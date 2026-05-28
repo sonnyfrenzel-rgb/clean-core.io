@@ -222,18 +222,39 @@ ${codeToAnalyze}`;
       }
 
       try {
+        const isAlreadyCharged = project?.charged || false;
+
         await updateDoc(doc(getDb(), 'projects', projectId as string), {
           legacyCode: codeToAnalyze,
           s4Deployment: targetDeployment,
           analysis: responseText,
           extensibilityRoute: recommendedRoute,
           cleanCoreScore: cleanCoreScore,
-          status: 'analyzed'
+          status: 'analyzed',
+          charged: true,
+          transformationBypass: true
         });
+
+        if (!isAlreadyCharged) {
+          await incrementTransformations();
+        }
       } catch (error) {
         handleFirestoreError(error, OperationType.UPDATE, `projects/${projectId}`);
       }
-      setProject((prev: Project | null) => prev ? { ...prev, analysis: responseText, extensibilityRoute: recommendedRoute, s4Deployment: targetDeployment, cleanCoreScore } : null);
+      setProject((prev: Project | null) => 
+        prev 
+          ? { 
+              ...prev, 
+              analysis: responseText, 
+              extensibilityRoute: recommendedRoute, 
+              s4Deployment: targetDeployment, 
+              cleanCoreScore,
+              charged: true,
+              transformationBypass: true
+            } 
+          : null
+      );
+
     } catch (err: unknown) {
       console.error('Analysis Error:', err);
       const errMessage = err instanceof Error ? err.message : String(err);
