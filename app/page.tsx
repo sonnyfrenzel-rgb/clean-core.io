@@ -871,9 +871,21 @@ export default function Home() {
               <span className="text-gray-800">|</span>
               <button onClick={() => setShowDatenschutz(true)} className="hover:text-white transition-colors">Privacy Policy</button>
             </p>
-            <p className="mt-8 text-xs text-gray-700 max-w-md mx-auto">
-              Disclaimer: This application is a non-commercial prototype pilot.
-            </p>
+            <div className="mt-12 text-[10px] text-gray-500 max-w-2xl mx-auto leading-relaxed border border-gray-900 bg-gray-950/50 p-6 rounded-2xl text-left space-y-3">
+              <span className="font-extrabold text-gray-400 uppercase tracking-widest block border-b border-gray-900 pb-1.5">Legal Disclaimer & Pilot Status</span>
+              <p>
+                <strong>Non-Commercial Developer Sandbox:</strong> Clean-Core.io is operated exclusively as a non-commercial, open-source research and prototyping platform under administrative developer oversight (Felix Frenzel). No commercial licensing, subscriptions, or paid services are offered.
+              </p>
+              <p>
+                <strong>AI Transformations & "As-Is" Provisioning:</strong> All solution designs, compliance scores, modular code transformations, documentation blueprints, and sandboxed test suites are dynamically generated utilizing third-party generative AI models (Google Gemini API). This platform and all compiled artifacts are provided strictly on an <em>"AS IS"</em> and <em>"AS AVAILABLE"</em> basis, without any warranties or guarantees of any kind, express or implied, including but not limited to the correctness, compilation, performance, security, or commercial compliance of the generated results. Developers must independently review, test, and validate all outputs before any commercial or production usage.
+              </p>
+              <p>
+                <strong>Limitation of Liability:</strong> In no event shall the administrator, contributors, or developers be held liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, loss of data, system crashes, integration failures, or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort arising in any way out of the use of this software, even if advised of the possibility of such damage.
+              </p>
+              <p>
+                <strong>Data Privacy & GDPR:</strong> This platform is deployed on secure European cloud nodes in the Belgium (europe-west1) region. Secure stateless proxy layers ensure that uploaded legacy codes are never saved, persisted, or utilized by Google for LLM model training. All users retain the absolute right to immediate, recursive erasure (Art. 17 GDPR) via the settings dashboard.
+              </p>
+            </div>
           </div>
         </div>
       </footer>
