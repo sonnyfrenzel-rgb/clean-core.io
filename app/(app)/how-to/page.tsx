@@ -235,13 +235,13 @@ export default function HowToPage() {
             {/* Slide Viewer Canvas Container (Ref with Fullscreen toggle support) */}
             <div 
               ref={deckRef}
-              className={`border border-slate-200 bg-white flex flex-col justify-between shadow-2xl group transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-[100] !rounded-none bg-slate-50 border-none w-screen h-screen overflow-hidden' : 'aspect-video rounded-[2rem] overflow-hidden'}`}
+              className={`border border-slate-200 bg-white flex flex-col justify-between shadow-2xl group transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-[100] !rounded-none bg-slate-50 border-none w-screen h-screen overflow-hidden' : 'h-auto md:aspect-video rounded-[2rem] overflow-hidden'}`}
             >
               {/* Split Workspace */}
               <div className="flex-grow flex flex-col md:flex-row w-full overflow-hidden min-h-0">
                 
                 {/* Left Panel: High-Fidelity Screenshot & Pulsing Hotspots (60% width) */}
-                <div className="w-full md:w-3/5 h-full relative bg-slate-100 flex items-center justify-center border-r border-slate-200/60 overflow-hidden shrink-0">
+                <div className="w-full md:w-3/5 aspect-video md:aspect-auto md:h-full relative bg-slate-100 flex items-center justify-center md:border-r border-b md:border-b-0 border-slate-200/60 overflow-hidden shrink-0">
                   <img 
                     src={currentSlide === 0 ? '/screenshots/step-7.jpg' : `/screenshots/step-${currentSlide}.jpg`} 
                     alt={steps[currentSlide].title} 
@@ -309,7 +309,7 @@ export default function HowToPage() {
                 </div>
 
                 {/* Right Panel: Explanations, Q&A, and Narration Script (40% width) */}
-                <div className="w-full md:w-2/5 h-full relative bg-white p-6 sm:p-8 flex flex-col justify-between overflow-y-auto min-w-0">
+                <div className="w-full md:w-2/5 h-auto md:h-full relative bg-white p-6 sm:p-8 flex flex-col justify-between md:overflow-y-auto min-w-0">
                   <div className="space-y-6">
                     {/* Header: Slide index & Title */}
                     <div className="space-y-1.5">

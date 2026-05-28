@@ -7,7 +7,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
-import { UploadCloud, FileCode2, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, Activity, Download, ChevronDown, X, HelpCircle, Info, Sparkles, Trash2 } from 'lucide-react';
+import { UploadCloud, FileCode2, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, Activity, Download, ChevronDown, X, HelpCircle, Info, Sparkles, Trash2, Layers } from 'lucide-react';
 import clsx from 'clsx';
 import nextDynamic from 'next/dynamic';
 import { DocumentSection } from '@/components/DocumentSection';
@@ -37,6 +37,7 @@ export default function AnalyzePage() {
   const { profile } = useUserProfile();
   const [showHelpMode, setShowHelpMode] = useState(false);
   const [showScoreModal, setShowScoreModal] = useState(false);
+  const [selectedCheckpoint, setSelectedCheckpoint] = useState(0);
 
   const markdownComponents: Components = {
     h1: ({ node, ...props }) => (
@@ -155,6 +156,33 @@ interface AnalysisData {
     cloudReadiness: string; // Technical assessment of whether the custom logic can be cleanly migrated to a transformed cloud service (Node.js)
   };
   strategicNextSteps: string[]; // 3-4 concrete actionable technical next steps for the engineering and architecture teams
+  extensibilityRouting: {
+    recommendedRoute: 'Side-by-Side (SAP BTP)' | 'In-App (ABAP Cloud)'; // Route: 'Side-by-Side (SAP BTP)' if the legacy logic is asynchronous, external-facing, or has non-SAP SaaS dependencies. 'In-App (ABAP Cloud)' if it has tight core database joins, synchronous posting validation logic, or runs directly during S/4HANA transactional postings.
+    confidenceScore: number; // 0-100 score representing the route decision confidence
+    rationale: string; // Factual justification of why this extensibility route was selected
+    targetArtifact: string; // Primary target SAP cloud extension artifact (e.g., "SAP BTP Node.js App", "ABAP Cloud RAP Business Object", "Released BAdI Implementation", "Custom CDS Projection View")
+    decisionTreeCheckpoints: Array<{
+      checkpointName: string; // The specific decision checkpoint (e.g., "Transactional Coupling", "UI Paradigm", "Resource Coupling", "Data Proximity")
+      question: string; // Standard SAP Extensibility Guide evaluation question
+      evaluation: string; // Detailed technical evaluation of how the legacy code answers this question
+      resultState: 'In-App Preferred' | 'Side-by-Side Preferred' | 'Neutral';
+      cleanCoreImpact: string; // Architectural explanation of what this means for clean core compliance
+    }>;
+    comparativeAnalysis: {
+      inAppABAPCloud: {
+        technicalFeasibility: 'Highly Compatible' | 'Partially Compatible' | 'Incompatible';
+        fitDetails: string; // Custom technical fit explanation for the RAP/ABAP Cloud track for this legacy code
+        pros: string[]; // 2-3 specific technical advantages of using RAP for this legacy logic
+        cons: string[]; // 2-3 specific technical limitations/disadvantages of RAP for this logic
+      };
+      sideBySideBTP: {
+        technicalFeasibility: 'Highly Compatible' | 'Partially Compatible' | 'Incompatible';
+        fitDetails: string; // Custom technical fit explanation for BTP CAP track for this legacy code
+        pros: string[]; // 2-3 specific advantages of using BTP CAP for this logic
+        cons: string[]; // 2-3 specific limitations/disadvantages of BTP CAP for this logic
+      };
+    };
+  };
 }
 
 Legacy Code to Analyze:
@@ -162,16 +190,27 @@ ${codeToAnalyze}`;
 
       const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, profile?.geminiApiKey);
       
+      let recommendedRoute = 'Side-by-Side (SAP BTP)';
+      try {
+        const parsed = JSON.parse(responseText.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim());
+        if (parsed.extensibilityRouting?.recommendedRoute) {
+          recommendedRoute = parsed.extensibilityRouting.recommendedRoute;
+        }
+      } catch (e) {
+        console.error('Failed to parse analysis JSON for routing', e);
+      }
+
       try {
         await updateDoc(doc(getDb(), 'projects', projectId as string), {
           legacyCode: codeToAnalyze,
           analysis: responseText,
+          extensibilityRoute: recommendedRoute,
           status: 'analyzed'
         });
       } catch (error) {
         handleFirestoreError(error, OperationType.UPDATE, `projects/${projectId}`);
       }
-      setProject((prev: Project | null) => prev ? { ...prev, analysis: responseText } : null);
+      setProject((prev: Project | null) => prev ? { ...prev, analysis: responseText, extensibilityRoute: recommendedRoute } : null);
     } catch (err: unknown) {
       console.error('Analysis Error:', err);
       const errMessage = err instanceof Error ? err.message : String(err);
@@ -225,6 +264,101 @@ ${codeToAnalyze}`;
         <li style="margin-bottom: 10px; font-size: 14px;"><strong>${step}</strong></li>
       `).join('') || '';
 
+      // Extensibility Routing Pathway and Comparative matrices
+      const isBtp = (project.extensibilityRoute || data.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP');
+      
+      const checkpoints = data.extensibilityRouting?.decisionTreeCheckpoints || [
+        {
+          checkpointName: 'Transactional Coupling',
+          question: 'Does the legacy logic require synchronous execution and update locks within standard S/4HANA transactional postings?',
+          evaluation: isBtp 
+            ? 'The custom logic executes asynchronously or independently without blocking standard ERP database threads (e.g. read-only analytics, decoupled webhooks, or scheduled updates).' 
+            : 'The custom logic requires synchronous validation and real-time locking within standard SAP LUW processes (e.g., during posting of sales orders or billing items).',
+          resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
+          cleanCoreImpact: isBtp 
+            ? 'Side-by-side execution leaves S/4HANA upgrade cycles completely unaffected.' 
+            : 'In-App extensibility (RAP) is required to run within the ERP core transaction boundaries while keeping the repository clean.'
+        },
+        {
+          checkpointName: 'UI Paradigm & Customization',
+          question: 'Does the application require an external-facing portal, heavy custom branding, or tight integration with third-party SaaS services?',
+          evaluation: isBtp 
+            ? 'Requires a highly responsive, modern Fiori Elements or custom React UI available to external vendors and clients without exposing standard SAP ports.' 
+            : 'The UI is embedded inside standard S/4HANA transaction screens for internal business users utilizing standard Fiori grids.',
+          resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
+          cleanCoreImpact: isBtp 
+            ? 'BTP decoupled hosting allows modern web framework freedom and enterprise-grade security isolation.' 
+            : 'ABAP RAP keeps the UI aligned with standard S/4HANA layouts, eliminating custom server configurations.'
+        },
+        {
+          checkpointName: 'Data & DB Proximity',
+          question: 'Does the logic perform compute-intensive joins across dozens of custom database tables or require a separate persistent schema?',
+          evaluation: isBtp 
+            ? 'The application relies on decoupled custom data stores, external SaaS APIs, or complex pre-aggregations that would overhead the core database.' 
+            : 'Requires direct, low-latency joins and real-time reads on standard tables (e.g. BSEG, KNA1) inside standard transactional screens.',
+          resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
+          cleanCoreImpact: isBtp 
+            ? 'Decoupling database schemas keeps the ERP core lightweight, safe, and easily upgradeable.' 
+            : 'Uses standard released RAP CDS projection views and standard repository items, preserving database integrity.'
+        },
+        {
+          checkpointName: 'Lifecycle & Resource Scaling',
+          question: 'Does the solution experience highly volatile, bursty resource scaling requirements or have massive external workloads?',
+          evaluation: isBtp 
+            ? 'Scaling requirements are independent of core ERP compute threads, with unpredictable high-volume external webhook events.' 
+            : 'Resource consumption remains flat, predictable, and fully aligned with internal S/4HANA user transaction volume.',
+          resultState: isBtp ? 'Side-by-Side Preferred' : 'Neutral',
+          cleanCoreImpact: isBtp 
+            ? 'Scale-out workloads are absorbed by BTP Cloud Foundry/Kyma, shielding the ERP core system from resource starvation.' 
+            : 'ABAP Cloud leverages standard ERP server resource pools, maintaining unified resource constraints.'
+        }
+      ];
+
+      const comparative = data.extensibilityRouting?.comparativeAnalysis || {
+        inAppABAPCloud: {
+          technicalFeasibility: isBtp ? 'Partially Compatible' : 'Highly Compatible',
+          fitDetails: isBtp 
+            ? 'Technically possible to implement in RAP, but transactional tight coupling would restrict SaaS integrations and UI layout options.' 
+            : 'Perfect technical fit. Executes inside standard S/4HANA transaction pipelines utilizing RAP CDS views and behavior definitions.',
+          pros: [
+            'Zero latency database reads on core S/4HANA standard tables',
+            'Synchronous transactional execution inside standard SAP LUW',
+            'Direct reuse of existing standard locks and validations'
+          ],
+          cons: [
+            'Language restricted strictly to released ABAP Cloud standard repository items',
+            'No access to external SaaS libraries or Node.js frameworks',
+            'Any compute overhead directly blocks ERP core system processes'
+          ]
+        },
+        sideBySideBTP: {
+          technicalFeasibility: isBtp ? 'Highly Compatible' : 'Partially Compatible',
+          fitDetails: isBtp 
+            ? 'Ideal architectural fit. The application runs as a fully decoupled, upgrade-safe microservice on SAP BTP using CAP and Node.js.' 
+            : 'Feasible via event triggers (Event Mesh) or API destinations, but adds HTTP latency and requires destination configuration.',
+          pros: [
+            'Absolute lifecycle isolation - zero upgrade blockers for S/4HANA core',
+            'Total development freedom with Node.js, TypeScript, and modern NPM libraries',
+            'Allows external portal hosting and multi-tenant SaaS scaling'
+          ],
+          cons: [
+            'Requires configuring standard cloud API destinations and credentials',
+            'Introduces HTTP request latency for transactional processes',
+            'Needs ERP-side trigger classes to capture transactional database state changes'
+          ]
+        }
+      };
+
+      const checkpointsRows = checkpoints.map((cp, idx) => `
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: bold; text-align: center;">${idx + 1}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: bold;">${cp.checkpointName}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-size: 13px;">${cp.question}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #172b4d;">${cp.evaluation}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; text-align: center;"><span style="padding: 2.5px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; background: ${cp.resultState.includes('Side-by-Side') ? '#deebff' : cp.resultState.includes('In-App') ? '#e3fcef' : '#f4f5f7'}; color: ${cp.resultState.includes('Side-by-Side') ? '#0747a6' : cp.resultState.includes('In-App') ? '#006644' : '#505f79'};">${cp.resultState}</span></td>
+        </tr>
+      `).join('');
+
       htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -239,6 +373,7 @@ ${codeToAnalyze}`;
             ul { margin-bottom: 16px; padding-left: 20px; }
             table { width: 100%; border-collapse: collapse; margin: 20px 0; }
             th { background: #f4f5f7; text-align: left; padding: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #6b778c; border-bottom: 2px solid #ebecf0; }
+            td { border-bottom: 1px solid #ebecf0; }
             .badge { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; background: #e6fcff; color: #007a87; border: 1px solid #b3f0ff; }
             .summary-box { background: #f4f5f7; border-left: 4px solid #0747a6; padding: 20px; border-radius: 0 8px 8px 0; margin-bottom: 30px; }
             .card-grid { display: grid; grid-template-cols: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
@@ -266,15 +401,63 @@ ${codeToAnalyze}`;
             <p><strong>Standardization Potential:</strong> <span class="badge">${data.standardFit?.potential || 'Medium'}</span></p>
             <p>${data.standardFit?.rationale}</p>
 
+            <h2>SAP Extensibility Routing Decision Path</h2>
+            <p>The legacy ABAP code was evaluated step-by-step against the official SAP Clean Core extensibility decision tree. Below is the detailed pathway and checkpoint audit:</p>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 5%; text-align: center; background: #f4f5f7; padding: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #6b778c;">Step</th>
+                  <th style="width: 20%; background: #f4f5f7; padding: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #6b778c;">Decision Milestone</th>
+                  <th style="width: 25%; background: #f4f5f7; padding: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #6b778c;">Evaluation Question</th>
+                  <th style="width: 40%; background: #f4f5f7; padding: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #6b778c;">Legacy Code Assessment</th>
+                  <th style="width: 10%; text-align: center; background: #f4f5f7; padding: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #6b778c;">Result State</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${checkpointsRows}
+              </tbody>
+            </table>
+
+            <h2>Extensibility Track Comparative Matrix</h2>
+            <p>Direct architectural comparison of both available tracks mapped specifically to this project's requirements:</p>
+            <div class="card-grid" style="grid-template-cols: 1fr 1fr; margin-bottom: 30px;">
+              <div class="card" style="border-left: 4px solid #006644; background: #e3fcef20;">
+                <div class="card-title" style="color: #006644;">⚙️ In-App ABAP Cloud (RAP) Track</div>
+                <p style="font-size: 11px; color: #5e6c84; font-weight: bold; margin-bottom: 8px;">Feasibility: ${comparative.inAppABAPCloud.technicalFeasibility}</p>
+                <p style="font-size: 13px; margin-bottom: 12px;">${comparative.inAppABAPCloud.fitDetails}</p>
+                <div style="font-size: 12px; margin-bottom: 8px;"><strong>Technical Pros:</strong></div>
+                <ul style="font-size: 12px; padding-left: 20px; margin-bottom: 12px;">
+                  ${comparative.inAppABAPCloud.pros.map(pro => `<li>${pro}</li>`).join('')}
+                </ul>
+                <div style="font-size: 12px; margin-bottom: 8px;"><strong>Limitations (Cons):</strong></div>
+                <ul style="font-size: 12px; padding-left: 20px; color: #5e6c84; margin-bottom: 0;">
+                  ${comparative.inAppABAPCloud.cons.map(con => `<li>${con}</li>`).join('')}
+                </ul>
+              </div>
+              <div class="card" style="border-left: 4px solid #0747a6; background: #deebff20;">
+                <div class="card-title" style="color: #0747a6;">☁️ Side-by-Side SAP BTP (CAP) Track</div>
+                <p style="font-size: 11px; color: #5e6c84; font-weight: bold; margin-bottom: 8px;">Feasibility: ${comparative.sideBySideBTP.technicalFeasibility}</p>
+                <p style="font-size: 13px; margin-bottom: 12px;">${comparative.sideBySideBTP.fitDetails}</p>
+                <div style="font-size: 12px; margin-bottom: 8px;"><strong>Technical Pros:</strong></div>
+                <ul style="font-size: 12px; padding-left: 20px; margin-bottom: 12px;">
+                  ${comparative.sideBySideBTP.pros.map(pro => `<li>${pro}</li>`).join('')}
+                </ul>
+                <div style="font-size: 12px; margin-bottom: 8px;"><strong>Limitations (Cons):</strong></div>
+                <ul style="font-size: 12px; padding-left: 20px; color: #5e6c84; margin-bottom: 0;">
+                  ${comparative.sideBySideBTP.cons.map(con => `<li>${con}</li>`).join('')}
+                </ul>
+              </div>
+            </div>
+
             <h2>Functional Gaps Analysis Matrix</h2>
             <table>
               <thead>
                 <tr>
-                  <th>Requirement</th>
-                  <th>Divergence</th>
-                  <th>Mitigation Strategy</th>
-                  <th>Technical Rationale</th>
-                  <th>Complexity</th>
+                  <th style="background: #f4f5f7; padding: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #6b778c;">Requirement</th>
+                  <th style="background: #f4f5f7; padding: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #6b778c;">Divergence</th>
+                  <th style="background: #f4f5f7; padding: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #6b778c;">Mitigation Strategy</th>
+                  <th style="background: #f4f5f7; padding: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #6b778c;">Technical Rationale</th>
+                  <th style="background: #f4f5f7; padding: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #6b778c;">Complexity</th>
                 </tr>
               </thead>
               <tbody>
@@ -397,7 +580,7 @@ ${codeToAnalyze}`;
       return (
         <div className="space-y-12">
           {/* Core metrics panel */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-stretch">
             {/* Circular SVG Gauge for Clean Core Score */}
             <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-lg border border-slate-800 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-2xl -mr-16 -mt-16"></div>
@@ -435,8 +618,56 @@ ${codeToAnalyze}`;
               <p className="text-xs text-slate-400 mt-2 max-w-[200px]">Higher score indicates better alignment with standard extensibility guidelines.</p>
             </div>
 
+            {/* Extensibility Router Card */}
+            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between relative group">
+              <div>
+                <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Extensibility Router</span>
+                <div className="flex items-center gap-2 mt-2 mb-3">
+                  <span className={clsx(
+                    "text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider shadow-sm",
+                    (project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP')
+                      ? "bg-blue-50 text-blue-700 border border-blue-100"
+                      : "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                  )}>
+                    {(project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP') ? '☁️ BTP Side-by-Side' : '⚙️ ABAP Cloud'}
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-400">
+                    {analysisData.extensibilityRouting?.confidenceScore || 95}% Conf.
+                  </span>
+                </div>
+                <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight mb-1">
+                  Target: {analysisData.extensibilityRouting?.targetArtifact || ((project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || '').includes('BTP') ? 'SAP BTP Node.js App' : 'RAP Business Object')}
+                </h4>
+                <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-4">
+                  {analysisData.extensibilityRouting?.rationale || 'AI analyzed legacy database joins and determined the optimal decoupled BTP modernization strategy.'}
+                </p>
+              </div>
+
+              {/* Interactive Override Button */}
+              <div className="border-t border-slate-100 pt-4 mt-4 flex items-center justify-between gap-2">
+                <span className="text-[9px] font-bold text-slate-400 uppercase">Override Route</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const currentRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)';
+                    const nextRoute = currentRoute.includes('BTP') ? 'In-App (ABAP Cloud)' : 'Side-by-Side (SAP BTP)';
+                    
+                    // Update in Firestore
+                    const docRef = doc(getDb(), 'projects', projectId as string);
+                    await updateDoc(docRef, { extensibilityRoute: nextRoute });
+                    
+                    // Update state
+                    setProject((prev: any) => prev ? { ...prev, extensibilityRoute: nextRoute } : prev);
+                  }}
+                  className="text-[9px] font-black text-slate-500 hover:text-green-600 transition-colors uppercase tracking-widest flex items-center gap-1"
+                >
+                  <RefreshCw size={10} className="animate-spin-slow" /> Switch Track
+                </button>
+              </div>
+            </div>
+
             {/* Project Summary Card */}
-            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between md:col-span-2 relative group">
+            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between lg:col-span-2 relative group">
               <div>
                 <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Analysis Summary</span>
                 <h3 className="text-2xl font-black text-slate-900 mt-2 mb-3">{analysisData.projectTitle || project.name}</h3>
@@ -462,12 +693,325 @@ ${codeToAnalyze}`;
               </div>
             </div>
           </div>
+          
+          {/* Extensibility Decision Matrix & Path Guide */}
+          <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden group mb-8 animate-in fade-in duration-700">
+            <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Extensibility Decision Matrix & Path</h3>
+                <p className="text-xs text-slate-400 mt-1">Detailed comparison and dynamic AI checkpoints that determined the active modernization track.</p>
+              </div>
+              <span className="bg-slate-100 text-slate-700 border border-slate-200/60 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider font-mono shrink-0 self-start md:self-center">
+                SAP Clean Core Guidelines
+              </span>
+            </div>
+
+            {(() => {
+              const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP');
+              
+              const checkpoints = analysisData.extensibilityRouting?.decisionTreeCheckpoints || [
+                {
+                  checkpointName: 'Transactional Coupling',
+                  question: 'Does the legacy logic require synchronous execution and update locks within standard S/4HANA transactional postings?',
+                  evaluation: isBtp 
+                    ? 'The custom logic executes asynchronously or independently without blocking standard ERP database threads (e.g. read-only analytics, decoupled webhooks, or scheduled updates).' 
+                    : 'The custom logic requires synchronous validation and real-time locking within standard SAP LUW processes (e.g., during posting of sales orders or billing items).',
+                  resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
+                  cleanCoreImpact: isBtp 
+                    ? 'Side-by-side execution leaves S/4HANA upgrade cycles completely unaffected.' 
+                    : 'In-App extensibility (RAP) is required to run within the ERP core transaction boundaries while keeping the repository clean.'
+                },
+                {
+                  checkpointName: 'UI Paradigm & Customization',
+                  question: 'Does the application require an external-facing portal, heavy custom branding, or tight integration with third-party SaaS services?',
+                  evaluation: isBtp 
+                    ? 'Requires a highly responsive, modern Fiori Elements or custom React UI available to external vendors and clients without exposing standard SAP ports.' 
+                    : 'The UI is embedded inside standard S/4HANA transaction screens for internal business users utilizing standard Fiori grids.',
+                  resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
+                  cleanCoreImpact: isBtp 
+                    ? 'BTP decoupled hosting allows modern web framework freedom and enterprise-grade security isolation.' 
+                    : 'ABAP RAP keeps the UI aligned with standard S/4HANA layouts, eliminating custom server configurations.'
+                },
+                {
+                  checkpointName: 'Data & DB Proximity',
+                  question: 'Does the logic perform compute-intensive joins across dozens of custom database tables or require a separate persistent schema?',
+                  evaluation: isBtp 
+                    ? 'The application relies on decoupled custom data stores, external SaaS APIs, or complex pre-aggregations that would overhead the core database.' 
+                    : 'Requires direct, low-latency joins and real-time reads on standard tables (e.g. BSEG, KNA1) inside standard transactional screens.',
+                  resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
+                  cleanCoreImpact: isBtp 
+                    ? 'Decoupling database schemas keeps the ERP core lightweight, safe, and easily upgradeable.' 
+                    : 'Uses standard released RAP CDS projection views and standard repository items, preserving database integrity.'
+                },
+                {
+                  checkpointName: 'Lifecycle & Resource Scaling',
+                  question: 'Does the solution experience highly volatile, bursty resource scaling requirements or have massive external workloads?',
+                  evaluation: isBtp 
+                    ? 'Scaling requirements are independent of core ERP compute threads, with unpredictable high-volume external webhook events.' 
+                    : 'Resource consumption remains flat, predictable, and fully aligned with internal S/4HANA user transaction volume.',
+                  resultState: isBtp ? 'Side-by-Side Preferred' : 'Neutral',
+                  cleanCoreImpact: isBtp 
+                    ? 'Scale-out workloads are absorbed by BTP Cloud Foundry/Kyma, shielding the ERP core system from resource starvation.' 
+                    : 'ABAP Cloud leverages standard ERP server resource pools, maintaining unified resource constraints.'
+                }
+              ];
+
+              const comparative = analysisData.extensibilityRouting?.comparativeAnalysis || {
+                inAppABAPCloud: {
+                  technicalFeasibility: isBtp ? 'Partially Compatible' : 'Highly Compatible',
+                  fitDetails: isBtp 
+                    ? 'Technically possible to implement in RAP, but transactional tight coupling would restrict SaaS integrations and UI layout options.' 
+                    : 'Perfect technical fit. Executes inside standard S/4HANA transaction pipelines utilizing RAP CDS views and behavior definitions.',
+                  pros: [
+                    'Zero latency database reads on core S/4HANA standard tables',
+                    'Synchronous transactional execution inside standard SAP LUW',
+                    'Direct reuse of existing standard locks and validations'
+                  ],
+                  cons: [
+                    'Language restricted strictly to released ABAP Cloud standard repository items',
+                    'No access to external SaaS libraries or Node.js frameworks',
+                    'Any compute overhead directly blocks ERP core system processes'
+                  ]
+                },
+                sideBySideBTP: {
+                  technicalFeasibility: isBtp ? 'Highly Compatible' : 'Partially Compatible',
+                  fitDetails: isBtp 
+                    ? 'Ideal architectural fit. The application runs as a fully decoupled, upgrade-safe microservice on SAP BTP using CAP and Node.js.' 
+                    : 'Feasible via event triggers (Event Mesh) or API destinations, but adds HTTP latency and requires destination configuration.',
+                  pros: [
+                    'Absolute lifecycle isolation - zero upgrade blockers for S/4HANA core',
+                    'Total development freedom with Node.js, TypeScript, and modern NPM libraries',
+                    'Allows external portal hosting and multi-tenant SaaS scaling'
+                  ],
+                  cons: [
+                    'Requires configuring standard cloud API destinations and credentials',
+                    'Introduces HTTP request latency for transactional processes',
+                    'Needs ERP-side trigger classes to capture transactional database state changes'
+                  ]
+                }
+              };
+
+              return (
+                <div className="space-y-8 animate-in fade-in duration-300">
+                  {/* Pathway Explorer */}
+                  <div className="bg-slate-50/50 border border-slate-150 rounded-[1.5rem] p-5 shadow-sm">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-4 font-mono">AI Routing Decision Pathway Explorer</span>
+                    <div className="relative">
+                      {/* Horizontal progress path connecting checkpoints */}
+                      <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-slate-200 -translate-y-1/2 hidden md:block z-0"></div>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative z-10">
+                        {checkpoints.map((cp, idx) => {
+                          const isActive = selectedCheckpoint === idx;
+                          const isSideBySide = cp.resultState === 'Side-by-Side Preferred';
+                          const isInApp = cp.resultState === 'In-App Preferred';
+                          
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setSelectedCheckpoint(idx)}
+                              className={clsx(
+                                "bg-white border rounded-2xl p-4 text-left transition-all duration-300 shadow-sm relative overflow-hidden group hover:scale-[1.02] hover:shadow-md",
+                                isActive 
+                                  ? "border-emerald-600 ring-2 ring-emerald-500/20" 
+                                  : "border-slate-200/85 hover:border-slate-300"
+                              )}
+                            >
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className={clsx(
+                                  "w-6 h-6 rounded-full font-bold flex items-center justify-center text-[10px] shrink-0",
+                                  isActive 
+                                    ? "bg-emerald-650 text-white" 
+                                    : "bg-slate-100 text-slate-500 group-hover:bg-slate-200"
+                                )}>
+                                  {idx + 1}
+                                </span>
+                                <span className="text-[11px] font-extrabold text-slate-800 tracking-tight line-clamp-1">{cp.checkpointName}</span>
+                              </div>
+                              
+                              <div className="flex items-center gap-1.5 mt-2">
+                                <span className={clsx(
+                                  "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md",
+                                  isSideBySide ? "bg-blue-50 text-blue-700 border border-blue-100" :
+                                  isInApp ? "bg-emerald-50 text-emerald-700 border border-emerald-100" :
+                                  "bg-slate-50 text-slate-600 border border-slate-100"
+                                )}>
+                                  {cp.resultState.split(' ')[0]}
+                                </span>
+                                <span className="text-[9px] text-slate-400 font-bold ml-auto group-hover:text-slate-600 transition-colors">Inspect →</span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Active Checkpoint Detail Panel */}
+                    <div className="bg-white border border-slate-150 rounded-xl p-5 mt-5 animate-in fade-in slide-in-from-top-1 duration-300">
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-150 pb-4 mb-4">
+                        <div className="space-y-1">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block font-mono">Selected Milestone {selectedCheckpoint + 1} • {checkpoints[selectedCheckpoint].checkpointName}</span>
+                          <h4 className="text-sm font-extrabold text-slate-900 leading-snug">{checkpoints[selectedCheckpoint].question}</h4>
+                        </div>
+                        <span className={clsx(
+                          "text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-sm shrink-0 self-start md:self-auto",
+                          checkpoints[selectedCheckpoint].resultState === 'Side-by-Side Preferred' ? "bg-blue-600 text-white" :
+                          checkpoints[selectedCheckpoint].resultState === 'In-App Preferred' ? "bg-emerald-600 text-white" :
+                          "bg-slate-600 text-white"
+                        )}>
+                          {checkpoints[selectedCheckpoint].resultState}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-relaxed">
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1.5">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block font-mono">Custom Technical Assessment</span>
+                          <p className="text-slate-700 font-medium">{checkpoints[selectedCheckpoint].evaluation}</p>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1.5">
+                          <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest block font-mono">Clean Core Implementation Impact</span>
+                          <p className="text-slate-600 font-medium">{checkpoints[selectedCheckpoint].cleanCoreImpact}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tailored comparative matrix */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+                    {/* Track 1: In-App ABAP Cloud */}
+                    <div className={clsx(
+                      "p-6 rounded-2xl border transition-all flex flex-col justify-between",
+                      !isBtp
+                        ? "bg-emerald-50/20 border-emerald-500/30 shadow-md ring-1 ring-emerald-500/10"
+                        : "bg-slate-50/40 border-slate-200/50 opacity-80"
+                    )}>
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <div className={clsx("p-2 rounded-xl", !isBtp ? "bg-emerald-100/50 text-emerald-700" : "bg-slate-250/60 text-slate-555")}>
+                              <Sparkles size={16} />
+                            </div>
+                            <span className="font-extrabold text-slate-900 text-sm">⚙️ In-App ABAP Cloud (RAP)</span>
+                          </div>
+                          <span className={clsx(
+                            "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm",
+                            comparative.inAppABAPCloud.technicalFeasibility === 'Highly Compatible' ? "bg-green-600 text-white" :
+                            comparative.inAppABAPCloud.technicalFeasibility === 'Partially Compatible' ? "bg-amber-600 text-white" :
+                            "bg-rose-600 text-white"
+                          )}>
+                            {comparative.inAppABAPCloud.technicalFeasibility}
+                          </span>
+                        </div>
+                        
+                        <p className="text-xs text-slate-600 leading-relaxed mb-6 font-medium">
+                          {comparative.inAppABAPCloud.fitDetails}
+                        </p>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest block font-mono mb-2">Technical Advantages (Pros)</span>
+                            <ul className="space-y-2 text-[11px] text-slate-700 font-semibold">
+                              {comparative.inAppABAPCloud.pros.map((pro, pIdx) => (
+                                <li key={pIdx} className="flex items-start gap-1.5">
+                                  <span className="text-emerald-500 shrink-0 font-extrabold">✓</span>
+                                  <span>{pro}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest block font-mono mb-2">Architectural Limitations (Cons)</span>
+                            <ul className="space-y-2 text-[11px] text-slate-500 font-medium">
+                              {comparative.inAppABAPCloud.cons.map((con, cIdx) => (
+                                <li key={cIdx} className="flex items-start gap-1.5">
+                                  <span className="text-rose-455 shrink-0 font-extrabold">✗</span>
+                                  <span>{con}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {!isBtp && (
+                        <div className="border-t border-emerald-500/20 pt-4 mt-6 text-[10px] text-emerald-800 font-bold uppercase tracking-widest font-mono">
+                          Target: Released CDS Views & RAP Business Objects
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Track 2: Side-by-Side SAP BTP */}
+                    <div className={clsx(
+                      "p-6 rounded-2xl border transition-all flex flex-col justify-between",
+                      isBtp
+                        ? "bg-blue-50/20 border-blue-500/30 shadow-md ring-1 ring-blue-500/10"
+                        : "bg-slate-50/40 border-slate-200/50 opacity-80"
+                    )}>
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <div className={clsx("p-2 rounded-xl", isBtp ? "bg-blue-100/50 text-blue-700" : "bg-slate-250/60 text-slate-555")}>
+                              <Layers size={16} />
+                            </div>
+                            <span className="font-extrabold text-slate-900 text-sm">☁️ Side-by-Side SAP BTP (CAP)</span>
+                          </div>
+                          <span className={clsx(
+                            "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm",
+                            comparative.sideBySideBTP.technicalFeasibility === 'Highly Compatible' ? "bg-green-600 text-white" :
+                            comparative.sideBySideBTP.technicalFeasibility === 'Partially Compatible' ? "bg-amber-600 text-white" :
+                            "bg-rose-600 text-white"
+                          )}>
+                            {comparative.sideBySideBTP.technicalFeasibility}
+                          </span>
+                        </div>
+                        
+                        <p className="text-xs text-slate-600 leading-relaxed mb-6 font-medium">
+                          {comparative.sideBySideBTP.fitDetails}
+                        </p>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest block font-mono mb-2">Technical Advantages (Pros)</span>
+                            <ul className="space-y-2 text-[11px] text-slate-700 font-semibold">
+                              {comparative.sideBySideBTP.pros.map((pro, pIdx) => (
+                                <li key={pIdx} className="flex items-start gap-1.5">
+                                  <span className="text-emerald-500 shrink-0 font-extrabold">✓</span>
+                                  <span>{pro}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest block font-mono mb-2">Architectural Limitations (Cons)</span>
+                            <ul className="space-y-2 text-[11px] text-slate-500 font-medium">
+                              {comparative.sideBySideBTP.cons.map((con, cIdx) => (
+                                <li key={cIdx} className="flex items-start gap-1.5">
+                                  <span className="text-rose-455 shrink-0 font-extrabold">✗</span>
+                                  <span>{con}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {isBtp && (
+                        <div className="border-t border-blue-500/20 pt-4 mt-6 text-[10px] text-blue-800 font-bold uppercase tracking-widest font-mono">
+                          Target: CAP OData APIs & Decoupled BTP Microservices
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
 
           {/* As-is Context and Target Extensibility Mapping */}
           <div className="space-y-8">
             <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative">
               {showHelpMode && (
-                <div className="absolute top-6 right-6 flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 px-3 py-1 rounded-full animate-pulse select-none">
+                <div className="sm:absolute relative sm:top-6 sm:right-6 mb-4 sm:mb-0 flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 px-3 py-1 rounded-full animate-pulse select-none w-fit self-start z-10">
                   <Info size={12} />
                   Describes current system status and workflow.
                 </div>
@@ -485,7 +1029,7 @@ ${codeToAnalyze}`;
                     {showHelpMode && (
                       <div className="group relative">
                         <Info size={14} className="text-amber-500 cursor-help animate-pulse shrink-0" />
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 bg-slate-900 text-white text-xs rounded-xl p-3 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-50 leading-relaxed font-normal">
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 max-w-[85vw] bg-slate-900 text-white text-xs rounded-xl p-3 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-50 leading-relaxed font-normal">
                           <strong>Enterprise Architecture Mapping:</strong> Categorizes your legacy code into modern SAP clean core boundaries to identify what can be decommissioned or automated.
                         </div>
                       </div>
@@ -569,7 +1113,7 @@ ${codeToAnalyze}`;
           {/* 2x2 Matrix Grid */}
           <div className="space-y-4 relative">
             {showHelpMode && (
-              <div className="absolute top-0 right-0 flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 px-3 py-1 rounded-full animate-pulse select-none z-10">
+              <div className="sm:absolute relative sm:top-0 sm:right-0 mb-4 sm:mb-0 flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 px-3 py-1 rounded-full animate-pulse select-none w-fit self-start z-10">
                 <Info size={12} />
                 Prioritizes extensions based on business value and complex deployment effort.
               </div>
@@ -669,7 +1213,7 @@ ${codeToAnalyze}`;
           {/* Detailed Gap Cards */}
           <div className="space-y-6 relative">
             {showHelpMode && (
-              <div className="absolute top-0 right-0 flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 px-3 py-1 rounded-full animate-pulse select-none z-10">
+              <div className="sm:absolute relative sm:top-0 sm:right-0 mb-4 sm:mb-0 flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 px-3 py-1 rounded-full animate-pulse select-none w-fit self-start z-10">
                 <Info size={12} />
                 Divergence indicates the severity of departure from standard S/4HANA core logic.
               </div>
@@ -689,7 +1233,7 @@ ${codeToAnalyze}`;
           {/* Clean Core Recommendations */}
           <div className="bg-slate-50 rounded-[2rem] p-8 md:p-10 border border-slate-200 space-y-8 relative">
             {showHelpMode && (
-              <div className="absolute top-8 right-8 flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 px-3 py-1 rounded-full animate-pulse select-none z-10">
+              <div className="sm:absolute relative sm:top-8 sm:right-8 mb-4 sm:mb-0 flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 px-3 py-1 rounded-full animate-pulse select-none w-fit self-start z-10">
                 <Info size={12} />
                 Identifies key architecture strategies to safeguard your ERP standard core.
               </div>

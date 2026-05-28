@@ -291,10 +291,86 @@ CMD ["node", "srv/service.js"]`
     setLoading(true);
     setProgress(0);
     setError('');
-    setTransformationLog(['Initializing transformation engine...', 'Parsing legacy ABAP structures...', 'Mapping to Node.js patterns...']);
     
     try {
-      const prompt = `You are an elite Cloud Platform & Node.js Developer. Transform the following legacy ABAP code into a modern, production-ready modular Node.js (TypeScript) application project structure based on the provided Solution Design and Business Analysis.
+      const db = getDb();
+      const docSnap = await getDoc(doc(db, 'projects', projectId as string));
+      const projData = docSnap.exists() ? docSnap.data() : null;
+      const route = projData?.extensibilityRoute || 'Side-by-Side (SAP BTP)';
+      const isAbapCloud = !route.includes('BTP');
+
+      setTransformationLog([
+        'Initializing transformation engine...',
+        `Selected track: ${isAbapCloud ? 'In-App ABAP Cloud (RAP)' : 'Side-by-Side SAP BTP (CAP)'}`,
+        'Parsing legacy ABAP structures...',
+        isAbapCloud ? 'Mapping to RAP Developer Extensibility patterns...' : 'Mapping to CAP modular structures...'
+      ]);
+
+      const prompt = isAbapCloud
+        ? `You are an elite SAP RAP & ABAP Cloud Developer. Transform the following legacy ABAP code into a modern, production-ready modular SAP RAP (RESTful Application Programming Model) Developer Extensibility target architecture based on the provided Solution Design and Business Analysis.
+        
+        Legacy ABAP Code:
+        ${legacyCode}
+        
+        Business Analysis:
+        ${analysis}
+        
+        Solution Design:
+        ${design}
+        
+        Requirements:
+        1. Write clean, cloud-ready ABAP Cloud RAP syntax. Replace obsolete database access patterns with released APIs and MODIFY ENTITIES operations.
+        2. Follow standard released object restrictions (No direct SELECT on BSEG/KNA1; use released CDS views instead).
+        3. Split the modernized implementation into multiple files under standard abapGit file structures:
+           - src/zcl_demo_rap_behavior.clas.abap: The Behavior Implementation ABAP Class containing standard CRUD modification logic.
+           - src/zcl_demo_rap_behavior.clas.xml: The metadata XML descriptor for the class.
+           - src/z_demo_rap_ddls.ddls.asddls: The CDS data definition / projection view for the target entity.
+           - src/z_demo_rap_bdef.bdef.asbdef: The behavior definition for the CDS view (defining CREATE/UPDATE/DELETE and custom actions).
+           - src/z_demo_rap_srvd.srvd.assrvd: The RAP service definition exposing the business object.
+           - src/z_demo_rap_srvb.srvb.assrvb: The RAP service binding configuration (exposing as OData V4 UI).
+           - abapgit.xml: The standard abapGit repository configuration file in the root.
+        4. Add professional comments explaining the Developer Extensibility patterns used.
+        5. Return a complete ABAP Unit test suite inside the tests JSON object that validates the RAP behavior.
+        
+        Return a JSON object with the following structure:
+        {
+          "files": [
+            {
+              "path": "src/zcl_demo_rap_behavior.clas.abap",
+              "content": "/* The main ABAP class code */"
+            },
+            {
+              "path": "src/zcl_demo_rap_behavior.clas.xml",
+              "content": "/* Standard XML metadata descriptor */"
+            },
+            {
+              "path": "src/z_demo_rap_ddls.ddls.asddls",
+              "content": "/* The CDS View code */"
+            },
+            {
+              "path": "src/z_demo_rap_bdef.bdef.asbdef",
+              "content": "/* The BDEF code */"
+            },
+            {
+              "path": "src/z_demo_rap_srvd.srvd.assrvd",
+              "content": "/* The Service Definition code */"
+            },
+            {
+              "path": "src/z_demo_rap_srvb.srvb.assrvb",
+              "content": "/* The Service Binding code */"
+            },
+            {
+              "path": "abapgit.xml",
+              "content": "/* Standard abapgit.xml setup */"
+            }
+          ],
+          "tests": {
+            "config": "/* Standard ABAP Unit configuration metadata */",
+            "spec": "/* Complete zcl_demo_rap_test.clas.abap ABAP Unit test class verifying RAP methods */"
+          }
+        }
+        No conversational text.`
+        : `You are an elite Cloud Platform & Node.js Developer. Transform the following legacy ABAP code into a modern, production-ready modular Node.js (TypeScript) application project structure based on the provided Solution Design and Business Analysis.
         
         Legacy ABAP Code:
         ${legacyCode}
@@ -313,6 +389,7 @@ CMD ["node", "srv/service.js"]`
            - db/schema.cds: SAP CAP schema definition OR TypeORM entities mapping legacy database tables
            - package.json: Application dependencies, metadata, and scripts
            - Dockerfile: Multi-stage container setup for production
+           - erp-triggers/zcl_core_event_publisher.clas.abap: CRITICAL! S/4HANA-side event trigger: a clean ABAP Cloud class (or BAdI implementation) that intercepts transactional updates in the core ERP database and publishes the event payload asynchronously to the BTP Event Mesh/REST endpoint.
         4. Use modern patterns (async/await, dependency injection, structured logging).
         5. CRITICAL FOR SANDBOX: Use standard Node.js built-ins (like 'fetch', 'console') where possible. If you must use external libraries, restrict yourself strictly to: express, pino, pino-pretty, typeorm, @sap-cloud-sdk/http-client, @sap/xssec, and passport. Do NOT use any other external npm modules.
         6. CRITICAL: Do NOT import specific strategies like 'XS720Strategy' from '@sap/xssec' if they are not standard exports. Use standard passport-jwt or mock the authentication middleware entirely.
@@ -339,6 +416,10 @@ CMD ["node", "srv/service.js"]`
             {
               "path": "Dockerfile",
               "content": "/* Multi-stage Docker containerization setup */"
+            },
+            {
+              "path": "erp-triggers/zcl_core_event_publisher.clas.abap",
+              "content": "/* Clean S/4HANA Core event trigger publisher class in ABAP Cloud syntax */"
             }
           ],
           "tests": {
@@ -373,7 +454,7 @@ CMD ["node", "srv/service.js"]`
         
         if (filesArray.length === 0 && result.code) {
           filesArray.push({
-            path: 'srv/service.ts',
+            path: isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts',
             content: result.code
           });
         }
@@ -381,7 +462,7 @@ CMD ["node", "srv/service.js"]`
         // Fallback for completely non-JSON text
         filesArray = [
           {
-            path: 'srv/service.ts',
+            path: isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts',
             content: responseText || ''
           }
         ];
@@ -389,7 +470,6 @@ CMD ["node", "srv/service.js"]`
       
       setTransformationLog(prev => [...prev, 'Code generation complete.', 'Optimizing imports...', 'Finalizing transformation...']);
       
-      const db = getDb();
       await updateDoc(doc(db, 'projects', projectId as string), {
         generatedCode: JSON.stringify(filesArray),
         testSuite: tests,
@@ -397,8 +477,9 @@ CMD ["node", "srv/service.js"]`
       });
       
       setFiles(filesArray);
-      const hasServiceTs = filesArray.some(f => f.path === 'srv/service.ts');
-      setSelectedFilePath(hasServiceTs ? 'srv/service.ts' : (filesArray[0]?.path || ''));
+      const mainPath = isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts';
+      const hasMainFile = filesArray.some(f => f.path === mainPath);
+      setSelectedFilePath(hasMainFile ? mainPath : (filesArray[0]?.path || ''));
     } catch (err) {
       console.error('Transformation Error:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred during code transformation.');
