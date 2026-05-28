@@ -1,0 +1,38 @@
+import { NextResponse } from 'next/server';
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { requisitionIds, companyCode } = body;
+
+    if (!requisitionIds || !Array.isArray(requisitionIds) || requisitionIds.length === 0) {
+      return NextResponse.json(
+        { error: 'requisitionIds array is required' },
+        { status: 400 }
+      );
+    }
+
+    // Mock consolidation logic: if multiple PRs, they get the same PO ID for this demo
+    const purchaseOrderId = `PO-${Math.floor(100000 + Math.random() * 900000)}`;
+    const jobId = `JOB-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+
+    const results = requisitionIds.map(id => ({
+      requisitionId: id,
+      purchaseOrderId: purchaseOrderId,
+      success: true,
+      message: 'Successfully processed'
+    }));
+
+    return NextResponse.json({
+      jobId,
+      status: 'COMPLETED',
+      results
+    }, { status: 201 });
+
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Invalid request body' },
+      { status: 400 }
+    );
+  }
+}

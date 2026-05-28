@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+/* -------------------------------------------------------------
+ * Premium Global Dark Mode Theme Adaptation Rules
+ * Converts standard layout colors seamlessly when .dark is active
+ * ------------------------------------------------------------- */
+
+/* App background adaptation */
+.dark body,
+.dark .bg-app-page,
+.dark .bg-\[\#f8f9ff\],
+.dark .bg-slate-50,
+.dark .bg-gray-50\/60 {
+  background-color: #070b13 !important;
+}
+
+/* Card Obsidian adaptation */
+.dark .bg-white,
+.dark .bg-app-card,
+.dark .bg-white\/80 {
+  background-color: #0e1625 !important;
+  border-color: #1e293b !important;
+}
+
+/* App Header Adaptation */
+.dark header {
+  background-color: rgba(14, 22, 37, 0.8) !important;
+  border-color: #1e293b !important;
+}
+
+.dark header span.text-gray-900,
+.dark header span.text-gray-500 {
+  color: #f8fafc !important;
+}
+
+/* Text adaptations */
+.dark .text-gray-900,
+.dark .text-slate-900,
+.dark .text-gray-950,
+.dark .text-slate-950,
+.dark .text-slate-800,
+.dark .text-\[\#0b1c30\] {
+  color: #f8fafc !important;
+}
+
+.dark .text-gray-500,
+.dark .text-slate-500,
+.dark .text-gray-600,
+.dark .text-slate-600,
+.dark .text-slate-700,
+.dark .text-\[\#0b1c30\]\/70,
+.dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+/* Border adaptations */
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-200\/60,
+.dark .border-slate-200\/40,
+.dark .border-\[\#eff4ff\] {
+  border-color: #1e293b !important;
+}
+
+/* Form inputs & interactive widgets */
+.dark input,
+.dark textarea,
+.dark select,
+.dark .bg-gray-50,
+.dark .bg-slate-100,
+.dark .bg-slate-100\/50,
+.dark .bg-slate-950 {
+  background-color: #151f32 !important;
+  border-color: #27354f !important;
+  color: #f8fafc !important;
+}
+
+/* Disabled and placeholder text inside inputs */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Glassmorphism deep elements inside Dark */
+.dark .bg-slate-50\/70,
+.dark .bg-emerald-50\/40,
+.dark .bg-gray-50\/60 {
+  background-color: rgba(21, 31, 50, 0.4) !important;
+}
+
+/* Project tree and explorer branch adapters */
+.dark .bg-\[\#eff4ff\],
+.dark .bg-\[\#eff4ff\]\/30,
+.dark .bg-\[\#eff4ff\]\/50 {
+  background-color: #151f32 !important;
+  color: #f8fafc !important;
+}
+
+.dark .before\:bg-\[\#eff4ff\]::before {
+  background-color: #1e293b !important;
+}
+
+.dark .bg-gradient-to-br.from-white {
+  background-image: linear-gradient(to bottom right, #0e1625, #151f32) !important;
+}
+
+/* Markdown prose text inside Dark view modals */
+.dark .prose {
+  color: #e2e8f0 !important;
+}
+
+.dark .prose h1,
+.dark .prose h2,
+.dark .prose h3,
+.dark .prose h4,
+.dark .prose strong {
+  color: #ffffff !important;
+}
+
+.dark .prose p,
+.dark .prose li {
+  color: #cbd5e1 !important;
+}

@@ -1,0 +1,105 @@
+*&---------------------------------------------------------------------*
+*& Report  Z_EMPLOYEE_EXPENSE_VAL
+*& Processes employee travel expenses and validates limits against policy
+*&---------------------------------------------------------------------*
+REPORT z_employee_expense_val.
+
+* Simulation of SAP database structure for travel expenses
+TYPES: BEGIN OF ty_trip,
+         reinr   TYPE c LENGTH 10,  "Trip Number
+         pernr   TYPE c LENGTH 8,   "Personnel Number
+         dep_date TYPE sy-datum,     "Departure Date
+         arr_date TYPE sy-datum,     "Arrival Date
+         country TYPE c LENGTH 3,   "Destination country
+         kms     TYPE i,            "Travelled Kilometers
+         meals   TYPE p DECIMALS 2, "Meals costs
+         hotel   TYPE p DECIMALS 2, "Hotel costs
+       END OF ty_trip.
+
+DATA: gt_trips TYPE TABLE OF ty_trip,
+      gs_trip  TYPE ty_trip.
+
+PARAMETERS: p_pernr TYPE c LENGTH 8 DEFAULT '00010234',
+            p_limit TYPE p DECIMALS 2 DEFAULT '500.00'.
+
+START-OF-SELECTION.
+  PERFORM populate_employee_trips.
+  PERFORM audit_travel_expenses.
+
+*&---------------------------------------------------------------------*
+*&      Form  POPULATE_EMPLOYEE_TRIPS
+*&---------------------------------------------------------------------*
+FORM populate_employee_trips.
+  CLEAR gt_trips.
+
+  " Mock Trip 1: Standard Domestic Trip
+  gs_trip-reinr    = '0000000001'.
+  gs_trip-pernr    = p_pernr.
+  gs_trip-dep_date = '20260501'.
+  gs_trip-arr_date = '20260504'.
+  gs_trip-country  = 'DEU'.
+  gs_trip-kms      = 120.
+  gs_trip-meals    = '84.00'.
+  gs_trip-hotel    = '270.00'.
+  APPEND gs_trip TO gt_trips.
+
+  " Mock Trip 2: International Over-Limit Trip
+  gs_trip-reinr    = '0000000002'.
+  gs_trip-pernr    = p_pernr.
+  gs_trip-dep_date = '20260510'.
+  gs_trip-arr_date = '20260515'.
+  gs_trip-country  = 'USA'.
+  gs_trip-kms      = 5400.
+  gs_trip-meals    = '320.00'.
+  gs_trip-hotel    = '890.00'.
+  APPEND gs_trip TO gt_trips.
+ENDFORM.                    " POPULATE_EMPLOYEE_TRIPS
+
+*&---------------------------------------------------------------------*
+*&      Form  AUDIT_TRAVEL_EXPENSES
+*&---------------------------------------------------------------------*
+FORM audit_travel_expenses.
+  DATA: lv_days TYPE i,
+        lv_allowance TYPE p DECIMALS 2,
+        lv_total TYPE p DECIMALS 2.
+
+  WRITE: / 'Travel Expense Audit Report for Employee:', p_pernr.
+  ULINE.
+
+  LOOP AT gt_trips INTO gs_trip.
+    " Calculate days count
+    lv_days = gs_trip-arr_date - gs_trip-dep_date + 1.
+    
+    " Meal allowance is 24 EUR per day in DEU, 50 EUR per day in USA
+    IF gs_trip-country = 'DEU'.
+      lv_allowance = lv_days * 24.
+    ELSE.
+      lv_allowance = lv_days * 50.
+    ENDIF.
+
+    " Add travel km reimbursement (0.30 EUR / km)
+    lv_allowance = lv_allowance + ( gs_trip-kms * '0.30' ).
+
+    " Compute total actual cost submitted
+    lv_total = gs_trip-meals + gs_trip-hotel.
+
+    WRITE: / 'Trip Num:', gs_trip-reinr,
+             'Days:', lv_days,
+             'Destination:', gs_trip-country.
+
+    WRITE: / '  Actual Submitted:', lv_total CURRENCY 'EUR',
+             '  Max Policy Limit:', p_limit CURRENCY 'EUR'.
+
+    IF lv_total > p_limit.
+      FORMAT COLOR COL_NEGATIVE.
+      WRITE: / '  AUDIT WARNING: Submitted costs exceed the maximum allowed limits!'.
+      FORMAT RESET.
+    ELSE.
+      FORMAT COLOR COL_POSITIVE.
+      WRITE: / '  AUDIT SUCCESS: Cost claims are within the compliant limits.'.
+      FORMAT RESET.
+    ENDIF.
+    
+    ULINE.
+  ENDLOOP.
+ENDFORM.                    " AUDIT_TRAVEL_EXPENSES

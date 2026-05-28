@@ -1,0 +1,129 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createHmac } from 'crypto';
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { uid, email, name, motivation } = body;
+
+    if (!uid || !email || !name) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Generate secure cryptographic validation token
+    const secret = process.env.PILOT_APPROVAL_SECRET || 'fallback-secret-key-12345';
+    const token = createHmac('sha256', secret).update(uid).digest('hex');
+
+    // Get current host and protocol
+    const host = request.headers.get('host') || 'localhost:3000';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    
+    const approveUrl = `${protocol}://${host}/admin/approve?uid=${uid}&token=${token}&auto=true`;
+    const rejectUrl = `${protocol}://${host}/admin/approve?uid=${uid}&token=${token}&action=reject`;
+
+    const emailSubject = `🚀 Clean-Core.io Pilot Request: ${name}`;
+    const emailHtml = `
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 32px;">
+          <div style="display: inline-block; padding: 12px; background-color: #f0fdf4; border-radius: 16px; margin-bottom: 16px;">
+            <span style="font-size: 32px;">⚡</span>
+          </div>
+          <h1 style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0; text-transform: uppercase; tracking-tight: -0.05em;">New Pilot Registration</h1>
+          <p style="font-size: 14px; font-weight: 500; color: #64748b; margin: 6px 0 0 0;">An applicant is requesting access to the closed beta.</p>
+        </div>
+
+        <!-- Details Card -->
+        <div style="background-color: #f8fafc; border: 1px solid #f1f5f9; border-radius: 20px; padding: 24px; margin-bottom: 32px;">
+          <h2 style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 16px 0;">Applicant Information</h2>
+          
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Full Name</label>
+            <span style="font-size: 16px; font-weight: 700; color: #0f172a;">${name}</span>
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Email Address</label>
+            <a href="mailto:${email}" style="font-size: 16px; font-weight: 600; color: #006b2c; text-decoration: none;">${email}</a>
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Auth ID (UID)</label>
+            <code style="font-size: 12px; font-family: monospace; color: #475569; background-color: #e2e8f0; padding: 2px 6px; border-radius: 6px;">${uid}</code>
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Motivation / Use Case</label>
+            <p style="font-size: 14px; line-height: 1.6; color: #334155; margin: 0; font-style: italic;">"${motivation || 'No motivation provided.'}"</p>
+          </div>
+        </div>
+
+        <!-- Action Section -->
+        <div style="text-align: center;">
+          <h3 style="font-size: 12px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 16px;">Administrative Control</h3>
+          <p style="font-size: 13px; color: #64748b; margin-bottom: 24px;">Click the button below to instantly approve and provision this pilot user in Firestore.</p>
+          
+          <div style="margin-bottom: 16px;">
+            <a href="${approveUrl}" style="display: inline-block; width: 100%; box-sizing: border-box; background: linear-gradient(135deg, #006b2c 0%, #00873a 100%); color: #ffffff; text-decoration: none; padding: 16px 24px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 107, 44, 0.2); text-align: center;">
+              ⚡ Approve User (One-Click)
+            </a>
+          </div>
+          
+          <div>
+            <a href="${rejectUrl}" style="display: inline-block; font-size: 13px; font-weight: 700; color: #dc2626; text-decoration: underline;">
+              Reject & Delete Application
+            </a>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 48px; border-t: 1px solid #f1f5f9; padding-top: 24px;">
+          <p style="font-size: 11px; color: #94a3b8; margin: 0;">This is an automated system notification from Clean-Core.io.</p>
+        </div>
+      </div>
+    `;
+
+    // Check if Resend API Key is configured in environment
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (resendApiKey) {
+      console.log(`[Email] Sending real email via Resend to info@clean-core.io for ${email}...`);
+      const resendRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'Clean-Core Pilot <system@send.clean-core.io>',
+          to: 'info@clean-core.io',
+          subject: emailSubject,
+          html: emailHtml,
+        }),
+      });
+
+      if (!resendRes.ok) {
+        const errText = await resendRes.text();
+        console.error('[Email] Failed to send via Resend API:', errText);
+      } else {
+        console.log('[Email] Success sending via Resend API.');
+      }
+    } else {
+      // Offline/Local development fallback: log details in console
+      console.log('\n======================================================');
+      console.log('📬   [MOCK EMAIL SENT TO info@clean-core.io]   📬');
+      console.log(`Subject: ${emailSubject}`);
+      console.log(`Applicant: ${name} (${email})`);
+      console.log(`Motivation: ${motivation}`);
+      console.log('\n👇   ⚡ ONE-CLICK APPROVAL LINK ⚡   👇');
+      console.log(approveUrl);
+      console.log('\n👇   ❌ REJECT LINK ❌   👇');
+      console.log(rejectUrl);
+      console.log('======================================================\n');
+    }
+
+    return NextResponse.json({ success: true, approveUrl });
+  } catch (error) {
+    console.error('Error in request-pilot API:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}

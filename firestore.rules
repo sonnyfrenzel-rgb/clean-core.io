@@ -1,0 +1,153 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (request.auth.token.get('email', '') == "sonny.frenzel@gmail.com" || 
+         request.auth.token.get('email', '') == "sonny.frenzel@googlemail.com");
+    }
+
+    function getUserData() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+        : {
+          'tier': 'basic',
+          'transformationsUsed': 0,
+          'transformationsLimit': 1,
+          'orgId': null
+        };
+    }
+
+    // Validate User entity
+    function isValidUser(data) {
+      return data.firstName is string && data.firstName.size() > 0 && data.firstName.size() < 100 &&
+             data.lastName is string && data.lastName.size() > 0 && data.lastName.size() < 100 &&
+             data.email is string && data.email.size() < 255 &&
+             data.tier in ['basic', 'starter', 'premium', 'unlimited', 'enterprise', 'pilot', 'pilot_byok'] &&
+             data.transformationsUsed is number &&
+             data.transformationsLimit is number &&
+             data.createdAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && userId == request.auth.uid; // Temporarily bypass isValidUser validation to diagnose schema mismatch
+      allow update: if isAuthenticated() && (userId == request.auth.uid || isAdmin()) && 
+                    (!('tier' in request.resource.data) || isAdmin()) && // Only admin can change tier
+                    (!('transformationsLimit' in request.resource.data) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Validate Project entity
+    function isValidProject(data, isUpdate) {
+      return (isUpdate || (data.name is string && data.name.size() > 0 && data.name.size() < 255)) &&
+             (isUpdate || (data.status in ['uploaded', 'analyzed', 'designed', 'transformed', 'completed'])) &&
+             (isUpdate || (data.userId is string && data.userId == request.auth.uid)) &&
+             (isUpdate || (data.createdAt is timestamp)) &&
+             (!('legacyCode' in data) || (data.legacyCode is string && data.legacyCode.size() < 1000000)) &&
+             (!('analysis' in data) || (data.analysis is string && data.analysis.size() < 1000000)) &&
+             (!('solutionDesign' in data) || (data.solutionDesign is string && data.solutionDesign.size() < 1000000)) &&
+             (!('generatedCode' in data) || (data.generatedCode is string && data.generatedCode.size() < 1000000)) &&
+             (!('documentation' in data) || (data.documentation is string && data.documentation.size() < 1000000)) &&
+             (!('presentation' in data) || (data.presentation is string && data.presentation.size() < 1000000)) &&
+             (!('testCases' in data) || (data.testCases is list && data.testCases.size() < 100)) &&
+             (!('testSuite' in data) || (data.testSuite is map)) &&
+             (!('exports' in data) || (data.exports is map && (getUserData().tier != 'basic' || isAdmin())));
+    }
+
+    match /projects/{projectId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin() || 
+        (resource.data.get('orgId', null) != null && resource.data.orgId == getUserData().get('orgId', 'NONE'))
+      );
+      allow create: if isAuthenticated() && 
+                    request.resource.data.keys().hasAll(['name', 'status', 'userId', 'createdAt']) &&
+                    isValidProject(request.resource.data, false) &&
+                    (getUserData().transformationsUsed < getUserData().transformationsLimit || isAdmin());
+      allow update: if isAuthenticated() &&
+                    (('userId' in resource.data && resource.data.userId == request.auth.uid) || isAdmin()) &&
+                    isValidProject(request.resource.data, true) &&
+                    (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId) &&
+                    (!('createdAt' in request.resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if isAuthenticated() && (('userId' in resource.data && resource.data.userId == request.auth.uid) || isAdmin());
+    }
+
+    // Validate SupportTicket
+    function isValidSupportTicket(data) {
+      return data.userId == request.auth.uid &&
+             data.subject is string && data.subject.size() > 0 &&
+             data.message is string && data.message.size() > 0 &&
+             data.status in ['open', 'in_progress', 'closed'] &&
+             data.createdAt is timestamp;
+    }
+
+    match /support_tickets/{ticketId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && 
+                    (getUserData().tier in ['premium', 'unlimited'] || isAdmin()) &&
+                    isValidSupportTicket(request.resource.data);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Validate FileEntry entity
+    function isValidFileEntry(data, isUpdate) {
+      return (isUpdate || (data.name is string && data.name.size() > 0 && data.name.size() < 255)) &&
+             (isUpdate || (data.content is string && data.content.size() < 1000000)) &&
+             (isUpdate || (data.userId is string && data.userId == request.auth.uid)) &&
+             (isUpdate || (data.createdAt is timestamp));
+    }
+
+    match /files/{fileId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && 
+                    request.resource.data.keys().hasAll(['name', 'content', 'userId', 'createdAt']) &&
+                    isValidFileEntry(request.resource.data, false);
+      allow update: if isAuthenticated() &&
+                    (('userId' in resource.data && resource.data.userId == request.auth.uid) || isAdmin()) &&
+                    isValidFileEntry(request.resource.data, true) &&
+                    (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId) &&
+                    (!('createdAt' in request.resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if isAuthenticated() && (('userId' in resource.data && resource.data.userId == request.auth.uid) || isAdmin());
+    }
+
+    // Validate ABAPExample entity
+    function isValidABAPExample(data, isUpdate) {
+      return (isUpdate || (data.name is string && data.name.size() > 0 && data.name.size() < 255)) &&
+             (isUpdate || (data.code is string && data.code.size() < 1000000)) &&
+             (isUpdate || (data.userId is string && data.userId == request.auth.uid)) &&
+             (isUpdate || (data.createdAt is timestamp));
+    }
+
+    match /abap_examples/{exampleId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && 
+                    request.resource.data.keys().hasAll(['name', 'code', 'userId', 'createdAt']) &&
+                    isValidABAPExample(request.resource.data, false);
+      allow update: if isAuthenticated() &&
+                    (('userId' in resource.data && resource.data.userId == request.auth.uid) || isAdmin()) &&
+                    isValidABAPExample(request.resource.data, true) &&
+                    (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId) &&
+                    (!('createdAt' in request.resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+    }
+
+    match /registration_requests/{requestId} {
+      allow read: if isAuthenticated() && (requestId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && requestId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}

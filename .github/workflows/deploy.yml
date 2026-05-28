@@ -1,0 +1,95 @@
+name: Secure CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - dev
+      - release
+      - main
+
+permissions:
+  contents: read
+  id-token: write # Required for Workload Identity Federation OIDC
+
+jobs:
+  # Job 1: Build, Lint & Test (Quality Gate)
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Linting Checks
+        run: npm run lint
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Run End-to-End Tests
+        run: npx playwright test
+        env:
+          NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.TEST_GEMINI_API_KEY }}
+
+  # Job 2: Build & Deploy to Google Cloud Run
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Determine environment specific variables based on push branch
+      - name: Set Environment Context
+        id: env-ctx
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "service=clean-core" >> $GITHUB_OUTPUT
+            echo "db_id=ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e" >> $GITHUB_OUTPUT
+            echo "app_url=https://clean-core.io" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_name }}" = "release" ]; then
+            echo "service=clean-core-test" >> $GITHUB_OUTPUT
+            echo "db_id=ai-studio-39b46c45-cda0-481e-9847-19682e979043" >> $GITHUB_OUTPUT
+            echo "app_url=https://test.clean-core.io" >> $GITHUB_OUTPUT
+          else
+            echo "service=clean-core-dev" >> $GITHUB_OUTPUT
+            echo "db_id=ai-studio-030e1ee1-7e1d-4208-beda-28735bc1a360" >> $GITHUB_OUTPUT
+            echo "app_url=https://dev.clean-core.io" >> $GITHUB_OUTPUT
+          fi
+
+      # Authenticate securely with Google Cloud using OIDC Workload Identity Federation
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/819734065839/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: 'deployer-service-account@cleancore-491216.iam.gserviceaccount.com'
+
+      # Deploy source code directly to Cloud Run
+      - name: Deploy to Google Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ steps.env-ctx.outputs.service }}
+          region: 'europe-west1'
+          source: '.'
+          flags: |
+            --memory=2Gi
+            --cpu=2
+            --allow-unauthenticated
+          env_vars: |
+            NEXT_PUBLIC_FIRESTORE_DB_ID=${{ steps.env-ctx.outputs.db_id }}
+            NEXT_PUBLIC_APP_URL=${{ steps.env-ctx.outputs.app_url }}
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+            NODE_OPTIONS=--max-old-space-size=4096
+          build_vars: |
+            NEXT_PUBLIC_FIRESTORE_DB_ID=${{ steps.env-ctx.outputs.db_id }}
+            NEXT_PUBLIC_APP_URL=${{ steps.env-ctx.outputs.app_url }}
+            NODE_OPTIONS=--max-old-space-size=4096
