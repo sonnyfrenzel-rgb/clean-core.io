@@ -13,7 +13,34 @@ export const useTestGeneration = (projectId: string, project: Project | null, se
   const generateTestCases = async (previousError?: string) => {
     setIsGenerating(true);
     try {
-      const prompt = `Given the following context:
+      const isAbapCloud = (project?.extensibilityRoute || '').includes('ABAP Cloud');
+
+      const prompt = isAbapCloud
+        ? `Given the following context:
+        Legacy Code: ${project?.legacyCode}
+        Design: ${project?.solutionDesign}
+        Generated ABAP Cloud RAP Code: ${project?.generatedCode}
+        ${previousError ? `\n\nPREVIOUS ATTEMPT FAILED WITH ERROR:\n${previousError}\nPLEASE FIX THE CODE TO RESOLVE THIS ERROR.` : ''}
+        
+        Generate:
+        1. 10 simple, robust ABAP Unit test cases designed for Developer Extensibility.
+        2. A complete ABAP Unit test class definition and implementation verifying the behavior implementation class (e.g. \`BP_...\`) using \`cl_abap_unit_test\` and \`cl_aunit_assert\`.
+        3. A list of areas that could not be fully unit-tested (e.g. real external service integrations, async queues, standard authority checks) and must be verified via "human-in-the-loop" testing.
+        4. A coverageEstimate object with { percentage: number (0-100), explanation: string, missingCoverage: string }.
+        
+        CRITICAL GUIDELINES FOR ABAP UNIT:
+        - The test class MUST use clean ABAP Cloud syntax: \`CLASS ltcl_test DEFINITION FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.\`
+        - Use local test doubles and stubs to mock standard released table/view accesses.
+        - TEST CASE ID NAMING CONVENTION (CRITICAL): The test method name in the local test class MUST incorporate or refer to the test case ID (e.g. \`methods tc_01_create_sales_order for testing.\`) so they can be mapped programmatically.
+        - Use \`cl_abap_unit_test=>fail( ... )\` or \`cl_aunit_assert=>assert_equals( ... )\` or \`cl_aunit_assert=>assert_initial( ... )\` for assertion checking.
+        
+        Format the output as a JSON object with:
+        - testCases: An array of test case objects (id, name, category, description, preconditions, steps, expectedResult, priority, testData, validationPoints)
+        - testSuite: An object with the 'code' representing the complete ABAP Unit local test class code.
+        - manualTestingRequirements: An array of objects (area, reason, verificationSteps)
+        - coverageEstimate: { percentage: number, explanation: string, missingCoverage: string }.
+        `
+        : `Given the following context:
         Legacy Code: ${project?.legacyCode}
         Design: ${project?.solutionDesign}
         Generated Node.js Code: ${project?.generatedCode}

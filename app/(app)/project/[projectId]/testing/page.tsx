@@ -180,8 +180,8 @@ export default function TestingSandboxPage() {
     }
   };
 
-  const router = useRouter();
-  
+  const isAbapCloud = (project?.extensibilityRoute || '').includes('ABAP Cloud');
+
   if (loading) return <div className="p-8">Loading...</div>;
 
   return (
@@ -190,7 +190,12 @@ export default function TestingSandboxPage() {
       
       <div className="mb-6 md:mb-10 mt-6 md:mt-8">
         <h1 className="text-3xl md:text-4xl font-black text-[#0b1c30] tracking-tight mb-2">Testing & Sandbox</h1>
-        <p className="text-[#0b1c30]/70 font-medium text-sm md:text-base">Generate test cases and run automated validation in an isolated Node.js environment.</p>
+        <p className="text-[#0b1c30]/70 font-medium text-sm md:text-base">
+          {isAbapCloud 
+            ? 'Generate ABAP Unit stubs and run simulated validation in a secure SAP ADT environment.'
+            : 'Generate test cases and run automated validation in an isolated Node.js environment.'
+          }
+        </p>
       </div>
 
       {/* Explanation Boxes */}
@@ -198,15 +203,29 @@ export default function TestingSandboxPage() {
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-blue-100 shadow-sm flex gap-4">
           <ShieldCheck className="w-8 h-8 md:w-10 md:h-10 text-blue-600 flex-shrink-0" />
           <div>
-            <h3 className="font-bold text-blue-900 mb-1 text-sm md:text-base">Real Sandbox Execution</h3>
-            <p className="text-xs md:text-sm text-blue-700">We execute actual Node.js code in an isolated environment. No simulation, just real results.</p>
+            <h3 className="font-bold text-blue-900 mb-1 text-sm md:text-base">
+              {isAbapCloud ? 'ABAP Unit Compiler' : 'Real Sandbox Execution'}
+            </h3>
+            <p className="text-xs md:text-sm text-blue-700">
+              {isAbapCloud 
+                ? 'Generates standardized ABAP Unit local test classes verifying RAP custom behavioral entities.'
+                : 'We execute actual Node.js code in an isolated environment. No simulation, just real results.'
+              }
+            </p>
           </div>
         </div>
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-green-100 shadow-sm flex gap-4">
           <Activity className="w-8 h-8 md:w-10 md:h-10 text-green-600 flex-shrink-0" />
           <div>
-            <h3 className="font-bold text-green-900 mb-1 text-sm md:text-base">SAP Mock Library</h3>
-            <p className="text-xs md:text-sm text-green-700">Realistic SAP response patterns are injected to ensure business logic parity.</p>
+            <h3 className="font-bold text-green-900 mb-1 text-sm md:text-base">
+              {isAbapCloud ? 'SQL Test Double Mock' : 'SAP Mock Library'}
+            </h3>
+            <p className="text-xs md:text-sm text-green-700">
+              {isAbapCloud 
+                ? 'Realistic SQL Double DB schemas are mocked to test transactional behavior logic without core pollution.'
+                : 'Realistic SAP response patterns are injected to ensure business logic parity.'
+              }
+            </p>
           </div>
         </div>
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-purple-100 shadow-sm flex gap-4">
@@ -319,19 +338,26 @@ export default function TestingSandboxPage() {
               </div>
               <div className="flex items-center gap-2 text-[#ffffff]/60 ml-1 md:ml-2 min-w-0">
                 <TerminalIcon className="w-3.5 h-3.5 shrink-0" />
-                <span className="text-[10px] font-mono truncate">sandbox-runtime ~ node app.js</span>
+                <span className="text-[10px] font-mono truncate">
+                  {isAbapCloud ? 'adt-test-cockpit ~ execute aunit' : 'sandbox-runtime ~ node app.js'}
+                </span>
               </div>
             </div>
             <button 
               onClick={() => setShowTestCode(!showTestCode)}
               className="text-[10px] font-black text-white/70 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors uppercase tracking-widest text-center"
             >
-              {showTestCode ? 'View Output' : 'View Module Code'}
+              {isAbapCloud
+                ? (showTestCode ? 'View ADT Output' : 'View ABAP Unit Class')
+                : (showTestCode ? 'View Output' : 'View Module Code')
+              }
             </button>
           </div>
           <div className="p-4 md:p-6 font-mono text-[11px] md:text-sm bg-[#0b1c30] text-[#00ff41] flex-grow overflow-auto custom-scrollbar">
             {showTestCode ? (
-              <pre className="whitespace-pre-wrap leading-relaxed text-blue-300">{project?.testSuite?.code || 'No test code generated yet.'}</pre>
+              <pre className="whitespace-pre-wrap leading-relaxed text-blue-300">
+                {project?.testSuite?.code || (isAbapCloud ? 'No test suite generated yet. Generate a suite to inspect local ABAP stubs.' : 'No test code generated yet.')}
+              </pre>
             ) : (
               <pre className="whitespace-pre-wrap leading-relaxed">{sandboxOutput || '// Waiting for execution...'}</pre>
             )}
