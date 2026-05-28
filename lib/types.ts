@@ -52,6 +52,10 @@ export interface Project {
   s4Deployment?: 'public' | 'private';
   status?: 'created' | 'analyzed' | 'designed' | 'transformed' | 'testing' | 'documented' | 'completed';
   exports?: Record<string, string>;
+  cleanCoreScore?: number;
+  highComplianceCharged?: boolean;
+  charged?: boolean;
+  transformationBypass?: boolean;
   createdAt?: unknown;
   updatedAt?: unknown;
 }

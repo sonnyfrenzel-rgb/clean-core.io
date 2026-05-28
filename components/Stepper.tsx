@@ -2,7 +2,7 @@ import { Check } from 'lucide-react';
 import clsx from 'clsx';
 import { useRouter } from 'next/navigation';
 
-export default function Stepper({ currentStep, projectId }: { currentStep: number, projectId?: string }) {
+export default function Stepper({ currentStep, projectId, cleanCoreScore, transformationBypass }: { currentStep: number, projectId?: string, cleanCoreScore?: number, transformationBypass?: boolean }) {
   const router = useRouter();
   const steps = [
     { name: 'Upload', path: 'dashboard' },
@@ -17,8 +17,8 @@ export default function Stepper({ currentStep, projectId }: { currentStep: numbe
   const handleNavigate = (path: string, stepNum: number) => {
     if (!projectId && path !== 'dashboard') return;
     
-    // Allow navigation to previous steps or current step
-    if (stepNum <= currentStep || (projectId && stepNum <= currentStep + 1)) {
+    // Allow navigation to previous steps, current step, or if step 7 is unlocked via transformationBypass
+    if (stepNum <= currentStep || (projectId && stepNum <= currentStep + 1) || (stepNum === 7 && transformationBypass)) {
       if (path === 'dashboard') {
         router.push('/dashboard');
       } else {
@@ -35,7 +35,12 @@ export default function Stepper({ currentStep, projectId }: { currentStep: numbe
           const stepNum = index + 1;
           const isActive = stepNum === currentStep;
           const isCompleted = stepNum < currentStep;
-          const isAccessible = stepNum <= currentStep || (projectId && isCompleted);
+          let isAccessible = stepNum <= currentStep || (projectId && isCompleted);
+
+          // Force Step 7 (Delivery) to be accessible if transformation progress is >90% (transformationBypass is true)
+          if (stepNum === 7 && transformationBypass) {
+            isAccessible = true;
+          }
 
           return (
             <div 

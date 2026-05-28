@@ -130,23 +130,24 @@ JSON Structure:
         const docSnap = await getDoc(doc(db, 'projects', projectId as string));
         if (docSnap.exists() && isMounted) {
           const data = docSnap.data();
-          setProject(data);
+          const projectData = { id: docSnap.id, ...data } as unknown as Project;
+          setProject(projectData);
           
-          if (data.documentation) {
-            setDocumentation(data.documentation);
+          if (projectData.documentation) {
+            setDocumentation(projectData.documentation);
           }
           
-          if (data.presentation) {
-            setPresentation(data.presentation);
-            if (data.status !== 'completed') {
+          if (projectData.presentation) {
+            setPresentation(projectData.presentation);
+            if (projectData.status !== 'completed') {
               const db = getDb();
               await updateDoc(doc(db, 'projects', projectId as string), {
                 status: 'completed'
               });
             }
-          } else if (data.documentation) {
+          } else if (projectData.documentation) {
             if (profile?.tier !== 'pilot') {
-              await generatePresentation(data);
+              await generatePresentation(projectData);
             }
           }
         }
@@ -309,7 +310,7 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
 
   if (loading) return (
     <div className="animate-in fade-in duration-500">
-      <Stepper currentStep={7} projectId={projectId as string} />
+      <Stepper currentStep={7} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       <div className="h-[60vh] flex flex-col items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
           <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Finalizing delivery package...</p>
@@ -319,7 +320,7 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
 
   return (
     <div className="animate-in fade-in duration-500 max-w-7xl mx-auto px-4 md:px-0">
-      <Stepper currentStep={7} projectId={projectId as string} />
+      <Stepper currentStep={7} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
       <div className="mb-10 md:mb-12 text-center mt-6 md:mt-10">
         <div className="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-full bg-green-50 mb-6 md:mb-8 border-4 border-white shadow-xl">
