@@ -238,6 +238,24 @@ export default function Home() {
         createdAt: new Date(),
       });
       
+      // Dispatch the approval request email in the background
+      try {
+        await fetch('/api/request-pilot', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            uid: signedInUser.uid,
+            email: signedInUser.email || '',
+            name: `${firstName} ${lastName}`,
+            motivation: '',
+          }),
+        });
+      } catch (emailErr) {
+        console.error('Failed to trigger pilot registration approval email:', emailErr);
+      }
+      
       setIsNavigating(true);
       router.push('/dashboard');
     } catch (error: any) {
