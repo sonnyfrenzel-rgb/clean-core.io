@@ -56,11 +56,15 @@ export async function POST(request: NextRequest) {
       model = 'gemini-3-flash-preview',
       jsonResponse = false,
       customApiKey,
+      userId,
+      idToken,
     } = body as {
       prompt: string;
       model?: string;
       jsonResponse?: boolean;
       customApiKey?: string;
+      userId?: string;
+      idToken?: string;
     };
 
     if (!prompt) {
@@ -68,6 +72,76 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required field: prompt' },
         { status: 400 },
       );
+    }
+
+    // Secure server-side check of transformations quota limit if NOT BYOK
+    if (!customApiKey) {
+      if (!userId || !idToken) {
+        return NextResponse.json(
+          { error: 'Unauthorized: Missing session tokens for closed-beta quota validation.' },
+          { status: 401 },
+        );
+      }
+
+      try {
+        const dbId = process.env.NEXT_PUBLIC_FIRESTORE_DB_ID || 'ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e';
+        const projectId = 'cleancore-491216';
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/users/${userId}`;
+
+        const res = await fetch(firestoreUrl, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`
+          }
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          const errMsg = errData.error?.message || 'Failed to verify session status.';
+          return NextResponse.json(
+            { error: `Unauthorized session: ${errMsg}` },
+            { status: res.status }
+          );
+        }
+
+        const docData = await res.json();
+        const fields = docData.fields || {};
+
+        const email = fields.email?.stringValue || '';
+        const tier = fields.tier?.stringValue || 'pilot';
+        const status = fields.status?.stringValue || 'pending';
+        
+        const transformationsUsed = fields.transformationsUsed?.integerValue 
+          ? parseInt(fields.transformationsUsed.integerValue, 10) 
+          : 0;
+        const transformationsLimit = fields.transformationsLimit?.integerValue 
+          ? parseInt(fields.transformationsLimit.integerValue, 10) 
+          : 5;
+
+        const isSonny = email === 'sonny.frenzel@googlemail.com' || email === 'sonny.frenzel@gmail.com';
+        const isEnterprise = tier === 'enterprise' || isSonny;
+
+        if (!isEnterprise) {
+          if (status !== 'approved') {
+            return NextResponse.json(
+              { error: 'Your beta pilot account is currently pending admin approval.' },
+              { status: 403 }
+            );
+          }
+          if (transformationsUsed > transformationsLimit) {
+            return NextResponse.json(
+              { error: `Transformation limit reached! Your pilot plan allows a maximum of ${transformationsLimit} free transformations. Please upgrade or configure your own Gemini API key in settings.` },
+              { status: 403 }
+            );
+          }
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('Quota check validation error:', message);
+        return NextResponse.json(
+          { error: `Internal quota validation failed: ${message}` },
+          { status: 500 }
+        );
+      }
     }
 
     // Use BYOK key if provided, otherwise fall back to server key.
