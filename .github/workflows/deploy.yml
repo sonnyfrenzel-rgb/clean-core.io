@@ -39,6 +39,9 @@ jobs:
         env:
           NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.TEST_GEMINI_API_KEY }}
 
+      - name: Generate QE Quality Engineering Report
+        run: npm run build:report
+
   # Job 2: Build & Deploy to Google Cloud Run
   deploy:
     needs: validate
