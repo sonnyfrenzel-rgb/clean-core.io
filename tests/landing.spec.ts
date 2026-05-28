@@ -11,7 +11,7 @@ test.describe('Clean-Core.io Landing Page E2E Tests', () => {
     // 3. Verify that the primary hero heading is rendered and visible
     const heroHeading = page.locator('h1');
     await expect(heroHeading).toBeVisible();
-    await expect(heroHeading).toContainText(/ABAP/i);
+    await expect(heroHeading).toContainText(/Legacy Code/i);
 
     // 4. Verify that pricing cards are rendered correctly
     const pricingSection = page.locator('#pricing, section:has-text("Pricing"), section:has-text("Preise")').first();
