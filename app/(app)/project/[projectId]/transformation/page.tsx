@@ -43,34 +43,6 @@ export default function TransformationPage() {
   const router = useRouter();
   const { profile, incrementTransformations } = useUserProfile();
 
-  // Charge 1 credit and enable transformation bypass when loading progress reaches > 90%
-  useEffect(() => {
-    if (progress > 90 && project && !project.charged) {
-      // Optimistically update local project state to prevent double execution
-      setProject((prev: Project | null) => {
-        if (!prev || prev.charged) return prev;
-        return {
-          ...prev,
-          charged: true,
-          transformationBypass: true
-        };
-      });
-
-      const performCharge = async () => {
-        try {
-          const db = getDb();
-          await updateDoc(doc(db, 'projects', projectId as string), {
-            charged: true,
-            transformationBypass: true
-          });
-          await incrementTransformations();
-        } catch (e) {
-          console.error("Failed to perform transformation progress charge:", e);
-        }
-      };
-      performCharge();
-    }
-  }, [progress, project, projectId, incrementTransformations]);
 
 
   const [files, setFiles] = useState<ProjectFile[]>([]);
