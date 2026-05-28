@@ -86,13 +86,10 @@ jobs:
             --memory=2Gi
             --cpu=2
             --allow-unauthenticated
+            --build-env-vars=NEXT_PUBLIC_FIRESTORE_DB_ID=${{ steps.env-ctx.outputs.db_id }},NEXT_PUBLIC_APP_URL=${{ steps.env-ctx.outputs.app_url }},NODE_OPTIONS=--max-old-space-size=4096
           env_vars: |
             NEXT_PUBLIC_FIRESTORE_DB_ID=${{ steps.env-ctx.outputs.db_id }}
             NEXT_PUBLIC_APP_URL=${{ steps.env-ctx.outputs.app_url }}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
-            NODE_OPTIONS=--max-old-space-size=4096
-          build_vars: |
-            NEXT_PUBLIC_FIRESTORE_DB_ID=${{ steps.env-ctx.outputs.db_id }}
-            NEXT_PUBLIC_APP_URL=${{ steps.env-ctx.outputs.app_url }}
             NODE_OPTIONS=--max-old-space-size=4096
