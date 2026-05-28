@@ -18,6 +18,7 @@ import { saveAs } from 'file-saver';
 import { callGemini } from '@/lib/gemini';
 import type { Project, AnalysisData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import GlossaryTerm from '@/components/GlossaryTerm';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 
@@ -629,14 +630,18 @@ ${codeToAnalyze}`;
                       ? "bg-blue-50 text-blue-700 border border-blue-100"
                       : "bg-emerald-50 text-emerald-700 border border-emerald-100"
                   )}>
-                    {(project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP') ? '☁️ BTP Side-by-Side' : '⚙️ ABAP Cloud'}
+                    {(project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP') 
+                      ? <GlossaryTerm termKey="BTP" className="border-b-0 hover:text-blue-700 text-blue-700">☁️ BTP Side-by-Side</GlossaryTerm> 
+                      : <GlossaryTerm termKey="RAP" className="border-b-0 hover:text-emerald-700 text-emerald-700">⚙️ ABAP Cloud (RAP)</GlossaryTerm>}
                   </span>
                   <span className="text-[10px] font-bold text-slate-400">
                     {analysisData.extensibilityRouting?.confidenceScore || 95}% Conf.
                   </span>
                 </div>
                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight mb-1">
-                  Target: {analysisData.extensibilityRouting?.targetArtifact || ((project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || '').includes('BTP') ? 'SAP BTP Node.js App' : 'RAP Business Object')}
+                  Target: {analysisData.extensibilityRouting?.targetArtifact || ((project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || '').includes('BTP') 
+                    ? <GlossaryTerm termKey="CAP" className="text-xs font-black text-slate-800 border-b-0 uppercase">SAP BTP Node.js App (CAP)</GlossaryTerm> 
+                    : <GlossaryTerm termKey="RAP" className="text-xs font-black text-slate-800 border-b-0 uppercase">RAP Business Object</GlossaryTerm>)}
                 </h4>
                 <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-4">
                   {analysisData.extensibilityRouting?.rationale || 'AI analyzed legacy database joins and determined the optimal decoupled BTP modernization strategy.'}
