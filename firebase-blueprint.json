@@ -1,0 +1,77 @@
+{
+  "entities": {
+    "FileEntry": {
+      "title": "FileEntry",
+      "description": "Represents an uploaded legacy source file.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the uploaded file." },
+        "content": { "type": "string", "description": "The content of the file." },
+        "userId": { "type": "string", "description": "The ID of the user who uploaded the file." },
+        "createdAt": { "type": "timestamp", "description": "The timestamp when the file was uploaded." }
+      },
+      "required": ["name", "content", "userId", "createdAt"]
+    },
+    "ABAPExample": {
+      "title": "ABAPExample",
+      "description": "An example ABAP/Legacy code file",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["name", "code", "userId", "createdAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile with tier and limits.",
+      "type": "object",
+      "properties": {
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string" },
+        "tier": { "type": "string", "enum": ["basic", "starter", "premium", "unlimited"] },
+        "transformationsUsed": { "type": "number" },
+        "transformationsLimit": { "type": "number" },
+        "accessUntil": { "type": "timestamp" },
+        "trialUsed": { "type": "boolean" },
+        "createdAt": { "type": "timestamp" },
+        "updatedAt": { "type": "timestamp" }
+      },
+      "required": ["firstName", "lastName", "email", "tier", "transformationsUsed", "transformationsLimit", "createdAt"]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "A support ticket for premium users.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "in_progress", "closed"] },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["userId", "subject", "message", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "User" },
+      "description": "User profile data."
+    },
+    "/files/{fileId}": {
+      "schema": { "$ref": "FileEntry" },
+      "description": "Collection of uploaded legacy files."
+    },
+    "/abap_examples/{exampleId}": {
+      "schema": { "$ref": "ABAPExample" },
+      "description": "Collection of ABAP/Legacy code examples"
+    },
+    "/support_tickets/{ticketId}": {
+      "schema": { "$ref": "SupportTicket" },
+      "description": "Collection of support tickets."
+    }
+  }
+}

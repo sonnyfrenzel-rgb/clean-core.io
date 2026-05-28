@@ -1,0 +1,114 @@
+/**
+ * Central type definitions for the Clean-Core.io platform.
+ * Replaces all `any` project state typings across pages and hooks.
+ */
+
+export interface TestCase {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  preconditions?: string;
+  steps?: string[];
+  expectedResult?: string;
+  priority: 'High' | 'Medium' | 'Low';
+  testData?: string;
+  validationPoints?: string[];
+  status?: 'Passed' | 'Failed' | 'Pending';
+  message?: string;
+}
+
+export interface TestSuite {
+  code: string;
+  config?: string;
+  spec?: string;
+}
+
+export interface CoverageEstimate {
+  percentage: number;
+  explanation: string;
+  missingCoverage: string;
+}
+
+export interface ManualTestRequirement {
+  area: string;
+  reason: string;
+  verificationSteps: string[];
+}
+
+export interface Project {
+  name: string;
+  legacyCode?: string;
+  analysis?: string;
+  solutionDesign?: string;
+  generatedCode?: string;
+  testCases?: TestCase[];
+  testSuite?: TestSuite;
+  coverageEstimate?: CoverageEstimate;
+  manualTestingRequirements?: ManualTestRequirement[];
+  documentation?: string;
+  presentation?: string;
+  status?: 'created' | 'analyzed' | 'designed' | 'transformed' | 'testing' | 'documented' | 'completed';
+  exports?: Record<string, string>;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+}
+
+export interface AnalysisData {
+  projectTitle: string;
+  cleanCoreScore: number;
+  summary: string;
+  asIsContext: string;
+  standardFit: {
+    potential: 'High' | 'Medium' | 'Low';
+    targetStandardProcess: string;
+    rationale: string;
+  };
+  gaps: Array<{
+    title: string;
+    severity: 'High' | 'Medium' | 'Low';
+    strategy: string;
+    rationale: string;
+    complexity: 'High' | 'Medium' | 'Low';
+  }>;
+  recommendations: {
+    keepCoreClean: string;
+    decommissioning: string;
+    cloudReadiness: string;
+  };
+  strategicNextSteps: string[];
+}
+
+export interface DesignData {
+  projectName: string;
+  architectureOverview: {
+    approachDescription: string;
+    nodeFramework: string;
+    runtimePlatform: string; // e.g. SAP BTP, AWS ECS, Google Cloud Run
+  };
+  nodeAppBlueprint: {
+    projectStructure: Array<{ path: string; purpose: string }>;
+    apiEndpoints: Array<{ path: string; method: 'GET' | 'POST' | 'PUT' | 'DELETE'; description: string }>;
+  };
+  cloudServices: Array<{
+    serviceName: string;
+    purpose: string;
+    npmPackages: string[];
+  }>;
+  dataSync: {
+    patternName: string;
+    description: string;
+  };
+  securityHardening: Array<{
+    category: string;
+    requirement: string;
+    packageOrConfig: string;
+  }>;
+  roadmap: Array<{
+    phase: string;
+    title: string;
+    deliverables: string[];
+  }>;
+}
+
+

@@ -1,0 +1,99 @@
+*&---------------------------------------------------------------------*
+*& Report  Z_MATERIAL_STOCK_CALC
+*& Calculates material stock valuation using classic database joins
+*&---------------------------------------------------------------------*
+REPORT z_material_stock_calc LINE-SIZE 120.
+
+TABLES: mara, marc, mard.
+
+TYPES: BEGIN OF ty_stock,
+         matnr TYPE mara-matnr,
+         mtart TYPE mara-mtart,
+         meins TYPE mara-meins,
+         werks TYPE marc-werks,
+         lgort TYPE mard-lgort,
+         labst TYPE mard-labst,
+         netpr TYPE sscrfields-ucomm, "Legacy stand-in for price
+         value TYPE p DECIMALS 2,
+       END OF ty_stock.
+
+DATA: gt_stock TYPE TABLE OF ty_stock,
+      gs_stock TYPE ty_stock,
+      gv_total_val TYPE p DECIMALS 2.
+
+SELECT-OPTIONS: s_matnr FOR mara-matnr,
+                s_werks FOR marc-werks.
+
+PARAMETERS: p_curr TYPE c LENGTH 3 DEFAULT 'EUR',
+            p_markup TYPE p DECIMALS 2 DEFAULT '1.10'.
+
+START-OF-SELECTION.
+  PERFORM select_material_stock.
+  PERFORM calculate_valuations.
+  PERFORM output_stock_list.
+
+*&---------------------------------------------------------------------*
+*&      Form  SELECT_MATERIAL_STOCK
+*&---------------------------------------------------------------------*
+FORM select_material_stock.
+  SELECT m~matnr m~mtart m~meins c~werks d~lgort d~labst
+    INTO CORRESPONDING FIELDS OF TABLE gt_stock
+    FROM mara AS m
+    INNER JOIN marc AS c ON c~matnr = m~matnr
+    INNER JOIN mard AS d ON d~matnr = m~matnr AND d~werks = c~werks
+    WHERE m~matnr IN s_matnr
+      AND c~werks IN s_werks
+      AND d~labst > 0.
+ENDFORM.                    " SELECT_MATERIAL_STOCK
+
+*&---------------------------------------------------------------------*
+*&      Form  CALCULATE_VALUATIONS
+*&---------------------------------------------------------------------*
+FORM calculate_valuations.
+  DATA: lv_price TYPE p DECIMALS 2.
+
+  LOOP AT gt_stock INTO gs_stock.
+    " Simulating price fetching from standard tables (e.g. mbew)
+    CASE gs_stock-mtart.
+      WHEN 'ROH'.
+        lv_price = '10.50'.
+      WHEN 'HALB'.
+        lv_price = '45.00'.
+      WHEN 'FERT'.
+        lv_price = '120.00'.
+      WHEN OTHERS.
+        lv_price = '5.00'.
+    ENDCASE.
+
+    " Apply markup and calculate total value
+    lv_price = lv_price * p_markup.
+    gs_stock-value = gs_stock-labst * lv_price.
+    gv_total_val = gv_total_val + gs_stock-value.
+
+    MODIFY gt_stock FROM gs_stock.
+  ENDLOOP.
+ENDFORM.                    " CALCULATE_VALUATIONS
+
+*&---------------------------------------------------------------------*
+*&      Form  OUTPUT_STOCK_LIST
+*&---------------------------------------------------------------------*
+FORM output_stock_list.
+  FORMAT COLOR COL_HEADING.
+  WRITE: / 'Material', 15 'Plant', 22 'Storage', 30 'Stock Qty', 45 'Unit', 52 'Valuation Value', p_curr.
+  ULINE.
+  FORMAT RESET.
+
+  LOOP AT gt_stock INTO gs_stock.
+    WRITE: / gs_stock-matnr USING EDIT MASK '==MATN1',
+             gs_stock-werks,
+             gs_stock-lgort,
+             gs_stock-labst DECIMALS 0,
+             gs_stock-meins,
+             gs_stock-value CURRENCY p_curr.
+  ENDLOOP.
+
+  ULINE.
+  FORMAT COLOR COL_TOTAL.
+  WRITE: / 'Total Stock Valuation:', 52 gv_total_val CURRENCY p_curr.
+  FORMAT RESET.
+ENDFORM.                    " OUTPUT_STOCK_LIST

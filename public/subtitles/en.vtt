@@ -1,0 +1,61 @@
+WEBVTT
+
+00:00.000 --> 00:07.500
+Enterprise core modifications are the single greatest barrier to S/4HANA upgrades.
+
+00:07.500 --> 00:16.000
+Welcome to Clean-Core.io—the automated SaaS engine designed to decouple legacy ABAP logic into modern, side-by-side cloud services on SAP BTP.
+
+00:16.000 --> 00:25.000
+Our platform enables enterprise architects to keep the SAP digital core clean while accelerating cloud transformation.
+
+00:25.000 --> 00:35.000
+Let's trace a modernization journey. We start by uploading legacy ABAP source files directly into the Technical Analytics workspace.
+
+00:35.000 --> 00:45.000
+The static analysis engine parses the legacy custom code, maps external dependencies, and highlights hard-coded workarounds.
+
+00:45.000 --> 00:55.000
+We get a clear compliance baseline showing which parts of the legacy package violate the clean-core philosophy.
+
+00:55.000 --> 01:05.000
+Next, our rule-based scoring engine separates obsolete code from active requirements, marking retired workarounds for immediate disposal.
+
+01:05.000 --> 01:15.000
+Standard capabilities are mapped to native, standard SAP cloud features, avoiding redundant development.
+
+01:15.000 --> 01:25.000
+Only the custom delta requirements are scoped and packaged for side-by-side BTP extension.
+
+01:25.000 --> 01:35.000
+Now, we navigate to the Target Architecture Blueprint. Here, we design the modern target cloud-native schema.
+
+01:35.000 --> 01:47.000
+Using secure, stateless Gemini API proxying, your legacy code structures are parsed and converted into a modular Node.js folder structure.
+
+01:47.000 --> 02:00.000
+The visual console displays generated cds schemas, TypeScript controllers, Dockerfiles, and destination manager bindings for SAP BTP.
+
+02:00.000 --> 02:10.000
+Under the Code Transformation workspace, you can review the side-by-side conversion in detail.
+
+02:10.000 --> 02:20.000
+The scroll-sync code comparison viewer maps legacy ABAP statements directly to their modern TypeScript equivalents.
+
+02:20.000 --> 02:30.000
+Architects can easily audit the refactored code patterns and ensure secure database queries and BTP SDK conventions are followed.
+
+02:30.000 --> 02:42.000
+For verification, the platform automatically mounts the new TypeScript code inside an Isolated Testing Sandbox.
+
+02:42.000 --> 02:50.000
+The system runs selective, granular unit tests, showing real-time TAP-formatted execution logs and passing assertions.
+
+02:50.000 --> 02:57.000
+Once validated, we generate the final deployable asset.
+
+02:57.000 --> 03:07.000
+Click 'Download Handover Package' to export a complete ZIP bundle with package.json configs, tests, and markdown documentation.
+
+03:07.000 --> 03:12.000
+Keep your ERP core pristine. Build fast, scale safe, and join the Clean-Core.io Pilot today.
