@@ -18,19 +18,23 @@ export async function POST(request: NextRequest) {
         <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; padding: 40px;">
           
           <!-- Logo & Branding -->
-          <div style="margin-bottom: 32px; border-bottom: 1px solid #f1f5f9; padding-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <div style="font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; margin: 0;">
-                Clean-Core<span style="color: #10b981;">.io</span>
-              </div>
-              <div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.15em; margin-top: 4px;">
-                Enterprise Modernization Suite
-              </div>
-            </div>
-            <div style="font-size: 11px; font-weight: 700; color: #b45309; background-color: #fffbeb; padding: 6px 12px; border-radius: 8px; border: 1px solid #fef3c7;">
-              Review Pending
-            </div>
-          </div>
+          <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 32px; border-bottom: 1px solid #f1f5f9; padding-bottom: 24px;">
+            <tr>
+              <td align="left" valign="middle">
+                <div style="font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; margin: 0; line-height: 1.2;">
+                  Clean-Core<span style="color: #10b981;">.io</span>
+                </div>
+                <div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.15em; margin-top: 4px; line-height: 1.2;">
+                  Enterprise Modernization Suite
+                </div>
+              </td>
+              <td align="right" valign="middle" style="text-align: right;">
+                <span style="display: inline-block; font-size: 11px; font-weight: 700; color: #b45309; background-color: #fffbeb; padding: 6px 12px; border-radius: 8px; border: 1px solid #fef3c7; line-height: 1.2; text-align: center; white-space: nowrap;">
+                  Review Pending
+                </span>
+              </td>
+            </tr>
+          </table>
 
           <!-- Main Heading -->
           <div style="margin-bottom: 28px;">
