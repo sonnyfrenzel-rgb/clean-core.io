@@ -9,14 +9,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Determine domain and urls based on host
-    const host = request.headers.get('host') || 'localhost:3000';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const dashboardUrl = `${protocol}://${host}/dashboard`;
-
-    const emailSubject = `🎉 Welcome to Clean-Core.io: Pilot Access Approved!`;
+    const emailSubject = `⏳ Clean-Core.io: We are reviewing your Pilot Application!`;
     
-    // Professional, spam-resilient, trusted business-grade HTML email template
+    // Premium, marketing-grade, state-of-the-art trusted HTML email template
     const emailHtml = `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a;">
         <!-- Card Container -->
@@ -32,17 +27,17 @@ export async function POST(request: NextRequest) {
                 Enterprise Modernization Suite
               </div>
             </div>
-            <div style="font-size: 11px; font-weight: 700; color: #0f172a; background-color: #f1f5f9; padding: 6px 12px; border-radius: 8px;">
-              Beta Pilot
+            <div style="font-size: 11px; font-weight: 700; color: #b45309; background-color: #fffbeb; padding: 6px 12px; border-radius: 8px; border: 1px solid #fef3c7;">
+              Review Pending
             </div>
           </div>
 
           <!-- Main Heading -->
           <div style="margin-bottom: 28px;">
-            <span style="font-size: 10px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.1em; background-color: #d1fae5; padding: 6px 12px; border-radius: 9999px; border: 1px solid #a7f3d0;">
-              ✓ Application Approved
+            <span style="font-size: 10px; font-weight: 800; color: #b45309; text-transform: uppercase; letter-spacing: 0.1em; background-color: #fffbeb; padding: 6px 12px; border-radius: 9999px; border: 1px solid #fef3c7;">
+              ⏳ Application Received
             </span>
-            <h1 style="font-size: 26px; font-weight: 800; color: #0f172a; margin: 18px 0 0 0; letter-spacing: -0.03em; line-height: 1.15;">Your Developer Access is Ready</h1>
+            <h1 style="font-size: 26px; font-weight: 800; color: #0f172a; margin: 18px 0 0 0; letter-spacing: -0.03em; line-height: 1.15;">Your Modernization Workspace is Preparing</h1>
           </div>
 
           <!-- Content -->
@@ -50,12 +45,12 @@ export async function POST(request: NextRequest) {
             Hello ${name},
           </p>
           
-          <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            We are pleased to inform you that your application for the <strong>Clean-Core.io Pilot Program</strong> has been successfully verified. Your closed-beta workspace credentials are now active.
+          <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
+            Thank you for requesting access to the <strong>Clean-Core.io Closed Beta Pilot</strong>. Our engineering and architecture team has successfully received your application. We are actively reviewing your use case to provision your dedicated high-compute sandbox.
           </p>
 
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            Thank you so much for joining our pilot program and taking the time to test our platform. We are incredibly grateful for your participation and look forward to your valuable feedback to help us refine and improve the experience.
+            Get ready to experience the future of SAP modernization. Clean-Core.io is a state-of-the-art research platform engineered to automatically decouple, refactor, and analyze monolithic legacy custom logic into clean, upgrade-stable architectures.
           </p>
 
           <!-- Security Trust Indicator -->
@@ -68,7 +63,7 @@ export async function POST(request: NextRequest) {
 
           <!-- Feature Grid -->
           <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px;">
-            <h3 style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin: 0 0 16px 0; letter-spacing: 0.05em;">Your Provisioned Access Scope:</h3>
+            <h3 style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin: 0 0 16px 0; letter-spacing: 0.05em;">What Awaits You Inside:</h3>
             
             <!-- Benefit 1 -->
             <div style="margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
@@ -107,11 +102,10 @@ export async function POST(request: NextRequest) {
             </div>
           </div>
 
-          <!-- CTA Button -->
-          <div style="text-align: center; margin-bottom: 36px;">
-            <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
-              Launch Workspace
-            </a>
+          <!-- Closing Info -->
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 30px; font-size: 13px; line-height: 1.6; color: #475569;">
+            <strong>What happens next?</strong><br />
+            Our administrators review and approve pilot requests manually to ensure server resources are correctly balanced. Typically, this takes less than 24 hours. Once approved, you will receive an automatic confirmation email with your instant workspace launch link. We appreciate your patience and look forward to welcoming you aboard!
           </div>
 
           <!-- Professional Signature -->
@@ -126,7 +120,7 @@ export async function POST(request: NextRequest) {
         <!-- Anti-Spam / Legal Footer -->
         <div style="text-align: center; margin-top: 32px; padding: 0 20px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
           <p style="margin: 0 0 8px 0;">
-            This transactional email was sent to ${email} regarding your approved pilot program application on Clean-Core.io.
+            This transactional email was sent to ${email} confirming your pilot program application on Clean-Core.io.
           </p>
           <p style="margin: 0 0 12px 0; font-weight: 600;">
             Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io
@@ -138,10 +132,9 @@ export async function POST(request: NextRequest) {
       </div>
     `;
 
-    // Check Resend config
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
-      console.log(`[Email] Sending Pilot Welcome Email to applicant ${email}...`);
+      console.log(`[Email] Sending Pilot Pending notification email to applicant ${email}...`);
       const resendRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -149,7 +142,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Clean-Core.io <team@clean-core.io>',
+          from: 'Clean-Core.io Team <team@clean-core.io>',
           to: email,
           subject: emailSubject,
           html: emailHtml,
@@ -158,23 +151,21 @@ export async function POST(request: NextRequest) {
 
       if (!resendRes.ok) {
         const errText = await resendRes.text();
-        console.error('[Email] Failed to send Welcome Email via Resend API:', errText);
+        console.error('[Email] Failed to send Pending Welcome Email via Resend API:', errText);
       } else {
-        console.log('[Email] Success sending Welcome Email.');
+        console.log('[Email] Success sending Pending Welcome Email.');
       }
     } else {
-      // Offline/Local development fallback
       console.log('\n======================================================');
-      console.log('📬   [WELCOME EMAIL SENT TO USER]   📬');
+      console.log('📬   [PENDING REGISTRATION EMAIL SENT TO USER]   📬');
       console.log(`To: ${name} (${email})`);
       console.log(`Subject: ${emailSubject}`);
-      console.log(`Dashboard Link: ${dashboardUrl}`);
       console.log('======================================================\n');
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error in send-approval-email API:', error);
+    console.error('Error in send-pending-email API:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
