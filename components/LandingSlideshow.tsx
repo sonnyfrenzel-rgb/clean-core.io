@@ -198,6 +198,21 @@ export default function LandingSlideshow() {
             </motion.div>
           </AnimatePresence>
         </div>
+        {/* Hidden Preloading Pipeline to cache all slides instantly */}
+        <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
+          {slides.map((slide, idx) => (
+            idx > 0 && (
+              <Image 
+                key={idx}
+                src={slide.image} 
+                alt=""
+                width={1280}
+                height={800}
+                priority
+              />
+            )
+          ))}
+        </div>
       </div>
     </div>
   );
