@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
-import { Code2, ArrowRight, ArrowLeft, RefreshCw, FileCode2, Terminal, AlertCircle, CheckCircle2, Cpu, Zap, Copy, Check, X, Folder, Lock, Unlock } from 'lucide-react';
+import { Code2, ArrowRight, ArrowLeft, RefreshCw, FileCode2, Terminal, AlertCircle, CheckCircle2, Cpu, Zap, Copy, Check, X, Folder, Lock, Unlock, Activity } from 'lucide-react';
 import clsx from 'clsx';
 import { DocumentSkeleton } from '@/components/Skeleton';
 import NavigationButtons from '@/components/NavigationButtons';
@@ -496,7 +496,7 @@ CMD ["node", "srv/service.js"]`
         const docSnap = await getDoc(doc(db, 'projects', projectId as string));
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setProject(data);
+          setProject(({ id: docSnap.id, ...data } as unknown) as Project);
           if (data.generatedCode) {
             const parsedFiles = parseGeneratedCode(data.generatedCode);
             setFiles(parsedFiles);
@@ -579,8 +579,26 @@ CMD ["node", "srv/service.js"]`
       
       <div className="mb-10 flex flex-col md:flex-row items-end justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-gray-900 mb-2">Code Transformation</h1>
-          <p className="text-gray-500 font-medium">Legacy ABAP to Modern Node.js (TypeScript) Conversion</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-4xl font-black tracking-tight text-gray-900">Code Transformation</h1>
+            {profile && (
+              <div className={`px-3 py-1 rounded-full border text-[11px] font-black font-mono shadow-sm flex items-center gap-1.5 transition-all select-none uppercase tracking-wider ${
+                profile.tier === 'enterprise' 
+                  ? 'bg-purple-50 text-purple-700 border-purple-200' 
+                  : (profile.transformationsLimit - profile.transformationsUsed <= 1)
+                    ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
+                    : 'bg-green-50 text-green-700 border-green-200'
+              }`}>
+                <Activity size={12} className={profile.tier !== 'enterprise' && (profile.transformationsLimit - profile.transformationsUsed <= 1) ? 'animate-bounce' : 'animate-pulse'} />
+                {profile.tier === 'enterprise' ? (
+                  <span>Enterprise: Unlimited</span>
+                ) : (
+                  <span>Pilot Balance: {Math.max(0, profile.transformationsLimit - profile.transformationsUsed)} / {profile.transformationsLimit} Free</span>
+                )}
+              </div>
+            )}
+          </div>
+          <p className="text-gray-500 font-medium mt-1">Legacy ABAP to Modern Node.js (TypeScript) Conversion</p>
         </div>
         <div className="flex gap-3">
           <button 
@@ -602,7 +620,11 @@ CMD ["node", "srv/service.js"]`
             <Code2 size={16} /> Copy Code
           </button>
           <button 
-            onClick={() => generateTransformation(project?.legacyCode, project?.solutionDesign, project?.analysis)}
+            onClick={() => {
+              if (project?.legacyCode && project?.solutionDesign && project?.analysis) {
+                generateTransformation(project.legacyCode, project.solutionDesign, project.analysis);
+              }
+            }}
             className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all font-bold text-sm shadow-sm"
           >
             <RefreshCw size={16} /> Re-Run Engine
