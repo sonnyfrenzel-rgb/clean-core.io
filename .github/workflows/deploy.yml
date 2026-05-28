@@ -74,6 +74,7 @@ jobs:
         with:
           workload_identity_provider: 'projects/819734065839/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
           service_account: '819734065839-compute@developer.gserviceaccount.com'
+          project_id: 'cleancore-491216'
 
       # Deploy source code directly to Cloud Run
       - name: Deploy to Google Cloud Run
@@ -82,6 +83,7 @@ jobs:
           service: ${{ steps.env-ctx.outputs.service }}
           region: 'europe-west1'
           source: '.'
+          project_id: 'cleancore-491216'
           flags: |
             --memory=2Gi
             --cpu=2
