@@ -38,7 +38,10 @@ import {
   EyeOff,
   Mail,
   Lock,
-  ArrowLeft
+  ArrowLeft,
+  Layers,
+  Sparkles,
+  Activity
 } from 'lucide-react';
 import LegalOverlay from './components/LegalOverlay';
 import LandingSlideshow from '@/components/LandingSlideshow';
@@ -576,7 +579,7 @@ export default function Home() {
             into <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">Cloud-Native Node.js</span>
           </h1>
           <p className="text-lg md:text-2xl text-gray-700 max-w-3xl mx-auto mb-12 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200">
-            Bridging the gap between IT legacy and business agility. Automatically transform undocumented custom operations into clean-code TypeScript applications, complete with deterministic testing sandboxes and L1-L4 process blueprints.
+            Bridging the gap between SAP legacy and Cloud-Native agility. Automatically transform undocumented custom ABAP operations into clean-code architectures, fully aligned with standard SAP Clean Core extensibility paths for S/4HANA Public Cloud and Private Cloud / RISE.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
             <button
@@ -605,34 +608,34 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                icon: <Code2 className="w-8 h-8 text-green-600" />,
-                title: 'Automated Analysis',
-                desc: 'Instantly extract business logic, dependencies, and value from undocumented legacy code.'
+                icon: <Layers className="w-8 h-8 text-green-600" />,
+                title: 'Extensibility Routing',
+                desc: 'Intelligently classifies legacy custom logic against SAP Clean Core guidelines, automatically separating In-App ABAP Cloud (RAP) from Side-by-Side BTP (CAP) tracks.'
               },
               {
-                icon: <LayoutTemplate className="w-8 h-8 text-green-600" />,
-                title: 'Solution Design',
-                desc: 'Generate target architecture and technical design based on automated analysis.'
+                icon: <Globe className="w-8 h-8 text-green-600" />,
+                title: 'SAP API Hub Mapping',
+                desc: 'Directly maps legacy database table operations to released, public standard SAP APIs with interactive links to official API Hub listings.'
               },
               {
                 icon: <Cpu className="w-8 h-8 text-green-600" />,
-                title: 'AI-Driven Transformation',
-                desc: 'Generate clean, maintainable, and secure Node.js (TypeScript) code tailored for modern cloud platforms.'
+                title: 'Dual RAP & CAP Engine',
+                desc: 'Generates clean In-App ABAP Cloud RAP handlers formatted as abapGit directories, or Side-by-Side BTP CAP Node.js services complete with ERP event triggers.'
+              },
+              {
+                icon: <Activity className="w-8 h-8 text-green-600" />,
+                title: 'Business Value Audit',
+                desc: 'Quantifies legacy custom intellectual property value, estimates technical debt, and outlines plain-English roadmaps tailored for non-technical stakeholders.'
               },
               {
                 icon: <ShieldCheck className="w-8 h-8 text-green-600" />,
-                title: 'Enterprise Testing',
-                desc: 'Automatically generate and execute deterministic Node.js unit and integration tests in an isolated sandbox.'
+                title: 'ADT Cockpit Simulation',
+                desc: 'Generates standard ABAP Unit classes with local database doubles, simulating execution in a virtual Eclipse ADT Test Cockpit console.'
               },
               {
-                icon: <FileText className="w-8 h-8 text-green-600" />,
-                title: 'Process Documentation',
-                desc: 'Auto-generate L1-L4 process models bridging the gap between IT and business stakeholders.'
-              },
-              {
-                icon: <Download className="w-8 h-8 text-green-600" />,
-                title: 'Delivery Package',
-                desc: 'Finalize and export production-ready code, executive summaries, and technical documentation.'
+                icon: <Sparkles className="w-8 h-8 text-green-600" />,
+                title: 'Knowledge Overlays & AI',
+                desc: 'Provides inline glossary tooltips, a searchable floating reference sidebar, and a context-restricted SAP AI Architect Chatbot.'
               }
             ].map((feature, idx) => (
               <motion.div 
@@ -686,7 +689,7 @@ export default function Home() {
               {
                 icon: <ShieldCheck className="w-6 h-6 text-green-600" />,
                 title: "DSGVO / GDPR Compliant",
-                desc: "Full enforcement of Art. 17 DSGVO. Instantly purge all your user footprints, uploaded code fragments, and analytics recursively in Settings."
+                desc: "Full enforcement of Art. 17 DSGVO. Purge all user footprints, uploads, and data in Settings. Transactional emails are securely routed via Resend API with DSGVO imprints."
               },
               {
                 icon: <Users className="w-6 h-6 text-green-600" />,
