@@ -60,13 +60,11 @@ export default function GlossaryTerm({ termKey, children, className }: GlossaryT
       <span
         ref={triggerRef}
         onClick={handleTrigger}
-        onMouseEnter={() => !isMobile && setShowTooltip(true)}
-        onMouseLeave={() => !isMobile && setShowTooltip(false)}
         className={clsx(
-          "border-b border-dashed border-emerald-500/80 cursor-help hover:text-emerald-700 font-bold transition-colors select-none",
+          "underline decoration-dashed decoration-2 decoration-emerald-500/80 underline-offset-4 cursor-help hover:text-emerald-800 font-bold transition-all select-none active:scale-95 inline-block",
           className
         )}
-        title="Click or hover for Glossary explanation"
+        title="Click to toggle Glossary explanation"
       >
         {children || item.shortName}
       </span>

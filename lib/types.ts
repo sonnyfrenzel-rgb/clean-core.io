@@ -49,6 +49,7 @@ export interface Project {
   documentation?: string;
   presentation?: string;
   extensibilityRoute?: string;
+  s4Deployment?: 'public' | 'private';
   status?: 'created' | 'analyzed' | 'designed' | 'transformed' | 'testing' | 'documented' | 'completed';
   exports?: Record<string, string>;
   createdAt?: unknown;
@@ -104,6 +105,14 @@ export interface AnalysisData {
         cons: string[];
       };
     };
+  };
+  businessValueAnalysis?: {
+    legacyAssetScore: number;
+    technicalDebtLevel: 'Low' | 'Medium' | 'High';
+    estimatedMaintenanceCost: number;
+    valueDrivers: string[];
+    cloudRoiSummary: string;
+    plainEnglishActionPlan: string[];
   };
 }
 
