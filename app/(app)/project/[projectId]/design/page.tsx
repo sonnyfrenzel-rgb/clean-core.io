@@ -412,7 +412,7 @@ ${analysis}`;
       const docSnap = await getDoc(doc(db, 'projects', projectId as string));
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setProject(data);
+        setProject({ id: docSnap.id, ...data } as unknown as Project);
         if (data.solutionDesign) {
             setDesign(data.solutionDesign);
             setLoading(false);
@@ -1005,7 +1005,7 @@ ${analysis}`;
 
   if (loading && !design) return (
     <div className="animate-in fade-in duration-500">
-      <Stepper currentStep={3} projectId={projectId as string} />
+      <Stepper currentStep={3} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       <div className="bg-white rounded-[2rem] shadow-xl border border-gray-100 overflow-hidden mt-8">
         <div className="bg-green-600 px-10 py-12 text-white flex items-center justify-between">
           <div>
@@ -1021,7 +1021,7 @@ ${analysis}`;
 
   return (
     <div className="animate-in fade-in duration-500">
-      <Stepper currentStep={3} projectId={projectId as string} />
+      <Stepper currentStep={3} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -1038,7 +1038,7 @@ ${analysis}`;
                <Lock size={14} className="text-slate-400" /> Send to Jira (Enterprise)
              </button>
             <button 
-              onClick={() => generateDesign(project.analysis)}
+              onClick={() => project?.analysis && generateDesign(project.analysis)}
               className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-sm"
             >
               <RefreshCw size={16} /> Regenerate

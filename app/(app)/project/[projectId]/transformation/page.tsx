@@ -32,6 +32,7 @@ export default function TransformationPage() {
   useEffect(() => {
     projectRef.current = project;
   }, [project]);
+
   const [transformedCode, setTransformedCode] = useState('');
   const [transformationLog, setTransformationLog] = useState<string[]>([]);
   const [error, setError] = useState('');
@@ -40,7 +41,37 @@ export default function TransformationPage() {
   const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [insightOverlay, setInsightOverlay] = useState<{ title: string, content: string } | null>(null);
   const router = useRouter();
-  const { profile } = useUserProfile();
+  const { profile, incrementTransformations } = useUserProfile();
+
+  // Charge 1 credit and enable transformation bypass when loading progress reaches > 90%
+  useEffect(() => {
+    if (progress > 90 && project && !project.charged) {
+      // Optimistically update local project state to prevent double execution
+      setProject((prev: Project | null) => {
+        if (!prev || prev.charged) return prev;
+        return {
+          ...prev,
+          charged: true,
+          transformationBypass: true
+        };
+      });
+
+      const performCharge = async () => {
+        try {
+          const db = getDb();
+          await updateDoc(doc(db, 'projects', projectId as string), {
+            charged: true,
+            transformationBypass: true
+          });
+          await incrementTransformations();
+        } catch (e) {
+          console.error("Failed to perform transformation progress charge:", e);
+        }
+      };
+      performCharge();
+    }
+  }, [progress, project, projectId, incrementTransformations]);
+
 
   const [files, setFiles] = useState<ProjectFile[]>([]);
   const [selectedFilePath, setSelectedFilePath] = useState<string>('srv/service.ts');
@@ -533,7 +564,7 @@ CMD ["node", "srv/service.js"]`
 
   if (loading && !transformedCode) return (
     <div className="animate-in fade-in duration-500">
-      <Stepper currentStep={4} projectId={projectId as string} />
+      <Stepper currentStep={4} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       <div className="bg-[#0a0a0a] rounded-[2rem] shadow-2xl border border-white/10 overflow-hidden mt-8">
         <div className="px-10 py-12 text-white flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex-1">
@@ -575,7 +606,7 @@ CMD ["node", "srv/service.js"]`
 
   return (
     <div className="animate-in fade-in duration-500 max-w-7xl mx-auto">
-      <Stepper currentStep={4} projectId={projectId as string} />
+      <Stepper currentStep={4} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
       <div className="mb-10 flex flex-col md:flex-row items-end justify-between gap-6">
         <div>

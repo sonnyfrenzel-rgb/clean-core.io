@@ -35,11 +35,13 @@ export default function AnalyzePage() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { profile } = useUserProfile();
+  const { profile, incrementTransformations } = useUserProfile();
   const [showHelpMode, setShowHelpMode] = useState(false);
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(0);
-  const [targetDeployment, setTargetDeployment] = useState<'public' | 'private'>('public');
+  const [targetDeployment, setTargetDeployment] = useState<'public' | 'private' | null>(null);
+  const [showConceptQuestion, setShowConceptQuestion] = useState(false);
+  const [modalSelection, setModalSelection] = useState<'public' | 'private' | null>(null);
 
   const markdownComponents: Components = {
     h1: ({ node, ...props }) => (
@@ -72,8 +74,12 @@ export default function AnalyzePage() {
       try {
         const docSnap = await getDoc(doc(getDb(), 'projects', projectId as string));
         if (docSnap.exists()) {
-          setProject({ id: docSnap.id, ...docSnap.data() } as any);
-          setLegacyCode(docSnap.data().legacyCode || '');
+          const data = docSnap.data();
+          setProject({ id: docSnap.id, ...data } as any);
+          setLegacyCode(data.legacyCode || '');
+          if (data.s4Deployment) {
+            setTargetDeployment(data.s4Deployment as 'public' | 'private');
+          }
         }
       } catch (error) {
         handleFirestoreError(error, OperationType.GET, `projects/${projectId}`);
@@ -202,10 +208,14 @@ ${codeToAnalyze}`;
       const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, profile?.geminiApiKey);
       
       let recommendedRoute = 'Side-by-Side (SAP BTP)';
+      let cleanCoreScore = 0;
       try {
         const parsed = JSON.parse(responseText.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim());
         if (parsed.extensibilityRouting?.recommendedRoute) {
           recommendedRoute = parsed.extensibilityRouting.recommendedRoute;
+        }
+        if (typeof parsed.cleanCoreScore === 'number') {
+          cleanCoreScore = parsed.cleanCoreScore;
         }
       } catch (e) {
         console.error('Failed to parse analysis JSON for routing', e);
@@ -217,12 +227,13 @@ ${codeToAnalyze}`;
           s4Deployment: targetDeployment,
           analysis: responseText,
           extensibilityRoute: recommendedRoute,
+          cleanCoreScore: cleanCoreScore,
           status: 'analyzed'
         });
       } catch (error) {
         handleFirestoreError(error, OperationType.UPDATE, `projects/${projectId}`);
       }
-      setProject((prev: Project | null) => prev ? { ...prev, analysis: responseText, extensibilityRoute: recommendedRoute, s4Deployment: targetDeployment } : null);
+      setProject((prev: Project | null) => prev ? { ...prev, analysis: responseText, extensibilityRoute: recommendedRoute, s4Deployment: targetDeployment, cleanCoreScore } : null);
     } catch (err: unknown) {
       console.error('Analysis Error:', err);
       const errMessage = err instanceof Error ? err.message : String(err);
@@ -1504,7 +1515,7 @@ ${codeToAnalyze}`;
 
   return (
     <div className="animate-in fade-in duration-500 max-w-5xl mx-auto">
-      <Stepper currentStep={project?.analysis ? 2 : 1} />
+      <Stepper currentStep={project?.analysis ? 2 : 1} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
       <div className="mb-10 text-center">
         <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 mb-3">Code Analysis</h1>
@@ -1656,7 +1667,17 @@ ${codeToAnalyze}`;
               </button>
               
               <button
-                onClick={() => handleAnalyze(legacyCode)}
+                onClick={() => {
+                  if (!targetDeployment) {
+                    setError('Please select a S/4HANA Target Operating Model (Public Cloud or Private Cloud RISE) before starting the analysis.');
+                    // Scroll to top where error displays
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                  }
+                  setError('');
+                  setModalSelection(targetDeployment);
+                  setShowConceptQuestion(true);
+                }}
                 disabled={loading || !legacyCode}
                 className={clsx(
                   "flex items-center gap-3 bg-[#00873a] text-white px-10 py-4 rounded-2xl hover:bg-[#006b2c] hover:shadow-xl hover:shadow-green-900/20 transition-all font-black disabled:opacity-70 disabled:cursor-not-allowed min-w-[220px] justify-center shadow-lg shadow-green-900/10",
@@ -1731,14 +1752,17 @@ ${codeToAnalyze}`;
               </button>
               
               <button
-                onClick={() => { setIsNavigating(true); router.push(`/project/${projectId}/design`); }}
+                onClick={() => { 
+                  setIsNavigating(true); 
+                  router.push(`/project/${projectId}/design`); 
+                }}
                 disabled={isNavigating}
                 className={clsx(
                   "flex items-center gap-3 bg-emerald-600 text-white px-10 py-4 rounded-2xl hover:bg-emerald-500 hover:shadow-xl hover:shadow-emerald-500/20 transition-all font-black min-w-[220px] justify-center shadow-lg shadow-emerald-500/10 hover:-translate-y-0.5",
                   isNavigating && "animate-pulse"
                 )}
               >
-                Continue to Design <ArrowRight size={18} />
+                <>Continue to Design <ArrowRight size={18} /></>
               </button>
             </div>
           </div>
@@ -1798,6 +1822,125 @@ ${codeToAnalyze}`;
                   <p className="text-slate-500 leading-relaxed">Direct alteration of standard SAP core objects, leading to major regression risks and upgrade blocks.</p>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Target Operating Model Concept Question Modal */}
+      {showConceptQuestion && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2rem] p-8 md:p-10 max-w-2xl w-full border border-slate-200/50 shadow-2xl relative animate-in zoom-in-95 duration-300 space-y-6 max-h-[90vh] overflow-y-auto">
+            <button 
+              onClick={() => setShowConceptQuestion(false)}
+              className="absolute top-6 right-6 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+            >
+              <X size={18} />
+            </button>
+            
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full inline-block font-mono">⚖️ Architecture Validation Checkpoint</span>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Confirm Target Operating Model</h3>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                Before the AI Modernization Engine generates clean core recommendations, let's align on a critical architectural choice. Which target operating model is selected?
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Public Card */}
+              <div 
+                onClick={() => setModalSelection('public')}
+                className={clsx(
+                  "p-5 rounded-2xl border cursor-pointer transition-all duration-300 flex flex-col justify-between min-h-[120px] active:scale-[0.98]",
+                  modalSelection === 'public'
+                    ? "bg-green-50/20 border-green-500 shadow-md ring-1 ring-green-500/10"
+                    : "bg-white border-slate-200 hover:border-slate-350"
+                )}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-extrabold text-slate-900 text-xs">☁️ Public Cloud</span>
+                    {modalSelection === 'public' && <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />}
+                  </div>
+                  <p className="text-[10px] text-slate-500 leading-normal font-semibold">Strict SaaS rules. Zero direct modifications allowed. Released standard APIs only.</p>
+                </div>
+              </div>
+
+              {/* Private Card */}
+              <div 
+                onClick={() => setModalSelection('private')}
+                className={clsx(
+                  "p-5 rounded-2xl border cursor-pointer transition-all duration-300 flex flex-col justify-between min-h-[120px] active:scale-[0.98]",
+                  modalSelection === 'private'
+                    ? "bg-blue-50/20 border-blue-500 shadow-md ring-1 ring-blue-500/10"
+                    : "bg-white border-slate-200 hover:border-slate-350"
+                )}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-extrabold text-slate-900 text-xs">🛡️ Private Cloud / RISE</span>
+                    {modalSelection === 'private' && <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />}
+                  </div>
+                  <p className="text-[10px] text-slate-500 leading-normal font-semibold">3-Tier Extensibility Model. Supports upgrade-safe Tier 2 custom wrappers.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Explanation box based on selection */}
+            {modalSelection && (
+              <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50 space-y-3 animate-in slide-in-from-bottom-2 duration-300">
+                <div className="flex items-center gap-2 text-slate-800 font-extrabold text-xs">
+                  <Info className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>💡 Why this choice determines your modernization strategy:</span>
+                </div>
+                <div className="text-[11px] text-slate-600 space-y-2 leading-relaxed font-sans">
+                  {modalSelection === 'public' ? (
+                    <>
+                      <p>
+                        In <strong>SAP S/4HANA Public Cloud (Strict SaaS)</strong>, standard code modifications are entirely blocked.
+                      </p>
+                      <ul className="list-disc pl-4 space-y-1">
+                        <li><strong>Unreleased APIs Forbidden:</strong> Any legacy unreleased SAP tables/functions used by your custom logic are unreachable.</li>
+                        <li><strong>Strict Clean Core Compliance:</strong> The AI engine will prioritize <strong>BTP Side-by-Side (CAP)</strong> or <strong>In-App RAP</strong> using strictly released APIs. You must plan to decommission or completely rewrite outdated custom logic.</li>
+                      </ul>
+                    </>
+                  ) : (
+                    <>
+                      <p>
+                        In <strong>SAP S/4HANA Private Cloud / On-Premise (RISE)</strong>, you can utilize the <strong>3-Tier Extensibility Model</strong>.
+                      </p>
+                      <ul className="list-disc pl-4 space-y-1">
+                        <li><strong>Tier 2 API Wrappers:</strong> You can wrap legacy, unreleased SAP database tables or functions inside a custom Tier 2 API wrapper.</li>
+                        <li><strong>Upgrade-Safe Bridging:</strong> This wrapper acts as an upgrade-safe bridge, exposing unreleased structures to Tier 1 Cloud Developer Extensibility (RAP/CAP) without blocking future S/4HANA core releases.</li>
+                      </ul>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button 
+                type="button" 
+                onClick={() => setShowConceptQuestion(false)} 
+                className="px-5 py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                onClick={() => {
+                  if (modalSelection) {
+                    setTargetDeployment(modalSelection);
+                    setShowConceptQuestion(false);
+                    handleAnalyze(legacyCode);
+                  }
+                }} 
+                disabled={!modalSelection}
+                className="bg-[#00873a] hover:bg-[#006b2c] disabled:opacity-50 text-white px-6 py-2.5 rounded-xl text-xs font-black transition-all shadow-sm flex items-center gap-2 active:scale-95 hover:shadow-lg hover:shadow-green-900/10"
+              >
+                Start AI Modernization Engine <ArrowRight size={14} />
+              </button>
             </div>
           </div>
         </div>

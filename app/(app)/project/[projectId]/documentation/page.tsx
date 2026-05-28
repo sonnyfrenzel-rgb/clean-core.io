@@ -109,7 +109,7 @@ export default function DocumentationPage() {
         const docSnap = await getDoc(doc(db, 'projects', idStr));
         if (docSnap.exists() && isMounted) {
           const data = docSnap.data();
-          setProject(data);
+          setProject({ id: docSnap.id, ...data } as unknown as Project);
           if (data.documentation) {
             setDocumentation(data.documentation);
           }
@@ -335,7 +335,7 @@ ${context}`;
 
   if (loading) return (
     <div className="animate-in fade-in duration-500">
-      <Stepper currentStep={6} projectId={projectId as string} />
+      <Stepper currentStep={6} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       <div className="h-[60vh] flex flex-col items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
           <p className="text-lg font-medium text-gray-400">Loading documentation...</p>
@@ -345,7 +345,7 @@ ${context}`;
 
   return (
     <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8">
-      <Stepper currentStep={6} projectId={projectId as string} />
+      <Stepper currentStep={6} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-10 mt-6 md:mt-8">
         <div>

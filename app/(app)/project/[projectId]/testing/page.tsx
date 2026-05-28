@@ -53,6 +53,7 @@ const renderSafeValue = (val: any): string => {
 
 export default function TestingSandboxPage() {
   const { projectId } = useParams();
+  const router = useRouter();
   const { profile } = useUserProfile();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
@@ -190,7 +191,7 @@ export default function TestingSandboxPage() {
 
   return (
     <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8">
-      <Stepper currentStep={5} projectId={projectId as string} />
+      <Stepper currentStep={5} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
       <div className="mb-6 md:mb-10 mt-6 md:mt-8">
         <h1 className="text-3xl md:text-4xl font-black text-[#0b1c30] tracking-tight mb-2">Testing & Sandbox</h1>
