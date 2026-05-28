@@ -314,10 +314,9 @@ export default function Dashboard() {
         userId: user.uid,
         createdAt: serverTimestamp()
       });
-      await incrementTransformations();
       setProjectName('');
       setExampleToStart(null);
-      router.push(`/project/${docRef.id}/analyze?autoAnalyze=true`);
+      router.push(`/project/${docRef.id}/analyze?autoAnalyze=false&fromExample=true`);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'projects');
     } finally {
@@ -398,7 +397,6 @@ export default function Dashboard() {
         userId: user.uid,
         createdAt: serverTimestamp()
       });
-      await incrementTransformations();
       setProjectName('');
       setShowUpload(false);
       router.push(`/project/${docRef.id}/analyze`);
@@ -441,7 +439,8 @@ export default function Dashboard() {
 
   const handleProceed = (project: any) => {
     setProceedingId(project.id);
-    if (project.status === 'uploaded') router.push(`/project/${project.id}/analyze`);
+    if (project.cleanCoreScore && project.cleanCoreScore > 90) router.push(`/project/${project.id}/delivery`);
+    else if (project.status === 'uploaded') router.push(`/project/${project.id}/analyze`);
     else if (project.status === 'analyzed') router.push(`/project/${project.id}/design`);
     else if (project.status === 'designed') router.push(`/project/${project.id}/transformation`);
     else if (project.status === 'transformed') router.push(`/project/${project.id}/testing`);
