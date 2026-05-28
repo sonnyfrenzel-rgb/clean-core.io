@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Clean-Core Pilot <system@send.clean-core.io>',
+          from: 'Clean-Core Pilot <system@clean-core.io>',
           to: 'info@clean-core.io',
           subject: emailSubject,
           html: emailHtml,

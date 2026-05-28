@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Clean-Core.io <team@send.clean-core.io>',
+          from: 'Clean-Core.io <team@clean-core.io>',
           to: email,
           subject: emailSubject,
           html: emailHtml,
