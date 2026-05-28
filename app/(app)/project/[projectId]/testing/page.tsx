@@ -18,8 +18,7 @@ import NavigationButtons from '@/components/NavigationButtons';
 import { motion } from 'motion/react';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
-const TestingPieChart = nextDynamic(() => import('@/components/TestingCharts').then(mod => mod.TestingPieChart), { ssr: false });
-const TestingBarChart = nextDynamic(() => import('@/components/TestingCharts').then(mod => mod.TestingBarChart), { ssr: false });
+import { TestingPieChart, TestingBarChart } from '@/components/TestingCharts';
 
 import { ProjectSkeleton } from '@/components/Skeleton';
 
@@ -64,6 +63,11 @@ export default function TestingSandboxPage() {
   const { isGenerating, testCases, generateTestCases } = useTestGeneration(projectId as string, project, setProject);
   const { isRunning, testResults, sandboxOutput, aiExplanation, runTestCases } = useTestExecution(projectId as string, project, setProject);
   const [showTestCode, setShowTestCode] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -448,7 +452,7 @@ export default function TestingSandboxPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 mb-8">
             {/* Pass Rate Card */}
             <div className="lg:col-span-4 bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center">
-              <TestingPieChart pieData={pieData} stats={stats} />
+              {mounted && <TestingPieChart pieData={pieData} stats={stats} />}
               <div className="mt-6 flex justify-center gap-8">
                 <div className="text-center">
                   <p className="text-2xl font-black text-[#006b2c] tracking-tighter">{stats.passed}</p>
@@ -468,7 +472,7 @@ export default function TestingSandboxPage() {
                 Capability Coverage
               </h3>
               <div className="h-[250px] md:h-[300px]">
-                <TestingBarChart stats={stats} />
+                {mounted && <TestingBarChart stats={stats} />}
               </div>
             </div>
           </div>

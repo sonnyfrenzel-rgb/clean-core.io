@@ -8,6 +8,7 @@ import { signOut } from 'firebase/auth';
 import { useState, useEffect } from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import GlossarySidebar from '@/components/GlossarySidebar';
+import GlossaryChatbot from '@/components/GlossaryChatbot';
 
 export default function AppLayout({children}: {children: React.ReactNode}) {
   const pathname = usePathname();
@@ -147,12 +148,12 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
               </div>
             )}
 
-            <Link
-              href="/how-to"
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
               className="hidden sm:flex items-center gap-2 text-sm font-black text-green-700 hover:text-white bg-green-50 hover:bg-green-600 px-5 py-2.5 rounded-full border border-green-200 hover:border-green-600 hover:shadow-lg transition-all"
             >
-              <HelpCircle size={14} /> How-to
-            </Link>
+              <HelpCircle size={14} /> Ask AI
+            </button>
 
             <div className="relative">
               <button 
@@ -189,13 +190,12 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                       <Settings size={18} /> Settings & Profile
                     </Link>
 
-                    <Link 
-                      href="/how-to" 
-                      onClick={() => setShowUserDropdown(false)}
-                      className="flex items-center gap-3 w-full p-3 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-xl transition-all"
+                    <button 
+                      onClick={() => { setShowUserDropdown(false); window.dispatchEvent(new CustomEvent('open-chatbot')); }}
+                      className="flex items-center gap-3 w-full p-3 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-xl transition-all text-left"
                     >
-                      <HelpCircle size={18} /> How-to
-                    </Link>
+                      <HelpCircle size={18} /> Ask AI
+                    </button>
 
                     <button 
                       onClick={() => { setShowUserDropdown(false); setShowLogoutConfirm(true); }}
@@ -262,7 +262,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {children}
       </main>
-      <GlossarySidebar />
+      <GlossaryChatbot />
     </div>
   );
 }

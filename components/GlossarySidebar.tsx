@@ -42,7 +42,7 @@ export default function GlossarySidebar() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-[80] bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-full shadow-2xl transition-all duration-350 hover:scale-105 active:scale-95 group flex items-center gap-2 border border-emerald-500/30"
+        className="fixed bottom-6 right-24 sm:right-40 z-[80] bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-full shadow-2xl transition-all duration-350 hover:scale-105 active:scale-95 group flex items-center gap-2 border border-emerald-500/30"
         title="Open Clean Core Glossary Guide"
       >
         <BookOpen size={20} className="group-hover:rotate-6 transition-transform" />
