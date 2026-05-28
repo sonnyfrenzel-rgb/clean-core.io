@@ -760,16 +760,32 @@ export default function Dashboard() {
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-4xl font-black text-[#0b1c30] tracking-tight">Workspace</h1>
             <button 
               type="button"
               onClick={() => setShowWorkspaceInfo(true)}
-              className="text-gray-400 hover:text-green-600 transition-colors p-1.5 rounded-full hover:bg-green-50 outline-none"
+              className="text-gray-400 hover:text-green-600 transition-colors p-1.5 rounded-full hover:bg-green-50 outline-none mr-2"
               title="What is this workspace for?"
             >
               <HelpCircle size={18} />
             </button>
+            {profile && (
+              <div className={`px-3 py-1 rounded-full border text-[11px] font-black font-mono shadow-sm flex items-center gap-1.5 transition-all select-none uppercase tracking-wider ${
+                profile.tier === 'enterprise' 
+                  ? 'bg-purple-50 text-purple-700 border-purple-200' 
+                  : (profile.transformationsLimit - profile.transformationsUsed <= 1)
+                    ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
+                    : 'bg-green-50 text-green-700 border-green-200'
+              }`}>
+                <Activity size={12} className={profile.tier !== 'enterprise' && (profile.transformationsLimit - profile.transformationsUsed <= 1) ? 'animate-bounce' : 'animate-pulse'} />
+                {profile.tier === 'enterprise' ? (
+                  <span>Enterprise: Unlimited</span>
+                ) : (
+                  <span>Pilot Balance: {Math.max(0, profile.transformationsLimit - profile.transformationsUsed)} / {profile.transformationsLimit} Free</span>
+                )}
+              </div>
+            )}
           </div>
           <p className="text-[#0b1c30]/70 mt-1 font-medium">Manage your transformation projects and deliverables.</p>
         </div>
@@ -815,6 +831,39 @@ export default function Dashboard() {
               ⚠️ <strong>Pilot Terms:</strong> This is a non-commercial, AI-powered playground. Generated code may contain errors and is provided without warranty or liability. Review our <a href="/settings" className="underline font-bold text-amber-950 hover:text-green-700 transition-colors">Privacy Policy</a> & Legal Notice in settings.
             </div>
 
+            {/* Quota limit feedback */}
+            {profile && profile.tier !== 'enterprise' && profile.transformationsUsed >= profile.transformationsLimit ? (
+              <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-red-50 to-rose-50/30 border border-red-200/60 shadow-sm flex items-start gap-3">
+                <div className="bg-red-100 p-2.5 rounded-lg text-red-700 shrink-0">
+                  <ShieldAlert className="w-5 h-5 text-red-600 animate-bounce" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-red-800 font-mono">Quota Exceeded</h4>
+                  <p className="text-xs text-red-700 font-semibold mt-0.5 leading-snug">
+                    You have used all <strong>{profile.transformationsLimit}</strong> free transformations. Please upgrade or configure your own Gemini API key in settings to proceed.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50/30 border border-green-200/60 shadow-sm flex items-start gap-3">
+                <div className="bg-green-100 p-2.5 rounded-lg text-green-700 shrink-0">
+                  <Activity className="w-5 h-5 text-green-600 animate-pulse" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-green-800 font-mono">Pilot Balance Status</h4>
+                  <p className="text-sm text-green-700 font-semibold mt-0.5 leading-snug">
+                    {profile?.tier === 'enterprise' ? (
+                      <span>✨ Unlimited enterprise transformations remaining.</span>
+                    ) : (
+                      <span>
+                        You have <strong>{Math.max(0, (profile?.transformationsLimit || 5) - (profile?.transformationsUsed || 0))}</strong> of <strong>{profile?.transformationsLimit || 5}</strong> free transformations left.
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">Project Name</label>
               <input 
@@ -823,12 +872,16 @@ export default function Dashboard() {
                 className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                 placeholder="e.g., Z_FI_INVOICE_REPORT"
                 autoFocus
-                disabled={isCreating}
+                disabled={isCreating || (profile?.tier !== 'enterprise' && (profile?.transformationsUsed || 0) >= (profile?.transformationsLimit || 5))}
               />
             </div>
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => setShowUpload(false)} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" disabled={isCreating}>Cancel</button>
-              <button type="submit" disabled={!projectName.trim() || isCreating} className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
+              <button 
+                type="submit" 
+                disabled={!projectName.trim() || isCreating || (profile?.tier !== 'enterprise' && (profile?.transformationsUsed || 0) >= (profile?.transformationsLimit || 5))} 
+                className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2"
+              >
                 {isCreating ? <><RefreshCw className="w-4 h-4 animate-spin" /> Creating...</> : 'Create Project'}
               </button>
             </div>
@@ -885,7 +938,41 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <form onSubmit={handleCreateProjectFromExample} className="bg-white p-6 rounded-xl w-full max-w-md shadow-xl">
             <h2 className="text-xl font-bold mb-2 text-gray-900">Start Project from Example</h2>
-            <p className="mb-6 text-sm text-gray-500">Name your new project based on <strong>{exampleToStart.name}</strong>.</p>
+            <p className="mb-4 text-sm text-gray-500">Name your new project based on <strong>{exampleToStart.name}</strong>.</p>
+            
+            {/* Quota limit feedback */}
+            {profile && profile.tier !== 'enterprise' && profile.transformationsUsed >= profile.transformationsLimit ? (
+              <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-red-50 to-rose-50/30 border border-red-200/60 shadow-sm flex items-start gap-3">
+                <div className="bg-red-100 p-2.5 rounded-lg text-red-700 shrink-0">
+                  <ShieldAlert className="w-5 h-5 text-red-600 animate-bounce" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-red-800 font-mono">Quota Exceeded</h4>
+                  <p className="text-xs text-red-700 font-semibold mt-0.5 leading-snug">
+                    You have used all <strong>{profile.transformationsLimit}</strong> free transformations. Please upgrade or configure your own Gemini API key in settings to proceed.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50/30 border border-green-200/60 shadow-sm flex items-start gap-3">
+                <div className="bg-green-100 p-2.5 rounded-lg text-green-700 shrink-0">
+                  <Activity className="w-5 h-5 text-green-600 animate-pulse" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-green-800 font-mono">Pilot Balance Status</h4>
+                  <p className="text-sm text-green-700 font-semibold mt-0.5 leading-snug">
+                    {profile?.tier === 'enterprise' ? (
+                      <span>✨ Unlimited enterprise transformations remaining.</span>
+                    ) : (
+                      <span>
+                        You have <strong>{Math.max(0, (profile?.transformationsLimit || 5) - (profile?.transformationsUsed || 0))}</strong> of <strong>{profile?.transformationsLimit || 5}</strong> free transformations left.
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">Project Name</label>
               <input 
@@ -894,12 +981,16 @@ export default function Dashboard() {
                 className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                 placeholder={`e.g., Transform ${exampleToStart.name}`}
                 autoFocus
-                disabled={isCreating}
+                disabled={isCreating || (profile?.tier !== 'enterprise' && (profile?.transformationsUsed || 0) >= (profile?.transformationsLimit || 5))}
               />
             </div>
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => { setExampleToStart(null); setProjectName(''); }} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" disabled={isCreating}>Cancel</button>
-              <button type="submit" disabled={!projectName.trim() || isCreating} className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
+              <button 
+                type="submit" 
+                disabled={!projectName.trim() || isCreating || (profile?.tier !== 'enterprise' && (profile?.transformationsUsed || 0) >= (profile?.transformationsLimit || 5))} 
+                className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2"
+              >
                 {isCreating ? <><RefreshCw className="w-4 h-4 animate-spin" /> Starting...</> : 'Start Transformation'}
               </button>
             </div>

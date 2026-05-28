@@ -1,3 +1,5 @@
+import { getAuth } from '@/lib/firebase';
+
 /**
  * Client-side Gemini helper.
  * This module does NOT import @google/genai — all AI calls are proxied
@@ -11,6 +13,19 @@ export async function callGemini(
   jsonResponse: boolean = false,
   customApiKey?: string | null,
 ): Promise<string> {
+  let userId: string | undefined;
+  let idToken: string | undefined;
+
+  try {
+    const auth = getAuth();
+    if (auth.currentUser) {
+      userId = auth.currentUser.uid;
+      idToken = await auth.currentUser.getIdToken();
+    }
+  } catch (err) {
+    console.warn('Firebase Auth context not available in callGemini:', err);
+  }
+
   const response = await fetch('/api/gemini', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -19,6 +34,8 @@ export async function callGemini(
       model: modelName,
       jsonResponse,
       customApiKey: customApiKey || undefined,
+      userId,
+      idToken,
     }),
   });
 
