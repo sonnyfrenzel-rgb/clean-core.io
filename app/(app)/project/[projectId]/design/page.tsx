@@ -16,6 +16,7 @@ import { saveAs } from 'file-saver';
 import { callGemini } from '@/lib/gemini';
 import type { Project, DesignData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import GlossaryTerm from '@/components/GlossaryTerm';
 import JiraIntegrationModal from '@/components/JiraIntegrationModal';
 import UpgradeToEnterpriseModal from '@/components/UpgradeToEnterpriseModal';
 
@@ -830,7 +831,7 @@ ${analysis}`;
               <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h4 className="font-extrabold text-slate-900 text-lg">SAP API Business Hub Integration</h4>
-                  <p className="text-xs text-slate-400 mt-1">Released standard S/4HANA Public APIs mapped to fully decouple direct legacy database access.</p>
+                  <p className="text-xs text-slate-400 mt-1">Officially <GlossaryTerm termKey="Released Interface" className="text-xs text-slate-400 border-emerald-500/40 font-medium">Released standard S/4HANA Public APIs</GlossaryTerm> mapped to fully decouple direct legacy database access.</p>
                 </div>
                 <span className="bg-blue-50 text-blue-700 border border-blue-150 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
                   <Network className="w-3.5 h-3.5 text-blue-600 animate-pulse" /> api.sap.com Reference
@@ -842,7 +843,7 @@ ${analysis}`;
                   <thead>
                     <tr className="border-b border-slate-105">
                       <th className="py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Legacy Object</th>
-                      <th className="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Target Released API</th>
+                      <th className="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Target <GlossaryTerm termKey="Released Interface" className="text-[10px] text-slate-400 border-slate-400/50 uppercase tracking-widest">Released API</GlossaryTerm></th>
                       <th className="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hub API ID</th>
                       <th className="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Integration Role / Context</th>
                       <th className="py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Action</th>
