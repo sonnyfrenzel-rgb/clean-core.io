@@ -54,6 +54,10 @@ export async function POST(request: NextRequest) {
             We are pleased to inform you that your application for the <strong>Clean-Core.io Pilot Program</strong> has been successfully verified. Your closed-beta workspace credentials are now active.
           </p>
 
+          <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
+            Thank you so much for joining our pilot program and taking the time to test our platform. We are incredibly grateful for your participation and look forward to your valuable feedback to help us refine and improve the experience.
+          </p>
+
           <!-- Security Trust Indicator -->
           <div style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 16px; padding: 18px; margin-bottom: 30px;">
             <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">🛡️ Sovereign Data Privacy Assured</span>

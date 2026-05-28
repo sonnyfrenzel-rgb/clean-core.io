@@ -48,6 +48,7 @@ export interface Project {
   manualTestingRequirements?: ManualTestRequirement[];
   documentation?: string;
   presentation?: string;
+  extensibilityRoute?: string;
   status?: 'created' | 'analyzed' | 'designed' | 'transformed' | 'testing' | 'documented' | 'completed';
   exports?: Record<string, string>;
   createdAt?: unknown;
@@ -77,6 +78,33 @@ export interface AnalysisData {
     cloudReadiness: string;
   };
   strategicNextSteps: string[];
+  extensibilityRouting?: {
+    recommendedRoute: 'Side-by-Side (SAP BTP)' | 'In-App (ABAP Cloud)';
+    confidenceScore: number;
+    rationale: string;
+    targetArtifact: string;
+    decisionTreeCheckpoints?: Array<{
+      checkpointName: string;
+      question: string;
+      evaluation: string;
+      resultState: 'In-App Preferred' | 'Side-by-Side Preferred' | 'Neutral';
+      cleanCoreImpact: string;
+    }>;
+    comparativeAnalysis?: {
+      inAppABAPCloud: {
+        technicalFeasibility: 'Highly Compatible' | 'Partially Compatible' | 'Incompatible';
+        fitDetails: string;
+        pros: string[];
+        cons: string[];
+      };
+      sideBySideBTP: {
+        technicalFeasibility: 'Highly Compatible' | 'Partially Compatible' | 'Incompatible';
+        fitDetails: string;
+        pros: string[];
+        cons: string[];
+      };
+    };
+  };
 }
 
 export interface DesignData {
@@ -99,6 +127,13 @@ export interface DesignData {
     patternName: string;
     description: string;
   };
+  sapStandardApiMapping?: Array<{
+    legacyTableOrFunction: string;
+    sapStandardApiName: string;
+    apiHubUrl: string;
+    apiId: string;
+    description: string;
+  }>;
   securityHardening: Array<{
     category: string;
     requirement: string;

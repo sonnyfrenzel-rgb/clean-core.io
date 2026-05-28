@@ -293,37 +293,88 @@ export default function DesignPage() {
     setLoading(true);
     setLoadingMessage('Architecting solution design...');
     try {
-      const prompt = `Act as a Senior Cloud Solutions Architect. Analyze the legacy business analysis results and design a modern, highly practical Node.js side-by-side transformed cloud architecture. 
+      const db = getDb();
+      const docSnap = await getDoc(doc(db, 'projects', projectId as string));
+      const projData = docSnap.exists() ? docSnap.data() : null;
+      const route = projData?.extensibilityRoute || 'Side-by-Side (SAP BTP)';
+      const isAbapCloud = !route.includes('BTP');
+
+      const prompt = isAbapCloud 
+        ? `Act as a Senior SAP Enterprise Architect. Analyze the legacy business analysis results and design a modern, clean SAP RAP (RESTful Application Programming Model) Developer Extensibility target architecture.
 You must return your output strictly in JSON format. Do not include any markdown formatting, HTML, or explanations outside the JSON object. The JSON must exactly match this TypeScript schema:
 
 interface DesignData {
   projectName: string; // The name of this modernization project
   architectureOverview: {
-    approachDescription: string; // A concise 2-3 sentence overview of the transformed architectural approach. Focus on loose coupling, exposing legacy core through versioned APIs, and deploying side-by-side.
-    nodeFramework: string; // The target Node.js framework recommended (e.g. Express, NestJS, SAP CAP) with brief justification
-    runtimePlatform: string; // The recommended cloud runtime (e.g. SAP BTP Cloud Foundry, Kyma/Kubernetes, AWS ECS, Google Cloud Run)
+    approachDescription: string; // A concise 2-3 sentence overview of the clean core RAP approach. Focus on in-app extensibility, standard RAP business object adaptations, or custom released RAP endpoints.
+    nodeFramework: string; // Value MUST be: "SAP RAP (RESTful Application Programming)" with a brief justification
+    runtimePlatform: string; // Value MUST be: "SAP S/4HANA Core (Developer Extensibility)"
   };
   nodeAppBlueprint: {
-    projectStructure: Array<{ path: string; purpose: string }>; // Recommended side-by-side project folder structure with concrete folder/files (e.g., srv/handlers.js, package.json, Dockerfile)
-    apiEndpoints: Array<{ path: string; method: 'GET' | 'POST' | 'PUT' | 'DELETE'; description: string }>; // REST or OData endpoints designed to handle the legacy business capability
+    projectStructure: Array<{ path: string; purpose: string }>; // Recommended RAP artifact layout: CDS projection views, Behavior Definitions (BDEF), Service Definitions (SRVD), Service Bindings (SRVB), and Behavior Implementation classes (ABP).
+    apiEndpoints: Array<{ path: string; method: 'GET' | 'POST' | 'PUT' | 'DELETE'; description: string }>; // Exposed RAP UI service operations or REST service definitions
   };
   cloudServices: Array<{
-    serviceName: string; // Name of the cloud service (e.g. XSUAA Identity Provider, Destination service, PostgreSQL, Event Mesh)
-    purpose: string; // Concrete usage in this extension
-    npmPackages: string[]; // Actual npm packages used in Node.js to integrate with it (e.g. ['@sap/xssec', 'passport'], ['@sap-cloud-sdk/connectivity'], ['pg'])
+    serviceName: string; // Internal core services integrated (e.g. standard IAM business roles, released BAdI extension points, custom authorization objects)
+    purpose: string; // Concrete usage in this RAP service
+    npmPackages: string[]; // Value MUST be empty array [] (as RAP uses standard ABAP dictionary packages, not npm)
   }>;
   dataSync: {
-    patternName: string; // Name of the data sync pattern (e.g. Event-Driven via Event Mesh, Transactional API Gateway, Batch replication)
-    description: string; // Technical description of how data stays consistent between the Node.js application and the legacy core.
+    patternName: string; // E.g. "Transactional DB Access", "ABAP CDS Projection Join"
+    description: string; // Rationale on how standard transactional lock (ENQUEUE/DEQUEUE) is preserved natively within SAP LUW (Logical Unit of Work).
   };
   securityHardening: Array<{
-    category: string; // e.g. Authentication, Network, Coding, Audit
-    requirement: string; // Technical security rule (e.g. JWT Validation, Helmet.js headers, Principal Propagation, dependency audit)
-    packageOrConfig: string; // Concrete implementation detail (e.g. '@sap/xssec middleware', 'app.use(helmet())', 'npm audit --audit-level=high')
+    category: string; // e.g. IAM, Authorization, Dictionary, Audit
+    requirement: string; // Technical security rule (e.g. Authority Check on custom authorization object, SQL Injection prevention via CDS mapping, locked field constraints)
+    packageOrConfig: string; // Concrete implementation detail (e.g. 'AUTHORITY-CHECK OBJECT', 'CDS view access controls DCL', 'ABAP Cloud restricted syntax check')
   }>;
   roadmap: Array<{
     phase: string; // Phase index (e.g. Phase 0, Phase 1, Phase 2, Phase 3)
-    title: string; // Title of the phase (e.g. Foundation, Pilot Extensibility, Event Integration, Production Hardening)
+    title: string; // Title of the phase (e.g. DDIC Setup, RAP Behavior Implementation, Service Exposure, Fiori Elements Integration)
+    deliverables: string[]; // 3-4 concrete, down-to-earth engineering deliverables for this phase
+  }>;
+}
+
+Analysis Context:
+${analysis}`
+        : `Act as a Senior SAP Cloud Solutions Architect. Analyze the legacy business analysis results and design a modern, highly professional modular SAP CAP (Cloud Application Programming) side-by-side transformed cloud architecture.
+You must return your output strictly in JSON format. Do not include any markdown formatting, HTML, or explanations outside the JSON object. The JSON must exactly match this TypeScript schema:
+
+interface DesignData {
+  projectName: string; // The name of this modernization project
+  architectureOverview: {
+    approachDescription: string; // A concise 2-3 sentence overview of the transformed architectural approach. Focus on loose coupling, exposing legacy core through standard versioned APIs, and deploying side-by-side.
+    nodeFramework: string; // Value MUST be: "SAP CAP (Cloud Application Programming model)" with a brief justification
+    runtimePlatform: string; // Value MUST be: "SAP BTP (Business Technology Platform)"
+  };
+  nodeAppBlueprint: {
+    projectStructure: Array<{ path: string; purpose: string }>; // Recommended modular CAP layout: db/schema.cds (CDS schema), srv/service.cds (service definitions), srv/service.ts (business handlers), package.json, Dockerfile.
+    apiEndpoints: Array<{ path: string; method: 'GET' | 'POST' | 'PUT' | 'DELETE'; description: string }>; // REST or OData service endpoints designed to handle the legacy business capability
+  };
+  cloudServices: Array<{
+    serviceName: string; // Name of the cloud BTP service (e.g. XSUAA Identity Provider, Destination service, Event Mesh, BTP PostgreSQL)
+    purpose: string; // Concrete usage in this BTP extension
+    npmPackages: string[]; // Actual npm packages used in CAP/Node.js to integrate with it (e.g. ['@sap/xssec', '@sap/cds'], ['@sap-cloud-sdk/connectivity'], ['pg'], ['@sap/cds-dk'])
+  }>;
+  dataSync: {
+    patternName: string; // E.g. "Event-Driven via BTP Event Mesh", "Transactional BTP Destination Routing"
+    description: string; // Technical description of how data stays consistent between the CAP service and the legacy core.
+  };
+  sapStandardApiMapping?: Array<{
+    legacyTableOrFunction: string; // Legacy database table (e.g., KNA1, BSEG, LFA1, VBAK) or BAPI being integrated
+    sapStandardApiName: string; // Official standard released SAP API name (e.g. API_BUSINESS_PARTNER, API_SALES_ORDER_SRV, API_OUTBOUND_DELIVERY_SRV)
+    apiHubUrl: string; // Reference link to api.sap.com (e.g. https://api.sap.com/api/API_BUSINESS_PARTNER/overview)
+    apiId: string; // Official API ID reference (e.g. SAP_COM_0008, SAP_COM_0109, etc.)
+    description: string; // Clear technical rationale of how this API replaces direct DB SELECTs to keep the core clean
+  }>;
+  securityHardening: Array<{
+    category: string; // e.g. Authentication, Network, Coding, Audit
+    requirement: string; // Technical security rule (e.g. XSUAA JWT Validation, Helmet.js headers, Principal Propagation tunnel, dependency audit)
+    packageOrConfig: string; // Concrete implementation detail (e.g. 'XSUAA middleware', 'app.use(helmet())', 'npm audit --audit-level=high')
+  }>;
+  roadmap: Array<{
+    phase: string; // Phase index (e.g. Phase 0, Phase 1, Phase 2, Phase 3)
+    title: string; // Title of the phase (e.g. Foundation, CAP Service exposure, BTP Event Integration, Production Hardening)
     deliverables: string[]; // 3-4 concrete, down-to-earth engineering deliverables for this phase
   }>;
 }
@@ -339,7 +390,6 @@ ${analysis}`;
         throw new Error('Gemini returned an empty response.');
       }
 
-      const db = getDb();
       await updateDoc(doc(db, 'projects', projectId as string), {
         solutionDesign: responseText,
         status: 'designed'
@@ -441,6 +491,35 @@ ${analysis}`;
         </div>
       `).join('') || '';
 
+            const apiMappingRows = data.sapStandardApiMapping?.map(map => `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold;">${map.legacyTableOrFunction}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-weight: bold; color: #00875a;">${map.sapStandardApiName}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-size: 12px;">${map.apiId}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${map.description}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 12px;"><a href="${map.apiHubUrl}" target="_blank" style="color: #0747a6; font-weight: bold; text-decoration: none;">api.sap.com ➔</a></td>
+        </tr>
+      `).join('') || '';
+
+      const apiMappingSection = data.sapStandardApiMapping && data.sapStandardApiMapping.length > 0 ? `
+        <h2>🌐 SAP API Business Hub Mappings</h2>
+        <p>Decoupled communication mappings dynamically generated to keep the S/4HANA core clean:</p>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 20%;">Legacy Object</th>
+              <th style="width: 25%;">Target Released API</th>
+              <th style="width: 15%;">Hub API ID</th>
+              <th>Description</th>
+              <th style="width: 15%;">Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${apiMappingRows}
+          </tbody>
+        </table>
+      ` : '';
+
       htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -457,6 +536,7 @@ ${analysis}`;
             ul { margin-bottom: 16px; padding-left: 20px; }
             table { width: 100%; border-collapse: collapse; margin: 20px 0; }
             th { background: #f4f5f7; text-align: left; padding: 10px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #6b778c; border-bottom: 2px solid #ebecf0; }
+            td { padding: 10px; border-bottom: 1px solid #ebecf0; }
             .card-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 16px; margin: 20px 0; }
             .summary-box { background: #f4f5f7; border-left: 4px solid #00875a; padding: 20px; border-radius: 0 8px 8px 0; margin-bottom: 30px; }
             .meta { color: #6b778c; font-size: 14px; margin-top: 10px; }
@@ -510,6 +590,8 @@ ${analysis}`;
             <h2>Data Synchronization Pattern</h2>
             <p><strong>Pattern:</strong> <strong>${data.dataSync?.patternName}</strong></p>
             <p>${data.dataSync?.description}</p>
+
+            ${apiMappingSection}
 
             <h2>Security Hardening Blueprint</h2>
             <table>
@@ -741,6 +823,55 @@ ${analysis}`;
               </div>
             </div>
           </div>
+
+          {/* SAP API Business Hub Integration */}
+          {data.sapStandardApiMapping && data.sapStandardApiMapping.length > 0 && (
+            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col animate-in fade-in duration-500">
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h4 className="font-extrabold text-slate-900 text-lg">SAP API Business Hub Integration</h4>
+                  <p className="text-xs text-slate-400 mt-1">Released standard S/4HANA Public APIs mapped to fully decouple direct legacy database access.</p>
+                </div>
+                <span className="bg-blue-50 text-blue-700 border border-blue-150 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
+                  <Network className="w-3.5 h-3.5 text-blue-600 animate-pulse" /> api.sap.com Reference
+                </span>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-105">
+                      <th className="py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Legacy Object</th>
+                      <th className="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Target Released API</th>
+                      <th className="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hub API ID</th>
+                      <th className="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Integration Role / Context</th>
+                      <th className="py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 text-xs">
+                    {data.sapStandardApiMapping.map((map, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-4 font-mono font-bold text-slate-500 select-all">{map.legacyTableOrFunction}</td>
+                        <td className="py-4 px-4 font-extrabold text-slate-800">{map.sapStandardApiName}</td>
+                        <td className="py-4 px-4"><span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded font-mono text-[10px]">{map.apiId}</span></td>
+                        <td className="py-4 px-4 text-slate-600 leading-relaxed max-w-sm">{map.description}</td>
+                        <td className="py-4 text-right">
+                          <a
+                            href={map.apiHubUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 text-[10px] font-black text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-100 hover:border-blue-200 px-3.5 py-2 rounded-xl transition-all shadow-sm uppercase tracking-widest"
+                          >
+                            Open API Hub <ArrowUpRight className="w-3 h-3" />
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Cloud Service Integration & Packages */}
           <div className="space-y-4">
