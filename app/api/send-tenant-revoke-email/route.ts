@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
             <span style="font-weight: 800; color: #334155; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 12px;">💡 How to Restore Live Connections:</span>
             <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #475569; line-height: 1.6;">
               <li style="margin-bottom: 8px;">
-                <strong>Contact Support:</strong> Get in touch with our engineering team at <a href="mailto:support@clean-core.io" style="color: #0284c7; text-decoration: none; font-weight: 600;">support@clean-core.io</a> to request an evaluation extension.
+                <strong>Contact Support:</strong> Get in touch with our engineering team at <a href="mailto:info@clean-core.io" style="color: #0284c7; text-decoration: none; font-weight: 600;">info@clean-core.io</a> to request an evaluation extension.
               </li>
               <li style="margin-bottom: 8px;">
                 <strong>Submit Business Motivation:</strong> You can submit a renewed BYOT request directly within your Pilot Account Settings page by providing an updated business scenario explanation.
