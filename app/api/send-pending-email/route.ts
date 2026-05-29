@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { APP_VERSION } from '@/lib/version';
 
 export async function POST(request: NextRequest) {
   try {
@@ -127,7 +128,8 @@ export async function POST(request: NextRequest) {
             This transactional email was sent to ${email} confirming your pilot program application on Clean-Core.io.
           </p>
           <p style="margin: 0 0 12px 0; font-weight: 600;">
-            Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io
+            Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
+            Clean-Core.io System-Version: ${APP_VERSION} • Enterprise Modernization Suite • Confidential
           </p>
           <p style="margin: 0;">
             <strong>Data Sovereignty (Art. 17 GDPR):</strong> You have the absolute right to erasure. To permanently and instantly wipe all database and authentication entries associated with your profile, visit the <em>Danger Zone</em> inside your Settings dashboard.

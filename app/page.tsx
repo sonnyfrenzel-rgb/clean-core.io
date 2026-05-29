@@ -486,7 +486,7 @@ export default function Home() {
                   onClick={openSignInModal}
                   className="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-6 py-2 rounded-lg font-medium transition-colors shadow-sm text-sm sm:text-base"
                 >
-                  Get Pilot Access
+                  Get Pilot Access or Login
                 </button>
               </div>
             )}
@@ -598,7 +598,7 @@ export default function Home() {
             into <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">Cloud-Native Node.js</span>
           </h1>
           <p className="text-lg md:text-2xl text-gray-700 max-w-3xl mx-auto mb-12 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200">
-            Bridging the gap between SAP legacy and Cloud-Native agility. Automatically transform undocumented custom ABAP operations into clean-code architectures, fully aligned with standard SAP Clean Core extensibility paths for S/4HANA Public Cloud and Private Cloud / RISE.
+            Bridge legacy SAP and cloud-native agility. Automatically transform custom ABAP operations into clean-code architectures fully aligned with official SAP Clean Core guidelines.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
             <button
@@ -606,7 +606,7 @@ export default function Home() {
               disabled={isNavigating}
               className="w-full sm:w-auto flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white px-12 py-5 rounded-2xl font-black text-lg transition-all shadow-lg hover:shadow-2xl hover:-translate-y-1 disabled:bg-green-500/50 disabled:cursor-not-allowed"
             >
-              {isNavigating ? 'Loading...' : (user ? 'Open Workspace' : 'Get Pilot Access')} <ArrowRight className="w-5 h-5" />
+              {isNavigating ? 'Loading...' : (user ? 'Open Workspace' : 'Get Pilot Access or Login')} <ArrowRight className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -653,8 +653,8 @@ export default function Home() {
               },
               {
                 icon: <Sparkles className="w-8 h-8 text-green-600" />,
-                title: 'Knowledge Overlays & AI',
-                desc: 'Provides inline glossary tooltips, a searchable floating reference sidebar, and a context-restricted SAP AI Architect Chatbot.'
+                title: 'BPMN 2.0 & AI Blueprints',
+                desc: 'Maps modernized processes into standard BPMN 2.0 XML with coordinates and swimlanes for native SAP Signavio & Build imports, complete with AI Chatbot support.'
               },
               {
                 icon: <Zap className="w-8 h-8 text-green-600" />,
@@ -898,7 +898,7 @@ export default function Home() {
             disabled={isNavigating}
             className="bg-green-600 hover:bg-green-700 text-white px-10 md:px-12 py-4 md:py-5 rounded-2xl font-bold text-lg transition-all shadow-xl shadow-green-900/20 hover:-translate-y-1 disabled:bg-gray-700 disabled:cursor-not-allowed"
           >
-            {isNavigating ? 'Loading...' : (user ? 'Go to Workspace' : 'Get Pilot Access')}
+            {isNavigating ? 'Loading...' : (user ? 'Go to Workspace' : 'Get Pilot Access or Login')}
           </button>
           
           <div className="mt-24 pt-12 border-t border-gray-800 text-sm text-gray-500 font-light">
