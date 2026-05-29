@@ -236,7 +236,11 @@ ${codeToAnalyze}`;
         });
 
         if (!isAlreadyCharged) {
-          await incrementTransformations();
+          try {
+            await incrementTransformations();
+          } catch (e) {
+            console.error("Non-blocking error during incrementTransformations:", e);
+          }
         }
       } catch (error) {
         handleFirestoreError(error, OperationType.UPDATE, `projects/${projectId}`);
