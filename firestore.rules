@@ -16,8 +16,10 @@ service cloud.firestore {
       return isAuthenticated() &&
         (request.auth.token.get('email', '') == "sonny.frenzel@gmail.com" || 
          request.auth.token.get('email', '') == "sonny.frenzel@googlemail.com" ||
+         request.auth.token.get('email', '') == "info@clean-core.io" ||
          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true));
+          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true ||
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', '') == 'true')));
     }
 
     function isE2ETestUser() {
