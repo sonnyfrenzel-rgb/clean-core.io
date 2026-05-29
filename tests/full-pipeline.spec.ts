@@ -66,7 +66,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
   });
 
   test('should walk through the complete 6 progressive stages using a safe example', async ({ page }) => {
-    test.setTimeout(240 * 1000); // 4 minutes timeout for all 5 live LLM calls
+    test.setTimeout(300 * 1000); // 5 minutes timeout for all 5 live LLM calls
 
     // --- STAGE 0: LOGIN ---
     console.log('Navigating to homepage and signing in...');
@@ -191,8 +191,18 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await page.click('button:has-text("Proceed to Documentation")');
     await page.waitForURL(/.*\/project\/.*\/documentation/);
     
+    // Click "Start Architectural Mapping" if it is present (new project flow)
+    const startButton = page.locator('button:has-text("Start Architectural Mapping")');
+    try {
+      await expect(startButton).toBeVisible({ timeout: 5000 });
+      await startButton.click();
+      console.log('Triggered architectural blueprint documentation generation...');
+    } catch (e) {
+      console.log('Documentation blueprint already exists or is generating, skipping click.');
+    }
+    
     // Verify BPMN process flows are active
-    await expect(page.locator('text=Interactive BPMN Map')).toBeVisible({ timeout: 45000 });
+    await expect(page.locator('text=Interactive BPMN Map')).toBeVisible({ timeout: 60000 });
     console.log('Stage 5 Complete: Architectural documentation mapped successfully.');
 
     // --- STAGE 6: MODULAR HANDOVER DELIVERY ---

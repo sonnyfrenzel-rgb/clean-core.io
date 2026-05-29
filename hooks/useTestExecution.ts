@@ -207,7 +207,9 @@ export const useTestExecution = (projectId: string, project: Project | null, set
         tests: project?.testSuite, 
         projectId, 
         code: project?.generatedCode,
-        selectedTestIds: selectedTestCases.map(tc => tc.id)
+        selectedTestIds: selectedTestCases.map(tc => tc.id),
+        s4Environment: project?.s4Environment,
+        s4Config: project?.s4Config
       };
       
       if (smokeTests.length > 0) {
@@ -259,5 +261,5 @@ export const useTestExecution = (projectId: string, project: Project | null, set
     }
   };
 
-  return { isRunning, testResults, sandboxOutput, aiExplanation, runTestCases };
+  return { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases };
 };

@@ -27,6 +27,8 @@ export interface UserProfile {
   mfaSecret?: string;
   mfaBackupCodes?: string[];
   authMethod?: 'google' | 'password';
+  s4TenantAccessRequested?: boolean;
+  s4TenantAccessAllowed?: boolean;
 }
 
 

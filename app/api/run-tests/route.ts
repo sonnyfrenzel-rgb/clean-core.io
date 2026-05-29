@@ -70,7 +70,7 @@ function parseTapOutput(stdout: string): TestRunResult[] {
 }
 
 export async function POST(req: Request) {
-  const { tests, projectId, code, selectedTestIds } = await req.json();
+  const { tests, projectId, code, selectedTestIds, s4Environment, s4Config } = await req.json();
   
   // Use a project-relative directory for tests
   const testDir = path.join(process.cwd(), 'tmp', 'tests', projectId);
@@ -165,7 +165,13 @@ export async function POST(req: Request) {
         env: { 
           ...process.env, 
           NODE_PATH: path.join(process.cwd(), 'node_modules'),
-          NODE_ENV: 'test'
+          NODE_ENV: 'test',
+          ...(s4Environment === 'live' && s4Config ? {
+            S4_TENANT_URL: s4Config.url || '',
+            S4_USERNAME: s4Config.username || '',
+            S4_PASSWORD: s4Config.password || '',
+            S4_AUTH_TYPE: s4Config.authType || 'basic'
+          } : {})
         } 
       });
       stdout = result.stdout;
