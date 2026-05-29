@@ -8,6 +8,7 @@ import { ShieldCheck, ShieldAlert, CheckCircle2, Trash2, User, Mail, FileText, C
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { clsx } from 'clsx';
+import { APP_VERSION } from '@/lib/version';
 
 export default function AdminConsole() {
   const { profile, loading: profileLoading } = useUserProfile();
@@ -266,6 +267,7 @@ export default function AdminConsole() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black text-green-400 uppercase tracking-widest bg-green-950/60 border border-green-900/40 px-2 py-0.5 rounded-full">Secure Console</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-800 border border-slate-700 px-2.5 py-0.5 rounded-full">{APP_VERSION}</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight mt-1">Admin Control Room</h1>
           </div>

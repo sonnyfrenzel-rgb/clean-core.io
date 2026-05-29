@@ -46,6 +46,7 @@ import {
 import LegalOverlay from './components/LegalOverlay';
 import LandingSlideshow from '@/components/LandingSlideshow';
 import { motion, AnimatePresence } from 'motion/react';
+import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export default function Home() {
   const auth = getAuth();
@@ -902,6 +903,9 @@ export default function Home() {
           
           <div className="mt-24 pt-12 border-t border-gray-800 text-sm text-gray-500 font-light">
             <p>&copy; 2026 Clean-Core.io. All rights reserved.</p>
+            <p className="mt-2 text-xs text-gray-600 font-mono font-bold uppercase tracking-wider">
+              System Version: {APP_VERSION} • {APP_RELEASE_DATE}
+            </p>
             <p className="mt-4 flex flex-wrap justify-center gap-4">
               <button onClick={() => setShowImpressum(true)} className="hover:text-white transition-colors">Legal Notice</button>
               <span className="text-gray-800">|</span>
@@ -970,6 +974,10 @@ export default function Home() {
           <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 p-3 rounded-lg font-bold">
             Important Note: Clean-Core.io is a purely academic, non-commercial tool for testing modern software architectures in the context of legacy code. No paid services are offered.
           </p>
+
+          <div className="pt-4 border-t border-slate-100 text-center text-[10px] text-slate-400 font-black font-mono uppercase tracking-wider">
+            Clean-Core.io {APP_VERSION} ({APP_RELEASE_DATE})
+          </div>
         </div>
       </LegalOverlay>
 
