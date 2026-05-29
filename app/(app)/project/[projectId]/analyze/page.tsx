@@ -7,7 +7,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
-import { UploadCloud, FileCode2, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, Activity, Download, ChevronDown, X, HelpCircle, Info, Sparkles, Trash2, Layers, Shield } from 'lucide-react';
+import { UploadCloud, FileCode2, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, Activity, Download, ChevronDown, X, HelpCircle, Info, Sparkles, Trash2, Layers, Shield, BarChart3 } from 'lucide-react';
 import clsx from 'clsx';
 import nextDynamic from 'next/dynamic';
 import { DocumentSection } from '@/components/DocumentSection';
@@ -936,6 +936,16 @@ ${codeToAnalyze}`;
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* McKinsey TCO & ROI Calculator CTA */}
+                <div className="border-t border-slate-100 pt-4 mt-2">
+                  <a
+                    href={`/project/${projectId}/tco`}
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-br from-[#0b1c30] to-slate-800 hover:shadow-lg text-white font-bold text-xs uppercase tracking-wider h-11 rounded-xl transition-all cursor-pointer shadow-md active:scale-95 text-center no-underline"
+                  >
+                    <BarChart3 className="w-4 h-4 text-green-400" /> C-Level TCO & ROI Calculator 📊
+                  </a>
                 </div>
               </div>
 
