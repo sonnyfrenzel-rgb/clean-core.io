@@ -237,6 +237,42 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
 `);
       }
 
+      if (isAbapCloud) {
+        // Add abapGit package configuration XML
+        zip.file("abapgit.xml", `<?xml version="1.0" encoding="utf-8"?>
+<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+ <asx:values>
+  <DATA>
+   <START_CLASS>ZCL_DEMO_RAP_TEST</START_CLASS>
+   <FOLDER_LOGIC>PREFIX</FOLDER_LOGIC>
+   <VERSION>1.0</VERSION>
+  </DATA>
+ </asx:values>
+</asx:abap>`);
+
+        if (!isModular) {
+          const src = zip.folder("src");
+          if (src && project.generatedCode) {
+            src.file("zcl_demo_rap_behavior.clas.abap", project.generatedCode);
+            src.file("zcl_demo_rap_behavior.clas.xml", `<?xml version="1.0" encoding="utf-8"?>
+<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+ <asx:values>
+  <VSEOCLASS>
+   <CLSNAME>ZCL_DEMO_RAP_BEHAVIOR</CLSNAME>
+   <VERSION>1</VERSION>
+   <LANGU>E</LANGU>
+   <DESCRIPT>RAP Behavior Class</DESCRIPT>
+   <STATE>1</STATE>
+   <CLSCCINCL>X</CLSCCINCL>
+   <FIXPT>X</FIXPT>
+   <UNICODE>X</UNICODE>
+  </VSEOCLASS>
+ </asx:values>
+</asx:abap>`);
+          }
+        }
+      }
+
       if (!isAbapCloud && !isModular) {
         zip.file("package.json", JSON.stringify({
           "name": project.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
