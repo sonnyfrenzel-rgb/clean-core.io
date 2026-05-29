@@ -41,13 +41,13 @@ const steps = [
   {
     time: "00:55 - 01:25",
     title: "Phase 2: Solution Design",
-    desc: "Designing the side-by-side cloud-native target architecture. Maps legacy structures to Express endpoints, and lists BTP bindings.",
-    narration: "Now, we navigate to the Target Architecture Blueprint. Here, we design the modern target cloud-native schema. The solution design console maps custom legacy transactions into versioned API routes and transformed side-by-side Node.js applications. It also details destination manager and XSUAA bindings for SAP BTP.",
+    desc: "Designing the side-by-side cloud-native target architecture. Maps legacy structures to modern endpoints, configures JWT/XSUAA BTP tunnels, and establishes S/4HANA BYOT destination routing.",
+    narration: "Now, we navigate to the Target Architecture Blueprint. Here, we design the modern target cloud-native schema. The solution design console maps custom legacy transactions into versioned API routes and transformed side-by-side Node.js applications. It also details secure JWT/XSUAA BTP tunnels and S/4HANA BYOT destination routing.",
     icon: Award,
     color: "from-amber-500/10 to-orange-500/10 text-amber-600 border-amber-200/50",
     hotspots: [
-      { x: 30, y: 25, question: "What is the Target File Tree?", answer: "A clean, modern SAP CAP (Cloud Application Programming) folder layout: db/ for DB schema, srv/ for business logic, and configs." },
-      { x: 70, y: 25, question: "How does security work?", answer: "The solution configures XSUAA (SAP BTP Security Service) bindings, supporting OAuth 2.0 and JWT token-based authentication." },
+      { x: 30, y: 25, question: "What is S/4HANA BYOT Routing?", answer: "Bring Your Own Tenant (BYOT) allows configuring secure RFC and OData tunnels back to your specific S/4HANA instances, routing live queries safely via the SAP BTP Connectivity service." },
+      { x: 70, y: 25, question: "How does security work?", answer: "The solution configures secure JWT/XSUAA BTP tunnels, supporting OAuth 2.0 and SAML/JWT assertion flows to safely propagate identities without exposing credentials." },
       { x: 50, y: 75, question: "What is the Destination Manager?", answer: "It manages secure connections and principal propagation back to your SAP S/4HANA core, routing OData and RFC queries safely." }
     ]
   },
@@ -67,12 +67,12 @@ const steps = [
   {
     time: "02:00 - 02:30",
     title: "Phase 4: Testing & Sandbox",
-    desc: "Automatic test execution in a secure sandbox. Real-time TAP-formatted execution logs and granular test assertions.",
-    narration: "For verification, the platform automatically mounts the new TypeScript code inside an Isolated Testing Sandbox. The system runs selective, granular unit tests, showing real-time TAP-formatted execution logs and passing assertions.",
+    desc: "Automatic test execution in a secure sandbox. Runs safe sandbox simulations against live connected S/4HANA tenants via BYOT secure connectivity.",
+    narration: "For verification, the platform automatically mounts the new TypeScript code inside an Isolated Testing Sandbox. The system runs selective, granular unit tests and safe sandbox simulations against live connected S/4HANA tenants using BYOT access keys, showing real-time TAP-formatted execution logs and passing assertions.",
     icon: FileText,
     color: "from-cyan-500/10 to-blue-500/10 text-cyan-600 border-cyan-200/50",
     hotspots: [
-      { x: 30, y: 35, question: "What is the Sandbox environment?", answer: "A secure, containerized sandbox that simulates the BTP CAP runtime to run your tests with zero side-effects to any production systems." },
+      { x: 30, y: 35, question: "What is the S/4HANA Live Sandbox?", answer: "A containerized environment simulating BTP runtimes. It enables safe read-only sandbox simulations against live connected S/4HANA tenants using BYOT access keys, preventing write side-effects." },
       { x: 70, y: 40, question: "What is TAP format?", answer: "Test Anything Protocol is a simple, standardized text output format used to log unit test assertions, passes, and fails clearly." },
       { x: 50, y: 80, question: "What are the test cases testing?", answer: "The generated test cases assert data models, validation rules, security checks, and service endpoint response values." }
     ]
@@ -80,13 +80,13 @@ const steps = [
   {
     time: "02:30 - 02:55",
     title: "Phase 5: Process Blueprint",
-    desc: "Interactive business process documentation. Maps L1/L2 domain contexts to L3 BPMN diagrams and detailed L4 Architect's decks.",
-    narration: "In the Process Blueprint workspace, we automatically document the business logic. We capture L1 domain and L2 process group maps, auto-generate standard L3 BPMN flowcharts, and compile L4 Architect's decks detailing task complexity, data integration points, and direct source file references.",
+    desc: "Interactive business process documentation. Maps L1/L2 domain contexts to L3 BPMN diagrams and detailed L4 Architect's decks with native SAP Signavio & SAP Build exports.",
+    narration: "In the Process Blueprint workspace, we automatically document the business logic. The platform maps your processes and generates standard BPMN 2.0 XML exports with complete swimlanes and pools. These blueprints are fully compatible and ready for direct import into SAP Signavio and SAP Build Process Automation, accelerating process harmonization.",
     icon: CheckCircle2,
     color: "from-teal-500/10 to-emerald-500/10 text-teal-600 border-teal-200/50",
     hotspots: [
-      { x: 30, y: 30, question: "What is BPMN L3?", answer: "An interactive, standard BPMN 2.0 flowchart representing the logical sequence of operations and branch decisions." },
-      { x: 70, y: 30, question: "What is the Architect's Deck?", answer: "Detailed Level 4 specifications of each task block including technology stack, data flows, and code references." },
+      { x: 30, y: 30, question: "How do I use BPMN 2.0 XML exports?", answer: "You can download full BPMN 2.0 XML representations of your transformed flows, with accurate swimlanes and pools, designed for direct import into SAP Signavio or SAP Build Process Automation." },
+      { x: 70, y: 30, question: "Is it SAP Signavio compatible?", answer: "Yes, the exported diagrams strictly follow BPMN 2.0 schemas, ensuring seamless import into SAP Signavio Process Manager and SAP Build without manual remodeling." },
       { x: 50, y: 80, question: "How does navigation work?", answer: "Clicking a BPMN flow node automatically scrolls and highlights the respective Level 4 specification deck card." }
     ]
   },
