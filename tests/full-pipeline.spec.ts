@@ -183,7 +183,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await page.click('button:has-text("Run Selected")');
     
     // Verify that test console stubs resolve to visual Green success badges
-    await expect(page.locator('text=Passed')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('text=Passed').first()).toBeVisible({ timeout: 15000 });
     console.log('Stage 4 Complete: Sandbox test case runs executed successfully.');
 
     // --- STAGE 5: PROCESS BLUEPRINTING & DOCUMENTATION ---
