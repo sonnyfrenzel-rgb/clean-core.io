@@ -44,8 +44,8 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && userId == request.auth.uid; // Temporarily bypass isValidUser validation to diagnose schema mismatch
       allow update: if isAuthenticated() && (userId == request.auth.uid || isAdmin()) && 
-                    (!('tier' in request.resource.data) || isAdmin()) && // Only admin can change tier
-                    (!('transformationsLimit' in request.resource.data) || isAdmin());
+                    (!('tier' in request.resource.data) || request.resource.data.tier == resource.data.tier || isAdmin()) && // Allow tier if unchanged
+                    (!('transformationsLimit' in request.resource.data) || request.resource.data.transformationsLimit == resource.data.transformationsLimit || isAdmin());
       allow delete: if isAdmin();
     }
 
