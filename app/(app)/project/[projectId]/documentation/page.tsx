@@ -40,34 +40,152 @@ const extractJSON = (text: string) => {
   }
 };
 
-// Basic BPMN 2.0 XML Generator
+// Enterprise BPMN 2.0 XML Generator for SAP Signavio & SAP Build
 const generateBPMN = (flow: any[]) => {
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-  xml += `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">\n`;
+  xml += `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"\n`;
+  xml += `                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"\n`;
+  xml += `                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"\n`;
+  xml += `                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"\n`;
+  xml += `                  id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">\n`;
+  
+  xml += `  <bpmn:collaboration id="Collaboration_1">\n`;
+  xml += `    <bpmn:participant id="Participant_1" name="Modernized Clean Core Process Flow" processRef="Process_1" />\n`;
+  xml += `  </bpmn:collaboration>\n`;
+
   xml += `  <bpmn:process id="Process_1" isExecutable="false">\n`;
+  
   const sequenceFlows: {id: string, source: string, target: string}[] = [];
+  
   if (Array.isArray(flow)) {
+    // 1. Gather all unique roles for lanes mapping
+    const roles = Array.from(new Set(flow.map(node => node.role || 'System').filter(Boolean)));
+    
+    // 2. Generate LaneSet & Lanes
+    if (roles.length > 0) {
+      xml += `    <bpmn:laneSet id="LaneSet_1">\n`;
+      roles.forEach((role, rIdx) => {
+        xml += `      <bpmn:lane id="Lane_${rIdx}" name="${role}">\n`;
+        flow.forEach(node => {
+          const nodeRole = node.role || 'System';
+          if (nodeRole === role) {
+            xml += `        <bpmn:flowNodeRef>${node.id}</bpmn:flowNodeRef>\n`;
+          }
+        });
+        xml += `      </bpmn:lane>\n`;
+      });
+      xml += `    </bpmn:laneSet>\n`;
+    }
+
+    // 3. Generate Flow Nodes
     flow.forEach((node) => {
       const type = node.type === 'startEvent' ? 'bpmn:startEvent' :
                    node.type === 'endEvent' ? 'bpmn:endEvent' :
-                   node.type === 'gateway' ? 'bpmn:exclusiveGateway' : 'bpmn:task';
+                   node.type === 'gateway' || node.type === 'exclusiveGateway' ? 'bpmn:exclusiveGateway' :
+                   node.type === 'serviceTask' ? 'bpmn:serviceTask' :
+                   node.type === 'userTask' ? 'bpmn:userTask' :
+                   node.type === 'sendTask' ? 'bpmn:sendTask' :
+                   node.type === 'receiveTask' ? 'bpmn:receiveTask' : 'bpmn:task';
+                   
       xml += `    <${type} id="${node.id}" name="${node.name || node.id}">\n`;
-      xml += `    </${type}>\n`;
       if (node.next && Array.isArray(node.next)) {
         node.next.forEach((targetId: string, i: number) => {
+          const flowId = `Flow_${node.id}_${targetId}_${i}`;
+          xml += `      <bpmn:outgoing>${flowId}</bpmn:outgoing>\n`;
           sequenceFlows.push({
-            id: `Flow_${node.id}_${targetId}_${i}`,
+            id: flowId,
             source: node.id,
             target: targetId
           });
         });
       }
+      xml += `    </${type}>\n`;
     });
+
+    // 4. Generate Sequence Flows
     sequenceFlows.forEach(f => {
       xml += `    <bpmn:sequenceFlow id="${f.id}" sourceRef="${f.source}" targetRef="${f.target}" />\n`;
     });
   }
+  
   xml += `  </bpmn:process>\n`;
+
+  // 5. Generate BPMN Diagram Interchange (BPMNDI) for visual layout rendering in Signavio
+  if (Array.isArray(flow)) {
+    const roles = Array.from(new Set(flow.map(node => node.role || 'System').filter(Boolean)));
+    const totalWidth = flow.length * 200 + 150;
+    const totalHeight = Math.max(200, roles.length * 160 + 60);
+
+    xml += `  <bpmndi:BPMNDiagram id="BPMNDiagram_1">\n`;
+    xml += `    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1">\n`;
+    
+    // Participant Pool Bounds
+    xml += `      <bpmndi:BPMNShape id="Participant_1_di" bpmnElement="Participant_1" isHorizontal="true">\n`;
+    xml += `        <dc:Bounds x="80" y="40" width="${totalWidth}" height="${totalHeight}" />\n`;
+    xml += `      </bpmndi:BPMNShape>\n`;
+
+    // Lanes Bounds
+    roles.forEach((role, rIdx) => {
+      xml += `      <bpmndi:BPMNShape id="Lane_${rIdx}_di" bpmnElement="Lane_${rIdx}" isHorizontal="true">\n`;
+      xml += `        <dc:Bounds x="110" y="${rIdx * 160 + 40}" width="${totalWidth - 30}" height="160" />\n`;
+      xml += `      </bpmndi:BPMNShape>\n`;
+    });
+
+    // Nodes Bounds (Grid placement coordinates)
+    flow.forEach((node, idx) => {
+      const role = node.role || 'System';
+      const rIdx = roles.indexOf(role);
+      const yPos = rIdx * 160 + 80;
+      const xPos = idx * 200 + 160;
+      
+      let width = 120;
+      let height = 80;
+      let offset = 0; // Center offset for circular events
+      if (node.type === 'startEvent' || node.type === 'endEvent') {
+        width = 36;
+        height = 36;
+        offset = 22;
+      } else if (node.type === 'gateway' || node.type === 'exclusiveGateway') {
+        width = 50;
+        height = 50;
+        offset = 15;
+      }
+
+      xml += `      <bpmndi:BPMNShape id="${node.id}_di" bpmnElement="${node.id}">\n`;
+      xml += `        <dc:Bounds x="${xPos}" y="${yPos + offset}" width="${width}" height="${height}" />\n`;
+      xml += `      </bpmndi:BPMNShape>\n`;
+    });
+
+    // Connections Edges (Sequence Flows Waypoints)
+    sequenceFlows.forEach(f => {
+      const sourceNode = flow.find(n => n.id === f.source);
+      const targetNode = flow.find(n => n.id === f.target);
+      if (sourceNode && targetNode) {
+        const sourceRole = sourceNode.role || 'System';
+        const targetRole = targetNode.role || 'System';
+        const sIdx = flow.indexOf(sourceNode);
+        const tIdx = flow.indexOf(targetNode);
+        
+        const srIdx = roles.indexOf(sourceRole);
+        const trIdx = roles.indexOf(targetRole);
+
+        const sX = sIdx * 200 + 160 + (sourceNode.type === 'startEvent' || sourceNode.type === 'endEvent' ? 36 : sourceNode.type === 'gateway' || sourceNode.type === 'exclusiveGateway' ? 50 : 120);
+        const sY = srIdx * 160 + 80 + (sourceNode.type === 'startEvent' || sourceNode.type === 'endEvent' ? 40 : sourceNode.type === 'gateway' || sourceNode.type === 'exclusiveGateway' ? 40 : 40);
+
+        const tX = tIdx * 200 + 160;
+        const tY = trIdx * 160 + 80 + (targetNode.type === 'startEvent' || targetNode.type === 'endEvent' ? 40 : targetNode.type === 'gateway' || targetNode.type === 'exclusiveGateway' ? 40 : 40);
+
+        xml += `      <bpmndi:BPMNEdge id="${f.id}_di" bpmnElement="${f.id}">\n`;
+        xml += `        <di:waypoint x="${sX}" y="${sY}" />\n`;
+        xml += `        <di:waypoint x="${tX}" y="${tY}" />\n`;
+        xml += `      </bpmndi:BPMNEdge>\n`;
+      }
+    });
+
+    xml += `    </bpmndi:BPMNPlane>\n`;
+    xml += `  </bpmndi:BPMNDiagram>\n`;
+  }
+
   xml += `</bpmn:definitions>`;
   return xml;
 };
@@ -146,14 +264,24 @@ Based on the context, generate a comprehensive Process Documentation focusing he
 Return ONLY a JSON object wrapped in a markdown code block (\`\`\`json ... \`\`\`). 
 DO NOT include any text before or after the JSON.
 
+CRITICAL BPMN 2.0 & SAP SIGNAVIO INTEGRATION GUIDELINES:
+- In "l3_flow", you MUST map the role responsible for executing each task. Ensure that roles are standard enterprise actors (e.g. "System", "Finance Analyst", "CISO", "Developer").
+- Node "type" inside "l3_flow" MUST utilize standard BPMN 2.0 task classifications:
+  - "startEvent": The trigger point.
+  - "endEvent": The final state.
+  - "gateway" or "exclusiveGateway": Decisions.
+  - "serviceTask": Fully automated backend systems (e.g., calling standard released OData APIs).
+  - "userTask": Steps requiring human action (e.g., CISO approval, manual code check).
+  - "sendTask" / "receiveTask": Asynchronous messaging events.
+
 Structure exactly like this:
 {
   "l1_domain": { "name": "...", "strategicGoal": "...", "owner": "..." },
   "l2_group": { "name": "...", "processArea": "...", "kpis": ["...", "..."] },
   "l3_flow": [
-    { "id": "Start", "name": "Process Trigger", "type": "startEvent", "next": ["Task1"] },
-    { "id": "Task1", "name": "First Step", "type": "task", "role": "User", "next": ["End"] },
-    { "id": "End", "name": "Process Complete", "type": "endEvent", "next": [] }
+    { "id": "Start", "name": "Process Trigger", "type": "startEvent", "role": "System", "next": ["Task1"] },
+    { "id": "Task1", "name": "First Step", "type": "serviceTask|userTask|gateway|endEvent", "role": "System|Developer|CISO|User", "next": ["End"] },
+    { "id": "End", "name": "Process Complete", "type": "endEvent", "role": "System", "next": [] }
   ],
   "l4_tasks": [
     { 

@@ -26,8 +26,8 @@ test.describe('Stage 1 & 2: Analysis & Solution Design E2E Tests', () => {
     const adtCockpitCard = page.locator('text=ADT Cockpit Simulation').first();
     await expect(adtCockpitCard).toBeVisible();
 
-    const knowledgeCard = page.locator('text=Knowledge Overlays & AI').first();
-    await expect(knowledgeCard).toBeVisible();
+    const bpmnCard = page.locator('text=BPMN 2.0 & AI Blueprints').first();
+    await expect(bpmnCard).toBeVisible();
   });
 
   test('should verify the global glossary overlays toggle behavior', async ({ page }) => {
