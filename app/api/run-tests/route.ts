@@ -143,13 +143,15 @@ export async function POST(req: Request) {
     const tsxBin = path.join(process.cwd(), 'node_modules', '.bin', 'tsx');
     
     // Build test execution command with selection filters and TAP reporter
-    let command = `"${tsxBin}" --test --test-reporter=tap "${testPath}"`;
+    let options = '--test --test-reporter=tap';
     if (selectedTestIds && Array.isArray(selectedTestIds) && selectedTestIds.length > 0) {
       const pattern = selectedTestIds.map(id => id.replace(/[^A-Za-z0-9_]/g, '')).filter(Boolean).join('|');
       if (pattern) {
-        command += ` --test-name-pattern="${pattern}"`;
+        options += ` --test-name-pattern="${pattern}"`;
       }
     }
+    
+    const command = `"${tsxBin}" ${options} "${testPath}"`;
     
     let stdout = '';
     let stderr = '';
