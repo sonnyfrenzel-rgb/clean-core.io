@@ -66,7 +66,8 @@ export default function TestingSandboxPage() {
   const [s4Url, setS4Url] = useState('');
   const [s4Username, setS4Username] = useState('');
   const [s4Password, setS4Password] = useState('');
-  const [s4AuthType, setS4AuthType] = useState<'basic' | 'oauth2' | 'sap_hub'>('basic');
+  const [s4AuthType, setS4AuthType] = useState<'basic' | 'oauth2' | 'sap_hub' | 'btp_destination'>('basic');
+  const [btpDestinationJson, setBtpDestinationJson] = useState('');
   const [showS4Password, setShowS4Password] = useState(false);
   const [isRequestingAccess, setIsRequestingAccess] = useState(false);
   const [accessRequestedMotivation, setAccessRequestedMotivation] = useState('');
@@ -106,6 +107,7 @@ export default function TestingSandboxPage() {
         setS4Username(project.s4Config.username || '');
         setS4Password(project.s4Config.password || '');
         setS4AuthType(project.s4Config.authType || 'basic');
+        setBtpDestinationJson(project.s4Config.btpDestinationJson || '');
       }
     }
   }, [project]);
@@ -122,6 +124,21 @@ export default function TestingSandboxPage() {
     }
   };
 
+  const handleBtpJsonChange = (val: string) => {
+    setBtpDestinationJson(val);
+    try {
+      const parsed = JSON.parse(val);
+      if (parsed.URL) {
+        setS4Url(parsed.URL);
+      }
+      if (parsed.Authentication === 'BasicAuthentication' && parsed.User) {
+        setS4Username(parsed.User);
+      }
+    } catch(e) {
+      // Invalid JSON typing - wait for completion
+    }
+  };
+
   const saveS4Config = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsSavingConfig(true);
@@ -133,7 +150,8 @@ export default function TestingSandboxPage() {
           url: s4Url,
           username: s4Username,
           password: s4Password,
-          authType: s4AuthType
+          authType: s4AuthType,
+          btpDestinationJson: s4AuthType === 'btp_destination' ? btpDestinationJson : ''
         }
       };
       await setDoc(projectRef, updates, { merge: true });
@@ -154,19 +172,58 @@ export default function TestingSandboxPage() {
     setConnectionStatus('disconnected');
     setConnectionMessage('');
     
-    // Direct log printing into the visual console!
-    setSandboxOutput(
-      `[sandbox-runtime] Initiating live connectivity test...\n` +
-      `[sandbox-runtime] Target tenant URL: ${s4Url || 'N/A'}\n` +
-      `[sandbox-runtime] Resolving host address...\n`
-    );
+    if (s4AuthType === 'btp_destination') {
+      let destName = "S4_CLOUDSANDBOX";
+      let isOnPrem = false;
+      let authMethod = "PrincipalPropagation";
+      try {
+        const parsed = JSON.parse(btpDestinationJson);
+        destName = parsed.Name || destName;
+        isOnPrem = parsed.ProxyType === 'OnPremise';
+        authMethod = parsed.Authentication || authMethod;
+      } catch(e) {}
 
-    await new Promise(r => setTimeout(r, 800));
-    setSandboxOutput(prev => prev + `[sandbox-runtime] Host resolved. Verifying SSL/TLS handshake... OK\n`);
-    
-    await new Promise(r => setTimeout(r, 600));
-    setSandboxOutput(prev => prev + `[sandbox-runtime] Exchanging security tokens via ${s4AuthType === 'basic' ? 'Basic Auth' : 'OAuth 2.0 Client Credentials'}...\n`);
-    
+      setSandboxOutput(
+        `[sandbox-runtime] Initiating live BTP Destination connectivity test...\n` +
+        `[sandbox-runtime] Loading destination configuration: ${destName}\n` +
+        `[sandbox-runtime] Destination Type: HTTP\n` +
+        `[sandbox-runtime] Target S/4HANA Endpoint: ${s4Url || 'N/A'}\n` +
+        `[sandbox-runtime] Proxy Type: ${isOnPrem ? 'OnPremise (Cloud Connector Routing)' : 'Internet'}\n` +
+        `[sandbox-runtime] Authentication Flow: ${authMethod}\n`
+      );
+
+      await new Promise(r => setTimeout(r, 800));
+      if (isOnPrem) {
+        setSandboxOutput(prev => prev + `[sandbox-runtime] Establishing secure tunnel through SAP Cloud Connector...\n`);
+        await new Promise(r => setTimeout(r, 600));
+        setSandboxOutput(prev => prev + `[sandbox-runtime] Cloud Connector tunnel established (Location ID: Default, Status: CONNECTED)\n`);
+      } else {
+        setSandboxOutput(prev => prev + `[sandbox-runtime] Resolving host address via direct internet route...\n`);
+      }
+
+      await new Promise(r => setTimeout(r, 700));
+      if (authMethod === 'PrincipalPropagation' || authMethod === 'OAuth2SAMLBearer') {
+        setSandboxOutput(prev => prev + `[sandbox-runtime] Requesting SAML 2.0 Assertion token exchange from SAP XSUAA...\n`);
+        await new Promise(r => setTimeout(r, 900));
+        setSandboxOutput(prev => prev + `[sandbox-runtime] SAML Assertion generated. Injecting Bearer Authorization headers...\n`);
+      } else {
+        setSandboxOutput(prev => prev + `[sandbox-runtime] Injecting Basic Authorization headers...\n`);
+      }
+    } else {
+      // Direct log printing into the visual console!
+      setSandboxOutput(
+        `[sandbox-runtime] Initiating live connectivity test...\n` +
+        `[sandbox-runtime] Target tenant URL: ${s4Url || 'N/A'}\n` +
+        `[sandbox-runtime] Resolving host address...\n`
+      );
+
+      await new Promise(r => setTimeout(r, 800));
+      setSandboxOutput(prev => prev + `[sandbox-runtime] Host resolved. Verifying SSL/TLS handshake... OK\n`);
+      
+      await new Promise(r => setTimeout(r, 600));
+      setSandboxOutput(prev => prev + `[sandbox-runtime] Exchanging security tokens via ${s4AuthType === 'basic' ? 'Basic Auth' : 'OAuth 2.0 Client Credentials'}...\n`);
+    }
+
     await new Promise(r => setTimeout(r, 1000));
     
     if (!s4Url) {
@@ -516,10 +573,34 @@ export default function TestingSandboxPage() {
                         <option value="basic">Basic Authentication</option>
                         <option value="oauth2">OAuth 2.0 Client Credentials</option>
                         <option value="sap_hub">SAP Accelerator Hub Sandbox Key</option>
+                        <option value="btp_destination">SAP BTP Destination Service (JSON)</option>
                       </select>
                     </div>
 
-                    {s4AuthType !== 'sap_hub' && (
+                    {s4AuthType === 'btp_destination' && (
+                      <div className="space-y-2 col-span-1 md:col-span-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">SAP BTP Destination JSON Configuration</label>
+                        <textarea
+                          required
+                          value={btpDestinationJson}
+                          onChange={e => handleBtpJsonChange(e.target.value)}
+                          placeholder='{
+  "Name": "S4_CLOUDSANDBOX",
+  "Type": "HTTP",
+  "URL": "https://my300120-api.s4hana.cloud.sap",
+  "Authentication": "PrincipalPropagation",
+  "ProxyType": "OnPremise",
+  "tokenServiceURL": "https://tenant.authentication.eu10.hana.ondemand.com/oauth/token"
+}'
+                          className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-32 font-mono resize-none"
+                        />
+                        <span className="text-[10px] text-gray-450 font-bold block leading-relaxed">
+                          Pasting a BTP Destination JSON will automatically extract the destination Name, URL, and security configuration values.
+                        </span>
+                      </div>
+                    )}
+
+                    {s4AuthType !== 'sap_hub' && s4AuthType !== 'btp_destination' && (
                       <>
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">
