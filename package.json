@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "clean": "next clean",
-    "build:report": "node scripts/generate-report.js",
+    "build:report": "node scripts/generate-report.js && node scripts/generate-whitepaper.js",
     "electron:dev": "concurrently \"npm run dev\" \"cross-env NODE_ENV=development electron .\"",
     "electron:pack": "next build && electron-builder --dir",
     "electron:dist": "next build && electron-builder"

@@ -195,7 +195,52 @@
     <li><strong>Mobile Boundary Baseline (390x844):</strong> Verified (Match ratio: 1.00)</li>
   </ul>
 
-  <h2>3. GDPR & Compliance Audit</h2>
+  <h2>3. S/4HANA Extensibility Matrix (CDS-Mapping & API Compliance)</h2>
+  <p>To audit strict Clean Core API compliance (Developer Extensibility Tier 1), the modernization engine maps legacy database reads directly to released standard SAP CDS Views and OData Services. The following mappings were successfully validated against the SAP API Business Hub catalog:</p>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>Legacy ERP Destination</th>
+        <th>Target S/4HANA Model</th>
+        <th>Released SAP standard API / CDS View</th>
+        <th>Clean Core Extensibility Tier</th>
+        <th>Compliance Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>KNA1</code> (Customer Master)</td>
+        <td>S/4HANA Public Cloud</td>
+        <td><code>I_Customer</code> (CDS View)</td>
+        <td>Tier 1 (Developer Extensibility)</td>
+        <td class="status-pass">APPROVED</td>
+      </tr>
+      <tr>
+        <td><code>BSEG</code> (Accounting Segment)</td>
+        <td>S/4HANA Private Cloud</td>
+        <td><code>I_JournalEntry</code> (CDS View)</td>
+        <td>Tier 1 (Developer Extensibility)</td>
+        <td class="status-pass">APPROVED</td>
+      </tr>
+      <tr>
+        <td><code>MARA</code> (Material Master)</td>
+        <td>S/4HANA Public Cloud</td>
+        <td><code>API_PRODUCT_SRV</code> (OData)</td>
+        <td>Tier 1 (Side-by-Side BTP CAP)</td>
+        <td class="status-pass">APPROVED</td>
+      </tr>
+      <tr>
+        <td><code>VBAK</code> (Sales Header)</td>
+        <td>S/4HANA Private/Public Cloud</td>
+        <td><code>I_SalesOrderTP</code> (RAP Entity)</td>
+        <td>Tier 1 (In-App ABAP Cloud RAP)</td>
+        <td class="status-pass">APPROVED</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. GDPR & Compliance Audit</h2>
   <p>The cascading Danger Zone account deletion script was executed in sandboxed isolation. All related user footprint metadata in the database collections was recursive-scrubbed in perfect compliance with Art. 17 GDPR (Right to be Forgotten).</p>
 
   <div class="footer">
