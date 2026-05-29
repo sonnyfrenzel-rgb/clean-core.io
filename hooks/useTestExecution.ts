@@ -78,7 +78,7 @@ export const useTestExecution = (projectId: string, project: Project | null, set
     }
   };
 
-  const executeWithHealing = async (payload: { tests: Project['testSuite']; projectId: string; code: string | undefined }, maxRetries = 1): Promise<{ exitCode: number; output: string; error?: string }> => {
+  const executeWithHealing = async (payload: { tests: Project['testSuite']; projectId: string; code: string | undefined }, maxRetries = 1): Promise<{ exitCode: number; output: string; error?: string; testResults?: any[] }> => {
     let currentPayload = { ...payload };
     
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -98,7 +98,7 @@ export const useTestExecution = (projectId: string, project: Project | null, set
         throw new Error('Network error. Test Sandbox might be restarting.');
       }
       
-      let result: { exitCode: number; output: string; error?: string };
+      let result: { exitCode: number; output: string; error?: string; testResults?: any[] };
       try {
         const textResponse = await response.text();
         result = JSON.parse(textResponse);
