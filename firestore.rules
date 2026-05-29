@@ -149,5 +149,12 @@ service cloud.firestore {
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
+
+    match /tenant_access_requests/{requestId} {
+      allow read: if isAuthenticated() && (requestId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && requestId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
   }
 }

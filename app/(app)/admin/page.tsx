@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { ShieldCheck, ShieldAlert, CheckCircle2, Trash2, User, Mail, FileText, Clock, Search, Shield, UserX, UserCheck } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, CheckCircle2, Trash2, User, Mail, FileText, Clock, Search, Shield, UserX, UserCheck, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
+import { clsx } from 'clsx';
 
 export default function AdminConsole() {
   const { profile, loading: profileLoading } = useUserProfile();
@@ -27,21 +28,43 @@ export default function AdminConsole() {
     setLoadingRequests(true);
     const q = query(collection(db, 'registration_requests'), orderBy('createdAt', 'desc'));
     
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetched = snapshot.docs.map(docSnap => {
-        const data = docSnap.data();
-        let dateObj = new Date();
-        if (data.createdAt) {
-          dateObj = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
-        }
-        return {
-          uid: docSnap.id,
-          ...data,
-          createdAt: dateObj
-        };
-      });
-      setRequests(fetched);
-      setLoadingRequests(false);
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      try {
+        const fetched = await Promise.all(snapshot.docs.map(async (docSnap) => {
+          const data = docSnap.data();
+          const uid = docSnap.id;
+          
+          let s4TenantAccessAllowed = false;
+          let s4TenantAccessRequested = false;
+          try {
+            const userSnap = await getDoc(doc(db, 'users', uid));
+            if (userSnap.exists()) {
+              const userData = userSnap.data();
+              s4TenantAccessAllowed = userData.s4TenantAccessAllowed || false;
+              s4TenantAccessRequested = userData.s4TenantAccessRequested || false;
+            }
+          } catch (userErr) {
+            console.error(`Error reading user profile for S/4 flags:`, userErr);
+          }
+
+          let dateObj = new Date();
+          if (data.createdAt) {
+            dateObj = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+          }
+          return {
+            uid,
+            ...data,
+            s4TenantAccessAllowed,
+            s4TenantAccessRequested,
+            createdAt: dateObj
+          };
+        }));
+        setRequests(fetched);
+      } catch (err) {
+        console.error('Error fetching user profiles during snapshot processing:', err);
+      } finally {
+        setLoadingRequests(false);
+      }
     }, (err) => {
       console.error('Error listing registration requests:', err);
       setLoadingRequests(false);
@@ -135,6 +158,57 @@ export default function AdminConsole() {
     } catch (err) {
       console.error('Error deleting user:', err);
       alert('Failed to delete user.');
+    } finally {
+      setActionUid(null);
+      setActionType(null);
+    }
+  };
+
+  const handleToggleS4Access = async (uid: string, currentAllowed: boolean) => {
+    setActionUid(uid);
+    setActionType(currentAllowed ? 'revoking' : 'approving');
+    const targetReq = requests.find(r => r.uid === uid);
+    try {
+      // 1. Update user profile s4 flags
+      const userRef = doc(db, 'users', uid);
+      await setDoc(userRef, {
+        s4TenantAccessAllowed: !currentAllowed,
+        s4TenantAccessRequested: false
+      }, { merge: true });
+
+      // 2. Update tenant_access_requests status if exists
+      const regRef = doc(db, 'tenant_access_requests', uid);
+      const regSnap = await getDoc(regRef);
+      if (regSnap.exists()) {
+        await setDoc(regRef, {
+          status: !currentAllowed ? 'approved' : 'pending'
+        }, { merge: true });
+      }
+
+      // 3. Dispatch premium welcome email if we granted access
+      if (!currentAllowed && targetReq) {
+        try {
+          await fetch('/api/send-tenant-approval-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email: targetReq.email,
+              name: targetReq.name
+            })
+          });
+        } catch (emailErr) {
+          console.error("Failed to send tenant activation email:", emailErr);
+        }
+      }
+
+      // Update local state for immediate feedback
+      setRequests(prev => prev.map(r => r.uid === uid ? { ...r, s4TenantAccessAllowed: !currentAllowed, s4TenantAccessRequested: false } : r));
+
+    } catch (err) {
+      console.error('Error toggling S/4 access:', err);
+      alert('Failed to update tenant access privileges.');
     } finally {
       setActionUid(null);
       setActionType(null);
@@ -301,6 +375,16 @@ export default function AdminConsole() {
                           <Clock size={10} /> Pending Review
                         </span>
                       )}
+                      {req.s4TenantAccessAllowed && (
+                        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-blue-200">
+                          <Globe size={10} /> S/4 Live Bridge Unlocked
+                        </span>
+                      )}
+                      {!req.s4TenantAccessAllowed && req.s4TenantAccessRequested && (
+                        <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-indigo-200 animate-pulse">
+                          <Globe size={10} /> BYOT Requested
+                        </span>
+                      )}
                     </div>
 
                     {/* Meta information */}
@@ -349,6 +433,21 @@ export default function AdminConsole() {
                             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 border border-slate-700 whitespace-nowrap"
                           >
                             <UserX className="w-4 h-4" /> Revoke
+                          </button>
+                        )}
+
+                        {req.status === 'approved' && (
+                          <button
+                            onClick={() => handleToggleS4Access(req.uid, req.s4TenantAccessAllowed)}
+                            className={clsx(
+                              "flex-1 md:flex-none flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 whitespace-nowrap border",
+                              req.s4TenantAccessAllowed 
+                                ? "bg-blue-50 hover:bg-blue-100 text-blue-650 border-blue-200 shadow-sm" 
+                                : "bg-white hover:bg-gray-50 text-gray-700 border-gray-250 shadow-sm"
+                            )}
+                          >
+                            <Globe className="w-4 h-4" />
+                            {req.s4TenantAccessAllowed ? 'Revoke BYOT' : 'Grant BYOT'}
                           </button>
                         )}
 
