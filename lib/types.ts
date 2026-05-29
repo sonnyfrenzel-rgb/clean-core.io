@@ -40,7 +40,8 @@ export interface S4Config {
   url?: string;
   username?: string;
   password?: string;
-  authType?: 'basic' | 'oauth2' | 'sap_hub';
+  authType?: 'basic' | 'oauth2' | 'sap_hub' | 'btp_destination';
+  btpDestinationJson?: string;
 }
 
 export interface Project {

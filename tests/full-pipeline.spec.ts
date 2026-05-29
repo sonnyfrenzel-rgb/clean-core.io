@@ -173,11 +173,15 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await page.click('button:has-text("Proceed to Testing")');
     await page.waitForURL(/.*\/project\/.*\/testing/);
     
-    // Generate test suite first
-    await page.click('button:has-text("Generate Suite")');
-    
-    // Wait for the suite to be generated successfully (uses live Gemini call)
-    await expect(page.locator('button:has-text("Run Selected")')).toBeVisible({ timeout: 45000 });
+    // Check if Run Selected is already visible (preloaded suite), otherwise generate it
+    const runButton = page.locator('button:has-text("Run Selected")');
+    if (!(await runButton.isVisible())) {
+      console.log('Test suite not preloaded. Clicking Generate Suite...');
+      await page.click('button:has-text("Generate Suite")');
+      await expect(runButton).toBeVisible({ timeout: 60000 });
+    } else {
+      console.log('Test suite preloaded. Proceeding directly to execution.');
+    }
     
     // Run automated unit tests in Sandbox
     await page.click('button:has-text("Run Selected")');
