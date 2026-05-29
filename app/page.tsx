@@ -639,12 +639,12 @@ export default function Home() {
               {
                 icon: <Cpu className="w-8 h-8 text-green-600" />,
                 title: 'Dual RAP & CAP Engine',
-                desc: 'Generates clean In-App ABAP Cloud RAP handlers formatted as abapGit directories, or Side-by-Side BTP CAP Node.js services complete with ERP event triggers.'
+                desc: 'Generates clean In-App ABAP Cloud RAP handlers formatted as standard abapGit directories (src/ and abapgit.xml) for local ADT import, or decoupled BTP CAP Node.js services.'
               },
               {
                 icon: <Activity className="w-8 h-8 text-green-600" />,
-                title: 'Business Value Audit',
-                desc: 'Quantifies legacy custom intellectual property value, estimates technical debt, and outlines plain-English roadmaps tailored for non-technical stakeholders.'
+                title: 'Business Value Audit & TCO',
+                desc: 'Quantifies technical debt and custom IP value. Features an interactive C-Level TCO & ROI calculator predicting upgrade-impact savings based on Clean Core Scores.'
               },
               {
                 icon: <ShieldCheck className="w-8 h-8 text-green-600" />,
@@ -659,7 +659,7 @@ export default function Home() {
               {
                 icon: <Zap className="w-8 h-8 text-green-600" />,
                 title: 'S/4HANA Live Bridge (BYOT)',
-                desc: 'Securely connect your own S/4HANA Public Cloud Test/Sandbox Tenant to run E2E unit tests on live ERP destinations, complete with an encrypted credentials vault.'
+                desc: 'Connect live sandbox tenants using Basic Auth or standard BTP Destination JSON configs. Supports OAuth 2.0 SAML Bearer token exchange and Cloud Connector tunnels.'
               },
               {
                 icon: <LayoutTemplate className="w-8 h-8 text-green-600" />,
