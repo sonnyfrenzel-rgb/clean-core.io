@@ -11,7 +11,7 @@ const firebaseApp = initializeApp(firebaseConfig);
 const firestoreDb = initializeFirestore(firebaseApp, {}, firebaseConfig.firestoreDatabaseId);
 const firebaseAuth = getAuth(firebaseApp);
 
-const TEST_EMAIL = 'superduper-e2e@cleancore-test.io';
+const TEST_EMAIL = `superduper-e2e-${Date.now()}@cleancore-test.io`;
 const TEST_PASSWORD = 'SuperPassword123!';
 
 test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', () => {
@@ -42,7 +42,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
         firstName: 'Super',
         lastName: 'Duper E2E',
         email: TEST_EMAIL,
-        tier: 'pilot',
+        tier: 'starter',
         status: 'approved',
         transformationsUsed: 0,
         transformationsLimit: 25,
@@ -53,14 +53,14 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
         isAdmin: false,
         authMethod: 'password',
       });
-      console.log('Created new E2E test user profile.');
+      console.log('Created new E2E test user profile with starter tier.');
     } else {
       const data = docSnap.data();
-      if (data.status !== 'approved') {
-        await setDoc(userDocRef, { status: 'approved' }, { merge: true });
-        console.log('Approved existing E2E test user profile.');
+      if (data.status !== 'approved' || data.tier !== 'starter') {
+        await setDoc(userDocRef, { status: 'approved', tier: 'starter' }, { merge: true });
+        console.log('Approved existing E2E test user profile and updated to starter tier.');
       } else {
-        console.log('E2E test user profile already exists and is approved.');
+        console.log('E2E test user profile already exists, is approved, and has starter tier.');
       }
     }
   });
@@ -214,7 +214,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     const downloadPromise = page.waitForEvent('download');
     
     // Click ZIP Download Handover Bundle
-    await page.click('button:has-text("Download Handover Bundle")');
+    await page.click('button:has-text("Download Bundle")');
     const download = await downloadPromise;
 
     // Assert download is successful
