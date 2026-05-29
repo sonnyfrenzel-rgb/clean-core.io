@@ -48,7 +48,6 @@ export function getDb(): Firestore {
         const dbId = process.env.NEXT_PUBLIC_FIRESTORE_DB_ID || firebaseConfig.firestoreDatabaseId;
         dbInstance = initializeFirestore(getFirebaseApps(), {
             experimentalForceLongPolling: true,
-            useFetchStreams: false,
         }, dbId);
     }
     return dbInstance;
