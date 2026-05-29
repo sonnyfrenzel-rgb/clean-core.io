@@ -654,6 +654,21 @@ export default function Home() {
                 icon: <Sparkles className="w-8 h-8 text-green-600" />,
                 title: 'Knowledge Overlays & AI',
                 desc: 'Provides inline glossary tooltips, a searchable floating reference sidebar, and a context-restricted SAP AI Architect Chatbot.'
+              },
+              {
+                icon: <Zap className="w-8 h-8 text-green-600" />,
+                title: 'S/4HANA Live Bridge (BYOT)',
+                desc: 'Securely connect your own S/4HANA Public Cloud Test/Sandbox Tenant to run E2E unit tests on live ERP destinations, complete with an encrypted credentials vault.'
+              },
+              {
+                icon: <LayoutTemplate className="w-8 h-8 text-green-600" />,
+                title: 'Premium Desktop Sync',
+                desc: 'Run as a borderless, contextualized desktop client with native OS sync, context isolation, and secure local environment sandboxing.'
+              },
+              {
+                icon: <Shield className="w-8 h-8 text-green-600" />,
+                title: 'GDPR Sovereign Deletion',
+                desc: 'Full Art. 17 DSGVO cascade-erasure. Permanently purge your profile, secure key vault, and project transformations with a single click.'
               }
             ].map((feature, idx) => (
               <motion.div 
