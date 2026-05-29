@@ -362,7 +362,7 @@ export default function AdminConsole() {
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all p-5 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 w-full"
+                  className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all p-5 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 w-full"
                 >
                   <div className="space-y-3.5 flex-1 w-full">
                     {/* Header info */}
@@ -406,7 +406,7 @@ export default function AdminConsole() {
                       <div className="bg-gray-50 border border-gray-200 rounded-xl p-3.5 text-xs flex gap-2 w-full max-w-xl">
                         <FileText className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
                         <div>
-                          <label className="block text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Motivation</label>
+                           <label className="block text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Motivation</label>
                           <p className="text-gray-700 font-medium italic leading-relaxed">"{req.motivation}"</p>
                         </div>
                       </div>
@@ -414,9 +414,9 @@ export default function AdminConsole() {
                   </div>
 
                   {/* Actions column */}
-                  <div className="flex flex-row md:flex-row gap-2 shrink-0 w-full md:w-auto border-t border-gray-100 md:border-t-0 pt-4 md:pt-0 justify-end">
+                  <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto border-t border-gray-100 sm:border-t-0 pt-4 sm:pt-0 justify-end">
                     {req.uid === actionUid ? (
-                      <div className="flex items-center justify-center py-2.5 px-6 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 w-full md:w-36">
+                      <div className="flex items-center justify-center py-2.5 px-6 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 w-full sm:w-36">
                         <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
                         Updating...
                       </div>
@@ -425,14 +425,14 @@ export default function AdminConsole() {
                         {req.status === 'pending' ? (
                           <button
                             onClick={() => handleApprove(req.uid)}
-                            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95 whitespace-nowrap"
+                            className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95 whitespace-nowrap"
                           >
                             <UserCheck className="w-4 h-4" /> Approve
                           </button>
                         ) : (
                           <button
                             onClick={() => handleRevoke(req.uid)}
-                            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 border border-slate-700 whitespace-nowrap"
+                            className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 border border-slate-700 whitespace-nowrap"
                           >
                             <UserX className="w-4 h-4" /> Revoke
                           </button>
@@ -442,7 +442,7 @@ export default function AdminConsole() {
                           <button
                             onClick={() => handleToggleS4Access(req.uid, req.s4TenantAccessAllowed)}
                             className={clsx(
-                              "flex-1 md:flex-none flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 whitespace-nowrap border",
+                              "w-full sm:w-auto flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 whitespace-nowrap border",
                               req.s4TenantAccessAllowed 
                                 ? "bg-blue-50 hover:bg-blue-100 text-blue-650 border-blue-200 shadow-sm" 
                                 : "bg-white hover:bg-gray-50 text-gray-700 border-gray-250 shadow-sm"
@@ -455,7 +455,7 @@ export default function AdminConsole() {
 
                         <button
                           onClick={() => handleDelete(req.uid)}
-                          className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-650 border border-red-200 px-3.5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 whitespace-nowrap"
+                          className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-650 border border-red-200 px-3.5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 whitespace-nowrap"
                           title="Permanently delete application record"
                         >
                           <Trash2 className="w-4 h-4" /> Delete
