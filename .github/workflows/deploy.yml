@@ -38,9 +38,16 @@ jobs:
         run: npx playwright test
         env:
           NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.TEST_GEMINI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.TEST_GEMINI_API_KEY }}
 
       - name: Generate QE Quality Engineering Report
         run: npm run build:report
+
+      - name: Upload QE Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qe-report
+          path: public/QE_Engineer_Report.pdf
 
   # Job 2: Build & Deploy to Google Cloud Run
   deploy:
@@ -49,6 +56,12 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Download QE Report Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: qe-report
+          path: public/
 
       # Determine environment specific variables based on push branch
       - name: Set Environment Context
