@@ -15,7 +15,9 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() &&
         (request.auth.token.get('email', '') == "sonny.frenzel@gmail.com" || 
-         request.auth.token.get('email', '') == "sonny.frenzel@googlemail.com");
+         request.auth.token.get('email', '') == "sonny.frenzel@googlemail.com" ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true));
     }
 
     function isE2ETestUser() {
@@ -46,7 +48,7 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && userId == request.auth.uid; // Temporarily bypass isValidUser validation to diagnose schema mismatch
+      allow create: if isAuthenticated() && (userId == request.auth.uid || isAdmin()); // Allow admin to create user profiles if they don't exist
       allow update: if isAuthenticated() && (userId == request.auth.uid || isAdmin()) && 
                     (!('tier' in request.resource.data) || request.resource.data.tier == resource.data.tier || isAdmin() || isE2ETestUser()) && // Allow tier if unchanged or E2E user
                     (!('transformationsLimit' in request.resource.data) || request.resource.data.transformationsLimit == resource.data.transformationsLimit || isAdmin() || isE2ETestUser());
