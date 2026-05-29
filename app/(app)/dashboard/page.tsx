@@ -312,7 +312,8 @@ export default function Dashboard() {
         status: 'uploaded',
         legacyCode: exampleToStart.code,
         userId: user.uid,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        fromExample: true
       });
       setProjectName('');
       setExampleToStart(null);

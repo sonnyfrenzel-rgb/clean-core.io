@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { initializeFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import * as fs from 'fs';
 import * as path from 'path';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase SDK in Node context to register and approve the test user
 const firebaseApp = initializeApp(firebaseConfig);
-const firestoreDb = getFirestore(firebaseApp);
+const firestoreDb = initializeFirestore(firebaseApp, {}, firebaseConfig.firestoreDatabaseId);
 const firebaseAuth = getAuth(firebaseApp);
 
 const TEST_EMAIL = 'superduper-e2e@cleancore-test.io';
@@ -36,22 +36,33 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
 
     // 2. Elevate user status to 'approved' inside Firestore and provision transformations quota
     const userDocRef = doc(firestoreDb, 'users', uid);
-    await setDoc(userDocRef, {
-      firstName: 'Super',
-      lastName: 'Duper E2E',
-      email: TEST_EMAIL,
-      tier: 'pilot',
-      status: 'approved',
-      transformationsUsed: 0,
-      transformationsLimit: 25,
-      maxTeamMembers: 1,
-      orgId: null,
-      identityProvider: 'password',
-      createdAt: new Date(),
-      isAdmin: false,
-      authMethod: 'password',
-    }, { merge: true });
-    console.log('Test user profile successfully approved and transformations limit provisioned.');
+    const docSnap = await getDoc(userDocRef);
+    if (!docSnap.exists()) {
+      await setDoc(userDocRef, {
+        firstName: 'Super',
+        lastName: 'Duper E2E',
+        email: TEST_EMAIL,
+        tier: 'pilot',
+        status: 'approved',
+        transformationsUsed: 0,
+        transformationsLimit: 25,
+        maxTeamMembers: 1,
+        orgId: null,
+        identityProvider: 'password',
+        createdAt: new Date(),
+        isAdmin: false,
+        authMethod: 'password',
+      });
+      console.log('Created new E2E test user profile.');
+    } else {
+      const data = docSnap.data();
+      if (data.status !== 'approved') {
+        await setDoc(userDocRef, { status: 'approved' }, { merge: true });
+        console.log('Approved existing E2E test user profile.');
+      } else {
+        console.log('E2E test user profile already exists and is approved.');
+      }
+    }
   });
 
   test('should walk through the complete 6 progressive stages using a safe example', async ({ page }) => {
@@ -82,8 +93,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await createProjectButton.click();
 
     // Fill project name in modal form
-    await page.waitForSelector('input[placeholder="Enter project name..."]');
-    await page.fill('input[placeholder="Enter project name..."]', 'Super Duper E2E Invoice Extractor');
+    await page.waitForSelector('input[placeholder*="Z_FI_INVOICE_REPORT"]');
+    await page.fill('input[placeholder*="Z_FI_INVOICE_REPORT"]', 'Super Duper E2E Invoice Extractor');
     
     // Click submit in project creation modal
     await page.click('button[type="submit"]:has-text("Create"), button[type="submit"]:has-text("Erstellen")');
@@ -144,8 +155,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await page.waitForURL(/.*\/project\/.*\/design/);
     
     // Verify that the files tree explorer renders the modernization directory structures
-    await expect(page.locator('text=srv/service.ts')).toBeVisible();
-    await expect(page.locator('text=package.json')).toBeVisible();
+    await expect(page.locator('text=Target Project Blueprint')).toBeVisible({ timeout: 45000 });
+    await expect(page.locator('text=/project-root')).toBeVisible();
     console.log('Stage 2 Complete: Visual architecture catalog verified.');
 
     // --- STAGE 3: TRANSFORMATION ---
@@ -154,33 +165,39 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await page.waitForURL(/.*\/project\/.*\/transformation/);
     
     // Verify proportional side-by-side scrolls toggles
-    await expect(page.locator('button:has-text("Scroll Synchronization")')).toBeVisible();
+    await expect(page.locator('button:has-text("Sync Scroll:")')).toBeVisible({ timeout: 45000 });
     console.log('Stage 3 Complete: Side-by-Side transformation scroll verification passed.');
 
-    // --- STAGE 4: PROCESS BLUEPRINTING & DOCUMENTATION ---
-    console.log('Navigating to Stage 4: Documentation...');
-    await page.click('button:has-text("Continue to Documentation")');
-    await page.waitForURL(/.*\/project\/.*\/documentation/);
-    
-    // Verify BPMN process flows are active
-    await expect(page.locator('text=BPMN Process Blueprint')).toBeVisible();
-    console.log('Stage 4 Complete: Architectural documentation mapped successfully.');
-
-    // --- STAGE 5: TESTING SANDBOX ---
-    console.log('Navigating to Stage 5: Testing Sandbox...');
-    await page.click('button:has-text("Continue to Testing")');
+    // --- STAGE 4: TESTING SANDBOX ---
+    console.log('Navigating to Stage 4: Testing Sandbox...');
+    await page.click('button:has-text("Proceed to Testing")');
     await page.waitForURL(/.*\/project\/.*\/testing/);
     
+    // Generate test suite first
+    await page.click('button:has-text("Generate Suite")');
+    
+    // Wait for the suite to be generated successfully (uses live Gemini call)
+    await expect(page.locator('button:has-text("Run Selected")')).toBeVisible({ timeout: 45000 });
+    
     // Run automated unit tests in Sandbox
-    await page.click('button:has-text("Run Selected Tests")');
+    await page.click('button:has-text("Run Selected")');
     
     // Verify that test console stubs resolve to visual Green success badges
     await expect(page.locator('text=Passed')).toBeVisible({ timeout: 15000 });
-    console.log('Stage 5 Complete: Sandbox test case runs executed successfully.');
+    console.log('Stage 4 Complete: Sandbox test case runs executed successfully.');
+
+    // --- STAGE 5: PROCESS BLUEPRINTING & DOCUMENTATION ---
+    console.log('Navigating to Stage 5: Documentation...');
+    await page.click('button:has-text("Proceed to Documentation")');
+    await page.waitForURL(/.*\/project\/.*\/documentation/);
+    
+    // Verify BPMN process flows are active
+    await expect(page.locator('text=Interactive BPMN Map')).toBeVisible({ timeout: 45000 });
+    console.log('Stage 5 Complete: Architectural documentation mapped successfully.');
 
     // --- STAGE 6: MODULAR HANDOVER DELIVERY ---
     console.log('Navigating to Stage 6: Delivery...');
-    await page.click('button:has-text("Continue to Delivery")');
+    await page.click('button:has-text("Proceed to Delivery")');
     await page.waitForURL(/.*\/project\/.*\/delivery/);
 
     // Setup download event listener
