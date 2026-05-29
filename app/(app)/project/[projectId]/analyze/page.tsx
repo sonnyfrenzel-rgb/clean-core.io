@@ -42,7 +42,8 @@ export default function AnalyzePage() {
   const [targetDeployment, setTargetDeployment] = useState<'public' | 'private' | null>(null);
   const [showConceptQuestion, setShowConceptQuestion] = useState(false);
   const [modalSelection, setModalSelection] = useState<'public' | 'private' | null>(null);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const isFromExample = searchParams.get('fromExample') === 'true' || !!project?.fromExample || project?.isExample;
+  const [acceptedTerms, setAcceptedTerms] = useState(searchParams.get('fromExample') === 'true');
 
   const markdownComponents: Components = {
     h1: ({ node, ...props }) => (
@@ -81,6 +82,9 @@ export default function AnalyzePage() {
           if (data.s4Deployment) {
             setTargetDeployment(data.s4Deployment as 'public' | 'private');
           }
+          if (data.fromExample || data.isExample || searchParams.get('fromExample') === 'true') {
+            setAcceptedTerms(true);
+          }
         }
       } catch (error) {
         handleFirestoreError(error, OperationType.GET, `projects/${projectId}`);
@@ -89,7 +93,7 @@ export default function AnalyzePage() {
       }
     };
     fetchProject();
-  }, [projectId]);
+  }, [projectId, searchParams]);
 
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState('');
@@ -1720,7 +1724,7 @@ ${codeToAnalyze}`;
               </div>
             )}
 
-            {legacyCode && (
+            {legacyCode && !isFromExample && (
               <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-4 animate-in slide-in-from-bottom-4 mb-8">
                 <h4 className="text-base font-bold text-gray-900 flex items-center gap-2">
                   <Shield size={16} className="text-green-600 animate-pulse" /> Security Scan & Pilot Agreement
@@ -1765,6 +1769,24 @@ ${codeToAnalyze}`;
                   placeholder="Paste legacy code here..."
                   spellCheck={false}
                 />
+              </div>
+            )}
+
+            {legacyCode && !isFromExample && (!targetDeployment || !acceptedTerms) && (
+              <div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl text-xs text-amber-900 leading-relaxed font-semibold flex items-start gap-3 mt-8 animate-in slide-in-from-bottom-2 duration-300">
+                <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5 animate-pulse" />
+                <div className="space-y-1">
+                  <span className="font-bold text-sm block">📋 Aktion erforderlich:</span>
+                  <p>Um die KI-Modernisierung zu starten, müssen folgende Schritte durchgeführt werden:</p>
+                  <ul className="list-disc pl-5 mt-2 space-y-1 font-medium">
+                    {!targetDeployment && (
+                      <li>Wähle dein <strong>S/4HANA Ziel-Betriebsmodell</strong> aus (Public Cloud oder Private Cloud RISE Edition oben).</li>
+                    )}
+                    {!acceptedTerms && (
+                      <li>Bestätige die <strong>Pilot-Nutzungsbedingungen</strong> (über die Checkbox in der Security-Box oben).</li>
+                    )}
+                  </ul>
+                </div>
               </div>
             )}
 
