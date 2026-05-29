@@ -186,10 +186,10 @@ export default function AdminConsole() {
         }, { merge: true });
       }
 
-      // 3. Dispatch premium welcome email if we granted access
-      if (!currentAllowed && targetReq) {
+      // 3. Dispatch premium welcome / deactivation email
+      if (targetReq) {
         try {
-          await fetch('/api/send-tenant-approval-email', {
+          await fetch(currentAllowed ? '/api/send-tenant-revoke-email' : '/api/send-tenant-approval-email', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -200,7 +200,7 @@ export default function AdminConsole() {
             })
           });
         } catch (emailErr) {
-          console.error("Failed to send tenant activation email:", emailErr);
+          console.error("Failed to send tenant access update email:", emailErr);
         }
       }
 
