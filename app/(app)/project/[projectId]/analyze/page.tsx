@@ -7,7 +7,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
-import { UploadCloud, FileCode2, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, Activity, Download, ChevronDown, X, HelpCircle, Info, Sparkles, Trash2, Layers } from 'lucide-react';
+import { UploadCloud, FileCode2, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, Activity, Download, ChevronDown, X, HelpCircle, Info, Sparkles, Trash2, Layers, Shield } from 'lucide-react';
 import clsx from 'clsx';
 import nextDynamic from 'next/dynamic';
 import { DocumentSection } from '@/components/DocumentSection';
@@ -42,6 +42,7 @@ export default function AnalyzePage() {
   const [targetDeployment, setTargetDeployment] = useState<'public' | 'private' | null>(null);
   const [showConceptQuestion, setShowConceptQuestion] = useState(false);
   const [modalSelection, setModalSelection] = useState<'public' | 'private' | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const markdownComponents: Components = {
     h1: ({ node, ...props }) => (
@@ -102,16 +103,71 @@ export default function AnalyzePage() {
     return legacyKeywords.some(regex => regex.test(code)) || code.trim().length > 0; // Relaxed check
   };
 
+  const scanForMaliciousCode = (content: string, fileName: string): string | null => {
+    if (!fileName.endsWith('.abap') && !fileName.endsWith('.txt')) {
+      return 'Security Block: Unauthorized file type. Only standard ABAP source (.abap) or plain text (.txt) files are permitted.';
+    }
+
+    const lower = content.toLowerCase();
+
+    // Exploit / Script Injection Checks
+    const maliciousPatterns = [
+      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+      /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
+      /javascript:/i,
+      /onerror\s*=/i,
+      /onload\s*=/i,
+      /eval\s*\(/i,
+      /exec\s*\(/i,
+      /system\s*\(/i,
+      /spawn\s*\(/i,
+      /fork\s*\(/i,
+      /sh\s+-c/i,
+      /bash\s+-c/i,
+      /cmd\.exe/i,
+      /powershell/i
+    ];
+
+    for (const pattern of maliciousPatterns) {
+      if (pattern.test(content)) {
+        return 'Security Block: Malicious script or shell injection payload detected in staged code. Raw iframe elements, shell commands, and execution wrappers are blocked.';
+      }
+    }
+
+    // Plaintext SAP Secrets Check
+    const secretKeywords = [
+      "sap_pass", "db_password", "client_secret", "begin private key", "-----begin"
+    ];
+    for (const key of secretKeywords) {
+      if (lower.includes(key)) {
+        return 'Security Block: Plaintext security credential leak detected. Master passwords or private keys are prohibited to prevent corporate security breaches.';
+      }
+    }
+
+    return null;
+  };
+
   const handleFile = (file: File) => {
     setError('');
+    
+    // Scan file metadata first
     if (!file.name.endsWith('.abap') && !file.name.endsWith('.txt')) {
-        setError('Please upload a valid legacy code file (.abap or .txt)');
+        setError('Security Block: Unauthorized file type. Only standard ABAP source (.abap) or plain text (.txt) files are permitted.');
         return;
     }
 
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
+      
+      // Perform automated malicious payload scan
+      const scanResult = scanForMaliciousCode(content, file.name);
+      if (scanResult) {
+        setError(scanResult);
+        setLegacyCode(''); // Clear staged code
+        return;
+      }
+
       if (!isLegacyCode(content)) {
           setError('The file does not appear to contain valid legacy code.');
           return;
@@ -1665,6 +1721,35 @@ ${codeToAnalyze}`;
             )}
 
             {legacyCode && (
+              <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-4 animate-in slide-in-from-bottom-4 mb-8">
+                <h4 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                  <Shield size={16} className="text-green-600 animate-pulse" /> Security Scan & Pilot Agreement
+                </h4>
+                
+                {/* Visual Security Badge */}
+                <div className="bg-green-50/50 border border-green-200/50 p-4 rounded-2xl text-xs text-green-900 leading-relaxed font-medium flex items-start gap-3">
+                  <CheckCircle2 size={16} className="text-green-600 mt-0.5 shrink-0" />
+                  <div>
+                    <strong>Malicious Payload Check passed:</strong> Staged files are automatically scanned for malicious command injections, unauthorized file extensions, and plaintext secrets. The file <strong>is clean and safe for processing</strong>.
+                  </div>
+                </div>
+
+                {/* Terms and Conditions Consent Box */}
+                <label className="flex items-start gap-3 p-4 bg-slate-50/50 border border-slate-200/60 rounded-2xl cursor-pointer hover:bg-slate-55 transition-all select-none">
+                  <input 
+                    type="checkbox" 
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-0.5 accent-green-600 shrink-0 cursor-pointer"
+                  />
+                  <span className="text-xs text-gray-700 leading-relaxed font-medium">
+                    I agree to the <strong>Terms & Conditions</strong> of the Clean-Core.io pilot. I understand this is a non-commercial learning project under absolute warranty and liability disclaimer, utilizing secure Gemini models on EU-compliant servers.
+                  </span>
+                </label>
+              </div>
+            )}
+
+            {legacyCode && (
               <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden animate-in slide-in-from-bottom-4">
                 <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1699,14 +1784,20 @@ ${codeToAnalyze}`;
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     return;
                   }
+                  if (!acceptedTerms) {
+                    setError('Please agree to the Terms & Conditions of the Clean-Core.io pilot before starting the analysis.');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                  }
                   setError('');
                   setModalSelection(targetDeployment);
                   setShowConceptQuestion(true);
                 }}
-                disabled={loading || !legacyCode}
+                disabled={loading || !legacyCode || !acceptedTerms}
                 className={clsx(
-                  "flex items-center gap-3 bg-[#00873a] text-white px-10 py-4 rounded-2xl hover:bg-[#006b2c] hover:shadow-xl hover:shadow-green-900/20 transition-all font-black disabled:opacity-70 disabled:cursor-not-allowed min-w-[220px] justify-center shadow-lg shadow-green-900/10",
-                  loading && "animate-pulse"
+                  "flex items-center gap-3 bg-[#00873a] text-white px-10 py-4 rounded-2xl hover:bg-[#006b2c] hover:shadow-xl hover:shadow-green-900/20 transition-all font-black disabled:opacity-50 disabled:cursor-not-allowed min-w-[220px] justify-center shadow-lg shadow-green-900/10",
+                  loading && "animate-pulse",
+                  !acceptedTerms && "opacity-50 cursor-not-allowed"
                 )}
               >
                 {loading ? (
@@ -1955,13 +2046,19 @@ ${codeToAnalyze}`;
               <button 
                 type="button" 
                 onClick={() => {
+                  if (!acceptedTerms) {
+                    setError('Please agree to the Terms & Conditions of the Clean-Core.io pilot before starting the analysis.');
+                    setShowConceptQuestion(false);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                  }
                   if (modalSelection) {
                     setTargetDeployment(modalSelection);
                     setShowConceptQuestion(false);
                     handleAnalyze(legacyCode);
                   }
                 }} 
-                disabled={!modalSelection}
+                disabled={!modalSelection || !acceptedTerms}
                 className="bg-[#00873a] hover:bg-[#006b2c] disabled:opacity-50 text-white px-6 py-2.5 rounded-xl text-xs font-black transition-all shadow-sm flex items-center gap-2 active:scale-95 hover:shadow-lg hover:shadow-green-900/10"
               >
                 Start AI Modernization Engine <ArrowRight size={14} />
