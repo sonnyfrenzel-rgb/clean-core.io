@@ -36,6 +36,13 @@ export interface ManualTestRequirement {
   verificationSteps: string[];
 }
 
+export interface S4Config {
+  url?: string;
+  username?: string;
+  password?: string;
+  authType?: 'basic' | 'oauth2' | 'sap_hub';
+}
+
 export interface Project {
   name: string;
   legacyCode?: string;
@@ -50,6 +57,8 @@ export interface Project {
   presentation?: string;
   extensibilityRoute?: string;
   s4Deployment?: 'public' | 'private';
+  s4Environment?: 'mock' | 'live';
+  s4Config?: S4Config;
   status?: 'created' | 'analyzed' | 'designed' | 'transformed' | 'testing' | 'documented' | 'completed';
   exports?: Record<string, string>;
   cleanCoreScore?: number;

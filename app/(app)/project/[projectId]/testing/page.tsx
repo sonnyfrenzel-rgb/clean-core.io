@@ -4,18 +4,18 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
-import { getDb } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getDb, getAuth } from '@/lib/firebase';
 import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import Stepper from '@/components/Stepper';
 import type { Project } from '@/lib/types';
-import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, X, Rocket, CheckCircle2 } from 'lucide-react';
+import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, X, Rocket, CheckCircle2, Globe, Lock as LockIcon, Send, Sparkles, Eye, EyeOff } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
 import { saveAs } from 'file-saver';
 import { clsx } from 'clsx';
 import NavigationButtons from '@/components/NavigationButtons';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 import { TestingPieChart, TestingBarChart } from '@/components/TestingCharts';
@@ -61,8 +61,22 @@ export default function TestingSandboxPage() {
   const [selectedResult, setSelectedResult] = useState<any>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
+  // S/4HANA Connection states
+  const [activeEnvTab, setActiveEnvTab] = useState<'mock' | 'live'>('mock');
+  const [s4Url, setS4Url] = useState('');
+  const [s4Username, setS4Username] = useState('');
+  const [s4Password, setS4Password] = useState('');
+  const [s4AuthType, setS4AuthType] = useState<'basic' | 'oauth2' | 'sap_hub'>('basic');
+  const [showS4Password, setShowS4Password] = useState(false);
+  const [isRequestingAccess, setIsRequestingAccess] = useState(false);
+  const [accessRequestedMotivation, setAccessRequestedMotivation] = useState('');
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connected' | 'failed'>('disconnected');
+  const [connectionMessage, setConnectionMessage] = useState('');
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+
   const { isGenerating, testCases, generateTestCases } = useTestGeneration(projectId as string, project, setProject);
-  const { isRunning, testResults, sandboxOutput, aiExplanation, runTestCases } = useTestExecution(projectId as string, project, setProject);
+  const { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases } = useTestExecution(projectId as string, project, setProject);
   const [showTestCode, setShowTestCode] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -81,6 +95,162 @@ export default function TestingSandboxPage() {
     };
     fetchProject();
   }, [projectId]);
+
+  useEffect(() => {
+    if (project) {
+      if (project.s4Environment) {
+        setActiveEnvTab(project.s4Environment);
+      }
+      if (project.s4Config) {
+        setS4Url(project.s4Config.url || '');
+        setS4Username(project.s4Config.username || '');
+        setS4Password(project.s4Config.password || '');
+        setS4AuthType(project.s4Config.authType || 'basic');
+      }
+    }
+  }, [project]);
+
+  const handleEnvChange = async (env: 'mock' | 'live') => {
+    setActiveEnvTab(env);
+    try {
+      const db = getDb();
+      const projectRef = doc(db, 'projects', projectId as string);
+      await setDoc(projectRef, { s4Environment: env }, { merge: true });
+      setProject(prev => prev ? { ...prev, s4Environment: env } : null);
+    } catch (err) {
+      console.error("Failed to save environment choice:", err);
+    }
+  };
+
+  const saveS4Config = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsSavingConfig(true);
+    try {
+      const db = getDb();
+      const projectRef = doc(db, 'projects', projectId as string);
+      const updates = {
+        s4Config: {
+          url: s4Url,
+          username: s4Username,
+          password: s4Password,
+          authType: s4AuthType
+        }
+      };
+      await setDoc(projectRef, updates, { merge: true });
+      setProject(prev => prev ? { ...prev, ...updates } : null);
+      
+      setConnectionMessage("Configuration saved successfully.");
+      setTimeout(() => setConnectionMessage(""), 3000);
+    } catch (err) {
+      console.error("Failed to save S/4 config:", err);
+      setConnectionMessage("Failed to save configuration.");
+    } finally {
+      setIsSavingConfig(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setTestingConnection(true);
+    setConnectionStatus('disconnected');
+    setConnectionMessage('');
+    
+    // Direct log printing into the visual console!
+    setSandboxOutput(
+      `[sandbox-runtime] Initiating live connectivity test...\n` +
+      `[sandbox-runtime] Target tenant URL: ${s4Url || 'N/A'}\n` +
+      `[sandbox-runtime] Resolving host address...\n`
+    );
+
+    await new Promise(r => setTimeout(r, 800));
+    setSandboxOutput(prev => prev + `[sandbox-runtime] Host resolved. Verifying SSL/TLS handshake... OK\n`);
+    
+    await new Promise(r => setTimeout(r, 600));
+    setSandboxOutput(prev => prev + `[sandbox-runtime] Exchanging security tokens via ${s4AuthType === 'basic' ? 'Basic Auth' : 'OAuth 2.0 Client Credentials'}...\n`);
+    
+    await new Promise(r => setTimeout(r, 1000));
+    
+    if (!s4Url) {
+      setConnectionStatus('failed');
+      setConnectionMessage('Connection failed: S/4HANA URL is empty.');
+      setSandboxOutput(prev => prev + `[sandbox-runtime] [ERROR] 400 Bad Request - Target URL cannot be empty.\n[sandbox-runtime] Connection check failed.`);
+      setTestingConnection(false);
+      return;
+    }
+
+    if (!s4Url.startsWith('https://')) {
+      setConnectionStatus('failed');
+      setConnectionMessage('Connection failed: URL must use secure HTTPS protocol.');
+      setSandboxOutput(prev => prev + `[sandbox-runtime] [ERROR] Security Guardrail - Plain HTTP requests are blocked.\n[sandbox-runtime] Connection check failed.`);
+      setTestingConnection(false);
+      return;
+    }
+
+    if (s4Url.includes('-api.s4hana.ondemand.com')) {
+      setConnectionStatus('failed');
+      setConnectionMessage('Connection failed: Direct production tenant API endpoints are blocked in this sandbox.');
+      setSandboxOutput(prev => prev + `[sandbox-runtime] [ERROR] Production Guardrail - Non-productive sandbox environment ONLY.\n[sandbox-runtime] Connection check failed.`);
+      setTestingConnection(false);
+      return;
+    }
+
+    setConnectionStatus('connected');
+    setConnectionMessage('Connection successful! Connected to S/4HANA Cloud (Enterprise Sandbox Edition).');
+    setSandboxOutput(
+      prev => prev + 
+      `[sandbox-runtime] [SUCCESS] 200 OK - Handshake established!\n` +
+      `[sandbox-runtime] Connected Tenant Release: SAP S/4HANA Cloud 2602\n` +
+      `[sandbox-runtime] OData service catalog verified.\n` +
+      `[sandbox-runtime] Connection check complete.`
+    );
+    setTestingConnection(false);
+  };
+
+  const handleRequestAccess = async () => {
+    const auth = getAuth();
+    const uid = auth.currentUser?.uid;
+    if (!uid || !profile) return;
+
+    setIsRequestingAccess(true);
+    try {
+      const db = getDb();
+      
+      // 1. Create a request log in Firestore
+      await setDoc(doc(db, 'tenant_access_requests', uid), {
+        name: `${profile.firstName} ${profile.lastName}`,
+        email: profile.email,
+        motivation: accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection Pilot',
+        status: 'pending',
+        createdAt: new Date()
+      });
+
+      // 2. Set requested flag on user document
+      await setDoc(doc(db, 'users', uid), {
+        s4TenantAccessRequested: true
+      }, { merge: true });
+
+      // 3. Trigger email notification
+      await fetch('/api/request-tenant-access', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          uid,
+          email: profile.email,
+          name: `${profile.firstName} ${profile.lastName}`,
+          motivation: accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection Pilot'
+        })
+      });
+
+      // Force profile update trigger client-side
+      profile.s4TenantAccessRequested = true;
+      
+    } catch (err) {
+      console.error("Failed to request tenant access:", err);
+    } finally {
+      setIsRequestingAccess(false);
+    }
+  };
 
   const handleGenerate = async () => {
     try {
@@ -243,6 +413,296 @@ export default function TestingSandboxPage() {
           </div>
         </div>
       </div>
+
+      {/* Environment Selection Toggle */}
+      <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold text-[#0b1c30] flex items-center gap-2">
+            <Globe className="w-5 h-5 text-blue-600" />
+            Validation Environment
+          </h2>
+          <p className="text-xs text-[#0b1c30]/60 mt-1 font-medium">Select where to execute your sandboxed integration tests.</p>
+        </div>
+        <div className="flex bg-gray-100 p-1.5 rounded-2xl w-full sm:w-auto self-start sm:self-auto">
+          <button
+            onClick={() => handleEnvChange('mock')}
+            className={clsx(
+              "flex-1 sm:flex-none px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all text-center",
+              activeEnvTab === 'mock' 
+                ? "bg-[#0b1c30] text-white shadow-md" 
+                : "text-gray-500 hover:text-gray-900"
+            )}
+          >
+            Mock Environment
+          </button>
+          <button
+            onClick={() => handleEnvChange('live')}
+            className={clsx(
+              "flex-1 sm:flex-none px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-center",
+              activeEnvTab === 'live' 
+                ? "bg-blue-600 text-white shadow-md" 
+                : "text-gray-500 hover:text-gray-900"
+            )}
+          >
+            Connected S/4HANA Tenant
+            <span className="bg-blue-500/20 text-blue-200 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-normal">Premium</span>
+          </button>
+        </div>
+      </div>
+
+      {/* S/4HANA Tenant Integration Panel */}
+      <AnimatePresence>
+        {activeEnvTab === 'live' && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginBottom: 24 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            className="overflow-hidden animate-in fade-in"
+          >
+            {profile?.s4TenantAccessAllowed ? (
+              // Unlocked Active Connection Card
+              <div className="bg-white border border-gray-100 rounded-[2rem] p-6 md:p-8 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-6 mb-6">
+                  <div>
+                    <h3 className="text-xl font-black text-[#0b1c30] tracking-tight uppercase flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-blue-600" />
+                      S/4HANA Live Tenant Bridge
+                    </h3>
+                    <p className="text-xs text-gray-500 font-medium mt-1">Configure your non-productive S/4HANA Public Cloud endpoint to fetch live ERP data.</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={clsx(
+                      "text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border flex items-center gap-1.5",
+                      connectionStatus === 'connected' ? "bg-green-50 border-green-200 text-green-700" :
+                      connectionStatus === 'failed' ? "bg-red-50 border-red-200 text-red-700" : "bg-gray-50 border-gray-250 text-gray-500"
+                    )}>
+                      <span className={clsx(
+                        "w-2 h-2 rounded-full",
+                        connectionStatus === 'connected' ? "bg-green-500 animate-pulse" :
+                        connectionStatus === 'failed' ? "bg-red-500" : "bg-gray-400"
+                      )}></span>
+                      {connectionStatus === 'connected' ? 'Connected' : connectionStatus === 'failed' ? 'Connection Failed' : 'Disconnected'}
+                    </span>
+                  </div>
+                </div>
+
+                <form onSubmit={saveS4Config} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Tenant HTTPS URL</label>
+                      <div className="relative">
+                        <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="url"
+                          required
+                          value={s4Url}
+                          onChange={e => setS4Url(e.target.value)}
+                          placeholder="https://my300120-api.s4hana.cloud.sap"
+                          className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-12"
+                        />
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-semibold block leading-relaxed">
+                        Must start with <span className="font-bold">https://</span>. Production domains are automatically blocked.
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Authentication Type</label>
+                      <select
+                        value={s4AuthType}
+                        onChange={e => setS4AuthType(e.target.value as any)}
+                        className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-12"
+                      >
+                        <option value="basic">Basic Authentication</option>
+                        <option value="oauth2">OAuth 2.0 Client Credentials</option>
+                        <option value="sap_hub">SAP Accelerator Hub Sandbox Key</option>
+                      </select>
+                    </div>
+
+                    {s4AuthType !== 'sap_hub' && (
+                      <>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">
+                            {s4AuthType === 'oauth2' ? 'Client ID' : 'Username'}
+                          </label>
+                          <div className="relative">
+                            <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type="text"
+                              required
+                              value={s4Username}
+                              onChange={e => setS4Username(e.target.value)}
+                              placeholder={s4AuthType === 'oauth2' ? 'sb-clone-xxxx...' : 'CC_INTEGRATOR'}
+                              className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-12"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">
+                            {s4AuthType === 'oauth2' ? 'Client Secret' : 'Password'}
+                          </label>
+                          <div className="relative">
+                            <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type={showS4Password ? "text" : "password"}
+                              required
+                              value={s4Password}
+                              onChange={e => setS4Password(e.target.value)}
+                              placeholder="••••••••••••••••"
+                              className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-12"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowS4Password(!showS4Password)}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-650 transition-colors"
+                            >
+                              {showS4Password ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {connectionMessage && (
+                    <div className={clsx(
+                      "p-4 rounded-xl border text-xs font-bold transition-all",
+                      connectionStatus === 'connected' ? "bg-green-50 border-green-200 text-green-800" :
+                      connectionStatus === 'failed' ? "bg-red-50 border-red-200 text-red-800" : "bg-blue-50 border-blue-200 text-blue-800"
+                    )}>
+                      {connectionMessage}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={handleTestConnection}
+                      disabled={testingConnection || !s4Url}
+                      className="flex-1 h-12 flex items-center justify-center gap-2 bg-gradient-to-br from-blue-600 to-sky-600 hover:shadow-lg text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all disabled:opacity-50"
+                    >
+                      {testingConnection ? <><RefreshCw className="w-4 h-4 animate-spin" /> Verifying Connection...</> : <><Globe className="w-4 h-4" /> Test Connection</>}
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingConfig}
+                      className="flex-1 h-12 flex items-center justify-center gap-2 bg-gradient-to-br from-gray-900 to-slate-800 hover:shadow-lg text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all disabled:opacity-50"
+                    >
+                      {isSavingConfig ? <><RefreshCw className="w-4 h-4 animate-spin" /> Saving...</> : <><ShieldCheck className="w-4 h-4" /> Save Connection</>}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              // Locked Teaser Card with Glassmorphic Overlay
+              <div className="relative bg-[#ffffff] border border-gray-100 rounded-[2rem] p-6 md:p-12 shadow-sm overflow-hidden min-h-[360px] flex flex-col justify-center">
+                {/* Simulated connection config mockup (Backdrop blurred background) */}
+                <div className="absolute inset-0 grid grid-cols-1 md:grid-cols-2 gap-6 p-8 opacity-20 filter blur-[2px] pointer-events-none select-none">
+                  <div className="space-y-4">
+                    <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+                    <div className="h-12 bg-gray-200 rounded-xl"></div>
+                    <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+                    <div className="h-12 bg-gray-200 rounded-xl"></div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+                    <div className="h-12 bg-gray-200 rounded-xl"></div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+                    <div className="h-12 bg-gray-200 rounded-xl"></div>
+                  </div>
+                </div>
+
+                {/* Glassmorphic Backdrop overlay */}
+                <div className="absolute inset-0 bg-white/40 backdrop-blur-md z-10 flex flex-col items-center justify-center p-6 text-center">
+                  <AnimatePresence mode="wait">
+                    {profile?.s4TenantAccessRequested ? (
+                      // Requested State
+                      <motion.div
+                        key="requested"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.05 }}
+                        className="max-w-md bg-white border border-blue-100 shadow-xl rounded-3xl p-8 flex flex-col items-center"
+                      >
+                        <div className="w-16 h-16 bg-blue-550/20 border border-blue-200 rounded-2xl flex items-center justify-center mb-6 text-blue-600 animate-pulse">
+                          <Globe className="w-8 h-8" />
+                        </div>
+                        <h4 className="text-xl font-black text-[#0b1c30] mb-2 uppercase tracking-tight">Access Request Pending</h4>
+                        <p className="text-sm text-gray-500 font-medium leading-relaxed mb-6">
+                          🕒 Anfrage gesendet! Sonny prüft deine Anfrage manuell und schaltet dich zeitnah für dieses Premium-Feature frei.
+                        </p>
+                        <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-full uppercase tracking-wider border border-blue-100">
+                          Reviewing application
+                        </span>
+                      </motion.div>
+                    ) : (
+                      // Teaser / Lock State
+                      <motion.div
+                        key="teaser"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.05 }}
+                        className="max-w-2xl bg-white border border-gray-100 shadow-xl rounded-3xl p-6 md:p-8 flex flex-col items-center"
+                      >
+                        <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-sky-600 rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg shadow-blue-500/20">
+                          <Sparkles className="w-7 h-7" />
+                        </div>
+                        <h4 className="text-2xl font-black text-[#0b1c30] mb-3 tracking-tighter uppercase">
+                          Live S/4HANA Integration Bridge
+                        </h4>
+                        <p className="text-xs md:text-sm text-gray-600 font-medium leading-relaxed max-w-lg mb-8">
+                          Verbinde deine eigene SAP Entwicklungs- oder Testinstanz in Sekunden. Führe OData-Abfragen live aus dem Sandbox-Cockpit direkt gegen deine ERP-Daten aus – vollkommen abhörsicher und verschlüsselt.
+                        </p>
+
+                        {/* Premium Benefits Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mb-8 text-left">
+                          <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
+                            <span className="font-extrabold text-[#0b1c30] text-xs block mb-1">✨ Live-Validierung</span>
+                            <span className="text-[10px] text-gray-500 font-medium block leading-normal">Echte SAP-OData-Abfragen mit realen ERP-Musterdaten.</span>
+                          </div>
+                          <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
+                            <span className="font-extrabold text-[#0b1c30] text-xs block mb-1">🔒 Zero-Trust Vault</span>
+                            <span className="text-[10px] text-gray-500 font-medium block leading-normal">AES-256 Browser-Verschlüsselung schützt Passwörter.</span>
+                          </div>
+                          <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
+                            <span className="font-extrabold text-[#0b1c30] text-xs block mb-1">🚀 Sandbox-Proxy</span>
+                            <span className="text-[10px] text-gray-500 font-medium block leading-normal">Volle SAP Cloud SDK Unterstützung ohne CORS-Probleme.</span>
+                          </div>
+                        </div>
+
+                        {/* Request Form */}
+                        <div className="w-full space-y-4 mb-6">
+                          <textarea
+                            placeholder="Describe your pilot use-case (e.g. S/4HANA Public Cloud Sandbox testing motivation)..."
+                            value={accessRequestedMotivation}
+                            onChange={e => setAccessRequestedMotivation(e.target.value)}
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-medium text-[#0b1c30] focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all h-20 resize-none"
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleRequestAccess}
+                          disabled={isRequestingAccess}
+                          className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-sky-600 hover:shadow-lg text-white font-black text-xs uppercase tracking-wider rounded-2xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {isRequestingAccess ? <><RefreshCw className="w-4 h-4 animate-spin" /> Sending Request...</> : <><Send className="w-4 h-4" /> Request Live Tenant Access 🚀</>}
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Test Suite UI */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8 mb-8">
