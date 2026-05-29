@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +15,7 @@ export async function POST(request: NextRequest) {
     const host = request.headers.get('host') || 'localhost:3000';
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const dashboardUrl = `${protocol}://${host}/dashboard`;
+    const whitepaperUrl = `${protocol}://${host}/Enterprise_Security_Compliance_Whitepaper.pdf`;
 
     const emailSubject = `🎉 Welcome to Clean-Core.io: Pilot Access Approved!`;
     
@@ -64,9 +67,12 @@ export async function POST(request: NextRequest) {
 
           <!-- Security Trust Indicator -->
           <div style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 16px; padding: 18px; margin-bottom: 30px;">
-            <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">🛡️ Sovereign Data Privacy Assured</span>
+            <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">🛡️ Sovereign Data Privacy & CISO Security Assured</span>
             <span style="color: #047857; font-size: 13px; line-height: 1.5; display: block;">
               To comply strictly with GDPR (DSGVO) guidelines, your projects are hosted entirely in the <strong>Belgium (europe-west1)</strong> region. All generative AI transformations utilize secure stateless APIs, guaranteeing your source code is never cached, persisted, or used by Google for LLM training.
+            </span>
+            <span style="color: #03543f; font-size: 12px; line-height: 1.5; display: block; margin-top: 10px; font-weight: 600;">
+              📎 A comprehensive, certified <strong>Enterprise Security & GDPR Compliance Whitepaper</strong> is available for your internal IT audit. Read or download it anytime via the link below.
             </span>
           </div>
 
@@ -109,6 +115,23 @@ export async function POST(request: NextRequest) {
               <span style="font-weight: 700; color: #0f172a; font-size: 14px; display: block;">📖 S/4HANA Glossary & AI Architect Guidance</span>
               <span style="color: #64748b; font-size: 13px; display: block; margin-top: 4px; line-height: 1.4;">Click-to-toggle inline terminology definitions, searchable sidebar panels, and a context-restricted SAP AI Architect Chatbot.</span>
             </div>
+          </div>
+          
+          <!-- Security Whitepaper Downloader Card -->
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 32px;">
+            <span style="font-size: 10px; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">CISO Compliance & Data Safety</span>
+            <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; letter-spacing: -0.01em;">Enterprise Security Whitepaper</h4>
+            <p style="font-size: 12px; line-height: 1.5; color: #475569; margin: 0 0 12px 0;">
+              To facilitate your internal IT audit and accelerate compliance approval, our comprehensive security datasheet details:
+            </p>
+            <ul style="margin: 0 0 16px 0; padding-left: 18px; font-size: 11px; color: #475569; line-height: 1.5;">
+              <li><strong>Sovereign Cloud Hosting:</strong> 100% data processing in europe-west1 (Belgium).</li>
+              <li><strong>Web Cryptography (BYOK):</strong> Browser-side PBKDF2 AES-GCM credentials encryption.</li>
+              <li><strong>Zero-Cache Policy:</strong> Data exclusion from generative AI model training cycles.</li>
+            </ul>
+            <a href="${whitepaperUrl}" target="_blank" style="display: inline-block; background-color: #ffffff; border: 1px solid #0284c7; color: #0284c7; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
+              📎 Read Security Whitepaper (PDF)
+            </a>
           </div>
 
           <!-- CTA Button -->
@@ -173,6 +196,7 @@ export async function POST(request: NextRequest) {
       console.log(`To: ${name} (${email})`);
       console.log(`Subject: ${emailSubject}`);
       console.log(`Dashboard Link: ${dashboardUrl}`);
+      console.log(`Whitepaper Link: ${whitepaperUrl}`);
       console.log('======================================================\n');
     }
 

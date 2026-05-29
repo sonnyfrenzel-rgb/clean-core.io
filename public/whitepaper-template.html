@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Clean-Core.io: Enterprise Security & GDPR Compliance Whitepaper</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #0f172a;
+      background-color: #ffffff;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    header {
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 30px;
+      margin-bottom: 40px;
+    }
+
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -0.03em;
+    }
+
+    .logo span {
+      color: #10b981;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      font-weight: 800;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-top: 4px;
+    }
+
+    .meta-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      color: #0284c7;
+      background-color: #f0f9ff;
+      border: 1px solid #bae6fd;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -0.04em;
+      margin-top: 30px;
+      margin-bottom: 10px;
+      line-height: 1.15;
+    }
+
+    .doc-meta {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 500;
+      margin-bottom: 40px;
+    }
+
+    .doc-meta span {
+      font-weight: 700;
+      color: #475569;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.03em;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 8px;
+      margin-top: 40px;
+      margin-bottom: 20px;
+    }
+
+    p {
+      font-size: 14px;
+      color: #334155;
+      margin-bottom: 20px;
+      text-align: justify;
+    }
+
+    ul, ol {
+      margin-bottom: 25px;
+      padding-left: 20px;
+    }
+
+    li {
+      font-size: 14px;
+      color: #334155;
+      margin-bottom: 10px;
+    }
+
+    li strong {
+      color: #0f172a;
+    }
+
+    .highlight-card {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 24px;
+      margin: 30px 0;
+    }
+
+    .highlight-card h3 {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-top: 0;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .highlight-card p:last-child {
+      margin-bottom: 0;
+    }
+
+    .gdpr-badge-block {
+      background-color: #f0fdf4;
+      border: 1px solid #d1fae5;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 30px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .gdpr-badge-text {
+      color: #065f46;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .gdpr-badge-text strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .sign-table {
+      width: 100%;
+      margin-top: 60px;
+      border-collapse: collapse;
+    }
+
+    .sign-table td {
+      width: 50%;
+      vertical-align: top;
+    }
+
+    .signature-line {
+      width: 80%;
+      border-top: 1px solid #cbd5e1;
+      margin-top: 50px;
+      padding-top: 10px;
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    .signature-line strong {
+      color: #475569;
+    }
+
+    footer {
+      border-top: 1px solid #f1f5f9;
+      margin-top: 60px;
+      padding-top: 20px;
+      font-size: 10px;
+      color: #94a3b8;
+      text-align: center;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <header>
+      <table class="header-table">
+        <tr>
+          <td>
+            <div class="logo">Clean-Core<span>.io</span></div>
+            <div class="subtitle">Enterprise Modernization Suite</div>
+          </td>
+          <td style="text-align: right; vertical-align: middle;">
+            <span class="meta-badge">CISO APPROVED</span>
+          </td>
+        </tr>
+      </table>
+    </header>
+
+    <h1>Enterprise Security & GDPR Compliance Whitepaper</h1>
+    <div class="doc-meta">
+      Document ID: <span>CC-SEC-WP-2026-05</span> &nbsp;|&nbsp; 
+      Version: <span>v1.3.0</span> &nbsp;|&nbsp; 
+      Classification: <span>Public / Customer-Grade</span> &nbsp;|&nbsp;
+      Date: <span>2026-05-29</span>
+    </div>
+
+    <p>
+      At Clean-Core.io, we recognize that custom SAP legacy code (ABAP) contains highly proprietary business logic, core process knowledge, and intellectual property. Migrating and refactoring this logic requires an absolute commitment to data isolation, modern cryptographic standards, and strict adherence to European data sovereignty laws. This whitepaper details the architectural, cryptographic, and operational guardrails established on Clean-Core.io to ensure full compliance and data safety.
+    </p>
+
+    <h2>1. Data Sovereignty & GDPR (DSGVO) Compliance</h2>
+    <p>
+      Clean-Core.io is engineered as a fully sovereign, European-hosted modernization platform. All storage and processing layers comply strictly with the General Data Protection Regulation (GDPR / DSGVO):
+    </p>
+    
+    <div class="gdpr-badge-block">
+      <div class="gdpr-badge-text">
+        <strong>✓ Strictly EU-Hosted Processing (Art. 25 GDPR)</strong>
+        All database operations, project documents, and processing routes run exclusively in the <strong>Belgium (europe-west1)</strong> cloud region on GCP. No data is transferred or cached outside the European Union.
+      </div>
+    </div>
+
+    <ul>
+      <li><strong>Art. 17 GDPR (Right to Erasure):</strong> We implement a strict cascading delete policy. When a user triggers "Delete Profile" from the Settings Danger Zone, the platform initiates an atomic transaction that permanently deletes their Firebase Authentication entry, all Firestore project documents, and all stored files from the storage bucket.</li>
+      <li><strong>Data Minimization (Art. 5 GDPR):</strong> The system collects only the minimal authentication records required (Name, Email) and strictly processes uploaded ABAP code to extract abstract syntactic structures. No actual master or transactional business records (e.g., customer addresses or bank details) are parsed or processed.</li>
+    </ul>
+
+    <h2>2. Browser-Side Cryptographic Vault (BYOK)</h2>
+    <p>
+      Clean-Core.io features a pioneering **Bring Your Own Key (BYOK)** capability to give enterprises full control over their generative AI resources.
+    </p>
+    
+    <div class="highlight-card">
+      <h3>🔒 Browser-Side PBKDF2 & AES-GCM Encrypted Vault</h3>
+      <p>
+        When a pilot user registers their own Google Gemini API key:
+      </p>
+      <ol>
+        <li>The key is encrypted directly inside the user's browser using the native Web Cryptography API (SubtleCrypto).</li>
+        <li>We derive a 256-bit AES key using PBKDF2 with 100,000 iterations and a dynamic, random salt.</li>
+        <li>The key is encrypted in authenticated <strong>AES-GCM mode</strong>, guaranteeing that the raw key never transit or sit on our database in plaintext.</li>
+      </ol>
+    </div>
+
+    <h2>3. Stateless AI Orchestration & Model Training Isolation</h2>
+    <p>
+      A common concern for enterprise IT is the use of source code by AI providers for model tuning or training.
+    </p>
+    <ul>
+      <li><strong>Stateless API Proxying:</strong> The Clean-Core.io server-side backend proxies Gemini AI requests using enterprise-level, stateless Google Cloud Vertex AI API configurations. E2E transformation calls are treated as transactional API runs.</li>
+      <li><strong>Training Deactivation:</strong> In accordance with Google Cloud Enterprise Agreement terms, all code snippets sent to the backend `/api/gemini` proxy are **excluded from LLM model training and reinforcement cycles**. Your intellectual property remains strictly yours.</li>
+    </ul>
+
+    <h2>4. Live S/4HANA Connection Sandbox Isolation</h2>
+    <p>
+      The S/4HANA Live Tenant Integration Feature (BYOT) in Stage 5 enables developers to run OData validation tests directly against non-productive S/4HANA environments. To safeguard the host ERP network:
+    </p>
+    <ul>
+      <li><strong>Production Domain Blocklist:</strong> The server-side sandbox proxy intercepts S/4HANA Tenant URLs and enforces a strict regex blocklist, rejecting any connections matching known production IP address ranges or SAP production host patterns.</li>
+      <li><strong>Encrypted Firestore Storage:</strong> ERP tenant integration credentials (username/password/OAuth secrets) are stored in your Firestore user document under strict Firestore Security Rules, ensuring they are only accessible to the authenticated owner and the sandboxed server runtime.</li>
+    </ul>
+
+    <div class="sign-table">
+      <table>
+        <tr>
+          <td>
+            <div class="signature-line">
+              <strong>Felix Frenzel</strong><br />
+              Founder & Lead Architect<br />
+              Clean-Core.io Suite
+            </div>
+          </td>
+          <td>
+            <div class="signature-line">
+              <strong>Google Cloud Security Standards</strong><br />
+              Enterprise Platform Partner<br />
+              Bamberg, Germany
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <footer>
+      Clean-Core.io • Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany<br />
+      Data Privacy Officer E-Mail: info@clean-core.io • Version 1.3.0 (2026-05-29)
+    </footer>
+
+  </div>
+
+</body>
+</html>
