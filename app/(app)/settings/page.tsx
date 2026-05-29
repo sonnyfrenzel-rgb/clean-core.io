@@ -45,6 +45,12 @@ export default function SettingsPage() {
   // GDPR Account Deletion
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
+  // BYOT (Bring Your Own Tenant) States
+  const [byotMotivation, setByotMotivation] = useState('');
+  const [isRequestingByot, setIsRequestingByot] = useState(false);
+  const [byotStatus, setByotStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [byotError, setByotError] = useState('');
+
   // System Preferences States
   const [themePreference, setThemePreference] = useState<'light' | 'dark' | 'system'>('light');
   const [backupEnabled, setBackupEnabled] = useState<boolean>(true);
@@ -393,6 +399,59 @@ export default function SettingsPage() {
       console.error('Error removing API Key:', error);
     } finally {
       setIsDeletingKey(false);
+    }
+  };
+
+  const handleRequestByot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile) return;
+    if (!byotMotivation.trim()) {
+      setByotStatus('error');
+      setByotError('Please enter a brief motivation or use-case for S/4HANA connection.');
+      return;
+    }
+
+    setIsRequestingByot(true);
+    setByotStatus('idle');
+    setByotError('');
+
+    try {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error('No authenticated user found.');
+
+      // 1. Submit request to the backend API route which handles administration notifications
+      const res = await fetch('/api/request-tenant-access', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uid: currentUser.uid,
+          email: profile.email,
+          name: `${profile.firstName} ${profile.lastName}`,
+          motivation: byotMotivation.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to submit tenant integration request.');
+      }
+
+      // 2. Persist the requested flag in the Firestore UserProfile so UI retains pending state
+      await updateProfile({
+        s4TenantAccessRequested: true
+      });
+
+      setByotStatus('success');
+      setByotMotivation('');
+    } catch (error: any) {
+      console.error('BYOT permission request failed:', error);
+      setByotStatus('error');
+      setByotError(error.message || 'Failed to request tenant access. Please try again.');
+    } finally {
+      setIsRequestingByot(false);
     }
   };
 
@@ -1074,6 +1133,123 @@ export default function SettingsPage() {
                   )}
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* BYOT (S/4HANA Tenant integration) Section */}
+          {(profile?.tier === 'pilot' || profile?.tier === 'pilot_byok') && (
+            <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-gray-100 relative overflow-hidden transition-all duration-300 hover:shadow-md">
+              {/* Decorative side accent */}
+              <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-sky-500 to-blue-600" />
+              
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="bg-sky-600/10 p-2.5 rounded-2xl">
+                    <Database className="text-sky-600" size={22} />
+                  </div>
+                  <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">S/4HANA Live Tenant Integration</h2>
+                </div>
+                
+                {profile?.s4TenantAccessAllowed ? (
+                  <span className="text-[10px] md:text-xs font-black uppercase tracking-widest bg-sky-100 text-sky-700 px-3 py-1.5 rounded-full border border-sky-200 flex items-center gap-1">
+                    <CheckCircle2 size={12} /> Active / Premium
+                  </span>
+                ) : profile?.s4TenantAccessRequested ? (
+                  <span className="text-[10px] md:text-xs font-black uppercase tracking-widest bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200 flex items-center gap-1">
+                    <Clock size={12} /> Pending Review
+                  </span>
+                ) : null}
+              </div>
+              
+              <p className="text-gray-600 font-medium mb-8 text-sm md:text-base leading-relaxed">
+                Connect your custom, non-productive S/4HANA Cloud or On-Premise systems (BYOT) directly inside the Stage 5 testing sandbox to run integrations, OData connection tests, and live schema validation.
+              </p>
+
+              {profile?.s4TenantAccessAllowed ? (
+                <div className="bg-sky-50/50 border border-sky-150 rounded-2xl p-5 text-sm text-sky-950 font-medium space-y-2">
+                  <p className="font-bold flex items-center gap-1.5 text-sky-900">
+                    <CheckCircle2 size={16} className="text-sky-600" />
+                    Live Tenant connection is Unlocked
+                  </p>
+                  <p className="text-sky-700/90 leading-relaxed text-xs">
+                    Your account has premium connection privileges active. Go to your **Stage 5 Testing Sandbox** and select the "Connected S/4HANA Tenant" tab to configure your endpoint credentials.
+                  </p>
+                </div>
+              ) : profile?.s4TenantAccessRequested ? (
+                <div className="bg-amber-50/50 border border-amber-150 rounded-2xl p-5 text-sm text-amber-950 font-medium space-y-2">
+                  <p className="font-bold flex items-center gap-1.5 text-amber-900">
+                    <Clock size={16} className="text-amber-600" />
+                    Integration Access Request Under Review
+                  </p>
+                  <p className="text-amber-700/90 leading-relaxed text-xs">
+                    We have successfully received your integration proposal and notified the systems administrators. To ensure secure tunnels and destination security, our engineering team approves live endpoints manually. Typically, this takes less than 24 hours.
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleRequestByot} className="space-y-6 text-gray-900">
+                  <div className="space-y-2.5">
+                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                      Describe your S/4HANA Sandbox / Use-Case
+                    </label>
+                    <textarea 
+                      value={byotMotivation}
+                      onChange={(e) => setByotMotivation(e.target.value)}
+                      placeholder="E.g., We want to connect our non-productive S/4HANA Public Cloud partner sandbox tenant (Partner Demo) to test clean-core Decoupling models and propagation endpoints..."
+                      rows={3}
+                      className="w-full bg-gray-50 border border-gray-200 px-4 py-3.5 rounded-xl focus:ring-2 focus:ring-sky-600 outline-none transition-all font-medium text-gray-900 text-sm leading-relaxed"
+                      required
+                    />
+                  </div>
+
+                  {byotStatus === 'success' && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-emerald-50 border border-emerald-200 text-emerald-950 p-4 rounded-xl text-xs md:text-sm font-medium flex items-start gap-2.5"
+                    >
+                      <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={16} />
+                      <div>
+                        <p className="font-bold text-emerald-900 mb-0.5">Request submitted successfully!</p>
+                        <p className="text-emerald-700/90 leading-normal">Your tenant access request has been sent to our system administrators for verification.</p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {byotStatus === 'error' && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-rose-50 border border-rose-200 text-rose-950 p-4 rounded-xl text-xs md:text-sm font-medium flex items-start gap-2.5"
+                    >
+                      <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={16} />
+                      <div>
+                        <p className="font-bold text-rose-900 mb-0.5">Failed to submit request</p>
+                        <p className="text-rose-700/90 leading-normal">{byotError || 'An error occurred during submission. Please try again.'}</p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  <div className="pt-1">
+                    <button 
+                      type="submit" 
+                      disabled={isRequestingByot || !byotMotivation.trim()}
+                      className="w-full bg-gradient-to-br from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white py-3.5 px-4 rounded-xl font-black transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg shadow-sky-600/10"
+                    >
+                      {isRequestingByot ? (
+                        <>
+                          <Loader2 className="animate-spin animate-duration-1000" size={16} />
+                          Submitting Connection Request...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} />
+                          Request Live Tenant Access (BYOT)
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           )}
 
