@@ -1,96 +1,123 @@
-# Clean-Core.io — Premium Open Source Desktop Client & Platform
+# Clean-Core.io — Enterprise SAP Code Modernization Platform
 
-Clean-Core.io is a modern, high-performance, and secure web and desktop application designed to streamline SAP ABAP legacy migrations to TypeScript/Node.js, offering interactive solution design modeling, modular code transformation sandboxes, and enterprise-grade GDPR (DSGVO) compliance.
-
----
-
-## 🌟 Key Features
-
-*   **Legacy-to-Modern AI Transformation:** Modular code translation from SAP ABAP to structured Node.js/TypeScript code using Google Gemini.
-*   **Architectural Solution Design:** Interactive visual representation of API endpoints, side-by-side target files, and automated Cloud Run/Firestore setup.
-*   **BYOK (Bring Your Own Key):** Secure client-side Gemini API testing, saving, and testing proxies to run custom developer models.
-*   **GDPR / DSGVO Readiness:** Integrated deep Danger Zone with full-cascade data deletion (users, requests, projects, custom snippets, and Firebase authentication keys) and legal onboarding notices.
-*   **Frosted-glass Premium Design:** Dynamic HSL-tailored slate and emerald background meshes, particle streams, and scrolling key reveals.
-*   **Premium Electron Desktop App:** Fully borderless desktop wrapper with local dev syncing and secure environment containment.
+Clean-Core.io is a modern, high-performance, and secure web and desktop client application designed to streamline SAP ABAP legacy migrations to TypeScript/Node.js. Fully aligned with the official SAP **Clean Core Extensibility Paradigm**, it enables enterprise architects and developers to modernize custom transactional operations, verify compliance with released APIs, and compile modular side-by-side cloud architectures.
 
 ---
 
-## 📦 Tech Stack
+## 🌟 Premium Key Features
 
-*   **Framework:** Next.js (React 19)
-*   **Desktop Shell:** Electron (v30.0.0) with context isolation and secure sandboxing
-*   **Database:** Firestore & Firebase Auth
-*   **Styling:** CSS & TailwindCSS (configured via postcss)
-*   **Animations:** Framer Motion (motion/react)
+*   **S/4HANA Live Bridge (BYOT - Bring Your Own Tenant):**
+    Securely connect your own S/4HANA Public Cloud Test/Sandbox Tenant to run E2E unit tests on live ERP destinations. Securely stores URL, authentication secrets, and credentials locally or inside an encrypted Zero-Trust Firestore vault.
+*   **Unified Pilot & Tenant Administration Console:**
+    Comprehensive admin workbench (`/admin`) allowing administrators to instantly review, approve, or revoke pilot access requests, track tenant bridge applications, and toggle Bring-Your-Own-Tenant (BYOT) privileges with live status badges.
+*   **Transactional Verification & Responsive Email Automations:**
+    Fully integrated with the Resend API to deliver secure, responsive, HTML-table-formatted notifications. Sonny receives manual approval emails with cryptographic verification links, and applicants receive dynamic welcome activation emails.
+*   **Legacy-to-Modern AI Transformation Engine:**
+    Modular code translation from SAP ABAP to structured Node.js/TypeScript code using Google Gemini. Classifies legacy logic to automatically separate **In-App Developer Extensibility (ABAP Cloud RAP)** from **Side-by-Side Extensibility (BTP CAP)** tracks.
+*   **Architectural Solution Design & File Explorers:**
+    Interactive visual representation of API endpoints, directory configurations (including database entity mapping and Docker containers), and direct public links to the SAP API Business Hub.
+*   **ADT Cockpit & Sandboxed Unit Testing:**
+    Provision a virtual Eclipse ADT Test Cockpit to compile and execute local sandboxed unit tests. If S/4HANA Live Bridge is activated, credentials are automatically injected as environment variables to test requests against real OData/REST destinations.
+*   **Process Blueprinting & BPMN 2.0 Mapping:**
+    Generates dynamic Level 1-4 functional blueprints and interactive BPMN process flow maps directly from modernized business logic.
+*   **GDPR / DSGVO Sovereign Data Erasure:**
+    Strict enforcement of Article 17 GDPR (Right to Erasure). A secure transactional deletion cascade in the settings panel recursively purges all user footprints, project workspaces, custom snippets, and authentication keys.
+*   **Frosted-glass UI & Electron Desktop Wrapper:**
+    Visually stunning dark-mode design featuring vibrant HSL-tailored emerald mesh gradients, smooth framer-motion transitions, and a borderless context-isolated Electron wrapper with native OS sync.
+
+---
+
+## 📦 Technical Architecture & Stack
+
+Clean-Core.io is engineered for ultimate performance, security, and portability:
+
+*   **Frontend Core:** React 19, Next.js (v15.5) App Router, HSL Custom Glassmorphism Styling.
+*   **Desktop Shell:** Electron (v30.0) with complete context isolation and secure sandboxing.
+*   **Security & Database:** Firestore & Firebase Auth secured with custom rules.
+*   **Animations:** Motion (Framer Motion) for micro-animations and physics-based sliders.
+*   **Email Deliverability:** Transactional secure email templates powered by Resend API.
+*   **QA Test Runner:** Isolated TypeScript runtime executing automated unit test specifications.
 
 ---
 
 ## 🚀 Local Development Setup
 
-### Prerequisites
-*   Node.js (v18 or higher recommended)
-*   npm or yarn
+### 📋 Prerequisites
+*   Node.js (v20 or higher recommended)
+*   npm (v10 or higher)
 
-### Installation
-1. Clone the repository and navigate to the directory:
-   ```bash
-   git clone https://github.com/your-org/clean-core.git
-   cd clean-core
-   ```
-2. Install all open-source dependencies:
-   ```bash
-   npm install
-   ```
-3. Set up your environment variables by copying `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-   Fill in your `GEMINI_API_KEY` and other standard Firebase credentials in `.env` (or configure them in-app via the BYOK Settings panel).
+### ⚙️ Installation
+1.  **Clone the Repository:**
+    ```bash
+    git clone https://github.com/sonnyfrenzel-rgb/clean-core.io.git
+    cd clean-core.io
+    ```
+2.  **Install Dependencies:**
+    ```bash
+    npm install
+    ```
+3.  **Configure Environment Variables:**
+    Copy the sample configuration file:
+    ```bash
+    cp .env.example .env.local
+    ```
+    Populate the variables inside `.env.local` including your `GEMINI_API_KEY`, `RESEND_API_KEY`, and standard Firebase project keys.
 
-### Running the Web Application
-Launch the local Next.js dev server:
+### 🌐 Running the Web Application
+Launch the local Next.js development server:
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser to inspect the application.
+Open [http://localhost:3000](http://localhost:3000) to view the client.
 
----
-
-## 🖥️ Desktop App Compilation (Electron)
-
-Clean-Core includes a premium Electron shell configured with borderless window structures and native OS controls for a modern desktop experience.
-
-### Run in Desktop Development Mode
+### 🖥️ Running the Desktop Application (Electron)
 To launch the Next.js local server and Electron wrapper concurrently in development mode:
 ```bash
 npm run electron:dev
 ```
-
-### Pack the Desktop Application
 To compile Next.js static files and package the Electron wrapper into a runnable local folder matching your current platform:
 ```bash
 npm run electron:pack
 ```
-This generates a runnable output inside the `dist/` directory.
-
-### Build Production Installers (Open Source Release)
-To build distributable installers (e.g., NSIS `.exe` on Windows, `.dmg` on macOS, `.AppImage`/`.deb` on Linux):
+To build production distributable installers (e.g., NSIS `.exe` on Windows, `.dmg` on macOS):
 ```bash
 npm run electron:dist
 ```
-The compiled binaries will be output inside the `dist/` folder.
 
 ---
 
-## 🔒 Security & Privacy (DSGVO / GDPR)
+## ⚙️ S/4HANA Public Cloud Sandbox Integration (BYOT)
 
-Clean-Core.io is designed with strict data privacy guidelines:
-*   **Context Isolation:** Electron renderer process runs in complete isolation with `nodeIntegration` disabled to prevent unsafe remote script executions.
-*   **Danger Zone Account Deletion:** Users can request complete, recursive erasure directly from their settings panel. This safely purges user profiles, project blueprints, test sandboxes, ABAP uploads, and original Firebase authentication credentials in a secure transactional cascade.
-*   **BYOK Storage:** Gemini keys are stored in encrypted environments or under Firestore security guidelines and can be purged instantly by the user.
+Clean-Core.io bridges the gap between static code analysis and live database verification.
+
+### How it Works:
+1.  **Request Access:** Pilot users click "Request Live Tenant Access" inside Stage 5 (Testing Sandbox).
+2.  **Security Review:** Administrators receive a cryptographically signed email linking to `/admin/approve-tenant`.
+3.  **Privilege Zaining:** Sonny grants the `s4TenantAccessAllowed` right directly in the Unified Admin Console.
+4.  **Secure Connection:** The locked connection panel slides open. Users enter their S/4HANA URL and Basic/OAuth credentials.
+5.  **Encrypted Storage:** Configuration details are saved using strict Zero-Trust Firestore database rules.
+6.  **Test Runner Injection:** During test execution, credentials are proxy-injected into the isolated sandbox environment as:
+    *   `S4_TENANT_URL`
+    *   `S4_USERNAME`
+    *   `S4_PASSWORD`
+    This enables automated unit tests to run and verify real OData endpoints on your target public cloud system.
 
 ---
 
-## 📄 License
+## 🔒 Security, Sovereignty & Compliance
 
-This project is licensed under the MIT License — completely open source and free for development use. Feel free to fork, contribute, and build amazing clean architecture templates.
+Clean-Core.io prioritizes data security and user privacy above all else:
+
+*   **Encrypted Key Storage:** Secure client-side BYOK configuration keys remain in local storage or secured Firestore profiles and are proxied server-side to prevent third-party exposure.
+*   **Art. 17 GDPR Cascade Deletion:** Instantly purges:
+    *   Authentication profiles.
+    *   Custom uploads, ABAP scripts, and analysis metadata.
+    *   Modernized designs, blueprints, and generated ZIP packages.
+    *   Sandbox outputs, configurations, and connectivity credentials.
+*   **Context Isolation:** Electron configuration maintains `nodeIntegration: false` and `contextIsolation: true` to protect users against unsafe remote script execution in desktop mode.
+
+---
+
+## 📄 Open Source License
+
+This project is licensed under the **MIT License** — completely open source, secure, and free for collaborative enterprise development.
