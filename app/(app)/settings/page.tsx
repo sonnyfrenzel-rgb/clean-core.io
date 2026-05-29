@@ -439,7 +439,17 @@ export default function SettingsPage() {
         throw new Error(errorData.error || 'Failed to submit tenant integration request.');
       }
 
-      // 2. Persist the requested flag in the Firestore UserProfile so UI retains pending state
+      // 2. Create the tenant access request document in Firestore
+      const db = getDb();
+      await setDoc(doc(db, 'tenant_access_requests', currentUser.uid), {
+        email: profile.email,
+        name: `${profile.firstName} ${profile.lastName}`,
+        motivation: byotMotivation.trim(),
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
+
+      // 3. Persist the requested flag in the Firestore UserProfile so UI retains pending state
       await updateProfile({
         s4TenantAccessRequested: true
       });
