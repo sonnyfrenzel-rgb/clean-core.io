@@ -60,11 +60,30 @@ export async function POST(request: NextRequest) {
           </p>
 
           <!-- Security Trust Indicator -->
-          <div style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 16px; padding: 18px; margin-bottom: 30px;">
+          <div style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 16px; padding: 18px; margin-bottom: 24px;">
             <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">🛡️ Secure & Compliant Sandbox Execution</span>
             <span style="color: #047857; font-size: 13px; line-height: 1.5; display: block;">
               Credentials are stored securely in your project document with restricted write access and decrypted dynamically only within server-side execution runtime proxy requests. They are never exposed directly on public client APIs.
             </span>
+          </div>
+
+          <!-- Enterprise Compliance Checklist -->
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 30px;">
+            <span style="font-weight: 800; color: #334155; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 12px;">🔒 CISO & Compliance Safe-Connection Guidelines:</span>
+            <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #475569; line-height: 1.6;">
+              <li style="margin-bottom: 8px;">
+                <strong>BTP Destination Service:</strong> Always prefer importing your connection as a standard BTP HTTP Destination JSON instead of manual credentials to inherit BTP connectivity profiles.
+              </li>
+              <li style="margin-bottom: 8px;">
+                <strong>Principal Propagation:</strong> Utilize OAuth 2.0 SAML Bearer Assertions for authentication to enforce user-specific identity propagation and audit logs inside your target ERP.
+              </li>
+              <li style="margin-bottom: 8px;">
+                <strong>Secure Cloud Connector:</strong> For On-Premise development tenants, route all traffic through a secure SAP Cloud Connector tunnel (Location ID routing) to keep your firewall closed.
+              </li>
+              <li>
+                <strong>Stateless Sandbox Proxy:</strong> The sandbox executes all queries client-side or via stateless transit proxies. No data is stored, persisted, or used for LLM training.
+              </li>
+            </ul>
           </div>
 
           <!-- Feature Recap -->
