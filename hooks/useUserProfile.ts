@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, serverTimestamp, getDoc, increment } from 'firebase/firestore';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { User } from 'firebase/auth';
 
@@ -151,11 +151,11 @@ export function useUserProfile() {
   };
 
   const incrementTransformations = async () => {
-    if (!auth.currentUser || !profile) return;
+    if (!auth.currentUser) return;
     try {
       const userDocRef = doc(db, 'users', auth.currentUser.uid);
       await setDoc(userDocRef, { 
-        transformationsUsed: (profile.transformationsUsed || 0) + 1,
+        transformationsUsed: increment(1),
         updatedAt: serverTimestamp() 
       }, { merge: true });
     } catch (err) {

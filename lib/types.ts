@@ -56,6 +56,8 @@ export interface Project {
   highComplianceCharged?: boolean;
   charged?: boolean;
   transformationBypass?: boolean;
+  fromExample?: boolean;
+  isExample?: boolean;
   createdAt?: unknown;
   updatedAt?: unknown;
 }
