@@ -66,7 +66,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
   });
 
   test('should walk through the complete 6 progressive stages using a safe example', async ({ page }) => {
-    test.setTimeout(120 * 1000); // 2 minutes timeout for real LLM analysis execution
+    test.setTimeout(240 * 1000); // 4 minutes timeout for all 5 live LLM calls
 
     // --- STAGE 0: LOGIN ---
     console.log('Navigating to homepage and signing in...');
