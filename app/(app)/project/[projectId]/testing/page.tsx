@@ -12,6 +12,7 @@ import Stepper from '@/components/Stepper';
 import type { Project } from '@/lib/types';
 import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, X, Rocket, CheckCircle2, Globe, Lock as LockIcon, Send, Sparkles, Eye, EyeOff } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
+import Link from 'next/link';
 import { saveAs } from 'file-saver';
 import { clsx } from 'clsx';
 import NavigationButtons from '@/components/NavigationButtons';
@@ -516,15 +517,23 @@ export default function TestingSandboxPage() {
             exit={{ opacity: 0, height: 0, marginBottom: 0 }}
             className="overflow-hidden animate-in fade-in"
           >
-            {profile?.s4TenantAccessAllowed ? (
+            {profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
               // Unlocked Active Connection Card
               <div className="bg-white border border-gray-100 rounded-[2rem] p-6 md:p-8 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-6 mb-6">
                   <div>
-                    <h3 className="text-xl font-black text-[#0b1c30] tracking-tight uppercase flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-blue-600" />
-                      S/4HANA Live Tenant Bridge
-                    </h3>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h3 className="text-xl font-black text-[#0b1c30] tracking-tight uppercase flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-blue-600" />
+                        S/4HANA Live Tenant Bridge
+                      </h3>
+                      <Link 
+                        href="/settings"
+                        className="text-xs text-blue-600 hover:text-blue-700 font-extrabold flex items-center gap-1 hover:underline shrink-0"
+                      >
+                        Profile Settings ↗
+                      </Link>
+                    </div>
                     <p className="text-xs text-gray-500 font-medium mt-1">Configure your non-productive S/4HANA Public Cloud endpoint to fetch live ERP data.</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -716,7 +725,7 @@ export default function TestingSandboxPage() {
                         </div>
                         <h4 className="text-xl font-black text-[#0b1c30] mb-2 uppercase tracking-tight">Access Request Pending</h4>
                         <p className="text-sm text-gray-500 font-medium leading-relaxed mb-6">
-                          🕒 Anfrage gesendet! Sonny prüft deine Anfrage manuell und schaltet dich zeitnah für dieses Premium-Feature frei.
+                          🕒 Request sent! Sonny will review your request manually and unlock this premium feature for you shortly.
                         </p>
                         <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-full uppercase tracking-wider border border-blue-100">
                           Reviewing application
@@ -737,23 +746,23 @@ export default function TestingSandboxPage() {
                         <h4 className="text-2xl font-black text-[#0b1c30] mb-3 tracking-tighter uppercase">
                           Live S/4HANA Integration Bridge
                         </h4>
-                        <p className="text-xs md:text-sm text-gray-600 font-medium leading-relaxed max-w-lg mb-8">
-                          Verbinde deine eigene SAP Entwicklungs- oder Testinstanz in Sekunden. Führe OData-Abfragen live aus dem Sandbox-Cockpit direkt gegen deine ERP-Daten aus – vollkommen abhörsicher und verschlüsselt.
+                        <p className="text-xs md:text-sm text-gray-650 font-medium leading-relaxed max-w-lg mb-8">
+                          Connect your own SAP development or testing instance in seconds. Execute live OData queries directly against your ERP data from the Sandbox Cockpit – fully secure and encrypted. You can also request and manage connections in your <Link href="/settings" className="text-blue-600 hover:text-blue-700 font-bold hover:underline">Profile Settings ↗</Link>.
                         </p>
 
                         {/* Premium Benefits Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mb-8 text-left">
                           <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
-                            <span className="font-extrabold text-[#0b1c30] text-xs block mb-1">✨ Live-Validierung</span>
-                            <span className="text-[10px] text-gray-500 font-medium block leading-normal">Echte SAP-OData-Abfragen mit realen ERP-Musterdaten.</span>
+                            <span className="font-extrabold text-[#0b1c30] text-xs block mb-1">✨ Live Validation</span>
+                            <span className="text-[10px] text-gray-500 font-medium block leading-normal">Real SAP OData queries utilizing live ERP test data.</span>
                           </div>
                           <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
                             <span className="font-extrabold text-[#0b1c30] text-xs block mb-1">🔒 Zero-Trust Vault</span>
-                            <span className="text-[10px] text-gray-500 font-medium block leading-normal">AES-256 Browser-Verschlüsselung schützt Passwörter.</span>
+                            <span className="text-[10px] text-gray-500 font-medium block leading-normal">AES-256 browser-side encryption protects passwords.</span>
                           </div>
                           <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
-                            <span className="font-extrabold text-[#0b1c30] text-xs block mb-1">🚀 Sandbox-Proxy</span>
-                            <span className="text-[10px] text-gray-500 font-medium block leading-normal">Volle SAP Cloud SDK Unterstützung ohne CORS-Probleme.</span>
+                            <span className="font-extrabold text-[#0b1c30] text-xs block mb-1">🚀 Sandbox Proxy</span>
+                            <span className="text-[10px] text-gray-500 font-medium block leading-normal">Full SAP Cloud SDK support without CORS issues.</span>
                           </div>
                         </div>
 
