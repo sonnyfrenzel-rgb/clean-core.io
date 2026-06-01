@@ -151,15 +151,20 @@ export default function Home() {
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[CLIENT LOG] handleEmailSignIn started!');
     setAuthError('');
     setIsSubmitting(true);
     try {
+      console.log('[CLIENT LOG] Calling signInWithEmailAndPassword...');
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log('[CLIENT LOG] signInWithEmailAndPassword resolved successfully!');
       const signedInUser = userCredential.user;
       
       const db = getDb();
       const userDocRef = doc(db, 'users', signedInUser.uid);
+      console.log('[CLIENT LOG] Calling getDoc for user profile...');
       const userDoc = await getDoc(userDocRef);
+      console.log('[CLIENT LOG] getDoc resolved successfully!');
       
       if (userDoc.exists()) {
         const profileData = userDoc.data();
@@ -172,6 +177,7 @@ export default function Home() {
         }
       }
       
+      console.log('[CLIENT LOG] Setting isNavigating to true and redirecting to /dashboard...');
       setIsNavigating(true);
       router.push('/dashboard');
     } catch (error: any) {
