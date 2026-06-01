@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>S/4HANA Clean Core Modernization: The Engineering Blueprint</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #0f172a;
+      background-color: #f8fafc;
+      line-height: 1.5;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact;
+    }
+
+    /* Page container setup for clean PDF page boundaries */
+    .page {
+      width: 210mm;
+      height: 297mm;
+      padding: 20mm;
+      margin: 0 auto;
+      background-color: #ffffff;
+      position: relative;
+      overflow: hidden;
+      page-break-after: always;
+      display: flex;
+      flex-col: column;
+      justify-content: space-between;
+    }
+
+    /* Page-specific layouts */
+    .cover-page {
+      background: linear-gradient(135deg, #0b1c30 0%, #080f1e 100%);
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 297mm;
+      padding: 25mm 20mm;
+    }
+
+    .cover-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 20px;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: -0.03em;
+    }
+
+    .logo span {
+      color: #10b981;
+    }
+
+    .cover-tag {
+      font-size: 10px;
+      font-weight: 800;
+      color: #10b981;
+      background-color: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .cover-middle {
+      margin-top: auto;
+      margin-bottom: auto;
+      max-width: 90%;
+    }
+
+    .cover-title {
+      font-size: 44px;
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+      margin: 0 0 20px 0;
+      color: #ffffff;
+    }
+
+    .cover-subtitle {
+      font-size: 18px;
+      font-weight: 500;
+      color: #94a3b8;
+      line-height: 1.4;
+      margin: 0 0 40px 0;
+    }
+
+    .divider-line {
+      width: 80px;
+      height: 5px;
+      background-color: #10b981;
+      border-radius: 9999px;
+      margin-bottom: 40px;
+    }
+
+    .cover-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 25px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .cover-footer strong {
+      color: #e2e8f0;
+    }
+
+    /* Content Styling */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 12px;
+      margin-bottom: 25px;
+    }
+
+    .page-header .brand {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+
+    .page-header .brand span {
+      color: #10b981;
+    }
+
+    .page-header .title-tag {
+      font-size: 9px;
+      font-weight: 800;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .page-footer {
+      border-top: 1px solid #f1f5f9;
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: #94a3b8;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .page-content {
+      flex-grow: 1;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.03em;
+      margin: 0 0 16px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2 span {
+      color: #10b981;
+    }
+
+    p {
+      font-size: 13.5px;
+      color: #334155;
+      margin: 0 0 16px 0;
+      text-align: justify;
+      line-height: 1.6;
+    }
+
+    .lead-paragraph {
+      font-size: 15px;
+      color: #0f172a;
+      font-weight: 500;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    /* Architectural Comparison Matrix Card Table */
+    table.matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 12px;
+    }
+
+    table.matrix-table th {
+      background-color: #0f172a;
+      color: #ffffff;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 10px 12px;
+      text-align: left;
+      border: 1px solid #1e293b;
+    }
+
+    table.matrix-table td {
+      padding: 10px 12px;
+      border: 1px solid #e2e8f0;
+      vertical-align: top;
+      color: #334155;
+    }
+
+    table.matrix-table tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+
+    .badge-wrap {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-rap {
+      background-color: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .badge-cap {
+      background-color: #eff6ff;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+    }
+
+    /* Grid & Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-cols: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .card {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    .card-navy {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border: none;
+      color: #ffffff;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 10px 0;
+    }
+
+    .card-title.emerald {
+      color: #10b981;
+    }
+
+    .card-title.navy {
+      color: #38bdf8;
+    }
+
+    .card p {
+      font-size: 12.5px;
+      margin: 0;
+      color: inherit;
+    }
+
+    .card-navy p {
+      color: #94a3b8;
+    }
+
+    ul.check-list {
+      margin: 0 0 20px 0;
+      padding-left: 0;
+      list-style: none;
+    }
+
+    ul.check-list li {
+      font-size: 13px;
+      color: #334155;
+      margin-bottom: 8px;
+      position: relative;
+      padding-left: 20px;
+    }
+
+    ul.check-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #10b981;
+      font-weight: 900;
+    }
+
+    .highlight-box {
+      border-left: 4px solid #10b981;
+      background-color: #f0fdf4;
+      padding: 16px 20px;
+      border-radius: 0 16px 16px 0;
+      margin: 20px 0;
+    }
+
+    .highlight-box p {
+      margin: 0;
+      font-size: 13px;
+      color: #065f46;
+      font-weight: 500;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      padding: 2px 5px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .sign-section {
+      margin-top: 40px;
+      display: flex;
+      justify-content: space-between;
+      gap: 40px;
+    }
+
+    .sign-block {
+      flex: 1;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 10px;
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    .sign-block strong {
+      color: #334155;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- PAGE 1: COVER -->
+  <div class="page cover-page">
+    <div class="cover-header">
+      <div class="logo">Clean-Core<span>.io</span></div>
+      <div class="cover-tag">Transformation Architecture</div>
+    </div>
+    
+    <div class="cover-middle">
+      <div class="divider-line"></div>
+      <h1 class="cover-title">S/4HANA Clean Core<br />Modernization</h1>
+      <p class="cover-subtitle">
+        An engineering blueprint for automated legacy ABAP refactoring via SAP BTP CAP (Node.js/TS) and Developer Extensibility (ABAP Cloud RAP).
+      </p>
+    </div>
+
+    <div class="cover-footer">
+      <div>
+        Author: <strong>Felix Frenzel</strong><br />
+        Role: <strong>Founder & Lead Architect</strong>
+      </div>
+      <div style="text-align: right;">
+        Classification: <strong>Public / Technical Standard</strong><br />
+        Date: <strong>June 2026</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 2: EXECUTIVE SUMMARY & ARCHITECTURAL CHOICE -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">Clean-Core<span>.io</span></div>
+      <div class="title-tag">The Engineering Blueprint</div>
+    </div>
+
+    <div class="page-content">
+      <h2><span>01.</span> The Legacy Modernization Bottleneck</h2>
+      <p class="lead-paragraph">
+        Custom legacy code—specifically standard modifications, unreleased database direct table reads, and tightly coupled ABAP logic—represents the single largest barrier to upgrade stability, scalability, and cloud transition in SAP environments. 
+      </p>
+      <p>
+        The SAP <strong>Clean Core</strong> paradigm demands the absolute separation of custom extensions from the standard ERP software. Clean-Core.io acts as a Do-It-Yourself (DIY) automated migration co-pilot, helping architects transition unreleased custom Z-structures into standard-compliant, decoupled cloud-ready architectures.
+      </p>
+
+      <h2><span>02.</span> The Dual-Track Extensibility Paradigm</h2>
+      <p>
+        To maintain upgrade stability, custom logic must be refactored into one of two strategic tracks defined by standard SAP extensibility guidelines:
+      </p>
+
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Technical Dimension</th>
+            <th style="width: 37.5%;"><span class="badge-wrap badge-rap">In-App ABAP Cloud (RAP)</span></th>
+            <th style="width: 37.5%;"><span class="badge-wrap badge-cap">Side-by-Side (BTP CAP)</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Core Target</strong></td>
+            <td>S/4HANA Core Developer Extensibility</td>
+            <td>SAP BTP (Node.js/TypeScript)</td>
+          </tr>
+          <tr>
+            <td><strong>Database Proximity</strong></td>
+            <td>High (Direct CDS views, synchronous joins)</td>
+            <td>Decoupled (Dedicated cloud SQL schema)</td>
+          </tr>
+          <tr>
+            <td><strong>LUW Boundary</strong></td>
+            <td>Runs natively inside core transactional block</td>
+            <td>Asynchronous, decoupled via API/Event Mesh</td>
+          </tr>
+          <tr>
+            <td><strong>UI Paradigm</strong></td>
+            <td>SAP Fiori Elements (strict templates)</td>
+            <td>React/Angular/Flexible Portal options</td>
+          </tr>
+          <tr>
+            <td><strong>Best Fit Case</strong></td>
+            <td>Real-time business validations and core locks</td>
+            <td>Burst-scale apps, SaaS, external vendor portals</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight-box">
+        <p>
+          <strong>Architectural Rule:</strong> If the legacy logic blocks standard ERP update threads or requires direct synchronous database locks (Enqueue/Dequeue), it belongs in the ABAP Cloud (RAP) track. If it processes data asynchronously, connects to third-party APIs, or scales unpredictably, it belongs in the SAP BTP (CAP) track.
+        </p>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Section 1 & 2: Core Extensibility</span>
+      <span>Clean-Core.io Whitepaper</span>
+      <span>Page 2</span>
+    </div>
+  </div>
+
+  <!-- PAGE 3: DECOUPLING CORE DATABASE & TRIGGERS -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">Clean-Core<span>.io</span></div>
+      <div class="title-tag">The Engineering Blueprint</div>
+    </div>
+
+    <div class="page-content">
+      <h2><span>03.</span> Decoupling the Database Core</h2>
+      <p class="lead-paragraph">
+        Direct database select queries on unreleased tables (such as <code>BSEG</code>, <code>KNA1</code>, <code>MARA</code>) trigger compilation blocks during S/4HANA Public Cloud upgrade cycles. Decoupling requires mapping these entities to released standard public APIs.
+      </p>
+      <p>
+        The Clean-Core.io transformation pipeline automatically identifies unreleased legacy dependencies and maps them to standard OData/REST scenarios or released CDS views:
+      </p>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title navy">Legacy Object Replacement</div>
+          <ul class="check-list">
+            <li><code>KNA1</code> &rarr; mapped to <code>I_Customer</code> (CDS View)</li>
+            <li><code>BSEG</code> &rarr; mapped to <code>I_JournalEntry</code> (CDS View)</li>
+            <li><code>MARA</code> &rarr; mapped to <code>API_PRODUCT_SRV</code> (OData)</li>
+            <li><code>VBAK</code> &rarr; mapped to <code>I_SalesOrderTP</code> (RAP)</li>
+          </ul>
+        </div>
+        <div class="card card-navy">
+          <div class="card-title emerald">Asynchronous Event Pub/Sub</div>
+          <p>
+            For side-by-side extensions, the platform generates a clean ABAP Cloud class (or BAdI implementation) on the ERP side. This trigger intercepts transactional updates in the core database and publishes the event payload asynchronously to the **SAP Event Mesh**, ensuring near-zero processing coupling.
+          </p>
+        </div>
+      </div>
+
+      <h2><span>04.</span> Quality Engineering & Verification Sandboxes</h2>
+      <p>
+        Every transformation is immediately equipped with a sandbox suite to verify logical behavior against standard APIs:
+      </p>
+      
+      <ul class="check-list">
+        <li><strong>Playwright & TAP Testing Sandbox (CAP):</strong> Auto-generates unit tests and executes them in an isolated server-side sandbox, returning TAP-reporter outputs. Supplying a <strong>BTP Destination JSON</strong> allows testing live connectivity through the **SAP Cloud Connector** (utilizing secure Principal Propagation tunnels).</li>
+        <li><strong>ABAP Unit Test doubles (RAP):</strong> In-app structures are compiled with a full ABAP Unit test suite, verifying method behaviors locally inside the SAP LUW using local mock test doubles.</li>
+        <li><strong>BPMN 2.0 Architectural Blueprinting:</strong> The L3 process flow is mapped into a standard BPMN 2.0 XML schema with explicit swimlanes and task boundaries (e.g. ServiceTasks for API calls, UserTasks for approvals). The output can be directly imported into **SAP Signavio Process Manager** or **SAP Build Process Automation**.</li>
+      </ul>
+    </div>
+
+    <div class="page-footer">
+      <span>Section 3 & 4: Database & Testing</span>
+      <span>Clean-Core.io Whitepaper</span>
+      <span>Page 3</span>
+    </div>
+  </div>
+
+  <!-- PAGE 4: ENTERPRISE GOVERNANCE & DATA SAFETY -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">Clean-Core<span>.io</span></div>
+      <div class="title-tag">The Engineering Blueprint</div>
+    </div>
+
+    <div class="page-content">
+      <h2><span>05.</span> Enterprise Governance & Data Safety</h2>
+      <p class="lead-paragraph">
+        Proprietary legacy source code is a highly confidential business asset. Clean-Core.io is engineered with strict cryptographic and operational safety boundaries to ensure data compliance.
+      </p>
+
+      <div class="card" style="margin-bottom: 20px; background-color: #f8fafc;">
+        <div class="card-title" style="color: #0f172a;">GDPR & EU Sovereignty Infrastructure</div>
+        <p style="color: #475569; margin-bottom: 10px;">
+          All storage and compute layers are hosted entirely within the <strong>Belgium (europe-west1)</strong> GCP region, satisfying European data residency policies (Art. 25 GDPR).
+        </p>
+        <p style="color: #475569;">
+          <strong>Art. 17 GDPR (Right to Erasure):</strong> Triggering account deletion initiates an atomic backend routine that permanently wipes Firebase Auth records, Firestore project documents, and stored analysis artifacts instantly.
+        </p>
+      </div>
+
+      <div class="card" style="margin-bottom: 20px; background-color: #f0fdf4; border-color: #d1fae5;">
+        <div class="card-title" style="color: #065f46;">Stateless Processing & BYOK Vault</div>
+        <p style="color: #065f46; margin-bottom: 10px;">
+          <strong>Bring Your Own Key (BYOK):</strong> Keys are vaulted inside the user's browser using AES-GCM 256-bit encryption (PBKDF2 with 100,000 iterations). Plaintext keys are never stored on our servers.
+        </p>
+        <p style="color: #065f46;">
+          <strong>Stateless Vertex AI Proxying:</strong> All prompts are routed using enterprise-grade stateless configurations. In accordance with Vertex Cloud terms, code is strictly excluded from LLM reinforcement training loops.
+        </p>
+      </div>
+
+      <h2><span>06.</span> Executive ROI & Business Value Drivers</h2>
+      <p>
+        Refactoring legacy ABAP code generates immediate business return:
+      </p>
+      <ul class="check-list">
+        <li><strong>Reduced Regression Testing Cost:</strong> Eliminating core database modifications reduces the average scope of automated and manual regression tests during S/4HANA upgrade cycles by **~40%**.</li>
+        <li><strong>Upgrade-Downtime Elimination:</strong> Keeping the core clean guarantees that cloud tenant upgrades execute seamlessly, completely avoiding upgrade-related custom code breakages.</li>
+        <li><strong>Open-Source Freedom:</strong> Decoupling to SAP BTP CAP allows leveraging modern cloud libraries (Node.js/TS) and standard agile deployment pipelines, boosting developer velocity.</li>
+      </ul>
+
+      <div class="sign-section">
+        <div class="sign-block">
+          <strong>Felix Frenzel</strong><br />
+          Founder & Lead Architect<br />
+          Clean-Core.io
+        </div>
+        <div class="sign-block">
+          <strong>Clean Core Council</strong><br />
+          Open Community Architecture<br />
+          Bamberg, Germany
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Section 5 & 6: Governance & ROI</span>
+      <span>Clean-Core.io Whitepaper</span>
+      <span>Page 4</span>
+    </div>
+  </div>
+
+</body>
+</html>
