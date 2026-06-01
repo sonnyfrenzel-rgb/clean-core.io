@@ -68,9 +68,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
   test('should walk through the complete 6 progressive stages using a safe example', async ({ page }) => {
     test.setTimeout(300 * 1000); // 5 minutes timeout for all 5 live LLM calls
 
-    // Redirect browser console logs to terminal for CI debugging
-    page.on('console', msg => console.log(`[BROWSER CONSOLE] ${msg.type()}: ${msg.text()}`));
-    page.on('pageerror', err => console.log(`[BROWSER ERROR] ${err.name}: ${err.message}\n${err.stack}`));
+    // Redirect browser console logs to terminal for CI debugging (unbuffered)
+    page.on('console', msg => process.stdout.write(`[BROWSER CONSOLE] ${msg.type()}: ${msg.text()}\n`));
+    page.on('pageerror', err => process.stdout.write(`[BROWSER ERROR] ${err.name}: ${err.message}\n${err.stack}\n`));
 
     // --- STAGE 0: LOGIN ---
     console.log('Navigating to homepage and signing in...');
@@ -86,7 +86,10 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await page.fill('input[type="password"]', TEST_PASSWORD);
     
     // Submit Sign-In
+    console.log(`[CI DEBUG] Logging in with email: ${TEST_EMAIL}`);
+    console.log('[CI DEBUG] Clicking Sign In button...');
     await page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Anmelden")');
+    console.log('[CI DEBUG] Clicked. Waiting for URL redirect to **/dashboard...');
     await page.waitForURL('**/dashboard');
     console.log('Successfully logged in and reached /dashboard.');
 
