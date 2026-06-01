@@ -73,13 +73,23 @@ export default function LandingSlideshow() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     if (isHovered || !isPlaying) return;
     
+    const intervalTime = 50; // Update every 50ms for hyper-smooth movement
+    const step = (intervalTime / 5000) * 100; // Increment percentage (50ms / 5000ms * 100 = 1%)
+    
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % slides.length);
-    }, 5000); // Change slide every 5 seconds
+      setProgress((prev) => {
+        if (prev >= 100) {
+          setCurrentIndex((current) => (current + 1) % slides.length);
+          return 0;
+        }
+        return prev + step;
+      });
+    }, intervalTime);
 
     return () => clearInterval(timer);
   }, [isHovered, isPlaying]);
@@ -137,17 +147,19 @@ export default function LandingSlideshow() {
                   key={idx}
                   onClick={() => {
                     setCurrentIndex(idx);
-                    setIsPlaying(false); // Optional: pause when manually selecting a slide
+                    setProgress(0);
+                    setIsPlaying(false); // Pause when manually selecting a slide
                   }}
                   className="relative h-2 flex-1 rounded-full overflow-hidden bg-gray-200 transition-all"
                   aria-label={`Go to slide ${idx + 1}`}
                 >
                   {idx === currentIndex && (
-                    <motion.div 
+                    <div 
                       className="absolute top-0 left-0 h-full bg-green-600"
-                      initial={{ width: "0%" }}
-                      animate={{ width: isPlaying && !isHovered ? "100%" : "0%" }}
-                      transition={{ duration: 5, ease: "linear" }}
+                      style={{ 
+                        width: `${progress}%`,
+                        transition: isPlaying && !isHovered ? 'width 50ms linear' : 'none'
+                      }}
                     />
                   )}
                   {idx < currentIndex && (
