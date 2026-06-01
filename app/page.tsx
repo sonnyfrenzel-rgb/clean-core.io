@@ -600,14 +600,27 @@ export default function Home() {
           <p className="text-lg md:text-2xl text-gray-700 max-w-3xl mx-auto mb-12 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200">
             Bridge legacy SAP and cloud-native agility. Automatically transform custom ABAP operations into clean-code architectures fully aligned with official SAP Clean Core guidelines.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
-            <button
-              onClick={user ? () => { setIsNavigating(true); router.push('/dashboard'); } : openSignInModal}
-              disabled={isNavigating}
-              className="w-full sm:w-auto flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white px-12 py-5 rounded-2xl font-black text-lg transition-all shadow-lg hover:shadow-2xl hover:-translate-y-1 disabled:bg-green-500/50 disabled:cursor-not-allowed"
-            >
-              {isNavigating ? 'Loading...' : (user ? 'Open Workspace' : 'Get Pilot Access or Login')} <ArrowRight className="w-5 h-5" />
-            </button>
+          <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+              <button
+                onClick={user ? () => { setIsNavigating(true); router.push('/dashboard'); } : openSignInModal}
+                disabled={isNavigating}
+                className="w-full sm:w-auto flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white px-12 py-5 rounded-2xl font-black text-lg transition-all shadow-lg hover:shadow-2xl hover:-translate-y-1 disabled:bg-green-500/50 disabled:cursor-not-allowed"
+              >
+                {isNavigating ? 'Loading...' : (user ? 'Open Workspace' : 'Get Pilot Access or Login')} <ArrowRight className="w-5 h-5" />
+              </button>
+              <a 
+                href="/Clean-Core_S4HANA_Modernization_Whitepaper.pdf"
+                download="Clean-Core_S4HANA_Modernization_Whitepaper.pdf"
+                className="w-full sm:w-auto flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-850 text-white px-8 py-5 rounded-2xl font-bold text-base transition-all shadow-md hover:shadow-lg hover:-translate-y-1"
+              >
+                <Download className="w-5 h-5 text-green-400" /> Download Whitepaper (PDF)
+              </a>
+            </div>
+            <div className="flex items-center gap-2 mt-2 bg-slate-100 text-slate-700 px-3.5 py-1.5 rounded-full border border-slate-200 text-xs font-bold font-mono">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              <span>LATEST COMMUNITY RELEASE: {APP_VERSION} ({APP_RELEASE_DATE})</span>
+            </div>
           </div>
         </div>
         
