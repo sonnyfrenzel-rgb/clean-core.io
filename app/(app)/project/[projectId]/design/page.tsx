@@ -223,16 +223,25 @@ const getCloudServiceDetails = (serviceName: string) => {
 };
 
 const cleanAndParseJSON = (str: string) => {
-  const trimmed = str.trim();
-  const firstBrace = trimmed.indexOf('{');
-  const lastBrace = trimmed.lastIndexOf('}');
-  
+  let cleaned = str.trim();
+
+  // 1. Extract JSON block if wrapped in markdown
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    const jsonStr = trimmed.slice(firstBrace, lastBrace + 1);
-    return JSON.parse(jsonStr);
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
   }
-  
-  return JSON.parse(trimmed);
+
+  // 2. Strip multi-line comments: /* ... */
+  cleaned = cleaned.replace(/\/\*[\s\S]*?\*\//g, '');
+
+  // 3. Strip single-line comments: // ..., but preserve URLs like http://, https://
+  cleaned = cleaned.replace(/(?<!:)\/\/.*$/gm, '');
+
+  // 4. Strip trailing commas before closing braces/brackets
+  cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
+
+  return JSON.parse(cleaned);
 };
 
 export default function DesignPage() {
