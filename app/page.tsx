@@ -138,7 +138,7 @@ export default function Home() {
         }
       }
       
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     } catch (error) {
       console.error('Error signing in:', error);
     }
@@ -179,7 +179,7 @@ export default function Home() {
       
       console.log('[CLIENT LOG] Setting isNavigating to true and redirecting to /dashboard...');
       setIsNavigating(true);
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     } catch (error: any) {
       console.error('Sign-in error:', error);
       let errorMsg = 'Invalid email or password.';
@@ -264,7 +264,7 @@ export default function Home() {
       }
       
       setIsNavigating(true);
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     } catch (error: any) {
       console.error('Registration error:', error);
       let errorMsg = 'Error creating account. Please try again.';
@@ -480,7 +480,7 @@ export default function Home() {
              </div>
             {user ? (
               <button
-                onClick={() => { setIsNavigating(true); window.location.href = '/dashboard'; }}
+                onClick={() => { setIsNavigating(true); router.push('/dashboard'); }}
                 disabled={isNavigating}
                 className="bg-gray-950 hover:bg-gray-800 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:bg-gray-900/70 disabled:cursor-not-allowed text-sm sm:text-base"
               >
