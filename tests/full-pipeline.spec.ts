@@ -87,10 +87,11 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     
     // Submit Sign-In
     console.log(`[CI DEBUG] Logging in with email: ${TEST_EMAIL}`);
-    console.log('[CI DEBUG] Clicking Sign In button...');
-    await page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Anmelden")');
-    console.log('[CI DEBUG] Clicked. Waiting for URL redirect to **/dashboard...');
-    await page.waitForURL('**/dashboard', { waitUntil: 'commit' });
+    console.log('[CI DEBUG] Clicking Sign In button and waiting for redirect to /dashboard...');
+    await Promise.all([
+      page.waitForURL('**/dashboard', { waitUntil: 'domcontentloaded' }),
+      page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Anmelden")')
+    ]);
     console.log('Successfully logged in and reached /dashboard.');
 
     // --- STAGE 0.5: CREATE PROJECT ---
