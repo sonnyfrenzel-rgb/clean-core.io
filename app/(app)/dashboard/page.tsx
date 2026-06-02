@@ -334,10 +334,21 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    console.log('[DASHBOARD LOG] useEffect auth listener mounted. auth.currentUser:', auth.currentUser ? auth.currentUser.email : 'null');
+    
+    if (auth.currentUser) {
+      console.log('[DASHBOARD LOG] Synchronous auth.currentUser found, initializing immediately');
+      setUser(auth.currentUser);
+      setLoadingAuth(false);
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      console.log('[DASHBOARD LOG] onAuthStateChanged fired. currentUser:', currentUser ? currentUser.email : 'null');
       if (!currentUser) {
+        console.log('[DASHBOARD LOG] No currentUser, redirecting to landing page /');
         router.push('/');
       } else {
+        console.log('[DASHBOARD LOG] Valid user found, setting auth state');
         setUser(currentUser);
         setLoadingAuth(false);
       }
