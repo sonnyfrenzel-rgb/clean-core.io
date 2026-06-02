@@ -4,7 +4,7 @@ const path = require('path');
 
 async function generateWhitepaper() {
   console.log('Generating Enterprise Security & GDPR Compliance Whitepaper PDF...');
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, args: ['--disable-web-security'] });
   const page = await browser.newPage();
   
   // Load template

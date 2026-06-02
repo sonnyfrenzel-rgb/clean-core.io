@@ -4,20 +4,23 @@
   <meta charset="UTF-8">
   <title>S/4HANA Clean Core Modernization: The Engineering Blueprint</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
     
     * {
       box-sizing: border-box;
     }
 
     body {
-      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       color: #0f172a;
       background-color: #f8fafc;
       line-height: 1.6;
       margin: 0;
       padding: 0;
       -webkit-print-color-adjust: exact;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
     }
 
     /* Page container setup for clean PDF page boundaries with spacious paddings */
@@ -368,6 +371,170 @@
     .sign-block strong {
       color: #334155;
     }
+
+    /* Premium Benefits Page Redesign Styles */
+    .benefit-grid {
+      display: grid;
+      grid-template-cols: 1fr 1fr;
+      gap: 18px;
+      margin: 15px 0;
+    }
+
+    .benefit-card-premium {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+
+    .benefit-card-premium::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(to bottom, #10b981, #3b82f6);
+    }
+
+    .benefit-card-premium.time::before {
+      background: linear-gradient(to bottom, #10b981, #059669);
+    }
+
+    .benefit-card-premium.resilience::before {
+      background: linear-gradient(to bottom, #3b82f6, #2563eb);
+    }
+
+    .benefit-card-premium.testing::before {
+      background: linear-gradient(to bottom, #8b5cf6, #7c3aed);
+    }
+
+    .benefit-card-premium.bpmn::before {
+      background: linear-gradient(to bottom, #ec4899, #db2777);
+    }
+
+    .benefit-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .benefit-icon-wrapper {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .benefit-card-premium.time .benefit-icon-wrapper {
+      background-color: #ecfdf5;
+      color: #10b981;
+    }
+
+    .benefit-card-premium.resilience .benefit-icon-wrapper {
+      background-color: #eff6ff;
+      color: #3b82f6;
+    }
+
+    .benefit-card-premium.testing .benefit-icon-wrapper {
+      background-color: #f5f3ff;
+      color: #8b5cf6;
+    }
+
+    .benefit-card-premium.bpmn .benefit-icon-wrapper {
+      background-color: #fdf2f8;
+      color: #ec4899;
+    }
+
+    .benefit-title-premium {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.01em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .benefit-description {
+      font-size: 11.5px;
+      line-height: 1.5;
+      color: #475569;
+      margin: 0;
+      text-align: justify;
+    }
+
+    /* Fast-Pass Feature Banner */
+    .fast-pass-banner {
+      background: linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%);
+      border: 1px solid #a7f3d0;
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 18px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .fast-pass-icon-wrapper {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background-color: #10b981;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+    }
+
+    .fast-pass-content {
+      flex: 1;
+    }
+
+    .fast-pass-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #065f46;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fast-pass-badge {
+      background-color: #065f46;
+      color: #ffffff;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .fast-pass-text {
+      font-size: 12px;
+      line-height: 1.6;
+      color: #065f46;
+      margin: 0;
+      text-align: justify;
+    }
   </style>
 </head>
 <body>
@@ -452,41 +619,68 @@
         Clean-Core.io is not just a code translator, but a comprehensive modernization accelerator. Developers, system architects, and IT decision-makers benefit from immediate, tangible advantages in daily operations:
       </p>
 
-      <div class="grid-2" style="margin-top: 15px;">
-        <div class="card">
-          <div class="card-title navy">Enormous Time Savings</div>
-          <p style="color: #475569; font-size: 12px; line-height: 1.5;">
+      <div class="benefit-grid">
+        <div class="benefit-card-premium time">
+          <div class="benefit-header">
+            <div class="benefit-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h3 class="benefit-title-premium">Enormous Time Savings</h3>
+          </div>
+          <p class="benefit-description">
             Manually searching for modern SAP standard APIs and rewriting legacy ABAP into modern Node.js microservices or RAP classes takes days. Clean-Core.io executes the analysis and code generation in under 2 minutes.
           </p>
         </div>
-        <div class="card">
-          <div class="card-title navy">Upgrade Resilience</div>
-          <p style="color: #475569; font-size: 12px; line-height: 1.5;">
+
+        <div class="benefit-card-premium resilience">
+          <div class="benefit-header">
+            <div class="benefit-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h3 class="benefit-title-premium">Upgrade Resilience</h3>
+          </div>
+          <p class="benefit-description">
             By replacing unreleased database dependencies with officially released standard SAP APIs (like I_Customer or API_PRODUCT_SRV), your ERP core remains fully upgradable and future-proof.
           </p>
         </div>
-      </div>
 
-      <div class="grid-2" style="margin-top: 10px;">
-        <div class="card">
-          <div class="card-title navy">Automated Test Stubs</div>
-          <p style="color: #475569; font-size: 12px; line-height: 1.5;">
+        <div class="benefit-card-premium testing">
+          <div class="benefit-header">
+            <div class="benefit-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.5"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <h3 class="benefit-title-premium">Automated Test Stubs</h3>
+          </div>
+          <p class="benefit-description">
             The tool writes matching automated unit tests immediately – as ABAP Unit Test Doubles for RAP or as Playwright/Express testcases for CAP. This saves extensive QA cycles.
           </p>
         </div>
-        <div class="card">
-          <div class="card-title navy">BPMN 2.0 Signavio Export</div>
-          <p style="color: #475569; font-size: 12px; line-height: 1.5;">
+
+        <div class="benefit-card-premium bpmn">
+          <div class="benefit-header">
+            <div class="benefit-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+            </div>
+            <h3 class="benefit-title-premium">BPMN 2.0 Export</h3>
+          </div>
+          <p class="benefit-description">
             L3 business processes are exported in standard BPMN 2.0 XML schema. These files can be directly imported into SAP Signavio Process Manager or SAP Build to visualize your processes instantly.
           </p>
         </div>
       </div>
 
-      <div class="card" style="margin-top: 15px; background-color: #f0fdf4; border-color: #d1fae5;">
-        <div class="card-title" style="color: #065f46;">The Fast-Pass Advantage</div>
-        <p style="color: #065f46; font-size: 12.5px;">
-          Using the integrated Fast-Pass Stepper, you can bypass intermediate wizard stages and jump straight from the analysis page to the Delivery view to download your compiled ZIP package containing all modularized project files.
-        </p>
+      <div class="fast-pass-banner">
+        <div class="fast-pass-icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div class="fast-pass-content">
+          <div class="fast-pass-title">
+            The Fast-Pass Advantage <span class="fast-pass-badge">Accelerator</span>
+          </div>
+          <p class="fast-pass-text">
+            Using the integrated Fast-Pass Stepper, you can bypass intermediate wizard stages and jump straight from the analysis page to the Delivery view to download your compiled ZIP package containing all modularized project files.
+          </p>
+        </div>
       </div>
     </div>
 

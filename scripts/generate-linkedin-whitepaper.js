@@ -4,7 +4,7 @@ const path = require('path');
 
 async function generateLinkedInWhitepaper() {
   console.log('Generating LinkedIn Clean-Core S/4HANA Modernization Whitepaper PDF...');
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, args: ['--disable-web-security'] });
   const page = await browser.newPage();
   
   // Load template
