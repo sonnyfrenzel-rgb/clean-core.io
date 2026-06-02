@@ -52,7 +52,7 @@ export default function TcoCalculatorPage() {
     fetchProject();
   }, [projectId]);
 
-  // McKinsey-Grade TCO Mathematical Model
+  // Better Practice TCO Mathematical Model
   const calculations = useMemo(() => {
     const scoreBefore = project?.cleanCoreScore || 30;
     const scoreAfter = 95; // Upgraded target
@@ -138,7 +138,7 @@ export default function TcoCalculatorPage() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full uppercase tracking-wider">C-Level Executive View</span>
-              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full uppercase tracking-wider print:hidden">McKinsey Standard Mapped</span>
+              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full uppercase tracking-wider print:hidden">Better Practice Mapped</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-black text-[#0b1c30] tracking-tight uppercase mt-2">TCO & Upgrade-ROI Analysis</h1>
             <p className="text-sm text-gray-500 font-medium mt-1">Upgrade-impact reduction forecast based on Clean Core modernization score.</p>

@@ -938,7 +938,7 @@ ${codeToAnalyze}`;
                   </div>
                 </div>
 
-                {/* McKinsey TCO & ROI Calculator CTA */}
+                {/* Better Practice TCO & ROI Calculator CTA */}
                 <div className="border-t border-slate-100 pt-4 mt-2">
                   <a
                     href={`/project/${projectId}/tco`}
