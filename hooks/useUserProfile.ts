@@ -40,7 +40,9 @@ export function useUserProfile() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('[PROFILE HOOK LOG] useEffect auth listener mounted. auth.currentUser:', auth.currentUser ? auth.currentUser.email : 'null');
     const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
+      console.log('[PROFILE HOOK LOG] onAuthStateChanged fired. user:', user ? user.email : 'null');
       if (!user) {
         setProfile(null);
         setLoading(false);
