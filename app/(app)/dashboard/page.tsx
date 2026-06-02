@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import { Plus, Trash2, ArrowRight, FolderOpen, Folder, ChevronRight, ChevronDown, ChevronUp, FileText, FileCode2, Download, Copy, Eye, X, Activity, Clock, CheckCircle2, RefreshCw, AlertCircle, BookOpen, Shield, ShieldAlert, MessageSquare, Crown, ShieldCheck, HelpCircle, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { saveAs } from 'file-saver';
@@ -353,6 +353,16 @@ export default function Dashboard() {
       where('userId', '==', user.uid),
       orderBy('createdAt', 'desc')
     );
+    
+    // Immediate, robust one-time getDocs fetch to ensure loading state resolves
+    // even if the persistent onSnapshot streaming connection hangs or is blocked on CI runners.
+    getDocs(q).then((snapshot) => {
+      setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoadingProjects(false);
+    }).catch((error) => {
+      console.error('Immediate getDocs projects fetch error:', error);
+    });
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoadingProjects(false);
@@ -371,6 +381,16 @@ export default function Dashboard() {
       where('userId', '==', user.uid),
       orderBy('createdAt', 'desc')
     );
+
+    // Immediate, robust one-time getDocs fetch to ensure loading state resolves
+    // even if the persistent onSnapshot streaming connection hangs or is blocked on CI runners.
+    getDocs(q).then((snapshot) => {
+      setAbapExamples(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoadingExamples(false);
+    }).catch((error) => {
+      console.error('Immediate getDocs examples fetch error:', error);
+    });
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setAbapExamples(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoadingExamples(false);

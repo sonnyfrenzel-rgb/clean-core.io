@@ -49,6 +49,27 @@ export function useUserProfile() {
 
       const userDocRef = doc(db, 'users', user.uid);
       
+      // Immediate, robust one-time getDoc fetch to ensure loading state resolves
+      // even if the persistent onSnapshot streaming connection hangs or is blocked on CI runners.
+      getDoc(userDocRef).then((docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as UserProfile;
+          const isSonny = data.email === 'sonny.frenzel@googlemail.com' || data.email === 'sonny.frenzel@gmail.com';
+          if (isSonny) {
+            data.tier = 'enterprise';
+            data.transformationsLimit = 999999;
+            data.status = 'approved';
+            data.isAdmin = true;
+          } else if (data.tier === 'pilot') {
+            data.transformationsLimit = 5;
+          }
+          setProfile(data);
+          setLoading(false);
+        }
+      }).catch((err) => {
+        console.error('Immediate getDoc profile fetch error:', err);
+      });
+
       const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data() as UserProfile;
