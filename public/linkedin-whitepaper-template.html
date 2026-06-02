@@ -383,7 +383,7 @@
       <div class="divider-line"></div>
       <h1 class="cover-title">S/4HANA Clean Core<br />Modernization</h1>
       <p class="cover-subtitle">
-        A free, non-commercial community pilot for automated legacy ABAP refactoring via SAP BTP CAP (Node.js/TS) and Developer Extensibility (ABAP Cloud RAP).
+        A free, non-commercial community pilot project for automated legacy ABAP refactoring to SAP BTP CAP (Node.js/TS) and Developer Extensibility (ABAP Cloud RAP).
       </p>
     </div>
 
@@ -399,25 +399,166 @@
     </div>
   </div>
 
-  <!-- PAGE 2: INTRODUCTION & DECISION FRAMEWORK -->
+  <!-- PAGE 2: PAGE 2 - WHAT IS CLEAN-CORE.IO & INTRODUCTION -->
   <div class="page">
     <div class="page-header">
       <div class="brand">Clean-Core<span>.io</span></div>
-      <div class="title-tag">Section 1: The Core Concept</div>
+      <div class="title-tag">Section 1: The Introduction</div>
     </div>
 
     <div class="page-content">
-      <h2><span>01.</span> Understanding the Clean Core Strategy</h2>
+      <h2><span>01.</span> What is Clean-Core.io?</h2>
       <p class="lead-paragraph">
-        What is Clean Core? In simple terms, it means keeping the standard SAP ERP core code completely untouched. When custom code is mixed directly with standard code, S/4HANA system updates become complex, slow, and expensive.
+        In simple terms, Clean Core means keeping the standard SAP ERP core code completely untouched. When custom code is mixed directly with standard standard classes and tables, future S/4HANA system updates become complex, slow, and expensive.
       </p>
       <p>
-        The SAP <strong>Clean Core</strong> strategy resolves this by separating custom extensions from the standard ERP software. Built as a <strong>free, non-commercial community learning project</strong>, Clean-Core.io acts as an educational, Do-It-Yourself (DIY) transformation co-pilot. It helps developers refactor unreleased legacy structures (like direct database select statements or obsolete modifications) into modern, standard-compliant, cloud-ready extensions.
+        This is exactly where <strong>Clean-Core.io</strong> comes in. Designed as a free, non-commercial DIY community learning project, this tool supports SAP developers and architects as an intelligent co-pilot. Simply upload your legacy, proprietary ABAP code (such as raw database SELECTs or obsolete function modules) and transform it into modern, upgrade-safe cloud-ready extensions with a single click.
       </p>
 
-      <h2><span>02.</span> Choosing Your Path: RAP vs. CAP</h2>
-      <p>
-        To keep the core clean, standard SAP guidelines define two main upgrade-safe paths for developers:
+      <div class="card" style="margin-top: 20px; background-color: #f8fafc;">
+        <div class="card-title" style="color: #0f172a;">The Problem: Z-Table Chaos & Rigid Core Modifications</div>
+        <p style="color: #475569; font-size: 12.5px; margin-bottom: 8px;">
+          Historically grown SAP systems often contain hundreds of custom database tables and direct modifications. These Z-objects block standard upgrades because SAP can modify the underlying standard structures at any time.
+        </p>
+        <p style="color: #475569; font-size: 12.5px;">
+          The solution is a clean separation of custom logic and standard software. Our wizard analyzes your legacy Z-objects and automatically recommends the optimal modernization track.
+        </p>
+      </div>
+
+      <div class="highlight-box" style="margin-top: 20px;">
+        <p>
+          <strong>S/4HANA Extensibility Rule:</strong> Custom developments belong either as In-App Extensibility directly in the SAP ABAP Cloud Stack (RAP) or as Side-by-Side Extensibility on the SAP Business Technology Platform (BTP CAP). The standard core remains completely clean and untouched.
+        </p>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Section 1: What is Clean-Core.io</span>
+      <span>Clean-Core.io Whitepaper</span>
+      <span>Page 2</span>
+    </div>
+  </div>
+
+  <!-- PAGE 3: PAGE 3 - WHAT BENEFITS DOES IT BRING / USER VALUE -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">Clean-Core<span>.io</span></div>
+      <div class="title-tag">Section 2: User Benefits</div>
+    </div>
+
+    <div class="page-content">
+      <h2><span>02.</span> The Value: What benefits does it bring to the user?</h2>
+      <p class="lead-paragraph">
+        Clean-Core.io is not just a code translator, but a comprehensive modernization accelerator. Developers, system architects, and IT decision-makers benefit from immediate, tangible advantages in daily operations:
+      </p>
+
+      <div class="grid-2" style="margin-top: 15px;">
+        <div class="card">
+          <div class="card-title navy">Enormous Time Savings</div>
+          <p style="color: #475569; font-size: 12px; line-height: 1.5;">
+            Manually searching for modern SAP standard APIs and rewriting legacy ABAP into modern Node.js microservices or RAP classes takes days. Clean-Core.io executes the analysis and code generation in under 2 minutes.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title navy">Upgrade Resilience</div>
+          <p style="color: #475569; font-size: 12px; line-height: 1.5;">
+            By replacing unreleased database dependencies with officially released standard SAP APIs (like I_Customer or API_PRODUCT_SRV), your ERP core remains fully upgradable and future-proof.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top: 10px;">
+        <div class="card">
+          <div class="card-title navy">Automated Test Stubs</div>
+          <p style="color: #475569; font-size: 12px; line-height: 1.5;">
+            The tool writes matching automated unit tests immediately – as ABAP Unit Test Doubles for RAP or as Playwright/Express testcases for CAP. This saves extensive QA cycles.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title navy">BPMN 2.0 Signavio Export</div>
+          <p style="color: #475569; font-size: 12px; line-height: 1.5;">
+            L3 business processes are exported in standard BPMN 2.0 XML schema. These files can be directly imported into SAP Signavio Process Manager or SAP Build to visualize your processes instantly.
+          </p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 15px; background-color: #f0fdf4; border-color: #d1fae5;">
+        <div class="card-title" style="color: #065f46;">The Fast-Pass Advantage</div>
+        <p style="color: #065f46; font-size: 12.5px;">
+          Using the integrated Fast-Pass Stepper, you can bypass intermediate wizard stages and jump straight from the analysis page to the Delivery view to download your compiled ZIP package containing all modularized project files.
+        </p>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Section 2: Value for the User</span>
+      <span>Clean-Core.io Whitepaper</span>
+      <span>Page 3</span>
+    </div>
+  </div>
+
+  <!-- PAGE 4: PAGE 4 - CLOSED PILOT, SECURITY & COMPLIANCE -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">Clean-Core<span>.io</span></div>
+      <div class="title-tag">Section 3: Security & Compliance</div>
+    </div>
+
+    <div class="page-content">
+      <h2><span>03.</span> Closed Pilot, Data Security & Compliance</h2>
+      <p class="lead-paragraph">
+        Proprietary legacy source code is a highly confidential business asset. Clean-Core.io is engineered with strict cryptographic and operational safety boundaries to ensure data compliance and protection.
+      </p>
+
+      <div class="card" style="margin-bottom: 16px; background-color: #f8fafc;">
+        <div class="card-title" style="color: #0f172a;">The Closed Pilot: Controlled Access & BYOK</div>
+        <p style="color: #475569; font-size: 12.5px; margin-bottom: 8px;">
+          The platform is accessible via a restricted, free Closed Pilot. Every new pilot user receives 5 free transformations to explore the wizard.
+        </p>
+        <p style="color: #475569; font-size: 12.5px;">
+          For unlimited, private, and fully secure enterprise modernizations, the platform supports the innovative <strong>Bring Your Own Key (BYOK)</strong> vault. Your private Gemini API key is encrypted directly inside your browser using PBKDF2 (100,000 iterations) and AES-GCM 256-bit encryption. Plaintext keys never reach our database.
+        </p>
+      </div>
+
+      <div class="card" style="margin-bottom: 16px; background-color: #f0fdf4; border-color: #d1fae5;">
+        <div class="card-title" style="color: #065f46;">Stateless AI Routing & Model Training Isolation</div>
+        <p style="color: #065f46; font-size: 12.5px; margin-bottom: 8px;">
+          All AI prompts are routed via a secure, server-side API proxy to Google Vertex AI.
+        </p>
+        <p style="color: #065f46; font-size: 12.5px;">
+          In accordance with Google Cloud Enterprise data safety terms, all code snippets sent to the backend proxy are <strong>strictly excluded from LLM model training and reinforcement cycles</strong>. Your intellectual property remains strictly yours.
+        </p>
+      </div>
+
+      <div class="card" style="background-color: #f9fafb;">
+        <div class="card-title" style="color: #0f172a;">100% GDPR Compliance & Sovereignty (Art. 25 & 17 GDPR)</div>
+        <p style="color: #475569; font-size: 12.5px; margin-bottom: 6px;">
+          All server, database, and compute layers are hosted entirely within the GCP region <strong>Belgium (europe-west1)</strong>, satisfying European data residency policies.
+        </p>
+        <p style="color: #475569; font-size: 12.5px;">
+          Triggering account deletion initiates an atomic backend routine (Art. 17 GDPR - Right to Erasure) that permanently wipes Firebase Auth records, Firestore project documents, and stored ZIP files instantly. The system never parses or processes actual business master data.
+        </p>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Section 3: Closed Pilot & Compliance</span>
+      <span>Clean-Core.io Whitepaper</span>
+      <span>Page 4</span>
+    </div>
+  </div>
+
+  <!-- PAGE 5: DETAILS 1 - TECHNICAL DETAILS: RAP vs. CAP & API-MAPPING -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">Clean-Core<span>.io</span></div>
+      <div class="title-tag">Section 4: Technical Details</div>
+    </div>
+
+    <div class="page-content">
+      <h2><span>04.</span> Technical Details: RAP vs. CAP & API Mapping</h2>
+      <p class="lead-paragraph">
+        The modernization engine decides during Stage 1 based on syntax analysis which extensibility path is best suited for your legacy system:
       </p>
 
       <table class="matrix-table">
@@ -430,235 +571,91 @@
         </thead>
         <tbody>
           <tr>
-            <td><strong>Core Target</strong></td>
-            <td>SAP RAP runs directly inside the S/4HANA system.</td>
-            <td>SAP CAP runs externally on the SAP Business Technology Platform (BTP).</td>
+            <td><strong>Runtime Engine</strong></td>
+            <td>Runs natively directly within the S/4HANA core.</td>
+            <td>Runs decoupled on the SAP BTP (Node.js/TS).</td>
           </tr>
           <tr>
-            <td><strong>Database Access</strong></td>
-            <td>Uses released CDS views and synchronous queries.</td>
-            <td>Decoupled using separate SQL databases and web APIs.</td>
+            <td><strong>Interfaces</strong></td>
+            <td>Uses synchronous released CDS views.</td>
+            <td>Decoupled via OData APIs or Event Mesh.</td>
           </tr>
           <tr>
-            <td><strong>LUW Boundary</strong></td>
-            <td>Runs natively inside standard database threads and locks.</td>
-            <td>Asynchronous, communicating via APIs or Event Mesh.</td>
+            <td><strong>RISE Compliance</strong></td>
+            <td>Strict SaaS compliance (zero core modifications).</td>
+            <td>Upgrade-resilient Tier 2 custom API wrappers.</td>
           </tr>
           <tr>
-            <td><strong>UI Layout</strong></td>
-            <td>Built with standard SAP Fiori Elements layout templates.</td>
-            <td>Highly flexible (React, Angular, or customized web pages).</td>
-          </tr>
-          <tr>
-            <td><strong>Best Fit Case</strong></td>
-            <td>Immediate database updates, validations, and document locks.</td>
-            <td>Decoupled customer portals, SaaS, or unpredictable traffic scales.</td>
+            <td><strong>Focus Case</strong></td>
+            <td>Immediate database updates and transactional locks.</td>
+            <td>Customer portals, external mobile apps, SaaS tools.</td>
           </tr>
         </tbody>
       </table>
 
-      <div class="highlight-box">
-        <p>
-          <strong>Factual Architectural Rule:</strong> If the legacy logic needs to check data instantly and block standard SAP database threads during transaction saves, it belongs in the ABAP Cloud (RAP) track. If the process is asynchronous or integrates with non-SAP systems, it belongs in the SAP BTP (CAP) track.
-        </p>
-      </div>
-    </div>
-
-    <div class="page-footer">
-      <span>Section 1 & 2: Core Extensibility</span>
-      <span>Clean-Core.io Whitepaper</span>
-      <span>Page 2</span>
-    </div>
-  </div>
-
-  <!-- PAGE 3: DECOUPLING THE DATABASE LAYER -->
-  <div class="page">
-    <div class="page-header">
-      <div class="brand">Clean-Core<span>.io</span></div>
-      <div class="title-tag">Section 2: Database Decoupling</div>
-    </div>
-
-    <div class="page-content">
-      <h2><span>03.</span> Decoupling the Database Core</h2>
-      <p class="lead-paragraph">
-        Direct select queries on unreleased legacy database tables (like <code>KNA1</code> for customer master data or <code>BSEG</code> for accounting data) cause upgrade compilation blocks. Decoupling means replacing raw queries with standard released SAP APIs.
-      </p>
-      <p>
-        The Clean-Core.io transformation pipeline automatically identifies unreleased legacy dependencies in your old ABAP code and maps them to target released standard scenario interfaces:
-      </p>
-
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-title navy">Released SAP Object Mapping</div>
-          <p style="color: #475569; margin-bottom: 8px; font-size: 11.5px;">Direct raw database tables are replaced with safe, standard released interfaces:</p>
-          <ul class="check-list" style="margin-bottom: 0;">
-            <li><code>KNA1</code> (Customer) &rarr; <code>I_Customer</code> (CDS View)</li>
-            <li><code>BSEG</code> (Accounting) &rarr; <code>I_JournalEntry</code> (CDS View)</li>
-            <li><code>MARA</code> (Material) &rarr; <code>API_PRODUCT_SRV</code> (OData)</li>
-            <li><code>VBAK</code> (Sales Header) &rarr; <code>I_SalesOrderTP</code> (RAP)</li>
-          </ul>
-        </div>
-        <div class="card card-navy">
-          <div class="card-title emerald">Asynchronous Event Pub/Sub</div>
-          <p style="margin-bottom: 10px;">
-            For BTP CAP side-by-side extensions, the platform generates a clean ABAP Cloud class (or BAdI trigger implementation) on the ERP side.
-          </p>
-          <p>
-            This class intercepts database changes in S/4HANA and publishes the event payload asynchronously to the <strong>SAP Event Mesh</strong>. The external Node.js microservice receives the message and processes it, achieving zero processing coupling.
-          </p>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top: 10px; background-color: #f8fafc;">
-        <div class="card-title" style="color: #0f172a;">Why standard APIs keep the core clean</div>
-        <p style="color: #475569; font-size: 12.5px;">
-          By routing all requests through official, released APIs, SAP can modify its underlying database tables during upgrades without breaking your custom applications. The API acts as a stable contract between the standard ERP and your custom code.
-        </p>
-      </div>
-    </div>
-
-    <div class="page-footer">
-      <span>Section 3: Database Decoupling</span>
-      <span>Clean-Core.io Whitepaper</span>
-      <span>Page 3</span>
-    </div>
-  </div>
-
-  <!-- PAGE 4: QUALITY ENGINEERING & SANDBOXES -->
-  <div class="page">
-    <div class="page-header">
-      <div class="brand">Clean-Core<span>.io</span></div>
-      <div class="title-tag">Section 3: Quality Engineering</div>
-    </div>
-
-    <div class="page-content">
-      <h2><span>04.</span> Quality Engineering & Verification Sandboxes</h2>
-      <p class="lead-paragraph">
-        Every modern software project requires rigorous testing. Clean-Core.io automatically equips your transformed cloud application with automated testing sandboxes to verify correct behavior:
-      </p>
-
-      <div class="card" style="margin-bottom: 16px;">
-        <div class="card-title" style="color: #0f172a;">Playwright & TAP Testing Sandbox (BTP CAP)</div>
+      <div class="card" style="margin-top: 15px; background-color: #f8fafc;">
+        <div class="card-title" style="color: #0f172a;">Automated API Mapping & Decoupling</div>
         <p style="color: #475569; font-size: 12.5px; margin-bottom: 8px;">
-          The system auto-generates express unit tests and runs them in a sandboxed, server-side Node.js environment.
+          Direct SELECTs on old tables (like KNA1 for customers or BSEG for financials) trigger immediate audit errors. The engine maps these queries to modern standard interfaces:
         </p>
-        <p style="color: #475569; font-size: 12.5px;">
-          By providing a <strong>BTP Destination JSON</strong>, you can securely test live connections to your non-productive S/4HANA tenant. The test runs through the <strong>SAP Cloud Connector</strong> (utilizing standard Principal Propagation tunnels to forward user context safely).
-        </p>
-      </div>
-
-      <div class="card" style="margin-bottom: 16px;">
-        <div class="card-title" style="color: #0f172a;">ABAP Unit Test Doubles (ABAP Cloud RAP)</div>
-        <p style="color: #475569; font-size: 12.5px;">
-          For in-app RAP structures, the platform generates a comprehensive ABAP Unit test suite. It uses standard local test doubles to mock database reads and writes. This allows verifying validation classes locally without modifying actual database tables.
-        </p>
-      </div>
-
-      <div class="card" style="margin-bottom: 10px; background-color: #f0fdf4; border-color: #d1fae5;">
-        <div class="card-title" style="color: #065f46;">SAP Signavio & SAP Build BPMN Exports</div>
-        <p style="color: #065f46; font-size: 12.5px;">
-          The platform maps the L3 business process into a standard BPMN 2.0 XML schema. It defines explicit swimlanes and role-based tasks (e.g. Finance Analyst, Developer, CISO). The resulting XML file can be directly imported into **SAP Signavio Process Manager** or **SAP Build Process Automation** to visualize your target process.
-        </p>
+        <ul class="check-list" style="margin-bottom: 0;">
+          <li><code>KNA1</code> (Customer Master) &rarr; Maps to CDS View <code>I_Customer</code></li>
+          <li><code>BSEG</code> (Accounting Segment) &rarr; Maps to CDS View <code>I_JournalEntry</code></li>
+          <li><code>MARA</code> (Material Master) &rarr; Maps to OData API <code>API_PRODUCT_SRV</code></li>
+          <li><code>VBAK</code> (Sales Header) &rarr; Maps to RAP Entity <code>I_SalesOrderTP</code></li>
+        </ul>
       </div>
     </div>
 
     <div class="page-footer">
-      <span>Section 4: Quality Engineering</span>
-      <span>Clean-Core.io Whitepaper</span>
-      <span>Page 4</span>
-    </div>
-  </div>
-
-  <!-- PAGE 5: ENTERPRISE GOVERNANCE & DATA SAFETY -->
-  <div class="page">
-    <div class="page-header">
-      <div class="brand">Clean-Core<span>.io</span></div>
-      <div class="title-tag">Section 4: Data Governance</div>
-    </div>
-
-    <div class="page-content">
-      <h2><span>05.</span> Enterprise Governance & Data Safety</h2>
-      <p class="lead-paragraph">
-        Proprietary legacy source code is a highly confidential business asset. Clean-Core.io is engineered with strict cryptographic and operational safety boundaries to ensure data compliance.
-      </p>
-
-      <div class="card" style="margin-bottom: 20px; background-color: #f8fafc;">
-        <div class="card-title" style="color: #0f172a;">GDPR & EU Sovereignty Infrastructure (Art. 25 GDPR)</div>
-        <p style="color: #475569; margin-bottom: 10px; font-size: 12.5px;">
-          All storage and compute layers are hosted entirely within the <strong>Belgium (europe-west1)</strong> GCP region, satisfying European data residency policies.
-        </p>
-        <p style="color: #475569; font-size: 12.5px;">
-          <strong>Art. 17 GDPR (Right to Erasure):</strong> Triggering account deletion initiates an atomic backend routine that permanently wipes Firebase Auth records, Firestore project documents, and stored analysis artifacts instantly.
-        </p>
-      </div>
-
-      <div class="card" style="margin-bottom: 20px; background-color: #f0fdf4; border-color: #d1fae5;">
-        <div class="card-title" style="color: #065f46;">Stateless Processing & BYOK Vault</div>
-        <p style="color: #065f46; margin-bottom: 10px; font-size: 12.5px;">
-          <strong>Bring Your Own Key (BYOK):</strong> Your private Gemini API key is encrypted directly inside your browser using AES-GCM 256-bit encryption (PBKDF2 with 100,000 iterations). Plaintext keys are never stored on our servers.
-        </p>
-        <p style="color: #065f46; font-size: 12.5px;">
-          <strong>Stateless Vertex AI Proxying:</strong> All prompts are routed using enterprise-grade stateless configurations. In accordance with Vertex Cloud terms, code is strictly excluded from LLM reinforcement training loops. Your intellectual property remains strictly yours.
-        </p>
-      </div>
-
-      <div class="card" style="background-color: #f9fafb;">
-        <div class="card-title" style="color: #0f172a;">Zero master data processing</div>
-        <p style="color: #475569; font-size: 12.5px;">
-          To prevent data leaks, Clean-Core.io only parses code structures and abstract schemas. It does not parse or process master data or actual business records (like customer names or pricing values).
-        </p>
-      </div>
-    </div>
-
-    <div class="page-footer">
-      <span>Section 5: Data Governance</span>
+      <span>Section 4: RAP vs. CAP Details</span>
       <span>Clean-Core.io Whitepaper</span>
       <span>Page 5</span>
     </div>
   </div>
 
-  <!-- PAGE 6: COMMUNITY VISION, CLOSED PILOT & CTA -->
+  <!-- PAGE 6: DETAILS 2 - QUALITY ENGINEERING & CTA -->
   <div class="page">
     <div class="page-header">
       <div class="brand">Clean-Core<span>.io</span></div>
-      <div class="title-tag">Section 5: Community & Execution</div>
+      <div class="title-tag">Section 5: Quality & Joining</div>
     </div>
 
     <div class="page-content">
-      <h2><span>06.</span> Community Vision, Closed Pilot & Educational Design</h2>
+      <h2><span>05.</span> Quality Engineering & Community Collaboration</h2>
       <p class="lead-paragraph">
-        Clean-Core.io is <strong>strictly a free, non-commercial educational project</strong> built for the SAP developer community. Its purpose is to demonstrate how modern AI-driven architectures can help automate legacy ABAP transitions and make Clean Core guidelines accessible and practical.
+        A clean refactoring is only complete when the result is fully functional and auditable. Clean-Core.io equips every transformation with built-in quality assurance:
       </p>
 
-      <div class="grid-2" style="margin-bottom: 20px;">
+      <div class="grid-2">
         <div class="card">
-          <div class="card-title navy" style="color: #38bdf8;">Closed Pilot Access</div>
+          <div class="card-title navy">Automated Sandbox Tests</div>
           <p style="color: #475569; font-size: 12.5px;">
-            The platform is accessible via a <strong>free, restricted Closed Pilot</strong>. New registrants receive 5 free transformations to explore the wizard. For unlimited, private, and fully secure enterprise modernizations, the platform supports <strong>Bring Your Own Key (BYOK)</strong>.
+            For BTP CAP projects, an Express unit test suite is generated. By inputting a BTP Destination JSON, you can securely execute sandbox tests against your non-productive S/4HANA tenant via the SAP Cloud Connector.
           </p>
         </div>
-        <div class="card" style="background-color: #f8fafc;">
-          <div class="card-title" style="color: #10b981;">Educational Design Overlays</div>
+        <div class="card">
+          <div class="card-title navy">ABAP Unit Doubles</div>
           <p style="color: #475569; font-size: 12.5px;">
-            The app features contextual <strong>glossary overlays</strong> explaining complex security concepts ( helmet.js, stateless JWT, principal propagation) and <strong>deep-dive connectivity drawers</strong> displaying ready-to-use Node.js client integrations.
+            For RAP blocks, a local ABAP Unit test class is generated. Database SELECTs are simulated using local doubles, allowing you to run your validation classes immediately and locally.
           </p>
         </div>
       </div>
 
-      <div class="card" style="margin-top: 10px; margin-bottom: 20px; background: linear-gradient(135deg, #0b1c30 0%, #080f1e 100%); border: none; color: #ffffff; text-align: center; padding: 25px;">
-        <div class="card-title" style="color: #10b981; font-size: 13px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;">Get Started with Clean Core</div>
+      <div class="card" style="margin-top: 15px; margin-bottom: 20px; background: linear-gradient(135deg, #0b1c30 0%, #080f1e 100%); border: none; color: #ffffff; text-align: center; padding: 25px;">
+        <div class="card-title" style="color: #10b981; font-size: 13px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;">Join the Clean-Core Community</div>
         <p style="color: #cbd5e1; font-size: 13px; margin-bottom: 16px;">
-          Accelerate your S/4HANA modernization journey today. Upload legacy ABAP, map standard APIs, and bundle deployable CAP/RAP packages instantly.
+          Bring your legacy Z-programs into the cloud era. Register for the Closed Pilot or leverage your own Gemini API key (BYOK) for unlimited, private transformations today!
         </p>
         <a href="https://clean-core.io" target="_blank" style="display: inline-block; background-color: #10b981; color: #ffffff; font-weight: 800; font-size: 11px; text-decoration: none; padding: 10px 24px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.1em; transition: all 0.2s;">
-          Launch Modernization Wizard &rarr; https://clean-core.io
+          Register Now & Start &rarr; https://clean-core.io
         </a>
       </div>
 
       <div class="sign-section">
         <div class="sign-block">
           <strong>Felix Frenzel</strong><br />
-          Clean-Core.io Community
+          Clean-Core.io Initiator
         </div>
         <div class="sign-block">
           <strong>Clean Core Council</strong><br />
@@ -668,7 +665,7 @@
     </div>
 
     <div class="page-footer">
-      <span>Section 6: Community & CTA</span>
+      <span>Section 5: Quality & CTA</span>
       <span>Clean-Core.io Whitepaper</span>
       <span>Page 6</span>
     </div>
