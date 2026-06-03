@@ -8,7 +8,7 @@ import Stepper from '@/components/Stepper';
 import NavigationButtons from '@/components/NavigationButtons';
 import { Download, ArrowLeft, ArrowRight, RefreshCw, AlertCircle, FileCode2, Briefcase, Target, Users, Settings, Activity, Layers, Cpu, Database, Box, Lock, CheckCircle2, X, Rocket } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import dynamic from 'next/dynamic';
 import { clsx } from 'clsx';
 import { saveAs } from 'file-saver';
@@ -207,6 +207,12 @@ export default function DocumentationPage() {
 
   const handleNodeClick = (nodeId: string) => {
     setHighlightedTaskId(nodeId);
+    if (parsedDoc?.l4_tasks) {
+      const task = parsedDoc.l4_tasks.find((t: any) => t.stepId === nodeId);
+      if (task) {
+        setActiveTask(task);
+      }
+    }
     const element = document.getElementById(`task-${nodeId}`);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -479,6 +485,27 @@ ${context}`;
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-[#0b1c30] tracking-tight uppercase">Process Blueprint & Mapping</h1>
           <p className="text-[#0b1c30]/70 font-medium">Business Architecture & BPMN Map</p>
+          
+          {/* SAP Compatibility Badges */}
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Integrations:</span>
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded text-[9px] font-black uppercase tracking-tight shadow-sm cursor-help group/signavio relative">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>SAP Signavio Ready</span>
+              <div className="absolute top-full left-0 mt-1 w-64 p-3 bg-slate-900 border border-slate-800 text-[10px] rounded-xl shadow-xl opacity-0 pointer-events-none group-hover/signavio:opacity-100 transition-opacity duration-200 text-left leading-relaxed text-slate-300 z-50 normal-case">
+                <div className="font-extrabold text-emerald-400 mb-1 uppercase tracking-wider text-[9px]">SAP Signavio Ready</div>
+                The generated BPMN 2.0 XML conforms precisely to the standard Signavio Process Manager schema model for seamless imports.
+              </div>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 rounded text-[9px] font-black uppercase tracking-tight shadow-sm cursor-help group/sapbuild relative">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span>
+              <span>SAP Build Validated</span>
+              <div className="absolute top-full left-0 mt-1 w-64 p-3 bg-slate-900 border border-slate-800 text-[10px] rounded-xl shadow-xl opacity-0 pointer-events-none group-hover/sapbuild:opacity-100 transition-opacity duration-200 text-left leading-relaxed text-slate-300 z-50 normal-case">
+                <div className="font-extrabold text-cyan-400 mb-1 uppercase tracking-wider text-[9px]">SAP Build Validated</div>
+                Process flow structures mapped for direct compatibility inside SAP Build Process Automation pipelines.
+              </div>
+            </div>
+          </div>
         </div>
         <div className="flex flex-wrap gap-3">
           <div className="relative group/tooltip">
@@ -651,7 +678,7 @@ ${context}`;
             </div>
             <div className="rounded-2xl overflow-hidden border border-gray-100 h-[400px] md:h-[500px] shadow-inner relative">
               {parsedDoc.l3_flow && (
-                <ProcessFlow flow={parsedDoc.l3_flow} onNodeClick={handleNodeClick} />
+                <ProcessFlow flow={parsedDoc.l3_flow} tasks={parsedDoc.l4_tasks} onNodeClick={handleNodeClick} />
               )}
               <div className="absolute bottom-4 left-4 bg-gray-900/80 text-white text-[9px] px-3 py-1.5 rounded-lg backdrop-blur-sm pointer-events-none font-bold uppercase tracking-wider">
                 💡 Tip: Click nodes to scroll to Task Specs
@@ -838,133 +865,157 @@ ${context}`;
         </div>
       )}
 
-      {/* Level 4 Task Deep-Dive Modal Overlay */}
-      {activeTask && (
-        <div 
-          className="fixed inset-0 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md z-[120] animate-in fade-in duration-200"
-          onClick={() => setActiveTask(null)}
-        >
-          <div 
-            className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 max-w-2xl w-full text-white shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Decorative background blob */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16"></div>
-            
-            <button 
+      {/* Level 4 Task Deep-Dive Drawer Overlay */}
+      <AnimatePresence>
+        {activeTask && (
+          <>
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
               onClick={() => setActiveTask(null)}
-              className="absolute top-6 right-6 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-colors z-10"
+              className="fixed inset-0 bg-slate-950 z-[110]"
+            />
+            
+            {/* Slide-out Drawer Panel */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-screen w-full md:w-[480px] xl:w-[550px] bg-slate-900/95 backdrop-blur-xl border-l border-slate-800 shadow-2xl z-[120] text-white p-6 md:p-8 flex flex-col overflow-hidden"
             >
-              <X size={18} />
-            </button>
-
-            {/* Header */}
-            <div className="flex items-center gap-3.5 mb-6 pb-6 border-b border-slate-800/80 shrink-0">
-              <div className="bg-green-500/20 p-2.5 rounded-2xl text-green-400 border border-green-500/30">
-                <Settings className="w-6 h-6 animate-pulse" />
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest font-mono">Level 4 Task Specification</span>
-                <h3 className="text-xl font-extrabold text-white mt-0.5 uppercase tracking-tight">{activeTask.name || `Task ${activeTask.stepId}`}</h3>
-              </div>
-            </div>
-
-            {/* Scrollable Body */}
-            <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm scrollbar-thin scrollbar-thumb-slate-800">
-              <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">Functional Description & Role Responsibility</h4>
-                <p className="text-slate-200 leading-relaxed font-medium">{activeTask.description}</p>
-              </div>
-
-              {/* Grid Metrics */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-y border-slate-800 py-4 my-2 shrink-0">
-                <div>
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block font-mono">Step ID</span>
-                  <span className="text-sm font-black text-slate-200 mt-1 block uppercase">{activeTask.stepId}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block font-mono">Logic Complexity</span>
-                  <span className={clsx(
-                    "text-xs font-black uppercase tracking-widest mt-1.5 inline-block px-2.5 py-0.5 rounded border",
-                    activeTask.complexity === 'High' ? "bg-red-950/40 text-red-400 border-red-900/60" :
-                    activeTask.complexity === 'Medium' ? "bg-amber-950/40 text-amber-400 border-amber-900/60" :
-                    "bg-green-950/40 text-green-400 border-green-900/60"
-                  )}>
-                    {activeTask.complexity || 'Low'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block font-mono">Estimated Effort</span>
-                  <span className="text-sm font-bold text-emerald-400 mt-1.5 flex items-center gap-1.5">
-                    <Activity className="w-3.5 h-3.5" />
-                    {activeTask.estimatedDuration || '2 Days'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Inputs & Outputs */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 shrink-0">
-                <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/80">
-                  <div className="flex items-center gap-2 text-slate-400 mb-2">
-                    <Layers size={14} className="text-green-500" />
-                    <span className="text-[9px] font-black uppercase tracking-widest font-mono">Input Parameters</span>
-                  </div>
-                  <ul className="space-y-1 text-xs text-slate-200 list-disc pl-4 font-semibold">
-                    {(activeTask.inputs || []).map((inp: string, idx: number) => (
-                      <li key={idx}>{inp}</li>
-                    ))}
-                    {(!activeTask.inputs || activeTask.inputs.length === 0) && <li>N/A</li>}
-                  </ul>
-                </div>
-
-                <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/80">
-                  <div className="flex items-center gap-2 text-slate-400 mb-2">
-                    <Box size={14} className="text-green-500" />
-                    <span className="text-[9px] font-black uppercase tracking-widest font-mono">Output Results</span>
-                  </div>
-                  <ul className="space-y-1 text-xs text-slate-200 list-disc pl-4 font-semibold">
-                    {(activeTask.outputs || []).map((out: string, idx: number) => (
-                      <li key={idx}>{out}</li>
-                    ))}
-                    {(!activeTask.outputs || activeTask.outputs.length === 0) && <li>N/A</li>}
-                  </ul>
-                </div>
-              </div>
-
-              {/* Target Systems */}
-              <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5 font-mono">Target Platform & Tech Stack</h4>
-                <div className="flex flex-wrap gap-2">
-                  {(Array.isArray(activeTask.systems) ? activeTask.systems : [activeTask.systems || 'Node.js']).map((sys: string, idx: number) => (
-                    <code key={idx} className="bg-slate-950 text-emerald-400 border border-slate-800 text-xs px-3 py-1.5 rounded-xl font-mono">
-                      {sys}
-                    </code>
-                  ))}
-                </div>
-              </div>
-
-              {/* Technical Mapping Snippet */}
-              <div className="space-y-2.5 pt-2 shrink-0">
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Technical & Execution Mapping</h4>
-                <pre className="bg-slate-950 p-5 rounded-2xl border border-slate-800 text-xs font-mono text-emerald-300 overflow-x-auto max-h-[180px] select-all scrollbar-thin scrollbar-thumb-slate-800">
-                  <code>{activeTask.technicalMapping || '// Transformed execution handler\nrouter.post(\'/sync\', async (req, res) => {\n  // Implementation code mapping detailed above...\n});'}</code>
-                </pre>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="mt-8 pt-6 border-t border-slate-800/80 flex justify-between items-center shrink-0">
-              <span className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">Clean-Core.io Architecture Mapping Standard</span>
-              <button
+              {/* Close Button */}
+              <button 
                 onClick={() => setActiveTask(null)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-950/20 active:scale-95"
+                className="absolute top-6 right-6 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-colors z-10"
               >
-                Close Blueprint
+                <X size={18} />
               </button>
-            </div>
-          </div>
-        </div>
-      )}
+
+              {/* Decorative background blob */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16"></div>
+              
+              {/* Header */}
+              <div className="flex items-center gap-3.5 mb-6 pb-6 border-b border-slate-800/80 shrink-0">
+                <div className="bg-green-500/20 p-2.5 rounded-2xl text-green-400 border border-green-500/30">
+                  <Settings className="w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest font-mono">Level 4 Task Specification</span>
+                  <h3 className="text-xl font-extrabold text-white mt-0.5 uppercase tracking-tight">{activeTask.name || `Task ${activeTask.stepId}`}</h3>
+                </div>
+              </div>
+
+              {/* Scrollable Body */}
+              <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm scrollbar-thin scrollbar-thumb-slate-800">
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">Functional Description & Role Responsibility</h4>
+                  <p className="text-slate-200 leading-relaxed font-medium">{activeTask.description}</p>
+                </div>
+
+                {/* Grid Metrics */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-y border-slate-800 py-4 my-2 shrink-0">
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block font-mono">Step ID</span>
+                    <span className="text-sm font-black text-slate-200 mt-1 block uppercase">{activeTask.stepId}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block font-mono">Logic Complexity</span>
+                    <span className={clsx(
+                      "text-xs font-black uppercase tracking-widest mt-1.5 inline-block px-2.5 py-0.5 rounded border",
+                      activeTask.complexity === 'High' ? "bg-red-950/40 text-red-400 border-red-900/60" :
+                      activeTask.complexity === 'Medium' ? "bg-amber-950/40 text-amber-400 border-amber-900/60" :
+                      "bg-green-950/40 text-green-400 border-green-900/60"
+                    )}>
+                      {activeTask.complexity || 'Low'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block font-mono">Estimated Effort</span>
+                    <span className="text-sm font-bold text-emerald-400 mt-1.5 flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5" />
+                      {activeTask.estimatedDuration || '2 Days'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Inputs & Outputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 shrink-0">
+                  <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/80">
+                    <div className="flex items-center gap-2 text-slate-400 mb-2">
+                      <Layers size={14} className="text-green-500" />
+                      <span className="text-[9px] font-black uppercase tracking-widest font-mono">Input Parameters</span>
+                    </div>
+                    <ul className="space-y-1.5 text-xs text-slate-200 list-disc pl-4 font-semibold">
+                      {(activeTask.inputs || []).map((inp: string, idx: number) => (
+                        <li key={idx}>{inp}</li>
+                      ))}
+                      {(!activeTask.inputs || activeTask.inputs.length === 0) && <li>N/A</li>}
+                    </ul>
+                  </div>
+
+                  <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/80">
+                    <div className="flex items-center gap-2 text-slate-400 mb-2">
+                      <Box size={14} className="text-green-500" />
+                      <span className="text-[9px] font-black uppercase tracking-widest font-mono">Output Results</span>
+                    </div>
+                    <ul className="space-y-1.5 text-xs text-slate-200 list-disc pl-4 font-semibold">
+                      {(activeTask.outputs || []).map((out: string, idx: number) => (
+                        <li key={idx}>{out}</li>
+                      ))}
+                      {(!activeTask.outputs || activeTask.outputs.length === 0) && <li>N/A</li>}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Target Systems */}
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5 font-mono">Target Platform & Tech Stack</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {(Array.isArray(activeTask.systems) ? activeTask.systems : [activeTask.systems || 'Node.js']).map((sys: string, idx: number) => (
+                      <code key={idx} className="bg-slate-950 text-emerald-400 border border-slate-800 text-xs px-3 py-1.5 rounded-xl font-mono">
+                        {sys}
+                      </code>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Technical Mapping Snippet */}
+                <div className="space-y-2.5 pt-2 shrink-0">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Technical & Execution Mapping</h4>
+                  <div className="rounded-2xl border border-slate-800 overflow-hidden bg-slate-950">
+                    <div className="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+                      </div>
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest font-mono">{activeTask.stepId}.ts</span>
+                      <div className="w-12"></div>
+                    </div>
+                    <pre className="p-5 text-xs font-mono text-emerald-300 overflow-x-auto max-h-[220px] select-all scrollbar-thin scrollbar-thumb-slate-800">
+                      <code>{activeTask.technicalMapping || '// Transformed execution handler\nrouter.post(\'/sync\', async (req, res) => {\n  // Implementation code mapping detailed above...\n});'}</code>
+                    </pre>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="mt-8 pt-6 border-t border-slate-800/80 flex justify-between items-center shrink-0">
+                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">Clean-Core.io Architecture Mapping Standard</span>
+                <button
+                  onClick={() => setActiveTask(null)}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-950/20 active:scale-95"
+                >
+                  Close Specification
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <NavigationButtons 
         backPath={`/project/${projectId}/testing`}
