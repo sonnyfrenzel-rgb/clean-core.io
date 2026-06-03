@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, connectAuthEmulator } from 'firebase/auth';
+import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, deleteDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import * as fs from 'fs';
 import * as path from 'path';
 import firebaseConfig from '../firebase-applet-config.json';
@@ -10,6 +10,12 @@ import firebaseConfig from '../firebase-applet-config.json';
 const firebaseApp = initializeApp(firebaseConfig);
 const firestoreDb = initializeFirestore(firebaseApp, {}, firebaseConfig.firestoreDatabaseId);
 const firebaseAuth = getAuth(firebaseApp);
+
+if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
+  console.log('[TEST SDK] Connecting test runner Firestore & Auth to emulators...');
+  connectFirestoreEmulator(firestoreDb, 'localhost', 8080);
+  connectAuthEmulator(firebaseAuth, 'http://localhost:9099', { disableWarnings: true });
+}
 
 const branchSuffix = (process.env.GITHUB_REF_NAME || 'local').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 const TEST_EMAIL = `superduper-e2e-${branchSuffix}@cleancore-test.io`;
