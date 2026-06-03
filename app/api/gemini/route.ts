@@ -86,7 +86,9 @@ export async function POST(request: NextRequest) {
       try {
         const dbId = process.env.NEXT_PUBLIC_FIRESTORE_DB_ID || 'ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e';
         const projectId = 'cleancore-491216';
-        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/users/${userId}`;
+        const firestoreUrl = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true'
+          ? `http://localhost:8080/v1/projects/${projectId}/databases/${dbId}/documents/users/${userId}`
+          : `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/users/${userId}`;
 
         const res = await fetch(firestoreUrl, {
           headers: {
