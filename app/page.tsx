@@ -1403,16 +1403,19 @@ export default function Home() {
                 <form onSubmit={handleEmailSignIn} className="p-8 sm:p-10">
                   <div className="text-center mb-6">
                     <h3 className="text-3xl font-black text-gray-950 tracking-tight mb-1">Welcome Back</h3>
-                    <p className="text-xs font-bold text-gray-500">
-                      New to the pilot?{' '}
+                    <div className="mt-4 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-200/80 rounded-2xl flex items-center justify-between gap-3 shadow-inner text-left animate-in fade-in slide-in-from-top-2 duration-500">
+                      <div>
+                        <p className="text-[10px] font-black text-green-800 uppercase tracking-widest leading-none mb-1">New to Clean-Core.io?</p>
+                        <p className="text-[11px] text-gray-500 font-bold leading-none">Join our closed pilot program</p>
+                      </div>
                       <button
                         type="button"
                         onClick={() => { setAuthMode('signup'); setAuthError(''); }}
-                        className="text-green-600 hover:underline"
+                        className="bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all shadow hover:shadow-green-600/15 cursor-pointer shrink-0"
                       >
                         Create Account
                       </button>
-                    </p>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
@@ -1490,6 +1493,19 @@ export default function Home() {
                       <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.2-5.136 4.2A5.72 5.72 0 0 1 8.24 12.9a5.72 5.72 0 0 1 5.751-5.7 5.6 5.6 0 0 1 3.916 1.547l3.076-3.076A10.15 10.15 0 0 0 14.004 2a10.05 10.05 0 0 0-10 10.05 10.05 10.05 0 0 0 10 10.05c5.787 0 9.878-3.9 9.878-9.882 0-.67-.066-1.3-.2-1.933H12.24Z"/></svg>
                       Google Account
                     </button>
+                    
+                    <div className="pt-4 border-t border-gray-100 text-center mt-6 bg-slate-50 p-4.5 rounded-2xl border border-dashed border-gray-200">
+                      <p className="text-xs text-gray-500 font-bold leading-normal">
+                        No pilot access yet?{' '}
+                        <button
+                          type="button"
+                          onClick={() => { setAuthMode('signup'); setAuthError(''); }}
+                          className="text-green-600 hover:text-green-750 font-black hover:underline cursor-pointer transition-colors mt-0.5 block"
+                        >
+                          Request Beta Pilot Registration
+                        </button>
+                      </p>
+                    </div>
                   </div>
                 </form>
               )}
