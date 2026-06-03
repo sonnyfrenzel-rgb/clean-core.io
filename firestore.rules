@@ -60,7 +60,7 @@ service cloud.firestore {
     // Validate Project entity
     function isValidProject(data, isUpdate) {
       return (isUpdate || (data.name is string && data.name.size() > 0 && data.name.size() < 255)) &&
-             (isUpdate || (data.status in ['uploaded', 'analyzed', 'designed', 'transformed', 'completed'])) &&
+             (isUpdate || (data.status in ['uploaded', 'analyzed', 'designed', 'transformed', 'testing', 'documented', 'completed'])) &&
              (isUpdate || (data.userId is string && data.userId == request.auth.uid)) &&
              (isUpdate || (data.createdAt is timestamp)) &&
              (!('legacyCode' in data) || (data.legacyCode is string && data.legacyCode.size() < 1000000)) &&

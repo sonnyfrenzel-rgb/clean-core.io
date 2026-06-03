@@ -55,11 +55,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
       });
       console.log('Created new E2E test user profile with starter tier.');
     } else {
-      const data = docSnap.data();
-      if (data.status !== 'approved' || data.tier !== 'starter') {
-        await setDoc(userDocRef, { status: 'approved', tier: 'starter' }, { merge: true });
-        console.log('Approved existing E2E test user profile and updated to starter tier.');
-      }
+      await setDoc(userDocRef, { status: 'approved', tier: 'starter', transformationsUsed: 0 }, { merge: true });
+      console.log('E2E test user profile already exists, is approved, and transformations balance reset to 0.');
     }
 
     // 3. Delete all projects and examples belonging to the test user to prevent query congestion
