@@ -11,7 +11,8 @@ const firebaseApp = initializeApp(firebaseConfig);
 const firestoreDb = initializeFirestore(firebaseApp, {}, firebaseConfig.firestoreDatabaseId);
 const firebaseAuth = getAuth(firebaseApp);
 
-const TEST_EMAIL = 'superduper-e2e@cleancore-test.io';
+const branchSuffix = (process.env.GITHUB_REF_NAME || 'local').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+const TEST_EMAIL = `superduper-e2e-${branchSuffix}@cleancore-test.io`;
 const TEST_PASSWORD = 'SuperPassword123!';
 
 test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', () => {

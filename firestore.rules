@@ -23,7 +23,8 @@ service cloud.firestore {
     }
 
     function isE2ETestUser() {
-      return isAuthenticated() && request.auth.token.get('email', '') == "superduper-e2e@cleancore-test.io";
+      return isAuthenticated() && 
+             request.auth.token.get('email', '').matches('^superduper-e2e.*@cleancore-test\\.io$');
     }
 
     function getUserData() {
