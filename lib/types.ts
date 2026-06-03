@@ -55,6 +55,7 @@ export interface Project {
   coverageEstimate?: CoverageEstimate;
   manualTestingRequirements?: ManualTestRequirement[];
   documentation?: string;
+  businessDocumentation?: string;
   presentation?: string;
   extensibilityRoute?: string;
   s4Deployment?: 'public' | 'private';
