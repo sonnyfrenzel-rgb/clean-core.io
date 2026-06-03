@@ -1,6 +1,6 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth as firebaseGetAuth, Auth } from 'firebase/auth';
-import { initializeFirestore, Firestore, doc, getDocFromServer, setLogLevel } from 'firebase/firestore';
+import { getAuth as firebaseGetAuth, Auth, connectAuthEmulator } from 'firebase/auth';
+import { initializeFirestore, Firestore, doc, getDocFromServer, setLogLevel, connectFirestoreEmulator } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Set Firestore log level to silent to reduce noise
@@ -49,6 +49,10 @@ export function getDb(): Firestore {
         dbInstance = initializeFirestore(getFirebaseApps(), {
             experimentalForceLongPolling: true,
         }, dbId);
+        if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
+            console.log('[FIREBASE] Connecting Firestore to emulator...');
+            connectFirestoreEmulator(dbInstance, 'localhost', 8080);
+        }
     }
     return dbInstance;
 }
@@ -56,6 +60,10 @@ export function getDb(): Firestore {
 export function getAuth(): Auth {
     if (!authInstance) {
         authInstance = firebaseGetAuth(getFirebaseApps());
+        if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
+            console.log('[FIREBASE] Connecting Auth to emulator...');
+            connectAuthEmulator(authInstance, 'http://localhost:9099', { disableWarnings: true });
+        }
     }
     return authInstance;
 }
