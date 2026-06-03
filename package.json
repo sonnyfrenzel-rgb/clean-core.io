@@ -1,6 +1,6 @@
 {
   "name": "ai-studio-applet",
-  "version": "1.4.7",
+  "version": "1.5.4",
   "private": true,
   "main": "main.js",
   "scripts": {
