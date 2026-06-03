@@ -40,8 +40,17 @@ const extractJSON = (text: string) => {
   }
 };
 
+const escapeXML = (str: string) => {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+};
+
 // Enterprise BPMN 2.0 XML Generator for SAP Signavio & SAP Build
-const generateBPMN = (flow: any[]) => {
+const generateBPMN = (flow: any[], businessDoc?: any) => {
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"\n`;
   xml += `                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"\n`;
@@ -87,7 +96,22 @@ const generateBPMN = (flow: any[]) => {
                    node.type === 'sendTask' ? 'bpmn:sendTask' :
                    node.type === 'receiveTask' ? 'bpmn:receiveTask' : 'bpmn:task';
                    
+      let documentationText = '';
+      if (businessDoc) {
+        const sop = businessDoc.sop_details?.find((s: any) => s.stepId === node.id);
+        const raci = businessDoc.raci_matrix?.find((r: any) => r.stepId === node.id);
+        if (sop) {
+          documentationText += `SOP narrative: ${sop.narrative}\nKPI target: ${sop.kpiTarget}\nException fallback: ${sop.businessException}\n\n`;
+        }
+        if (raci) {
+          documentationText += `RACI assignments: R=${raci.r}, A=${raci.a}, C=${raci.c}, I=${raci.i}\n`;
+        }
+      }
+
       xml += `    <${type} id="${node.id}" name="${node.name || node.id}">\n`;
+      if (documentationText) {
+        xml += `      <bpmn:documentation>${escapeXML(documentationText)}</bpmn:documentation>\n`;
+      }
       if (node.next && Array.isArray(node.next)) {
         node.next.forEach((targetId: string, i: number) => {
           const flowId = `Flow_${node.id}_${targetId}_${i}`;
@@ -205,6 +229,12 @@ export default function DocumentationPage() {
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<any | null>(null);
 
+  // Stage 2 Business Documentation States
+  const [businessDocumentation, setBusinessDocumentation] = useState('');
+  const [isGeneratingBusinessDoc, setIsGeneratingBusinessDoc] = useState(false);
+  const [businessDocError, setBusinessDocError] = useState('');
+  const [activeTab, setActiveTab] = useState<'technical' | 'business'>('technical');
+
   const handleNodeClick = (nodeId: string) => {
     setHighlightedTaskId(nodeId);
     if (parsedDoc?.l4_tasks) {
@@ -236,6 +266,9 @@ export default function DocumentationPage() {
           setProject({ id: docSnap.id, ...data } as unknown as Project);
           if (data.documentation) {
             setDocumentation(data.documentation);
+          }
+          if (data.businessDocumentation) {
+            setBusinessDocumentation(data.businessDocumentation);
           }
         }
       } catch (err) {
@@ -350,13 +383,97 @@ ${context}`;
     }
   }, [documentation]);
 
+  const parsedBusinessDoc = useMemo(() => {
+    if (!businessDocumentation) return null;
+    try {
+      return extractJSON(businessDocumentation);
+    } catch (e) {
+      console.error("Parsed business documentation is invalid:", e);
+      return null;
+    }
+  }, [businessDocumentation]);
+
+  const generateBusinessDocumentation = useCallback(async () => {
+    if (!project || !projectId || !documentation) return;
+    
+    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
+    
+    setIsGeneratingBusinessDoc(true);
+    setBusinessDocError('');
+    
+    try {
+      const prompt = `Act as an Enterprise Business Process Compliance & SOP Expert.
+Based on the following Process Blueprint (BPMN flow and Level 4 tasks), generate the corresponding Business SOP & RACI Matrix layer.
+
+Return ONLY a JSON object wrapped in a markdown code block (\`\`\`json ... \`\`\`).
+DO NOT include any text before or after the JSON.
+
+Process Blueprint Context:
+${documentation}
+
+Structure the JSON exactly like this:
+{
+  "raci_matrix": [
+    { 
+      "stepId": "Task1", 
+      "r": "Responsible Role (matching roles in l3_flow e.g. System, Developer, CISO, User)", 
+      "a": "Accountable Role (e.g. Service Owner, Process Owner)", 
+      "c": "Consulted Role (e.g. CISO, Senior Architect)", 
+      "i": "Informed Role (e.g. IT Operations, finance)" 
+    }
+  ],
+  "sop_details": [
+    { 
+      "stepId": "Task1", 
+      "narrative": "Detailed step-by-step description of how this process step is handled (3-4 sentences).", 
+      "businessException": "Fallback guidance on what to do if this step fails (e.g., fallback process, manual controls).", 
+      "kpiTarget": "KPI metrics target for this task (e.g. Process time < 30min, 100% compliance score)." 
+    }
+  ],
+  "audit_controls": [
+    { 
+      "stepId": "Task1", 
+      "controlObjective": "Compliance risk control goal (e.g. Prevent unauthorized direct database modification).", 
+      "mitigationAction": "Mitigation steps (e.g. Use Tier 1 custom API proxy or released standard API mapping).", 
+      "assertionMethod": "Verification method (e.g. automated pipeline code verification, unit tests verification)." 
+    }
+  ]
+}`;
+
+      console.log('Generating business process compliance for project:', project.name);
+      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', false, profile?.geminiApiKey);
+      
+      if (!responseText) {
+        throw new Error('Gemini returned an empty response.');
+      }
+      
+      const parsed = extractJSON(responseText);
+      if (!parsed.raci_matrix || !parsed.sop_details || !parsed.audit_controls) {
+        throw new Error("Invalid business documentation schema returned by AI");
+      }
+      
+      setBusinessDocumentation(responseText);
+      
+      const db = getDb();
+      await updateDoc(doc(db, 'projects', idStr), {
+        businessDocumentation: responseText
+      });
+      
+    } catch (err: unknown) {
+      console.error('Business documentation generation error:', err);
+      setBusinessDocError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsGeneratingBusinessDoc(false);
+    }
+  }, [projectId, project, documentation, profile?.geminiApiKey]);
+
   const downloadBPMN = () => {
     if (profile?.tier === 'pilot') {
       setShowUpgradeModal(true);
       return;
     }
     if (!parsedDoc?.l3_flow) return;
-    const xml = generateBPMN(parsedDoc.l3_flow);
+    const xml = generateBPMN(parsedDoc.l3_flow, parsedBusinessDoc);
     const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
     const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
     saveAs(blob, `${fileName}_Process.bpmn`);
@@ -458,6 +575,78 @@ ${context}`;
               `).join('')}
             </tbody>
           </table>
+          
+          ${parsedBusinessDoc ? `
+            <h2>Level 5: Standard Operating Procedures (SOP) & RACI Assignment</h2>
+            
+            <h3>RACI Assignment Matrix</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Task ID</th>
+                  <th>Responsible (R)</th>
+                  <th>Accountable (A)</th>
+                  <th>Consulted (C)</th>
+                  <th>Informed (I)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(parsedBusinessDoc.raci_matrix || []).map((raci: any) => `
+                  <tr>
+                    <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${raci.stepId}</td>
+                    <td>${raci.r || 'N/A'}</td>
+                    <td>${raci.a || 'N/A'}</td>
+                    <td>${raci.c || 'N/A'}</td>
+                    <td>${raci.i || 'N/A'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            
+            <h3>SOP Operational Playbook</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 15%">Task ID</th>
+                  <th style="width: 50%">Operational SOP Description</th>
+                  <th style="width: 20%">Business Exception Fallback</th>
+                  <th style="width: 15%">KPI Success Metric</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(parsedBusinessDoc.sop_details || []).map((sop: any) => `
+                  <tr>
+                    <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${sop.stepId}</td>
+                    <td>${sop.narrative || 'N/A'}</td>
+                    <td style="color: #BF2600; font-weight: 500;">${sop.businessException || 'N/A'}</td>
+                    <td style="font-weight: 600; color: #006644;">${sop.kpiTarget || 'N/A'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            
+            <h3>Internal Audit Compliance & Risk Controls</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Task ID</th>
+                  <th>Control Objective</th>
+                  <th>Mitigation Action</th>
+                  <th>Assertion Verification Method</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(parsedBusinessDoc.audit_controls || []).map((ctrl: any) => `
+                  <tr>
+                    <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${ctrl.stepId}</td>
+                    <td><strong>${ctrl.controlObjective || 'N/A'}</strong></td>
+                    <td>${ctrl.mitigationAction || 'N/A'}</td>
+                    <td style="font-family: monospace; font-size: 11px;">${ctrl.assertionMethod || 'N/A'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          ` : ''}
         </body>
       </html>
     `;
@@ -581,8 +770,36 @@ ${context}`;
         </div>
       ) : parsedDoc ? (
         <div id="documentation-report" className="space-y-8 mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          {/* L1 & L2 Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Tab Switcher */}
+          <div className="flex border-b border-gray-200 mb-8 mt-4 overflow-x-auto gap-4">
+            <button
+              onClick={() => setActiveTab('technical')}
+              className={clsx(
+                "px-6 py-3 font-bold text-xs md:text-sm uppercase tracking-wider border-b-2 transition-all shrink-0",
+                activeTab === 'technical' ? "border-[#006b2c] text-[#006b2c]" : "border-transparent text-gray-400 hover:text-gray-600"
+              )}
+            >
+              Technical Blueprint
+            </button>
+            <button
+              onClick={() => setActiveTab('business')}
+              className={clsx(
+                "px-6 py-3 font-bold text-xs md:text-sm uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 shrink-0",
+                activeTab === 'business' ? "border-[#006b2c] text-[#006b2c]" : "border-transparent text-gray-400 hover:text-gray-600"
+              )}
+            >
+              Business SOP & Compliance
+              {!parsedBusinessDoc && (
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              )}
+            </button>
+          </div>
+
+          {activeTab === 'technical' ? (
+            <div className="space-y-8">
+              {/* L1 & L2 Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* L1 Domain */}
             <div className="bg-gradient-to-br from-slate-900 to-[#0b1c30] p-8 rounded-[2rem] shadow-xl border border-white/5 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-green-500/10 transition-all duration-500"></div>
@@ -796,6 +1013,215 @@ ${context}`;
               })}
             </div>
           </div>
+        </div>
+          ) : (
+            <div className="space-y-8">
+              {isGeneratingBusinessDoc ? (
+                <div className="min-h-[40vh] bg-[#0b1c30] border border-slate-800 flex flex-col items-center justify-center p-8 text-center rounded-[2.5rem] md:rounded-[3rem] shadow-sm mb-12 text-white relative overflow-hidden">
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 mx-auto mb-8">
+                    <div className="absolute inset-0 rounded-full border-4 border-slate-800"></div>
+                    <div className="absolute inset-0 rounded-full border-4 border-green-500 border-t-transparent animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <RefreshCw className="w-8 h-8 text-green-500 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="text-xl md:text-2xl font-black mb-2 uppercase tracking-tight text-white">Mapping SOP & RACI Matrix</div>
+                  <p className="text-slate-400 font-medium text-sm md:text-base max-w-md leading-relaxed">
+                    Gemini is evaluating executing roles, drafting operational playbook instructions, and defining target compliance checkpoints...
+                  </p>
+                </div>
+              ) : parsedBusinessDoc ? (
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                  {/* RACI Matrix Section */}
+                  <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-[#eff4ff] text-[#0b1c30] rounded-xl"><Users size={24} /></div>
+                        <div>
+                          <h2 className="text-[10px] font-black text-[#0b1c30]/40 uppercase tracking-widest">Level 5</h2>
+                          <h3 className="text-lg md:text-xl font-black text-[#0b1c30] uppercase tracking-tight">RACI Assignment Matrix</h3>
+                        </div>
+                      </div>
+                      
+                      {/* RACI Legend */}
+                      <div className="flex flex-wrap items-center gap-3 bg-gray-55 px-4 py-2.5 rounded-2xl border border-gray-100">
+                        <span className="text-[9px] font-black text-gray-400 uppercase mr-1">RACI Guide:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 rounded border border-purple-100 text-[8px] font-black uppercase">R</span>
+                          <span className="text-[8px] font-bold text-gray-600">Responsible</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-100 text-[8px] font-black uppercase">A</span>
+                          <span className="text-[8px] font-bold text-gray-600">Accountable</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-100 text-[8px] font-black uppercase">C</span>
+                          <span className="text-[8px] font-bold text-gray-600">Consulted</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200 text-[8px] font-black uppercase">I</span>
+                          <span className="text-[8px] font-bold text-gray-600">Informed</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="overflow-x-auto rounded-2xl border border-gray-100 shadow-inner">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Step ID</th>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Responsible (R)</th>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Accountable (A)</th>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Consulted (C)</th>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Informed (I)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-100 font-medium text-xs text-gray-700">
+                          {(parsedBusinessDoc.raci_matrix || []).map((raci: any, rIdx: number) => (
+                            <tr key={rIdx} className="hover:bg-gray-50/50">
+                              <td className="px-6 py-4 font-mono font-black text-green-600">{raci.stepId}</td>
+                              <td className="px-6 py-4">
+                                <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded border border-purple-100 font-bold uppercase text-[10px] tracking-tight">{raci.r || 'N/A'}</span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-100 font-bold uppercase text-[10px] tracking-tight">{raci.a || 'N/A'}</span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-100 font-bold uppercase text-[10px] tracking-tight">{raci.c || 'N/A'}</span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200 font-bold uppercase text-[10px] tracking-tight">{raci.i || 'N/A'}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* SOP Narratives Section */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-[#eff4ff] text-[#00873a] rounded-xl"><Briefcase size={24} /></div>
+                      <div>
+                        <h2 className="text-[10px] font-black text-[#0b1c30]/40 uppercase tracking-widest">Level 5 SOP</h2>
+                        <h3 className="text-lg md:text-xl font-black text-[#0b1c30] uppercase tracking-tight">Standard Operating Procedures</h3>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {(parsedBusinessDoc.sop_details || []).map((sop: any, sIdx: number) => (
+                        <div key={sIdx} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="px-3 py-1 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase tracking-tight font-mono">Step: {sop.stepId}</span>
+                            <span className="text-[10px] font-black text-green-600 uppercase tracking-wider flex items-center gap-1">
+                              <Activity className="w-3.5 h-3.5" /> Target: {sop.kpiTarget}
+                            </span>
+                          </div>
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 font-mono">Operational Narrative</h4>
+                              <p className="text-xs text-gray-700 leading-relaxed font-semibold">{sop.narrative}</p>
+                            </div>
+                            <div className="bg-rose-50/50 p-4 rounded-xl border border-rose-100">
+                              <h4 className="text-[10px] font-black text-rose-700 uppercase tracking-widest mb-1 font-mono">Business Exception Fallback</h4>
+                              <p className="text-xs text-rose-950 leading-relaxed font-semibold">{sop.businessException}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Internal Controls Section */}
+                  <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-[#eff4ff] text-[#006b2c] rounded-xl"><Lock size={24} /></div>
+                      <div>
+                        <h2 className="text-[10px] font-black text-[#0b1c30]/40 uppercase tracking-widest">Compliance Audit</h2>
+                        <h3 className="text-lg md:text-xl font-black text-[#0b1c30] uppercase tracking-tight">Risk & Control Checkpoints</h3>
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto rounded-2xl border border-gray-100 shadow-inner">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Step</th>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Control Objective</th>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Mitigation Action</th>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-500 uppercase tracking-wider">Assertion Method</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-100 font-medium text-xs text-gray-700">
+                          {(parsedBusinessDoc.audit_controls || []).map((ctrl: any, cIdx: number) => (
+                            <tr key={cIdx} className="hover:bg-gray-50/50">
+                              <td className="px-6 py-4 font-mono font-black text-green-600">{ctrl.stepId}</td>
+                              <td className="px-6 py-4 font-extrabold text-gray-900 leading-normal">{ctrl.controlObjective}</td>
+                              <td className="px-6 py-4 text-gray-600 leading-normal">{ctrl.mitigationAction}</td>
+                              <td className="px-6 py-4">
+                                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded font-mono text-[9px] font-bold uppercase">{ctrl.assertionMethod}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-[#0b1c30] border border-slate-800 rounded-[2.5rem] p-8 md:p-12 text-white shadow-xl relative overflow-hidden group">
+                  {/* Decorative gradient blur */}
+                  <div className="absolute top-0 right-0 w-80 h-80 bg-green-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-green-500/15 transition-all duration-700"></div>
+                  
+                  <div className="max-w-3xl">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-xs font-black uppercase tracking-widest mb-6">
+                      <Cpu className="w-4 h-4 animate-pulse" /> AI Business Extension
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-4">Generate Enterprise Business SOP & RACI Matrix</h3>
+                    <p className="text-slate-300 font-medium mb-8 text-sm md:text-base leading-relaxed">
+                      Unlock business-level mapping to align technical Clean Core changes with corporate compliance frameworks and operational execution procedures.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                      <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/80">
+                        <div className="flex items-center gap-2 text-green-400 mb-2">
+                          <Users size={16} />
+                          <span className="text-[10px] font-black uppercase tracking-widest font-mono">RACI Assignment</span>
+                        </div>
+                        <p className="text-xs text-slate-300 font-medium leading-relaxed">Maps Responsible, Accountable, Consulted, and Informed roles across all process tasks.</p>
+                      </div>
+                      <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/80">
+                        <div className="flex items-center gap-2 text-cyan-400 mb-2">
+                          <Layers size={16} />
+                          <span className="text-[10px] font-black uppercase tracking-widest font-mono">Level 5 Narratives</span>
+                        </div>
+                        <p className="text-xs text-slate-300 font-medium leading-relaxed">Drafts standard operating narratives, KPI targets, and functional exception handling guidance.</p>
+                      </div>
+                      <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/80">
+                        <div className="flex items-center gap-2 text-rose-400 mb-2">
+                          <Lock size={16} />
+                          <span className="text-[10px] font-black uppercase tracking-widest font-mono">Internal Audit Controls</span>
+                        </div>
+                        <p className="text-xs text-slate-300 font-medium leading-relaxed">Identifies key clean core control objectives, mitigating actions, and assertion evidence methods.</p>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={generateBusinessDocumentation}
+                      disabled={isGeneratingBusinessDoc}
+                      className="relative inline-flex items-center gap-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-black uppercase tracking-widest text-xs md:text-sm px-10 py-4.5 rounded-2xl shadow-xl hover:shadow-green-600/20 active:scale-95 transition-all disabled:opacity-50"
+                    >
+                      <Rocket className="w-4 h-4" />
+                      <span>Generate Business Layer (AI)</span>
+                    </button>
+                    
+                    {businessDocError && (
+                      <p className="text-rose-400 font-medium text-xs mt-4 animate-pulse">{businessDocError}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <div className="p-12 md:p-20 text-center bg-gray-50/50 rounded-[2.5rem] md:rounded-[3rem] border-2 border-dashed border-gray-200 mb-12">
