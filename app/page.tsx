@@ -681,8 +681,9 @@ export default function Home() {
               },
               {
                 icon: <Sparkles className="w-8 h-8 text-green-600" />,
-                title: 'BPMN 2.0 & AI Blueprints',
-                desc: 'Maps modernized processes into standard BPMN 2.0 XML with coordinates and swimlanes for native SAP Signavio & Build imports, complete with AI Chatbot support.'
+                title: 'BPMN 2.0 & Business SOP',
+                desc: 'Maps modernized processes into standard BPMN 2.0 XML with swimlanes. Features a two-stage blueprint layer mapping RACI matrices, Level 5 SOP narratives, and internal compliance controls.',
+                isNew: true
               },
               {
                 icon: <Zap className="w-8 h-8 text-green-600" />,
@@ -714,7 +715,12 @@ export default function Home() {
                       {feature.icon}
                     </div>
                   </div>
-                  <h3 className="text-2xl font-black mb-4 text-gray-950 tracking-tight">{feature.title}</h3>
+                  <h3 className="text-2xl font-black mb-4 text-gray-950 tracking-tight flex items-center gap-2 animate-pulse-slow">
+                    {feature.title}
+                    {feature.isNew && (
+                      <span className="px-2 py-0.5 bg-green-600 text-white text-[9px] font-black rounded-md uppercase tracking-wider">NEW</span>
+                    )}
+                  </h3>
                   <p className="text-gray-700 leading-relaxed font-medium text-sm md:text-base">{feature.desc}</p>
                 </div>
               </motion.div>
