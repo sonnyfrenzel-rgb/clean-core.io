@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { initializeFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import * as fs from 'fs';
 import * as path from 'path';
 import firebaseConfig from '../firebase-applet-config.json';
@@ -59,9 +59,26 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
       if (data.status !== 'approved' || data.tier !== 'starter') {
         await setDoc(userDocRef, { status: 'approved', tier: 'starter' }, { merge: true });
         console.log('Approved existing E2E test user profile and updated to starter tier.');
-      } else {
-        console.log('E2E test user profile already exists, is approved, and has starter tier.');
       }
+    }
+
+    // 3. Delete all projects and examples belonging to the test user to prevent query congestion
+    try {
+      const projectsQuery = query(collection(firestoreDb, 'projects'), where('userId', '==', uid));
+      const projectsSnapshot = await getDocs(projectsQuery);
+      console.log(`Cleaning up ${projectsSnapshot.docs.length} legacy test projects...`);
+      for (const docSnap of projectsSnapshot.docs) {
+        await deleteDoc(doc(firestoreDb, 'projects', docSnap.id));
+      }
+      
+      const examplesQuery = query(collection(firestoreDb, 'abap_examples'), where('userId', '==', uid));
+      const examplesSnapshot = await getDocs(examplesQuery);
+      console.log(`Cleaning up ${examplesSnapshot.docs.length} legacy test examples...`);
+      for (const docSnap of examplesSnapshot.docs) {
+        await deleteDoc(doc(firestoreDb, 'abap_examples', docSnap.id));
+      }
+    } catch (cleanErr) {
+      console.error('Error during E2E test database cleanup:', cleanErr);
     }
   });
 
