@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, deleteDoc, doc, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, deleteDoc, doc, getDocs, limit } from 'firebase/firestore';
 import { Plus, Trash2, ArrowRight, FolderOpen, Folder, ChevronRight, ChevronDown, ChevronUp, FileText, FileCode2, Download, Copy, Eye, X, Activity, Clock, CheckCircle2, RefreshCw, AlertCircle, BookOpen, Shield, ShieldAlert, MessageSquare, Crown, ShieldCheck, HelpCircle, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { saveAs } from 'file-saver';
@@ -362,7 +362,8 @@ export default function Dashboard() {
     const q = query(
       collection(db, 'projects'),
       where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
+      limit(25)
     );
     
     // Immediate, robust one-time getDocs fetch to ensure loading state resolves
@@ -390,7 +391,8 @@ export default function Dashboard() {
     const q = query(
       collection(db, 'abap_examples'), 
       where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
+      limit(25)
     );
 
     // Immediate, robust one-time getDocs fetch to ensure loading state resolves
