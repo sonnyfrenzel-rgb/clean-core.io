@@ -34,14 +34,28 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Start Firebase Emulator
+        run: |
+          npx firebase emulators:start --only auth,firestore --project=cleancore-491216 &
+          sleep 5
+
       - name: Build Next.js Application
         run: npm run build
+        env:
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true'
 
       - name: Run End-to-End Tests
         run: npx playwright test
         env:
           NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.TEST_GEMINI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.TEST_GEMINI_API_KEY }}
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true'
 
       - name: Generate QE Quality Engineering Report
         run: npm run build:report
