@@ -26,7 +26,7 @@ test.describe('Stage 1 & 2: Analysis & Solution Design E2E Tests', () => {
     const adtCockpitCard = page.locator('text=ADT Cockpit Simulation').first();
     await expect(adtCockpitCard).toBeVisible();
 
-    const bpmnCard = page.locator('text=BPMN 2.0 & AI Blueprints').first();
+    const bpmnCard = page.locator('text=BPMN 2.0 & Business SOP').first();
     await expect(bpmnCard).toBeVisible();
   });
 
