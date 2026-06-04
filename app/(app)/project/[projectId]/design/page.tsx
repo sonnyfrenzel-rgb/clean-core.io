@@ -996,19 +996,25 @@ ${analysis}`;
 
     // Fallback to legacy markdown rendering
     return (
-      <div className="prose prose-base md:prose-lg prose-gray max-w-none 
-        prose-headings:text-gray-950 prose-headings:font-extrabold prose-headings:tracking-tight
-        prose-h1:text-3xl md:prose-h1:text-5xl prose-h1:mb-8 prose-h1:mt-12
-        prose-h2:text-2xl md:prose-h2:text-3xl prose-h2:mb-6 prose-h2:mt-10
-        prose-h3:text-xl md:prose-h3:text-2xl prose-h3:mb-4 prose-h3:mt-8
-        prose-p:text-gray-800 prose-p:leading-relaxed prose-p:text-base md:prose-p:text-lg prose-p:mb-6
-        prose-li:text-gray-800 prose-li:text-base prose-li:mb-2
-        prose-strong:text-gray-950 prose-strong:font-bold
-        prose-table:border prose-table:border-gray-300 prose-th:bg-gray-100 prose-th:p-4 prose-td:p-4
-        prose-code:bg-gray-200 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-green-700 prose-code:before:content-none prose-code:after:content-none
-      ">
-        <ReactMarkdown components={markdownComponents}>{design}</ReactMarkdown>
-      </div>
+      <div 
+        className="prose prose-base md:prose-lg max-w-none text-slate-800
+          prose-headings:text-slate-900 prose-headings:font-black prose-headings:tracking-tight
+          prose-h1:text-2xl md:text-3xl prose-h1:mb-6 prose-h1:mt-8
+          prose-h2:text-xl md:text-2xl prose-h2:mb-4 prose-h2:mt-6
+          prose-h3:text-lg md:text-xl prose-h3:mb-3 prose-h3:mt-4
+          prose-p:text-slate-650 prose-p:leading-relaxed prose-p:text-base md:prose-p:text-lg prose-p:mb-6
+          prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-6
+          prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-6
+          prose-li:mb-2
+          prose-strong:text-slate-900 prose-strong:font-bold
+          prose-blockquote:border-l-4 prose-blockquote:border-emerald-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-6 prose-blockquote:text-slate-600
+          prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-code:text-xs prose-code:text-emerald-700
+          prose-table:w-full prose-table:my-6 prose-table:border-collapse prose-table:rounded-xl prose-table:overflow-hidden prose-table:border prose-table:border-slate-200
+          prose-th:bg-slate-50 prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:text-xs prose-th:font-bold prose-th:text-slate-500 prose-th:uppercase prose-th:tracking-wider prose-th:border-b prose-th:border-slate-200
+          prose-td:px-4 prose-td:py-3 prose-td:text-xs md:text-sm prose-td:text-slate-700 prose-td:border-b prose-td:border-slate-100
+        "
+        dangerouslySetInnerHTML={{ __html: marked(design) as string }}
+      />
     );
   };
 
@@ -1114,19 +1120,25 @@ ${analysis}`;
                 </div>
               </div>
 
-              <div className="prose prose-base md:prose-lg prose-gray max-w-none 
-                prose-headings:text-gray-950 prose-headings:font-extrabold prose-headings:tracking-tight
-                prose-h1:text-3xl md:prose-h1:text-5xl prose-h1:mb-8 prose-h1:mt-12
-                prose-h2:text-2xl md:prose-h2:text-3xl prose-h2:mb-6 prose-h2:mt-10
-                prose-h3:text-xl md:prose-h3:text-2xl prose-h3:mb-4 prose-h3:mt-8
-                prose-p:text-gray-800 prose-p:leading-relaxed prose-p:text-base md:prose-p:text-lg prose-p:mb-6
-                prose-li:text-gray-800 prose-li:text-base prose-li:mb-2
-                prose-strong:text-gray-950 prose-strong:font-bold
-                prose-table:border prose-table:border-gray-300 prose-th:bg-gray-100 prose-th:p-4 prose-td:p-4
-                prose-code:bg-gray-200 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-green-700 prose-code:before:content-none prose-code:after:content-none
-              ">
-                <ReactMarkdown components={markdownComponents}>{design}</ReactMarkdown>
-              </div>
+              <div 
+                className="prose prose-base md:prose-lg max-w-none text-slate-800
+                  prose-headings:text-slate-900 prose-headings:font-black prose-headings:tracking-tight
+                  prose-h1:text-2xl md:text-3xl prose-h1:mb-6 prose-h1:mt-8
+                  prose-h2:text-xl md:text-2xl prose-h2:mb-4 prose-h2:mt-6
+                  prose-h3:text-lg md:text-xl prose-h3:mb-3 prose-h3:mt-4
+                  prose-p:text-slate-650 prose-p:leading-relaxed prose-p:text-base md:prose-p:text-lg prose-p:mb-6
+                  prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-6
+                  prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-6
+                  prose-li:mb-2
+                  prose-strong:text-slate-900 prose-strong:font-bold
+                  prose-blockquote:border-l-4 prose-blockquote:border-emerald-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-6 prose-blockquote:text-slate-600
+                  prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-code:text-xs prose-code:text-emerald-700
+                  prose-table:w-full prose-table:my-6 prose-table:border-collapse prose-table:rounded-xl prose-table:overflow-hidden prose-table:border prose-table:border-slate-200
+                  prose-th:bg-slate-50 prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:text-xs prose-th:font-bold prose-th:text-slate-500 prose-th:uppercase prose-th:tracking-wider prose-th:border-b prose-th:border-slate-200
+                  prose-td:px-4 prose-td:py-3 prose-td:text-xs md:text-sm prose-td:text-slate-700 prose-td:border-b prose-td:border-slate-100
+                "
+                dangerouslySetInnerHTML={{ __html: marked(design) as string }}
+              />
 
               {/* Document Footer Style */}
               <div className="mt-20 pt-10 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-400 font-medium uppercase tracking-widest">
