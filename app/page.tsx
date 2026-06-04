@@ -1493,19 +1493,6 @@ export default function Home() {
                       <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.2-5.136 4.2A5.72 5.72 0 0 1 8.24 12.9a5.72 5.72 0 0 1 5.751-5.7 5.6 5.6 0 0 1 3.916 1.547l3.076-3.076A10.15 10.15 0 0 0 14.004 2a10.05 10.05 0 0 0-10 10.05 10.05 10.05 0 0 0 10 10.05c5.787 0 9.878-3.9 9.878-9.882 0-.67-.066-1.3-.2-1.933H12.24Z"/></svg>
                       Google Account
                     </button>
-                    
-                    <div className="pt-4 border-t border-gray-100 text-center mt-6 bg-slate-50 p-4.5 rounded-2xl border border-dashed border-gray-200">
-                      <p className="text-xs text-gray-500 font-bold leading-normal">
-                        No pilot access yet?{' '}
-                        <button
-                          type="button"
-                          onClick={() => { setAuthMode('signup'); setAuthError(''); }}
-                          className="text-green-600 hover:text-green-750 font-black hover:underline cursor-pointer transition-colors mt-0.5 block"
-                        >
-                          Request Beta Pilot Registration
-                        </button>
-                      </p>
-                    </div>
                   </div>
                 </form>
               )}
