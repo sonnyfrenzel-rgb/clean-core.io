@@ -6,15 +6,16 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
 import { PresentationViewer, PresentationData } from '@/components/PresentationViewer';
-import { Download, CheckCircle2, FileCode2, ArrowLeft, Home, RefreshCw, X, Rocket, ShieldCheck, Zap, Layout, Eye, Presentation, AlertCircle, Lock } from 'lucide-react';
+import { Download, CheckCircle2, FileCode2, ArrowLeft, Home, RefreshCw, X, Rocket, ShieldCheck, Zap, Layout, Eye, Presentation, AlertCircle, Lock, Briefcase } from 'lucide-react';
 import NavigationButtons from '@/components/NavigationButtons';
 import { saveAs } from 'file-saver';
 import JSZip from 'jszip';
-import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown } from '@/lib/markdownFormatter';
+import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
 
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { motion } from 'motion/react';
@@ -334,6 +335,7 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
         if (project.analysis) docs.file("business-analysis.md", formatAnalysisToMarkdown(project.analysis));
         if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign));
         if (project.documentation) docs.file("process-blueprint.md", formatDocsToMarkdown(project.documentation));
+        if (project.businessDocumentation) docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation));
       }
 
       const content = await zip.generateAsync({ type: "blob" });
@@ -368,7 +370,7 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-16">
         {/* ZIP Package Download */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 flex flex-col items-center text-center hover:shadow-xl hover:border-green-500/20 transition-all group overflow-hidden">
           <div className="bg-green-50 p-5 rounded-2xl mb-6 md:mb-8 group-hover:scale-110 transition-transform">
@@ -519,12 +521,60 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
               </div>
             </li>
           </ul>
-          
-          <div className="w-full p-4 bg-white/5 rounded-2xl border border-white/10">
+          <div className="w-full p-4 bg-white/5 rounded-2xl border border-white/10 mt-4">
             <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1">QA Status</span>
             <span className="text-green-400 font-bold flex items-center gap-2 text-xs md:text-sm uppercase tracking-tighter">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" /> Ready for Deployment
             </span>
+          </div>
+        </div>
+
+        {/* Business SOP & Compliance Card */}
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 flex flex-col items-center text-center hover:shadow-xl hover:border-blue-500/20 transition-all group overflow-hidden">
+          <div className="bg-blue-50 p-5 rounded-2xl mb-6 md:mb-8 group-hover:scale-110 transition-transform">
+            <Briefcase className="w-8 h-8 md:w-10 md:h-10 text-blue-600" />
+          </div>
+          <h2 className="text-xl md:text-2xl font-black text-gray-900 mb-3 tracking-tight uppercase">SOP & Compliance</h2>
+          <p className="text-gray-500 mb-8 md:mb-10 flex-grow text-xs md:text-sm leading-relaxed">
+            Standard Operating Procedures (SOP), RACI Matrix, and Audit Controls compliance documentation (Level 5).
+          </p>
+          
+          <div className="w-full relative group/tooltip">
+            {profile?.tier === 'pilot' ? (
+              <button 
+                onClick={() => setShowUpgradeModal(true)}
+                className="w-full bg-gray-100 text-gray-400 py-4 rounded-2xl font-black flex items-center justify-center gap-2 uppercase tracking-widest text-xs md:text-sm"
+              >
+                <Lock size={18} /> Basic Locked
+              </button>
+            ) : project?.businessDocumentation ? (
+              <button 
+                onClick={() => {
+                  const blob = new Blob([formatBusinessDocsToMarkdown(project.businessDocumentation || '')], { type: "text/markdown;charset=utf-8" });
+                  const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
+                  saveAs(blob, `${fileName}_BusinessDocumentation.md`);
+                }}
+                className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-2xl hover:bg-blue-700 transition-all font-bold shadow-lg shadow-blue-600/10 uppercase tracking-widest text-xs"
+              >
+                <Download size={20} /> Export Markdown
+              </button>
+            ) : (
+              <button 
+                disabled
+                className="w-full bg-gray-50 text-gray-400 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 border border-gray-150 uppercase tracking-widest text-xs cursor-not-allowed"
+              >
+                <AlertCircle size={16} /> Not Generated
+              </button>
+            )}
+            {profile?.tier === 'pilot' ? (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
+                SOP Reports are reserved for <span className="text-green-400 font-bold uppercase tracking-widest">Starter</span> & Premium users.
+              </div>
+            ) : !project?.businessDocumentation && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
+                Go to the <Link href={`/project/${projectId}/documentation`} className="text-blue-400 hover:underline">Documentation Stage</Link> to generate Level 5 SOPs.
+              </div>
+            )}
           </div>
         </div>
       </div>
