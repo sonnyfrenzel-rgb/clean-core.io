@@ -110,7 +110,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     console.log(`[CI DEBUG] Logging in with email: ${TEST_EMAIL}`);
     console.log('[CI DEBUG] Clicking Sign In button and waiting for redirect to /dashboard...');
     await Promise.all([
-      page.waitForURL('**/dashboard', { waitUntil: 'domcontentloaded' }),
+      page.waitForURL('**/dashboard', { waitUntil: 'commit' }),
       page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Anmelden")')
     ]);
     console.log('Successfully logged in and reached /dashboard.');
