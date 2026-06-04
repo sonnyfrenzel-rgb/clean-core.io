@@ -140,7 +140,7 @@ export default function Home() {
       
       setIsNavigating(true);
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        router.push('/dashboard');
       }, 850);
     } catch (error) {
       console.error('Error signing in:', error);
@@ -183,7 +183,7 @@ export default function Home() {
       console.log('[CLIENT LOG] Setting isNavigating to true and redirecting to /dashboard...');
       setIsNavigating(true);
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        router.push('/dashboard');
       }, 850);
     } catch (error: any) {
       console.error('Sign-in error:', error);
@@ -270,7 +270,7 @@ export default function Home() {
       
       setIsNavigating(true);
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        router.push('/dashboard');
       }, 850);
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -328,7 +328,7 @@ export default function Home() {
         
         setIsNavigating(true);
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          router.push('/dashboard');
         }, 850);
       } else {
         setAuthError('Invalid 6-digit code or backup recovery code.');
