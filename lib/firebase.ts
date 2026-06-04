@@ -46,12 +46,22 @@ export function getFirebaseApps() {
 export function getDb(): Firestore {
     if (!dbInstance) {
         const dbId = process.env.NEXT_PUBLIC_FIRESTORE_DB_ID || firebaseConfig.firestoreDatabaseId;
-        dbInstance = initializeFirestore(getFirebaseApps(), {
+        
+        // experimentalForceLongPolling only on client side to prevent Node.js SSR hangs
+        const firestoreSettings = typeof window !== 'undefined' ? {
             experimentalForceLongPolling: true,
-        }, dbId);
-        if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-            console.log('[FIREBASE] Connecting Firestore to emulator...');
-            connectFirestoreEmulator(dbInstance, 'localhost', 8080);
+        } : {};
+        
+        dbInstance = initializeFirestore(getFirebaseApps(), firestoreSettings, dbId);
+        
+        if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
+            const host = '127.0.0.1';
+            console.log(`[FIREBASE] Connecting Firestore to emulator on ${host}:8080...`);
+            try {
+                connectFirestoreEmulator(dbInstance, host, 8080);
+            } catch (err) {
+                console.warn('[FIREBASE] Firestore emulator connection warning/already connected:', err);
+            }
         }
     }
     return dbInstance;
@@ -60,9 +70,14 @@ export function getDb(): Firestore {
 export function getAuth(): Auth {
     if (!authInstance) {
         authInstance = firebaseGetAuth(getFirebaseApps());
-        if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-            console.log('[FIREBASE] Connecting Auth to emulator...');
-            connectAuthEmulator(authInstance, 'http://localhost:9099', { disableWarnings: true });
+        if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
+            const host = '127.0.0.1';
+            console.log(`[FIREBASE] Connecting Auth to emulator on ${host}:9099...`);
+            try {
+                connectAuthEmulator(authInstance, `http://${host}:9099`, { disableWarnings: true });
+            } catch (err) {
+                console.warn('[FIREBASE] Auth emulator connection warning/already connected:', err);
+            }
         }
     }
     return authInstance;

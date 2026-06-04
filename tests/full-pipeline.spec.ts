@@ -13,8 +13,8 @@ const firebaseAuth = getAuth(firebaseApp);
 
 if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
   console.log('[TEST SDK] Connecting test runner Firestore & Auth to emulators...');
-  connectFirestoreEmulator(firestoreDb, 'localhost', 8080);
-  connectAuthEmulator(firebaseAuth, 'http://localhost:9099', { disableWarnings: true });
+  connectFirestoreEmulator(firestoreDb, '127.0.0.1', 8080);
+  connectAuthEmulator(firebaseAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
 }
 
 const branchSuffix = (process.env.GITHUB_REF_NAME || 'local').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
