@@ -14,6 +14,33 @@ import { clsx } from 'clsx';
 import { saveAs } from 'file-saver';
 import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
+import { formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
+
+const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
+  let files: Array<{ path: string, content: string }> = [];
+  if (generatedCode) {
+    try {
+      const parsed = JSON.parse(generatedCode);
+      if (Array.isArray(parsed)) {
+        files = parsed;
+      }
+    } catch (e) {
+      files = [
+        {
+          path: 'srv/service.ts',
+          content: generatedCode
+        }
+      ];
+    }
+  }
+  const existingFileIdx = files.findIndex(f => f.path === filePath);
+  if (existingFileIdx !== -1) {
+    files[existingFileIdx].content = fileContent;
+  } else {
+    files.push({ path: filePath, content: fileContent });
+  }
+  return JSON.stringify(files);
+};
 
 // Dynamically import ProcessFlow to avoid SSR issues
 const ProcessFlow = dynamic(() => import('@/components/ProcessFlow'), { ssr: false });
@@ -354,11 +381,16 @@ ${context}`;
       
       setDocumentation(jsonString);
       
+      const updatedCode = addOrUpdateFileInWorkspace(project.generatedCode, 'docs/process-blueprint.md', formatDocsToMarkdown(jsonString));
+
       const db = getDb();
       await updateDoc(doc(db, 'projects', idStr), {
         documentation: jsonString,
+        generatedCode: updatedCode,
         status: 'documented'
       });
+
+      setProject(prev => prev ? { ...prev, documentation: jsonString, generatedCode: updatedCode, status: 'documented' } : null);
       
     } catch (err: unknown) {
       console.error('Documentation generation error:', err);
@@ -454,10 +486,15 @@ Structure the JSON exactly like this:
       
       setBusinessDocumentation(responseText);
       
+      const updatedCode = addOrUpdateFileInWorkspace(project.generatedCode, 'docs/business-documentation.md', formatBusinessDocsToMarkdown(responseText));
+
       const db = getDb();
       await updateDoc(doc(db, 'projects', idStr), {
-        businessDocumentation: responseText
+        businessDocumentation: responseText,
+        generatedCode: updatedCode
       });
+
+      setProject(prev => prev ? { ...prev, businessDocumentation: responseText, generatedCode: updatedCode } : null);
       
     } catch (err: unknown) {
       console.error('Business documentation generation error:', err);

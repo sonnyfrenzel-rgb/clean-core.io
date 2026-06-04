@@ -279,3 +279,48 @@ export function formatPresentationToMarkdown(rawJson: string): string {
     return rawJson;
   }
 }
+
+export function formatBusinessDocsToMarkdown(rawJson: string): string {
+  if (!rawJson) return '';
+  try {
+    const cleanedJson = rawJson.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
+    const data = JSON.parse(cleanedJson);
+    if (!data || typeof data !== 'object') return rawJson;
+
+    let md = `# 🏢 Business SOP & Compliance Documentation\n\n`;
+
+    if (Array.isArray(data.raci_matrix) && data.raci_matrix.length > 0) {
+      md += `## 👥 RACI Assignment Matrix\n\n`;
+      md += `| Task ID | Responsible (R) | Accountable (A) | Consulted (C) | Informed (I) |\n`;
+      md += `| :--- | :--- | :--- | :--- | :--- |\n`;
+      data.raci_matrix.forEach((raci: any) => {
+        md += `| \`${raci.stepId}\` | ${raci.r || 'N/A'} | ${raci.a || 'N/A'} | ${raci.c || 'N/A'} | ${raci.i || 'N/A'} |\n`;
+      });
+      md += `\n`;
+    }
+
+    if (Array.isArray(data.sop_details) && data.sop_details.length > 0) {
+      md += `## 📋 Standard Operating Procedures (SOP) Playbook\n\n`;
+      data.sop_details.forEach((sop: any) => {
+        md += `### 🔹 Task: \`${sop.stepId}\`\n`;
+        md += `* **Operational Narrative:** ${sop.narrative || 'N/A'}\n`;
+        md += `* **KPI Target:** \`${sop.kpiTarget || 'N/A'}\`\n`;
+        md += `* **Business Exception Fallback:** _${sop.businessException || 'N/A'}_\n\n`;
+      });
+    }
+
+    if (Array.isArray(data.audit_controls) && data.audit_controls.length > 0) {
+      md += `## 🛡️ Internal Audit Compliance & Risk Controls\n\n`;
+      md += `| Task ID | Control Objective | Mitigation Action | Assertion Method |\n`;
+      md += `| :--- | :--- | :--- | :--- |\n`;
+      data.audit_controls.forEach((ctrl: any) => {
+        md += `| \`${ctrl.stepId}\` | **${ctrl.controlObjective || 'N/A'}** | ${ctrl.mitigationAction || 'N/A'} | \`${ctrl.assertionMethod || 'N/A'}\` |\n`;
+      });
+      md += `\n`;
+    }
+
+    return md;
+  } catch (e) {
+    return rawJson;
+  }
+}
