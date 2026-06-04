@@ -715,7 +715,7 @@ export default function Home() {
                       {feature.icon}
                     </div>
                   </div>
-                  <h3 className="text-2xl font-black mb-4 text-gray-950 tracking-tight flex items-center gap-2 animate-pulse-slow">
+                  <h3 className="text-2xl font-black mb-4 text-gray-950 tracking-tight flex items-center gap-2">
                     {feature.title}
                     {feature.isNew && (
                       <span className="px-2 py-0.5 bg-green-600 text-white text-[9px] font-black rounded-md uppercase tracking-wider">NEW</span>
