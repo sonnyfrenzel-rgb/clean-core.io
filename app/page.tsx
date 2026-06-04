@@ -140,7 +140,7 @@ export default function Home() {
       
       setIsNavigating(true);
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        router.push('/dashboard');
       }, 850);
     } catch (error) {
       console.error('Error signing in:', error);
@@ -183,8 +183,8 @@ export default function Home() {
       console.log('[CLIENT LOG] Setting isNavigating to true and redirecting to /dashboard...');
       setIsNavigating(true);
       setTimeout(() => {
-        console.log('[CLIENT LOG] setTimeout callback fired, setting window.location.href to /dashboard...');
-        window.location.href = '/dashboard';
+        console.log('[CLIENT LOG] setTimeout callback fired, setting router.push to /dashboard...');
+        router.push('/dashboard');
       }, 850);
     } catch (error: any) {
       console.error('Sign-in error:', error);
@@ -271,7 +271,7 @@ export default function Home() {
       
       setIsNavigating(true);
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        router.push('/dashboard');
       }, 850);
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -329,7 +329,7 @@ export default function Home() {
         
         setIsNavigating(true);
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          router.push('/dashboard');
         }, 850);
       } else {
         setAuthError('Invalid 6-digit code or backup recovery code.');
@@ -490,7 +490,7 @@ export default function Home() {
              </div>
             {user ? (
               <button
-                onClick={() => { setIsNavigating(true); window.location.href = '/dashboard'; }}
+                onClick={() => { setIsNavigating(true); router.push('/dashboard'); }}
                 disabled={isNavigating}
                 className="bg-gray-950 hover:bg-gray-800 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:bg-gray-900/70 disabled:cursor-not-allowed text-sm sm:text-base"
               >
@@ -619,7 +619,7 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
               <button
-                onClick={user ? () => { setIsNavigating(true); window.location.href = '/dashboard'; } : openSignInModal}
+                onClick={user ? () => { setIsNavigating(true); router.push('/dashboard'); } : openSignInModal}
                 disabled={isNavigating}
                 className="w-full sm:w-auto flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white px-12 py-5 rounded-2xl font-black text-lg transition-all shadow-lg hover:shadow-2xl hover:-translate-y-1 disabled:bg-green-500/50 disabled:cursor-not-allowed"
               >
