@@ -13,6 +13,7 @@ import { saveAs } from 'file-saver';
 import nextDynamic from 'next/dynamic';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
+import { marked } from 'marked';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 
@@ -1045,17 +1046,25 @@ export default function Dashboard() {
             </div>
             <div className="p-6 overflow-y-auto flex-grow bg-white">
               {viewContent.type === 'markdown' ? (
-                <div className="prose prose-2xl prose-gray max-w-none 
-                  prose-headings:text-gray-950 prose-headings:font-extrabold prose-headings:tracking-tight
-                  prose-h1:text-6xl prose-h1:mb-16 prose-h1:mt-24
-                  prose-h2:text-5xl prose-h2:mb-12 prose-h2:mt-20
-                  prose-h3:text-4xl prose-h3:mb-8 prose-h3:mt-16
-                  prose-p:text-gray-800 prose-p:leading-relaxed prose-p:text-2xl prose-p:mb-10
-                  prose-li:text-gray-800 prose-li:text-xl prose-li:mb-4
-                  prose-strong:text-gray-950 prose-strong:font-bold
-                ">
-                  <ReactMarkdown>{viewContent.content}</ReactMarkdown>
-                </div>
+                <div 
+                  className="prose prose-base md:prose-lg max-w-none text-slate-800
+                    prose-headings:text-slate-900 prose-headings:font-black prose-headings:tracking-tight
+                    prose-h1:text-2xl md:text-3xl prose-h1:mb-6 prose-h1:mt-8
+                    prose-h2:text-xl md:text-2xl prose-h2:mb-4 prose-h2:mt-6
+                    prose-h3:text-lg md:text-xl prose-h3:mb-3 prose-h3:mt-4
+                    prose-p:text-slate-600 prose-p:leading-relaxed prose-p:text-sm md:text-base prose-p:mb-4
+                    prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-6
+                    prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-6
+                    prose-li:mb-2
+                    prose-strong:text-slate-900 prose-strong:font-bold
+                    prose-blockquote:border-l-4 prose-blockquote:border-emerald-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-6 prose-blockquote:text-slate-600
+                    prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-code:text-xs prose-code:text-emerald-700
+                    prose-table:w-full prose-table:my-6 prose-table:border-collapse prose-table:rounded-xl prose-table:overflow-hidden prose-table:border prose-table:border-slate-200
+                    prose-th:bg-slate-50 prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:text-xs prose-th:font-bold prose-th:text-slate-500 prose-th:uppercase prose-th:tracking-wider prose-th:border-b prose-th:border-slate-200
+                    prose-td:px-4 prose-td:py-3 prose-td:text-xs md:text-sm prose-td:text-slate-700 prose-td:border-b prose-td:border-slate-100
+                  "
+                  dangerouslySetInnerHTML={{ __html: marked(viewContent.content) as string }}
+                />
               ) : viewContent.type === 'json' ? (
                 <pre className="bg-gray-900 text-green-400 p-4 rounded-lg text-sm font-mono overflow-x-auto">
                   {viewContent.content}
