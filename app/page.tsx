@@ -183,6 +183,7 @@ export default function Home() {
       console.log('[CLIENT LOG] Setting isNavigating to true and redirecting to /dashboard...');
       setIsNavigating(true);
       setTimeout(() => {
+        console.log('[CLIENT LOG] setTimeout callback fired, setting window.location.href to /dashboard...');
         window.location.href = '/dashboard';
       }, 850);
     } catch (error: any) {
