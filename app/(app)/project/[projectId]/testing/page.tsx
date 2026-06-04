@@ -10,7 +10,7 @@ import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import Stepper from '@/components/Stepper';
 import type { Project } from '@/lib/types';
-import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, X, Rocket, CheckCircle2, Globe, Lock as LockIcon, Send, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, X, Rocket, CheckCircle2, Globe, Lock as LockIcon, Send, Sparkles, Eye, EyeOff, Clock, Loader2 } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { saveAs } from 'file-saver';
@@ -109,9 +109,15 @@ export default function TestingSandboxPage() {
         setS4Password(project.s4Config.password || '');
         setS4AuthType(project.s4Config.authType || 'basic');
         setBtpDestinationJson(project.s4Config.btpDestinationJson || '');
+      } else if (profile?.s4Config) {
+        setS4Url(profile.s4Config.url || '');
+        setS4Username(profile.s4Config.username || '');
+        setS4Password(profile.s4Config.password || '');
+        setS4AuthType(profile.s4Config.authType || 'basic');
+        setBtpDestinationJson(profile.s4Config.btpDestinationJson || '');
       }
     }
-  }, [project]);
+  }, [project, profile]);
 
   const handleEnvChange = async (env: 'mock' | 'live') => {
     setActiveEnvTab(env);
@@ -685,108 +691,84 @@ export default function TestingSandboxPage() {
                 </form>
               </div>
             ) : (
-              // Locked Teaser Card with Glassmorphic Overlay
-              <div className="relative bg-[#ffffff] border border-gray-100 rounded-[2rem] p-6 md:p-12 shadow-sm overflow-hidden min-h-[360px] flex flex-col justify-center">
-                {/* Simulated connection config mockup (Backdrop blurred background) */}
-                <div className="absolute inset-0 grid grid-cols-1 md:grid-cols-2 gap-6 p-8 opacity-20 filter blur-[2px] pointer-events-none select-none">
-                  <div className="space-y-4">
-                    <div className="h-4 bg-gray-300 rounded w-1/4"></div>
-                    <div className="h-12 bg-gray-200 rounded-xl"></div>
-                    <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+              // Locked Teaser Card / Guide & Access Request
+              <div className="bg-[#ffffff] border border-gray-100 rounded-[2rem] p-6 md:p-10 shadow-sm relative overflow-hidden">
+                <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-sky-500 to-blue-600" />
+                
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="bg-sky-600/10 p-2.5 rounded-2xl">
+                    <Globe className="text-sky-600" size={22} />
                   </div>
-                  <div className="space-y-4">
-                    <div className="h-4 bg-gray-300 rounded w-1/4"></div>
-                    <div className="h-12 bg-gray-200 rounded-xl"></div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="h-4 bg-gray-300 rounded w-1/4"></div>
-                    <div className="h-12 bg-gray-200 rounded-xl"></div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="h-4 bg-gray-300 rounded w-1/4"></div>
-                    <div className="h-12 bg-gray-200 rounded-xl"></div>
-                  </div>
+                  <h3 className="text-xl font-black text-[#0b1c30] tracking-tight uppercase flex items-center gap-2">
+                    Live S/4HANA Integration Bridge
+                  </h3>
                 </div>
 
-                {/* Glassmorphic Backdrop overlay */}
-                <div className="absolute inset-0 bg-white/40 backdrop-blur-md z-10 flex flex-col items-center justify-center p-6 text-center">
-                  <AnimatePresence mode="wait">
-                    {profile?.s4TenantAccessRequested ? (
-                      // Requested State
-                      <motion.div
-                        key="requested"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 1.05 }}
-                        className="max-w-md bg-white border border-blue-100 shadow-xl rounded-3xl p-8 flex flex-col items-center"
-                      >
-                        <div className="w-16 h-16 bg-blue-550/20 border border-blue-200 rounded-2xl flex items-center justify-center mb-6 text-blue-600 animate-pulse">
-                          <Globe className="w-8 h-8" />
-                        </div>
-                        <h4 className="text-xl font-black text-[#0b1c30] mb-2 uppercase tracking-tight">Access Request Pending</h4>
-                        <p className="text-sm text-gray-500 font-medium leading-relaxed mb-6">
-                          🕒 Request sent! Sonny will review your request manually and unlock this premium feature for you shortly.
+                <div className="space-y-6 max-w-4xl">
+                  {/* Anleitung */}
+                  <div className="bg-sky-50/50 border border-sky-100 p-5 rounded-2xl">
+                    <h3 className="text-xs font-black text-sky-950 uppercase tracking-widest mb-3">📋 Anleitung (Setup-Leitfaden)</h3>
+                    <ol className="list-decimal pl-4 text-xs text-sky-850 space-y-2 font-medium">
+                      <li><strong>Freigabe anfordern:</strong> Nutzen Sie das untenstehende Formular, um eine Pilot-Freigabe für Ihre Organisation anzufragen.</li>
+                      <li><strong>HTTPS-Endpunkt bereitstellen:</strong> Richten Sie eine sichere HTTPS-Verbindung zu Ihrem S/4HANA Sandbox- oder Testsystem ein.</li>
+                      <li><strong>Zugangsdaten konfigurieren:</strong> Nach der Freigabe können Sie Ihre Anmeldedaten (Basic Auth oder OAuth 2.0) hinterlegen.</li>
+                      <li><strong>Verbindung testen & nutzen:</strong> Führen Sie Testläufe live gegen OData-Schnittstellen direkt aus der Stage 5 Testumgebung aus.</li>
+                    </ol>
+                  </div>
+
+                  {/* Sicherheitsmaßnahmen */}
+                  <div className="bg-green-50/50 border border-green-100 p-5 rounded-2xl">
+                    <h3 className="text-xs font-black text-green-950 uppercase tracking-widest mb-3">🛡️ Sicherheitsmaßnahmen & Erklärungen</h3>
+                    <ul className="list-disc pl-4 text-xs text-green-850 space-y-2 font-medium">
+                      <li><strong>Browserseitige Verschlüsselung:</strong> Alle Passwörter und Tokens werden lokal im Browser verschlüsselt, bevor sie an den Proxy-Tunnel übertragen werden.</li>
+                      <li><strong>Produktions-Blockade:</strong> Zugriffe auf Produktiv-Schnittstellen (<code className="bg-green-100 px-1 py-0.5 rounded font-mono text-[10px]">*-api.s4hana.ondemand.com</code>) sind systemseitig gesperrt.</li>
+                      <li><strong>Sandboxed Execution:</strong> Datenverbindungen werden über einen isolierten BTP-Proxy-Kanal geleitet, um CORS-Richtlinien einzuhalten und Ihre IP-Adresse zu schützen.</li>
+                    </ul>
+                  </div>
+
+                  {/* Disclaimer */}
+                  <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
+                    <h3 className="text-xs font-black text-amber-950 uppercase tracking-widest mb-2">⚠️ Haftungsausschluss (Disclaimer)</h3>
+                    <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                      Diese Plattform ist eine nicht-kommerzielle Community-Pilotumgebung. Der Zugriff erfolgt vollständig ohne Gewährleistung, Garantie oder Haftung. Verwenden Sie unter keinen Umständen produktive ERP-Daten oder reale Passwörter.
+                    </p>
+                  </div>
+
+                  {/* Request Form / Status */}
+                  {profile?.s4TenantAccessRequested ? (
+                    <div className="bg-amber-50/50 border border-amber-150 p-5 rounded-2xl flex items-start gap-3">
+                      <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-amber-900 text-xs md:text-sm mb-1 uppercase tracking-tight">Anfrage in Prüfung</h4>
+                        <p className="text-xs text-amber-800/90 leading-relaxed font-medium">
+                          Ihre Anfrage für den Live-S/4HANA-Zugriff wird derzeit von unseren Systemadministratoren geprüft. Freigaben erfolgen in der Regel innerhalb von 24 Stunden.
                         </p>
-                        <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-full uppercase tracking-wider border border-blue-100">
-                          Reviewing application
-                        </span>
-                      </motion.div>
-                    ) : (
-                      // Teaser / Lock State
-                      <motion.div
-                        key="teaser"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 1.05 }}
-                        className="max-w-2xl bg-white border border-gray-100 shadow-xl rounded-3xl p-6 md:p-8 flex flex-col items-center"
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 pt-2">
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                          Beschreibung Ihres Pilot-Use-Cases (Motivation)
+                        </label>
+                        <textarea 
+                          placeholder="Z. B. Anbindung unserer non-produktiven S/4HANA Public Cloud Sandbox zur Validierung von OData-Schnittstellen..."
+                          value={accessRequestedMotivation}
+                          onChange={e => setAccessRequestedMotivation(e.target.value)}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-medium text-[#0b1c30] focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all h-20 resize-none outline-none font-medium"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleRequestAccess}
+                        disabled={isRequestingAccess}
+                        className="w-full bg-gradient-to-r from-blue-600 to-sky-650 hover:shadow-lg text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-11"
                       >
-                        <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-sky-600 rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg shadow-blue-500/20">
-                          <Sparkles className="w-7 h-7" />
-                        </div>
-                        <h4 className="text-2xl font-black text-[#0b1c30] mb-3 tracking-tighter uppercase">
-                          Live S/4HANA Integration Bridge
-                        </h4>
-                        <p className="text-xs md:text-sm text-gray-650 font-medium leading-relaxed max-w-lg mb-8">
-                          Connect your own SAP development or testing instance in seconds. Execute live OData queries directly against your ERP data from the Sandbox Cockpit – fully secure and encrypted. You can also request and manage connections in your <Link href="/settings" className="text-blue-600 hover:text-blue-700 font-bold hover:underline">Profile Settings ↗</Link>.
-                        </p>
-
-                        {/* Premium Benefits Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mb-8 text-left">
-                          <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
-                            <span className="font-extrabold text-[#0b1c30] text-xs block mb-1">✨ Live Validation</span>
-                            <span className="text-[10px] text-gray-500 font-medium block leading-normal">Real SAP OData queries utilizing live ERP test data.</span>
-                          </div>
-                          <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
-                            <span className="font-extrabold text-[#0b1c30] text-xs block mb-1">🔒 Zero-Trust Vault</span>
-                            <span className="text-[10px] text-gray-500 font-medium block leading-normal">AES-256 browser-side encryption protects passwords.</span>
-                          </div>
-                          <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
-                            <span className="font-extrabold text-[#0b1c30] text-xs block mb-1">🚀 Sandbox Proxy</span>
-                            <span className="text-[10px] text-gray-500 font-medium block leading-normal">Full SAP Cloud SDK support without CORS issues.</span>
-                          </div>
-                        </div>
-
-                        {/* Request Form */}
-                        <div className="w-full space-y-4 mb-6">
-                          <textarea
-                            placeholder="Describe your pilot use-case (e.g. S/4HANA Public Cloud Sandbox testing motivation)..."
-                            value={accessRequestedMotivation}
-                            onChange={e => setAccessRequestedMotivation(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-medium text-[#0b1c30] focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all h-20 resize-none"
-                          />
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={handleRequestAccess}
-                          disabled={isRequestingAccess}
-                          className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-sky-600 hover:shadow-lg text-white font-black text-xs uppercase tracking-wider rounded-2xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                          {isRequestingAccess ? <><RefreshCw className="w-4 h-4 animate-spin" /> Sending Request...</> : <><Send className="w-4 h-4" /> Request Live Tenant Access 🚀</>}
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                        {isRequestingAccess ? <><Loader2 className="w-4 h-4 animate-spin" /> Wird gesendet...</> : <><Send className="w-4 h-4" /> Freigabe für Live-S/4HANA-Zugriff anfragen 🚀</>}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -822,6 +804,20 @@ export default function TestingSandboxPage() {
               </div>
             ) : (
               <div className="space-y-3">
+                {activeEnvTab === 'live' && !s4Url && (
+                  <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-2xl text-xs font-semibold flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-650 shrink-0" />
+                    <span>Bitte konfigurieren Sie die S/4HANA-Verbindung (URL & Anmeldedaten), um Live-Tests auszuführen.</span>
+                  </div>
+                )}
+
+                {activeEnvTab === 'live' && s4Url && connectionStatus !== 'connected' && (
+                  <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl text-xs font-semibold flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>Tipp: Bitte führen Sie oben einen erfolgreichen Verbindungstest aus, um Konnektivitätsprobleme zu vermeiden.</span>
+                  </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
                   <div className="flex items-center gap-4">
                     <span className="text-[10px] font-black text-[#0b1c30]/50 uppercase tracking-widest">{selectedTestCases.length} of {testCases.length} selected</span>
@@ -844,7 +840,7 @@ export default function TestingSandboxPage() {
                   </div>
                   <button 
                     onClick={handleRun} 
-                    disabled={isRunning || selectedTestCases.length === 0}
+                    disabled={isRunning || selectedTestCases.length === 0 || (activeEnvTab === 'live' && !s4Url)}
                     className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 text-xs md:text-sm font-bold w-full sm:w-auto"
                   >
                     {isRunning ? <><RefreshCw className="w-4 h-4 animate-spin" /> Running...</> : <><Play className="w-4 h-4" /> Run Selected</>}

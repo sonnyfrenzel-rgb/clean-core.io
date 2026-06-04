@@ -29,6 +29,7 @@ export interface UserProfile {
   authMethod?: 'google' | 'password';
   s4TenantAccessRequested?: boolean;
   s4TenantAccessAllowed?: boolean;
+  s4Config?: any;
 }
 
 
