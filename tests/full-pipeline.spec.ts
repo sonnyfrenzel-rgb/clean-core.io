@@ -110,7 +110,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     console.log(`[CI DEBUG] Logging in with email: ${TEST_EMAIL}`);
     console.log('[CI DEBUG] Clicking Sign In button and waiting for redirect to /dashboard...');
     await page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Anmelden")');
-    await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 45000 });
+    await page.waitForURL('**/dashboard', { timeout: 45000 });
     console.log('Successfully logged in and reached /dashboard.');
 
     // --- STAGE 0.5: CREATE PROJECT ---
