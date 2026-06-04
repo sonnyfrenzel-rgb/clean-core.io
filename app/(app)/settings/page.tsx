@@ -1394,32 +1394,32 @@ export default function SettingsPage() {
                 </form>
               ) : (
                 <div className="space-y-6">
-                  {/* Anleitung */}
+                  {/* Instructions */}
                   <div className="bg-sky-50/50 border border-sky-100 p-5 rounded-2xl">
-                    <h3 className="text-xs font-black text-sky-950 uppercase tracking-widest mb-3">📋 Anleitung (Setup-Leitfaden)</h3>
+                    <h3 className="text-xs font-black text-sky-950 uppercase tracking-widest mb-3">📋 Instructions (Setup Guide)</h3>
                     <ol className="list-decimal pl-4 text-xs text-sky-850 space-y-2 font-medium">
-                      <li><strong>Freigabe anfordern:</strong> Nutzen Sie das untenstehende Formular, um eine Pilot-Freigabe für Ihre Organisation anzufragen.</li>
-                      <li><strong>HTTPS-Endpunkt bereitstellen:</strong> Richten Sie eine sichere HTTPS-Verbindung zu Ihrem S/4HANA Sandbox- oder Testsystem ein.</li>
-                      <li><strong>Zugangsdaten konfigurieren:</strong> Nach der Freigabe können Sie Ihre Anmeldedaten (Basic Auth oder OAuth 2.0) hinterlegen.</li>
-                      <li><strong>Verbindung testen & nutzen:</strong> Führen Sie Testläufe live gegen OData-Schnittstellen direkt aus der Stage 5 Testumgebung aus.</li>
+                      <li><strong>Request access:</strong> Use the form below to request pilot access for your organization.</li>
+                      <li><strong>Provide HTTPS endpoint:</strong> Set up a secure HTTPS connection to your S/4HANA sandbox or test system.</li>
+                      <li><strong>Configure credentials:</strong> Once approved, you can configure your credentials (Basic Auth or OAuth 2.0).</li>
+                      <li><strong>Test & use connection:</strong> Run live test cases against OData interfaces directly from the Stage 5 testing environment.</li>
                     </ol>
                   </div>
 
-                  {/* Sicherheitsmaßnahmen */}
+                  {/* Security Measures */}
                   <div className="bg-green-50/50 border border-green-100 p-5 rounded-2xl">
-                    <h3 className="text-xs font-black text-green-950 uppercase tracking-widest mb-3">🛡️ Sicherheitsmaßnahmen & Erklärungen</h3>
+                    <h3 className="text-xs font-black text-green-950 uppercase tracking-widest mb-3">🛡️ Security Measures & Explanations</h3>
                     <ul className="list-disc pl-4 text-xs text-green-850 space-y-2 font-medium">
-                      <li><strong>Browserseitige Verschlüsselung:</strong> Alle Passwörter und Tokens werden lokal im Browser verschlüsselt, bevor sie an den Proxy-Tunnel übertragen werden.</li>
-                      <li><strong>Produktions-Blockade:</strong> Zugriffe auf Produktiv-Schnittstellen (<code className="bg-green-100 px-1 py-0.5 rounded font-mono text-[10px]">*-api.s4hana.ondemand.com</code>) sind systemseitig gesperrt.</li>
-                      <li><strong>Sandboxed Execution:</strong> Datenverbindungen werden über einen isolierten BTP-Proxy-Kanal geleitet, um CORS-Richtlinien einzuhalten und Ihre IP-Adresse zu schützen.</li>
+                      <li><strong>Browser-side Encryption:</strong> All passwords and tokens are encrypted locally in the browser before being transmitted to the proxy tunnel.</li>
+                      <li><strong>Production Block:</strong> Access to production interfaces (<code className="bg-green-100 px-1 py-0.5 rounded font-mono text-[10px]">*-api.s4hana.ondemand.com</code>) is blocked by the system.</li>
+                      <li><strong>Sandboxed Execution:</strong> Data connections are routed through an isolated BTP proxy channel to comply with CORS policies and protect your IP address.</li>
                     </ul>
                   </div>
 
                   {/* Disclaimer */}
                   <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
-                    <h3 className="text-xs font-black text-amber-950 uppercase tracking-widest mb-2">⚠️ Haftungsausschluss (Disclaimer)</h3>
+                    <h3 className="text-xs font-black text-amber-950 uppercase tracking-widest mb-2">⚠️ Warranty Disclaimer</h3>
                     <p className="text-xs text-amber-800 leading-relaxed font-medium">
-                      Diese Plattform ist eine nicht-kommerzielle Community-Pilotumgebung. Der Zugriff erfolgt vollständig ohne Gewährleistung, Garantie oder Haftung. Verwenden Sie unter keinen Umständen produktive ERP-Daten oder reale Passwörter.
+                      This platform is a non-commercial community pilot environment. Access is provided entirely without warranty, guarantee, or liability. Under no circumstances should you use productive ERP data or real passwords.
                     </p>
                   </div>
 
@@ -1428,9 +1428,9 @@ export default function SettingsPage() {
                     <div className="bg-amber-50/50 border border-amber-150 p-5 rounded-2xl flex items-start gap-3">
                       <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                       <div>
-                        <h4 className="font-bold text-amber-900 text-xs md:text-sm mb-1 uppercase tracking-tight">Anfrage in Prüfung</h4>
+                        <h4 className="font-bold text-amber-900 text-xs md:text-sm mb-1 uppercase tracking-tight">Request in Review</h4>
                         <p className="text-xs text-amber-800/90 leading-relaxed font-medium">
-                          Ihre Anfrage für den Live-S/4HANA-Zugriff wird derzeit von unseren Systemadministratoren geprüft. Freigaben erfolgen in der Regel innerhalb von 24 Stunden.
+                          Your request for live S/4HANA access is currently being reviewed by our system administrators. Approvals are usually processed within 24 hours.
                         </p>
                       </div>
                     </div>
@@ -1438,12 +1438,12 @@ export default function SettingsPage() {
                     <form onSubmit={handleRequestByot} className="space-y-4 pt-2">
                       <div className="space-y-2">
                         <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                          Beschreibung Ihres Pilot-Use-Cases (Motivation)
+                          Description of your pilot use case (Motivation)
                         </label>
                         <textarea 
                           value={byotMotivation}
                           onChange={(e) => setByotMotivation(e.target.value)}
-                          placeholder="Z. B. Anbindung unserer non-produktiven S/4HANA Public Cloud Sandbox zur Validierung von OData-Schnittstellen..."
+                          placeholder="E.g., connecting our non-productive S/4HANA Public Cloud Sandbox to validate OData interfaces..."
                           rows={3}
                           className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-sky-600 outline-none transition-all font-medium text-gray-900 text-sm leading-relaxed"
                           required
@@ -1456,7 +1456,7 @@ export default function SettingsPage() {
                           animate={{ opacity: 1, y: 0 }}
                           className="bg-emerald-50 border border-emerald-250 text-emerald-950 p-4 rounded-xl text-xs font-medium"
                         >
-                          Anfrage erfolgreich übermittelt!
+                          Request successfully submitted!
                         </motion.div>
                       )}
 
@@ -1466,7 +1466,7 @@ export default function SettingsPage() {
                           animate={{ opacity: 1, y: 0 }}
                           className="bg-rose-50 border border-rose-250 text-rose-950 p-4 rounded-xl text-xs font-medium"
                         >
-                          {byotError || 'Fehler beim Senden der Anfrage. Bitte versuchen Sie es erneut.'}
+                          {byotError || 'Error submitting request. Please try again.'}
                         </motion.div>
                       )}
 
@@ -1478,12 +1478,12 @@ export default function SettingsPage() {
                         {isRequestingByot ? (
                           <>
                             <Loader2 className="animate-spin" size={14} />
-                            Wird gesendet...
+                            Sending...
                           </>
                         ) : (
                           <>
                             <Send size={14} />
-                            Freigabe für Live-S/4HANA-Zugriff anfragen
+                            Request Access for Live S/4HANA
                           </>
                         )}
                       </button>
