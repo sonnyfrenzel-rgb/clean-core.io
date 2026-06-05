@@ -44,6 +44,9 @@ export function getFirebaseApps() {
 }
 
 export function getDb(): Firestore {
+    if (typeof window === 'undefined') {
+        return null as any;
+    }
     if (!dbInstance) {
         const dbId = process.env.NEXT_PUBLIC_FIRESTORE_DB_ID || firebaseConfig.firestoreDatabaseId;
         
@@ -68,6 +71,9 @@ export function getDb(): Firestore {
 }
 
 export function getAuth(): Auth {
+    if (typeof window === 'undefined') {
+        return null as any;
+    }
     if (!authInstance) {
         authInstance = firebaseGetAuth(getFirebaseApps());
         if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
