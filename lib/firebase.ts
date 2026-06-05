@@ -47,10 +47,10 @@ export function getDb(): Firestore {
     if (!dbInstance) {
         const dbId = process.env.NEXT_PUBLIC_FIRESTORE_DB_ID || firebaseConfig.firestoreDatabaseId;
         
-        // experimentalForceLongPolling only on client side to prevent Node.js SSR hangs
-        const firestoreSettings = typeof window !== 'undefined' ? {
+        // Enable experimentalForceLongPolling on both client and server to prevent Node.js SSR event loop hangs
+        const firestoreSettings = {
             experimentalForceLongPolling: true,
-        } : {};
+        };
         
         dbInstance = initializeFirestore(getFirebaseApps(), firestoreSettings, dbId);
         
