@@ -21,6 +21,9 @@ export default function UserOnboarding() {
   const [showTerms, setShowTerms] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
+  // Return early during SSR if Firebase Auth is bypassed on the server
+  if (!auth) return null;
+
   useEffect(() => {
     if (auth.currentUser?.displayName && !firstName && !lastName) {
       const displayName = auth.currentUser.displayName.trim();

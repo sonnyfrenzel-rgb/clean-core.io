@@ -41,6 +41,10 @@ export function useUserProfile() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!auth || !db) {
+      setLoading(false);
+      return;
+    }
     console.log('[PROFILE HOOK LOG] useEffect auth listener mounted. auth.currentUser:', auth.currentUser ? auth.currentUser.email : 'null');
     const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
       console.log('[PROFILE HOOK LOG] onAuthStateChanged fired. user:', user ? user.email : 'null');
@@ -167,7 +171,7 @@ export function useUserProfile() {
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!auth.currentUser) return;
+    if (!auth || !auth.currentUser) return;
     try {
       const userDocRef = doc(db, 'users', auth.currentUser.uid);
       await setDoc(userDocRef, { ...updates, updatedAt: serverTimestamp() }, { merge: true });
@@ -177,7 +181,7 @@ export function useUserProfile() {
   };
 
   const incrementTransformations = async () => {
-    if (!auth.currentUser) return;
+    if (!auth || !auth.currentUser) return;
     try {
       const userDocRef = doc(db, 'users', auth.currentUser.uid);
       await setDoc(userDocRef, { 

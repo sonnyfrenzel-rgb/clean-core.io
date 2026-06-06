@@ -11,10 +11,34 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Clean-Core.io',
-  description: 'Enterprise Legacy to Node.js Transformation Tool',
+  title: 'Clean-Core.io | Enterprise S/4HANA Modernization Suite',
+  description: 'Automatically analyze and transform custom legacy ABAP operations into clean-code, cloud-native Node.js architectures following official SAP Clean Core guidelines.',
   icons: {
     icon: '/icon.svg',
+  },
+  openGraph: {
+    title: 'Clean-Core.io | Enterprise S/4HANA Modernization Suite',
+    description: 'Automatically analyze and transform custom legacy ABAP operations into clean-code, cloud-native Node.js architectures following official SAP Clean Core guidelines.',
+    url: 'https://clean-core.io',
+    type: 'website',
+    siteName: 'Clean-Core.io',
+    images: [
+      {
+        url: 'https://clean-core.io/icon.svg',
+        width: 800,
+        height: 600,
+        alt: 'Clean-Core.io Logo',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Clean-Core.io | Enterprise S/4HANA Modernization Suite',
+    description: 'Automatically analyze and transform custom legacy ABAP operations into clean-code, cloud-native Node.js architectures following official SAP Clean Core guidelines.',
+    images: ['https://clean-core.io/icon.svg'],
+  },
+  verification: {
+    google: 'google-site-verification-placeholder-value',
   },
 };
 
