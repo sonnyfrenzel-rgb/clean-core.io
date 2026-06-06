@@ -216,6 +216,9 @@ export default function Dashboard() {
   const auth = getAuth();
   const db = getDb();
   const { profile, loading: loadingProfile, incrementTransformations } = useUserProfile();
+
+  // Return early during SSR if Firebase is bypassed on the server
+  if (!auth || !db) return null;
   const [user, setUser] = useState<any>(null);
   const [projects, setProjects] = useState<any[]>([]);
   const [abapExamples, setAbapExamples] = useState<any[]>([]);

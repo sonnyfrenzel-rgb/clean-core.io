@@ -110,7 +110,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     console.log(`[CI DEBUG] Logging in with email: ${TEST_EMAIL}`);
     console.log('[CI DEBUG] Clicking Sign In button and waiting for redirect to /dashboard...');
     await page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Anmelden")');
-    await page.waitForURL('**/dashboard', { timeout: 90000, waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('h1:has-text("Workspace")', { timeout: 90000 });
     console.log('Successfully logged in and reached /dashboard.');
 
     // --- STAGE 0.5: CREATE PROJECT ---
@@ -125,7 +125,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     
     // Click submit in project creation modal
     await page.click('button[type="submit"]:has-text("Create"), button[type="submit"]:has-text("Erstellen")');
-    await page.waitForURL(/.*\/project\/.*\/analyze/, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 45000 });
     console.log('Project created. Navigated to analyze page.');
 
     // Seed Firestore document with preloaded passing testcases and test suite to bypass live generation flake
@@ -206,7 +206,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 2: SOLUTION DESIGN ---
     console.log('Navigating to Stage 2: Solution Design...');
     await page.click('button:has-text("Continue to Design")');
-    await page.waitForURL(/.*\/project\/.*\/design/, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('text=Target Project Blueprint', { timeout: 45000 });
     
     // Verify that the files tree explorer renders the modernization directory structures
     await expect(page.locator('text=Target Project Blueprint')).toBeVisible({ timeout: 45000 });
@@ -216,7 +216,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 3: TRANSFORMATION ---
     console.log('Navigating to Stage 3: Transformation...');
     await page.click('button:has-text("Continue to Transformation")');
-    await page.waitForURL(/.*\/project\/.*\/transformation/, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('button:has-text("Sync Scroll:")', { timeout: 45000 });
     
     // Verify proportional side-by-side scrolls toggles
     await expect(page.locator('button:has-text("Sync Scroll:")')).toBeVisible({ timeout: 45000 });
@@ -225,7 +225,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 4: TESTING SANDBOX ---
     console.log('Navigating to Stage 4: Testing Sandbox...');
     await page.click('button:has-text("Proceed to Testing")');
-    await page.waitForURL(/.*\/project\/.*\/testing/, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('button:has-text("Run Selected"), button:has-text("Generate Suite")', { timeout: 60000 });
     
     // Check if Run Selected is already visible (preloaded suite), otherwise generate it
     const runButton = page.locator('button:has-text("Run Selected")');
@@ -247,7 +247,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 5: PROCESS BLUEPRINTING & DOCUMENTATION ---
     console.log('Navigating to Stage 5: Documentation...');
     await page.click('button:has-text("Proceed to Documentation")');
-    await page.waitForURL(/.*\/project\/.*\/documentation/, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('h1:has-text("Process Blueprint & Mapping")', { timeout: 45000 });
     
     // Click "Start Architectural Mapping" if it is present (new project flow)
     const startButton = page.locator('button:has-text("Start Architectural Mapping")');
@@ -266,7 +266,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 6: MODULAR HANDOVER DELIVERY ---
     console.log('Navigating to Stage 6: Delivery...');
     await page.click('button:has-text("Proceed to Delivery")');
-    await page.waitForURL(/.*\/project\/.*\/delivery/, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('button:has-text("Download Bundle")', { timeout: 45000 });
 
     // Setup download event listener
     const downloadPromise = page.waitForEvent('download');
