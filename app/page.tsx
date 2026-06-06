@@ -140,7 +140,7 @@ export default function Home() {
       
       setIsNavigating(true);
       setTimeout(() => {
-        router.push('/dashboard');
+        window.location.href = '/dashboard';
       }, 850);
     } catch (error) {
       console.error('Error signing in:', error);
@@ -183,8 +183,8 @@ export default function Home() {
       console.log('[CLIENT LOG] Setting isNavigating to true and redirecting to /dashboard...');
       setIsNavigating(true);
       setTimeout(() => {
-        console.log('[CLIENT LOG] setTimeout callback fired, setting router.push to /dashboard...');
-        router.push('/dashboard');
+        console.log('[CLIENT LOG] setTimeout callback fired, setting window.location.href to /dashboard...');
+        window.location.href = '/dashboard';
       }, 850);
     } catch (error: any) {
       console.error('Sign-in error:', error);
@@ -490,7 +490,7 @@ export default function Home() {
              </div>
             {user ? (
               <button
-                onClick={() => { setIsNavigating(true); router.push('/dashboard'); }}
+                onClick={() => { setIsNavigating(true); window.location.href = '/dashboard'; }}
                 disabled={isNavigating}
                 className="bg-gray-950 hover:bg-gray-800 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:bg-gray-900/70 disabled:cursor-not-allowed text-sm sm:text-base"
               >
@@ -929,7 +929,7 @@ export default function Home() {
           <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tighter">Ready to join the community?</h2>
           <p className="text-lg md:text-xl text-gray-400 mb-12 font-light max-w-2xl mx-auto">Help us shape the future of Core Transformations. Join our pilot program for free.</p>
           <button
-            onClick={user ? () => { setIsNavigating(true); router.push('/dashboard'); } : openSignInModal}
+            onClick={user ? () => { setIsNavigating(true); window.location.href = '/dashboard'; } : openSignInModal}
             disabled={isNavigating}
             className="bg-green-600 hover:bg-green-700 text-white px-10 md:px-12 py-4 md:py-5 rounded-2xl font-bold text-lg transition-all shadow-xl shadow-green-900/20 hover:-translate-y-1 disabled:bg-gray-700 disabled:cursor-not-allowed"
           >
