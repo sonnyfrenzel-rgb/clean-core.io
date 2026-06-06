@@ -110,7 +110,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     console.log(`[CI DEBUG] Logging in with email: ${TEST_EMAIL}`);
     console.log('[CI DEBUG] Clicking Sign In button and waiting for redirect to /dashboard...');
     await page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Anmelden")');
-    await page.waitForURL('**/dashboard', { timeout: 90000 });
+    await page.waitForURL('**/dashboard', { timeout: 90000, waitUntil: 'domcontentloaded' });
     console.log('Successfully logged in and reached /dashboard.');
 
     // --- STAGE 0.5: CREATE PROJECT ---
@@ -125,7 +125,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     
     // Click submit in project creation modal
     await page.click('button[type="submit"]:has-text("Create"), button[type="submit"]:has-text("Erstellen")');
-    await page.waitForURL(/.*\/project\/.*\/analyze/);
+    await page.waitForURL(/.*\/project\/.*\/analyze/, { waitUntil: 'domcontentloaded' });
     console.log('Project created. Navigated to analyze page.');
 
     // Seed Firestore document with preloaded passing testcases and test suite to bypass live generation flake
@@ -206,7 +206,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 2: SOLUTION DESIGN ---
     console.log('Navigating to Stage 2: Solution Design...');
     await page.click('button:has-text("Continue to Design")');
-    await page.waitForURL(/.*\/project\/.*\/design/);
+    await page.waitForURL(/.*\/project\/.*\/design/, { waitUntil: 'domcontentloaded' });
     
     // Verify that the files tree explorer renders the modernization directory structures
     await expect(page.locator('text=Target Project Blueprint')).toBeVisible({ timeout: 45000 });
@@ -216,7 +216,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 3: TRANSFORMATION ---
     console.log('Navigating to Stage 3: Transformation...');
     await page.click('button:has-text("Continue to Transformation")');
-    await page.waitForURL(/.*\/project\/.*\/transformation/);
+    await page.waitForURL(/.*\/project\/.*\/transformation/, { waitUntil: 'domcontentloaded' });
     
     // Verify proportional side-by-side scrolls toggles
     await expect(page.locator('button:has-text("Sync Scroll:")')).toBeVisible({ timeout: 45000 });
@@ -225,7 +225,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 4: TESTING SANDBOX ---
     console.log('Navigating to Stage 4: Testing Sandbox...');
     await page.click('button:has-text("Proceed to Testing")');
-    await page.waitForURL(/.*\/project\/.*\/testing/);
+    await page.waitForURL(/.*\/project\/.*\/testing/, { waitUntil: 'domcontentloaded' });
     
     // Check if Run Selected is already visible (preloaded suite), otherwise generate it
     const runButton = page.locator('button:has-text("Run Selected")');
@@ -247,7 +247,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 5: PROCESS BLUEPRINTING & DOCUMENTATION ---
     console.log('Navigating to Stage 5: Documentation...');
     await page.click('button:has-text("Proceed to Documentation")');
-    await page.waitForURL(/.*\/project\/.*\/documentation/);
+    await page.waitForURL(/.*\/project\/.*\/documentation/, { waitUntil: 'domcontentloaded' });
     
     // Click "Start Architectural Mapping" if it is present (new project flow)
     const startButton = page.locator('button:has-text("Start Architectural Mapping")');
@@ -266,7 +266,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 6: MODULAR HANDOVER DELIVERY ---
     console.log('Navigating to Stage 6: Delivery...');
     await page.click('button:has-text("Proceed to Delivery")');
-    await page.waitForURL(/.*\/project\/.*\/delivery/);
+    await page.waitForURL(/.*\/project\/.*\/delivery/, { waitUntil: 'domcontentloaded' });
 
     // Setup download event listener
     const downloadPromise = page.waitForEvent('download');
