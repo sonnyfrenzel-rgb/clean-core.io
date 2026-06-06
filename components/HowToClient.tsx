@@ -79,14 +79,14 @@ const steps = [
   {
     time: "02:30 - 02:55",
     title: "Phase 5: Process Blueprint",
-    desc: "Interactive business process documentation. Maps L1/L2 domain contexts to L3 BPMN diagrams and detailed L4 Architect's decks with native SAP Signavio & SAP Build exports.",
-    narration: "In the Process Blueprint workspace, we automatically document the business logic. The platform maps your processes and generates standard BPMN 2.0 XML exports with complete swimlanes and pools. These blueprints are fully compatible and ready for direct import into SAP Signavio and SAP Build Process Automation, accelerating process harmonization.",
+    desc: "Dual-track process blueprint & compliance. Maps technical flows to BPMN 2.0, generates dynamic RACI matrices, standard operating procedures (SOPs), and audit-ready controls.",
+    narration: "In the Process Blueprint workspace, we automatically document both the technical and business logic. The platform features a dual-track layout: the Technical Blueprint generates standard BPMN 2.0 exports ready for SAP Signavio and SAP Build, while the Business SOP & Compliance layer builds audit-ready RACI matrices, step-by-step operating procedures, and risk control checkpoints. You can export this entire quality-engineered package directly to Confluence.",
     icon: CheckCircle2,
     color: "from-teal-500/10 to-emerald-500/10 text-teal-600 border-teal-200/50",
     hotspots: [
-      { x: 30, y: 30, question: "How do I use BPMN 2.0 XML exports?", answer: "You can download full BPMN 2.0 XML representations of your transformed flows, with accurate swimlanes and pools, designed for direct import into SAP Signavio or SAP Build Process Automation." },
-      { x: 70, y: 30, question: "Is it SAP Signavio compatible?", answer: "Yes, the exported diagrams strictly follow BPMN 2.0 schemas, ensuring seamless import into SAP Signavio Process Manager and SAP Build without manual remodeling." },
-      { x: 50, y: 80, question: "How does navigation work?", answer: "Clicking a BPMN flow node automatically scrolls and highlights the respective Level 4 specification deck card." }
+      { x: 20, y: 30, question: "What is the dual-track layout?", answer: "It bridges the gap between developers and compliance officers by separating technical BPMN/React Flow charts from business-level SOPs and risk control tables." },
+      { x: 80, y: 30, question: "What are SOPs & RACI tables?", answer: "Standard Operating Procedures outline step-by-step human tasks and exception fallbacks. The RACI matrix dynamically maps who is Responsible, Accountable, Consulted, and Informed for each modernized step." },
+      { x: 50, y: 75, question: "Can I export to Confluence?", answer: "Yes, the dashboard compiles all technical specifications, RACI tables, and audit control objectives into an ISO 9001-compliant Confluence HTML document for direct import." }
     ]
   },
   {
