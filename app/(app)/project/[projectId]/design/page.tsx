@@ -459,12 +459,17 @@ ${analysis}`;
     }
 
     if (isJson && data) {
-      const structureRows = data.nodeAppBlueprint?.projectStructure?.map(item => `
-        <tr>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold;">${item.path}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${item.purpose}</td>
-        </tr>
-      `).join('') || '';
+      const structureRows = data.nodeAppBlueprint?.projectStructure?.map(item => {
+        if (!item) return '';
+        const pathStr = typeof item === 'string' ? item : item.path || '';
+        const purposeStr = typeof item === 'string' ? '' : item.purpose || '';
+        return `
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold;">${pathStr}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${purposeStr}</td>
+          </tr>
+        `;
+      }).join('') || '';
 
       const endpointsRows = data.nodeAppBlueprint?.apiEndpoints?.map(route => `
         <tr>
@@ -765,9 +770,13 @@ ${analysis}`;
                 </div>
                 
                 {data.nodeAppBlueprint?.projectStructure?.map((item, idx) => {
-                  const parts = item.path.split('/');
-                  const isFile = parts[parts.length - 1].includes('.');
-                  const name = parts[parts.length - 1];
+                  if (!item) return null;
+                  const pathStr = typeof item === 'string' ? item : item.path || '';
+                  const purposeStr = typeof item === 'string' ? '' : item.purpose || '';
+                  
+                  const parts = pathStr.split('/');
+                  const isFile = parts[parts.length - 1]?.includes('.') || false;
+                  const name = parts[parts.length - 1] || '';
                   const depth = parts.length;
                   
                   return (
@@ -775,7 +784,7 @@ ${analysis}`;
                       key={idx} 
                       style={{ paddingLeft: `${depth * 14}px` }} 
                       className="group flex items-center justify-between py-0.5 hover:bg-slate-100/50 rounded px-1 transition-colors"
-                      title={item.purpose}
+                      title={purposeStr}
                     >
                       <div className="flex items-center gap-2">
                         {isFile ? (
@@ -785,7 +794,7 @@ ${analysis}`;
                         )}
                         <span className="text-slate-700 font-medium">{name}</span>
                       </div>
-                      <span className="text-[9px] text-slate-400 group-hover:text-slate-500 transition-colors font-sans truncate ml-2 max-w-[120px]">{item.purpose}</span>
+                      <span className="text-[9px] text-slate-400 group-hover:text-slate-500 transition-colors font-sans truncate ml-2 max-w-[120px]">{purposeStr}</span>
                     </div>
                   );
                 })}
