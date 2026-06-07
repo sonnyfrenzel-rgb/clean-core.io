@@ -9,7 +9,6 @@ import { useRouter } from 'next/navigation';
 import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, deleteDoc, doc, getDocs, limit } from 'firebase/firestore';
 import { Plus, Trash2, ArrowRight, FolderOpen, Folder, ChevronRight, ChevronDown, ChevronUp, FileText, FileCode2, Download, Copy, Eye, X, Activity, Clock, CheckCircle2, RefreshCw, AlertCircle, BookOpen, Shield, ShieldAlert, MessageSquare, Crown, ShieldCheck, HelpCircle, Send } from 'lucide-react';
 import { format } from 'date-fns';
-import { saveAs } from 'file-saver';
 import nextDynamic from 'next/dynamic';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
@@ -469,10 +468,11 @@ export default function Dashboard() {
     }
   };
 
-  const handleExportProject = (project: any) => {
+  const handleExportProject = async (project: any) => {
     const { id, userId, ...exportData } = project;
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    saveAs(blob, `${project.name.replace(/\s+/g, '_')}_export.json`);
+    const { saveAs: save } = await import('file-saver');
+    save(blob, `${project.name.replace(/\s+/g, '_')}_export.json`);
   };
 
   const handleProceed = (project: any) => {
@@ -738,9 +738,10 @@ export default function Dashboard() {
     }, 800);
   };
 
-  const downloadFile = (content: string, filename: string, type: string = 'text/plain') => {
+  const downloadFile = async (content: string, filename: string, type: string = 'text/plain') => {
     const blob = new Blob([content], { type });
-    saveAs(blob, filename);
+    const { saveAs: save } = await import('file-saver');
+    save(blob, filename);
   };
 
   if (loadingAuth || loadingProfile) return (

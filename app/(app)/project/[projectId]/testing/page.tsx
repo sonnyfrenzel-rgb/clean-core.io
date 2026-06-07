@@ -13,7 +13,6 @@ import type { Project } from '@/lib/types';
 import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, X, Rocket, CheckCircle2, Globe, Lock as LockIcon, Send, Sparkles, Eye, EyeOff, Clock, Loader2 } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
-import { saveAs } from 'file-saver';
 import { clsx } from 'clsx';
 import NavigationButtons from '@/components/NavigationButtons';
 import { motion, AnimatePresence } from 'motion/react';
@@ -413,7 +412,8 @@ export default function TestingSandboxPage() {
       const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
       const blob = new Blob([wbout], { type: 'application/octet-stream' });
       const projectName = project?.name?.replace(/\s+/g, '_') || 'Project';
-      saveAs(blob, `${projectName}_Test_Suite.xlsx`);
+      const { saveAs: save } = await import('file-saver');
+      save(blob, `${projectName}_Test_Suite.xlsx`);
     } catch (err) {
       console.error("Excellent export failed:", err);
     }
