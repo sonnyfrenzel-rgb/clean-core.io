@@ -13,6 +13,7 @@ import nextDynamic from 'next/dynamic';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
 import { marked } from 'marked';
+import { saveAs } from '@/lib/fileSaver';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 
@@ -471,8 +472,7 @@ export default function Dashboard() {
   const handleExportProject = async (project: any) => {
     const { id, userId, ...exportData } = project;
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const { saveAs: save } = await import('file-saver');
-    save(blob, `${project.name.replace(/\s+/g, '_')}_export.json`);
+    await saveAs(blob, `${project.name.replace(/\s+/g, '_')}_export.json`);
   };
 
   const handleProceed = (project: any) => {
@@ -740,8 +740,7 @@ export default function Dashboard() {
 
   const downloadFile = async (content: string, filename: string, type: string = 'text/plain') => {
     const blob = new Blob([content], { type });
-    const { saveAs: save } = await import('file-saver');
-    save(blob, filename);
+    await saveAs(blob, filename);
   };
 
   if (loadingAuth || loadingProfile) return (
