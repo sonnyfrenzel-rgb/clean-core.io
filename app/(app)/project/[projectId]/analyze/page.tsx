@@ -13,8 +13,6 @@ import nextDynamic from 'next/dynamic';
 import { DocumentSection } from '@/components/DocumentSection';
 import { Components } from 'react-markdown';
 import { marked } from 'marked';
-import NavigationButtons from '@/components/NavigationButtons';
-import { saveAs } from 'file-saver';
 import { callGemini } from '@/lib/gemini';
 import type { Project, AnalysisData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -676,7 +674,8 @@ ${codeToAnalyze}`;
     }
 
     const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-    saveAs(blob, `${project.name.replace(/\s+/g, '_')}_Business_Analysis.html`);
+    const { saveAs: save } = await import('file-saver');
+    save(blob, `${project.name.replace(/\s+/g, '_')}_Business_Analysis.html`);
     
     // Store in DB
     const docRef = doc(getDb(), 'projects', projectId as string);

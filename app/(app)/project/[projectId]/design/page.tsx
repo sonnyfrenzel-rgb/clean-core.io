@@ -12,7 +12,6 @@ import nextDynamic from 'next/dynamic';
 import { DocumentSection } from '@/components/DocumentSection';
 import { Components } from 'react-markdown';
 import { marked } from 'marked';
-import { saveAs } from 'file-saver';
 import { callGemini } from '@/lib/gemini';
 import type { Project, DesignData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -681,7 +680,8 @@ ${analysis}`;
     }
 
     const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-    saveAs(blob, `${currentProject.name.replace(/\s+/g, '_')}_Solution_Design.html`);
+    const { saveAs: save } = await import('file-saver');
+    save(blob, `${currentProject.name.replace(/\s+/g, '_')}_Solution_Design.html`);
     
     // Store in DB
     const db = getDb();
