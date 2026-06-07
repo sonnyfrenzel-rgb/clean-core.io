@@ -213,12 +213,16 @@ ENDCLASS.`,
 ];
 
 export default function Dashboard() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const auth = getAuth();
   const db = getDb();
   const { profile, loading: loadingProfile, incrementTransformations } = useUserProfile();
 
-  // Return early during SSR if Firebase is bypassed on the server
-  if (!auth || !db) return null;
   const [user, setUser] = useState<any>(null);
   const [projects, setProjects] = useState<any[]>([]);
   const [abapExamples, setAbapExamples] = useState<any[]>([]);
@@ -743,7 +747,7 @@ export default function Dashboard() {
     await saveAs(blob, filename);
   };
 
-  if (loadingAuth || loadingProfile) return (
+  if (!mounted || !auth || !db || loadingAuth || loadingProfile) return (
     <div className="h-[60vh] flex flex-col items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
         <p className="text-lg font-medium text-gray-500">Loading workspace...</p>
