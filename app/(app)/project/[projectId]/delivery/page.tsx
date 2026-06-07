@@ -13,7 +13,6 @@ import Stepper from '@/components/Stepper';
 import { PresentationViewer, PresentationData } from '@/components/PresentationViewer';
 import { Download, CheckCircle2, FileCode2, ArrowLeft, Home, RefreshCw, X, Rocket, ShieldCheck, Zap, Layout, Eye, Presentation, AlertCircle, Lock, Briefcase } from 'lucide-react';
 import NavigationButtons from '@/components/NavigationButtons';
-import { saveAs } from 'file-saver';
 import JSZip from 'jszip';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
 
@@ -339,7 +338,8 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
       }
 
       const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, `${project.name.replace(/\s+/g, '_')}_DeliveryPackage.zip`);
+      const { saveAs: save } = await import('file-saver');
+      save(content, `${project.name.replace(/\s+/g, '_')}_DeliveryPackage.zip`);
     } catch (err) {
       console.error(err);
       alert('Failed to generate ZIP package.');
@@ -552,7 +552,9 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
                 onClick={() => {
                   const blob = new Blob([formatBusinessDocsToMarkdown(project.businessDocumentation || '')], { type: "text/markdown;charset=utf-8" });
                   const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
-                  saveAs(blob, `${fileName}_BusinessDocumentation.md`);
+                  import('file-saver').then(({ saveAs: save }) => {
+                    save(blob, `${fileName}_BusinessDocumentation.md`);
+                  });
                 }}
                 className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-2xl hover:bg-blue-700 transition-all font-bold shadow-lg shadow-blue-600/10 uppercase tracking-widest text-xs"
               >

@@ -11,7 +11,6 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { motion, AnimatePresence } from 'motion/react';
 import dynamic from 'next/dynamic';
 import { clsx } from 'clsx';
-import { saveAs } from 'file-saver';
 import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
 import { formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
@@ -513,7 +512,9 @@ Structure the JSON exactly like this:
     const xml = generateBPMN(parsedDoc.l3_flow, parsedBusinessDoc);
     const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
     const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
-    saveAs(blob, `${fileName}_Process.bpmn`);
+    import('file-saver').then(({ saveAs: save }) => {
+      save(blob, `${fileName}_Process.bpmn`);
+    });
   };
 
   const downloadConfluenceHTML = () => {
@@ -690,7 +691,9 @@ Structure the JSON exactly like this:
     
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
     const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
-    saveAs(blob, `${fileName}_Confluence.html`);
+    import('file-saver').then(({ saveAs: save }) => {
+      save(blob, `${fileName}_Confluence.html`);
+    });
   };
 
   if (loading) return (
