@@ -15,6 +15,7 @@ import { marked } from 'marked';
 import { callGemini } from '@/lib/gemini';
 import type { Project, DesignData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { saveAs } from '@/lib/fileSaver';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import JiraIntegrationModal from '@/components/JiraIntegrationModal';
 import UpgradeToEnterpriseModal from '@/components/UpgradeToEnterpriseModal';
@@ -680,8 +681,7 @@ ${analysis}`;
     }
 
     const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-    const { saveAs: save } = await import('file-saver');
-    save(blob, `${currentProject.name.replace(/\s+/g, '_')}_Solution_Design.html`);
+    await saveAs(blob, `${currentProject.name.replace(/\s+/g, '_')}_Solution_Design.html`);
     
     // Store in DB
     const db = getDb();

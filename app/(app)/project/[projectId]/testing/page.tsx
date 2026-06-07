@@ -23,6 +23,7 @@ import { TestingPieChart, TestingBarChart } from '@/components/TestingCharts';
 import { ProjectSkeleton } from '@/components/Skeleton';
 
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { saveAs } from '@/lib/fileSaver';
 
 const renderSafeValue = (val: any): string => {
   if (val === null || val === undefined) return '';
@@ -412,8 +413,7 @@ export default function TestingSandboxPage() {
       const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
       const blob = new Blob([wbout], { type: 'application/octet-stream' });
       const projectName = project?.name?.replace(/\s+/g, '_') || 'Project';
-      const { saveAs: save } = await import('file-saver');
-      save(blob, `${projectName}_Test_Suite.xlsx`);
+      await saveAs(blob, `${projectName}_Test_Suite.xlsx`);
     } catch (err) {
       console.error("Excellent export failed:", err);
     }
