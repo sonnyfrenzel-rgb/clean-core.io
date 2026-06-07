@@ -14,6 +14,7 @@ import { clsx } from 'clsx';
 import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
 import { formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
+import { saveAs } from '@/lib/fileSaver';
 
 const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
   let files: Array<{ path: string, content: string }> = [];
@@ -512,9 +513,7 @@ Structure the JSON exactly like this:
     const xml = generateBPMN(parsedDoc.l3_flow, parsedBusinessDoc);
     const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
     const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
-    import('file-saver').then(({ saveAs: save }) => {
-      save(blob, `${fileName}_Process.bpmn`);
-    });
+    saveAs(blob, `${fileName}_Process.bpmn`);
   };
 
   const downloadConfluenceHTML = () => {
@@ -691,9 +690,7 @@ Structure the JSON exactly like this:
     
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
     const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
-    import('file-saver').then(({ saveAs: save }) => {
-      save(blob, `${fileName}_Confluence.html`);
-    });
+    saveAs(blob, `${fileName}_Confluence.html`);
   };
 
   if (loading) return (

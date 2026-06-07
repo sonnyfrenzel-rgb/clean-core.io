@@ -17,6 +17,7 @@ import JSZip from 'jszip';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
 
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { saveAs } from '@/lib/fileSaver';
 import { motion } from 'motion/react';
 import { clsx } from 'clsx';
 
@@ -338,8 +339,7 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
       }
 
       const content = await zip.generateAsync({ type: "blob" });
-      const { saveAs: save } = await import('file-saver');
-      save(content, `${project.name.replace(/\s+/g, '_')}_DeliveryPackage.zip`);
+      await saveAs(content, `${project.name.replace(/\s+/g, '_')}_DeliveryPackage.zip`);
     } catch (err) {
       console.error(err);
       alert('Failed to generate ZIP package.');
@@ -552,9 +552,7 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
                 onClick={() => {
                   const blob = new Blob([formatBusinessDocsToMarkdown(project.businessDocumentation || '')], { type: "text/markdown;charset=utf-8" });
                   const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
-                  import('file-saver').then(({ saveAs: save }) => {
-                    save(blob, `${fileName}_BusinessDocumentation.md`);
-                  });
+                  saveAs(blob, `${fileName}_BusinessDocumentation.md`);
                 }}
                 className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-2xl hover:bg-blue-700 transition-all font-bold shadow-lg shadow-blue-600/10 uppercase tracking-widest text-xs"
               >
