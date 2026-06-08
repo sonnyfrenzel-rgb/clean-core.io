@@ -10,7 +10,7 @@ import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import Stepper from '@/components/Stepper';
 import type { Project } from '@/lib/types';
-import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, X, Rocket, CheckCircle2, Globe, Lock as LockIcon, Send, Sparkles, Eye, EyeOff, Clock, Loader2, BookOpen, ExternalLink, HelpCircle } from 'lucide-react';
+import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, X, Rocket, CheckCircle2, Globe, Lock as LockIcon, Send, Sparkles, Eye, EyeOff, Clock, Loader2, BookOpen, ExternalLink, HelpCircle, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { clsx } from 'clsx';
@@ -76,6 +76,7 @@ export default function TestingSandboxPage() {
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connected' | 'failed'>('disconnected');
   const [connectionMessage, setConnectionMessage] = useState('');
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [showSetupGuide, setShowSetupGuide] = useState(true);
 
   const { isGenerating, testCases, generateTestCases } = useTestGeneration(projectId as string, project, setProject);
   const { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases } = useTestExecution(projectId as string, project, setProject);
@@ -109,12 +110,14 @@ export default function TestingSandboxPage() {
         setS4Password(project.s4Config.password || '');
         setS4AuthType(project.s4Config.authType || 'basic');
         setBtpDestinationJson(project.s4Config.btpDestinationJson || '');
+        if (project.s4Config.url) setShowSetupGuide(false);
       } else if (profile?.s4Config) {
         setS4Url(profile.s4Config.url || '');
         setS4Username(profile.s4Config.username || '');
         setS4Password(profile.s4Config.password || '');
         setS4AuthType(profile.s4Config.authType || 'basic');
         setBtpDestinationJson(profile.s4Config.btpDestinationJson || '');
+        if (profile.s4Config.url) setShowSetupGuide(false);
       }
     }
   }, [project, profile]);
@@ -558,38 +561,158 @@ export default function TestingSandboxPage() {
                   </div>
                 </div>
 
-                {/* How-To Documentation Banner — Setup Guide with Knowledge Hub + Ask AI links */}
-                <div className="bg-gradient-to-r from-indigo-50 via-sky-50 to-blue-50 border border-indigo-200/60 p-5 rounded-2xl mb-6 space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-indigo-600/10 p-2 rounded-xl shrink-0">
-                      <BookOpen className="w-5 h-5 text-indigo-600" />
+                {/* ─────── Comprehensive Setup Guide (collapsible) ─────── */}
+                <div className="mb-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowSetupGuide(!showSetupGuide)}
+                    className="w-full flex items-center justify-between bg-gradient-to-r from-indigo-50 via-sky-50 to-blue-50 border border-indigo-200/60 p-4 rounded-2xl hover:shadow-sm transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="bg-indigo-600/10 p-2 rounded-xl shrink-0">
+                        <BookOpen className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs font-black text-indigo-950 uppercase tracking-widest">Quick Start Guide — How to Connect Your S/4HANA Tenant</p>
+                        <p className="text-[10px] text-indigo-700/80 font-semibold mt-0.5">Step-by-step instructions for every authentication method. Click to {showSetupGuide ? 'collapse' : 'expand'}.</p>
+                      </div>
                     </div>
-                    <div className="flex-1 space-y-2">
-                      <p className="text-xs font-black text-indigo-950 uppercase tracking-widest">Setup Guide — S/4HANA Live Tenant Integration</p>
-                      <p className="text-[11px] text-indigo-800/90 leading-relaxed font-medium">
-                        Follow our step-by-step documentation to configure your S/4HANA connection. Covers Basic Auth, OAuth 2.0 Client Credentials, SAP API Hub Sandbox Keys, and SAP BTP Destination Service JSON imports.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 pt-1 pl-10">
-                    <Link
-                      href="/knowledge"
-                      className="inline-flex items-center gap-1.5 text-[10px] font-black text-indigo-700 uppercase tracking-widest bg-white hover:bg-indigo-100 border border-indigo-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
-                    >
-                      <ExternalLink className="w-3 h-3" /> Knowledge Hub
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
-                      className="inline-flex items-center gap-1.5 text-[10px] font-black text-emerald-700 uppercase tracking-widest bg-white hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
-                    >
-                      <HelpCircle className="w-3 h-3" /> Ask AI for Help
-                    </button>
-                  </div>
+                    {showSetupGuide ? <ChevronUp className="w-5 h-5 text-indigo-500" /> : <ChevronDown className="w-5 h-5 text-indigo-500" />}
+                  </button>
+
+                  <AnimatePresence>
+                    {showSetupGuide && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="bg-gradient-to-br from-indigo-50/80 to-sky-50/60 border border-t-0 border-indigo-200/40 p-5 rounded-b-2xl -mt-2 space-y-4">
+                          
+                          {/* Step 1 — Always visible */}
+                          <div className="flex gap-3 items-start">
+                            <span className="bg-indigo-600 text-white text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">1</span>
+                            <div>
+                              <p className="text-xs font-bold text-indigo-950">Choose your Authentication Type</p>
+                              <p className="text-[11px] text-indigo-800/80 font-medium leading-relaxed">
+                                Select the method that matches your SAP system setup from the dropdown below. Not sure which to use? Here is a quick overview:
+                              </p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                <div className={clsx("p-2.5 rounded-xl border text-[10px] font-semibold leading-relaxed transition-all", s4AuthType === 'basic' ? "bg-white border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white/50 border-gray-200/80")}>
+                                  <span className="font-black text-indigo-900 block mb-0.5">Basic Authentication</span>
+                                  <span className="text-gray-600">Username + Password. Use for S/4HANA Cloud test tenants with Communication Arrangements (API users).</span>
+                                </div>
+                                <div className={clsx("p-2.5 rounded-xl border text-[10px] font-semibold leading-relaxed transition-all", s4AuthType === 'oauth2' ? "bg-white border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white/50 border-gray-200/80")}>
+                                  <span className="font-black text-indigo-900 block mb-0.5">OAuth 2.0 Client Credentials</span>
+                                  <span className="text-gray-600">Client ID + Secret. Use when your S/4HANA tenant provides OAuth token endpoints via Communication Arrangements.</span>
+                                </div>
+                                <div className={clsx("p-2.5 rounded-xl border text-[10px] font-semibold leading-relaxed transition-all", s4AuthType === 'sap_hub' ? "bg-white border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white/50 border-gray-200/80")}>
+                                  <span className="font-black text-indigo-900 block mb-0.5">SAP API Business Hub Sandbox</span>
+                                  <span className="text-gray-600">Free sandbox API key. No own tenant needed — perfect for testing with SAP{"'"}s public demo APIs.</span>
+                                </div>
+                                <div className={clsx("p-2.5 rounded-xl border text-[10px] font-semibold leading-relaxed transition-all", s4AuthType === 'btp_destination' ? "bg-white border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white/50 border-gray-200/80")}>
+                                  <span className="font-black text-indigo-900 block mb-0.5">BTP Destination Service (JSON)</span>
+                                  <span className="text-gray-600">Paste your BTP destination JSON config. For enterprises routing via SAP BTP with Cloud Connector or Internet proxy.</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Step 2 — Dynamic based on auth type */}
+                          <div className="flex gap-3 items-start">
+                            <span className="bg-indigo-600 text-white text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">2</span>
+                            <div>
+                              <p className="text-xs font-bold text-indigo-950">Enter Your Connection Details</p>
+                              {s4AuthType === 'basic' && (
+                                <div className="text-[11px] text-indigo-800/80 font-medium leading-relaxed space-y-1 mt-1">
+                                  <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className="bg-white/80 px-1.5 py-0.5 rounded text-[10px] font-mono border border-indigo-200/50">https://my300120-api.s4hana.cloud.sap</code></p>
+                                  <p>→ <strong>Username:</strong> The Communication User name from your Communication Arrangement (e.g. <code className="bg-white/80 px-1.5 py-0.5 rounded text-[10px] font-mono border border-indigo-200/50">CC_INTEGRATOR</code>)</p>
+                                  <p>→ <strong>Password:</strong> The password assigned to that Communication User</p>
+                                  <p className="text-[10px] text-indigo-600 mt-1">📍 Where to find: S/4HANA Cloud → Communication Management → Communication Arrangements → Your arrangement → Inbound Communication → User Name</p>
+                                </div>
+                              )}
+                              {s4AuthType === 'oauth2' && (
+                                <div className="text-[11px] text-indigo-800/80 font-medium leading-relaxed space-y-1 mt-1">
+                                  <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className="bg-white/80 px-1.5 py-0.5 rounded text-[10px] font-mono border border-indigo-200/50">https://my300120-api.s4hana.cloud.sap</code></p>
+                                  <p>→ <strong>Client ID:</strong> The OAuth client ID from your Communication Arrangement (starts with <code className="bg-white/80 px-1.5 py-0.5 rounded text-[10px] font-mono border border-indigo-200/50">sb-clone-...</code>)</p>
+                                  <p>→ <strong>Client Secret:</strong> The OAuth client secret generated alongside the Client ID</p>
+                                  <p className="text-[10px] text-indigo-600 mt-1">📍 Where to find: S/4HANA Cloud → Communication Arrangements → OAuth 2.0 Details → Client ID / Client Secret</p>
+                                </div>
+                              )}
+                              {s4AuthType === 'sap_hub' && (
+                                <div className="text-[11px] text-indigo-800/80 font-medium leading-relaxed space-y-1 mt-1">
+                                  <p>→ <strong>Tenant URL:</strong> Use SAP{"'"}s sandbox URL: <code className="bg-white/80 px-1.5 py-0.5 rounded text-[10px] font-mono border border-indigo-200/50">https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/</code></p>
+                                  <p>→ No username or password needed — only your API key is required</p>
+                                  <p className="text-[10px] text-indigo-600 mt-1">📍 Where to find: <a href="https://api.sap.com" target="_blank" rel="noopener noreferrer" className="underline">api.sap.com</a> → Log in → Show API Key (top-right on any API page)</p>
+                                </div>
+                              )}
+                              {s4AuthType === 'btp_destination' && (
+                                <div className="text-[11px] text-indigo-800/80 font-medium leading-relaxed space-y-1 mt-1">
+                                  <p>→ Paste the full JSON from your BTP Destination into the text area below</p>
+                                  <p>→ The system automatically extracts <strong>Name</strong>, <strong>URL</strong>, <strong>Authentication</strong>, and <strong>ProxyType</strong></p>
+                                  <p className="text-[10px] text-indigo-600 mt-1">📍 Where to find: SAP BTP Cockpit → Connectivity → Destinations → Select your destination → Export as JSON (or copy the config)</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Step 3 + 4 — Always visible */}
+                          <div className="flex gap-3 items-start">
+                            <span className="bg-indigo-600 text-white text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">3</span>
+                            <div>
+                              <p className="text-xs font-bold text-indigo-950">Test the Connection</p>
+                              <p className="text-[11px] text-indigo-800/80 font-medium">Click <strong>"Test Connection"</strong> to verify the handshake. The sandbox terminal below will show the live connection log.</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-3 items-start">
+                            <span className="bg-indigo-600 text-white text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">4</span>
+                            <div>
+                              <p className="text-xs font-bold text-indigo-950">Save and Run Tests</p>
+                              <p className="text-[11px] text-indigo-800/80 font-medium">Click <strong>"Save Connection"</strong> to persist the config. Then generate and execute test cases — they will run against your live tenant data.</p>
+                            </div>
+                          </div>
+
+                          {/* Security Notice */}
+                          <div className="bg-green-50/70 border border-green-200/60 p-3 rounded-xl flex items-start gap-2 mt-2">
+                            <ShieldCheck className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                            <p className="text-[10px] text-green-800 font-semibold leading-relaxed">
+                              <strong>Security:</strong> Credentials are encrypted in-browser before transmission. Production domains (<code className="bg-green-100 px-1 rounded font-mono">*-api.s4hana.ondemand.com</code>) are automatically blocked. Only non-productive sandbox/test systems are allowed.
+                            </p>
+                          </div>
+
+                          {/* Quick links */}
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <Link
+                              href="/knowledge"
+                              className="inline-flex items-center gap-1.5 text-[10px] font-black text-indigo-700 uppercase tracking-widest bg-white hover:bg-indigo-100 border border-indigo-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
+                            >
+                              <ExternalLink className="w-3 h-3" /> Knowledge Hub
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
+                              className="inline-flex items-center gap-1.5 text-[10px] font-black text-emerald-700 uppercase tracking-widest bg-white hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
+                            >
+                              <HelpCircle className="w-3 h-3" /> Ask AI for Help
+                            </button>
+                            <Link
+                              href="/settings"
+                              className="inline-flex items-center gap-1.5 text-[10px] font-black text-gray-600 uppercase tracking-widest bg-white hover:bg-gray-100 border border-gray-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
+                            >
+                              <ExternalLink className="w-3 h-3" /> Manage in Profile Settings
+                            </Link>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
+                {/* ─────── Connection Form with Contextual Helpers ─────── */}
                 <form onSubmit={saveS4Config} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Tenant URL */}
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Tenant HTTPS URL</label>
                       <div className="relative">
@@ -599,15 +722,24 @@ export default function TestingSandboxPage() {
                           required
                           value={s4Url}
                           onChange={e => setS4Url(e.target.value)}
-                          placeholder="https://my300120-api.s4hana.cloud.sap"
+                          placeholder={s4AuthType === 'sap_hub' ? 'https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/' : 'https://my300120-api.s4hana.cloud.sap'}
                           className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-12"
                         />
                       </div>
-                      <span className="text-[10px] text-gray-400 font-semibold block leading-relaxed">
-                        Must start with <span className="font-bold">https://</span>. Production domains are automatically blocked.
-                      </span>
+                      <div className="flex items-start gap-1.5">
+                        <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" />
+                        <span className="text-[10px] text-gray-400 font-semibold leading-relaxed">
+                          {s4AuthType === 'sap_hub'
+                            ? 'Use the SAP API Business Hub sandbox base URL. Find it at api.sap.com on any S/4HANA Cloud API page.'
+                            : s4AuthType === 'btp_destination'
+                            ? 'Auto-filled from your BTP Destination JSON. You can also enter it manually.'
+                            : 'Your S/4HANA Cloud API host. Format: https://myXXXXXX-api.s4hana.cloud.sap — found in your S/4HANA Launchpad under Communication Arrangements.'
+                          }
+                        </span>
+                      </div>
                     </div>
 
+                    {/* Authentication Type */}
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Authentication Type</label>
                       <select
@@ -615,13 +747,23 @@ export default function TestingSandboxPage() {
                         onChange={e => setS4AuthType(e.target.value as any)}
                         className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-12"
                       >
-                        <option value="basic">Basic Authentication</option>
-                        <option value="oauth2">OAuth 2.0 Client Credentials</option>
-                        <option value="sap_hub">SAP Accelerator Hub Sandbox Key</option>
-                        <option value="btp_destination">SAP BTP Destination Service (JSON)</option>
+                        <option value="basic">Basic Authentication (Username + Password)</option>
+                        <option value="oauth2">OAuth 2.0 Client Credentials (Client ID + Secret)</option>
+                        <option value="sap_hub">SAP API Business Hub Sandbox (API Key only)</option>
+                        <option value="btp_destination">SAP BTP Destination Service (Paste JSON)</option>
                       </select>
+                      <div className="flex items-start gap-1.5">
+                        <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" />
+                        <span className="text-[10px] text-gray-400 font-semibold leading-relaxed">
+                          {s4AuthType === 'basic' && 'Best for direct S/4HANA Cloud sandbox connections using a Communication User.'}
+                          {s4AuthType === 'oauth2' && 'Use when your Communication Arrangement provides OAuth 2.0 token endpoints.'}
+                          {s4AuthType === 'sap_hub' && 'No S/4HANA system needed — uses SAP\'s free public sandbox APIs for testing.'}
+                          {s4AuthType === 'btp_destination' && 'For enterprise setups routing through SAP BTP with Cloud Connector or direct proxy.'}
+                        </span>
+                      </div>
                     </div>
 
+                    {/* BTP Destination JSON */}
                     {s4AuthType === 'btp_destination' && (
                       <div className="space-y-2 col-span-1 md:col-span-2">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">SAP BTP Destination JSON Configuration</label>
@@ -629,22 +771,19 @@ export default function TestingSandboxPage() {
                           required
                           value={btpDestinationJson}
                           onChange={e => handleBtpJsonChange(e.target.value)}
-                          placeholder='{
-  "Name": "S4_CLOUDSANDBOX",
-  "Type": "HTTP",
-  "URL": "https://my300120-api.s4hana.cloud.sap",
-  "Authentication": "PrincipalPropagation",
-  "ProxyType": "OnPremise",
-  "tokenServiceURL": "https://tenant.authentication.eu10.hana.ondemand.com/oauth/token"
-}'
+                          placeholder={'{\n  "Name": "S4_CLOUDSANDBOX",\n  "Type": "HTTP",\n  "URL": "https://my300120-api.s4hana.cloud.sap",\n  "Authentication": "PrincipalPropagation",\n  "ProxyType": "OnPremise",\n  "tokenServiceURL": "https://tenant.authentication.eu10.hana.ondemand.com/oauth/token"\n}'}
                           className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-32 font-mono resize-none"
                         />
-                        <span className="text-[10px] text-gray-450 font-bold block leading-relaxed">
-                          Pasting a BTP Destination JSON will automatically extract the destination Name, URL, and security configuration values.
-                        </span>
+                        <div className="flex items-start gap-1.5">
+                          <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" />
+                          <span className="text-[10px] text-gray-450 font-bold leading-relaxed">
+                            Paste the JSON from SAP BTP Cockpit → Connectivity → Destinations. The Name, URL, Authentication, and ProxyType fields are auto-extracted.
+                          </span>
+                        </div>
                       </div>
                     )}
 
+                    {/* Username / Client ID + Password / Secret fields */}
                     {s4AuthType !== 'sap_hub' && s4AuthType !== 'btp_destination' && (
                       <>
                         <div className="space-y-2">
@@ -661,6 +800,15 @@ export default function TestingSandboxPage() {
                               placeholder={s4AuthType === 'oauth2' ? 'sb-clone-xxxx...' : 'CC_INTEGRATOR'}
                               className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-12"
                             />
+                          </div>
+                          <div className="flex items-start gap-1.5">
+                            <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" />
+                            <span className="text-[10px] text-gray-400 font-semibold leading-relaxed">
+                              {s4AuthType === 'oauth2'
+                                ? 'Found in Communication Arrangements → OAuth 2.0 Details → Client ID. Starts with "sb-clone-".'
+                                : 'The Communication User name from your Communication Arrangement. Example: CC_INTEGRATOR or INTEGRATION_USER.'
+                              }
+                            </span>
                           </div>
                         </div>
 
@@ -685,6 +833,15 @@ export default function TestingSandboxPage() {
                             >
                               {showS4Password ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
+                          </div>
+                          <div className="flex items-start gap-1.5">
+                            <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" />
+                            <span className="text-[10px] text-gray-400 font-semibold leading-relaxed">
+                              {s4AuthType === 'oauth2'
+                                ? 'The Client Secret generated together with your Client ID. Only shown once when creating the Communication Arrangement.'
+                                : 'The password set for the Communication User. If forgotten, reset it in the Communication Arrangement settings.'
+                              }
+                            </span>
                           </div>
                         </div>
                       </>
