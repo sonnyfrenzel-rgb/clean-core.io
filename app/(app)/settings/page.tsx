@@ -23,7 +23,7 @@ import { clsx } from 'clsx';
 export default function SettingsPage() {
   const router = useRouter();
   const { profile, loading, updateProfile } = useUserProfile();
-  const isPilotTier = !!profile && ['pilot', 'pilot_byok', 'starter', 'unlimited'].includes(profile.tier);
+  const isPilotTier = !!profile && (profile.isAdmin || ['pilot', 'pilot_byok', 'starter', 'unlimited'].includes(profile.tier));
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
