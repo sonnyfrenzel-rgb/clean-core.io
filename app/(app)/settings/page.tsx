@@ -544,17 +544,34 @@ export default function SettingsPage() {
       return;
     }
 
-    if (s4Url.includes('-api.s4hana.ondemand.com')) {
-      setConnectionStatus('failed');
-      setConnectionMessage('Connection failed: Direct production tenant API endpoints are blocked in this sandbox.');
-      setTestingConnection(false);
-      return;
-    }
+    try {
+      const res = await fetch('/api/test-s4-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: s4Url,
+          username: s4Username,
+          password: s4Password,
+          authType: s4AuthType,
+        }),
+      });
 
-    await new Promise(r => setTimeout(r, 1200));
-    setConnectionStatus('connected');
-    setConnectionMessage('Connection successful! Connected to S/4HANA Cloud (Enterprise Sandbox Edition).');
-    setTestingConnection(false);
+      const data = await res.json();
+
+      if (data.status === 'connected') {
+        setConnectionStatus('connected');
+        setConnectionMessage(data.message);
+      } else {
+        setConnectionStatus('failed');
+        setConnectionMessage(data.message || 'Connection failed. Verify the URL and credentials.');
+      }
+    } catch (error: any) {
+      console.error('S/4HANA connection test error:', error);
+      setConnectionStatus('failed');
+      setConnectionMessage('Network error: Unable to reach the connection test service. Please try again.');
+    } finally {
+      setTestingConnection(false);
+    }
   };
 
   // GDPR Account Deletion
@@ -1261,9 +1278,19 @@ export default function SettingsPage() {
                 ) : null}
               </div>
               
-              <p className="text-gray-650 font-medium mb-8 text-sm md:text-base leading-relaxed">
+              <p className="text-gray-650 font-medium mb-4 text-sm md:text-base leading-relaxed">
                 Connect your custom, non-productive S/4HANA Cloud or On-Premise systems (BYOT) directly inside the Stage 5 testing sandbox to run integrations, OData connection tests, and live schema validation.
               </p>
+
+              <div className="bg-sky-50/60 border border-sky-200 p-4 rounded-2xl mb-8 flex items-start gap-3">
+                <Globe className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-sky-900 mb-1">Pilot Connectivity Mode</p>
+                  <p className="text-[11px] text-sky-800/90 leading-relaxed font-medium">
+                    The &quot;Test Connection&quot; button performs a real HTTP handshake against your S/4HANA endpoint to verify reachability and authentication status. Full OData entity integration is planned for a future release.
+                  </p>
+                </div>
+              </div>
 
               {profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
                 <form onSubmit={saveS4Config} className="space-y-6 text-gray-900">

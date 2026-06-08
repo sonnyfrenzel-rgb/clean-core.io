@@ -43,7 +43,7 @@ jobs:
       - name: Start Firebase Emulator
         run: |
           npx firebase emulators:start --only auth,firestore --project=cleancore-491216 &
-          sleep 5
+          sleep 10
 
       - name: Build Next.js Application
         run: npm run build
