@@ -58,6 +58,7 @@ export default function SettingsPage() {
   const [s4Username, setS4Username] = useState('');
   const [s4Password, setS4Password] = useState('');
   const [s4AuthType, setS4AuthType] = useState<'basic' | 'oauth2' | 'sap_hub' | 'btp_destination'>('basic');
+  const [s4TokenUrl, setS4TokenUrl] = useState('');
   const [btpDestinationJson, setBtpDestinationJson] = useState('');
   const [showS4Password, setShowS4Password] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
@@ -271,6 +272,7 @@ export default function SettingsPage() {
         setS4Username(profile.s4Config.username || '');
         setS4Password(profile.s4Config.password || '');
         setS4AuthType(profile.s4Config.authType || 'basic');
+        setS4TokenUrl(profile.s4Config.tokenUrl || '');
         setBtpDestinationJson(profile.s4Config.btpDestinationJson || '');
       }
     }
@@ -511,6 +513,7 @@ export default function SettingsPage() {
           username: s4Username,
           password: s4Password,
           authType: s4AuthType,
+          tokenUrl: s4AuthType === 'oauth2' ? s4TokenUrl : '',
           btpDestinationJson: s4AuthType === 'btp_destination' ? btpDestinationJson : ''
         }
       };
@@ -553,6 +556,8 @@ export default function SettingsPage() {
           username: s4Username,
           password: s4Password,
           authType: s4AuthType,
+          tokenUrl: s4AuthType === 'oauth2' ? s4TokenUrl : undefined,
+          btpDestinationJson: s4AuthType === 'btp_destination' ? btpDestinationJson : undefined,
         }),
       });
 
@@ -1327,6 +1332,26 @@ export default function SettingsPage() {
                       </select>
                     </div>
 
+                    {s4AuthType === 'oauth2' && (
+                      <div className="space-y-2 col-span-1 md:col-span-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">OAuth 2.0 Token URL</label>
+                        <div className="relative">
+                          <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input
+                            type="url"
+                            required
+                            value={s4TokenUrl}
+                            onChange={e => setS4TokenUrl(e.target.value)}
+                            placeholder="https://mysubaccount.authentication.eu10.hana.ondemand.com/oauth/token"
+                            className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-11"
+                          />
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-semibold block leading-relaxed">
+                          The XSUAA or IAS token endpoint URL from your BTP subaccount. Used for <span className="font-bold">grant_type=client_credentials</span>.
+                        </span>
+                      </div>
+                    )}
+
                     {s4AuthType === 'btp_destination' && (
                       <div className="space-y-2 col-span-1 md:col-span-2">
                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">SAP BTP Destination JSON Configuration</label>
@@ -1334,14 +1359,21 @@ export default function SettingsPage() {
                           required
                           value={btpDestinationJson}
                           onChange={e => handleBtpJsonChange(e.target.value)}
-                          placeholder='{
+                          placeholder={`{
   "Name": "S4_CLOUDSANDBOX",
   "Type": "HTTP",
   "URL": "https://my300120-api.s4hana.cloud.sap",
-  "Authentication": "PrincipalPropagation"
-}'
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-28 font-mono resize-none"
+  "Authentication": "OAuth2ClientCredentials",
+  "tokenServiceURL": "https://mysubaccount.authentication.eu10.hana.ondemand.com/oauth/token",
+  "clientId": "sb-clone-xxxx...",
+  "clientSecret": "...",
+  "ProxyType": "Internet"
+}`}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-40 font-mono resize-none"
                         />
+                        <span className="text-[10px] text-gray-400 font-semibold block leading-relaxed">
+                          Paste the full JSON export from the BTP Cockpit Destination Service. Supports <span className="font-bold">BasicAuthentication</span>, <span className="font-bold">OAuth2ClientCredentials</span>, and <span className="font-bold">PrincipalPropagation</span>.
+                        </span>
                       </div>
                     )}
 
