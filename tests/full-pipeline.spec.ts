@@ -115,10 +115,24 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await page.waitForTimeout(3000);
     console.log('[CI DEBUG] Auth settlement period complete. Forcing hard navigation to /dashboard...');
 
+    // Abort any in-flight Next.js RSC streaming from the previous router.push to prevent
+    // the server from being blocked when we issue a fresh page.goto
+    await page.evaluate(() => window.stop());
+    await page.waitForTimeout(500);
+
     // Force a full-page navigation instead of relying on Next.js router.push (which silently
-    // fails in production builds on CI runners due to missing RSC prefetch data)
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 30000 });
-    console.log('[CI DEBUG] Hard navigation to /dashboard complete. Waiting for Workspace h1...');
+    // fails in production builds on CI runners due to missing RSC prefetch data).
+    // Use 'commit' instead of 'domcontentloaded' — it resolves as soon as the server sends
+    // the first byte, which avoids hanging on slow RSC chunk streaming.
+    try {
+      await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 });
+    } catch (navError) {
+      console.log(`[CI DEBUG] First goto attempt failed: ${navError}. Retrying with fresh context...`);
+      await page.evaluate(() => window.stop());
+      await page.waitForTimeout(1000);
+      await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 });
+    }
+    console.log('[CI DEBUG] Hard navigation to /dashboard committed. Waiting for Workspace h1...');
 
     // Wait for the dashboard loading guard to resolve and the h1 "Workspace" to appear
     await page.waitForSelector('h1:has-text("Workspace")', { timeout: 90000 });
