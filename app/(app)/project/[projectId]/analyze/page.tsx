@@ -267,13 +267,21 @@ ${codeToAnalyze}`;
       
       let recommendedRoute = 'Side-by-Side (SAP BTP)';
       let cleanCoreScore = 0;
+      // Normalize the Gemini response: strip code fences, unwrap arrays
+      let normalizedAnalysis = responseText;
       try {
-        const parsed = JSON.parse(responseText.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim());
-        if (parsed.extensibilityRouting?.recommendedRoute) {
-          recommendedRoute = parsed.extensibilityRouting.recommendedRoute;
-        }
-        if (typeof parsed.cleanCoreScore === 'number') {
-          cleanCoreScore = parsed.cleanCoreScore;
+        let cleaned = responseText.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
+        const parsed = JSON.parse(cleaned);
+        // If Gemini returned an array, unwrap the first element
+        const obj = Array.isArray(parsed) ? parsed[0] : parsed;
+        if (obj && typeof obj === 'object') {
+          normalizedAnalysis = JSON.stringify(obj);
+          if (obj.extensibilityRouting?.recommendedRoute) {
+            recommendedRoute = obj.extensibilityRouting.recommendedRoute;
+          }
+          if (typeof obj.cleanCoreScore === 'number') {
+            cleanCoreScore = obj.cleanCoreScore;
+          }
         }
       } catch (e) {
         console.error('Failed to parse analysis JSON for routing', e);
@@ -285,7 +293,7 @@ ${codeToAnalyze}`;
         await updateDoc(doc(getDb(), 'projects', projectId as string), {
           legacyCode: codeToAnalyze,
           s4Deployment: targetDeployment,
-          analysis: responseText,
+          analysis: normalizedAnalysis,
           extensibilityRoute: recommendedRoute,
           cleanCoreScore: cleanCoreScore,
           status: 'analyzed',
@@ -307,7 +315,7 @@ ${codeToAnalyze}`;
         prev 
           ? { 
               ...prev, 
-              analysis: responseText, 
+              analysis: normalizedAnalysis, 
               extensibilityRoute: recommendedRoute, 
               s4Deployment: targetDeployment, 
               cleanCoreScore,
@@ -344,15 +352,23 @@ ${codeToAnalyze}`;
 
     let htmlContent = '';
     
-    // Check if JSON
+    // Robust JSON extraction: handles objects, arrays, code fences, and string formats
     let isJson = false;
     let data: AnalysisData | null = null;
-    if (project.analysis.trim().startsWith('{')) {
-      try {
-        data = JSON.parse(project.analysis);
+    try {
+      const raw = typeof project.analysis === 'object' ? project.analysis : project.analysis;
+      if (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
+        data = raw as AnalysisData;
         isJson = true;
-      } catch {}
-    }
+      } else if (typeof raw === 'string') {
+        const cleaned = raw.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
+        if (cleaned.startsWith('{') || cleaned.startsWith('[')) {
+          const parsed = JSON.parse(cleaned);
+          data = Array.isArray(parsed) ? parsed[0] : parsed;
+          isJson = true;
+        }
+      }
+    } catch {}
 
     if (isJson && data) {
       // Local fallback for Confluence export
@@ -718,12 +734,21 @@ ${codeToAnalyze}`;
     if (!project?.analysis) return null;
     
     let analysisData: AnalysisData | null = null;
-    if (project.analysis.trim().startsWith('{')) {
-      try {
-        analysisData = JSON.parse(project.analysis);
-      } catch (e) {
-        console.error('Failed to parse JSON analysis, falling back to markdown rendering', e);
+    try {
+      // Handle case where Firestore returns analysis as a JS object directly
+      if (typeof project.analysis === 'object' && project.analysis !== null && !Array.isArray(project.analysis)) {
+        analysisData = project.analysis as unknown as AnalysisData;
+      } else if (typeof project.analysis === 'string') {
+        // Strip markdown code fences if present
+        const cleaned = project.analysis.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
+        if (cleaned.startsWith('{') || cleaned.startsWith('[')) {
+          const parsed = JSON.parse(cleaned);
+          // Unwrap array if Gemini returned [{...}] instead of {...}
+          analysisData = Array.isArray(parsed) ? parsed[0] : parsed;
+        }
       }
+    } catch (e) {
+      console.error('Failed to parse JSON analysis, falling back to markdown rendering', e);
     }
 
     if (analysisData) {
