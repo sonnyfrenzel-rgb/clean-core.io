@@ -9,7 +9,8 @@ import {
   LifeBuoy, Send, MessageSquare, Eye, EyeOff,
   Trash2, KeyRound, Loader2, Sun, Moon, Monitor,
   Database, Save, Lock, ShieldCheck, Key, RefreshCw, 
-  ArrowLeft, Copy, Download, Smartphone, Check, X, ArrowRight, Globe
+  ArrowLeft, Copy, Download, Smartphone, Check, X, ArrowRight, Globe,
+  BookOpen, ExternalLink, HelpCircle
 } from 'lucide-react';
 import { addDoc, collection, serverTimestamp, getDocs, query, where, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { getDb, getAuth, handleFirestoreError, OperationType } from '@/lib/firebase';
@@ -1296,6 +1297,38 @@ export default function SettingsPage() {
                   </p>
                 </div>
               </div>
+
+              {/* How-To Documentation Banner — visible for enabled S4 users */}
+              {(profile?.s4TenantAccessAllowed || profile?.isAdmin) && (
+                <div className="bg-gradient-to-r from-indigo-50 via-sky-50 to-blue-50 border border-indigo-200/60 p-5 rounded-2xl mb-8 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-indigo-600/10 p-2 rounded-xl shrink-0">
+                      <BookOpen className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <p className="text-xs font-black text-indigo-950 uppercase tracking-widest">Setup Guide — S/4HANA Live Tenant Integration</p>
+                      <p className="text-[11px] text-indigo-800/90 leading-relaxed font-medium">
+                        Follow our step-by-step documentation to configure your S/4HANA connection. Covers Basic Auth, OAuth 2.0 Client Credentials, SAP API Hub Sandbox Keys, and SAP BTP Destination Service JSON imports.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1 pl-10">
+                    <a
+                      href="/knowledge"
+                      className="inline-flex items-center gap-1.5 text-[10px] font-black text-indigo-700 uppercase tracking-widest bg-white hover:bg-indigo-100 border border-indigo-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
+                    >
+                      <ExternalLink className="w-3 h-3" /> Knowledge Hub
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
+                      className="inline-flex items-center gap-1.5 text-[10px] font-black text-emerald-700 uppercase tracking-widest bg-white hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
+                    >
+                      <HelpCircle className="w-3 h-3" /> Ask AI for Help
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
                 <form onSubmit={saveS4Config} className="space-y-6 text-gray-900">
