@@ -44,8 +44,8 @@ export default function GlossaryChatbot() {
 
   const suggestionChips = [
     'Explain RAP vs CAP',
+    'How do I set up S/4 Live Tenant?',
     'How do I use abapGit?',
-    'What is an SAP LUW?',
     'Why Released APIs?'
   ];
 
@@ -76,6 +76,21 @@ ${JSON.stringify(GLOSSARY_ITEMS, null, 2)}
 - Step 3 (Code Transformation): AI transforms legacy ABAP into clean ABAP Cloud RAP (abapGit-compliant layout) or modular CAP Node.js files (plus erp-triggers event publisher).
 - Step 4 (Testing & Sandbox): Execute tests. For ABAP Cloud, compiles standard ABAP Unit classes (CL_AUNIT_ASSERT) with real ADT Eclipse test cockpits. For BTP, runs containerized Express sandbox tests.
 - Step 5 (Handover): Build and download abapGit package (ABAP Cloud RAP) or standard CAP project directories in modular ZIP archives.
+
+3. S/4HANA LIVE TENANT INTEGRATION (BYOT SETUP GUIDE):
+Clean-Core.io supports connecting non-productive S/4HANA Cloud or On-Premise tenants directly for live OData connection tests and schema validation. Here is how to set it up:
+
+- Navigate to Settings > "S/4HANA Live Tenant Integration" section (requires Pilot/Premium tier).
+- Provide the HTTPS endpoint of your S/4HANA system (e.g. https://my-s4.example.com:443/sap/opu/odata/sap/API_BUSINESS_PARTNER).
+- Choose one of the supported authentication methods:
+  a) Basic Authentication: Enter a technical communication user and password configured in your S/4HANA system (transaction SU01).
+  b) OAuth 2.0 Client Credentials: Provide a Token URL (e.g. https://<subdomain>.authentication.<region>.hana.ondemand.com/oauth/token), Client ID, and Client Secret. Clean-Core.io exchanges these for a Bearer token before calling the S/4 endpoint.
+  c) SAP API Hub Sandbox Key: Enter your api.sap.com API key for testing against SAP's public sandbox APIs.
+  d) SAP BTP Destination Service (JSON): Paste the full JSON export from your SAP BTP Destination configuration. Clean-Core.io auto-detects the auth type (BasicAuthentication, OAuth2ClientCredentials, PrincipalPropagation, NoAuthentication) and resolves credentials accordingly.
+- Click "Test Connection" to perform a live HTTP handshake that verifies endpoint reachability, DNS resolution, TLS certificate validity, and authentication status.
+- Click "Save Connection" to persist the configuration securely in Firestore.
+- Security: All credentials are stored server-side in encrypted Firestore documents. Passwords and secrets are never exposed in client-side code or logs. TLS is enforced for all outbound connections.
+- For the full Knowledge Hub and architecture references, visit /knowledge.
 
 CRITICAL GUARDRAILS AND SAFETY RULES:
 - You must under no circumstances be used or "abused" for general-purpose questions unrelated to SAP, S/4HANA, BTP, Clean Core, or the Clean-Core.io platform.
