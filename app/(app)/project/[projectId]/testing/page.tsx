@@ -10,7 +10,7 @@ import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import Stepper from '@/components/Stepper';
 import type { Project } from '@/lib/types';
-import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, X, Rocket, CheckCircle2, Globe, Lock as LockIcon, Send, Sparkles, Eye, EyeOff, Clock, Loader2 } from 'lucide-react';
+import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, X, Rocket, CheckCircle2, Globe, Lock as LockIcon, Send, Sparkles, Eye, EyeOff, Clock, Loader2, BookOpen, ExternalLink, HelpCircle } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { clsx } from 'clsx';
@@ -555,6 +555,36 @@ export default function TestingSandboxPage() {
                       )}></span>
                       {connectionStatus === 'connected' ? 'Connected' : connectionStatus === 'failed' ? 'Connection Failed' : 'Disconnected'}
                     </span>
+                  </div>
+                </div>
+
+                {/* How-To Documentation Banner — Setup Guide with Knowledge Hub + Ask AI links */}
+                <div className="bg-gradient-to-r from-indigo-50 via-sky-50 to-blue-50 border border-indigo-200/60 p-5 rounded-2xl mb-6 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-indigo-600/10 p-2 rounded-xl shrink-0">
+                      <BookOpen className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <p className="text-xs font-black text-indigo-950 uppercase tracking-widest">Setup Guide — S/4HANA Live Tenant Integration</p>
+                      <p className="text-[11px] text-indigo-800/90 leading-relaxed font-medium">
+                        Follow our step-by-step documentation to configure your S/4HANA connection. Covers Basic Auth, OAuth 2.0 Client Credentials, SAP API Hub Sandbox Keys, and SAP BTP Destination Service JSON imports.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1 pl-10">
+                    <Link
+                      href="/knowledge"
+                      className="inline-flex items-center gap-1.5 text-[10px] font-black text-indigo-700 uppercase tracking-widest bg-white hover:bg-indigo-100 border border-indigo-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
+                    >
+                      <ExternalLink className="w-3 h-3" /> Knowledge Hub
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
+                      className="inline-flex items-center gap-1.5 text-[10px] font-black text-emerald-700 uppercase tracking-widest bg-white hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
+                    >
+                      <HelpCircle className="w-3 h-3" /> Ask AI for Help
+                    </button>
                   </div>
                 </div>
 
