@@ -352,6 +352,17 @@ export default function Dashboard() {
 
     let redirectTimer: NodeJS.Timeout | null = null;
 
+    // Safety net: if after 8s loadingAuth is still true but auth.currentUser exists,
+    // force-resolve to prevent infinite spinner on slow CI runners where
+    // onAuthStateChanged may fire before the component mounts.
+    const safetyTimer = setTimeout(() => {
+      if (auth.currentUser) {
+        console.log('[DASHBOARD LOG] Safety timeout (8s): auth.currentUser exists, force-resolving loadingAuth');
+        setUser(auth.currentUser);
+        setLoadingAuth(false);
+      }
+    }, 8000);
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       console.log('[DASHBOARD LOG] onAuthStateChanged fired. currentUser:', currentUser ? currentUser.email : 'null');
       if (!currentUser) {
@@ -359,8 +370,15 @@ export default function Dashboard() {
         // after a page load. Delay the redirect to avoid premature logout on slow CI runners.
         console.log('[DASHBOARD LOG] No currentUser detected, waiting 3s for token restoration...');
         redirectTimer = setTimeout(() => {
-          console.log('[DASHBOARD LOG] Grace period expired, no user restored. Redirecting to /');
-          router.push('/');
+          // Double-check: auth.currentUser might have been set synchronously after the listener fired
+          if (auth.currentUser) {
+            console.log('[DASHBOARD LOG] Grace period expired but auth.currentUser now exists, setting auth state');
+            setUser(auth.currentUser);
+            setLoadingAuth(false);
+          } else {
+            console.log('[DASHBOARD LOG] Grace period expired, no user restored. Redirecting to /');
+            router.push('/');
+          }
         }, 3000);
       } else {
         // User found — cancel any pending redirect and set auth state
@@ -375,6 +393,7 @@ export default function Dashboard() {
     });
     return () => {
       unsubscribe();
+      clearTimeout(safetyTimer);
       if (redirectTimer) clearTimeout(redirectTimer);
     };
   }, [router]);
@@ -762,12 +781,18 @@ export default function Dashboard() {
     await saveAs(blob, filename);
   };
 
-  if (!mounted || !auth || !db || loadingAuth || loadingProfile) return (
-    <div className="h-[60vh] flex flex-col items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
-        <p className="text-lg font-medium text-gray-500">Loading workspace...</p>
-    </div>
-  );
+  // Diagnostic: log which flag is blocking render (helps debug CI hangs)
+  if (!mounted || !auth || !db || loadingAuth || loadingProfile) {
+    if (typeof window !== 'undefined') {
+      console.log(`[DASHBOARD LOG] Blocked by loading guard: mounted=${mounted}, auth=${!!auth}, db=${!!db}, loadingAuth=${loadingAuth}, loadingProfile=${loadingProfile}`);
+    }
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
+          <p className="text-lg font-medium text-gray-500">Loading workspace...</p>
+      </div>
+    );
+  }
 
   if (profile?.status === 'pending') {
     return (
