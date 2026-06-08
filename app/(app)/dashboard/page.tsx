@@ -350,18 +350,33 @@ export default function Dashboard() {
       setLoadingAuth(false);
     }
 
+    let redirectTimer: NodeJS.Timeout | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       console.log('[DASHBOARD LOG] onAuthStateChanged fired. currentUser:', currentUser ? currentUser.email : 'null');
       if (!currentUser) {
-        console.log('[DASHBOARD LOG] No currentUser, redirecting to landing page /');
-        router.push('/');
+        // Grace period: Firebase Auth may need time to restore the session token from IndexedDB
+        // after a page load. Delay the redirect to avoid premature logout on slow CI runners.
+        console.log('[DASHBOARD LOG] No currentUser detected, waiting 3s for token restoration...');
+        redirectTimer = setTimeout(() => {
+          console.log('[DASHBOARD LOG] Grace period expired, no user restored. Redirecting to /');
+          router.push('/');
+        }, 3000);
       } else {
+        // User found — cancel any pending redirect and set auth state
+        if (redirectTimer) {
+          clearTimeout(redirectTimer);
+          redirectTimer = null;
+        }
         console.log('[DASHBOARD LOG] Valid user found, setting auth state');
         setUser(currentUser);
         setLoadingAuth(false);
       }
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (redirectTimer) clearTimeout(redirectTimer);
+    };
   }, [router]);
 
   useEffect(() => {
