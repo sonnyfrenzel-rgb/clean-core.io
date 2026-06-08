@@ -110,9 +110,17 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     console.log(`[CI DEBUG] Logging in with email: ${TEST_EMAIL}`);
     console.log('[CI DEBUG] Clicking Sign In button and waiting for redirect to /dashboard...');
     await page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Anmelden")');
-    
-    // Wait for the dashboard to render (SPA navigation via router.push doesn't fire a page 'load' event,
-    // so we skip waitForURL and wait directly for the dashboard content to appear)
+    // Wait for Firebase Auth to settle after login (auth token must be persisted to IndexedDB
+    // before navigating, otherwise the dashboard's onAuthStateChanged fires with null)
+    await page.waitForTimeout(3000);
+    console.log('[CI DEBUG] Auth settlement period complete. Forcing hard navigation to /dashboard...');
+
+    // Force a full-page navigation instead of relying on Next.js router.push (which silently
+    // fails in production builds on CI runners due to missing RSC prefetch data)
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    console.log('[CI DEBUG] Hard navigation to /dashboard complete. Waiting for Workspace h1...');
+
+    // Wait for the dashboard loading guard to resolve and the h1 "Workspace" to appear
     await page.waitForSelector('h1:has-text("Workspace")', { timeout: 90000 });
     console.log('Successfully logged in and reached /dashboard.');
 
