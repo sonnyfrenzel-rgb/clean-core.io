@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Sparkles, AlertTriangle, ShieldCheck, HelpCircle } from 'lucide-react';
 import { callGemini } from '@/lib/gemini';
 import { GLOSSARY_ITEMS } from '@/lib/glossary';
+import { buildKnowledgeBase } from '@/lib/chatbot-knowledge';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import clsx from 'clsx';
 import nextDynamic from 'next/dynamic';
@@ -45,8 +46,10 @@ export default function GlossaryChatbot() {
   const suggestionChips = [
     'Explain RAP vs CAP',
     'How do I set up S/4 Live Tenant?',
-    'How do I use abapGit?',
-    'Why Released APIs?'
+    'Walk me through the platform',
+    'What is Clean Core?',
+    'How does TCO analysis work?',
+    'What is BYOK?'
   ];
 
   const handleSend = async (text: string) => {
@@ -63,45 +66,26 @@ export default function GlossaryChatbot() {
     setLoading(true);
 
     try {
-      // Formulate S/4HANA Modernization Architect prompt embedding glossary & platform guide context
+      // Build comprehensive system prompt with full platform knowledge base
+      const knowledgeBase = buildKnowledgeBase();
+
       const systemPrompt = `You are a professional SAP S/4HANA Modernization Architect chatbot at Clean-Core.io. Your mission is to provide high-grade technical and business assistance to enterprise architects and developers using the Clean-Core.io platform.
 
-You have access to the following platform context:
-1. GLOSSARY OF S/4HANA & BTP TERMS:
+You have access to the COMPLETE Clean-Core.io platform knowledge base below. Use it to answer questions about ANY part of the platform accurately and in detail.
+
+## GLOSSARY OF S/4HANA & BTP TERMS
 ${JSON.stringify(GLOSSARY_ITEMS, null, 2)}
 
-2. PLATFORM WORKFLOW (HOW-TO GUIDE):
-- Step 1 (Technical Analytics): Upload custom ABAP source files. Static analysis parses code, maps database tables, and calculates a Clean Core score.
-- Step 2 (Solution Design): Design the side-by-side CAP Node.js blueprint. Maps database operations to Released stable standard S/4HANA Public APIs (api.sap.com) to decouple extensions from ERP tables.
-- Step 3 (Code Transformation): AI transforms legacy ABAP into clean ABAP Cloud RAP (abapGit-compliant layout) or modular CAP Node.js files (plus erp-triggers event publisher).
-- Step 4 (Testing & Sandbox): Execute tests. For ABAP Cloud, compiles standard ABAP Unit classes (CL_AUNIT_ASSERT) with real ADT Eclipse test cockpits. For BTP, runs containerized Express sandbox tests.
-- Step 5 (Handover): Build and download abapGit package (ABAP Cloud RAP) or standard CAP project directories in modular ZIP archives.
-
-3. S/4HANA LIVE TENANT INTEGRATION (BYOT SETUP GUIDE):
-Clean-Core.io supports connecting non-productive S/4HANA Cloud or On-Premise tenants directly for live OData connection tests and schema validation. Here is how to set it up:
-
-- Navigate to Settings > "S/4HANA Live Tenant Integration" section (requires Pilot/Premium tier).
-- Provide the HTTPS endpoint of your S/4HANA system (e.g. https://my-s4.example.com:443/sap/opu/odata/sap/API_BUSINESS_PARTNER).
-- Choose one of the supported authentication methods:
-  a) Basic Authentication: Enter a technical communication user and password configured in your S/4HANA system (transaction SU01).
-  b) OAuth 2.0 Client Credentials: Provide a Token URL (e.g. https://<subdomain>.authentication.<region>.hana.ondemand.com/oauth/token), Client ID, and Client Secret. Clean-Core.io exchanges these for a Bearer token before calling the S/4 endpoint.
-  c) SAP API Hub Sandbox Key: Enter your api.sap.com API key for testing against SAP's public sandbox APIs.
-  d) SAP BTP Destination Service (JSON): Paste the full JSON export from your SAP BTP Destination configuration. Clean-Core.io auto-detects the auth type (BasicAuthentication, OAuth2ClientCredentials, PrincipalPropagation, NoAuthentication) and resolves credentials accordingly.
-- Click "Test Connection" to perform a live HTTP handshake that verifies endpoint reachability, DNS resolution, TLS certificate validity, and authentication status.
-- Click "Save Connection" to persist the configuration securely in Firestore.
-- Security: All credentials are stored server-side in encrypted Firestore documents. Passwords and secrets are never exposed in client-side code or logs. TLS is enforced for all outbound connections.
-- For the full Knowledge Hub and architecture references, visit /knowledge.
+${knowledgeBase}
 
 CRITICAL GUARDRAILS AND SAFETY RULES:
 - You must under no circumstances be used or "abused" for general-purpose questions unrelated to SAP, S/4HANA, BTP, Clean Core, or the Clean-Core.io platform.
 - If the user asks about unrelated topics (e.g. cooking recipes, general Python/Java coding outside of SAP contexts, writing stories/poetry, weather, non-SAP history, pop culture, sports), you must politely but firmly refuse to answer. You should reply EXACTLY in this tone:
 "My apologies, but as an SAP S/4HANA Modernization Architect, I am strictly configured to assist only with ERP upgrades, Clean Core guidelines, BTP cloud extensions, and Clean-Core.io platform walk-throughs. Please ask an SAP-related question."
-- Keep your answers highly professional, factual, and technically accurate. Use clear corporate English (or German if the user initiates the conversation in German). Use markdown formatting for structures, code snippets, or bullet points. Avoid marketing fluff.`;
+- Keep your answers highly professional, factual, and technically accurate. Use clear corporate English (or German if the user initiates the conversation in German). Use markdown formatting for structures, code snippets, or bullet points. Avoid marketing fluff.
+- When referencing platform pages, mention the navigation path (e.g. "Go to Testing > Live Tenant tab") to help users find features quickly.`;
 
-      const promptContext = `${systemPrompt}
-
-User Question: ${text}
-Assistant Response:`;
+      const promptContext = `${systemPrompt}\n\nUser Question: ${text}\nAssistant Response:`;
 
       const responseText = await callGemini(promptContext, 'gemini-3-flash-preview', false, profile?.geminiApiKey);
 
