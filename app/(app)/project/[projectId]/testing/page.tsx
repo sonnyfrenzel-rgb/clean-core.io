@@ -182,94 +182,61 @@ export default function TestingSandboxPage() {
     setConnectionStatus('disconnected');
     setConnectionMessage('');
     
-    if (s4AuthType === 'btp_destination') {
-      let destName = "S4_CLOUDSANDBOX";
-      let isOnPrem = false;
-      let authMethod = "PrincipalPropagation";
-      try {
-        const parsed = JSON.parse(btpDestinationJson);
-        destName = parsed.Name || destName;
-        isOnPrem = parsed.ProxyType === 'OnPremise';
-        authMethod = parsed.Authentication || authMethod;
-      } catch(e) {}
+    const authLabel = s4AuthType === 'basic' ? 'Basic Auth' 
+      : s4AuthType === 'oauth2' ? 'OAuth 2.0 Client Credentials' 
+      : s4AuthType === 'sap_hub' ? 'SAP API Hub Sandbox Key'
+      : 'BTP Destination Service';
 
-      setSandboxOutput(
-        `[sandbox-runtime] Initiating live BTP Destination connectivity test...\n` +
-        `[sandbox-runtime] Loading destination configuration: ${destName}\n` +
-        `[sandbox-runtime] Destination Type: HTTP\n` +
-        `[sandbox-runtime] Target S/4HANA Endpoint: ${s4Url || 'N/A'}\n` +
-        `[sandbox-runtime] Proxy Type: ${isOnPrem ? 'OnPremise (Cloud Connector Routing)' : 'Internet'}\n` +
-        `[sandbox-runtime] Authentication Flow: ${authMethod}\n`
-      );
-
-      await new Promise(r => setTimeout(r, 800));
-      if (isOnPrem) {
-        setSandboxOutput(prev => prev + `[sandbox-runtime] Establishing secure tunnel through SAP Cloud Connector...\n`);
-        await new Promise(r => setTimeout(r, 600));
-        setSandboxOutput(prev => prev + `[sandbox-runtime] Cloud Connector tunnel established (Location ID: Default, Status: CONNECTED)\n`);
-      } else {
-        setSandboxOutput(prev => prev + `[sandbox-runtime] Resolving host address via direct internet route...\n`);
-      }
-
-      await new Promise(r => setTimeout(r, 700));
-      if (authMethod === 'PrincipalPropagation' || authMethod === 'OAuth2SAMLBearer') {
-        setSandboxOutput(prev => prev + `[sandbox-runtime] Requesting SAML 2.0 Assertion token exchange from SAP XSUAA...\n`);
-        await new Promise(r => setTimeout(r, 900));
-        setSandboxOutput(prev => prev + `[sandbox-runtime] SAML Assertion generated. Injecting Bearer Authorization headers...\n`);
-      } else {
-        setSandboxOutput(prev => prev + `[sandbox-runtime] Injecting Basic Authorization headers...\n`);
-      }
-    } else {
-      // Direct log printing into the visual console!
-      setSandboxOutput(
-        `[sandbox-runtime] Initiating live connectivity test...\n` +
-        `[sandbox-runtime] Target tenant URL: ${s4Url || 'N/A'}\n` +
-        `[sandbox-runtime] Resolving host address...\n`
-      );
-
-      await new Promise(r => setTimeout(r, 800));
-      setSandboxOutput(prev => prev + `[sandbox-runtime] Host resolved. Verifying SSL/TLS handshake... OK\n`);
-      
-      await new Promise(r => setTimeout(r, 600));
-      setSandboxOutput(prev => prev + `[sandbox-runtime] Exchanging security tokens via ${s4AuthType === 'basic' ? 'Basic Auth' : 'OAuth 2.0 Client Credentials'}...\n`);
-    }
-
-    await new Promise(r => setTimeout(r, 1000));
-    
-    if (!s4Url) {
-      setConnectionStatus('failed');
-      setConnectionMessage('Connection failed: S/4HANA URL is empty.');
-      setSandboxOutput(prev => prev + `[sandbox-runtime] [ERROR] 400 Bad Request - Target URL cannot be empty.\n[sandbox-runtime] Connection check failed.`);
-      setTestingConnection(false);
-      return;
-    }
-
-    if (!s4Url.startsWith('https://')) {
-      setConnectionStatus('failed');
-      setConnectionMessage('Connection failed: URL must use secure HTTPS protocol.');
-      setSandboxOutput(prev => prev + `[sandbox-runtime] [ERROR] Security Guardrail - Plain HTTP requests are blocked.\n[sandbox-runtime] Connection check failed.`);
-      setTestingConnection(false);
-      return;
-    }
-
-    if (s4Url.includes('-api.s4hana.ondemand.com')) {
-      setConnectionStatus('failed');
-      setConnectionMessage('Connection failed: Direct production tenant API endpoints are blocked in this sandbox.');
-      setSandboxOutput(prev => prev + `[sandbox-runtime] [ERROR] Production Guardrail - Non-productive sandbox environment ONLY.\n[sandbox-runtime] Connection check failed.`);
-      setTestingConnection(false);
-      return;
-    }
-
-    setConnectionStatus('connected');
-    setConnectionMessage('Connection successful! Connected to S/4HANA Cloud (Enterprise Sandbox Edition).');
     setSandboxOutput(
-      prev => prev + 
-      `[sandbox-runtime] [SUCCESS] 200 OK - Handshake established!\n` +
-      `[sandbox-runtime] Connected Tenant Release: SAP S/4HANA Cloud 2602\n` +
-      `[sandbox-runtime] OData service catalog verified.\n` +
-      `[sandbox-runtime] Connection check complete.`
+      `[sandbox-runtime] Initiating live connectivity test...\n` +
+      `[sandbox-runtime] Target tenant URL: ${s4Url || 'N/A'}\n` +
+      `[sandbox-runtime] Authentication method: ${authLabel}\n` +
+      `[sandbox-runtime] Sending server-side HTTP handshake via /api/test-s4-connection...\n`
     );
-    setTestingConnection(false);
+
+    try {
+      const response = await fetch('/api/test-s4-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: s4Url,
+          username: s4Username,
+          password: s4Password,
+          authType: s4AuthType,
+          btpDestinationJson: s4AuthType === 'btp_destination' ? btpDestinationJson : ''
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'connected') {
+        setConnectionStatus('connected');
+        setConnectionMessage(result.message);
+        setSandboxOutput(prev => prev +
+          `[sandbox-runtime] [SUCCESS] ${result.message}\n` +
+          (result.httpStatus ? `[sandbox-runtime] HTTP Status: ${result.httpStatus}\n` : '') +
+          `[sandbox-runtime] Connection check complete.`
+        );
+      } else {
+        setConnectionStatus('failed');
+        setConnectionMessage(result.message);
+        setSandboxOutput(prev => prev +
+          `[sandbox-runtime] [ERROR] ${result.message}\n` +
+          (result.httpStatus ? `[sandbox-runtime] HTTP Status: ${result.httpStatus}\n` : '') +
+          `[sandbox-runtime] Connection check failed.`
+        );
+      }
+    } catch (err) {
+      setConnectionStatus('failed');
+      const msg = err instanceof Error ? err.message : 'Network error — the test proxy may be unavailable.';
+      setConnectionMessage(`Connection test failed: ${msg}`);
+      setSandboxOutput(prev => prev +
+        `[sandbox-runtime] [ERROR] ${msg}\n` +
+        `[sandbox-runtime] Connection check failed.`
+      );
+    } finally {
+      setTestingConnection(false);
+    }
   };
 
   const handleRequestAccess = async () => {
