@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isUrlSafe } from '@/lib/url-validation';
 
 /**
  * POST /api/fetch-odata-metadata
@@ -289,13 +290,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Block production domains
-    const checkUrl = body.url || '';
-    if (checkUrl.includes('-api.s4hana.ondemand.com')) {
-      return NextResponse.json(
-        { status: 'failed', message: 'Production tenant API endpoints are blocked.' },
-        { status: 403 }
-      );
+    // SSRF protection: validate user-supplied URL
+    if (body.url) {
+      const urlCheck = isUrlSafe(body.url);
+      if (!urlCheck.safe) {
+        return NextResponse.json(
+          { status: 'failed', message: urlCheck.reason || 'URL is not allowed.' },
+          { status: 403 }
+        );
+      }
     }
 
     // Build auth headers
@@ -309,6 +312,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { status: 'failed', message: `Authentication failed: ${authErr.message}` },
         { status: 401 }
+      );
+    }
+
+    // SSRF protection: validate resolved URL (may differ from body.url for BTP destinations)
+    const resolvedUrlCheck = isUrlSafe(resolvedUrl);
+    if (!resolvedUrlCheck.safe) {
+      return NextResponse.json(
+        { status: 'failed', message: resolvedUrlCheck.reason || 'Resolved URL is not allowed.' },
+        { status: 403 }
       );
     }
 

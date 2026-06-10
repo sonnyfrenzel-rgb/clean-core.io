@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
-import { getDb } from '@/lib/firebase';
+import { getDb, getAuth } from '@/lib/firebase';
 import { callGemini } from '@/lib/gemini';
 import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase } from '@/lib/types';
@@ -84,8 +84,16 @@ export const useTestExecution = (projectId: string, project: Project | null, set
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       let response;
       try {
+        // Get the current user's ID token for authenticated API calls
+        const auth = getAuth();
+        const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+
         response = await fetch('/api/run-tests', {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {}),
+          },
           body: JSON.stringify(currentPayload),
         });
       } catch (err) {
@@ -158,9 +166,13 @@ export const useTestExecution = (projectId: string, project: Project | null, set
           // Actually call the real test-s4-connection API
           let connectionResult: { status: string; message: string; httpStatus?: number };
           try {
+            const token = await (await import('@/lib/firebase')).getAuth().currentUser?.getIdToken();
             const connResponse = await fetch('/api/test-s4-connection', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+              },
               body: JSON.stringify({
                 url: project.s4Config!.url,
                 username: project.s4Config!.username || '',

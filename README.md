@@ -7,7 +7,7 @@ Clean-Core.io is a modern, high-performance, and secure web and desktop client a
 ## 🌟 Premium Key Features
 
 *   **S/4HANA Live Bridge (BYOT - Bring Your Own Tenant):**
-    Securely connect your own S/4HANA Public Cloud Test/Sandbox Tenant to run E2E unit tests on live ERP destinations. Securely stores URL, authentication secrets, and credentials locally or inside an encrypted Zero-Trust Firestore vault.
+    Connect your own S/4HANA Public Cloud Test/Sandbox Tenant to run E2E unit tests on live ERP destinations. Credentials are stored in your Firebase user profile, protected by Firestore Security Rules with server-side authentication.
 *   **Unified Pilot & Tenant Administration Console:**
     Comprehensive admin workbench (`/admin`) allowing administrators to instantly review, approve, or revoke pilot access requests, track tenant bridge applications, and toggle Bring-Your-Own-Tenant (BYOT) privileges with live status badges.
 *   **Transactional Verification & Responsive Email Automations:**
@@ -16,8 +16,8 @@ Clean-Core.io is a modern, high-performance, and secure web and desktop client a
     Modular code translation from SAP ABAP to structured Node.js/TypeScript code using Google Gemini. Classifies legacy logic to automatically separate **In-App Developer Extensibility (ABAP Cloud RAP)** from **Side-by-Side Extensibility (BTP CAP)** tracks.
 *   **Architectural Solution Design & File Explorers:**
     Interactive visual representation of API endpoints, directory configurations (including database entity mapping and Docker containers), and direct public links to the SAP API Business Hub.
-*   **ADT Cockpit & Sandboxed Unit Testing:**
-    Provision a virtual Eclipse ADT Test Cockpit to compile and execute local sandboxed unit tests. If S/4HANA Live Bridge is activated, credentials are automatically injected as environment variables to test requests against real OData/REST destinations.
+*   **ADT Cockpit & Unit Testing:**
+    Provision a virtual Eclipse ADT Test Cockpit to compile and execute unit tests with process-level isolation. If S/4HANA Live Bridge is activated, only the required S/4 credentials are injected as environment variables — no other server secrets are exposed.
 *   **Process Blueprinting & BPMN 2.0 Mapping:**
     Generates dynamic Level 1-4 functional blueprints and interactive BPMN process flow maps directly from modernized business logic.
 *   **GDPR / DSGVO Sovereign Data Erasure:**
@@ -33,10 +33,10 @@ Clean-Core.io is engineered for ultimate performance, security, and portability:
 
 *   **Frontend Core:** React 19, Next.js (v15.5) App Router, HSL Custom Glassmorphism Styling.
 *   **Desktop Shell:** Electron (v30.0) with complete context isolation and secure sandboxing.
-*   **Security & Database:** Firestore & Firebase Auth secured with custom rules.
+*   **Security & Database:** Firestore & Firebase Auth secured with custom rules and server-side token verification via Firebase Admin SDK.
 *   **Animations:** Motion (Framer Motion) for micro-animations and physics-based sliders.
 *   **Email Deliverability:** Transactional secure email templates powered by Resend API.
-*   **QA Test Runner:** Isolated TypeScript runtime executing automated unit test specifications.
+*   **QA Test Runner:** Authenticated TypeScript runtime executing automated unit test specifications with SSRF protection and input sanitisation.
 
 ---
 
@@ -95,8 +95,8 @@ Clean-Core.io bridges the gap between static code analysis and live database ver
 2.  **Security Review:** Administrators receive a cryptographically signed email linking to `/admin/approve-tenant`.
 3.  **Privilege Zaining:** Sonny grants the `s4TenantAccessAllowed` right directly in the Unified Admin Console.
 4.  **Secure Connection:** The locked connection panel slides open. Users enter their S/4HANA URL and Basic/OAuth credentials.
-5.  **Encrypted Storage:** Configuration details are saved using strict Zero-Trust Firestore database rules.
-6.  **Test Runner Injection:** During test execution, credentials are proxy-injected into the isolated sandbox environment as:
+5.  **Credential Storage:** Configuration details are saved in the user's Firestore profile, protected by server-side authentication and field-level security rules.
+6.  **Test Runner Injection:** During test execution, only the S/4 credentials are injected into the test process as:
     *   `S4_TENANT_URL`
     *   `S4_USERNAME`
     *   `S4_PASSWORD`
@@ -108,7 +108,9 @@ Clean-Core.io bridges the gap between static code analysis and live database ver
 
 Clean-Core.io prioritizes data security and user privacy above all else:
 
-*   **Encrypted Key Storage:** Secure client-side BYOK configuration keys remain in local storage or secured Firestore profiles and are proxied server-side to prevent third-party exposure.
+*   **Server-Side Auth:** All mutating API routes require a valid Firebase ID token verified via Firebase Admin SDK. SSRF protection blocks internal/private IP access.
+*   **Credential Isolation:** BYOK API keys remain in the user's Firestore profile. The test runner receives only the minimum required environment variables — no server secrets are exposed.
+*   **Field-Level Security:** Firestore Security Rules freeze all privileged fields (isAdmin, tier, quota counters) so only admins can modify them.
 *   **Art. 17 GDPR Cascade Deletion:** Instantly purges:
     *   Authentication profiles.
     *   Custom uploads, ABAP scripts, and analysis metadata.

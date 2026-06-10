@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isUrlSafe } from '@/lib/url-validation';
 
 /**
  * POST /api/fetch-s4-metadata
@@ -220,6 +221,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { status: 'failed', message: `Authentication failed: ${authErr.message}` },
         { status: 401 }
+      );
+    }
+
+    // SSRF protection: validate resolved URL before any fetch
+    const urlCheck = isUrlSafe(targetUrl);
+    if (!urlCheck.safe) {
+      return NextResponse.json(
+        { status: 'failed', message: urlCheck.reason || 'URL is not allowed.' },
+        { status: 403 }
       );
     }
 

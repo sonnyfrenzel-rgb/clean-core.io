@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { isHardcodedAdmin, FIREBASE_PROJECT_ID, FIRESTORE_DB_ID } from '@/lib/constants';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -84,11 +85,9 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        const dbId = process.env.NEXT_PUBLIC_FIRESTORE_DB_ID || 'ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e';
-        const projectId = 'cleancore-491216';
         const firestoreUrl = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true'
-          ? `http://localhost:8080/v1/projects/${projectId}/databases/${dbId}/documents/users/${userId}`
-          : `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/users/${userId}`;
+          ? `http://localhost:8080/v1/projects/${FIREBASE_PROJECT_ID}/databases/${FIRESTORE_DB_ID}/documents/users/${userId}`
+          : `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/${FIRESTORE_DB_ID}/documents/users/${userId}`;
 
         const res = await fetch(firestoreUrl, {
           headers: {
@@ -119,8 +118,8 @@ export async function POST(request: NextRequest) {
           ? parseInt(fields.transformationsLimit.integerValue, 10) 
           : 5;
 
-        const isSonny = email === 'sonny.frenzel@googlemail.com' || email === 'sonny.frenzel@gmail.com';
-        const isEnterprise = tier === 'enterprise' || isSonny;
+        const isSuperAdmin = isHardcodedAdmin(email);
+        const isEnterprise = tier === 'enterprise' || isSuperAdmin;
 
         if (!isEnterprise) {
           if (status !== 'approved') {
@@ -129,7 +128,7 @@ export async function POST(request: NextRequest) {
               { status: 403 }
             );
           }
-          if (transformationsUsed > transformationsLimit) {
+          if (transformationsUsed >= transformationsLimit) {
             return NextResponse.json(
               { error: `Transformation limit reached! Your pilot plan allows a maximum of ${transformationsLimit} free transformations. Please upgrade or configure your own Gemini API key in settings.` },
               { status: 403 }
