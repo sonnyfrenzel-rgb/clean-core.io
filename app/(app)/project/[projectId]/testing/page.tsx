@@ -10,7 +10,7 @@ import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import Stepper from '@/components/Stepper';
 import type { Project } from '@/lib/types';
-import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, X, Rocket, CheckCircle2, Globe, Lock as LockIcon, Send, Sparkles, Eye, EyeOff, Clock, Loader2, BookOpen, ExternalLink, HelpCircle, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, X, Rocket, CheckCircle2, Globe, Lock as LockIcon, Send, Sparkles, Eye, EyeOff, Clock, Loader2, BookOpen, ExternalLink, HelpCircle, ChevronDown, ChevronUp, Info, Database, Search, Layers, ChevronRight } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { clsx } from 'clsx';
@@ -77,6 +77,18 @@ export default function TestingSandboxPage() {
   const [connectionMessage, setConnectionMessage] = useState('');
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [showSetupGuide, setShowSetupGuide] = useState(true);
+
+  // OData Metadata Fetch states
+  const [odataMode, setOdataMode] = useState<'idle' | 'loading' | 'catalog' | 'metadata' | 'error'>('idle');
+  const [odataCatalog, setOdataCatalog] = useState<Array<{ title: string; path: string; serviceUrl: string }>>([]);
+  const [odataSuggestedServices, setOdataSuggestedServices] = useState<Array<{ title: string; path: string }>>([]);
+  const [odataEntityTypes, setOdataEntityTypes] = useState<Array<{ name: string; properties: Array<{ name: string; type: string; nullable: boolean }> }>>([]);
+  const [odataServicePath, setOdataServicePath] = useState('');
+  const [odataSelectedService, setOdataSelectedService] = useState('');
+  const [odataMessage, setOdataMessage] = useState('');
+  const [odataTotalServices, setOdataTotalServices] = useState(0);
+  const [odataExpandedEntity, setOdataExpandedEntity] = useState<string | null>(null);
+  const [odataCatalogSearch, setOdataCatalogSearch] = useState('');
 
   const { isGenerating, testCases, generateTestCases } = useTestGeneration(projectId as string, project, setProject);
   const { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases } = useTestExecution(projectId as string, project, setProject);
@@ -236,6 +248,96 @@ export default function TestingSandboxPage() {
       );
     } finally {
       setTestingConnection(false);
+    }
+  };
+
+  // --- OData Metadata Fetch ---
+  const handleFetchODataCatalog = async () => {
+    setOdataMode('loading');
+    setOdataMessage('');
+    setOdataEntityTypes([]);
+    setOdataSelectedService('');
+    setSandboxOutput(prev => prev + `\n[odata-explorer] Querying OData service catalog from ${s4Url}...\n`);
+
+    try {
+      const response = await fetch('/api/fetch-odata-metadata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: s4Url,
+          username: s4Username,
+          password: s4Password,
+          authType: s4AuthType,
+          btpDestinationJson: s4AuthType === 'btp_destination' ? btpDestinationJson : '',
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        setOdataCatalog(result.services || []);
+        setOdataTotalServices(result.totalServices || 0);
+        setOdataMode('catalog');
+        setSandboxOutput(prev => prev + `[odata-explorer] [SUCCESS] Discovered ${result.totalServices} OData services on tenant.\n`);
+      } else if (result.status === 'partial') {
+        setOdataCatalog([]);
+        setOdataSuggestedServices(result.suggestedServices || []);
+        setOdataMessage(result.message || '');
+        setOdataMode('catalog');
+        setSandboxOutput(prev => prev + `[odata-explorer] [INFO] ${result.message}\n`);
+      } else {
+        setOdataMode('error');
+        setOdataMessage(result.message || 'Failed to fetch catalog.');
+        setSandboxOutput(prev => prev + `[odata-explorer] [ERROR] ${result.message}\n`);
+      }
+    } catch (err) {
+      setOdataMode('error');
+      const msg = err instanceof Error ? err.message : 'Network error';
+      setOdataMessage(`Failed to fetch OData catalog: ${msg}`);
+      setSandboxOutput(prev => prev + `[odata-explorer] [ERROR] ${msg}\n`);
+    }
+  };
+
+  const handleFetchServiceMetadata = async (path: string) => {
+    setOdataMode('loading');
+    setOdataSelectedService(path);
+    setOdataMessage('');
+    setSandboxOutput(prev => prev + `\n[odata-explorer] Fetching $metadata for ${path}...\n`);
+
+    try {
+      const response = await fetch('/api/fetch-odata-metadata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: s4Url,
+          username: s4Username,
+          password: s4Password,
+          authType: s4AuthType,
+          btpDestinationJson: s4AuthType === 'btp_destination' ? btpDestinationJson : '',
+          servicePath: path,
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        setOdataEntityTypes(result.entityTypes || []);
+        setOdataMode('metadata');
+        setOdataExpandedEntity(null);
+        setSandboxOutput(prev => prev +
+          `[odata-explorer] [SUCCESS] ${path}: ${result.totalEntityTypes} EntityTypes discovered.\n` +
+          result.entityTypes.slice(0, 5).map((et: any) => `  → ${et.name} (${et.properties.length} properties)\n`).join('')
+        );
+      } else {
+        setOdataMode('error');
+        setOdataMessage(result.message || `Failed to fetch metadata for ${path}.`);
+        setSandboxOutput(prev => prev + `[odata-explorer] [ERROR] ${result.message}\n`);
+      }
+    } catch (err) {
+      setOdataMode('error');
+      const msg = err instanceof Error ? err.message : 'Network error';
+      setOdataMessage(`Metadata fetch failed: ${msg}`);
+      setSandboxOutput(prev => prev + `[odata-explorer] [ERROR] ${msg}\n`);
     }
   };
 
@@ -843,6 +945,220 @@ export default function TestingSandboxPage() {
                     </button>
                   </div>
                 </form>
+
+                {/* ─────── OData Service Explorer (appears after connection) ─────── */}
+                <AnimatePresence>
+                  {connectionStatus === 'connected' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-6 border border-emerald-200/60 bg-gradient-to-br from-emerald-50/40 to-teal-50/30 rounded-2xl p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-emerald-600/10 p-2.5 rounded-xl">
+                              <Database className="w-5 h-5 text-emerald-600" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-black text-emerald-950 uppercase tracking-wider">OData Service Explorer</h3>
+                              <p className="text-[10px] text-emerald-700/70 font-semibold">Browse live OData services exposed by your connected tenant.</p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleFetchODataCatalog}
+                            disabled={odataMode === 'loading'}
+                            className="shrink-0 h-10 px-5 flex items-center justify-center gap-2 bg-gradient-to-br from-emerald-600 to-teal-600 hover:shadow-lg text-white font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all disabled:opacity-50"
+                          >
+                            {odataMode === 'loading' ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Fetching...</> : <><Search className="w-3.5 h-3.5" /> Discover Services</>}
+                          </button>
+                        </div>
+
+                        {/* Manual service input */}
+                        <div className="flex gap-2 mb-4">
+                          <div className="relative flex-1">
+                            <Database className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                            <input
+                              type="text"
+                              value={odataServicePath}
+                              onChange={e => setOdataServicePath(e.target.value)}
+                              placeholder="Enter service name, e.g. API_BUSINESS_PARTNER"
+                              className="w-full pl-9 pr-4 py-2.5 bg-white border border-emerald-200/60 rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-400 transition-all text-[#0b1c30]"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => odataServicePath && handleFetchServiceMetadata(odataServicePath)}
+                            disabled={!odataServicePath || odataMode === 'loading'}
+                            className="shrink-0 h-[42px] px-4 flex items-center gap-1.5 bg-white border border-emerald-200 hover:bg-emerald-50 text-emerald-700 font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all disabled:opacity-40"
+                          >
+                            <Layers className="w-3.5 h-3.5" /> Fetch $metadata
+                          </button>
+                        </div>
+
+                        {/* Error message */}
+                        {odataMode === 'error' && odataMessage && (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-800 mb-4 flex items-start gap-2">
+                            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                            {odataMessage}
+                          </div>
+                        )}
+
+                        {/* Info message (partial catalog) */}
+                        {odataMode === 'catalog' && odataMessage && odataCatalog.length === 0 && (
+                          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs font-semibold text-amber-800 mb-4 flex items-start gap-2">
+                            <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                            <div>
+                              <p>{odataMessage}</p>
+                              {odataSuggestedServices.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  {odataSuggestedServices.map(svc => (
+                                    <button
+                                      key={svc.path}
+                                      type="button"
+                                      onClick={() => handleFetchServiceMetadata(svc.path)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-amber-200 hover:bg-amber-100 text-amber-900 font-bold text-[10px] rounded-lg transition-all"
+                                    >
+                                      <Database className="w-3 h-3" /> {svc.title}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Service Catalog Results */}
+                        {odataMode === 'catalog' && odataCatalog.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">
+                                {odataTotalServices} Services Discovered
+                              </span>
+                              <div className="relative w-48">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                                <input
+                                  type="text"
+                                  value={odataCatalogSearch}
+                                  onChange={e => setOdataCatalogSearch(e.target.value)}
+                                  placeholder="Filter services..."
+                                  className="w-full pl-7 pr-3 py-1.5 bg-white border border-emerald-200/60 rounded-lg text-[10px] font-medium focus:ring-1 focus:ring-emerald-400 transition-all"
+                                />
+                              </div>
+                            </div>
+                            <div className="max-h-60 overflow-y-auto rounded-xl border border-emerald-100 bg-white divide-y divide-emerald-50">
+                              {odataCatalog
+                                .filter(svc =>
+                                  !odataCatalogSearch ||
+                                  svc.title.toLowerCase().includes(odataCatalogSearch.toLowerCase()) ||
+                                  svc.path.toLowerCase().includes(odataCatalogSearch.toLowerCase())
+                                )
+                                .slice(0, 50)
+                                .map((svc, i) => (
+                                  <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => handleFetchServiceMetadata(svc.path)}
+                                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-emerald-50 transition-all text-left group"
+                                  >
+                                    <div className="min-w-0">
+                                      <span className="text-xs font-bold text-emerald-900 block truncate">{svc.title}</span>
+                                      <span className="text-[10px] font-mono text-emerald-600/70 block truncate">{svc.path}</span>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-emerald-400 group-hover:text-emerald-600 shrink-0 transition-colors" />
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Metadata Results (Entity Types) */}
+                        {odataMode === 'metadata' && odataEntityTypes.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => { setOdataMode('catalog'); setOdataEntityTypes([]); }}
+                                  className="text-[10px] font-bold text-emerald-600 hover:text-emerald-800 underline"
+                                >
+                                  ← Back to catalog
+                                </button>
+                                <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">
+                                  {odataSelectedService} — {odataEntityTypes.length} Entity Types
+                                </span>
+                              </div>
+                            </div>
+                            <div className="max-h-80 overflow-y-auto rounded-xl border border-emerald-100 bg-white divide-y divide-emerald-50">
+                              {odataEntityTypes.map((et, i) => (
+                                <div key={i}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setOdataExpandedEntity(odataExpandedEntity === et.name ? null : et.name)}
+                                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-emerald-50 transition-all text-left"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Layers className="w-4 h-4 text-emerald-500" />
+                                      <span className="text-xs font-bold text-emerald-900">{et.name}</span>
+                                      <span className="text-[9px] font-semibold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                        {et.properties.length} props
+                                      </span>
+                                    </div>
+                                    <ChevronDown className={clsx(
+                                      "w-4 h-4 text-emerald-400 transition-transform",
+                                      odataExpandedEntity === et.name && "rotate-180"
+                                    )} />
+                                  </button>
+                                  {odataExpandedEntity === et.name && (
+                                    <div className="px-4 pb-3">
+                                      <div className="bg-emerald-50/50 rounded-lg border border-emerald-100 overflow-hidden">
+                                        <table className="w-full text-[10px]">
+                                          <thead>
+                                            <tr className="bg-emerald-100/60">
+                                              <th className="text-left px-3 py-1.5 font-black text-emerald-800 uppercase tracking-wider">Property</th>
+                                              <th className="text-left px-3 py-1.5 font-black text-emerald-800 uppercase tracking-wider">Type</th>
+                                              <th className="text-left px-3 py-1.5 font-black text-emerald-800 uppercase tracking-wider">Nullable</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-emerald-100/50">
+                                            {et.properties.map((prop, pi) => (
+                                              <tr key={pi} className="hover:bg-emerald-50">
+                                                <td className="px-3 py-1.5 font-mono font-semibold text-emerald-900">{prop.name}</td>
+                                                <td className="px-3 py-1.5 font-mono text-emerald-600">{prop.type.replace('Edm.', '')}</td>
+                                                <td className="px-3 py-1.5">
+                                                  <span className={clsx(
+                                                    "px-1.5 py-0.5 rounded text-[9px] font-bold",
+                                                    prop.nullable ? "bg-gray-100 text-gray-500" : "bg-red-50 text-red-600"
+                                                  )}>
+                                                    {prop.nullable ? 'Yes' : 'Required'}
+                                                  </span>
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Empty state */}
+                        {odataMode === 'idle' && (
+                          <div className="text-center py-6 text-emerald-600/50">
+                            <Database className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                            <p className="text-[11px] font-semibold">Click "Discover Services" to browse the OData catalog, or enter a service name above.</p>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ) : (
               // Locked Teaser Card / Guide & Access Request
