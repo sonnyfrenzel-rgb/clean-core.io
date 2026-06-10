@@ -549,9 +549,13 @@ export default function SettingsPage() {
     }
 
     try {
+      const token = await getAuth().currentUser?.getIdToken();
       const res = await fetch('/api/test-s4-connection', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           url: s4Url,
           username: s4Username,

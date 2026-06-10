@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyRequestAuth } from '@/lib/firebase-admin';
+import { isUrlSafe } from '@/lib/url-validation';
 
 /**
  * POST /api/test-s4-connection
@@ -234,6 +236,15 @@ function evaluateHttpStatus(httpStatus: number, authMethod: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    // --- Server-side auth: require a valid Firebase ID token ---
+    const decodedToken = await verifyRequestAuth(req);
+    if (!decodedToken) {
+      return NextResponse.json(
+        { status: 'failed', message: 'Authentication required.' },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const { url, username, password, authType, tokenUrl, btpDestinationJson } = body;
 
@@ -256,10 +267,11 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Block production domains
-      if (config.url.includes('-api.s4hana.ondemand.com')) {
+      // SSRF protection: validate resolved URL
+      const urlCheck = isUrlSafe(config.url);
+      if (!urlCheck.safe) {
         return NextResponse.json(
-          { status: 'failed', message: 'Direct production tenant API endpoints are blocked in this pilot sandbox.' },
+          { status: 'failed', message: urlCheck.reason || 'URL is not allowed.' },
           { status: 403 }
         );
       }
@@ -309,17 +321,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!url.startsWith('https://')) {
+    // SSRF protection: validate user-supplied URL
+    const urlCheck = isUrlSafe(url);
+    if (!urlCheck.safe) {
       return NextResponse.json(
-        { status: 'failed', message: 'URL must use secure HTTPS protocol.' },
-        { status: 400 }
-      );
-    }
-
-    // Block production tenant domains for safety
-    if (url.includes('-api.s4hana.ondemand.com')) {
-      return NextResponse.json(
-        { status: 'failed', message: 'Direct production tenant API endpoints are blocked in this pilot sandbox.' },
+        { status: 'failed', message: urlCheck.reason || 'URL is not allowed.' },
         { status: 403 }
       );
     }

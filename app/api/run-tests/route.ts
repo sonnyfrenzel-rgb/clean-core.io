@@ -3,6 +3,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import { verifyRequestAuth } from '@/lib/firebase-admin';
 
 const execAsync = promisify(exec);
 
@@ -70,10 +71,28 @@ function parseTapOutput(stdout: string): TestRunResult[] {
 }
 
 export async function POST(req: Request) {
+  // ── AUTH CHECK (Befund 1 fix) ──────────────────────────────
+  const decodedToken = await verifyRequestAuth(req);
+  if (!decodedToken) {
+    return NextResponse.json(
+      { output: '', error: 'Authentication required.', exitCode: 1 },
+      { status: 401 }
+    );
+  }
+
   const { tests, projectId, code, selectedTestIds, s4Environment, s4Config } = await req.json();
   
+  // ── INPUT SANITISATION (Befund 1 fix: command injection + path traversal) ──
+  const sanitizedProjectId = (projectId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+  if (!sanitizedProjectId) {
+    return NextResponse.json(
+      { output: '', error: 'Invalid project ID.', exitCode: 1 },
+      { status: 400 }
+    );
+  }
+
   // Use a project-relative directory for tests
-  const testDir = path.join(process.cwd(), 'tmp', 'tests', projectId);
+  const testDir = path.join(process.cwd(), 'tmp', 'tests', sanitizedProjectId);
   
   try {
     await fs.mkdir(testDir, { recursive: true });
@@ -86,7 +105,11 @@ export async function POST(req: Request) {
         const parsed = JSON.parse(code);
         if (Array.isArray(parsed) && parsed.every(f => typeof f.path === 'string' && typeof f.content === 'string')) {
           for (const file of parsed) {
-            const filePath = path.join(testDir, file.path);
+            // ── PATH TRAVERSAL PROTECTION (Befund 1 fix) ──
+            const safePath = file.path.replace(/\.\./g, '').replace(/^[\/\\]+/, '');
+            const filePath = path.join(testDir, safePath);
+            if (!filePath.startsWith(testDir)) continue; // skip path traversal attempts
+            
             const dirPath = path.dirname(filePath);
             await fs.mkdir(dirPath, { recursive: true });
             
@@ -101,7 +124,7 @@ export async function POST(req: Request) {
             await fs.writeFile(filePath, safeContent);
           }
           filesParsed = true;
-          console.log(`[TestRunner] Mounted modular project structure for ${projectId} with ${parsed.length} files.`);
+          console.log(`[TestRunner] Mounted modular project structure for ${sanitizedProjectId} with ${parsed.length} files.`);
         }
       } catch (e) {
         // Not JSON - fallback to legacy flat app
@@ -145,7 +168,7 @@ export async function POST(req: Request) {
     // Build test execution command with selection filters and TAP reporter
     let options = '--test --test-reporter=tap';
     if (selectedTestIds && Array.isArray(selectedTestIds) && selectedTestIds.length > 0) {
-      const pattern = selectedTestIds.map(id => id.replace(/[^A-Za-z0-9_]/g, '')).filter(Boolean).join('|');
+      const pattern = selectedTestIds.map((id: string) => id.replace(/[^A-Za-z0-9_]/g, '')).filter(Boolean).join('|');
       if (pattern) {
         options += ` --test-name-pattern="${pattern}"`;
       }
@@ -158,12 +181,14 @@ export async function POST(req: Request) {
     let exitCode = 0;
     
     try {
-      console.log(`[TestRunner] Executing tests for project ${projectId} in ${testDir}. Command: ${command}`);
+      console.log(`[TestRunner] Executing tests for project ${sanitizedProjectId} in ${testDir}. Command: ${command}`);
       const result = await execAsync(command, { 
         cwd: testDir, 
         timeout: 15000,
+        // ── ENV SANITISATION (Befund 1 fix: no more ...process.env) ──
         env: { 
-          ...process.env, 
+          PATH: process.env.PATH || '',
+          SYSTEMROOT: process.env.SYSTEMROOT || '',   // needed on Windows
           NODE_PATH: path.join(process.cwd(), 'node_modules'),
           NODE_ENV: 'test',
           ...(s4Environment === 'live' && s4Config ? {
@@ -176,12 +201,12 @@ export async function POST(req: Request) {
       });
       stdout = result.stdout;
       stderr = result.stderr;
-      console.log(`[TestRunner] Tests passed for ${projectId}`);
+      console.log(`[TestRunner] Tests passed for ${sanitizedProjectId}`);
     } catch (err: any) {
       stdout = err.stdout || '';
       stderr = err.stderr || err.message;
       exitCode = err.code || 1;
-      console.error(`[TestRunner] Tests failed for ${projectId}:`, stderr);
+      console.error(`[TestRunner] Tests failed for ${sanitizedProjectId}:`, stderr);
     } finally {
       // Cleanup temporary test directory
       try {
