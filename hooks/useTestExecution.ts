@@ -178,10 +178,53 @@ export const useTestExecution = (projectId: string, project: Project | null, set
 
           setSandboxOutput(prev => prev +
             `Tenant connectivity: ${tenantReachable ? '[OK] ' + connectionResult.message : '[FAILED] ' + connectionResult.message}\n` +
-            (connectionResult.httpStatus ? `HTTP Status: ${connectionResult.httpStatus}\n` : '') +
-            `\nExecuting ABAP Unit validation against live context...\n\n`
+            (connectionResult.httpStatus ? `HTTP Status: ${connectionResult.httpStatus}\n` : '')
           );
 
+          // --- OData $metadata Fetch ---
+          let metadataServices: { name: string; type: string }[] = [];
+          let metadataMessage = '';
+
+          if (tenantReachable) {
+            setSandboxOutput(prev => prev + `\nFetching OData $metadata from tenant...\n`);
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            try {
+              const metaResponse = await fetch('/api/fetch-s4-metadata', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  url: project.s4Config!.url,
+                  username: project.s4Config!.username || '',
+                  password: project.s4Config!.password || '',
+                  authType: project.s4Config!.authType || 'basic',
+                  btpDestinationJson: project.s4Config!.btpDestinationJson || '',
+                  servicePath: '/sap/opu/odata/sap/API_BUSINESS_PARTNER'
+                })
+              });
+              const metaResult = await metaResponse.json();
+
+              if (metaResult.status === 'success' && metaResult.services) {
+                metadataServices = metaResult.services;
+                metadataMessage = `[OK] ${metaResult.message}`;
+                const entityTypes = metadataServices.filter(s => s.type === 'EntityType');
+                const entitySets = metadataServices.filter(s => s.type === 'EntitySet');
+                const funcImports = metadataServices.filter(s => s.type === 'FunctionImport');
+                setSandboxOutput(prev => prev +
+                  `OData Metadata: ${metadataMessage}\n` +
+                  `  → EntityTypes: ${entityTypes.length} | EntitySets: ${entitySets.length} | FunctionImports: ${funcImports.length}\n`
+                );
+              } else {
+                metadataMessage = `[INFO] ${metaResult.message || 'Metadata not available'}`;
+                setSandboxOutput(prev => prev + `OData Metadata: ${metadataMessage}\n`);
+              }
+            } catch (metaErr) {
+              metadataMessage = `[WARN] Metadata fetch failed: ${metaErr instanceof Error ? metaErr.message : 'Unknown error'}`;
+              setSandboxOutput(prev => prev + `OData Metadata: ${metadataMessage}\n`);
+            }
+          }
+
+          setSandboxOutput(prev => prev + `\nExecuting ABAP Unit validation against live context...\n\n`);
           await new Promise(resolve => setTimeout(resolve, 500));
 
           // Map results: if tenant is NOT reachable, mark connectivity-dependent tests as Failed
@@ -209,8 +252,26 @@ export const useTestExecution = (projectId: string, project: Project | null, set
           finalReport += `==================================================\n\n`;
           finalReport += `Tenant: ${project.s4Config!.url}\n`;
           finalReport += `Authentication: ${project.s4Config!.authType || 'basic'}\n`;
-          finalReport += `Connectivity: ${tenantReachable ? 'CONNECTED' : 'FAILED'}\n\n`;
-          finalReport += `Summary:\n`;
+          finalReport += `Connectivity: ${tenantReachable ? 'CONNECTED' : 'FAILED'}\n`;
+
+          if (metadataServices.length > 0) {
+            const entityTypes = metadataServices.filter(s => s.type === 'EntityType');
+            const entitySets = metadataServices.filter(s => s.type === 'EntitySet');
+            const funcImports = metadataServices.filter(s => s.type === 'FunctionImport');
+            finalReport += `OData Integration: VERIFIED\n`;
+            finalReport += `  EntityTypes: ${entityTypes.length} | EntitySets: ${entitySets.length} | FunctionImports: ${funcImports.length}\n`;
+            finalReport += `\n  Available OData Services:\n`;
+            entitySets.slice(0, 15).forEach(s => {
+              finalReport += `    • ${s.name}\n`;
+            });
+            if (entitySets.length > 15) {
+              finalReport += `    ... and ${entitySets.length - 15} more\n`;
+            }
+          } else if (tenantReachable) {
+            finalReport += `OData Integration: ${metadataMessage}\n`;
+          }
+
+          finalReport += `\nSummary:\n`;
           finalReport += `- Total Tests: ${results.length}\n`;
           finalReport += `- Passed:      ${passed}\n`;
           finalReport += `- Failed:      ${failed}\n\n`;
