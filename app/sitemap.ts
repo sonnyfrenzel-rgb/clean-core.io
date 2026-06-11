@@ -23,7 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/abap-custom-code-analyse`,
+      url: `${baseUrl}/abap-custom-code-analysis`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,

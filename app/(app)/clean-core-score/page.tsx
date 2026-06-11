@@ -4,14 +4,14 @@ import Link from 'next/link';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = {
-  title: 'SAP Clean Core Score & TCO Analyse | Clean-Core.io',
-  description: 'Erfahren Sie, wie der Clean Core Score berechnet wird und wie Sie Ihre Upgrade-Aufwände durch Entkopplung um bis zu 80% senken können.',
+  title: 'SAP Clean Core Score & TCO Analysis | Clean-Core.io',
+  description: 'Learn how the Clean Core Score is calculated and how to reduce your upgrade efforts by up to 80% via decoupling.',
   alternates: {
     canonical: 'https://clean-core.io/clean-core-score',
   },
   openGraph: {
-    title: 'SAP Clean Core Score & TCO Analyse | Clean-Core.io',
-    description: 'Erfahren Sie, wie der Clean Core Score berechnet wird und wie Sie Ihre Upgrade-Aufwände durch Entkopplung um bis zu 80% senken können.',
+    title: 'SAP Clean Core Score & TCO Analysis | Clean-Core.io',
+    description: 'Learn how the Clean Core Score is calculated and how to reduce your upgrade efforts by up to 80% via decoupling.',
     url: 'https://clean-core.io/clean-core-score',
     type: 'website',
   }
@@ -19,12 +19,12 @@ export const metadata: Metadata = {
 
 const faqs = [
   {
-    question: "Was bedeutet ein Clean Core Score von 100%?",
-    answer: "Ein Score von 100% signalisiert, dass alle kundenspezifischen Erweiterungen vollständig regelkonform implementiert wurden. Das bedeutet, dass In-App-Modifikationen nur über freigegebene Key-User Apps laufen und Side-by-Side BTP-Erweiterungen ausschließlich über zertifizierte Schnittstellen kommunizieren. Das SAP-System ist zu 100% upgradebereit."
+    question: "What does a Clean Core Score of 100% mean?",
+    answer: "A score of 100% signals that all customer-specific extensions are fully compliant. This means in-app modifications only run through released key-user apps, and side-by-side BTP extensions communicate exclusively via certified interfaces. The SAP system is 100% upgrade-ready."
   },
   {
-    question: "Wie hängen Clean Core Score und TCO zusammen?",
-    answer: "Je niedriger der Clean Core Score ist, desto höher sind die laufenden Betriebskosten (Total Cost of Ownership, TCO). Modifikationen müssen bei jedem SAP Support Package aufwendig nachgetestet und korrigiert werden. Ein hoher Score minimiert diesen Testaufwand dramatisch."
+    question: "How are the Clean Core Score and TCO connected?",
+    answer: "The lower the Clean Core Score, the higher the ongoing operating costs (Total Cost of Ownership, TCO). Modifications must be extensively re-tested and corrected for each SAP Support Package. A high score dramatically minimizes this testing effort."
   }
 ];
 
@@ -55,7 +55,7 @@ export default function CleanCoreScorePage() {
           href="/" 
           className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-slate-50 px-5 py-2.5 rounded-full border border-gray-200 hover:border-green-200"
         >
-          <ArrowLeft size={14} /> Zurück zur Startseite
+          <ArrowLeft size={14} /> Back to Homepage
         </Link>
       </div>
 
@@ -70,7 +70,7 @@ export default function CleanCoreScorePage() {
             SAP Clean Core <span className="text-green-400">Score</span>
           </h1>
           <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
-            Messen Sie die Zukunftsfähigkeit Ihres SAP ERP. Berechnen Sie die Einhaltung offizieller SAP Clean Core Guidelines und prognostizieren Sie Ihre TCO-Einsparungen.
+            Measure the future-readiness of your SAP ERP. Calculate compliance with official SAP Clean Core guidelines and predict your TCO savings.
           </p>
         </div>
       </div>
@@ -80,54 +80,54 @@ export default function CleanCoreScorePage() {
         {/* Left 2 Columns: Text content */}
         <div className="md:col-span-2 space-y-8">
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-950">
-              Was ist der Clean Core Score?
+            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+              What is the Clean Core Score?
             </h2>
             <p className="text-gray-700 leading-relaxed font-medium">
-              Der <strong>SAP Clean Core Score</strong> ist die zentrale Kennzahl (KPI) zur Bewertung des Entkopplungsgrades kundenspezifischer ABAP-Modifikationen. Er zeigt auf einer Skala von 0 % (vollständig modifiziertes Legacy-System) bis 100 % (Standard-ERP ohne Modifikationen) an, wie reibungslos Ihr System aktualisiert werden kann.
+              The <strong>SAP Clean Core Score</strong> is the key metric (KPI) for assessing the degree of decoupling of customer-specific ABAP modifications. On a scale of 0% (fully modified legacy system) to 100% (standard ERP without modifications), it indicates how smoothly your system can be upgraded.
             </p>
             <p className="text-gray-700 leading-relaxed font-medium">
-              Durch die Einhaltung eines „sauberen Kerns“ stellen Unternehmen sicher, dass Kernprozesse stabil bleiben, während Innovationen side-by-side auf der <strong>SAP Business Technology Platform (BTP)</strong> oder in-app über freigegebene Schnittstellen realisiert werden.
+              By maintaining a "clean core," companies ensure that core processes remain stable, while innovations are realized side-by-side on the <strong>SAP Business Technology Platform (BTP)</strong> or in-app via released interfaces.
             </p>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-950">
-              Die Berechnungsgrundlagen der KPI
+            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+              The Calculation Basis of the KPI
             </h2>
             <p className="text-gray-700 leading-relaxed font-medium">
-              Unser Analysealgorithmus bewertet hochgeladene Custom-Code-Projekte anhand von vier zentralen Säulen:
+              Our analysis algorithm evaluates uploaded custom code projects based on four key pillars:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-slate-50 border border-gray-150 p-6 rounded-2xl space-y-2">
                 <ShieldCheck className="text-green-600" size={24} />
-                <h3 className="text-base font-bold text-gray-950">Schnittstellen-Freigabe</h3>
+                <h3 className="text-base font-bold text-gray-955">API & Interface Release</h3>
                 <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                  Prüft, ob verwendete SAP APIs und Data Dictionary Objekte offiziell von SAP für Cloud-Erweiterungen freigegeben sind.
+                  Checks whether the SAP APIs and Data Dictionary objects used are officially released by SAP for cloud extensions.
                 </p>
               </div>
 
               <div className="bg-slate-50 border border-gray-150 p-6 rounded-2xl space-y-2">
                 <Activity className="text-green-600" size={24} />
-                <h3 className="text-base font-bold text-gray-950">Kopplungsgrad (Coupling)</h3>
+                <h3 className="text-base font-bold text-gray-955">Degree of Coupling</h3>
                 <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                  Misst, wie stark kundenspezifische Tabellen und Geschäftsabläufe mit SAP ERP-Modulen verwoben sind.
+                  Measures how strongly custom tables and business processes are interwoven with SAP ERP modules.
                 </p>
               </div>
 
               <div className="bg-slate-50 border border-gray-150 p-6 rounded-2xl space-y-2">
                 <Sparkles className="text-green-600" size={24} />
-                <h3 className="text-base font-bold text-gray-950">Modernes ABAP Cloud</h3>
+                <h3 className="text-base font-bold text-gray-955">Modern ABAP Cloud</h3>
                 <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                  Valdiert die Nutzung von modernem ABAP Cloud Syntax (RAP Model) anstelle veralteter ABAP Reports.
+                  Validates the usage of modern ABAP Cloud syntax (RAP Model) instead of outdated legacy ABAP reports.
                 </p>
               </div>
 
               <div className="bg-slate-50 border border-gray-150 p-6 rounded-2xl space-y-2">
                 <TrendingUp className="text-green-600" size={24} />
-                <h3 className="text-base font-bold text-gray-950">TCO Optimierungspotenzial</h3>
+                <h3 className="text-base font-bold text-gray-955">TCO Optimization Potential</h3>
                 <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                  Berechnet die Reduktion von Test- und Entwicklungskosten bei zukünftigen System-Upgrades.
+                  Calculates the reduction in testing and development costs for future system upgrades.
                 </p>
               </div>
             </div>
@@ -137,19 +137,19 @@ export default function CleanCoreScorePage() {
         {/* Right Column: Key Metrics / Sidebar */}
         <div className="space-y-6">
           <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 space-y-6">
-            <h3 className="font-black text-lg text-gray-950 uppercase tracking-tight">Vorteile auf einen Blick</h3>
+            <h3 className="font-black text-lg text-gray-955 uppercase tracking-tight">Benefits at a Glance</h3>
             <ul className="space-y-3 font-bold text-sm text-gray-700">
               <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> Klare KPI für das IT-Management
+                <Check className="text-green-600 shrink-0" size={16} /> Clear KPI for IT management
               </li>
               <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> Benchmarking gegen SAP-Best-Practices
+                <Check className="text-green-600 shrink-0" size={16} /> Benchmarking against SAP best practices
               </li>
               <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> Identifikation kritischer Kopplungen
+                <Check className="text-green-600 shrink-0" size={16} /> Identification of critical couplings
               </li>
               <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> Bis zu 80% Einsparung bei Testing
+                <Check className="text-green-600 shrink-0" size={16} /> Up to 80% savings in testing
               </li>
             </ul>
             <div className="pt-4 border-t border-gray-200">
@@ -157,19 +157,19 @@ export default function CleanCoreScorePage() {
                 href="/?auth=signup" 
                 className="block text-center bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all text-sm"
               >
-                Score berechnen
+                Calculate Score
               </Link>
             </div>
           </div>
 
           <div className="border border-slate-200 rounded-[2rem] p-6 space-y-4 bg-white">
-            <h3 className="font-black text-sm text-gray-400 uppercase tracking-wider">Verwandte Themen</h3>
+            <h3 className="font-black text-sm text-gray-400 uppercase tracking-wider">Related Topics</h3>
             <div className="space-y-2 font-bold text-sm">
-              <Link href="/abap-custom-code-analyse" className="block text-green-600 hover:underline">
-                → ABAP Custom Code Analyse
+              <Link href="/abap-custom-code-analysis" className="block text-green-600 hover:underline">
+                → ABAP Custom Code Analysis
               </Link>
               <Link href="/sap-tier-2-extensions" className="block text-green-600 hover:underline">
-                → ABAP Cloud & Tier-2-Extensions
+                → ABAP Cloud & Tier-2 Extensions
               </Link>
             </div>
           </div>
@@ -178,7 +178,7 @@ export default function CleanCoreScorePage() {
 
       {/* FAQs */}
       <div className="bg-slate-50 border border-gray-200 rounded-[2.5rem] p-8 space-y-6">
-        <h2 className="text-2xl font-black text-gray-950">Häufig gestellte Fragen (FAQ)</h2>
+        <h2 className="text-2xl font-black text-gray-955">Frequently Asked Questions (FAQ)</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-bold text-sm">
           {faqs.map((faq, idx) => (
             <div key={idx} className="space-y-2">
