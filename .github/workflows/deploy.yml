@@ -49,6 +49,8 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true'
+          FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099'
+          FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080'
 
       - name: Run End-to-End Tests
         run: npx playwright test
@@ -56,6 +58,8 @@ jobs:
           NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.TEST_GEMINI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.TEST_GEMINI_API_KEY }}
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true'
+          FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099'
+          FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080'
 
       - name: Generate QE Quality Engineering Report
         run: npm run build:report
