@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUrlSafe } from '@/lib/url-validation';
+import { verifyRequestAuth } from '@/lib/firebase-admin';
 
 /**
  * POST /api/fetch-odata-metadata
@@ -280,6 +281,14 @@ function extractServicesFromCatalogXml(xml: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    const decodedToken = await verifyRequestAuth(req);
+    if (!decodedToken) {
+      return NextResponse.json(
+        { status: 'failed', message: 'Authentication required.' },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const { servicePath } = body;
 

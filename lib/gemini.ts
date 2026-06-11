@@ -28,7 +28,10 @@ export async function callGemini(
 
   const response = await fetch('/api/gemini', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {}),
+    },
     body: JSON.stringify({
       prompt,
       model: modelName,

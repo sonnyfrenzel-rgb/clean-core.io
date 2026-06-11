@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
+import { verifyRequestAuth } from '@/lib/firebase-admin';
 
 export async function GET(request: Request) {
+  // Auth gate: only logged-in users can initiate Jira OAuth
+  const decodedToken = await verifyRequestAuth(request);
+  if (!decodedToken) {
+    return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+  }
+
   // Construct the OAuth provider's authorization URL
   const { origin } = new URL(request.url);
   const redirectUri = `${origin}/api/auth/jira/callback`;

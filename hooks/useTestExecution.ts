@@ -202,9 +202,13 @@ export const useTestExecution = (projectId: string, project: Project | null, set
             await new Promise(resolve => setTimeout(resolve, 300));
 
             try {
+              const token = await getAuth().currentUser?.getIdToken();
               const metaResponse = await fetch('/api/fetch-s4-metadata', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                  'Content-Type': 'application/json',
+                  ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
                 body: JSON.stringify({
                   url: project.s4Config!.url,
                   username: project.s4Config!.username || '',

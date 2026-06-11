@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
+import { verifyRequestAuth } from '@/lib/firebase-admin';
 
 export async function POST(request: Request) {
   try {
+    const decodedToken = await verifyRequestAuth(request);
+    if (!decodedToken) {
+      return NextResponse.json(
+        { error: 'Authentication required.' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { requisitionIds, companyCode } = body;
 

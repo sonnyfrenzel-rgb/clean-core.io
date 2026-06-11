@@ -264,9 +264,13 @@ export default function TestingSandboxPage() {
     setSandboxOutput(prev => prev + `\n[odata-explorer] Querying OData service catalog from ${s4Url}...\n`);
 
     try {
+      const token = await getAuth().currentUser?.getIdToken();
       const response = await fetch('/api/fetch-odata-metadata', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           url: s4Url,
           username: s4Username,
@@ -309,9 +313,13 @@ export default function TestingSandboxPage() {
     setSandboxOutput(prev => prev + `\n[odata-explorer] Fetching $metadata for ${path}...\n`);
 
     try {
+      const token = await getAuth().currentUser?.getIdToken();
       const response = await fetch('/api/fetch-odata-metadata', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           url: s4Url,
           username: s4Username,
@@ -369,10 +377,12 @@ export default function TestingSandboxPage() {
       }, { merge: true });
 
       // 3. Trigger email notification
+      const token = await getAuth().currentUser?.getIdToken();
       await fetch('/api/request-tenant-access', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           uid,

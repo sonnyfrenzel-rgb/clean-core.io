@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { isHardcodedAdmin, FIREBASE_PROJECT_ID, FIRESTORE_DB_ID } from '@/lib/constants';
+import { verifyRequestAuth } from '@/lib/firebase-admin';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -51,6 +52,15 @@ async function callWithRetry(
 
 export async function POST(request: NextRequest) {
   try {
+    // Server-side auth gate via Admin SDK
+    const decodedToken = await verifyRequestAuth(request);
+    if (!decodedToken) {
+      return NextResponse.json(
+        { error: 'Authentication required.' },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json();
     const {
       prompt,

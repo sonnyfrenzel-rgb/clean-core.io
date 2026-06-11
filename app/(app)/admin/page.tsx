@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
-import { getDb } from '@/lib/firebase';
+import { getDb, getAuth } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { ShieldCheck, ShieldAlert, CheckCircle2, Trash2, User, Mail, FileText, Clock, Search, Shield, UserX, UserCheck, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -97,10 +97,12 @@ export default function AdminConsole() {
       // 3. Dispatch premium Welcome Email to the user in the background
       if (targetReq) {
         try {
+          const token = await getAuth().currentUser?.getIdToken();
           await fetch('/api/send-approval-email', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             },
             body: JSON.stringify({
               email: targetReq.email,
@@ -189,10 +191,12 @@ export default function AdminConsole() {
       // 3. Dispatch premium welcome / deactivation email
       if (targetReq) {
         try {
+          const token = await getAuth().currentUser?.getIdToken();
           await fetch(currentAllowed ? '/api/send-tenant-revoke-email' : '/api/send-tenant-approval-email', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             },
             body: JSON.stringify({
               email: targetReq.email,

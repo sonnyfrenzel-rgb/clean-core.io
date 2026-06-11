@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUrlSafe } from '@/lib/url-validation';
+import { verifyRequestAuth } from '@/lib/firebase-admin';
 
 /**
  * POST /api/fetch-s4-metadata
@@ -198,6 +199,14 @@ function parseMetadataXml(xmlText: string): { name: string; type: 'EntityType' |
 
 export async function POST(req: NextRequest) {
   try {
+    const decodedToken = await verifyRequestAuth(req);
+    if (!decodedToken) {
+      return NextResponse.json(
+        { status: 'failed', message: 'Authentication required.' },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const { url, authType, btpDestinationJson } = body;
 

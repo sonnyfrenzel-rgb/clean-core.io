@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { APP_VERSION } from '@/lib/version';
+import { verifyRequestAuth } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
+    const decodedToken = await verifyRequestAuth(request);
+    if (!decodedToken) {
+      return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { email, name } = body;
 
@@ -12,11 +18,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Determine domain and urls based on host
-    const host = request.headers.get('host') || 'localhost:3000';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const dashboardUrl = `${protocol}://${host}/dashboard`;
-    const whitepaperUrl = `${protocol}://${host}/Enterprise_Security_Compliance_Whitepaper.pdf`;
+    // Hardcoded base URL to prevent Host-Header injection
+    const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.clean-core.io';
+    const dashboardUrl = `${BASE_URL}/dashboard`;
+    const whitepaperUrl = `${BASE_URL}/Enterprise_Security_Compliance_Whitepaper.pdf`;
 
     const emailSubject = `🎉 Welcome to Clean-Core.io: Pilot Access Approved!`;
     

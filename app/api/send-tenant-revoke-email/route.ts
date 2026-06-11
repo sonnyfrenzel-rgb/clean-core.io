@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { APP_VERSION } from '@/lib/version';
+import { verifyRequestAuth } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
+    const decodedToken = await verifyRequestAuth(request);
+    if (!decodedToken) {
+      return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { email, name } = body;
 
@@ -10,9 +16,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const host = request.headers.get('host') || 'localhost:3000';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const dashboardUrl = `${protocol}://${host}/dashboard`;
+    // Hardcoded base URL to prevent Host-Header injection
+    const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.clean-core.io';
+    const dashboardUrl = `${BASE_URL}/dashboard`;
 
     const emailSubject = `🔒 S/4HANA Live Tenant Integration Suspended`;
     const emailHtml = `
