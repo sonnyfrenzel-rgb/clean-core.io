@@ -11,6 +11,11 @@ import { getAuth } from 'firebase-admin/auth';
 function ensureInitialized() {
   if (getApps().length > 0) return;
 
+  // Connect Admin SDK to Auth emulator in test/dev mode
+  if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' && !process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+    process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+  }
+
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
   if (serviceAccountJson) {
