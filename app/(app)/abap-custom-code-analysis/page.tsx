@@ -4,27 +4,27 @@ import Link from 'next/link';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = {
-  title: 'ABAP Custom Code Analyse für S/4HANA Upgrades | Clean-Core.io',
-  description: 'Automatische statische Analyse von ABAP Legacy Code, Erkennung von Tabellenzugriffen und Zuordnung zu offiziellen Standard-SAP-APIs.',
+  title: 'ABAP Custom Code Analysis for S/4HANA Upgrades | Clean-Core.io',
+  description: 'Automated static analysis of legacy ABAP code, database table access detection, and mapping to official released standard SAP APIs.',
   alternates: {
-    canonical: 'https://clean-core.io/abap-custom-code-analyse',
+    canonical: 'https://clean-core.io/abap-custom-code-analysis',
   },
   openGraph: {
-    title: 'ABAP Custom Code Analyse für S/4HANA Upgrades | Clean-Core.io',
-    description: 'Automatische statische Analyse von ABAP Legacy Code, Erkennung von Tabellenzugriffen und Zuordnung zu offiziellen Standard-SAP-APIs.',
-    url: 'https://clean-core.io/abap-custom-code-analyse',
+    title: 'ABAP Custom Code Analysis for S/4HANA Upgrades | Clean-Core.io',
+    description: 'Automated static analysis of legacy ABAP code, database table access detection, and mapping to official released standard SAP APIs.',
+    url: 'https://clean-core.io/abap-custom-code-analysis',
     type: 'website',
   }
 };
 
 const faqs = [
   {
-    question: "Warum scheitern klassische S/4HANA Upgrades?",
-    answer: "Viele SAP-Systeme weisen eine starke Verflechtung (enge Kopplung) zwischen kundenspezifischem ABAP-Code und den Standard-Tabellen von SAP auf. Bei Upgrades verändern sich die zugrunde liegenden Datenstrukturen, was zu Systemfehlern und massivem Testaufwand führt."
+    question: "Why do classic S/4HANA upgrades fail?",
+    answer: "Many SAP systems exhibit tight coupling between custom ABAP code and standard SAP tables. During upgrades, these underlying data structures change, leading to system errors and massive testing efforts."
   },
   {
-    question: "Wie hilft die automatisierte ABAP-Analyse?",
-    answer: "Die Analyse isoliert Modifikationen im ABAP-Code und ordnet Direktzugriffe auf Tabellen wie VBAK, LIKP oder BSEG automatisch den freigegebenen Standard-OData/REST-APIs im SAP API Business Hub zu. Dadurch wird die Kopplung aufgelöst."
+    question: "How does automated ABAP analysis help?",
+    answer: "The analysis isolates modifications in the ABAP code and automatically maps direct access to tables like VBAK, LIKP, or BSEG to released standard OData/REST APIs in the SAP API Business Hub, decoupling the system."
   }
 ];
 
@@ -55,7 +55,7 @@ export default function AbapAnalysisPage() {
           href="/" 
           className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-slate-50 px-5 py-2.5 rounded-full border border-gray-200 hover:border-green-200"
         >
-          <ArrowLeft size={14} /> Zurück zur Startseite
+          <ArrowLeft size={14} /> Back to Homepage
         </Link>
       </div>
 
@@ -67,10 +67,10 @@ export default function AbapAnalysisPage() {
             <Cpu size={14} /> Core Technology
           </div>
           <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none text-slate-50">
-            ABAP Custom Code <span className="text-green-400">Analyse</span>
+            ABAP Custom Code <span className="text-green-400">Analysis</span>
           </h1>
           <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
-            Entkoppeln Sie Ihre Altsysteme. Analysieren Sie unstrukturierten ABAP-Code und transformieren Sie ihn automatisch in eine zukunftssichere Side-by-Side BTP Architektur.
+            Decouple your legacy systems. Analyze unstructured ABAP code and automatically transform it into a future-proof side-by-side BTP architecture.
           </p>
         </div>
       </div>
@@ -80,20 +80,20 @@ export default function AbapAnalysisPage() {
         {/* Left 2 Columns: Text content */}
         <div className="md:col-span-2 space-y-8">
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-950">
-              Die Herausforderung: Custom Code als Upgrade-Bremse
+            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+              The Challenge: Custom Code as an Upgrade Blocker
             </h2>
             <p className="text-gray-700 leading-relaxed font-medium">
-              In jahrzehntelang gewachsenen SAP-ERP-Systemen befinden sich oft tausende Zeilen kundeneigener ABAP-Entwicklungen. Viele davon greifen direkt auf Standard-Tabellen oder nicht freigegebene SAP-Funktionsbausteine zu. Bei einem Upgrade auf <strong>SAP S/4HANA</strong> führt diese enge Kopplung zu Systembrüchen, hohen Modernisierungskosten und monatelangen Testphasen.
+              In SAP ERP systems that have grown over decades, there are often thousands of lines of custom ABAP developments. Many of these directly access standard tables or unreleased SAP function modules. During an upgrade to <strong>SAP S/4HANA</strong>, this tight coupling leads to system breakages, high modernization costs, and months of testing phases.
             </p>
             <p className="text-gray-700 leading-relaxed font-medium">
-              Die manuelle <strong>ABAP Custom Code Analyse</strong> und anschließende Refaktorisierung ist extrem zeitaufwendig. Genau hier setzt die automatisierte Plattform von Clean-Core.io an: Unser Tool liest Ihren Legacy-ABAP-Code, parst Syntaxbäume und analysiert Datenflüsse, um Abhängigkeiten automatisch zu isolieren.
+              Manual <strong>ABAP custom code analysis</strong> and subsequent refactoring is extremely time-consuming. This is exactly where the automated platform of Clean-Core.io comes in: Our tool reads your legacy ABAP code, parses syntax trees, and analyzes data flows to automatically isolate dependencies.
             </p>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-950">
-              Wie die automatisierte Pipeline funktioniert
+            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+              How the Automated Pipeline Works
             </h2>
             <div className="space-y-4">
               <div className="flex gap-4">
@@ -101,9 +101,9 @@ export default function AbapAnalysisPage() {
                   <ShieldCheck size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-950">Static AST Parsing</h3>
+                  <h3 className="text-lg font-bold text-gray-955">Static AST Parsing</h3>
                   <p className="text-gray-600 text-sm font-medium mt-1">
-                    Der ABAP-Quellcode wird in abstrakte Syntaxbäume (AST) zerlegt. Dadurch erkennen wir Verzweigungen, Datenbankoperationen (SELECT, INSERT, UPDATE) und externe Aufrufe.
+                    The ABAP source code is broken down into abstract syntax trees (AST). This allows us to detect control flows, database operations (SELECT, INSERT, UPDATE), and external calls.
                   </p>
                 </div>
               </div>
@@ -113,9 +113,9 @@ export default function AbapAnalysisPage() {
                   <Link2 size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-950">SAP API Hub Alignment</h3>
+                  <h3 className="text-lg font-bold text-gray-955">SAP API Hub Alignment</h3>
                   <p className="text-gray-600 text-sm font-medium mt-1">
-                    Gefundene Tabellenzugriffe werden mit der offiziellen API Business Hub Datenbank abgeglichen. Das System sucht automatisch nach freigegebenen OData- oder REST-Schnittstellen (z. B. Business Partner, Sales Order APIs) und schlägt diese als Ersatz vor.
+                    Detected table accesses are matched against the official API Business Hub database. The system automatically searches for released OData or REST interfaces (e.g., Business Partner, Sales Order APIs) and suggests them as replacements.
                   </p>
                 </div>
               </div>
@@ -125,9 +125,9 @@ export default function AbapAnalysisPage() {
                   <Activity size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-950">Target Architecture Routing</h3>
+                  <h3 className="text-lg font-bold text-gray-955">Target Architecture Routing</h3>
                   <p className="text-gray-600 text-sm font-medium mt-1">
-                    Auf Basis des ermittelten Kopplungsgrades entscheidet das Routing, ob der Code In-App in ABAP Cloud (RAP) umgeschrieben oder als Side-by-Side Service auf SAP BTP (Node.js CAP) entkoppelt werden soll.
+                    Based on the determined degree of coupling, the router decides whether the code should be rewritten in-app in ABAP Cloud (RAP) or decoupled as a side-by-side service on SAP BTP (Node.js CAP).
                   </p>
                 </div>
               </div>
@@ -138,19 +138,19 @@ export default function AbapAnalysisPage() {
         {/* Right Column: Key Metrics / Sidebar */}
         <div className="space-y-6">
           <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 space-y-6">
-            <h3 className="font-black text-lg text-gray-950 uppercase tracking-tight">Vorteile auf einen Blick</h3>
+            <h3 className="font-black text-lg text-gray-955 uppercase tracking-tight">Benefits at a glance</h3>
             <ul className="space-y-3 font-bold text-sm text-gray-700">
               <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> 80% schnellere Code-Bewertung
+                <Check className="text-green-600 shrink-0" size={16} /> 80% faster code assessment
               </li>
               <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> Automatische OData API-Zuordnung
+                <Check className="text-green-600 shrink-0" size={16} /> Automatic OData API mapping
               </li>
               <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> SAP Clean Core Richtlinienkonform
+                <Check className="text-green-600 shrink-0" size={16} /> SAP Clean Core guideline compliant
               </li>
               <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> Reduziert Technische Upgradeschulden
+                <Check className="text-green-600 shrink-0" size={16} /> Reduces technical upgrade debt
               </li>
             </ul>
             <div className="pt-4 border-t border-gray-200">
@@ -158,19 +158,19 @@ export default function AbapAnalysisPage() {
                 href="/?auth=signup" 
                 className="block text-center bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all text-sm"
               >
-                Kostenlos analysieren
+                Analyze for Free
               </Link>
             </div>
           </div>
 
           <div className="border border-slate-200 rounded-[2rem] p-6 space-y-4 bg-white">
-            <h3 className="font-black text-sm text-gray-400 uppercase tracking-wider">Verwandte Themen</h3>
+            <h3 className="font-black text-sm text-gray-400 uppercase tracking-wider">Related Topics</h3>
             <div className="space-y-2 font-bold text-sm">
               <Link href="/clean-core-score" className="block text-green-600 hover:underline">
-                → Was ist der Clean Core Score?
+                → What is the Clean Core Score?
               </Link>
               <Link href="/sap-tier-2-extensions" className="block text-green-600 hover:underline">
-                → ABAP Cloud & Tier-2-Extensions
+                → ABAP Cloud & Tier-2 Extensions
               </Link>
             </div>
           </div>
@@ -179,11 +179,11 @@ export default function AbapAnalysisPage() {
 
       {/* FAQs */}
       <div className="bg-slate-50 border border-gray-200 rounded-[2.5rem] p-8 space-y-6">
-        <h2 className="text-2xl font-black text-gray-950">Häufig gestellte Fragen (FAQ)</h2>
+        <h2 className="text-2xl font-black text-gray-955">Frequently Asked Questions (FAQ)</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-bold text-sm">
           {faqs.map((faq, idx) => (
             <div key={idx} className="space-y-2">
-              <h3 className="text-gray-950 font-black">{faq.question}</h3>
+              <h3 className="text-gray-955 font-black">{faq.question}</h3>
               <p className="text-gray-600 font-medium leading-relaxed">{faq.answer}</p>
             </div>
           ))}

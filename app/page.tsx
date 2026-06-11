@@ -25,22 +25,22 @@ import LandingSlideshow from '@/components/LandingSlideshow';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = {
-  title: 'SAP Clean Core Analyse & S/4HANA Modernisierung | Clean-Core.io',
-  description: 'Automatisierte ABAP Custom Code Analyse und Transformation in Cloud-Native Node.js (CAP) gemäß offiziellen SAP Clean Core Richtlinien.',
+  title: 'SAP Clean Core Analysis & S/4HANA Modernization | Clean-Core.io',
+  description: 'Automated ABAP custom code analysis and transformation to cloud-native Node.js (CAP) following official SAP Clean Core guidelines.',
   alternates: {
     canonical: 'https://clean-core.io',
   },
   openGraph: {
-    title: 'SAP Clean Core Analyse & S/4HANA Modernisierung | Clean-Core.io',
-    description: 'Automatisierte ABAP Custom Code Analyse und Transformation in Cloud-Native Node.js (CAP) gemäß offiziellen SAP Clean Core Richtlinien.',
+    title: 'SAP Clean Core Analysis & S/4HANA Modernization | Clean-Core.io',
+    description: 'Automated ABAP custom code analysis and transformation to cloud-native Node.js (CAP) following official SAP Clean Core guidelines.',
     url: 'https://clean-core.io',
     type: 'website',
     siteName: 'Clean-Core.io',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SAP Clean Core Analyse & S/4HANA Modernisierung | Clean-Core.io',
-    description: 'Automatisierte ABAP Custom Code Analyse und Transformation in Cloud-Native Node.js (CAP) gemäß offiziellen SAP Clean Core Richtlinien.',
+    title: 'SAP Clean Core Analysis & S/4HANA Modernization | Clean-Core.io',
+    description: 'Automated ABAP custom code analysis and transformation to cloud-native Node.js (CAP) following official SAP Clean Core guidelines.',
   }
 };
 
@@ -70,7 +70,7 @@ export default function Home() {
           "price": "0",
           "priceCurrency": "USD"
         },
-        "description": "Automatische ABAP-Codeanalyse und S/4HANA Modernisierung nach offiziellen SAP Clean Core Richtlinien."
+        "description": "Automated ABAP custom code analysis and S/4HANA modernization following official SAP Clean Core guidelines."
       },
       {
         "@type": "FAQPage",
@@ -78,18 +78,18 @@ export default function Home() {
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "Was ist die SAP Clean Core Strategie?",
+            "name": "What is the SAP Clean Core strategy?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Die Clean Core Strategie hält den ERP-Standard frei von Kundeneigenentwicklungen, indem Erweiterungen über in-app Key-User Tools oder side-by-side auf SAP BTP ausgelagert werden."
+              "text": "The Clean Core strategy keeps the ERP standard free of custom developments by extending via in-app key-user tools or side-by-side on SAP BTP."
             }
           },
           {
             "@type": "Question",
-            "name": "Wie hilft Clean-Core.io bei der ABAP Modernisierung?",
+            "name": "How does Clean-Core.io help with ABAP modernization?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Clean-Core.io analysiert ABAP-Code automatisch und konvertiert ihn in SAP BTP CAP Node.js Services oder Cloud-fähige RAP-Komponenten."
+              "text": "Clean-Core.io automatically analyzes ABAP code and converts it to SAP BTP CAP Node.js services or cloud-ready RAP components."
             }
           }
         ]
@@ -269,7 +269,7 @@ export default function Home() {
                 icon: <Globe className="w-8 h-8 text-green-600" />,
                 title: 'SAP API Hub Mapping',
                 desc: 'Directly maps legacy database table operations to released, public standard SAP APIs with interactive links to official API Hub listings.',
-                link: '/abap-custom-code-analyse'
+                link: '/abap-custom-code-analysis'
               },
               {
                 icon: <Cpu className="w-8 h-8 text-green-600" />,
@@ -287,7 +287,7 @@ export default function Home() {
                 icon: <ShieldCheck className="w-8 h-8 text-green-600" />,
                 title: 'ADT Cockpit Simulation',
                 desc: 'Generates standard ABAP Unit classes with local database doubles, simulating execution in a virtual Eclipse ADT Test Cockpit console.',
-                link: '/abap-custom-code-analyse'
+                link: '/abap-custom-code-analysis'
               },
               {
                 icon: <Layers className="w-8 h-8 text-green-600" />,
@@ -320,7 +320,7 @@ export default function Home() {
                     href={feature.link}
                     className="text-green-600 hover:text-green-700 font-bold text-sm inline-flex items-center gap-1 hover:underline mt-auto"
                   >
-                    Mehr erfahren <ArrowRight size={14} />
+                    Learn more <ArrowRight size={14} />
                   </Link>
                 )}
               </div>
