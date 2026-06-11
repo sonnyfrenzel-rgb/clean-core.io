@@ -182,7 +182,7 @@ export default function LandingSlideshow() {
               transition={{ duration: 0.4, ease: "easeOut" }}
               className="absolute inset-0 p-4 sm:p-6 md:p-10 flex items-center justify-center"
             >
-              <div className="w-full h-full relative rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-gray-200/50 bg-white flex items-center justify-center">
+              <div className="w-full aspect-[16/10] relative rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-gray-200/50 bg-white flex items-center justify-center">
                 {/* Fallback UI if images are not uploaded yet */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 bg-gray-50 z-0 text-center p-4">
                   {slides[currentIndex].icon}
@@ -196,7 +196,7 @@ export default function LandingSlideshow() {
                   alt={slides[currentIndex].title}
                   fill
                   sizes="(max-width: 1024px) 100vw, 66vw"
-                  className="object-cover object-left-top md:object-top relative z-10 transition-opacity duration-300"
+                  className="object-cover relative z-10 transition-opacity duration-300"
                   onError={(e) => {
                     // Hide image if it fails to load, revealing the fallback UI behind it
                     (e.target as HTMLImageElement).style.opacity = '0';
