@@ -277,11 +277,11 @@ export const useTestExecution = (projectId: string, project: Project | null, set
 
             setSandboxOutput(prev => prev + `  → ${hasMetadata ? '✅ PASSED' : '❌ FAILED'}: ${hasMetadata ? entitySets.length + ' EntitySets found' : 'Metadata unavailable'}\n`);
 
-            // ── TC_ENTITY_*: Individual EntitySet Availability ──
+            // ── TC_ENTITY_*: Individual EntitySet Schema Availability ──
             if (hasMetadata && entitySets.length > 0) {
               setSandboxOutput(prev => prev + `\n[TC_ENTITY] Validating discovered OData EntitySets...\n`);
-              const maxEntities = Math.min(entitySets.length, 8);
-              for (let i = 0; i < maxEntities; i++) {
+              const maxSchemaEntities = Math.min(entitySets.length, 8);
+              for (let i = 0; i < maxSchemaEntities; i++) {
                 const es = entitySets[i];
                 liveResults.push({
                   id: `TC_ES_${String(i + 1).padStart(2, '0')}`,
@@ -294,8 +294,62 @@ export const useTestExecution = (projectId: string, project: Project | null, set
                 });
                 setSandboxOutput(prev => prev + `  → ✅ ${es.name}\n`);
               }
-              if (entitySets.length > maxEntities) {
-                setSandboxOutput(prev => prev + `  ... and ${entitySets.length - maxEntities} more EntitySets available\n`);
+              if (entitySets.length > maxSchemaEntities) {
+                setSandboxOutput(prev => prev + `  ... and ${entitySets.length - maxSchemaEntities} more EntitySets available\n`);
+              }
+
+              // ── TC_READ_*: Live OData GET Reads ──
+              setSandboxOutput(prev => prev + `\n[TC_READ] Executing live OData GET reads against tenant...\n`);
+              const maxReadTests = Math.min(entitySets.length, 5);
+              for (let i = 0; i < maxReadTests; i++) {
+                const es = entitySets[i];
+                setSandboxOutput(prev => prev + `  [${i + 1}/${maxReadTests}] GET ${es.name}?$top=1 ...`);
+
+                try {
+                  const readToken = await getAuth().currentUser?.getIdToken();
+                  const readResp = await fetch('/api/test-s4-odata-read', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      ...(readToken ? { 'Authorization': `Bearer ${readToken}` } : {}),
+                    },
+                    body: JSON.stringify({
+                      url: tenantUrl,
+                      username: project.s4Config!.username || '',
+                      password: project.s4Config!.password || '',
+                      authType: project.s4Config!.authType || 'basic',
+                      btpDestinationJson: project.s4Config!.btpDestinationJson || '',
+                      servicePath: '/sap/opu/odata/sap/API_BUSINESS_PARTNER',
+                      entitySet: es.name,
+                    })
+                  });
+                  const readResult = await readResp.json();
+
+                  const readPassed = readResult.status === 'success';
+                  liveResults.push({
+                    id: `TC_RD_${String(i + 1).padStart(2, '0')}`,
+                    name: `OData Read: ${es.name}`,
+                    description: `Executes GET ${es.name}?$top=1 to verify data accessibility`,
+                    category: 'Business Logic',
+                    priority: 'High' as any,
+                    status: readPassed ? 'Passed' : 'Failed',
+                    message: readPassed
+                      ? `${readResult.recordCount} record(s), fields: [${(readResult.sampleFields || []).join(', ')}]`
+                      : readResult.message || 'OData read failed'
+                  });
+                  setSandboxOutput(prev => prev + ` ${readPassed ? '✅' : '❌'} ${readResult.message}\n`);
+                } catch (readErr) {
+                  liveResults.push({
+                    id: `TC_RD_${String(i + 1).padStart(2, '0')}`,
+                    name: `OData Read: ${es.name}`,
+                    description: `Executes GET ${es.name}?$top=1 to verify data accessibility`,
+                    category: 'Business Logic',
+                    priority: 'High' as any,
+                    status: 'Failed',
+                    message: `Network error: ${readErr instanceof Error ? readErr.message : 'Unknown'}`
+                  });
+                  setSandboxOutput(prev => prev + ` ❌ Network error\n`);
+                }
               }
             }
           } else {
