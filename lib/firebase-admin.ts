@@ -1,15 +1,13 @@
-import { initializeApp, getApps, cert, type ServiceAccount } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
+let adminAppModule: any = null;
+let adminAuthModule: any = null;
 
-/**
- * Singleton Firebase Admin SDK initialisation.
- * 
- * In production (Vercel), uses GOOGLE_APPLICATION_CREDENTIALS or
- * FIREBASE_SERVICE_ACCOUNT_KEY env var.
- * Falls back to Application Default Credentials (ADC) for local dev.
- */
-function ensureInitialized() {
-  if (getApps().length > 0) return;
+async function ensureInitialized() {
+  if (!adminAppModule) {
+    adminAppModule = await import('firebase-admin/app');
+    adminAuthModule = await import('firebase-admin/auth');
+  }
+
+  if (adminAppModule.getApps().length > 0) return;
 
   // Connect Admin SDK to Auth emulator in test/dev mode
   const isEmulatorMode = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true';
@@ -21,8 +19,8 @@ function ensureInitialized() {
 
   if (serviceAccountJson) {
     try {
-      const serviceAccount: ServiceAccount = JSON.parse(serviceAccountJson);
-      initializeApp({ credential: cert(serviceAccount) });
+      const serviceAccount = JSON.parse(serviceAccountJson);
+      adminAppModule.initializeApp({ credential: adminAppModule.cert(serviceAccount) });
       return;
     } catch {
       console.warn('[firebase-admin] Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY, falling back to ADC.');
@@ -31,23 +29,21 @@ function ensureInitialized() {
 
   if (isEmulatorMode) {
     // In emulator mode without service account (CI), init with just projectId
-    initializeApp({ projectId: 'cleancore-491216' });
+    adminAppModule.initializeApp({ projectId: 'cleancore-491216' });
     return;
   }
 
   // Fallback: Application Default Credentials (gcloud auth)
-  initializeApp();
+  adminAppModule.initializeApp();
 }
-
-ensureInitialized();
 
 /**
  * Verify a Firebase ID token from the client.
  * Returns the decoded token or throws.
  */
 export async function verifyIdToken(idToken: string) {
-  ensureInitialized();
-  return getAuth().verifyIdToken(idToken);
+  await ensureInitialized();
+  return adminAuthModule.getAuth().verifyIdToken(idToken);
 }
 
 /**
