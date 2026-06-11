@@ -26,7 +26,7 @@ test.describe('Clean-Core.io Landing Page E2E Tests', () => {
     await page.goto('/');
     
     // Check if the Legal overlay link is present in the footer
-    const legalNoticeLink = page.locator('button:has-text("Impressum"), button:has-text("Legal Notice")').first();
+    const legalNoticeLink = page.locator('button, a').filter({ hasText: /Impressum|Legal Notice/ }).first();
     if (await legalNoticeLink.count() > 0) {
       await expect(legalNoticeLink).toBeVisible();
       // Click the link and verify the modal opens

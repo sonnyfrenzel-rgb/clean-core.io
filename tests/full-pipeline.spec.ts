@@ -99,7 +99,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await expect(page).toHaveTitle(/Clean-Core/i);
 
     // Open Sign-In Modal
-    await page.click('button:has-text("Get Pilot Access")');
+    await page.click('a:has-text("Get Pilot Access"), button:has-text("Get Pilot Access")');
     await page.waitForSelector('input[type="email"]');
 
     // Fill Credentials
