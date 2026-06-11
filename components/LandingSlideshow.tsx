@@ -10,7 +10,7 @@ const slides = [
   {
     id: 'analyze',
     title: 'Deep Code Intelligence',
-    description: 'Legacy ABAP is analyzed in seconds. We extract business rules and dependencies fully automatically – without weeks of workshops.',
+    description: 'Legacy ABAP is analyzed in seconds. Business rules, dependencies, and Clean Core compliance scores are extracted fully automatically.',
     icon: <Code2 className="w-6 h-6" />,
     image: '/screenshots/step-1.jpg',
     color: 'text-blue-600',
@@ -20,7 +20,7 @@ const slides = [
   {
     id: 'design',
     title: 'Cloud-Native Architecture',
-    description: 'From monolith to microservices. Generate a modern, scalable solution design at the push of a button.',
+    description: 'From monolith to SAP RAP. Auto-generated architecture blueprints with CDS views, behavior definitions, and API catalogs.',
     icon: <LayoutTemplate className="w-6 h-6" />,
     image: '/screenshots/step-2.jpg',
     color: 'text-indigo-600',
@@ -30,7 +30,7 @@ const slides = [
   {
     id: 'transform',
     title: 'Automated Refactoring',
-    description: 'Flawless translation from ABAP to Node.js & TypeScript. Clean, maintainable code that follows best practices.',
+    description: 'Flawless transformation from legacy ABAP to Node.js & TypeScript. Clean, maintainable code that follows SAP Clean Core best practices.',
     icon: <Cpu className="w-6 h-6" />,
     image: '/screenshots/step-3.jpg',
     color: 'text-emerald-600',
@@ -39,8 +39,8 @@ const slides = [
   },
   {
     id: 'test',
-    title: 'Isolated Sandbox Validation',
-    description: 'Zero-risk deployment. Auto-generated test cases validate business logic in a secure, isolated environment.',
+    title: 'Live Tenant Validation',
+    description: 'Connect your S/4HANA tenant and validate in real-time: connectivity, authentication, OData schema discovery, and live data reads.',
     icon: <ShieldCheck className="w-6 h-6" />,
     image: '/screenshots/step-4.jpg',
     color: 'text-amber-600',
@@ -50,7 +50,7 @@ const slides = [
   {
     id: 'document',
     title: 'Enterprise Process Specs',
-    description: 'Aligning IT and Business. Automatic generation of BPMN models and detailed process documentation.',
+    description: 'Aligning IT and Business. Automatic generation of BPMN models, Jira integration, and detailed process documentation.',
     icon: <FileText className="w-6 h-6" />,
     image: '/screenshots/step-5.jpg',
     color: 'text-purple-600',
@@ -60,7 +60,7 @@ const slides = [
   {
     id: 'deliver',
     title: 'Ready for Deployment',
-    description: 'The complete package: Source code, executive summary, and QA reports. Ready for production deployment in your cloud.',
+    description: 'The complete package: Source code, tenant validation report, executive summary, and QA reports — ready for production.',
     icon: <Download className="w-6 h-6" />,
     image: '/screenshots/step-6.jpg',
     color: 'text-green-600',
