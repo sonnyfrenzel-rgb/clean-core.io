@@ -12,7 +12,8 @@ function ensureInitialized() {
   if (getApps().length > 0) return;
 
   // Connect Admin SDK to Auth emulator in test/dev mode
-  if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' && !process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+  const isEmulatorMode = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true';
+  if (isEmulatorMode && !process.env.FIREBASE_AUTH_EMULATOR_HOST) {
     process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
   }
 
@@ -26,6 +27,12 @@ function ensureInitialized() {
     } catch {
       console.warn('[firebase-admin] Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY, falling back to ADC.');
     }
+  }
+
+  if (isEmulatorMode) {
+    // In emulator mode without service account (CI), init with just projectId
+    initializeApp({ projectId: 'cleancore-491216' });
+    return;
   }
 
   // Fallback: Application Default Credentials (gcloud auth)
