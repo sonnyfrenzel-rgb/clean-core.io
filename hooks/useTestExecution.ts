@@ -243,18 +243,69 @@ export const useTestExecution = (projectId: string, project: Project | null, set
           setSandboxOutput(prev => prev + `\nExecuting ABAP Unit validation against live context...\n\n`);
           await new Promise(resolve => setTimeout(resolve, 500));
 
-          // Map results: if tenant is NOT reachable, mark connectivity-dependent tests as Failed
-          const results = selectedTestCases.map((tc) => {
-            // Functional and business logic tests require a reachable tenant
-            const requiresTenant = ['Functional', 'Business Logic', 'Transactional'].includes(tc.category || '');
-            const passed = requiresTenant ? tenantReachable : true;
+          // Map results based on actual validation depth:
+          // - Connectivity checks: did the tenant respond at all?
+          // - Auth checks: did we get past authentication (HTTP 2xx/3xx)?
+          // - Metadata checks: could we read OData $metadata?
+          const httpStatus = connectionResult.httpStatus || 0;
+          const isAuthFailed = httpStatus === 401 || httpStatus === 403;
+          const isFullyConnected = tenantReachable && !isAuthFailed;
+          const hasMetadata = metadataServices.length > 0;
 
+          const results = selectedTestCases.map((tc) => {
+            const category = tc.category || '';
+
+            // Connectivity tests: pass if tenant responds at all (even 401)
+            if (category === 'Connectivity' || category === 'Smoke Test') {
+              return {
+                ...tc,
+                status: tenantReachable ? 'Passed' as const : 'Failed' as const,
+                message: tenantReachable
+                  ? `Endpoint reachable (HTTP ${httpStatus})`
+                  : `Tenant unreachable: ${connectionResult.message}`
+              };
+            }
+
+            // Auth/Security tests: pass only if auth succeeded (not 401/403)
+            if (category === 'Security' || category === 'Authorization') {
+              return {
+                ...tc,
+                status: isFullyConnected ? 'Passed' as const : 'Failed' as const,
+                message: isAuthFailed
+                  ? `Authentication rejected (HTTP ${httpStatus}) — verify credentials`
+                  : !tenantReachable
+                    ? `Tenant unreachable: ${connectionResult.message}`
+                    : `Authenticated successfully (HTTP ${httpStatus})`
+              };
+            }
+
+            // Functional/Business/Transactional tests: need full auth + metadata
+            if (['Functional', 'Business Logic', 'Transactional'].includes(category)) {
+              if (!tenantReachable) {
+                return { ...tc, status: 'Failed' as const, message: `Tenant unreachable: ${connectionResult.message}` };
+              }
+              if (isAuthFailed) {
+                return { ...tc, status: 'Failed' as const, message: `Cannot validate — authentication failed (HTTP ${httpStatus}). Verify your credentials.` };
+              }
+              if (!hasMetadata) {
+                return { ...tc, status: 'Failed' as const, message: `Cannot validate — OData $metadata not accessible. The API endpoint may require different permissions or the service path is incorrect.` };
+              }
+              return {
+                ...tc,
+                status: 'Passed' as const,
+                message: `Validated against live tenant (HTTP ${httpStatus}, ${metadataServices.length} OData entities available)`
+              };
+            }
+
+            // Default: pass only with full connection
             return {
               ...tc,
-              status: passed ? 'Passed' as const : 'Failed' as const,
-              message: passed
-                ? `Validated against live tenant ${project.s4Config!.url} (HTTP ${connectionResult.httpStatus || 'OK'})`
-                : `Tenant unreachable: ${connectionResult.message}`
+              status: isFullyConnected ? 'Passed' as const : 'Failed' as const,
+              message: isFullyConnected
+                ? `Validated against live tenant ${project.s4Config!.url} (HTTP ${httpStatus})`
+                : isAuthFailed
+                  ? `Authentication failed (HTTP ${httpStatus})`
+                  : `Tenant unreachable: ${connectionResult.message}`
             };
           });
 
@@ -267,8 +318,9 @@ export const useTestExecution = (projectId: string, project: Project | null, set
           finalReport += `S/4HANA LIVE TENANT VALIDATION REPORT - ${timestamp}\n`;
           finalReport += `==================================================\n\n`;
           finalReport += `Tenant: ${project.s4Config!.url}\n`;
-          finalReport += `Authentication: ${project.s4Config!.authType || 'basic'}\n`;
+          finalReport += `Auth Method: ${project.s4Config!.authType || 'basic'}\n`;
           finalReport += `Connectivity: ${tenantReachable ? 'CONNECTED' : 'FAILED'}\n`;
+          finalReport += `Auth Status: ${isAuthFailed ? 'REJECTED (HTTP ' + httpStatus + ')' : isFullyConnected ? 'OK' : 'N/A'}\n`;
 
           if (metadataServices.length > 0) {
             const entityTypes = metadataServices.filter(s => s.type === 'EntityType');
