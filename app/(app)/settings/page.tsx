@@ -447,10 +447,12 @@ export default function SettingsPage() {
       if (!currentUser) throw new Error('No authenticated user found.');
 
       // 1. Submit request to the backend API route which handles administration notifications
+      const token = await getAuth().currentUser?.getIdToken();
       const res = await fetch('/api/request-tenant-access', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           uid: currentUser.uid,

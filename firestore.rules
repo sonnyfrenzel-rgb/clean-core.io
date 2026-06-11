@@ -56,7 +56,7 @@ service cloud.firestore {
                     (request.resource.data.get('transformationsUsed', 0) == resource.data.get('transformationsUsed', 0) || isAdmin()) &&
                     (request.resource.data.get('tier', 'basic') == resource.data.get('tier', 'basic') || isAdmin()) &&
                     (request.resource.data.get('transformationsLimit', 1) == resource.data.get('transformationsLimit', 1) || isAdmin()) &&
-                    (request.resource.data.get('s4TenantAccessApproved', false) == resource.data.get('s4TenantAccessApproved', false) || isAdmin());
+                    (request.resource.data.get('s4TenantAccessAllowed', false) == resource.data.get('s4TenantAccessAllowed', false) || isAdmin());
       allow delete: if isAdmin();
     }
 

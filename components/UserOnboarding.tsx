@@ -124,10 +124,12 @@ export default function UserOnboarding() {
       
       // Dispatch the approval request email in the background
       try {
+        const token = await auth.currentUser?.getIdToken();
         await fetch('/api/request-pilot', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
             uid: user.uid,

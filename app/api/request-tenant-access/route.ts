@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHmac } from 'crypto';
 import { APP_VERSION } from '@/lib/version';
+import { verifyRequestAuth } from '@/lib/firebase-admin';
+import { APP_BASE_URL } from '@/lib/constants';
 
 export async function POST(request: NextRequest) {
   try {
+    const decodedToken = await verifyRequestAuth(request);
+    if (!decodedToken) {
+      return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { uid, email, name, motivation } = body;
 
@@ -15,12 +22,9 @@ export async function POST(request: NextRequest) {
     const secret = process.env.PILOT_APPROVAL_SECRET || 'fallback-secret-key-12345';
     const token = createHmac('sha256', secret).update(uid).digest('hex');
 
-    // Get current host and protocol
-    const host = request.headers.get('host') || 'localhost:3000';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    
-    const approveUrl = `${protocol}://${host}/admin/approve-tenant?uid=${uid}&token=${token}&auto=true`;
-    const rejectUrl = `${protocol}://${host}/admin/approve-tenant?uid=${uid}&token=${token}&action=reject`;
+    // Use canonical base URL to prevent Host-Header injection (CWE-644)
+    const approveUrl = `${APP_BASE_URL}/admin/approve-tenant?uid=${uid}&token=${token}&auto=true`;
+    const rejectUrl = `${APP_BASE_URL}/admin/approve-tenant?uid=${uid}&token=${token}&action=reject`;
 
     const emailSubject = `🚀 S/4HANA Live Tenant Access Request: ${name}`;
     const emailHtml = `

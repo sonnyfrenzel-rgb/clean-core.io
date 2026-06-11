@@ -131,10 +131,12 @@ function TenantApprovalContent() {
 
       // 3. Dispatch Premium S/4 Welcome Email to the user in the background
       try {
+        const token = await getAuth().currentUser?.getIdToken();
         await fetch('/api/send-tenant-approval-email', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
             email: applicant.email,

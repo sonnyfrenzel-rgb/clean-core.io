@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { APP_VERSION } from '@/lib/version';
+import { verifyRequestAuth } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
+    const decodedToken = await verifyRequestAuth(request);
+    if (!decodedToken) {
+      return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { email, name } = body;
 
