@@ -172,7 +172,7 @@ export default function LandingSlideshow() {
         </div>
 
         {/* Right Side: Image Display */}
-        <div className="w-full lg:w-2/3 bg-gray-100 relative p-4 sm:p-6 md:p-10 flex items-center justify-center h-[320px] sm:h-[450px] lg:h-auto lg:min-h-[600px]">
+        <div className="w-full lg:w-2/3 bg-gray-100 relative p-2 sm:p-3 md:p-4 flex items-center justify-center h-[320px] sm:h-[450px] lg:h-auto lg:min-h-[600px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
@@ -180,7 +180,7 @@ export default function LandingSlideshow() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.05 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="absolute inset-0 p-4 sm:p-6 md:p-10 flex items-center justify-center"
+              className="absolute inset-0 p-2 sm:p-3 md:p-4 flex items-center justify-center"
             >
               <div className="w-full aspect-[16/10] relative rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-gray-200/50 bg-white flex items-center justify-center">
                 {/* Fallback UI if images are not uploaded yet */}
