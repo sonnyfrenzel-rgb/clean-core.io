@@ -8,6 +8,8 @@ const inter = Inter({
   weight: ['300', '400', '500', '600', '700', '800', '900']
 });
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: 'Clean-Core.io | Enterprise S/4HANA Modernization Suite',
   description: 'Automatically analyze and transform custom legacy ABAP operations into clean-code, cloud-native Node.js architectures following official SAP Clean Core guidelines.',
