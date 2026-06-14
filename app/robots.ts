@@ -4,11 +4,18 @@ export default function robots(): MetadataRoute.Robots {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 
   return {
-    rules: {
-      userAgent: '*',
-      allow: '/',
-      disallow: ['/admin/', '/project/', '/dashboard/', '/settings/', '/api/'],
-    },
+    rules: [
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: ['/admin/', '/project/', '/dashboard/', '/settings/', '/api/'],
+      },
+      {
+        userAgent: ['GPTBot', 'ChatGPT-User', 'PerplexityBot', 'Google-Extended', 'ClaudeBot', 'Applebot-Extended'],
+        allow: ['/', '/abap-custom-code-analysis', '/clean-core-score', '/sap-tier-2-extensions', '/knowledge'],
+        disallow: ['/admin/', '/project/', '/dashboard/', '/settings/', '/api/'],
+      }
+    ],
     sitemap: `${baseUrl}/sitemap.xml`,
   };
 }

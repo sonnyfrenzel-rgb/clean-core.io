@@ -55,9 +55,19 @@ export default function Home() {
         "url": "https://clean-core.io",
         "logo": "https://clean-core.io/icon.svg",
         "sameAs": [
-          "https://github.com/clean-core-io",
+          "https://github.com/sonnyfrenzel-rgb/clean-core.io",
           "https://www.linkedin.com/company/clean-core-io"
-        ]
+        ],
+        "founder": {
+          "@type": "Person",
+          "name": "Felix Frenzel",
+          "jobTitle": "Founder & SAP Modernization Architect",
+          "url": "https://www.linkedin.com/in/felix-frenzel-3327741b8/",
+          "sameAs": [
+            "https://www.linkedin.com/in/felix-frenzel-3327741b8/",
+            "https://github.com/sonnyfrenzel-rgb"
+          ]
+        }
       },
       {
         "@type": "SoftwareApplication",
@@ -70,7 +80,8 @@ export default function Home() {
           "price": "0",
           "priceCurrency": "USD"
         },
-        "description": "Automated ABAP custom code analysis and S/4HANA modernization following official SAP Clean Core guidelines."
+        "description": "Automated ABAP custom code analysis and S/4HANA modernization following official SAP Clean Core guidelines.",
+        "dateModified": new Date().toISOString().split('T')[0]
       },
       {
         "@type": "FAQPage",
@@ -241,6 +252,17 @@ export default function Home() {
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
               <span>LATEST COMMUNITY RELEASE: {APP_VERSION} ({APP_RELEASE_DATE})</span>
             </div>
+          </div>
+        </div>
+
+        {/* GEO Quick Answer Block */}
+        <div className="max-w-4xl mx-auto px-6 mt-16 text-center relative z-20 animate-in fade-in slide-in-from-bottom-20 duration-1000 delay-600">
+          <div className="bg-green-50/50 rounded-3xl p-6 border border-green-100 shadow-sm">
+            <h2 className="text-sm font-black text-green-800 uppercase tracking-widest mb-2">Quick Answer</h2>
+            <h3 className="text-base font-bold text-gray-950 mb-2">How do you automate SAP Clean Core custom ABAP refactoring?</h3>
+            <p className="text-sm text-gray-700 leading-relaxed max-w-3xl mx-auto font-medium">
+              Clean-Core.io automatically modernizes legacy SAP architectures by parsing custom ABAP code (classes, reports, custom tables) via syntax trees and data-flow analyses. It maps direct database reads (e.g., VBAK, BSEG) to standard, released OData/REST APIs in the SAP API Business Hub, refactoring tightly-coupled logic into cloud-compliant BTP CAP Node.js microservices or in-app RAP components.
+            </p>
           </div>
         </div>
         
