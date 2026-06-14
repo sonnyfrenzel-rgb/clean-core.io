@@ -11,7 +11,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
 import { PresentationViewer, PresentationData } from '@/components/PresentationViewer';
-import { Download, CheckCircle2, FileCode2, ArrowLeft, Home, RefreshCw, X, Rocket, ShieldCheck, Zap, Layout, Eye, Presentation, AlertCircle, Lock, Briefcase } from 'lucide-react';
+import { Download, CheckCircle2, FileCode2, ArrowLeft, Home, RefreshCw, X, Rocket, ShieldCheck, Zap, Layout, Eye, Presentation, AlertCircle, Lock, Briefcase, BookOpen } from 'lucide-react';
 import NavigationButtons from '@/components/NavigationButtons';
 import JSZip from 'jszip';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
@@ -20,6 +20,42 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { saveAs } from '@/lib/fileSaver';
 import { motion } from 'motion/react';
 import { clsx } from 'clsx';
+
+const generateDeveloperGuidelines = (project: any) => {
+  const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
+  if (isAbapCloud) {
+    return `# Developer Extensibility Guidelines - ${project.name}
+
+## Overview
+ABAP Cloud / Developer Extensibility model for S/4HANA. All code must align with SAP Clean Core.
+
+## Development Rules
+1. **Zero Database Coupling**: Direct SELECT/INSERT/UPDATE on standard tables (VBAK, BSEG, KNA1, etc.) is blocked.
+2. **Released API Consumption**: Use released CDS views or standard APIs:
+   - VBAK -> Use CDS view 'I_SalesOrder'
+   - BSEG -> Use CDS view 'I_JournalEntry'
+   - KNA1 -> Use CDS view 'I_Customer'
+3. **RAP Service Tiering**:
+   - Encapsulate business logic in Behavior Implementations (ZCL_DEMO_RAP_BEHAVIOR).
+   - Expose services via Service Definitions (SRVD) and Service Bindings (SRVB) using OData V4.
+4. **Automated Testing**: Every RAP object must have a local ABAP Unit test class (ZCL_DEMO_RAP_TEST) with >=85% code coverage.
+5. **Linter Gate**: Run local 'abaplint.json' check variant before releasing any transport.
+`;
+  } else {
+    return `# Side-by-Side Extensibility Guidelines - ${project.name}
+
+## Overview
+SAP BTP Side-by-Side Extensibility using CAP (Node.js/TypeScript). S/4HANA core remains decoupled.
+
+## Development Rules
+1. **Decoupled Architecture**: Direct DB access is blocked. Integrate via released OData APIs through BTP Destination services.
+2. **Endpoint Security**: Secure CAP endpoints (db/schema.cds, srv/service.cds) with SAP XSUAA. Enforce JWT verification.
+3. **Testing**: Mock ERP data for local development. Execute 'npm test' before container packaging.
+4. **CI/CD Quality Gates**: Run the generated GitHub Actions pipeline on every PR.
+5. **Containerization**: Deploy using the root 'Dockerfile' to Cloud Foundry, Kyma, or GCP.
+`;
+  }
+};
 
 export default function DeliveryPage() {
   const { projectId } = useParams();
@@ -336,6 +372,54 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
         if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign));
         if (project.documentation) docs.file("process-blueprint.md", formatDocsToMarkdown(project.documentation));
         if (project.businessDocumentation) docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation));
+        docs.file("developer-guidelines.md", generateDeveloperGuidelines(project));
+      }
+
+      // Add linter and CI configurations based on route
+      if (isAbapCloud) {
+        zip.file("abaplint.json", JSON.stringify({
+          "global": {
+            "files": "/src/**/*.*"
+          },
+          "dependencies": [],
+          "syntax": {
+            "version": "v750",
+            "errorForAllowed": true,
+            "keypath": ""
+          },
+          "rules": {
+            "obsolete_statement": true,
+            "check_subrc": true,
+            "parser_error": true,
+            "allowed_object_types": ["CLAS", "INTF", "DDLS", "BDEF", "SRVD", "SRVB"],
+            "forbidden_statements": ["SELECT * FROM vbak", "SELECT * FROM bseg", "INSERT INTO vbak"]
+          }
+        }, null, 2));
+      } else {
+        const workflows = zip.folder(".github/workflows");
+        if (workflows) {
+          workflows.file("ci.yml", `name: Node.js CI/CD Quality Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - run: npm ci
+    - run: npm run build --if-present
+    - run: npm test
+`);
+        }
       }
 
       const content = await zip.generateAsync({ type: "blob" });
@@ -370,7 +454,7 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 md:gap-8 mb-16">
         {/* ZIP Package Download */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 flex flex-col items-center text-center hover:shadow-xl hover:border-green-500/20 transition-all group overflow-hidden">
           <div className="bg-green-50 p-5 rounded-2xl mb-6 md:mb-8 group-hover:scale-110 transition-transform">
@@ -575,6 +659,30 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
                 Go to the <Link href={`/project/${projectId}/documentation`} className="text-blue-400 hover:underline">Documentation Stage</Link> to generate Level 5 SOPs.
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Developer Guidelines Card */}
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 flex flex-col items-center text-center hover:shadow-xl hover:border-green-500/20 transition-all group overflow-hidden">
+          <div className="bg-green-50 p-5 rounded-2xl mb-6 md:mb-8 group-hover:scale-110 transition-transform">
+            <BookOpen className="w-8 h-8 md:w-10 md:h-10 text-green-600" />
+          </div>
+          <h2 className="text-xl md:text-2xl font-black text-gray-900 mb-3 tracking-tight uppercase">Developer Guide</h2>
+          <p className="text-gray-500 mb-8 md:mb-10 flex-grow text-xs md:text-sm leading-relaxed">
+            Technical guidelines, linter configurations, and Clean Core rule sets for development teams.
+          </p>
+          
+          <div className="w-full relative">
+            <button 
+              onClick={() => {
+                const blob = new Blob([generateDeveloperGuidelines(project)], { type: "text/markdown;charset=utf-8" });
+                const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
+                saveAs(blob, `${fileName}_Developer_Guidelines.md`);
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-[#006b2c] text-white px-8 py-4 rounded-2xl hover:bg-[#00873a] transition-all font-bold shadow-lg shadow-green-600/10 uppercase tracking-widest text-xs md:text-sm"
+            >
+              <Download size={20} /> Export Guide
+            </button>
           </div>
         </div>
       </div>
