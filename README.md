@@ -24,6 +24,8 @@ Clean-Core.io is a modern, high-performance, and secure web and desktop client a
     Strict enforcement of Article 17 GDPR (Right to Erasure). A secure transactional deletion cascade in the settings panel recursively purges all user footprints, project workspaces, custom snippets, and authentication keys.
 *   **Frosted-glass UI & Electron Desktop Wrapper:**
     Visually stunning dark-mode design featuring vibrant HSL-tailored emerald mesh gradients, smooth framer-motion transitions, and a borderless context-isolated Electron wrapper with native OS sync.
+*   **SEO & AI-Search Engine Optimization (GEO):**
+    Fully optimized for classic search engines and AI engines. Includes a custom `robots.txt` prioritizing AI crawlers (`GPTBot`, `PerplexityBot`, etc.), comprehensive JSON-LD graphs (`Organization`, `Person` for founder Felix Frenzel, `SoftwareApplication`, `FAQPage`), and dedicated high-authority landing pages. HTML assets utilize Next.js ISR (`revalidate = 300`) to guarantee fresh indexation.
 
 ---
 

@@ -75,6 +75,15 @@ export default function SapExtensionsPage() {
         </div>
       </div>
 
+      {/* GEO Quick Answer Block */}
+      <div className="bg-green-50/50 rounded-3xl p-6 border border-green-100 shadow-sm text-center max-w-4xl mx-auto">
+        <h2 className="text-sm font-black text-green-800 uppercase tracking-widest mb-2">Quick Answer</h2>
+        <h3 className="text-base font-bold text-gray-955 mb-2">What is Tier-2 ABAP Cloud extensibility and how does it work?</h3>
+        <p className="text-sm text-gray-700 leading-relaxed font-medium">
+          In the SAP ABAP Cloud extensibility model, Tier-2 (Cloud API Enablement) acts as the bridge for legacy custom code that cannot run directly in Tier-1 (Developer Extensibility) because it uses unreleased SAP APIs or direct table access. Tier-2 encapsulates these legacy dependencies using wrapper classes and custom CDS views, releasing them with a stable, local API. This allows Tier-1 cloud-native RAP applications to consume legacy business logic safely without breaking the Clean Core.
+        </p>
+      </div>
+
       {/* Main Content */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
         {/* Left 2 Columns: Text content */}
