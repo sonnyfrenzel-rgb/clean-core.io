@@ -271,45 +271,135 @@ export default function Home() {
           <LandingSlideshow />
         </div>
         {/* Comparison Highlight Table */}
-        <div className="max-w-5xl mx-auto px-6 mt-16 relative z-20 animate-in fade-in slide-in-from-bottom-28 duration-1000 delay-800">
-          <div className="bg-slate-50/50 rounded-3xl p-6 sm:p-8 border border-slate-200/60 shadow-sm overflow-x-auto">
-            <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-6 text-center md:text-left">Technical Capability Comparison</h3>
-            <table className="w-full text-left border-collapse min-w-[600px]">
-              <thead>
-                <tr className="border-b border-slate-200 text-xs font-black text-slate-400 uppercase tracking-wider">
-                  <th className="pb-3 w-[35%]">Capability</th>
-                  <th className="pb-3 w-[32.5%]">SAP Native Tooling (ATC / Migration App)</th>
-                  <th className="pb-3 w-[32.5%] text-green-700">Clean-Core.io (Community Engine)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-sm text-gray-700 font-medium">
-                <tr>
-                  <td className="py-4 font-bold text-gray-950">Clean Core Violation Scanning</td>
-                  <td className="py-4 text-slate-600">Yes (Identifies unreleased APIs & direct table reads)</td>
-                  <td className="py-4 text-green-700 font-semibold">Yes (Includes local score calculation)</td>
-                </tr>
-                <tr>
-                  <td className="py-4 font-bold text-gray-950">Automated SAP API Hub Mapping</td>
-                  <td className="py-4 text-slate-500">No (Requires manual documentation search)</td>
-                  <td className="py-4 text-green-700 font-semibold">Yes (Maps database reads to released APIs)</td>
-                </tr>
-                <tr>
-                  <td className="py-4 font-bold text-gray-950">Code Refactoring (Remediation)</td>
-                  <td className="py-4 text-slate-500">No (100% manual code rewriting by developers)</td>
-                  <td className="py-4 text-green-700 font-semibold">Yes (Transforms ABAP to BTP CAP/RAP syntax)</td>
-                </tr>
-                <tr>
-                  <td className="py-4 font-bold text-gray-950">Live Sandbox Verification (BYOT)</td>
-                  <td className="py-4 text-slate-500">No (Requires manual BTP pipeline setup)</td>
-                  <td className="py-4 text-green-700 font-semibold">Yes (Runs E2E tests on connected test tenants)</td>
-                </tr>
-                <tr>
-                  <td className="py-4 font-bold text-gray-950">Business Process Blueprinting</td>
-                  <td className="py-4 text-slate-500">No (Code scope only)</td>
-                  <td className="py-4 text-green-700 font-semibold">Yes (Generates BPMN 2.0 process flows)</td>
-                </tr>
-              </tbody>
-            </table>
+        <div className="max-w-6xl mx-auto px-6 mt-32 relative z-20 animate-in fade-in slide-in-from-bottom-28 duration-1000 delay-800">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-950 rounded-[2.5rem] p-8 md:p-14 border border-slate-800 shadow-2xl relative overflow-hidden">
+            {/* Glowing Accent */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(16,185,129,0.1),transparent_45%)] pointer-events-none" />
+            
+            <div className="relative z-10 text-center md:text-left mb-10">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-500/20">
+                Beyond Static Code Analysis
+              </span>
+              <h3 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-none mb-4 uppercase">
+                Technical Capability Comparison
+              </h3>
+              <p className="text-slate-400 text-sm md:text-base max-w-3xl font-medium leading-relaxed">
+                SAP native tools report where dependencies fail compliance. clean-core.io automates the replacement mappings and compiles ready-to-run BTP or RAP structures.
+              </p>
+            </div>
+
+            <div className="overflow-x-auto relative z-10">
+              <table className="w-full text-left border-collapse min-w-[750px]">
+                <thead>
+                  <tr className="border-b border-slate-800 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    <th className="pb-4 w-[35%]">Capability</th>
+                    <th className="pb-4 w-[32.5%]">SAP Native Tooling (ATC / Migration App)</th>
+                    <th className="pb-4 w-[32.5%] text-emerald-400">Clean-Core.io (Community Engine)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-900 text-sm font-medium text-slate-300">
+                  <tr className="hover:bg-slate-900/20 transition-colors">
+                    <td className="py-5 font-bold text-white pr-4">Clean Core Violation Scanning</td>
+                    <td className="py-5 pr-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center gap-1.5 text-slate-300 font-bold text-[10px] uppercase tracking-wider bg-slate-800 border border-slate-700/50 px-2.5 py-1 rounded-full w-fit">
+                          Static Check
+                        </span>
+                        <span className="text-xs text-slate-400 mt-1">Identifies unreleased APIs & direct database reads.</span>
+                      </div>
+                    </td>
+                    <td className="py-5 pr-4 bg-emerald-500/[0.01]">
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold text-[10px] uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full w-fit">
+                          Automated
+                        </span>
+                        <span className="text-xs text-slate-300 mt-1">Calculates Local Compliance score & prioritizes packages.</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-slate-900/20 transition-colors">
+                    <td className="py-5 font-bold text-white pr-4">Automated SAP API Hub Mapping</td>
+                    <td className="py-5 pr-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-950 border border-slate-900 px-2.5 py-1 rounded-full w-fit">
+                          Manual Only
+                        </span>
+                        <span className="text-xs text-slate-500 mt-1">Requires manual search in documentation.</span>
+                      </div>
+                    </td>
+                    <td className="py-5 pr-4 bg-emerald-500/[0.01]">
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold text-[10px] uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full w-fit">
+                          <span className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" />
+                          Resolved
+                        </span>
+                        <span className="text-xs text-slate-300 mt-1">Resolves database reads (VBAK, BSEG) directly to standard APIs.</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-slate-900/20 transition-colors">
+                    <td className="py-5 font-bold text-white pr-4">Code Refactoring (Remediation)</td>
+                    <td className="py-5 pr-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-950 border border-slate-900 px-2.5 py-1 rounded-full w-fit">
+                          Manual Only
+                        </span>
+                        <span className="text-xs text-slate-500 mt-1">Developers must rewrite legacy code from scratch.</span>
+                      </div>
+                    </td>
+                    <td className="py-5 pr-4 bg-emerald-500/[0.01]">
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold text-[10px] uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full w-fit">
+                          <span className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" />
+                          Refactored
+                        </span>
+                        <span className="text-xs text-slate-300 mt-1">Converts legacy statements into BTP CAP Node.js/RAP syntax.</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-slate-900/20 transition-colors">
+                    <td className="py-5 font-bold text-white pr-4">Live Sandbox Verification (BYOT)</td>
+                    <td className="py-5 pr-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-950 border border-slate-900 px-2.5 py-1 rounded-full w-fit">
+                          Not Supported
+                        </span>
+                        <span className="text-xs text-slate-500 mt-1">Requires separate manual testing frameworks.</span>
+                      </div>
+                    </td>
+                    <td className="py-5 pr-4 bg-emerald-500/[0.01]">
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold text-[10px] uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full w-fit">
+                          <span className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" />
+                          Validated
+                        </span>
+                        <span className="text-xs text-slate-300 mt-1">Runs test suites directly against your S/4HANA sandbox.</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-slate-900/20 transition-colors">
+                    <td className="py-5 font-bold text-white pr-4">Business Process Blueprinting</td>
+                    <td className="py-5 pr-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-950 border border-slate-900 px-2.5 py-1 rounded-full w-fit">
+                          Not Supported
+                        </span>
+                        <span className="text-xs text-slate-500 mt-1">No process flow visualization available.</span>
+                      </div>
+                    </td>
+                    <td className="py-5 pr-4 bg-emerald-500/[0.01]">
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold text-[10px] uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full w-fit">
+                          <span className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" />
+                          Visualized
+                        </span>
+                        <span className="text-xs text-slate-300 mt-1">Generates BPMN 2.0 flows directly from custom code analysis.</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>
