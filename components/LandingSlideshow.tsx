@@ -13,6 +13,7 @@ const slides = [
     description: 'Legacy ABAP is analyzed in seconds. Business rules, dependencies, and Clean Core compliance scores are extracted fully automatically.',
     icon: <Code2 className="w-6 h-6" />,
     image: '/screenshots/step-1.jpg',
+    alt: 'Clean-Core.io Deep Code Intelligence dashboard analyzing legacy SAP ABAP custom code, showing dependency graphs, business rules, and Clean Core compliance score.',
     color: 'text-blue-600',
     bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200'
@@ -23,6 +24,7 @@ const slides = [
     description: 'From monolith to SAP RAP. Auto-generated architecture blueprints with CDS views, behavior definitions, and API catalogs.',
     icon: <LayoutTemplate className="w-6 h-6" />,
     image: '/screenshots/step-2.jpg',
+    alt: 'Clean-Core.io Cloud-Native Architecture blueprint generator showcasing automated mapping from legacy ABAP monoliths to SAP RAP, including CDS views and API catalogs.',
     color: 'text-indigo-600',
     bgColor: 'bg-indigo-50',
     borderColor: 'border-indigo-200'
@@ -33,6 +35,7 @@ const slides = [
     description: 'Flawless transformation from legacy ABAP to Node.js & TypeScript. Clean, maintainable code that follows SAP Clean Core best practices.',
     icon: <Cpu className="w-6 h-6" />,
     image: '/screenshots/step-3.jpg',
+    alt: 'Clean-Core.io Automated Refactoring interface converting legacy ABAP source code into clean TypeScript and Node.js code side-by-side.',
     color: 'text-emerald-600',
     bgColor: 'bg-emerald-50',
     borderColor: 'border-emerald-200'
@@ -43,6 +46,7 @@ const slides = [
     description: 'Connect your S/4HANA tenant and validate in real-time: connectivity, authentication, OData schema discovery, and live data reads.',
     icon: <ShieldCheck className="w-6 h-6" />,
     image: '/screenshots/step-4.jpg',
+    alt: 'Clean-Core.io Live Tenant Validation tool running automated integration tests and OData schema checks against active SAP S/4HANA instances.',
     color: 'text-amber-600',
     bgColor: 'bg-amber-50',
     borderColor: 'border-amber-200'
@@ -53,6 +57,7 @@ const slides = [
     description: 'Aligning IT and Business. Automatic generation of BPMN models, Jira integration, and detailed process documentation.',
     icon: <FileText className="w-6 h-6" />,
     image: '/screenshots/step-5.jpg',
+    alt: 'Clean-Core.io Enterprise Process Specifications report highlighting automatically generated BPMN 2.0 process flow diagrams and JIRA integration specs.',
     color: 'text-purple-600',
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-200'
@@ -63,6 +68,7 @@ const slides = [
     description: 'The complete package: Source code, tenant validation report, executive summary, and QA reports — ready for production.',
     icon: <Download className="w-6 h-6" />,
     image: '/screenshots/step-6.jpg',
+    alt: 'Clean-Core.io Delivery package download screen displaying source code packages, executive TCO roadmap, and final QA verification reports.',
     color: 'text-green-600',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-200'
@@ -183,22 +189,20 @@ export default function LandingSlideshow() {
               className="absolute inset-0 p-2 sm:p-3 md:p-4 flex items-center justify-center"
             >
               <div className="w-full aspect-[16/10] relative rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-gray-200/50 bg-white flex items-center justify-center">
-                {/* Fallback UI if images are not uploaded yet */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 bg-gray-50 z-0 text-center p-4">
-                  {slides[currentIndex].icon}
-                  <p className="mt-4 text-sm font-medium">Screenshot {currentIndex + 1} will appear here</p>
-                  <p className="text-xs opacity-50">(Upload to /public/screenshots/step-{currentIndex + 1}.jpg)</p>
+                {/* Clean Loading Placeholder (No visible Dev text or layout issues for SEO crawlers) */}
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-0">
+                  <div className="w-8 h-8 rounded-full border-4 border-gray-200 border-t-green-600 animate-spin" />
                 </div>
                 
                 {/* Actual Image */}
                 <Image 
                   src={slides[currentIndex].image} 
-                  alt={slides[currentIndex].title}
+                  alt={slides[currentIndex].alt}
                   fill
                   sizes="(max-width: 1024px) 100vw, 66vw"
                   className="object-cover relative z-10 transition-opacity duration-300"
                   onError={(e) => {
-                    // Hide image if it fails to load, revealing the fallback UI behind it
+                    // Hide image if it fails to load
                     (e.target as HTMLImageElement).style.opacity = '0';
                   }}
                   onLoad={(e) => {

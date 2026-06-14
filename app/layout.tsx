@@ -37,9 +37,6 @@ export const metadata: Metadata = {
     description: 'Automatically analyze and transform custom legacy ABAP operations into clean-code, cloud-native Node.js architectures following official SAP Clean Core guidelines.',
     images: ['https://clean-core.io/icon.svg'],
   },
-  verification: {
-    google: 'google-site-verification-placeholder-value',
-  },
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
