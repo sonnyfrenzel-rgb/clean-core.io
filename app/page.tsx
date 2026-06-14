@@ -270,6 +270,48 @@ export default function Home() {
         <div className="relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
           <LandingSlideshow />
         </div>
+        {/* Comparison Highlight Table */}
+        <div className="max-w-5xl mx-auto px-6 mt-16 relative z-20 animate-in fade-in slide-in-from-bottom-28 duration-1000 delay-800">
+          <div className="bg-slate-50/50 rounded-3xl p-6 sm:p-8 border border-slate-200/60 shadow-sm overflow-x-auto">
+            <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-6 text-center md:text-left">Technical Capability Comparison</h3>
+            <table className="w-full text-left border-collapse min-w-[600px]">
+              <thead>
+                <tr className="border-b border-slate-200 text-xs font-black text-slate-400 uppercase tracking-wider">
+                  <th className="pb-3 w-[35%]">Capability</th>
+                  <th className="pb-3 w-[32.5%]">SAP Native Tooling (ATC / Migration App)</th>
+                  <th className="pb-3 w-[32.5%] text-green-700">Clean-Core.io (Community Engine)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm text-gray-700 font-medium">
+                <tr>
+                  <td className="py-4 font-bold text-gray-950">Clean Core Violation Scanning</td>
+                  <td className="py-4 text-slate-600">Yes (Identifies unreleased APIs & direct table reads)</td>
+                  <td className="py-4 text-green-700 font-semibold">Yes (Includes local score calculation)</td>
+                </tr>
+                <tr>
+                  <td className="py-4 font-bold text-gray-950">Automated SAP API Hub Mapping</td>
+                  <td className="py-4 text-slate-500">No (Requires manual documentation search)</td>
+                  <td className="py-4 text-green-700 font-semibold">Yes (Maps database reads to released APIs)</td>
+                </tr>
+                <tr>
+                  <td className="py-4 font-bold text-gray-950">Code Refactoring (Remediation)</td>
+                  <td className="py-4 text-slate-500">No (100% manual code rewriting by developers)</td>
+                  <td className="py-4 text-green-700 font-semibold">Yes (Transforms ABAP to BTP CAP/RAP syntax)</td>
+                </tr>
+                <tr>
+                  <td className="py-4 font-bold text-gray-950">Live Sandbox Verification (BYOT)</td>
+                  <td className="py-4 text-slate-500">No (Requires manual BTP pipeline setup)</td>
+                  <td className="py-4 text-green-700 font-semibold">Yes (Runs E2E tests on connected test tenants)</td>
+                </tr>
+                <tr>
+                  <td className="py-4 font-bold text-gray-950">Business Process Blueprinting</td>
+                  <td className="py-4 text-slate-500">No (Code scope only)</td>
+                  <td className="py-4 text-green-700 font-semibold">Yes (Generates BPMN 2.0 process flows)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       {/* Features Section */}
