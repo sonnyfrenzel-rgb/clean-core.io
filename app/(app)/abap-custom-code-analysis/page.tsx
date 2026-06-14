@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { BookOpen, ArrowLeft, Cpu, Activity, ShieldCheck, Link2, Check } from 'lucide-react';
 import Link from 'next/link';
+import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = {
@@ -76,13 +77,10 @@ export default function AbapAnalysisPage() {
       </div>
 
       {/* GEO Quick Answer Block */}
-      <div className="bg-green-50/50 rounded-3xl p-6 border border-green-100 shadow-sm text-center max-w-4xl mx-auto">
-        <h2 className="text-sm font-black text-green-800 uppercase tracking-widest mb-2">Quick Answer</h2>
-        <h3 className="text-base font-bold text-gray-955 mb-2">Why analyze custom ABAP code before an S/4HANA upgrade?</h3>
-        <p className="text-sm text-gray-700 leading-relaxed font-medium">
-          Legacy SAP systems often have tight syntax coupling to standard tables (e.g. VBAK, BSEG, LIKP) or unreleased function modules. During an S/4HANA migration, database structures change, which breaks custom programs. Automated custom code analysis detects these dependencies and maps direct database reads to modern, cloud-released OData APIs and BTP CAP or RAP architectures, preventing upgrade blockages.
-        </p>
-      </div>
+      <QuickAnswer 
+        question="Why analyze custom ABAP code before an S/4HANA upgrade?"
+        answer="Legacy SAP systems often have tight syntax coupling to standard tables (e.g. VBAK, BSEG, LIKP) or unreleased function modules. During an S/4HANA migration, database structures change, which breaks custom programs. Automated custom code analysis detects these dependencies and maps direct database reads to modern, cloud-released OData APIs and BTP CAP or RAP architectures, preventing upgrade blockages."
+      />
 
       {/* Main Content */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
