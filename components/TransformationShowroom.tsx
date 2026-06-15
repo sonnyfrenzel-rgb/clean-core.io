@@ -200,10 +200,15 @@ export default function TransformationShowroom() {
                     <span className="text-blue-700 font-bold">CLASS</span>{` ltcl_sales_order `}<span className="text-blue-700 font-bold">DEFINITION FINAL FOR TESTING</span>{`
   `}<span className="text-blue-700 font-bold">DURATION SHORT RISK LEVEL HARMLESS</span>{`.
   `}<span className="text-blue-700 font-bold">PRIVATE SECTION</span>{`.
+    `}<span className="text-blue-700 font-bold">CLASS-DATA</span>{` environment `}<span className="text-blue-700 font-bold">TYPE REF TO</span>{` if_cds_test_environment.
+    `}<span className="text-blue-700 font-bold">CLASS-METHODS</span>{` class_setup.
     `}<span className="text-blue-700 font-bold">METHODS</span>{` test_order_filter `}<span className="text-blue-700 font-bold">FOR TESTING</span>{`.
 `}<span className="text-blue-700 font-bold">ENDCLASS</span>{`.
 
 `}<span className="text-blue-700 font-bold">CLASS</span>{` ltcl_sales_order `}<span className="text-blue-700 font-bold">IMPLEMENTATION</span>{`.
+  `}<span className="text-blue-700 font-bold">METHOD</span>{` class_setup.
+    environment = cl_cds_test_environment=>`}<span className="text-blue-700 font-bold">create</span>{`( i_for_entity = 'ZI_SALESORDERCUSTOM' ).
+  `}<span className="text-blue-700 font-bold">ENDMETHOD</span>{`.
   `}<span className="text-blue-700 font-bold">METHOD</span>{` test_order_filter.
     `}<span className="text-blue-700 font-bold">DATA</span>{` lt_result `}<span className="text-blue-700 font-bold">TYPE STANDARD TABLE OF</span>{` ZI_SalesOrderCustom.
     `}<span className="text-blue-700 font-bold">SELECT</span>{` * `}<span className="text-blue-700 font-bold">FROM</span>{` ZI_SalesOrderCustom
@@ -248,7 +253,7 @@ export default function TransformationShowroom() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   <span className="text-xs font-bold text-green-700">
-                    Code compiled successfully
+                    CDS test environment created
                   </span>
                 </div>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-xl">
@@ -277,7 +282,7 @@ export default function TransformationShowroom() {
                 </div>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1 block">Business Context</span>
-                  <p className="text-sm text-slate-600 leading-relaxed font-medium">The finance controlling team extracts accounting document line items for company code 1000 to feed an external reporting tool. The legacy code reads BSEG directly — one of SAP&apos;s largest and most problematic cluster tables, deprecated in S/4HANA. The engine maps this to a cloud-native CAP Node.js service projecting onto the released API_JOURNALENTRY OData service, decoupling the reporting logic from the core ERP entirely.</p>
+                  <p className="text-sm text-slate-600 leading-relaxed font-medium">The finance controlling team extracts accounting document line items for company code 1000 to feed an external reporting tool. The legacy code reads BSEG directly — one of SAP&apos;s largest and most problematic cluster tables, deprecated in S/4HANA. The engine maps this to the released CDS view <code className="px-1 py-0.5 bg-emerald-50 text-emerald-700 rounded text-xs font-bold font-mono">I_JournalEntry</code>, wrapped in a cloud-native CAP Node.js service that decouples the reporting logic from the core ERP entirely.</p>
                 </div>
               </div>
             </div>
@@ -335,11 +340,11 @@ export default function TransformationShowroom() {
                     <code className="font-mono text-slate-800">
                       <span className="text-slate-400">{'// srv/journal-service.cds'}</span>
 {`
-`}<span className="text-blue-700 font-bold">using</span>{` { `}<span className="text-emerald-700 font-bold">API_JOURNALENTRY</span>{` } `}<span className="text-blue-700 font-bold">from</span>{` `}<span className="text-green-700">'../srv/external'</span>{`;
+`}<span className="text-blue-700 font-bold">using</span>{` { `}<span className="text-emerald-700 font-bold">I_JournalEntry</span>{` } `}<span className="text-blue-700 font-bold">from</span>{` `}<span className="text-green-700">'../srv/external'</span>{`;
 
 `}<span className="text-blue-700 font-bold">service</span>{` JournalService {
   `}<span className="text-violet-600">@readonly</span>{`
-  `}<span className="text-blue-700 font-bold">entity</span>{` JournalEntries `}<span className="text-blue-700 font-bold">as projection on</span>{` `}<span className="text-emerald-700 font-bold">API_JOURNALENTRY</span>{`.A_JournalEntry {
+  `}<span className="text-blue-700 font-bold">entity</span>{` JournalEntries `}<span className="text-blue-700 font-bold">as projection on</span>{` `}<span className="text-emerald-700 font-bold">I_JournalEntry</span>{` {
     `}<span className="text-blue-700 font-bold">key</span>{` CompanyCode,
     `}<span className="text-blue-700 font-bold">key</span>{` AccountingDocument,
     `}<span className="text-blue-700 font-bold">key</span>{` FiscalYear,
@@ -365,8 +370,8 @@ export default function TransformationShowroom() {
                   </span>
                 </div>
                 <p className="text-sm text-slate-700 font-medium leading-relaxed">
-                  Table <code className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold font-mono">BSEG</code> → Resolved to released API{' '}
-                  <code className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs font-bold font-mono">API_JOURNALENTRY</code>{' '}
+                  Table <code className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold font-mono">BSEG</code> → Resolved to released CDS view{' '}
+                  <code className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs font-bold font-mono">I_JournalEntry</code>{' '}
                   <span className="text-slate-400">(SAP API Business Hub)</span>.
                 </p>
                 <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-full">

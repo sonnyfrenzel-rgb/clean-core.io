@@ -541,10 +541,10 @@ export default function Home() {
               🛡️ Sovereign & Secured
             </span>
             <h2 className="text-4xl md:text-5xl font-black text-gray-955 tracking-tighter mb-4">
-              Built on Trust and Security Standards
+              Your Data Stays Yours
             </h2>
             <p className="text-gray-600 font-medium text-sm md:text-base max-w-xl mx-auto leading-relaxed">
-              We design software architecture transformations with strict European safety standards, data sovereignty, and robust security frameworks.
+              European hosting, GDPR-compliant by design, zero data retention. We built the security architecture the way we&apos;d want it for our own SAP systems.
             </p>
           </div>
 
