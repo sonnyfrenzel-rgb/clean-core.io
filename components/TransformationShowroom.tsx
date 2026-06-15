@@ -23,7 +23,7 @@ export default function TransformationShowroom() {
           #showroom-tab-1:checked ~ .showroom-panels .panel-1,
           #showroom-tab-2:checked ~ .showroom-panels .panel-2,
           #showroom-tab-3:checked ~ .showroom-panels .panel-3 {
-            display: block;
+            display: block !important;
           }
           #showroom-tab-1:checked ~ .showroom-panels .panel-2,
           #showroom-tab-1:checked ~ .showroom-panels .panel-3,
@@ -31,7 +31,7 @@ export default function TransformationShowroom() {
           #showroom-tab-2:checked ~ .showroom-panels .panel-3,
           #showroom-tab-3:checked ~ .showroom-panels .panel-1,
           #showroom-tab-3:checked ~ .showroom-panels .panel-2 {
-            display: none;
+            display: none !important;
           }
 
           /* ── Active tab label styling ── */
