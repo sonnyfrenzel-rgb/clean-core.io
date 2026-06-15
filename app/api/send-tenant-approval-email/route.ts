@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Hardcoded base URL to prevent Host-Header injection
-    const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.clean-core.io';
+    const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
     const dashboardUrl = `${BASE_URL}/dashboard`;
 
     const emailSubject = `🎉 S/4HANA Live Tenant Integration Unlocked!`;
