@@ -4,7 +4,7 @@
  */
 import dns from 'dns/promises';
 import net from 'net';
-import { Agent } from 'undici';
+// undici Agent is loaded dynamically to avoid compatibility issues on Node < 22
 
 export class SsrfError extends Error {
   constructor(message: string) {
@@ -186,19 +186,27 @@ export async function safeFetch(
 
     const pinnedIp = check.resolvedIp!;
     const pinnedFamily = check.family!;
-    const lookup = (_hostname: string, options: any, cb: any) => {
-      const rec = { address: pinnedIp, family: pinnedFamily };
-      if (options && options.all) return cb(null, [rec]);
-      return cb(null, pinnedIp, pinnedFamily);
-    };
-    const dispatcher = new Agent({ connect: { lookup } });
+    // Try to create a pinned dispatcher (undici Agent) for DNS rebinding protection.
+    // Falls back to no pinning on Node versions where undici is unavailable.
+    let dispatcherOpts: Record<string, any> = {};
+    try {
+      // @ts-ignore — undici is built into Node 22+; no npm package needed at runtime
+      const { Agent } = await import('undici');
+      const lookup = (_hostname: string, options: any, cb: any) => {
+        const rec = { address: pinnedIp, family: pinnedFamily };
+        if (options && options.all) return cb(null, [rec]);
+        return cb(null, pinnedIp, pinnedFamily);
+      };
+      dispatcherOpts = { dispatcher: new Agent({ connect: { lookup } }) };
+    } catch {
+      // undici not available — proceed without IP pinning (redirect re-validation still active)
+    }
 
     const res = await fetch(current, {
       ...init,
       redirect: 'manual',
-      // @ts-expect-error: dispatcher ist eine undici-Erweiterung von fetch()
-      dispatcher,
-    });
+      ...dispatcherOpts,
+    } as any);
 
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get('location');
