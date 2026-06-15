@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Hardcoded base URL to prevent Host-Header injection
-    const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.clean-core.io';
+    const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
     const dashboardUrl = `${BASE_URL}/dashboard`;
     const whitepaperUrl = `${BASE_URL}/Enterprise_Security_Compliance_Whitepaper.pdf`;
 
