@@ -11,9 +11,7 @@ import {
   ShieldCheck, 
   Shield, 
   Check, 
-  X,
-  ArrowRight,
-  Download
+  ArrowRight
 } from 'lucide-react';
 import PilotWarningBanner from '@/components/PilotWarningBanner';
 import HeaderAuthButton from '@/components/HeaderAuthButton';
@@ -23,25 +21,26 @@ import FooterCTA from '@/components/FooterCTA';
 import LandingModals from '@/components/LandingModals';
 import LandingSlideshow from '@/components/LandingSlideshow';
 import QuickAnswer from '@/components/QuickAnswer';
+import TransformationShowroom from '@/components/TransformationShowroom';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = {
-  title: 'SAP Clean Core Analysis & S/4HANA Modernization | Clean-Core.io',
-  description: 'Automated ABAP custom code analysis and transformation to cloud-native Node.js (CAP) following official SAP Clean Core guidelines.',
+  title: 'The SAP Architect\'s Clean Core Accelerator | Clean-Core.io',
+  description: 'Free community tool that generates the first Clean-Core-compliant draft for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
   alternates: {
     canonical: 'https://clean-core.io',
   },
   openGraph: {
-    title: 'SAP Clean Core Analysis & S/4HANA Modernization | Clean-Core.io',
-    description: 'Automated ABAP custom code analysis and transformation to cloud-native Node.js (CAP) following official SAP Clean Core guidelines.',
+    title: 'The SAP Architect\'s Clean Core Accelerator | Clean-Core.io',
+    description: 'Free community tool that generates the first Clean-Core-compliant draft for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
     url: 'https://clean-core.io',
     type: 'website',
     siteName: 'Clean-Core.io',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SAP Clean Core Analysis & S/4HANA Modernization | Clean-Core.io',
-    description: 'Automated ABAP custom code analysis and transformation to cloud-native Node.js (CAP) following official SAP Clean Core guidelines.',
+    title: 'The SAP Architect\'s Clean Core Accelerator | Clean-Core.io',
+    description: 'Free community tool that generates the first Clean-Core-compliant draft for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
   }
 };
 
@@ -129,12 +128,12 @@ export default function Home() {
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-lg sm:text-2xl tracking-tight text-gray-900 leading-none">Clean-Core<span className="text-green-600">.io</span></span>
-              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-gray-500 mt-1">Non-Commercial Pilot</span>
+              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-gray-500 mt-1">Community Pilot</span>
             </div>
           </Link>
           <div className="shrink-0 flex items-center gap-3">
              <div className="hidden sm:flex text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full items-center gap-1">
-               <Users size={14} /> Community Edition
+               <Users size={14} /> Free Community Tool
              </div>
              <HeaderAuthButton />
           </div>
@@ -236,16 +235,16 @@ export default function Home() {
         </div>
 
         <div className="max-w-6xl mx-auto px-6 relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 text-amber-700 font-bold text-xs md:text-sm mb-8 border border-amber-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <Users className="w-4 h-4" />
-            <span className="uppercase tracking-wider">Join our non-commercial Pilot Program</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs md:text-sm mb-8 border border-emerald-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <ShieldCheck className="w-4 h-4" />
+            <span className="uppercase tracking-wider">Free Community-Powered SAP Prototyping Platform</span>
           </div>
-          <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85] text-gray-950 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            Transform Legacy Code <br className="hidden md:block" />
-            into <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">Cloud-Native Node.js</span>
+          <h1 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85] text-gray-950 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            The SAP Architect&apos;s <br className="hidden md:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">Clean Core Accelerator</span>
           </h1>
-          <p className="text-lg md:text-2xl text-gray-700 max-w-3xl mx-auto mb-12 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200">
-            Bridge legacy SAP and cloud-native agility. Automatically transform custom ABAP operations into clean-code architectures fully aligned with official SAP Clean Core guidelines.
+          <p className="text-base sm:text-lg md:text-2xl text-gray-700 max-w-3xl mx-auto mb-12 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200">
+            Generate the first Clean-Core-compliant draft for review and approval. Save days of manual mapping and boilerplate generation&mdash;without replacing the judgment of the expert.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
             <HeroCTA />
@@ -452,12 +451,26 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Transformation Showroom */}
+      <section className="py-24 md:py-32 bg-slate-50/50 border-y border-gray-200/40 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-16">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-green-700 bg-green-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-green-100">
+              Real Verified Output
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">Transformation Showroom</h2>
+            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Unedited outputs from the engine. Every example is a real transformation&mdash;verified, compiled, and tested against Clean-Core Engine v1.7.3.</p>
+          </div>
+          <TransformationShowroom />
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="py-24 md:py-32 bg-white relative">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">Pilot Features Overview</h2>
-            <p className="text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Test the fully automated pipeline during our non-commercial pilot phase.</p>
+            <h2 className="text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">What You Can Do Today</h2>
+            <p className="text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Every feature listed here is live and free to use&mdash;start with 5 transformations or bring your own API key for unlimited access.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
@@ -500,7 +513,8 @@ export default function Home() {
               }
             ].map((feature, idx) => (
               <div 
-                key={idx} 
+                key={idx}
+                data-testid={`feature-${feature.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                 className="bg-white/45 backdrop-blur-md p-8 md:p-10 rounded-[2.5rem] border border-gray-200/60 hover:border-green-400 hover:bg-white/95 transition-all hover:shadow-xl hover:shadow-green-500/5 group hover:-translate-y-1.5 duration-350 flex flex-col justify-between"
               >
                 <div>
@@ -589,123 +603,103 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing / Licenses Section */}
-      <section className="py-24 md:py-32 bg-white relative overflow-hidden" id="pricing">
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-6xl font-black mb-6 text-gray-955 tracking-tighter">Pilot Licenses</h2>
-            <p className="text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Join the community. Commercial use is not currently planned, but will be evaluated if the pilot phase proves successful.</p>
+      {/* Community Access & Capabilities Section */}
+      <section className="py-24 md:py-32 bg-white relative overflow-hidden" id="access">
+        <div className="max-w-6xl mx-auto px-6 relative z-10">
+          <div className="text-center mb-16">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-100">
+              100% Free &mdash; No Credit Card Required
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">Community Access</h2>
+            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Start immediately with 5 free transformations, or bring your own API key to unlock unlimited access and full exports.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                tier: 'Pilot Basic (Community)',
-                price: 'Free',
-                period: 'Non-Commercial Sandbox',
-                features: [
-                  'Up to 5 standard analyses',
-                  'Standard Solution Designs',
-                  'Community Feedback Access',
-                  'Standard QA reports'
-                ],
-                notFeatures: [
-                  'Modular ZIP Handover',
-                  'Granular Sandbox Executions',
-                  'BPMN 2.0 XML Exports',
-                  'Confluence Blueprints'
-                ],
-                cta: 'Get Basic Access',
-                highlight: false,
-                disabled: false
-              },
-              {
-                tier: 'Pilot Starter (Developer Upgrade)',
-                price: 'Free',
-                period: 'Community Pilot — Instant Self-Service Key Upgrade',
-                features: [
-                  'Includes all Pilot Basic features',
-                  'Unlimited transformations (via BYOK*)',
-                  'Granular Sandbox Testing & Runs',
-                  'BPMN 2.0 & Confluence Exports',
-                  'Full Multi-File ZIP Handover',
-                  'Bring Your Own Key (BYOK*) — Unlock via Settings!'
-                ],
-                notFeatures: [
-                  'Commercial SLA',
-                  'Corporate SSO Integration',
-                  'Active JIRA / Azure DevOps Integration'
-                ],
-                cta: 'Unlock Developer Access',
-                highlight: true,
-                disabled: false
-              },
-              {
-                tier: 'Enterprise (Planned)',
-                price: 'TBD',
-                period: 'Future Commercial Release',
-                features: [
-                  'Unlimited team workspaces',
-                  'Commercial license & SLA',
-                  'SSO (Okta, Microsoft AD) ready',
-                  'Custom On-Premise deployment options'
-                ],
-                cta: 'In Development',
-                highlight: false,
-                disabled: true
-              }
-            ].map((plan, idx) => (
-              <div 
-                key={idx}
-                className={`relative flex flex-col p-8 rounded-[3rem] border transition-all duration-300 ${plan.highlight ? 'bg-gray-950 text-white border-gray-900 shadow-2xl z-10' : plan.disabled ? 'bg-gray-50 text-gray-400 border-gray-200 grayscale opacity-70' : 'bg-white text-gray-900 border-gray-200 hover:border-green-300 hover:shadow-xl'}`}
-              >
-                
-                {plan.disabled && (
-                  <div className="absolute top-0 right-1/2 translate-x-1/2 -translate-y-1/2 bg-gray-200 text-gray-500 border-gray-300 border text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest">
-                    Coming Soon
-                  </div>
-                )}
-                
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-black">{plan.tier}</h3>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black">{plan.price}</span>
-                  </div>
-                  <p className={`text-xs md:text-sm font-medium mt-1 ${plan.highlight ? 'text-gray-400' : 'text-gray-550'}`}>{plan.period}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Card 1: Pilot Sandbox */}
+            <div data-testid="card-sandbox" className="relative flex flex-col p-8 sm:p-10 rounded-[2.5rem] border border-gray-200 bg-white text-gray-900 hover:border-green-300 hover:shadow-xl transition-all duration-300">
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-black">Pilot Sandbox</h3>
+                  <span className="text-[9px] font-black uppercase tracking-widest bg-gray-100 text-gray-500 px-3 py-1 rounded-full border border-gray-200">Evaluate</span>
                 </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-black">Free</span>
+                  <span className="text-sm text-gray-500 font-medium">5 transformations</span>
+                </div>
+                <p className="text-xs md:text-sm font-medium mt-2 text-gray-500">Instant access &mdash; no API key or signup required.</p>
+              </div>
+              <ul className="space-y-3.5 mb-10 flex-grow">
+                {[
+                  'Up to 5 standard ABAP-to-Cloud transformations',
+                  'Syntax analysis & compliance scoring',
+                  'SAP API Business Hub mapping preview',
+                  'Online code preview (input vs. output)',
+                  'Solution design architecture catalog'
+                ].map((f, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm font-bold">
+                    <Check className="w-5 h-5 shrink-0 text-green-600" /> {f}
+                  </li>
+                ))}
+              </ul>
+              <PricingCTA cta="Get Started" highlight={false} disabled={false} />
+            </div>
 
-                <ul className="space-y-4 mb-10 flex-grow">
-                  {plan.features.map((f, i) => {
-                    const isAllBasic = f.toLowerCase().includes('all pilot basic');
-                    return (
-                      <li 
-                        key={i} 
-                        className={`flex items-start gap-3 text-sm ${
-                          isAllBasic 
-                            ? 'text-green-400 font-extrabold tracking-wide uppercase text-xs border border-green-500/30 bg-green-500/5 px-3 py-2 rounded-xl shadow-sm shadow-green-500/5' 
-                            : 'font-bold'
-                        }`}
-                      >
-                        <Check className={`w-5 h-5 shrink-0 ${isAllBasic ? 'text-green-400' : plan.highlight ? 'text-green-400' : plan.disabled ? 'text-gray-400' : 'text-green-600'}`} /> {f}
-                      </li>
-                    );
-                  })}
-                  {plan.notFeatures?.map((f, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm font-bold opacity-40">
-                      <X className="w-5 h-5 shrink-0" /> {f}
+            {/* Card 2: Developer Upgrade (BYOK) */}
+            <div data-testid="card-developer" className="relative flex flex-col p-8 sm:p-10 rounded-[2.5rem] border border-gray-900 bg-gray-950 text-white shadow-2xl transition-all duration-300">
+              <div className="absolute top-0 right-1/2 translate-x-1/2 -translate-y-1/2 bg-green-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
+                Recommended
+              </div>
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-black">Developer Upgrade</h3>
+                  <span className="text-[9px] font-black uppercase tracking-widest bg-green-500/10 text-green-400 px-3 py-1 rounded-full border border-green-500/20">BYOK</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-black">Free</span>
+                  <span className="text-sm text-gray-400 font-medium">Unlimited transformations</span>
+                </div>
+                <p className="text-xs md:text-sm font-medium mt-2 text-gray-400">Bring your own Google Gemini API key &mdash; saved locally in your browser.</p>
+              </div>
+              <ul className="space-y-3.5 mb-10 flex-grow">
+                {[
+                  'Includes all Pilot Sandbox features',
+                  'Unlimited code transformations (via BYOK)',
+                  'Full multi-file abapGit ZIP export (src/ + abapgit.xml)',
+                  'Automated ABAP-Unit test class generation',
+                  'Granular sandbox test execution & runs',
+                  'BPMN 2.0 & Confluence blueprint exports',
+                  'Live S/4HANA tenant connection (admin-gated)'
+                ].map((f, i) => {
+                  const isAll = f.toLowerCase().includes('includes all');
+                  return (
+                    <li key={i} className={`flex items-start gap-3 text-sm ${isAll ? 'text-green-400 font-extrabold tracking-wide uppercase text-xs border border-green-500/30 bg-green-500/5 px-3 py-2 rounded-xl' : 'font-bold'}`}>
+                      <Check className={`w-5 h-5 shrink-0 ${isAll ? 'text-green-400' : 'text-green-400'}`} /> {f}
                     </li>
-                  ))}
-                </ul>
+                  );
+                })}
+              </ul>
+              <PricingCTA cta="Unlock Developer Access" highlight={true} disabled={false} />
+            </div>
+          </div>
 
-                <PricingCTA cta={plan.cta} highlight={plan.highlight} disabled={plan.disabled} />
+          {/* Live Tenant Security Profile */}
+          <div className="mt-12 max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Read-Only Scope', desc: 'Tenant connections are restricted to OData metadata reads and test execution. No write operations.' },
+              { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Stateless Processing', desc: 'Credentials and code are processed in memory only. Nothing is persisted on our servers.' },
+              { icon: <Globe className="w-5 h-5 text-green-600" />, title: 'Admin Onboarding Gate', desc: 'Every tenant connection request is manually reviewed and approved to prevent misuse during the pilot phase.' }
+            ].map((item, idx) => (
+              <div key={idx} className="bg-gray-50 p-5 rounded-2xl border border-gray-200/60 text-center">
+                <div className="w-10 h-10 mx-auto bg-white rounded-xl flex items-center justify-center mb-3 border border-gray-100 shadow-sm">{item.icon}</div>
+                <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider mb-1">{item.title}</h4>
+                <p className="text-[11px] text-gray-500 leading-relaxed font-medium">{item.desc}</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-12 text-center text-xs md:text-sm text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-100 bg-gray-50/50 p-5 rounded-3xl shadow-sm">
-            <span className="font-extrabold text-gray-800 uppercase tracking-wider block mb-1">* BYOK (Bring Your Own Key)</span>
-            Use your own Google Gemini API key to run unlimited transformations without any platform limits. Your API key remains securely stored locally in your browser and is never sent or saved on our servers, ensuring absolute privacy and data sovereignty.
+          {/* BYOK Explainer */}
+          <div className="mt-8 text-center text-xs md:text-sm text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-100 bg-gray-50/50 p-5 rounded-3xl shadow-sm">
+            <span className="font-extrabold text-gray-800 uppercase tracking-wider block mb-1">BYOK (Bring Your Own Key)</span>
+            Use your own Google Gemini API key to run unlimited transformations without any platform limits. Your API key is encrypted and stored locally in your browser&mdash;it is never sent to or saved on our servers, ensuring absolute privacy and data sovereignty.
           </div>
         </div>
       </section>
@@ -713,8 +707,8 @@ export default function Home() {
       {/* Footer CTA */}
       <footer className="py-24 md:py-32 bg-gray-950 text-white text-center">
         <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tighter">Ready to join the community?</h2>
-          <p className="text-lg md:text-xl text-gray-400 mb-12 font-light max-w-2xl mx-auto">Help us shape the future of Core Transformations. Join our pilot program for free.</p>
+          <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-8 tracking-tighter">Verify It Yourself</h2>
+          <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-12 font-light max-w-2xl mx-auto">Import the generated abapGit package into your Eclipse ADT, compile the code, and run the ABAP-Unit tests&mdash;all in your own sandbox.</p>
           <FooterCTA />
           
           <div className="mt-24 pt-12 border-t border-gray-800 text-sm text-gray-500 font-light">
@@ -728,18 +722,18 @@ export default function Home() {
               <Link href="?legal=privacy" className="hover:text-white transition-colors cursor-pointer">Privacy Policy</Link>
             </p>
             <div className="mt-12 text-[10px] text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-900 bg-gray-950/50 p-6 rounded-2xl text-left space-y-3">
-              <span className="font-extrabold text-gray-400 uppercase tracking-widest block border-b border-gray-900 pb-1.5">Legal Disclaimer & Pilot Status</span>
+              <span className="font-extrabold text-gray-400 uppercase tracking-widest block border-b border-gray-900 pb-1.5">Legal Disclaimer & Verification Notice</span>
               <p>
-                <strong>Non-Commercial Developer Sandbox:</strong> Clean-Core.io is operated exclusively as a non-commercial, open-source research and prototyping platform under administrative developer oversight (Felix Frenzel). No commercial licensing, subscriptions, or paid services are offered.
+                <strong>Free Community Prototyping Platform:</strong> Clean-Core.io is a free, community-powered research and prototyping platform for SAP architects and developers, maintained by Felix Frenzel. No commercial licensing, subscriptions, or paid services are offered.
               </p>
               <p>
-                <strong>AI Transformations & "As-Is" Provisioning:</strong> All solution designs, compliance scores, modular code transformations, documentation blueprints, and sandboxed test suites are dynamically generated utilizing third-party generative AI models (Google Gemini API). This platform and all compiled artifacts are provided strictly on an <em>"AS IS"</em> and <em>"AS AVAILABLE"</em> basis, without any warranties or guarantees of any kind, express or implied, including but not limited to the correctness, compilation, performance, security, or commercial compliance of the generated results. Developers must independently review, test, and validate all outputs before any commercial or production usage.
+                <strong>AI-Assisted Drafts &mdash; Verify Before You Deploy:</strong> All solution designs, compliance scores, modular code transformations, and test suites are dynamically generated using third-party generative AI models (Google Gemini API). All artifacts are provided on an <em>&quot;AS IS&quot;</em> and <em>&quot;AS AVAILABLE&quot;</em> basis without warranties of any kind. This tool generates the first compliant draft&mdash;the architect reviews, tests, and approves. We provide the abapGit packages and ABAP-Unit tests so you can compile and verify every output in your own Eclipse ADT environment.
               </p>
               <p>
                 <strong>Limitation of Liability:</strong> In no event shall the administrator, contributors, or developers be held liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, loss of data, system crashes, integration failures, or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort arising in any way out of the use of this software, even if advised of the possibility of such damage.
               </p>
               <p>
-                <strong>Data Privacy & GDPR:</strong> This platform is deployed on secure European cloud nodes in the Belgium (europe-west1) region. Secure stateless proxy layers ensure that uploaded legacy codes are never saved, persisted, or utilized by Google for LLM model training. All users retain the absolute right to immediate, recursive erasure (Art. 17 GDPR) via the settings dashboard.
+                <strong>Data Privacy & GDPR:</strong> This platform is deployed on secure European cloud nodes in the Belgium (europe-west1) region. Secure stateless proxy layers ensure that uploaded code is processed in memory and never persisted or utilized by Google for LLM model training. All users retain the absolute right to immediate, recursive erasure (Art. 17 GDPR) via the settings dashboard.
               </p>
             </div>
           </div>

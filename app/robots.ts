@@ -12,7 +12,7 @@ export default function robots(): MetadataRoute.Robots {
       },
       {
         userAgent: ['GPTBot', 'ChatGPT-User', 'PerplexityBot', 'Google-Extended', 'ClaudeBot', 'Applebot-Extended'],
-        allow: ['/', '/abap-custom-code-analysis', '/clean-core-score', '/sap-tier-2-extensions', '/knowledge'],
+        allow: ['/', '/abap-custom-code-analysis', '/clean-core-score', '/sap-tier-2-extensions', '/knowledge', '/how-it-works', '/about', '/changelog'],
         disallow: ['/admin/', '/project/', '/dashboard/', '/settings/', '/api/'],
       }
     ],

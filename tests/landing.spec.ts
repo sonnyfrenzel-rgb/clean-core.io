@@ -11,15 +11,13 @@ test.describe('Clean-Core.io Landing Page E2E Tests', () => {
     // 3. Verify that the primary hero heading is rendered and visible
     const heroHeading = page.locator('h1');
     await expect(heroHeading).toBeVisible();
-    await expect(heroHeading).toContainText(/Legacy Code/i);
+    await expect(heroHeading).toContainText(/Clean Core Accelerator/i);
 
-    // 4. Verify that pricing cards are rendered correctly
-    const pricingSection = page.locator('#pricing, section:has-text("Pricing"), section:has-text("Preise")').first();
-    // Verify pricing options exist on page
-    const pricingCards = page.locator('.border-gray-200, .border-green-400, [class*="pricing-card"]');
-    if (await pricingCards.count() > 0) {
-      await expect(pricingCards.first()).toBeVisible();
-    }
+    // 4. Verify that community access cards are rendered correctly
+    const sandboxCard = page.getByTestId('card-sandbox');
+    const developerCard = page.getByTestId('card-developer');
+    await expect(sandboxCard).toBeVisible();
+    await expect(developerCard).toBeVisible();
   });
 
   test('should load the legal notice overlay', async ({ page }) => {
