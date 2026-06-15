@@ -6,13 +6,13 @@ import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = {
   title: 'About Clean-Core.io — Built by Felix Frenzel | SAP Modernization',
-  description: 'Clean-Core.io is a free community-powered SAP modernization tool built by Felix Frenzel, an SAP technology architect specializing in S/4HANA Clean Core transformations.',
+  description: 'Clean-Core.io is a free community-powered SAP modernization tool built by Felix Frenzel — born from first-hand experience with an S/4HANA transformation, for the SAP community.',
   alternates: {
     canonical: 'https://clean-core.io/about',
   },
   openGraph: {
     title: 'About Clean-Core.io — Built by Felix Frenzel | SAP Modernization',
-    description: 'Clean-Core.io is a free community-powered SAP modernization tool built by Felix Frenzel, an SAP technology architect specializing in S/4HANA Clean Core transformations.',
+    description: 'Clean-Core.io is a free community-powered SAP modernization tool built by Felix Frenzel — born from first-hand experience with an S/4HANA transformation, for the SAP community.',
     url: 'https://clean-core.io/about',
     type: 'website',
   }
@@ -37,7 +37,7 @@ const trustCards = [
   {
     icon: Users,
     title: 'Community-Driven',
-    description: 'Free to use, free forever. Built for architects, by an architect.',
+    description: 'Free to use, free forever. Built for the community, by someone who needed it.',
   },
 ];
 
@@ -46,7 +46,7 @@ export default function AboutPage() {
     "@context": "https://schema.org",
     "@type": "Person",
     "name": "Felix Frenzel",
-    "jobTitle": "SAP Modernization Architect & Developer",
+    "jobTitle": "Founder & Community Builder",
     "url": "https://clean-core.io/about",
     "sameAs": [
       "https://www.linkedin.com/in/felix-frenzel-3327741b8/",
@@ -107,10 +107,10 @@ export default function AboutPage() {
             <div className="space-y-3 flex-1">
               <div>
                 <h3 className="text-xl font-black text-gray-950 tracking-tight">Felix Frenzel</h3>
-                <p className="text-sm font-bold text-green-600 mt-0.5">SAP Modernization Architect & Developer</p>
+                <p className="text-sm font-bold text-green-600 mt-0.5">Founder — Clean-Core.io</p>
               </div>
               <p className="text-gray-700 leading-relaxed font-medium text-sm">
-                Felix combines deep SAP technology expertise with modern cloud-native development. Clean-Core.io is his contribution to the SAP community — a tool built from real-world experience with S/4HANA migrations, Clean Core compliance, and ABAP Cloud architecture.
+                Felix is personally affected by an S/4HANA transformation and built Clean-Core.io out of that first-hand experience. What started as a tool to solve his own challenges quickly grew into a free resource for the entire SAP community — helping others navigate Clean Core compliance, legacy code modernization, and the complexity of S/4HANA migrations.
               </p>
               <div className="flex items-center gap-3 pt-2">
                 <a
