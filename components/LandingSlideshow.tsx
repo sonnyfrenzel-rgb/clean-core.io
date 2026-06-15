@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Code2, LayoutTemplate, Cpu, ShieldCheck, FileText, Download, Play, Pause } from 'lucide-react';
+import { Code2, LayoutTemplate, Cpu, ShieldCheck, FileText, Download, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
 import Image from 'next/image';
 
@@ -99,6 +99,16 @@ export default function LandingSlideshow() {
 
     return () => clearInterval(timer);
   }, [isHovered, isPlaying]);
+
+  const goToPrev = () => {
+    setCurrentIndex((current) => (current - 1 + slides.length) % slides.length);
+    setProgress(0);
+  };
+
+  const goToNext = () => {
+    setCurrentIndex((current) => (current + 1) % slides.length);
+    setProgress(0);
+  };
 
   return (
     <div className="w-full max-w-6xl mx-auto mt-16 mb-24 px-4 sm:px-6">
@@ -213,6 +223,22 @@ export default function LandingSlideshow() {
               </div>
             </motion.div>
           </AnimatePresence>
+
+          {/* Navigation Arrows */}
+          <button
+            onClick={goToPrev}
+            className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-gray-200/60 shadow-lg text-gray-600 hover:bg-white hover:text-gray-900 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+          <button
+            onClick={goToNext}
+            className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-gray-200/60 shadow-lg text-gray-600 hover:bg-white hover:text-gray-900 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+            aria-label="Next slide"
+          >
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
         </div>
         {/* Hidden Preloading Pipeline to cache all slides instantly */}
         <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
