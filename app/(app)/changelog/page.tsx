@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { ArrowLeft, Tag, Rocket, Sparkles, Zap, Package } from 'lucide-react';
+import { Tag, Rocket, Sparkles, Zap, Package } from 'lucide-react';
 import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = {
@@ -77,12 +78,7 @@ export default function ChangelogPage() {
 
       {/* Navigation */}
       <div className="flex items-center justify-start">
-        <Link 
-          href="/" 
-          className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-slate-50 px-5 py-2.5 rounded-full border border-gray-200 hover:border-green-200"
-        >
-          <ArrowLeft size={14} /> Back to Homepage
-        </Link>
+        <BackButton />
       </div>
 
       {/* Hero Banner */}

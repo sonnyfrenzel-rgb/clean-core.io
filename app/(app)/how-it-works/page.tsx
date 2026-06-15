@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { ArrowLeft, GitBranch, Database, Code2, Bot, Ruler, ChevronDown, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { GitBranch, Database, Code2, Bot, Ruler, ChevronDown, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
@@ -98,12 +99,7 @@ export default function HowItWorksPage() {
 
       {/* Navigation */}
       <div className="flex items-center justify-start">
-        <Link 
-          href="/" 
-          className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-slate-50 px-5 py-2.5 rounded-full border border-gray-200 hover:border-green-200"
-        >
-          <ArrowLeft size={14} /> Back to Homepage
-        </Link>
+        <BackButton />
       </div>
 
       {/* Hero Banner */}
