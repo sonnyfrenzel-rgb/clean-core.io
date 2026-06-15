@@ -199,7 +199,7 @@ export default function AbapAnalysisPage() {
 
       {/* Footer Disclaimer */}
       <div className="text-center text-[10px] text-gray-500 font-mono font-bold uppercase tracking-wider pt-10 border-t border-gray-200">
-        Clean-Core.io {APP_VERSION} • {APP_RELEASE_DATE} • Non-Commercial Pilot Edition
+        Clean-Core.io {APP_VERSION} • {APP_RELEASE_DATE} • Free Community Pilot
       </div>
     </div>
   );

@@ -260,7 +260,7 @@ export default function UserOnboarding() {
                 >
                   GDPR provisions and Privacy Policy
                 </button>{' '}
-                and understand that this is a non-commercial pilot preview.
+                and understand that this is a free community pilot.
               </span>
             </label>
 
@@ -429,9 +429,9 @@ export default function UserOnboarding() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">2. Non-Commercial Usage</h3>
+            <h3 className="text-lg font-bold mb-2">2. Community Pilot Usage</h3>
             <p className="text-sm leading-relaxed text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100 font-medium">
-              During this closed pilot phase, platform access is completely free of charge and intended purely for private, educational, or research-based testing. Commercial utilization of the platform or deployment of the generated code in live production environments is prohibited without a separate commercial agreement.
+              During this community pilot phase, platform access is completely free of charge and intended for prototyping, educational, and research-based testing. Commercial deployment of generated code in live production environments requires a separate agreement.
             </p>
           </div>
 

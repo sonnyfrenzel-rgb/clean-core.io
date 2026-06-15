@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
               </td>
               <td align="right" valign="middle" style="text-align: right;">
                 <span style="display: inline-block; font-size: 11px; font-weight: 700; color: #0284c7; background-color: #f0f9ff; padding: 6px 12px; border-radius: 8px; line-height: 1.2; text-align: center; white-space: nowrap;">
-                  Premium Beta
+                  Community Pilot
                 </span>
               </td>
             </tr>
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
           </p>
           
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            Great news! Your request to integrate a **Live S/4HANA Public Cloud Custom Tenant** has been reviewed and approved by our engineering team. You now have full access to test transformations directly against your non-productive SAP environments.
+            Great news! Your request to integrate a <strong>Live S/4HANA Public Cloud Custom Tenant</strong> has been reviewed and approved by our engineering team. You now have full access to test transformations directly against your non-productive SAP environments.
           </p>
 
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
           <!-- Enterprise Compliance Checklist -->
           <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 30px;">
-            <span style="font-weight: 800; color: #334155; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 12px;">🔒 CISO & Compliance Safe-Connection Guidelines:</span>
+            <span style="font-weight: 800; color: #334155; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 12px;">🔒 Safe-Connection Guidelines:</span>
             <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #475569; line-height: 1.6;">
               <li style="margin-bottom: 8px;">
                 <strong>BTP Destination Service:</strong> Always prefer importing your connection as a standard BTP HTTP Destination JSON instead of manual credentials to inherit BTP connectivity profiles.
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
           <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
             Warm regards,<br />
             <strong>The Clean-Core.io Team</strong><br />
-            <span style="font-size: 12px; color: #94a3b8;">Beta Program Administration</span>
+            <span style="font-size: 12px; color: #94a3b8;">Community Pilot Program</span>
           </div>
 
         </div>
@@ -136,8 +136,9 @@ export async function POST(request: NextRequest) {
           </p>
           <p style="margin: 0 0 12px 0; font-weight: 600;">
             Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
-            Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform • Confidential
+            Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform
           </p>
+          <p style="margin: 0;"><strong>Data Sovereignty (Art. 17 GDPR):</strong> You have the absolute right to erasure. To permanently and instantly wipe all database and authentication entries associated with your profile, visit the <em>Danger Zone</em> inside your Settings dashboard.</p>
         </div>
       </div>
     `;

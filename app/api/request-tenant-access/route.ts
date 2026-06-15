@@ -61,11 +61,11 @@ export async function POST(request: NextRequest) {
 
           <!-- Content -->
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
-            Hello Sonny,
+            Hello Administrator,
           </p>
           
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            A pilot user has requested premium access to connect their <strong>Live S/4HANA Public Cloud Sandbox/Test Tenant</strong> (BYOT) inside the Stage 5 Testing Cockpit. Please review their details:
+            A pilot user has requested live tenant access to connect their <strong>Live S/4HANA Public Cloud Sandbox/Test Tenant</strong> (BYOT) inside the Stage 5 Testing Cockpit. Please review their details:
           </p>
 
           <!-- Applicant Detail Card -->
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
           <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
             Warm regards,<br />
             <strong>The Clean-Core.io Team</strong><br />
-            <span style="font-size: 12px; color: #94a3b8;">Beta Program Administration</span>
+            <span style="font-size: 12px; color: #94a3b8;">Community Pilot Program</span>
           </div>
 
         </div>
@@ -123,11 +123,11 @@ export async function POST(request: NextRequest) {
         <!-- Anti-Spam / Legal Footer -->
         <div style="text-align: center; margin-top: 32px; padding: 0 20px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
           <p style="margin: 0 0 8px 0;">
-            This transactional email was sent to info@clean-core.io regarding a premium tenant integration request on Clean-Core.io.
+            This transactional email was sent to info@clean-core.io regarding a tenant integration request on Clean-Core.io.
           </p>
           <p style="margin: 0 0 12px 0; font-weight: 600;">
              Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
-             Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform • Confidential
+             Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform
           </p>
         </div>
       </div>
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
               </p>
               
               <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
-                Thank you for submitting a premium connection request to connect a **Custom S/4HANA Tenant** (BYOT) inside your Stage 5 Testing Sandbox.
+                Thank you for submitting a connection request to connect a **Custom S/4HANA Tenant** (BYOT) inside your Stage 5 Testing Sandbox.
               </p>
 
               <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
@@ -222,18 +222,18 @@ export async function POST(request: NextRequest) {
               <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
                 Warm regards,<br />
                 <strong>The Clean-Core.io Team</strong><br />
-                <span style="font-size: 12px; color: #94a3b8;">Beta Program Administration</span>
+                <span style="font-size: 12px; color: #94a3b8;">Community Pilot Program</span>
               </div>
 
             </div>
 
             <div style="text-align: center; margin-top: 32px; padding: 0 20px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
               <p style="margin: 0 0 8px 0;">
-                This transactional email was sent to ${email} confirming your premium integration request on Clean-Core.io.
+                This transactional email was sent to ${email} confirming your integration request on Clean-Core.io.
               </p>
               <p style="margin: 0 0 12px 0; font-weight: 600;">
                 Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
-                Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform • Confidential
+                Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform
               </p>
             </div>
           </div>

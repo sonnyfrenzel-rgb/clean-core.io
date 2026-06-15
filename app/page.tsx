@@ -577,8 +577,8 @@ export default function Home() {
               },
               {
                 icon: <Users className="w-6 h-6 text-green-600" />,
-                title: "Non-Commercial Pilot",
-                desc: "Purely research-oriented beta platform. Free access for enterprise architects to prototype decoupling side-by-side without licensing overhead."
+                title: "Free Community Pilot",
+                desc: "Community-driven prototyping platform. Free access for SAP architects and developers to prototype decoupling strategies without licensing overhead."
               },
               {
                 icon: <Shield className="w-6 h-6 text-green-600" />,

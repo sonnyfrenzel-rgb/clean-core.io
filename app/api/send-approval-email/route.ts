@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
               </td>
               <td align="right" valign="middle" style="text-align: right;">
                 <span style="display: inline-block; font-size: 11px; font-weight: 700; color: #0f172a; background-color: #f1f5f9; padding: 6px 12px; border-radius: 8px; line-height: 1.2; text-align: center; white-space: nowrap;">
-                  Beta Pilot
+                  Community Pilot
                 </span>
               </td>
             </tr>
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
           </p>
           
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            We are pleased to inform you that your application for the <strong>Clean-Core.io Pilot Program</strong> has been successfully verified. Your closed-beta workspace credentials are now active.
+            We are pleased to inform you that your application for the <strong>Clean-Core.io Pilot Program</strong> has been successfully verified. Your pilot workspace is now active.
           </p>
 
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
@@ -73,12 +73,12 @@ export async function POST(request: NextRequest) {
 
           <!-- Security Trust Indicator -->
           <div style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 16px; padding: 18px; margin-bottom: 30px;">
-            <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">🛡️ Sovereign Data Privacy & CISO Security Assured</span>
+            <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">🛡️ Sovereign Data Privacy Assured</span>
             <span style="color: #047857; font-size: 13px; line-height: 1.5; display: block;">
               To comply strictly with GDPR (DSGVO) guidelines, your projects are hosted entirely in the <strong>Belgium (europe-west1)</strong> region. All generative AI transformations utilize secure stateless APIs, guaranteeing your source code is never cached, persisted, or used by Google for LLM training.
             </span>
             <span style="color: #03543f; font-size: 12px; line-height: 1.5; display: block; margin-top: 10px; font-weight: 600;">
-              📎 A comprehensive, certified <strong>Enterprise Security & GDPR Compliance Whitepaper</strong> is available for your internal IT audit. Read or download it anytime via the link below.
+              📎 A detailed <strong>Security & Privacy Whitepaper</strong> is available for review. Download it anytime via the link below.
             </span>
           </div>
 
@@ -125,8 +125,8 @@ export async function POST(request: NextRequest) {
           
           <!-- Security Whitepaper Downloader Card -->
           <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 32px;">
-            <span style="font-size: 10px; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">CISO Compliance & Data Safety</span>
-            <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; letter-spacing: -0.01em;">Enterprise Security Whitepaper</h4>
+            <span style="font-size: 10px; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Security & Data Privacy</span>
+            <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; letter-spacing: -0.01em;">Security & Privacy Whitepaper</h4>
             <p style="font-size: 12px; line-height: 1.5; color: #475569; margin: 0 0 12px 0;">
               To facilitate your internal IT audit and accelerate compliance approval, our comprehensive security datasheet details:
             </p>
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
           <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
             Warm regards,<br />
             <strong>The Clean-Core.io Team</strong><br />
-            <span style="font-size: 12px; color: #94a3b8;">Beta Program Administration</span>
+            <span style="font-size: 12px; color: #94a3b8;">Community Pilot Program</span>
           </div>
 
         </div>
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
           </p>
           <p style="margin: 0 0 12px 0; font-weight: 600;">
             Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
-            Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform • Confidential
+            Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform
           </p>
           <p style="margin: 0;">
             <strong>Data Sovereignty (Art. 17 GDPR):</strong> You have the absolute right to erasure. To permanently and instantly wipe all database and authentication entries associated with your profile, visit the <em>Danger Zone</em> inside your Settings dashboard.

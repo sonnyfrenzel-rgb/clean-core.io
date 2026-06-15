@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
               </td>
               <td align="right" valign="middle" style="text-align: right;">
                 <span style="display: inline-block; font-size: 11px; font-weight: 700; color: #0284c7; background-color: #f0f9ff; padding: 6px 12px; border-radius: 8px; line-height: 1.2; text-align: center; white-space: nowrap;">
-                  Premium Beta
+                  Community Pilot
                 </span>
               </td>
             </tr>
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
           </p>
           
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            Please be informed that your integration access for a **Live S/4HANA Public Cloud Custom Tenant** has been temporarily suspended or deactivated by the Clean-Core.io system administration.
+            Please be informed that your integration access for a <strong>Live S/4HANA Public Cloud Custom Tenant</strong> has been temporarily suspended or deactivated by the Clean-Core.io system administration.
           </p>
 
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
             <span style="font-weight: 800; color: #334155; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 12px;">💡 How to Restore Live Connections:</span>
             <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #475569; line-height: 1.6;">
               <li style="margin-bottom: 8px;">
-                <strong>Contact Support:</strong> Get in touch with our engineering team at <a href="mailto:info@clean-core.io" style="color: #0284c7; text-decoration: none; font-weight: 600;">info@clean-core.io</a> to request an evaluation extension.
+                <strong>Contact Support:</strong> Get in touch with our engineering team at <a href="mailto:info@clean-core.io" style="color: #0284c7; text-decoration: none; font-weight: 600;">info@clean-core.io</a> to request an access review.
               </li>
               <li style="margin-bottom: 8px;">
                 <strong>Submit Business Motivation:</strong> You can submit a renewed BYOT request directly within your Pilot Account Settings page by providing an updated business scenario explanation.
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
           <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
             Warm regards,<br />
             <strong>The Clean-Core.io Team</strong><br />
-            <span style="font-size: 12px; color: #94a3b8;">Beta Program Administration</span>
+            <span style="font-size: 12px; color: #94a3b8;">Community Pilot Program</span>
           </div>
 
         </div>
@@ -113,8 +113,9 @@ export async function POST(request: NextRequest) {
           </p>
           <p style="margin: 0 0 12px 0; font-weight: 600;">
             Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
-            Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform • Confidential
+            Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform
           </p>
+          <p style="margin: 0;"><strong>Data Sovereignty (Art. 17 GDPR):</strong> You have the absolute right to erasure. To permanently and instantly wipe all database and authentication entries associated with your profile, visit the <em>Danger Zone</em> inside your Settings dashboard.</p>
         </div>
       </div>
     `;

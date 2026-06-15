@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
             <span style="font-size: 10px; font-weight: 800; color: #b45309; text-transform: uppercase; letter-spacing: 0.1em; background-color: #fffbeb; padding: 6px 12px; border-radius: 9999px; border: 1px solid #fef3c7;">
               ⏳ Application Received
             </span>
-            <h1 style="font-size: 26px; font-weight: 800; color: #0f172a; margin: 18px 0 0 0; letter-spacing: -0.03em; line-height: 1.15;">Your Modernization Workspace is Preparing</h1>
+            <h1 style="font-size: 26px; font-weight: 800; color: #0f172a; margin: 18px 0 0 0; letter-spacing: -0.03em; line-height: 1.15;">Your Workspace is Being Reviewed</h1>
           </div>
 
           <!-- Content -->
@@ -57,11 +57,11 @@ export async function POST(request: NextRequest) {
           </p>
           
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
-            Thank you for requesting access to the <strong>Clean-Core.io Closed Beta Pilot</strong>. Our engineering and architecture team has successfully received your application. We are actively reviewing your use case to provision your dedicated high-compute sandbox.
+            Thank you for requesting access to the <strong>Clean-Core.io Community Pilot</strong>. We have received your application and are reviewing it to set up your workspace.
           </p>
 
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            Get ready to experience the future of SAP modernization. Clean-Core.io is a state-of-the-art research platform engineered to automatically decouple, refactor, and analyze monolithic legacy custom logic into clean, upgrade-stable architectures.
+            Get ready to experience the future of SAP modernization. Clean-Core.io automatically decouples, refactors, and analyzes monolithic legacy custom logic into clean, upgrade-stable architectures.
           </p>
 
           <!-- Security Trust Indicator -->
@@ -116,14 +116,14 @@ export async function POST(request: NextRequest) {
           <!-- Closing Info -->
           <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 30px; font-size: 13px; line-height: 1.6; color: #475569;">
             <strong>What happens next?</strong><br />
-            Our administrators review and approve pilot requests manually to ensure server resources are correctly balanced. Typically, this takes less than 24 hours. Once approved, you will receive an automatic confirmation email with your instant workspace launch link. We appreciate your patience and look forward to welcoming you aboard!
+            We review pilot requests manually. This typically takes less than 24 hours. Once approved, you will receive an automatic confirmation email with your instant workspace launch link. We appreciate your patience and look forward to welcoming you aboard!
           </div>
 
           <!-- Professional Signature -->
           <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
             Warm regards,<br />
             <strong>The Clean-Core.io Team</strong><br />
-            <span style="font-size: 12px; color: #94a3b8;">Beta Program Administration</span>
+            <span style="font-size: 12px; color: #94a3b8;">Community Pilot Program</span>
           </div>
 
         </div>
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
           </p>
           <p style="margin: 0 0 12px 0; font-weight: 600;">
             Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
-            Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform • Confidential
+            Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform
           </p>
           <p style="margin: 0;">
             <strong>Data Sovereignty (Art. 17 GDPR):</strong> You have the absolute right to erasure. To permanently and instantly wipe all database and authentication entries associated with your profile, visit the <em>Danger Zone</em> inside your Settings dashboard.
