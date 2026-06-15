@@ -205,9 +205,9 @@ export default function TransformationShowroom() {
 
 `}<span className="text-blue-700 font-bold">CLASS</span>{` ltcl_sales_order `}<span className="text-blue-700 font-bold">IMPLEMENTATION</span>{`.
   `}<span className="text-blue-700 font-bold">METHOD</span>{` test_order_filter.
-    `}<span className="text-slate-400">{`" Arrange: local test double for I_SalesOrder`}</span>{`
-    `}<span className="text-slate-400">{`" Act: execute CDS view with filter`}</span>{`
-    `}<span className="text-slate-400">{`" Assert: verify only 'OR' type orders returned`}</span>{`
+    `}<span className="text-blue-700 font-bold">DATA</span>{` lt_result `}<span className="text-blue-700 font-bold">TYPE STANDARD TABLE OF</span>{` ZI_SalesOrderCustom.
+    `}<span className="text-blue-700 font-bold">SELECT</span>{` * `}<span className="text-blue-700 font-bold">FROM</span>{` ZI_SalesOrderCustom
+      `}<span className="text-blue-700 font-bold">INTO TABLE</span>{` @lt_result.
     cl_abap_unit_assert=>`}<span className="text-blue-700 font-bold">assert_not_initial</span>{`( act = lines( lt_result ) ).
   `}<span className="text-blue-700 font-bold">ENDMETHOD</span>{`.
 `}<span className="text-blue-700 font-bold">ENDCLASS</span>{`.`}
@@ -366,7 +366,7 @@ export default function TransformationShowroom() {
                 </div>
                 <p className="text-sm text-slate-700 font-medium leading-relaxed">
                   Table <code className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold font-mono">BSEG</code> → Resolved to released API{' '}
-                  <code className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs font-bold font-mono">I_JournalEntry</code>{' '}
+                  <code className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs font-bold font-mono">API_JOURNALENTRY</code>{' '}
                   <span className="text-slate-400">(SAP API Business Hub)</span>.
                 </p>
                 <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-full">
