@@ -682,23 +682,32 @@ export default function Home() {
           </div>
 
           {/* Live Tenant Security Profile */}
-          <div className="mt-12 max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Read-Only Scope', desc: 'Tenant connections are restricted to OData metadata reads and test execution. No write operations.', link: '/how-it-works' },
-              { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Stateless Processing', desc: 'Credentials and code are processed in memory only. Nothing is persisted on our servers.', link: '/about' },
-              { icon: <Globe className="w-5 h-5 text-green-600" />, title: 'Admin Onboarding Gate', desc: 'Every tenant connection request is manually reviewed and approved to prevent misuse during the pilot phase.', link: '/settings' }
-            ].map((item, idx) => (
-              <div key={idx} className="bg-gray-50 p-5 rounded-2xl border border-gray-200/60 text-center">
-                <div className="w-10 h-10 mx-auto bg-white rounded-xl flex items-center justify-center mb-3 border border-gray-100 shadow-sm">{item.icon}</div>
-                <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider mb-1">{item.title}</h4>
-                <p className="text-[11px] text-gray-500 leading-relaxed font-medium">{item.desc}</p>
-                {item.link && (
-                  <Link href={item.link} className="mt-3 inline-flex items-center gap-1 text-[10px] font-bold text-green-600 hover:text-green-700 uppercase tracking-wider hover:underline">
-                    Learn more <ArrowRight size={10} />
-                  </Link>
-                )}
-              </div>
-            ))}
+          <div className="mt-12 max-w-4xl mx-auto border border-dashed border-gray-200 rounded-3xl p-6 pt-4 relative">
+            <div className="flex items-center justify-center gap-2 mb-5">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 whitespace-nowrap px-2">
+                Live S/4HANA Tenant Connection — Security Profile
+              </span>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Read-Only Scope', desc: 'Tenant connections are restricted to OData metadata reads and test execution. No write operations.', link: '/how-it-works' },
+                { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Stateless Processing', desc: 'Credentials and code are processed in memory only. Nothing is persisted on our servers.', link: '/about' },
+                { icon: <Globe className="w-5 h-5 text-green-600" />, title: 'Admin Onboarding Gate', desc: 'Every tenant connection request is manually reviewed and approved to prevent misuse during the pilot phase.', link: '/settings' }
+              ].map((item, idx) => (
+                <div key={idx} className="bg-gray-50 p-5 rounded-2xl border border-gray-200/60 text-center">
+                  <div className="w-10 h-10 mx-auto bg-white rounded-xl flex items-center justify-center mb-3 border border-gray-100 shadow-sm">{item.icon}</div>
+                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider mb-1">{item.title}</h4>
+                  <p className="text-[11px] text-gray-500 leading-relaxed font-medium">{item.desc}</p>
+                  {item.link && (
+                    <Link href={item.link} className="mt-3 inline-flex items-center gap-1 text-[10px] font-bold text-green-600 hover:text-green-700 uppercase tracking-wider hover:underline">
+                      Learn more <ArrowRight size={10} />
+                    </Link>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* BYOK Explainer */}
