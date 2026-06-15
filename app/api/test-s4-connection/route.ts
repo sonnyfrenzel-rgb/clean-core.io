@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
-import { isUrlSafe } from '@/lib/url-validation';
+import { isUrlSafe, safeFetch, SsrfError } from '@/lib/url-validation';
 
 /**
  * POST /api/test-s4-connection
@@ -40,7 +40,7 @@ async function fetchOAuth2Token(
   const timeout = setTimeout(() => controller.abort(), 12000);
 
   try {
-    const response = await fetch(tokenUrl, {
+    const response = await safeFetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -157,7 +157,7 @@ async function testEndpoint(
 
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await safeFetch(url, {
       method: 'HEAD',
       headers,
       signal: controller.signal,
@@ -171,7 +171,7 @@ async function testEndpoint(
 
     // Some servers don't support HEAD — try GET as fallback
     try {
-      response = await fetch(url, {
+      response = await safeFetch(url, {
         method: 'GET',
         headers,
         signal: controller.signal,
@@ -277,7 +277,7 @@ export async function POST(req: NextRequest) {
       }
 
       // SSRF protection: validate resolved URL
-      const urlCheck = isUrlSafe(config.url);
+      const urlCheck = await isUrlSafe(config.url);
       if (!urlCheck.safe) {
         return NextResponse.json(
           { status: 'failed', message: urlCheck.reason || 'URL is not allowed.' },
@@ -292,6 +292,13 @@ export async function POST(req: NextRequest) {
 
       // Resolve authentication from parsed destination config
       if (config.authType === 'oauth2' && config.tokenUrl && config.clientId && config.clientSecret) {
+        const tokenCheck = await isUrlSafe(config.tokenUrl);
+        if (!tokenCheck.safe) {
+          return NextResponse.json(
+            { status: 'failed', message: `Token URL blocked: ${tokenCheck.reason}` },
+            { status: 403 },
+          );
+        }
         try {
           const tokenData = await fetchOAuth2Token(config.tokenUrl, config.clientId, config.clientSecret);
           headers['Authorization'] = `Bearer ${tokenData.access_token}`;
@@ -331,7 +338,7 @@ export async function POST(req: NextRequest) {
     }
 
     // SSRF protection: validate user-supplied URL
-    const urlCheck = isUrlSafe(url);
+    const urlCheck = await isUrlSafe(url);
     if (!urlCheck.safe) {
       return NextResponse.json(
         { status: 'failed', message: urlCheck.reason || 'URL is not allowed.' },
@@ -359,6 +366,13 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      const tokenCheck = await isUrlSafe(tokenUrl);
+      if (!tokenCheck.safe) {
+        return NextResponse.json(
+          { status: 'failed', message: `Token URL blocked: ${tokenCheck.reason}` },
+          { status: 403 },
+        );
+      }
       try {
         const tokenData = await fetchOAuth2Token(tokenUrl, username, password);
         headers['Authorization'] = `Bearer ${tokenData.access_token}`;
@@ -388,9 +402,10 @@ export async function POST(req: NextRequest) {
       const { httpStatus } = await testEndpoint(url, headers);
       return evaluateHttpStatus(httpStatus, authType || 'basic');
     } catch (connErr: any) {
+      const status = connErr instanceof SsrfError ? 403 : 502;
       return NextResponse.json(
         { status: 'failed', message: connErr.message },
-        { status: 502 }
+        { status }
       );
     }
   } catch (error: any) {

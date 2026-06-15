@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isUrlSafe } from '@/lib/url-validation';
+import { isUrlSafe, safeFetch, SsrfError } from '@/lib/url-validation';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 
@@ -58,7 +58,7 @@ async function fetchOAuth2Token(
   const timeout = setTimeout(() => controller.abort(), 12000);
 
   try {
-    const response = await fetch(tokenUrl, {
+    const response = await safeFetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -142,12 +142,16 @@ async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, st
     url = config.url;
 
     if (config.authType === 'oauth2' && 'tokenUrl' in config && config.tokenUrl && 'clientId' in config && config.clientId && 'clientSecret' in config && config.clientSecret) {
+      const tokenCheck = await isUrlSafe(config.tokenUrl);
+      if (!tokenCheck.safe) throw new Error(`Token URL blocked: ${tokenCheck.reason}`);
       const tokenData = await fetchOAuth2Token(config.tokenUrl, config.clientId, config.clientSecret);
       headers['Authorization'] = `Bearer ${tokenData.access_token}`;
     } else if (config.authType === 'basic' && config.username && config.password) {
       headers['Authorization'] = `Basic ${Buffer.from(`${config.username}:${config.password}`).toString('base64')}`;
     }
   } else if (authType === 'oauth2' && tokenUrl && username && password) {
+    const tokenCheck = await isUrlSafe(tokenUrl);
+    if (!tokenCheck.safe) throw new Error(`Token URL blocked: ${tokenCheck.reason}`);
     const tokenData = await fetchOAuth2Token(tokenUrl, username, password);
     headers['Authorization'] = `Bearer ${tokenData.access_token}`;
   } else if (authType === 'basic' && username && password) {
@@ -165,7 +169,7 @@ async function fetchWithTimeout(url: string, headers: Record<string, string>, ti
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(url, {
+    const response = await safeFetch(url, {
       method: 'GET',
       headers,
       signal: controller.signal,
@@ -314,7 +318,7 @@ export async function POST(req: NextRequest) {
 
     // SSRF protection: validate user-supplied URL
     if (resolvedBody.url) {
-      const urlCheck = isUrlSafe(resolvedBody.url);
+      const urlCheck = await isUrlSafe(resolvedBody.url);
       if (!urlCheck.safe) {
         return NextResponse.json(
           { status: 'failed', message: urlCheck.reason || 'URL is not allowed.' },
@@ -338,7 +342,7 @@ export async function POST(req: NextRequest) {
     }
 
     // SSRF protection: validate resolved URL (may differ from body.url for BTP destinations)
-    const resolvedUrlCheck = isUrlSafe(resolvedUrl);
+    const resolvedUrlCheck = await isUrlSafe(resolvedUrl);
     if (!resolvedUrlCheck.safe) {
       return NextResponse.json(
         { status: 'failed', message: resolvedUrlCheck.reason || 'Resolved URL is not allowed.' },

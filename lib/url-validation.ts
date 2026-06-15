@@ -1,230 +1,213 @@
 /**
- * F-05: Hardened SSRF protection with DNS resolution, IPv6 blocking,
- * encoded-IP detection, redirect safety, and host allowlist.
- * 
- * Validates that a URL is safe for server-side fetching.
- * Blocks private/internal IPs, cloud metadata endpoints, localhost,
- * IPv6 addresses, encoded IP bypass attempts, and non-allowlisted hosts.
+ * SSRF-Schutz: validiert URLs für serverseitiges Fetching und stellt einen
+ * rebinding-/redirect-sicheren safeFetch() bereit.
  */
+import dns from 'dns/promises';
+import net from 'net';
+import { Agent } from 'undici';
 
-import { resolve as dnsResolve } from 'dns';
-
-// ── Private/reserved CIDR blocks ────────────────────────────────────────────
-const PRIVATE_RANGES = [
-  { start: 0x0A000000, end: 0x0AFFFFFF },   // 10.0.0.0/8
-  { start: 0xAC100000, end: 0xAC1FFFFF },   // 172.16.0.0/12
-  { start: 0xC0A80000, end: 0xC0A8FFFF },   // 192.168.0.0/16
-  { start: 0xA9FE0000, end: 0xA9FEFFFF },   // 169.254.0.0/16 (link-local)
-  { start: 0x7F000000, end: 0x7FFFFFFF },   // 127.0.0.0/8
-  { start: 0x00000000, end: 0x00FFFFFF },   // 0.0.0.0/8
-  { start: 0xC0000000, end: 0xC00000FF },   // 192.0.0.0/24
-  { start: 0xC6120000, end: 0xC613FFFF },   // 198.18.0.0/15 (benchmarking)
-  { start: 0xE0000000, end: 0xFFFFFFFF },   // 224.0.0.0/4 + 240.0.0.0/4 (multicast + reserved)
-];
-
-function ipv4ToInt(ip: string): number | null {
-  const parts = ip.split('.').map(Number);
-  if (parts.length !== 4 || parts.some(p => isNaN(p) || p < 0 || p > 255)) return null;
-  return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+export class SsrfError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SsrfError';
+  }
 }
 
-function isPrivateIPv4(ip: string): boolean {
-  const num = ipv4ToInt(ip);
-  if (num === null) return false;
-  return PRIVATE_RANGES.some(r => num >= r.start && num <= r.end);
+// Optionale Allowlist (kommagetrennte Host-Suffixe), z. B.
+// S4_HOST_ALLOWLIST=".s4hana.cloud,.hana.ondemand.com,.sapcloud.cn"
+function allowlist(): string[] {
+  return (process.env.S4_HOST_ALLOWLIST || '')
+    .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
 }
 
-// ── Hostname-based checks (pre-DNS) ────────────────────────────────────────
+// ── IPv4 ────────────────────────────────────────────────────────────────────
+function v4ToInt(ip: string): number {
+  return ip.split('.').reduce((acc, o) => ((acc << 8) + (parseInt(o, 10) & 0xff)) >>> 0, 0) >>> 0;
+}
+function inV4(ip: string, base: string, bits: number): boolean {
+  const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
+  return (v4ToInt(ip) & mask) === (v4ToInt(base) & mask);
+}
+function isBlockedV4(ip: string): boolean {
+  return (
+    inV4(ip, '0.0.0.0', 8) ||        // „this network"
+    inV4(ip, '10.0.0.0', 8) ||       // privat
+    inV4(ip, '100.64.0.0', 10) ||    // CGNAT
+    inV4(ip, '127.0.0.0', 8) ||      // loopback
+    inV4(ip, '169.254.0.0', 16) ||   // link-local + Cloud-Metadata
+    inV4(ip, '172.16.0.0', 12) ||    // privat
+    inV4(ip, '192.0.0.0', 24) ||     // IETF
+    inV4(ip, '192.0.2.0', 24) ||     // TEST-NET-1
+    inV4(ip, '192.168.0.0', 16) ||   // privat
+    inV4(ip, '198.18.0.0', 15) ||    // Benchmark
+    inV4(ip, '198.51.100.0', 24) ||  // TEST-NET-2
+    inV4(ip, '203.0.113.0', 24) ||   // TEST-NET-3
+    inV4(ip, '224.0.0.0', 4) ||      // Multicast
+    inV4(ip, '240.0.0.0', 4)         // reserviert
+  );
+}
 
-/** Detect IPv6 addresses including bracket-wrapped [::1] */
-function isIPv6(hostname: string): boolean {
-  // Bracket-wrapped IPv6 in URLs
-  if (hostname.startsWith('[') && hostname.endsWith(']')) return true;
-  // Raw IPv6 (contains multiple colons)
-  if ((hostname.match(/:/g) || []).length >= 2) return true;
+// ── IPv6 ────────────────────────────────────────────────────────────────────
+function v6ToBytes(ipIn: string): number[] | null {
+  let ip = ipIn.split('%')[0]; // Zone-ID entfernen
+  let v4: number[] | null = null;
+  if (ip.includes('.')) {
+    const lc = ip.lastIndexOf(':');
+    const tail = ip.slice(lc + 1);
+    const p = tail.split('.').map((n) => parseInt(n, 10));
+    if (p.length === 4 && p.every((n) => n >= 0 && n <= 255)) {
+      v4 = p;
+      ip = ip.slice(0, lc + 1) + '0:0';
+    }
+  }
+  const halves = ip.split('::');
+  if (halves.length > 2) return null;
+  const head = halves[0] ? halves[0].split(':') : [];
+  const tail = halves.length === 2 ? (halves[1] ? halves[1].split(':') : []) : [];
+  let groups: string[];
+  if (halves.length === 2) {
+    const missing = 8 - (head.length + tail.length);
+    if (missing < 0) return null;
+    groups = [...head, ...Array(missing).fill('0'), ...tail];
+  } else {
+    groups = head;
+  }
+  if (groups.length !== 8) return null;
+  const bytes: number[] = [];
+  for (const g of groups) {
+    const v = parseInt(g || '0', 16);
+    if (Number.isNaN(v) || v < 0 || v > 0xffff) return null;
+    bytes.push((v >> 8) & 0xff, v & 0xff);
+  }
+  if (v4) { bytes[12] = v4[0]; bytes[13] = v4[1]; bytes[14] = v4[2]; bytes[15] = v4[3]; }
+  return bytes;
+}
+function isBlockedV6(ip: string): boolean {
+  const b = v6ToBytes(ip);
+  if (!b) return true; // unparsebar → blocken
+  const allZeroUpto = (n: number) => b.slice(0, n).every((x) => x === 0);
+  // ::  und  ::1
+  if (allZeroUpto(15) && (b[15] === 0 || b[15] === 1)) return true;
+  // IPv4-mapped ::ffff:0:0/96
+  if (allZeroUpto(10) && b[10] === 0xff && b[11] === 0xff) {
+    return isBlockedV4(`${b[12]}.${b[13]}.${b[14]}.${b[15]}`);
+  }
+  // NAT64 64:ff9b::/96
+  if (b[0] === 0x00 && b[1] === 0x64 && b[2] === 0xff && b[3] === 0x9b && b.slice(4, 12).every((x) => x === 0)) {
+    return isBlockedV4(`${b[12]}.${b[13]}.${b[14]}.${b[15]}`);
+  }
+  if ((b[0] & 0xfe) === 0xfc) return true;                 // ULA fc00::/7
+  if (b[0] === 0xfe && (b[1] & 0xc0) === 0x80) return true; // link-local fe80::/10
+  if (b[0] === 0xff) return true;                           // Multicast ff00::/8
+  if (b[0] === 0x20 && b[1] === 0x01 && b[2] === 0x0d && b[3] === 0xb8) return true; // 2001:db8::/32
   return false;
 }
 
-/** Detect encoded/obfuscated IPs (hex, octal, decimal integer, mixed) */
-function isEncodedIP(hostname: string): boolean {
-  // Decimal integer IP: http://2130706433 → 127.0.0.1
-  if (/^\d{8,10}$/.test(hostname)) return true;
-  // Hex IP: 0x7f000001 or 0x7f.0x00.0x00.0x01
-  if (/^0x[0-9a-f]+$/i.test(hostname) || /^0x[0-9a-f]+\./i.test(hostname)) return true;
-  // Octal notation: 0177.0.0.01
-  if (/^0\d+\./.test(hostname)) return true;
-  // URL-encoded dots: 127%2e0%2e0%2e1
-  if (/%2e/i.test(hostname)) return true;
-  return false;
+function isBlockedIp(ip: string): boolean {
+  const fam = net.isIP(ip);
+  if (fam === 4) return isBlockedV4(ip);
+  if (fam === 6) return isBlockedV6(ip);
+  return true; // unbekannt → blocken
 }
 
-/** Blocked metadata hostnames */
-const METADATA_HOSTS = new Set([
-  '169.254.169.254',
-  'metadata.google.internal',
-  'metadata.google.com',
-  '100.100.100.200',      // Alibaba Cloud metadata
-  'instance-data',         // AWS alias
-]);
+export interface UrlSafeResult {
+  safe: boolean;
+  reason?: string;
+  host?: string;
+  resolvedIp?: string;
+  family?: 4 | 6;
+}
 
-// ── Synchronous pre-flight check ────────────────────────────────────────────
-
-export function isUrlSafe(urlString: string): { safe: boolean; reason?: string } {
+export async function isUrlSafe(urlString: string): Promise<UrlSafeResult> {
+  let parsed: URL;
   try {
-    const parsed = new URL(urlString);
-
-    // Only allow HTTPS
-    if (parsed.protocol !== 'https:') {
-      return { safe: false, reason: 'Only HTTPS URLs are allowed.' };
-    }
-
-    // Block credentials in URL (user:pass@host)
-    if (parsed.username || parsed.password) {
-      return { safe: false, reason: 'URLs with embedded credentials are blocked.' };
-    }
-
-    const hostname = parsed.hostname.toLowerCase();
-
-    // Block IPv6
-    if (isIPv6(hostname)) {
-      return { safe: false, reason: 'IPv6 addresses are blocked to prevent SSRF bypasses.' };
-    }
-
-    // Block encoded/obfuscated IPs
-    if (isEncodedIP(hostname)) {
-      return { safe: false, reason: 'Encoded or obfuscated IP addresses are blocked.' };
-    }
-
-    // Block cloud metadata endpoints
-    if (METADATA_HOSTS.has(hostname)) {
-      return { safe: false, reason: 'Cloud metadata endpoints are blocked.' };
-    }
-
-    // Block localhost variants
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '0.0.0.0') {
-      return { safe: false, reason: 'Localhost addresses are blocked.' };
-    }
-
-    // Block dangerous internal TLDs/suffixes
-    if (hostname.endsWith('.internal') || hostname.endsWith('.local') || hostname.endsWith('.localhost') || hostname.endsWith('.corp')) {
-      return { safe: false, reason: 'Internal/local hostnames are blocked.' };
-    }
-
-    // Block private IP ranges (plain IPv4)
-    const ipv4Match = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
-    if (ipv4Match) {
-      if (isPrivateIPv4(hostname)) {
-        return { safe: false, reason: 'Private/internal IP addresses are blocked.' };
-      }
-    }
-
-    // F-05: Host allowlist — if configured, only allow matching hosts
-    const allowlist = (process.env.S4_HOST_ALLOWLIST || '').split(',').map(s => s.trim()).filter(Boolean);
-    if (allowlist.length > 0 && !ipv4Match) {
-      const allowed = allowlist.some(suffix => hostname === suffix || hostname.endsWith(suffix));
-      if (!allowed) {
-        return { safe: false, reason: `Host "${hostname}" is not in the configured allowlist.` };
-      }
-    }
-
-    return { safe: true };
+    parsed = new URL(urlString);
   } catch {
     return { safe: false, reason: 'Invalid URL format.' };
   }
-}
 
-// ── Async DNS-based check (resolves hostname, checks resulting IPs) ─────────
+  if (parsed.protocol !== 'https:') return { safe: false, reason: 'Only HTTPS URLs are allowed.' };
+  if (parsed.username || parsed.password) return { safe: false, reason: 'Credentials in URL are not allowed.' };
 
-function resolveHostname(hostname: string): Promise<string[]> {
-  return new Promise((resolve) => {
-    dnsResolve(hostname, (err, addresses) => {
-      if (err || !addresses) {
-        resolve([]);
-      } else {
-        resolve(addresses);
-      }
-    });
-  });
-}
+  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
 
-/**
- * Full async SSRF check: runs isUrlSafe() + DNS resolution.
- * Use this for all server-side fetch operations.
- * DNS rebinding protection: resolves the hostname and checks the resulting IPs.
- */
-export async function isUrlSafeWithDNS(urlString: string): Promise<{ safe: boolean; reason?: string }> {
-  // Pre-flight checks
-  const preflight = isUrlSafe(urlString);
-  if (!preflight.safe) return preflight;
-
-  // DNS resolution check
-  try {
-    const parsed = new URL(urlString);
-    const hostname = parsed.hostname;
-
-    // Skip DNS check for raw IPs (already checked above)
-    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
-      return { safe: true };
-    }
-
-    const resolved = await resolveHostname(hostname);
-    if (resolved.length === 0) {
-      return { safe: false, reason: `DNS resolution failed for ${hostname}. Cannot verify target safety.` };
-    }
-
-    // Check every resolved IP
-    for (const ip of resolved) {
-      if (isPrivateIPv4(ip)) {
-        return { safe: false, reason: `DNS for ${hostname} resolves to private IP ${ip}. Blocked to prevent SSRF.` };
-      }
-      // Block metadata IPs in resolved addresses
-      if (METADATA_HOSTS.has(ip)) {
-        return { safe: false, reason: `DNS for ${hostname} resolves to cloud metadata IP ${ip}. Blocked.` };
-      }
-    }
-
-    return { safe: true };
-  } catch {
-    return { safe: false, reason: 'Failed to perform DNS safety check.' };
+  // Schnelle Denylist + Policy
+  if (host === 'metadata.google.internal' || host.endsWith('.internal') || host.endsWith('.local')) {
+    return { safe: false, reason: 'Internal/metadata hostnames are blocked.' };
   }
+  if (host.includes('-api.s4hana.ondemand.com')) {
+    return { safe: false, reason: 'Production tenant API endpoints are blocked.' };
+  }
+
+  // Optionale Allowlist
+  const al = allowlist();
+  if (al.length && !al.some((suf) => host === suf.replace(/^\./, '') || host.endsWith(suf))) {
+    return { safe: false, reason: 'Host is not in the configured allowlist.' };
+  }
+
+  // IP-Literal oder DNS-Auflösung (getaddrinfo normalisiert encodierte Formen)
+  let records: { address: string; family: number }[];
+  if (net.isIP(host)) {
+    records = [{ address: host, family: net.isIP(host) }];
+  } else {
+    try {
+      records = await dns.lookup(host, { all: true, verbatim: true });
+    } catch {
+      return { safe: false, reason: 'DNS resolution failed.' };
+    }
+  }
+  if (!records.length) return { safe: false, reason: 'No DNS records found.' };
+
+  for (const r of records) {
+    if (isBlockedIp(r.address)) {
+      return { safe: false, reason: `Resolves to a blocked address (${r.address}).` };
+    }
+  }
+  const first = records[0];
+  return { safe: true, host, resolvedIp: first.address, family: net.isIP(first.address) as 4 | 6 };
 }
 
 /**
- * Safe fetch wrapper: validates URL + DNS before fetching,
- * follows redirects manually to validate each hop.
- * maxRedirects defaults to 5.
+ * Rebinding-/Redirect-sicherer Fetch:
+ *  - validiert jede URL (auch nach Redirect) per isUrlSafe,
+ *  - pinnt die TCP-Verbindung an die validierte IP (SNI/TLS bleibt am Hostnamen),
+ *  - folgt Redirects nur manuell, begrenzt auf maxRedirects.
+ * Wirft SsrfError bei blockierten Zielen.
  */
 export async function safeFetch(
   url: string,
-  options: RequestInit = {},
-  maxRedirects = 5
+  init: RequestInit = {},
+  maxRedirects = 3,
 ): Promise<Response> {
-  let currentUrl = url;
+  let current = url;
+  for (let hop = 0; hop <= maxRedirects; hop++) {
+    const check = await isUrlSafe(current);
+    if (!check.safe) throw new SsrfError(check.reason || 'Blocked URL.');
 
-  for (let i = 0; i <= maxRedirects; i++) {
-    const check = await isUrlSafeWithDNS(currentUrl);
-    if (!check.safe) {
-      throw new Error(`SSRF blocked: ${check.reason}`);
-    }
+    const pinnedIp = check.resolvedIp!;
+    const pinnedFamily = check.family!;
+    const lookup = (_hostname: string, options: any, cb: any) => {
+      const rec = { address: pinnedIp, family: pinnedFamily };
+      if (options && options.all) return cb(null, [rec]);
+      return cb(null, pinnedIp, pinnedFamily);
+    };
+    const dispatcher = new Agent({ connect: { lookup } });
 
-    const response = await fetch(currentUrl, {
-      ...options,
-      redirect: 'manual', // Don't auto-follow — we need to validate each redirect target
+    const res = await fetch(current, {
+      ...init,
+      redirect: 'manual',
+      // @ts-expect-error: dispatcher ist eine undici-Erweiterung von fetch()
+      dispatcher,
     });
 
-    // Handle redirects manually
-    if ([301, 302, 303, 307, 308].includes(response.status)) {
-      const location = response.headers.get('location');
-      if (!location) {
-        throw new Error('Redirect response missing Location header.');
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get('location');
+      if (loc) {
+        current = new URL(loc, current).toString();
+        continue;
       }
-      // Resolve relative redirects
-      currentUrl = new URL(location, currentUrl).toString();
-      continue;
     }
-
-    return response;
+    return res;
   }
-
-  throw new Error(`Too many redirects (max ${maxRedirects}).`);
+  throw new SsrfError('Too many redirects.');
 }
