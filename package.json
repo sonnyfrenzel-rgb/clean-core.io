@@ -2,6 +2,9 @@
   "name": "ai-studio-applet",
   "version": "1.7.3",
   "private": true,
+  "engines": {
+    "node": ">=22.8"
+  },
   "main": "main.js",
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next dev",
