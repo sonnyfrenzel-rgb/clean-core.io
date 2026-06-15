@@ -3,12 +3,14 @@ const nextConfig = {
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
   typescript: {
-    ignoreBuildErrors: true,
+    // F-07: Build errors must block deployment (was: ignoreBuildErrors: true)
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    // F-07: Lint errors must block deployment (was: ignoreDuringBuilds: true)
+    ignoreDuringBuilds: false,
   },
-  serverExternalPackages: ['firebase-admin'],
+  serverExternalPackages: ['firebase-admin', 'esbuild', 'undici'],
   experimental: {
   },
   // Allow access to remote image placeholder.
