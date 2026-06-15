@@ -267,14 +267,22 @@ export default function SettingsPage() {
       setBackupEnabled(profile.backupEnabled !== false); // default true
       setDefaultView(profile.landingPageDefault || 'dashboard');
 
-      // Load S4 Config if present
-      if (profile.s4Config) {
+      // F-03: Load S4 metadata (non-secret) — password is write-only
+      if (profile.s4Meta?.configured) {
+        setS4Url(profile.s4Meta.url || '');
+        setS4Username(profile.s4Meta.username || '');
+        setS4AuthType((profile.s4Meta.authType as any) || 'basic');
+        setS4TokenUrl(profile.s4Meta.tokenUrl || '');
+        // Password/BTP-JSON are NOT loaded back (write-only).
+        // UI placeholder will show "•••••• (stored)" when configured.
+        setS4Password('');
+      } else if (profile.s4Config) {
+        // Legacy fallback for not-yet-migrated profiles
         setS4Url(profile.s4Config.url || '');
         setS4Username(profile.s4Config.username || '');
-        setS4Password(profile.s4Config.password || '');
+        setS4Password('');
         setS4AuthType(profile.s4Config.authType || 'basic');
         setS4TokenUrl(profile.s4Config.tokenUrl || '');
-        setBtpDestinationJson(profile.s4Config.btpDestinationJson || '');
       }
     }
   }, [profile]);
@@ -510,22 +518,27 @@ export default function SettingsPage() {
     if (e) e.preventDefault();
     setIsSavingConfig(true);
     try {
-      const updates = {
-        s4Config: {
+      // F-03: Save via encrypted server-side route (not plaintext Firestore)
+      const token = await getAuth().currentUser?.getIdToken();
+      const res = await fetch('/api/s4-credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
           url: s4Url,
           username: s4Username,
           password: s4Password,
           authType: s4AuthType,
           tokenUrl: s4AuthType === 'oauth2' ? s4TokenUrl : '',
-          btpDestinationJson: s4AuthType === 'btp_destination' ? btpDestinationJson : ''
-        }
-      };
-      await updateProfile(updates);
-      setConnectionMessage("Configuration saved successfully.");
+          btpDestinationJson: s4AuthType === 'btp_destination' ? btpDestinationJson : '',
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Save failed');
+      setS4Password(''); // Password should never stay in client state
+      setConnectionMessage("Configuration saved securely (encrypted).");
       setTimeout(() => setConnectionMessage(""), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to save S/4 config:", err);
-      setConnectionMessage("Failed to save configuration.");
+      setConnectionMessage(err.message || "Failed to save configuration.");
     } finally {
       setIsSavingConfig(false);
     }
@@ -630,6 +643,15 @@ export default function SettingsPage() {
 
       // 3. Delete user document in registration_requests
       await deleteDoc(doc(db, 'registration_requests', uid));
+
+      // 3.5 F-03: Delete encrypted S/4HANA credentials via API
+      try {
+        const token = await currentUser.getIdToken();
+        await fetch('/api/s4-credentials', {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch { /* best-effort */ }
 
       // 4. Delete user document in users
       await deleteDoc(doc(db, 'users', uid));

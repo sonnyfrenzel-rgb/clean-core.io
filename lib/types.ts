@@ -60,7 +60,15 @@ export interface Project {
   extensibilityRoute?: string;
   s4Deployment?: 'public' | 'private';
   s4Environment?: 'mock' | 'live';
+  /** @deprecated Use s4Meta — s4Config stored cleartext secrets */
   s4Config?: S4Config;
+  s4Meta?: {
+    configured: boolean;
+    url: string;
+    username: string;
+    authType: string;
+    tokenUrl: string;
+  };
   status?: 'created' | 'analyzed' | 'designed' | 'transformed' | 'testing' | 'documented' | 'completed';
   exports?: Record<string, string>;
   cleanCoreScore?: number;

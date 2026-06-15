@@ -177,11 +177,7 @@ export const useTestExecution = (projectId: string, project: Project | null, set
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
               },
               body: JSON.stringify({
-                url: tenantUrl,
-                username: project.s4Config!.username || '',
-                password: project.s4Config!.password || '',
-                authType: project.s4Config!.authType || 'basic',
-                btpDestinationJson: project.s4Config!.btpDestinationJson || ''
+                useStoredCredentials: true,
               })
             });
             connectionResult = await connResponse.json();
@@ -209,10 +205,10 @@ export const useTestExecution = (projectId: string, project: Project | null, set
           setSandboxOutput(prev => prev + `  → ${tenantReachable ? '✅ PASSED' : '❌ FAILED'}: ${connectionResult.message}\n`);
 
           // ── TC_AUTH: Authentication Validation ──
-          setSandboxOutput(prev => prev + `\n[TC_AUTH] Validating ${project.s4Config!.authType || 'basic'} authentication...\n`);
+          setSandboxOutput(prev => prev + `\n[TC_AUTH] Validating ${project.s4Meta?.authType || project.s4Config?.authType || 'basic'} authentication...\n`);
           liveResults.push({
             id: 'TC_AUTH',
-            name: `${(project.s4Config!.authType || 'basic').toUpperCase()} Authentication`,
+            name: `${(project.s4Meta?.authType || project.s4Config?.authType || 'basic').toUpperCase()} Authentication`,
             description: 'Validates that the provided credentials are accepted by the tenant',
             category: 'Security',
             priority: 'Critical' as any,
@@ -242,11 +238,7 @@ export const useTestExecution = (projectId: string, project: Project | null, set
                   ...(metaToken ? { 'Authorization': `Bearer ${metaToken}` } : {}),
                 },
                 body: JSON.stringify({
-                  url: tenantUrl,
-                  username: project.s4Config!.username || '',
-                  password: project.s4Config!.password || '',
-                  authType: project.s4Config!.authType || 'basic',
-                  btpDestinationJson: project.s4Config!.btpDestinationJson || '',
+                  useStoredCredentials: true,
                   servicePath: '/sap/opu/odata/sap/API_BUSINESS_PARTNER'
                 })
               });
@@ -314,11 +306,7 @@ export const useTestExecution = (projectId: string, project: Project | null, set
                       ...(readToken ? { 'Authorization': `Bearer ${readToken}` } : {}),
                     },
                     body: JSON.stringify({
-                      url: tenantUrl,
-                      username: project.s4Config!.username || '',
-                      password: project.s4Config!.password || '',
-                      authType: project.s4Config!.authType || 'basic',
-                      btpDestinationJson: project.s4Config!.btpDestinationJson || '',
+                      useStoredCredentials: true,
                       servicePath: '/sap/opu/odata/sap/API_BUSINESS_PARTNER',
                       entitySet: es.name,
                     })
@@ -392,7 +380,7 @@ export const useTestExecution = (projectId: string, project: Project | null, set
           finalReport += `S/4HANA LIVE TENANT VALIDATION REPORT - ${timestamp}\n`;
           finalReport += `==================================================\n\n`;
           finalReport += `Tenant: ${tenantUrl}\n`;
-          finalReport += `Auth Method: ${project.s4Config!.authType || 'basic'}\n`;
+          finalReport += `Auth Method: ${project.s4Meta?.authType || project.s4Config?.authType || 'basic'}\n`;
           finalReport += `Connectivity: ${tenantReachable ? 'CONNECTED' : 'FAILED'}\n`;
           finalReport += `Auth Status: ${isAuthFailed ? 'REJECTED (HTTP ' + httpStatus + ')' : isFullyConnected ? 'OK (HTTP ' + httpStatus + ')' : 'N/A'}\n`;
 

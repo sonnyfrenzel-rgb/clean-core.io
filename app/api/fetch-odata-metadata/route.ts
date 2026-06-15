@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUrlSafe } from '@/lib/url-validation';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
+import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 
 /**
  * POST /api/fetch-odata-metadata
@@ -292,7 +293,19 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { servicePath } = body;
 
-    if (!body.url && body.authType !== 'btp_destination') {
+    // F-03: Resolve credentials — stored (server-side) or transient (from body)
+    const stored = body.useStoredCredentials ? await loadS4ConfigForUser(decodedToken.uid) : null;
+    const resolvedBody = {
+      ...body,
+      url: body.url ?? stored?.url,
+      username: body.username ?? stored?.username,
+      password: body.password ?? stored?.password,
+      authType: body.authType ?? stored?.authType,
+      tokenUrl: body.tokenUrl ?? stored?.tokenUrl,
+      btpDestinationJson: body.btpDestinationJson ?? stored?.btpDestinationJson,
+    };
+
+    if (!resolvedBody.url && resolvedBody.authType !== 'btp_destination') {
       return NextResponse.json(
         { status: 'failed', message: 'S/4HANA URL is required.' },
         { status: 400 }
@@ -300,8 +313,8 @@ export async function POST(req: NextRequest) {
     }
 
     // SSRF protection: validate user-supplied URL
-    if (body.url) {
-      const urlCheck = isUrlSafe(body.url);
+    if (resolvedBody.url) {
+      const urlCheck = isUrlSafe(resolvedBody.url);
       if (!urlCheck.safe) {
         return NextResponse.json(
           { status: 'failed', message: urlCheck.reason || 'URL is not allowed.' },
@@ -314,7 +327,7 @@ export async function POST(req: NextRequest) {
     let headers: Record<string, string>;
     let resolvedUrl: string;
     try {
-      const result = await buildAuthHeaders(body);
+      const result = await buildAuthHeaders(resolvedBody);
       headers = result.headers;
       resolvedUrl = result.resolvedUrl;
     } catch (authErr: any) {

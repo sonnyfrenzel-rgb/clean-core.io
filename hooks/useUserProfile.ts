@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot, setDoc, serverTimestamp, getDoc, increment } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { User } from 'firebase/auth';
 
@@ -29,7 +29,15 @@ export interface UserProfile {
   authMethod?: 'google' | 'password';
   s4TenantAccessRequested?: boolean;
   s4TenantAccessAllowed?: boolean;
+  /** @deprecated Use s4Meta instead — s4Config contained cleartext secrets */
   s4Config?: any;
+  s4Meta?: {
+    configured: boolean;
+    url: string;
+    username: string;
+    authType: string;
+    tokenUrl: string;
+  };
 }
 
 
@@ -181,16 +189,9 @@ export function useUserProfile() {
   };
 
   const incrementTransformations = async () => {
-    if (!auth || !auth.currentUser) return;
-    try {
-      const userDocRef = doc(db, 'users', auth.currentUser.uid);
-      await setDoc(userDocRef, { 
-        transformationsUsed: increment(1),
-        updatedAt: serverTimestamp() 
-      }, { merge: true });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser.uid}`);
-    }
+    // F-06: No-op — Quota-Increment ist jetzt atomar serverseitig in /api/gemini.
+    // Diese Stub-Funktion bleibt, damit bestehende Aufrufer nicht brechen.
+    console.debug('[useUserProfile] incrementTransformations is now a server-side no-op.');
   };
 
   return { profile, loading, error, createProfile, updateProfile, incrementTransformations };

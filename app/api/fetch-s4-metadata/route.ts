@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUrlSafe } from '@/lib/url-validation';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
+import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 
 /**
  * POST /api/fetch-s4-metadata
@@ -208,7 +209,19 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { url, authType, btpDestinationJson } = body;
+
+    // F-03: Resolve credentials — stored (server-side) or transient (from body)
+    const stored = body.useStoredCredentials ? await loadS4ConfigForUser(decodedToken.uid) : null;
+    const resolvedBody = {
+      ...body,
+      url: body.url ?? stored?.url,
+      username: body.username ?? stored?.username,
+      password: body.password ?? stored?.password,
+      authType: body.authType ?? stored?.authType,
+      tokenUrl: body.tokenUrl ?? stored?.tokenUrl,
+      btpDestinationJson: body.btpDestinationJson ?? stored?.btpDestinationJson,
+    };
+    const { url, authType, btpDestinationJson } = resolvedBody;
 
     // Validate that we have a URL (either direct or from BTP destination)
     if (!url && !(authType === 'btp_destination' && btpDestinationJson)) {
@@ -223,7 +236,7 @@ export async function POST(req: NextRequest) {
     let authHeaders: Record<string, string>;
 
     try {
-      const result = await buildAuthHeaders(body);
+      const result = await buildAuthHeaders(resolvedBody);
       targetUrl = result.targetUrl;
       authHeaders = result.headers;
     } catch (authErr: any) {

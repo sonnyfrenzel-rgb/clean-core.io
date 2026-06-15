@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUrlSafe } from '@/lib/url-validation';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
+import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 
 /**
  * POST /api/test-s4-odata-read
@@ -93,6 +94,18 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { entitySet } = body;
 
+    // F-03: Resolve credentials — stored (server-side) or transient (from body)
+    const stored = body.useStoredCredentials ? await loadS4ConfigForUser(decodedToken.uid) : null;
+    const resolvedBody = {
+      ...body,
+      url: body.url ?? stored?.url,
+      username: body.username ?? stored?.username,
+      password: body.password ?? stored?.password,
+      authType: body.authType ?? stored?.authType,
+      tokenUrl: body.tokenUrl ?? stored?.tokenUrl,
+      btpDestinationJson: body.btpDestinationJson ?? stored?.btpDestinationJson,
+    };
+
     if (!entitySet) {
       return NextResponse.json({ status: 'failed', message: 'entitySet parameter is required.' }, { status: 400 });
     }
@@ -101,7 +114,7 @@ export async function POST(req: NextRequest) {
     let targetUrl: string;
     let authHeaders: Record<string, string>;
     try {
-      const result = await buildAuthHeaders(body);
+      const result = await buildAuthHeaders(resolvedBody);
       targetUrl = result.targetUrl;
       authHeaders = result.headers;
     } catch (authErr: any) {
