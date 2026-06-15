@@ -484,13 +484,13 @@ export default function Home() {
                 icon: <Globe className="w-8 h-8 text-green-600" />,
                 title: 'SAP API Hub Mapping',
                 desc: 'Directly maps legacy database table operations to released, public standard SAP APIs with interactive links to official API Hub listings.',
-                link: '/abap-custom-code-analysis'
+                link: '/how-it-works'
               },
               {
                 icon: <Cpu className="w-8 h-8 text-green-600" />,
                 title: 'Dual RAP & CAP Engine',
                 desc: 'Generates clean In-App ABAP Cloud RAP handlers formatted as standard abapGit directories (src/ and abapgit.xml) for local ADT import, or decoupled BTP CAP Node.js services.',
-                link: '/sap-tier-2-extensions'
+                link: '/how-it-works'
               },
               {
                 icon: <Activity className="w-8 h-8 text-green-600" />,
@@ -502,14 +502,14 @@ export default function Home() {
                 icon: <ShieldCheck className="w-8 h-8 text-green-600" />,
                 title: 'ADT Cockpit Simulation',
                 desc: 'Generates standard ABAP Unit classes with local database doubles, simulating execution in a virtual Eclipse ADT Test Cockpit console.',
-                link: '/abap-custom-code-analysis'
+                link: '/how-it-works'
               },
               {
                 icon: <Layers className="w-8 h-8 text-green-600" />,
                 title: 'BPMN 2.0 & Business SOP',
                 desc: 'Maps modernized processes into standard BPMN 2.0 XML with swimlanes. Features a two-stage blueprint layer mapping RACI matrices, Level 5 SOP narratives, and internal compliance controls.',
                 isNew: true,
-                link: '/clean-core-score'
+                link: '/knowledge'
               }
             ].map((feature, idx) => (
               <div 
@@ -625,7 +625,7 @@ export default function Home() {
                   <span className="text-4xl font-black">Free</span>
                   <span className="text-sm text-gray-500 font-medium">5 transformations</span>
                 </div>
-                <p className="text-xs md:text-sm font-medium mt-2 text-gray-500">Instant access &mdash; no API key or signup required.</p>
+                <p className="text-xs md:text-sm font-medium mt-2 text-gray-500">Register with name and email &mdash; approval within 24 hours.</p>
               </div>
               <ul className="space-y-3.5 mb-10 flex-grow">
                 {[
@@ -662,7 +662,7 @@ export default function Home() {
               <ul className="space-y-3.5 mb-10 flex-grow">
                 {[
                   'Includes all Pilot Sandbox features',
-                  'Unlimited code transformations (via BYOK)',
+                  'Unlimited code transformations (via BYOK)*',
                   'Full multi-file abapGit ZIP export (src/ + abapgit.xml)',
                   'Automated ABAP-Unit test class generation',
                   'Granular sandbox test execution & runs',
@@ -684,22 +684,28 @@ export default function Home() {
           {/* Live Tenant Security Profile */}
           <div className="mt-12 max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Read-Only Scope', desc: 'Tenant connections are restricted to OData metadata reads and test execution. No write operations.' },
-              { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Stateless Processing', desc: 'Credentials and code are processed in memory only. Nothing is persisted on our servers.' },
-              { icon: <Globe className="w-5 h-5 text-green-600" />, title: 'Admin Onboarding Gate', desc: 'Every tenant connection request is manually reviewed and approved to prevent misuse during the pilot phase.' }
+              { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Read-Only Scope', desc: 'Tenant connections are restricted to OData metadata reads and test execution. No write operations.', link: '/how-it-works' },
+              { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Stateless Processing', desc: 'Credentials and code are processed in memory only. Nothing is persisted on our servers.', link: '/about' },
+              { icon: <Globe className="w-5 h-5 text-green-600" />, title: 'Admin Onboarding Gate', desc: 'Every tenant connection request is manually reviewed and approved to prevent misuse during the pilot phase.', link: '/settings' }
             ].map((item, idx) => (
               <div key={idx} className="bg-gray-50 p-5 rounded-2xl border border-gray-200/60 text-center">
                 <div className="w-10 h-10 mx-auto bg-white rounded-xl flex items-center justify-center mb-3 border border-gray-100 shadow-sm">{item.icon}</div>
                 <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider mb-1">{item.title}</h4>
                 <p className="text-[11px] text-gray-500 leading-relaxed font-medium">{item.desc}</p>
+                {item.link && (
+                  <Link href={item.link} className="mt-3 inline-flex items-center gap-1 text-[10px] font-bold text-green-600 hover:text-green-700 uppercase tracking-wider hover:underline">
+                    Learn more <ArrowRight size={10} />
+                  </Link>
+                )}
               </div>
             ))}
           </div>
 
           {/* BYOK Explainer */}
           <div className="mt-8 text-center text-xs md:text-sm text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-100 bg-gray-50/50 p-5 rounded-3xl shadow-sm">
-            <span className="font-extrabold text-gray-800 uppercase tracking-wider block mb-1">BYOK (Bring Your Own Key)</span>
+            <span className="font-extrabold text-gray-800 uppercase tracking-wider block mb-1">* BYOK (Bring Your Own Key)</span>
             Use your own Google Gemini API key to run unlimited transformations without any platform limits. Your API key is encrypted and stored locally in your browser&mdash;it is never sent to or saved on our servers, ensuring absolute privacy and data sovereignty.
+            <span className="block mt-2 text-[11px] text-gray-500 font-medium">* Usage is subject to your Google Gemini API key quota and billing &mdash; clean-core.io does not charge any platform fees.</span>
           </div>
         </div>
       </section>

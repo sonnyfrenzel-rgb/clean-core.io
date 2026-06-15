@@ -98,6 +98,21 @@ export default function TransformationShowroom() {
           {/* TAB 1 — Sales Order (VBAK)                                   */}
           {/* ────────────────────────────────────────────────────────────── */}
           <div className="panel-1 p-4 sm:p-6 lg:p-8">
+            {/* Business context */}
+            <div className="mb-6 bg-slate-50 border border-slate-200/80 rounded-xl p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1 block">Business Context</span>
+                  <p className="text-sm text-slate-600 leading-relaxed font-medium">A sales operations team needs to query open standard orders (type &apos;OR&apos;) from SAP to populate a real-time order fulfillment dashboard. The legacy ABAP directly reads the VBAK database table — a non-released internal structure that breaks during S/4HANA upgrades. The engine transforms this into a clean CDS view consuming the released I_SalesOrder API, preserving the exact filter logic while making it upgrade-safe and unit-testable.</p>
+                </div>
+              </div>
+            </div>
+
             {/* Two-column code layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* ── LEFT: Legacy Input ── */}
@@ -252,6 +267,21 @@ export default function TransformationShowroom() {
           {/* TAB 2 — Journal Entry (BSEG)                                 */}
           {/* ────────────────────────────────────────────────────────────── */}
           <div className="panel-2 p-4 sm:p-6 lg:p-8" style={{ display: 'none' }}>
+            {/* Business context */}
+            <div className="mb-6 bg-slate-50 border border-slate-200/80 rounded-xl p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1 block">Business Context</span>
+                  <p className="text-sm text-slate-600 leading-relaxed font-medium">The finance controlling team extracts accounting document line items for company code 1000 to feed an external reporting tool. The legacy code reads BSEG directly — one of SAP&apos;s largest and most problematic cluster tables, deprecated in S/4HANA. The engine maps this to a cloud-native CAP Node.js service projecting onto the released API_JOURNALENTRY OData service, decoupling the reporting logic from the core ERP entirely.</p>
+                </div>
+              </div>
+            </div>
+
             {/* Two-column code layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* ── LEFT: Legacy Input ── */}
@@ -373,6 +403,21 @@ export default function TransformationShowroom() {
           {/* TAB 3 — Dynamic Dispatch (CALL FUNCTION)                     */}
           {/* ────────────────────────────────────────────────────────────── */}
           <div className="panel-3 p-4 sm:p-6 lg:p-8" style={{ display: 'none' }}>
+            {/* Business context */}
+            <div className="mb-6 bg-slate-50 border border-slate-200/80 rounded-xl p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1 block">Business Context</span>
+                  <p className="text-sm text-slate-600 leading-relaxed font-medium">A logistics module dynamically dispatches function calls at runtime based on business rules — a common pattern in older SAP systems for flexible processing chains. Since the target function is resolved at runtime, no static API mapping is possible. The engine correctly identifies this as a low-confidence scenario, flags it for architect review, and provides structured remediation guidance (factory pattern refactoring) rather than generating potentially incorrect code.</p>
+                </div>
+              </div>
+            </div>
+
             {/* Two-column code layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* ── LEFT: Legacy Input ── */}
