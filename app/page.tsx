@@ -269,129 +269,179 @@ export default function Home() {
           <LandingSlideshow />
         </div>
         {/* Comparison Highlight Table */}
-        <div className="max-w-6xl mx-auto px-6 mt-32 relative z-20 animate-in fade-in slide-in-from-bottom-28 duration-1000 delay-800">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-950 rounded-[2.5rem] p-8 md:p-14 border border-slate-800 shadow-2xl relative overflow-hidden">
+        <div className="max-w-6xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-28 duration-1000 delay-800">
+          <div className="bg-white rounded-[2rem] p-6 sm:p-10 md:p-12 border border-slate-200 shadow-xl relative overflow-hidden">
             {/* Glowing Accent */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(16,185,129,0.1),transparent_45%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(16,185,129,0.04),transparent_45%)] pointer-events-none" />
             
             <div className="relative z-10 text-center md:text-left mb-10">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-500/20">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-100">
                 Beyond Static Code Analysis
               </span>
-              <h3 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-none mb-4 uppercase">
+              <h3 className="text-2xl sm:text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none mb-4 uppercase">
                 Technical Capability Comparison
               </h3>
-              <p className="text-slate-400 text-sm md:text-base max-w-3xl font-medium leading-relaxed">
+              <p className="text-slate-500 text-sm md:text-base max-w-3xl font-medium leading-relaxed">
                 SAP native tools report where dependencies fail compliance. clean-core.io automates the replacement mappings and compiles ready-to-run BTP or RAP structures.
               </p>
             </div>
 
-            <div className="overflow-x-auto relative z-10">
+            {/* Mobile View: Stacked Comparison Cards (hidden on desktop) */}
+            <div className="space-y-6 md:hidden relative z-10">
+              {[
+                {
+                  title: "Clean Core Violation Scanning",
+                  sap: { badge: "Static Check", desc: "Identifies unreleased APIs & direct database reads." },
+                  cc: { badge: "Automated", desc: "Calculates Local Compliance score & prioritizes packages." }
+                },
+                {
+                  title: "Automated SAP API Hub Mapping",
+                  sap: { badge: "Manual Only", desc: "Requires manual search in documentation." },
+                  cc: { badge: "Resolved", desc: "Resolves database reads (VBAK, BSEG) directly to standard APIs." }
+                },
+                {
+                  title: "Code Refactoring (Remediation)",
+                  sap: { badge: "Manual Only", desc: "Developers must rewrite legacy code from scratch." },
+                  cc: { badge: "Refactored", desc: "Converts legacy statements into BTP CAP Node.js/RAP syntax." }
+                },
+                {
+                  title: "Live Sandbox Verification (BYOT)",
+                  sap: { badge: "Not Supported", desc: "Requires separate manual testing frameworks." },
+                  cc: { badge: "Validated", desc: "Runs test suites directly against your S/4HANA sandbox." }
+                },
+                {
+                  title: "Business Process Blueprinting",
+                  sap: { badge: "Not Supported", desc: "No process flow visualization available." },
+                  cc: { badge: "Visualized", desc: "Generates BPMN 2.0 flows directly from custom code analysis." }
+                }
+              ].map((row, idx) => (
+                <div key={idx} className="bg-slate-50 rounded-2xl p-5 border border-slate-200/80 space-y-4">
+                  <h4 className="text-sm font-black text-slate-900 border-b border-slate-200/60 pb-2">
+                    {row.title}
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-medium">
+                    <div className="space-y-1 bg-white p-3.5 rounded-xl border border-slate-150">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">SAP Native Tooling</span>
+                      <span className="inline-flex items-center gap-1.5 text-slate-700 font-bold text-[10px] uppercase tracking-wider bg-slate-100 border border-slate-200/60 px-2 py-0.5 rounded-full mt-1">
+                        {row.sap.badge}
+                      </span>
+                      <p className="text-slate-500 text-[11px] leading-relaxed mt-1.5">{row.sap.desc}</p>
+                    </div>
+                    <div className="space-y-1 bg-emerald-50/20 p-3.5 rounded-xl border border-emerald-100/50">
+                      <span className="text-[9px] font-black text-emerald-600 uppercase tracking-wider block">clean-core.io</span>
+                      <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[10px] uppercase tracking-wider bg-emerald-50 border border-emerald-100/80 px-2 py-0.5 rounded-full mt-1">
+                        {row.cc.badge}
+                      </span>
+                      <p className="text-slate-600 text-[11px] leading-relaxed mt-1.5">{row.cc.desc}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop View: Grid Table (hidden on mobile) */}
+            <div className="hidden md:block overflow-x-auto relative z-10">
               <table className="w-full text-left border-collapse min-w-[750px]">
                 <thead>
-                  <tr className="border-b border-slate-800 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  <tr className="border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                     <th className="pb-4 w-[35%]">Capability</th>
                     <th className="pb-4 w-[32.5%]">SAP Native Tooling (ATC / Migration App)</th>
-                    <th className="pb-4 w-[32.5%] text-emerald-400">Clean-Core.io (Community Engine)</th>
+                    <th className="pb-4 w-[32.5%] text-emerald-600">Clean-Core.io (Community Engine)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-900 text-sm font-medium text-slate-300">
-                  <tr className="hover:bg-slate-900/20 transition-colors">
-                    <td className="py-5 font-bold text-white pr-4">Clean Core Violation Scanning</td>
+                <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
+                  <tr className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-5 font-bold text-slate-900 pr-4">Clean Core Violation Scanning</td>
                     <td className="py-5 pr-4">
                       <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-slate-300 font-bold text-[10px] uppercase tracking-wider bg-slate-800 border border-slate-700/50 px-2.5 py-1 rounded-full w-fit">
+                        <span className="inline-flex items-center gap-1.5 text-slate-700 font-bold text-[10px] uppercase tracking-wider bg-slate-100 border border-slate-200/60 px-2.5 py-1 rounded-full w-fit">
                           Static Check
                         </span>
-                        <span className="text-xs text-slate-400 mt-1">Identifies unreleased APIs & direct database reads.</span>
+                        <span className="text-xs text-slate-500 mt-1">Identifies unreleased APIs & direct database reads.</span>
                       </div>
                     </td>
-                    <td className="py-5 pr-4 bg-emerald-500/[0.01]">
-                      <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold text-[10px] uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full w-fit">
+                    <td className="py-5 pr-4 bg-emerald-50/[0.15] border-l border-r border-emerald-100/50">
+                      <div className="flex flex-col gap-1 pl-2">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[10px] uppercase tracking-wider bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full w-fit">
                           Automated
                         </span>
-                        <span className="text-xs text-slate-300 mt-1">Calculates Local Compliance score & prioritizes packages.</span>
+                        <span className="text-xs text-slate-600 mt-1">Calculates Local Compliance score & prioritizes packages.</span>
                       </div>
                     </td>
                   </tr>
-                  <tr className="hover:bg-slate-900/20 transition-colors">
-                    <td className="py-5 font-bold text-white pr-4">Automated SAP API Hub Mapping</td>
+                  <tr className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-5 font-bold text-slate-900 pr-4">Automated SAP API Hub Mapping</td>
                     <td className="py-5 pr-4">
                       <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-950 border border-slate-900 px-2.5 py-1 rounded-full w-fit">
+                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-50 border border-slate-150 px-2.5 py-1 rounded-full w-fit">
                           Manual Only
                         </span>
-                        <span className="text-xs text-slate-500 mt-1">Requires manual search in documentation.</span>
+                        <span className="text-xs text-slate-400 mt-1">Requires manual search in documentation.</span>
                       </div>
                     </td>
-                    <td className="py-5 pr-4 bg-emerald-500/[0.01]">
-                      <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold text-[10px] uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full w-fit">
-                          <span className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" />
+                    <td className="py-5 pr-4 bg-emerald-50/[0.15] border-l border-r border-emerald-100/50">
+                      <div className="flex flex-col gap-1 pl-2">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[10px] uppercase tracking-wider bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full w-fit">
                           Resolved
                         </span>
-                        <span className="text-xs text-slate-300 mt-1">Resolves database reads (VBAK, BSEG) directly to standard APIs.</span>
+                        <span className="text-xs text-slate-600 mt-1">Resolves database reads (VBAK, BSEG) directly to standard APIs.</span>
                       </div>
                     </td>
                   </tr>
-                  <tr className="hover:bg-slate-900/20 transition-colors">
-                    <td className="py-5 font-bold text-white pr-4">Code Refactoring (Remediation)</td>
+                  <tr className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-5 font-bold text-slate-900 pr-4">Code Refactoring (Remediation)</td>
                     <td className="py-5 pr-4">
                       <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-950 border border-slate-900 px-2.5 py-1 rounded-full w-fit">
+                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-50 border border-slate-150 px-2.5 py-1 rounded-full w-fit">
                           Manual Only
                         </span>
-                        <span className="text-xs text-slate-500 mt-1">Developers must rewrite legacy code from scratch.</span>
+                        <span className="text-xs text-slate-400 mt-1">Developers must rewrite legacy code from scratch.</span>
                       </div>
                     </td>
-                    <td className="py-5 pr-4 bg-emerald-500/[0.01]">
-                      <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold text-[10px] uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full w-fit">
-                          <span className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" />
+                    <td className="py-5 pr-4 bg-emerald-50/[0.15] border-l border-r border-emerald-100/50">
+                      <div className="flex flex-col gap-1 pl-2">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[10px] uppercase tracking-wider bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full w-fit">
                           Refactored
                         </span>
-                        <span className="text-xs text-slate-300 mt-1">Converts legacy statements into BTP CAP Node.js/RAP syntax.</span>
+                        <span className="text-xs text-slate-600 mt-1">Converts legacy statements into BTP CAP Node.js/RAP syntax.</span>
                       </div>
                     </td>
                   </tr>
-                  <tr className="hover:bg-slate-900/20 transition-colors">
-                    <td className="py-5 font-bold text-white pr-4">Live Sandbox Verification (BYOT)</td>
+                  <tr className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-5 font-bold text-slate-900 pr-4">Live Sandbox Verification (BYOT)</td>
                     <td className="py-5 pr-4">
                       <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-950 border border-slate-900 px-2.5 py-1 rounded-full w-fit">
+                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-50 border border-slate-150 px-2.5 py-1 rounded-full w-fit">
                           Not Supported
                         </span>
-                        <span className="text-xs text-slate-500 mt-1">Requires separate manual testing frameworks.</span>
+                        <span className="text-xs text-slate-400 mt-1">Requires separate manual testing frameworks.</span>
                       </div>
                     </td>
-                    <td className="py-5 pr-4 bg-emerald-500/[0.01]">
-                      <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold text-[10px] uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full w-fit">
-                          <span className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" />
+                    <td className="py-5 pr-4 bg-emerald-50/[0.15] border-l border-r border-emerald-100/50">
+                      <div className="flex flex-col gap-1 pl-2">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[10px] uppercase tracking-wider bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full w-fit">
                           Validated
                         </span>
-                        <span className="text-xs text-slate-300 mt-1">Runs test suites directly against your S/4HANA sandbox.</span>
+                        <span className="text-xs text-slate-600 mt-1">Runs test suites directly against your S/4HANA sandbox.</span>
                       </div>
                     </td>
                   </tr>
-                  <tr className="hover:bg-slate-900/20 transition-colors">
-                    <td className="py-5 font-bold text-white pr-4">Business Process Blueprinting</td>
+                  <tr className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-5 font-bold text-slate-900 pr-4">Business Process Blueprinting</td>
                     <td className="py-5 pr-4">
                       <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-950 border border-slate-900 px-2.5 py-1 rounded-full w-fit">
+                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-50 border border-slate-150 px-2.5 py-1 rounded-full w-fit">
                           Not Supported
                         </span>
-                        <span className="text-xs text-slate-500 mt-1">No process flow visualization available.</span>
+                        <span className="text-xs text-slate-400 mt-1">No process flow visualization available.</span>
                       </div>
                     </td>
-                    <td className="py-5 pr-4 bg-emerald-500/[0.01]">
-                      <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold text-[10px] uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full w-fit">
-                          <span className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" />
+                    <td className="py-5 pr-4 bg-emerald-50/[0.15] border-l border-r border-emerald-100/50">
+                      <div className="flex flex-col gap-1 pl-2">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[10px] uppercase tracking-wider bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full w-fit">
                           Visualized
                         </span>
-                        <span className="text-xs text-slate-300 mt-1">Generates BPMN 2.0 flows directly from custom code analysis.</span>
+                        <span className="text-xs text-slate-600 mt-1">Generates BPMN 2.0 flows directly from custom code analysis.</span>
                       </div>
                     </td>
                   </tr>
