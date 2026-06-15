@@ -61,7 +61,7 @@ export default function Home() {
         "founder": {
           "@type": "Person",
           "name": "Felix Frenzel",
-          "jobTitle": "Founder & SAP Modernization Architect",
+          "jobTitle": "Founder & Community Builder",
           "url": "https://www.linkedin.com/in/felix-frenzel-3327741b8/",
           "sameAs": [
             "https://www.linkedin.com/in/felix-frenzel-3327741b8/",
