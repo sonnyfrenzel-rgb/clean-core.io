@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   if (!body?.url || typeof body.url !== 'string') {
     return NextResponse.json({ error: 'URL is required.' }, { status: 400 });
   }
-  const check = isUrlSafe(body.url);
+  const check = await isUrlSafe(body.url);
   if (!check.safe) return NextResponse.json({ error: check.reason || 'URL not allowed.' }, { status: 403 });
 
   try {

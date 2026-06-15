@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isUrlSafe } from '@/lib/url-validation';
+import { isUrlSafe, safeFetch, SsrfError } from '@/lib/url-validation';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 
@@ -57,7 +57,9 @@ async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, st
       const clientId = parsed.clientId || parsed.ClientId;
       const clientSecret = parsed.clientSecret || parsed.ClientSecret;
       if (tokenUrl && clientId && clientSecret) {
-        const tokenResp = await fetch(tokenUrl, {
+        const tokenCheck = await isUrlSafe(tokenUrl);
+        if (!tokenCheck.safe) throw new Error(`Token URL blocked: ${tokenCheck.reason}`);
+        const tokenResp = await safeFetch(tokenUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}` },
           body: 'grant_type=client_credentials',
@@ -67,7 +69,9 @@ async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, st
       }
     }
   } else if (body.authType === 'oauth2' && body.tokenUrl && body.username && body.password) {
-    const tokenResp = await fetch(body.tokenUrl, {
+    const tokenCheck = await isUrlSafe(body.tokenUrl);
+    if (!tokenCheck.safe) throw new Error(`Token URL blocked: ${tokenCheck.reason}`);
+    const tokenResp = await safeFetch(body.tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Basic ${Buffer.from(`${body.username}:${body.password}`).toString('base64')}` },
       body: 'grant_type=client_credentials',
@@ -122,7 +126,7 @@ export async function POST(req: NextRequest) {
     }
 
     // SSRF protection
-    const urlCheck = isUrlSafe(targetUrl);
+    const urlCheck = await isUrlSafe(targetUrl);
     if (!urlCheck.safe) {
       return NextResponse.json({ status: 'failed', message: urlCheck.reason || 'URL not allowed.', entitySet }, { status: 403 });
     }
@@ -138,7 +142,7 @@ export async function POST(req: NextRequest) {
 
     let response: Response;
     try {
-      response = await fetch(readUrl, {
+      response = await safeFetch(readUrl, {
         method: 'GET',
         headers: authHeaders,
         signal: controller.signal,
