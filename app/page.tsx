@@ -357,114 +357,80 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Desktop View: Grid Table (hidden on mobile) */}
-            <div className="hidden md:block overflow-x-auto relative z-10">
-              <table className="w-full text-left border-collapse min-w-[750px]">
-                <thead>
-                  <tr className="border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    <th className="pb-4 w-[35%]">Capability</th>
-                    <th className="pb-4 w-[32.5%]">SAP Native Tooling (ATC / Migration App)</th>
-                    <th className="pb-4 w-[32.5%] text-emerald-600">Clean-Core.io (Community Engine)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
-                  <tr className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-5 font-bold text-slate-900 pr-4">Clean Core Violation Scanning</td>
-                    <td className="py-5 pr-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-slate-700 font-bold text-[10px] uppercase tracking-wider bg-slate-100 border border-slate-200/60 px-2.5 py-1 rounded-full w-fit">
-                          Static Check
-                        </span>
-                        <span className="text-xs text-slate-500 mt-1">Identifies unreleased APIs & direct database reads.</span>
-                      </div>
-                    </td>
-                    <td className="py-5 pr-4 bg-emerald-50/[0.15] border-l border-r border-emerald-100/50">
-                      <div className="flex flex-col gap-1 pl-2">
-                        <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[10px] uppercase tracking-wider bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full w-fit">
-                          Automated
-                        </span>
-                        <span className="text-xs text-slate-600 mt-1">Calculates Local Compliance score & prioritizes packages.</span>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-5 font-bold text-slate-900 pr-4">Automated SAP API Hub Mapping</td>
-                    <td className="py-5 pr-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-50 border border-slate-150 px-2.5 py-1 rounded-full w-fit">
-                          Manual Only
-                        </span>
-                        <span className="text-xs text-slate-400 mt-1">Requires manual search in documentation.</span>
-                      </div>
-                    </td>
-                    <td className="py-5 pr-4 bg-emerald-50/[0.15] border-l border-r border-emerald-100/50">
-                      <div className="flex flex-col gap-1 pl-2">
-                        <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[10px] uppercase tracking-wider bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full w-fit">
-                          Resolved
-                        </span>
-                        <span className="text-xs text-slate-600 mt-1">Resolves database reads (VBAK, BSEG) directly to standard APIs.</span>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-5 font-bold text-slate-900 pr-4">Code Refactoring (Remediation)</td>
-                    <td className="py-5 pr-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-50 border border-slate-150 px-2.5 py-1 rounded-full w-fit">
-                          Manual Only
-                        </span>
-                        <span className="text-xs text-slate-400 mt-1">Developers must rewrite legacy code from scratch.</span>
-                      </div>
-                    </td>
-                    <td className="py-5 pr-4 bg-emerald-50/[0.15] border-l border-r border-emerald-100/50">
-                      <div className="flex flex-col gap-1 pl-2">
-                        <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[10px] uppercase tracking-wider bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full w-fit">
-                          Refactored
-                        </span>
-                        <span className="text-xs text-slate-600 mt-1">Converts legacy statements into BTP CAP Node.js/RAP syntax.</span>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-5 font-bold text-slate-900 pr-4">Live Sandbox Verification (BYOT)</td>
-                    <td className="py-5 pr-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-50 border border-slate-150 px-2.5 py-1 rounded-full w-fit">
-                          Not Supported
-                        </span>
-                        <span className="text-xs text-slate-400 mt-1">Requires separate manual testing frameworks.</span>
-                      </div>
-                    </td>
-                    <td className="py-5 pr-4 bg-emerald-50/[0.15] border-l border-r border-emerald-100/50">
-                      <div className="flex flex-col gap-1 pl-2">
-                        <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[10px] uppercase tracking-wider bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full w-fit">
-                          Validated
-                        </span>
-                        <span className="text-xs text-slate-600 mt-1">Runs test suites directly against your S/4HANA sandbox.</span>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-5 font-bold text-slate-900 pr-4">Business Process Blueprinting</td>
-                    <td className="py-5 pr-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1.5 text-slate-500 font-bold text-[10px] uppercase tracking-wider bg-slate-50 border border-slate-150 px-2.5 py-1 rounded-full w-fit">
-                          Not Supported
-                        </span>
-                        <span className="text-xs text-slate-400 mt-1">No process flow visualization available.</span>
-                      </div>
-                    </td>
-                    <td className="py-5 pr-4 bg-emerald-50/[0.15] border-l border-r border-emerald-100/50">
-                      <div className="flex flex-col gap-1 pl-2">
-                        <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[10px] uppercase tracking-wider bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full w-fit">
-                          Visualized
-                        </span>
-                        <span className="text-xs text-slate-600 mt-1">Generates BPMN 2.0 flows directly from custom code analysis.</span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            {/* Desktop View: Comparison Rows (hidden on mobile) */}
+            <div className="hidden md:block relative z-10 space-y-3">
+              {/* Column Headers */}
+              <div className="grid grid-cols-[1fr_1fr_1fr] gap-4 px-2 pb-2">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Capability</div>
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SAP Native Tooling</div>
+                <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Clean-Core.io</div>
+              </div>
+
+              {[
+                {
+                  title: "Clean Core Violation Scanning",
+                  sap: { badge: "Static Check", level: "partial", desc: "Identifies unreleased APIs & direct database reads." },
+                  cc: { badge: "Automated", desc: "Calculates Local Compliance score & prioritizes packages." }
+                },
+                {
+                  title: "SAP API Hub Mapping",
+                  sap: { badge: "Manual Only", level: "weak", desc: "Requires manual search in documentation." },
+                  cc: { badge: "Resolved", desc: "Resolves database reads (VBAK, BSEG) directly to standard APIs." }
+                },
+                {
+                  title: "Code Refactoring (Remediation)",
+                  sap: { badge: "Manual Only", level: "weak", desc: "Developers must rewrite legacy code from scratch." },
+                  cc: { badge: "Refactored", desc: "Converts legacy statements into BTP CAP Node.js/RAP syntax." }
+                },
+                {
+                  title: "Live Sandbox Verification",
+                  sap: { badge: "Not Available", level: "none", desc: "Requires separate manual testing frameworks." },
+                  cc: { badge: "Validated", desc: "Runs test suites directly against your S/4HANA sandbox." }
+                },
+                {
+                  title: "Business Process Blueprinting",
+                  sap: { badge: "Not Available", level: "none", desc: "No process flow visualization available." },
+                  cc: { badge: "Visualized", desc: "Generates BPMN 2.0 flows directly from custom code analysis." }
+                }
+              ].map((row, idx) => (
+                <div key={idx} className="grid grid-cols-[1fr_1fr_1fr] gap-4 items-stretch">
+                  {/* Capability Name */}
+                  <div className="flex items-center px-5 py-4 bg-slate-50/80 rounded-xl border border-slate-100">
+                    <span className="font-bold text-sm text-slate-900 leading-snug">{row.title}</span>
+                  </div>
+
+                  {/* SAP Column */}
+                  <div className="flex items-start gap-3 px-5 py-4 bg-slate-50/40 rounded-xl border border-slate-100/80">
+                    <span className={`mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                      row.sap.level === 'partial' 
+                        ? 'bg-amber-100 text-amber-600 border border-amber-200/60' 
+                        : row.sap.level === 'weak' 
+                        ? 'bg-slate-100 text-slate-400 border border-slate-200/60' 
+                        : 'bg-red-50 text-red-400 border border-red-200/40'
+                    }`}>
+                      {row.sap.level === 'partial' ? '~' : row.sap.level === 'weak' ? '–' : '✕'}
+                    </span>
+                    <div className="flex flex-col gap-1.5 min-w-0">
+                      <span className={`font-bold text-[11px] uppercase tracking-wider ${
+                        row.sap.level === 'partial' ? 'text-amber-700' : row.sap.level === 'weak' ? 'text-slate-500' : 'text-red-400'
+                      }`}>
+                        {row.sap.badge}
+                      </span>
+                      <span className="text-xs text-slate-400 leading-relaxed">{row.sap.desc}</span>
+                    </div>
+                  </div>
+
+                  {/* Clean-Core.io Column */}
+                  <div className="flex items-start gap-3 px-5 py-4 bg-emerald-50/50 rounded-xl border border-emerald-200/50 relative overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-emerald-400 rounded-l-xl" />
+                    <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 border border-emerald-200/60 flex items-center justify-center text-[10px] font-black">✓</span>
+                    <div className="flex flex-col gap-1.5 min-w-0">
+                      <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-700">{row.cc.badge}</span>
+                      <span className="text-xs text-slate-600 leading-relaxed">{row.cc.desc}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
