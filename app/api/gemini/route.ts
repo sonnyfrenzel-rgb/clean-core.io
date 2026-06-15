@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
-import { isHardcodedAdmin, FIREBASE_PROJECT_ID, FIRESTORE_DB_ID } from '@/lib/constants';
-import { verifyRequestAuth } from '@/lib/firebase-admin';
+import {
+  verifyRequestAuth,
+  reserveTransformationQuota,
+  refundTransformationQuota,
+  QuotaError,
+} from '@/lib/firebase-admin';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -12,6 +16,10 @@ import { verifyRequestAuth } from '@/lib/firebase-admin';
  *
  * Returns:
  *   { text: string }
+ *
+ * F-06: The transformation quota is verified AND incremented server-side, atomically,
+ * via reserveTransformationQuota() — directly before the call, so parallel requests
+ * cannot bypass the limit. On a failed generation the unit is refunded.
  */
 
 // Cache the default instance so we don't create a new one per request.
@@ -67,15 +75,11 @@ export async function POST(request: NextRequest) {
       model = 'gemini-3-flash-preview',
       jsonResponse = false,
       customApiKey,
-      userId,
-      idToken,
     } = body as {
       prompt: string;
       model?: string;
       jsonResponse?: boolean;
       customApiKey?: string;
-      userId?: string;
-      idToken?: string;
     };
 
     if (!prompt) {
@@ -85,77 +89,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Secure server-side check of transformations quota limit if NOT BYOK
-    if (!customApiKey) {
-      if (!userId || !idToken) {
-        return NextResponse.json(
-          { error: 'Unauthorized: Missing session tokens for closed-beta quota validation.' },
-          { status: 401 },
-        );
-      }
-
-      try {
-        const firestoreUrl = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true'
-          ? `http://localhost:8080/v1/projects/${FIREBASE_PROJECT_ID}/databases/${FIRESTORE_DB_ID}/documents/users/${userId}`
-          : `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/${FIRESTORE_DB_ID}/documents/users/${userId}`;
-
-        const res = await fetch(firestoreUrl, {
-          headers: {
-            'Authorization': `Bearer ${idToken}`
-          }
-        });
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          const errMsg = errData.error?.message || 'Failed to verify session status.';
-          return NextResponse.json(
-            { error: `Unauthorized session: ${errMsg}` },
-            { status: res.status }
-          );
-        }
-
-        const docData = await res.json();
-        const fields = docData.fields || {};
-
-        const email = fields.email?.stringValue || '';
-        const tier = fields.tier?.stringValue || 'pilot';
-        const status = fields.status?.stringValue || 'pending';
-        
-        const transformationsUsed = fields.transformationsUsed?.integerValue 
-          ? parseInt(fields.transformationsUsed.integerValue, 10) 
-          : 0;
-        const transformationsLimit = fields.transformationsLimit?.integerValue 
-          ? parseInt(fields.transformationsLimit.integerValue, 10) 
-          : 5;
-
-        const isSuperAdmin = isHardcodedAdmin(email);
-        const isEnterprise = tier === 'enterprise' || isSuperAdmin;
-
-        if (!isEnterprise) {
-          if (status !== 'approved') {
-            return NextResponse.json(
-              { error: 'Your beta pilot account is currently pending admin approval.' },
-              { status: 403 }
-            );
-          }
-          if (transformationsUsed >= transformationsLimit) {
-            return NextResponse.json(
-              { error: `Transformation limit reached! Your pilot plan allows a maximum of ${transformationsLimit} free transformations. Please upgrade or configure your own Gemini API key in settings.` },
-              { status: 403 }
-            );
-          }
-        }
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error('Quota check validation error:', message);
-        return NextResponse.json(
-          { error: `Internal quota validation failed: ${message}` },
-          { status: 500 }
-        );
-      }
-    }
-
-    // Use BYOK key if provided, otherwise fall back to server key.
+    // Resolve the AI client first (cheap) — BYOK key if provided, else server key.
     const ai = customApiKey
       ? new GoogleGenAI({ apiKey: customApiKey })
       : getDefaultAI();
@@ -170,21 +104,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const text = await callWithRetry(async () => {
-      const result = await ai.models.generateContent({
-        model,
-        contents: prompt,
-        config: jsonResponse
-          ? { responseMimeType: 'application/json' }
-          : undefined,
-      });
-
-      if (!result.text) {
-        throw new Error('Gemini returned an empty response.');
+    // Quota only for the NON-BYOK path: atomically verify + reserve.
+    // Authoritative UID comes from the verified token, never from the body.
+    if (!customApiKey) {
+      try {
+        await reserveTransformationQuota(decodedToken.uid);
+      } catch (err: unknown) {
+        if (err instanceof QuotaError) {
+          return NextResponse.json({ error: err.message }, { status: err.status });
+        }
+        console.error('Quota reservation error:', err);
+        return NextResponse.json(
+          { error: 'Internal quota validation failed.' },
+          { status: 500 },
+        );
       }
+    }
 
-      return result.text;
-    });
+    let text: string;
+    try {
+      text = await callWithRetry(async () => {
+        const result = await ai.models.generateContent({
+          model,
+          contents: prompt,
+          config: jsonResponse
+            ? { responseMimeType: 'application/json' }
+            : undefined,
+        });
+
+        if (!result.text) {
+          throw new Error('Gemini returned an empty response.');
+        }
+
+        return result.text;
+      });
+    } catch (genErr) {
+      // Refund the reserved unit so failed calls don't consume quota.
+      if (!customApiKey) {
+        await refundTransformationQuota(decodedToken.uid);
+      }
+      throw genErr; // handled by the outer catch below
+    }
 
     return NextResponse.json({ text });
   } catch (error: unknown) {
