@@ -286,7 +286,7 @@ export default function Home() {
             </div>
 
             {/* Mobile View: Stacked Comparison Cards (hidden on desktop) */}
-            <div className="space-y-6 md:hidden relative z-10">
+            <div className="space-y-5 md:hidden relative z-10">
               {[
                 {
                   title: "Clean Core Violation Scanning",
@@ -314,24 +314,43 @@ export default function Home() {
                   cc: { badge: "Visualized", desc: "Generates BPMN 2.0 flows directly from custom code analysis." }
                 }
               ].map((row, idx) => (
-                <div key={idx} className="bg-slate-50 rounded-2xl p-5 border border-slate-200/80 space-y-4">
-                  <h4 className="text-sm font-black text-slate-900 border-b border-slate-200/60 pb-2">
-                    {row.title}
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-medium">
-                    <div className="space-y-1 bg-white p-3.5 rounded-xl border border-slate-150">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">SAP Native Tooling</span>
-                      <span className="inline-flex items-center gap-1.5 text-slate-700 font-bold text-[10px] uppercase tracking-wider bg-slate-100 border border-slate-200/60 px-2 py-0.5 rounded-full mt-1">
+                <div key={idx} className="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden">
+                  {/* Capability Title */}
+                  <div className="bg-slate-100/80 px-5 py-3 border-b border-slate-200/60">
+                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                      {row.title}
+                    </h4>
+                  </div>
+                  
+                  <div className="divide-y divide-slate-200/50">
+                    {/* SAP Side */}
+                    <div className="px-5 py-4 space-y-2">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">SAP Native Tooling</span>
+                      <span className={`inline-flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full ${
+                        row.sap.badge === 'Static Check' 
+                          ? 'text-slate-700 bg-slate-100 border border-slate-200/60' 
+                          : 'text-slate-400 bg-slate-50 border border-slate-200/40'
+                      }`}>
+                        {row.sap.badge === 'Not Supported' && <span className="text-red-400">✕</span>}
                         {row.sap.badge}
                       </span>
-                      <p className="text-slate-500 text-[11px] leading-relaxed mt-1.5">{row.sap.desc}</p>
+                      <p className="text-slate-500 text-xs leading-relaxed">{row.sap.desc}</p>
                     </div>
-                    <div className="space-y-1 bg-emerald-50/20 p-3.5 rounded-xl border border-emerald-100/50">
-                      <span className="text-[9px] font-black text-emerald-600 uppercase tracking-wider block">clean-core.io</span>
-                      <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[10px] uppercase tracking-wider bg-emerald-50 border border-emerald-100/80 px-2 py-0.5 rounded-full mt-1">
+
+                    {/* Vs Divider */}
+                    <div className="flex items-center px-5 py-0 relative">
+                      <div className="absolute inset-x-5 top-1/2 -translate-y-1/2 h-px bg-slate-200/60" />
+                      <span className="relative z-10 mx-auto bg-slate-50 px-2.5 py-0.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">vs</span>
+                    </div>
+
+                    {/* Clean-Core.io Side */}
+                    <div className="px-5 py-4 space-y-2 bg-emerald-50/30 border-l-[3px] border-l-emerald-400">
+                      <span className="text-[10px] font-black text-emerald-600 uppercase tracking-wider block">clean-core.io</span>
+                      <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[11px] uppercase tracking-wider bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-full">
+                        <span className="text-emerald-500">✓</span>
                         {row.cc.badge}
                       </span>
-                      <p className="text-slate-600 text-[11px] leading-relaxed mt-1.5">{row.cc.desc}</p>
+                      <p className="text-slate-700 text-xs leading-relaxed">{row.cc.desc}</p>
                     </div>
                   </div>
                 </div>
