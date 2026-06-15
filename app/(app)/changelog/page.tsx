@@ -1,0 +1,193 @@
+import type { Metadata } from 'next';
+import { ArrowLeft, Tag, Rocket, Sparkles, Zap, Package } from 'lucide-react';
+import Link from 'next/link';
+import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+
+export const metadata: Metadata = {
+  title: 'Changelog & Release Notes | Clean-Core.io',
+  description: 'Track the latest updates, improvements, and new features added to the Clean-Core.io transformation engine.',
+  alternates: {
+    canonical: 'https://clean-core.io/changelog',
+  },
+  openGraph: {
+    title: 'Changelog & Release Notes | Clean-Core.io',
+    description: 'Track the latest updates, improvements, and new features added to the Clean-Core.io transformation engine.',
+    url: 'https://clean-core.io/changelog',
+    type: 'website',
+  }
+};
+
+const releases = [
+  {
+    version: 'v1.7.3',
+    date: 'June 15, 2026',
+    tag: 'Latest',
+    icon: Sparkles,
+    changes: [
+      'Added mobile-optimized comparison table with stacked card layout',
+      'Introduced Transformation Showroom with real E2E code examples',
+      "Added '/how-it-works' page with honest coverage matrix",
+      'Improved ABAP-Unit test generation for CDS view entities',
+      'Enhanced SAP API Hub mapping accuracy for financial tables (BSEG, BKPF)',
+    ],
+  },
+  {
+    version: 'v1.7.0',
+    date: 'June 1, 2026',
+    tag: null,
+    icon: Rocket,
+    changes: [
+      'Launched BPMN 2.0 business process blueprinting',
+      'Added Level 5 SOP narrative generation',
+      'Introduced RACI matrix auto-generation',
+      'Side-by-side code transformation view improvements',
+    ],
+  },
+  {
+    version: 'v1.6.0',
+    date: 'May 15, 2026',
+    tag: null,
+    icon: Zap,
+    changes: [
+      'Live S/4HANA tenant connection (BYOT) with admin approval gate',
+      'Enhanced sandbox test runner with real-time TAP output',
+      'Added Confluence blueprint export format',
+      'Improved abapGit ZIP packaging with proper directory structure',
+    ],
+  },
+  {
+    version: 'v1.5.0',
+    date: 'April 28, 2026',
+    tag: null,
+    icon: Package,
+    changes: [
+      'Initial public pilot release',
+      'Core ABAP parser and AST extraction engine',
+      'SAP API Business Hub integration',
+      'Dual-target code generation (RAP + CAP Node.js)',
+      'ABAP-Unit test class generation',
+      'Clean Core compliance scoring',
+    ],
+  },
+];
+
+export default function ChangelogPage() {
+  return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-12 animate-in fade-in duration-300 bg-white min-h-screen text-gray-900 font-sans">
+
+      {/* Navigation */}
+      <div className="flex items-center justify-start">
+        <Link 
+          href="/" 
+          className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-slate-50 px-5 py-2.5 rounded-full border border-gray-200 hover:border-green-200"
+        >
+          <ArrowLeft size={14} /> Back to Homepage
+        </Link>
+      </div>
+
+      {/* Hero Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[2.5rem] p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-slate-700/30">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.08),transparent)] pointer-events-none"></div>
+        <div className="relative z-10 max-w-4xl space-y-6">
+          <div className="inline-flex items-center gap-2 bg-green-500/15 border border-green-400/30 px-4 py-1.5 rounded-full text-xs font-bold text-green-400 tracking-wide uppercase">
+            <Tag size={14} /> Release History
+          </div>
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none text-slate-50">
+            Change<span className="text-green-400">log</span>
+          </h1>
+          <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
+            Track every update to the Clean-Core.io transformation engine.
+          </p>
+        </div>
+      </div>
+
+      {/* Timeline */}
+      <div className="relative space-y-0">
+        {/* Vertical timeline line */}
+        <div className="absolute left-4 sm:left-6 top-0 bottom-0 w-px bg-gray-200 hidden sm:block"></div>
+
+        {releases.map((release, idx) => {
+          const Icon = release.icon;
+          const isLatest = release.tag === 'Latest';
+
+          return (
+            <div key={release.version} className="relative pl-0 sm:pl-16 pb-10 last:pb-0">
+              {/* Timeline dot */}
+              <div className={`hidden sm:flex absolute left-0 top-0 w-12 h-12 rounded-xl items-center justify-center z-10 shadow-md ${
+                isLatest
+                  ? 'bg-green-600 text-white'
+                  : 'bg-white text-gray-400 border border-gray-200'
+              }`}>
+                <Icon size={20} />
+              </div>
+
+              {/* Release card */}
+              <div className={`rounded-[2rem] border p-6 sm:p-8 space-y-5 transition-all ${
+                isLatest
+                  ? 'border-green-200 bg-green-50/30 shadow-lg shadow-green-100/40 border-l-4 border-l-green-500'
+                  : 'border-gray-200 bg-white border-l-4 border-l-gray-300'
+              }`}>
+                {/* Header */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Mobile icon */}
+                  <div className={`sm:hidden w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    isLatest
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-100 text-gray-400 border border-gray-200'
+                  }`}>
+                    <Icon size={18} />
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-gray-950">
+                    {release.version}
+                  </h2>
+                  <span className="text-sm font-bold text-gray-500">
+                    — {release.date}
+                  </span>
+                  {isLatest && (
+                    <span className="inline-flex items-center gap-1.5 bg-green-600 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
+                      <Sparkles size={10} /> Latest
+                    </span>
+                  )}
+                </div>
+
+                {/* Changes list */}
+                <ul className="space-y-3">
+                  {release.changes.map((change, changeIdx) => (
+                    <li
+                      key={changeIdx}
+                      className="flex items-start gap-3 text-sm font-medium text-gray-700 leading-relaxed"
+                    >
+                      <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${
+                        isLatest ? 'bg-green-500' : 'bg-gray-300'
+                      }`}></span>
+                      {change}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* CTA */}
+      <div className="bg-slate-50 border border-gray-200 rounded-[2.5rem] p-8 sm:p-10 text-center space-y-4">
+        <h2 className="text-2xl font-black text-gray-955 tracking-tight">Want to try the latest features?</h2>
+        <p className="text-gray-600 font-medium text-sm max-w-lg mx-auto">
+          Create a free account and start transforming your ABAP code today. No credit card required.
+        </p>
+        <Link
+          href="/?auth=signup"
+          className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-8 rounded-xl shadow-md transition-all text-sm"
+        >
+          Get Started for Free
+        </Link>
+      </div>
+
+      {/* Footer Disclaimer */}
+      <div className="text-center text-[10px] text-gray-500 font-mono font-bold uppercase tracking-wider pt-10 border-t border-gray-200">
+        Clean-Core.io {APP_VERSION} • {APP_RELEASE_DATE} • Non-Commercial Pilot Edition
+      </div>
+    </div>
+  );
+}
