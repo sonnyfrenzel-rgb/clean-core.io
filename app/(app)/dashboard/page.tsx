@@ -909,7 +909,7 @@ export default function Dashboard() {
             
             {/* System Disclaimer & Terms */}
             <div className="mb-4 bg-amber-50/50 border border-amber-200/50 rounded-xl p-3 text-[11px] text-amber-900 leading-relaxed font-medium">
-              ⚠️ <strong>Pilot Terms:</strong> This is a non-commercial, AI-powered playground. Generated code may contain errors and is provided without warranty or liability. Review our <a href="/settings" className="underline font-bold text-amber-950 hover:text-green-700 transition-colors">Privacy Policy</a> & Legal Notice in settings.
+              ⚠️ <strong>Pilot Terms:</strong> This is a free community prototyping platform powered by AI. Generated code may contain errors and is provided without warranty or liability. Review our <a href="/settings" className="underline font-bold text-amber-950 hover:text-green-700 transition-colors">Privacy Policy</a> & Legal Notice in settings.
             </div>
 
             {/* Quota limit feedback */}
@@ -978,7 +978,7 @@ export default function Dashboard() {
             
             {/* System Disclaimer & Terms */}
             <div className="mb-4 bg-amber-50/50 border border-amber-200/50 rounded-xl p-3 text-[11px] text-amber-900 leading-relaxed font-medium">
-              ⚠️ <strong>AI Processing Notice:</strong> Uploaded codes are analyzed server-side using Generative AI. This pilot is non-commercial, provided completely without warranty or liability.
+              ⚠️ <strong>AI Processing Notice:</strong> Uploaded codes are analyzed server-side using Generative AI. This community pilot is free of charge, provided completely without warranty or liability.
             </div>
 
             <div className="mb-6">
@@ -1168,9 +1168,9 @@ export default function Dashboard() {
               </div>
 
               <div className="bg-amber-50 border border-amber-200/50 rounded-xl p-4 text-amber-900 space-y-2">
-                <h4 className="font-bold text-sm">💡 Non-Commercial Pilot Limits</h4>
+                <h4 className="font-bold text-sm">💡 Community Pilot Limits</h4>
                 <p className="text-xs leading-relaxed font-medium">
-                  Since this is a non-commercial, educational platform, standard pilot accounts are limited to <strong>5 transformations</strong>. 
+                  As a free community platform, standard pilot accounts are limited to <strong>5 transformations</strong>. 
                   To perform unlimited transformations, you can configure your own Gemini API Key in <a href="/settings" className="underline font-black hover:text-green-700 transition-colors">Profile Settings</a> (BYOK mode) at no extra cost.
                 </p>
               </div>

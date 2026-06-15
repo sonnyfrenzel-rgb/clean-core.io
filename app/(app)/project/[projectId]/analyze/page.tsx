@@ -1788,7 +1788,7 @@ ${codeToAnalyze}`;
                     className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-0.5 accent-green-600 shrink-0 cursor-pointer"
                   />
                   <span className="text-xs text-gray-700 leading-relaxed font-medium">
-                    I agree to the <strong>Terms & Conditions</strong> of the Clean-Core.io pilot. I understand this is a non-commercial learning project under absolute warranty and liability disclaimer, utilizing secure Gemini models on EU-compliant servers.
+                    I agree to the <strong>Terms & Conditions</strong> of the Clean-Core.io community pilot. I understand this is a free prototyping platform under absolute warranty and liability disclaimer, utilizing secure Gemini models on EU-compliant servers.
                   </span>
                 </label>
               </div>

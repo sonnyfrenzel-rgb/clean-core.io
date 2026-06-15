@@ -24,10 +24,10 @@ export default function PilotWarningBanner() {
   return (
     <div className="bg-amber-50/95 backdrop-blur text-amber-900 py-2 sm:py-2.5 px-4 pr-4 sm:pr-40 text-center text-[10px] sm:text-xs font-semibold border-b border-amber-200 flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 transition-all shrink-0 relative animate-in slide-in-from-top duration-300 z-50">
       <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-950 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider select-none shrink-0">
-        ⚡ Pilot Preview
+        ⚡ Community Pilot
       </span>
       <span className="leading-relaxed">
-        Non-Commercial Research Platform. Powered by Generative AI. Provided without warranty.
+        Free Community SAP Prototyping Platform. Powered by Generative AI. Provided without warranty.
       </span>
       <div className="flex items-center gap-2 font-black shrink-0">
         <Link href="?legal=privacy" className="underline hover:text-green-750 transition-colors outline-none cursor-pointer">
