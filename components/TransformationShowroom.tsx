@@ -132,7 +132,7 @@ export default function TransformationShowroom() {
                       Z_LEGACY_ORDERS.abap
                     </span>
                   </div>
-                  <pre className="p-4 overflow-x-auto text-[13px] leading-relaxed">
+                  <pre className="p-4 overflow-x-auto text-[11px] sm:text-[13px] leading-relaxed">
                     <code className="font-mono text-slate-700">
                       <span className="text-slate-400">{`" Direct table read — violates Clean Core`}</span>
 {`
@@ -162,7 +162,7 @@ export default function TransformationShowroom() {
                       ZI_SalesOrderCustom.cds
                     </span>
                   </div>
-                  <pre className="p-4 overflow-x-auto text-[13px] leading-relaxed">
+                  <pre className="p-4 overflow-x-auto text-[11px] sm:text-[13px] leading-relaxed">
                     <code className="font-mono text-slate-800">
                       <span className="text-blue-700 font-bold">define view entity</span>{` ZI_SalesOrderCustom
   `}<span className="text-blue-700 font-bold">as select from</span>{` `}<span className="text-emerald-700 font-bold">I_SalesOrder</span>{`
@@ -195,7 +195,7 @@ export default function TransformationShowroom() {
                     ltcl_sales_order.abap
                   </span>
                 </div>
-                <pre className="p-4 overflow-x-auto text-[13px] leading-relaxed">
+                <pre className="p-4 overflow-x-auto text-[11px] sm:text-[13px] leading-relaxed">
                   <code className="font-mono text-slate-700">
                     <span className="text-blue-700 font-bold">CLASS</span>{` ltcl_sales_order `}<span className="text-blue-700 font-bold">DEFINITION FINAL FOR TESTING</span>{`
   `}<span className="text-blue-700 font-bold">DURATION SHORT RISK LEVEL HARMLESS</span>{`.
@@ -301,7 +301,7 @@ export default function TransformationShowroom() {
                       Z_FI_DOCUMENTS.abap
                     </span>
                   </div>
-                  <pre className="p-4 overflow-x-auto text-[13px] leading-relaxed">
+                  <pre className="p-4 overflow-x-auto text-[11px] sm:text-[13px] leading-relaxed">
                     <code className="font-mono text-slate-700">
                       <span className="text-slate-400">{`" Financial doc segment read — non-released table`}</span>
 {`
@@ -331,7 +331,7 @@ export default function TransformationShowroom() {
                       srv/journal-service.cds
                     </span>
                   </div>
-                  <pre className="p-4 overflow-x-auto text-[13px] leading-relaxed">
+                  <pre className="p-4 overflow-x-auto text-[11px] sm:text-[13px] leading-relaxed">
                     <code className="font-mono text-slate-800">
                       <span className="text-slate-400">{'// srv/journal-service.cds'}</span>
 {`
@@ -437,7 +437,7 @@ export default function TransformationShowroom() {
                       Z_DYNAMIC_DISPATCH.abap
                     </span>
                   </div>
-                  <pre className="p-4 overflow-x-auto text-[13px] leading-relaxed">
+                  <pre className="p-4 overflow-x-auto text-[11px] sm:text-[13px] leading-relaxed">
                     <code className="font-mono text-slate-700">
                       <span className="text-slate-400">{`" Dynamic function module call — cannot be statically resolved`}</span>
 {`
@@ -468,7 +468,7 @@ lv_func = get_dynamic_function( ).
                       REVIEW_REQUIRED.abap
                     </span>
                   </div>
-                  <pre className="p-4 overflow-x-auto text-[13px] leading-relaxed">
+                  <pre className="p-4 overflow-x-auto text-[11px] sm:text-[13px] leading-relaxed">
                     <code className="font-mono text-slate-700">
                       <span className="text-amber-600 font-bold">{`" ⚠ LOW CONFIDENCE — Manual review recommended.`}</span>
 {`
