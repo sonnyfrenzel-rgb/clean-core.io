@@ -124,7 +124,7 @@ export default function LandingSlideshow() {
               The Clean-Core Process
             </div>
             
-            <div className="relative h-56 sm:h-48 lg:h-56">
+            <div className="relative min-h-[14rem] sm:min-h-[12rem] lg:min-h-[14rem]">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentIndex}
@@ -188,7 +188,7 @@ export default function LandingSlideshow() {
         </div>
 
         {/* Right Side: Image Display */}
-        <div className="w-full lg:w-2/3 bg-gray-100 relative p-2 sm:p-3 md:p-4 flex items-center justify-center h-[320px] sm:h-[450px] lg:h-auto lg:min-h-[600px]">
+        <div className="w-full lg:w-2/3 bg-gray-100 relative p-2 sm:p-3 md:p-4 flex items-center justify-center h-[280px] sm:h-[400px] lg:h-auto lg:min-h-[600px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}

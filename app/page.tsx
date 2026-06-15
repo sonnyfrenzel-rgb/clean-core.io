@@ -248,8 +248,8 @@ export default function Home() {
           </p>
           <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
             <HeroCTA />
-            <div className="flex items-center gap-2 mt-2 bg-slate-100 text-slate-700 px-3.5 py-1.5 rounded-full border border-slate-200 text-xs font-bold font-mono">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            <div className="flex items-center gap-2 mt-2 bg-slate-100 text-slate-700 px-3.5 py-1.5 rounded-full border border-slate-200 text-[10px] sm:text-xs font-bold font-mono whitespace-nowrap">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0"></span>
               <span>LATEST COMMUNITY RELEASE: {APP_VERSION} ({APP_RELEASE_DATE})</span>
             </div>
           </div>
@@ -454,7 +454,7 @@ export default function Home() {
       <section className="py-24 md:py-32 bg-white relative">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">What You Can Do Today</h2>
+            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">What You Can Do Today</h2>
             <p className="text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Every feature listed here is live and free to use&mdash;start with 5 transformations or bring your own API key for unlimited access.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -675,7 +675,7 @@ export default function Home() {
               </span>
               <div className="h-px flex-1 bg-gray-200" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
                 { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Read-Only Scope', desc: 'Tenant connections are restricted to OData metadata reads and test execution. No write operations.', link: '/tenant-security#read-only-scope' },
                 { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Stateless Processing', desc: 'Credentials and code are processed in memory only. Nothing is persisted on our servers.', link: '/tenant-security#stateless-processing' },
@@ -721,7 +721,7 @@ export default function Home() {
               <span className="text-gray-800">|</span>
               <Link href="?legal=privacy" className="hover:text-white transition-colors cursor-pointer">Privacy Policy</Link>
             </p>
-            <div className="mt-12 text-[10px] text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-900 bg-gray-950/50 p-6 rounded-2xl text-left space-y-3">
+            <div className="mt-12 text-[10px] sm:text-[11px] text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-900 bg-gray-950/50 p-6 rounded-2xl text-left space-y-3">
               <span className="font-extrabold text-gray-400 uppercase tracking-widest block border-b border-gray-900 pb-1.5">Legal Disclaimer & Verification Notice</span>
               <p>
                 <strong>Free Community Prototyping Platform:</strong> Clean-Core.io is a free, community-powered research and prototyping platform for SAP architects and developers, maintained by Felix Frenzel. No commercial licensing, subscriptions, or paid services are offered.
