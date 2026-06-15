@@ -167,5 +167,10 @@ service cloud.firestore {
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
+
+    // F-03: S/4HANA-Credentials: ausschließlich serverseitig (Admin SDK). Clients nie.
+    match /s4_credentials/{uid} {
+      allow read, write: if false;
+    }
   }
 }

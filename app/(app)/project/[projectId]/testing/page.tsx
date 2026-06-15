@@ -116,17 +116,32 @@ export default function TestingSandboxPage() {
       if (project.s4Environment) {
         setActiveEnvTab(project.s4Environment);
       }
-      if (project.s4Config) {
+      // F-03: Load S4 metadata (non-secret) — password is write-only
+      if (project.s4Meta?.configured) {
+        setS4Url(project.s4Meta.url || '');
+        setS4Username(project.s4Meta.username || '');
+        setS4AuthType((project.s4Meta.authType as any) || 'basic');
+        setS4Password('');
+        if (project.s4Meta.url) setShowSetupGuide(false);
+      } else if (project.s4Config) {
+        // Legacy fallback
         setS4Url(project.s4Config.url || '');
         setS4Username(project.s4Config.username || '');
-        setS4Password(project.s4Config.password || '');
+        setS4Password('');
         setS4AuthType(project.s4Config.authType || 'basic');
         setBtpDestinationJson(project.s4Config.btpDestinationJson || '');
         if (project.s4Config.url) setShowSetupGuide(false);
+      } else if (profile?.s4Meta?.configured) {
+        setS4Url(profile.s4Meta.url || '');
+        setS4Username(profile.s4Meta.username || '');
+        setS4AuthType((profile.s4Meta.authType as any) || 'basic');
+        setS4Password('');
+        if (profile.s4Meta.url) setShowSetupGuide(false);
       } else if (profile?.s4Config) {
+        // Legacy fallback
         setS4Url(profile.s4Config.url || '');
         setS4Username(profile.s4Config.username || '');
-        setS4Password(profile.s4Config.password || '');
+        setS4Password('');
         setS4AuthType(profile.s4Config.authType || 'basic');
         setBtpDestinationJson(profile.s4Config.btpDestinationJson || '');
         if (profile.s4Config.url) setShowSetupGuide(false);
@@ -165,25 +180,33 @@ export default function TestingSandboxPage() {
     if (e) e.preventDefault();
     setIsSavingConfig(true);
     try {
-      const db = getDb();
-      const projectRef = doc(db, 'projects', projectId as string);
-      const updates = {
-        s4Config: {
+      // F-03: Save via encrypted server-side route
+      const token = await getAuth().currentUser?.getIdToken();
+      const res = await fetch('/api/s4-credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
           url: s4Url,
           username: s4Username,
           password: s4Password,
           authType: s4AuthType,
-          btpDestinationJson: s4AuthType === 'btp_destination' ? btpDestinationJson : ''
-        }
-      };
-      await setDoc(projectRef, updates, { merge: true });
-      setProject(prev => prev ? { ...prev, ...updates } : null);
+          btpDestinationJson: s4AuthType === 'btp_destination' ? btpDestinationJson : '',
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Save failed');
       
-      setConnectionMessage("Configuration saved successfully.");
+      // Also save environment preference to project
+      const db = getDb();
+      const projectRef = doc(db, 'projects', projectId as string);
+      await setDoc(projectRef, { s4Environment: activeEnvTab }, { merge: true });
+      setProject(prev => prev ? { ...prev, s4Environment: activeEnvTab } : null);
+      
+      setS4Password(''); // Clear from client state
+      setConnectionMessage("Configuration saved securely (encrypted).");
       setTimeout(() => setConnectionMessage(""), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to save S/4 config:", err);
-      setConnectionMessage("Failed to save configuration.");
+      setConnectionMessage(err.message || "Failed to save configuration.");
     } finally {
       setIsSavingConfig(false);
     }
@@ -215,11 +238,7 @@ export default function TestingSandboxPage() {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          url: s4Url,
-          username: s4Username,
-          password: s4Password,
-          authType: s4AuthType,
-          btpDestinationJson: s4AuthType === 'btp_destination' ? btpDestinationJson : ''
+          useStoredCredentials: true,
         })
       });
 
@@ -272,11 +291,7 @@ export default function TestingSandboxPage() {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          url: s4Url,
-          username: s4Username,
-          password: s4Password,
-          authType: s4AuthType,
-          btpDestinationJson: s4AuthType === 'btp_destination' ? btpDestinationJson : '',
+          useStoredCredentials: true,
         })
       });
 
@@ -321,11 +336,7 @@ export default function TestingSandboxPage() {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          url: s4Url,
-          username: s4Username,
-          password: s4Password,
-          authType: s4AuthType,
-          btpDestinationJson: s4AuthType === 'btp_destination' ? btpDestinationJson : '',
+          useStoredCredentials: true,
           servicePath: path,
         })
       });

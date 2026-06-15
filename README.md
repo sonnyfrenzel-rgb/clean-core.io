@@ -7,7 +7,7 @@ Clean-Core.io is a modern, high-performance, and secure web and desktop client a
 ## 🌟 Premium Key Features
 
 *   **S/4HANA Live Bridge (BYOT - Bring Your Own Tenant):**
-    Connect your own S/4HANA Public Cloud Test/Sandbox Tenant to run E2E unit tests on live ERP destinations. Credentials are stored in your Firebase user profile, protected by Firestore Security Rules with server-side authentication.
+    Connect your own S/4HANA Public Cloud Test/Sandbox Tenant to run E2E unit tests on live ERP destinations. Credentials are encrypted at rest (AES-256-GCM) in a server-only Firestore collection, inaccessible to client SDKs.
 *   **Unified Pilot & Tenant Administration Console:**
     Comprehensive admin workbench (`/admin`) allowing administrators to instantly review, approve, or revoke pilot access requests, track tenant bridge applications, and toggle Bring-Your-Own-Tenant (BYOT) privileges with live status badges.
 *   **Transactional Verification & Responsive Email Automations:**
@@ -95,14 +95,10 @@ Clean-Core.io bridges the gap between static code analysis and live database ver
 ### How it Works:
 1.  **Request Access:** Pilot users click "Request Live Tenant Access" inside Stage 5 (Testing Sandbox).
 2.  **Security Review:** Administrators receive a cryptographically signed email linking to `/admin/approve-tenant`.
-3.  **Privilege Zaining:** Sonny grants the `s4TenantAccessAllowed` right directly in the Unified Admin Console.
+3.  **Privilege Granting:** Admin grants the `s4TenantAccessAllowed` right directly in the Unified Admin Console.
 4.  **Secure Connection:** The locked connection panel slides open. Users enter their S/4HANA URL and Basic/OAuth credentials.
-5.  **Credential Storage:** Configuration details are saved in the user's Firestore profile, protected by server-side authentication and field-level security rules.
-6.  **Test Runner Injection:** During test execution, only the S/4 credentials are injected into the test process as:
-    *   `S4_TENANT_URL`
-    *   `S4_USERNAME`
-    *   `S4_PASSWORD`
-    This enables automated unit tests to run and verify real OData endpoints on your target public cloud system.
+5.  **Encrypted Credential Storage:** Credentials are sent to `POST /api/s4-credentials`, encrypted with AES-256-GCM, and stored in a server-only `s4_credentials/{uid}` collection. Only non-secret metadata (`s4Meta`) is stored in the user profile.
+6.  **Server-Side Resolution:** During test execution, the server loads and decrypts credentials automatically. Credentials **never** leave the server after initial save.
 
 ---
 
@@ -110,15 +106,16 @@ Clean-Core.io bridges the gap between static code analysis and live database ver
 
 Clean-Core.io prioritizes data security and user privacy above all else:
 
-*   **Server-Side Auth:** All mutating API routes require a valid Firebase ID token verified via Firebase Admin SDK. SSRF protection blocks internal/private IP access.
-*   **Credential Isolation:** BYOK API keys remain in the user's Firestore profile. The test runner receives only the minimum required environment variables — no server secrets are exposed.
+*   **Server-Side Auth:** All mutating API routes require a valid Firebase ID token verified via Firebase Admin SDK.
+*   **SSRF Protection:** Multi-layer defense: HTTPS-only, DNS resolution with IP re-check, host allowlist (`S4_HOST_ALLOWLIST`), credential-in-URL blocking, internal TLD blocking, cloud metadata endpoint blocking, encoded IP detection, and redirect target validation. See [`SECURITY.md`](SECURITY.md) for full details.
+*   **Encrypted Credentials (AES-256-GCM):** S/4HANA credentials are encrypted at rest in a server-only Firestore collection (`s4_credentials`). Client SDKs cannot read this collection (`allow read, write: if false`). Passwords follow a write-only pattern — they are never returned to the client.
+*   **Admin Gating:** All privileged routes (email sending, tenant management) require `verifyAdminRequest()` with email allowlist enforcement.
+*   **Quota Enforcement:** Transformation quotas are enforced via atomic server-side Firestore transactions. Client-side counters are decorative only.
+*   **RCE Prevention:** The `/api/run-tests` route is permanently disabled (HTTP 503) to prevent remote code execution.
 *   **Field-Level Security:** Firestore Security Rules freeze all privileged fields (isAdmin, tier, quota counters) so only admins can modify them.
-*   **Art. 17 GDPR Cascade Deletion:** Instantly purges:
-    *   Authentication profiles.
-    *   Custom uploads, ABAP scripts, and analysis metadata.
-    *   Modernized designs, blueprints, and generated ZIP packages.
-    *   Sandbox outputs, configurations, and connectivity credentials.
+*   **Art. 17 GDPR Cascade Deletion:** Instantly purges authentication profiles, custom uploads, ABAP scripts, analysis metadata, modernized designs, blueprints, generated ZIP packages, sandbox outputs, configurations, and **encrypted S/4HANA credentials**.
 *   **Context Isolation:** Electron configuration maintains `nodeIntegration: false` and `contextIsolation: true` to protect users against unsafe remote script execution in desktop mode.
+*   **Full Security Documentation:** See [`SECURITY.md`](SECURITY.md) for the complete security architecture, threat model, and developer checklist.
 
 ---
 

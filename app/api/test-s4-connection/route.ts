@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
+import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 import { isUrlSafe } from '@/lib/url-validation';
 
 /**
@@ -246,7 +247,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { url, username, password, authType, tokenUrl, btpDestinationJson } = body;
+
+    // F-03: Resolve credentials — stored (server-side) or transient (from body)
+    const stored = body.useStoredCredentials ? await loadS4ConfigForUser(decodedToken.uid) : null;
+    const url = body.url ?? stored?.url;
+    const username = body.username ?? stored?.username;
+    const password = body.password ?? stored?.password;
+    const authType = body.authType ?? stored?.authType;
+    const tokenUrl = body.tokenUrl ?? stored?.tokenUrl;
+    const btpDestinationJson = body.btpDestinationJson ?? stored?.btpDestinationJson;
 
     // --- BTP Destination: parse JSON, resolve auth, and override parameters ---
     if (authType === 'btp_destination') {
