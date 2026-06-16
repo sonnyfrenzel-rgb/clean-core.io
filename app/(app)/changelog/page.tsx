@@ -21,17 +21,25 @@ export const metadata: Metadata = {
 const releases = [
   {
     version: 'v1.7.3',
-    date: 'June 15, 2026',
+    date: 'June 16, 2026',
     tag: 'Latest',
     icon: Sparkles,
     changes: [
+      'Added standalone /impressum and /datenschutz legal route pages for SEO and compliance',
+      'Fixed JSON-LD structured data: removed duplicate schema, added static dates for Google Rich Results',
+      'Improved Transformation Showroom ABAP-Unit test with proper CDS Test Double pattern (Arrange/Act/Assert)',
+      'Corrected Quick Answer heading hierarchy (h2 → semantic span badge)',
+      'Removed Jira Integration placeholders from Solution Design page',
+      'Updated footer and pilot banner links to real legal routes',
+      'Added legal routes to sitemap.xml for crawler discoverability',
+      'Updated E2E tests for route-based legal navigation',
       'Added mobile-optimized comparison table with stacked card layout',
       'Introduced Transformation Showroom with real E2E code examples',
       "Added '/how-it-works' page with honest coverage matrix",
-      'Improved ABAP-Unit test generation for CDS view entities',
       'Enhanced SAP API Hub mapping accuracy for financial tables (BSEG, BKPF)',
     ],
   },
+
   {
     version: 'v1.7.0',
     date: 'June 1, 2026',
