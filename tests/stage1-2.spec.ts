@@ -7,14 +7,16 @@ test.describe('Clean-Core.io Stage 1 & 2 E2E Tests', () => {
     await expect(page).toHaveTitle(/Clean-Core/i);
     await page.screenshot({ path: 'test-results/visual-baselines/desktop-landing.png' });
 
-    // 2. Open legal overlay and verify modal state
-    const legalNoticeLink = page.locator('button:has-text("Impressum"), button:has-text("Legal Notice")').first();
+    // 2. Navigate to legal notice page and verify
+    const legalNoticeLink = page.locator('a:has-text("Impressum"), a:has-text("Legal Notice")').first();
     if (await legalNoticeLink.count() > 0) {
       await legalNoticeLink.click();
-      const modal = page.locator('div[role="dialog"], div:has-text("Haftungsausschluss"), div:has-text("Disclaimer")').first();
-      await expect(modal).toBeVisible();
-      await page.screenshot({ path: 'test-results/visual-baselines/legal-modal.png' });
+      await expect(page).toHaveURL(/\/impressum/);
+      const heading = page.locator('h1');
+      await expect(heading).toContainText(/Legal Notice/i);
+      await page.screenshot({ path: 'test-results/visual-baselines/legal-page.png' });
     }
+
   });
 
   test('should verify architectural design tree and API method catalog UI', async ({ page }) => {

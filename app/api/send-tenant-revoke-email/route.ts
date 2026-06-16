@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { APP_VERSION } from '@/lib/version';
-import { verifyRequestAuth } from '@/lib/firebase-admin';
+import { verifyAdminRequest } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
-    const decodedToken = await verifyRequestAuth(request);
-    if (!decodedToken) {
-      return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    const adminToken = await verifyAdminRequest(request);
+    if (!adminToken) {
+      // Bewusst 403 (nicht 401): Token kann gültig sein, aber ohne Admin-Recht.
+      return NextResponse.json(
+        { error: 'Forbidden: administrator privileges required.' },
+        { status: 403 },
+      );
     }
 
     const body = await request.json();
@@ -14,6 +18,11 @@ export async function POST(request: NextRequest) {
 
     if (!email || !name) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // F-04: Empfängeradresse validieren (verhindert Missbrauch des Mailers selbst durch Admins)
+    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+      return NextResponse.json({ error: 'Invalid recipient email.' }, { status: 400 });
     }
 
     // Hardcoded base URL to prevent Host-Header injection

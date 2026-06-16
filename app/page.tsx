@@ -73,6 +73,7 @@ export default function Home() {
         "@type": "SoftwareApplication",
         "@id": "https://clean-core.io/#software",
         "name": "Clean-Core.io",
+        "url": "https://clean-core.io",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "All",
         "offers": {
@@ -81,7 +82,8 @@ export default function Home() {
           "priceCurrency": "USD"
         },
         "description": "Automated ABAP custom code analysis and S/4HANA modernization following official SAP Clean Core guidelines.",
-        "dateModified": new Date().toISOString().split('T')[0]
+        "datePublished": "2025-01-15",
+        "dateModified": "2026-06-16"
       },
       {
         "@type": "FAQPage",
@@ -107,6 +109,7 @@ export default function Home() {
       }
     ]
   };
+
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900">
@@ -717,9 +720,9 @@ export default function Home() {
               System Version: {APP_VERSION} • {APP_RELEASE_DATE}
             </p>
             <p className="mt-4 flex flex-wrap justify-center gap-4">
-              <Link href="?legal=impressum" className="hover:text-white transition-colors cursor-pointer">Legal Notice</Link>
+              <Link href="/impressum" className="hover:text-white transition-colors cursor-pointer">Legal Notice</Link>
               <span className="text-gray-800">|</span>
-              <Link href="?legal=privacy" className="hover:text-white transition-colors cursor-pointer">Privacy Policy</Link>
+              <Link href="/datenschutz" className="hover:text-white transition-colors cursor-pointer">Privacy Policy</Link>
             </p>
             <div className="mt-12 text-[10px] sm:text-[11px] text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-900 bg-gray-950/50 p-6 rounded-2xl text-left space-y-3">
               <span className="font-extrabold text-gray-400 uppercase tracking-widest block border-b border-gray-900 pb-1.5">Legal Disclaimer & Verification Notice</span>

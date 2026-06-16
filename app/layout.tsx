@@ -43,25 +43,6 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" className={inter.className}>
       <body className="bg-[#f8f9ff] text-[#0b1c30] antialiased min-h-screen flex flex-col">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "SoftwareApplication",
-              "name": "Clean-Core.io",
-              "operatingSystem": "All",
-              "applicationCategory": "DeveloperApplication",
-              "offers": {
-                "@type": "Offer",
-                "price": "0",
-                "priceCurrency": "EUR"
-              },
-              "description": "Enterprise S/4HANA Modernization Suite. Automatically analyze and transform custom legacy ABAP operations into clean-code, cloud-native Node.js architectures following official SAP Clean Core guidelines.",
-              "featureList": "ABAP Extensibility Routing, SAP API Hub Mapping, Dual RAP & CAP Engine, ADT Cockpit Simulation, Business Value & TCO Audit, BPMN 2.0 Architectural Blueprinting"
-            })
-          }}
-        />
         <UserOnboarding />
         {children}
       </body>
