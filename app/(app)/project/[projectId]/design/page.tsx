@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
-import { FileText, Download, ArrowRight, ArrowLeft, RefreshCw, LayoutTemplate, Eye, X, Send, Folder, FileCode, Terminal, ShieldCheck, Layers, Network, ArrowUpRight, ChevronDown, Lock, HelpCircle } from 'lucide-react';
+import { FileText, Download, ArrowRight, ArrowLeft, RefreshCw, LayoutTemplate, Eye, X, Folder, FileCode, Terminal, ShieldCheck, Layers, Network, ArrowUpRight, ChevronDown, HelpCircle } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
 import { DocumentSection } from '@/components/DocumentSection';
 import { Components } from 'react-markdown';
@@ -17,8 +17,7 @@ import type { Project, DesignData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { saveAs } from '@/lib/fileSaver';
 import GlossaryTerm from '@/components/GlossaryTerm';
-import JiraIntegrationModal from '@/components/JiraIntegrationModal';
-import UpgradeToEnterpriseModal from '@/components/UpgradeToEnterpriseModal';
+
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 
@@ -254,9 +253,7 @@ export default function DesignPage() {
 
   const [loadingMessage, setLoadingMessage] = useState('');
 
-  const [isProceeding, setIsProceeding] = useState(false);
-  const [isJiraModalOpen, setIsJiraModalOpen] = useState(false);
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+
   const [activeTerm, setActiveTerm] = useState<string | null>(null);
   const [activeService, setActiveService] = useState<any | null>(null);
   const [copied, setCopied] = useState(false);
@@ -1054,13 +1051,7 @@ ${analysis}`;
         </div>
         {design && (
           <div className="flex gap-3">
-            <button
-               disabled
-               className="flex items-center gap-2 bg-slate-100 text-slate-400 px-4 py-2 rounded-lg cursor-not-allowed transition-colors font-medium text-sm border border-slate-200"
-               title="Jira Sync is prepared for the Enterprise Edition"
-             >
-               <Lock size={14} className="text-slate-400" /> Send to Jira (Enterprise)
-             </button>
+
             <button 
               onClick={() => project?.analysis && generateDesign(project.analysis)}
               className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-sm"
@@ -1083,18 +1074,7 @@ ${analysis}`;
         )}
       </div>
 
-      {design && (
-        <div className="mb-8 p-5 bg-slate-900 text-white rounded-3xl border border-slate-800 flex items-start gap-4 shadow-xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-          <div className="bg-emerald-500/20 p-2 rounded-2xl text-emerald-400 shrink-0 border border-emerald-500/30">
-            <Lock className="w-5 h-5" />
-          </div>
-          <div className="text-xs space-y-1 relative z-10">
-            <span className="font-extrabold text-emerald-400 uppercase tracking-widest block font-mono">⚡ Enterprise Integration Prepared</span>
-            <p className="text-slate-350 leading-relaxed font-medium">The <strong className="text-white">Send to Jira</strong> pipeline is fully prepared for corporate board synchronizations. Automated epic mapping, standard backlog tickets generation, and sprint tasks synchronization will connect directly with your organization's instance once enterprise licenses are active.</p>
-          </div>
-        </div>
-      )}
+
 
       <div id="design-report" className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mb-12">
         <div className="bg-gray-50 border-b border-gray-200 px-8 py-6 flex items-center justify-between">
@@ -1167,17 +1147,7 @@ ${analysis}`;
         proceedLabel="Continue to Transformation"
       />
 
-      <JiraIntegrationModal 
-        isOpen={isJiraModalOpen} 
-        onClose={() => setIsJiraModalOpen(false)} 
-        solutionDesign={design}
-        projectId={projectId as string}
-      />
-      
-      <UpgradeToEnterpriseModal
-        isOpen={isUpgradeModalOpen}
-        onClose={() => setIsUpgradeModalOpen(false)}
-      />
+
 
       {/* Specialist Term Modal Overlay */}
       {activeTerm && (() => {

@@ -30,13 +30,14 @@ export default function PilotWarningBanner() {
         Free Community SAP Prototyping Platform. Powered by Generative AI. Provided without warranty.
       </span>
       <div className="flex items-center gap-2 font-black shrink-0">
-        <Link href="?legal=privacy" className="underline hover:text-green-750 transition-colors outline-none cursor-pointer">
+        <Link href="/datenschutz" className="underline hover:text-green-750 transition-colors outline-none cursor-pointer">
           Privacy Policy
         </Link>
         <span>•</span>
-        <Link href="?legal=impressum" className="underline hover:text-green-750 transition-colors outline-none cursor-pointer">
+        <Link href="/impressum" className="underline hover:text-green-750 transition-colors outline-none cursor-pointer">
           Legal Notice
         </Link>
+
         <span className="text-amber-300">|</span>
         <button 
           onClick={dismissBanner}

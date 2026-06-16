@@ -202,6 +202,7 @@ export default function TransformationShowroom() {
   `}<span className="text-blue-700 font-bold">PRIVATE SECTION</span>{`.
     `}<span className="text-blue-700 font-bold">CLASS-DATA</span>{` environment `}<span className="text-blue-700 font-bold">TYPE REF TO</span>{` if_cds_test_environment.
     `}<span className="text-blue-700 font-bold">CLASS-METHODS</span>{` class_setup.
+    `}<span className="text-blue-700 font-bold">CLASS-METHODS</span>{` class_teardown.
     `}<span className="text-blue-700 font-bold">METHODS</span>{` test_order_filter `}<span className="text-blue-700 font-bold">FOR TESTING</span>{`.
 `}<span className="text-blue-700 font-bold">ENDCLASS</span>{`.
 
@@ -209,13 +210,27 @@ export default function TransformationShowroom() {
   `}<span className="text-blue-700 font-bold">METHOD</span>{` class_setup.
     environment = cl_cds_test_environment=>`}<span className="text-blue-700 font-bold">create</span>{`( i_for_entity = 'ZI_SALESORDERCUSTOM' ).
   `}<span className="text-blue-700 font-bold">ENDMETHOD</span>{`.
+  `}<span className="text-blue-700 font-bold">METHOD</span>{` class_teardown.
+    environment->`}<span className="text-blue-700 font-bold">destroy</span>{`( ).
+  `}<span className="text-blue-700 font-bold">ENDMETHOD</span>{`.
   `}<span className="text-blue-700 font-bold">METHOD</span>{` test_order_filter.
+    `}<span className="text-slate-400">{`" Arrange — insert test double data`}</span>{`
+    `}<span className="text-blue-700 font-bold">DATA</span>{` lt_mock `}<span className="text-blue-700 font-bold">TYPE STANDARD TABLE OF</span>{` I_SalesOrder.
+    lt_mock = VALUE #(
+      ( SalesOrder = '100' SalesOrderType = `}<span className="text-green-700">'OR'</span>{` )
+      ( SalesOrder = '200' SalesOrderType = `}<span className="text-green-700">'RE'</span>{` ) ).
+    environment->`}<span className="text-blue-700 font-bold">insert_test_data</span>{`( i_data = lt_mock ).
+
+    `}<span className="text-slate-400">{`" Act — read via CDS projection`}</span>{`
     `}<span className="text-blue-700 font-bold">DATA</span>{` lt_result `}<span className="text-blue-700 font-bold">TYPE STANDARD TABLE OF</span>{` ZI_SalesOrderCustom.
     `}<span className="text-blue-700 font-bold">SELECT</span>{` * `}<span className="text-blue-700 font-bold">FROM</span>{` ZI_SalesOrderCustom
       `}<span className="text-blue-700 font-bold">INTO TABLE</span>{` @lt_result.
-    cl_abap_unit_assert=>`}<span className="text-blue-700 font-bold">assert_not_initial</span>{`( act = lines( lt_result ) ).
+
+    `}<span className="text-slate-400">{`" Assert — only type OR should pass the filter`}</span>{`
+    cl_abap_unit_assert=>`}<span className="text-blue-700 font-bold">assert_equals</span>{`( act = lines( lt_result ) exp = 1 ).
   `}<span className="text-blue-700 font-bold">ENDMETHOD</span>{`.
 `}<span className="text-blue-700 font-bold">ENDCLASS</span>{`.`}
+
                   </code>
                 </pre>
               </div>
