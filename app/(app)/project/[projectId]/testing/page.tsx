@@ -18,7 +18,8 @@ import NavigationButtons from '@/components/NavigationButtons';
 import { motion, AnimatePresence } from 'motion/react';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
-import { TestingPieChart, TestingBarChart } from '@/components/TestingCharts';
+const TestingPieChart = nextDynamic(() => import('@/components/TestingCharts').then(mod => mod.TestingPieChart), { ssr: false });
+const TestingBarChart = nextDynamic(() => import('@/components/TestingCharts').then(mod => mod.TestingBarChart), { ssr: false });
 
 import { ProjectSkeleton } from '@/components/Skeleton';
 
