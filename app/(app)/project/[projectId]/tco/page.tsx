@@ -11,7 +11,40 @@ import {
   TrendingUp, Calculator, Euro, Calendar, ShieldCheck, 
   FileText, Printer, ArrowRight, RefreshCw, BarChart3, AlertCircle 
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import dynamic from 'next/dynamic';
+
+// Lazy-load recharts to reduce initial bundle size (~312KB)
+const RechartsChart = dynamic(() => import('recharts').then(mod => {
+  const { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } = mod;
+  
+  function TcoChart({ data }: { data: any[] }) {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart
+          data={data}
+          margin={{ top: 10, right: 10, left: 20, bottom: 0 }}
+        >
+          <defs>
+            <linearGradient id="colorNet" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+              <stop offset="95%" stopColor="#10b981" stopOpacity={0.0}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+          <XAxis dataKey="year" stroke="#94a3b8" tick={{ fontSize: 11 }} />
+          <YAxis stroke="#94a3b8" tickFormatter={v => `€${(v / 1000)}k`} width={55} tick={{ fontSize: 11 }} />
+          <Tooltip formatter={(value) => [value ? `€${Number(value).toLocaleString()}` : '', '']} labelStyle={{ color: '#0f172a', fontWeight: 'bold' }} />
+          <Area type="monotone" dataKey="Net Financial Benefit" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorNet)" />
+        </AreaChart>
+      </ResponsiveContainer>
+    );
+  }
+  
+  return TcoChart;
+}), {
+  ssr: false,
+  loading: () => <div className="h-72 w-full flex items-center justify-center text-gray-400 text-sm">Loading chart...</div>
+});
 
 export default function TcoCalculatorPage() {
   const { projectId } = useParams();
@@ -399,25 +432,10 @@ export default function TcoCalculatorPage() {
             <BarChart3 className="w-5 h-5 text-blue-600" />
             5-Year Cumulative Financial ROI Forecast
           </h3>
-          <div className="h-72 w-full text-xs font-semibold">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={calculations.cumulativeSavings5Yr}
-                margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="colorNet" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="year" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" tickFormatter={v => `€${(v / 1000)}k`} />
-                <Tooltip formatter={(value) => [value ? `€${Number(value).toLocaleString()}` : '', '']} labelStyle={{ color: '#0f172a', fontWeight: 'bold' }} />
-                <Area type="monotone" dataKey="Net Financial Benefit" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorNet)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-64 md:h-72 w-full text-xs font-semibold overflow-x-auto">
+            <div className="min-w-[400px] h-full">
+              <RechartsChart data={calculations.cumulativeSavings5Yr} />
+            </div>
           </div>
           <span className="text-[10px] text-gray-400 font-semibold block text-center mt-4">
             Cumulative financial dividend (annual savings minus one-time investment). 5-year net return: <span className="text-green-600 font-bold">€{calculations.cumulativeSavings5Yr[5]?.['Net Financial Benefit']?.toLocaleString() || '0'}</span>.

@@ -1,0 +1,48 @@
+# ============================================
+# .geminiignore — Token-Effizienz für Antigravity IDE
+# ============================================
+# Verhindert, dass Binärdaten, Build-Artefakte und
+# große irrelevante Verzeichnisse in den Kontext geladen werden.
+
+# Build-Artefakte & Compiled Output
+dist/
+.next/
+coverage/
+playwright-report/
+test-results/
+
+# Binärdateien (PDFs, Bilder, Videos)
+public/screenshots/
+public/*.pdf
+public/*.html
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.mp4
+*.webm
+*.ico
+
+# Package Manager
+node_modules/
+package-lock.json
+
+# Temporäre Dateien & Logs
+tmp/
+scratch/
+*.log
+*.tsbuildinfo
+
+# IDE & OS
+.vscode/
+.DS_Store
+
+# Abap Test Fixtures (nur bei Bedarf relevant)
+abap-test-files/
+
+# Build-Skripte (selten im Kontext gebraucht)
+scripts/
+
+# Docs (statisch, selten editiert)
+docs/
