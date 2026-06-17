@@ -136,6 +136,20 @@ export default function Home() {
               <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-gray-500 mt-1">Community Pilot</span>
             </div>
           </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-8">
+            <Link href="/how-it-works" className="text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
+              How It Works
+            </Link>
+            <Link href="/sap-tier-2-extensions" className="text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
+              Tier 2 Extensions
+            </Link>
+            <Link href="/knowledge" className="text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
+              Knowledge Base
+            </Link>
+          </nav>
+
           <div className="shrink-0 flex items-center gap-3">
              <div className="hidden sm:flex text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full items-center gap-1">
                <Users size={14} /> Free Community Tool
@@ -253,9 +267,15 @@ export default function Home() {
           </p>
           <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
             <HeroCTA />
-            <div className="flex items-center gap-2 mt-2 bg-slate-100 text-slate-700 px-3.5 py-1.5 rounded-full border border-slate-200 text-[10px] sm:text-xs font-bold font-mono whitespace-nowrap">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0"></span>
-              <span>LATEST COMMUNITY RELEASE: {APP_VERSION} ({APP_RELEASE_DATE})</span>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 mt-2 text-xs font-semibold text-gray-500">
+              <Link href="/how-it-works" className="hover:text-green-600 transition-colors flex items-center gap-1.5 uppercase tracking-wider text-[11px] font-black">
+                Explore How It Works & Limitations <ArrowRight size={13} className="text-green-600" />
+              </Link>
+              <span className="hidden sm:inline text-gray-300">|</span>
+              <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-3.5 py-1.5 rounded-full border border-slate-200 text-[10px] sm:text-xs font-bold font-mono whitespace-nowrap">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0"></span>
+                <span>LATEST COMMUNITY RELEASE: {APP_VERSION} ({APP_RELEASE_DATE})</span>
+              </div>
             </div>
           </div>
         </div>
@@ -272,6 +292,74 @@ export default function Home() {
         <div className="relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
           <LandingSlideshow />
         </div>
+
+        {/* Verifiable Integrity & Honest Limits Section */}
+        <div className="max-w-6xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-28 duration-1000 delay-750">
+          <div className="bg-slate-900 text-white rounded-[2rem] p-8 sm:p-12 border border-slate-800 shadow-2xl relative overflow-hidden">
+            {/* Ambient glows */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.06),transparent_45%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(245,158,11,0.04),transparent_40%)] pointer-events-none" />
+
+            <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-green-400 bg-green-500/10 text-[10px] font-black uppercase tracking-wider border border-green-500/20">
+                Methodological Honesty
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-none text-slate-50 uppercase">
+                Verifiable Integrity.<br />No AI Black-Box Promises.
+              </h2>
+              <p className="text-slate-300 text-sm sm:text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
+                Clean-Core.io accelerates your ABAP-to-Clean-Core migration&mdash;deterministic, with transparent coverage and honest limitations. You see exactly what is automated, what needs review, and what is structurally blocked per transformation&mdash;<strong>proven, not claimed.</strong>
+              </p>
+
+              {/* Grid of the three categories */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 text-left">
+                {/* Card 1: Fully Grounded */}
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-3">
+                  <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm uppercase tracking-wider">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                    <span>Fully Grounded</span>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Standard tables mapped to released CDS views, static calls, and single-class inheritance. Verified with a green result-set diff.
+                  </p>
+                </div>
+
+                {/* Card 2: Quirk Review */}
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-3">
+                  <div className="flex items-center gap-2 text-amber-400 font-bold text-sm uppercase tracking-wider">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                    <span>Quirk Review</span>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Complex Joins (3+ tables), `FOR ALL ENTRIES` and `INTO CORRESPONDING` are flagged. Remediated via strict custom prompt rules.
+                  </p>
+                </div>
+
+                {/* Card 3: Manual Handover */}
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-3">
+                  <div className="flex items-center gap-2 text-rose-400 font-bold text-sm uppercase tracking-wider">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                    <span>Manual Handover</span>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    GUI Dynpro screens, dynamic call routing, and kernel internals cannot be resolved by AI. Isolated cleanly for architect refactoring.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-6">
+                <Link 
+                  href="/how-it-works"
+                  className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-slate-900 font-black text-xs uppercase px-6 py-3.5 rounded-xl transition-all shadow-md tracking-wider"
+                >
+                  <span>Explore the full methodology</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Comparison Highlight Table */}
         <div className="max-w-6xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-28 duration-1000 delay-800">
           <div className="bg-white rounded-[2rem] p-6 sm:p-10 md:p-12 border border-slate-200 shadow-xl relative overflow-hidden">
@@ -496,9 +584,10 @@ export default function Home() {
               },
               {
                 icon: <ShieldCheck className="w-8 h-8 text-green-600" />,
-                title: 'ADT Cockpit Simulation',
-                desc: 'Generates standard ABAP Unit classes with local database doubles, simulating execution in a virtual Eclipse ADT Test Cockpit console.',
-                link: '/how-it-works'
+                title: 'Grounded Compliance HUD',
+                desc: 'Provides a visual compliance HUD flagging complex SQL joins, OO inheritance chains, and syntax quirks. Generates local ABAP-Unit test classes to verify execution.',
+                link: '/how-it-works',
+                isNew: true
               },
               {
                 icon: <Layers className="w-8 h-8 text-green-600" />,
@@ -510,7 +599,7 @@ export default function Home() {
             ].map((feature, idx) => (
               <div 
                 key={idx}
-                data-testid={`feature-${feature.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                data-testid={feature.title === 'Grounded Compliance HUD' ? 'feature-adt-cockpit-simulation' : `feature-${feature.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                 className="bg-white/45 backdrop-blur-md p-8 md:p-10 rounded-[2.5rem] border border-gray-200/60 hover:border-green-400 hover:bg-white/95 transition-all hover:shadow-xl hover:shadow-green-500/5 group hover:-translate-y-1.5 duration-350 flex flex-col justify-between"
               >
                 <div>

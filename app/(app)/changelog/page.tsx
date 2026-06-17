@@ -25,6 +25,11 @@ const releases = [
     tag: 'Latest',
     icon: Sparkles,
     changes: [
+      'Introduced visual Code-Transformation Compliance Shield (Hero HUD) showing dynamic scores',
+      'Added interactive Code-Integrity Minimap heatmap scrollbar for instant file inspection',
+      'Designed sliding Grounded Audit Drawer panel containing CDS mappings, SQL quirk settings, and a differential sandbox query tester',
+      'Created realistic ABAP OO / SQL Join test script balloon in the workspace for pilot testing',
+      'Improved landing page with direct visual compliance highlights and direct links to Methodology / How It Works page',
       'Implemented admin identification via Custom Claims rather than hardcoded email addresses (patch-F-10)',
       'Configured Firestore log level to silent and handled transient stream errors cleanly at point-of-use (F-09)',
       'Updated all system version references across the showroom, replay interface, and landing pages to v1.7.4',
