@@ -107,7 +107,7 @@ export default function HowItWorksPage() {
             How It <span className="text-green-400">Works</span>
           </h1>
           <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
-            Three deterministic stages — from legacy ABAP to cloud-compliant architecture. Transparent coverage, honest limitations.
+            Three deterministic stages — from legacy ABAP to cloud-compliant architecture. Transparent, verifiable coverage — honest limitations.
           </p>
         </div>
       </div>
