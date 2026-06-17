@@ -6,6 +6,13 @@ Clean-Core.io is a modern, high-performance, and secure web and desktop client a
 
 ## 🌟 Premium Key Features
 
+*   **Visual Code-Transformation Integrity HUD & Heatmap (English UI):**
+    Provides real-time feedback on code modernization status:
+    *   **Clean Core Compliance Shield (Hero HUD):** A circular glassmorphic compliance progress radar that adapts dynamically (Green/Amber/Red) and details grounding statistics.
+    *   **Code-Integrity Minimap (Heatmap Scrollbar):** A vertical scroll strip containing colored markers matching translation findings (Fully Grounded, SQL Quirks, RTTI gaps) with smooth scroll-to-line navigation.
+    *   **Grounded Grounding Audit Panel (Sliding Drawer):** Includes an interactive developer sign-off checklist that updates the compliance score in real-time, detailed SQL CDS matches (mapping tables to released standard views), active Open SQL quirk remediation settings, and a **Differential Sandbox Result-Set Tester** that simulates S/4HANA live query checks.
+*   **Realistic OO & Complex SQL Join Test Balloon:**
+    A comprehensive test script (`abap-test-files/Z_ORDER_INTEGRITY_CHECK.txt`) modeling legacy invoice processing with abstract classes, subclasses, redefinitions, and a complex 3-table SELECT query with `FOR ALL ENTRIES` and `LEFT OUTER JOIN` quirks, designed for pilot users to verify the engine's grounding behavior.
 *   **S/4HANA Live Bridge (BYOT - Bring Your Own Tenant):**
     Connect your own S/4HANA Public Cloud Test/Sandbox Tenant to run E2E unit tests on live ERP destinations. Credentials are encrypted at rest (AES-256-GCM) in a server-only Firestore collection, inaccessible to client SDKs.
 *   **Unified Pilot & Tenant Administration Console:**
@@ -14,6 +21,8 @@ Clean-Core.io is a modern, high-performance, and secure web and desktop client a
     Fully integrated with the Resend API to deliver secure, responsive, HTML-table-formatted notifications. Sonny receives manual approval emails with cryptographic verification links, and applicants receive dynamic welcome activation emails.
 *   **Legacy-to-Modern AI Transformation Engine:**
     Modular code translation from SAP ABAP to structured Node.js/TypeScript code using Google Gemini. Classifies legacy logic to automatically separate **In-App Developer Extensibility (ABAP Cloud RAP)** from **Side-by-Side Extensibility (BTP CAP)** tracks.
+*   **Deterministic ABAP OO Inheritance Resolver & Grounding Layer:**
+    Resolves complex, multi-stage class and interface hierarchies deterministically before LLM invocation. Linearizes members via MRO, maps constructors and interface aliases, and requests missing dependencies dynamically via a bundle upload UI, preventing LLM structure hallucinations.
 *   **Architectural Solution Design & File Explorers:**
     Interactive visual representation of API endpoints, directory configurations (including database entity mapping and Docker containers), and direct public links to the SAP API Business Hub.
 *   **ADT Cockpit & Unit Testing:**

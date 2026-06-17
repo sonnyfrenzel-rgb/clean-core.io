@@ -4,6 +4,7 @@ import Link from 'next/link';
 import BackButton from '@/components/BackButton';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+import { supportMatrixRows, LEVEL_LABEL, LEVEL_EMOJI } from '@/lib/abap/support-matrix';
 
 export const metadata: Metadata = {
   title: 'How It Works — Transformation Methodology & Coverage | Clean-Core.io',
@@ -34,17 +35,10 @@ const faqs = [
   }
 ];
 
-const coverageRows = [
-  { construct: 'Direct SELECT on standard tables', level: 'full', label: '✅ Fully Supported', notes: 'Deterministic mapping to released CDS views / APIs' },
-  { construct: 'Simple wrapper classes / reports', level: 'full', label: '✅ Fully Supported', notes: 'Full AST decomposition and target generation' },
-  { construct: 'Static CALL FUNCTION', level: 'full', label: '✅ Fully Supported', notes: 'Resolved to equivalent API calls' },
-  { construct: 'Complex SQL Joins (3+ tables)', level: 'partial', label: '⚠️ Partial', notes: 'Generated with review flags; architect sign-off recommended' },
-  { construct: 'BAdI / Enhancement Implementations', level: 'partial', label: '⚠️ Partial', notes: 'Structure detected; business logic requires manual review' },
-  { construct: 'Dynamic CALL FUNCTION / PERFORM', level: 'partial', label: '⚠️ Partial', notes: 'Flagged with low-confidence warning; cannot resolve at parse time' },
-  { construct: 'SAP GUI Dynpro screens (MODULE POOL)', level: 'none', label: '❌ Not Supported', notes: 'UI layer requires manual Fiori/UI5 redesign' },
-  { construct: 'Kernel calls (ABAP system internals)', level: 'none', label: '❌ Not Supported', notes: 'No public API equivalent exists' },
-  { construct: 'ABAP OO with deep inheritance chains', level: 'partial', label: '⚠️ Partial', notes: 'Flat hierarchies supported; deep chains flagged' },
-];
+// Coverage data is rendered from SUPPORT_MATRIX (single source of truth).
+// Do NOT hardcode a coverage table here — the drift test enforces this so the
+// page can never diverge from the engine's actual support behaviour.
+const coverageRows = supportMatrixRows();
 
 const deterministicItems = [
   'Table-to-API mapping',
@@ -225,14 +219,15 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Section C: Coverage Matrix */}
+      {/* Section C: Coverage Matrix (data-driven from SUPPORT_MATRIX) */}
       <section className="space-y-6">
         <div className="space-y-2">
           <h2 className="text-3xl font-black tracking-tight text-gray-955">
             Coverage Matrix
           </h2>
           <p className="text-gray-600 font-medium">
-            What works today, what needs help, and what we don&apos;t support yet.
+            What works today, what needs help, and what we don&apos;t support yet. This matrix is the
+            single source the transformation engine flags against — it is always current.
           </p>
         </div>
 
@@ -248,12 +243,12 @@ export default function HowItWorksPage() {
             </thead>
             <tbody>
               {coverageRows.map((row, idx) => (
-                <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                  <td className="px-5 py-3.5 font-bold text-gray-800 border-b border-gray-100">{row.construct}</td>
+                <tr key={row.construct} id={row.anchor} className={`scroll-mt-24 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                  <td className="px-5 py-3.5 font-bold text-gray-800 border-b border-gray-100">{row.title}</td>
                   <td className={`px-5 py-3.5 font-bold border-b border-gray-100 ${
-                    row.level === 'full' ? 'text-green-700' : row.level === 'partial' ? 'text-amber-600' : 'text-red-600'
+                    row.level === 'fully' ? 'text-green-700' : row.level === 'partial' ? 'text-amber-600' : 'text-red-600'
                   }`}>
-                    {row.label}
+                    {LEVEL_EMOJI[row.level]} {LEVEL_LABEL[row.level]}
                   </td>
                   <td className="px-5 py-3.5 text-gray-600 font-medium border-b border-gray-100">{row.notes}</td>
                 </tr>
@@ -264,20 +259,20 @@ export default function HowItWorksPage() {
 
         {/* Mobile Stacked Cards */}
         <div className="md:hidden space-y-4">
-          {coverageRows.map((row, idx) => (
-            <div key={idx} className="bg-slate-50 border border-gray-200 rounded-2xl p-5 space-y-2">
-              <h4 className="font-black text-gray-955 text-sm">{row.construct}</h4>
+          {coverageRows.map((row) => (
+            <div key={row.construct} id={`${row.anchor}-m`} className="scroll-mt-24 bg-slate-50 border border-gray-200 rounded-2xl p-5 space-y-2">
+              <h4 className="font-black text-gray-955 text-sm">{row.title}</h4>
               <div className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
-                row.level === 'full'
+                row.level === 'fully'
                   ? 'bg-green-100 text-green-700 border border-green-200'
                   : row.level === 'partial'
                   ? 'bg-amber-50 text-amber-700 border border-amber-200'
                   : 'bg-red-50 text-red-600 border border-red-200'
               }`}>
-                {row.level === 'full' && <CheckCircle2 size={12} />}
+                {row.level === 'fully' && <CheckCircle2 size={12} />}
                 {row.level === 'partial' && <AlertTriangle size={12} />}
-                {row.level === 'none' && <XCircle size={12} />}
-                {row.level === 'full' ? 'Fully Supported' : row.level === 'partial' ? 'Partial' : 'Not Supported'}
+                {row.level === 'not-supported' && <XCircle size={12} />}
+                {LEVEL_LABEL[row.level]}
               </div>
               <p className="text-gray-600 text-xs font-medium leading-relaxed">{row.notes}</p>
             </div>
