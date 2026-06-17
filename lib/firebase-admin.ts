@@ -79,8 +79,10 @@ export async function verifyRequestAuth(req: Request) {
 export async function verifyAdminRequest(req: Request) {
   const decoded = await verifyRequestAuth(req);
   if (!decoded) return null;
-  if (!decoded.email || !isHardcodedAdmin(decoded.email)) return null;
-  return decoded;
+  // Custom Claim zuerst; hartkodierte Bootstrap-Admins nur noch als Übergangs-Fallback.
+  if ((decoded as any).admin === true) return decoded;
+  if (decoded.email && isHardcodedAdmin(decoded.email)) return decoded;
+  return null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -166,4 +168,24 @@ export async function refundTransformationQuota(uid: string): Promise<void> {
   } catch {
     /* best-effort; intentionally ignored */
   }
+}
+
+/**
+ * Sets or revokes the `admin` custom claim on a user and mirrors the boolean to
+ * users/{uid}.isAdmin (for UI display). Existing custom claims are preserved.
+ */
+export async function setAdminClaim(uid: string, isAdmin: boolean): Promise<void> {
+  await ensureInitialized();
+  const auth = adminAuthModule.getAuth();
+
+  const user = await auth.getUser(uid);
+  const claims = { ...(user.customClaims || {}) };
+  if (isAdmin) claims.admin = true; else delete claims.admin;
+  await auth.setCustomUserClaims(uid, claims);
+
+  const { db, FieldValue } = await getAdminDb();
+  await db.collection('users').doc(uid).set(
+    { isAdmin, updatedAt: FieldValue.serverTimestamp() },
+    { merge: true },
+  );
 }

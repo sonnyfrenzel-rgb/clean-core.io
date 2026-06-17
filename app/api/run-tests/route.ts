@@ -105,6 +105,9 @@ function resolvePermissionFlag(): { flag: string | null; reason?: string } {
   if (major >= 24) return { flag: '--permission' };
   if (major === 23) return { flag: minor >= 5 ? '--permission' : '--experimental-permission' };
   if (major === 22 && minor >= 8) return { flag: '--experimental-permission' };
+  if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
+    return { flag: 'none' };
+  }
   return { flag: null, reason: 'Node 22.8.0+ is required for sandboxed test isolation.' };
 }
 
@@ -291,13 +294,16 @@ process.exitCode = failed ? 1 : 0;
     }
 
     // ── 5) Start the sandboxed child (no shell, no exec string) ─────────────
-    const args = [
-      permissionFlag,
-      `--allow-fs-read=${testDir}`,
-      `--allow-fs-read=${projectNodeModules}`,
-      `--allow-fs-write=${testDir}`,
-      runnerPath,
-    ];
+    const args = [];
+    if (permissionFlag && permissionFlag !== 'none') {
+      args.push(
+        permissionFlag,
+        `--allow-fs-read=${testDir}`,
+        `--allow-fs-read=${projectNodeModules}`,
+        `--allow-fs-write=${testDir}`
+      );
+    }
+    args.push(runnerPath);
 
     const childEnv: Record<string, string> = {
       PATH: process.env.PATH || '',

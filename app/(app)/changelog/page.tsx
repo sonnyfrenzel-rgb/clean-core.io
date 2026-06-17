@@ -20,9 +20,20 @@ export const metadata: Metadata = {
 
 const releases = [
   {
+    version: 'v1.7.4',
+    date: 'June 17, 2026',
+    tag: 'Latest',
+    icon: Sparkles,
+    changes: [
+      'Implemented admin identification via Custom Claims rather than hardcoded email addresses (patch-F-10)',
+      'Configured Firestore log level to silent and handled transient stream errors cleanly at point-of-use (F-09)',
+      'Updated all system version references across the showroom, replay interface, and landing pages to v1.7.4',
+    ],
+  },
+  {
     version: 'v1.7.3',
     date: 'June 16, 2026',
-    tag: 'Latest',
+    tag: null,
     icon: Sparkles,
     changes: [
       'Added standalone /impressum and /datenschutz legal route pages for SEO and compliance',

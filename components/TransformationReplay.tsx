@@ -164,7 +164,7 @@ export default function TransformationReplay() {
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500/70" />
               <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
               <span className="ml-2 text-[10px] sm:text-[11px] font-mono font-bold text-slate-400">
-                Clean-Core Engine v1.7.3
+                Clean-Core Engine v1.7.4
               </span>
             </div>
             <button
