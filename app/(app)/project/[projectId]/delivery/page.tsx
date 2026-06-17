@@ -454,235 +454,241 @@ jobs:
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 md:gap-8 mb-16">
-        {/* ZIP Package Download */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 flex flex-col items-center text-center hover:shadow-xl hover:border-green-500/20 transition-all group overflow-hidden">
-          <div className="bg-green-50 p-5 rounded-2xl mb-6 md:mb-8 group-hover:scale-110 transition-transform">
-            <FileCode2 className="w-8 h-8 md:w-10 md:h-10 text-green-600" />
-          </div>
-          <h2 className="text-xl md:text-2xl font-black text-gray-900 mb-3 tracking-tight uppercase">Delivery Bundle</h2>
-          <p className="text-gray-500 mb-8 md:mb-10 flex-grow text-xs md:text-sm leading-relaxed">
-            One-Click ZIP Bundle containing your Source Code, Tests, Dependencies (package.json) and documentation.
-          </p>
-          <div className="w-full relative group/tooltip">
-            <button 
-              onClick={downloadZip}
-              className={clsx(
-                "w-full flex items-center justify-center gap-2 px-8 py-4 rounded-2xl transition-all font-bold shadow-lg uppercase tracking-widest text-xs md:text-sm",
-                profile?.tier === 'pilot' ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-[#006b2c] text-white hover:bg-[#00873a] shadow-green-600/20"
-              )}
-            >
-              {profile?.tier === 'pilot' ? (
-                <><Lock size={18} /> Basic Restricted</>
-              ) : (
-                <><Download size={20} /> Download Bundle</>
-              )}
-            </button>
-            {profile?.tier === 'pilot' && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
-                ZIP Package downloads are reserved for <span className="text-green-400 font-bold uppercase tracking-widest">Starter</span> & Premium users.
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Executive Presentation */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 flex flex-col items-center text-center hover:shadow-xl hover:border-purple-500/20 transition-all group overflow-hidden">
-          <div className="bg-purple-50 p-5 rounded-2xl mb-6 md:mb-8 group-hover:scale-110 transition-transform">
-            <Presentation className="w-8 h-8 md:w-10 md:h-10 text-purple-600" />
-          </div>
-          <h2 className="text-xl md:text-2xl font-black text-gray-900 mb-3 tracking-tight uppercase">Stakeholder briefing</h2>
-          <p className="text-gray-500 mb-8 md:mb-10 flex-grow text-xs md:text-sm leading-relaxed">
-            Management-ready presentation summarizing the transformation, ROI, and architecture.
-          </p>
-          
-          <div className="w-full relative group/tooltip">
-            {profile?.tier === 'pilot' ? (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-16 items-stretch">
+        {/* Left Side: 2x2 Grid of standard deliverables */}
+        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          {/* ZIP Package Download */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 flex flex-col items-center text-center hover:shadow-xl hover:border-green-500/20 transition-all group overflow-hidden">
+            <div className="bg-green-50 p-5 rounded-2xl mb-6 md:mb-8 group-hover:scale-110 transition-transform">
+              <FileCode2 className="w-8 h-8 md:w-10 md:h-10 text-green-600" />
+            </div>
+            <h2 className="text-xl md:text-2xl font-black text-gray-900 mb-3 tracking-tight uppercase">Delivery Bundle</h2>
+            <p className="text-gray-500 mb-8 md:mb-10 flex-grow text-xs md:text-sm leading-relaxed">
+              One-Click ZIP Bundle containing your Source Code, Tests, Dependencies (package.json) and documentation.
+            </p>
+            <div className="w-full relative group/tooltip">
               <button 
-                onClick={() => setShowUpgradeModal(true)}
-                className="w-full bg-gray-100 text-gray-400 py-4 rounded-2xl font-black flex items-center justify-center gap-2 uppercase tracking-widest text-xs md:text-sm"
+                onClick={downloadZip}
+                className={clsx(
+                  "w-full flex items-center justify-center gap-2 px-8 py-4 rounded-2xl transition-all font-bold shadow-lg uppercase tracking-widest text-xs md:text-sm",
+                  profile?.tier === 'pilot' ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-[#006b2c] text-white hover:bg-[#00873a] shadow-green-600/20"
+                )}
               >
-                <Lock size={18} /> Basic Locked
+                {profile?.tier === 'pilot' ? (
+                  <><Lock size={18} /> Basic Restricted</>
+                ) : (
+                  <><Download size={20} /> Download Bundle</>
+                )}
               </button>
-            ) : isGeneratingPresentation ? (
-              <div className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-400 px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-sm">
-                <RefreshCw className="w-5 h-5 animate-spin" /> Generating...
-              </div>
-            ) : presError ? (
-              <div className="w-full flex flex-col items-center gap-2">
-                <p className="text-[10px] text-red-500 font-bold uppercase mb-2 tracking-widest">{presError}</p>
+              {profile?.tier === 'pilot' && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
+                  ZIP Package downloads are reserved for <span className="text-green-400 font-bold uppercase tracking-widest">Starter</span> & Premium users.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Executive Presentation */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 flex flex-col items-center text-center hover:shadow-xl hover:border-purple-500/20 transition-all group overflow-hidden">
+            <div className="bg-purple-50 p-5 rounded-2xl mb-6 md:mb-8 group-hover:scale-110 transition-transform">
+              <Presentation className="w-8 h-8 md:w-10 md:h-10 text-purple-600" />
+            </div>
+            <h2 className="text-xl md:text-2xl font-black text-gray-900 mb-3 tracking-tight uppercase">Stakeholder briefing</h2>
+            <p className="text-gray-500 mb-8 md:mb-10 flex-grow text-xs md:text-sm leading-relaxed">
+              Management-ready presentation summarizing the transformation, ROI, and architecture.
+            </p>
+            
+            <div className="w-full relative group/tooltip">
+              {profile?.tier === 'pilot' ? (
+                <button 
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="w-full bg-gray-100 text-gray-400 py-4 rounded-2xl font-black flex items-center justify-center gap-2 uppercase tracking-widest text-xs md:text-sm"
+                >
+                  <Lock size={18} /> Basic Locked
+                </button>
+              ) : isGeneratingPresentation ? (
+                <div className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-400 px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-sm">
+                  <RefreshCw className="w-5 h-5 animate-spin" /> Generating...
+                </div>
+              ) : presError ? (
+                <div className="w-full flex flex-col items-center gap-2">
+                  <p className="text-[10px] text-red-500 font-bold uppercase mb-2 tracking-widest">{presError}</p>
+                  <button 
+                    onClick={() => generatePresentation(undefined)}
+                    className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-200 px-8 py-3 rounded-2xl hover:bg-red-100 transition-all font-bold text-xs uppercase tracking-[0.2em]"
+                  >
+                    <RefreshCw size={16} /> Retry AI
+                  </button>
+                </div>
+              ) : presentation ? (
+                <button 
+                  onClick={() => {
+                    document.getElementById('presentation-preview')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-2xl hover:bg-purple-700 transition-all font-bold shadow-lg shadow-purple-600/10 uppercase tracking-widest text-xs"
+                >
+                  <Eye size={20} /> View Slides
+                </button>
+              ) : (
                 <button 
                   onClick={() => generatePresentation(undefined)}
-                  className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-200 px-8 py-3 rounded-2xl hover:bg-red-100 transition-all font-bold text-xs uppercase tracking-[0.2em]"
+                  disabled={!documentation}
+                  className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-2xl hover:bg-purple-700 transition-all font-bold shadow-lg shadow-purple-600/10 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-xs"
                 >
-                  <RefreshCw size={16} /> Retry AI
+                  <RefreshCw size={20} /> Generate summary
                 </button>
-              </div>
-            ) : presentation ? (
+              )}
+              {profile?.tier === 'pilot' && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
+                  AI Briefings are a <span className="text-green-400 font-bold uppercase tracking-widest">Starter</span> feature.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Business SOP & Compliance Card */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 flex flex-col items-center text-center hover:shadow-xl hover:border-blue-500/20 transition-all group overflow-hidden">
+            <div className="bg-blue-50 p-5 rounded-2xl mb-6 md:mb-8 group-hover:scale-110 transition-transform">
+              <Briefcase className="w-8 h-8 md:w-10 md:h-10 text-blue-600" />
+            </div>
+            <h2 className="text-xl md:text-2xl font-black text-gray-900 mb-3 tracking-tight uppercase">SOP & Compliance</h2>
+            <p className="text-gray-500 mb-8 md:mb-10 flex-grow text-xs md:text-sm leading-relaxed">
+              Standard Operating Procedures (SOP), RACI Matrix, and Audit Controls compliance documentation (Level 5).
+            </p>
+            
+            <div className="w-full relative group/tooltip">
+              {profile?.tier === 'pilot' ? (
+                <button 
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="w-full bg-gray-100 text-gray-400 py-4 rounded-2xl font-black flex items-center justify-center gap-2 uppercase tracking-widest text-xs md:text-sm"
+                >
+                  <Lock size={18} /> Basic Locked
+                </button>
+              ) : project?.businessDocumentation ? (
+                <button 
+                  onClick={() => {
+                    const blob = new Blob([formatBusinessDocsToMarkdown(project.businessDocumentation || '')], { type: "text/markdown;charset=utf-8" });
+                    const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
+                    saveAs(blob, `${fileName}_BusinessDocumentation.md`);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-2xl hover:bg-blue-700 transition-all font-bold shadow-lg shadow-blue-600/10 uppercase tracking-widest text-xs"
+                >
+                  <Download size={20} /> Export Markdown
+                </button>
+              ) : (
+                <button 
+                  disabled
+                  className="w-full bg-gray-50 text-gray-400 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 border border-gray-150 uppercase tracking-widest text-xs cursor-not-allowed"
+                >
+                  <AlertCircle size={16} /> Not Generated
+                </button>
+              )}
+              {profile?.tier === 'pilot' ? (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
+                  SOP Reports are reserved for <span className="text-green-400 font-bold uppercase tracking-widest">Starter</span> & Premium users.
+                </div>
+              ) : !project?.businessDocumentation && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
+                  Go to the <Link href={`/project/${projectId}/documentation`} className="text-blue-400 hover:underline">Documentation Stage</Link> to generate Level 5 SOPs.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Developer Guidelines Card */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 flex flex-col items-center text-center hover:shadow-xl hover:border-green-500/20 transition-all group overflow-hidden">
+            <div className="bg-green-50 p-5 rounded-2xl mb-6 md:mb-8 group-hover:scale-110 transition-transform">
+              <BookOpen className="w-8 h-8 md:w-10 md:h-10 text-green-600" />
+            </div>
+            <h2 className="text-xl md:text-2xl font-black text-gray-900 mb-3 tracking-tight uppercase">Developer Guide</h2>
+            <p className="text-gray-500 mb-8 md:mb-10 flex-grow text-xs md:text-sm leading-relaxed">
+              Technical guidelines, linter configurations, and Clean Core rule sets for development teams.
+            </p>
+            
+            <div className="w-full relative">
               <button 
                 onClick={() => {
-                  document.getElementById('presentation-preview')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-2xl hover:bg-purple-700 transition-all font-bold shadow-lg shadow-purple-600/10 uppercase tracking-widest text-xs"
-              >
-                <Eye size={20} /> View Slides
-              </button>
-            ) : (
-              <button 
-                onClick={() => generatePresentation(undefined)}
-                disabled={!documentation}
-                className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-2xl hover:bg-purple-700 transition-all font-bold shadow-lg shadow-purple-600/10 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-xs"
-              >
-                <RefreshCw size={20} /> Generate summary
-              </button>
-            )}
-            {profile?.tier === 'pilot' && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
-                AI Briefings are a <span className="text-green-400 font-bold uppercase tracking-widest">Starter</span> feature.
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Quality Assurance & Test Cases */}
-        <div className="bg-gray-900 rounded-3xl shadow-2xl p-6 md:p-10 flex flex-col items-start text-left relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform hidden md:block">
-            <ShieldCheck className="w-32 h-32 text-white" />
-          </div>
-          <div className="bg-white/10 p-4 rounded-xl mb-6 md:mb-8">
-            <Zap className="w-8 h-8 text-yellow-400" />
-          </div>
-          <h2 className="text-xl md:text-2xl font-black text-white mb-3 tracking-tight uppercase">Integrity Report</h2>
-          <ul className="space-y-4 mb-8 md:mb-10 flex-grow w-full">
-            <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
-              <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
-              <div>
-                <span className="text-white block font-bold">
-                  {isAbapCloud ? 'abapGit Repo Layout' : 'Transformed CAP Structure'}
-                </span>
-                <span className="text-[10px] text-gray-400">
-                  {isAbapCloud 
-                    ? 'Handover: Modular ABAP Cloud packages generated'
-                    : 'Handover: Modular TypeScript package generated'
-                  }
-                </span>
-              </div>
-            </li>
-            <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
-              <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
-              <div>
-                <span className="text-white block font-bold">
-                  {isAbapCloud 
-                    ? `${project?.testCases?.length || 10} Automated ABAP Unit Tests`
-                    : `${project?.testCases?.length || 10} Automated Sandbox Tests`
-                  }
-                </span>
-                <span className="text-[10px] text-gray-400">
-                  {isAbapCloud 
-                    ? 'ADT: Clean AUnit local test doubles verified'
-                    : 'Sandbox: TAP-reporter unit tests verified'
-                  }
-                </span>
-              </div>
-            </li>
-            <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
-              <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
-              <div>
-                <span className="text-white block font-bold">{project?.coverageEstimate?.percentage || 92}% Estimated Coverage</span>
-                <span className="text-[10px] text-gray-400">
-                  {isAbapCloud
-                    ? 'Quality: Restricted clean ABAP syntax check compliant'
-                    : 'Quality: Strongly-typed model boundaries compliant'
-                  }
-                </span>
-              </div>
-            </li>
-            <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
-              <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
-              <div>
-                <span className="text-white block font-bold">Enterprise BPMN Blueprint</span>
-                <span className="text-[10px] text-gray-400">Docs: Mapped Level 1-4 architectural specs</span>
-              </div>
-            </li>
-          </ul>
-          <div className="w-full p-4 bg-white/5 rounded-2xl border border-white/10 mt-4">
-            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1">QA Status</span>
-            <span className="text-green-400 font-bold flex items-center gap-2 text-xs md:text-sm uppercase tracking-tighter">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" /> Ready for Deployment
-            </span>
-          </div>
-        </div>
-
-        {/* Business SOP & Compliance Card */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 flex flex-col items-center text-center hover:shadow-xl hover:border-blue-500/20 transition-all group overflow-hidden">
-          <div className="bg-blue-50 p-5 rounded-2xl mb-6 md:mb-8 group-hover:scale-110 transition-transform">
-            <Briefcase className="w-8 h-8 md:w-10 md:h-10 text-blue-600" />
-          </div>
-          <h2 className="text-xl md:text-2xl font-black text-gray-900 mb-3 tracking-tight uppercase">SOP & Compliance</h2>
-          <p className="text-gray-500 mb-8 md:mb-10 flex-grow text-xs md:text-sm leading-relaxed">
-            Standard Operating Procedures (SOP), RACI Matrix, and Audit Controls compliance documentation (Level 5).
-          </p>
-          
-          <div className="w-full relative group/tooltip">
-            {profile?.tier === 'pilot' ? (
-              <button 
-                onClick={() => setShowUpgradeModal(true)}
-                className="w-full bg-gray-100 text-gray-400 py-4 rounded-2xl font-black flex items-center justify-center gap-2 uppercase tracking-widest text-xs md:text-sm"
-              >
-                <Lock size={18} /> Basic Locked
-              </button>
-            ) : project?.businessDocumentation ? (
-              <button 
-                onClick={() => {
-                  const blob = new Blob([formatBusinessDocsToMarkdown(project.businessDocumentation || '')], { type: "text/markdown;charset=utf-8" });
+                  const blob = new Blob([generateDeveloperGuidelines(project)], { type: "text/markdown;charset=utf-8" });
                   const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
-                  saveAs(blob, `${fileName}_BusinessDocumentation.md`);
+                  saveAs(blob, `${fileName}_Developer_Guidelines.md`);
                 }}
-                className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-2xl hover:bg-blue-700 transition-all font-bold shadow-lg shadow-blue-600/10 uppercase tracking-widest text-xs"
+                className="w-full flex items-center justify-center gap-2 bg-[#006b2c] text-white px-8 py-4 rounded-2xl hover:bg-[#00873a] transition-all font-bold shadow-lg shadow-green-600/10 uppercase tracking-widest text-xs md:text-sm"
               >
-                <Download size={20} /> Export Markdown
+                <Download size={20} /> Export Guide
               </button>
-            ) : (
-              <button 
-                disabled
-                className="w-full bg-gray-50 text-gray-400 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 border border-gray-150 uppercase tracking-widest text-xs cursor-not-allowed"
-              >
-                <AlertCircle size={16} /> Not Generated
-              </button>
-            )}
-            {profile?.tier === 'pilot' ? (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
-                SOP Reports are reserved for <span className="text-green-400 font-bold uppercase tracking-widest">Starter</span> & Premium users.
-              </div>
-            ) : !project?.businessDocumentation && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
-                Go to the <Link href={`/project/${projectId}/documentation`} className="text-blue-400 hover:underline">Documentation Stage</Link> to generate Level 5 SOPs.
-              </div>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* Developer Guidelines Card */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 flex flex-col items-center text-center hover:shadow-xl hover:border-green-500/20 transition-all group overflow-hidden">
-          <div className="bg-green-50 p-5 rounded-2xl mb-6 md:mb-8 group-hover:scale-110 transition-transform">
-            <BookOpen className="w-8 h-8 md:w-10 md:h-10 text-green-600" />
-          </div>
-          <h2 className="text-xl md:text-2xl font-black text-gray-900 mb-3 tracking-tight uppercase">Developer Guide</h2>
-          <p className="text-gray-500 mb-8 md:mb-10 flex-grow text-xs md:text-sm leading-relaxed">
-            Technical guidelines, linter configurations, and Clean Core rule sets for development teams.
-          </p>
-          
-          <div className="w-full relative">
-            <button 
-              onClick={() => {
-                const blob = new Blob([generateDeveloperGuidelines(project)], { type: "text/markdown;charset=utf-8" });
-                const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
-                saveAs(blob, `${fileName}_Developer_Guidelines.md`);
-              }}
-              className="w-full flex items-center justify-center gap-2 bg-[#006b2c] text-white px-8 py-4 rounded-2xl hover:bg-[#00873a] transition-all font-bold shadow-lg shadow-green-600/10 uppercase tracking-widest text-xs md:text-sm"
-            >
-              <Download size={20} /> Export Guide
-            </button>
+        {/* Right Side: Featured Quality & Integrity Report */}
+        <div className="lg:col-span-1 flex">
+          {/* Quality Assurance & Test Cases */}
+          <div className="bg-gray-900 rounded-3xl shadow-2xl p-6 md:p-10 flex flex-col items-start text-left relative overflow-hidden group w-full h-full">
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform hidden md:block">
+              <ShieldCheck className="w-32 h-32 text-white" />
+            </div>
+            <div className="bg-white/10 p-4 rounded-xl mb-6 md:mb-8">
+              <Zap className="w-8 h-8 text-yellow-400" />
+            </div>
+            <h2 className="text-xl md:text-2xl font-black text-white mb-3 tracking-tight uppercase">Integrity Report</h2>
+            <ul className="space-y-4 mb-8 md:mb-10 flex-grow w-full">
+              <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
+                <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                <div>
+                  <span className="text-white block font-bold">
+                    {isAbapCloud ? 'abapGit Repo Layout' : 'Transformed CAP Structure'}
+                  </span>
+                  <span className="text-[10px] text-gray-400">
+                    {isAbapCloud 
+                      ? 'Handover: Modular ABAP Cloud packages generated'
+                      : 'Handover: Modular TypeScript package generated'
+                    }
+                  </span>
+                </div>
+              </li>
+              <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
+                <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                <div>
+                  <span className="text-white block font-bold">
+                    {isAbapCloud 
+                      ? `${project?.testCases?.length || 10} Automated ABAP Unit Tests`
+                      : `${project?.testCases?.length || 10} Automated Sandbox Tests`
+                    }
+                  </span>
+                  <span className="text-[10px] text-gray-400">
+                    {isAbapCloud 
+                      ? 'ADT: Clean AUnit local test doubles verified'
+                      : 'Sandbox: TAP-reporter unit tests verified'
+                    }
+                  </span>
+                </div>
+              </li>
+              <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
+                <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                <div>
+                  <span className="text-white block font-bold">{project?.coverageEstimate?.percentage || 92}% Estimated Coverage</span>
+                  <span className="text-[10px] text-gray-400">
+                    {isAbapCloud
+                      ? 'Quality: Restricted clean ABAP syntax check compliant'
+                      : 'Quality: Strongly-typed model boundaries compliant'
+                    }
+                  </span>
+                </div>
+              </li>
+              <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
+                <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                <div>
+                  <span className="text-white block font-bold">Enterprise BPMN Blueprint</span>
+                  <span className="text-[10px] text-gray-400">Docs: Mapped Level 1-4 architectural specs</span>
+                </div>
+              </li>
+            </ul>
+            <div className="w-full p-4 bg-white/5 rounded-2xl border border-white/10 mt-4">
+              <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1">QA Status</span>
+              <span className="text-green-400 font-bold flex items-center gap-2 text-xs md:text-sm uppercase tracking-tighter">
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" /> Ready for Deployment
+              </span>
+            </div>
           </div>
         </div>
       </div>
