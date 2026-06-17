@@ -128,6 +128,12 @@ Clean-Core.io prioritizes data security and user privacy above all else:
 
 ---
 
+## 🗺️ Roadmap & Backlog (Under Evaluation)
+
+*   **Lean Code Traceability Mapping:** A contextual "peek & jump" overlay linking modernized TypeScript/RAP statements back to their legacy ABAP syntax sources (under conceptual review).
+
+---
+
 ## 📄 Open Source License
 
 This project is licensed under the **MIT License** — completely open source, secure, and free for collaborative enterprise development.
