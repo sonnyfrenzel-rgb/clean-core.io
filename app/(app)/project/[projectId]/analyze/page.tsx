@@ -2215,7 +2215,7 @@ function ScannerConsole({ code, onComplete }: { code: string; onComplete?: () =>
   }, []);
 
   return (
-    <div className="bg-slate-950 text-emerald-400 font-mono text-xs rounded-[2rem] border border-slate-800 shadow-2xl overflow-hidden min-h-[480px] flex flex-col relative animate-in fade-in duration-500">
+    <div className="bg-slate-950 text-emerald-400 font-mono text-xs rounded-[2rem] border border-slate-800 shadow-2xl overflow-hidden h-[480px] flex flex-col relative animate-in fade-in duration-500">
       <style>{`
         @keyframes scan-y {
           0% { top: 0%; }
@@ -2253,8 +2253,8 @@ function ScannerConsole({ code, onComplete }: { code: string; onComplete?: () =>
       {/* Main split display */}
       <div className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-slate-850 overflow-hidden relative min-h-0">
         {/* Left Side: Code Preview (low opacity, scrolling) */}
-        <div className="flex-1 p-6 overflow-hidden relative select-none opacity-20 pointer-events-none max-h-[200px] md:max-h-none">
-          <pre className="text-[10px] leading-relaxed overflow-hidden text-slate-400">
+        <div className="flex-1 p-6 overflow-y-auto relative select-none opacity-20 pointer-events-none max-h-[200px] md:max-h-full scrollbar-thin scrollbar-thumb-slate-800">
+          <pre className="text-[10px] leading-relaxed text-slate-400">
             {code}
           </pre>
         </div>
