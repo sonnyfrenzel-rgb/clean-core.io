@@ -12,7 +12,8 @@ const nextConfig = {
     // F-07: Lint errors must block deployment (was: ignoreDuringBuilds: true)
     ignoreDuringBuilds: false,
   },
-  serverExternalPackages: ['firebase-admin', 'esbuild', 'undici'],
+  serverExternalPackages: ['esbuild', 'undici'],
+  transpilePackages: ['firebase-admin', 'jwks-rsa', 'jose'],
   experimental: {
   },
   // Allow access to remote image placeholder.

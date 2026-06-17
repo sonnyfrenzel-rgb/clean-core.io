@@ -3,38 +3,16 @@ import { getAuth as firebaseGetAuth, Auth, connectAuthEmulator } from 'firebase/
 import { initializeFirestore, Firestore, doc, getDocFromServer, setLogLevel, connectFirestoreEmulator } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
-// Set Firestore log level to silent to reduce noise
+// F-09: Firestore SDK noise is silenced via the SDK's own logger below.
+// Transient stream errors ("CANCELLED", "Disconnecting idle stream", ...) are
+// filtered at the point they are handled (see handleFirestoreError), instead of
+// globally overriding console.warn/console.error — which previously swallowed
+// unrelated warnings/errors app-wide and hurt observability.
 setLogLevel('silent');
 
 let app: FirebaseApp | null = null;
 let dbInstance: Firestore | null = null;
 let authInstance: Auth | null = null;
-
-// Suppress transient Firestore stream errors that are common in iframe/proxy environments
-if (typeof window !== 'undefined') {
-  const originalWarn = console.warn;
-  const originalError = console.error;
-
-  console.warn = (...args: any[]) => {
-    const message = args.map(String).join(' ');
-    if (message.includes('CANCELLED') || 
-        message.includes('Disconnecting idle stream') ||
-        message.includes('Timed out waiting for new targets')) {
-      return;
-    }
-    originalWarn.apply(console, args);
-  };
-
-  console.error = (...args: any[]) => {
-    const message = args.map(String).join(' ');
-    if (message.includes('CANCELLED') || 
-        message.includes('Disconnecting idle stream') ||
-        message.includes('Timed out waiting for new targets')) {
-      return;
-    }
-    originalError.apply(console, args);
-  };
-}
 
 export function getFirebaseApps() {
     if (!app) {
@@ -49,14 +27,14 @@ export function getDb(): Firestore {
     }
     if (!dbInstance) {
         const dbId = process.env.NEXT_PUBLIC_FIRESTORE_DB_ID || firebaseConfig.firestoreDatabaseId;
-        
+
         // Enable experimentalForceLongPolling on both client and server to prevent Node.js SSR event loop hangs
         const firestoreSettings = {
             experimentalForceLongPolling: true,
         };
-        
+
         dbInstance = initializeFirestore(getFirebaseApps(), firestoreSettings, dbId);
-        
+
         if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
             const host = '127.0.0.1';
             console.log(`[FIREBASE] Connecting Firestore to emulator on ${host}:8080...`);
@@ -130,7 +108,7 @@ interface FirestoreErrorInfo {
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const message = error instanceof Error ? error.message : String(error);
-  
+
   // Ignore "Cancelled" errors as they are often transient stream disconnects
   if (message.toLowerCase().includes('cancelled') || message.toLowerCase().includes('disconnecting idle stream')) {
     console.warn('Firestore transient error ignored:', message);
