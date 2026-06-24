@@ -1,6 +1,6 @@
 # Security Architecture — Clean-Core.io Platform
 
-> **Version:** 3.2 · **Date:** 2026-06-24 · **Classification:** Internal
+> **Version:** 3.3 · **Date:** 2026-06-24 · **Classification:** Internal
 
 ---
 

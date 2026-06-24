@@ -20,6 +20,9 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { saveAs } from '@/lib/fileSaver';
 import { motion } from 'motion/react';
 import { clsx } from 'clsx';
+import CollapsibleAccordion from '@/components/CollapsibleAccordion';
+import { generateAuditPack } from '@/lib/audit-pack';
+import { APP_VERSION } from '@/lib/version';
 
 const generateDeveloperGuidelines = (project: any) => {
   const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
@@ -692,6 +695,93 @@ jobs:
           </div>
         </div>
       </div>
+
+      {/* Compliance Audit Pack — collapsed accordion, pilot-accessible */}
+      {project && (
+        <div className="mb-10 md:mb-16">
+          <CollapsibleAccordion
+            title="Compliance Audit Pack"
+            badge={project.auditMetadata?.inputFingerprint ? 'Ready' : 'Partial'}
+            badgeSeverity={project.auditMetadata?.inputFingerprint ? 'green' : 'amber'}
+            tooltip="Exportable evidence package for architecture governance, compliance reviews, and audit documentation."
+          >
+            <div className="space-y-4">
+              {/* Audit Summary Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {/* Input Fingerprint */}
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Input Fingerprint</span>
+                  {project.auditMetadata?.inputFingerprint ? (
+                    <>
+                      <span className="text-xs font-bold text-gray-900 block truncate" title={project.auditMetadata.inputFingerprint.sha256}>
+                        SHA-256: {project.auditMetadata.inputFingerprint.sha256.substring(0, 16)}…
+                      </span>
+                      <span className="text-[10px] text-gray-500 font-medium">
+                        {project.auditMetadata.inputFingerprint.lineCount} lines · {project.auditMetadata.inputFingerprint.objectType} · {project.auditMetadata.inputFingerprint.fileName}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 font-medium">Re-analyze to generate fingerprint</span>
+                  )}
+                </div>
+
+                {/* Architecture Decision */}
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Architecture Decision</span>
+                  <span className="text-xs font-bold text-gray-900 block">
+                    {project.targetArchitecture
+                      ? { rap: 'In-App RAP', cap: 'Side-by-Side CAP', integration: 'Integration Suite', event: 'Event Mesh', retire: 'Retire' }[project.targetArchitecture] || project.targetArchitecture
+                      : project.extensibilityRoute || '—'}
+                  </span>
+                  <span className="text-[10px] text-gray-500 font-medium">
+                    {project.approvedByArchitect
+                      ? `✓ Approved${project.approvedBy ? ` by ${project.approvedBy}` : ''}`
+                      : '○ Pending architect sign-off'}
+                  </span>
+                </div>
+
+                {/* Engine Metadata */}
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Engine & Model</span>
+                  <span className="text-xs font-bold text-gray-900 block">
+                    {project.auditMetadata?.modelCard?.engineVersion || APP_VERSION}
+                  </span>
+                  <span className="text-[10px] text-gray-500 font-medium">
+                    {project.auditMetadata?.modelCard?.model || 'gemini-3-flash-preview'} · {project.auditMetadata?.modelCard?.byokUsed ? 'BYOK' : 'Platform Key'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Export Button */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+                <button
+                  onClick={async () => {
+                    if (!project) return;
+                    try {
+                      const blob = await generateAuditPack(project);
+                      const fileName = (project.name || 'Project').replace(/\s+/g, '_');
+                      await saveAs(blob, `${fileName}_AuditPack.zip`);
+                      // Save export timestamp
+                      const db = getDb();
+                      await updateDoc(doc(db, 'projects', projectId as string), {
+                        'auditMetadata.auditPackExportedAt': new Date().toISOString(),
+                      });
+                    } catch (err) {
+                      console.error('Audit pack generation failed:', err);
+                    }
+                  }}
+                  className="flex items-center justify-center gap-2 bg-[#006b2c] text-white px-6 py-3 rounded-xl hover:bg-[#00873a] transition-all font-bold shadow-md shadow-green-600/10 uppercase tracking-widest text-[10px] sm:text-xs"
+                >
+                  <Download size={16} /> Download Audit Pack
+                </button>
+                <span className="text-[10px] text-gray-400 font-medium leading-relaxed">
+                  ZIP contains: executive summary, input fingerprint, decision record, findings, model card, and known limitations.
+                </span>
+              </div>
+            </div>
+          </CollapsibleAccordion>
+        </div>
+      )}
       
       {/* Presentation Preview */}
       {presentation && (

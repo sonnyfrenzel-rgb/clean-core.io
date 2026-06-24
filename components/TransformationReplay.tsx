@@ -2,17 +2,17 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-// ── Pipeline steps that tick through during the animation ──
+// â”€â”€ Pipeline steps that tick through during the animation â”€â”€
 const PIPELINE_STEPS = [
-  { label: 'Parsing ABAP AST…', icon: '🔍', duration: 800 },
-  { label: 'Table VBAK detected — non-released', icon: '⚠️', duration: 700 },
-  { label: 'Mapping → I_SalesOrder (released API)', icon: '🔗', duration: 900 },
-  { label: 'CDS View entity generated', icon: '📄', duration: 600 },
-  { label: 'Unit test stub created', icon: '🧪', duration: 700 },
-  { label: '✓ Compiled — 0 errors', icon: '✅', duration: 500 },
+  { label: 'Parsing ABAP ASTâ€¦', icon: 'ðŸ”', duration: 800 },
+  { label: 'Table VBAK detected â€” non-released', icon: 'âš ï¸', duration: 700 },
+  { label: 'Mapping â†’ I_SalesOrder (released API)', icon: 'ðŸ”—', duration: 900 },
+  { label: 'CDS View entity generated', icon: 'ðŸ“„', duration: 600 },
+  { label: 'Unit test stub created', icon: 'ðŸ§ª', duration: 700 },
+  { label: 'âœ“ Compiled â€” 0 errors', icon: 'âœ…', duration: 500 },
 ];
 
-// ── The RAP output code lines that type themselves ──
+// â”€â”€ The RAP output code lines that type themselves â”€â”€
 const OUTPUT_LINES = [
   { text: 'define view entity', cls: 'text-blue-400 font-bold' },
   { text: '  ZI_SalesOrderCustom', cls: 'text-emerald-300' },
@@ -26,9 +26,9 @@ const OUTPUT_LINES = [
   { text: 'where SalesOrderType = \'OR\';', cls: 'text-slate-200' },
 ];
 
-// ── The legacy ABAP code shown statically on the left ──
+// â”€â”€ The legacy ABAP code shown statically on the left â”€â”€
 const LEGACY_LINES = [
-  { text: '" Direct table read — violates Clean Core', cls: 'text-slate-500' },
+  { text: '" Direct table read â€” violates Clean Core', cls: 'text-slate-500' },
   { text: '', cls: '' },
   { text: 'SELECT vbeln, erdat, netwr', cls: 'text-blue-400 font-bold' },
   { text: '  FROM vbak', cls: 'text-amber-400 font-bold' },
@@ -53,7 +53,7 @@ export default function TransformationReplay() {
     };
   }, []);
 
-  // ── Pipeline phase ──
+  // â”€â”€ Pipeline phase â”€â”€
   useEffect(() => {
     if (phase !== 'pipeline') return;
     if (pipelineStep >= PIPELINE_STEPS.length) {
@@ -75,7 +75,7 @@ export default function TransformationReplay() {
     };
   }, [phase, pipelineStep]);
 
-  // ── Typing phase ──
+  // â”€â”€ Typing phase â”€â”€
   useEffect(() => {
     if (phase !== 'typing') return;
 
@@ -134,7 +134,7 @@ export default function TransformationReplay() {
 
   return (
     <div className="w-full" data-testid="transformation-replay">
-      {/* ── Play Button (when idle) ── */}
+      {/* â”€â”€ Play Button (when idle) â”€â”€ */}
       {!isActive && (
         <div className="flex justify-center mb-6">
           <button
@@ -154,7 +154,7 @@ export default function TransformationReplay() {
         </div>
       )}
 
-      {/* ── Active Animation Container ── */}
+      {/* â”€â”€ Active Animation Container â”€â”€ */}
       {isActive && (
         <div className="relative bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl shadow-black/40 mb-6">
           {/* Header bar */}
@@ -164,14 +164,14 @@ export default function TransformationReplay() {
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500/70" />
               <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
               <span className="ml-2 text-[10px] sm:text-[11px] font-mono font-bold text-slate-400">
-                Clean-Core Engine v1.9.0
+                Clean-Core Engine v1.10.0
               </span>
             </div>
             <button
               onClick={handleReset}
               className="text-[10px] font-bold text-slate-500 hover:text-white uppercase tracking-wider transition-colors px-3 py-1 rounded-lg hover:bg-slate-700/50"
             >
-              ✕ Close
+              âœ• Close
             </button>
           </div>
 
@@ -186,7 +186,7 @@ export default function TransformationReplay() {
           {/* Main content: Pipeline steps + Code panels */}
           <div className="p-4 sm:p-6">
 
-            {/* Pipeline log — visible during pipeline & typing phases */}
+            {/* Pipeline log â€” visible during pipeline & typing phases */}
             {(phase === 'pipeline' || phase === 'typing' || phase === 'done') && (
               <div className="mb-5 bg-slate-800/40 rounded-xl border border-slate-700/40 p-3 sm:p-4">
                 <div className="flex items-center gap-2 mb-3">
@@ -214,7 +214,7 @@ export default function TransformationReplay() {
                         {step.label}
                       </span>
                       {i < pipelineStep && (
-                        <span className="text-emerald-500 ml-auto shrink-0">✓</span>
+                        <span className="text-emerald-500 ml-auto shrink-0">âœ“</span>
                       )}
                     </div>
                   ))}
@@ -259,7 +259,7 @@ export default function TransformationReplay() {
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`w-2 h-2 rounded-full ${phase === 'done' ? 'bg-emerald-500' : 'bg-emerald-500 animate-pulse'}`} />
                     <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                      {phase === 'done' ? 'Generated Output' : 'Generating…'}
+                      {phase === 'done' ? 'Generated Output' : 'Generatingâ€¦'}
                     </span>
                   </div>
                   <div className="bg-emerald-950/30 rounded-xl border border-emerald-700/30 overflow-hidden">
@@ -302,13 +302,13 @@ export default function TransformationReplay() {
             {phase === 'done' && (
               <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 sm:px-5 py-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl sm:text-2xl">✅</span>
+                  <span className="text-xl sm:text-2xl">âœ…</span>
                   <div>
                     <p className="text-xs sm:text-sm font-black text-emerald-400 uppercase tracking-wider">
                       Transformation Complete
                     </p>
                     <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium">
-                      VBAK → I_SalesOrder · CDS View + Unit Test generated · 0 errors
+                      VBAK â†’ I_SalesOrder Â· CDS View + Unit Test generated Â· 0 errors
                     </p>
                   </div>
                 </div>
@@ -316,7 +316,7 @@ export default function TransformationReplay() {
                   onClick={handleReset}
                   className="text-[10px] font-black text-emerald-400 hover:text-white uppercase tracking-widest px-4 py-2 rounded-lg border border-emerald-500/30 hover:bg-emerald-500/20 transition-all shrink-0"
                 >
-                  ↻ Replay
+                  â†» Replay
                 </button>
               </div>
             )}

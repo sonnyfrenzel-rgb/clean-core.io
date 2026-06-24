@@ -424,7 +424,7 @@ export default function Home() {
                           ? 'text-slate-700 bg-slate-100 border border-slate-200/60' 
                           : 'text-slate-400 bg-slate-50 border border-slate-200/40'
                       }`}>
-                        {row.sap.badge === 'Not Supported' && <span className="text-red-400">✕</span>}
+                        {row.sap.badge === 'Not Supported' && <span className="text-red-400">âœ•</span>}
                         {row.sap.badge}
                       </span>
                       <p className="text-slate-500 text-xs leading-relaxed">{row.sap.desc}</p>
@@ -440,7 +440,7 @@ export default function Home() {
                     <div className="px-5 py-4 space-y-2 bg-emerald-50/30 border-l-[3px] border-l-emerald-400">
                       <span className="text-[10px] font-black text-emerald-600 uppercase tracking-wider block">clean-core.io</span>
                       <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[11px] uppercase tracking-wider bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-full">
-                        <span className="text-emerald-500">✓</span>
+                        <span className="text-emerald-500">âœ“</span>
                         {row.cc.badge}
                       </span>
                       <p className="text-slate-700 text-xs leading-relaxed">{row.cc.desc}</p>
@@ -501,7 +501,7 @@ export default function Home() {
                         ? 'bg-slate-100 text-slate-400 border border-slate-200/60' 
                         : 'bg-red-50 text-red-400 border border-red-200/40'
                     }`}>
-                      {row.sap.level === 'partial' ? '~' : row.sap.level === 'weak' ? '–' : '✕'}
+                      {row.sap.level === 'partial' ? '~' : row.sap.level === 'weak' ? 'â€“' : 'âœ•'}
                     </span>
                     <div className="flex flex-col gap-1.5 min-w-0">
                       <span className={`font-bold text-[11px] uppercase tracking-wider ${
@@ -516,7 +516,7 @@ export default function Home() {
                   {/* Clean-Core.io Column */}
                   <div className="flex items-start gap-3 px-5 py-4 bg-emerald-50/50 rounded-xl border border-emerald-200/50 relative overflow-hidden">
                     <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-emerald-400 rounded-l-xl" />
-                    <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 border border-emerald-200/60 flex items-center justify-center text-[10px] font-black">✓</span>
+                    <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 border border-emerald-200/60 flex items-center justify-center text-[10px] font-black">âœ“</span>
                     <div className="flex flex-col gap-1.5 min-w-0">
                       <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-700">{row.cc.badge}</span>
                       <span className="text-xs text-slate-600 leading-relaxed">{row.cc.desc}</span>
@@ -537,7 +537,7 @@ export default function Home() {
               Real Verified Output
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">Transformation Showroom</h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Representative engine outputs. Every example is a real transformation&mdash;verified, compiled, and tested against Clean-Core Engine v1.9.0.</p>
+            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Representative engine outputs. Every example is a real transformation&mdash;verified, compiled, and tested against Clean-Core Engine v1.10.0.</p>
           </div>
           <Suspense fallback={null}>
             <TransformationReplay />
@@ -579,14 +579,14 @@ export default function Home() {
               {
                 icon: <Activity className="w-8 h-8 text-green-600" />,
                 title: 'Modernization Assessment',
-                desc: 'Computes complexity and business-criticality scores, extracts a full code inventory, and maps data coupling with standard SAP table risk analysis — all before transformation.',
+                desc: 'Computes complexity and business-criticality scores, extracts a full code inventory, and maps data coupling with standard SAP table risk analysis â€” all before transformation.',
                 link: '/how-it-works',
                 isNew: true
               },
               {
                 icon: <ShieldCheck className="w-8 h-8 text-green-600" />,
-                title: 'Grounded Compliance HUD',
-                desc: 'Visual compliance dashboard flagging complex SQL joins, OO inheritance chains, and syntax quirks. Generates local ABAP-Unit test classes to verify execution.',
+                title: 'Compliance & Audit Evidence',
+                desc: 'Visual compliance dashboard with exportable audit pack: input fingerprints, architecture decision records, model cards, and known limitations â€” ready for governance reviews.',
                 link: '/how-it-works'
               },
               {
@@ -637,7 +637,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="text-center mb-16">
             <span className="text-[10px] md:text-xs font-black bg-green-50 text-[#006b2c] px-3.5 py-1.5 rounded-full border border-green-150 uppercase tracking-widest inline-flex items-center gap-1.5 mb-4 select-none">
-              🛡️ Sovereign & Secured
+              ðŸ›¡ï¸ Sovereign & Secured
             </span>
             <h2 className="text-4xl md:text-5xl font-black text-gray-955 tracking-tighter mb-4">
               Your Data Stays Yours
@@ -770,14 +770,14 @@ export default function Home() {
             <div className="flex items-center justify-center gap-2 mb-5">
               <div className="h-px flex-1 bg-gray-200" />
               <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 whitespace-nowrap px-2">
-                S/4HANA Sandbox Connection — Security Profile
+                S/4HANA Sandbox Connection â€” Security Profile
               </span>
               <div className="h-px flex-1 bg-gray-200" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
-                { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Sandbox Only · Read-Only', desc: 'Connections are restricted to non-production sandbox systems. Only OData metadata reads and test execution — no write operations, no production access.', link: '/tenant-security#read-only-scope' },
-                { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Encrypted · Stateless', desc: 'Credentials are AES-256-GCM encrypted. SAP transaction data is processed in memory and never stored on our servers.', link: '/tenant-security#stateless-processing' },
+                { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Sandbox Only Â· Read-Only', desc: 'Connections are restricted to non-production sandbox systems. Only OData metadata reads and test execution â€” no write operations, no production access.', link: '/tenant-security#read-only-scope' },
+                { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Encrypted Â· Stateless', desc: 'Credentials are AES-256-GCM encrypted. SAP transaction data is processed in memory and never stored on our servers.', link: '/tenant-security#stateless-processing' },
                 { icon: <Globe className="w-5 h-5 text-green-600" />, title: 'Admin-Gated Onboarding', desc: 'Every sandbox connection request is manually reviewed and approved by an administrator before activation.', link: '/tenant-security#admin-onboarding-gate' }
               ].map((item, idx) => (
                 <div key={idx} className="bg-gray-50 p-5 rounded-2xl border border-gray-200/60 text-center">
@@ -813,7 +813,7 @@ export default function Home() {
           <div className="mt-24 pt-12 border-t border-gray-800 text-sm text-gray-500 font-light">
             <p>&copy; 2026 Clean-Core.io. All rights reserved.</p>
             <p className="mt-2 text-xs text-gray-600 font-mono font-bold uppercase tracking-wider">
-              System Version: {APP_VERSION} • {APP_RELEASE_DATE}
+              System Version: {APP_VERSION} â€¢ {APP_RELEASE_DATE}
             </p>
             <p className="mt-4 flex flex-wrap justify-center gap-4">
               <Link href="/impressum" className="hover:text-white transition-colors cursor-pointer">Legal Notice</Link>

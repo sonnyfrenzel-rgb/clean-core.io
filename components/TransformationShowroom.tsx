@@ -1,6 +1,6 @@
 {/* ==========================================================================
    TransformationShowroom.tsx
-   SSR-only (Server Component) — No 'use client'.
+   SSR-only (Server Component) â€” No 'use client'.
    Tab switching via hidden radio inputs + CSS :checked sibling selectors.
    All code examples rendered in the DOM at build time for SEO.
    ========================================================================== */}
@@ -13,13 +13,13 @@ export default function TransformationShowroom() {
     >
       <div className="max-w-7xl mx-auto">
 
-        {/* ── CSS-Only Tab Machinery ──
+        {/* â”€â”€ CSS-Only Tab Machinery â”€â”€
             Three hidden radio inputs control visibility via the
             general sibling combinator (~). Each panel has a matching
             peer class that reacts to :checked.
         */}
         <style>{`
-          /* ── Tab panel visibility ── */
+          /* â”€â”€ Tab panel visibility â”€â”€ */
           #showroom-tab-1:checked ~ .showroom-panels .panel-1,
           #showroom-tab-2:checked ~ .showroom-panels .panel-2,
           #showroom-tab-3:checked ~ .showroom-panels .panel-3 {
@@ -34,7 +34,7 @@ export default function TransformationShowroom() {
             display: none !important;
           }
 
-          /* ── Active tab label styling ── */
+          /* â”€â”€ Active tab label styling â”€â”€ */
           #showroom-tab-1:checked ~ .showroom-tab-bar .tab-label-1,
           #showroom-tab-2:checked ~ .showroom-tab-bar .tab-label-2,
           #showroom-tab-3:checked ~ .showroom-tab-bar .tab-label-3 {
@@ -46,7 +46,7 @@ export default function TransformationShowroom() {
           }
         `}</style>
 
-        {/* Hidden radios — must be siblings of .showroom-tab-bar & .showroom-panels */}
+        {/* Hidden radios â€” must be siblings of .showroom-tab-bar & .showroom-panels */}
         <input
           type="radio"
           name="showroom-tab"
@@ -70,7 +70,7 @@ export default function TransformationShowroom() {
           aria-label="Dynamic Dispatch (CALL FUNCTION) tab"
         />
 
-        {/* ── Tab Bar ── */}
+        {/* â”€â”€ Tab Bar â”€â”€ */}
         <div className="showroom-tab-bar flex flex-wrap gap-0 border-b border-slate-200 mb-0">
           <label
             htmlFor="showroom-tab-1"
@@ -92,11 +92,11 @@ export default function TransformationShowroom() {
           </label>
         </div>
 
-        {/* ── Tab Panels ── */}
+        {/* â”€â”€ Tab Panels â”€â”€ */}
         <div className="showroom-panels border border-t-0 border-slate-200 rounded-b-2xl bg-white">
-          {/* ────────────────────────────────────────────────────────────── */}
-          {/* TAB 1 — Sales Order (VBAK)                                   */}
-          {/* ────────────────────────────────────────────────────────────── */}
+          {/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+          {/* TAB 1 â€” Sales Order (VBAK)                                   */}
+          {/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
           <div className="panel-1 p-4 sm:p-6 lg:p-8">
             {/* Business context */}
             <div className="mb-6 bg-slate-50 border border-slate-200/80 rounded-xl p-4 sm:p-5">
@@ -108,14 +108,14 @@ export default function TransformationShowroom() {
                 </div>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1 block">Business Context</span>
-                  <p className="text-sm text-slate-600 leading-relaxed font-medium">A sales operations team needs to query open standard orders (type &apos;OR&apos;) from SAP to populate a real-time order fulfillment dashboard. The legacy ABAP directly reads the VBAK database table — a non-released internal structure that breaks during S/4HANA upgrades. The engine transforms this into a clean CDS view consuming the released I_SalesOrder API, preserving the exact filter logic while making it upgrade-safe and unit-testable.</p>
+                  <p className="text-sm text-slate-600 leading-relaxed font-medium">A sales operations team needs to query open standard orders (type &apos;OR&apos;) from SAP to populate a real-time order fulfillment dashboard. The legacy ABAP directly reads the VBAK database table â€” a non-released internal structure that breaks during S/4HANA upgrades. The engine transforms this into a clean CDS view consuming the released I_SalesOrder API, preserving the exact filter logic while making it upgrade-safe and unit-testable.</p>
                 </div>
               </div>
             </div>
 
             {/* Two-column code layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* ── LEFT: Legacy Input ── */}
+              {/* â”€â”€ LEFT: Legacy Input â”€â”€ */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="w-2 h-2 rounded-full bg-slate-400" />
@@ -134,7 +134,7 @@ export default function TransformationShowroom() {
                   </div>
                   <pre className="p-4 overflow-x-auto text-[11px] sm:text-[13px] leading-relaxed">
                     <code className="font-mono text-slate-700">
-                      <span className="text-slate-400">{`" Direct table read — violates Clean Core`}</span>
+                      <span className="text-slate-400">{`" Direct table read â€” violates Clean Core`}</span>
 {`
 `}<span className="text-blue-700 font-bold">SELECT</span>{` vbeln, erdat, netwr
   `}<span className="text-blue-700 font-bold">FROM</span>{` `}<span className="text-amber-700 font-bold">vbak</span>{`
@@ -145,7 +145,7 @@ export default function TransformationShowroom() {
                 </div>
               </div>
 
-              {/* ── RIGHT: Generated RAP Output ── */}
+              {/* â”€â”€ RIGHT: Generated RAP Output â”€â”€ */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -214,19 +214,19 @@ export default function TransformationShowroom() {
     environment->`}<span className="text-blue-700 font-bold">destroy</span>{`( ).
   `}<span className="text-blue-700 font-bold">ENDMETHOD</span>{`.
   `}<span className="text-blue-700 font-bold">METHOD</span>{` test_order_filter.
-    `}<span className="text-slate-400">{`" Arrange — insert test double data`}</span>{`
+    `}<span className="text-slate-400">{`" Arrange â€” insert test double data`}</span>{`
     `}<span className="text-blue-700 font-bold">DATA</span>{` lt_mock `}<span className="text-blue-700 font-bold">TYPE STANDARD TABLE OF</span>{` I_SalesOrder.
     lt_mock = VALUE #(
       ( SalesOrder = '100' SalesOrderType = `}<span className="text-green-700">'OR'</span>{` )
       ( SalesOrder = '200' SalesOrderType = `}<span className="text-green-700">'RE'</span>{` ) ).
     environment->`}<span className="text-blue-700 font-bold">insert_test_data</span>{`( i_data = lt_mock ).
 
-    `}<span className="text-slate-400">{`" Act — read via CDS projection`}</span>{`
+    `}<span className="text-slate-400">{`" Act â€” read via CDS projection`}</span>{`
     `}<span className="text-blue-700 font-bold">DATA</span>{` lt_result `}<span className="text-blue-700 font-bold">TYPE STANDARD TABLE OF</span>{` ZI_SalesOrderCustom.
     `}<span className="text-blue-700 font-bold">SELECT</span>{` * `}<span className="text-blue-700 font-bold">FROM</span>{` ZI_SalesOrderCustom
       `}<span className="text-blue-700 font-bold">INTO TABLE</span>{` @lt_result.
 
-    `}<span className="text-slate-400">{`" Assert — only type OR should pass the filter`}</span>{`
+    `}<span className="text-slate-400">{`" Assert â€” only type OR should pass the filter`}</span>{`
     cl_abap_unit_assert=>`}<span className="text-blue-700 font-bold">assert_equals</span>{`( act = lines( lt_result ) exp = 1 ).
   `}<span className="text-blue-700 font-bold">ENDMETHOD</span>{`.
 `}<span className="text-blue-700 font-bold">ENDCLASS</span>{`.`}
@@ -249,14 +249,14 @@ export default function TransformationShowroom() {
                   </span>
                 </div>
                 <p className="text-sm text-slate-700 font-medium leading-relaxed">
-                  Table <code className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold font-mono">VBAK</code> → Resolved to released API{' '}
+                  Table <code className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold font-mono">VBAK</code> â†’ Resolved to released API{' '}
                   <code className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs font-bold font-mono">I_SalesOrder</code>{' '}
                   <span className="text-slate-400">(SAP API Business Hub)</span>.
                 </p>
                 <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-full">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                   <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">
-                    Confidence: High — deterministic rule match
+                    Confidence: High â€” deterministic rule match
                   </span>
                 </div>
               </div>
@@ -283,9 +283,9 @@ export default function TransformationShowroom() {
             </div>
           </div>
 
-          {/* ────────────────────────────────────────────────────────────── */}
-          {/* TAB 2 — Journal Entry (BSEG)                                 */}
-          {/* ────────────────────────────────────────────────────────────── */}
+          {/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+          {/* TAB 2 â€” Journal Entry (BSEG)                                 */}
+          {/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
           <div className="panel-2 p-4 sm:p-6 lg:p-8" style={{ display: 'none' }}>
             {/* Business context */}
             <div className="mb-6 bg-slate-50 border border-slate-200/80 rounded-xl p-4 sm:p-5">
@@ -297,14 +297,14 @@ export default function TransformationShowroom() {
                 </div>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1 block">Business Context</span>
-                  <p className="text-sm text-slate-600 leading-relaxed font-medium">The finance controlling team extracts accounting document line items for company code 1000 to feed an external reporting tool. The legacy code reads BSEG directly — one of SAP&apos;s largest and most problematic cluster tables, deprecated in S/4HANA. The engine maps this to the released CDS view <code className="px-1 py-0.5 bg-emerald-50 text-emerald-700 rounded text-xs font-bold font-mono">I_JournalEntry</code>, wrapped in a cloud-native CAP Node.js service that decouples the reporting logic from the core ERP entirely.</p>
+                  <p className="text-sm text-slate-600 leading-relaxed font-medium">The finance controlling team extracts accounting document line items for company code 1000 to feed an external reporting tool. The legacy code reads BSEG directly â€” one of SAP&apos;s largest and most problematic cluster tables, deprecated in S/4HANA. The engine maps this to the released CDS view <code className="px-1 py-0.5 bg-emerald-50 text-emerald-700 rounded text-xs font-bold font-mono">I_JournalEntry</code>, wrapped in a cloud-native CAP Node.js service that decouples the reporting logic from the core ERP entirely.</p>
                 </div>
               </div>
             </div>
 
             {/* Two-column code layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* ── LEFT: Legacy Input ── */}
+              {/* â”€â”€ LEFT: Legacy Input â”€â”€ */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="w-2 h-2 rounded-full bg-slate-400" />
@@ -323,7 +323,7 @@ export default function TransformationShowroom() {
                   </div>
                   <pre className="p-4 overflow-x-auto text-[11px] sm:text-[13px] leading-relaxed">
                     <code className="font-mono text-slate-700">
-                      <span className="text-slate-400">{`" Financial doc segment read — non-released table`}</span>
+                      <span className="text-slate-400">{`" Financial doc segment read â€” non-released table`}</span>
 {`
 `}<span className="text-blue-700 font-bold">SELECT</span>{` bukrs, belnr, gjahr, dmbtr
   `}<span className="text-blue-700 font-bold">FROM</span>{` `}<span className="text-amber-700 font-bold">bseg</span>{`
@@ -334,7 +334,7 @@ export default function TransformationShowroom() {
                 </div>
               </div>
 
-              {/* ── RIGHT: Generated CAP Node.js Output ── */}
+              {/* â”€â”€ RIGHT: Generated CAP Node.js Output â”€â”€ */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -385,14 +385,14 @@ export default function TransformationShowroom() {
                   </span>
                 </div>
                 <p className="text-sm text-slate-700 font-medium leading-relaxed">
-                  Table <code className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold font-mono">BSEG</code> → Resolved to released CDS view{' '}
+                  Table <code className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold font-mono">BSEG</code> â†’ Resolved to released CDS view{' '}
                   <code className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs font-bold font-mono">I_JournalEntry</code>{' '}
                   <span className="text-slate-400">(SAP API Business Hub)</span>.
                 </p>
                 <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-full">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                   <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">
-                    Confidence: High — deterministic rule match
+                    Confidence: High â€” deterministic rule match
                   </span>
                 </div>
               </div>
@@ -419,9 +419,9 @@ export default function TransformationShowroom() {
             </div>
           </div>
 
-          {/* ────────────────────────────────────────────────────────────── */}
-          {/* TAB 3 — Dynamic Dispatch (CALL FUNCTION)                     */}
-          {/* ────────────────────────────────────────────────────────────── */}
+          {/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+          {/* TAB 3 â€” Dynamic Dispatch (CALL FUNCTION)                     */}
+          {/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
           <div className="panel-3 p-4 sm:p-6 lg:p-8" style={{ display: 'none' }}>
             {/* Business context */}
             <div className="mb-6 bg-slate-50 border border-slate-200/80 rounded-xl p-4 sm:p-5">
@@ -433,14 +433,14 @@ export default function TransformationShowroom() {
                 </div>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1 block">Business Context</span>
-                  <p className="text-sm text-slate-600 leading-relaxed font-medium">A logistics module dynamically dispatches function calls at runtime based on business rules — a common pattern in older SAP systems for flexible processing chains. Since the target function is resolved at runtime, no static API mapping is possible. The engine correctly identifies this as a low-confidence scenario, flags it for architect review, and provides structured remediation guidance (factory pattern refactoring) rather than generating potentially incorrect code.</p>
+                  <p className="text-sm text-slate-600 leading-relaxed font-medium">A logistics module dynamically dispatches function calls at runtime based on business rules â€” a common pattern in older SAP systems for flexible processing chains. Since the target function is resolved at runtime, no static API mapping is possible. The engine correctly identifies this as a low-confidence scenario, flags it for architect review, and provides structured remediation guidance (factory pattern refactoring) rather than generating potentially incorrect code.</p>
                 </div>
               </div>
             </div>
 
             {/* Two-column code layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* ── LEFT: Legacy Input ── */}
+              {/* â”€â”€ LEFT: Legacy Input â”€â”€ */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="w-2 h-2 rounded-full bg-slate-400" />
@@ -459,7 +459,7 @@ export default function TransformationShowroom() {
                   </div>
                   <pre className="p-4 overflow-x-auto text-[11px] sm:text-[13px] leading-relaxed">
                     <code className="font-mono text-slate-700">
-                      <span className="text-slate-400">{`" Dynamic function module call — cannot be statically resolved`}</span>
+                      <span className="text-slate-400">{`" Dynamic function module call â€” cannot be statically resolved`}</span>
 {`
 `}<span className="text-blue-700 font-bold">DATA</span>{`: lv_func `}<span className="text-blue-700 font-bold">TYPE</span>{` funcname.
 lv_func = get_dynamic_function( ).
@@ -471,7 +471,7 @@ lv_func = get_dynamic_function( ).
                 </div>
               </div>
 
-              {/* ── RIGHT: Generated Output (with warning) ── */}
+              {/* â”€â”€ RIGHT: Generated Output (with warning) â”€â”€ */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
@@ -490,7 +490,7 @@ lv_func = get_dynamic_function( ).
                   </div>
                   <pre className="p-4 overflow-x-auto text-[11px] sm:text-[13px] leading-relaxed">
                     <code className="font-mono text-slate-700">
-                      <span className="text-amber-600 font-bold">{`" ⚠ LOW CONFIDENCE — Manual review recommended.`}</span>
+                      <span className="text-amber-600 font-bold">{`" âš  LOW CONFIDENCE â€” Manual review recommended.`}</span>
 {`
 `}<span className="text-slate-400">{`" Reason: Dynamic CALL FUNCTION target cannot be
 " resolved at parse time. The function module name
@@ -528,7 +528,7 @@ lv_func = get_dynamic_function( ).
                 <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-full">
                   <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
                   <span className="text-[10px] font-black text-amber-700 uppercase tracking-wider">
-                    Confidence: Low — manual review recommended
+                    Confidence: Low â€” manual review recommended
                   </span>
                 </div>
               </div>
@@ -556,10 +556,10 @@ lv_func = get_dynamic_function( ).
           </div>
         </div>
 
-        {/* ── Version Stamp ── */}
+        {/* â”€â”€ Version Stamp â”€â”€ */}
         <div className="mt-6 text-center">
           <span className="text-[11px] font-mono font-bold text-slate-400 tracking-wide">
-            Verified against Clean-Core Engine v1.9.0 · June 2026
+            Verified against Clean-Core Engine v1.10.0 Â· June 2026
           </span>
         </div>
       </div>

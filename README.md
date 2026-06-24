@@ -25,6 +25,8 @@ Clean-Core.io is a modern, high-performance, and secure web and desktop client a
     Computes complexity and business-criticality scores from uploaded ABAP code. Extracts a full code inventory (classes, reports, function modules) and maps data coupling with standard SAP table risk analysis — all before transformation begins.
 *   **Architect Sign-Off Gate (v1.9.0):**
     Requires explicit target architecture confirmation (RAP, CAP, Integration Suite, Event Mesh, or Retire) before code transformation. Supports override with justification and captures a full audit trail (approver email, timestamp, rationale).
+*   **Compliance Audit Pack (v1.10.0):**
+    Exportable ZIP evidence package per project containing: SHA-256 input fingerprint, architecture decision record, data coupling findings (CSV), model card with provider/version metadata, and known limitations. Designed for architecture boards, compliance audits, and enterprise governance reviews. Contains only hashes and timestamps — never secrets or credentials.
 *   **Deterministic ABAP OO Inheritance Resolver & Grounding Layer:**
     Resolves complex, multi-stage class and interface hierarchies deterministically before LLM invocation. Linearizes members via MRO, maps constructors and interface aliases, and requests missing dependencies dynamically via a bundle upload UI, preventing LLM structure hallucinations.
 *   **Architectural Solution Design & File Explorers:**
