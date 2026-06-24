@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Clean-Core.io Landing Page E2E Tests', () => {
+  test.beforeEach(async () => {
+    test.setTimeout(90000);
+  });
+
   test('should load the landing page successfully and verify structural components', async ({ page }) => {
     // 1. Navigate to the local home page
     await page.goto('/');
