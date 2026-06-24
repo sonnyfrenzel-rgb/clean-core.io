@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
-import { FileText, Download, ArrowRight, ArrowLeft, RefreshCw, LayoutTemplate, Eye, X, Folder, FileCode, Terminal, ShieldCheck, Layers, Network, ArrowUpRight, ChevronDown, HelpCircle, Globe } from 'lucide-react';
+import { FileText, Download, ArrowRight, ArrowLeft, RefreshCw, LayoutTemplate, Eye, X, Folder, FileCode, Terminal, ShieldCheck, Layers, Network, ArrowUpRight, ChevronDown, HelpCircle, Globe, Info } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
 import { DocumentSection } from '@/components/DocumentSection';
 import { Components } from 'react-markdown';
@@ -17,6 +17,9 @@ import type { Project, DesignData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { saveAs } from '@/lib/fileSaver';
 import GlossaryTerm from '@/components/GlossaryTerm';
+import ArchitectSignOff from '@/components/ArchitectSignOff';
+import type { TargetArchitecture } from '@/components/ArchitectSignOff';
+import { getAuth } from 'firebase/auth';
 
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
@@ -258,6 +261,22 @@ export default function DesignPage() {
   const [activeService, setActiveService] = useState<any | null>(null);
   const [copied, setCopied] = useState(false);
   const projectRef = useRef(project);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  // Check localStorage for dismissed banner
+  useEffect(() => {
+    if (projectId) {
+      const key = `signoff-banner-dismissed-${projectId}`;
+      setBannerDismissed(localStorage.getItem(key) === 'true');
+    }
+  }, [projectId]);
+
+  const dismissBanner = () => {
+    setBannerDismissed(true);
+    if (projectId) {
+      localStorage.setItem(`signoff-banner-dismissed-${projectId}`, 'true');
+    }
+  };
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -1217,11 +1236,86 @@ ${analysis}`;
         </div>
       </div>
 
+      {/* v1.9.0: Architecture Decision Sign-Off */}
+      {design && project && (
+        <div className="my-8 space-y-6">
+          {/* Onboarding Banner (first visit) */}
+          {!bannerDismissed && !project.approvedByArchitect && (
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 sm:px-6 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <Info size={18} className="text-blue-500 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-blue-800 leading-relaxed">
+                  Before proceeding to code transformation, confirm your target architecture below. This ensures the generated output matches your deployment strategy. You can change this decision at any time.
+                </p>
+              </div>
+              <button
+                onClick={dismissBanner}
+                className="text-blue-400 hover:text-blue-600 shrink-0 p-1 rounded-lg hover:bg-blue-100 transition-colors"
+                aria-label="Dismiss"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
+
+          {/* Architect Sign-Off Card */}
+          <ArchitectSignOff
+            recommendation={project.originalRecommendation || (project.extensibilityRoute?.includes('BTP') ? 'cap' : 'rap')}
+            confidenceScore={project.recommendationConfidence || 75}
+            justificationText={project.recommendationJustification || `Based on the code analysis, the ${project.extensibilityRoute?.includes('BTP') ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`}
+            isLocked={project.approvedByArchitect === true}
+            currentArchitecture={project.targetArchitecture}
+            currentJustification={project.architectJustifiedOverride}
+            lockedByEmail={project.approvedBy}
+            lockedAt={project.architectSignOffAt ? String(project.architectSignOffAt) : undefined}
+            canUnlock={true}
+            onLock={async (architecture: TargetArchitecture, justification: string) => {
+              const auth = getAuth();
+              const userEmail = auth.currentUser?.email || 'unknown';
+              const db = getDb();
+              await updateDoc(doc(db, 'projects', projectId as string), {
+                targetArchitecture: architecture,
+                approvedByArchitect: true,
+                architectJustifiedOverride: justification || '',
+                architectSignOffAt: new Date().toISOString(),
+                approvedBy: userEmail,
+              });
+              setProject((prev: Project | null) => prev ? {
+                ...prev,
+                targetArchitecture: architecture,
+                approvedByArchitect: true,
+                architectJustifiedOverride: justification || '',
+                architectSignOffAt: new Date().toISOString(),
+                approvedBy: userEmail,
+              } : null);
+            }}
+            onUnlock={async () => {
+              const db = getDb();
+              await updateDoc(doc(db, 'projects', projectId as string), {
+                approvedByArchitect: false,
+                targetArchitecture: null,
+                architectJustifiedOverride: '',
+                architectSignOffAt: null,
+                approvedBy: '',
+              });
+              setProject((prev: Project | null) => prev ? {
+                ...prev,
+                approvedByArchitect: false,
+                targetArchitecture: undefined,
+                architectJustifiedOverride: '',
+                architectSignOffAt: undefined,
+                approvedBy: '',
+              } : null);
+            }}
+          />
+        </div>
+      )}
+
       <NavigationButtons 
         backPath={`/project/${projectId}/analyze`}
         backLabel="Back to Analysis"
-        proceedPath={`/project/${projectId}/transformation`}
-        proceedLabel="Continue to Transformation"
+        proceedPath={project?.approvedByArchitect ? `/project/${projectId}/transformation` : undefined}
+        proceedLabel={project?.approvedByArchitect ? 'Continue to Transformation' : 'Confirm architecture to proceed'}
       />
 
 

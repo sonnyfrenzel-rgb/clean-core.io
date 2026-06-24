@@ -97,14 +97,14 @@ export default function TenantSecurityPage() {
             <ShieldCheck className="w-7 h-7 text-green-600" />
           </div>
           <div>
-            <h2 className="text-3xl font-black tracking-tight text-gray-950">Stateless Processing</h2>
-            <p className="text-sm text-gray-500 font-medium mt-1">In-memory only — nothing persisted on our servers.</p>
+            <h2 className="text-3xl font-black tracking-tight text-gray-950">Secure Storage &amp; Stateless Transit</h2>
+            <p className="text-sm text-gray-500 font-medium mt-1">Encrypted credentials and transient business data.</p>
           </div>
         </div>
 
         <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 sm:p-8 space-y-5">
           <p className="text-gray-700 leading-relaxed font-medium">
-            Your connection credentials and source code are processed <strong>exclusively in-memory</strong> within isolated server-side execution contexts. Once the request completes, all data is immediately discarded — nothing is persisted, cached, or logged on our infrastructure.
+            Your connection credentials are encrypted using AES-256-GCM and stored securely on Google Cloud Platform in Europe (completely blocked from direct client SDK access). All actual business data (such as transactional records or metadata lists) retrieved from your S/4HANA OData tenant is processed strictly in-memory and never persisted, cached, or logged on our servers. Uploaded code files are stored in your project workspace, which you can permanently erase at any time.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -117,9 +117,9 @@ export default function TenantSecurityPage() {
             </div>
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm text-center">
               <Server className="w-8 h-8 text-green-600 mx-auto mb-3" />
-              <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider mb-2">Zero-Persistence Proxy</h4>
+              <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider mb-2">Stateless Business Transit</h4>
               <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                The backend proxy layer is fully stateless. No request payloads, no response data, and no connection tokens are stored after execution.
+                The backend OData transit layer is fully stateless. No business records or transaction responses are stored after execution.
               </p>
             </div>
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm text-center">

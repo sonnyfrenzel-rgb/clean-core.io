@@ -3,6 +3,7 @@ import { createHmac } from 'crypto';
 import { APP_VERSION } from '@/lib/version';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
 import { APP_BASE_URL } from '@/lib/constants';
+import { escapeHtml } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,11 +13,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { uid, email, name, motivation } = body;
+    let { uid, email, name, motivation } = body;
 
     if (!uid || !email || !name) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    uid = escapeHtml(uid);
+    email = escapeHtml(email);
+    name = escapeHtml(name);
+    motivation = escapeHtml(motivation);
 
     // Generate secure cryptographic validation token
     const secret = process.env.PILOT_APPROVAL_SECRET || 'fallback-secret-key-12345';

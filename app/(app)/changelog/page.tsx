@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Tag, Rocket, Sparkles, Zap, Package } from 'lucide-react';
+import { Tag, Rocket, Sparkles, Zap, Package, Shield } from 'lucide-react';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
@@ -20,9 +20,43 @@ export const metadata: Metadata = {
 
 const releases = [
   {
+    version: 'v1.9.0',
+    date: 'June 24, 2026',
+    tag: 'Latest',
+    icon: Shield,
+    changes: [
+      'Introduced Modernization Assessment engine computing complexity and business-criticality scores from uploaded ABAP code',
+      'Added Code Inventory and Data Coupling analysis panels with collapsible accordion UI pattern (Stage 1)',
+      'Built deterministic architecture recommendation logic (Decision Tree) based on parsed table access and code structure',
+      'Implemented Architect Sign-Off gate in Solution Design (Stage 2) requiring explicit target architecture confirmation before transformation',
+      'Added override flow with justification tracking and audit trail for architecture decisions',
+      'Gated Stage 3 navigation behind architecture approval to prevent mismatched transformation output',
+      'Created reusable CollapsibleAccordion and ArchitectSignOff UI components, fully responsive on mobile',
+      'Extended Project type with assessment fields (complexityScore, criticalityScore, codeInventory, dataCoupling, targetArchitecture)',
+      'Updated NavigationButtons to support gated disabled state with visual feedback',
+      'All version references bumped across engine, showroom, landing page, and documentation',
+    ],
+  },
+  {
+    version: 'v1.8.0',
+    date: 'June 24, 2026',
+    tag: null,
+    icon: Shield,
+    changes: [
+      'Moved GDPR account deletion orchestrations to a secure server-side transaction API, recursively purging credentials, projects, and metadata (Art. 17 compliance)',
+      'Enforced cryptographic verification of onboarding email approval links via secure server-side HMAC checks',
+      'Admin-gated all live S/4HANA bridge connectivity (BYOT) endpoints behind strict role and custom-claim validation checks',
+      'Mitigated potential HTML injection threats by fully sanitizing pilot welcome and administrator approval email templates',
+      'Stabilized SEO crawl signals by replacing dynamic site-generation dates with static constants in sitemap.xml',
+      'Aligned platform documentation and copywriting regarding live credentials storage (AES-256-GCM encryption) and business data processing (stateless in-memory)',
+      'Resolved security advisory warnings by bumping Next.js from v15.5.14 to v15.5.19',
+      'Introduced comprehensive Playwright E2E security and compliance test suites validating authorization boundaries, token validations, and cascading account deletion processes',
+    ],
+  },
+  {
     version: 'v1.7.4',
     date: 'June 17, 2026',
-    tag: 'Latest',
+    tag: null,
     icon: Sparkles,
     changes: [
       'Introduced visual Code-Transformation Compliance Shield (Hero HUD) showing dynamic scores',

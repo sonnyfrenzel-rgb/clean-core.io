@@ -79,7 +79,40 @@ export interface Project {
   isExample?: boolean;
   createdAt?: unknown;
   updatedAt?: unknown;
+
+  // v1.9.0: Modernization Assessment & Architect Sign-Off
+  complexityScore?: number;
+  criticalityScore?: number;
+  codeInventory?: CodeInventoryItem[];
+  dataCoupling?: DataCouplingEntry[];
+  targetArchitecture?: 'rap' | 'cap' | 'integration' | 'event' | 'retire';
+  approvedByArchitect?: boolean;
+  architectJustifiedOverride?: string;
+  architectSignOffAt?: unknown;
+  approvedBy?: string;
+  originalRecommendation?: 'rap' | 'cap' | 'integration' | 'event' | 'retire';
+  recommendationConfidence?: number;
+  recommendationJustification?: string;
 }
+
+/** Single ABAP artifact extracted from uploaded code */
+export interface CodeInventoryItem {
+  objectName: string;
+  type: 'Class' | 'Function Module' | 'Report' | 'Include' | 'Form Routine' | 'Interface' | 'Other';
+  package?: string;
+  module?: string;
+  criticality: 'High' | 'Medium' | 'Low';
+}
+
+/** Database table access detected in code */
+export interface DataCouplingEntry {
+  tableName: string;
+  accessType: 'Read' | 'Write' | 'Read/Write';
+  isCustom: boolean;
+  riskLevel: 'High' | 'Medium' | 'Low';
+  recommendation: string;
+}
+
 
 export interface AnalysisData {
   projectTitle: string;

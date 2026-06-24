@@ -397,9 +397,9 @@ export default function Home() {
                   cc: { badge: "Refactored", desc: "Converts legacy statements into BTP CAP Node.js/RAP syntax." }
                 },
                 {
-                  title: "Live Sandbox Verification (BYOT)",
+                  title: "Sandbox Verification (BYOT)",
                   sap: { badge: "Not Supported", desc: "Requires separate manual testing frameworks." },
-                  cc: { badge: "Validated", desc: "Runs test suites directly against your S/4HANA sandbox." }
+                  cc: { badge: "Validated", desc: "Runs test suites against your S/4HANA sandbox via encrypted, read-only connection. Never targets production." }
                 },
                 {
                   title: "Business Process Blueprinting",
@@ -476,9 +476,9 @@ export default function Home() {
                   cc: { badge: "Refactored", desc: "Converts legacy statements into BTP CAP Node.js/RAP syntax." }
                 },
                 {
-                  title: "Live Sandbox Verification",
+                  title: "Sandbox Verification",
                   sap: { badge: "Not Available", level: "none", desc: "Requires separate manual testing frameworks." },
-                  cc: { badge: "Validated", desc: "Runs test suites directly against your S/4HANA sandbox." }
+                  cc: { badge: "Validated", desc: "Runs test suites against your S/4HANA sandbox via encrypted, read-only connection. Never targets production." }
                 },
                 {
                   title: "Business Process Blueprinting",
@@ -537,7 +537,7 @@ export default function Home() {
               Real Verified Output
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">Transformation Showroom</h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Representative engine outputs. Every example is a real transformation&mdash;verified, compiled, and tested against Clean-Core Engine v1.7.4.</p>
+            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Representative engine outputs. Every example is a real transformation&mdash;verified, compiled, and tested against Clean-Core Engine v1.9.0.</p>
           </div>
           <Suspense fallback={null}>
             <TransformationReplay />
@@ -560,14 +560,14 @@ export default function Home() {
             {[
               {
                 icon: <Layers className="w-8 h-8 text-green-600" />,
-                title: 'Extensibility Routing',
-                desc: 'Intelligently classifies legacy custom logic against SAP Clean Core guidelines, automatically separating In-App ABAP Cloud (RAP) from Side-by-Side BTP (CAP) tracks.',
+                title: 'Extensibility Routing & Sign-Off',
+                desc: 'Classifies legacy custom logic against SAP Clean Core guidelines, routes between In-App RAP and Side-by-Side CAP tracks, and gates transformation behind an explicit architecture decision.',
                 link: '/sap-tier-2-extensions'
               },
               {
                 icon: <Globe className="w-8 h-8 text-green-600" />,
                 title: 'SAP API Hub Mapping',
-                desc: 'Directly maps legacy database table operations to released, public standard SAP APIs with interactive links to official API Hub listings.',
+                desc: 'Maps legacy database table operations to released, standard SAP APIs with interactive references to official API Hub listings.',
                 link: '/how-it-works'
               },
               {
@@ -578,22 +578,21 @@ export default function Home() {
               },
               {
                 icon: <Activity className="w-8 h-8 text-green-600" />,
-                title: 'Business Value Audit & TCO',
-                desc: 'Quantifies technical debt and custom IP value. Features an interactive C-Level TCO & ROI calculator predicting upgrade-impact savings based on Clean Core Scores.',
-                link: '/clean-core-score'
-              },
-              {
-                icon: <ShieldCheck className="w-8 h-8 text-green-600" />,
-                title: 'Grounded Compliance HUD',
-                desc: 'Provides a visual compliance HUD flagging complex SQL joins, OO inheritance chains, and syntax quirks. Generates local ABAP-Unit test classes to verify execution.',
+                title: 'Modernization Assessment',
+                desc: 'Computes complexity and business-criticality scores, extracts a full code inventory, and maps data coupling with standard SAP table risk analysis — all before transformation.',
                 link: '/how-it-works',
                 isNew: true
               },
               {
+                icon: <ShieldCheck className="w-8 h-8 text-green-600" />,
+                title: 'Grounded Compliance HUD',
+                desc: 'Visual compliance dashboard flagging complex SQL joins, OO inheritance chains, and syntax quirks. Generates local ABAP-Unit test classes to verify execution.',
+                link: '/how-it-works'
+              },
+              {
                 icon: <Layers className="w-8 h-8 text-green-600" />,
                 title: 'BPMN 2.0 & Business SOP',
-                desc: 'Maps modernized processes into standard BPMN 2.0 XML with swimlanes. Features a two-stage blueprint layer mapping RACI matrices, Level 5 SOP narratives, and internal compliance controls.',
-                isNew: true,
+                desc: 'Maps modernized processes into standard BPMN 2.0 XML with swimlanes. Features a two-stage blueprint layer with RACI matrices, Level 5 SOP narratives, and internal compliance controls.',
                 link: '/knowledge'
               }
             ].map((feature, idx) => (
@@ -644,7 +643,7 @@ export default function Home() {
               Your Data Stays Yours
             </h2>
             <p className="text-gray-600 font-medium text-sm md:text-base max-w-xl mx-auto leading-relaxed">
-              European hosting, GDPR-compliant by design, zero data retention. We built the security architecture the way we&apos;d want it for our own SAP systems.
+              European hosting, GDPR-compliant by design, with full self-service data erasure control. We built the security architecture the way we&apos;d want it for our own SAP systems.
             </p>
           </div>
 
@@ -752,7 +751,7 @@ export default function Home() {
                   'Automated ABAP-Unit test class generation',
                   'Granular sandbox test execution & runs',
                   'BPMN 2.0 & Confluence blueprint exports',
-                  'Live S/4HANA tenant connection (admin-gated)'
+                  'S/4HANA sandbox connection (encrypted, read-only, admin-gated)'
                 ].map((f, i) => {
                   const isAll = f.toLowerCase().includes('includes all');
                   return (
@@ -771,15 +770,15 @@ export default function Home() {
             <div className="flex items-center justify-center gap-2 mb-5">
               <div className="h-px flex-1 bg-gray-200" />
               <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 whitespace-nowrap px-2">
-                Live S/4HANA Tenant Connection — Security Profile
+                S/4HANA Sandbox Connection — Security Profile
               </span>
               <div className="h-px flex-1 bg-gray-200" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
-                { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Read-Only Scope', desc: 'Tenant connections are restricted to OData metadata reads and test execution. No write operations.', link: '/tenant-security#read-only-scope' },
-                { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Stateless Processing', desc: 'Credentials and code are processed in memory only. Nothing is persisted on our servers.', link: '/tenant-security#stateless-processing' },
-                { icon: <Globe className="w-5 h-5 text-green-600" />, title: 'Admin Onboarding Gate', desc: 'Every tenant connection request is manually reviewed and approved to prevent misuse during the pilot phase.', link: '/tenant-security#admin-onboarding-gate' }
+                { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Sandbox Only · Read-Only', desc: 'Connections are restricted to non-production sandbox systems. Only OData metadata reads and test execution — no write operations, no production access.', link: '/tenant-security#read-only-scope' },
+                { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Encrypted · Stateless', desc: 'Credentials are AES-256-GCM encrypted. SAP transaction data is processed in memory and never stored on our servers.', link: '/tenant-security#stateless-processing' },
+                { icon: <Globe className="w-5 h-5 text-green-600" />, title: 'Admin-Gated Onboarding', desc: 'Every sandbox connection request is manually reviewed and approved by an administrator before activation.', link: '/tenant-security#admin-onboarding-gate' }
               ].map((item, idx) => (
                 <div key={idx} className="bg-gray-50 p-5 rounded-2xl border border-gray-200/60 text-center">
                   <div className="w-10 h-10 mx-auto bg-white rounded-xl flex items-center justify-center mb-3 border border-gray-100 shadow-sm">{item.icon}</div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUrlSafe, safeFetch, SsrfError } from '@/lib/url-validation';
-import { verifyRequestAuth } from '@/lib/firebase-admin';
+import { verifyRequestAuth, assertS4TenantAccess, QuotaError } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 
 /**
@@ -212,6 +212,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    await assertS4TenantAccess(decodedToken.uid);
+
     const body = await req.json();
 
     // F-03: Resolve credentials — stored (server-side) or transient (from body)
@@ -347,6 +349,12 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
+    if (error instanceof QuotaError) {
+      return NextResponse.json(
+        { status: 'failed', message: error.message },
+        { status: error.status }
+      );
+    }
     console.error('[fetch-s4-metadata] Unexpected error:', error);
     return NextResponse.json(
       { status: 'failed', message: 'Internal server error during metadata fetch.' },
