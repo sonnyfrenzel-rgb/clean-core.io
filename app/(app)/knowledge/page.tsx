@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { BookOpen, ArrowLeft, Layers, Check } from 'lucide-react';
-import Link from 'next/link';
+import { BookOpen, Layers, Check } from 'lucide-react';
 import KnowledgeClient from '@/components/KnowledgeClient';
+import BackButton from '@/components/BackButton';
 
 // Server-side Metadata configuration for SEO & GEO Crawlers
 export const metadata: Metadata = {
@@ -64,12 +64,7 @@ export default function KnowledgePage() {
 
       {/* Navigation */}
       <div className="flex items-center justify-start">
-        <Link 
-          href="/dashboard" 
-          className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-white px-5 py-2.5 rounded-full border border-gray-200 hover:border-green-200 hover:bg-green-50/50 hover:shadow-sm shadow-slate-100"
-        >
-          <ArrowLeft size={14} /> Back to Workspace
-        </Link>
+        <BackButton />
       </div>
 
       {/* Header Banner */}

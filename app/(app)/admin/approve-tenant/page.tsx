@@ -16,6 +16,7 @@ function TenantApprovalContent() {
   const uid = searchParams.get('uid');
   const actionParam = searchParams.get('action'); // 'approve' or 'reject'
   const autoParam = searchParams.get('auto') === 'true';
+  const tokenParam = searchParams.get('token') || '';
 
   const [status, setStatus] = useState<'loading' | 'unauthorized' | 'ready' | 'processing' | 'approved' | 'rejected' | 'error'>('loading');
   const [applicant, setApplicant] = useState<{ name: string; email: string; motivation: string; status: string } | null>(null);
@@ -116,42 +117,34 @@ function TenantApprovalContent() {
     if (!uid || !applicant) return;
     setStatus('processing');
     try {
-      // 1. Update user profile
-      const userRef = doc(db, 'users', uid);
-      await setDoc(userRef, {
-        s4TenantAccessAllowed: true,
-        s4TenantAccessRequested: false,
-      }, { merge: true });
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("No admin authenticated.");
+      const adminToken = await currentUser.getIdToken();
 
-      // 2. Update tenant access request
-      const regRef = doc(db, 'tenant_access_requests', uid);
-      await setDoc(regRef, {
-        status: 'approved',
-      }, { merge: true });
+      const res = await fetch('/api/admin/approve-tenant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify({
+          uid,
+          token: tokenParam,
+          action: 'approve'
+        })
+      });
 
-      // 3. Dispatch Premium S/4 Welcome Email to the user in the background
-      try {
-        const token = await getAuth().currentUser?.getIdToken();
-        await fetch('/api/send-tenant-approval-email', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            email: applicant.email,
-            name: applicant.name,
-          }),
-        });
-      } catch (emailErr) {
-        console.error('Failed to trigger S/4 Welcome Email API:', emailErr);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to approve tenant access.');
       }
 
       setStatus('approved');
     } catch (err: any) {
       console.error('Error approving tenant access:', err);
       setStatus('error');
-      setErrorMessage(err.message || 'Failed to update Firestore documents.');
+      setErrorMessage(err.message || 'Failed to update tenant access status.');
     }
   };
 
@@ -159,22 +152,34 @@ function TenantApprovalContent() {
     if (!uid) return;
     setStatus('processing');
     try {
-      // Delete tenant access request document
-      const regRef = doc(db, 'tenant_access_requests', uid);
-      await deleteDoc(regRef);
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("No admin authenticated.");
+      const adminToken = await currentUser.getIdToken();
 
-      // Clean request status on user document
-      const userRef = doc(db, 'users', uid);
-      await setDoc(userRef, {
-        s4TenantAccessRequested: false,
-        s4TenantAccessAllowed: false,
-      }, { merge: true });
+      const res = await fetch('/api/admin/approve-tenant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify({
+          uid,
+          token: tokenParam,
+          action: 'reject'
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to decline tenant request.');
+      }
 
       setStatus('rejected');
     } catch (err: any) {
       console.error('Error rejecting tenant access:', err);
       setStatus('error');
-      setErrorMessage(err.message || 'Failed to update Firestore documents.');
+      setErrorMessage(err.message || 'Failed to decline tenant request.');
     }
   };
 

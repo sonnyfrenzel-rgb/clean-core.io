@@ -5,11 +5,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 // ── Pipeline steps that tick through during the animation ──
 const PIPELINE_STEPS = [
   { label: 'Parsing ABAP AST…', icon: '🔍', duration: 800 },
-  { label: 'Table VBAK erkannt — non-released', icon: '⚠️', duration: 700 },
+  { label: 'Table VBAK detected — non-released', icon: '⚠️', duration: 700 },
   { label: 'Mapping → I_SalesOrder (released API)', icon: '🔗', duration: 900 },
-  { label: 'CDS View entity generiert', icon: '📄', duration: 600 },
-  { label: 'Unit-Test-Stub erzeugt', icon: '🧪', duration: 700 },
-  { label: '✓ Kompiliert — 0 Fehler', icon: '✅', duration: 500 },
+  { label: 'CDS View entity generated', icon: '📄', duration: 600 },
+  { label: 'Unit test stub created', icon: '🧪', duration: 700 },
+  { label: '✓ Compiled — 0 errors', icon: '✅', duration: 500 },
 ];
 
 // ── The RAP output code lines that type themselves ──
@@ -164,7 +164,7 @@ export default function TransformationReplay() {
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500/70" />
               <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
               <span className="ml-2 text-[10px] sm:text-[11px] font-mono font-bold text-slate-400">
-                Clean-Core Engine v1.7.4
+                Clean-Core Engine v1.9.0
               </span>
             </div>
             <button

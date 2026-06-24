@@ -1,3 +1,4 @@
+import { createHmac } from 'crypto';
 import { FIRESTORE_DB_ID, isHardcodedAdmin } from '@/lib/constants';
 
 let adminAppModule: any = null;
@@ -189,3 +190,154 @@ export async function setAdminClaim(uid: string, isAdmin: boolean): Promise<void
     { merge: true },
   );
 }
+
+/**
+ * Assert that the user has permission to access S/4HANA live tenant endpoints.
+ * - Super-admins (hardcoded emails) are allowed.
+ * - Custom claim `admin === true` is allowed.
+ * - User documents with `s4TenantAccessAllowed === true` are allowed.
+ * Throws a QuotaError if access is denied.
+ */
+export async function assertS4TenantAccess(uid: string): Promise<void> {
+  const { db } = await getAdminDb();
+  const ref = db.collection('users').doc(uid);
+  const snap = await ref.get();
+  
+  if (!snap.exists) {
+    throw new QuotaError('User profile does not exist.', 404);
+  }
+  
+  const data = snap.data();
+  const email = data.email || '';
+  const isAdminUser = (data.isAdmin === true) || isHardcodedAdmin(email);
+  const s4TenantAccessAllowed = data.s4TenantAccessAllowed === true;
+
+  if (!isAdminUser && !s4TenantAccessAllowed) {
+    throw new QuotaError('Access to S/4HANA live tenant endpoints is restricted to approved pilot users or administrators. Please request access in settings.', 403);
+  }
+}
+
+/**
+ * Permanently erases all user data from Firestore collections and deletes the Firebase Auth account.
+ * Implements GDPR Right to Erasure (Art. 17 GDPR) server-side to prevent orphaned data.
+ */
+export async function deleteUserDataAndAccount(uid: string): Promise<void> {
+  await ensureInitialized();
+  const { db } = await getAdminDb();
+
+  // 1. Fetch and delete projects
+  const projectsSnap = await db.collection('projects').where('userId', '==', uid).get();
+  const batch1 = db.batch();
+  projectsSnap.docs.forEach((doc: any) => {
+    batch1.delete(doc.ref);
+  });
+  await batch1.commit();
+
+  // 2. Fetch and delete ABAP examples
+  const examplesSnap = await db.collection('abap_examples').where('userId', '==', uid).get();
+  const batch2 = db.batch();
+  examplesSnap.docs.forEach((doc: any) => {
+    batch2.delete(doc.ref);
+  });
+  await batch2.commit();
+
+  // 3. Delete registration requests
+  await db.collection('registration_requests').doc(uid).delete();
+
+  // 4. Delete tenant access requests
+  await db.collection('tenant_access_requests').doc(uid).delete();
+
+  // 5. Delete encrypted credentials directly
+  await db.collection('s4_credentials').doc(uid).delete();
+
+  // 6. Delete user profile document
+  await db.collection('users').doc(uid).delete();
+
+  // 7. Delete the Firebase Auth User
+  await adminAuthModule.getAuth().deleteUser(uid);
+}
+
+/**
+ * Server-side cryptographic token validation and user approval.
+ */
+export async function approveUserWithToken(
+  adminUid: string,
+  uid: string,
+  token: string,
+  action: 'approve' | 'reject'
+): Promise<void> {
+  await ensureInitialized();
+  
+  // 1. Verify that the token is correct cryptographically
+  const secret = process.env.PILOT_APPROVAL_SECRET || 'fallback-secret-key-12345';
+  const expectedToken = createHmac('sha256', secret).update(uid).digest('hex');
+  if (token !== expectedToken) {
+    throw new Error('Invalid verification token.');
+  }
+
+  const { db } = await getAdminDb();
+
+  if (action === 'approve') {
+    // Update user profile in users/{uid}
+    await db.collection('users').doc(uid).set({
+      status: 'approved',
+      tier: 'pilot',
+      transformationsLimit: 5,
+      transformationsUsed: 0
+    }, { merge: true });
+
+    // Update registration request
+    await db.collection('registration_requests').doc(uid).set({
+      status: 'approved',
+    }, { merge: true });
+  } else if (action === 'reject') {
+    // Delete registration request and user document
+    await db.collection('registration_requests').doc(uid).delete();
+    await db.collection('users').doc(uid).delete();
+  }
+}
+
+/**
+ * Server-side cryptographic token validation and tenant connection approval.
+ */
+export async function approveTenantWithToken(
+  adminUid: string,
+  uid: string,
+  token: string,
+  action: 'approve' | 'reject'
+): Promise<void> {
+  await ensureInitialized();
+
+  // 1. Verify that the token is correct cryptographically
+  const secret = process.env.PILOT_APPROVAL_SECRET || 'fallback-secret-key-12345';
+  const expectedToken = createHmac('sha256', secret).update(uid).digest('hex');
+  if (token !== expectedToken) {
+    throw new Error('Invalid verification token.');
+  }
+
+  const { db } = await getAdminDb();
+
+  if (action === 'approve') {
+    // Update user profile in users/{uid}
+    await db.collection('users').doc(uid).set({
+      s4TenantAccessAllowed: true,
+      s4TenantAccessRequested: false
+    }, { merge: true });
+
+    // Update tenant access request
+    await db.collection('tenant_access_requests').doc(uid).set({
+      status: 'approved',
+    }, { merge: true });
+  } else if (action === 'reject') {
+    // Clean request status on user document
+    await db.collection('users').doc(uid).set({
+      s4TenantAccessRequested: false,
+      s4TenantAccessAllowed: false
+    }, { merge: true });
+
+    // Delete tenant access request document
+    await db.collection('tenant_access_requests').doc(uid).delete();
+  }
+}
+
+

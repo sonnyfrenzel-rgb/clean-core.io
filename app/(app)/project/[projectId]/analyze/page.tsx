@@ -7,16 +7,18 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
-import { UploadCloud, FileCode2, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, Activity, Download, ChevronDown, X, HelpCircle, Info, Sparkles, Trash2, Layers, Shield, BarChart3 } from 'lucide-react';
+import { UploadCloud, FileCode2, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, Activity, Download, ChevronDown, X, HelpCircle, Info, Sparkles, Trash2, Layers, Shield, BarChart3, Package, Link2, Cpu, Zap } from 'lucide-react';
 import clsx from 'clsx';
 import nextDynamic from 'next/dynamic';
 import { DocumentSection } from '@/components/DocumentSection';
 import { Components } from 'react-markdown';
 import { marked } from 'marked';
 import { callGemini } from '@/lib/gemini';
-import type { Project, AnalysisData } from '@/lib/types';
+import type { Project, AnalysisData, CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import GlossaryTerm from '@/components/GlossaryTerm';
+import CollapsibleAccordion from '@/components/CollapsibleAccordion';
+import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore, recommendArchitecture } from '@/lib/abap/code-assessment';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 
@@ -287,6 +289,13 @@ ${codeToAnalyze}`;
         console.error('Failed to parse analysis JSON for routing', e);
       }
 
+      // v1.9.0: Compute code inventory, data coupling, and assessment scores
+      const inventory = extractCodeInventory(codeToAnalyze);
+      const coupling = extractDataCoupling(codeToAnalyze);
+      const complexityScore = computeComplexityScore(codeToAnalyze);
+      const criticalityScore = computeCriticalityScore(codeToAnalyze);
+      const archRecommendation = recommendArchitecture(codeToAnalyze, inventory, coupling, recommendedRoute);
+
       try {
         const isAlreadyCharged = project?.charged || false;
 
@@ -298,7 +307,15 @@ ${codeToAnalyze}`;
           cleanCoreScore: cleanCoreScore,
           status: 'analyzed',
           charged: true,
-          transformationBypass: true
+          transformationBypass: true,
+          // v1.9.0 Assessment Fields
+          codeInventory: inventory,
+          dataCoupling: coupling,
+          complexityScore,
+          criticalityScore,
+          originalRecommendation: archRecommendation.architecture,
+          recommendationConfidence: archRecommendation.confidence,
+          recommendationJustification: archRecommendation.justification,
         });
 
         if (!isAlreadyCharged) {
@@ -320,7 +337,14 @@ ${codeToAnalyze}`;
               s4Deployment: targetDeployment, 
               cleanCoreScore,
               charged: true,
-              transformationBypass: true
+              transformationBypass: true,
+              codeInventory: inventory,
+              dataCoupling: coupling,
+              complexityScore,
+              criticalityScore,
+              originalRecommendation: archRecommendation.architecture,
+              recommendationConfidence: archRecommendation.confidence,
+              recommendationJustification: archRecommendation.justification,
             } 
           : null
       );
@@ -905,7 +929,129 @@ ${codeToAnalyze}`;
               </div>
             </div>
           </div>
-          
+
+          {/* v1.9.0: Complexity & Criticality Badges */}
+          {(project.complexityScore !== undefined || project.criticalityScore !== undefined) && (
+            <div className="flex flex-wrap gap-3">
+              {project.complexityScore !== undefined && (
+                <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm">
+                  <Cpu size={14} className={clsx(
+                    project.complexityScore >= 70 ? 'text-red-500' : project.complexityScore >= 40 ? 'text-amber-500' : 'text-emerald-500'
+                  )} />
+                  <span className="text-xs font-bold text-slate-600">Complexity</span>
+                  <span className={clsx(
+                    'text-sm font-black',
+                    project.complexityScore >= 70 ? 'text-red-600' : project.complexityScore >= 40 ? 'text-amber-600' : 'text-emerald-600'
+                  )}>{project.complexityScore}</span>
+                </div>
+              )}
+              {project.criticalityScore !== undefined && (
+                <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm">
+                  <Zap size={14} className={clsx(
+                    project.criticalityScore >= 70 ? 'text-red-500' : project.criticalityScore >= 40 ? 'text-amber-500' : 'text-emerald-500'
+                  )} />
+                  <span className="text-xs font-bold text-slate-600">Criticality</span>
+                  <span className={clsx(
+                    'text-sm font-black',
+                    project.criticalityScore >= 70 ? 'text-red-600' : project.criticalityScore >= 40 ? 'text-amber-600' : 'text-emerald-600'
+                  )}>{project.criticalityScore}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* v1.9.0: Code Inventory Accordion */}
+          {project.codeInventory && project.codeInventory.length > 0 && (
+            <CollapsibleAccordion
+              icon={<Package size={16} />}
+              title="Code Inventory"
+              badge={`${project.codeInventory.length} object${project.codeInventory.length !== 1 ? 's' : ''} detected`}
+              badgeSeverity={project.codeInventory.some(i => i.criticality === 'High') ? 'red' : 'green'}
+              tooltip="All recognized ABAP artifacts extracted from your uploaded code, classified by type and module."
+            >
+              <div className="overflow-x-auto -mx-2">
+                <table className="w-full text-xs border-collapse min-w-[480px]">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Object</th>
+                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Type</th>
+                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden sm:table-cell">Module</th>
+                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Criticality</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {project.codeInventory.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-2 px-2 font-mono font-bold text-slate-800">{item.objectName}</td>
+                        <td className="py-2 px-2 text-slate-600">{item.type}</td>
+                        <td className="py-2 px-2 text-slate-500 hidden sm:table-cell">{item.module || '—'}</td>
+                        <td className="py-2 px-2">
+                          <span className={clsx(
+                            'px-2 py-0.5 rounded-full text-[10px] font-bold',
+                            item.criticality === 'High' ? 'bg-red-50 text-red-700 border border-red-200' :
+                            item.criticality === 'Medium' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                            'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          )}>{item.criticality}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CollapsibleAccordion>
+          )}
+
+          {/* v1.9.0: Data Coupling Accordion */}
+          {project.dataCoupling && project.dataCoupling.length > 0 && (
+            <CollapsibleAccordion
+              icon={<Link2 size={16} />}
+              title="Data Coupling"
+              badge={`${project.dataCoupling.length} table${project.dataCoupling.length !== 1 ? 's' : ''} · ${project.dataCoupling.filter(d => d.accessType !== 'Read').length} direct writes`}
+              badgeSeverity={project.dataCoupling.some(d => d.riskLevel === 'High') ? 'red' : project.dataCoupling.some(d => d.riskLevel === 'Medium') ? 'amber' : 'green'}
+              tooltip="Direct database table accesses detected in your code. Write operations on standard tables are a Clean-Core risk."
+            >
+              <div className="overflow-x-auto -mx-2">
+                <table className="w-full text-xs border-collapse min-w-[560px]">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Table</th>
+                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Access</th>
+                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Risk</th>
+                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Recommendation</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {project.dataCoupling.map((entry, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-2 px-2 font-mono font-bold text-slate-800">
+                          {entry.tableName}
+                          {entry.isCustom && <span className="ml-1.5 text-[9px] text-blue-500 font-semibold">(Custom)</span>}
+                        </td>
+                        <td className="py-2 px-2">
+                          <span className={clsx(
+                            'px-2 py-0.5 rounded-full text-[10px] font-bold',
+                            entry.accessType === 'Write' || entry.accessType === 'Read/Write'
+                              ? 'bg-red-50 text-red-700 border border-red-200'
+                              : 'bg-slate-100 text-slate-600'
+                          )}>{entry.accessType}</span>
+                        </td>
+                        <td className="py-2 px-2">
+                          <span className={clsx(
+                            'px-2 py-0.5 rounded-full text-[10px] font-bold',
+                            entry.riskLevel === 'High' ? 'bg-red-50 text-red-700 border border-red-200' :
+                            entry.riskLevel === 'Medium' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                            'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          )}>{entry.riskLevel}</span>
+                        </td>
+                        <td className="py-2 px-2 text-slate-600 text-[11px]">{entry.recommendation}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CollapsibleAccordion>
+          )}
+
           {/* Business Value & Executive Action Center */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch animate-in fade-in duration-500">
             {/* Left Column: Business Value Audit (Span 5) */}

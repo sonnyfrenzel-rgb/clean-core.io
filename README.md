@@ -21,6 +21,10 @@ Clean-Core.io is a modern, high-performance, and secure web and desktop client a
     Fully integrated with the Resend API to deliver secure, responsive, HTML-table-formatted notifications. Sonny receives manual approval emails with cryptographic verification links, and applicants receive dynamic welcome activation emails.
 *   **Legacy-to-Modern AI Transformation Engine:**
     Modular code translation from SAP ABAP to structured Node.js/TypeScript code using Google Gemini. Classifies legacy logic to automatically separate **In-App Developer Extensibility (ABAP Cloud RAP)** from **Side-by-Side Extensibility (BTP CAP)** tracks.
+*   **Modernization Assessment Engine (v1.9.0):**
+    Computes complexity and business-criticality scores from uploaded ABAP code. Extracts a full code inventory (classes, reports, function modules) and maps data coupling with standard SAP table risk analysis — all before transformation begins.
+*   **Architect Sign-Off Gate (v1.9.0):**
+    Requires explicit target architecture confirmation (RAP, CAP, Integration Suite, Event Mesh, or Retire) before code transformation. Supports override with justification and captures a full audit trail (approver email, timestamp, rationale).
 *   **Deterministic ABAP OO Inheritance Resolver & Grounding Layer:**
     Resolves complex, multi-stage class and interface hierarchies deterministically before LLM invocation. Linearizes members via MRO, maps constructors and interface aliases, and requests missing dependencies dynamically via a bundle upload UI, preventing LLM structure hallucinations.
 *   **Architectural Solution Design & File Explorers:**
@@ -99,7 +103,7 @@ npm run electron:dist
 
 ## ⚙️ S/4HANA Public Cloud Sandbox Integration (BYOT)
 
-Clean-Core.io bridges the gap between static code analysis and live database verification.
+Clean-Core.io bridges the gap between static code analysis and live sandbox verification. **Connections are restricted to non-production sandbox systems only — never production environments.** All communication is encrypted, read-only, and admin-gated.
 
 ### How it Works:
 1.  **Request Access:** Pilot users click "Request Live Tenant Access" inside Stage 5 (Testing Sandbox).

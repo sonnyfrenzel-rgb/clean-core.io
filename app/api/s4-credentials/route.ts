@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyRequestAuth } from '@/lib/firebase-admin';
+import { verifyRequestAuth, assertS4TenantAccess, QuotaError } from '@/lib/firebase-admin';
 import { saveS4Credentials, deleteS4Credentials, loadS4ConfigForUser } from '@/lib/s4-credentials';
 import { isUrlSafe } from '@/lib/url-validation';
 
@@ -13,6 +13,15 @@ import { isUrlSafe } from '@/lib/url-validation';
 export async function POST(req: Request) {
   const decoded = await verifyRequestAuth(req);
   if (!decoded) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+
+  try {
+    await assertS4TenantAccess(decoded.uid);
+  } catch (e: any) {
+    if (e instanceof QuotaError) {
+      return NextResponse.json({ error: e.message }, { status: e.status });
+    }
+    return NextResponse.json({ error: 'Internal server error during authorization check.' }, { status: 500 });
+  }
 
   const body = await req.json();
   if (!body?.url || typeof body.url !== 'string') {
@@ -41,6 +50,15 @@ export async function GET(req: Request) {
   const decoded = await verifyRequestAuth(req);
   if (!decoded) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
+  try {
+    await assertS4TenantAccess(decoded.uid);
+  } catch (e: any) {
+    if (e instanceof QuotaError) {
+      return NextResponse.json({ error: e.message }, { status: e.status });
+    }
+    return NextResponse.json({ error: 'Internal server error during authorization check.' }, { status: 500 });
+  }
+
   const cfg = await loadS4ConfigForUser(decoded.uid);
   if (!cfg) return NextResponse.json({ configured: false });
   return NextResponse.json({
@@ -57,6 +75,16 @@ export async function GET(req: Request) {
 export async function DELETE(req: Request) {
   const decoded = await verifyRequestAuth(req);
   if (!decoded) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+
+  try {
+    await assertS4TenantAccess(decoded.uid);
+  } catch (e: any) {
+    if (e instanceof QuotaError) {
+      return NextResponse.json({ error: e.message }, { status: e.status });
+    }
+    return NextResponse.json({ error: 'Internal server error during authorization check.' }, { status: 500 });
+  }
+
   await deleteS4Credentials(decoded.uid);
   return NextResponse.json({ ok: true });
 }

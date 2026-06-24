@@ -559,7 +559,7 @@ lv_func = get_dynamic_function( ).
         {/* ── Version Stamp ── */}
         <div className="mt-6 text-center">
           <span className="text-[11px] font-mono font-bold text-slate-400 tracking-wide">
-            Verified against Clean-Core Engine v1.7.4 · June 2026
+            Verified against Clean-Core Engine v1.9.0 · June 2026
           </span>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUrlSafe, safeFetch, SsrfError } from '@/lib/url-validation';
-import { verifyRequestAuth } from '@/lib/firebase-admin';
+import { verifyRequestAuth, assertS4TenantAccess, QuotaError } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 
 /**
@@ -94,6 +94,8 @@ export async function POST(req: NextRequest) {
     if (!decodedToken) {
       return NextResponse.json({ status: 'failed', message: 'Authentication required.' }, { status: 401 });
     }
+
+    await assertS4TenantAccess(decodedToken.uid);
 
     const body = await req.json();
     const { entitySet } = body;
@@ -198,6 +200,9 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
+    if (error instanceof QuotaError) {
+      return NextResponse.json({ status: 'failed', message: error.message }, { status: error.status });
+    }
     console.error('[test-s4-odata-read] Error:', error);
     return NextResponse.json({ status: 'failed', message: 'Internal server error.' }, { status: 500 });
   }

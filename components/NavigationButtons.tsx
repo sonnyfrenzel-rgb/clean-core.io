@@ -8,7 +8,7 @@ import { clsx } from 'clsx';
 interface NavigationButtonsProps {
   backPath?: string;
   backLabel?: string;
-  proceedPath: string;
+  proceedPath?: string;
   proceedLabel: string;
   onProceed?: () => Promise<void> | void;
 }
@@ -23,13 +23,16 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
 
+  const isDisabled = !proceedPath;
+
   const handleProceed = async () => {
+    if (isDisabled) return;
     setIsPending(true);
     try {
       if (onProceed) {
         await onProceed();
       }
-      router.push(proceedPath);
+      router.push(proceedPath!);
     } catch (error) {
       console.error("Navigation error:", error);
       setIsPending(false);
@@ -51,9 +54,13 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
       
       <button
         onClick={handleProceed}
-        disabled={isPending}
+        disabled={isPending || isDisabled}
+        title={isDisabled ? proceedLabel : undefined}
         className={clsx(
-          "flex items-center gap-3 bg-[#00873a] text-white px-10 py-4 rounded-2xl hover:bg-[#006b2c] hover:shadow-xl hover:shadow-green-900/20 transition-all font-black disabled:opacity-70 disabled:cursor-not-allowed min-w-[220px] justify-center shadow-lg shadow-green-900/10",
+          "flex items-center gap-3 px-10 py-4 rounded-2xl font-black min-w-[220px] justify-center transition-all",
+          isDisabled
+            ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+            : "bg-[#00873a] text-white hover:bg-[#006b2c] hover:shadow-xl hover:shadow-green-900/20 shadow-lg shadow-green-900/10 disabled:opacity-70 disabled:cursor-not-allowed",
           isPending && "animate-pulse"
         )}
       >

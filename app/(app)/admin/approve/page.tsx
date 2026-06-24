@@ -16,6 +16,7 @@ function ApprovalPanelContent() {
   const uid = searchParams.get('uid');
   const actionParam = searchParams.get('action'); // 'approve' or 'reject'
   const autoParam = searchParams.get('auto') === 'true';
+  const tokenParam = searchParams.get('token') || '';
 
   const [status, setStatus] = useState<'loading' | 'unauthorized' | 'ready' | 'processing' | 'approved' | 'rejected' | 'error'>('loading');
   const [applicant, setApplicant] = useState<{ name: string; email: string; motivation: string; status: string } | null>(null);
@@ -117,44 +118,34 @@ function ApprovalPanelContent() {
     if (!uid || !applicant) return;
     setStatus('processing');
     try {
-      // 1. Update user profile to approved, set tier to pilot and limit to 5
-      const userRef = doc(db, 'users', uid);
-      await setDoc(userRef, {
-        status: 'approved',
-        tier: 'pilot',
-        transformationsLimit: 5,
-        transformationsUsed: 0
-      }, { merge: true });
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("No admin authenticated.");
+      const adminToken = await currentUser.getIdToken();
 
-      // 2. Update registration request
-      const regRef = doc(db, 'registration_requests', uid);
-      await setDoc(regRef, {
-        status: 'approved',
-      }, { merge: true });
+      const res = await fetch('/api/admin/approve-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify({
+          uid,
+          token: tokenParam,
+          action: 'approve'
+        })
+      });
 
-      // 3. Dispatch premium Welcome Email to the user in the background
-      try {
-        const token = await getAuth().currentUser?.getIdToken();
-        await fetch('/api/send-approval-email', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            email: applicant.email,
-            name: applicant.name,
-          }),
-        });
-      } catch (emailErr) {
-        console.error('Failed to trigger Welcome Email API:', emailErr);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to approve user.');
       }
 
       setStatus('approved');
     } catch (err: any) {
       console.error('Error approving user:', err);
       setStatus('error');
-      setErrorMessage(err.message || 'Failed to update Firestore documents.');
+      setErrorMessage(err.message || 'Failed to update user status.');
     }
   };
 
@@ -162,19 +153,34 @@ function ApprovalPanelContent() {
     if (!uid) return;
     setStatus('processing');
     try {
-      // Delete registration request
-      const regRef = doc(db, 'registration_requests', uid);
-      await deleteDoc(regRef);
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("No admin authenticated.");
+      const adminToken = await currentUser.getIdToken();
 
-      // Delete user profile (or mark as rejected, here we clean up database)
-      const userRef = doc(db, 'users', uid);
-      await deleteDoc(userRef);
+      const res = await fetch('/api/admin/approve-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify({
+          uid,
+          token: tokenParam,
+          action: 'reject'
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to reject user.');
+      }
 
       setStatus('rejected');
     } catch (err: any) {
       console.error('Error rejecting user:', err);
       setStatus('error');
-      setErrorMessage(err.message || 'Failed to delete Firestore documents.');
+      setErrorMessage(err.message || 'Failed to reject user.');
     }
   };
 

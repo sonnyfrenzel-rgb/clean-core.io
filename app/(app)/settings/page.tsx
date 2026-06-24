@@ -614,58 +614,32 @@ export default function SettingsPage() {
 
     setIsDeletingAccount(true);
     try {
-      const db = getDb();
       const auth = getAuth();
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("No authenticated user found.");
 
-      const uid = currentUser.uid;
+      const token = await currentUser.getIdToken(true);
 
-      // 1. Delete all projects belonging to the user
-      const projectsCollection = collection(db, 'projects');
-      const projectsQuery = query(projectsCollection, where('userId', '==', uid));
-      const projectsSnapshot = await getDocs(projectsQuery);
+      const res = await fetch('/api/account/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
-      const projectDeletePromises = projectsSnapshot.docs.map(docSnap => 
-        deleteDoc(doc(db, 'projects', docSnap.id))
-      );
-      await Promise.all(projectDeletePromises);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to erase account.');
+      }
 
-      // 2. Delete all abap examples uploaded by the user
-      const examplesCollection = collection(db, 'abap_examples');
-      const examplesQuery = query(examplesCollection, where('userId', '==', uid));
-      const examplesSnapshot = await getDocs(examplesQuery);
+      await auth.signOut();
 
-      const exampleDeletePromises = examplesSnapshot.docs.map(docSnap => 
-        deleteDoc(doc(db, 'abap_examples', docSnap.id))
-      );
-      await Promise.all(exampleDeletePromises);
-
-      // 3. Delete user document in registration_requests
-      await deleteDoc(doc(db, 'registration_requests', uid));
-
-      // 3.5 F-03: Delete encrypted S/4HANA credentials via API
-      try {
-        const token = await currentUser.getIdToken();
-        await fetch('/api/s4-credentials', {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } catch { /* best-effort */ }
-
-      // 4. Delete user document in users
-      await deleteDoc(doc(db, 'users', uid));
-
-      // 5. Delete Firebase Auth User account
-      await currentUser.delete();
-
-      // 6. Redirect to landing page
       alert("Your user account and all associated data have been successfully and permanently removed from our system in accordance with GDPR (Right to Erasure). Thank you for participating in the Community Pilot.");
       router.push('/');
     } catch (error: any) {
       console.error("GDPR Account Erasure failed:", error);
-
-      if (error.code === 'auth/requires-recent-login') {
+      if (error.message?.includes('recent login') || error.message?.includes('requires-recent-login')) {
         alert("Security restriction: Deleting your account requires a recent login. Please sign out, sign back in, and try deleting your account again.");
       } else {
         alert("GDPR erasure failed or is incomplete: " + (error.message || error));
