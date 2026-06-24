@@ -20,9 +20,24 @@ export const metadata: Metadata = {
 
 const releases = [
   {
-    version: 'v1.9.0',
+    version: 'v1.10.0',
     date: 'June 24, 2026',
     tag: 'Latest',
+    icon: Shield,
+    changes: [
+      'Added Compliance Audit Pack — exportable ZIP evidence package for architecture governance and compliance reviews',
+      'Audit pack includes: executive summary, SHA-256 input fingerprint, architecture decision record, findings CSV, model card, and known limitations',
+      'Input fingerprint (SHA-256 hash) computed silently during analysis — only hashes code content, no secrets or PII',
+      'Model card metadata (provider, model, engine version, BYOK flag) logged per project analysis for full traceability',
+      'Audit Pack section added to Delivery stage as collapsible accordion — collapsed by default, accessible to all tiers',
+      'Updated landing page Compliance feature card to reflect audit evidence export capability',
+      'All version references bumped to v1.10.0 across engine, components, and documentation',
+    ],
+  },
+  {
+    version: 'v1.9.0',
+    date: 'June 24, 2026',
+    tag: null,
     icon: Shield,
     changes: [
       'Introduced Modernization Assessment engine computing complexity and business-criticality scores from uploaded ABAP code',

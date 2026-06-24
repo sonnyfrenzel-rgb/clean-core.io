@@ -19,6 +19,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore, recommendArchitecture } from '@/lib/abap/code-assessment';
+import { APP_VERSION } from '@/lib/version';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 
@@ -44,6 +45,7 @@ export default function AnalyzePage() {
   const [modalSelection, setModalSelection] = useState<'public' | 'private' | null>(null);
   const isFromExample = searchParams.get('fromExample') === 'true' || !!project?.fromExample || project?.isExample;
   const [acceptedTerms, setAcceptedTerms] = useState(searchParams.get('fromExample') === 'true');
+  const [uploadedFileName, setUploadedFileName] = useState('manual-input.abap');
 
   const markdownComponents: Components = {
     h1: ({ node, ...props }) => (
@@ -177,6 +179,7 @@ export default function AnalyzePage() {
           return;
       }
       setLegacyCode(content);
+      setUploadedFileName(file.name);
     };
     reader.readAsText(file);
   };
@@ -299,6 +302,22 @@ ${codeToAnalyze}`;
       try {
         const isAlreadyCharged = project?.charged || false;
 
+        // v1.10.0: Compute input fingerprint (SHA-256) for audit trail
+        // Only hashes the code content — no secrets, no PII
+        const encoder = new TextEncoder();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(codeToAnalyze));
+        const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+        // Detect primary object type from code content
+        const detectObjectType = (code: string): string => {
+          if (/^\s*CLASS\s+/im.test(code)) return 'Class';
+          if (/^\s*INTERFACE\s+/im.test(code)) return 'Interface';
+          if (/^\s*FUNCTION\s+/im.test(code)) return 'Function Module';
+          if (/^\s*REPORT\s+/im.test(code)) return 'Report';
+          if (/^\s*FORM\s+/im.test(code)) return 'Form Routine';
+          return 'ABAP Source';
+        };
+
         await updateDoc(doc(getDb(), 'projects', projectId as string), {
           legacyCode: codeToAnalyze,
           s4Deployment: targetDeployment,
@@ -316,6 +335,22 @@ ${codeToAnalyze}`;
           originalRecommendation: archRecommendation.architecture,
           recommendationConfidence: archRecommendation.confidence,
           recommendationJustification: archRecommendation.justification,
+          // v1.10.0 Audit Metadata — hashes and model identifiers only
+          'auditMetadata.inputFingerprint': {
+            sha256: hashHex,
+            fileName: uploadedFileName,
+            lineCount: codeToAnalyze.split('\n').length,
+            byteSize: encoder.encode(codeToAnalyze).byteLength,
+            uploadedAt: new Date().toISOString(),
+            objectType: detectObjectType(codeToAnalyze),
+          },
+          'auditMetadata.modelCard': {
+            provider: 'google-gemini',
+            model: 'gemini-3-flash-preview',
+            engineVersion: APP_VERSION,
+            byokUsed: !!profile?.geminiApiKey,
+            analysisTimestamp: new Date().toISOString(),
+          },
         });
 
         if (!isAlreadyCharged) {

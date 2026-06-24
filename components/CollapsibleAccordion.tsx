@@ -5,8 +5,8 @@ import { ChevronDown, Info } from 'lucide-react';
 import clsx from 'clsx';
 
 interface CollapsibleAccordionProps {
-  /** Icon rendered before the title */
-  icon: React.ReactNode;
+  /** Icon rendered before the title (optional) */
+  icon?: React.ReactNode;
   /** Main title label */
   title: string;
   /** Short summary badge (e.g., "12 objects detected · 3 high-risk tables") */
@@ -72,9 +72,11 @@ export default function CollapsibleAccordion({
         aria-expanded={isOpen}
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="shrink-0 text-slate-500 group-hover:text-slate-700 transition-colors">
-            {icon}
-          </div>
+          {icon && (
+            <div className="shrink-0 text-slate-500 group-hover:text-slate-700 transition-colors">
+              {icon}
+            </div>
+          )}
           <span className="font-bold text-slate-800 text-sm truncate">{title}</span>
 
           {badge && (

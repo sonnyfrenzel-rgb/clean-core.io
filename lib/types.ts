@@ -93,6 +93,35 @@ export interface Project {
   originalRecommendation?: 'rap' | 'cap' | 'integration' | 'event' | 'retire';
   recommendationConfidence?: number;
   recommendationJustification?: string;
+
+  // v1.10.0: Compliance Audit Pack
+  auditMetadata?: AuditMetadata;
+}
+
+/**
+ * Audit metadata stored per project. Contains only hashes, timestamps,
+ * and model identifiers — never secrets, credentials, or PII.
+ */
+export interface AuditMetadata {
+  inputFingerprint?: {
+    /** SHA-256 hash of the uploaded source code (hex string) */
+    sha256: string;
+    fileName: string;
+    lineCount: number;
+    byteSize: number;
+    uploadedAt: string;
+    objectType: string;
+  };
+  modelCard?: {
+    provider: string;
+    model: string;
+    engineVersion: string;
+    byokUsed: boolean;
+    analysisTimestamp?: string;
+    designTimestamp?: string;
+    transformationTimestamp?: string;
+  };
+  auditPackExportedAt?: string;
 }
 
 /** Single ABAP artifact extracted from uploaded code */
