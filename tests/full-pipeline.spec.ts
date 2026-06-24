@@ -238,6 +238,12 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await expect(page.locator('text=/project-root')).toBeVisible();
     console.log('Stage 2 Complete: Visual architecture catalog verified.');
 
+    // Confirm target architecture sign-off
+    console.log('Confirming target architecture sign-off...');
+    await page.click('button:has-text("Confirm & Lock Architecture")');
+    await page.waitForSelector('text=Target Architecture Set', { timeout: 15000 });
+    console.log('Architecture confirmed.');
+
     // --- STAGE 3: TRANSFORMATION ---
     console.log('Navigating to Stage 3: Transformation...');
     await page.click('button:has-text("Continue to Transformation")');
