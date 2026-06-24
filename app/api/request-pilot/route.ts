@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHmac } from 'crypto';
+import { createApprovalToken } from '@/lib/approval-token';
 import { APP_VERSION } from '@/lib/version';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
 import { APP_BASE_URL } from '@/lib/constants';
@@ -13,24 +13,23 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    let { uid, email, name, motivation } = body;
-
-    if (!uid || !email || !name) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const uid = decodedToken.uid;
+    const rawEmail = decodedToken.email || '';
+    if (!rawEmail) {
+      return NextResponse.json({ error: 'Authenticated account has no email.' }, { status: 400 });
     }
+    // Values inserted into the HTML email must be HTML-escaped.
+    const email = escapeHtml(rawEmail);
+    const name = escapeHtml(body.name || (decodedToken as any).name || rawEmail);
+    const motivation = escapeHtml(body.motivation || '');
 
-    uid = escapeHtml(uid);
-    email = escapeHtml(email);
-    name = escapeHtml(name);
-    motivation = escapeHtml(motivation);
+    // Action-bound, expiring tokens; fail-closed (no fallback secret).
+    const approveToken = createApprovalToken(uid, 'pilot', 'approve');
+    const rejectToken = createApprovalToken(uid, 'pilot', 'reject');
 
-    // Generate secure cryptographic validation token
-    const secret = process.env.PILOT_APPROVAL_SECRET || 'fallback-secret-key-12345';
-    const token = createHmac('sha256', secret).update(uid).digest('hex');
-
-    // Use canonical base URL to prevent Host-Header injection (CWE-644)
-    const approveUrl = `${APP_BASE_URL}/admin/approve?uid=${uid}&token=${token}&auto=true`;
-    const rejectUrl = `${APP_BASE_URL}/admin/approve?uid=${uid}&token=${token}&action=reject`;
+    // URLs built with URLSearchParams (correct encoding — not HTML-escaping).
+    const approveUrl = `${APP_BASE_URL}/admin/approve?${new URLSearchParams({ uid, token: approveToken, auto: 'true' })}`;
+    const rejectUrl = `${APP_BASE_URL}/admin/approve?${new URLSearchParams({ uid, token: rejectToken, action: 'reject' })}`;
 
     const emailSubject = `🚀 Clean-Core.io Pilot Request: ${name}`;
     const emailHtml = `

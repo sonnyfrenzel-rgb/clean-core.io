@@ -1,5 +1,5 @@
-import { createHmac } from 'crypto';
 import { FIRESTORE_DB_ID, isHardcodedAdmin } from '@/lib/constants';
+import { verifyApprovalToken } from '@/lib/approval-token';
 
 let adminAppModule: any = null;
 let adminAuthModule: any = null;
@@ -15,13 +15,18 @@ async function ensureInitialized() {
 
   // Connect Admin SDK to Auth emulator in test/dev mode
   const isEmulatorMode = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true';
-  if (isEmulatorMode && !process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-    process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+  if (isEmulatorMode) {
+    if (!process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+      process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+    }
+    if (!process.env.FIRESTORE_EMULATOR_HOST) {
+      process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
+    }
   }
 
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-  if (serviceAccountJson) {
+  if (serviceAccountJson && !isEmulatorMode) {
     try {
       const serviceAccount = JSON.parse(serviceAccountJson);
       adminAppModule.initializeApp({ credential: adminAppModule.cert(serviceAccount) });
@@ -198,7 +203,10 @@ export async function setAdminClaim(uid: string, isAdmin: boolean): Promise<void
  * - User documents with `s4TenantAccessAllowed === true` are allowed.
  * Throws a QuotaError if access is denied.
  */
-export async function assertS4TenantAccess(uid: string): Promise<void> {
+export async function assertS4TenantAccess(
+  uid: string,
+  opts?: { isAdminClaim?: boolean },
+): Promise<void> {
   const { db } = await getAdminDb();
   const ref = db.collection('users').doc(uid);
   const snap = await ref.get();
@@ -209,7 +217,7 @@ export async function assertS4TenantAccess(uid: string): Promise<void> {
   
   const data = snap.data();
   const email = data.email || '';
-  const isAdminUser = (data.isAdmin === true) || isHardcodedAdmin(email);
+  const isAdminUser = opts?.isAdminClaim === true || (data.isAdmin === true) || isHardcodedAdmin(email);
   const s4TenantAccessAllowed = data.s4TenantAccessAllowed === true;
 
   if (!isAdminUser && !s4TenantAccessAllowed) {
@@ -268,12 +276,8 @@ export async function approveUserWithToken(
 ): Promise<void> {
   await ensureInitialized();
   
-  // 1. Verify that the token is correct cryptographically
-  const secret = process.env.PILOT_APPROVAL_SECRET || 'fallback-secret-key-12345';
-  const expectedToken = createHmac('sha256', secret).update(uid).digest('hex');
-  if (token !== expectedToken) {
-    throw new Error('Invalid verification token.');
-  }
+  // Audit P2: action/type-bound, expiring, timing-safe, fail-closed.
+  verifyApprovalToken(token, { uid, requestType: 'pilot', action });
 
   const { db } = await getAdminDb();
 
@@ -308,12 +312,8 @@ export async function approveTenantWithToken(
 ): Promise<void> {
   await ensureInitialized();
 
-  // 1. Verify that the token is correct cryptographically
-  const secret = process.env.PILOT_APPROVAL_SECRET || 'fallback-secret-key-12345';
-  const expectedToken = createHmac('sha256', secret).update(uid).digest('hex');
-  if (token !== expectedToken) {
-    throw new Error('Invalid verification token.');
-  }
+  // Audit P2: action/type-bound, expiring, timing-safe, fail-closed.
+  verifyApprovalToken(token, { uid, requestType: 'tenant', action });
 
   const { db } = await getAdminDb();
 

@@ -7,9 +7,7 @@ import { GLOSSARY_ITEMS } from '@/lib/glossary';
 import { buildKnowledgeBase } from '@/lib/chatbot-knowledge';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import clsx from 'clsx';
-import nextDynamic from 'next/dynamic';
-
-const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
+import { renderMarkdownSafe } from '@/lib/sanitize-html';
 
 interface Message {
   sender: 'user' | 'bot';
@@ -111,6 +109,37 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .prose-chat table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 12px 0;
+          font-size: 10px;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+        .prose-chat th {
+          background-color: #f1f5f9;
+          color: #334155;
+          font-weight: 800;
+          text-align: left;
+          padding: 6px 10px;
+          border-bottom: 2px solid #e2e8f0;
+          text-transform: uppercase;
+          font-size: 9px;
+        }
+        .prose-chat td {
+          padding: 6px 10px;
+          color: #475569;
+          border-top: 1px solid #f1f5f9;
+          background-color: #ffffff;
+        }
+        .prose-chat tr:nth-child(even) td {
+          background-color: #f8fafc;
+        }
+      `}} />
+
       {/* Floating Glowing Assistant Toggle Button */}
       <button
         type="button"
@@ -178,29 +207,10 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                     )}
                   >
                     {isBot ? (
-                      <ReactMarkdown
-                        components={{
-                          table: ({ children }) => (
-                            <div className="overflow-x-auto my-3 rounded-xl border border-slate-250 shadow-inner bg-slate-50/50">
-                              <table className="min-w-full divide-y divide-slate-200 text-[10px] m-0">
-                                {children}
-                              </table>
-                            </div>
-                          ),
-                          th: ({ children }) => (
-                            <th className="px-3 py-2 bg-slate-100 text-slate-700 font-extrabold text-left uppercase tracking-wider text-[9px] border-b border-slate-200">
-                              {children}
-                            </th>
-                          ),
-                          td: ({ children }) => (
-                            <td className="px-3 py-2 text-slate-600 font-semibold border-t border-slate-150 bg-white">
-                              {children}
-                            </td>
-                          )
-                        }}
-                      >
-                        {msg.text}
-                      </ReactMarkdown>
+                      <div 
+                        className="prose-chat"
+                        dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(msg.text) }} 
+                      />
                     ) : msg.text}
                   </div>
                   <span className="text-[8px] font-bold text-slate-400 font-mono tracking-wider px-1">

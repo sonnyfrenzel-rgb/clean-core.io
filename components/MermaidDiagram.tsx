@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import { sanitizeSvg } from '@/lib/sanitize-html';
 
 export default function MermaidDiagram({ chart }: { chart: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -14,17 +15,17 @@ export default function MermaidDiagram({ chart }: { chart: string }) {
         mermaid.initialize({
           startOnLoad: false,
           theme: 'neutral',
-          securityLevel: 'loose',
+          securityLevel: 'strict',
           flowchart: {
             useMaxWidth: true,
-            htmlLabels: true,
+            htmlLabels: false,
             curve: 'basis',
           },
         });
         const id = 'm' + Math.random().toString(36).substr(2, 9);
         const { svg } = await mermaid.render(id, chart);
         if (ref.current) {
-          ref.current.innerHTML = svg;
+          ref.current.innerHTML = sanitizeSvg(svg);
         }
       } catch (err) {
         console.error("Mermaid render error:", err);

@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Shield, Cpu, GitBranch, Terminal, CheckCircle2, Activity, Lock, Zap, FileCheck } from 'lucide-react';
 import { clsx } from 'clsx';
+import { sanitizeSvg } from '@/lib/sanitize-html';
 
 const Mermaid = ({ chart }: { chart: string }) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -18,10 +19,10 @@ const Mermaid = ({ chart }: { chart: string }) => {
         mermaid.initialize({
           startOnLoad: true,
           theme: 'neutral',
-          securityLevel: 'loose',
+          securityLevel: 'strict',
           flowchart: {
             useMaxWidth: true,
-            htmlLabels: true,
+            htmlLabels: false,
             curve: 'basis',
           },
         });
@@ -29,7 +30,7 @@ const Mermaid = ({ chart }: { chart: string }) => {
         const id = 'm' + Math.random().toString(36).substr(2, 9);
         const { svg } = await mermaid.render(id, chart);
         if (ref.current) {
-          ref.current.innerHTML = svg;
+          ref.current.innerHTML = sanitizeSvg(svg);
         }
       } catch (err) {
         console.error("Mermaid render error:", err);

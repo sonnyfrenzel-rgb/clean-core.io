@@ -246,7 +246,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await assertS4TenantAccess(decodedToken.uid);
+    await assertS4TenantAccess(decodedToken.uid, { isAdminClaim: (decodedToken as any).admin === true });
 
     const body = await req.json();
 

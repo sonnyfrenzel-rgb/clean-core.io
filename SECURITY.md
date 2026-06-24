@@ -1,6 +1,6 @@
 # Security Architecture — Clean-Core.io Platform
 
-> **Version:** 3.3 · **Date:** 2026-06-24 · **Classification:** Internal
+> **Version:** 3.4 · **Date:** 2026-06-25 · **Classification:** Internal
 
 ---
 
@@ -46,6 +46,12 @@ This document describes the security architecture and hardening measures impleme
 - All collections enforce `isAuthenticated()` for reads.
 - Privileged fields (`isAdmin`, `tier`, `transformationsUsed`, `transformationsLimit`, `s4TenantAccessAllowed`) are frozen for non-admin users.
 - `s4_credentials/{uid}`: `allow read, write: if false;` — exclusively accessed via Admin SDK.
+
+### 3.4 Onboarding Link Cryptography (F-09)
+- Action-bound approval/rejection links (sent via Resend) are protected by a cryptographically signed HMAC token.
+- Tokens are bound to the specific `uid`, `requestType` (e.g. pilot, tenant), and `action` (e.g. approve, reject), and carry a 7-day expiration time (`exp`).
+- Signature verification uses Node's `crypto.createHmac('sha256')` with `timingSafeEqual` comparison to eliminate timing side-channel attacks.
+- Fail-closed behavior is enforced: if `PILOT_APPROVAL_SECRET` is missing or less than 16 characters, token creation/verification fails immediately.
 
 ---
 
@@ -188,7 +194,19 @@ Server (API Route)
 
 ---
 
-## 10. Security Checklist for New Features
+## 10. XSS & Content Sanitization
+- **Safe Markdown Rendering**: AI chatbot tables, answers, and project process documentation are parsed using `marked` and sanitized client-side using `DOMPurify` (via the wrapper `renderMarkdownSafe`). This protects against HTML injection and cross-site scripting (XSS) from unverified model outputs.
+- **Mermaid Sandbox Rules**: Interactively rendered BPMN 2.0 flowcharts configure Mermaid to run with `securityLevel: 'strict'` and `htmlLabels: false`, preventing arbitrary JavaScript execution in inline SVG elements.
+
+---
+
+## 11. Evidentiary Board Presentation & Rollup Safety
+- **Deterministic Presentation Builder**: Replaced dynamic Gemini-based slide generation with a local, deterministic deck builder (`lib/board-deck.ts`) to prevent prompt injection and LLM hallucinations.
+- **Worst-Case Rollup Safety**: The overall project recommendation is evaluated using a strict rollup function. If a project contains any `not-supported` findings, Slide 1 recommendation is automatically downgraded to "Core Redesign Required" (Hold / Rejection) to prevent false positives.
+
+---
+
+## 12. Security Checklist for New Features
 
 - [ ] All API routes use `verifyRequestAuth()` or `verifyAdminRequest()`
 - [ ] No user-supplied URLs are fetched without `await isUrlSafe()` validation

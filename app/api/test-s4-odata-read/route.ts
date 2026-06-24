@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ status: 'failed', message: 'Authentication required.' }, { status: 401 });
     }
 
-    await assertS4TenantAccess(decodedToken.uid);
+    await assertS4TenantAccess(decodedToken.uid, { isAdminClaim: (decodedToken as any).admin === true });
 
     const body = await req.json();
     const { entitySet } = body;
@@ -134,7 +134,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Build OData read URL: GET EntitySet?$top=1&$format=json
-    const servicePath = body.servicePath || '/sap/opu/odata/sap/API_BUSINESS_PARTNER';
+    const servicePath = resolvedBody.servicePath || '/sap/opu/odata/sap/API_BUSINESS_PARTNER';
+    // Audit P2: constrain path building — no arbitrary GET paths on the allowed host.
+    if (
+      !/^\/sap\/opu\/odata\/[A-Za-z0-9_/-]+$/.test(servicePath) ||
+      servicePath.includes('..') ||
+      /%2e|%2f|%5c/i.test(servicePath)
+    ) {
+      return NextResponse.json({ status: 'failed', message: 'Invalid OData service path.', entitySet }, { status: 400 });
+    }
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(entitySet || '')) {
+      return NextResponse.json({ status: 'failed', message: 'Invalid entity set name.', entitySet }, { status: 400 });
+    }
     const baseUrl = targetUrl.replace(/\/$/, '');
     const readUrl = `${baseUrl}${servicePath}/${entitySet}?$top=1&$format=json&$inlinecount=allpages`;
 
