@@ -1293,10 +1293,26 @@ export default function TestingSandboxPage() {
           
           <div className="p-4 md:p-6 flex-grow overflow-auto">
             {testCases.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center text-[#0b1c30]/40 px-4">
-                <ListChecks className="w-10 h-10 md:w-12 md:h-12 text-[#0b1c30]/20 mb-4" />
-                <p className="font-medium">No test cases generated yet.</p>
-                <p className="text-xs md:text-sm mt-2 opacity-70">Click &apos;Generate Suite&apos; to create a professional test suite based on your code.</p>
+              <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8 bg-[#f8f9ff]/50 rounded-2xl border-2 border-dashed border-slate-200 max-w-md mx-auto my-auto min-h-[300px]">
+                <div className="bg-[#006b2c]/10 p-4 rounded-2xl text-[#006b2c] mb-4 animate-pulse">
+                  <ListChecks className="w-10 h-10 md:w-12 md:h-12" />
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900">Generate Your Test Suite</h3>
+                <p className="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed">
+                  To begin sandboxed verification, you must first generate the test cases based on your modernization blueprint.
+                </p>
+                
+                <button
+                  onClick={handleGenerate}
+                  disabled={isGenerating}
+                  className="mt-6 flex items-center justify-center gap-2 bg-[#00873a] hover:bg-[#006b2c] text-white px-6 py-3 rounded-xl shadow-lg shadow-green-900/10 hover:shadow-xl hover:shadow-green-900/20 transition-all font-black text-xs uppercase tracking-wider animate-bounce"
+                >
+                  {isGenerating ? (
+                    <><RefreshCw className="w-4 h-4 animate-spin" /> Generating Suite...</>
+                  ) : (
+                    <>Generate Test Suite</>
+                  )}
+                </button>
               </div>
             ) : (
               <div className="space-y-3">

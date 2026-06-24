@@ -23,6 +23,7 @@ export interface UserProfile {
   theme?: 'light' | 'dark' | 'system';
   backupEnabled?: boolean;
   landingPageDefault?: 'dashboard' | 'analytics' | 'transformation';
+  desktopChatbotEnabled?: boolean;
   mfaEnabled?: boolean;
   mfaSecret?: string;
   mfaBackupCodes?: string[];
