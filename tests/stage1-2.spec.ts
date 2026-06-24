@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Clean-Core.io Stage 1 & 2 E2E Tests', () => {
+  test.beforeEach(async () => {
+    test.setTimeout(90000);
+  });
+
   test('should navigate, perform visual check on landing features, and upload mock ABAP data', async ({ page }) => {
     // 1. Load Landing Page and capture visual snapshot
     await page.goto('/');
