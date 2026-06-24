@@ -172,7 +172,7 @@ export default function ArchitectSignOff({
           </div>
 
           {/* Locked Body */}
-          <div className="px-4 sm:px-8 py-4 sm:py-5 space-y-3 text-sm">
+          <div className="px-4 sm:px-8 py-4 sm:py-5 space-y-4 text-sm">
             <div className="flex flex-wrap items-center gap-2 text-slate-500">
               <Lock size={12} />
               <span>
@@ -180,9 +180,37 @@ export default function ArchitectSignOff({
                 {lockedAt && <>on {new Date(lockedAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</>}
               </span>
             </div>
+
+            {lockedOption && (
+              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-2.5 animate-in fade-in duration-200">
+                <div className="flex items-center gap-2">
+                  <Info size={14} className="text-slate-500 shrink-0" />
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{lockedOption.label}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs text-slate-650">
+                  <div>
+                    <span className="font-extrabold text-slate-800 block mb-0.5 uppercase tracking-wider text-[10px]">Focus</span>
+                    {lockedOption.focus}
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-emerald-700 block mb-0.5 uppercase tracking-wider text-[10px]">Best For</span>
+                    {lockedOption.bestFor}
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-red-650 block mb-0.5 uppercase tracking-wider text-[10px]">Not Suitable For</span>
+                    {lockedOption.notFor}
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-blue-600 block mb-0.5 uppercase tracking-wider text-[10px]">Motto</span>
+                    <em>&ldquo;{lockedOption.motto}&rdquo;</em>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {isOverride && currentJustification && (
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">
-                <span className="font-bold">Override Justification:</span> {currentJustification}
+                <span className="font-bold">Architect's Reasoning:</span> {currentJustification}
               </div>
             )}
           </div>
@@ -196,10 +224,10 @@ export default function ArchitectSignOff({
                 <div className="bg-amber-100 p-2 rounded-xl">
                   <AlertTriangle className="w-5 h-5 text-amber-600" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900">Change Architecture Decision?</h3>
+                <h3 className="text-lg font-black text-slate-900">Adjust target architecture?</h3>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed">
-                Changing the architecture resets any transformation output from Stage 3. You will need to re-confirm your target before proceeding.
+                Refining your path is part of the design process. Choosing a new architecture will reset the transformation output, allowing you to generate code tailored to your new choice.
               </p>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <button
@@ -273,10 +301,37 @@ export default function ArchitectSignOff({
           />
           <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors leading-relaxed">
             {confirmed
-              ? 'I confirm the recommended target architecture'
-              : 'I want to select a different target architecture'}
+              ? 'I want to proceed with the recommended architecture (Recommended)'
+              : 'I would like to explore other architectural options'}
           </span>
         </label>
+
+        {confirmed && recommendedOption && (
+          <div className="bg-emerald-50/40 border border-emerald-100/60 rounded-xl p-4 space-y-2.5 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2">
+              <Info size={14} className="text-emerald-600 shrink-0" />
+              <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">{recommendedOption.label}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs text-slate-650">
+              <div>
+                <span className="font-extrabold text-slate-800 block mb-0.5 uppercase tracking-wider text-[10px]">Focus</span>
+                {recommendedOption.focus}
+              </div>
+              <div>
+                <span className="font-extrabold text-emerald-750 block mb-0.5 uppercase tracking-wider text-[10px]">Best For</span>
+                {recommendedOption.bestFor}
+              </div>
+              <div>
+                <span className="font-extrabold text-red-650 block mb-0.5 uppercase tracking-wider text-[10px]">Not Suitable For</span>
+                {recommendedOption.notFor}
+              </div>
+              <div>
+                <span className="font-extrabold text-blue-650 block mb-0.5 uppercase tracking-wider text-[10px]">Motto</span>
+                <em>&ldquo;{recommendedOption.motto}&rdquo;</em>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Override Mode */}
         {!confirmed && (
@@ -333,18 +388,18 @@ export default function ArchitectSignOff({
             {/* Justification Textarea */}
             <div>
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">
-                Justification for Deviation
+                Reason for selecting another option
               </label>
               <textarea
                 value={overrideJustification}
                 onChange={(e) => setOverrideJustification(e.target.value)}
-                placeholder="Briefly explain why you chose a different path (saved for audit trail)..."
+                placeholder="Briefly tell us why a different approach fits this specific project better..."
                 rows={3}
                 className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all resize-none"
               />
               <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
                 <Info size={10} />
-                This justification is stored as part of the project audit trail for your team's reference.
+                Sharing your reasoning helps keep your team aligned and documents this design decision.
               </p>
             </div>
           </div>

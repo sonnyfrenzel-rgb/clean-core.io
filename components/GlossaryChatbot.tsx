@@ -119,7 +119,8 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
           "fixed bottom-6 right-6 z-[80] p-4 rounded-full shadow-2xl transition-all duration-350 hover:scale-105 active:scale-95 group border flex items-center gap-2",
           isOpen 
             ? "bg-slate-900 text-white border-slate-800" 
-            : "bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500/30"
+            : "bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500/30",
+          (!isOpen && profile?.desktopChatbotEnabled === false) && "md:hidden"
         )}
         title="Open Modernization AI Chatbot"
       >

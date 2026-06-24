@@ -71,6 +71,7 @@ export default function SettingsPage() {
   const [themePreference, setThemePreference] = useState<'light' | 'dark' | 'system'>('light');
   const [backupEnabled, setBackupEnabled] = useState<boolean>(true);
   const [defaultView, setDefaultView] = useState<'dashboard' | 'analytics' | 'transformation'>('dashboard');
+  const [desktopChatbotEnabled, setDesktopChatbotEnabled] = useState<boolean>(true);
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [prefsSaved, setPrefsSaved] = useState(false);
 
@@ -266,6 +267,7 @@ export default function SettingsPage() {
       setThemePreference(profile.theme || 'light');
       setBackupEnabled(profile.backupEnabled !== false); // default true
       setDefaultView(profile.landingPageDefault || 'dashboard');
+      setDesktopChatbotEnabled(profile.desktopChatbotEnabled !== false); // default true
 
       // F-03: Load S4 metadata (non-secret) — password is write-only
       if (profile.s4Meta?.configured) {
@@ -366,7 +368,8 @@ export default function SettingsPage() {
       await updateProfile({
         theme: themePreference,
         backupEnabled,
-        landingPageDefault: defaultView
+        landingPageDefault: defaultView,
+        desktopChatbotEnabled
       });
       setPrefsSaved(true);
       setTimeout(() => setPrefsSaved(false), 3000);
@@ -857,6 +860,28 @@ export default function SettingsPage() {
                       <span
                         className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
                           backupEnabled ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
+                    Desktop Chatbot (Ask AI) Button
+                  </label>
+                  <div className="flex items-center justify-between h-[46px] bg-gray-50 border border-gray-200 px-4 rounded-xl">
+                    <span className="text-xs font-bold text-gray-700">Show floating "Ask AI" assistant button on desktop screens</span>
+                    <button
+                      type="button"
+                      onClick={() => setDesktopChatbotEnabled(!desktopChatbotEnabled)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none ${
+                        desktopChatbotEnabled ? 'bg-green-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                          desktopChatbotEnabled ? 'translate-x-5' : 'translate-x-0'
                         }`}
                       />
                     </button>
