@@ -1,29 +1,50 @@
 import { NextResponse } from 'next/server';
+import { randomBytes } from 'crypto';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
 
+/**
+ * GET /api/auth/jira/url
+ *
+ * Builds the Atlassian authorization URL. F-14 hardening:
+ *  - CSRF state is a cryptographically random value (never a fixed literal),
+ *    stored in an httpOnly cookie and verified in the callback.
+ *  - The initiating user's uid is stored in an httpOnly cookie so the callback
+ *    can associate the resulting tokens with the right account.
+ *  - client_secret is NEVER sent here; the token exchange happens server-side
+ *    in the callback.
+ */
 export async function GET(request: Request) {
-  // Auth gate: only logged-in users can initiate Jira OAuth
   const decodedToken = await verifyRequestAuth(request);
   if (!decodedToken) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
   }
 
-  // Construct the OAuth provider's authorization URL
   const { origin } = new URL(request.url);
   const redirectUri = `${origin}/api/auth/jira/callback`;
 
-  // We are using a mock/prepare structure for Jira OAuth as requested.
+  const state = randomBytes(32).toString('hex');
+
   const params = new URLSearchParams({
     audience: 'api.atlassian.com',
-    client_id: process.env.JIRA_CLIENT_ID || 'mock_client_id',
-    scope: 'read:jira-work write:jira-work read:jira-user',
+    client_id: process.env.JIRA_CLIENT_ID || '',
+    scope: 'read:jira-work write:jira-work read:jira-user offline_access',
     redirect_uri: redirectUri,
-    state: 'random_state_string',
+    state,
     response_type: 'code',
-    prompt: 'consent'
+    prompt: 'consent',
   });
 
   const authUrl = `https://auth.atlassian.com/authorize?${params.toString()}`;
 
-  return NextResponse.json({ url: authUrl });
+  const res = NextResponse.json({ url: authUrl });
+  const cookieOpts = {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: 600, // 10 minutes to complete the flow
+  };
+  res.cookies.set('jira_oauth_state', state, cookieOpts);
+  res.cookies.set('jira_oauth_uid', decodedToken.uid, cookieOpts);
+  return res;
 }

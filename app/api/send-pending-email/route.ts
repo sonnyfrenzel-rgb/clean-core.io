@@ -10,10 +10,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, name } = body;
+    const { name } = body;
 
-    if (!email || !name) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    // F-13: send only to the AUTHENTICATED applicant's own verified email — never a
+    // body-supplied address (prevents the route being used as an arbitrary-recipient mailer).
+    const recipient = decodedToken.email;
+    if (!recipient || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+      return NextResponse.json({ error: 'Authenticated account has no valid email.' }, { status: 400 });
+    }
+    if (!name) {
+      return NextResponse.json({ error: 'Missing required field: name' }, { status: 400 });
     }
 
     const emailSubject = `⏳ Clean-Core.io: We are reviewing your Pilot Application!`;
@@ -131,7 +137,7 @@ export async function POST(request: NextRequest) {
         <!-- Anti-Spam / Legal Footer -->
         <div style="text-align: center; margin-top: 32px; padding: 0 20px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
           <p style="margin: 0 0 8px 0;">
-            This transactional email was sent to ${email} confirming your pilot program application on Clean-Core.io.
+            This transactional email was sent to ${recipient} confirming your pilot program application on Clean-Core.io.
           </p>
           <p style="margin: 0 0 12px 0; font-weight: 600;">
             Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
@@ -146,7 +152,7 @@ export async function POST(request: NextRequest) {
 
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
-      console.log(`[Email] Sending Pilot Pending notification email to applicant ${email}...`);
+      console.log(`[Email] Sending Pilot Pending notification email to applicant ${recipient}...`);
       const resendRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -155,7 +161,7 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           from: 'Clean-Core.io Team <team@clean-core.io>',
-          to: email,
+          to: recipient,
           subject: emailSubject,
           html: emailHtml,
         }),
@@ -170,7 +176,7 @@ export async function POST(request: NextRequest) {
     } else {
       console.log('\n======================================================');
       console.log('📬   [PENDING REGISTRATION EMAIL SENT TO USER]   📬');
-      console.log(`To: ${name} (${email})`);
+      console.log(`To: ${name} (${recipient})`);
       console.log(`Subject: ${emailSubject}`);
       console.log('======================================================\n');
     }
