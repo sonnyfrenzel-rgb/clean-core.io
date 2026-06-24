@@ -20,9 +20,25 @@ export const metadata: Metadata = {
 
 const releases = [
   {
+    version: 'v1.11.0',
+    date: 'June 25, 2026',
+    tag: 'Latest',
+    icon: Rocket,
+    changes: [
+      'Redesigned Board Presentation (Stage 7) to be deterministic and evidence-based, derived from project metrics and findings',
+      'Added metrics, matrix (support specification table), and risk register slide types to PresentationViewer',
+      'Enforced Worst-Case Rollup: overall recommendation automatically downgrades based on findings severity',
+      'Unified Spec specifications from SUPPORT_MATRIX with deep links to how-it-works documentation',
+      'Hardened onboarding email links with action-bound cryptographic HMAC signatures and timing-safe verify routes',
+      'Secured Markdown and chat responses from HTML Injection / XSS using DOMPurify and marked sanitizers',
+      'Implemented strict sandbox securityLevel for Mermaid BPMN 2.0 flowcharts',
+      'Added Word document (.doc) executive summary exports in client-generated Compliance Audit Pack ZIP',
+    ],
+  },
+  {
     version: 'v1.10.0',
     date: 'June 24, 2026',
-    tag: 'Latest',
+    tag: null,
     icon: Shield,
     changes: [
       'Added Compliance Audit Pack — exportable ZIP evidence package for architecture governance and compliance reviews',

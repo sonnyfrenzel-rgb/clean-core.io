@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, FileText, Maximize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, Maximize2, ExternalLink } from 'lucide-react';
 
 export interface SlideData {
   title: string;
-  type: 'title' | 'bullets' | 'split' | 'quote';
+  type: 'title' | 'bullets' | 'split' | 'quote' | 'metrics' | 'matrix' | 'risk';
   subtitle?: string;
   content?: string[];
   leftContent?: string;
@@ -11,6 +11,15 @@ export interface SlideData {
   quote?: string;
   author?: string;
   speakerNotes?: string;
+  metrics?: { label: string; value: string | number; sub?: string }[];
+  rows?: {
+    col1: string;
+    col2: string;
+    col3?: string;
+    col4?: string;
+    status?: 'success' | 'warning' | 'danger' | 'info' | string;
+    url?: string;
+  }[];
 }
 
 export interface PresentationData {
@@ -93,6 +102,145 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
               &quot;{slide.quote}&quot;
             </blockquote>
             {slide.author && <cite className="text-base sm:text-lg md:text-xl text-gray-500 font-medium not-italic">— {slide.author}</cite>}
+          </div>
+        )}
+
+        {slide.type === 'metrics' && (
+          <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 mt-8 sm:mt-0">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-2 border-b-4 border-green-500 pb-2 sm:pb-3 inline-block self-start">
+              {slide.title}
+            </h2>
+            {slide.subtitle && (
+              <p className="text-xs sm:text-sm text-gray-500 font-bold mb-4 uppercase tracking-wider">{slide.subtitle}</p>
+            )}
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-4">
+              {slide.metrics?.map((metric, idx) => (
+                <div key={idx} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center text-center">
+                  <span className="text-2xl sm:text-4xl font-black text-green-600 tracking-tight mb-1">
+                    {metric.value}
+                  </span>
+                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    {metric.label}
+                  </span>
+                  {metric.sub && (
+                    <span className="text-[10px] text-gray-400 mt-0.5 font-medium leading-tight">
+                      {metric.sub}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {slide.content && slide.content.length > 0 && (
+              <ul className="space-y-1.5 sm:space-y-2 mt-2 flex-grow">
+                {slide.content.map((point, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-gray-700">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />
+                    <span className="leading-relaxed">{point}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {slide.type === 'matrix' && (
+          <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 mt-8 sm:mt-0">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-2 border-b-4 border-blue-500 pb-2 sm:pb-3 inline-block self-start">
+              {slide.title}
+            </h2>
+            {slide.subtitle && (
+              <p className="text-xs sm:text-sm text-gray-500 font-bold mb-4 uppercase tracking-wider">{slide.subtitle}</p>
+            )}
+            
+            <div className="overflow-x-auto rounded-2xl border border-gray-150 shadow-sm bg-white flex-grow">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-150 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    <th className="p-3 sm:p-4">Construct</th>
+                    <th className="p-3 sm:p-4 text-center">Occurrences</th>
+                    <th className="p-3 sm:p-4">Recommendation</th>
+                    <th className="p-3 sm:p-4">Level</th>
+                    <th className="p-3 sm:p-4 text-right">Spec</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs">
+                  {slide.rows?.map((row, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="p-3 sm:p-4 font-bold text-gray-900">{row.col1}</td>
+                      <td className="p-3 sm:p-4 text-center font-bold text-gray-500">{row.col2}</td>
+                      <td className="p-3 sm:p-4 text-gray-600 font-medium leading-relaxed">{row.col3}</td>
+                      <td className="p-3 sm:p-4">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold leading-none ${
+                          row.status === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
+                          row.status === 'warning' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                          row.status === 'danger' ? 'bg-red-50 text-red-700 border border-red-200' :
+                          'bg-gray-100 text-gray-700 border border-gray-200'
+                        }`}>
+                          {row.col4}
+                        </span>
+                      </td>
+                      <td className="p-3 sm:p-4 text-right">
+                        {row.url ? (
+                          <a
+                            href={row.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-0.5 text-[9px] font-black text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-widest"
+                          >
+                            Doc <ExternalLink size={10} />
+                          </a>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {slide.type === 'risk' && (
+          <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 mt-8 sm:mt-0">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-2 border-b-4 border-red-500 pb-2 sm:pb-3 inline-block self-start">
+              {slide.title}
+            </h2>
+            {slide.subtitle && (
+              <p className="text-xs sm:text-sm text-gray-500 font-bold mb-4 uppercase tracking-wider">{slide.subtitle}</p>
+            )}
+            
+            <div className="overflow-x-auto rounded-2xl border border-gray-150 shadow-sm bg-white flex-grow">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-150 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    <th className="p-3 sm:p-4">Identified Risk</th>
+                    <th className="p-3 sm:p-4">Owner</th>
+                    <th className="p-3 sm:p-4">Mitigation Strategy</th>
+                    <th className="p-3 sm:p-4">Quality Gate / Condition</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs">
+                  {slide.rows?.map((row, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="p-3 sm:p-4 font-bold text-gray-900 flex items-center gap-2">
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                          row.status === 'success' ? 'bg-green-500' :
+                          row.status === 'warning' ? 'bg-amber-500' :
+                          'bg-red-500'
+                        }`} />
+                        {row.col1}
+                      </td>
+                      <td className="p-3 sm:p-4 font-bold text-gray-500">{row.col2}</td>
+                      <td className="p-3 sm:p-4 text-gray-600 font-medium leading-relaxed">{row.col3}</td>
+                      <td className="p-3 sm:p-4 font-bold text-gray-800">{row.col4}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

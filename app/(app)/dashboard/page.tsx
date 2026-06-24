@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 import nextDynamic from 'next/dynamic';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
-import { marked } from 'marked';
+import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
@@ -1110,7 +1110,7 @@ export default function Dashboard() {
                     prose-th:bg-slate-50 prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:text-xs prose-th:font-bold prose-th:text-slate-500 prose-th:uppercase prose-th:tracking-wider prose-th:border-b prose-th:border-slate-200
                     prose-td:px-4 prose-td:py-3 prose-td:text-xs md:text-sm prose-td:text-slate-700 prose-td:border-b prose-td:border-slate-100
                   "
-                  dangerouslySetInnerHTML={{ __html: marked(viewContent.content) as string }}
+                  dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(viewContent.content) }}
                 />
               ) : viewContent.type === 'json' ? (
                 <pre className="bg-gray-900 text-green-400 p-4 rounded-lg text-sm font-mono overflow-x-auto">

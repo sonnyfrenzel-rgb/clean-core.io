@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
 import { useParams, useRouter } from 'next/navigation';
@@ -11,6 +11,9 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
 import { PresentationViewer, PresentationData } from '@/components/PresentationViewer';
+import { buildBoardDeck } from '@/lib/board-deck';
+import { detectFindings } from '@/lib/abap/findings-detector';
+import type { ClassModel } from '@/lib/abap/class-model';
 import { Download, CheckCircle2, FileCode2, ArrowLeft, Home, RefreshCw, X, Rocket, ShieldCheck, Zap, Layout, Eye, Presentation, AlertCircle, Lock, Briefcase, BookOpen } from 'lucide-react';
 import NavigationButtons from '@/components/NavigationButtons';
 import JSZip from 'jszip';
@@ -67,100 +70,13 @@ export default function DeliveryPage() {
   const isAbapCloud = (project?.extensibilityRoute || '').includes('ABAP Cloud');
   const [loading, setLoading] = useState(true);
   const [documentation, setDocumentation] = useState('');
-  const [presentation, setPresentation] = useState('');
-  const [isGeneratingPresentation, setIsGeneratingPresentation] = useState(false);
-  const [presError, setPresError] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const router = useRouter();
   const projectRef = useRef(project);
 
-
   useEffect(() => {
     projectRef.current = project;
   }, [project]);
-
-  const generatePresentation = useCallback(async (projectData?: Project) => {
-    if (profile?.tier === 'pilot') {
-      setShowUpgradeModal(true);
-      return null;
-    }
-
-    const targetProject = projectData || projectRef.current;
-    if (!targetProject) return null;
-    
-    const docTextToUse = targetProject.documentation;
-    if (!docTextToUse) {
-      setPresError('Process documentation is required before generating the presentation.');
-      return null;
-    }
-
-    setIsGeneratingPresentation(true);
-    setPresError('');
-    try {
-      // Simplify data sent to the AI for a faster response.
-      const testCount = targetProject.testCases ? targetProject.testCases.length : 0;
-      let processSum = "N/A";
-      try { processSum = JSON.parse(docTextToUse)?.l1_domain?.name || 'N/A'; } catch(e){}
-
-      const prompt = `Act as an Elite Enterprise Solutions Architect.
-Generate an Executive Transformation Summary presentation strictly in JSON format (5 slides max). The phrasing must be highly precise, developer-aligned yet business-comprehensible, completely devoid of corporate fluff, and focused directly on execution, concrete facts, and actionable next steps.
-
-Project Context:
-- Project Name: ${targetProject.name}
-- Business Domain: ${processSum}
-- Quality & Verification: ${testCount} Automated Test Cases generated and successfully validated.
-- Transformed Core standard achieved with Side-by-Side Node.js microservice architecture.
-
-CRITICAL PRESENTATION REQUIREMENTS:
-1. The presentation must have exactly 5 slides structured logically:
-   - Slide 1 (Type: 'title'): Executive Summary title and subtitle.
-   - Slide 2 (Type: 'bullets'): "What We Did (Core Transformation)". Explains extracting custom legacy transactions into side-by-side Node.js cloud-native extensions utilizing SAP public OData/REST APIs.
-   - Slide 3 (Type: 'split'): "Core Technical Facts". Left side outlines Sandbox & Test Metrics (${testCount} automated sandbox test cases, mapped L1-L4 process blueprints). Right side outlines Platform Service Bindings (XSUAA authentication, Destination connectivity, Event Mesh, and isolated PostgreSQL schemas).
-   - Slide 4 (Type: 'quote'): "Strategic Business Value". A brief, highly impactful executive quote summarizing how this transformed extension enables zero-maintenance legacy core upgrades and rapid, modern cloud expansions.
-   - Slide 5 (Type: 'bullets'): "Actionable Next Steps". Precise concrete steps (Deploy modular ZIP to BTP/GCP, configure Principal Propagation tunnels, connect Event Mesh pub/sub listeners, expand standard API mappings).
-2. The language must be extremely clear and direct, addressing IT experts and business stakeholders alike. Use clear, factual, professional English.
-3. Return a JSON object matching the PresentationData format. DO NOT output any markdown tags, wrappers, or text outside the JSON.
-
-JSON Structure:
-{
-  "title": "Executive Summary: Transformed Modernization",
-  "date": "${new Date().toLocaleDateString()}",
-  "author": "Clean-Core Transformation Engine",
-  "slides": [
-    {
-      "title": "Slide Title",
-      "type": "title|bullets|split|quote",
-      "subtitle": "Optional Subtitle",
-      "content": ["Bullet point 1 detailing facts", "Bullet point 2 detailing facts"],
-      "leftContent": "Details on tests and blueprints",
-      "rightContent": "Details on service integrations",
-      "quote": "Quote text explaining strategic value",
-      "author": "Speaker or role",
-      "speakerNotes": "Brief, technical talking points for the presenter"
-    }
-  ]
-}`;
-      
-      console.log('Generating executive presentation for project:', targetProject.name);
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, profile?.geminiApiKey);
-      
-      const presText = responseText || '';
-      setPresentation(presText);
-      
-      const db = getDb();
-      await updateDoc(doc(db, 'projects', projectId as string), {
-        presentation: presText,
-        status: 'completed'
-      });
-      return presText;
-    } catch (err: unknown) {
-      console.error('Presentation generation error:', err);
-      setPresError(err instanceof Error ? err.message : String(err) || 'Failed to generate executive presentation.');
-      return null;
-    } finally {
-      setIsGeneratingPresentation(false);
-    }
-  }, [projectId, profile?.tier, profile?.geminiApiKey]);
 
   useEffect(() => {
     let isMounted = true;
@@ -177,18 +93,11 @@ JSON Structure:
             setDocumentation(projectData.documentation);
           }
           
-          if (projectData.presentation) {
-            setPresentation(projectData.presentation);
-            if (projectData.status !== 'completed') {
-              const db = getDb();
-              await updateDoc(doc(db, 'projects', projectId as string), {
-                status: 'completed'
-              });
-            }
-          } else if (projectData.documentation) {
-            if (profile?.tier !== 'pilot') {
-              await generatePresentation(projectData);
-            }
+          if (projectData.status !== 'completed') {
+            const db = getDb();
+            await updateDoc(doc(db, 'projects', projectId as string), {
+              status: 'completed'
+            });
           }
         }
       } catch (err) {
@@ -199,7 +108,38 @@ JSON Structure:
     };
     fetchProject();
     return () => { isMounted = false; };
-  }, [projectId, generatePresentation, profile?.tier]);
+  }, [projectId]);
+
+  const findings = useMemo(() => {
+    if (!project || !project.legacyCode) return [];
+    const abapSources = [{ file: 'main.abap', content: project.legacyCode }];
+    const mockModel: ClassModel = {
+      root: 'MAIN',
+      nodes: {
+        'MAIN': {
+          key: 'MAIN', kind: 'class', source: { file: 'main.abap', line: 1 },
+          isStandard: false, isAbstract: false, isFinal: false,
+          interfaces: [], friends: [], methods: [], attributes: [], events: [], aliases: []
+        }
+      },
+      edges: [],
+      linearization: ['MAIN'],
+      resolved: true,
+      missing: [],
+      findings: []
+    };
+    try {
+      return detectFindings(mockModel, abapSources);
+    } catch (e) {
+      console.error('Error detecting findings:', e);
+      return [];
+    }
+  }, [project?.legacyCode]);
+
+  const deck = useMemo(() => {
+    if (!project) return null;
+    return buildBoardDeck({ project, findings });
+  }, [project, findings]);
 
   const downloadZip = async () => {
     if (profile?.tier === 'pilot') {
@@ -509,21 +449,7 @@ jobs:
                 >
                   <Lock size={18} /> Basic Locked
                 </button>
-              ) : isGeneratingPresentation ? (
-                <div className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-400 px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-sm">
-                  <RefreshCw className="w-5 h-5 animate-spin" /> Generating...
-                </div>
-              ) : presError ? (
-                <div className="w-full flex flex-col items-center gap-2">
-                  <p className="text-[10px] text-red-500 font-bold uppercase mb-2 tracking-widest">{presError}</p>
-                  <button 
-                    onClick={() => generatePresentation(undefined)}
-                    className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-200 px-8 py-3 rounded-2xl hover:bg-red-100 transition-all font-bold text-xs uppercase tracking-[0.2em]"
-                  >
-                    <RefreshCw size={16} /> Retry AI
-                  </button>
-                </div>
-              ) : presentation ? (
+              ) : deck ? (
                 <button 
                   onClick={() => {
                     document.getElementById('presentation-preview')?.scrollIntoView({ behavior: 'smooth' });
@@ -533,13 +459,9 @@ jobs:
                   <Eye size={20} /> View Slides
                 </button>
               ) : (
-                <button 
-                  onClick={() => generatePresentation(undefined)}
-                  disabled={!documentation}
-                  className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-2xl hover:bg-purple-700 transition-all font-bold shadow-lg shadow-purple-600/10 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-xs"
-                >
-                  <RefreshCw size={20} /> Generate summary
-                </button>
+                <div className="w-full text-center py-4 text-gray-400 font-bold text-xs uppercase tracking-widest">
+                  No slides available
+                </div>
               )}
               {profile?.tier === 'pilot' && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
@@ -784,35 +706,16 @@ jobs:
       )}
       
       {/* Presentation Preview */}
-      {presentation && (
+      {deck && (
         <div id="presentation-preview" className="mb-20 animate-in slide-in-from-bottom-8 duration-1000 px-2 md:px-0">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
               <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight uppercase">Board Presentation</h2>
               <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Interactive Strategic Map</p>
             </div>
-            <button 
-              onClick={() => generatePresentation(undefined)}
-              disabled={isGeneratingPresentation}
-              className="flex items-center justify-center gap-2 text-[10px] font-bold text-white bg-slate-900 hover:bg-slate-800 px-6 py-3 rounded-xl transition-all uppercase tracking-widest shadow-lg"
-            >
-              <RefreshCw className={`w-3 h-3 ${isGeneratingPresentation ? 'animate-spin' : ''}`} /> Regenerate Slides
-            </button>
           </div>
           <div className="bg-gray-50 rounded-[2rem] md:rounded-[3rem] p-4 md:p-12 border border-gray-100 shadow-inner flex justify-center">
-            {(() => {
-              try {
-                const parsedData = JSON.parse(presentation);
-                return <PresentationViewer data={parsedData} />;
-              } catch (e) {
-                return (
-                  <div className="p-8 text-center bg-red-50 rounded-2xl border border-red-100 w-full max-w-5xl">
-                    <p className="text-red-600 font-bold mb-2">Presentation Preview Unavailable</p>
-                    <p className="text-red-500 text-sm">The generated presentation data is malformed. Please try regenerating it.</p>
-                  </div>
-                );
-              }
-            })()}
+            <PresentationViewer data={deck} />
           </div>
         </div>
       )}

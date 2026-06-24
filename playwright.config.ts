@@ -29,6 +29,7 @@ export default defineConfig({
       NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true',
       FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
       FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
+      PILOT_APPROVAL_SECRET: process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345',
     },
   },
 });

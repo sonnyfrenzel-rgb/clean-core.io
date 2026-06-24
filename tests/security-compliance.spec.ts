@@ -2,7 +2,11 @@ import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, connectAuthEmulator } from 'firebase/auth';
 import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, connectFirestoreEmulator } from 'firebase/firestore';
-import { createHmac } from 'crypto';
+
+// Set test secret first so that imports initializing getSecret don't throw
+process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
+
+import { createApprovalToken } from '../lib/approval-token';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase SDK in Node context for seeding and validation
@@ -148,9 +152,8 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     const errBody = await invalidTokenRes.json();
     expect(errBody.error).toContain('Invalid verification token');
 
-    // Generate valid HMAC token
-    const secret = process.env.PILOT_APPROVAL_SECRET || 'fallback-secret-key-12345';
-    const validToken = createHmac('sha256', secret).update(normalUserUid).digest('hex');
+    // Generate valid approval token (Audit P2: action-bound, expiring)
+    const validToken = createApprovalToken(normalUserUid, 'pilot', 'approve');
 
     // 2. Approve with valid token
     const validTokenRes = await request.post('/api/admin/approve-user', {

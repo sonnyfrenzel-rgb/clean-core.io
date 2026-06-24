@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import fssync from 'fs';
 import os from 'os';
 import path from 'path';
-import { verifyRequestAuth } from '@/lib/firebase-admin';
+import { verifyRequestAuth, assertS4TenantAccess } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 
 /**
@@ -282,6 +282,16 @@ process.exitCode = failed ? 1 : 0;
     // ── 4) Resolve S/4 credentials server-side (F-03), never from the body ──
     let s4Env: Record<string, string> = {};
     if (s4Environment === 'live') {
+      // Audit P1: re-verify tenant access here too. A user whose S/4 access was
+      // revoked must not be able to use stored live credentials via the test runner.
+      try {
+        await assertS4TenantAccess(decodedToken.uid);
+      } catch (e: any) {
+        return NextResponse.json(
+          { output: '', error: e?.message || 'S/4HANA live access is not permitted.', exitCode: 1 },
+          { status: 403 },
+        );
+      }
       const c = await loadS4ConfigForUser(decodedToken.uid);
       if (c) {
         s4Env = {
