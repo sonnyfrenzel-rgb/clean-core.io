@@ -12,12 +12,13 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Admin check uses ONLY the custom claim token. The Firestore doc
+    // fallback was removed because (a) admin status is set via the
+    // set-admin-claim API which writes the custom claim, and (b) the
+    // Firestore get() caused evaluation errors in the emulator when the
+    // user document didn't exist yet (e.g., during first-time create).
     function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.get('admin', false) == true ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true)
-      );
+      return isAuthenticated() && request.auth.token.get('admin', false) == true;
     }
 
     function getUserData() {
@@ -88,14 +89,10 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
-      // Use token-only admin check for create to avoid circular get() on the
-      // document being created (the Firestore doc doesn't exist yet, so
-      // isAdmin()'s get() call causes an evaluation error in the emulator).
-      allow create: if isAuthenticated() &&
+      allow create: if isAuthenticated() && (userId == request.auth.uid || isAdmin()) &&
                     (
-                      request.auth.token.get('admin', false) == true ||
+                      isAdmin() || 
                       (
-                        userId == request.auth.uid &&
                         request.resource.data.keys().hasOnly(userClientCreateKeys()) &&
                         request.resource.data.get('orgId', null) == null &&
                         request.resource.data.get('email', '') == request.auth.token.email &&
