@@ -91,22 +91,33 @@ jobs:
           path: public/
 
       # Determine environment specific variables based on push branch
+      # Security: github.ref_name is passed via env to prevent shell injection
       - name: Set Environment Context
         id: env-ctx
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "service=clean-core" >> $GITHUB_OUTPUT
-            echo "db_id=ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e" >> $GITHUB_OUTPUT
-            echo "app_url=https://clean-core.io" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref_name }}" = "release" ]; then
-            echo "service=clean-core-test" >> $GITHUB_OUTPUT
-            echo "db_id=ai-studio-39b46c45-cda0-481e-9847-19682e979043" >> $GITHUB_OUTPUT
-            echo "app_url=https://test.clean-core.io" >> $GITHUB_OUTPUT
-          else
-            echo "service=clean-core-dev" >> $GITHUB_OUTPUT
-            echo "db_id=ai-studio-030e1ee1-7e1d-4208-beda-28735bc1a360" >> $GITHUB_OUTPUT
-            echo "app_url=https://dev.clean-core.io" >> $GITHUB_OUTPUT
-          fi
+          case "$REF_NAME" in
+            main)
+              echo "service=clean-core" >> "$GITHUB_OUTPUT"
+              echo "db_id=ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e" >> "$GITHUB_OUTPUT"
+              echo "app_url=https://clean-core.io" >> "$GITHUB_OUTPUT"
+              ;;
+            release)
+              echo "service=clean-core-test" >> "$GITHUB_OUTPUT"
+              echo "db_id=ai-studio-39b46c45-cda0-481e-9847-19682e979043" >> "$GITHUB_OUTPUT"
+              echo "app_url=https://test.clean-core.io" >> "$GITHUB_OUTPUT"
+              ;;
+            dev)
+              echo "service=clean-core-dev" >> "$GITHUB_OUTPUT"
+              echo "db_id=ai-studio-030e1ee1-7e1d-4208-beda-28735bc1a360" >> "$GITHUB_OUTPUT"
+              echo "app_url=https://dev.clean-core.io" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unsupported branch: $REF_NAME" >&2
+              exit 1
+              ;;
+          esac
 
       # Authenticate securely with Google Cloud using OIDC Workload Identity Federation
       - name: Authenticate with Google Cloud

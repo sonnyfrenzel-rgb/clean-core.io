@@ -20,8 +20,13 @@ function safeEqual(a: string, b: string): boolean {
 
 function readCookie(request: Request, name: string): string | undefined {
   const raw = request.headers.get('cookie') || '';
-  const m = raw.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
-  return m?.[1];
+  for (const part of raw.split(';')) {
+    const [key, ...valueParts] = part.trim().split('=');
+    if (key === name) {
+      return valueParts.join('=');
+    }
+  }
+  return undefined;
 }
 
 function resultPage(ok: boolean, appOrigin: string): string {
