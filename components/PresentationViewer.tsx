@@ -29,6 +29,37 @@ export interface PresentationData {
   slides: SlideData[];
 }
 
+const renderFormattedText = (text: string | undefined) => {
+  if (!text) return null;
+  
+  const lines = text.split('\n');
+  
+  return lines.map((line, lineIdx) => {
+    // Split by markdown bold (**text**), italic (*text*), and code (`text`) syntax
+    const parts = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+    
+    const renderedLine = parts.map((part, partIdx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={partIdx} className="font-extrabold">{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith('*') && part.endsWith('*')) {
+        return <em key={partIdx} className="italic">{part.slice(1, -1)}</em>;
+      }
+      if (part.startsWith('`') && part.endsWith('`')) {
+        return <code key={partIdx} className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-red-600 dark:text-red-400 font-mono text-[0.85em] border border-gray-200 dark:border-gray-700">{part.slice(1, -1)}</code>;
+      }
+      return part;
+    });
+
+    return (
+      <React.Fragment key={lineIdx}>
+        {lineIdx > 0 && <br />}
+        {renderedLine}
+      </React.Fragment>
+    );
+  });
+};
+
 export const PresentationViewer = ({ data }: { data: PresentationData }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showNotes, setShowNotes] = useState(false);
@@ -74,7 +105,7 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
               {slide.content?.map((point, idx) => (
                 <li key={idx} className="flex items-start gap-3 sm:gap-4 text-base sm:text-lg md:text-xl text-gray-700">
                   <span className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500 mt-2 sm:mt-2.5 flex-shrink-0" />
-                  <span className="leading-relaxed">{point}</span>
+                  <span className="leading-relaxed">{renderFormattedText(point)}</span>
                 </li>
               ))}
             </ul>
@@ -86,10 +117,10 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-6 sm:mb-10 border-b-4 border-blue-500 pb-2 sm:pb-4 inline-block self-start">{slide.title}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 md:gap-12 flex-grow items-center">
               <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100 h-full flex items-center text-base sm:text-lg md:text-xl text-gray-700 leading-relaxed">
-                {slide.leftContent}
+                <div className="w-full">{renderFormattedText(slide.leftContent)}</div>
               </div>
               <div className="bg-gray-900 text-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-xl h-full flex items-center text-base sm:text-lg md:text-xl leading-relaxed">
-                {slide.rightContent}
+                <div className="w-full">{renderFormattedText(slide.rightContent)}</div>
               </div>
             </div>
           </div>
@@ -137,7 +168,7 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
                 {slide.content.map((point, idx) => (
                   <li key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-gray-700">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />
-                    <span className="leading-relaxed">{point}</span>
+                    <span className="leading-relaxed">{renderFormattedText(point)}</span>
                   </li>
                 ))}
               </ul>
@@ -168,9 +199,9 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
                 <tbody className="divide-y divide-gray-100 text-xs">
                   {slide.rows?.map((row, idx) => (
                     <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-3 sm:p-4 font-bold text-gray-900">{row.col1}</td>
+                      <td className="p-3 sm:p-4 font-bold text-gray-900">{renderFormattedText(row.col1)}</td>
                       <td className="p-3 sm:p-4 text-center font-bold text-gray-500">{row.col2}</td>
-                      <td className="p-3 sm:p-4 text-gray-600 font-medium leading-relaxed">{row.col3}</td>
+                      <td className="p-3 sm:p-4 text-gray-600 font-medium leading-relaxed">{renderFormattedText(row.col3)}</td>
                       <td className="p-3 sm:p-4">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold leading-none ${
                           row.status === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
@@ -231,11 +262,11 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
                           row.status === 'warning' ? 'bg-amber-500' :
                           'bg-red-500'
                         }`} />
-                        {row.col1}
+                        {renderFormattedText(row.col1)}
                       </td>
                       <td className="p-3 sm:p-4 font-bold text-gray-500">{row.col2}</td>
-                      <td className="p-3 sm:p-4 text-gray-600 font-medium leading-relaxed">{row.col3}</td>
-                      <td className="p-3 sm:p-4 font-bold text-gray-800">{row.col4}</td>
+                      <td className="p-3 sm:p-4 text-gray-600 font-medium leading-relaxed">{renderFormattedText(row.col3)}</td>
+                      <td className="p-3 sm:p-4 font-bold text-gray-800">{renderFormattedText(row.col4)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -278,7 +309,7 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
           <div className="mt-2 sm:mt-4 p-4 sm:p-6 bg-gray-800 rounded-2xl border border-gray-700 animate-in slide-in-from-top-2">
             <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Speaker Notes</h4>
             <p className="text-gray-300 leading-relaxed text-sm">
-              {slide.speakerNotes || "No speaker notes for this slide."}
+              {renderFormattedText(slide.speakerNotes || "No speaker notes for this slide.")}
             </p>
           </div>
         )}
