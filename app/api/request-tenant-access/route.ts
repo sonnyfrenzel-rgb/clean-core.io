@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createApprovalToken } from '@/lib/approval-token';
 import { APP_VERSION } from '@/lib/version';
-import { verifyRequestAuth } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
 import { APP_BASE_URL } from '@/lib/constants';
 import { escapeHtml } from '@/lib/utils';
 
@@ -280,6 +280,13 @@ export async function POST(request: NextRequest) {
       console.log(`System Version: ${APP_VERSION}`);
       console.log('======================================================\n');
     }
+
+    // Set requested flag on user document server-side (F-03 / Audit security fix)
+    const { db, FieldValue } = await getAdminDb();
+    await db.collection('users').doc(uid).set({
+      s4TenantAccessRequested: true,
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
 
     return NextResponse.json({ success: true, approveUrl });
   } catch (error) {

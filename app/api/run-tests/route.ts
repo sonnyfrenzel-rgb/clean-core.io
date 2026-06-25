@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import fssync from 'fs';
 import os from 'os';
 import path from 'path';
-import { verifyRequestAuth, assertS4TenantAccess } from '@/lib/firebase-admin';
+import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 
 /**
@@ -130,6 +130,15 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { output: '', error: 'Authentication required.', exitCode: 1 },
       { status: 401 },
+    );
+  }
+
+  try {
+    await assertMfaSatisfied(req, decodedToken);
+  } catch (mfaErr: any) {
+    return NextResponse.json(
+      { output: '', error: mfaErr.message || 'MFA verification required.', exitCode: 1 },
+      { status: 403 }
     );
   }
 

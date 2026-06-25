@@ -79,25 +79,26 @@ export default function AdminConsole() {
     setActionType('approving');
     const targetReq = requests.find(r => r.uid === uid);
     try {
-      // 1. Update user profile to approved, set tier to pilot and limit to 5
-      const userRef = doc(db, 'users', uid);
-      await setDoc(userRef, {
-        status: 'approved',
-        tier: 'pilot',
-        transformationsLimit: 5,
-        transformationsUsed: 0
-      }, { merge: true });
+      const token = await getAuth().currentUser?.getIdToken();
+      
+      // 1. Call secure API endpoint for approval
+      const res = await fetch('/api/admin/console-action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ uid, action: 'approve-user' }),
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to approve user.');
+      }
 
-      // 2. Update registration request
-      const regRef = doc(db, 'registration_requests', uid);
-      await setDoc(regRef, {
-        status: 'approved',
-      }, { merge: true });
-
-      // 3. Dispatch premium Welcome Email to the user in the background
+      // 2. Dispatch premium Welcome Email to the user in the background
       if (targetReq) {
         try {
-          const token = await getAuth().currentUser?.getIdToken();
           await fetch('/api/send-approval-email', {
             method: 'POST',
             headers: {
@@ -113,9 +114,9 @@ export default function AdminConsole() {
           console.error('Failed to trigger Welcome Email API:', emailErr);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error approving user:', err);
-      alert('Failed to approve user.');
+      alert(err.message || 'Failed to approve user.');
     } finally {
       setActionUid(null);
       setActionType(null);
@@ -126,21 +127,23 @@ export default function AdminConsole() {
     setActionUid(uid);
     setActionType('revoking');
     try {
-      // 1. Update user profile back to pending and limit to 0
-      const userRef = doc(db, 'users', uid);
-      await setDoc(userRef, {
-        status: 'pending',
-        transformationsLimit: 0
-      }, { merge: true });
-
-      // 2. Update registration request status back to pending
-      const regRef = doc(db, 'registration_requests', uid);
-      await setDoc(regRef, {
-        status: 'pending',
-      }, { merge: true });
-    } catch (err) {
+      const token = await getAuth().currentUser?.getIdToken();
+      const res = await fetch('/api/admin/console-action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ uid, action: 'revoke-user' }),
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to revoke user.');
+      }
+    } catch (err: any) {
       console.error('Error revoking user:', err);
-      alert('Failed to revoke access.');
+      alert(err.message || 'Failed to revoke access.');
     } finally {
       setActionUid(null);
       setActionType(null);
@@ -153,14 +156,23 @@ export default function AdminConsole() {
     setActionUid(uid);
     setActionType('deleting');
     try {
-      // 1. Delete registration request
-      await deleteDoc(doc(db, 'registration_requests', uid));
-
-      // 2. Delete user document
-      await deleteDoc(doc(db, 'users', uid));
-    } catch (err) {
+      const token = await getAuth().currentUser?.getIdToken();
+      const res = await fetch('/api/admin/console-action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ uid, action: 'delete-user' }),
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to delete user.');
+      }
+    } catch (err: any) {
       console.error('Error deleting user:', err);
-      alert('Failed to delete user.');
+      alert(err.message || 'Failed to delete user.');
     } finally {
       setActionUid(null);
       setActionType(null);
@@ -172,26 +184,27 @@ export default function AdminConsole() {
     setActionType(currentAllowed ? 'revoking' : 'approving');
     const targetReq = requests.find(r => r.uid === uid);
     try {
-      // 1. Update user profile s4 flags
-      const userRef = doc(db, 'users', uid);
-      await setDoc(userRef, {
-        s4TenantAccessAllowed: !currentAllowed,
-        s4TenantAccessRequested: false
-      }, { merge: true });
-
-      // 2. Update tenant_access_requests status if exists
-      const regRef = doc(db, 'tenant_access_requests', uid);
-      const regSnap = await getDoc(regRef);
-      if (regSnap.exists()) {
-        await setDoc(regRef, {
-          status: !currentAllowed ? 'approved' : 'pending'
-        }, { merge: true });
+      const token = await getAuth().currentUser?.getIdToken();
+      const res = await fetch('/api/admin/console-action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          uid,
+          action: currentAllowed ? 'revoke-s4' : 'grant-s4'
+        }),
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to toggle S/4 access.');
       }
 
       // 3. Dispatch premium welcome / deactivation email
       if (targetReq) {
         try {
-          const token = await getAuth().currentUser?.getIdToken();
           await fetch(currentAllowed ? '/api/send-tenant-revoke-email' : '/api/send-tenant-approval-email', {
             method: 'POST',
             headers: {

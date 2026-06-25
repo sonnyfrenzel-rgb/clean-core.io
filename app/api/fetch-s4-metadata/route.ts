@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUrlSafe, safeFetch, SsrfError } from '@/lib/url-validation';
-import { verifyRequestAuth, assertS4TenantAccess, QuotaError } from '@/lib/firebase-admin';
+import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 
 /**
@@ -212,7 +212,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await assertS4TenantAccess(decodedToken.uid, { isAdminClaim: (decodedToken as any).admin === true });
+    try {
+      await assertMfaSatisfied(req, decodedToken);
+    } catch (mfaErr: any) {
+      return NextResponse.json(
+        { status: 'failed', message: mfaErr.message || 'MFA verification required.' },
+        { status: 403 }
+      );
+    }
+
+    try {
+      await assertS4TenantAccess(decodedToken.uid, { isAdminClaim: (decodedToken as any).admin === true });
+    } catch (e: any) {
+      return NextResponse.json(
+        { status: 'failed', message: e.message || 'Access denied.' },
+        { status: 403 }
+      );
+    }
 
     const body = await req.json();
 

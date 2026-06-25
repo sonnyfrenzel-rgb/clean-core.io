@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
-import { verifyMfa } from '@/lib/mfa';
+import { verifyMfa, encryptMfaSecret } from '@/lib/mfa';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +40,22 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ success: true });
+    // 4. Generate and set the short-lived mfa_session cookie for API gating
+    const sessionToken = encryptMfaSecret(JSON.stringify({
+      uid,
+      mfaVerifiedAt: Date.now(),
+    }));
+
+    const response = NextResponse.json({ success: true });
+    response.cookies.set('mfa_session', sessionToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 12 * 60 * 60, // 12 hours in seconds
+    });
+
+    return response;
   } catch (error) {
     console.error('[mfa/verify] Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

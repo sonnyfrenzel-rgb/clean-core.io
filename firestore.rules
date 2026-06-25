@@ -21,8 +21,6 @@ service cloud.firestore {
          request.auth.token.get('email', '') == "info@clean-core.io");
     }
 
-
-
     function getUserData() {
       return exists(/databases/$(database)/documents/users/$(request.auth.uid))
         ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
@@ -32,6 +30,36 @@ service cloud.firestore {
           'transformationsLimit': 1,
           'orgId': null
         };
+    }
+
+    function getUserOrgId() {
+      return 'orgId' in getUserData() ? getUserData().orgId : null;
+    }
+
+    function userClientCreateKeys() {
+      return [
+        'firstName', 'lastName', 'email',
+        'tier', 'status',
+        'transformationsUsed', 'transformationsLimit',
+        'maxTeamMembers', 'orgId',
+        'identityProvider', 'createdAt', 'authMethod', 'isAdmin',
+        's4TenantAccessAllowed', 's4TenantAccessRequested', 'mfaEnabled'
+      ];
+    }
+
+    function userClientUpdateKeys() {
+      return [
+        'firstName', 'lastName', 'theme', 'landingPageDefault',
+        'backupEnabled', 'desktopChatbotEnabled', 'geminiApiKey', 'updatedAt'
+      ];
+    }
+
+    function projectAllowedKeys() {
+      return [
+        'name', 'status', 'userId', 'createdAt', 'orgId',
+        'legacyCode', 'analysis', 'solutionDesign', 'generatedCode',
+        'documentation', 'presentation', 'testCases', 'testSuite', 'exports'
+      ];
     }
 
     // Validate User entity
@@ -51,6 +79,9 @@ service cloud.firestore {
                     (
                       isAdmin() || 
                       (
+                        request.resource.data.keys().hasOnly(userClientCreateKeys()) &&
+                        request.resource.data.get('orgId', null) == null &&
+                        request.resource.data.get('email', '') == request.auth.token.email &&
                         request.resource.data.get('tier', 'pilot') == 'pilot' &&
                         request.resource.data.get('status', 'pending') == 'pending' &&
                         request.resource.data.get('isAdmin', false) == false &&
@@ -59,22 +90,18 @@ service cloud.firestore {
                         request.resource.data.get('maxTeamMembers', 1) == 1 &&
                         request.resource.data.get('s4TenantAccessAllowed', false) == false &&
                         request.resource.data.get('s4TenantAccessRequested', false) == false &&
-                        request.resource.data.get('mfaEnabled', false) == false &&
-                        !('mfaSecret' in request.resource.data) &&
-                        !('mfaBackupCodes' in request.resource.data)
+                        request.resource.data.get('mfaEnabled', false) == false
                       )
                     );
-      allow update: if isAuthenticated() && (userId == request.auth.uid || isAdmin()) &&
-                    // Freeze privileged fields: only admin can change these
-                    (request.resource.data.get('isAdmin', false) == resource.data.get('isAdmin', false) || isAdmin()) &&
-                    (request.resource.data.get('status', '') == resource.data.get('status', '') || isAdmin()) &&
-                    (request.resource.data.get('transformationsUsed', 0) == resource.data.get('transformationsUsed', 0) || isAdmin()) &&
-                    (request.resource.data.get('tier', 'basic') == resource.data.get('tier', 'basic') || isAdmin()) &&
-                    (request.resource.data.get('transformationsLimit', 1) == resource.data.get('transformationsLimit', 1) || isAdmin()) &&
-                    (request.resource.data.get('s4TenantAccessAllowed', false) == resource.data.get('s4TenantAccessAllowed', false) || isAdmin()) &&
-                    // Prevent client manipulation of server-only fields
-                    !('mfaSecret' in request.resource.data) &&
-                    !('mfaBackupCodes' in request.resource.data);
+      allow update: if isAuthenticated() && (
+                      isAdmin() ||
+                      (
+                        userId == request.auth.uid &&
+                        request.resource.data.diff(resource.data).changedKeys().hasOnly(userClientUpdateKeys()) &&
+                        request.resource.data.diff(resource.data).addedKeys().hasOnly(userClientUpdateKeys()) &&
+                        request.resource.data.diff(resource.data).removedKeys().hasOnly([])
+                      )
+                    );
       allow delete: if isAdmin();
     }
 
@@ -97,17 +124,22 @@ service cloud.firestore {
 
     match /projects/{projectId} {
       allow read: if isAuthenticated() && (
-        resource == null ||
-        resource.data.userId == request.auth.uid || 
-        isAdmin() || 
-        (resource.data.get('orgId', null) != null && resource.data.orgId == getUserData().get('orgId', 'NONE'))
+        isAdmin() ||
+        (resource != null && (
+          resource.data.userId == request.auth.uid || 
+          (resource.data.get('orgId', null) != null && resource.data.orgId == getUserOrgId())
+        ))
       );
       allow create: if isAuthenticated() && 
                     request.resource.data.keys().hasAll(['name', 'status', 'userId', 'createdAt']) &&
+                    request.resource.data.keys().hasOnly(projectAllowedKeys()) &&
+                    request.resource.data.get('orgId', null) == getUserOrgId() &&
                     isValidProject(request.resource.data, false) &&
                     (getUserData().transformationsUsed < getUserData().transformationsLimit || isAdmin());
       allow update: if isAuthenticated() &&
                     (('userId' in resource.data && resource.data.userId == request.auth.uid) || isAdmin()) &&
+                    request.resource.data.keys().hasOnly(projectAllowedKeys()) &&
+                    request.resource.data.get('orgId', null) == resource.data.get('orgId', null) &&
                     isValidProject(request.resource.data, true) &&
                     (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId) &&
                     (!('createdAt' in request.resource.data) || request.resource.data.createdAt == resource.data.createdAt);
@@ -124,7 +156,10 @@ service cloud.firestore {
     }
 
     match /support_tickets/{ticketId} {
-      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (resource != null && resource.data.userId == request.auth.uid)
+      );
       allow create: if isAuthenticated() && 
                     (getUserData().tier in ['premium', 'unlimited'] || isAdmin()) &&
                     isValidSupportTicket(request.resource.data);
@@ -141,7 +176,10 @@ service cloud.firestore {
     }
 
     match /files/{fileId} {
-      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (resource != null && resource.data.userId == request.auth.uid)
+      );
       allow create: if isAuthenticated() && 
                     request.resource.data.keys().hasAll(['name', 'content', 'userId', 'createdAt']) &&
                     isValidFileEntry(request.resource.data, false);
@@ -162,7 +200,10 @@ service cloud.firestore {
     }
 
     match /abap_examples/{exampleId} {
-      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (resource != null && resource.data.userId == request.auth.uid)
+      );
       allow create: if isAuthenticated() && 
                     request.resource.data.keys().hasAll(['name', 'code', 'userId', 'createdAt']) &&
                     isValidABAPExample(request.resource.data, false);

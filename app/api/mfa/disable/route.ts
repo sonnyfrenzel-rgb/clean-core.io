@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, assertMfaStepUp } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,6 +17,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Security timeout. Please re-authenticate and try again.' },
         { status: 400 }
+      );
+    }
+
+    // Enforce recent MFA verification
+    try {
+      await assertMfaStepUp(request, decodedToken);
+    } catch (mfaErr: any) {
+      return NextResponse.json(
+        { error: mfaErr.message || 'Recent MFA step-up verification required.' },
+        { status: 403 }
       );
     }
 
