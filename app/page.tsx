@@ -267,15 +267,13 @@ export default function Home() {
           </p>
           <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
             <HeroCTA />
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 mt-2 text-xs font-semibold text-gray-500">
-              <Link href="/how-it-works" className="hover:text-green-600 transition-colors flex items-center gap-1.5 uppercase tracking-wider text-[11px] font-black">
-                Explore How It Works & Limitations <ArrowRight size={13} className="text-green-600" />
+            <div className="flex items-center justify-center mt-3">
+              <Link 
+                href="/how-it-works" 
+                className="text-xs sm:text-sm font-extrabold text-gray-600 hover:text-green-600 hover:border-green-400 hover:bg-green-50/10 transition-all flex items-center gap-2 px-6 py-2.5 rounded-full border border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm"
+              >
+                Explore How It Works & Limitations <ArrowRight size={14} className="text-green-600" />
               </Link>
-              <span className="hidden sm:inline text-gray-300">|</span>
-              <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-3.5 py-1.5 rounded-full border border-slate-200 text-[10px] sm:text-xs font-bold font-mono whitespace-nowrap">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0"></span>
-                <span>LATEST COMMUNITY RELEASE: {APP_VERSION} ({APP_RELEASE_DATE})</span>
-              </div>
             </div>
           </div>
         </div>
