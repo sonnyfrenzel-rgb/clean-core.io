@@ -96,7 +96,7 @@ export async function verifyAdminRequest(req: Request) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Lazily initialised Admin-Firestore handle for the named database. */
-async function getAdminDb() {
+export async function getAdminDb() {
   await ensureInitialized();
   if (!adminFirestoreModule) {
     adminFirestoreModule = await import('firebase-admin/firestore');
@@ -233,35 +233,34 @@ export async function deleteUserDataAndAccount(uid: string): Promise<void> {
   await ensureInitialized();
   const { db } = await getAdminDb();
 
-  // 1. Fetch and delete projects
-  const projectsSnap = await db.collection('projects').where('userId', '==', uid).get();
-  const batch1 = db.batch();
-  projectsSnap.docs.forEach((doc: any) => {
-    batch1.delete(doc.ref);
-  });
-  await batch1.commit();
+  // Helper for batch deletion of sub-collections (limit 400 per batch)
+  const deleteCollectionByUid = async (colName: string) => {
+    const q = db.collection(colName).where('userId', '==', uid).limit(400);
+    let snapshot = await q.get();
+    while (snapshot.size > 0) {
+      const batch = db.batch();
+      snapshot.docs.forEach((doc: any) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      snapshot = await q.get();
+    }
+  };
 
-  // 2. Fetch and delete ABAP examples
-  const examplesSnap = await db.collection('abap_examples').where('userId', '==', uid).get();
-  const batch2 = db.batch();
-  examplesSnap.docs.forEach((doc: any) => {
-    batch2.delete(doc.ref);
-  });
-  await batch2.commit();
+  // 1. Paginated deletion of user-owned collections
+  await deleteCollectionByUid('projects');
+  await deleteCollectionByUid('abap_examples');
+  await deleteCollectionByUid('support_tickets');
+  await deleteCollectionByUid('files');
 
-  // 3. Delete registration requests
-  await db.collection('registration_requests').doc(uid).delete();
+  // 2. Delete single documents
+  await db.collection('registration_requests').doc(uid).delete().catch(() => {});
+  await db.collection('tenant_access_requests').doc(uid).delete().catch(() => {});
+  await db.collection('s4_credentials').doc(uid).delete().catch(() => {});
+  await db.collection('mfa_secrets').doc(uid).delete().catch(() => {});
+  await db.collection('users').doc(uid).delete().catch(() => {});
 
-  // 4. Delete tenant access requests
-  await db.collection('tenant_access_requests').doc(uid).delete();
-
-  // 5. Delete encrypted credentials directly
-  await db.collection('s4_credentials').doc(uid).delete();
-
-  // 6. Delete user profile document
-  await db.collection('users').doc(uid).delete();
-
-  // 7. Delete the Firebase Auth User
+  // 3. Delete the Firebase Auth User
   await adminAuthModule.getAuth().deleteUser(uid);
 }
 

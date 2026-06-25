@@ -1,26 +1,7 @@
 {
-  "firestore": [
-    {
-      "database": "(default)",
-      "rules": "firestore.rules"
-    },
-    {
-      "database": "ai-studio-030e1ee1-7e1d-4208-beda-28735bc1a360",
-      "rules": "firestore.rules"
-    },
-    {
-      "database": "ai-studio-39b46c45-cda0-481e-9847-19682e979043",
-      "rules": "firestore.rules"
-    },
-    {
-      "database": "ai-studio-d80950ff-29db-4c7a-a202-688b019c1bf9",
-      "rules": "firestore.rules"
-    },
-    {
-      "database": "ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e",
-      "rules": "firestore.rules"
-    }
-  ],
+  "firestore": {
+    "rules": "firestore.rules"
+  },
   "emulators": {
     "auth": {
       "port": 9099

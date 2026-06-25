@@ -272,25 +272,24 @@ export default function LandingModals() {
     setAuthError('');
     setIsSubmitting(true);
     try {
-      const isOtpValid = await verifyTOTP(pendingMfaProfile.mfaSecret, codeStr);
-      const isBackupValid = pendingMfaProfile.mfaBackupCodes?.includes(codeStr.toUpperCase());
+      const token = await pendingMfaUser.getIdToken();
+      const res = await fetch('/api/mfa/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ code: codeStr })
+      });
       
-      if (isOtpValid || isBackupValid) {
-        if (isBackupValid && !isOtpValid) {
-          const db = getDb();
-          const userDocRef = doc(db, 'users', pendingMfaUser.uid);
-          const updatedBackupCodes = pendingMfaProfile.mfaBackupCodes.filter(
-            (c: string) => c !== codeStr.toUpperCase()
-          );
-          await setDoc(userDocRef, { mfaBackupCodes: updatedBackupCodes }, { merge: true });
-        }
-        
+      if (res.ok) {
         setIsNavigating(true);
         setTimeout(() => {
           router.push('/dashboard');
         }, 850);
       } else {
-        setAuthError('Invalid 6-digit code or backup recovery code.');
+        const errData = await res.json().catch(() => ({}));
+        setAuthError(errData.error || 'Invalid 6-digit code or backup recovery code.');
         setIsSubmitting(false);
       }
     } catch (error) {
