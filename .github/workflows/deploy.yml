@@ -53,6 +53,7 @@ jobs:
           FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080'
           MFA_BACKUP_CODE_PEPPER: ${{ secrets.MFA_BACKUP_CODE_PEPPER }}
           PILOT_APPROVAL_SECRET: ${{ secrets.PILOT_APPROVAL_SECRET }}
+          S4_ENCRYPTION_KEY: ${{ secrets.S4_ENCRYPTION_KEY }}
 
       - name: Run End-to-End Tests
         run: npx playwright test
@@ -64,6 +65,7 @@ jobs:
           FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080'
           MFA_BACKUP_CODE_PEPPER: ${{ secrets.MFA_BACKUP_CODE_PEPPER }}
           PILOT_APPROVAL_SECRET: ${{ secrets.PILOT_APPROVAL_SECRET }}
+          S4_ENCRYPTION_KEY: ${{ secrets.S4_ENCRYPTION_KEY }}
 
       - name: Generate QE Quality Engineering Report
         run: npm run build:report

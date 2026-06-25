@@ -199,8 +199,10 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     const projectId = currentUrl.split('/project/')[1].split('/')[0];
     console.log(`Extracted project ID for seeding: ${projectId}`);
 
-    const projectRef = doc(firestoreDb, 'projects', projectId);
-    await setDoc(projectRef, {
+    // Use Admin SDK to bypass security rules (client SDK triggers getUserData()
+    // evaluation errors in the emulator)
+    const { adminMergeDoc } = await import('./helpers/admin-seed');
+    await adminMergeDoc('projects', projectId, {
       testCases: [
         {
           id: 'TC_01',
@@ -218,7 +220,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
       testSuite: {
         code: `import { test } from 'node:test';\nimport assert from 'node:assert';\n\ntest('TC_01: Extract Invoice Headers', () => {\n  assert.strictEqual(1, 1);\n});\n`
       }
-    }, { merge: true });
+    });
     console.log(`Seeded project ${projectId} in Firestore.`);
 
     // --- STAGE 1: ANALYZE & SECURITY SCANS ---

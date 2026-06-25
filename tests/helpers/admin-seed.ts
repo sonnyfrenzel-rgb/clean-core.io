@@ -70,7 +70,7 @@ export async function adminApproveUser(uid: string) {
   await adminFirestore.collection('users').doc(uid).set({
     status: 'approved',
     tier: 'pilot',
-    transformationsLimit: 5,
+    transformationsLimit: 50, // High limit for CI: retries consume transformations
     transformationsUsed: 0,
   }, { merge: true });
 }
