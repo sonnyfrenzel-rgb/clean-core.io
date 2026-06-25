@@ -69,7 +69,7 @@ export async function adminApproveUser(uid: string) {
   await ensureAdmin();
   await adminFirestore.collection('users').doc(uid).set({
     status: 'approved',
-    tier: 'pilot',
+    tier: 'starter', // Must be starter+ for Stage 6 Download Bundle button visibility
     transformationsLimit: 50, // High limit for CI: retries consume transformations
     transformationsUsed: 0,
   }, { merge: true });
