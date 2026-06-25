@@ -37,8 +37,8 @@ Clean-Core.io is a modern, high-performance, and secure web and desktop client a
     Generates dynamic Level 1-4 functional blueprints and interactive BPMN process flow maps directly from modernized business logic.
 *   **GDPR / DSGVO Sovereign Data Erasure:**
     Strict enforcement of Article 17 GDPR (Right to Erasure). A secure transactional deletion cascade in the settings panel recursively purges all user footprints, project workspaces, custom snippets, and authentication keys.
-*   **Frosted-glass UI & Electron Desktop Wrapper:**
-    Visually stunning dark-mode design featuring vibrant HSL-tailored emerald mesh gradients, smooth framer-motion transitions, and a borderless context-isolated Electron wrapper with native OS sync.
+*   **Frosted-glass UI:**
+    Visually stunning dark-mode design featuring vibrant HSL-tailored emerald mesh gradients, smooth framer-motion transitions, and polished glassmorphism aesthetics.
 *   **SEO & AI-Search Engine Optimization (GEO):**
     Fully optimized for classic search engines and AI engines. Includes a custom `robots.txt` prioritizing AI crawlers (`GPTBot`, `PerplexityBot`, etc.), comprehensive JSON-LD graphs (`Organization`, `Person` for founder Felix Frenzel, `SoftwareApplication`, `FAQPage`), and dedicated high-authority landing pages. HTML assets utilize Next.js ISR (`revalidate = 300`) to guarantee fresh indexation.
 
@@ -49,7 +49,6 @@ Clean-Core.io is a modern, high-performance, and secure web and desktop client a
 Clean-Core.io is engineered for ultimate performance, security, and portability:
 
 *   **Frontend Core:** React 19, Next.js (v15.5) App Router, HSL Custom Glassmorphism Styling.
-*   **Desktop Shell:** Electron (v30.0) with complete context isolation and secure sandboxing.
 *   **Security & Database:** Firestore & Firebase Auth secured with custom rules and server-side token verification via Firebase Admin SDK.
 *   **Animations:** Motion (Framer Motion) for micro-animations and physics-based sliders.
 *   **Email Deliverability:** Transactional secure email templates powered by Resend API.
@@ -87,20 +86,6 @@ npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) to view the client.
 
-### 🖥️ Running the Desktop Application (Electron)
-To launch the Next.js local server and Electron wrapper concurrently in development mode:
-```bash
-npm run electron:dev
-```
-To compile Next.js static files and package the Electron wrapper into a runnable local folder matching your current platform:
-```bash
-npm run electron:pack
-```
-To build production distributable installers (e.g., NSIS `.exe` on Windows, `.dmg` on macOS):
-```bash
-npm run electron:dist
-```
-
 ---
 
 ## ⚙️ S/4HANA Public Cloud Sandbox Integration (BYOT)
@@ -129,7 +114,6 @@ Clean-Core.io prioritizes data security and user privacy above all else:
 *   **RCE Prevention:** The `/api/run-tests` route is permanently disabled (HTTP 503) to prevent remote code execution.
 *   **Field-Level Security:** Firestore Security Rules freeze all privileged fields (isAdmin, tier, quota counters) so only admins can modify them.
 *   **Art. 17 GDPR Cascade Deletion:** Instantly purges authentication profiles, custom uploads, ABAP scripts, analysis metadata, modernized designs, blueprints, generated ZIP packages, sandbox outputs, configurations, and **encrypted S/4HANA credentials**.
-*   **Context Isolation:** Electron configuration maintains `nodeIntegration: false` and `contextIsolation: true` to protect users against unsafe remote script execution in desktop mode.
 *   **Full Security Documentation:** See [`SECURITY.md`](SECURITY.md) for the complete security architecture, threat model, and developer checklist.
 
 ---
