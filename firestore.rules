@@ -88,10 +88,14 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && (userId == request.auth.uid || isAdmin()) &&
+      // Use token-only admin check for create to avoid circular get() on the
+      // document being created (the Firestore doc doesn't exist yet, so
+      // isAdmin()'s get() call causes an evaluation error in the emulator).
+      allow create: if isAuthenticated() &&
                     (
-                      isAdmin() || 
+                      request.auth.token.get('admin', false) == true ||
                       (
+                        userId == request.auth.uid &&
                         request.resource.data.keys().hasOnly(userClientCreateKeys()) &&
                         request.resource.data.get('orgId', null) == null &&
                         request.resource.data.get('email', '') == request.auth.token.email &&
