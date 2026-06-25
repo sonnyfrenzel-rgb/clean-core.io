@@ -272,23 +272,28 @@ export async function POST(request: NextRequest) {
         console.error('[Email] Failed to send pending email to applicant:', err);
       }
     } else {
-      // Offline/Local development fallback
-      console.log('\n======================================================');
-      console.log('📬   [MOCK EMAIL SENT TO info@clean-core.io]   📬');
-      console.log(`Subject: ${emailSubject}`);
-      console.log(`Applicant: ${name} (${email})`);
-      console.log(`Motivation: ${motivation}`);
-      console.log('\n👇   ⚡ ONE-CLICK APPROVAL LINK ⚡   👇');
-      console.log(approveUrl);
-      console.log('\n👇   ❌ REJECT LINK ❌   👇');
-      console.log(rejectUrl);
-      console.log('======================================================\n');
+      // Security: Never log approval/reject tokens in production (F-03)
+      const isProd = process.env.NODE_ENV === 'production';
+      if (!isProd) {
+        console.log('\n======================================================');
+        console.log('📬   [MOCK EMAIL SENT TO info@clean-core.io]   📬');
+        console.log(`Subject: ${emailSubject}`);
+        console.log(`Applicant: ${name} (${email})`);
+        console.log(`Motivation: ${motivation}`);
+        console.log('\n👇   ⚡ ONE-CLICK APPROVAL LINK ⚡   👇');
+        console.log(approveUrl);
+        console.log('\n👇   ❌ REJECT LINK ❌   👇');
+        console.log(rejectUrl);
+        console.log('======================================================\n');
 
-      console.log('\n======================================================');
-      console.log(`📬   [MOCK PENDING EMAIL SENT TO APPLICANT: ${email}]   📬`);
-      console.log(`Subject: ⏳ Clean-Core.io: We are reviewing your S/4HANA Tenant Request!`);
-      console.log(`System Version: ${APP_VERSION}`);
-      console.log('======================================================\n');
+        console.log('\n======================================================');
+        console.log(`📬   [MOCK PENDING EMAIL SENT TO APPLICANT: ${email}]   📬`);
+        console.log(`Subject: ⏳ Clean-Core.io: We are reviewing your S/4HANA Tenant Request!`);
+        console.log(`System Version: ${APP_VERSION}`);
+        console.log('======================================================\n');
+      } else {
+        console.warn('[Email] RESEND_API_KEY missing — tenant access email not sent. Token suppressed.');
+      }
     }
 
     // Set requested flag on user document server-side (F-03 / Audit security fix)
