@@ -675,8 +675,8 @@ export default function Home() {
               },
               {
                 icon: <Layers className="w-6 h-6 text-green-600" />,
-                title: "Local Code Sovereignty",
-                desc: "Run the entire platform as a local Electron desktop application. Workspaces, AST analysis, and custom code translations compile directly in your secure local environment."
+                title: "Cloud-Native Security",
+                desc: "Fully containerized on Google Cloud Run with server-side encryption, stateless APIs, and zero persistent local data. All processing happens in hardened, ephemeral containers."
               },
               {
                 icon: <Shield className="w-6 h-6 text-green-600" />,
