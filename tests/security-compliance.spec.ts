@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, connectAuthEmulator } from 'firebase/auth';
 import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, connectFirestoreEmulator } from 'firebase/firestore';
+import { adminSetDoc, adminSetCustomClaim, adminMergeDoc } from './helpers/admin-seed';
 
 // Set test secret first so that imports initializing getSecret don't throw
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
@@ -46,8 +47,11 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       }
     }
 
-    // Set normal user profile in Firestore
-    await setDoc(doc(firestoreDb, 'users', normalUserUid), {
+    // Seed normal user profile via Admin SDK (bypasses security rules).
+    // Using the client SDK's setDoc() triggers the emulator's rules evaluation
+    // which fails when the update rule tries to access resource.data on a
+    // non-existent document.
+    await adminSetDoc('users', normalUserUid, {
       firstName: 'Normal',
       lastName: 'Security User',
       email: NORMAL_USER_EMAIL,
@@ -93,14 +97,17 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       }
     }
 
-    // Set admin profile in Firestore
-    await setDoc(doc(firestoreDb, 'users', adminUid), {
+    // Seed admin profile via Admin SDK (bypasses security rules).
+    // The client SDK would reject isAdmin:true on profile creation (L100 in firestore.rules).
+    await adminSetDoc('users', adminUid, {
       firstName: 'Sonny',
       lastName: 'Frenzel',
       email: ADMIN_USER_EMAIL,
       isAdmin: true,
       createdAt: new Date(),
     });
+    // Set admin custom claim so Firestore rules (token-only check) recognise this user
+    await adminSetCustomClaim(adminUid, { admin: true });
   });
 
   test('should restrict S/4HANA connection tests for unapproved users (API Gating)', async ({ request }) => {
@@ -201,25 +208,22 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     const tempUid = tempCred.user.uid;
     const tempToken = await tempCred.user.getIdToken();
 
-    // 2. Seed some mock data in projects and examples for the temporary user
-    const mockProjDoc = doc(firestoreDb, 'projects', `proj-${tempUid}`);
-    await setDoc(mockProjDoc, {
+    // 2. Seed some mock data in projects and examples for the temporary user via Admin SDK
+    await adminSetDoc('projects', `proj-${tempUid}`, {
       name: 'Temp Project to Delete',
       status: 'uploaded',
       userId: tempUid,
       createdAt: new Date(),
     });
 
-    const mockExampleDoc = doc(firestoreDb, 'abap_examples', `example-${tempUid}`);
-    await setDoc(mockExampleDoc, {
+    await adminSetDoc('abap_examples', `example-${tempUid}`, {
       name: 'Temp Example to Delete',
       code: '" Mock Code',
       userId: tempUid,
       createdAt: new Date(),
     });
 
-    const tempUserDoc = doc(firestoreDb, 'users', tempUid);
-    await setDoc(tempUserDoc, {
+    await adminSetDoc('users', tempUid, {
       firstName: 'Temp',
       lastName: 'Delete',
       email: tempEmail,
@@ -247,13 +251,13 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     // Sign in as Admin to verify (since normal users get PERMISSION_DENIED on non-existent documents)
     await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
 
-    const projSnap = await getDoc(mockProjDoc);
+    const projSnap = await getDoc(doc(firestoreDb, 'projects', `proj-${tempUid}`));
     expect(projSnap.exists()).toBe(false);
 
-    const exampleSnap = await getDoc(mockExampleDoc);
+    const exampleSnap = await getDoc(doc(firestoreDb, 'abap_examples', `example-${tempUid}`));
     expect(exampleSnap.exists()).toBe(false);
 
-    const userSnap = await getDoc(tempUserDoc);
+    const userSnap = await getDoc(doc(firestoreDb, 'users', tempUid));
     expect(userSnap.exists()).toBe(false);
   });
 
@@ -457,8 +461,8 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     const cred = await createUserWithEmailAndPassword(firebaseAuth, mfaEmail, TEST_PASSWORD);
     const mfaUid = cred.user.uid;
 
-    // Create profile with status pending (as allowed client-side)
-    await setDoc(doc(firestoreDb, 'users', mfaUid), {
+    // Create profile via Admin SDK (bypasses security rules)
+    await adminSetDoc('users', mfaUid, {
       firstName: 'Mfa',
       lastName: 'Gate',
       email: mfaEmail,
