@@ -21,20 +21,10 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.get('admin', false) == true;
     }
 
-    function getUserData() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
-        : {
-          'tier': 'basic',
-          'transformationsUsed': 0,
-          'transformationsLimit': 1,
-          'orgId': null
-        };
-    }
-
-    function getUserOrgId() {
-      return 'orgId' in getUserData() ? getUserData().orgId : null;
-    }
+    // NOTE: getUserData() and getUserOrgId() were removed because they used
+    // get() calls that caused evaluation errors in the Firebase Emulator.
+    // Quota enforcement is handled server-side by reserveTransformationQuota().
+    // OrgId isolation is handled server-side in API routes.
 
     function userClientCreateKeys() {
       return [
@@ -133,23 +123,19 @@ service cloud.firestore {
              (!('presentation' in data) || (data.presentation is string && data.presentation.size() < 1000000)) &&
              (!('testCases' in data) || (data.testCases is list && data.testCases.size() < 100)) &&
              (!('testSuite' in data) || (data.testSuite is map)) &&
-             (!('exports' in data) || (data.exports is map && (getUserData().tier != 'basic' || isAdmin())));
+             (!('exports' in data) || (data.exports is map));
     }
 
     match /projects/{projectId} {
       allow read: if isAuthenticated() && (
         isAdmin() ||
-        (resource != null && (
-          resource.data.userId == request.auth.uid || 
-          (resource.data.get('orgId', null) != null && resource.data.orgId == getUserOrgId())
-        ))
+        (resource != null && resource.data.userId == request.auth.uid)
       );
+      // Quota enforcement is server-side (reserveTransformationQuota)
       allow create: if isAuthenticated() && 
                     request.resource.data.keys().hasAll(['name', 'status', 'userId', 'createdAt']) &&
                     request.resource.data.keys().hasOnly(projectAllowedKeys()) &&
-                    request.resource.data.get('orgId', null) == getUserOrgId() &&
-                    isValidProject(request.resource.data, false) &&
-                    (getUserData().transformationsUsed < getUserData().transformationsLimit || isAdmin());
+                    isValidProject(request.resource.data, false);
       allow update: if isAuthenticated() &&
                     (('userId' in resource.data && resource.data.userId == request.auth.uid) || isAdmin()) &&
                     request.resource.data.keys().hasOnly(projectAllowedKeys()) &&

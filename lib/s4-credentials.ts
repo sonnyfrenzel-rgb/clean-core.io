@@ -5,6 +5,9 @@ import { FIRESTORE_DB_ID } from '@/lib/constants';
 // Schlüssel als 32-Byte base64 in S4_ENCRYPTION_KEY (Secret Manager / Env).
 // Erzeugen: `openssl rand -base64 32`  oder  node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 const ALGO = 'aes-256-gcm';
+const IV_LENGTH = 12;
+const TAG_LENGTH = 16;
+const MIN_PAYLOAD_LENGTH = IV_LENGTH + TAG_LENGTH + 1;
 
 function getKey(): Buffer {
   const b64 = process.env.S4_ENCRYPTION_KEY;
@@ -15,8 +18,8 @@ function getKey(): Buffer {
 }
 
 export function encrypt(plaintext: string): string {
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv(ALGO, getKey(), iv);
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv(ALGO, getKey(), iv, { authTagLength: TAG_LENGTH });
   const ct = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
   const tag = cipher.getAuthTag();
   // Layout: iv(12) | tag(16) | ciphertext
@@ -25,10 +28,19 @@ export function encrypt(plaintext: string): string {
 
 export function decrypt(payload: string): string {
   const raw = Buffer.from(payload, 'base64');
-  const iv = raw.subarray(0, 12);
-  const tag = raw.subarray(12, 28);
-  const ct = raw.subarray(28);
-  const decipher = crypto.createDecipheriv(ALGO, getKey(), iv);
+  if (raw.length < MIN_PAYLOAD_LENGTH) {
+    throw new Error('Invalid encrypted payload.');
+  }
+
+  const iv = raw.subarray(0, IV_LENGTH);
+  const tag = raw.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH);
+  const ct = raw.subarray(IV_LENGTH + TAG_LENGTH);
+
+  if (iv.length !== IV_LENGTH || tag.length !== TAG_LENGTH || ct.length === 0) {
+    throw new Error('Invalid encrypted payload.');
+  }
+
+  const decipher = crypto.createDecipheriv(ALGO, getKey(), iv, { authTagLength: TAG_LENGTH });
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(ct), decipher.final()]).toString('utf8');
 }
