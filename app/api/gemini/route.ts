@@ -5,6 +5,7 @@ import {
   reserveTransformationQuota,
   refundTransformationQuota,
   QuotaError,
+  assertMfaSatisfied,
 } from '@/lib/firebase-admin';
 
 /**
@@ -66,6 +67,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Authentication required.' },
         { status: 401 },
+      );
+    }
+
+    // Server-side MFA gate
+    try {
+      await assertMfaSatisfied(request, decodedToken);
+    } catch (mfaErr: any) {
+      return NextResponse.json(
+        { error: mfaErr.message || 'MFA verification required.' },
+        { status: 403 }
       );
     }
 

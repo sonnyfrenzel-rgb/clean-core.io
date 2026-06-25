@@ -222,7 +222,7 @@ export default function SettingsPage() {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ secret: tempMfaSecret, code: mfaVerifyCode })
+        body: JSON.stringify({ code: mfaVerifyCode })
       });
       
       if (res.ok) {
@@ -270,11 +270,6 @@ export default function SettingsPage() {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || 'Failed to disable 2FA.');
       }
-      
-      // Update local profile state
-      await updateProfile({
-        mfaEnabled: false
-      });
       
       setShowMfaDisable(false);
       setDisablePassword('');
@@ -519,11 +514,6 @@ export default function SettingsPage() {
         createdAt: serverTimestamp()
       });
 
-      // 3. Persist the requested flag in the Firestore UserProfile so UI retains pending state
-      await updateProfile({
-        s4TenantAccessRequested: true
-      });
-
       setByotStatus('success');
       setByotMotivation('');
     } catch (error: any) {
@@ -651,6 +641,32 @@ export default function SettingsPage() {
       const auth = getAuth();
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("No authenticated user found.");
+
+      // If MFA is enabled, require MFA step-up verification first
+      if (profile?.mfaEnabled) {
+        const mfaCode = window.prompt("MFA Step-up Required:\nPlease enter your 6-digit 2FA verification code (or recovery backup code) to confirm identity:");
+        if (!mfaCode) {
+          alert("Deletion cancelled. MFA verification code is required.");
+          setIsDeletingAccount(false);
+          return;
+        }
+
+        // Call verification endpoint to set a fresh mfa_session cookie
+        const idToken = await currentUser.getIdToken();
+        const mfaRes = await fetch('/api/mfa/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({ code: mfaCode })
+        });
+
+        if (!mfaRes.ok) {
+          const mfaErr = await mfaRes.json().catch(() => ({}));
+          throw new Error(mfaErr.error || 'MFA step-up verification failed.');
+        }
+      }
 
       const token = await currentUser.getIdToken(true);
 

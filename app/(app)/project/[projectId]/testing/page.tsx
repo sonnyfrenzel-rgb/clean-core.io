@@ -383,11 +383,6 @@ export default function TestingSandboxPage() {
         createdAt: new Date()
       });
 
-      // 2. Set requested flag on user document
-      await setDoc(doc(db, 'users', uid), {
-        s4TenantAccessRequested: true
-      }, { merge: true });
-
       // 3. Trigger email notification
       const token = await getAuth().currentUser?.getIdToken();
       await fetch('/api/request-tenant-access', {

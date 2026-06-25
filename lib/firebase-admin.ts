@@ -1,5 +1,6 @@
 import { FIRESTORE_DB_ID, isHardcodedAdmin } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
+import { decrypt } from './s4-credentials';
 
 let adminAppModule: any = null;
 let adminAuthModule: any = null;
@@ -11,8 +12,6 @@ async function ensureInitialized() {
     adminAuthModule = await import('firebase-admin/auth');
   }
 
-  if (adminAppModule.getApps().length > 0) return;
-
   // Connect Admin SDK to Auth emulator in test/dev mode
   const isEmulatorMode = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true';
   if (isEmulatorMode) {
@@ -23,6 +22,8 @@ async function ensureInitialized() {
       process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
     }
   }
+
+  if (adminAppModule.getApps().length > 0) return;
 
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
@@ -337,6 +338,180 @@ export async function approveTenantWithToken(
     // Delete tenant access request document
     await db.collection('tenant_access_requests').doc(uid).delete();
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MFA Session Validation & Step-Up Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function assertMfaSatisfied(req: Request, decodedToken: any) {
+  const uid = decodedToken.uid;
+  const { db } = await getAdminDb();
+  
+  // 1. Fetch user profile
+  const userDoc = await db.collection('users').doc(uid).get();
+  if (!userDoc.exists) return;
+  
+  const userData = userDoc.data();
+  if (!userData || !userData.mfaEnabled) {
+    return; // MFA is not enabled for this user
+  }
+  
+  // 2. MFA is enabled, check the mfa_session cookie
+  const cookieHeader = req.headers.get('cookie') || '';
+  const cookies = cookieHeader.split(';').reduce((acc: any, c: string) => {
+    const [name, val] = c.trim().split('=');
+    if (name && val) acc[name] = val;
+    return acc;
+  }, {});
+  const sessionCookie = cookies['mfa_session'];
+  
+  if (!sessionCookie) {
+    throw new QuotaError('MFA verification required. Please complete 2FA.', 403);
+  }
+  
+  try {
+    const decrypted = decrypt(decodeURIComponent(sessionCookie));
+    const session = JSON.parse(decrypted);
+    
+    if (session.uid !== uid) {
+      throw new QuotaError('Invalid MFA session.', 403);
+    }
+    
+    const MAX_AGE = 12 * 60 * 60 * 1000; // 12 hours
+    if (Date.now() - session.mfaVerifiedAt > MAX_AGE) {
+      throw new QuotaError('MFA session expired. Please verify again.', 403);
+    }
+  } catch (err) {
+    throw new QuotaError('Invalid or expired MFA session. Please verify again.', 403);
+  }
+}
+
+export async function assertMfaStepUp(req: Request, decodedToken: any) {
+  const uid = decodedToken.uid;
+  const { db } = await getAdminDb();
+  
+  const userDoc = await db.collection('users').doc(uid).get();
+  if (!userDoc.exists) return;
+  
+  const userData = userDoc.data();
+  if (!userData || !userData.mfaEnabled) return;
+  
+  const cookieHeader = req.headers.get('cookie') || '';
+  const cookies = cookieHeader.split(';').reduce((acc: any, c: string) => {
+    const [name, val] = c.trim().split('=');
+    if (name && val) acc[name] = val;
+    return acc;
+  }, {});
+  const sessionCookie = cookies['mfa_session'];
+  
+  if (!sessionCookie) {
+    throw new QuotaError('MFA verification required. Please complete 2FA.', 403);
+  }
+  
+  try {
+    const decrypted = decrypt(decodeURIComponent(sessionCookie));
+    const session = JSON.parse(decrypted);
+    
+    if (session.uid !== uid) {
+      throw new QuotaError('Invalid MFA session.', 403);
+    }
+    
+    const MAX_AGE = 5 * 60 * 1000; // 5 minutes step-up
+    if (Date.now() - session.mfaVerifiedAt > MAX_AGE) {
+      throw new QuotaError('MFA security timeout. Please re-verify your 2FA code in the settings page.', 403);
+    }
+  } catch (err) {
+    throw new QuotaError('MFA security timeout. Please re-verify your 2FA code.', 403);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin Governance Helpers with Audit Event Logging
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function logAuditEvent(db: any, actorUid: string, action: string, targetUid: string) {
+  let actorEmail = 'system-admin';
+  try {
+    const actorDoc = await db.collection('users').doc(actorUid).get();
+    if (actorDoc.exists) {
+      actorEmail = actorDoc.data()?.email || actorEmail;
+    }
+  } catch {}
+  
+  await db.collection('audit_events').add({
+    actorUid,
+    actorEmail,
+    action,
+    targetUid,
+    timestamp: new Date(),
+  });
+}
+
+export async function adminApproveUser(adminUid: string, targetUid: string) {
+  await ensureInitialized();
+  const { db } = await getAdminDb();
+  await db.collection('users').doc(targetUid).set({
+    status: 'approved',
+    tier: 'pilot',
+    transformationsLimit: 5,
+    transformationsUsed: 0
+  }, { merge: true });
+  await db.collection('registration_requests').doc(targetUid).set({
+    status: 'approved',
+  }, { merge: true });
+  await logAuditEvent(db, adminUid, 'APPROVE_USER', targetUid);
+}
+
+export async function adminRevokeUser(adminUid: string, targetUid: string) {
+  await ensureInitialized();
+  const { db } = await getAdminDb();
+  await db.collection('users').doc(targetUid).set({
+    status: 'pending',
+    transformationsLimit: 0
+  }, { merge: true });
+  await db.collection('registration_requests').doc(targetUid).set({
+    status: 'pending',
+  }, { merge: true });
+  await logAuditEvent(db, adminUid, 'REVOKE_USER', targetUid);
+}
+
+export async function adminGrantS4(adminUid: string, targetUid: string) {
+  await ensureInitialized();
+  const { db } = await getAdminDb();
+  await db.collection('users').doc(targetUid).set({
+    s4TenantAccessAllowed: true,
+    s4TenantAccessRequested: false
+  }, { merge: true });
+  const regRef = db.collection('tenant_access_requests').doc(targetUid);
+  const regSnap = await regRef.get();
+  if (regSnap.exists) {
+    await regRef.set({ status: 'approved' }, { merge: true });
+  }
+  await logAuditEvent(db, adminUid, 'GRANT_S4', targetUid);
+}
+
+export async function adminRevokeS4(adminUid: string, targetUid: string) {
+  await ensureInitialized();
+  const { db } = await getAdminDb();
+  await db.collection('users').doc(targetUid).set({
+    s4TenantAccessAllowed: false,
+    s4TenantAccessRequested: false
+  }, { merge: true });
+  const regRef = db.collection('tenant_access_requests').doc(targetUid);
+  const regSnap = await regRef.get();
+  if (regSnap.exists) {
+    await regRef.set({ status: 'pending' }, { merge: true });
+  }
+  await logAuditEvent(db, adminUid, 'REVOKE_S4', targetUid);
+}
+
+export async function adminDeleteUser(adminUid: string, targetUid: string) {
+  await ensureInitialized();
+  const { db } = await getAdminDb();
+  await db.collection('registration_requests').doc(targetUid).delete();
+  await db.collection('users').doc(targetUid).delete();
+  await logAuditEvent(db, adminUid, 'DELETE_USER', targetUid);
 }
 
 

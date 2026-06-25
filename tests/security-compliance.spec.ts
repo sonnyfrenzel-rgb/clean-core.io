@@ -23,8 +23,8 @@ if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
 
 const branchSuffix = (process.env.GITHUB_REF_NAME || 'local').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
-// Accounts for testing
-const NORMAL_USER_EMAIL = `security-user-${branchSuffix}@cleancore-test.io`;
+// Accounts for testing (using timestamp to prevent collisions between sequential test runs in the emulator)
+const NORMAL_USER_EMAIL = `security-user-${branchSuffix}-${Date.now()}-${Math.floor(Math.random() * 1000)}@cleancore-test.io`;
 const ADMIN_USER_EMAIL = `sonny.frenzel@gmail.com`; // Hardcoded admin email in constants
 const TEST_PASSWORD = 'SecurityPassword123!';
 
@@ -32,12 +32,11 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
   let normalUserUid = '';
   let adminUid = '';
 
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ request }) => {
     // 1. Register a normal test user
     try {
       const cred = await createUserWithEmailAndPassword(firebaseAuth, NORMAL_USER_EMAIL, TEST_PASSWORD);
       normalUserUid = cred.user.uid;
-      console.log(`Registered test normal user with UID: ${normalUserUid}`);
     } catch (e: any) {
       if (e.code === 'auth/email-already-in-use') {
         const cred = await signInWithEmailAndPassword(firebaseAuth, NORMAL_USER_EMAIL, TEST_PASSWORD);
@@ -47,7 +46,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       }
     }
 
-    // Set normal user profile in Firestore (not approved for S/4 tenant access)
+    // Set normal user profile in Firestore
     await setDoc(doc(firestoreDb, 'users', normalUserUid), {
       firstName: 'Normal',
       lastName: 'Security User',
@@ -63,16 +62,28 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       mfaEnabled: false,
       createdAt: new Date(),
     });
-    // Request access (update is allowed for non-frozen fields)
-    await setDoc(doc(firestoreDb, 'users', normalUserUid), {
-      s4TenantAccessRequested: true
-    }, { merge: true });
+
+    // Request access via server-side API
+    const normalUserCred = await signInWithEmailAndPassword(firebaseAuth, NORMAL_USER_EMAIL, TEST_PASSWORD);
+    const normalUserToken = await normalUserCred.user.getIdToken();
+    const reqResponse = await request.post('/api/request-tenant-access', {
+      headers: {
+        'Authorization': `Bearer ${normalUserToken}`,
+        'Content-Type': 'application/json',
+      },
+      data: {
+        name: 'Normal Security User',
+        motivation: 'Testing live tenant access integration gates.'
+      }
+    });
+    if (reqResponse.status() !== 200) {
+      throw new Error(`Failed to request tenant access via API: ${await reqResponse.text()}`);
+    }
 
     // 2. Register an admin user
     try {
       const cred = await createUserWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
       adminUid = cred.user.uid;
-      console.log(`Registered test admin user with UID: ${adminUid}`);
     } catch (e: any) {
       if (e.code === 'auth/email-already-in-use') {
         const cred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
@@ -233,6 +244,9 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     expect(deleteResponse.status()).toBe(200);
 
     // 4. Verify all documents are purged from Firestore
+    // Sign in as Admin to verify (since normal users get PERMISSION_DENIED on non-existent documents)
+    await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
+
     const projSnap = await getDoc(mockProjDoc);
     expect(projSnap.exists()).toBe(false);
 
@@ -374,15 +388,156 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     expect(backupVerifyRes2.status()).toBe(400);
 
     // 6. Disable MFA
+    // Extract the cookie from backup verify response
+    const setCookieHeader = backupVerifyRes.headers()['set-cookie'] || '';
+    const match = setCookieHeader.match(/mfa_session=([^;]+)/);
+    const cookieVal = match ? match[1] : '';
+
     // Force refresh token to get a fresh auth_time
     const freshToken = await cred.user.getIdToken(true);
     const disableRes = await request.post('/api/mfa/disable', {
-      headers: { 'Authorization': `Bearer ${freshToken}` }
+      headers: {
+        'Authorization': `Bearer ${freshToken}`,
+        'Cookie': `mfa_session=${cookieVal}`
+      }
     });
     expect(disableRes.status()).toBe(200);
 
     // Check user profile has mfaEnabled = false
     const userDoc = await getDoc(doc(firestoreDb, 'users', cred.user.uid));
     expect(userDoc.data()?.mfaEnabled).toBe(false);
+  });
+
+  test('should restrict orgId and maxTeamMembers manipulation on profile create/update', async () => {
+    // 1. Try to create with an orgId
+    const testEmail = `org-test-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, testEmail, TEST_PASSWORD);
+    const testUid = cred.user.uid;
+    const testUserDoc = doc(firestoreDb, 'users', testUid);
+
+    await expect(
+      setDoc(testUserDoc, {
+        firstName: 'Org',
+        lastName: 'Test',
+        email: testEmail,
+        orgId: 'some-malicious-org-id',
+        createdAt: new Date(),
+      })
+    ).rejects.toThrow();
+
+    // Create with safe defaults (should succeed)
+    await setDoc(testUserDoc, {
+      firstName: 'Org',
+      lastName: 'Test',
+      email: testEmail,
+      tier: 'pilot',
+      status: 'pending',
+      isAdmin: false,
+      transformationsUsed: 0,
+      transformationsLimit: 5,
+      maxTeamMembers: 1,
+      orgId: null,
+      createdAt: new Date(),
+    });
+
+    // 2. Try to update orgId
+    await expect(
+      setDoc(testUserDoc, { orgId: 'hacked-org-id' }, { merge: true })
+    ).rejects.toThrow();
+
+    // 3. Try to update maxTeamMembers
+    await expect(
+      setDoc(testUserDoc, { maxTeamMembers: 100 }, { merge: true })
+    ).rejects.toThrow();
+  });
+
+  test('should enforce MFA session cookie gate on protected routes', async ({ request }) => {
+    // 1. Register a temporary user
+    const mfaEmail = `mfa-gate-test-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, mfaEmail, TEST_PASSWORD);
+    const mfaUid = cred.user.uid;
+
+    // Create profile with status pending (as allowed client-side)
+    await setDoc(doc(firestoreDb, 'users', mfaUid), {
+      firstName: 'Mfa',
+      lastName: 'Gate',
+      email: mfaEmail,
+      tier: 'pilot',
+      status: 'pending',
+      isAdmin: false,
+      transformationsUsed: 0,
+      transformationsLimit: 5,
+      maxTeamMembers: 1,
+      s4TenantAccessAllowed: false,
+      s4TenantAccessRequested: false,
+      mfaEnabled: false,
+      createdAt: new Date(),
+    });
+
+    // Approve the user using the Admin API
+    const adminCred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
+    const adminToken = await adminCred.user.getIdToken();
+    const validToken = createApprovalToken(mfaUid, 'pilot', 'approve');
+    const approveRes = await request.post('/api/admin/approve-user', {
+      headers: {
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      data: {
+        uid: mfaUid,
+        token: validToken,
+        action: 'approve',
+      },
+    });
+    expect(approveRes.status()).toBe(200);
+
+    // Sign back in as the MFA user to get a fresh token with approved status
+    const mfaCred = await signInWithEmailAndPassword(firebaseAuth, mfaEmail, TEST_PASSWORD);
+    const mfaToken = await mfaCred.user.getIdToken();
+
+    // 2. Set up MFA for this user
+    const startRes = await request.post('/api/mfa/setup/start', {
+      headers: { 'Authorization': `Bearer ${mfaToken}` }
+    });
+    const { secret } = await startRes.json();
+    const currentCode = await generateTOTP(secret);
+
+    // Complete setup (enables MFA and sets cookie)
+    const verifySetupRes = await request.post('/api/mfa/setup/verify', {
+      headers: { 'Authorization': `Bearer ${mfaToken}`, 'Content-Type': 'application/json' },
+      data: { code: currentCode }
+    });
+    expect(verifySetupRes.status()).toBe(200);
+
+    // Extract the mfa_session cookie from the verify setup headers
+    const setCookieHeader = verifySetupRes.headers()['set-cookie'] || '';
+    expect(setCookieHeader).toContain('mfa_session');
+
+    // 3. Access /api/gemini with token but NO cookie (should fail with 403)
+    const blockedRes = await request.post('/api/gemini', {
+      headers: {
+        'Authorization': `Bearer ${mfaToken}`,
+        'Content-Type': 'application/json',
+        'Cookie': '' // explicit empty cookies
+      },
+      data: { prompt: 'Hello' }
+    });
+    expect(blockedRes.status()).toBe(403);
+    const blockedBody = await blockedRes.json();
+    expect(blockedBody.error).toContain('MFA verification required');
+
+    // 4. Access /api/gemini WITH cookie (should pass)
+    const match = setCookieHeader.match(/mfa_session=([^;]+)/);
+    const cookieVal = match ? match[1] : '';
+
+    const allowedRes = await request.post('/api/gemini', {
+      headers: {
+        'Authorization': `Bearer ${mfaToken}`,
+        'Content-Type': 'application/json',
+        'Cookie': `mfa_session=${cookieVal}`
+      },
+      data: { prompt: 'Explain ABAP select statement in 10 words.' }
+    });
+    // It should either return 200 (success) or 502/500 if Gemini API is offline, but NOT 403 (MFA blocked)!
+    expect(allowedRes.status()).not.toBe(403);
   });
 });

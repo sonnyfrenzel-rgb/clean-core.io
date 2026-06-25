@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyRequestAuth, assertS4TenantAccess, QuotaError } from '@/lib/firebase-admin';
+import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { saveS4Credentials, deleteS4Credentials, loadS4ConfigForUser } from '@/lib/s4-credentials';
 import { isUrlSafe } from '@/lib/url-validation';
 
@@ -15,12 +15,13 @@ export async function POST(req: Request) {
   if (!decoded) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
   try {
+    await assertMfaSatisfied(req, decoded);
     await assertS4TenantAccess(decoded.uid, { isAdminClaim: (decoded as any).admin === true });
   } catch (e: any) {
     if (e instanceof QuotaError) {
       return NextResponse.json({ error: e.message }, { status: e.status });
     }
-    return NextResponse.json({ error: 'Internal server error during authorization check.' }, { status: 500 });
+    return NextResponse.json({ error: e.message || 'Internal server error during authorization check.' }, { status: 500 });
   }
 
   const body = await req.json();
@@ -51,12 +52,13 @@ export async function GET(req: Request) {
   if (!decoded) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
   try {
+    await assertMfaSatisfied(req, decoded);
     await assertS4TenantAccess(decoded.uid, { isAdminClaim: (decoded as any).admin === true });
   } catch (e: any) {
     if (e instanceof QuotaError) {
       return NextResponse.json({ error: e.message }, { status: e.status });
     }
-    return NextResponse.json({ error: 'Internal server error during authorization check.' }, { status: 500 });
+    return NextResponse.json({ error: e.message || 'Internal server error during authorization check.' }, { status: 500 });
   }
 
   const cfg = await loadS4ConfigForUser(decoded.uid);
@@ -76,7 +78,11 @@ export async function DELETE(req: Request) {
   const decoded = await verifyRequestAuth(req);
   if (!decoded) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
-
+  try {
+    await assertMfaSatisfied(req, decoded);
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message || 'MFA verification required.' }, { status: 403 });
+  }
 
   await deleteS4Credentials(decoded.uid);
   return NextResponse.json({ ok: true });
