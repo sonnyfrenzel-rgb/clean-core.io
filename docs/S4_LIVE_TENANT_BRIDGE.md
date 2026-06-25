@@ -350,19 +350,25 @@ interface Project {
 
 ### Firestore Storage
 
-Credentials are stored in the project document at `projects/{projectId}`:
+Credentials are encrypted with AES-256-GCM and stored in a **server-only** Firestore collection:
 
 ```
-projects/
-  {projectId}/
-    s4Config: {
-      url: "https://...",
-      username: "CC_INTEGRATOR",
-      password: "...",          ← stored as-is (see Security section)
-      authType: "basic"
+s4_credentials/
+  {uid}/
+    secretEnc: "<base64 iv|tag|ciphertext>"   ← AES-256-GCM encrypted
+    updatedAt: Timestamp
+
+users/
+  {uid}/
+    s4Meta: {                                  ← client-readable metadata only
+      host: "https://...",
+      authType: "basic",
+      updatedAt: "..."
     }
-    s4Environment: "live"
 ```
+
+Client SDK access to `s4_credentials` is blocked by Firestore Rules (`allow read, write: if false`).
+Credentials are decrypted server-side only during test execution.
 
 ---
 
@@ -381,7 +387,7 @@ projects/
 
 ### Known Limitations & Risks
 
-> ⚠️ **Credential Storage:** Passwords and Client Secrets are currently stored **in plaintext** in Firestore. In a production deployment, these should be encrypted at rest or stored in a secrets manager (e.g., Google Secret Manager, SAP BTP Credential Store).
+> ✅ **Credential Storage:** Passwords and Client Secrets are encrypted with AES-256-GCM (explicit `authTagLength: 16`, 12-byte IV, payload validation) and stored in a server-only Firestore collection (`s4_credentials`). The encryption key is managed via `S4_ENCRYPTION_KEY` environment variable. Client-readable user profiles contain only non-sensitive metadata (`s4Meta`).
 
 > ⚠️ **No Rate Limiting:** The `/api/test-s4-connection` endpoint has no rate limiting. Repeated calls could trigger IP-based blocking on the customer's SAP system.
 

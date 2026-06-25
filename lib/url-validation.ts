@@ -199,7 +199,8 @@ export async function safeFetch(
       };
       dispatcherOpts = { dispatcher: new Agent({ connect: { lookup } }) };
     } catch {
-      // undici not available — proceed without IP pinning (redirect re-validation still active)
+      // Fail-closed: DNS rebinding protection requires IP-pinned fetch (F-04)
+      throw new SsrfError('Secure DNS pinning is unavailable. Cannot proceed without IP-pinned fetch.');
     }
 
     const res = await fetch(current, {

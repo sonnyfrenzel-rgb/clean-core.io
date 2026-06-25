@@ -135,8 +135,7 @@ service cloud.firestore {
         isAdmin() ||
         (resource != null && resource.data.userId == request.auth.uid)
       );
-      allow create: if isAuthenticated() && 
-                    (getUserData().tier in ['premium', 'unlimited'] || isAdmin()) &&
+      allow create: if isAuthenticated() &&
                     isValidSupportTicket(request.resource.data);
       allow update: if isAdmin();
       allow delete: if isAdmin();

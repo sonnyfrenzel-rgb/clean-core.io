@@ -311,17 +311,22 @@ export async function POST(request: NextRequest) {
         console.error('[Email] Failed to send pending email to applicant:', err);
       }
     } else {
-      // Offline/Local development fallback: log details in console
-      console.log('\n======================================================');
-      console.log('📬   [MOCK EMAIL SENT TO info@clean-core.io]   📬');
-      console.log(`Subject: ${emailSubject}`);
-      console.log(`Applicant: ${name} (${email})`);
-      console.log(`Motivation: ${motivation}`);
-      console.log('\n👇   ⚡ ONE-CLICK APPROVAL LINK ⚡   👇');
-      console.log(approveUrl);
-      console.log('\n👇   ❌ REJECT LINK ❌   👇');
-      console.log(rejectUrl);
-      console.log('======================================================\n');
+      // Security: Never log approval/reject tokens in production (F-03)
+      const isProd = process.env.NODE_ENV === 'production';
+      if (!isProd) {
+        console.log('\n======================================================');
+        console.log('📬   [MOCK EMAIL SENT TO info@clean-core.io]   📬');
+        console.log(`Subject: ${emailSubject}`);
+        console.log(`Applicant: ${name} (${email})`);
+        console.log(`Motivation: ${motivation}`);
+        console.log('\n👇   ⚡ ONE-CLICK APPROVAL LINK ⚡   👇');
+        console.log(approveUrl);
+        console.log('\n👇   ❌ REJECT LINK ❌   👇');
+        console.log(rejectUrl);
+        console.log('======================================================\n');
+      } else {
+        console.warn('[Email] RESEND_API_KEY missing — approval email not sent. Token suppressed.');
+      }
     }
 
     return NextResponse.json({ success: true });
