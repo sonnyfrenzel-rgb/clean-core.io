@@ -273,7 +273,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // Wait for the analysis loader to complete and render the analysis report
     const complianceHeader = page.locator('h3:has-text("Understanding Clean Core")');
     // Generous timeout since Gemini call is executed live in this test context
-    await expect(page.locator('text=Business Analysis Report')).toBeVisible({ timeout: 45000 });
+    await expect(page.locator('text=Business Analysis Report')).toBeVisible({ timeout: 90000 });
     console.log('Stage 1 Complete: Analysis report parsed and rendered.');
 
     // --- STAGE 2: SOLUTION DESIGN ---
