@@ -476,44 +476,59 @@ export default function TestingSandboxPage() {
     try {
       if (!testCases || testCases.length === 0) return;
       
-      const XLSX = await import('xlsx');
-      const wb = XLSX.utils.book_new();
-      const summaryData = testCases.map(tc => ({
-        ID: renderSafeValue(tc.id) || 'N/A',
-        Name: renderSafeValue(tc.name) || 'Untitled',
-        Priority: renderSafeValue(tc.priority) || 'Medium',
-        Status: 'Pending'
-      }));
-      const wsSummary = XLSX.utils.json_to_sheet(summaryData);
-      XLSX.utils.book_append_sheet(wb, wsSummary, "Test Suite Summary");
-
-      testCases.forEach((tc, index) => {
-        const safeId = renderSafeValue(tc.id) || `TC_${index}`;
-        const detailData = [
-          ["Test Case ID", safeId],
-          ["Test Case Name", renderSafeValue(tc.name) || 'Untitled'],
-          ["Priority", renderSafeValue(tc.priority) || 'Medium'],
-          ["", ""],
-          ["Description", renderSafeValue(tc.description) || ''],
-          ["Preconditions", renderSafeValue(tc.preconditions) || ''],
-          ["", ""],
-          ["Test Steps", ""],
-          ...(Array.isArray(tc.steps) ? tc.steps : [tc.steps]).map((s: any, i: number) => [`Step ${i+1}`, renderSafeValue(s) || '']),
-          ["", ""],
-          ["Expected Result", renderSafeValue(tc.expectedResult) || ''],
-          ["Test Data", renderSafeValue(tc.testData) || 'N/A'],
-          ["Validation Points", renderSafeValue(tc.validationPoints) || 'N/A']
-        ];
-        const wsDetail = XLSX.utils.aoa_to_sheet(detailData);
-        XLSX.utils.book_append_sheet(wb, wsDetail, safeId.slice(0, 30));
+      const ExcelJS = await import('exceljs');
+      const wb = new ExcelJS.Workbook();
+      
+      // 1. Summary sheet
+      const wsSummary = wb.addWorksheet("Test Suite Summary");
+      wsSummary.columns = [
+        { header: 'ID', key: 'ID', width: 15 },
+        { header: 'Name', key: 'Name', width: 35 },
+        { header: 'Priority', key: 'Priority', width: 15 },
+        { header: 'Status', key: 'Status', width: 15 }
+      ];
+      
+      testCases.forEach(tc => {
+        wsSummary.addRow({
+          ID: renderSafeValue(tc.id) || 'N/A',
+          Name: renderSafeValue(tc.name) || 'Untitled',
+          Priority: renderSafeValue(tc.priority) || 'Medium',
+          Status: 'Pending'
+        });
       });
 
-      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([wbout], { type: 'application/octet-stream' });
+      // 2. Detail sheets
+      testCases.forEach((tc, index) => {
+        const safeId = renderSafeValue(tc.id) || `TC_${index}`;
+        const wsDetail = wb.addWorksheet(safeId.slice(0, 30));
+        
+        wsDetail.addRow(["Test Case ID", safeId]);
+        wsDetail.addRow(["Test Case Name", renderSafeValue(tc.name) || 'Untitled']);
+        wsDetail.addRow(["Priority", renderSafeValue(tc.priority) || 'Medium']);
+        wsDetail.addRow(["", ""]);
+        wsDetail.addRow(["Description", renderSafeValue(tc.description) || '']);
+        wsDetail.addRow(["Preconditions", renderSafeValue(tc.preconditions) || '']);
+        wsDetail.addRow(["", ""]);
+        wsDetail.addRow(["Test Steps", ""]);
+        
+        const steps = Array.isArray(tc.steps) ? tc.steps : [tc.steps];
+        steps.forEach((s: any, i: number) => {
+          wsDetail.addRow([`Step ${i+1}`, renderSafeValue(s) || '']);
+        });
+        
+        wsDetail.addRow(["", ""]);
+        wsDetail.addRow(["Expected Result", renderSafeValue(tc.expectedResult) || '']);
+        wsDetail.addRow(["Test Data", renderSafeValue(tc.testData) || 'N/A']);
+        wsDetail.addRow(["Validation Points", renderSafeValue(tc.validationPoints) || 'N/A']);
+      });
+
+      // 3. Generate file buffer and download
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const projectName = project?.name?.replace(/\s+/g, '_') || 'Project';
       await saveAs(blob, `${projectName}_Test_Suite.xlsx`);
     } catch (err) {
-      console.error("Excellent export failed:", err);
+      console.error("Excel export failed:", err);
     }
   };
 

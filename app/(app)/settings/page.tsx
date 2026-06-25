@@ -15,7 +15,6 @@ import {
 import { addDoc, collection, serverTimestamp, getDocs, query, where, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { getDb, getAuth, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword as firebaseUpdatePassword } from 'firebase/auth';
-import { generateSecret, verifyTOTP, generateBackupCodes, generateOtpauthUrl } from '@/lib/totp';
 import { motion, AnimatePresence } from 'motion/react';
 import { callGemini } from '@/lib/gemini';
 import { clsx } from 'clsx';
@@ -93,6 +92,7 @@ export default function SettingsPage() {
   const [generatedBackupCodes, setGeneratedBackupCodes] = useState<string[]>([]);
   const [mfaSetupError, setMfaSetupError] = useState('');
   const [isVerifyingMfa, setIsVerifyingMfa] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
 
   // 2FA Disable States
   const [showMfaDisable, setShowMfaDisable] = useState(false);
@@ -186,34 +186,52 @@ export default function SettingsPage() {
     }
   };
 
-  const handleStartMfaSetup = () => {
-    const secret = generateSecret();
-    setTempMfaSecret(secret);
-    setMfaSetupStep(1);
-    setMfaVerifyCode('');
+  const handleStartMfaSetup = async () => {
     setMfaSetupError('');
-    setShowMfaSetup(true);
+    try {
+      const auth = getAuth();
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('/api/mfa/setup/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      if (!res.ok) throw new Error('Failed to initiate MFA setup.');
+      const data = await res.json();
+      setTempMfaSecret(data.secret);
+      setQrCodeUrl(data.qrCodeUrl);
+      setMfaSetupStep(1);
+      setMfaVerifyCode('');
+      setShowMfaSetup(true);
+    } catch (err: any) {
+      alert(err.message || 'Error starting 2FA setup.');
+    }
   };
 
   const handleVerifyMfaSetup = async () => {
     setMfaSetupError('');
     setIsVerifyingMfa(true);
     try {
-      const isValid = await verifyTOTP(tempMfaSecret, mfaVerifyCode);
-      if (isValid) {
-        const backupCodes = generateBackupCodes();
-        setGeneratedBackupCodes(backupCodes);
-        
-        // Save to Firestore
-        await updateProfile({
-          mfaEnabled: true,
-          mfaSecret: tempMfaSecret,
-          mfaBackupCodes: backupCodes
-        });
-        
+      const auth = getAuth();
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('/api/mfa/setup/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ secret: tempMfaSecret, code: mfaVerifyCode })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setGeneratedBackupCodes(data.backupCodes);
         setMfaSetupStep(3);
       } else {
-        setMfaSetupError('Invalid 6-digit verification code. Please check your authenticator app.');
+        const errData = await res.json().catch(() => ({}));
+        setMfaSetupError(errData.error || 'Invalid 6-digit verification code. Please check your authenticator app.');
       }
     } catch (err) {
       console.error(err);
@@ -238,19 +256,32 @@ export default function SettingsPage() {
         await reauthenticateWithCredential(currentUser, credential);
       }
       
-      // Disable in Firestore
+      // Call disable API endpoint
+      const token = await currentUser.getIdToken(true); // Force refresh token to get latest auth_time claim
+      const res = await fetch('/api/mfa/disable', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to disable 2FA.');
+      }
+      
+      // Update local profile state
       await updateProfile({
-        mfaEnabled: false,
-        mfaSecret: '',
-        mfaBackupCodes: []
+        mfaEnabled: false
       });
       
       setShowMfaDisable(false);
       setDisablePassword('');
     } catch (error: any) {
       console.error('Disable 2FA error:', error);
-      let errorMsg = 'Failed to disable 2FA. Please verify your password.';
-      if (error.code === 'auth/wrong-password') {
+      let errorMsg = error.message || 'Failed to disable 2FA. Please verify your password.';
+      if (error.code === 'auth/wrong-password' || error.message?.includes('wrong-password') || error.message?.includes('invalid-credential')) {
         errorMsg = 'Incorrect password.';
       }
       setMfaDisableError(errorMsg);
@@ -1792,7 +1823,7 @@ export default function SettingsPage() {
 
                     {/* Styled Mock QR Code */}
                     <div className="flex justify-center py-2">
-                      <MockQrCode value={generateOtpauthUrl(tempMfaSecret, profile?.email || '')} />
+                      <MockQrCode value={qrCodeUrl} />
                     </div>
 
                     <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-1.5 text-center">

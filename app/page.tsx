@@ -545,7 +545,7 @@ export default function Home() {
               Real Verified Output
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">Transformation Showroom</h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Representative engine outputs. Every example is a real transformation&mdash;verified, compiled, and tested against Clean-Core Engine v1.11.0.</p>
+            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Representative engine outputs. Every example is a real transformation&mdash;verified, compiled, and tested against Clean-Core Engine v1.12.0.</p>
           </div>
           <Suspense fallback={null}>
             <TransformationReplay />

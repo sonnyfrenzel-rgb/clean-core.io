@@ -47,7 +47,23 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && (userId == request.auth.uid || isAdmin()); // Allow admin to create user profiles if they don't exist
+      allow create: if isAuthenticated() && (userId == request.auth.uid || isAdmin()) &&
+                    (
+                      isAdmin() || 
+                      (
+                        request.resource.data.get('tier', 'pilot') == 'pilot' &&
+                        request.resource.data.get('status', 'pending') == 'pending' &&
+                        request.resource.data.get('isAdmin', false) == false &&
+                        request.resource.data.get('transformationsUsed', 0) == 0 &&
+                        request.resource.data.get('transformationsLimit', 5) == 5 &&
+                        request.resource.data.get('maxTeamMembers', 1) == 1 &&
+                        request.resource.data.get('s4TenantAccessAllowed', false) == false &&
+                        request.resource.data.get('s4TenantAccessRequested', false) == false &&
+                        request.resource.data.get('mfaEnabled', false) == false &&
+                        !('mfaSecret' in request.resource.data) &&
+                        !('mfaBackupCodes' in request.resource.data)
+                      )
+                    );
       allow update: if isAuthenticated() && (userId == request.auth.uid || isAdmin()) &&
                     // Freeze privileged fields: only admin can change these
                     (request.resource.data.get('isAdmin', false) == resource.data.get('isAdmin', false) || isAdmin()) &&
@@ -55,7 +71,10 @@ service cloud.firestore {
                     (request.resource.data.get('transformationsUsed', 0) == resource.data.get('transformationsUsed', 0) || isAdmin()) &&
                     (request.resource.data.get('tier', 'basic') == resource.data.get('tier', 'basic') || isAdmin()) &&
                     (request.resource.data.get('transformationsLimit', 1) == resource.data.get('transformationsLimit', 1) || isAdmin()) &&
-                    (request.resource.data.get('s4TenantAccessAllowed', false) == resource.data.get('s4TenantAccessAllowed', false) || isAdmin());
+                    (request.resource.data.get('s4TenantAccessAllowed', false) == resource.data.get('s4TenantAccessAllowed', false) || isAdmin()) &&
+                    // Prevent client manipulation of server-only fields
+                    !('mfaSecret' in request.resource.data) &&
+                    !('mfaBackupCodes' in request.resource.data);
       allow delete: if isAdmin();
     }
 
@@ -78,6 +97,7 @@ service cloud.firestore {
 
     match /projects/{projectId} {
       allow read: if isAuthenticated() && (
+        resource == null ||
         resource.data.userId == request.auth.uid || 
         isAdmin() || 
         (resource.data.get('orgId', null) != null && resource.data.orgId == getUserData().get('orgId', 'NONE'))
@@ -104,7 +124,7 @@ service cloud.firestore {
     }
 
     match /support_tickets/{ticketId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && 
                     (getUserData().tier in ['premium', 'unlimited'] || isAdmin()) &&
                     isValidSupportTicket(request.resource.data);
@@ -121,7 +141,7 @@ service cloud.firestore {
     }
 
     match /files/{fileId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && 
                     request.resource.data.keys().hasAll(['name', 'content', 'userId', 'createdAt']) &&
                     isValidFileEntry(request.resource.data, false);
@@ -142,7 +162,7 @@ service cloud.firestore {
     }
 
     match /abap_examples/{exampleId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && 
                     request.resource.data.keys().hasAll(['name', 'code', 'userId', 'createdAt']) &&
                     isValidABAPExample(request.resource.data, false);
@@ -169,6 +189,11 @@ service cloud.firestore {
 
     // F-03: S/4HANA-Credentials: ausschließlich serverseitig (Admin SDK). Clients nie.
     match /s4_credentials/{uid} {
+      allow read, write: if false;
+    }
+
+    // MFA Option B: MFA Secrets ausschließlich serverseitig (Admin SDK). Clients nie.
+    match /mfa_secrets/{uid} {
       allow read, write: if false;
     }
   }

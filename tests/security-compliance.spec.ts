@@ -7,6 +7,7 @@ import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, get
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
 
 import { createApprovalToken } from '../lib/approval-token';
+import { generateTOTP } from '../lib/totp';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase SDK in Node context for seeding and validation
@@ -53,10 +54,19 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       email: NORMAL_USER_EMAIL,
       tier: 'pilot',
       status: 'pending',
+      isAdmin: false,
+      transformationsUsed: 0,
+      transformationsLimit: 5,
+      maxTeamMembers: 1,
       s4TenantAccessAllowed: false,
-      s4TenantAccessRequested: true,
+      s4TenantAccessRequested: false,
+      mfaEnabled: false,
       createdAt: new Date(),
     });
+    // Request access (update is allowed for non-frozen fields)
+    await setDoc(doc(firestoreDb, 'users', normalUserUid), {
+      s4TenantAccessRequested: true
+    }, { merge: true });
 
     // 2. Register an admin user
     try {
@@ -202,6 +212,15 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       firstName: 'Temp',
       lastName: 'Delete',
       email: tempEmail,
+      tier: 'pilot',
+      status: 'pending',
+      isAdmin: false,
+      transformationsUsed: 0,
+      transformationsLimit: 5,
+      maxTeamMembers: 1,
+      s4TenantAccessAllowed: false,
+      s4TenantAccessRequested: false,
+      mfaEnabled: false,
       createdAt: new Date(),
     });
 
@@ -222,5 +241,148 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
 
     const userSnap = await getDoc(tempUserDoc);
     expect(userSnap.exists()).toBe(false);
+  });
+
+  test('should restrict privilege escalation on profile creation (Hardened Rules)', async () => {
+    // Register a malicious new user
+    const maliciousEmail = `malicious-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, maliciousEmail, TEST_PASSWORD);
+    const malUid = cred.user.uid;
+
+    const malUserDoc = doc(firestoreDb, 'users', malUid);
+
+    // Try to create profile with isAdmin: true
+    await expect(
+      setDoc(malUserDoc, {
+        firstName: 'Malicious',
+        lastName: 'User',
+        email: maliciousEmail,
+        isAdmin: true,
+        createdAt: new Date(),
+      })
+    ).rejects.toThrow();
+
+    // Try to create profile with tier: 'enterprise'
+    await expect(
+      setDoc(malUserDoc, {
+        firstName: 'Malicious',
+        lastName: 'User',
+        email: maliciousEmail,
+        tier: 'enterprise',
+        createdAt: new Date(),
+      })
+    ).rejects.toThrow();
+
+    // Try to create profile with transformationsLimit: 1000
+    await expect(
+      setDoc(malUserDoc, {
+        firstName: 'Malicious',
+        lastName: 'User',
+        email: maliciousEmail,
+        transformationsLimit: 1000,
+        createdAt: new Date(),
+      })
+    ).rejects.toThrow();
+
+    // Try to create profile with status: 'approved'
+    await expect(
+      setDoc(malUserDoc, {
+        firstName: 'Malicious',
+        lastName: 'User',
+        email: maliciousEmail,
+        status: 'approved',
+        createdAt: new Date(),
+      })
+    ).rejects.toThrow();
+
+    // Creating with safe defaults should succeed
+    await expect(
+      setDoc(malUserDoc, {
+        firstName: 'Malicious',
+        lastName: 'User',
+        email: maliciousEmail,
+        tier: 'pilot',
+        status: 'pending',
+        isAdmin: false,
+        transformationsUsed: 0,
+        transformationsLimit: 5,
+        maxTeamMembers: 1,
+        createdAt: new Date(),
+      })
+    ).resolves.not.toThrow();
+  });
+
+  test('should completely restrict client read/write to private collections', async () => {
+    const cred = await signInWithEmailAndPassword(firebaseAuth, NORMAL_USER_EMAIL, TEST_PASSWORD);
+    
+    // Normal user attempting to access mfa_secrets/{uid} directly
+    const mfaSecretDoc = doc(firestoreDb, 'mfa_secrets', cred.user.uid);
+    await expect(setDoc(mfaSecretDoc, { secret: 'hijacked' })).rejects.toThrow();
+    await expect(getDoc(mfaSecretDoc)).rejects.toThrow();
+
+    // Normal user attempting to access s4_credentials/{uid} directly
+    const s4CredentialsDoc = doc(firestoreDb, 's4_credentials', cred.user.uid);
+    await expect(setDoc(s4CredentialsDoc, { secret: 'hijacked' })).rejects.toThrow();
+    await expect(getDoc(s4CredentialsDoc)).rejects.toThrow();
+  });
+
+  test('should successfully complete the server-side MFA lifecycle (setup, verify, disable)', async ({ request }) => {
+    // 1. Get auth token
+    const cred = await signInWithEmailAndPassword(firebaseAuth, NORMAL_USER_EMAIL, TEST_PASSWORD);
+    const token = await cred.user.getIdToken();
+
+    // 2. Start setup
+    const startRes = await request.post('/api/mfa/setup/start', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    expect(startRes.status()).toBe(200);
+    const { secret, qrCodeUrl } = await startRes.json();
+    expect(secret).toBeDefined();
+    expect(qrCodeUrl).toContain(encodeURIComponent(NORMAL_USER_EMAIL));
+
+    // 3. Verify setup
+    const currentCode = await generateTOTP(secret);
+    const verifySetupRes = await request.post('/api/mfa/setup/verify', {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data: { secret, code: currentCode }
+    });
+    expect(verifySetupRes.status()).toBe(200);
+    const { backupCodes } = await verifySetupRes.json();
+    expect(backupCodes).toHaveLength(5);
+
+    // 4. Verify login flow MFA token verification
+    const loginTotpCode = await generateTOTP(secret);
+    const loginVerifyRes = await request.post('/api/mfa/verify', {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data: { code: loginTotpCode }
+    });
+    expect(loginVerifyRes.status()).toBe(200);
+
+    // 5. Verify using a backup code
+    const testBackupCode = backupCodes[0];
+    const backupVerifyRes = await request.post('/api/mfa/verify', {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data: { code: testBackupCode }
+    });
+    expect(backupVerifyRes.status()).toBe(200);
+
+    // Re-verifying with the same backup code must fail (consumed)
+    const backupVerifyRes2 = await request.post('/api/mfa/verify', {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data: { code: testBackupCode }
+    });
+    expect(backupVerifyRes2.status()).toBe(400);
+
+    // 6. Disable MFA
+    // Force refresh token to get a fresh auth_time
+    const freshToken = await cred.user.getIdToken(true);
+    const disableRes = await request.post('/api/mfa/disable', {
+      headers: { 'Authorization': `Bearer ${freshToken}` }
+    });
+    expect(disableRes.status()).toBe(200);
+
+    // Check user profile has mfaEnabled = false
+    const userDoc = await getDoc(doc(firestoreDb, 'users', cred.user.uid));
+    expect(userDoc.data()?.mfaEnabled).toBe(false);
   });
 });

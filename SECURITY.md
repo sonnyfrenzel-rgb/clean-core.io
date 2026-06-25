@@ -1,6 +1,6 @@
 # Security Architecture — Clean-Core.io Platform
 
-> **Version:** 3.4 · **Date:** 2026-06-25 · **Classification:** Internal
+> **Version:** 3.5 · **Date:** 2026-06-25 · **Classification:** Internal
 
 ---
 
@@ -44,14 +44,28 @@ This document describes the security architecture and hardening measures impleme
 
 ### 3.3 Firestore Security Rules
 - All collections enforce `isAuthenticated()` for reads.
-- Privileged fields (`isAdmin`, `tier`, `transformationsUsed`, `transformationsLimit`, `s4TenantAccessAllowed`) are frozen for non-admin users.
-- `s4_credentials/{uid}`: `allow read, write: if false;` — exclusively accessed via Admin SDK.
+- **Hardened Onboarding (F-06 Härtung)**: Direct creation of profiles in `/users/{userId}` is permitted but strictly gated. Non-admin users are restricted to safe default values (`tier == 'pilot'`, `status == 'pending'`, `isAdmin == false`, `transformationsUsed == 0`, `transformationsLimit == 5`, `maxTeamMembers == 1`, `s4TenantAccessAllowed == false`).
+- **Field-Level Protection**: Privileged fields can only be modified by admins on update. Client writes to `mfaSecret` and `mfaBackupCodes` are completely blocked.
+- **Server-Only Credentials**:
+  - `s4_credentials/{uid}`: `allow read, write: if false;` — exclusively accessed via Admin SDK.
+  - `mfa_secrets/{uid}`: `allow read, write: if false;` — exclusively accessed via Admin SDK.
 
 ### 3.4 Onboarding Link Cryptography (F-09)
 - Action-bound approval/rejection links (sent via Resend) are protected by a cryptographically signed HMAC token.
 - Tokens are bound to the specific `uid`, `requestType` (e.g. pilot, tenant), and `action` (e.g. approve, reject), and carry a 7-day expiration time (`exp`).
 - Signature verification uses Node's `crypto.createHmac('sha256')` with `timingSafeEqual` comparison to eliminate timing side-channel attacks.
 - Fail-closed behavior is enforced: if `PILOT_APPROVAL_SECRET` is missing or less than 16 characters, token creation/verification fails immediately.
+
+### 3.5 Two-Factor Authentication (MFA) — Server-Side (Option B)
+- **Architecture**: Enforces custom application-level MFA verification on the server-side, preventing raw secrets from leaking to the client bundle.
+- **Storage & Cryptography**:
+  - **Encrypted TOTP Secret**: Stored in the private `/mfa_secrets/{uid}` collection. Secrets are encrypted using AES-256-GCM under the `S4_ENCRYPTION_KEY` env var.
+  - **Hashed Recovery Backup Codes**: Stored in `/mfa_secrets/{uid}`. Backup codes are hashed using Node's `crypto.scryptSync` with the user's `uid` as salt to protect against dictionary attacks.
+- **MFA API Endpoints**:
+  - `POST /api/mfa/setup/start`: Generates a temporary Base32 secret and QR code URL, returned to the client for scanning.
+  - `POST /api/mfa/setup/verify`: Verifies the initial TOTP code, encrypts the secret, hashes the backup codes, and saves them to Firestore, setting `mfaEnabled: true`.
+  - `POST /api/mfa/verify`: Authenticates a login attempt using a 6-digit TOTP token or a backup recovery code. Backup codes are single-use and consumed upon verification.
+  - `POST /api/mfa/disable`: Disables MFA for the user. Requires a recent login session (within 5 minutes, verified using the ID token `auth_time` claim) for security.
 
 ---
 

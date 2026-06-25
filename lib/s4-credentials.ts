@@ -14,7 +14,7 @@ function getKey(): Buffer {
   return key;
 }
 
-function encrypt(plaintext: string): string {
+export function encrypt(plaintext: string): string {
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv(ALGO, getKey(), iv);
   const ct = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
@@ -23,7 +23,7 @@ function encrypt(plaintext: string): string {
   return Buffer.concat([iv, tag, ct]).toString('base64');
 }
 
-function decrypt(payload: string): string {
+export function decrypt(payload: string): string {
   const raw = Buffer.from(payload, 'base64');
   const iv = raw.subarray(0, 12);
   const tag = raw.subarray(12, 28);

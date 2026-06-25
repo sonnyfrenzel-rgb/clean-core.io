@@ -20,9 +20,23 @@ export const metadata: Metadata = {
 
 const releases = [
   {
-    version: 'v1.11.0',
+    version: 'v1.12.0',
     date: 'June 25, 2026',
     tag: 'Latest',
+    icon: Rocket,
+    changes: [
+      'Hardened client-side onboarding by restricting default fields (tier, status, transformations limit, admin roles) in Firestore security rules to prevent privilege escalation',
+      'Implemented server-side two-factor authentication (MFA) via TOTP using encrypted secrets stored in memory and hashed backup codes (Option B)',
+      'Secured settings page and authentication flows to perform MFA verification and setup verification server-side',
+      'Added secure, encrypted storage of MFA secrets using AES-256-GCM',
+      'Updated security architecture documentation and added detailed security notes in SECURITY.md',
+      'Bounced version references to v1.12.0 across the application and checked E2E Playwright tests',
+    ],
+  },
+  {
+    version: 'v1.11.0',
+    date: 'June 25, 2026',
+    tag: null,
     icon: Rocket,
     changes: [
       'Redesigned Board Presentation (Stage 7) to be deterministic and evidence-based, derived from project metrics and findings',

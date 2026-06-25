@@ -38,7 +38,7 @@ export function buildBoardDeck(input: {
     type: 'split',
     subtitle: `Recommendation: ${recommendation}`,
     leftContent: `**Decision summary:**\n\n• **Target Architecture**: Clean Core Compliance tier using ${project.extensibilityRoute || 'In-App RAP / Side-by-Side CAP'}.\n• **Overall Readiness**: Clean Core Score is **${project.cleanCoreScore ?? 100}/100**.\n• **Rollup Risk Rating**: **${riskRating}** (${overallLevel.toUpperCase()}).\n• **Required Actions**: ${overallLevel === 'not-supported' ? 'Block deployment, redesign unsupported structures.' : overallLevel === 'partial' ? 'Require Lead Architect sign-off before transport.' : 'Proceed to release queue.'}`,
-    rightContent: `**Governance Status:**\n\n• **Risk Assessment**: ${riskRating}\n• **Evidence Level**: Evidentiary Board Presentation derived from Static AST Analysis\n• **Fingerprint Identity**: ${project.auditMetadata?.inputFingerprint?.sha256?.substring(0, 12) || 'N/A'}\n• **Model Registry**: ${project.auditMetadata?.modelCard?.model || 'Clean-Core Compiler v1.11.0'}`,
+    rightContent: `**Governance Status:**\n\n• **Risk Assessment**: ${riskRating}\n• **Evidence Level**: Evidentiary Board Presentation derived from Static AST Analysis\n• **Fingerprint Identity**: ${project.auditMetadata?.inputFingerprint?.sha256?.substring(0, 12) || 'N/A'}\n• **Model Registry**: ${project.auditMetadata?.modelCard?.model || 'Clean-Core Compiler v1.12.0'}`,
     speakerNotes: `Decision-first board recommendation. This project is rated as ${riskRating} due to worst-case rollup of ${overallLevel} compliance. The target architecture is ${project.extensibilityRoute || 'standard Cloud SDK'}.`
   };
 
