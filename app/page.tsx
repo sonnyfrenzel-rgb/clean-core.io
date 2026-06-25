@@ -387,6 +387,11 @@ export default function Home() {
                   cc: { badge: "Automated", desc: "Calculates Local Compliance score & prioritizes packages." }
                 },
                 {
+                  title: "Developer HUD & Feedback",
+                  sap: { badge: "Static Logs", desc: "Requires manually parsing warning lists or waiting for PDF consulting reports." },
+                  cc: { badge: "Interactive", desc: "Visualizes compliance scores, code-minimap heatmaps, and developer checklists in real-time." }
+                },
+                {
                   title: "Automated SAP API Hub Mapping",
                   sap: { badge: "Manual Only", desc: "Requires manual search in documentation." },
                   cc: { badge: "Resolved", desc: "Resolves database reads (VBAK, BSEG) directly to standard APIs." }
@@ -464,6 +469,11 @@ export default function Home() {
                   title: "Clean Core Violation Scanning",
                   sap: { badge: "Static Check", level: "partial", desc: "Identifies unreleased APIs & direct database reads." },
                   cc: { badge: "Automated", desc: "Calculates Local Compliance score & prioritizes packages." }
+                },
+                {
+                  title: "Developer HUD & Feedback",
+                  sap: { badge: "Static Logs", level: "weak", desc: "Requires manually parsing warning lists or waiting for PDF consulting reports." },
+                  cc: { badge: "Interactive", desc: "Visualizes compliance scores, code-minimap heatmaps, and developer checklists in real-time." }
                 },
                 {
                   title: "SAP API Hub Mapping",
@@ -575,7 +585,7 @@ export default function Home() {
               {
                 icon: <Cpu className="w-8 h-8 text-green-600" />,
                 title: 'Dual RAP & CAP Engine',
-                desc: 'Generates clean In-App ABAP Cloud RAP handlers formatted as standard abapGit directories (src/ and abapgit.xml) for local ADT import, or decoupled BTP CAP Node.js services.',
+                desc: 'Generates clean In-App ABAP Cloud RAP handlers or decoupled BTP CAP services. Powered by a deterministic AST resolver that linearizes OO inheritance chains before translation, preventing structural AI hallucinations.',
                 link: '/how-it-works',
                 testId: 'feature-dual-rap-cap-engine'
               },
@@ -666,9 +676,9 @@ export default function Home() {
                 desc: "Full enforcement of Art. 17 DSGVO. Purge all user footprints, uploads, and data in Settings. Transactional emails are securely routed via Resend API with DSGVO imprints."
               },
               {
-                icon: <Users className="w-6 h-6 text-green-600" />,
-                title: "Free Community Pilot",
-                desc: "Community-driven prototyping platform. Free access for SAP architects and developers to prototype decoupling strategies without licensing overhead."
+                icon: <Layers className="w-6 h-6 text-green-600" />,
+                title: "Local Code Sovereignty",
+                desc: "Run the entire platform as a local Electron desktop application. Workspaces, AST analysis, and custom code translations compile directly in your secure local environment."
               },
               {
                 icon: <Shield className="w-6 h-6 text-green-600" />,
