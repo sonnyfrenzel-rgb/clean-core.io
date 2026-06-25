@@ -51,6 +51,8 @@ jobs:
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true'
           FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099'
           FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080'
+          MFA_BACKUP_CODE_PEPPER: ${{ secrets.MFA_BACKUP_CODE_PEPPER }}
+          PILOT_APPROVAL_SECRET: ${{ secrets.PILOT_APPROVAL_SECRET }}
 
       - name: Run End-to-End Tests
         run: npx playwright test
@@ -60,6 +62,8 @@ jobs:
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true'
           FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099'
           FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080'
+          MFA_BACKUP_CODE_PEPPER: ${{ secrets.MFA_BACKUP_CODE_PEPPER }}
+          PILOT_APPROVAL_SECRET: ${{ secrets.PILOT_APPROVAL_SECRET }}
 
       - name: Generate QE Quality Engineering Report
         run: npm run build:report
@@ -130,4 +134,6 @@ jobs:
             RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
             S4_ENCRYPTION_KEY=${{ secrets.S4_ENCRYPTION_KEY }}
             S4_HOST_ALLOWLIST=${{ secrets.S4_HOST_ALLOWLIST }}
+            MFA_BACKUP_CODE_PEPPER=${{ secrets.MFA_BACKUP_CODE_PEPPER }}
+            PILOT_APPROVAL_SECRET=${{ secrets.PILOT_APPROVAL_SECRET }}
             NODE_OPTIONS=--max-old-space-size=4096

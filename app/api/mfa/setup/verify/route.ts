@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
 import { verifyTOTP, generateBackupCodes } from '@/lib/totp';
 import { encryptMfaSecret, decryptMfaSecret, hashBackupCodeWithSaltAndPepper } from '@/lib/mfa';
+import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
@@ -17,6 +18,15 @@ export async function POST(request: NextRequest) {
     }
 
     const uid = decodedToken.uid;
+    try {
+      await assertRateLimit(`mfa-setup-verify:${uid}:${getClientIp(request)}`, 5, 10 * 60 * 1000);
+    } catch (rateErr: any) {
+      return NextResponse.json(
+        { error: rateErr.message || 'Too many MFA setup attempts. Please wait and try again.' },
+        { status: rateErr.status || 429 },
+      );
+    }
+
     const { db, FieldValue } = await getAdminDb();
 
     // 1. Load pending secret from server-side collection mfa_pending/{uid}

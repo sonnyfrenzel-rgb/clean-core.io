@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyAdminRequest, setAdminClaim } from '@/lib/firebase-admin';
+import { verifyAdminRequest, setAdminClaim, assertAdminStepUp } from '@/lib/firebase-admin';
 
 /**
  * POST /api/admin/set-admin-claim
@@ -19,6 +19,15 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: 'Forbidden: administrator privileges required.' },
       { status: 403 },
+    );
+  }
+
+  try {
+    await assertAdminStepUp(req, admin);
+  } catch (e: any) {
+    return NextResponse.json(
+      { error: e?.message || 'Recent administrator step-up verification required.' },
+      { status: e?.status || 403 },
     );
   }
 

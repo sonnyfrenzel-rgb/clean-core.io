@@ -751,7 +751,7 @@ export default function Dashboard() {
     setForumError(null);
     setForumSending(true);
     setTimeout(() => {
-      const isAdminUser = profile?.email === 'sonny.frenzel@googlemail.com' || user?.email === 'sonny.frenzel@googlemail.com' || profile?.isAdmin;
+      const isAdminUser = profile?.isAdmin === true;
       const newPost = {
         id: `post-${Date.now()}`,
         title: forumTitle,
@@ -1560,7 +1560,7 @@ export default function Dashboard() {
               return true;
             });
 
-            const isAdminUser = profile?.email === 'sonny.frenzel@googlemail.com' || user?.email === 'sonny.frenzel@googlemail.com' || profile?.isAdmin;
+            const isAdminUser = profile?.isAdmin === true;
 
             return (
               <div className="space-y-6">
@@ -1770,9 +1770,9 @@ export default function Dashboard() {
                               type="text" 
                               value={forumAuthor}
                               onChange={(e) => setForumAuthor(e.target.value)}
-                              placeholder={profile?.email === 'sonny.frenzel@googlemail.com' ? "Clean-Core Admin" : "Your alias (e.g., SAP_Guru)"}
+                              placeholder={profile?.isAdmin ? "Clean-Core Admin" : "Your alias (e.g., SAP_Guru)"}
                               className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:ring-2 focus:ring-green-500 outline-none transition-all font-sans"
-                              disabled={profile?.email === 'sonny.frenzel@googlemail.com'}
+                              disabled={profile?.isAdmin === true}
                             />
                           </div>
 

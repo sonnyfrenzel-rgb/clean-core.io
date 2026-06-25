@@ -1,4 +1,4 @@
-import { FIRESTORE_DB_ID, isHardcodedAdmin } from '@/lib/constants';
+import { FIRESTORE_DB_ID } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { decrypt } from './s4-credentials';
 
@@ -80,16 +80,33 @@ export async function verifyRequestAuth(req: Request) {
 
 /**
  * Verify that the request comes from an authenticated admin user.
- * Checks: valid Firebase token + email in hardcoded admin allowlist.
+ * Checks: valid Firebase token + admin custom claim.
  * Returns the decoded token or null.
  */
 export async function verifyAdminRequest(req: Request) {
   const decoded = await verifyRequestAuth(req);
   if (!decoded) return null;
-  // Custom Claim zuerst; hartkodierte Bootstrap-Admins nur noch als Übergangs-Fallback.
   if ((decoded as any).admin === true) return decoded;
-  if (decoded.email && isHardcodedAdmin(decoded.email)) return decoded;
+  if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
+    const { db } = await getAdminDb();
+    const snap = await db.collection('users').doc(decoded.uid).get();
+    if (snap.exists && snap.data()?.isAdmin === true) return decoded;
+  }
   return null;
+}
+
+export function assertRecentAuth(decodedToken: any, maxAgeSeconds = 300): void {
+  const authTime = Number(decodedToken?.auth_time);
+  const nowSeconds = Math.floor(Date.now() / 1000);
+
+  if (!Number.isFinite(authTime) || nowSeconds - authTime > maxAgeSeconds) {
+    throw new QuotaError('Security timeout. Please re-authenticate and try again.', 403);
+  }
+}
+
+export async function assertAdminStepUp(req: Request, decodedAdmin: any): Promise<void> {
+  assertRecentAuth(decodedAdmin, 300);
+  await assertMfaStepUp(req, decodedAdmin);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -133,13 +150,12 @@ export async function reserveTransformationQuota(uid: string): Promise<void> {
     const snap = await tx.get(ref);
     const data = snap.exists ? snap.data() : {};
 
-    const email = data.email || '';
     const tier = data.tier || 'pilot';
     const status = data.status || 'pending';
     const used = typeof data.transformationsUsed === 'number' ? data.transformationsUsed : 0;
     const limit = typeof data.transformationsLimit === 'number' ? data.transformationsLimit : 5;
 
-    const isUnlimited = tier === 'enterprise' || isHardcodedAdmin(email);
+    const isUnlimited = tier === 'enterprise';
     if (isUnlimited) return; // no metering
 
     if (status !== 'approved') {
@@ -217,8 +233,7 @@ export async function assertS4TenantAccess(
   }
   
   const data = snap.data();
-  const email = data.email || '';
-  const isAdminUser = opts?.isAdminClaim === true || (data.isAdmin === true) || isHardcodedAdmin(email);
+  const isAdminUser = opts?.isAdminClaim === true || (data.isAdmin === true);
   const s4TenantAccessAllowed = data.s4TenantAccessAllowed === true;
 
   if (!isAdminUser && !s4TenantAccessAllowed) {

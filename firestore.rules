@@ -14,11 +14,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() &&
-        (request.auth.token.get('admin', false) == true ||
-         // Übergangs-Fallback (entfernen, sobald alle Admins den Claim haben):
-         request.auth.token.get('email', '') == "sonny.frenzel@gmail.com" ||
-         request.auth.token.get('email', '') == "sonny.frenzel@googlemail.com" ||
-         request.auth.token.get('email', '') == "info@clean-core.io");
+        request.auth.token.get('admin', false) == true;
     }
 
     function getUserData() {
@@ -56,9 +52,23 @@ service cloud.firestore {
 
     function projectAllowedKeys() {
       return [
+        // Core fields
         'name', 'status', 'userId', 'createdAt', 'orgId',
+        // Stage content fields
         'legacyCode', 'analysis', 'solutionDesign', 'generatedCode',
-        'documentation', 'presentation', 'testCases', 'testSuite', 'exports'
+        'documentation', 'businessDocumentation', 'presentation',
+        'testCases', 'testSuite', 'exports',
+        // v1.9.0 Assessment & Architecture
+        'codeInventory', 'dataCoupling', 'complexityScore', 'criticalityScore',
+        'targetArchitecture', 'originalRecommendation', 'recommendationConfidence',
+        'recommendationJustification', 'architectureOverride', 'architectureOverrideJustification',
+        // Architect sign-off
+        'approvedByArchitect', 'architectJustifiedOverride', 'architectSignOffAt', 'approvedBy',
+        // Analysis metadata
+        's4Deployment', 'extensibilityRoute', 'cleanCoreScore',
+        'charged', 'transformationBypass',
+        // v1.10.0 Audit metadata
+        'auditMetadata'
       ];
     }
 
@@ -235,6 +245,10 @@ service cloud.firestore {
 
     // MFA Option B: MFA Secrets ausschließlich serverseitig (Admin SDK). Clients nie.
     match /mfa_secrets/{uid} {
+      allow read, write: if false;
+    }
+
+    match /rate_limits/{key} {
       allow read, write: if false;
     }
   }

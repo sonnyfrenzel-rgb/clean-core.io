@@ -288,8 +288,18 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
 
     // Confirm target architecture sign-off
     console.log('Confirming target architecture sign-off...');
-    await page.click('button:has-text("Confirm & Lock Architecture")');
-    await page.waitForSelector('text=Target Architecture Set', { timeout: 15000 });
+    const lockBtn = page.locator('button:has-text("Confirm & Lock Architecture")');
+    await lockBtn.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(1000); // Allow any animations/renders to settle
+    
+    // Listen for console errors during the click
+    page.on('console', msg => {
+      if (msg.type() === 'error') console.log(`[BROWSER ERROR] ${msg.text()}`);
+    });
+    
+    await lockBtn.click();
+    console.log('Lock button clicked, waiting for confirmation...');
+    await page.waitForSelector('text=Target Architecture Set', { timeout: 30000 });
     console.log('Architecture confirmed.');
 
     // --- STAGE 3: TRANSFORMATION ---

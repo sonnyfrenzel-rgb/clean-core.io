@@ -17,7 +17,10 @@ export function hashBackupCode(code: string, uid: string): string {
  */
 export function hashBackupCodeWithSaltAndPepper(code: string, salt: string): string {
   const cleanCode = code.trim().toUpperCase();
-  const pepper = process.env.MFA_BACKUP_CODE_PEPPER || 'default-fallback-mfa-pepper-98765';
+  const pepper = process.env.MFA_BACKUP_CODE_PEPPER;
+  if (!pepper || pepper.length < 32) {
+    throw new Error('MFA_BACKUP_CODE_PEPPER is not configured (minimum 32 characters).');
+  }
   // Combine code, salt and pepper. We pass the combined string as password and salt as salt.
   return crypto.scryptSync(cleanCode + pepper, salt, 32).toString('base64');
 }

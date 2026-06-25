@@ -4,12 +4,22 @@ import { APP_VERSION } from '@/lib/version';
 import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
 import { APP_BASE_URL } from '@/lib/constants';
 import { escapeHtml } from '@/lib/utils';
+import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
     const decodedToken = await verifyRequestAuth(request);
     if (!decodedToken) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+
+    try {
+      await assertRateLimit(`request-tenant:${decodedToken.uid}:${getClientIp(request)}`, 3, 60 * 60 * 1000);
+    } catch (rateErr: any) {
+      return NextResponse.json(
+        { error: rateErr.message || 'Too many requests. Please wait and try again.' },
+        { status: rateErr.status || 429 },
+      );
     }
 
     const body = await request.json();
@@ -288,7 +298,7 @@ export async function POST(request: NextRequest) {
       updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
 
-    return NextResponse.json({ success: true, approveUrl });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error in request-tenant-access API:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

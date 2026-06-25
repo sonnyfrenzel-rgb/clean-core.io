@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
 import { verifyMfa, encryptMfaSecret } from '@/lib/mfa';
+import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,6 +16,15 @@ export async function POST(request: NextRequest) {
     }
 
     const uid = decodedToken.uid;
+    try {
+      await assertRateLimit(`mfa-verify:${uid}:${getClientIp(request)}`, 5, 10 * 60 * 1000);
+    } catch (rateErr: any) {
+      return NextResponse.json(
+        { error: rateErr.message || 'Too many MFA attempts. Please wait and try again.' },
+        { status: rateErr.status || 429 },
+      );
+    }
+
     const { db, FieldValue } = await getAdminDb();
 
     // 1. Fetch encrypted secret and hashed backup codes
