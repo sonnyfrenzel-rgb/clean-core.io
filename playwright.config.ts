@@ -5,6 +5,14 @@ process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR = 'true';
 process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
 process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
 
+// Ensure security secrets are available for tests that call createApprovalToken directly
+if (!process.env.PILOT_APPROVAL_SECRET) {
+  process.env.PILOT_APPROVAL_SECRET = 'test-approval-secret-key-1234567890';
+}
+if (!process.env.MFA_BACKUP_CODE_PEPPER) {
+  process.env.MFA_BACKUP_CODE_PEPPER = 'test-mfa-pepper-value-for-ci-test-runner-32';
+}
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
