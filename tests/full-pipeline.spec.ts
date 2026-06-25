@@ -4,6 +4,11 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, co
 import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, deleteDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import * as fs from 'fs';
 import * as path from 'path';
+
+// Set test secret first so that imports initializing getSecret don't throw
+process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
+
+import { createApprovalToken } from '../lib/approval-token';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase SDK in Node context to register and approve the test user
@@ -19,11 +24,13 @@ if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
 
 const branchSuffix = (process.env.GITHUB_REF_NAME || 'local').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 const TEST_EMAIL = `superduper-e2e-${branchSuffix}@cleancore-test.io`;
+const ADMIN_USER_EMAIL = 'sonny.frenzel@gmail.com';
 const TEST_PASSWORD = 'SuperPassword123!';
+const ADMIN_PASSWORD = 'SecurityPassword123!';
 
 test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', () => {
   
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ request }) => {
     console.log('Initializing test user registration...');
     let uid = '';
     try {
@@ -41,7 +48,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
       }
     }
 
-    // 2. Elevate user status to 'approved' inside Firestore and provision transformations quota
+    // 2. Create user profile with hardened-rules-compliant defaults
     const userDocRef = doc(firestoreDb, 'users', uid);
     const docSnap = await getDoc(userDocRef);
     if (!docSnap.exists()) {
@@ -49,22 +56,63 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
         firstName: 'Super',
         lastName: 'Duper E2E',
         email: TEST_EMAIL,
-        tier: 'starter',
-        status: 'approved',
+        tier: 'pilot',
+        status: 'pending',
         transformationsUsed: 0,
-        transformationsLimit: 25,
+        transformationsLimit: 5,
         maxTeamMembers: 1,
         orgId: null,
         identityProvider: 'password',
         createdAt: new Date(),
         isAdmin: false,
         authMethod: 'password',
+        s4TenantAccessAllowed: false,
+        s4TenantAccessRequested: false,
+        mfaEnabled: false,
       });
-      console.log('Created new E2E test user profile with starter tier.');
-    } else {
-      await setDoc(userDocRef, { status: 'approved', tier: 'starter', transformationsUsed: 0 }, { merge: true });
-      console.log('E2E test user profile already exists, is approved, and transformations balance reset to 0.');
+      console.log('Created new E2E test user profile with pilot/pending defaults.');
     }
+
+    // 3. Register admin user if not exists (try both known passwords for emulator reuse)
+    let adminUid = '';
+    try {
+      const adminCred = await createUserWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, ADMIN_PASSWORD);
+      adminUid = adminCred.user.uid;
+    } catch (e: any) {
+      if (e.code === 'auth/email-already-in-use') {
+        // Admin may have been registered by security-compliance or a prior run; try known passwords
+        let adminCred;
+        try {
+          adminCred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, ADMIN_PASSWORD);
+        } catch {
+          adminCred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
+        }
+        adminUid = adminCred.user.uid;
+      } else {
+        throw e;
+      }
+    }
+    // Ensure admin profile exists (admin bypasses rules)
+    await setDoc(doc(firestoreDb, 'users', adminUid), {
+      firstName: 'Admin', lastName: 'E2E', email: ADMIN_USER_EMAIL,
+      isAdmin: true, createdAt: new Date(),
+    });
+
+    // 4. Approve user via admin API (elevates tier and status to approved)
+    let adminCred;
+    try {
+      adminCred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, ADMIN_PASSWORD);
+    } catch {
+      adminCred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
+    }
+    const adminToken = await adminCred.user.getIdToken();
+    const approvalToken = createApprovalToken(uid, 'pilot', 'approve');
+    const approveRes = await request.post('/api/admin/approve-user', {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+      data: { uid, token: approvalToken, action: 'approve' },
+    });
+    console.log(`Admin approval response: ${approveRes.status()}`);
+    expect(approveRes.status()).toBe(200);
 
     // 3. Delete all projects and examples belonging to the test user to prevent query congestion
     try {

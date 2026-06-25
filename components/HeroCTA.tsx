@@ -56,13 +56,12 @@ export default function HeroCTA() {
           Get Pilot Access or Login <ArrowRight className="w-5 h-5" />
         </Link>
       )}
-      <a 
-        href="/Clean-Core_S4HANA_Modernization_Whitepaper.pdf"
-        download="Clean-Core_S4HANA_Modernization_Whitepaper.pdf"
+      <Link
+        href="/whitepaper"
         className="w-full sm:w-auto flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-850 text-white px-8 py-5 rounded-2xl font-bold text-base transition-all shadow-md hover:shadow-lg hover:-translate-y-1 cursor-pointer"
       >
-        <Download className="w-5 h-5 text-green-400" /> Download Whitepaper (PDF)
-      </a>
+        <Download className="w-5 h-5 text-green-400" /> Read Whitepaper
+      </Link>
     </div>
   );
 }
