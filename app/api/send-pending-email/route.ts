@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { APP_VERSION } from '@/lib/version';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
+import { escapeHtml } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name } = body;
+    const { name: rawName } = body;
 
     // F-13: send only to the AUTHENTICATED applicant's own verified email — never a
     // body-supplied address (prevents the route being used as an arbitrary-recipient mailer).
@@ -18,9 +19,13 @@ export async function POST(request: NextRequest) {
     if (!recipient || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
       return NextResponse.json({ error: 'Authenticated account has no valid email.' }, { status: 400 });
     }
-    if (!name) {
+    if (!rawName) {
       return NextResponse.json({ error: 'Missing required field: name' }, { status: 400 });
     }
+    if (typeof rawName !== 'string' || rawName.length > 200) {
+      return NextResponse.json({ error: 'Invalid name.' }, { status: 400 });
+    }
+    const name = escapeHtml(rawName);
 
     const emailSubject = `⏳ Clean-Core.io: We are reviewing your Pilot Application!`;
     

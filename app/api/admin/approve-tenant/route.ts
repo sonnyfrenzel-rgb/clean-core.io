@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdminRequest, approveTenantWithToken } from '@/lib/firebase-admin';
+import { verifyAdminRequest, approveTenantWithToken, assertAdminStepUp } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   try {
@@ -7,6 +7,15 @@ export async function POST(req: NextRequest) {
     const decodedAdmin = await verifyAdminRequest(req);
     if (!decodedAdmin) {
       return NextResponse.json({ error: 'Unauthorized. Admin privileges required.' }, { status: 403 });
+    }
+
+    try {
+      await assertAdminStepUp(req, decodedAdmin);
+    } catch (stepUpErr: any) {
+      return NextResponse.json(
+        { error: stepUpErr.message || 'Recent administrator step-up verification required.' },
+        { status: stepUpErr.status || 403 },
+      );
     }
 
     const body = await req.json();

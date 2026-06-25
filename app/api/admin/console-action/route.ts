@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   verifyAdminRequest,
-  assertMfaSatisfied,
+  assertAdminStepUp,
   adminApproveUser,
   adminRevokeUser,
   adminGrantS4,
@@ -17,21 +17,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized. Admin privileges required.' }, { status: 403 });
     }
 
-    // 2. Enforce recent re-authentication (within 5 minutes)
-    const authTime = decodedAdmin.auth_time;
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    if (nowSeconds - authTime > 300) {
-      return NextResponse.json({ error: 'Security timeout. Please re-authenticate.' }, { status: 400 });
-    }
-
-    // 3. Enforce MFA validation
+    // 2. Enforce recent re-authentication and recent MFA validation.
     try {
-      await assertMfaSatisfied(req, decodedAdmin);
-    } catch (mfaErr: any) {
-      return NextResponse.json({ error: mfaErr.message || 'MFA verification required.' }, { status: 403 });
+      await assertAdminStepUp(req, decodedAdmin);
+    } catch (stepUpErr: any) {
+      return NextResponse.json(
+        { error: stepUpErr.message || 'Recent administrator step-up verification required.' },
+        { status: stepUpErr.status || 403 },
+      );
     }
 
-    // 4. Parse request body
+    // 3. Parse request body
     const body = await req.json();
     const { uid, action } = body;
 
@@ -39,7 +35,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required parameters: uid, action.' }, { status: 400 });
     }
 
-    // 5. Execute corresponding admin action server-side
+    // 4. Execute corresponding admin action server-side
     switch (action) {
       case 'approve-user':
         await adminApproveUser(decodedAdmin.uid, uid);

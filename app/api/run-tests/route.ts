@@ -291,6 +291,18 @@ process.exitCode = failed ? 1 : 0;
     // ── 4) Resolve S/4 credentials server-side (F-03), never from the body ──
     let s4Env: Record<string, string> = {};
     if (s4Environment === 'live') {
+      if (process.env.S4_TEST_RUNNER_EGRESS_ENFORCED !== 'true') {
+        return NextResponse.json(
+          {
+            output: '',
+            error: 'Live S/4HANA test execution is disabled until runner network egress is restricted by infrastructure policy.',
+            exitCode: 1,
+            testResults: [],
+          },
+          { status: 403 },
+        );
+      }
+
       // Audit P1: re-verify tenant access here too. A user whose S/4 access was
       // revoked must not be able to use stored live credentials via the test runner.
       try {

@@ -35,6 +35,7 @@ export default defineConfig({
       FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
       FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
       PILOT_APPROVAL_SECRET: process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345',
+      MFA_BACKUP_CODE_PEPPER: process.env.MFA_BACKUP_CODE_PEPPER || 'test-mfa-pepper-value-for-ci-test-runner-32',
     },
   },
 });

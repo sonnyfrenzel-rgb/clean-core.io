@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import { APP_VERSION } from '@/lib/version';
-import { verifyAdminRequest } from '@/lib/firebase-admin';
+import { verifyAdminRequest, assertAdminStepUp } from '@/lib/firebase-admin';
+import { escapeHtml } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,10 +14,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { email, name } = body;
+    try {
+      await assertAdminStepUp(request, adminToken);
+    } catch (stepUpErr: any) {
+      return NextResponse.json(
+        { error: stepUpErr.message || 'Recent administrator step-up verification required.' },
+        { status: stepUpErr.status || 403 },
+      );
+    }
 
-    if (!email || !name) {
+    const body = await request.json();
+    const { email, name: rawName } = body;
+
+    if (!email || !rawName) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -26,6 +34,10 @@ export async function POST(request: NextRequest) {
     if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
       return NextResponse.json({ error: 'Invalid recipient email.' }, { status: 400 });
     }
+    if (typeof rawName !== 'string' || rawName.length > 200) {
+      return NextResponse.json({ error: 'Invalid recipient name.' }, { status: 400 });
+    }
+    const name = escapeHtml(rawName);
 
     // Hardcoded base URL to prevent Host-Header injection
     const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';

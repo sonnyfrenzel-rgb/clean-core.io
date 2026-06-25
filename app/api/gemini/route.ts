@@ -7,6 +7,7 @@ import {
   QuotaError,
   assertMfaSatisfied,
 } from '@/lib/firebase-admin';
+import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -67,6 +68,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Authentication required.' },
         { status: 401 },
+      );
+    }
+
+    try {
+      await assertRateLimit(`gemini:${decodedToken.uid}:${getClientIp(request)}`, 20, 60 * 60 * 1000);
+    } catch (rateErr: any) {
+      return NextResponse.json(
+        { error: rateErr.message || 'Too many requests.' },
+        { status: rateErr.status || 429 },
       );
     }
 
