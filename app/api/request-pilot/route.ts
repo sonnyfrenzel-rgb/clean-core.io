@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
                   Clean-Core<span style="color: #10b981;">.io</span>
                 </div>
                 <div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.15em; margin-top: 4px; line-height: 1.2;">
-                  Free Community SAP Prototyping Platform
+                  Free Community SAP Modernization Platform
                 </div>
               </td>
               <td align="right" valign="middle" style="text-align: right;">
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
           </p>
           <p style="margin: 0 0 12px 0; font-weight: 600;">
             Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
-            Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform
+            Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Modernization Platform
           </p>
           <p style="margin: 0;">
             <strong>Data Sovereignty (Art. 17 GDPR):</strong> You have the absolute right to erasure. To permanently and instantly wipe all database and authentication entries associated with your profile, visit the <em>Danger Zone</em> inside your Settings dashboard.
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
                       Clean-Core<span style="color: #10b981;">.io</span>
                     </div>
                     <div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.15em; margin-top: 4px; line-height: 1.2;">
-                      Free Community SAP Prototyping Platform
+                      Free Community SAP Modernization Platform
                     </div>
                   </td>
                   <td align="right" valign="middle" style="text-align: right;">
@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
               </p>
               <p style="margin: 0 0 12px 0; font-weight: 600;">
                 Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
-                Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Prototyping Platform
+                Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Modernization Platform
               </p>
               <p style="margin: 0;">
                 <strong>Data Sovereignty (Art. 17 GDPR):</strong> You have the absolute right to erasure. To permanently and instantly wipe all database and authentication entries associated with your profile, visit the <em>Danger Zone</em> inside your Settings dashboard.

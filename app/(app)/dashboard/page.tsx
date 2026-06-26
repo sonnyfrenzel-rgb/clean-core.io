@@ -909,7 +909,7 @@ export default function Dashboard() {
             
             {/* System Disclaimer & Terms */}
             <div className="mb-4 bg-amber-50/50 border border-amber-200/50 rounded-xl p-3 text-[11px] text-amber-900 leading-relaxed font-medium">
-              ⚠️ <strong>Pilot Terms:</strong> This is a free community prototyping platform powered by AI. Generated code may contain errors and is provided without warranty or liability. Review our <a href="/settings" className="underline font-bold text-amber-950 hover:text-green-700 transition-colors">Privacy Policy</a> & Legal Notice in settings.
+              ⚠️ <strong>Pilot Terms:</strong> This is a free community Modernization Platform powered by AI. Generated code may contain errors and is provided without warranty or liability. Review our <a href="/settings" className="underline font-bold text-amber-950 hover:text-green-700 transition-colors">Privacy Policy</a> & Legal Notice in settings.
             </div>
 
             {/* Quota limit feedback */}

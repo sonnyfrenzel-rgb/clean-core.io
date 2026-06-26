@@ -94,7 +94,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
             ⚡ Community Pilot
           </span>
           <span className="leading-relaxed">
-            Free Community SAP Prototyping Platform. Powered by Generative AI. Provided without warranty.
+            Free Community SAP Modernization Platform. Powered by Generative AI. Provided without warranty.
           </span>
           <div className="flex items-center gap-2 font-black shrink-0">
             <Link href="/settings#privacy" className="underline hover:text-green-750 transition-colors">Privacy Policy</Link>

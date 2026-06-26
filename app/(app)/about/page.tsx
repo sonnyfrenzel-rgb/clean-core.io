@@ -77,7 +77,7 @@ export default function AboutPage() {
             About Clean-<span className="text-green-400">Core.io</span>
           </h1>
           <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
-            A free, community-powered prototyping platform for SAP architects and developers.
+            A free, community-powered Modernization Platform for SAP architects and developers.
           </p>
         </div>
       </div>
