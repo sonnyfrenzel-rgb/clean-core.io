@@ -1,6 +1,6 @@
 # Security Architecture — Clean-Core.io Platform
 
-> **Version:** 3.5 · **Date:** 2026-06-25 · **Classification:** Internal
+> **Version:** 3.6 · **Date:** 2026-06-26 · **Classification:** Internal
 
 ---
 
@@ -24,6 +24,7 @@ This document describes the security architecture and hardening measures impleme
 | F-08 | Client-side GDPR account erasure orchestration | **P1** | ✅ Resolved | Replaced client-side delete routines with transaction-backed server-side deletion route `/api/account/delete`. |
 | F-09 | Decorative-only email approval HMAC checks | **P1** | ✅ Resolved | Transitioned email activation/approval hooks to server-side cryptographic HMAC token re-validation routes. |
 | F-10 | Vulnerability to HTML Injection in transactional emails | **P2** | ✅ Resolved | Added HTML escaping for all interpolated user fields inside the transactional email templates. |
+| A-01 | Orphaned Firebase Auth user after pilot registration reject | **P2** | ✅ Resolved | `approveUserWithToken` reject branch now deletes the Firebase Auth user via `getAuth().deleteUser(uid)`. Idempotent: `auth/user-not-found` is silently ignored. |
 
 ---
 
