@@ -3,23 +3,29 @@ import { NextRequest, NextResponse } from 'next/server';
 /**
  * F-03: Content-Security-Policy Middleware
  *
- * Injects a strict CSP header into every HTML response.
- * Uses nonce-based script-src with 'strict-dynamic' for Next.js compatibility.
- * style-src allows 'unsafe-inline' short-term (Tailwind/Framer Motion inline styles).
+ * Injects a CSP header into every HTML response.
+ *
+ * NOTE: Next.js does not propagate middleware-generated nonces to its <script>
+ * tags without the experimental `contentSecurityPolicy` config. Therefore we
+ * use 'self' + 'unsafe-inline' instead of nonce-based strict-dynamic.
+ *
+ * This CSP still provides significant hardening:
+ *  - Blocks external script injection (only 'self' scripts allowed)
+ *  - Prevents clickjacking (frame-ancestors 'none')
+ *  - Blocks Flash / plugin-based attacks (object-src 'none')
+ *  - Restricts form targets (form-action 'self')
+ *  - Limits connect-src to known Google/Firebase domains
+ *  - Enforces HTTPS in production (upgrade-insecure-requests)
  */
 
 export function middleware(request: NextRequest) {
-  // Generate a random nonce for this request
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
-
-  // In development, Next.js uses eval() for HMR/webpack — allow it.
-  // In production, strict CSP without unsafe-eval applies.
   const isDev = process.env.NODE_ENV === 'development';
 
-  // Build the CSP header
   const csp = [
     `default-src 'self'`,
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+    // 'unsafe-inline' required for Next.js inline bootstrap scripts & CSS-in-JS
+    // 'unsafe-eval' required in dev for webpack HMR; production only needs inline
+    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: https: blob:`,
     `font-src 'self' data: https://fonts.gstatic.com`,
@@ -31,15 +37,7 @@ export function middleware(request: NextRequest) {
     ...(isDev ? [] : [`upgrade-insecure-requests`]),
   ].join('; ');
 
-  // Clone the request headers and set the nonce for downstream use
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-nonce', nonce);
-
-  const response = NextResponse.next({
-    request: { headers: requestHeaders },
-  });
-
-  // Set the CSP header on the response
+  const response = NextResponse.next();
   response.headers.set('Content-Security-Policy', csp);
 
   return response;
