@@ -85,7 +85,7 @@ export default function Home() {
         },
         "description": "Automated ABAP custom code analysis and S/4HANA modernization following official SAP Clean Core guidelines.",
         "datePublished": "2025-01-15",
-        "dateModified": "2026-06-17"
+        "dateModified": "2026-06-26"
       },
       {
         "@type": "FAQPage",

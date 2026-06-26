@@ -8,6 +8,9 @@ import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 export const metadata: Metadata = {
   title: 'SAP S/4HANA Clean Core Modernization Guide | Clean-Core.io',
   description: 'Follow our interactive walkthrough to learn how to refactor legacy ABAP structures into modern Node.js and TypeScript BTP applications.',
+  alternates: {
+    canonical: 'https://clean-core.io/how-to',
+  },
   openGraph: {
     title: 'SAP S/4HANA Clean Core Modernization Guide | Clean-Core.io',
     description: 'Follow our interactive walkthrough to learn how to refactor legacy ABAP structures into modern Node.js and TypeScript BTP applications.',
