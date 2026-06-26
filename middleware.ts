@@ -20,6 +20,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const isDev = process.env.NODE_ENV === 'development';
+  const useEmulator = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true';
+
+  // Emulator URLs needed for E2E tests (Auth: 9099, Firestore: 8080)
+  const emulatorConnectSrc = useEmulator ? ' http://127.0.0.1:* http://localhost:*' : '';
 
   const csp = [
     `default-src 'self'`,
@@ -29,12 +33,12 @@ export function middleware(request: NextRequest) {
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: https: blob:`,
     `font-src 'self' data: https://fonts.gstatic.com`,
-    `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://generativelanguage.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com${isDev ? ' ws://localhost:*' : ''}`,
+    `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://generativelanguage.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com${isDev ? ' ws://localhost:*' : ''}${emulatorConnectSrc}`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
     `object-src 'none'`,
-    ...(isDev ? [] : [`upgrade-insecure-requests`]),
+    ...(isDev || useEmulator ? [] : [`upgrade-insecure-requests`]),
   ].join('; ');
 
   const response = NextResponse.next();
