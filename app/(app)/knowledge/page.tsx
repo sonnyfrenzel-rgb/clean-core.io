@@ -7,6 +7,9 @@ import BackButton from '@/components/BackButton';
 export const metadata: Metadata = {
   title: 'SAP S/4HANA Clean Core & BTP Extensibility | Clean-Core.io',
   description: 'Explore standard SAP Clean Core architectural strategies, In-App RAP vs. Side-by-Side CAP decision patterns, and BTP integration security guidelines.',
+  alternates: {
+    canonical: 'https://clean-core.io/knowledge',
+  },
   openGraph: {
     title: 'SAP S/4HANA Clean Core & BTP Extensibility | Clean-Core.io',
     description: 'Explore standard SAP Clean Core architectural strategies, In-App RAP vs. Side-by-Side CAP decision patterns, and BTP integration security guidelines.',
