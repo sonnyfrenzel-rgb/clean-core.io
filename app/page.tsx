@@ -848,7 +848,7 @@ export default function Home() {
             <div className="mt-12 text-[10px] sm:text-[11px] text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-900 bg-gray-950/50 p-6 rounded-2xl text-left space-y-3">
               <span className="font-extrabold text-gray-400 uppercase tracking-widest block border-b border-gray-900 pb-1.5">Legal Disclaimer & Verification Notice</span>
               <p>
-                <strong>Free Community Prototyping Platform:</strong> Clean-Core.io is a free, community-powered research and prototyping platform for SAP architects and developers, maintained by Felix Frenzel. No commercial licensing, subscriptions, or paid services are offered.
+                <strong>Free Community Modernization Platform:</strong> Clean-Core.io is a free, community-powered research and Modernization Platform for SAP architects and developers, maintained by Felix Frenzel. No commercial licensing, subscriptions, or paid services are offered.
               </p>
               <p>
                 <strong>AI-Assisted Drafts &mdash; Verify Before You Deploy:</strong> All solution designs, compliance scores, modular code transformations, and test suites are dynamically generated using third-party generative AI models (Google Gemini API). All artifacts are provided on an <em>&quot;AS IS&quot;</em> and <em>&quot;AS AVAILABLE&quot;</em> basis without warranties of any kind. This tool generates the first compliant draft&mdash;the architect reviews, tests, and approves. We provide the abapGit packages and ABAP-Unit tests so you can compile and verify every output in your own Eclipse ADT environment.
