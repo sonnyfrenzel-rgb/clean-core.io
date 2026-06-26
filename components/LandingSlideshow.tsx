@@ -152,7 +152,7 @@ export default function LandingSlideshow() {
           <div className="mt-12 flex items-center gap-3">
             <button 
               onClick={() => setIsPlaying(!isPlaying)}
-              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors"
+              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors outline-none focus:outline-none focus-visible:outline-none"
               aria-label={isPlaying ? "Pause slideshow" : "Play slideshow"}
             >
               {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
@@ -166,7 +166,7 @@ export default function LandingSlideshow() {
                     setProgress(0);
                     setIsPlaying(false); // Pause when manually selecting a slide
                   }}
-                  className="relative h-2 flex-1 rounded-full overflow-hidden bg-gray-200 transition-all"
+                  className="relative h-2 flex-1 rounded-full overflow-hidden bg-gray-200 transition-all outline-none focus:outline-none focus-visible:outline-none"
                   aria-label={`Go to slide ${idx + 1}`}
                 >
                   {idx === currentIndex && (
@@ -227,14 +227,14 @@ export default function LandingSlideshow() {
           {/* Navigation Arrows */}
           <button
             onClick={goToPrev}
-            className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-gray-200/60 shadow-lg text-gray-600 hover:bg-white hover:text-gray-900 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+            className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-gray-200/60 shadow-lg text-gray-600 hover:bg-white hover:text-gray-900 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer outline-none focus:outline-none focus-visible:outline-none"
             aria-label="Previous slide"
           >
             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <button
             onClick={goToNext}
-            className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-gray-200/60 shadow-lg text-gray-600 hover:bg-white hover:text-gray-900 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+            className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-gray-200/60 shadow-lg text-gray-600 hover:bg-white hover:text-gray-900 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer outline-none focus:outline-none focus-visible:outline-none"
             aria-label="Next slide"
           >
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
