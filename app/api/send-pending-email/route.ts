@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
           <div style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 16px; padding: 18px; margin-bottom: 30px;">
             <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">🛡️ Sovereign Data Privacy Assured</span>
             <span style="color: #047857; font-size: 13px; line-height: 1.5; display: block;">
-              To comply strictly with GDPR (DSGVO) guidelines, your projects are hosted entirely in the <strong>Belgium (europe-west1)</strong> region. All generative AI transformations utilize secure stateless APIs, guaranteeing your source code is never cached, persisted, or used by Google for LLM training.
+              To support GDPR (DSGVO) alignment, your projects are hosted in the <strong>Belgium (europe-west1)</strong> region. Generative AI transformations use stateless APIs designed so that your source code is not cached, persisted, or used for LLM training (per Google Cloud API Terms of Service).
             </span>
           </div>
 

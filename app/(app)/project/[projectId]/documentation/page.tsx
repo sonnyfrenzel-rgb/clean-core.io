@@ -717,18 +717,18 @@ Structure the JSON exactly like this:
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Integrations:</span>
             <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded text-[9px] font-black uppercase tracking-tight shadow-sm cursor-help group/signavio relative">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>SAP Signavio Ready</span>
+              <span>BPMN-Compatible</span>
               <div className="absolute top-full left-0 mt-1 w-64 p-3 bg-slate-900 border border-slate-800 text-[10px] rounded-xl shadow-xl opacity-0 pointer-events-none group-hover/signavio:opacity-100 transition-opacity duration-200 text-left leading-relaxed text-slate-300 z-50 normal-case">
-                <div className="font-extrabold text-emerald-400 mb-1 uppercase tracking-wider text-[9px]">SAP Signavio Ready</div>
-                The generated BPMN 2.0 XML conforms precisely to the standard Signavio Process Manager schema model for seamless imports.
+                <div className="font-extrabold text-emerald-400 mb-1 uppercase tracking-wider text-[9px]">Signavio-Importable</div>
+                The generated BPMN 2.0 XML is designed for seamless import into SAP Signavio Process Manager and other BPMN 2.0 compliant tools.
               </div>
             </div>
             <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 rounded text-[9px] font-black uppercase tracking-tight shadow-sm cursor-help group/sapbuild relative">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span>
-              <span>SAP Build Validated</span>
+              <span>SAP Build-Compatible</span>
               <div className="absolute top-full left-0 mt-1 w-64 p-3 bg-slate-900 border border-slate-800 text-[10px] rounded-xl shadow-xl opacity-0 pointer-events-none group-hover/sapbuild:opacity-100 transition-opacity duration-200 text-left leading-relaxed text-slate-300 z-50 normal-case">
-                <div className="font-extrabold text-cyan-400 mb-1 uppercase tracking-wider text-[9px]">SAP Build Validated</div>
-                Process flow structures mapped for direct compatibility inside SAP Build Process Automation pipelines.
+                <div className="font-extrabold text-cyan-400 mb-1 uppercase tracking-wider text-[9px]">SAP Build-Compatible</div>
+                Process flow structures mapped for compatibility with SAP Build Process Automation pipelines. Not an official SAP certification.
               </div>
             </div>
           </div>

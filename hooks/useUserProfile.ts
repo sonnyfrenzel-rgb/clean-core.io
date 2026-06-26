@@ -65,18 +65,17 @@ export function useUserProfile() {
 
       const userDocRef = doc(db, 'users', user.uid);
       
+      // F-06: Admin/tier is determined solely by the Firestore document
+      // (which is managed by server-side set-admin-claim API and Custom Claims).
+      // No client-side email-based privilege escalation.
+
       // Immediate, robust one-time getDoc fetch to ensure loading state resolves
       // even if the persistent onSnapshot streaming connection hangs or is blocked on CI runners.
       getDoc(userDocRef).then((docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data() as UserProfile;
-          const isSonny = data.email === 'sonny.frenzel@googlemail.com' || data.email === 'sonny.frenzel@gmail.com';
-          if (isSonny) {
-            data.tier = 'enterprise';
-            data.transformationsLimit = 999999;
-            data.status = 'approved';
-            data.isAdmin = true;
-          } else if (data.tier === 'pilot') {
+          // Enforce pilot limit for pilot users
+          if (data.tier === 'pilot') {
             data.transformationsLimit = 5;
           }
           setProfile(data);
@@ -89,37 +88,13 @@ export function useUserProfile() {
       const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data() as UserProfile;
-          const isSonny = data.email === 'sonny.frenzel@googlemail.com' || data.email === 'sonny.frenzel@gmail.com';
-          if (isSonny) {
-            data.tier = 'enterprise';
-            data.transformationsLimit = 999999;
-            data.status = 'approved';
-            data.isAdmin = true;
-          } else {
-            // "Setze alle User auf 5 Transformationen in der Pilot Lizenz"
-            // Make sure regular pilot users have exactly 5 transformationsLimit
-            if (data.tier === 'pilot') {
-              data.transformationsLimit = 5;
-            }
+          // Enforce pilot limit for pilot users
+          if (data.tier === 'pilot') {
+            data.transformationsLimit = 5;
           }
           setProfile(data);
         } else {
-          const isSonny = user.email === 'sonny.frenzel@googlemail.com' || user.email === 'sonny.frenzel@gmail.com';
-          if (isSonny) {
-            setProfile({
-              firstName: 'Sonny',
-              lastName: 'Frenzel',
-              email: user.email || '',
-              tier: 'enterprise',
-              status: 'approved',
-              transformationsUsed: 0,
-              transformationsLimit: 999999,
-              createdAt: new Date(),
-              isAdmin: true,
-            });
-          } else {
-            setProfile(null);
-          }
+          setProfile(null);
         }
         setLoading(false);
         setError(null);
@@ -139,20 +114,21 @@ export function useUserProfile() {
   }, [auth, db]);
 
   const createProfile = async (user: User, firstName: string, lastName: string, motivation?: string, authMethod: 'google' | 'password' = 'google') => {
-    const isSonny = user.email === 'sonny.frenzel@googlemail.com' || user.email === 'sonny.frenzel@gmail.com';
+    // F-06: No email-based privilege escalation. All new users start as 'pilot' / 'pending'.
+    // Admin status is granted server-side via the set-admin-claim API.
     const newProfile: UserProfile = {
       firstName,
       lastName,
       email: user.email || '',
-      tier: isSonny ? 'enterprise' : 'pilot',
-      status: isSonny ? 'approved' : 'pending', // Requires approval for others, Sonny auto-approved
+      tier: 'pilot',
+      status: 'pending',
       transformationsUsed: 0,
-      transformationsLimit: isSonny ? 999999 : 5, // Pilot tier limit: Sonny has unlimited, others 5
-      maxTeamMembers: isSonny ? 999 : 1,
+      transformationsLimit: 5,
+      maxTeamMembers: 1,
       orgId: null,
       identityProvider: 'google',
       createdAt: serverTimestamp(),
-      isAdmin: isSonny,
+      isAdmin: false,
       authMethod,
     };
 
@@ -169,7 +145,7 @@ export function useUserProfile() {
         email: user.email,
         name: `${firstName} ${lastName}`,
         motivation: motivation || '',
-        status: isSonny ? 'approved' : 'pending',
+        status: 'pending',
         createdAt: serverTimestamp()
       });
     } catch (err) {

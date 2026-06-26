@@ -36,6 +36,18 @@ function getDefaultAI(): GoogleGenAI | null {
   return defaultAI;
 }
 
+// F-07: Server-side model governance — only approved models may be used.
+const ALLOWED_MODELS = new Set([
+  'gemini-2.5-flash',
+  'gemini-2.5-pro',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-3-flash-preview',
+]);
+
+// F-07: Hard prompt-size limit to prevent cost/quota abuse.
+const MAX_PROMPT_LENGTH = 250_000;
+
 const MAX_RETRIES = 3;
 const INITIAL_DELAY = 2000;
 
@@ -106,6 +118,22 @@ export async function POST(request: NextRequest) {
     if (!prompt) {
       return NextResponse.json(
         { error: 'Missing required field: prompt' },
+        { status: 400 },
+      );
+    }
+
+    // F-07: Validate model against server-side allowlist
+    if (!ALLOWED_MODELS.has(model)) {
+      return NextResponse.json(
+        { error: `Model "${model}" is not permitted. Allowed: ${[...ALLOWED_MODELS].join(', ')}` },
+        { status: 400 },
+      );
+    }
+
+    // F-07: Enforce prompt size limit
+    if (prompt.length > MAX_PROMPT_LENGTH) {
+      return NextResponse.json(
+        { error: `Prompt exceeds maximum length of ${MAX_PROMPT_LENGTH.toLocaleString()} characters.` },
         { status: 400 },
       );
     }
