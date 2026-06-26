@@ -24,10 +24,10 @@ export const metadata: Metadata = {
     siteName: 'Clean-Core.io',
     images: [
       {
-        url: 'https://clean-core.io/icon.svg',
-        width: 800,
-        height: 600,
-        alt: 'Clean-Core.io Logo',
+        url: 'https://clean-core.io/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Clean-Core.io — SAP S/4HANA Modernization Suite',
       },
     ],
   },
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Clean-Core.io | Enterprise S/4HANA Modernization Suite',
     description: 'Automatically analyze and transform custom legacy ABAP operations into clean-code, cloud-native Node.js architectures following official SAP Clean Core guidelines.',
-    images: ['https://clean-core.io/icon.svg'],
+    images: ['https://clean-core.io/og-image.png'],
   },
 };
 

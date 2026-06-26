@@ -108,6 +108,17 @@ export default function Home() {
             }
           }
         ]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://clean-core.io" },
+          { "@type": "ListItem", "position": 2, "name": "How It Works", "item": "https://clean-core.io/how-it-works" },
+          { "@type": "ListItem", "position": 3, "name": "ABAP Analysis", "item": "https://clean-core.io/abap-custom-code-analysis" },
+          { "@type": "ListItem", "position": 4, "name": "Clean Core Score", "item": "https://clean-core.io/clean-core-score" },
+          { "@type": "ListItem", "position": 5, "name": "Knowledge Base", "item": "https://clean-core.io/knowledge" },
+          { "@type": "ListItem", "position": 6, "name": "About", "item": "https://clean-core.io/about" }
+        ]
       }
     ]
   };
