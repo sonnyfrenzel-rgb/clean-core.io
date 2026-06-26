@@ -105,26 +105,26 @@ service cloud.firestore {
              (!('testCases' in data) || (data.testCases is list && data.testCases.size() < 100)) &&
              (!('testSuite' in data) || (data.testSuite is map)) &&
              (!('exports' in data) || (data.exports is map));
-    }\r
-\r
-    match /projects/{projectId} {\r
-      allow read: if isAuthenticated() && (\r
-        isAdmin() ||\r
-        (resource != null && resource.data.userId == request.auth.uid)\r
-      );\r
-      // Quota enforcement and field validation are server-side\r
-      allow create: if isAuthenticated() && \r
-                    request.resource.data.keys().hasAll(['name', 'status', 'userId', 'createdAt']) &&\r
-                    request.resource.data.userId == request.auth.uid;\r
-      // F-01: Owner may update their project, but userId and createdAt are immutable.\r
-      // Field-level size validation is enforced by isValidProject().\r
-      allow update: if isAuthenticated() && (\r
-                    isAdmin() || (\r
-                      resource.data.userId == request.auth.uid &&\r
-                      request.resource.data.userId == resource.data.userId &&\r
-                      request.resource.data.createdAt == resource.data.createdAt\r
-                    )) && isValidProject(request.resource.data, true);\r
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());\r
+    }
+
+    match /projects/{projectId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (resource != null && resource.data.userId == request.auth.uid)
+      );
+      // Quota enforcement and field validation are server-side
+      allow create: if isAuthenticated() && 
+                    request.resource.data.keys().hasAll(['name', 'status', 'userId', 'createdAt']) &&
+                    request.resource.data.userId == request.auth.uid;
+      // F-01: Owner may update their project, but userId and createdAt are immutable.
+      // Field-level size validation is enforced by isValidProject().
+      allow update: if isAuthenticated() && (
+                    isAdmin() || (
+                      resource.data.userId == request.auth.uid &&
+                      request.resource.data.userId == resource.data.userId &&
+                      request.resource.data.createdAt == resource.data.createdAt
+                    )) && isValidProject(request.resource.data, true);
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // Validate SupportTicket
