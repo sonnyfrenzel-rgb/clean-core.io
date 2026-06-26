@@ -152,7 +152,7 @@ export default function Home() {
 
           <div className="shrink-0 flex items-center gap-3">
              <div className="hidden sm:flex text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full items-center gap-1">
-               <Users size={14} /> Free Community Tool
+               <Users size={14} /> Free for the SAP Community
              </div>
              <HeaderAuthButton />
           </div>
@@ -256,7 +256,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs md:text-sm mb-8 border border-emerald-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
             <ShieldCheck className="w-4 h-4" />
-            <span className="uppercase tracking-wider">Free Community-Powered SAP Prototyping Platform</span>
+            <span className="uppercase tracking-wider">Free for the SAP Community · Clean Core & ABAP Transformation</span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85] text-gray-950 animate-in fade-in slide-in-from-bottom-8 duration-1000">
             The SAP Architect&apos;s <br className="hidden md:block" />
