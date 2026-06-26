@@ -247,7 +247,7 @@ export default function LandingSlideshow() {
               <Image 
                 key={idx}
                 src={slide.image} 
-                alt=""
+                alt={slide.alt}
                 width={1280}
                 height={800}
                 priority

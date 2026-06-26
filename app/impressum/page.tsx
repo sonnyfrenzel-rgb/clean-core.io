@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://clean-core.io/impressum',
   },
+  openGraph: {
+    title: 'Impressum – Legal Notice | Clean-Core.io',
+    description: 'Legal notice (Impressum) for Clean-Core.io according to § 5 TMG.',
+    url: 'https://clean-core.io/impressum',
+    type: 'website',
+  },
 };
 
 export default function ImpressumPage() {

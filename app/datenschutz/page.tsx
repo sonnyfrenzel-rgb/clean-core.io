@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://clean-core.io/datenschutz',
   },
+  openGraph: {
+    title: 'Datenschutzerklärung – Privacy Policy | Clean-Core.io',
+    description: 'GDPR-compliant data processing, your rights under Art. 15-20 GDPR, and data erasure (Art. 17).',
+    url: 'https://clean-core.io/datenschutz',
+    type: 'website',
+  },
 };
 
 export default function DatenschutzPage() {
