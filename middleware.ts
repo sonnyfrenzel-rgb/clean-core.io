@@ -12,19 +12,23 @@ export function middleware(request: NextRequest) {
   // Generate a random nonce for this request
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
 
+  // In development, Next.js uses eval() for HMR/webpack — allow it.
+  // In production, strict CSP without unsafe-eval applies.
+  const isDev = process.env.NODE_ENV === 'development';
+
   // Build the CSP header
   const csp = [
     `default-src 'self'`,
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: https: blob:`,
     `font-src 'self' data: https://fonts.gstatic.com`,
-    `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://generativelanguage.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com`,
+    `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://generativelanguage.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com${isDev ? ' ws://localhost:*' : ''}`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
     `object-src 'none'`,
-    `upgrade-insecure-requests`,
+    ...(isDev ? [] : [`upgrade-insecure-requests`]),
   ].join('; ');
 
   // Clone the request headers and set the nonce for downstream use
