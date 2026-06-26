@@ -20,9 +20,19 @@ export const metadata: Metadata = {
 
 const releases = [
   {
+    version: 'v1.12.2',
+    date: 'June 26, 2026',
+    tag: 'Latest',
+    icon: Shield,
+    changes: [
+      'Security patch A-01: reject branch in approveUserWithToken now deletes the orphaned Firebase Auth user, preventing re-registration issues',
+      'Bumped all version references from v1.12.0 to v1.12.2 across landing page, showroom, replay, sample package, and board-deck components',
+      'Updated SECURITY.md to v3.6 with A-01 finding documentation',
+    ],
+  },
+  {
     version: 'v1.12.0',
     date: 'June 25, 2026',
-    tag: 'Latest',
     icon: Rocket,
     changes: [
       'Hardened client-side onboarding by restricting default fields (tier, status, transformations limit, admin roles) in Firestore security rules to prevent privilege escalation',

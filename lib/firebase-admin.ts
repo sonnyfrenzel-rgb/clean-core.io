@@ -313,6 +313,18 @@ export async function approveUserWithToken(
     // Delete registration request and user document
     await db.collection('registration_requests').doc(uid).delete();
     await db.collection('users').doc(uid).delete();
+
+    // A-01: also remove the Firebase Auth user — otherwise a rejected applicant
+    // leaves an orphaned auth account and cannot cleanly re-register later.
+    try {
+      await adminAuthModule.getAuth().deleteUser(uid);
+    } catch (e: any) {
+      // Already gone is fine; anything else is a real failure.
+      if (e?.code !== 'auth/user-not-found') {
+        console.error('[reject] failed to delete auth user:', e?.code || e);
+        throw e;
+      }
+    }
   }
 }
 
