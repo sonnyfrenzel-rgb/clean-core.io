@@ -375,6 +375,15 @@ export async function POST(req: NextRequest) {
     // MODE 1: Specific service $metadata
     // ─────────────────────────────────────────────────────────
     if (servicePath) {
+      // F-08: Strict servicePath validation — only SAP service IDs allowed
+      const SERVICE_PATH_REGEX = /^[A-Za-z0-9_./-]{1,120}$/;
+      if (!SERVICE_PATH_REGEX.test(servicePath) || servicePath.includes('..') || servicePath.includes('?') || servicePath.includes('#')) {
+        return NextResponse.json(
+          { status: 'failed', message: 'Invalid service path. Only alphanumeric characters, dots, underscores, hyphens, and forward slashes are allowed (max 120 chars). No "..", "?", or "#".' },
+          { status: 400 }
+        );
+      }
+
       const cleanPath = servicePath.replace(/^\/+/, '').replace(/\/\$metadata$/, '');
       
       // Try multiple URL patterns that SAP uses

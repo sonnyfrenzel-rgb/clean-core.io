@@ -205,6 +205,7 @@ export default function HowToClient() {
               
               {/* Left Panel: High-Fidelity Screenshot & Pulsing Hotspots (60% width) */}
               <div className="w-full md:w-3/5 aspect-video md:aspect-auto md:h-full relative bg-slate-100 flex items-center justify-center md:border-r border-b md:border-b-0 border-slate-200/60 overflow-hidden shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
                   src={currentSlide === 0 ? '/screenshots/step-7.jpg' : `/screenshots/step-${currentSlide}.jpg`} 
                   alt={steps[currentSlide].title} 

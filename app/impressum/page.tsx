@@ -93,6 +93,12 @@ export default function ImpressumPage() {
             </p>
           </div>
 
+          <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl">
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              <strong className="text-slate-600">Trademark Notice:</strong> SAP, S/4HANA, ABAP, BTP, SAP Signavio, SAP Build, and SAP Cloud ALM are trademarks or registered trademarks of SAP SE or its affiliates. Clean-Core.io is an independent project and is not endorsed, certified, or sponsored by SAP SE unless explicitly stated.
+            </p>
+          </div>
+
           <div className="pt-8 border-t border-gray-100 text-center text-[10px] text-gray-400 font-black font-mono uppercase tracking-wider">
             Clean-Core.io {APP_VERSION} ({APP_RELEASE_DATE})
           </div>

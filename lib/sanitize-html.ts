@@ -16,12 +16,10 @@ let _purify: any = null;
 function getPurify() {
   if (_purify) return _purify;
   // Lazy import so the bundle stays clean and SSR/CSR both work.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const createDOMPurify = require('dompurify');
   if (typeof window !== 'undefined') {
     _purify = createDOMPurify(window);
   } else {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { JSDOM } = require('jsdom');
     _purify = createDOMPurify(new JSDOM('').window);
   }

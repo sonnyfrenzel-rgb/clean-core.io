@@ -403,7 +403,6 @@ ${codeToAnalyze}`;
       hasAutoAnalyzed.current = true;
       handleAnalyze(legacyCode);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoAnalyze, legacyCode, project?.analysis]);
 
   const exportToConfluence = async () => {
@@ -443,7 +442,7 @@ ${codeToAnalyze}`;
             ? ["Business Partner Extension", "Custom Database Mapping", "ERP Outbound Decoupled Sync"]
             : ["Custom Transaction Logic", "Validation Rule Engine", "Core Schema Enhancements"]),
         cloudRoiSummary: data.businessValueAnalysis?.cloudRoiSummary || 
-          `Transforming this logic to a modern extensibility model will reduce core upgrade testing costs by ~40%, eliminate code maintenance overhead, and guarantee S/4HANA Clean Core compliance.`,
+          `Transforming this logic to a modern extensibility model will reduce core upgrade testing costs by ~40%, eliminate code maintenance overhead, and support alignment with S/4HANA Clean Core principles.`,
         plainEnglishActionPlan: data.businessValueAnalysis?.plainEnglishActionPlan || [
           "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
           "2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.",
@@ -826,7 +825,7 @@ ${codeToAnalyze}`;
             ? ["Business Partner Extension", "Custom Database Mapping", "ERP Outbound Decoupled Sync"]
             : ["Custom Transaction Logic", "Validation Rule Engine", "Core Schema Enhancements"]),
         cloudRoiSummary: analysisData.businessValueAnalysis?.cloudRoiSummary || 
-          `Transforming this logic to a modern extensibility model will reduce core upgrade testing costs by ~40%, eliminate code maintenance overhead, and guarantee S/4HANA Clean Core compliance.`,
+          `Transforming this logic to a modern extensibility model will reduce core upgrade testing costs by ~40%, eliminate code maintenance overhead, and support alignment with S/4HANA Clean Core principles.`,
         plainEnglishActionPlan: analysisData.businessValueAnalysis?.plainEnglishActionPlan || [
           "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
           "2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.",

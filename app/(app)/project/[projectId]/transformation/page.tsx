@@ -1089,7 +1089,7 @@ CMD ["node", "srv/service.js"]`
                   <p className="text-xs text-gray-400 leading-relaxed">
                     {remediationMode === 'clean' 
                       ? 'Modernizes Open SQL syntax quirks (e.g., empty FOR ALL ENTRIES returns an empty array immediately) for standard cloud readiness.'
-                      : 'Emulates exact ABAP database behaviors (e.g., empty FOR ALL ENTRIES selects all rows from target database) to guarantee 100% bug-for-bug compatibility.'
+                      : 'Emulates exact ABAP database behaviors (e.g., empty FOR ALL ENTRIES selects all rows from target database) for high-fidelity bug-for-bug compatibility.'
                     }
                   </p>
                 </div>
