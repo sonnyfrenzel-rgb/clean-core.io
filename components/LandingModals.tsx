@@ -182,21 +182,22 @@ export default function LandingModals() {
       
       const db = getDb();
       const userDocRef = doc(db, 'users', signedInUser.uid);
-      const isSonny = signedInUser.email === 'sonny.frenzel@googlemail.com' || signedInUser.email === 'sonny.frenzel@gmail.com';
       
+      // All new users start as pilot/pending. Admin bootstrap only via
+      // the server-side set-admin-claim API with Firebase Custom Claims.
       const newProfile = {
         firstName,
         lastName,
         email: signedInUser.email || '',
-        tier: isSonny ? 'enterprise' : 'pilot',
-        status: isSonny ? 'approved' : 'pending',
+        tier: 'pilot',
+        status: 'pending',
         transformationsUsed: 0,
-        transformationsLimit: isSonny ? 999999 : 5,
-        maxTeamMembers: isSonny ? 999 : 1,
+        transformationsLimit: 5,
+        maxTeamMembers: 1,
         orgId: null,
         identityProvider: 'google',
         createdAt: new Date(),
-        isAdmin: isSonny,
+        isAdmin: false,
         authMethod: 'password',
       };
       
@@ -206,7 +207,7 @@ export default function LandingModals() {
         email: signedInUser.email,
         name: `${firstName} ${lastName}`,
         motivation: '',
-        status: isSonny ? 'approved' : 'pending',
+        status: 'pending',
         createdAt: new Date(),
       });
       

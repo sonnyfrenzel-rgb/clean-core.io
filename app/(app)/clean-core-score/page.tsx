@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     question: "What does a Clean Core Score of 100% mean?",
-    answer: "A score of 100% signals that all customer-specific extensions are fully compliant. This means in-app modifications only run through released key-user apps, and side-by-side BTP extensions communicate exclusively via certified interfaces. The SAP system is 100% upgrade-ready."
+    answer: "A score of 100% indicates that all analyzed customer-specific extensions align with SAP's clean core guidelines. This means in-app modifications only run through released key-user apps, and side-by-side BTP extensions communicate exclusively via certified interfaces. The SAP system is considered upgrade-ready based on these criteria."
   },
   {
     question: "How are the Clean Core Score and TCO connected?",

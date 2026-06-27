@@ -218,6 +218,16 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Audit events: server-only via Admin SDK. No client access.
+    match /audit_events/{eventId} {
+      allow read, write: if false;
+    }
+
+    // User secrets (e.g. BYOK keys): server-only via Admin SDK. No client access.
+    match /user_secrets/{uid}/{document=**} {
+      allow read, write: if false;
+    }
+
     match /rate_limits/{key} {
       allow read, write: if false;
     }

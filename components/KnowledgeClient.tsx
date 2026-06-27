@@ -26,7 +26,7 @@ const faqs = [
   },
   {
     question: "What is the BYOT (Bring Your Own Tenant) connectivity model?",
-    answer: "The BYOT model allows enterprise customers to connect their own SAP S/4HANA and SAP BTP subaccount instances to the Clean-Core.io conversion and testing engine. Instead of hosting client data, Clean-Core.io securely runs static analysis and deploys sandbox environments directly into the customer’s verified tenants using secure credentials, ensuring full compliance with corporate security, data residency, and governance rules.",
+    answer: "The BYOT model allows enterprise customers to connect their own SAP S/4HANA and SAP BTP subaccount instances to the Clean-Core.io conversion and testing engine. Instead of hosting client data, Clean-Core.io securely runs static analysis and deploys sandbox environments directly into the customer’s verified tenants using secure credentials, designed to support compliance with corporate security, data residency, and governance rules.",
     icon: Server,
     tag: "Tenant Security"
   },
