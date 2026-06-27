@@ -766,7 +766,7 @@ export default function Home() {
                   <span className="text-4xl font-black">Free</span>
                   <span className="text-sm text-gray-400 font-medium">Unlimited transformations</span>
                 </div>
-                <p className="text-xs md:text-sm font-medium mt-2 text-gray-400">Bring your own Google Gemini API key &mdash; saved locally in your browser.</p>
+                <p className="text-xs md:text-sm font-medium mt-2 text-gray-400">Bring your own Google Gemini API key &mdash; encrypted and stored securely.</p>
               </div>
               <ul className="space-y-3.5 mb-10 flex-grow">
                 {[
@@ -802,7 +802,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
                 { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Sandbox Only · Read-Only', desc: 'Connections are restricted to non-production sandbox systems. Only OData metadata reads and test execution — no write operations, no production access.', link: '/tenant-security#read-only-scope' },
-                { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Encrypted · Stateless', desc: 'Credentials are AES-256-GCM encrypted. SAP transaction data is processed in memory and never stored on our servers.', link: '/tenant-security#stateless-processing' },
+                { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Encrypted · Stateless', desc: 'Credentials are AES-256-GCM encrypted. SAP transaction data is processed statelessly in memory — no customer ERP data is persisted on our infrastructure.', link: '/tenant-security#stateless-processing' },
                 { icon: <Globe className="w-5 h-5 text-green-600" />, title: 'Admin-Gated Onboarding', desc: 'Every sandbox connection request is manually reviewed and approved by an administrator before activation.', link: '/tenant-security#admin-onboarding-gate' }
               ].map((item, idx) => (
                 <div key={idx} className="bg-gray-50 p-5 rounded-2xl border border-gray-200/60 text-center">
@@ -822,7 +822,7 @@ export default function Home() {
           {/* BYOK Explainer */}
           <div className="mt-8 text-center text-xs md:text-sm text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-100 bg-gray-50/50 p-5 rounded-3xl shadow-sm">
             <span className="font-extrabold text-gray-800 uppercase tracking-wider block mb-1">* BYOK (Bring Your Own Key)</span>
-            Use your own Google Gemini API key to run unlimited transformations without any platform limits. Your API key is encrypted and stored locally in your browser&mdash;it is never sent to or saved on our servers, ensuring absolute privacy and data sovereignty.
+            Use your own Google Gemini API key to run unlimited transformations without any platform limits. Your API key is encrypted (AES-256-GCM) and stored in your authenticated user profile&mdash;it is used exclusively via our secure backend proxy and never exposed in plaintext.
             <span className="block mt-2 text-[11px] text-gray-500 font-medium">* Usage is subject to your Google Gemini API key quota and billing &mdash; clean-core.io does not charge any platform fees.</span>
           </div>
         </div>
