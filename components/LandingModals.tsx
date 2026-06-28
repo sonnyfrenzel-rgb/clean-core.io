@@ -215,9 +215,11 @@ export default function LandingModals() {
           return; // Browser will redirect away
         } catch (redirectErr) {
           console.error('Redirect also failed:', redirectErr);
+          setAuthError('Google Sign-In is currently unavailable. Please use Email/Password sign-in or try again later.');
+          return;
         }
       }
-      setAuthError(`Sign-in failed (${code || error?.message || 'unknown'}). Please try again.`);
+      setAuthError(`Sign-in failed. Please try Email/Password sign-in or contact support. (${code})`);
     }
   };
 
@@ -315,10 +317,12 @@ export default function LandingModals() {
       });
       
       try {
-        await fetch('/api/request-pilot', {
+        const token = await signedInUser.getIdToken();
+        const pilotResp = await fetch('/api/request-pilot', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
             uid: signedInUser.uid,
@@ -327,6 +331,9 @@ export default function LandingModals() {
             motivation: '',
           }),
         });
+        if (!pilotResp.ok) {
+          console.warn('[Email Signup] request-pilot returned', pilotResp.status);
+        }
       } catch (emailErr) {
         console.error('Failed to trigger pilot registration approval email:', emailErr);
       }

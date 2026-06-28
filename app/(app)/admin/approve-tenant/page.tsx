@@ -204,7 +204,7 @@ function TenantApprovalContent() {
         </div>
         <h2 className="text-2xl font-black text-white mb-3 uppercase tracking-tight">Access Denied</h2>
         <p className="text-slate-400 text-sm font-medium mb-8 leading-relaxed">
-          You must be logged in as an Administrator (e.g. Sonny Frenzel) to access this panel and approve S/4HANA live connections.
+          You must be logged in as a platform administrator to access this panel and approve S/4HANA live connections.
         </p>
         <button 
           onClick={() => {
