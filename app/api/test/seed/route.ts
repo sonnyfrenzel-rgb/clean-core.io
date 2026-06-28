@@ -6,8 +6,8 @@ export async function POST(req: NextRequest) {
   // In production, Gate 1 alone blocks access. Gates 2+3 prevent
   // accidental exposure in preview/staging deployments.
 
-  // Gate 1: Hard block in production (Cloud Run always sets NODE_ENV=production)
-  if (process.env.NODE_ENV === 'production') {
+  // Gate 1: Hard block on Cloud Run (K_SERVICE is set only in real deployments, not CI)
+  if (process.env.K_SERVICE) {
     return NextResponse.json({ error: 'Not Found' }, { status: 404 });
   }
   // Gate 2: Emulator flag must be explicitly enabled
