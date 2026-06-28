@@ -114,7 +114,7 @@ export default function LandingModals() {
         
         if (profileExists) {
           const profileData = userDoc.data();
-          if (profileData.mfaEnabled) {
+          if (profileData && profileData.mfaEnabled) {
             setPendingMfaUser(signedInUser);
             setPendingMfaProfile(profileData);
             setAuthMode('mfa');
