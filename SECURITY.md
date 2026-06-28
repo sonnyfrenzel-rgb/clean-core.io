@@ -244,3 +244,68 @@ Server (API Route)
 - [ ] Admin-only operations check `verifyAdminRequest()` + email format validation
 - [ ] New env vars are documented in `.env.example` (without values)
 - [ ] New dependencies are added to `serverExternalPackages` if they use native bindings
+- [ ] **CSP changes tested against Google Sign-In** (see Section 13 below)
+
+---
+
+## 13. Content Security Policy (CSP) & Firebase Auth — DO NOT BREAK
+
+> **Incident Reference:** v1.13.2 (June 28, 2026) — Google Sign-In was silently broken for weeks due to CSP `script-src` and `frame-src` blocking Firebase Auth's hidden iframe. The failure mode is completely silent: no popup opens, no visible error, Firebase throws `auth/internal-error`.
+
+### 13.1 How Google Sign-In Works (signInWithPopup)
+
+```
+App (clean-core.io)
+  └─ Firebase SDK loads hidden <iframe> from cleancore-491216.firebaseapp.com/__/auth/iframe
+      └─ iframe executes JavaScript (from firebaseapp.com)
+          └─ iframe opens popup window to accounts.google.com
+              └─ user authenticates with Google (+ optional 2FA)
+                  └─ popup redirects to cleancore-491216.firebaseapp.com/__/auth/handler
+                      └─ handler sends credential back via window.postMessage
+                          └─ iframe receives credential → passes to app
+                              └─ app has authenticated user ✅
+```
+
+### 13.2 Required CSP Directives
+
+The following CSP directives in `middleware.ts` are **ALL required** for Google Sign-In. Removing any one of them silently breaks authentication.
+
+| Directive | Domain | Why |
+|---|---|---|
+| `script-src` | `cleancore-491216.firebaseapp.com` | The auth iframe loads and executes JS from this domain. Without it, the iframe HTML renders but its scripts are blocked → popup never opens. **This was the root cause of the v1.13.2 outage.** |
+| `script-src` | `apis.google.com` | Google's OAuth client library used by the auth handler page. |
+| `frame-src` | `cleancore-491216.firebaseapp.com` | Firebase SDK embeds a hidden `<iframe>` for cross-origin auth state management via `postMessage`. |
+| `frame-src` | `accounts.google.com` | The Google account chooser / consent screen popup. |
+| `connect-src` | `accounts.google.com` | XHR/fetch calls during OAuth token exchange. |
+| `connect-src` | `identitytoolkit.googleapis.com` | Firebase Auth REST API for token verification. |
+| `connect-src` | `securetoken.googleapis.com` | Firebase Auth token refresh endpoint. |
+
+### 13.3 Configuration Dependencies
+
+| Setting | File | Value | Why |
+|---|---|---|---|
+| `authDomain` | `firebase-applet-config.json` | `cleancore-491216.firebaseapp.com` | Must match the domain in `frame-src` and `script-src`. Changing to a custom domain (e.g. `clean-core.io`) requires a Firebase Hosting reverse proxy — a Next.js rewrite is **not sufficient** because it breaks `postMessage` communication. |
+| Authorized domains | Firebase Console → Auth → Settings | Must include `clean-core.io` | Firebase rejects auth requests from unlisted domains. |
+| OAuth redirect URI | Google Cloud Console → Credentials | `https://cleancore-491216.firebaseapp.com/__/auth/handler` | Must match `authDomain`. If `authDomain` changes, this URI must be updated. Google propagation takes 1-5 minutes. |
+
+### 13.4 Failure Modes & Debugging
+
+| Symptom | Likely Cause | Fix |
+|---|---|---|
+| No popup, no error, `auth/internal-error` in console | CSP `script-src` missing `cleancore-491216.firebaseapp.com` | Add domain to `script-src` in `middleware.ts` |
+| No popup, no error, `auth/internal-error` | CSP `frame-src` missing `cleancore-491216.firebaseapp.com` | Add domain to `frame-src` in `middleware.ts` |
+| Popup opens but shows `redirect_uri_mismatch` | `authDomain` changed but OAuth redirect URI not updated in Google Cloud Console | Add `https://<authDomain>/__/auth/handler` to OAuth client redirect URIs |
+| Popup opens, user authenticates, but app doesn't recognize login | Using `signInWithRedirect` fallback — cross-origin storage blocked | Use `signInWithPopup` only (no redirect fallback) |
+| `auth/popup-blocked` | Browser popup blocker | User must allow popups for `clean-core.io` |
+
+### 13.5 Testing CSP Changes
+
+Before deploying any CSP modification:
+
+1. **Build locally**: `npm run build`
+2. **Start production server**: `npm run start`
+3. **Open** `http://localhost:3000`
+4. **Click Google Sign-In** — a popup should open to `accounts.google.com`
+5. **Check browser console** — NO `auth/internal-error` or CSP violations
+6. If the popup doesn't open, check the console for `Refused to load` or `Refused to execute` errors — these indicate a CSP block
+

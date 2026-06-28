@@ -30,8 +30,47 @@ export function middleware(request: NextRequest) {
   // Emulator URLs needed for E2E tests (Auth: 9099, Firestore: 8080)
   const emulatorConnectSrc = useEmulator ? ' http://127.0.0.1:* http://localhost:*' : '';
 
+  // ┌─────────────────────────────────────────────────────────────────────────┐
+  // │ CSP — Content Security Policy                                          │
+  // │                                                                         │
+  // │ ⚠️  CRITICAL: Firebase Auth (Google Sign-In) depends on FOUR CSP        │
+  // │     directives. Removing any of them silently breaks Google login       │
+  // │     with `auth/internal-error` — NO visible error in the UI.           │
+  // │                                                                         │
+  // │ Required for Google Sign-In (signInWithPopup):                          │
+  // │                                                                         │
+  // │  1. script-src — cleancore-491216.firebaseapp.com                      │
+  // │     The hidden auth iframe (/__/auth/iframe) loads JS from this domain. │
+  // │     Without it, the iframe renders but its scripts are blocked → the    │
+  // │     popup never opens and Firebase throws auth/internal-error.          │
+  // │                                                                         │
+  // │  2. script-src — apis.google.com                                        │
+  // │     Google's OAuth client library loaded by the auth handler.           │
+  // │                                                                         │
+  // │  3. frame-src — cleancore-491216.firebaseapp.com                       │
+  // │     Firebase SDK embeds a hidden <iframe> from this domain for          │
+  // │     cross-origin auth state management via postMessage.                 │
+  // │                                                                         │
+  // │  4. frame-src — accounts.google.com                                     │
+  // │     The Google account chooser / consent popup.                         │
+  // │                                                                         │
+  // │  5. connect-src — accounts.google.com                                   │
+  // │     XHR/fetch calls during the OAuth token exchange.                    │
+  // │                                                                         │
+  // │ How signInWithPopup works:                                              │
+  // │   App (clean-core.io)                                                   │
+  // │     └─ loads hidden iframe (firebaseapp.com/__/auth/iframe) [frame-src] │
+  // │         └─ iframe runs JS [script-src]                                  │
+  // │             └─ opens popup to accounts.google.com [frame-src]           │
+  // │                 └─ user authenticates                                   │
+  // │                     └─ popup redirects to /__/auth/handler              │
+  // │                         └─ postMessage back to iframe → app             │
+  // │                                                                         │
+  // │ DO NOT tighten script-src or frame-src without testing Google login!    │
+  // └─────────────────────────────────────────────────────────────────────────┘
   const csp = [
     `default-src 'self'`,
+    // ⚠️ See CSP documentation block above — these domains are REQUIRED for Google Sign-In
     `script-src 'self' 'unsafe-inline' https://cleancore-491216.firebaseapp.com https://apis.google.com`,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: https: blob:`,
