@@ -206,20 +206,13 @@ export default function LandingModals() {
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
         return;
       }
-      // Fallback: if popup fails (internal-error, popup-blocked, etc.), try redirect
-      if (code === 'auth/internal-error' || code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
-        console.log('[handleSignIn] Popup failed, falling back to signInWithRedirect...');
-        try {
-          const provider = new GoogleAuthProvider();
-          await signInWithRedirect(auth, provider);
-          return; // Browser will redirect away
-        } catch (redirectErr) {
-          console.error('Redirect also failed:', redirectErr);
-          setAuthError('Google Sign-In is currently unavailable. Please use Email/Password sign-in or try again later.');
-          return;
-        }
+      // Log the actual error for debugging — don't silently redirect
+      console.error('[handleSignIn] Google popup error code:', code, 'message:', error?.message);
+      if (code === 'auth/popup-blocked') {
+        setAuthError('Pop-up was blocked by your browser. Please allow pop-ups for clean-core.io and try again.');
+      } else {
+        setAuthError(`Google Sign-In failed (${code || error?.message || 'unknown'}). Please try Email/Password sign-in or contact support.`);
       }
-      setAuthError(`Sign-in failed. Please try Email/Password sign-in or contact support. (${code})`);
     }
   };
 
