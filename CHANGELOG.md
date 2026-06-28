@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Phase 5 & 6 — Unified Report Model & Grounding:** Restructured the Gemini prompt to act purely as a narrative generator, grounded on deterministic findings instead of raw legacy code.
-- **Sprint 1 Data Coupling:** Haredend data coupling table parser with `tokenize` statement grouping, blacklist filtering (MODE, RISK, SCREEN, LINE, ADJACENT), and correct data export mapping.
+- **Sprint 1 Data Coupling:** Hardened data coupling table parser with `tokenize` statement grouping, blacklist filtering (MODE, RISK, SCREEN, LINE, ADJACENT), and correct data export mapping.
 
 ### Security
 - **Admin Rate-Limit Bypass:** Enabled admins (`admin: true`) to bypass the hourly quota limits in `app/api/gemini/route.ts` to prevent "Rate limit exceeded" blockages during large modernization runs.
