@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   CheckCircle2, 
   AlertCircle, 
   Clock, 
   Search, 
   Filter, 
-  ArrowUpRight,
+  Code2,
+  X,
   ShieldCheck, 
   ChevronDown, 
   ListFilter,
@@ -48,6 +49,7 @@ export default function GapsWorklist({
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
+  const [expandedCodeItem, setExpandedCodeItem] = useState<string | null>(null);
 
   // Derive unified worklist items, lazily fallback if not present in Firestore
   const worklistItems = useMemo(() => {
@@ -298,7 +300,8 @@ export default function GapsWorklist({
                   const isUpdating = updatingItemId === item.id;
                   
                   return (
-                    <tr key={item.id} className="hover:bg-slate-50/20 transition-colors align-top group">
+                    <React.Fragment key={item.id}>
+                    <tr className="hover:bg-slate-50/20 transition-colors align-top group">
                       {/* Status select column */}
                       <td className="py-4 px-6">
                         <div className="relative">
@@ -329,15 +332,17 @@ export default function GapsWorklist({
                             <span>📍</span>
                             <span>{item.location}</span>
                           </span>
-                          {item.targetAnchor && (
-                            <a
-                              href={`https://clean-core.io/how-it-works#${item.targetAnchor}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-[9px] font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-widest flex items-center gap-0.5 hover:underline"
+                          {item.location && item.location.includes(':') && project?.legacyCode && (
+                            <button
+                              onClick={() => setExpandedCodeItem(expandedCodeItem === item.id ? null : item.id)}
+                              className={`text-[9px] font-bold uppercase tracking-widest flex items-center gap-0.5 transition-colors ${
+                                expandedCodeItem === item.id
+                                  ? 'text-red-500 hover:text-red-600'
+                                  : 'text-emerald-600 hover:text-emerald-700'
+                              }`}
                             >
-                              Docs <ArrowUpRight size={10} />
-                            </a>
+                              {expandedCodeItem === item.id ? (<>Close <X size={10} /></>) : (<>View Code <Code2 size={10} /></>)}
+                            </button>
                           )}
                         </div>
                       </td>
@@ -379,6 +384,52 @@ export default function GapsWorklist({
                         )}
                       </td>
                     </tr>
+                    {/* Inline code snippet expansion */}
+                    {expandedCodeItem === item.id && project?.legacyCode && (() => {
+                      // Parse line numbers from location (e.g. "main.abap:228, 656, 703")
+                      const locParts = (item.location || '').split(':');
+                      const lineNums = (locParts[1] || '').split(',').map((s: string) => parseInt(s.trim(), 10)).filter((n: number) => !isNaN(n));
+                      const codeLines = project.legacyCode.split('\n');
+                      if (lineNums.length === 0) return null;
+                      return (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-3 bg-slate-950">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Source Code — {lineNums.length} occurrence{lineNums.length > 1 ? 's' : ''}</span>
+                              <button onClick={() => setExpandedCodeItem(null)} className="text-[10px] font-bold text-slate-500 hover:text-white transition-colors flex items-center gap-1">
+                                <X size={10} /> Close
+                              </button>
+                            </div>
+                            <div className="max-h-64 overflow-y-auto rounded-lg">
+                              {lineNums.map((lineNum: number, i: number) => {
+                                const contextStart = Math.max(0, lineNum - 3);
+                                const contextEnd = Math.min(codeLines.length - 1, lineNum + 2);
+                                const snippet = codeLines.slice(contextStart, contextEnd + 1);
+                                return (
+                                  <div key={i} className={i > 0 ? 'mt-3 pt-3 border-t border-slate-800' : ''}>
+                                    <pre className="text-[10px] font-mono leading-relaxed">
+                                      {snippet.map((line, j) => {
+                                        const actualLine = contextStart + j + 1;
+                                        const isTarget = actualLine === lineNum;
+                                        return (
+                                          <div key={j} className={`px-3 py-0.5 ${
+                                            isTarget ? 'bg-amber-500/20 text-amber-200 font-bold' : 'text-slate-400'
+                                          }`}>
+                                            <span className="inline-block w-10 text-right mr-3 text-slate-600 select-none">{actualLine}</span>
+                                            {line}
+                                          </div>
+                                        );
+                                      })}
+                                    </pre>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })()}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
