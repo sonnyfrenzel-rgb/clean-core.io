@@ -32,7 +32,7 @@ export function middleware(request: NextRequest) {
 
   const csp = [
     `default-src 'self'`,
-    `script-src 'self' 'unsafe-inline'`,
+    `script-src 'self' 'unsafe-inline' https://cleancore-491216.firebaseapp.com https://apis.google.com`,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: https: blob:`,
     `font-src 'self' data: https://fonts.gstatic.com`,
