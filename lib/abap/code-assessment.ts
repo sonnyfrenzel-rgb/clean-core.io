@@ -358,6 +358,18 @@ export function computeCriticalityScore(code: string): number {
   }
   financeFactor = Math.min(3, financeFactor); // Cap at 3
 
+  // Business-critical process detection (Sales, Delivery, Credit, Audit, Partner)
+  const criticalProcessTables = ['VBAK', 'VBAP', 'LIKP', 'LIPS', 'KNA1', 'KNB1', 'EKKO', 'EKPO'];
+  let processFactor = 0;
+  for (const t of criticalProcessTables) {
+    if (upper.includes(t)) processFactor += 1;
+  }
+  const criticalKeywords = ['CREDIT', 'DELIVERY', 'AUDIT', 'FULFILLMENT', 'INVOICE', 'BILLING', 'DUNNING'];
+  for (const kw of criticalKeywords) {
+    if (upper.includes(kw)) processFactor += 1;
+  }
+  processFactor = Math.min(3, processFactor); // Cap at 3
+
   // Write-intensity (MODIFY, INSERT, UPDATE, DELETE)
   const writes = (upper.match(/\b(INSERT|UPDATE|MODIFY|DELETE)\s+/g) || []).length;
   const writeFactor = Math.min(2, writes); // 0-2 points
@@ -366,8 +378,8 @@ export function computeCriticalityScore(code: string): number {
   const authChecks = (upper.match(/\bAUTHORITY-CHECK\b/g) || []).length;
   const authFactor = Math.min(2, authChecks); // 0-2 points
 
-  // Sum: max possible = 3 + 3 + 2 + 2 = 10
-  const score = moduleFactor + financeFactor + writeFactor + authFactor;
+  // Sum: max possible = 3 + 3 + 3 + 2 + 2 = 13, clamped to 10
+  const score = moduleFactor + financeFactor + processFactor + writeFactor + authFactor;
   
   // Minimum 1 (code exists), maximum 10
   return Math.max(1, Math.min(10, score));

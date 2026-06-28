@@ -35,7 +35,10 @@ export function routeExtensibility(
   const findings = evidence.findings;
 
   // 1. Calculate Clean Core Score deterministically
-  // Start at 100%. Deduct based on findings
+  // Start at 100%. Deduct per CATEGORY (not per-finding) with diminishing returns.
+  // Rationale: even heavily legacy code retains some reusable business logic,
+  // AUTHORITY-CHECK patterns, and clear structure. Score 0% should be reserved
+  // for code that is 100% unreleased and untransformable.
   let score = 100;
   
   const standardWrites = findings.filter(f => f.kind === 'standard-table-write');
@@ -48,18 +51,23 @@ export function routeExtensibility(
   const fileAccess = findings.filter(f => f.kind === 'gui-download');
   const dynproUi = findings.filter(f => f.kind === 'dynpro');
 
-  // Deductions
-  score -= standardWrites.length * 25;
-  score -= customWrites.length * 15;
-  score -= bdcCalls.length * 15;
-  score -= nativeSql.length * 15;
-  score -= rfcCalls.length * 10;
-  score -= updateTasks.length * 10;
-  score -= fileAccess.length * 10;
-  score -= dynproUi.length * 10;
-  score -= standardReads.length * 5;
+  // Category-based deductions (capped per category, diminishing returns)
+  // First occurrence of a category costs more; additional occurrences add less
+  const deduct = (count: number, first: number, additional: number, cap: number) =>
+    count === 0 ? 0 : Math.min(cap, first + (count - 1) * additional);
 
-  score = Math.max(0, score);
+  score -= deduct(standardWrites.length, 20, 3, 25);   // Direct writes to standard tables
+  score -= deduct(customWrites.length,   12, 2, 18);    // Custom table writes (still transformable)
+  score -= deduct(bdcCalls.length,        10, 3, 15);   // BDC screen automation
+  score -= deduct(nativeSql.length,       10, 3, 15);   // Native SQL bypass
+  score -= deduct(rfcCalls.length,         8, 2, 12);   // RFC remote calls
+  score -= deduct(updateTasks.length,      5, 2, 10);   // Update task patterns
+  score -= deduct(fileAccess.length,       5, 2, 10);   // GUI file operations
+  score -= deduct(dynproUi.length,         5, 1,  8);   // Dynpro/Screen Painter
+  score -= deduct(standardReads.length,    2, 1,  5);   // Standard reads (low penalty)
+
+  // Floor: even the worst legacy code retains some reusable structure (5%)
+  score = Math.max(5, score);
 
   // 2. Determine target route
   // Side-by-Side (BTP) is required if:
