@@ -3,7 +3,10 @@
 import { useState, useEffect, FormEvent, KeyboardEvent, ClipboardEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
-  signInWithPopup, 
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  browserPopupRedirectResolver,
   GoogleAuthProvider, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -69,6 +72,20 @@ export default function LandingModals() {
     }
   }, [authParam]);
 
+  // Handle Google redirect result (fallback from signInWithPopup)
+  useEffect(() => {
+    if (!auth) return;
+    getRedirectResult(auth).then((result) => {
+      if (result?.user) {
+        console.log('[getRedirectResult] User signed in via redirect:', result.user.email);
+        setIsNavigating(true);
+        router.push('/dashboard');
+      }
+    }).catch((err) => {
+      console.error('[getRedirectResult] Error:', err);
+    });
+  }, [auth, router]);
+
   const updateQueryParams = (key: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value) {
@@ -98,7 +115,7 @@ export default function LandingModals() {
   const handleSignIn = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      const userCredential = await signInWithPopup(auth, provider);
+      const userCredential = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
       const signedInUser = userCredential.user;
       
       const db = getDb();
@@ -184,18 +201,22 @@ export default function LandingModals() {
         router.push('/dashboard');
       }, 850);
     } catch (error: any) {
-      console.error('Error signing in:', error);
-      // Show error to user instead of silently failing
+      console.error('Error signing in with popup:', error);
       const code = error?.code || '';
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-        // User closed the popup — not an error, just do nothing
         return;
       }
-      if (code === 'auth/popup-blocked') {
-        setAuthError('Pop-up blocked by your browser. Please allow pop-ups for clean-core.io and try again.');
-        return;
+      // Fallback: if popup fails (internal-error, popup-blocked, etc.), try redirect
+      if (code === 'auth/internal-error' || code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+        console.log('[handleSignIn] Popup failed, falling back to signInWithRedirect...');
+        try {
+          const provider = new GoogleAuthProvider();
+          await signInWithRedirect(auth, provider);
+          return; // Browser will redirect away
+        } catch (redirectErr) {
+          console.error('Redirect also failed:', redirectErr);
+        }
       }
-      // Show the real error code so we can debug
       setAuthError(`Sign-in failed (${code || error?.message || 'unknown'}). Please try again.`);
     }
   };
