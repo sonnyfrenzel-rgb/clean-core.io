@@ -52,5 +52,9 @@ export function sanitizeHtml(html: string): string {
 
 /** Sanitize SVG output (e.g. mermaid) using the SVG profile. */
 export function sanitizeSvg(svg: string): string {
-  return getPurify().sanitize(svg ?? '', { USE_PROFILES: { svg: true, svgFilters: true } });
+  return getPurify().sanitize(svg ?? '', {
+    USE_PROFILES: { svg: true, svgFilters: true, html: true },
+    ADD_TAGS: ['foreignObject'],
+    ADD_ATTR: ['dominant-baseline', 'text-anchor', 'requiredFeatures', 'transform', 'style', 'x', 'y', 'width', 'height', 'class', 'xmlns'],
+  });
 }

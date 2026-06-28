@@ -15,11 +15,14 @@ export default function MermaidDiagram({ chart }: { chart: string }) {
         mermaid.initialize({
           startOnLoad: false,
           theme: 'neutral',
-          securityLevel: 'strict',
+          securityLevel: 'loose',
           flowchart: {
-            useMaxWidth: true,
-            htmlLabels: false,
+            useMaxWidth: false,
+            htmlLabels: true,
             curve: 'basis',
+            padding: 15,
+            nodeSpacing: 30,
+            rankSpacing: 40,
           },
         });
         const id = 'm' + Math.random().toString(36).substr(2, 9);
@@ -38,5 +41,5 @@ export default function MermaidDiagram({ chart }: { chart: string }) {
     renderChart();
   }, [chart]);
 
-  return <div ref={ref} className="mermaid-container w-full overflow-x-auto flex justify-center py-8 bg-gray-50 rounded-3xl border border-gray-100 shadow-inner" />;
+  return <div ref={ref} className="mermaid-container w-full overflow-x-auto flex justify-center py-6 px-4 bg-gray-50 rounded-3xl border border-gray-100 shadow-inner" style={{ maxHeight: '600px' }} />;
 }

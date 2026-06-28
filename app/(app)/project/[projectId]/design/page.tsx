@@ -609,12 +609,14 @@ ${analysis}`;
           {/* Cloud Service bindings grid & drawer */}
           <CloudServiceIntegrations cloudServices={data.cloudServices} />
 
-          {/* Security Hardening and checklist — with construct coupling */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-            <SecurityHardeningChecklist securityHardening={data.securityHardening} findings={findings} />
-            
-            {/* Architect sign-off checklist gate component */}
-            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between">
+          {/* Security Hardening checklist — full width */}
+          <SecurityHardeningChecklist securityHardening={data.securityHardening} findings={findings} />
+
+          {/* Phased Modernization Roadmap timeline */}
+          <ModernizationRoadmap roadmap={data.roadmap} />
+
+          {/* Architect sign-off / decision — always last */}
+          <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
               <ArchitectSignOff
                 recommendation={project?.originalRecommendation || (project?.extensibilityRoute?.includes('BTP') ? 'cap' : 'rap')}
                 confidenceScore={project?.recommendationConfidence || 75}
@@ -664,11 +666,7 @@ ${analysis}`;
                   } : null);
                 }}
               />
-            </div>
           </div>
-
-          {/* Phased Modernization Roadmap timeline */}
-          <ModernizationRoadmap roadmap={data.roadmap} />
         </div>
       );
     }
