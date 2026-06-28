@@ -11,7 +11,7 @@ import {
   signOut
 } from 'firebase/auth';
 import { getAuth, getDb } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { verifyTOTP } from '@/lib/totp';
 import { 
   X, 
@@ -50,6 +50,12 @@ export default function LandingModals() {
   const [authError, setAuthError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+
+  // Legal consent state (for signup)
+  const [agreedGDPR, setAgreedGDPR] = useState(false);
+  const [agreedTerms, setAgreedTerms] = useState(false);
+  const [showDatenschutz, setShowDatenschutz] = useState(false);
+  const [showTermsOverlay, setShowTermsOverlay] = useState(false);
 
   // 2FA Interceptor States
   const [mfaCode, setMfaCode] = useState<string[]>(['', '', '', '', '', '']);
@@ -106,6 +112,54 @@ export default function LandingModals() {
           setPendingMfaProfile(profileData);
           setAuthMode('mfa');
           return;
+        }
+      } else {
+        // Auto-create profile for Google sign-in (no separate onboarding modal)
+        const displayName = signedInUser.displayName || '';
+        const nameParts = displayName.trim().split(/\s+/);
+        const autoFirstName = nameParts[0] || '';
+        const autoLastName = nameParts.slice(1).join(' ') || '';
+
+        const newProfile = {
+          firstName: autoFirstName,
+          lastName: autoLastName,
+          email: signedInUser.email || '',
+          tier: 'pilot',
+          status: 'pending',
+          transformationsUsed: 0,
+          transformationsLimit: 5,
+          maxTeamMembers: 1,
+          orgId: null,
+          identityProvider: 'google',
+          createdAt: serverTimestamp(),
+          isAdmin: false,
+          authMethod: 'google',
+        };
+        await setDoc(userDocRef, newProfile);
+
+        await setDoc(doc(db, 'registration_requests', signedInUser.uid), {
+          email: signedInUser.email,
+          name: displayName,
+          motivation: '',
+          status: 'pending',
+          createdAt: serverTimestamp(),
+        });
+
+        // Trigger approval email in background
+        try {
+          const token = await signedInUser.getIdToken();
+          await fetch('/api/request-pilot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+              uid: signedInUser.uid,
+              email: signedInUser.email || '',
+              name: displayName,
+              motivation: '',
+            }),
+          });
+        } catch (emailErr) {
+          console.error('Failed to trigger pilot registration email:', emailErr);
         }
       }
       
@@ -660,6 +714,64 @@ export default function LandingModals() {
                       )}
                     </div>
 
+                    {/* Legal consent checkboxes (required for registration) */}
+                    <div className="space-y-2.5 pt-3 border-t border-gray-100">
+                      <label className="flex items-start gap-2.5 cursor-pointer group">
+                        <div className="relative mt-0.5 shrink-0">
+                          <input 
+                            type="checkbox" 
+                            checked={agreedGDPR} 
+                            onChange={(e) => setAgreedGDPR(e.target.checked)}
+                            className="sr-only"
+                          />
+                          <div className={`w-4 h-4 border-2 rounded transition-all flex items-center justify-center ${agreedGDPR ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
+                            {agreedGDPR && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-gray-600 leading-relaxed font-medium">
+                          I agree to the{' '}
+                          <button 
+                            type="button" 
+                            onClick={(e) => { e.preventDefault(); setShowDatenschutz(true); }}
+                            className="text-gray-950 font-bold underline hover:text-green-600 transition-colors"
+                          >
+                            GDPR provisions and Privacy Policy
+                          </button>{' '}
+                          and understand this is a free community pilot.
+                        </span>
+                      </label>
+
+                      <label className="flex items-start gap-2.5 cursor-pointer group">
+                        <div className="relative mt-0.5 shrink-0">
+                          <input 
+                            type="checkbox" 
+                            checked={agreedTerms} 
+                            onChange={(e) => setAgreedTerms(e.target.checked)}
+                            className="sr-only"
+                          />
+                          <div className={`w-4 h-4 border-2 rounded transition-all flex items-center justify-center ${agreedTerms ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
+                            {agreedTerms && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-gray-600 leading-relaxed font-medium">
+                          I accept the{' '}
+                          <button 
+                            type="button" 
+                            onClick={(e) => { e.preventDefault(); setShowTermsOverlay(true); }}
+                            className="text-gray-950 font-bold underline hover:text-green-600 transition-colors"
+                          >
+                            Terms of Service and Guidelines
+                          </button>
+                          .
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* AI Disclaimer */}
+                    <div className="bg-amber-50/50 p-3 rounded-xl border border-amber-200/60 text-[9px] text-amber-900 leading-relaxed font-medium">
+                      <strong>⚡ Disclaimer:</strong> All analyses are powered by Generative AI and may contain inaccuracies. No warranty or liability assumed. Generated code must be verified by qualified architects before deployment.
+                    </div>
+
                     {authError && (
                       <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-2.5 text-xs text-red-700 font-bold">
                         <X size={14} className="shrink-0 mt-0.5" />
@@ -669,7 +781,7 @@ export default function LandingModals() {
 
                     <button
                       type="submit"
-                      disabled={isSubmitting || (!!confirmPassword && password !== confirmPassword)}
+                      disabled={isSubmitting || (!!confirmPassword && password !== confirmPassword) || !agreedGDPR || !agreedTerms}
                       className="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-black text-sm transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {isSubmitting ? 'Registering...' : 'Register'} <ArrowRight size={14} />
@@ -785,6 +897,13 @@ export default function LandingModals() {
                       <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.2-5.136 4.2A5.72 5.72 0 0 1 8.24 12.9a5.72 5.72 0 0 1 5.751-5.7 5.6 5.6 0 0 1 3.916 1.547l3.076-3.076A10.15 10.15 0 0 0 14.004 2a10.05 10.05 0 0 0-10 10.05 10.05 10.05 0 0 0 10 10.05c5.787 0 9.878-3.9 9.878-9.882 0-.67-.066-1.3-.2-1.933H12.24Z"/></svg>
                       Google Account
                     </button>
+
+                    <p className="text-[9px] text-gray-400 text-center leading-relaxed font-medium pt-1">
+                      By signing in, you agree to our{' '}
+                      <button type="button" onClick={() => updateQueryParams('legal', 'datenschutz')} className="underline hover:text-green-600">Privacy Policy</button>{' '}
+                      and{' '}
+                      <button type="button" onClick={() => updateQueryParams('legal', 'impressum')} className="underline hover:text-green-600">Terms</button>.
+                    </p>
                   </div>
                 </form>
               )}
@@ -916,6 +1035,83 @@ export default function LandingModals() {
             <p className="text-xs text-slate-500 mt-2">
               To exercise these rights, particularly to cascadingly erase all your data immediately, you can trigger account deletion directly in your Profile Settings under the **Danger Zone**, which will permanently and instantly wipe all database and authentication entries. Alternatively, contact us at <strong>info@clean-core.io</strong>.
             </p>
+          </div>
+        </div>
+      </LegalOverlay>
+
+      {/* Signup-specific GDPR overlay */}
+      <LegalOverlay isOpen={showDatenschutz} onClose={() => setShowDatenschutz(false)} title="Privacy Policy (GDPR Compliance)">
+        <div className="space-y-6 text-slate-800">
+          <div>
+            <h3 className="text-lg font-bold mb-2">1. Privacy at a Glance</h3>
+            <p className="text-sm leading-relaxed mb-2">
+              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our Pilot program.
+            </p>
+            <p className="text-xs text-slate-500">
+              <strong>Controller:</strong> Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, E-Mail: info@clean-core.io.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold mb-2">2. Data Collection & Processing</h3>
+            <ul className="list-disc pl-5 space-y-2 text-xs text-slate-600">
+              <li><strong>Google Authentication (Firebase Auth):</strong> Your name, email, and profile picture are used to authenticate your session.</li>
+              <li><strong>Firestore User Profiles:</strong> We store metadata about your usage (transformation count, system limits, name) in our secure database.</li>
+              <li><strong>BYOK (Bring Your Own Key):</strong> If configured, your Gemini API key is AES-256-GCM encrypted and never exposed to the browser.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold mb-2">3. Source Code Processing</h3>
+            <p className="text-sm leading-relaxed">
+              Uploaded ABAP files and generated artifacts are stored in Google Firebase (Europe). Source code is transmitted via secure channels to the Google Gemini API using stateless requests — never stored or used for AI training.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold mb-2">4. Your GDPR Rights</h3>
+            <ul className="list-disc pl-5 space-y-1 text-xs text-slate-600">
+              <li>Right of Access (Art. 15 GDPR)</li>
+              <li>Right to Rectification (Art. 16 GDPR)</li>
+              <li>Right to Erasure / &quot;Right to be Forgotten&quot; (Art. 17 GDPR)</li>
+              <li>Right to Data Portability (Art. 20 GDPR)</li>
+              <li>Right to Withdraw Consent (Art. 7 Abs. 3 GDPR)</li>
+            </ul>
+            <p className="text-xs text-slate-500 mt-2">
+              To exercise these rights, use account deletion in Profile Settings or contact <strong>info@clean-core.io</strong>.
+            </p>
+          </div>
+        </div>
+      </LegalOverlay>
+
+      {/* Signup-specific Terms overlay */}
+      <LegalOverlay isOpen={showTermsOverlay} onClose={() => setShowTermsOverlay(false)} title="Terms of Service & Guidelines">
+        <div className="space-y-6 text-slate-800">
+          <div>
+            <h3 className="text-lg font-bold mb-2">1. Scope and Purpose</h3>
+            <p className="text-sm leading-relaxed">
+              This Clean-Core.io pilot program is designed solely for research and evaluation purposes in the domain of automated code modernization (ABAP to Cloud-Native). By participating, you help shape and improve this community utility.
+            </p>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold mb-2">2. Community Pilot Usage</h3>
+            <p className="text-sm leading-relaxed text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100 font-medium">
+              During this community pilot phase, platform access is completely free and intended for prototyping, educational, and research-based testing. Commercial deployment of generated code requires a separate agreement.
+            </p>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold mb-2">3. AI Liability Disclaimer</h3>
+            <p className="text-sm leading-relaxed">
+              All code and analyses are generated by AI models. We assume no warranty, guarantees, or liability for reliability, correctness, or security of outputs. All generated artifacts must be verified by qualified software architects before deployment.
+            </p>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold mb-2">4. Code of Conduct</h3>
+            <ul className="list-disc pl-5 space-y-1 text-xs text-slate-600">
+              <li>Do not upload malicious software, illegal scripts, or IP-violating source code.</li>
+              <li>Maintain a respectful, professional tone in community spaces.</li>
+              <li>Report system issues to help refine the engine.</li>
+            </ul>
           </div>
         </div>
       </LegalOverlay>

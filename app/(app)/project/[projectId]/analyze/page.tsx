@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
@@ -20,9 +20,25 @@ import GlossaryTerm from '@/components/GlossaryTerm';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore, recommendArchitecture } from '@/lib/abap/code-assessment';
 import { APP_VERSION } from '@/lib/version';
+import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
+import { detectFindings, summarize } from '@/lib/abap/findings-detector';
+import type { SourceFile } from '@/lib/abap/findings-detector';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 
+import CodeInventoryTable from '@/components/analyze/CodeInventoryTable';
+import DataCouplingTable from '@/components/analyze/DataCouplingTable';
+import BusinessValueAudit from '@/components/analyze/BusinessValueAudit';
+import PlainEnglishGuide from '@/components/analyze/PlainEnglishGuide';
+import ExtensibilityDecisionMatrix from '@/components/analyze/ExtensibilityDecisionMatrix';
+import TargetScopeMapping from '@/components/analyze/TargetScopeMapping';
+import ModernizationStrategy from '@/components/analyze/ModernizationStrategy';
+import ArchitecturalNextSteps from '@/components/analyze/ArchitecturalNextSteps';
+import CoverageVerdict from '@/components/analyze/CoverageVerdict';
+import ConstructFindings from '@/components/analyze/ConstructFindings';
+import GapsWorklist from '@/components/analyze/GapsWorklist';
+import MissingDependencyPrompt from '@/components/analyze/MissingDependencyPrompt';
+import PreAnalysisPreview from '@/components/analyze/PreAnalysisPreview';
 
 import { DocumentSkeleton } from '@/components/Skeleton';
 
@@ -46,6 +62,26 @@ export default function AnalyzePage() {
   const isFromExample = searchParams.get('fromExample') === 'true' || !!project?.fromExample || project?.isExample;
   const [acceptedTerms, setAcceptedTerms] = useState(searchParams.get('fromExample') === 'true');
   const [uploadedFileName, setUploadedFileName] = useState('manual-input.abap');
+  const [activeTab, setActiveTab] = useState<'evidence' | 'backlog' | 'detailed' | 'strategy'>('evidence');
+  const [isSticky, setIsSticky] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsSticky(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleUpdateWorklist = async (updatedWorklist: any[]) => {
+    try {
+      const docRef = doc(getDb(), 'projects', projectId as string);
+      await updateDoc(docRef, { worklist: updatedWorklist });
+      setProject((prev: any) => prev ? { ...prev, worklist: updatedWorklist } : prev);
+    } catch (err) {
+      console.error('Failed to update project worklist:', err);
+    }
+  };
 
   const markdownComponents: Components = {
     h1: ({ node, ...props }) => (
@@ -200,68 +236,105 @@ export default function AnalyzePage() {
         return;
     }
     setLoading(true);
-    setLoadingMessage('Performing deep code analysis...');
+    setLoadingMessage('Parsing ABAP grammar structures and legacy tokens...');
+
+    const stages = [
+      'Parsing ABAP grammar structures and legacy tokens...',
+      'Resolving inheritance trees and class dependencies...',
+      'Cross-referencing S/4HANA best-practice released APIs...',
+      'Running extensibility audits & findings assessments...',
+      'Structuring operational JSON metadata profile...'
+    ];
+    let stageIdx = 0;
+    const stageInterval = setInterval(() => {
+      if (stageIdx < stages.length - 1) {
+        stageIdx++;
+        setLoadingMessage(stages[stageIdx]);
+      }
+    }, 2000);
+
     try {
+      const abapSources = [{ file: uploadedFileName || 'main.abap', content: codeToAnalyze }];
+      const mockModel: ClassModel = {
+        root: 'MAIN',
+        nodes: {
+          'MAIN': {
+            key: 'MAIN', kind: 'class', source: { file: uploadedFileName || 'main.abap', line: 1 },
+            isStandard: false, isAbstract: false, isFinal: false,
+            interfaces: [], friends: [], methods: [], attributes: [], events: [], aliases: []
+          }
+        },
+        edges: [],
+        linearization: ['MAIN'],
+        resolved: true,
+        missing: [],
+        findings: []
+      };
+      const detectedFindings = detectFindings(mockModel, abapSources);
+
       const prompt = `You are analyzing a legacy SAP ABAP custom codebase for modernization. The customer has defined their target operating model as: SAP S/4HANA Cloud, ${targetDeployment === 'public' ? 'Public Edition (strict SaaS, zero modifications allowed)' : 'Private Edition / RISE (3-Tier Extensibility Model, allowing custom Tier 2 API wrappers)'}.
+
+Here are the statically identified code findings for this package:
+${JSON.stringify(detectedFindings, null, 2)}
       
-      Analyze the following legacy SAP ABAP code and provide a highly practical, down-to-earth IT and Business assessment. You must return your output strictly in JSON format. Do not include any markdown formatting, HTML, or explanations outside the JSON object. The JSON must exactly match this TypeScript schema:
+      Analyze the legacy SAP ABAP code and the statically detected code findings to provide a highly practical, down-to-earth IT and Business assessment. You must return your output strictly in JSON format. Do not include any markdown formatting, HTML, or explanations outside the JSON object. The JSON must exactly match this TypeScript schema:
 
 interface AnalysisData {
-  projectTitle: string; // Dynamic name of this modernization project
-  cleanCoreScore: number; // A number between 0 and 100 representing clean core compliance. Modifying standard = 0, standard/decommissioning = 100, BTP/transformed extensibility = 90, key-user extensibility = 85.
-  summary: string; // A concise 2-3 sentence technical summary of the modernization potential.
-  asIsContext: string; // Brief description of what the legacy code does technically and what business capability it supports.
+  projectTitle: string; 
+  cleanCoreScore: number; 
+  summary: string; 
+  asIsContext: string; 
   standardFit: {
     potential: 'High' | 'Medium' | 'Low';
-    targetStandardProcess: string; // Name of the target S/4HANA best practice process or standard SAP capability mapping to this requirement.
-    rationale: string; // Technical reasoning on why standard process can or cannot fit.
+    targetStandardProcess: string; 
+    rationale: string; 
   };
   gaps: Array<{
-    title: string; // Name of the specific functional gap or custom validation logic
-    severity: 'High' | 'Medium' | 'Low'; // The degree of divergence from standard SAP
-    strategy: string; // Recommended mitigation path (e.g. Side-by-Side Extensibility, Key-User Extensibility, Decommission, or Standard SAP Configuration)
-    rationale: string; // Technical explanation of the mitigation path
-    complexity: 'High' | 'Medium' | 'Low'; // Implementation effort complexity
+    title: string; 
+    severity: 'High' | 'Medium' | 'Low'; 
+    strategy: string; 
+    rationale: string; 
+    complexity: 'High' | 'Medium' | 'Low'; 
   }>;
   recommendations: {
-    keepCoreClean: string; // Concrete strategy for replacing modifications via extensibility or transformed APIs
-    decommissioning: string; // Functionality that is obsolete, duplicate, or should be retired entirely
-    cloudReadiness: string; // Technical assessment of whether the custom logic can be cleanly migrated to a transformed cloud service (Node.js)
+    keepCoreClean: string; 
+    decommissioning: string; 
+    cloudReadiness: string; 
   };
-  strategicNextSteps: string[]; // 3-4 concrete actionable technical next steps for the engineering and architecture teams
+  strategicNextSteps: string[]; 
   extensibilityRouting: {
-    recommendedRoute: 'Side-by-Side (SAP BTP)' | 'In-App (ABAP Cloud)'; // Route: 'Side-by-Side (SAP BTP)' if the legacy logic is asynchronous, external-facing, or has non-SAP SaaS dependencies. 'In-App (ABAP Cloud)' if it has tight core database joins, synchronous posting validation logic, or runs directly during S/4HANA transactional postings.
-    confidenceScore: number; // 0-100 score representing the route decision confidence
-    rationale: string; // Factual justification of why this extensibility route was selected
-    targetArtifact: string; // Primary target SAP cloud extension artifact (e.g., "SAP BTP Node.js App", "ABAP Cloud RAP Business Object", "Released BAdI Implementation", "Custom CDS Projection View")
+    recommendedRoute: 'Side-by-Side (SAP BTP)' | 'In-App (ABAP Cloud)'; 
+    confidenceScore: number; 
+    rationale: string; 
+    targetArtifact: string; 
     decisionTreeCheckpoints: Array<{
-      checkpointName: string; // The specific decision checkpoint (e.g., "Transactional Coupling", "UI Paradigm", "Resource Coupling", "Data Proximity")
-      question: string; // Standard SAP Extensibility Guide evaluation question
-      evaluation: string; // Detailed technical evaluation of how the legacy code answers this question
+      checkpointName: string; 
+      question: string; 
+      evaluation: string; 
       resultState: 'In-App Preferred' | 'Side-by-Side Preferred' | 'Neutral';
-      cleanCoreImpact: string; // Architectural explanation of what this means for clean core compliance
+      cleanCoreImpact: string; 
     }>;
     comparativeAnalysis: {
       inAppABAPCloud: {
         technicalFeasibility: 'Highly Compatible' | 'Partially Compatible' | 'Incompatible';
-        fitDetails: string; // Custom technical fit explanation for the RAP/ABAP Cloud track for this legacy code
-        pros: string[]; // 2-3 specific technical advantages of using RAP for this legacy logic
-        cons: string[]; // 2-3 specific technical limitations/disadvantages of RAP for this logic
+        fitDetails: string; 
+        pros: string[]; 
+        cons: string[]; 
       };
       sideBySideBTP: {
         technicalFeasibility: 'Highly Compatible' | 'Partially Compatible' | 'Incompatible';
-        fitDetails: string; // Custom technical fit explanation for BTP CAP track for this legacy code
-        pros: string[]; // 2-3 specific advantages of using BTP CAP for this logic
-        cons: string[]; // 2-3 specific limitations/disadvantages of BTP CAP for this logic
+        fitDetails: string; 
+        pros: string[]; 
+        cons: string[]; 
     };
   };
   businessValueAnalysis: {
-    legacyAssetScore: number; // 0-100 score of how valuable/unique this custom IP is (high means it contains critical custom IP, low means it is mostly redundant standard logic)
+    legacyAssetScore: number; 
     technicalDebtLevel: 'Low' | 'Medium' | 'High';
-    estimatedMaintenanceCost: number; // Estimated annual maintenance cost in EUR to keep this legacy code alive in core (e.g., 5000) based on complexity and code size
-    valueDrivers: string[]; // 3-4 key business value drivers enabled by this logic (e.g., "Customer Portal Integration", "Automated Validation")
-    cloudRoiSummary: string; // Business-centric expected ROI of transforming this asset (e.g., "60% lower maintenance, zero core upgrade downtime")
-    plainEnglishActionPlan: string[]; // 3-4 simple, bulleted action items for non-technical business stakeholders (e.g., "1. Replace redundant standard ERP processes with Best Practice configuration")
+    estimatedMaintenanceCost: number; 
+    valueDrivers: string[]; 
+    cloudRoiSummary: string; 
+    plainEnglishActionPlan: string[]; 
   };
 }
 
@@ -272,12 +345,11 @@ ${codeToAnalyze}`;
       
       let recommendedRoute = 'Side-by-Side (SAP BTP)';
       let cleanCoreScore = 0;
-      // Normalize the Gemini response: strip code fences, unwrap arrays
       let normalizedAnalysis = responseText;
+      let initialWorklist: any[] = [];
       try {
         let cleaned = responseText.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
         const parsed = JSON.parse(cleaned);
-        // If Gemini returned an array, unwrap the first element
         const obj = Array.isArray(parsed) ? parsed[0] : parsed;
         if (obj && typeof obj === 'object') {
           normalizedAnalysis = JSON.stringify(obj);
@@ -287,12 +359,39 @@ ${codeToAnalyze}`;
           if (typeof obj.cleanCoreScore === 'number') {
             cleanCoreScore = obj.cleanCoreScore;
           }
+
+          const gapsList = obj.gaps || [];
+          initialWorklist = [
+            ...detectedFindings.map((f: SupportFinding, idx: number) => ({
+              id: `finding-${f.construct}-${idx}`,
+              title: f.title,
+              category: 'Finding',
+              level: f.level,
+              severity: f.level === 'not-supported' ? 'High' : f.level === 'partial' ? 'Medium' : 'Low',
+              location: f.location ? `${f.location.file}:${f.location.line}` : 'main.abap',
+              recommendation: f.recommendation,
+              status: f.requiresSignOff ? 'open' : 'signed_off',
+              effort: f.level === 'not-supported' ? 'High' : f.level === 'partial' ? 'Medium' : 'Low',
+              targetAnchor: f.targetAnchor || '',
+              detail: f.detail
+            })),
+            ...gapsList.map((g: any, idx: number) => ({
+              id: `gap-${idx}`,
+              title: g.title,
+              category: 'Functional Gap',
+              severity: g.severity,
+              location: 'S/4HANA Configuration',
+              recommendation: g.rationale,
+              strategy: g.strategy,
+              status: 'open',
+              effort: g.complexity
+            }))
+          ];
         }
       } catch (e) {
         console.error('Failed to parse analysis JSON for routing', e);
       }
 
-      // v1.9.0: Compute code inventory, data coupling, and assessment scores
       const inventory = extractCodeInventory(codeToAnalyze);
       const coupling = extractDataCoupling(codeToAnalyze);
       const complexityScore = computeComplexityScore(codeToAnalyze);
@@ -301,14 +400,10 @@ ${codeToAnalyze}`;
 
       try {
         const isAlreadyCharged = project?.charged || false;
-
-        // v1.10.0: Compute input fingerprint (SHA-256) for audit trail
-        // Only hashes the code content — no secrets, no PII
         const encoder = new TextEncoder();
         const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(codeToAnalyze));
         const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-        // Detect primary object type from code content
         const detectObjectType = (code: string): string => {
           if (/^\s*CLASS\s+/im.test(code)) return 'Class';
           if (/^\s*INTERFACE\s+/im.test(code)) return 'Interface';
@@ -327,7 +422,7 @@ ${codeToAnalyze}`;
           status: 'analyzed',
           charged: true,
           transformationBypass: true,
-          // v1.9.0 Assessment Fields
+          worklist: initialWorklist,
           codeInventory: inventory,
           dataCoupling: coupling,
           complexityScore,
@@ -335,7 +430,6 @@ ${codeToAnalyze}`;
           originalRecommendation: archRecommendation.architecture,
           recommendationConfidence: archRecommendation.confidence,
           recommendationJustification: archRecommendation.justification,
-          // v1.10.0 Audit Metadata — hashes and model identifiers only
           'auditMetadata.inputFingerprint': {
             sha256: hashHex,
             fileName: uploadedFileName,
@@ -367,12 +461,14 @@ ${codeToAnalyze}`;
         prev 
           ? { 
               ...prev, 
+              legacyCode: codeToAnalyze,
               analysis: normalizedAnalysis, 
               extensibilityRoute: recommendedRoute, 
               s4Deployment: targetDeployment, 
               cleanCoreScore,
               charged: true,
               transformationBypass: true,
+              worklist: initialWorklist,
               codeInventory: inventory,
               dataCoupling: coupling,
               complexityScore,
@@ -383,16 +479,15 @@ ${codeToAnalyze}`;
             } 
           : null
       );
-
     } catch (err: unknown) {
       console.error('Analysis Error:', err);
       const errMessage = err instanceof Error ? err.message : String(err);
       if (errMessage.includes('{')) {
-        // Already handled by handleFirestoreError
         throw err;
       }
       setError(`Failed to analyze the code: ${errMessage || 'Unknown error'}. Please try again.`);
     } finally {
+      clearInterval(stageInterval);
       setLoading(false);
       setLoadingMessage('');
     }
@@ -788,20 +883,64 @@ ${codeToAnalyze}`;
     return categories;
   };
 
+  // Re-derive static findings from the stored legacy code for the Evidence tab
+  const { findings, findingsSummary, missingDeps } = useMemo(() => {
+    if (!legacyCode) return { findings: [] as SupportFinding[], findingsSummary: null, missingDeps: [] as import('@/lib/abap/class-model').MissingDependency[] };
+    const abapSources: SourceFile[] = [{ file: uploadedFileName || 'main.abap', content: legacyCode }];
+    const mockModel: ClassModel = {
+      root: 'MAIN',
+      nodes: {
+        'MAIN': {
+          key: 'MAIN', kind: 'class', source: { file: uploadedFileName || 'main.abap', line: 1 },
+          isStandard: false, isAbstract: false, isFinal: false,
+          interfaces: [], friends: [], methods: [], attributes: [], events: [], aliases: []
+        }
+      },
+      edges: [],
+      linearization: ['MAIN'],
+      resolved: true,
+      missing: [],
+      findings: []
+    };
+
+    // Detect potential missing dependencies from ABAP references
+    const detectedMissing: import('@/lib/abap/class-model').MissingDependency[] = [];
+    const className = legacyCode.match(/^\s*CLASS\s+(\w+)/im)?.[1] || 'MAIN';
+    // Superclass references
+    const superMatch = legacyCode.match(/INHERITING\s+FROM\s+(\w+)/i);
+    if (superMatch && !superMatch[1].startsWith('CL_') && !superMatch[1].startsWith('IF_')) {
+      detectedMissing.push({
+        ref: superMatch[1], kind: 'superclass', referencedBy: className,
+        at: { file: uploadedFileName || 'main.abap', line: 1 }, impact: 'blocks-resolution'
+      });
+    }
+    // Interface references
+    const ifMatches = legacyCode.matchAll(/INTERFACES\s+(\w+)/gi);
+    for (const m of ifMatches) {
+      if (!m[1].startsWith('IF_')) {
+        detectedMissing.push({
+          ref: m[1], kind: 'interface', referencedBy: className,
+          at: { file: uploadedFileName || 'main.abap', line: 1 }, impact: 'reduces-confidence'
+        });
+      }
+    }
+
+    const detected = detectFindings(mockModel, abapSources);
+    const summary = summarize(detected, mockModel);
+    return { findings: detected, findingsSummary: summary, missingDeps: detectedMissing };
+  }, [legacyCode, uploadedFileName]);
+
   const renderAnalysisContent = () => {
     if (!project?.analysis) return null;
     
     let analysisData: AnalysisData | null = null;
     try {
-      // Handle case where Firestore returns analysis as a JS object directly
       if (typeof project.analysis === 'object' && project.analysis !== null && !Array.isArray(project.analysis)) {
         analysisData = project.analysis as unknown as AnalysisData;
       } else if (typeof project.analysis === 'string') {
-        // Strip markdown code fences if present
         const cleaned = project.analysis.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
         if (cleaned.startsWith('{') || cleaned.startsWith('[')) {
           const parsed = JSON.parse(cleaned);
-          // Unwrap array if Gemini returned [{...}] instead of {...}
           analysisData = Array.isArray(parsed) ? parsed[0] : parsed;
         }
       }
@@ -810,9 +949,6 @@ ${codeToAnalyze}`;
     }
 
     if (analysisData) {
-      const gapsCat = categorizeGaps(analysisData.gaps || []);
-      
-      // Dynamic business valuation fallback generator
       const bizFallback = {
         legacyAssetScore: analysisData.businessValueAnalysis?.legacyAssetScore || 
           (analysisData.standardFit?.potential === 'Low' ? 82 : analysisData.standardFit?.potential === 'Medium' ? 55 : 35),
@@ -832,958 +968,272 @@ ${codeToAnalyze}`;
           `3. Decouple unique, high-value custom intellectual property into a modern, upgrade-stable ${analysisData.extensibilityRouting?.recommendedRoute || 'decoupled'} architecture.`
         ]
       };
+const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP');
+      const checkpoints = analysisData.extensibilityRouting?.decisionTreeCheckpoints;
+      const comparative = analysisData.extensibilityRouting?.comparativeAnalysis;
 
       return (
-        <div className="space-y-12">
-          {/* Core metrics panel */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-stretch">
-            {/* Circular SVG Gauge for Clean Core Score */}
-            <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-lg border border-slate-800 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-2xl -mr-16 -mt-16"></div>
-              
-              <div className="flex items-center gap-1.5 mb-4 relative z-10">
-                <span className="text-[10px] font-bold tracking-widest text-green-400 uppercase">Clean Core Score</span>
-                <button 
-                  onClick={() => setShowScoreModal(true)}
-                  className="p-1 rounded-md text-green-400 hover:text-white hover:bg-white/10 transition-all shrink-0"
-                  title="Explain Clean Core Score"
-                >
-                  <HelpCircle size={14} className="animate-pulse" />
-                </button>
-              </div>
-              
-              <div className="relative w-36 h-36 flex items-center justify-center mb-4">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle cx="72" cy="72" r="56" className="stroke-slate-800 fill-none" strokeWidth="8" />
-                  <circle 
-                    cx="72" 
-                    cy="72" 
-                    r="56" 
-                    className="stroke-green-500 fill-none transition-all duration-1000 ease-out" 
-                    strokeWidth="8" 
-                    strokeDasharray="351.8" 
-                    strokeDashoffset={351.8 - (351.8 * (analysisData.cleanCoreScore || 0)) / 100}
-                  />
-                </svg>
-                <div className="absolute flex flex-col items-center">
-                  <span className="text-3xl font-extrabold text-white tracking-tight">{analysisData.cleanCoreScore}%</span>
-                  <span className="text-[9px] text-slate-400 font-medium">Compliance</span>
-                </div>
-              </div>
-              
-              <p className="text-xs text-slate-400 mt-2 max-w-[200px]">Higher score indicates better alignment with standard extensibility guidelines.</p>
-            </div>
-
-            {/* Extensibility Router Card */}
-            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between relative group">
-              <div>
-                <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Extensibility Router</span>
-                <div className="flex items-center gap-2 mt-2 mb-3">
-                  <span className={clsx(
-                    "text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider shadow-sm",
-                    (project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP')
-                      ? "bg-blue-50 text-blue-700 border border-blue-100"
-                      : "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                  )}>
-                    {(project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP') 
-                      ? <GlossaryTerm termKey="BTP" className="border-b-0 hover:text-blue-700 text-blue-700">☁️ BTP Side-by-Side</GlossaryTerm> 
-                      : <GlossaryTerm termKey="RAP" className="border-b-0 hover:text-emerald-700 text-emerald-700">⚙️ ABAP Cloud (RAP)</GlossaryTerm>}
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-400">
-                    {analysisData.extensibilityRouting?.confidenceScore || 95}% Conf.
-                  </span>
-                </div>
-                <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight mb-1">
-                  Target: {analysisData.extensibilityRouting?.targetArtifact || ((project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || '').includes('BTP') 
-                    ? <GlossaryTerm termKey="CAP" className="text-xs font-black text-slate-800 border-b-0 uppercase">SAP BTP Node.js App (CAP)</GlossaryTerm> 
-                    : <GlossaryTerm termKey="RAP" className="text-xs font-black text-slate-800 border-b-0 uppercase">RAP Business Object</GlossaryTerm>)}
-                </h4>
-                <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-4">
-                  {analysisData.extensibilityRouting?.rationale || 'AI analyzed legacy database joins and determined the optimal decoupled BTP modernization strategy.'}
-                </p>
-              </div>
-
-              {/* Interactive Override Button */}
-              <div className="border-t border-slate-100 pt-4 mt-4 flex items-center justify-between gap-2">
-                <span className="text-[9px] font-bold text-slate-400 uppercase">Override Route</span>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const currentRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)';
-                    const nextRoute = currentRoute.includes('BTP') ? 'In-App (ABAP Cloud)' : 'Side-by-Side (SAP BTP)';
-                    
-                    // Update in Firestore
-                    const docRef = doc(getDb(), 'projects', projectId as string);
-                    await updateDoc(docRef, { extensibilityRoute: nextRoute });
-                    
-                    // Update state
-                    setProject((prev: any) => prev ? { ...prev, extensibilityRoute: nextRoute } : prev);
-                  }}
-                  className="text-[9px] font-black text-slate-500 hover:text-green-600 transition-colors uppercase tracking-widest flex items-center gap-1"
-                >
-                  <RefreshCw size={10} className="animate-spin-slow" /> Switch Track
-                </button>
-              </div>
-            </div>
-
-            {/* Project Summary Card */}
-            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between lg:col-span-2 relative group">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Analysis Summary</span>
-                  <span className={clsx(
-                    "text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-sm",
-                    (project.s4Deployment || 'public') === 'public'
-                      ? "bg-green-50 text-green-700 border-green-200/60"
-                      : "bg-blue-50 text-blue-700 border-blue-200/60"
-                  )}>
-                    {(project.s4Deployment || 'public') === 'public' ? '☁️ S/4HANA Public Cloud' : '🛡️ Private Cloud / RISE'}
-                  </span>
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 mt-2 mb-3">{analysisData.projectTitle || project.name}</h3>
-                <p className="text-slate-600 text-base leading-relaxed">{analysisData.summary}</p>
-              </div>
-              <div className="border-t border-slate-100 pt-4 mt-6 flex flex-wrap items-center gap-6">
-                <div>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase">Standardization Potential</span>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className={clsx(
-                      "w-2 h-2 rounded-full",
-                      analysisData.standardFit?.potential === 'High' ? 'bg-green-500' :
-                      analysisData.standardFit?.potential === 'Medium' ? 'bg-amber-500' : 'bg-red-500'
-                    )}></span>
-                    <span className="text-sm font-bold text-slate-700">{analysisData.standardFit?.potential || 'Medium'}</span>
-                  </div>
-                </div>
-                <div className="h-8 w-px bg-slate-200"></div>
-                <div>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase">Target Process Mapping</span>
-                  <p className="text-sm font-bold text-slate-800 mt-1">{analysisData.standardFit?.targetStandardProcess || 'N/A'}</p>
-                </div>
-              </div>
-            </div>
+        <div className="space-y-8 font-sans">
+          {/* Tab Navigation Menu */}
+          <div className="flex border-b border-slate-200 -mx-6 md:-mx-12 px-6 md:px-12 bg-slate-50/50 pt-2 gap-1 sm:gap-2">
+            {[
+              { id: 'evidence', label: 'Decision & Evidence', icon: '✅' },
+              { id: 'backlog', label: 'Gaps Backlog', icon: '📋' },
+              { id: 'detailed', label: 'Detailed Assessment', icon: '🔍' },
+              { id: 'strategy', label: 'Modernization Strategy', icon: '💡' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as any)}
+                className={clsx(
+                  "px-4 py-3 text-[11px] font-black uppercase tracking-wider rounded-t-2xl border-t border-x -mb-px transition-all flex items-center gap-2",
+                  activeTab === tab.id
+                    ? "bg-white border-slate-200 text-slate-900 border-b-white z-10"
+                    : "bg-transparent border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
+                )}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
           </div>
 
-          {/* v1.9.0: Complexity & Criticality Badges */}
-          {(project.complexityScore !== undefined || project.criticalityScore !== undefined) && (
-            <div className="flex flex-wrap gap-3">
-              {project.complexityScore !== undefined && (
-                <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm">
-                  <Cpu size={14} className={clsx(
-                    project.complexityScore >= 70 ? 'text-red-500' : project.complexityScore >= 40 ? 'text-amber-500' : 'text-emerald-500'
-                  )} />
-                  <span className="text-xs font-bold text-slate-600">Complexity</span>
-                  <span className={clsx(
-                    'text-sm font-black',
-                    project.complexityScore >= 70 ? 'text-red-600' : project.complexityScore >= 40 ? 'text-amber-600' : 'text-emerald-600'
-                  )}>{project.complexityScore}</span>
-                </div>
+          {/* TAB CONTENT: Decision & Evidence */}
+          {activeTab === 'evidence' && (
+            <div className="space-y-10 animate-in fade-in duration-300">
+              {/* Missing Dependency Prompt — surfaces gaps upfront */}
+              {missingDeps.length > 0 && (
+                <MissingDependencyPrompt missing={missingDeps} />
               )}
-              {project.criticalityScore !== undefined && (
-                <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm">
-                  <Zap size={14} className={clsx(
-                    project.criticalityScore >= 70 ? 'text-red-500' : project.criticalityScore >= 40 ? 'text-amber-500' : 'text-emerald-500'
-                  )} />
-                  <span className="text-xs font-bold text-slate-600">Criticality</span>
-                  <span className={clsx(
-                    'text-sm font-black',
-                    project.criticalityScore >= 70 ? 'text-red-600' : project.criticalityScore >= 40 ? 'text-amber-600' : 'text-emerald-600'
-                  )}>{project.criticalityScore}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* v1.9.0: Code Inventory Accordion */}
-          {project.codeInventory && project.codeInventory.length > 0 && (
-            <CollapsibleAccordion
-              icon={<Package size={16} />}
-              title="Code Inventory"
-              badge={`${project.codeInventory.length} object${project.codeInventory.length !== 1 ? 's' : ''} detected`}
-              badgeSeverity={project.codeInventory.some(i => i.criticality === 'High') ? 'red' : 'green'}
-              tooltip="All recognized ABAP artifacts extracted from your uploaded code, classified by type and module."
-            >
-              <div className="overflow-x-auto -mx-2">
-                <table className="w-full text-xs border-collapse min-w-[480px]">
-                  <thead>
-                    <tr className="border-b border-slate-100">
-                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Object</th>
-                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Type</th>
-                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden sm:table-cell">Module</th>
-                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Criticality</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {project.codeInventory.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-2 px-2 font-mono font-bold text-slate-800">{item.objectName}</td>
-                        <td className="py-2 px-2 text-slate-600">{item.type}</td>
-                        <td className="py-2 px-2 text-slate-500 hidden sm:table-cell">{item.module || '—'}</td>
-                        <td className="py-2 px-2">
-                          <span className={clsx(
-                            'px-2 py-0.5 rounded-full text-[10px] font-bold',
-                            item.criticality === 'High' ? 'bg-red-50 text-red-700 border border-red-200' :
-                            item.criticality === 'Medium' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                            'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          )}>{item.criticality}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CollapsibleAccordion>
-          )}
-
-          {/* v1.9.0: Data Coupling Accordion */}
-          {project.dataCoupling && project.dataCoupling.length > 0 && (
-            <CollapsibleAccordion
-              icon={<Link2 size={16} />}
-              title="Data Coupling"
-              badge={`${project.dataCoupling.length} table${project.dataCoupling.length !== 1 ? 's' : ''} · ${project.dataCoupling.filter(d => d.accessType !== 'Read').length} direct writes`}
-              badgeSeverity={project.dataCoupling.some(d => d.riskLevel === 'High') ? 'red' : project.dataCoupling.some(d => d.riskLevel === 'Medium') ? 'amber' : 'green'}
-              tooltip="Direct database table accesses detected in your code. Write operations on standard tables are a Clean-Core risk."
-            >
-              <div className="overflow-x-auto -mx-2">
-                <table className="w-full text-xs border-collapse min-w-[560px]">
-                  <thead>
-                    <tr className="border-b border-slate-100">
-                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Table</th>
-                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Access</th>
-                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Risk</th>
-                      <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Recommendation</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {project.dataCoupling.map((entry, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-2 px-2 font-mono font-bold text-slate-800">
-                          {entry.tableName}
-                          {entry.isCustom && <span className="ml-1.5 text-[9px] text-blue-500 font-semibold">(Custom)</span>}
-                        </td>
-                        <td className="py-2 px-2">
-                          <span className={clsx(
-                            'px-2 py-0.5 rounded-full text-[10px] font-bold',
-                            entry.accessType === 'Write' || entry.accessType === 'Read/Write'
-                              ? 'bg-red-50 text-red-700 border border-red-200'
-                              : 'bg-slate-100 text-slate-600'
-                          )}>{entry.accessType}</span>
-                        </td>
-                        <td className="py-2 px-2">
-                          <span className={clsx(
-                            'px-2 py-0.5 rounded-full text-[10px] font-bold',
-                            entry.riskLevel === 'High' ? 'bg-red-50 text-red-700 border border-red-200' :
-                            entry.riskLevel === 'Medium' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                            'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          )}>{entry.riskLevel}</span>
-                        </td>
-                        <td className="py-2 px-2 text-slate-600 text-[11px]">{entry.recommendation}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CollapsibleAccordion>
-          )}
-
-          {/* Business Value & Executive Action Center */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch animate-in fade-in duration-500">
-            {/* Left Column: Business Value Audit (Span 5) */}
-            <div className="lg:col-span-5 bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between relative overflow-hidden group">
-              <div className="space-y-6">
-                <div>
-                  <span className="text-[10px] font-bold tracking-widest text-emerald-600 uppercase bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100/50">Business Value Audit</span>
-                  <h3 className="text-xl font-black text-slate-900 mt-3">Legacy Asset Valuation</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-1">Financial and quality audit of the legacy custom codebase.</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Legacy Asset Score */}
-                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Legacy Asset Value</span>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-3xl font-black text-slate-900">{bizFallback.legacyAssetScore}%</span>
-                      <span className="text-[10px] text-green-600 font-extrabold">IP Score</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-200 rounded-full mt-2.5 overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${bizFallback.legacyAssetScore}%` }}></div>
+              {/* Core metrics panel */}
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-stretch">
+                {/* Circular SVG Gauge for Clean Core Score */}
+                <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-lg border border-slate-800 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-2xl -mr-16 -mt-16"></div>
+                  
+                  <div className="flex items-center gap-1.5 mb-4 relative z-10">
+                    <span className="text-[10px] font-bold tracking-widest text-green-400 uppercase">Clean Core Score</span>
+                    <button 
+                      type="button"
+                      onClick={() => setShowScoreModal(true)}
+                      className="p-1 rounded-md text-green-400 hover:text-white hover:bg-white/10 transition-all shrink-0"
+                      title="Explain Clean Core Score"
+                    >
+                      <HelpCircle size={14} className="animate-pulse" />
+                    </button>
+                  </div>
+                  
+                  <div className="relative w-36 h-36 flex items-center justify-center mb-4">
+                    <svg className="w-full h-full transform -rotate-90">
+                      <circle cx="72" cy="72" r="56" className="stroke-slate-800 fill-none" strokeWidth="8" />
+                      <circle 
+                        cx="72" 
+                        cy="72" 
+                        r="56" 
+                        className="stroke-green-500 fill-none transition-all duration-1000 ease-out" 
+                        strokeWidth="8" 
+                        strokeDasharray="351.8" 
+                        strokeDashoffset={351.8 - (351.8 * (analysisData.cleanCoreScore || 0)) / 100}
+                      />
+                    </svg>
+                    <div className="absolute flex flex-col items-center">
+                      <span className="text-3xl font-extrabold text-white tracking-tight">{analysisData.cleanCoreScore}%</span>
+                      <span className="text-[9px] text-slate-400 font-medium">Compliance</span>
                     </div>
                   </div>
+                  
+                  <p className="text-xs text-slate-400 mt-2 max-w-[200px]">Higher score indicates better alignment with standard extensibility guidelines.</p>
+                </div>
 
-                  {/* Technical Debt Estimate */}
-                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col justify-between">
-                    <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Technical Debt Level</span>
+                {/* Extensibility Router Card */}
+                <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between relative group">
+                  <div>
+                    <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Extensibility Router</span>
+                    <div className="flex items-center gap-2 mt-2 mb-3">
                       <span className={clsx(
-                        "text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-wider",
-                        bizFallback.technicalDebtLevel === 'High' ? "bg-rose-105 text-rose-700 border border-rose-200" :
-                        bizFallback.technicalDebtLevel === 'Medium' ? "bg-amber-100 text-amber-700 border border-amber-200" :
-                        "bg-green-100 text-green-700 border border-green-200"
+                        "text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider shadow-sm",
+                        (project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP')
+                          ? "bg-blue-50 text-blue-700 border border-blue-100"
+                          : "bg-emerald-50 text-emerald-700 border border-emerald-100"
                       )}>
-                        {bizFallback.technicalDebtLevel} Debt
+                        {(project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP') 
+                          ? <GlossaryTerm termKey="BTP" className="border-b-0 hover:text-blue-700 text-blue-700">☁️ BTP Side-by-Side</GlossaryTerm> 
+                          : <GlossaryTerm termKey="RAP" className="border-b-0 hover:text-emerald-700 text-emerald-700">⚙️ ABAP Cloud (RAP)</GlossaryTerm>}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {analysisData.extensibilityRouting?.confidenceScore || 95}% Conf.
                       </span>
                     </div>
-                    <div className="mt-2 text-[10px] text-slate-450 font-bold leading-none">
-                      Est. Maint. Cost: <span className="text-slate-900 font-black font-mono">{(bizFallback.estimatedMaintenanceCost).toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}/yr</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Value Drivers List */}
-                <div className="space-y-2">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block font-mono">Legacy Business Value Drivers</span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {bizFallback.valueDrivers.map((driver, dIdx) => (
-                      <div key={dIdx} className="bg-slate-50/50 px-3 py-2 rounded-xl border border-slate-100 flex items-center gap-2 text-xs font-semibold text-slate-700">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                        <span className="truncate">{driver}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Better Practice TCO & ROI Calculator CTA */}
-                <div className="border-t border-slate-100 pt-4 mt-2">
-                  <a
-                    href={`/project/${projectId}/tco`}
-                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-br from-[#0b1c30] to-slate-800 hover:shadow-lg text-white font-bold text-xs uppercase tracking-wider h-11 rounded-xl transition-all cursor-pointer shadow-md active:scale-95 text-center no-underline"
-                  >
-                    <BarChart3 className="w-4 h-4 text-green-400" /> C-Level TCO & ROI Calculator 📊
-                  </a>
-                </div>
-              </div>
-
-              {/* expected ROI box */}
-              <div className="border-t border-slate-100 pt-4 mt-6 bg-slate-50 -mx-8 -mb-8 p-6 rounded-b-3xl">
-                <div className="flex gap-2.5">
-                  <div className="bg-emerald-100 text-emerald-700 p-2 rounded-xl shrink-0 h-fit">
-                    <Sparkles size={16} />
-                  </div>
-                  <div>
-                    <span className="block text-[8px] font-black text-emerald-700 uppercase tracking-widest font-mono">Estimated Cloud ROI</span>
-                    <p className="text-[11px] text-slate-700 leading-relaxed font-bold mt-1">
-                      {bizFallback.cloudRoiSummary}
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight mb-1">
+                      Target: {analysisData.extensibilityRouting?.targetArtifact || ((project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || '').includes('BTP') 
+                        ? <GlossaryTerm termKey="CAP" className="text-xs font-black text-slate-800 border-b-0 uppercase">SAP BTP Node.js App (CAP)</GlossaryTerm> 
+                        : <GlossaryTerm termKey="RAP" className="text-xs font-black text-slate-800 border-b-0 uppercase">RAP Business Object</GlossaryTerm>)}
+                    </h4>
+                    <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-4">
+                      {analysisData.extensibilityRouting?.rationale || 'AI analyzed legacy database joins and determined the optimal decoupled BTP modernization strategy.'}
                     </p>
                   </div>
-                </div>
-              </div>
-            </div>
 
-            {/* Right Column: Executive Plain-English Action Plan (Span 7) */}
-            <div className="lg:col-span-7 bg-slate-900 text-white rounded-3xl p-8 border border-slate-800 shadow-xl relative overflow-hidden flex flex-col justify-between group">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-green-500/5 rounded-full blur-3xl -mr-24 -mt-24 pointer-events-none"></div>
-              
-              <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+                  {/* Interactive Override Button */}
+                  <div className="border-t border-slate-100 pt-4 mt-4 flex items-center justify-between gap-2">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase">Override Route</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const currentRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)';
+                        const nextRoute = currentRoute.includes('BTP') ? 'In-App (ABAP Cloud)' : 'Side-by-Side (SAP BTP)';
+                        
+                        const docRef = doc(getDb(), 'projects', projectId as string);
+                        await updateDoc(docRef, { extensibilityRoute: nextRoute });
+                        setProject((prev: any) => prev ? { ...prev, extensibilityRoute: nextRoute } : prev);
+                      }}
+                      className="text-[9px] font-black text-slate-500 hover:text-green-600 transition-colors uppercase tracking-widest flex items-center gap-1"
+                    >
+                      <RefreshCw size={10} className="animate-spin-slow" /> Switch Track
+                    </button>
+                  </div>
+                </div>
+
+                {/* Project Summary Card */}
+                <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between lg:col-span-2 relative group">
                   <div>
-                    <span className="text-[10px] font-bold tracking-widest text-green-400 uppercase bg-green-950 px-2.5 py-1 rounded-full border border-green-800/30">Executive Summary</span>
-                    <h3 className="text-xl font-black text-white mt-3">What to Do - Plain English Guide</h3>
-                    <p className="text-xs text-slate-400 mt-1">Simple, non-technical steps to modernize this business process successfully.</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Analysis Summary</span>
+                      <span className={clsx(
+                        "text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-sm",
+                        (project.s4Deployment || 'public') === 'public'
+                          ? "bg-green-50 text-green-700 border-green-200/60"
+                          : "bg-blue-50 text-blue-700 border-blue-200/60"
+                      )}>
+                        {(project.s4Deployment || 'public') === 'public' ? '☁️ S/4HANA Public Cloud' : '🛡️ Private Cloud / RISE'}
+                      </span>
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 mt-2 mb-3">{analysisData.projectTitle || project.name}</h3>
+                    <p className="text-slate-655 text-sm leading-relaxed line-clamp-3">{analysisData.summary}</p>
                   </div>
-                  <span className="text-[10px] font-bold text-slate-400 bg-slate-800 border border-slate-700 px-3 py-1 rounded-full uppercase tracking-wider font-mono shrink-0 self-start sm:self-center">Business Roadmap</span>
-                </div>
-
-                <div className="space-y-4">
-                  {bizFallback.plainEnglishActionPlan.map((action, aIdx) => (
-                    <div key={aIdx} className="bg-slate-800/50 p-4 rounded-2xl border border-slate-800/60 flex items-start gap-4 hover:border-slate-700 transition-colors">
-                      <span className="w-8 h-8 rounded-xl bg-green-500/10 text-green-400 border border-green-500/20 flex items-center justify-center shrink-0 font-black text-xs shadow-inner">{aIdx + 1}</span>
-                      <p className="text-xs text-slate-300 leading-relaxed font-bold pt-1.5">{action}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="text-[10px] text-slate-400 font-bold font-mono tracking-widest uppercase mt-6 pt-4 border-t border-slate-800/60">
-                Strategic Path: {project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Decoupled Extension'} Track
-              </div>
-            </div>
-          </div>
-          
-          {/* Extensibility Decision Matrix & Path Guide */}
-          <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden group mb-8 animate-in fade-in duration-700">
-            <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">Extensibility Decision Matrix & Path</h3>
-                <p className="text-xs text-slate-400 mt-1">Detailed comparison and dynamic AI checkpoints that determined the active modernization track.</p>
-              </div>
-              <span className="bg-slate-100 text-slate-700 border border-slate-200/60 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider font-mono shrink-0 self-start md:self-center">
-                SAP Clean Core Guidelines
-              </span>
-            </div>
-
-            {(() => {
-              const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP');
-              
-              const checkpoints = analysisData.extensibilityRouting?.decisionTreeCheckpoints || [
-                {
-                  checkpointName: 'Transactional Coupling',
-                  question: 'Does the legacy logic require synchronous execution and update locks within standard S/4HANA transactional postings?',
-                  evaluation: isBtp 
-                    ? 'The custom logic executes asynchronously or independently without blocking standard ERP database threads (e.g. read-only analytics, decoupled webhooks, or scheduled updates).' 
-                    : 'The custom logic requires synchronous validation and real-time locking within standard SAP LUW processes (e.g., during posting of sales orders or billing items).',
-                  resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
-                  cleanCoreImpact: isBtp 
-                    ? 'Side-by-side execution leaves S/4HANA upgrade cycles completely unaffected.' 
-                    : 'In-App extensibility (RAP) is required to run within the ERP core transaction boundaries while keeping the repository clean.'
-                },
-                {
-                  checkpointName: 'UI Paradigm & Customization',
-                  question: 'Does the application require an external-facing portal, heavy custom branding, or tight integration with third-party SaaS services?',
-                  evaluation: isBtp 
-                    ? 'Requires a highly responsive, modern Fiori Elements or custom React UI available to external vendors and clients without exposing standard SAP ports.' 
-                    : 'The UI is embedded inside standard S/4HANA transaction screens for internal business users utilizing standard Fiori grids.',
-                  resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
-                  cleanCoreImpact: isBtp 
-                    ? 'BTP decoupled hosting allows modern web framework freedom and enterprise-grade security isolation.' 
-                    : 'ABAP RAP keeps the UI aligned with standard S/4HANA layouts, eliminating custom server configurations.'
-                },
-                {
-                  checkpointName: 'Data & DB Proximity',
-                  question: 'Does the logic perform compute-intensive joins across dozens of custom database tables or require a separate persistent schema?',
-                  evaluation: isBtp 
-                    ? 'The application relies on decoupled custom data stores, external SaaS APIs, or complex pre-aggregations that would overhead the core database.' 
-                    : 'Requires direct, low-latency joins and real-time reads on standard tables (e.g. BSEG, KNA1) inside standard transactional screens.',
-                  resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
-                  cleanCoreImpact: isBtp 
-                    ? 'Decoupling database schemas keeps the ERP core lightweight, safe, and easily upgradeable.' 
-                    : 'Uses standard released RAP CDS projection views and standard repository items, preserving database integrity.'
-                },
-                {
-                  checkpointName: 'Lifecycle & Resource Scaling',
-                  question: 'Does the solution experience highly volatile, bursty resource scaling requirements or have massive external workloads?',
-                  evaluation: isBtp 
-                    ? 'Scaling requirements are independent of core ERP compute threads, with unpredictable high-volume external webhook events.' 
-                    : 'Resource consumption remains flat, predictable, and fully aligned with internal S/4HANA user transaction volume.',
-                  resultState: isBtp ? 'Side-by-Side Preferred' : 'Neutral',
-                  cleanCoreImpact: isBtp 
-                    ? 'Scale-out workloads are absorbed by BTP Cloud Foundry/Kyma, shielding the ERP core system from resource starvation.' 
-                    : 'ABAP Cloud leverages standard ERP server resource pools, maintaining unified resource constraints.'
-                }
-              ];
-
-              const comparative = analysisData.extensibilityRouting?.comparativeAnalysis || {
-                inAppABAPCloud: {
-                  technicalFeasibility: isBtp ? 'Partially Compatible' : 'Highly Compatible',
-                  fitDetails: isBtp 
-                    ? 'Technically possible to implement in RAP, but transactional tight coupling would restrict SaaS integrations and UI layout options.' 
-                    : 'Perfect technical fit. Executes inside standard S/4HANA transaction pipelines utilizing RAP CDS views and behavior definitions.',
-                  pros: [
-                    'Zero latency database reads on core S/4HANA standard tables',
-                    'Synchronous transactional execution inside standard SAP LUW',
-                    'Direct reuse of existing standard locks and validations'
-                  ],
-                  cons: [
-                    'Language restricted strictly to released ABAP Cloud standard repository items',
-                    'No access to external SaaS libraries or Node.js frameworks',
-                    'Any compute overhead directly blocks ERP core system processes'
-                  ]
-                },
-                sideBySideBTP: {
-                  technicalFeasibility: isBtp ? 'Highly Compatible' : 'Partially Compatible',
-                  fitDetails: isBtp 
-                    ? 'Ideal architectural fit. The application runs as a fully decoupled, upgrade-safe microservice on SAP BTP using CAP and Node.js.' 
-                    : 'Feasible via event triggers (Event Mesh) or API destinations, but adds HTTP latency and requires destination configuration.',
-                  pros: [
-                    'Absolute lifecycle isolation - zero upgrade blockers for S/4HANA core',
-                    'Total development freedom with Node.js, TypeScript, and modern NPM libraries',
-                    'Allows external portal hosting and multi-tenant SaaS scaling'
-                  ],
-                  cons: [
-                    'Requires configuring standard cloud API destinations and credentials',
-                    'Introduces HTTP request latency for transactional processes',
-                    'Needs ERP-side trigger classes to capture transactional database state changes'
-                  ]
-                }
-              };
-
-              return (
-                <div className="space-y-8 animate-in fade-in duration-300">
-                  {/* Pathway Explorer */}
-                  <div className="bg-slate-50/50 border border-slate-150 rounded-[1.5rem] p-5 shadow-sm">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-4 font-mono">AI Routing Decision Pathway Explorer</span>
-                    <div className="relative">
-                      {/* Horizontal progress path connecting checkpoints */}
-                      <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-slate-200 -translate-y-1/2 hidden md:block z-0"></div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative z-10">
-                        {checkpoints.map((cp, idx) => {
-                          const isActive = selectedCheckpoint === idx;
-                          const isSideBySide = cp.resultState === 'Side-by-Side Preferred';
-                          const isInApp = cp.resultState === 'In-App Preferred';
-                          
-                          return (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => setSelectedCheckpoint(idx)}
-                              className={clsx(
-                                "bg-white border rounded-2xl p-4 text-left transition-all duration-300 shadow-sm relative overflow-hidden group hover:scale-[1.02] hover:shadow-md",
-                                isActive 
-                                  ? "border-emerald-600 ring-2 ring-emerald-500/20" 
-                                  : "border-slate-200/85 hover:border-slate-300"
-                              )}
-                            >
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className={clsx(
-                                  "w-6 h-6 rounded-full font-bold flex items-center justify-center text-[10px] shrink-0",
-                                  isActive 
-                                    ? "bg-emerald-650 text-white" 
-                                    : "bg-slate-100 text-slate-500 group-hover:bg-slate-200"
-                                )}>
-                                  {idx + 1}
-                                </span>
-                                <span className="text-[11px] font-extrabold text-slate-800 tracking-tight line-clamp-1">{cp.checkpointName}</span>
-                              </div>
-                              
-                              <div className="flex items-center gap-1.5 mt-2">
-                                <span className={clsx(
-                                  "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md",
-                                  isSideBySide ? "bg-blue-50 text-blue-700 border border-blue-100" :
-                                  isInApp ? "bg-emerald-50 text-emerald-700 border border-emerald-100" :
-                                  "bg-slate-50 text-slate-600 border border-slate-100"
-                                )}>
-                                  {cp.resultState.split(' ')[0]}
-                                </span>
-                                <span className="text-[9px] text-slate-400 font-bold ml-auto group-hover:text-slate-600 transition-colors">Inspect →</span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Active Checkpoint Detail Panel */}
-                    <div className="bg-white border border-slate-150 rounded-xl p-5 mt-5 animate-in fade-in slide-in-from-top-1 duration-300">
-                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-150 pb-4 mb-4">
-                        <div className="space-y-1">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block font-mono">Selected Milestone {selectedCheckpoint + 1} • {checkpoints[selectedCheckpoint].checkpointName}</span>
-                          <h4 className="text-sm font-extrabold text-slate-900 leading-snug">{checkpoints[selectedCheckpoint].question}</h4>
-                        </div>
+                  <div className="border-t border-slate-100 pt-4 mt-6 flex flex-wrap items-center gap-6">
+                    <div>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase">Standard Fit</span>
+                      <div className="flex items-center gap-1.5 mt-1">
                         <span className={clsx(
-                          "text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-sm shrink-0 self-start md:self-auto",
-                          checkpoints[selectedCheckpoint].resultState === 'Side-by-Side Preferred' ? "bg-blue-600 text-white" :
-                          checkpoints[selectedCheckpoint].resultState === 'In-App Preferred' ? "bg-emerald-600 text-white" :
-                          "bg-slate-600 text-white"
-                        )}>
-                          {checkpoints[selectedCheckpoint].resultState}
-                        </span>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-relaxed">
-                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1.5">
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block font-mono">Custom Technical Assessment</span>
-                          <p className="text-slate-700 font-medium">{checkpoints[selectedCheckpoint].evaluation}</p>
-                        </div>
-                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1.5">
-                          <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest block font-mono">Clean Core Implementation Impact</span>
-                          <p className="text-slate-600 font-medium">{checkpoints[selectedCheckpoint].cleanCoreImpact}</p>
-                        </div>
+                          "w-2 h-2 rounded-full",
+                          analysisData.standardFit?.potential === 'High' ? 'bg-green-500' :
+                          analysisData.standardFit?.potential === 'Medium' ? 'bg-amber-500' : 'bg-red-500'
+                        )}></span>
+                        <span className="text-xs font-bold text-slate-700">{analysisData.standardFit?.potential || 'Medium'}</span>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Tailored comparative matrix */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-                    {/* Track 1: In-App ABAP Cloud */}
-                    <div className={clsx(
-                      "p-6 rounded-2xl border transition-all flex flex-col justify-between",
-                      !isBtp
-                        ? "bg-emerald-50/20 border-emerald-500/30 shadow-md ring-1 ring-emerald-500/10"
-                        : "bg-slate-50/40 border-slate-200/50 opacity-80"
-                    )}>
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2">
-                            <div className={clsx("p-2 rounded-xl", !isBtp ? "bg-emerald-100/50 text-emerald-700" : "bg-slate-250/60 text-slate-555")}>
-                              <Sparkles size={16} />
-                            </div>
-                            <span className="font-extrabold text-slate-900 text-sm">⚙️ In-App ABAP Cloud (RAP)</span>
-                          </div>
-                          <span className={clsx(
-                            "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm",
-                            comparative.inAppABAPCloud.technicalFeasibility === 'Highly Compatible' ? "bg-green-600 text-white" :
-                            comparative.inAppABAPCloud.technicalFeasibility === 'Partially Compatible' ? "bg-amber-600 text-white" :
-                            "bg-rose-600 text-white"
-                          )}>
-                            {comparative.inAppABAPCloud.technicalFeasibility}
-                          </span>
-                        </div>
-                        
-                        <p className="text-xs text-slate-600 leading-relaxed mb-6 font-medium">
-                          {comparative.inAppABAPCloud.fitDetails}
-                        </p>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest block font-mono mb-2">Technical Advantages (Pros)</span>
-                            <ul className="space-y-2 text-[11px] text-slate-700 font-semibold">
-                              {comparative.inAppABAPCloud.pros.map((pro, pIdx) => (
-                                <li key={pIdx} className="flex items-start gap-1.5">
-                                  <span className="text-emerald-500 shrink-0 font-extrabold">✓</span>
-                                  <span>{pro}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                          <div>
-                            <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest block font-mono mb-2">Architectural Limitations (Cons)</span>
-                            <ul className="space-y-2 text-[11px] text-slate-500 font-medium">
-                              {comparative.inAppABAPCloud.cons.map((con, cIdx) => (
-                                <li key={cIdx} className="flex items-start gap-1.5">
-                                  <span className="text-rose-455 shrink-0 font-extrabold">✗</span>
-                                  <span>{con}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {!isBtp && (
-                        <div className="border-t border-emerald-500/20 pt-4 mt-6 text-[10px] text-emerald-800 font-bold uppercase tracking-widest font-mono">
-                          Target: Released CDS Views & RAP Business Objects
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Track 2: Side-by-Side SAP BTP */}
-                    <div className={clsx(
-                      "p-6 rounded-2xl border transition-all flex flex-col justify-between",
-                      isBtp
-                        ? "bg-blue-50/20 border-blue-500/30 shadow-md ring-1 ring-blue-500/10"
-                        : "bg-slate-50/40 border-slate-200/50 opacity-80"
-                    )}>
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2">
-                            <div className={clsx("p-2 rounded-xl", isBtp ? "bg-blue-100/50 text-blue-700" : "bg-slate-250/60 text-slate-555")}>
-                              <Layers size={16} />
-                            </div>
-                            <span className="font-extrabold text-slate-900 text-sm">☁️ Side-by-Side SAP BTP (CAP)</span>
-                          </div>
-                          <span className={clsx(
-                            "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm",
-                            comparative.sideBySideBTP.technicalFeasibility === 'Highly Compatible' ? "bg-green-600 text-white" :
-                            comparative.sideBySideBTP.technicalFeasibility === 'Partially Compatible' ? "bg-amber-600 text-white" :
-                            "bg-rose-600 text-white"
-                          )}>
-                            {comparative.sideBySideBTP.technicalFeasibility}
-                          </span>
-                        </div>
-                        
-                        <p className="text-xs text-slate-600 leading-relaxed mb-6 font-medium">
-                          {comparative.sideBySideBTP.fitDetails}
-                        </p>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest block font-mono mb-2">Technical Advantages (Pros)</span>
-                            <ul className="space-y-2 text-[11px] text-slate-700 font-semibold">
-                              {comparative.sideBySideBTP.pros.map((pro, pIdx) => (
-                                <li key={pIdx} className="flex items-start gap-1.5">
-                                  <span className="text-emerald-500 shrink-0 font-extrabold">✓</span>
-                                  <span>{pro}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                          <div>
-                            <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest block font-mono mb-2">Architectural Limitations (Cons)</span>
-                            <ul className="space-y-2 text-[11px] text-slate-500 font-medium">
-                              {comparative.sideBySideBTP.cons.map((con, cIdx) => (
-                                <li key={cIdx} className="flex items-start gap-1.5">
-                                  <span className="text-rose-455 shrink-0 font-extrabold">✗</span>
-                                  <span>{con}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {isBtp && (
-                        <div className="border-t border-blue-500/20 pt-4 mt-6 text-[10px] text-blue-800 font-bold uppercase tracking-widest font-mono">
-                          Target: CAP OData APIs & Decoupled BTP Microservices
-                        </div>
-                      )}
+                    <div className="h-8 w-px bg-slate-200"></div>
+                    <div>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase">Target Process</span>
+                      <p className="text-xs font-bold text-slate-800 mt-1">{analysisData.standardFit?.targetStandardProcess || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
-              );
-            })()}
-          </div>
+              </div>
 
-          {/* As-is Context and Target Extensibility Mapping */}
-          <div className="space-y-8">
-            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative">
-              {showHelpMode && (
-                <div className="sm:absolute relative sm:top-6 sm:right-6 mb-4 sm:mb-0 flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 px-3 py-1 rounded-full animate-pulse select-none w-fit self-start z-10">
-                  <Info size={12} />
-                  Describes current system status and workflow.
+              {/* Coverage verdict donut chart */}
+              <CoverageVerdict findings={findings} summary={findingsSummary} />
+
+              {/* Construct Findings checklist */}
+              <ConstructFindings findings={findings} />
+            </div>
+          )}
+
+          {/* TAB CONTENT: Gaps Backlog */}
+          {activeTab === 'backlog' && (
+            <div className="animate-in fade-in duration-300">
+              <GapsWorklist
+                projectId={projectId as string}
+                project={project}
+                findings={findings}
+                analysisGaps={analysisData.gaps || []}
+                showHelpMode={showHelpMode}
+                onUpdateWorklist={handleUpdateWorklist}
+              />
+            </div>
+          )}
+
+          {/* TAB CONTENT: Detailed Assessment */}
+          {activeTab === 'detailed' && (
+            <div className="space-y-10 animate-in fade-in duration-300">
+              {/* Complexity & Criticality badges */}
+              {(project.complexityScore !== undefined || project.criticalityScore !== undefined) && (
+                <div className="flex flex-wrap gap-3">
+                  {project.complexityScore !== undefined && (
+                    <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm">
+                      <Cpu size={14} className={clsx(
+                        project.complexityScore >= 70 ? 'text-red-500' : project.complexityScore >= 40 ? 'text-amber-500' : 'text-emerald-500'
+                      )} />
+                      <span className="text-xs font-bold text-slate-655">Complexity</span>
+                      <span className={clsx(
+                        'text-sm font-black',
+                        project.complexityScore >= 70 ? 'text-red-655' : project.complexityScore >= 40 ? 'text-amber-655' : 'text-emerald-655'
+                      )}>{project.complexityScore}</span>
+                    </div>
+                  )}
+                  {project.criticalityScore !== undefined && (
+                    <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm">
+                      <Zap size={14} className={clsx(
+                        project.criticalityScore >= 70 ? 'text-red-500' : project.criticalityScore >= 40 ? 'text-amber-500' : 'text-emerald-500'
+                      )} />
+                      <span className="text-xs font-bold text-slate-655">Criticality</span>
+                      <span className={clsx(
+                        'text-sm font-black',
+                        project.criticalityScore >= 70 ? 'text-red-655' : project.criticalityScore >= 40 ? 'text-amber-655' : 'text-emerald-655'
+                      )}>{project.criticalityScore}</span>
+                    </div>
+                  )}
                 </div>
               )}
-              <h4 className="font-extrabold text-slate-900 text-lg mb-3">As-Is Process & Legacy Context</h4>
-              <p className="text-slate-600 leading-relaxed text-sm">{analysisData.asIsContext}</p>
-            </div>
-            
-            {/* Target Scope Mapping Card */}
-            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-6 relative">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-extrabold text-slate-900 text-lg">Target Scope & Extensibility Mapping</h4>
-                    {showHelpMode && (
-                      <div className="group relative">
-                        <Info size={14} className="text-amber-500 cursor-help animate-pulse shrink-0" />
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 max-w-[85vw] bg-slate-900 text-white text-xs rounded-xl p-3 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-50 leading-relaxed font-normal">
-                          <strong>Enterprise Architecture Mapping:</strong> Categorizes your legacy code into modern SAP clean core boundaries to identify what can be decommissioned or automated.
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">Strategic alignment of custom legacy logic with modern S/4HANA extensibility guidelines.</p>
-                </div>
-                <span className="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-200/60 px-3 py-1 rounded-full uppercase tracking-wider font-mono shrink-0 self-start sm:self-center">Clean Core Mapping</span>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Column 1: S/4HANA Standard Fit */}
-                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col justify-between space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-green-700">
-                      <CheckCircle2 size={18} className="shrink-0" />
-                      <span className="text-xs font-bold uppercase tracking-wider font-mono">Standard Fit</span>
-                    </div>
-                    <h5 className="text-sm font-extrabold text-slate-900">{analysisData.standardFit?.targetStandardProcess || 'S/4HANA Best Practice'}</h5>
-                    <p className="text-xs text-slate-600 leading-relaxed">{analysisData.standardFit?.rationale}</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase mb-1.5">
-                      <span>Standardization Fit</span>
-                      <span className="text-green-600 font-extrabold">{analysisData.standardFit?.potential === 'High' ? '90%' : analysisData.standardFit?.potential === 'Medium' ? '50%' : '15%'}</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-green-500 rounded-full" 
-                        style={{ width: analysisData.standardFit?.potential === 'High' ? '90%' : analysisData.standardFit?.potential === 'Medium' ? '50%' : '15%' }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Column 2: Transformed BTP Extension */}
-                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col justify-between space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-emerald-700">
-                      <Sparkles size={18} className="shrink-0" />
-                      <span className="text-xs font-bold uppercase tracking-wider font-mono">Modern Extension</span>
-                    </div>
-                    <h5 className="text-sm font-extrabold text-slate-900">Side-by-Side BTP / Node.js</h5>
-                    <p className="text-xs text-slate-600 leading-relaxed">{analysisData.recommendations?.cloudReadiness || 'Custom API layers and microservices completely transformed from standard core.'}</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase mb-1.5">
-                      <span>Cloud Readiness</span>
-                      <span className="text-emerald-600 font-extrabold">95%</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: '95%' }}></div>
-                    </div>
-                  </div>
-                </div>
+              {/* Code Inventory Table */}
+              <CodeInventoryTable codeInventory={project.codeInventory || []} />
 
-                {/* Column 3: Obsolete / Retire */}
-                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col justify-between space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-slate-700">
-                      <Trash2 size={18} className="shrink-0" />
-                      <span className="text-xs font-bold uppercase tracking-wider font-mono">Decommission</span>
-                    </div>
-                    <h5 className="text-sm font-extrabold text-slate-900">Redundant & Obsolete Logic</h5>
-                    <p className="text-xs text-slate-600 leading-relaxed">{analysisData.recommendations?.decommissioning || 'Obsolete SAP workarounds, manual validation structures, and unused code blocks.'}</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase mb-1.5">
-                      <span>Decommission Ratio</span>
-                      <span className="text-slate-600 font-extrabold">80%</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-slate-500 rounded-full" style={{ width: '80%' }}></div>
-                    </div>
-                  </div>
+              {/* Data Coupling Table */}
+              <DataCouplingTable dataCoupling={project.dataCoupling || []} />
+
+              {/* Valuation details */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                <div className="lg:col-span-5 flex flex-col">
+                  <BusinessValueAudit projectId={projectId as string} bizFallback={bizFallback} />
+                </div>
+                <div className="lg:col-span-7 flex flex-col">
+                  <PlainEnglishGuide 
+                    plainEnglishActionPlan={bizFallback.plainEnglishActionPlan}
+                    extensibilityRoute={project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Decoupled Extension'}
+                  />
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* 2x2 Matrix Grid */}
-          <div className="space-y-4 relative">
-            {showHelpMode && (
-              <div className="sm:absolute relative sm:top-0 sm:right-0 mb-4 sm:mb-0 flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 px-3 py-1 rounded-full animate-pulse select-none w-fit self-start z-10">
-                <Info size={12} />
-                Prioritizes extensions based on business value and complex deployment effort.
-              </div>
-            )}
-            <div>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Gaps Prioritization Matrix</h3>
-              <p className="text-sm text-slate-500 mt-1">Identified extensions grouped by complexity and core compliance impact.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-[2rem] border border-slate-200">
-              {/* Quadrant 1: Quick Wins */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <div className="flex items-center justify-between mb-3">
-                  <h5 className="font-extrabold text-emerald-800 text-sm tracking-wider uppercase">⚡ Quick Wins</h5>
-                  <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Low Effort</span>
-                </div>
-                <p className="text-xs text-slate-400 mb-4">Simple requirements that can be handled through standard extensibility or decommissioned easily.</p>
-                <div className="space-y-2">
-                  {gapsCat.quickWins.length > 0 ? (
-                    gapsCat.quickWins.map((g, idx) => (
-                      <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center text-xs">
-                        <span className="font-semibold text-slate-800">{g.title}</span>
-                        <span className="text-[9px] text-slate-500 font-medium">Low Severity</span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs text-slate-400 italic">No gaps categorized in this quadrant.</p>
-                  )}
-                </div>
-              </div>
+          {/* TAB CONTENT: Modernization Strategy */}
+          {activeTab === 'strategy' && (
+            <div className="space-y-10 animate-in fade-in duration-300">
+              {/* Decision matrix pathway */}
+              <ExtensibilityDecisionMatrix 
+                extensibilityRoute={project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)'}
+                decisionTreeCheckpoints={checkpoints}
+                comparativeAnalysis={comparative}
+              />
 
-              {/* Quadrant 2: Complex Standard Fit */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <div className="flex items-center justify-between mb-3">
-                  <h5 className="font-extrabold text-blue-800 text-sm tracking-wider uppercase">🔄 Complex Standard Fit</h5>
-                  <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">High Fit / High Effort</span>
-                </div>
-                <p className="text-xs text-slate-400 mb-4">Standard exists but migration requires significant refactoring or process redesign.</p>
-                <div className="space-y-2">
-                  {gapsCat.complexStandard.length > 0 ? (
-                    gapsCat.complexStandard.map((g, idx) => (
-                      <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center text-xs">
-                        <span className="font-semibold text-slate-800">{g.title}</span>
-                        <span className="text-[9px] text-blue-600 font-bold">Standard Target</span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs text-slate-400 italic">No gaps categorized in this quadrant.</p>
-                  )}
-                </div>
-              </div>
+              {/* S/4HANA Standard Fit */}
+              <TargetScopeMapping 
+                showHelpMode={showHelpMode}
+                standardFit={analysisData.standardFit}
+              />
 
-              {/* Quadrant 3: Strategic Extensions */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <div className="flex items-center justify-between mb-3">
-                  <h5 className="font-extrabold text-amber-800 text-sm tracking-wider uppercase">💡 Strategic Extensions</h5>
-                  <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Transformed App Needed</span>
-                </div>
-                <p className="text-xs text-slate-400 mb-4">High complexity and no standard fit. Best implemented side-by-side on BTP or dynamic APIs.</p>
-                <div className="space-y-2">
-                  {gapsCat.strategic.length > 0 ? (
-                    gapsCat.strategic.map((g, idx) => (
-                      <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center text-xs">
-                        <span className="font-semibold text-slate-800">{g.title}</span>
-                        <span className="text-[9px] text-amber-600 font-bold">Side-by-Side</span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs text-slate-400 italic">No gaps categorized in this quadrant.</p>
-                  )}
-                </div>
-              </div>
+              {/* Core Clean recommendations */}
+              <ModernizationStrategy 
+                showHelpMode={showHelpMode}
+                recommendations={analysisData.recommendations}
+              />
 
-              {/* Quadrant 4: Retire / Decommission */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <div className="flex items-center justify-between mb-3">
-                  <h5 className="font-extrabold text-rose-800 text-sm tracking-wider uppercase">🗑️ Retire & Decommission</h5>
-                  <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">Decommission</span>
-                </div>
-                <p className="text-xs text-slate-400 mb-4">Obsolete requirements or unused custom logic that should be removed from scope.</p>
-                <div className="space-y-2">
-                  {gapsCat.retire.length > 0 ? (
-                    gapsCat.retire.map((g, idx) => (
-                      <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center text-xs">
-                        <span className="font-semibold text-slate-800">{g.title}</span>
-                        <span className="text-[9px] text-rose-600 font-bold bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-full">Retire</span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs text-slate-400 italic">No gaps categorized in this quadrant.</p>
-                  )}
-                </div>
-              </div>
+              {/* Next Steps */}
             </div>
-          </div>
-
-          {/* Detailed Gap Cards */}
-          <div className="space-y-6 relative">
-            {showHelpMode && (
-              <div className="sm:absolute relative sm:top-0 sm:right-0 mb-4 sm:mb-0 flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 px-3 py-1 rounded-full animate-pulse select-none w-fit self-start z-10">
-                <Info size={12} />
-                Divergence indicates the severity of departure from standard S/4HANA core logic.
-              </div>
-            )}
-            <div>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Functional Gaps Analysis</h3>
-              <p className="text-sm text-slate-500 mt-1">Detailed assessment and mitigation strategies for each identified gap.</p>
-            </div>
-            
-            <div className="space-y-4">
-              {analysisData.gaps?.map((gap, idx) => {
-                return <GapAccordionCard key={idx} gap={gap} />;
-              })}
-            </div>
-          </div>
-
-          {/* Clean Core Recommendations */}
-          <div className="bg-slate-50 rounded-[2rem] p-8 md:p-10 border border-slate-200 space-y-8 relative">
-            {showHelpMode && (
-              <div className="sm:absolute relative sm:top-8 sm:right-8 mb-4 sm:mb-0 flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 px-3 py-1 rounded-full animate-pulse select-none w-fit self-start z-10">
-                <Info size={12} />
-                Identifies key architecture strategies to safeguard your ERP standard core.
-              </div>
-            )}
-            <div>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Modernization Strategy</h3>
-              <p className="text-sm text-slate-500 mt-1">Concrete actions to keep your core clean during target implementation.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-2xl p-6 border border-slate-150 shadow-sm space-y-3">
-                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full inline-block">Keep Core Clean</span>
-                <p className="text-xs text-slate-600 leading-relaxed">{analysisData.recommendations?.keepCoreClean}</p>
-              </div>
-              
-              <div className="bg-white rounded-2xl p-6 border border-slate-150 shadow-sm space-y-3">
-                <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest bg-amber-50 px-3 py-1 rounded-full inline-block">Decommissioning</span>
-                <p className="text-xs text-slate-600 leading-relaxed">{analysisData.recommendations?.decommissioning}</p>
-              </div>
-              
-              <div className="bg-white rounded-2xl p-6 border border-slate-150 shadow-sm space-y-3">
-                <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full inline-block">Cloud Readiness</span>
-                <p className="text-xs text-slate-600 leading-relaxed">{analysisData.recommendations?.cloudReadiness}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Actionable Next Steps */}
-          <div className="bg-slate-900 text-white rounded-[2rem] p-8 md:p-12 border border-slate-850 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-green-500/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
-            <div className="relative z-10 space-y-6">
-              <div>
-                <h3 className="text-2xl font-black text-white tracking-tight">Architectural Next Steps</h3>
-                <p className="text-sm text-slate-400 mt-1">Action items for your engineering and configuration teams.</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {analysisData.strategicNextSteps?.map((step, idx) => (
-                  <div key={idx} className="bg-slate-800 p-4 rounded-xl border border-slate-750 flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 font-bold text-xs">{idx + 1}</span>
-                    <p className="text-xs text-slate-300 leading-relaxed font-medium">{step}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       );
     }
@@ -1821,6 +1271,55 @@ ${codeToAnalyze}`;
 
   return (
     <div className="animate-in fade-in duration-500 max-w-5xl mx-auto">
+      {/* Sticky Decision-Header */}
+      {project?.analysis && (
+        <div 
+          className={clsx(
+            "fixed left-0 right-0 z-50 transition-all duration-500 font-sans border-b border-slate-200 shadow-sm",
+            isSticky 
+              ? "top-[64px] opacity-100 translate-y-0" 
+              : "top-0 opacity-0 -translate-y-full pointer-events-none"
+          )}
+        >
+          {/* Blur background */}
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-md z-0" />
+          
+          <div className="relative z-10 max-w-5xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              {/* Route Badge */}
+              <span className={clsx(
+                "text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider shadow-sm",
+                (project.extensibilityRoute || '').includes('BTP')
+                  ? "bg-blue-50 text-blue-700 border border-blue-100"
+                  : "bg-emerald-50 text-emerald-700 border border-emerald-100"
+              )}>
+                {(project.extensibilityRoute || '').includes('BTP') ? '☁️ BTP Side-by-Side' : '⚙️ ABAP Cloud (RAP)'}
+              </span>
+              
+              {/* Score */}
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Compliance:</span>
+                <span className="text-xs font-black text-slate-900">{project.cleanCoreScore}%</span>
+              </div>
+
+              {/* Target Deployment */}
+              <div className="h-4 w-px bg-slate-200 hidden sm:block"></div>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider hidden sm:inline">
+                Target: {project.s4Deployment === 'public' ? 'Public Cloud' : 'Private Cloud RISE'}
+              </span>
+            </div>
+
+            {/* Next Step CTA */}
+            <button
+              onClick={() => router.push(`/project/${projectId}/design`)}
+              className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-1.5 rounded-xl hover:bg-emerald-500 transition-all font-black text-[10px] uppercase tracking-wider shadow-md shadow-emerald-500/10 active:scale-95"
+            >
+              Continue to Design <ArrowRight size={12} />
+            </button>
+          </div>
+        </div>
+      )}
+
       <Stepper currentStep={project?.analysis ? 2 : 1} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
       <div className="mb-10 text-center">
@@ -1991,6 +1490,11 @@ ${codeToAnalyze}`;
                   spellCheck={false}
                 />
               </div>
+            )}
+
+            {/* Pre-Analysis Preview — deterministic quick scan before the big run */}
+            {legacyCode && !project?.analysis && !loading && (
+              <PreAnalysisPreview code={legacyCode} fileName={uploadedFileName} />
             )}
 
             {legacyCode && !isFromExample && (!targetDeployment || !acceptedTerms) && (

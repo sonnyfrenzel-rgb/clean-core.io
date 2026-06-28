@@ -96,6 +96,7 @@ export interface Project {
 
   // v1.10.0: Compliance Audit Pack
   auditMetadata?: AuditMetadata;
+  worklist?: WorklistItem[];
 }
 
 /**
@@ -240,6 +241,21 @@ export interface DesignData {
     title: string;
     deliverables: string[];
   }>;
+}
+
+export interface WorklistItem {
+  id: string;
+  title: string;
+  category: 'Finding' | 'Functional Gap';
+  level?: 'fully' | 'review' | 'out_of_scope';
+  severity?: 'High' | 'Medium' | 'Low';
+  location: string;
+  recommendation: string;
+  strategy?: string;
+  status: 'open' | 'in_review' | 'signed_off';
+  effort: 'Low' | 'Medium' | 'High';
+  targetAnchor?: string;
+  detail?: string;
 }
 
 

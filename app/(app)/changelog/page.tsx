@@ -20,9 +20,24 @@ export const metadata: Metadata = {
 
 const releases = [
   {
+    version: 'v1.13.0',
+    date: 'June 28, 2026',
+    tag: 'Latest',
+    icon: Rocket,
+    changes: [
+      'UX Concept Block A: Evidence Backbone — deterministic Coverage Verdict donut + Construct Findings checklist from findings-detector, replacing opaque LLM-generated coverage numbers',
+      'UX Concept Block B: Progressive Output — sticky Decision-Header with route badge, Clean Core Score, deployment target, and "Continue to Design" CTA; tabbed workspace layout (Evidence, Gaps Backlog, Detailed Assessment, Modernization Strategy); sequential stage simulation logs during analysis',
+      'UX Concept Block C: Interactive Gaps Worklist — sortable/filterable backlog table with per-row status management (Open → In Review → Signed Off), burndown progress bar, and Firestore-persisted WorklistItem data model',
+      'UX Concept Block D: Target Architecture Diagram — auto-generated Mermaid flowchart from DesignData JSON (RAP/CAP); "Why This Routing" rationale panel binding Design back to Analyze evidence; Security Hardening ↔ Construct coupling badges',
+      'UX Concept Block E: Input & Gap Guidance — Missing Dependency Prompt for ancestor classes/interfaces; Pre-Analysis Preview showing LOC, recognized constructs, object type, and estimated coverage before the full analysis run',
+      'UX Concept Block F: Monolith Split — design page decomposed into 9 modular components (ArchitectureOverview, InteractiveTopology, ProjectBlueprintExplorer, ApiEndpointsCatalog, ApiBusinessHubMapping, CloudServiceIntegrations, SecurityHardeningChecklist, ModernizationRoadmap, SyncPatternCard)',
+      'New components: TargetArchitectureDiagram, RoutingRationale, MissingDependencyPrompt, PreAnalysisPreview, GapsWorklist, GapsPrioritization, CoverageVerdict, ConstructFindings',
+      'Version bump to v1.13.0 across all configuration files',
+    ],
+  },
+  {
     version: 'v1.12.2',
     date: 'June 26, 2026',
-    tag: 'Latest',
     icon: Shield,
     changes: [
       'Security patch A-01: reject branch in approveUserWithToken now deletes the orphaned Firebase Auth user, preventing re-registration issues',

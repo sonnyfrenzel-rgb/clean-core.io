@@ -1,7 +1,6 @@
 import type {Metadata} from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import UserOnboarding from '@/components/UserOnboarding';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -43,7 +42,6 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" className={inter.className}>
       <body className="bg-[#f8f9ff] text-[#0b1c30] antialiased min-h-screen flex flex-col">
-        <UserOnboarding />
         {children}
       </body>
     </html>

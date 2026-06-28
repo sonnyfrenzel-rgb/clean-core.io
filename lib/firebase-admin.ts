@@ -69,7 +69,8 @@ export async function verifyRequestAuth(req: Request) {
 
   try {
     return await verifyIdToken(token);
-  } catch {
+  } catch (err) {
+    console.error('verifyRequestAuth error:', err);
     return null;
   }
 }
