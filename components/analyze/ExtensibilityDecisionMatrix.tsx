@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Sparkles, Layers, Globe, Network, ShieldCheck, Terminal, Info } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -36,6 +36,7 @@ export default function ExtensibilityDecisionMatrix({
   comparativeAnalysis
 }: ExtensibilityDecisionMatrixProps) {
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(0);
+  const detailPanelRef = useRef<HTMLDivElement>(null);
 
   const isBtp = extensibilityRoute.includes('BTP');
 
@@ -150,7 +151,10 @@ export default function ExtensibilityDecisionMatrix({
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setSelectedCheckpoint(idx)}
+                    onClick={() => {
+                      setSelectedCheckpoint(idx);
+                      setTimeout(() => detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+                    }}
                     className={clsx(
                       "bg-white border rounded-2xl p-4 text-left transition-all duration-300 shadow-sm relative overflow-hidden group hover:scale-[1.02] hover:shadow-md",
                       isActive 
@@ -188,7 +192,7 @@ export default function ExtensibilityDecisionMatrix({
           </div>
 
           {/* Active Checkpoint Detail Panel */}
-          <div className="bg-white border border-slate-150 rounded-xl p-5 mt-5 animate-in fade-in slide-in-from-top-1 duration-300">
+          <div ref={detailPanelRef} className="bg-white border border-slate-150 rounded-xl p-5 mt-5 animate-in fade-in slide-in-from-top-1 duration-300">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-150 pb-4 mb-4">
               <div className="space-y-1">
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block font-mono">Selected Milestone {selectedCheckpoint + 1} • {checkpoints[selectedCheckpoint].checkpointName}</span>

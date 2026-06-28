@@ -20,9 +20,22 @@ export const metadata: Metadata = {
 
 const releases = [
   {
-    version: 'v1.13.0',
+    version: 'v1.13.1',
     date: 'June 28, 2026',
     tag: 'Latest',
+    icon: Sparkles,
+    changes: [
+      'Clean Core Score: redesigned formula — 60% deterministic construct coverage, 30% standard fit, 10% AI calibration for accurate migration readiness scoring',
+      'Mermaid architecture diagrams: fixed empty boxes by bypassing DOMPurify for code-generated SVG content',
+      'Severity consistency: Prioritization Matrix now shows Effort (complexity) matching the Worklist, eliminating contradictory labels',
+      'Tab rename: "Detailed Assessment" → "Assessment & Value" to surface the Business Value Audit / ROI section',
+      'Cloud Service deep dives: 5 new SAP-native entries (CDS View, IAM, LUW Manager, BAdI, RAP Service Binding) with dedicated ABAP code patterns',
+      'Context-aware labels: SAP-native services show "Released SAP Objects" instead of "NPM Package Dependencies"',
+    ],
+  },
+  {
+    version: 'v1.13.0',
+    date: 'June 28, 2026',
     icon: Rocket,
     changes: [
       'UX Concept Block A: Evidence Backbone — deterministic Coverage Verdict donut + Construct Findings checklist from findings-detector, replacing opaque LLM-generated coverage numbers',
