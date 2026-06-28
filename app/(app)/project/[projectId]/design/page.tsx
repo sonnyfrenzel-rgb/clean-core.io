@@ -44,6 +44,7 @@ import RoutingRationale from '@/components/design/RoutingRationale';
 import TargetArchitectureDiagram from '@/components/design/TargetArchitectureDiagram';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 import { detectFindings, summarize } from '@/lib/abap/findings-detector';
+import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { SourceFile } from '@/lib/abap/findings-detector';
 
 const cleanAndParseJSON = (str: string) => {
@@ -88,24 +89,10 @@ export default function DesignPage() {
   // Re-derive findings from project.legacyCode for construct coupling
   const findings = useMemo<SupportFinding[]>(() => {
     if (!project?.legacyCode) return [];
-    const abapSources: SourceFile[] = [{ file: 'main.abap', content: project.legacyCode }];
-    const mockModel: ClassModel = {
-      root: 'MAIN',
-      nodes: {
-        'MAIN': {
-          key: 'MAIN', kind: 'class', source: { file: 'main.abap', line: 1 },
-          isStandard: false, isAbstract: false, isFinal: false,
-          interfaces: [], friends: [], methods: [], attributes: [], events: [], aliases: []
-        }
-      },
-      edges: [],
-      linearization: ['MAIN'],
-      resolved: true,
-      missing: [],
-      findings: []
-    };
+    const abapSources = [{ file: 'main.abap', content: project.legacyCode }];
     try {
-      return detectFindings(mockModel, abapSources);
+      const realModel = buildClassModel(abapSources);
+      return detectFindings(realModel, abapSources);
     } catch {
       return [];
     }

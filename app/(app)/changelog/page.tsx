@@ -20,9 +20,22 @@ export const metadata: Metadata = {
 
 const releases = [
   {
+    version: 'v1.14.0',
+    date: 'June 29, 2026',
+    tag: 'Latest',
+    icon: Rocket,
+    changes: [
+      'Phase 2 & 3: Deterministic Evidence Scanner — Implemented a statement-based scanner (buildAbapEvidence) to collect static code evidence (BDC, RFC, Native SQL, DB Writes, Dynpro, ALV, GUI Downloads) and fully persist the report in Firestore.',
+      'Phase 4 & 7: Extensibility Router & Score Calibration — Added extensibility-router to mathematically calculate the Clean Core score, recommendation confidence, and target architectures (In-App RAP vs Side-by-Side CAP) from scanner findings, preventing LLM score hallucinations.',
+      'Phase 5 & 6: Unified Report Model & Grounding — Restructured the Gemini prompt to act purely as a narrative generator, grounded on deterministic findings instead of raw legacy code.',
+      'Class Model Resolver — Integrated buildClassModel across all 5 analysis UI hooks, eliminating the temporary mockModel and enabling real static inheritance tree and missing dependency resolution.',
+      'Sprint 1 Data Coupling — Fixed table detection, data export mapping, and added fake-table filtering (blocking keywords like MODE, RISK, SCREEN, LINE).',
+      'Admin Rate-Limit Bypass — Enabled admins to run unlimited analyses on clean-core.io by skipping the hourly quota check.',
+    ],
+  },
+  {
     version: 'v1.13.2',
     date: 'June 28, 2026',
-    tag: 'Latest',
     icon: Shield,
     changes: [
       'Google Auth Fix: CSP frame-src was blocking accounts.google.com — OAuth popup now works correctly on production',

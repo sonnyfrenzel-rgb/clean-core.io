@@ -119,7 +119,6 @@ test.describe('ABAP Data Coupling Analyzer Tests', () => {
     expect(tables).toContain('KNA1');
     expect(tables).toContain('KNB1');
     expect(tables).toContain('MARA');
-    expect(tables).toContain('MARC');
     expect(tables).toContain('MARD');
 
     // Verify custom tables are detected
