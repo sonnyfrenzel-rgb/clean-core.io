@@ -44,6 +44,8 @@ export default defineConfig({
       FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
       PILOT_APPROVAL_SECRET: process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345',
       MFA_BACKUP_CODE_PEPPER: process.env.MFA_BACKUP_CODE_PEPPER || 'test-mfa-pepper-value-for-ci-test-runner-32',
+      // Suppress real email dispatch during E2E tests — API routes check `if (resendApiKey)` and skip when empty
+      RESEND_API_KEY: '',
     },
   },
 });
