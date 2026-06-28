@@ -44,7 +44,8 @@ async function ensureInitialized() {
   }
 
   // Fallback: Application Default Credentials (gcloud auth)
-  adminAppModule.initializeApp();
+  // Always pass projectId so ADC doesn't pick up the wrong gcloud default project.
+  adminAppModule.initializeApp({ projectId: 'cleancore-491216' });
 }
 
 /**
