@@ -15,10 +15,21 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
 
   if (!findings || findings.length === 0) {
     return (
-      <div className="bg-emerald-50/20 border border-emerald-200/50 p-8 rounded-3xl text-center">
-        <span className="text-3xl">✅</span>
-        <h4 className="text-base font-extrabold text-emerald-800 mt-3">Prinstine Codebase Detected</h4>
-        <p className="text-xs text-slate-500 mt-1">Staged legacy assets contain no unreleased database queries, screen flows, or dynamic call targets.</p>
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <span>Construct Findings</span>
+            <span className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 px-2.5 py-0.5 rounded-full text-xs font-bold">
+              0 findings
+            </span>
+          </h3>
+          <p className="text-sm text-slate-500 mt-1">Deterministic static analysis of ABAP language constructs against target platform support matrix.</p>
+        </div>
+        <div className="bg-emerald-50/20 border border-emerald-200/50 p-8 rounded-3xl text-center">
+          <span className="text-3xl">✅</span>
+          <h4 className="text-base font-extrabold text-emerald-800 mt-3">Pristine Codebase Detected</h4>
+          <p className="text-xs text-slate-500 mt-1">Staged legacy assets contain no unreleased database queries, screen flows, or dynamic call targets.</p>
+        </div>
       </div>
     );
   }

@@ -1052,29 +1052,46 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
       return (
         <div className="space-y-8 font-sans">
-          {/* Tab Navigation Menu */}
-          <div className="flex border-b border-slate-200 -mx-6 md:-mx-12 px-6 md:px-12 bg-slate-50/50 pt-2 gap-1 sm:gap-2">
-            {[
-              { id: 'evidence', label: 'Decision & Evidence', icon: '✅' },
-              { id: 'backlog', label: 'Gaps Backlog', icon: '📋' },
-              { id: 'detailed', label: 'Detailed Assessment', icon: '🔍' },
-              { id: 'strategy', label: 'Modernization Strategy', icon: '💡' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id as any)}
-                className={clsx(
-                  "px-4 py-3 text-[11px] font-black uppercase tracking-wider rounded-t-2xl border-t border-x -mb-px transition-all flex items-center gap-2",
-                  activeTab === tab.id
-                    ? "bg-white border-slate-200 text-slate-900 border-b-white z-10"
-                    : "bg-transparent border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
-                )}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
+          {/* Tab Navigation Menu — Enhanced Discovery */}
+          <div className="sticky top-[128px] z-40 -mx-6 md:-mx-12 bg-white/95 backdrop-blur-md border-b-2 border-slate-200 shadow-sm">
+            <div className="px-6 md:px-12 pt-3 pb-0 flex items-center gap-1 sm:gap-0 overflow-x-auto">
+              {[
+                { id: 'evidence', label: 'Decision & Evidence', icon: '✅', step: 1 },
+                { id: 'backlog', label: 'Gaps Backlog', icon: '📋', step: 2 },
+                { id: 'detailed', label: 'Detailed Assessment', icon: '🔍', step: 3 },
+                { id: 'strategy', label: 'Modernization Strategy', icon: '💡', step: 4 }
+              ].map((tab, idx) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={clsx(
+                    "relative px-5 py-3.5 text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-2.5 border-b-[3px] whitespace-nowrap",
+                    activeTab === tab.id
+                      ? "border-emerald-500 text-slate-900 bg-emerald-50/30"
+                      : "border-transparent text-slate-400 hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50/50"
+                  )}
+                >
+                  <span className={clsx(
+                    "w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0",
+                    activeTab === tab.id
+                      ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/30"
+                      : "bg-slate-200 text-slate-500"
+                  )}>
+                    {tab.step}
+                  </span>
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+            {/* Explore all tabs hint — only shows on first tab */}
+            {activeTab === 'evidence' && (
+              <div className="px-6 md:px-12 py-1.5 bg-amber-50/80 border-t border-amber-100 text-center">
+                <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">
+                  ← Explore all 4 report sections before proceeding to Solution Design →
+                </p>
+              </div>
+            )}
           </div>
 
           {/* TAB CONTENT: Decision & Evidence */}
@@ -1188,7 +1205,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                       </span>
                     </div>
                     <h3 className="text-2xl font-black text-slate-900 mt-2 mb-3">{analysisData.projectTitle || project.name}</h3>
-                    <p className="text-slate-655 text-sm leading-relaxed line-clamp-3">{analysisData.summary}</p>
+                    <p className="text-slate-655 text-sm leading-relaxed">{analysisData.summary}</p>
                   </div>
                   <div className="border-t border-slate-100 pt-4 mt-6 flex flex-wrap items-center gap-6">
                     <div>
@@ -1216,6 +1233,12 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
               {/* Construct Findings checklist */}
               <ConstructFindings findings={findings} />
+
+              {/* Executive Plain English Guide — bottom of Decision & Evidence */}
+              <PlainEnglishGuide 
+                plainEnglishActionPlan={bizFallback.plainEnglishActionPlan}
+                extensibilityRoute={project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Decoupled Extension'}
+              />
             </div>
           )}
 
@@ -1286,14 +1309,8 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
               {/* Valuation details */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-                <div className="lg:col-span-5 flex flex-col">
+                <div className="lg:col-span-12 flex flex-col">
                   <BusinessValueAudit projectId={projectId as string} bizFallback={bizFallback} />
-                </div>
-                <div className="lg:col-span-7 flex flex-col">
-                  <PlainEnglishGuide 
-                    plainEnglishActionPlan={bizFallback.plainEnglishActionPlan}
-                    extensibilityRoute={project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Decoupled Extension'}
-                  />
                 </div>
               </div>
             </div>
