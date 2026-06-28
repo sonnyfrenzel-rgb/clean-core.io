@@ -13,11 +13,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Phase 2 & 3 — Deterministic Evidence Scanner:** Implemented a statement-based static scanner (`buildAbapEvidence` in `lib/abap/evidence-model.ts`) that extracts concrete legacy patterns (BDC, RFC, Native SQL, DB Writes, Dynpro, ALV, GUI Downloads) and persists the complete report as `evidenceReport` in Firestore.
 - **Phase 4 & 7 — Extensibility Router & Score Calibration:** Added `lib/abap/extensibility-router.ts` to calculate Clean Core score, recommendation confidence, decision checkpoints, and target architectures (In-App RAP vs Side-by-Side CAP) mathematically from scanner findings, eliminating LLM hallucinations.
 - **Class Model Resolver:** Created `lib/abap/class-model-resolver.ts` to build topological sort linearization and missing dependency trees, replacing the mocked `ClassModel` across all 5 analysis UI hooks.
+- **Evidence Findings Table:** Added a dedicated evidence findings table to the Decision & Evidence tab — deduplicated by kind+objectName, sorted Critical→Low, with severity filter buttons and occurrence count aggregation.
+- **Inline Code Viewer:** Replaced the external "DOCS ↗" link in the Gaps Worklist with an inline "View Code" toggle showing source code context (±2 lines) with amber line highlighting for each occurrence.
+- **Confluence Export — Evidence & Worklist:** Added Evidence Findings table and Gaps Worklist table to the Confluence HTML export with Pattern, Lines, Snippet, Severity, SAP Replacement + Confidence, Target, Status.
 - **Inheritance Unit Tests:** Added unit tests verifying inheritance linearization and missing dependencies in `tests/abap-inheritance.spec.ts`.
 
 ### Changed
 - **Phase 5 & 6 — Unified Report Model & Grounding:** Restructured the Gemini prompt to act purely as a narrative generator, grounded on deterministic findings instead of raw legacy code.
+- **Score Formula Recalibration:** Replaced linear per-finding deductions with diminishing returns per category and a 5% floor, producing realistic 12-18% scores for heavily legacy code (was 0%).
+- **Criticality Score Boost:** Added business-critical process detection (Sales/Delivery/Credit/Audit/Partner tables and keywords) raising fulfillment code from 5/10 to 7-8/10.
+- **Prompt Hardening:** Softened decommissioning language ("retire after validation and business sign-off"), added API confidence markers (Verified/Candidate/Needs Validation), hedged ROI claims with ranges and assumptions, instructed hybrid routing guidance.
+- **Worklist Deduplication:** Grouped evidence findings by kind+objectName in both the Gaps Worklist and fallback builder, aggregating line numbers into a single row with `(N×)` count.
 - **Sprint 1 Data Coupling:** Hardened data coupling table parser with `tokenize` statement grouping, blacklist filtering (MODE, RISK, SCREEN, LINE, ADJACENT), and correct data export mapping.
+- **Dynamic Version in Exports:** Confluence report footer now uses `APP_VERSION` dynamically instead of hardcoded `v1.13`.
+
+### Fixed
+- **Language Consistency:** Translated remaining German UI text ("Aktion erforderlich" block) to English for consistent language across the entire platform.
 
 ### Security
 - **Admin Rate-Limit Bypass:** Enabled admins (`admin: true`) to bypass the hourly quota limits in `app/api/gemini/route.ts` to prevent "Rate limit exceeded" blockages during large modernization runs.
