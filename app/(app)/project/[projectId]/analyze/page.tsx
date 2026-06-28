@@ -284,9 +284,9 @@ interface AnalysisData {
     complexity: 'High' | 'Medium' | 'Low'; 
   }>;
   recommendations: {
-    keepCoreClean: string; // STEP 1: What standard SAP replacement exists? Name the EXACT standard object (e.g. "Use released CDS view I_Customer instead of SELECT on KNA1"). Do NOT say "rewrite" here — only name the standard alternative.
-    decommissioning: string; // STEP 2: What legacy objects can be deleted/retired AFTER the standard alternative from Step 1 is adopted? Be explicit: "Delete Z_CUSTOMER_GET_DETAIL function module once consumers migrate to I_Customer". Must be consistent with keepCoreClean.
-    cloudReadiness: string; // STEP 3: If Step 1 fully replaces the legacy code, state "No rewrite needed — standard replacement covers all functionality." If Step 1 only partially covers, describe ONLY the remaining gap that needs ABAP Cloud or Tier 2 wrapping. NEVER contradict Step 1 or Step 2.
+    keepCoreClean: string; // STEP 1: What standard SAP replacement exists? Name the EXACT standard object (e.g. "Use released CDS view I_Customer instead of SELECT on KNA1"). Mark each API as "(Verified)", "(Candidate)", or "(Needs Validation)" based on whether you are certain the API exists and covers the use case. Do NOT say "rewrite" here — only name the standard alternative.
+    decommissioning: string; // STEP 2: What legacy objects can be RETIRED after the standard alternative from Step 1 is adopted and validated? Never say "delete" — use "retire after replacement validation, data migration assessment, and business sign-off". Be explicit about which custom objects are candidates for retirement. Must be consistent with keepCoreClean.
+    cloudReadiness: string; // STEP 3: If Step 1 fully replaces the legacy code, state "No rewrite needed — standard replacement covers all functionality." If Step 1 only partially covers, describe ONLY the remaining gap that needs ABAP Cloud or Tier 2 wrapping. For complex programs, describe a HYBRID approach: which components go to RAP/In-App, which to CAP/BTP, which to Integration Suite/Event Mesh, and which to Fiori/UI5. NEVER contradict Step 1 or Step 2.
   };
   strategicNextSteps: string[]; 
   extensibilityRouting: {
@@ -301,9 +301,9 @@ interface AnalysisData {
   businessValueAnalysis: {
     legacyAssetScore: number; 
     technicalDebtLevel: 'Low' | 'Medium' | 'High';
-    estimatedMaintenanceCost: number; 
+    estimatedMaintenanceCost: number; // Provide a RANGE estimate (e.g. lower bound). Always state "estimated" and note key assumptions.
     valueDrivers: string[]; 
-    cloudRoiSummary: string; 
+    cloudRoiSummary: string; // Use hedged language: "estimated ~X% reduction", "projected savings of approximately Y". Never claim "100% elimination" or "guaranteed" outcomes. State key assumptions.
     plainEnglishActionPlan: string[]; 
   };
 }
@@ -979,6 +979,12 @@ ${codeToAnalyze}`;
     return { findings: detected, findingsSummary: summary, missingDeps: realModel.missing };
   }, [legacyCode, uploadedFileName]);
 
+  // Re-derive evidence findings (with snippets, targetOptions, sapReplacement) for the Evidence table
+  const evidenceFindings = useMemo(() => {
+    if (!legacyCode) return [];
+    return buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap').findings;
+  }, [legacyCode, uploadedFileName]);
+
   // ── Live-reconcile Clean Core Score ──
   // Generic formula: deterministic construct coverage is the primary signal.
   // Standard Fit (from AI) indicates whether a replacement path exists.
@@ -1239,6 +1245,87 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
               {/* Construct Findings checklist */}
               <ConstructFindings findings={findings} />
+
+              {/* ── Evidence Findings Detail Table ── */}
+              {evidenceFindings.length > 0 && (
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 flex items-center gap-2">
+                    <FileCode2 size={18} className="text-indigo-500" />
+                    <h3 className="text-base font-bold text-slate-800">Evidence Findings</h3>
+                    <span className="ml-auto text-xs font-medium text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                      {evidenceFindings.length} {evidenceFindings.length === 1 ? 'finding' : 'findings'}
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                          <th className="px-4 py-2.5">Pattern</th>
+                          <th className="px-4 py-2.5">Line</th>
+                          <th className="px-4 py-2.5 min-w-[200px]">Code Snippet</th>
+                          <th className="px-4 py-2.5">Severity</th>
+                          <th className="px-4 py-2.5">SAP Replacement</th>
+                          <th className="px-4 py-2.5">Target</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {evidenceFindings.map((ef, idx) => (
+                          <tr key={ef.id || idx} className="hover:bg-indigo-50/30 transition-colors">
+                            <td className="px-4 py-2.5">
+                              <div className="font-semibold text-slate-800">{ef.title}</div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">{ef.kind}</div>
+                            </td>
+                            <td className="px-4 py-2.5 font-mono text-slate-600">{ef.lineStart}{ef.lineEnd && ef.lineEnd !== ef.lineStart ? `–${ef.lineEnd}` : ''}</td>
+                            <td className="px-4 py-2.5">
+                              <code className="block text-[10px] font-mono bg-slate-100 text-slate-700 px-2 py-1 rounded max-w-xs overflow-hidden text-ellipsis whitespace-nowrap" title={ef.snippet}>
+                                {ef.snippet}
+                              </code>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                ef.severity === 'Critical' ? 'bg-red-100 text-red-700' :
+                                ef.severity === 'High' ? 'bg-orange-100 text-orange-700' :
+                                ef.severity === 'Medium' ? 'bg-amber-100 text-amber-700' :
+                                'bg-green-100 text-green-700'
+                              }`}>
+                                {ef.severity}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              {ef.sapReplacement ? (
+                                <div>
+                                  <div className="font-medium text-slate-700">{ef.sapReplacement.objectName}</div>
+                                  <span className={`text-[10px] font-bold ${
+                                    ef.sapReplacement.confidence === 'Verified' ? 'text-green-600' :
+                                    ef.sapReplacement.confidence === 'Candidate' ? 'text-amber-600' :
+                                    'text-red-500'
+                                  }`}>
+                                    {ef.sapReplacement.confidence}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <div className="flex flex-wrap gap-1">
+                                {(ef.targetOptions || []).slice(0, 2).map((opt, i) => (
+                                  <span key={i} className="inline-block text-[9px] font-medium bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded">
+                                    {opt}
+                                  </span>
+                                ))}
+                                {(ef.targetOptions || []).length > 2 && (
+                                  <span className="text-[9px] text-slate-400">+{(ef.targetOptions || []).length - 2}</span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
 
               {/* Executive Plain English Guide — bottom of Decision & Evidence */}
               <PlainEnglishGuide 
