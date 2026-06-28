@@ -185,16 +185,18 @@ export default function LandingModals() {
       }, 850);
     } catch (error: any) {
       console.error('Error signing in:', error);
-      // Show error to user instead of silently failing (fixes desktop popup issue)
-      if (error?.code === 'auth/popup-closed-by-user') {
+      // Show error to user instead of silently failing
+      const code = error?.code || '';
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
         // User closed the popup — not an error, just do nothing
         return;
       }
-      if (error?.code === 'auth/popup-blocked') {
+      if (code === 'auth/popup-blocked') {
         setAuthError('Pop-up blocked by your browser. Please allow pop-ups for clean-core.io and try again.');
         return;
       }
-      setAuthError('Sign-in failed. Please try again or use email/password.');
+      // Show the real error code so we can debug
+      setAuthError(`Sign-in failed (${code || error?.message || 'unknown'}). Please try again.`);
     }
   };
 
