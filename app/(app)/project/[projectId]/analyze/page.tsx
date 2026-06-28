@@ -297,9 +297,9 @@ interface AnalysisData {
     complexity: 'High' | 'Medium' | 'Low'; 
   }>;
   recommendations: {
-    keepCoreClean: string; 
-    decommissioning: string; 
-    cloudReadiness: string; 
+    keepCoreClean: string; // STEP 1: What standard SAP replacement exists? Name the EXACT standard object (e.g. "Use released CDS view I_Customer instead of SELECT on KNA1"). Do NOT say "rewrite" here — only name the standard alternative.
+    decommissioning: string; // STEP 2: What legacy objects can be deleted/retired AFTER the standard alternative from Step 1 is adopted? Be explicit: "Delete Z_CUSTOMER_GET_DETAIL function module once consumers migrate to I_Customer". Must be consistent with keepCoreClean.
+    cloudReadiness: string; // STEP 3: If Step 1 fully replaces the legacy code, state "No rewrite needed — standard replacement covers all functionality." If Step 1 only partially covers, describe ONLY the remaining gap that needs ABAP Cloud or Tier 2 wrapping. NEVER contradict Step 1 or Step 2.
   };
   strategicNextSteps: string[]; 
   extensibilityRouting: {
@@ -1008,6 +1008,43 @@ ${codeToAnalyze}`;
     return { findings: detected, findingsSummary: summary, missingDeps: detectedMissing };
   }, [legacyCode, uploadedFileName]);
 
+  // ── Live-reconcile Clean Core Score ──
+  // Generic formula: deterministic construct coverage is the primary signal.
+  // Standard Fit (from AI) indicates whether a replacement path exists.
+  // AI-stored score is only a minor correction to avoid wild disagreement.
+  //
+  // Score semantics: "How ready is this code for Clean Core migration?"
+  //   - All constructs supported + High standard fit = 100%  (clear quick win)
+  //   - All constructs supported + Medium standard fit = 90% (path exists, some effort)
+  //   - Partial constructs + any fit = proportional (gaps need work)
+  //   - Out-of-scope constructs = lower (blocking issues)
+  const liveCleanCoreScore = useMemo(() => {
+    const stored = project?.cleanCoreScore ?? 0;
+    const totalF = findings.length;
+    const fullyCount = findings.filter(f => f.level === 'fully').length;
+    const partialCount = findings.filter(f => f.level === 'partial').length;
+    // 0 findings = trivially clean code → 100% coverage
+    const coveragePct = totalF > 0
+      ? Math.round(((fullyCount + partialCount * 0.5) / totalF) * 100)
+      : 100;
+
+    // Extract standard fit from stored analysis (generic — works for any project)
+    let standardFitBonus = 80; // default if not available
+    try {
+      const analysis = typeof project?.analysis === 'object' ? project.analysis : 
+        (typeof project?.analysis === 'string' ? JSON.parse(project.analysis.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim()) : null);
+      const fit = analysis?.standardFit?.potential || '';
+      if (/high/i.test(fit)) standardFitBonus = 100;
+      else if (/medium/i.test(fit)) standardFitBonus = 80;
+      else if (/low/i.test(fit)) standardFitBonus = 60;
+    } catch { /* ignore parse errors */ }
+
+    // Weighted: 60% construct coverage, 30% standard fit, 10% stored AI score
+    const weighted = Math.round(coveragePct * 0.6 + standardFitBonus * 0.3 + stored * 0.1);
+    // Clamp to [0, 100]
+    return Math.min(100, Math.max(0, weighted));
+  }, [findings, project?.cleanCoreScore, project?.analysis]);
+
   const renderAnalysisContent = () => {
     if (!project?.analysis) return null;
     
@@ -1027,6 +1064,8 @@ ${codeToAnalyze}`;
     }
 
     if (analysisData) {
+      // Sync analysisData.cleanCoreScore with the centrally computed live value
+      analysisData.cleanCoreScore = liveCleanCoreScore;
       const bizFallback = {
         legacyAssetScore: analysisData.businessValueAnalysis?.legacyAssetScore || 
           (analysisData.standardFit?.potential === 'Low' ? 82 : analysisData.standardFit?.potential === 'Medium' ? 55 : 35),
@@ -1052,42 +1091,38 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
       return (
         <div className="space-y-8 font-sans">
-          {/* Tab Navigation Menu — Enhanced Discovery */}
-          <div className="sticky top-[128px] z-40 -mx-6 md:-mx-12 bg-white/95 backdrop-blur-md border-b-2 border-slate-200 shadow-sm">
-            <div className="px-6 md:px-12 pt-3 pb-0 flex items-center gap-1 sm:gap-0 overflow-x-auto">
+          {/* Tab Navigation Menu — Premium with Icons */}
+          <div className="sticky top-[128px] z-40 -mx-6 md:-mx-12 bg-white/95 backdrop-blur-md border-b-2 border-slate-200 shadow-md">
+            <div className="px-4 md:px-8 pt-2 pb-0 flex items-center gap-0 overflow-x-auto">
               {[
-                { id: 'evidence', label: 'Decision & Evidence', icon: '✅', step: 1 },
-                { id: 'backlog', label: 'Gaps Backlog', icon: '📋', step: 2 },
-                { id: 'detailed', label: 'Detailed Assessment', icon: '🔍', step: 3 },
-                { id: 'strategy', label: 'Modernization Strategy', icon: '💡', step: 4 }
-              ].map((tab, idx) => (
+                { id: 'evidence', label: 'Decision & Evidence', Icon: Shield },
+                { id: 'backlog', label: 'Gaps Backlog', Icon: AlertCircle },
+                { id: 'detailed', label: 'Assessment & Value', Icon: BarChart3 },
+                { id: 'strategy', label: 'Modernization Strategy', Icon: Zap }
+              ].map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id as any)}
                   className={clsx(
-                    "relative px-5 py-3.5 text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-2.5 border-b-[3px] whitespace-nowrap",
+                    "relative px-4 py-3 text-xs font-extrabold uppercase tracking-wider transition-all flex items-center gap-2 border-b-[3px] whitespace-nowrap",
                     activeTab === tab.id
-                      ? "border-emerald-500 text-slate-900 bg-emerald-50/30"
-                      : "border-transparent text-slate-400 hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50/50"
+                      ? "border-emerald-500 text-slate-900 bg-emerald-50/40"
+                      : "border-transparent text-slate-400 hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50/60"
                   )}
                 >
-                  <span className={clsx(
-                    "w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0",
-                    activeTab === tab.id
-                      ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/30"
-                      : "bg-slate-200 text-slate-500"
-                  )}>
-                    {tab.step}
-                  </span>
+                  <tab.Icon size={15} className={clsx(
+                    "shrink-0 transition-all",
+                    activeTab === tab.id ? "text-emerald-600" : "text-slate-400"
+                  )} />
                   <span>{tab.label}</span>
                 </button>
               ))}
             </div>
             {/* Explore all tabs hint — only shows on first tab */}
             {activeTab === 'evidence' && (
-              <div className="px-6 md:px-12 py-1.5 bg-amber-50/80 border-t border-amber-100 text-center">
-                <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">
+              <div className="px-6 md:px-12 py-1.5 bg-amber-50/70 border-t border-amber-100/80 text-center">
+                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">
                   ← Explore all 4 report sections before proceeding to Solution Design →
                 </p>
               </div>
@@ -1129,11 +1164,11 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                         className="stroke-green-500 fill-none transition-all duration-1000 ease-out" 
                         strokeWidth="8" 
                         strokeDasharray="351.8" 
-                        strokeDashoffset={351.8 - (351.8 * (analysisData.cleanCoreScore || 0)) / 100}
+                        strokeDashoffset={351.8 - (351.8 * liveCleanCoreScore) / 100}
                       />
                     </svg>
                     <div className="absolute flex flex-col items-center">
-                      <span className="text-3xl font-extrabold text-white tracking-tight">{analysisData.cleanCoreScore}%</span>
+                      <span className="text-3xl font-extrabold text-white tracking-tight">{liveCleanCoreScore}%</span>
                       <span className="text-[9px] text-slate-400 font-medium">Compliance</span>
                     </div>
                   </div>
@@ -1259,47 +1294,53 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
           {/* TAB CONTENT: Detailed Assessment */}
           {activeTab === 'detailed' && (
             <div className="space-y-10 animate-in fade-in duration-300">
-              {/* Complexity & Criticality badges with scale */}
-              {(project.complexityScore !== undefined || project.criticalityScore !== undefined) && (
-                <div className="flex flex-wrap gap-4">
-                  {project.complexityScore !== undefined && (
-                    <div className="bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm" title="Complexity measures structural code intricacy: control flow depth, dependency count, and custom object coupling. Scale: 1 = trivial, 5 = moderate, 10 = highly complex.">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Cpu size={14} className={clsx(
-                          project.complexityScore >= 7 ? 'text-red-500' : project.complexityScore >= 4 ? 'text-amber-500' : 'text-emerald-500'
-                        )} />
-                        <span className="text-xs font-bold text-slate-500">Complexity</span>
-                        <span className={clsx(
-                          'text-sm font-black',
-                          project.complexityScore >= 7 ? 'text-red-600' : project.complexityScore >= 4 ? 'text-amber-600' : 'text-emerald-600'
-                        )}>{project.complexityScore}<span className="text-slate-400 font-bold">/10</span></span>
+              {/* Complexity & Criticality badges — live recomputed */}
+              {(() => {
+                // Recompute live from code to ensure new 1-10 scale is used
+                const liveComplexity = legacyCode ? computeComplexityScore(legacyCode) : project.complexityScore;
+                const liveCriticality = legacyCode ? computeCriticalityScore(legacyCode) : project.criticalityScore;
+                if (liveComplexity === undefined && liveCriticality === undefined) return null;
+                return (
+                  <div className="flex flex-wrap gap-4">
+                    {liveComplexity !== undefined && (
+                      <div className="bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm" title="Complexity measures structural code intricacy: control flow depth, dependency count, and custom object coupling. Scale: 1 = trivial, 5 = moderate, 10 = highly complex.">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Cpu size={14} className={clsx(
+                            liveComplexity >= 7 ? 'text-red-500' : liveComplexity >= 4 ? 'text-amber-500' : 'text-emerald-500'
+                          )} />
+                          <span className="text-xs font-bold text-slate-500">Complexity</span>
+                          <span className={clsx(
+                            'text-sm font-black',
+                            liveComplexity >= 7 ? 'text-red-600' : liveComplexity >= 4 ? 'text-amber-600' : 'text-emerald-600'
+                          )}>{liveComplexity}<span className="text-slate-400 font-bold">/10</span></span>
+                        </div>
+                        <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className={clsx('h-full rounded-full transition-all', liveComplexity >= 7 ? 'bg-red-500' : liveComplexity >= 4 ? 'bg-amber-500' : 'bg-emerald-500')} style={{ width: `${(liveComplexity / 10) * 100}%` }} />
+                        </div>
+                        <p className="text-[9px] text-slate-400 mt-1.5">{liveComplexity >= 7 ? 'High — significant refactoring needed' : liveComplexity >= 4 ? 'Moderate — manageable effort' : 'Low — straightforward migration'}</p>
                       </div>
-                      <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className={clsx('h-full rounded-full transition-all', project.complexityScore >= 7 ? 'bg-red-500' : project.complexityScore >= 4 ? 'bg-amber-500' : 'bg-emerald-500')} style={{ width: `${(project.complexityScore / 10) * 100}%` }} />
+                    )}
+                    {liveCriticality !== undefined && (
+                      <div className="bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm" title="Criticality measures business impact: process priority, data sensitivity, and integration depth. Scale: 1 = low impact, 5 = important, 10 = mission-critical.">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Zap size={14} className={clsx(
+                            liveCriticality >= 7 ? 'text-red-500' : liveCriticality >= 4 ? 'text-amber-500' : 'text-emerald-500'
+                          )} />
+                          <span className="text-xs font-bold text-slate-500">Criticality</span>
+                          <span className={clsx(
+                            'text-sm font-black',
+                            liveCriticality >= 7 ? 'text-red-600' : liveCriticality >= 4 ? 'text-amber-600' : 'text-emerald-600'
+                          )}>{liveCriticality}<span className="text-slate-400 font-bold">/10</span></span>
+                        </div>
+                        <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className={clsx('h-full rounded-full transition-all', liveCriticality >= 7 ? 'bg-red-500' : liveCriticality >= 4 ? 'bg-amber-500' : 'bg-emerald-500')} style={{ width: `${(liveCriticality / 10) * 100}%` }} />
+                        </div>
+                        <p className="text-[9px] text-slate-400 mt-1.5">{liveCriticality >= 7 ? 'Mission-critical — requires careful planning' : liveCriticality >= 4 ? 'Important — schedule appropriately' : 'Low impact — quick win candidate'}</p>
                       </div>
-                      <p className="text-[9px] text-slate-400 mt-1.5">{project.complexityScore >= 7 ? 'High — significant refactoring needed' : project.complexityScore >= 4 ? 'Moderate — manageable effort' : 'Low — straightforward migration'}</p>
-                    </div>
-                  )}
-                  {project.criticalityScore !== undefined && (
-                    <div className="bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm" title="Criticality measures business impact: process priority, data sensitivity, and integration depth. Scale: 1 = low impact, 5 = important, 10 = mission-critical.">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Zap size={14} className={clsx(
-                          project.criticalityScore >= 7 ? 'text-red-500' : project.criticalityScore >= 4 ? 'text-amber-500' : 'text-emerald-500'
-                        )} />
-                        <span className="text-xs font-bold text-slate-500">Criticality</span>
-                        <span className={clsx(
-                          'text-sm font-black',
-                          project.criticalityScore >= 7 ? 'text-red-600' : project.criticalityScore >= 4 ? 'text-amber-600' : 'text-emerald-600'
-                        )}>{project.criticalityScore}<span className="text-slate-400 font-bold">/10</span></span>
-                      </div>
-                      <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className={clsx('h-full rounded-full transition-all', project.criticalityScore >= 7 ? 'bg-red-500' : project.criticalityScore >= 4 ? 'bg-amber-500' : 'bg-emerald-500')} style={{ width: `${(project.criticalityScore / 10) * 100}%` }} />
-                      </div>
-                      <p className="text-[9px] text-slate-400 mt-1.5">{project.criticalityScore >= 7 ? 'Mission-critical — requires careful planning' : project.criticalityScore >= 4 ? 'Important — schedule appropriately' : 'Low impact — quick win candidate'}</p>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Code Inventory Table */}
               <CodeInventoryTable codeInventory={project.codeInventory || []} />
@@ -1332,11 +1373,30 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 standardFit={analysisData.standardFit}
               />
 
-              {/* Core Clean recommendations */}
-              <ModernizationStrategy 
-                showHelpMode={false}
-                recommendations={analysisData.recommendations}
-              />
+              {/* Core Clean recommendations — reconciled to avoid contradictions */}
+              {(() => {
+                const recs = analysisData.recommendations;
+                if (!recs) return null;
+                const reconciledRecs = { ...recs };
+                
+                // Reconcile: if decommissioning says "retire" but cloudReadiness says "rewrite", fix cloudReadiness
+                const isRetire = /\b(retire|retired|decommission|removed|delete|obsolete)\b/i.test(recs.decommissioning || '');
+                const isRewrite = /\b(rewrit|rewrite|rewritten|must be rewritten)\b/i.test(recs.cloudReadiness || '');
+                
+                if (isRetire && isRewrite) {
+                  // Extract the standard replacement from keepCoreClean if available
+                  const standardMatch = (recs.keepCoreClean || '').match(/(?:released|standard|use)\s+(?:CDS\s+view\s+)?([A-Z_][A-Z0-9_]*)/i);
+                  const standardObj = standardMatch ? standardMatch[1] : 'the released standard object';
+                  reconciledRecs.cloudReadiness = `No rewrite needed. Since the function module is being retired and replaced by ${standardObj}, no ABAP Cloud migration of the legacy code is required. Simply adopt the standard replacement and remove the custom object.`;
+                }
+                
+                return (
+                  <ModernizationStrategy 
+                    showHelpMode={false}
+                    recommendations={reconciledRecs}
+                  />
+                );
+              })()}
 
               {/* Next Steps */}
             </div>
@@ -1406,7 +1466,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               {/* Score */}
               <div className="flex items-center gap-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Compliance:</span>
-                <span className="text-xs font-black text-slate-900">{project.cleanCoreScore}%</span>
+                <span className="text-xs font-black text-slate-900">{liveCleanCoreScore}%</span>
               </div>
 
               {/* Target Deployment */}

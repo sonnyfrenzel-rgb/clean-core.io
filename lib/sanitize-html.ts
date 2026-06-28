@@ -54,7 +54,7 @@ export function sanitizeHtml(html: string): string {
 export function sanitizeSvg(svg: string): string {
   return getPurify().sanitize(svg ?? '', {
     USE_PROFILES: { svg: true, svgFilters: true, html: true },
-    ADD_TAGS: ['foreignObject'],
-    ADD_ATTR: ['dominant-baseline', 'text-anchor', 'requiredFeatures', 'transform', 'style', 'x', 'y', 'width', 'height', 'class', 'xmlns'],
+    ADD_TAGS: ['foreignObject', 'div', 'span', 'p', 'br', 'b', 'i', 'em', 'strong', 'code', 'pre', 'ul', 'li', 'a'],
+    ADD_ATTR: ['dominant-baseline', 'text-anchor', 'requiredFeatures', 'transform', 'style', 'x', 'y', 'width', 'height', 'class', 'xmlns', 'xmlns:xlink', 'viewBox', 'marker-end', 'marker-start', 'font-size', 'fill', 'stroke', 'rx', 'ry', 'cx', 'cy', 'r', 'd', 'points'],
   });
 }

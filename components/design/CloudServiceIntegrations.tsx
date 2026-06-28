@@ -144,9 +144,119 @@ async function queryExtensionData(userId) {
   }
 }`
   },
+  // ── SAP-Native / RAP Deep Dives ──────────────────────────────
+  cdsView: {
+    title: 'Released CDS View Integration',
+    details: 'Released CDS Views (e.g., I_Customer, I_Product, I_SalesOrder) are the official, upgrade-stable data access layer in S/4HANA. They replace direct table access (SELECT from KNA1, MARA, VBAK) with semantically enriched, versioned data models maintained by SAP. Consuming released CDS views ensures your extensions survive kernel upgrades without modification.',
+    whyCritical: 'Direct table SELECTs on SAP standard tables (KNA1, MARA, VBAK) are the #1 reason custom code breaks during S/4HANA upgrades. Released CDS views provide a stable contract — SAP guarantees backward compatibility across releases. This is the foundational principle of Clean Core.',
+    npmPackages: [],
+    codeSnippet: `" Before (Legacy — breaks on upgrade):
+SELECT SINGLE kunnr name1 ort01
+  FROM kna1
+  INTO @DATA(ls_customer)
+  WHERE kunnr = @lv_customer_id.
+
+" After (Clean Core — upgrade-stable):
+SELECT SINGLE CustomerID, CustomerName, CityName
+  FROM I_Customer
+  INTO @DATA(ls_customer)
+  WHERE Customer = @lv_customer_id.`
+  },
+  iamRoles: {
+    title: 'SAP IAM Business Role Mapping',
+    details: 'SAP Identity and Access Management (IAM) in S/4HANA Cloud provides a role-based authorization framework. IAM Business Roles map business users to SAP Fiori apps and OData services via Business Catalogs. In the RAP context, IAM apps are bound to Service Bindings, controlling who can access which RAP business objects and operations.',
+    whyCritical: 'Legacy authorization checks (AUTHORITY-CHECK on custom objects like Z_AUTH_*) are not portable to cloud. IAM Business Roles provide a standardized, auditable authorization model that integrates with SAP BTP Identity Authentication Service (IAS) and supports federation with corporate identity providers.',
+    npmPackages: [],
+    codeSnippet: `" IAM App Registration (ADT metadata):
+" 1. Create IAM App in ADT → links to Service Binding
+" 2. Assign to Business Catalog
+" 3. Business Catalog → Business Role → User Assignment
+
+" In RAP Behavior Definition — authorization control:
+managed implementation in class zbp_customer;
+strict;
+
+define behavior for ZR_Customer alias Customer
+  authorization master ( instance )
+{
+  // IAM controls access to create/update/delete
+  create;
+  update;
+  delete;
+}`
+  },
+  luwManager: {
+    title: 'SAP LUW & Transaction Consistency',
+    details: 'The SAP Logical Unit of Work (LUW) Manager in RAP handles transactional consistency natively. RAP managed scenarios automatically orchestrate COMMIT WORK, ROLLBACK, and save sequencing across all entities in a business object hierarchy. This replaces legacy patterns like explicit CALL FUNCTION ... IN UPDATE TASK, COMMIT WORK, and manual BAPI transaction control.',
+    whyCritical: 'Legacy transaction patterns (UPDATE TASK, explicit COMMIT/ROLLBACK, FM-based BAPI calls) create tight coupling to the ABAP runtime and are error-prone in cloud scenarios. RAP\'s managed LUW ensures ACID compliance, automatic draft handling, and optimistic concurrency — all built into the framework without custom transaction code.',
+    npmPackages: [],
+    codeSnippet: `" Legacy LUW Pattern (problematic):
+CALL FUNCTION 'Z_UPDATE_CUSTOMER' IN UPDATE TASK
+  EXPORTING customer_data = ls_data.
+COMMIT WORK AND WAIT.
+
+" RAP Managed LUW (automatic):
+" The RAP framework handles save sequencing automatically.
+" No explicit COMMIT needed — the framework orchestrates it.
+CLASS lhc_Customer DEFINITION INHERITING FROM cl_abap_behavior_handler.
+  PRIVATE SECTION.
+    METHODS save_modified FOR MODIFY
+      IMPORTING keys FOR ACTION Customer~save.
+ENDCLASS.
+
+" Draft-enabled transactional processing is built-in:
+" - Optimistic locking via ETag
+" - Draft persistence in managed scenarios
+" - Automatic cleanup of stale drafts`
+  },
+  badi: {
+    title: 'BAdI Enhancement Spot Integration',
+    details: 'Business Add-Ins (BAdIs) are SAP\'s official enhancement framework for injecting custom logic into standard processes without modifying the original code. Released BAdIs in S/4HANA provide stable enhancement points for validation, determination, and side-effect logic. They replace legacy user exits, customer exits, and modification-based enhancements.',
+    whyCritical: 'User exits and customer exits are deprecated in S/4HANA Cloud. BAdIs provide a clean, upgrade-stable mechanism for extensions. SAP releases new BAdIs with each S/4HANA version specifically to cover common extension scenarios, making them the preferred pattern for in-stack customization.',
+    npmPackages: [],
+    codeSnippet: `" BAdI Implementation for Custom Validation:
+CLASS zcl_badi_customer_validation DEFINITION
+  PUBLIC FINAL
+  CREATE PUBLIC.
+
+  PUBLIC SECTION.
+    INTERFACES if_badi_customer_check.
+ENDCLASS.
+
+CLASS zcl_badi_customer_validation IMPLEMENTATION.
+  METHOD if_badi_customer_check~validate.
+    " Custom validation logic injected via BAdI
+    IF customer-region IS INITIAL.
+      APPEND VALUE #( id = 'REGION_MISSING'
+                      message = 'Region is mandatory'
+                      severity = 'E' ) TO messages.
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.`
+  },
+  rapService: {
+    title: 'RAP Service Binding & OData Exposure',
+    details: 'RAP Service Bindings expose Business Objects as OData V4 (or V2) services. They are the deployment artifact that makes RAP entities accessible to Fiori UIs and external consumers. A Service Binding references a Service Definition, which in turn references CDS projection views defining the public API surface of the business object.',
+    whyCritical: 'Service Bindings replace the legacy pattern of manually creating OData services via SEGW transaction. They provide automatic protocol handling, metadata generation, and deep integration with SAP Fiori Elements — enabling UI5 apps to be generated directly from the service metadata without custom frontend code.',
+    npmPackages: [],
+    codeSnippet: `" Service Definition (SRVD):
+define service ZUI_Customer_O4 {
+  expose ZC_Customer as Customer;
+  expose ZC_CustomerAddress as CustomerAddress;
+}
+
+" Service Binding (SRVB) created in ADT:
+" → Protocol: OData V4 - UI
+" → Binding Type: /IWBEP/V4_UI
+" → Publish: Local Service Endpoint
+
+" The Fiori Elements app consumes this service directly:
+" → No custom UI5 controller needed
+" → List Report / Object Page generated from annotations`
+  },
   default: {
     title: 'Cloud Service Binding Integration',
-    details: 'Cloud service bindings allow the Node.js application to connect securely and dynamically with platform-managed systems, including databases, identity providers, routing gateways, and messaging queues, utilizing externalized environment injections.',
+    details: 'Cloud service bindings allow the application to connect securely and dynamically with platform-managed systems, including databases, identity providers, routing gateways, and messaging queues, utilizing externalized environment injections.',
     whyCritical: 'Avoids static configuration files or hardcoded server details, satisfying modern Cloud Native standards (12-Factor App design).',
     npmPackages: ['@sap/xsenv'],
     codeSnippet: `const xsenv = require('@sap/xsenv');
@@ -162,10 +272,17 @@ try {
 
 export const getCloudServiceDetails = (serviceName: string) => {
   const name = serviceName.toLowerCase();
-  if (name.includes('xsuaa') || name.includes('identity') || name.includes('auth')) return cloudServiceDetails.xsuaa;
+  // BTP / Node.js services
+  if (name.includes('xsuaa') || (name.includes('identity') && !name.includes('iam'))) return cloudServiceDetails.xsuaa;
   if (name.includes('destination') || name.includes('connectivity') || name.includes('sdk')) return cloudServiceDetails.destination;
   if (name.includes('mesh') || name.includes('messaging') || name.includes('amqp')) return cloudServiceDetails.eventmesh;
-  if (name.includes('postgres') || name.includes('db') || name.includes('sql')) return cloudServiceDetails.postgresql;
+  if (name.includes('postgres') || name.includes('hana') || name.includes('database')) return cloudServiceDetails.postgresql;
+  // SAP-native / RAP services
+  if (name.includes('cds') || name.includes('view') || name.includes('i_') || name.includes('projection')) return cloudServiceDetails.cdsView;
+  if (name.includes('iam') || name.includes('role') || name.includes('auth')) return cloudServiceDetails.iamRoles;
+  if (name.includes('luw') || name.includes('transaction') || name.includes('session')) return cloudServiceDetails.luwManager;
+  if (name.includes('badi') || name.includes('enhancement') || name.includes('exit')) return cloudServiceDetails.badi;
+  if (name.includes('service') || name.includes('srvb') || name.includes('srvd') || name.includes('rap') || name.includes('odata')) return cloudServiceDetails.rapService;
   return cloudServiceDetails.default;
 };
 
@@ -185,7 +302,7 @@ export default function CloudServiceIntegrations({ cloudServices }: CloudService
     <div className="space-y-4">
       <div>
         <h3 className="text-2xl font-black text-slate-900 tracking-tight">Cloud Service Integrations</h3>
-        <p className="text-sm text-slate-500 mt-1">Platform service bindings and specific Node.js client packages required.</p>
+        <p className="text-sm text-slate-500 mt-1">Platform service bindings and technical dependencies required for the target architecture.</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -206,14 +323,24 @@ export default function CloudServiceIntegrations({ cloudServices }: CloudService
               <p className="text-slate-600 text-xs leading-relaxed mb-4">{service.purpose}</p>
             </div>
             <div className="border-t border-slate-50 pt-3 mt-4">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">NPM package dependencies</span>
-              <div className="flex flex-wrap gap-1.5">
-                {service.npmPackages?.map((pkg, pIdx) => (
-                  <code key={pIdx} className="bg-slate-100 text-slate-800 text-[10px] px-2 py-0.5 rounded-md font-mono border border-slate-150 group-hover:bg-emerald-50 group-hover:text-emerald-805 group-hover:border-emerald-200 transition-colors">
-                    {pkg}
-                  </code>
-                ))}
-              </div>
+              {(() => {
+                const isAbapNative = !service.npmPackages?.length || 
+                  /CDS|View|RAP|IAM|LUW|BADI|BRF|Fiori|ABAP/i.test(service.serviceName);
+                const label = isAbapNative ? 'Released SAP Objects' : 'NPM Package Dependencies';
+                const packages = service.npmPackages?.length ? service.npmPackages : ['No external dependencies'];
+                return (
+                  <>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">{label}</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {packages.map((pkg, pIdx) => (
+                        <code key={pIdx} className="bg-slate-100 text-slate-800 text-[10px] px-2 py-0.5 rounded-md font-mono border border-slate-150 group-hover:bg-emerald-50 group-hover:text-emerald-805 group-hover:border-emerald-200 transition-colors">
+                          {pkg}
+                        </code>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         ))}
@@ -269,20 +396,24 @@ export default function CloudServiceIntegrations({ cloudServices }: CloudService
                   <p className="text-slate-300 leading-relaxed text-xs border-l-2 border-emerald-500/40 pl-4 py-1.5 italic bg-emerald-950/20 rounded-r-xl">{details.whyCritical}</p>
                 </div>
 
+                {details.npmPackages && details.npmPackages.length > 0 && (
                 <div>
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5 font-mono">NPM Package Dependencies</h4>
                   <div className="flex flex-wrap gap-2">
-                    {details.npmPackages?.map((pkg, idx) => (
+                    {details.npmPackages.map((pkg, idx) => (
                       <code key={idx} className="bg-slate-955 text-emerald-400 border border-slate-800 text-xs px-3 py-1 rounded-xl font-mono">
                         {pkg}
                       </code>
                     ))}
                   </div>
                 </div>
+                )}
 
                 <div className="space-y-2.5 pt-2">
                   <div className="flex justify-between items-center">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Node.js Integration Code Guide</h4>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+                      {details.npmPackages && details.npmPackages.length > 0 ? 'Node.js Integration Code Guide' : 'ABAP Code Pattern'}
+                    </h4>
                     <button
                       onClick={() => handleCopyCode(details.codeSnippet)}
                       className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 bg-emerald-950/40 border border-emerald-900/60 px-3 py-1.5 rounded-xl transition-all"

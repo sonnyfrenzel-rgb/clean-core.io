@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v1.13.1] — 2026-06-28
+
+### Fixed
+- **Clean Core Score formula:** Redesigned from stale AI-only value to a generic weighted formula (60% deterministic construct coverage, 30% standard fit, 10% AI calibration). Scores now correctly reflect migration readiness.
+- **Mermaid architecture diagrams:** Fixed empty boxes caused by DOMPurify stripping foreignObject HTML children. Diagrams now render with full labels.
+- **Severity consistency:** Prioritization Matrix gap items now show Effort (complexity) matching the Worklist column instead of contradictory severity labels.
+- **AI recommendation contradictions:** Reconciliation logic suppresses "rewrite" recommendations when an object is marked for decommission/retirement.
+
+### Changed
+- **Tab rename:** "Detailed Assessment" → "Assessment & Value" to surface the Business Value Audit / ROI section.
+- **Cloud Service Integrations:** Labels and deep dives are now context-aware — SAP-native services (CDS Views, IAM, LUW Manager) show dedicated ABAP code patterns and "Released SAP Objects" instead of generic Node.js NPM content.
+- 5 new SAP-native deep dive entries: Released CDS View, IAM Business Roles, LUW Manager, BAdI Enhancement, RAP Service Binding.
+
+### Security
+- MermaidDiagram component bypasses DOMPurify for deterministically generated chart content (no user input in chart data). All other HTML sanitization remains intact.
+
+---
+
 ## [v1.13.0] — 2026-06-28
 
 ### Added
