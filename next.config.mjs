@@ -37,17 +37,6 @@ const nextConfig = {
       },
     ];
   },
-  // Proxy Firebase Auth handler through custom domain to avoid third-party cookie blocking.
-  // This allows authDomain to be set to 'clean-core.io' instead of 'cleancore-491216.firebaseapp.com',
-  // keeping the auth iframe/popup on the same origin as the app.
-  async rewrites() {
-    return [
-      {
-        source: '/__/auth/:path*',
-        destination: 'https://cleancore-491216.firebaseapp.com/__/auth/:path*',
-      },
-    ];
-  },
   typescript: {
     // F-07: Build errors must block deployment (was: ignoreBuildErrors: true)
     ignoreBuildErrors: false,
