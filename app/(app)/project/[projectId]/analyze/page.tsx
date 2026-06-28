@@ -53,7 +53,7 @@ export default function AnalyzePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { profile, incrementTransformations } = useUserProfile();
-  const [showHelpMode, setShowHelpMode] = useState(false);
+  // Help Mode removed — Ask AI chatbot replaces this functionality
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(0);
   const [targetDeployment, setTargetDeployment] = useState<'public' | 'private' | null>(null);
@@ -398,6 +398,24 @@ ${codeToAnalyze}`;
       const criticalityScore = computeCriticalityScore(codeToAnalyze);
       const archRecommendation = recommendArchitecture(codeToAnalyze, inventory, coupling, recommendedRoute);
 
+      // ── Reconcile AI score with deterministic findings ───────────
+      // The AI-generated cleanCoreScore can contradict the deterministic
+      // Coverage Verdict (e.g. 65% score but 100% fully supported).
+      // We merge both signals into one coherent number.
+      const totalFindings = detectedFindings.length;
+      const fullyCount = detectedFindings.filter((f: SupportFinding) => f.level === 'fully').length;
+      const partialCount = detectedFindings.filter((f: SupportFinding) => f.level === 'partial').length;
+      const deterministicPercent = totalFindings > 0
+        ? Math.round(((fullyCount + partialCount * 0.5) / totalFindings) * 100)
+        : 100; // no findings = assume clean
+      
+      // Blend: 40% deterministic weight, 60% AI weight, then clamp
+      const reconciledScore = Math.round(deterministicPercent * 0.4 + cleanCoreScore * 0.6);
+      // If deterministic says 100% but AI says <80%, floor at 80
+      const finalCleanCoreScore = deterministicPercent === 100
+        ? Math.max(reconciledScore, 80)
+        : Math.min(reconciledScore, deterministicPercent + 10); // don't overshoot deterministic ceiling
+
       try {
         const isAlreadyCharged = project?.charged || false;
         const encoder = new TextEncoder();
@@ -418,7 +436,7 @@ ${codeToAnalyze}`;
           s4Deployment: targetDeployment,
           analysis: normalizedAnalysis,
           extensibilityRoute: recommendedRoute,
-          cleanCoreScore: cleanCoreScore,
+          cleanCoreScore: finalCleanCoreScore,
           status: 'analyzed',
           charged: true,
           transformationBypass: true,
@@ -805,6 +823,65 @@ ${codeToAnalyze}`;
             <ol style="padding-left: 20px;">
               ${stepsList}
             </ol>
+
+            <h2>Detailed Technical Assessment</h2>
+            ${project.complexityScore !== undefined || project.criticalityScore !== undefined ? `
+            <div class="card-grid" style="grid-template-cols: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+              ${project.complexityScore !== undefined ? `
+              <div class="card" style="border-left: 4px solid ${project.complexityScore >= 7 ? '#de350b' : project.complexityScore >= 4 ? '#ff991f' : '#00875a'};">
+                <div class="card-title">Complexity Score</div>
+                <p style="font-size: 28px; font-weight: bold; margin: 0;">${project.complexityScore}<span style="color: #6b778c; font-size: 14px;">/10</span></p>
+                <p style="font-size: 12px; color: #6b778c; margin-top: 4px;">${project.complexityScore >= 7 ? 'High — significant refactoring needed' : project.complexityScore >= 4 ? 'Moderate — manageable effort' : 'Low — straightforward migration'}</p>
+              </div>` : ''}
+              ${project.criticalityScore !== undefined ? `
+              <div class="card" style="border-left: 4px solid ${project.criticalityScore >= 7 ? '#de350b' : project.criticalityScore >= 4 ? '#ff991f' : '#00875a'};">
+                <div class="card-title">Criticality Score</div>
+                <p style="font-size: 28px; font-weight: bold; margin: 0;">${project.criticalityScore}<span style="color: #6b778c; font-size: 14px;">/10</span></p>
+                <p style="font-size: 12px; color: #6b778c; margin-top: 4px;">${project.criticalityScore >= 7 ? 'Mission-critical — requires careful planning' : project.criticalityScore >= 4 ? 'Important — schedule appropriately' : 'Low impact — quick win candidate'}</p>
+              </div>` : ''}
+            </div>` : ''}
+
+            ${(project.codeInventory || []).length > 0 ? `
+            <h3>Code Inventory</h3>
+            <table>
+              <thead><tr>
+                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Object Type</th>
+                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Object Name</th>
+                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Lines</th>
+                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Category</th>
+              </tr></thead>
+              <tbody>
+                ${(project.codeInventory || []).map((item: any) => `<tr>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.objectType || ''}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${item.objectName || ''}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.lineCount || 'N/A'}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.category || ''}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>` : ''}
+
+            ${(project.dataCoupling || []).length > 0 ? `
+            <h3>Data Coupling Analysis</h3>
+            <table>
+              <thead><tr>
+                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Table</th>
+                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Access Type</th>
+                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Occurrences</th>
+                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Risk Level</th>
+              </tr></thead>
+              <tbody>
+                ${(project.dataCoupling || []).map((item: any) => `<tr>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${item.tableName || ''}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.accessType || ''}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.occurrences || 0}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;background:${item.isDirectWrite ? '#ffebe6' : '#e3fcef'};color:${item.isDirectWrite ? '#de350b' : '#006644'};">${item.isDirectWrite ? 'Direct Write' : 'Read Only'}</span></td>
+                </tr>`).join('')}
+              </tbody>
+            </table>` : ''}
+
+            <div style="margin-top: 40px; padding: 16px; background: #f4f5f7; border-radius: 8px; text-align: center; font-size: 11px; color: #6b778c;">
+              Report generated by Clean-Core.io v1.13 | All tabs exported | ${new Date().toISOString()}
+            </div>
           </div>
         </body>
         </html>
@@ -843,7 +920,8 @@ ${codeToAnalyze}`;
     }
 
     const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-    const { saveAs: save } = await import('file-saver');
+    const fileSaver = await import('file-saver');
+    const save = fileSaver.saveAs || fileSaver.default?.saveAs || fileSaver.default;
     save(blob, `${project.name.replace(/\s+/g, '_')}_Business_Analysis.html`);
     
     // Store in DB
@@ -1149,7 +1227,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 project={project}
                 findings={findings}
                 analysisGaps={analysisData.gaps || []}
-                showHelpMode={showHelpMode}
+                showHelpMode={false}
                 onUpdateWorklist={handleUpdateWorklist}
               />
             </div>
@@ -1158,31 +1236,43 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
           {/* TAB CONTENT: Detailed Assessment */}
           {activeTab === 'detailed' && (
             <div className="space-y-10 animate-in fade-in duration-300">
-              {/* Complexity & Criticality badges */}
+              {/* Complexity & Criticality badges with scale */}
               {(project.complexityScore !== undefined || project.criticalityScore !== undefined) && (
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-4">
                   {project.complexityScore !== undefined && (
-                    <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm">
-                      <Cpu size={14} className={clsx(
-                        project.complexityScore >= 70 ? 'text-red-500' : project.complexityScore >= 40 ? 'text-amber-500' : 'text-emerald-500'
-                      )} />
-                      <span className="text-xs font-bold text-slate-655">Complexity</span>
-                      <span className={clsx(
-                        'text-sm font-black',
-                        project.complexityScore >= 70 ? 'text-red-655' : project.complexityScore >= 40 ? 'text-amber-655' : 'text-emerald-655'
-                      )}>{project.complexityScore}</span>
+                    <div className="bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm" title="Complexity measures structural code intricacy: control flow depth, dependency count, and custom object coupling. Scale: 1 = trivial, 5 = moderate, 10 = highly complex.">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Cpu size={14} className={clsx(
+                          project.complexityScore >= 7 ? 'text-red-500' : project.complexityScore >= 4 ? 'text-amber-500' : 'text-emerald-500'
+                        )} />
+                        <span className="text-xs font-bold text-slate-500">Complexity</span>
+                        <span className={clsx(
+                          'text-sm font-black',
+                          project.complexityScore >= 7 ? 'text-red-600' : project.complexityScore >= 4 ? 'text-amber-600' : 'text-emerald-600'
+                        )}>{project.complexityScore}<span className="text-slate-400 font-bold">/10</span></span>
+                      </div>
+                      <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className={clsx('h-full rounded-full transition-all', project.complexityScore >= 7 ? 'bg-red-500' : project.complexityScore >= 4 ? 'bg-amber-500' : 'bg-emerald-500')} style={{ width: `${(project.complexityScore / 10) * 100}%` }} />
+                      </div>
+                      <p className="text-[9px] text-slate-400 mt-1.5">{project.complexityScore >= 7 ? 'High — significant refactoring needed' : project.complexityScore >= 4 ? 'Moderate — manageable effort' : 'Low — straightforward migration'}</p>
                     </div>
                   )}
                   {project.criticalityScore !== undefined && (
-                    <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm">
-                      <Zap size={14} className={clsx(
-                        project.criticalityScore >= 70 ? 'text-red-500' : project.criticalityScore >= 40 ? 'text-amber-500' : 'text-emerald-500'
-                      )} />
-                      <span className="text-xs font-bold text-slate-655">Criticality</span>
-                      <span className={clsx(
-                        'text-sm font-black',
-                        project.criticalityScore >= 70 ? 'text-red-655' : project.criticalityScore >= 40 ? 'text-amber-655' : 'text-emerald-655'
-                      )}>{project.criticalityScore}</span>
+                    <div className="bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm" title="Criticality measures business impact: process priority, data sensitivity, and integration depth. Scale: 1 = low impact, 5 = important, 10 = mission-critical.">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Zap size={14} className={clsx(
+                          project.criticalityScore >= 7 ? 'text-red-500' : project.criticalityScore >= 4 ? 'text-amber-500' : 'text-emerald-500'
+                        )} />
+                        <span className="text-xs font-bold text-slate-500">Criticality</span>
+                        <span className={clsx(
+                          'text-sm font-black',
+                          project.criticalityScore >= 7 ? 'text-red-600' : project.criticalityScore >= 4 ? 'text-amber-600' : 'text-emerald-600'
+                        )}>{project.criticalityScore}<span className="text-slate-400 font-bold">/10</span></span>
+                      </div>
+                      <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className={clsx('h-full rounded-full transition-all', project.criticalityScore >= 7 ? 'bg-red-500' : project.criticalityScore >= 4 ? 'bg-amber-500' : 'bg-emerald-500')} style={{ width: `${(project.criticalityScore / 10) * 100}%` }} />
+                      </div>
+                      <p className="text-[9px] text-slate-400 mt-1.5">{project.criticalityScore >= 7 ? 'Mission-critical — requires careful planning' : project.criticalityScore >= 4 ? 'Important — schedule appropriately' : 'Low impact — quick win candidate'}</p>
                     </div>
                   )}
                 </div>
@@ -1221,13 +1311,13 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
               {/* S/4HANA Standard Fit */}
               <TargetScopeMapping 
-                showHelpMode={showHelpMode}
+                showHelpMode={false}
                 standardFit={analysisData.standardFit}
               />
 
               {/* Core Clean recommendations */}
               <ModernizationStrategy 
-                showHelpMode={showHelpMode}
+                showHelpMode={false}
                 recommendations={analysisData.recommendations}
               />
 
@@ -1578,18 +1668,6 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   <p className="text-green-100 mt-3 max-w-2xl text-base md:text-lg font-medium opacity-90">Comprehensive assessment of legacy logic, business value, and modernization potential.</p>
                 </div>
                 <div className="flex gap-3 shrink-0 items-center">
-                  <button
-                    onClick={() => setShowHelpMode(!showHelpMode)}
-                    className={clsx(
-                      "flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all font-bold text-sm backdrop-blur-md",
-                      showHelpMode 
-                        ? "bg-amber-500/20 text-amber-200 border-amber-500/30" 
-                        : "bg-white/10 hover:bg-white/20 text-white border border-white/20"
-                    )}
-                  >
-                    <HelpCircle size={16} className={clsx(showHelpMode && "animate-bounce")} />
-                    {showHelpMode ? 'Help Mode: ON' : 'Help Mode'}
-                  </button>
                   
                   <button 
                     onClick={() => exportToConfluence()}

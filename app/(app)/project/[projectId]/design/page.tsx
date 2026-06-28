@@ -199,8 +199,8 @@ interface DesignData {
   };
   securityHardening: Array<{
     category: string; // e.g. IAM, Authorization, Dictionary, Audit
-    requirement: string; // Technical security rule (e.g. Authority Check on custom authorization object, SQL Injection prevention via CDS mapping, locked field constraints)
-    packageOrConfig: string; // Concrete implementation detail (e.g. 'AUTHORITY-CHECK OBJECT', 'CDS view access controls DCL', 'ABAP Cloud restricted syntax check')
+    requirement: string; // ABAP Cloud / RAP security rule ONLY. MUST use only ABAP-native concepts. NEVER reference Node.js, npm, passport, helmet, or any non-ABAP technology. Example: 'Authority Check on V_KNA1_VKO authorization object'
+    packageOrConfig: string; // ABAP-native implementation ONLY. Examples: 'AUTHORITY-CHECK OBJECT V_KNA1_VKO', 'CDS access control DCL', 'ABAP Cloud restricted syntax check', 'IAM App / Business Catalog'. NEVER use npm packages or Node.js code.
   }>;
   roadmap: Array<{
     phase: string; // Phase index (e.g. Phase 0, Phase 1, Phase 2, Phase 3)
@@ -243,8 +243,8 @@ interface DesignData {
   }>;
   securityHardening: Array<{
     category: string; // e.g. Authentication, Network, Coding, Audit
-    requirement: string; // Technical security rule (e.g. XSUAA JWT Validation, Helmet.js headers, Principal Propagation tunnel, dependency audit)
-    packageOrConfig: string; // Concrete implementation detail (e.g. 'XSUAA middleware', 'app.use(helmet())', 'npm audit --audit-level=high')
+    requirement: string; // Node.js / CAP / BTP security rule ONLY. MUST use only BTP-native and Node.js concepts. NEVER reference ABAP, AUTHORITY-CHECK, or any ABAP-native constructs. Example: 'XSUAA JWT Validation via @sap/xssec'
+    packageOrConfig: string; // Node.js/BTP implementation ONLY. Examples: 'app.use(passport.authenticate("JWT", { session: false }))', 'app.use(helmet())', 'npm audit --audit-level=high', '@sap/xssec'. NEVER use ABAP code or syntax.
   }>;
   roadmap: Array<{
     phase: string; // Phase index (e.g. Phase 0, Phase 1, Phase 2, Phase 3)
