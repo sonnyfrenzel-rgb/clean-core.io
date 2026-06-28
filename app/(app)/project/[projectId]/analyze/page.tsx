@@ -66,6 +66,7 @@ export default function AnalyzePage() {
   const [acceptedTerms, setAcceptedTerms] = useState(searchParams.get('fromExample') === 'true');
   const [uploadedFileName, setUploadedFileName] = useState('manual-input.abap');
   const [activeTab, setActiveTab] = useState<'evidence' | 'backlog' | 'detailed' | 'strategy'>('evidence');
+  const [evidenceFilter, setEvidenceFilter] = useState<'All' | 'Critical' | 'High' | 'Medium' | 'Low'>('All');
   const [isSticky, setIsSticky] = useState(false);
 
   useEffect(() => {
@@ -887,8 +888,51 @@ ${codeToAnalyze}`;
               </tbody>
             </table>` : ''}
 
+            ${(() => {
+              // Evidence Findings table for Confluence export — deduplicated, sorted by severity
+              const evidenceForExport = legacyCode ? buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap').findings : [];
+              if (evidenceForExport.length === 0) return '';
+              const sevOrd: Record<string, number> = { Critical: 0, High: 1, Medium: 2, Low: 3, Info: 4 };
+              const grp = new Map<string, { f: typeof evidenceForExport[0]; lines: number[]; snippets: string[] }>();
+              for (const ef of evidenceForExport) {
+                const k = `${ef.kind}::${ef.objectName || ef.title}`;
+                const ex = grp.get(k);
+                if (ex) { ex.lines.push(ef.lineStart); if (ef.snippet && !ex.snippets.includes(ef.snippet)) ex.snippets.push(ef.snippet); }
+                else grp.set(k, { f: ef, lines: [ef.lineStart], snippets: ef.snippet ? [ef.snippet] : [] });
+              }
+              const sorted = Array.from(grp.values()).sort((a, b) => (sevOrd[a.f.severity] ?? 9) - (sevOrd[b.f.severity] ?? 9));
+              const rows = sorted.map(({ f, lines, snippets }) => {
+                const sevColor = f.severity === 'Critical' ? '#ffebe6;color:#de350b' : f.severity === 'High' ? '#fff0b3;color:#974f0c' : f.severity === 'Medium' ? '#fffae6;color:#974f0c' : '#e3fcef;color:#006644';
+                const confColor = f.sapReplacement?.confidence === 'Verified' ? '#006644' : f.sapReplacement?.confidence === 'Candidate' ? '#974f0c' : '#de350b';
+                return `<tr>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${f.title}${lines.length > 1 ? ` (${lines.length}×)` : ''}<br/><span style="font-size:10px;color:#6b778c;">${f.kind}</span></td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-family:monospace;font-size:11px;">${lines.join(', ')}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><code style="font-size:10px;background:#f4f5f7;padding:2px 4px;border-radius:3px;">${snippets[0] || '—'}</code></td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;background:${sevColor};">${f.severity}</span></td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${f.sapReplacement ? `${f.sapReplacement.objectName}<br/><span style="font-size:10px;font-weight:bold;color:${confColor};">${f.sapReplacement.confidence}</span>` : '—'}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-size:10px;">${(f.targetOptions || []).slice(0, 2).join(', ') || '—'}</td>
+                </tr>`;
+              }).join('');
+              return `
+              <h2 style="margin-top:40px;color:#172b4d;border-bottom:1px solid #ebecf0;padding-bottom:8px;">📋 Evidence Findings</h2>
+              <p style="font-size:13px;color:#6b778c;margin-bottom:12px;">${sorted.length} unique findings — deduplicated, sorted by severity</p>
+              <table style="width:100%;border-collapse:collapse;margin-bottom:30px;font-size:13px;">
+                <thead>
+                  <tr style="background:#f4f5f7;text-align:left;">
+                    <th style="padding:10px;border-bottom:2px solid #dfe1e6;font-weight:bold;font-size:11px;text-transform:uppercase;">Pattern</th>
+                    <th style="padding:10px;border-bottom:2px solid #dfe1e6;font-weight:bold;font-size:11px;text-transform:uppercase;">Lines</th>
+                    <th style="padding:10px;border-bottom:2px solid #dfe1e6;font-weight:bold;font-size:11px;text-transform:uppercase;">Snippet</th>
+                    <th style="padding:10px;border-bottom:2px solid #dfe1e6;font-weight:bold;font-size:11px;text-transform:uppercase;">Severity</th>
+                    <th style="padding:10px;border-bottom:2px solid #dfe1e6;font-weight:bold;font-size:11px;text-transform:uppercase;">SAP Replacement</th>
+                    <th style="padding:10px;border-bottom:2px solid #dfe1e6;font-weight:bold;font-size:11px;text-transform:uppercase;">Target</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>`;
+            })()}
+
             <div style="margin-top: 40px; padding: 16px; background: #f4f5f7; border-radius: 8px; text-align: center; font-size: 11px; color: #6b778c;">
-              Report generated by Clean-Core.io v1.13 | All tabs exported | ${new Date().toISOString()}
+              Report generated by Clean-Core.io v${APP_VERSION} | All tabs exported | ${new Date().toISOString()}
             </div>
           </div>
         </body>
@@ -1246,22 +1290,68 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               {/* Construct Findings checklist */}
               <ConstructFindings findings={findings} />
 
-              {/* ── Evidence Findings Detail Table ── */}
-              {evidenceFindings.length > 0 && (
+              {/* ── Evidence Findings Detail Table — deduplicated, sorted, filterable ── */}
+              {evidenceFindings.length > 0 && (() => {
+                // Deduplicate by kind+objectName, aggregate lines
+                const sevOrder: Record<string, number> = { Critical: 0, High: 1, Medium: 2, Low: 3, Info: 4 };
+                const grouped = new Map<string, { finding: typeof evidenceFindings[0]; lines: number[]; snippets: string[] }>();
+                for (const ef of evidenceFindings) {
+                  const key = `${ef.kind}::${ef.objectName || ef.title}`;
+                  const existing = grouped.get(key);
+                  if (existing) {
+                    existing.lines.push(ef.lineStart);
+                    if (ef.snippet && !existing.snippets.includes(ef.snippet)) existing.snippets.push(ef.snippet);
+                  } else {
+                    grouped.set(key, { finding: ef, lines: [ef.lineStart], snippets: ef.snippet ? [ef.snippet] : [] });
+                  }
+                }
+                const deduped = Array.from(grouped.values())
+                  .sort((a, b) => (sevOrder[a.finding.severity] ?? 9) - (sevOrder[b.finding.severity] ?? 9));
+                const filtered = evidenceFilter === 'All' ? deduped : deduped.filter(d => d.finding.severity === evidenceFilter);
+                const sevCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
+                for (const d of deduped) {
+                  const s = d.finding.severity;
+                  if (s in sevCounts) sevCounts[s as keyof typeof sevCounts]++;
+                }
+
+                return (
                 <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 flex items-center gap-2">
+                  <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 flex flex-wrap items-center gap-2">
                     <FileCode2 size={18} className="text-indigo-500" />
                     <h3 className="text-base font-bold text-slate-800">Evidence Findings</h3>
-                    <span className="ml-auto text-xs font-medium text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-full">
-                      {evidenceFindings.length} {evidenceFindings.length === 1 ? 'finding' : 'findings'}
+                    <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                      {deduped.length} unique {deduped.length === 1 ? 'finding' : 'findings'}
                     </span>
+                    {/* Filter buttons */}
+                    <div className="ml-auto flex gap-1.5 flex-wrap">
+                      {(['All', 'Critical', 'High', 'Medium', 'Low'] as const).map(level => {
+                        const count = level === 'All' ? deduped.length : sevCounts[level as keyof typeof sevCounts];
+                        const isActive = evidenceFilter === level;
+                        const colors: Record<string, string> = {
+                          All: isActive ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+                          Critical: isActive ? 'bg-red-600 text-white' : 'bg-red-50 text-red-600 hover:bg-red-100',
+                          High: isActive ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-600 hover:bg-orange-100',
+                          Medium: isActive ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-600 hover:bg-amber-100',
+                          Low: isActive ? 'bg-green-600 text-white' : 'bg-green-50 text-green-600 hover:bg-green-100',
+                        };
+                        return (
+                          <button
+                            key={level}
+                            onClick={() => setEvidenceFilter(level)}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${colors[level]}`}
+                          >
+                            {level} {count > 0 ? `(${count})` : ''}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="bg-slate-50 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                           <th className="px-4 py-2.5">Pattern</th>
-                          <th className="px-4 py-2.5">Line</th>
+                          <th className="px-4 py-2.5">Lines</th>
                           <th className="px-4 py-2.5 min-w-[200px]">Code Snippet</th>
                           <th className="px-4 py-2.5">Severity</th>
                           <th className="px-4 py-2.5">SAP Replacement</th>
@@ -1269,17 +1359,24 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {evidenceFindings.map((ef, idx) => (
-                          <tr key={ef.id || idx} className="hover:bg-indigo-50/30 transition-colors">
+                        {filtered.length === 0 ? (
+                          <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-400">No findings match the selected filter.</td></tr>
+                        ) : filtered.map(({ finding: ef, lines, snippets }, idx) => (
+                          <tr key={`${ef.kind}-${idx}`} className="hover:bg-indigo-50/30 transition-colors">
                             <td className="px-4 py-2.5">
-                              <div className="font-semibold text-slate-800">{ef.title}</div>
+                              <div className="font-semibold text-slate-800">
+                                {ef.title}{lines.length > 1 ? ` (${lines.length}×)` : ''}
+                              </div>
                               <div className="text-[10px] text-slate-400 mt-0.5">{ef.kind}</div>
                             </td>
-                            <td className="px-4 py-2.5 font-mono text-slate-600">{ef.lineStart}{ef.lineEnd && ef.lineEnd !== ef.lineStart ? `–${ef.lineEnd}` : ''}</td>
+                            <td className="px-4 py-2.5 font-mono text-slate-600 text-[10px]">{lines.join(', ')}</td>
                             <td className="px-4 py-2.5">
-                              <code className="block text-[10px] font-mono bg-slate-100 text-slate-700 px-2 py-1 rounded max-w-xs overflow-hidden text-ellipsis whitespace-nowrap" title={ef.snippet}>
-                                {ef.snippet}
-                              </code>
+                              {snippets.slice(0, 2).map((s, i) => (
+                                <code key={i} className="block text-[10px] font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded mb-0.5 max-w-xs overflow-hidden text-ellipsis whitespace-nowrap" title={s}>
+                                  {s}
+                                </code>
+                              ))}
+                              {snippets.length > 2 && <span className="text-[9px] text-slate-400">+{snippets.length - 2} more</span>}
                             </td>
                             <td className="px-4 py-2.5">
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -1325,7 +1422,8 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                     </table>
                   </div>
                 </div>
-              )}
+              );
+              })()}
 
               {/* Executive Plain English Guide — bottom of Decision & Evidence */}
               <PlainEnglishGuide 
