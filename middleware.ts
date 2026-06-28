@@ -22,23 +22,27 @@ export function middleware(request: NextRequest) {
   const isDev = process.env.NODE_ENV === 'development';
   const useEmulator = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true';
 
+  // Skip CSP entirely in dev to avoid blocking Firebase Auth popup
+  if (isDev) {
+    return NextResponse.next();
+  }
+
   // Emulator URLs needed for E2E tests (Auth: 9099, Firestore: 8080)
   const emulatorConnectSrc = useEmulator ? ' http://127.0.0.1:* http://localhost:*' : '';
 
   const csp = [
     `default-src 'self'`,
-    // 'unsafe-inline' required for Next.js inline bootstrap scripts & CSS-in-JS
-    // 'unsafe-eval' required in dev for webpack HMR; production only needs inline
-    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
+    `script-src 'self' 'unsafe-inline'`,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: https: blob:`,
     `font-src 'self' data: https://fonts.gstatic.com`,
-    `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://generativelanguage.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com${isDev ? ' ws://localhost:*' : ''}${emulatorConnectSrc}`,
+    `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://generativelanguage.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com${emulatorConnectSrc}`,
+    `frame-src 'self' https://cleancore-491216.firebaseapp.com`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
     `object-src 'none'`,
-    ...(isDev || useEmulator ? [] : [`upgrade-insecure-requests`]),
+    ...(useEmulator ? [] : [`upgrade-insecure-requests`]),
   ].join('; ');
 
   const response = NextResponse.next();
