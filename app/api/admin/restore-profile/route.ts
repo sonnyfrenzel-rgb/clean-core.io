@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb, setAdminClaim } from '@/lib/firebase-admin';
 
+// Lazy-loaded admin auth module
+let adminAuthModule: any = null;
+
 /**
  * TEMPORARY admin profile restore endpoint.
  * Secured by PILOT_APPROVAL_SECRET.
@@ -22,19 +25,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden.' }, { status: 403 });
     }
 
-    const { db, adminAuth } = await getAdminDb();
+    const { db } = await getAdminDb();
+
+    // Lazy-load admin auth
+    if (!adminAuthModule) {
+      adminAuthModule = await import('firebase-admin/auth');
+    }
+    const auth = adminAuthModule.getAuth();
 
     // Find the user by email
     let userRecord;
     try {
-      userRecord = await adminAuth.getUserByEmail(email);
+      userRecord = await auth.getUserByEmail(email);
     } catch {
       return NextResponse.json({ error: `User not found: ${email}` }, { status: 404 });
     }
 
     const uid = userRecord.uid;
 
-    // Restore admin profile in Firestore
+    // Restore admin profile in Firestore (merge to preserve any existing fields)
     await db.collection('users').doc(uid).set({
       firstName: userRecord.displayName?.split(' ')[0] || 'Admin',
       lastName: userRecord.displayName?.split(' ').slice(1).join(' ') || '',
