@@ -16,6 +16,11 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   const { profile } = useUserProfile();
   const isProjectStep = pathname.includes('/project/');
 
+  // Scroll to top on every page navigation
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
   // Reactive Workspace Theme Bootstrapper
   useEffect(() => {
     const root = window.document.documentElement;
