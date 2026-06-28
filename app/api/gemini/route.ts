@@ -84,7 +84,10 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      await assertRateLimit(`gemini:${decodedToken.uid}:${getClientIp(request)}`, 20, 60 * 60 * 1000);
+      // Skip rate limiting for admin users
+      if (!decodedToken.admin) {
+        await assertRateLimit(`gemini:${decodedToken.uid}:${getClientIp(request)}`, 20, 60 * 60 * 1000);
+      }
     } catch (rateErr: any) {
       return NextResponse.json(
         { error: rateErr.message || 'Too many requests.' },

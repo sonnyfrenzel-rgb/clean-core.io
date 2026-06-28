@@ -132,6 +132,11 @@ export interface CodeInventoryItem {
   package?: string;
   module?: string;
   criticality: 'High' | 'Medium' | 'Low';
+  lineStart?: number;
+  lineEnd?: number;
+  loc?: number;
+  category?: string;
+  businessDomain?: string;
 }
 
 /** Database table access detected in code */
@@ -141,6 +146,12 @@ export interface DataCouplingEntry {
   isCustom: boolean;
   riskLevel: 'High' | 'Medium' | 'Low';
   recommendation: string;
+  occurrences?: number;
+  readCount?: number;
+  writeCount?: number;
+  lineNumbers?: number[];
+  snippets?: string[];
+  replacementConfidence?: 'Verified' | 'Candidate' | 'Needs Validation';
 }
 
 
