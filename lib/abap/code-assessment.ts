@@ -6,6 +6,7 @@
  */
 
 import type { CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
+import { tokenize } from './declaration-parser';
 
 // Well-known SAP standard tables and their recommended API/CDS replacements
 const STANDARD_TABLE_MAP: Record<string, string> = {
@@ -130,60 +131,111 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
  */
 export function extractDataCoupling(code: string): DataCouplingEntry[] {
   const entries: DataCouplingEntry[] = [];
-  const tableAccessMap = new Map<string, Set<string>>();
+  const statements = tokenize(code);
 
-  const upper = code.toUpperCase();
+  const FAKE_TABLES = new Set([
+    'MODE', 'TASK', 'RISK', 'SCREEN', 'LINE', 'TABLE', 'INTO', 'FROM',
+    'CORRESPONDING', 'DATA', 'ADJACENT', 'RESULT', 'CONNECTION', 'TYPE',
+    'INDEX', 'UP', 'TO', 'ROWS', 'WHERE', 'AND', 'OR', 'NOT', 'NULL',
+    'IS', 'AS', 'ON', 'JOIN', 'LEFT', 'RIGHT', 'OUTER', 'INNER',
+    'FULL', 'CROSS', 'USING', 'CLIENT', 'SPECIFIED', 'SYSTEM', 'VALUES',
+    'SELECT', 'INSERT', 'UPDATE', 'MODIFY', 'DELETE', 'FOR', 'ALL',
+    'ENTRIES', 'BY', 'ORDER', 'GROUP', 'HAVING'
+  ]);
 
-  // SELECT ... FROM <table>
-  const selectRegex = /\bSELECT\b[\s\S]*?\bFROM\s+([\w]+)/gi;
-  let match;
-  while ((match = selectRegex.exec(upper)) !== null) {
-    const table = match[1].trim();
-    if (!table || table === 'TABLE' || table.length < 2) continue;
-    if (!tableAccessMap.has(table)) tableAccessMap.set(table, new Set());
-    tableAccessMap.get(table)!.add('Read');
+  interface TableStats {
+    tableName: string;
+    reads: number;
+    writes: number;
+    lineNumbers: number[];
+    snippets: string[];
   }
 
-  // INSERT INTO <table>
-  const insertRegex = /\bINSERT\s+(?:INTO\s+)?([\w]+)/gi;
-  while ((match = insertRegex.exec(upper)) !== null) {
-    const table = match[1].trim();
-    if (!table || table === 'INTO' || table.length < 2) continue;
-    if (!tableAccessMap.has(table)) tableAccessMap.set(table, new Set());
-    tableAccessMap.get(table)!.add('Write');
-  }
+  const statsMap = new Map<string, TableStats>();
 
-  // UPDATE <table>
-  const updateRegex = /\bUPDATE\s+([\w]+)/gi;
-  while ((match = updateRegex.exec(upper)) !== null) {
-    const table = match[1].trim();
-    if (!table || table.length < 2) continue;
-    if (!tableAccessMap.has(table)) tableAccessMap.set(table, new Set());
-    tableAccessMap.get(table)!.add('Write');
-  }
+  const getOrCreate = (table: string): TableStats => {
+    const normTable = table.toUpperCase().trim();
+    if (!statsMap.has(normTable)) {
+      statsMap.set(normTable, {
+        tableName: normTable,
+        reads: 0,
+        writes: 0,
+        lineNumbers: [],
+        snippets: []
+      });
+    }
+    return statsMap.get(normTable)!;
+  };
 
-  // MODIFY <table>
-  const modifyRegex = /\bMODIFY\s+([\w]+)/gi;
-  while ((match = modifyRegex.exec(upper)) !== null) {
-    const table = match[1].trim();
-    if (!table || table === 'SCREEN' || table === 'LINE' || table === 'TABLE' || table.length < 2) continue;
-    if (!tableAccessMap.has(table)) tableAccessMap.set(table, new Set());
-    tableAccessMap.get(table)!.add('Write');
-  }
+  const addStat = (table: string, isWrite: boolean, line: number, snippet: string) => {
+    if (!table || table.length < 2 || FAKE_TABLES.has(table.toUpperCase()) || /^\d/.test(table)) return;
+    const stats = getOrCreate(table);
+    if (isWrite) stats.writes++;
+    else stats.reads++;
+    if (!stats.lineNumbers.includes(line)) {
+      stats.lineNumbers.push(line);
+      stats.snippets.push(snippet);
+    }
+  };
 
-  // DELETE FROM <table>
-  const deleteRegex = /\bDELETE\s+(?:FROM\s+)?([\w]+)/gi;
-  while ((match = deleteRegex.exec(upper)) !== null) {
-    const table = match[1].trim();
-    if (!table || table === 'FROM' || table === 'TABLE' || table === 'ADJACENT' || table.length < 2) continue;
-    if (!tableAccessMap.has(table)) tableAccessMap.set(table, new Set());
-    tableAccessMap.get(table)!.add('Write');
+  for (const stmt of statements) {
+    const text = stmt.text.trim();
+    if (!text) continue;
+    const upper = text.toUpperCase();
+
+    // 1. SELECT Statement (with Join parsing support)
+    if (/^SELECT\b/i.test(text)) {
+      // Extract from FROM part until any terminating SQL clause
+      const fromMatch = text.match(/\bFROM\s+([\s\S]+?)(?:\b(INTO|WHERE|ORDER|GROUP|UP|HAVING|UNION|FOR)\b|$)/i);
+      if (fromMatch) {
+        const tableArea = fromMatch[1].trim();
+        // Split by JOIN keywords to find all participating tables
+        const parts = tableArea.split(/\b(?:INNER\s+|LEFT\s+(?:OUTER\s+)?|RIGHT\s+(?:OUTER\s+)?|FULL\s+(?:OUTER\s+)?|CROSS\s+)?JOIN\b/i);
+        for (const part of parts) {
+          const words = part.trim().split(/\s+/);
+          const tableName = words[0]?.replace(/[~,]/g, '').trim(); // strip alias markers or commas
+          if (tableName) {
+            addStat(tableName, false, stmt.line, text);
+          }
+        }
+      }
+    }
+
+    // 2. INSERT Statement
+    const insertMatch = text.match(/^INSERT\s+(?:INTO\s+)?([\w\/]+)/i);
+    if (insertMatch) {
+      addStat(insertMatch[1], true, stmt.line, text);
+    }
+
+    // 3. UPDATE Statement
+    const updateMatch = text.match(/^UPDATE\s+([\w\/]+)/i);
+    if (updateMatch) {
+      addStat(updateMatch[1], true, stmt.line, text);
+    }
+
+    // 4. MODIFY Statement
+    const modifyMatch = text.match(/^MODIFY\s+([\w\/]+)/i);
+    if (modifyMatch) {
+      const target = modifyMatch[1].toUpperCase();
+      if (target !== 'SCREEN' && target !== 'LINE' && target !== 'TABLE') {
+        addStat(modifyMatch[1], true, stmt.line, text);
+      }
+    }
+
+    // 5. DELETE Statement
+    const deleteMatch = text.match(/^DELETE\s+(?:FROM\s+)?([\w\/]+)/i);
+    if (deleteMatch) {
+      const target = deleteMatch[1].toUpperCase();
+      if (target !== 'FROM' && target !== 'TABLE' && target !== 'ADJACENT') {
+        addStat(deleteMatch[1], true, stmt.line, text);
+      }
+    }
   }
 
   // Convert map to entries
-  for (const [tableName, ops] of tableAccessMap) {
-    const hasRead = ops.has('Read');
-    const hasWrite = ops.has('Write');
+  for (const [tableName, stats] of statsMap) {
+    const hasRead = stats.reads > 0;
+    const hasWrite = stats.writes > 0;
     const isCustom = tableName.startsWith('Z') || tableName.startsWith('Y');
     const isStandard = STANDARD_TABLE_MAP[tableName] !== undefined;
 
@@ -198,17 +250,37 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
     else if (isStandard) riskLevel = 'Medium';
 
     let recommendation = '';
+    let replacementConfidence: 'Verified' | 'Candidate' | 'Needs Validation' = 'Needs Validation';
     if (isStandard && STANDARD_TABLE_MAP[tableName]) {
       recommendation = STANDARD_TABLE_MAP[tableName];
+      replacementConfidence = 'Verified';
+    } else if (isStandard) {
+      recommendation = 'Verify API availability in SAP API Hub';
+      replacementConfidence = 'Candidate';
     } else if (isCustom && hasWrite) {
       recommendation = 'Requires Side-by-Side model (custom persistence)';
+      replacementConfidence = 'Needs Validation';
     } else if (isCustom) {
       recommendation = 'Custom table — evaluate migration or retirement';
+      replacementConfidence = 'Needs Validation';
     } else {
       recommendation = 'Verify API availability in SAP API Hub';
+      replacementConfidence = 'Needs Validation';
     }
 
-    entries.push({ tableName, accessType, isCustom, riskLevel, recommendation });
+    entries.push({
+      tableName,
+      accessType,
+      isCustom,
+      riskLevel,
+      recommendation,
+      occurrences: stats.reads + stats.writes,
+      readCount: stats.reads,
+      writeCount: stats.writes,
+      lineNumbers: stats.lineNumbers,
+      snippets: stats.snippets,
+      replacementConfidence
+    });
   }
 
   // Sort: High risk first, then custom tables, then alphabetical

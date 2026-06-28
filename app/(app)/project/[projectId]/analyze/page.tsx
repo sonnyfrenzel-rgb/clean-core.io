@@ -845,17 +845,23 @@ ${codeToAnalyze}`;
             <h3>Code Inventory</h3>
             <table>
               <thead><tr>
-                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Object Type</th>
                 <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Object Name</th>
-                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Lines</th>
-                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Category</th>
+                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Type</th>
+                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Module</th>
+                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Criticality</th>
               </tr></thead>
               <tbody>
                 ${(project.codeInventory || []).map((item: any) => `<tr>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.objectType || ''}</td>
                   <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${item.objectName || ''}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.lineCount || 'N/A'}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.category || ''}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.type || ''}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.module || '—'}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">
+                    <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;background:${
+                      item.criticality === 'High' ? '#ffebe6' : item.criticality === 'Medium' ? '#fff0b3' : '#e3fcef'
+                    };color:${
+                      item.criticality === 'High' ? '#de350b' : item.criticality === 'Medium' ? '#974f0c' : '#006644'
+                    };">${item.criticality || 'Low'}</span>
+                  </td>
                 </tr>`).join('')}
               </tbody>
             </table>` : ''}
@@ -866,15 +872,29 @@ ${codeToAnalyze}`;
               <thead><tr>
                 <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Table</th>
                 <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Access Type</th>
-                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Occurrences</th>
                 <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Risk Level</th>
+                <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Recommendation</th>
               </tr></thead>
               <tbody>
                 ${(project.dataCoupling || []).map((item: any) => `<tr>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${item.tableName || ''}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.accessType || ''}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.occurrences || 0}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;background:${item.isDirectWrite ? '#ffebe6' : '#e3fcef'};color:${item.isDirectWrite ? '#de350b' : '#006644'};">${item.isDirectWrite ? 'Direct Write' : 'Read Only'}</span></td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">
+                    ${item.tableName || ''} ${item.isCustom ? '<span style="color:#0747a6;font-size:9px;">(Custom)</span>' : ''}
+                  </td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">
+                    <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;background:${
+                      item.accessType !== 'Read' ? '#ffebe6' : '#f4f5f7'
+                    };color:${
+                      item.accessType !== 'Read' ? '#de350b' : '#5e6c84'
+                    };">${item.accessType || 'Read'}</span>
+                  </td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">
+                    <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;background:${
+                      item.riskLevel === 'High' ? '#ffebe6' : item.riskLevel === 'Medium' ? '#fff0b3' : '#e3fcef'
+                    };color:${
+                      item.riskLevel === 'High' ? '#de350b' : item.riskLevel === 'Medium' ? '#974f0c' : '#006644'
+                    };">${item.riskLevel || 'Low'}</span>
+                  </td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-size:11px;color:#5e6c84;">${item.recommendation || ''}</td>
                 </tr>`).join('')}
               </tbody>
             </table>` : ''}
