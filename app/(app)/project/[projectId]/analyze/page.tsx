@@ -325,14 +325,29 @@ ${codeToAnalyze}`;
           normalizedAnalysis = JSON.stringify(obj);
           
           const gapsList = obj.gaps || [];
+
+          // Deduplicate findings: group by kind+objectName, aggregate line numbers
+          const findingsGrouped = new Map<string, { finding: any; lines: number[] }>();
+          for (const f of evidenceReport.findings) {
+            const groupKey = `${f.kind}::${f.objectName || f.title}`;
+            const existing = findingsGrouped.get(groupKey);
+            if (existing) {
+              existing.lines.push(f.lineStart);
+            } else {
+              findingsGrouped.set(groupKey, { finding: f, lines: [f.lineStart] });
+            }
+          }
+
           initialWorklist = [
-            ...evidenceReport.findings.map((f: any, idx: number) => ({
+            ...Array.from(findingsGrouped.values()).map(({ finding: f, lines }, idx) => ({
               id: `finding-${f.kind}-${idx}`,
-              title: f.title,
+              title: lines.length > 1 ? `${f.title} (${lines.length}×)` : f.title,
               category: 'Finding',
               level: f.severity === 'Critical' || f.severity === 'High' ? 'not-supported' : 'partial',
               severity: f.severity === 'Critical' || f.severity === 'High' ? 'High' : f.severity === 'Medium' ? 'Medium' : 'Low',
-              location: `${uploadedFileName || 'main.abap'}:${f.lineStart}`,
+              location: lines.length > 1
+                ? `${uploadedFileName || 'main.abap'}:${lines.join(', ')}`
+                : `${uploadedFileName || 'main.abap'}:${lines[0]}`,
               recommendation: f.recommendation,
               status: 'open',
               effort: f.severity === 'Critical' ? 'High' : f.severity === 'High' || f.severity === 'Medium' ? 'Medium' : 'Low',
@@ -354,14 +369,26 @@ ${codeToAnalyze}`;
         }
       } catch (e) {
         console.error('Failed to parse analysis JSON for routing', e);
-        // Fallback worklist building if JSON parsing fails
-        initialWorklist = evidenceReport.findings.map((f: any, idx: number) => ({
+        // Fallback worklist building if JSON parsing fails — deduplicated
+        const fallbackGrouped = new Map<string, { finding: any; lines: number[] }>();
+        for (const f of evidenceReport.findings) {
+          const groupKey = `${f.kind}::${f.objectName || f.title}`;
+          const existing = fallbackGrouped.get(groupKey);
+          if (existing) {
+            existing.lines.push(f.lineStart);
+          } else {
+            fallbackGrouped.set(groupKey, { finding: f, lines: [f.lineStart] });
+          }
+        }
+        initialWorklist = Array.from(fallbackGrouped.values()).map(({ finding: f, lines }, idx) => ({
           id: `finding-${f.kind}-${idx}`,
-          title: f.title,
+          title: lines.length > 1 ? `${f.title} (${lines.length}×)` : f.title,
           category: 'Finding',
           level: f.severity === 'Critical' || f.severity === 'High' ? 'not-supported' : 'partial',
           severity: f.severity === 'Critical' || f.severity === 'High' ? 'High' : f.severity === 'Medium' ? 'Medium' : 'Low',
-          location: `${uploadedFileName || 'main.abap'}:${f.lineStart}`,
+          location: lines.length > 1
+            ? `${uploadedFileName || 'main.abap'}:${lines.join(', ')}`
+            : `${uploadedFileName || 'main.abap'}:${lines[0]}`,
           recommendation: f.recommendation,
           status: 'open',
           effort: f.severity === 'Critical' ? 'High' : f.severity === 'High' || f.severity === 'Medium' ? 'Medium' : 'Low',
