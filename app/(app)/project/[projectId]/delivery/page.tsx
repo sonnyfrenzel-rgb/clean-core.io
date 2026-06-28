@@ -13,6 +13,7 @@ import Stepper from '@/components/Stepper';
 import { PresentationViewer, PresentationData } from '@/components/PresentationViewer';
 import { buildBoardDeck } from '@/lib/board-deck';
 import { detectFindings } from '@/lib/abap/findings-detector';
+import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel } from '@/lib/abap/class-model';
 import { Download, CheckCircle2, FileCode2, ArrowLeft, Home, RefreshCw, X, Rocket, ShieldCheck, Zap, Layout, Eye, Presentation, AlertCircle, Lock, Briefcase, BookOpen } from 'lucide-react';
 import NavigationButtons from '@/components/NavigationButtons';
@@ -113,23 +114,9 @@ export default function DeliveryPage() {
   const findings = useMemo(() => {
     if (!project || !project.legacyCode) return [];
     const abapSources = [{ file: 'main.abap', content: project.legacyCode }];
-    const mockModel: ClassModel = {
-      root: 'MAIN',
-      nodes: {
-        'MAIN': {
-          key: 'MAIN', kind: 'class', source: { file: 'main.abap', line: 1 },
-          isStandard: false, isAbstract: false, isFinal: false,
-          interfaces: [], friends: [], methods: [], attributes: [], events: [], aliases: []
-        }
-      },
-      edges: [],
-      linearization: ['MAIN'],
-      resolved: true,
-      missing: [],
-      findings: []
-    };
     try {
-      return detectFindings(mockModel, abapSources);
+      const realModel = buildClassModel(abapSources);
+      return detectFindings(realModel, abapSources);
     } catch (e) {
       console.error('Error detecting findings:', e);
       return [];

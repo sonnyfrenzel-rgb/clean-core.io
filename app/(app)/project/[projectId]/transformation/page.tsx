@@ -17,6 +17,7 @@ import type { Project } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
 import { detectFindings } from '@/lib/abap/findings-detector';
+import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 import { matchCdsView } from '@/lib/abap/cds-catalog';
 import { extractSelects, parseSelect } from '@/lib/abap/select-parser';
@@ -57,23 +58,9 @@ export default function TransformationPage() {
   useEffect(() => {
     if (project?.legacyCode) {
       const abapSources = [{ file: 'main.abap', content: project.legacyCode }];
-      const mockModel: ClassModel = {
-        root: 'MAIN',
-        nodes: {
-          'MAIN': {
-            key: 'MAIN', kind: 'class', source: { file: 'main.abap', line: 1 },
-            isStandard: false, isAbstract: false, isFinal: false,
-            interfaces: [], friends: [], methods: [], attributes: [], events: [], aliases: []
-          }
-        },
-        edges: [],
-        linearization: ['MAIN'],
-        resolved: true,
-        missing: [],
-        findings: []
-      };
       try {
-        const detected = detectFindings(mockModel, abapSources);
+        const realModel = buildClassModel(abapSources);
+        const detected = detectFindings(realModel, abapSources);
         setFindings(detected);
       } catch (e) {
         console.error('Error detecting findings:', e);

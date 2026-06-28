@@ -137,4 +137,41 @@ test.describe('ABAP Inheritance & Parser Unit Tests', () => {
     expect(summary.signOffRequired).toBe(true);
     expect(summary.overall).toBe('partial');
   });
+
+  test('should resolve class hierarchy and identify missing dependencies using buildClassModel', () => {
+    const sources = [
+      {
+        file: 'child.abap',
+        content: `
+          CLASS zcl_child_class DEFINITION INHERITING FROM zcl_base_class.
+            PUBLIC SECTION.
+              INTERFACES my_helper.
+          ENDCLASS.
+        `
+      },
+      {
+        file: 'base.abap',
+        content: `
+          CLASS zcl_base_class DEFINITION.
+          ENDCLASS.
+        `
+      }
+    ];
+
+    const { buildClassModel } = require('../lib/abap/class-model-resolver');
+    const model = buildClassModel(sources);
+
+    expect(model.root).toBe('ZCL_CHILD_CLASS');
+    expect(model.linearization).toContain('ZCL_CHILD_CLASS');
+    expect(model.linearization).toContain('ZCL_BASE_CLASS');
+    expect(model.edges.length).toBe(1);
+    expect(model.edges[0]).toEqual({ from: 'ZCL_CHILD_CLASS', to: 'ZCL_BASE_CLASS', type: 'inherits' });
+
+    // Missing dependency my_helper
+    expect(model.missing.length).toBe(1);
+    expect(model.missing[0].ref).toBe('MY_HELPER');
+    expect(model.missing[0].kind).toBe('interface');
+    expect(model.missing[0].impact).toBe('reduces-confidence');
+    expect(model.resolved).toBe(true); // blocks-resolution was 0 since superclass exists, interface reduces confidence
+  });
 });

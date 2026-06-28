@@ -5,6 +5,7 @@ import { FileCode2, Layers, Search, Cpu, AlertTriangle, CheckCircle2 } from 'luc
 import clsx from 'clsx';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 import { detectFindings, summarize } from '@/lib/abap/findings-detector';
+import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { SourceFile, SupportSummary } from '@/lib/abap/findings-detector';
 import { LEVEL_EMOJI } from '@/lib/abap/support-matrix';
 
@@ -55,28 +56,13 @@ export default function PreAnalysisPreview({ code, fileName }: PreAnalysisPrevie
     if (callMatches) constructs.push({ label: 'External Calls', count: callMatches.length, icon: '📡' });
 
     // Lightweight findings detection
-    const abapSources: SourceFile[] = [{ file: fileName, content: code }];
-    const mockModel: ClassModel = {
-      root: 'MAIN',
-      nodes: {
-        'MAIN': {
-          key: 'MAIN', kind: 'class', source: { file: fileName, line: 1 },
-          isStandard: false, isAbstract: false, isFinal: false,
-          interfaces: [], friends: [], methods: [], attributes: [], events: [], aliases: []
-        }
-      },
-      edges: [],
-      linearization: ['MAIN'],
-      resolved: true,
-      missing: [],
-      findings: []
-    };
-
+    const abapSources = [{ file: fileName, content: code }];
     let findings: SupportFinding[] = [];
     let summary: SupportSummary | null = null;
     try {
-      findings = detectFindings(mockModel, abapSources);
-      summary = summarize(findings, mockModel);
+      const realModel = buildClassModel(abapSources);
+      findings = detectFindings(realModel, abapSources);
+      summary = summarize(findings, realModel);
     } catch {
       // Silently fail — pre-analysis is non-critical
     }
