@@ -18,7 +18,7 @@ import type { Project, AnalysisData, CodeInventoryItem, DataCouplingEntry } from
 import { useUserProfile } from '@/hooks/useUserProfile';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
-import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore, recommendArchitecture } from '@/lib/abap/code-assessment';
+import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
