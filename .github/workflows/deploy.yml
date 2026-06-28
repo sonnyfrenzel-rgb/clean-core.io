@@ -119,6 +119,14 @@ jobs:
               ;;
           esac
 
+      # F-15: Assert no emulator flag leaks into production deploy
+      - name: Assert No Emulator Flag in Deploy
+        run: |
+          if [ "${NEXT_PUBLIC_USE_FIREBASE_EMULATOR:-}" = "true" ]; then
+            echo "::error::FATAL: NEXT_PUBLIC_USE_FIREBASE_EMULATOR must not be 'true' in deploy!"
+            exit 1
+          fi
+
       # Authenticate securely with Google Cloud using OIDC Workload Identity Federation
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2

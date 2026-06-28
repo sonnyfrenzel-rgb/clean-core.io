@@ -10,7 +10,10 @@ const BASE_URL = 'http://localhost:3000';
 async function callSeedApi(payload: any) {
   const response = await fetch(`${BASE_URL}/api/test/seed`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-test-seed-token': process.env.PILOT_APPROVAL_SECRET || '',
+    },
     body: JSON.stringify(payload)
   });
   if (!response.ok) {

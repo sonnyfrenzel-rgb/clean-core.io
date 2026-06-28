@@ -1,6 +1,6 @@
 # Security Architecture — Clean-Core.io Platform
 
-> **Version:** 3.6 · **Date:** 2026-06-26 · **Classification:** Internal
+> **Version:** 3.7 · **Date:** 2026-06-28 · **Classification:** Internal
 
 ---
 
@@ -25,6 +25,10 @@ This document describes the security architecture and hardening measures impleme
 | F-09 | Decorative-only email approval HMAC checks | **P1** | ✅ Resolved | Transitioned email activation/approval hooks to server-side cryptographic HMAC token re-validation routes. |
 | F-10 | Vulnerability to HTML Injection in transactional emails | **P2** | ✅ Resolved | Added HTML escaping for all interpolated user fields inside the transactional email templates. |
 | A-01 | Orphaned Firebase Auth user after pilot registration reject | **P2** | ✅ Resolved | `approveUserWithToken` reject branch now deletes the Firebase Auth user via `getAuth().deleteUser(uid)`. Idempotent: `auth/user-not-found` is silently ignored. |
+| F-15 | `/api/test/seed` admin escalation behind single env gate | **P2** | ✅ Resolved | Defense-in-depth: 3 independent gates (NODE_ENV, emulator flag, secret header). Returns 404 in production. CI assertion prevents accidental deployment with emulator flag. |
+| F-05n | Email registration missing Bearer token on `/api/request-pilot` | **P2** | ✅ Resolved | Password sign-up now calls `getIdToken()` and sends `Authorization: Bearer` header, matching the Google sign-in flow. |
+| F-08n | `mfa_pending` collection lacks explicit Firestore deny rule | **P3** | ✅ Resolved | Added explicit `allow read, write: if false` rule for audit clarity (previously covered by default-deny). |
+| F-03n | Mermaid label sanitizer insufficient against XSS | **P2** | ✅ Resolved | Hardened `sanitize()` to strip HTML tags, JS protocol, event handlers, Mermaid control tokens, and arrow syntax. |
 
 ---
 

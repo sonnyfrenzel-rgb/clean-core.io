@@ -20,9 +20,22 @@ export const metadata: Metadata = {
 
 const releases = [
   {
-    version: 'v1.13.1',
+    version: 'v1.13.2',
     date: 'June 28, 2026',
     tag: 'Latest',
+    icon: Shield,
+    changes: [
+      'Google Auth Fix: CSP frame-src was blocking accounts.google.com — OAuth popup now works correctly on production',
+      'F-15: Seed route hardened with 3 independent security gates (NODE_ENV + emulator flag + secret header) — returns 404 in production',
+      'F-05: Email/password registration now sends Bearer token to approval API, fixing silent 401 failures',
+      'F-03: Mermaid label sanitizer hardened against XSS payloads (HTML tags, JS protocol, event handlers, Mermaid control tokens)',
+      'F-08: Explicit Firestore deny rule for mfa_pending collection for audit clarity',
+      'CI: Deploy workflow assertion prevents accidental emulator flag in production',
+    ],
+  },
+  {
+    version: 'v1.13.1',
+    date: 'June 28, 2026',
     icon: Sparkles,
     changes: [
       'Clean Core Score: redesigned formula — 60% deterministic construct coverage, 30% standard fit, 10% AI calibration for accurate migration readiness scoring',

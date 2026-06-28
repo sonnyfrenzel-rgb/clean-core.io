@@ -2,9 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb, setAdminClaim } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
-  // Strict check: fail-closed in production
+  // F-15: Defense-in-Depth — THREE independent gates must ALL pass.
+  // In production, Gate 1 alone blocks access. Gates 2+3 prevent
+  // accidental exposure in preview/staging deployments.
+
+  // Gate 1: Hard block in production (Cloud Run always sets NODE_ENV=production)
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+  // Gate 2: Emulator flag must be explicitly enabled
   if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+  // Gate 3: Secret header must match server-side env (prevents unauthenticated access)
+  const seedToken = req.headers.get('x-test-seed-token');
+  if (!seedToken || seedToken !== process.env.PILOT_APPROVAL_SECRET) {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
   }
 
   try {

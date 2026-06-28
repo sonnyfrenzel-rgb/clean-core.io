@@ -164,7 +164,18 @@ function buildCapChart(data: DesignData): string {
   return lines.join('\n');
 }
 
-/** Sanitize text for Mermaid labels — strip quotes and special chars */
+/**
+ * F-03: Sanitize text for Mermaid labels — defense-in-depth against XSS.
+ * Even though chart data is deterministic, we harden labels to prevent
+ * accidental injection if data sources expand in the future.
+ */
 function sanitize(text: string): string {
-  return text.replace(/["\[\](){}#]/g, '').substring(0, 40);
+  return text
+    .replace(/[<>'"&`]/g, '')       // Strip HTML/XSS characters
+    .replace(/[\[\]{}()|;#]/g, '')  // Strip Mermaid control tokens
+    .replace(/-->/g, '')            // Strip Mermaid arrow syntax
+    .replace(/javascript:/gi, '')   // Strip JS protocol
+    .replace(/on\w+=/gi, '')        // Strip event handlers (onclick=, onerror=, etc.)
+    .slice(0, 60)
+    .trim();
 }

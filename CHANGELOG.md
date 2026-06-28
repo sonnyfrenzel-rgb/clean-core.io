@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v1.13.2] — 2026-06-28
+
+### Security
+- **F-15 — Seed Route Defense-in-Depth:** `/api/test/seed` now requires three independent gates (NODE_ENV ≠ production, emulator flag = true, secret header match). Returns 404 instead of 403.
+- **F-03 — Mermaid Label Sanitizer:** Hardened `sanitize()` in TargetArchitectureDiagram to strip HTML tags, JS protocol, event handlers, and Mermaid control tokens.
+- **F-08 — mfa_pending Firestore Rule:** Added explicit `allow read, write: if false` for audit clarity (was covered by default-deny).
+- **CI Assertion:** Deploy workflow now fails if `NEXT_PUBLIC_USE_FIREBASE_EMULATOR` is accidentally set to `true` in production.
+
+### Fixed
+- **Google Auth on Production:** CSP `frame-src` was blocking `accounts.google.com`, preventing the OAuth popup from opening. Added Google OAuth domains to `frame-src` and `connect-src`.
+- **F-05 — Email Registration Bearer Token:** Password sign-up now sends a Bearer token to `/api/request-pilot`, matching the Google sign-in flow. Previously, the approval email silently failed with 401.
+- **Google Auth UX:** Improved error messages when both popup and redirect sign-in fail.
+
+### Changed
+- **F-10 — Admin Panel:** Replaced personal example name with generic "platform administrator" text.
+
+---
+
 ## [v1.13.1] — 2026-06-28
 
 ### Fixed

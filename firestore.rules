@@ -218,6 +218,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // F-08: MFA pending tokens: server-only via Admin SDK. Explicit deny for audit clarity.
+    match /mfa_pending/{uid} {
+      allow read, write: if false;
+    }
+
     // Audit events: server-only via Admin SDK. No client access.
     match /audit_events/{eventId} {
       allow read, write: if false;
