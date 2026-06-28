@@ -103,18 +103,34 @@ export default function LandingModals() {
       
       const db = getDb();
       const userDocRef = doc(db, 'users', signedInUser.uid);
-      const userDoc = await getDoc(userDocRef);
       
-      if (userDoc.exists()) {
-        const profileData = userDoc.data();
-        if (profileData.mfaEnabled) {
-          setPendingMfaUser(signedInUser);
-          setPendingMfaProfile(profileData);
-          setAuthMode('mfa');
-          return;
+      // CRITICAL: Wrap getDoc in its own try/catch so a Firestore error
+      // does NOT silently fall through to the auto-create else branch
+      // and overwrite an existing admin/approved profile.
+      let profileExists = false;
+      try {
+        const userDoc = await getDoc(userDocRef);
+        profileExists = userDoc.exists();
+        
+        if (profileExists) {
+          const profileData = userDoc.data();
+          if (profileData.mfaEnabled) {
+            setPendingMfaUser(signedInUser);
+            setPendingMfaProfile(profileData);
+            setAuthMode('mfa');
+            return;
+          }
         }
-      } else {
-        // Auto-create profile for Google sign-in (no separate onboarding modal)
+      } catch (firestoreErr) {
+        // If we can't read the profile, assume it exists and skip auto-create.
+        // Better to redirect to dashboard and let useUserProfile handle it
+        // than to accidentally overwrite an existing profile.
+        console.error('[handleSignIn] Firestore read failed — skipping profile auto-create:', firestoreErr);
+        profileExists = true; // Defensive: assume profile exists
+      }
+      
+      // Only auto-create if we CONFIRMED the profile does not exist
+      if (!profileExists) {
         const displayName = signedInUser.displayName || '';
         const nameParts = displayName.trim().split(/\s+/);
         const autoFirstName = nameParts[0] || '';
@@ -167,8 +183,18 @@ export default function LandingModals() {
       setTimeout(() => {
         router.push('/dashboard');
       }, 850);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing in:', error);
+      // Show error to user instead of silently failing (fixes desktop popup issue)
+      if (error?.code === 'auth/popup-closed-by-user') {
+        // User closed the popup — not an error, just do nothing
+        return;
+      }
+      if (error?.code === 'auth/popup-blocked') {
+        setAuthError('Pop-up blocked by your browser. Please allow pop-ups for clean-core.io and try again.');
+        return;
+      }
+      setAuthError('Sign-in failed. Please try again or use email/password.');
     }
   };
 
