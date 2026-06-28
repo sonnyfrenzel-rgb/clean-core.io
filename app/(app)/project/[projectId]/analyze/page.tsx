@@ -1726,14 +1726,14 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               <div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl text-xs text-amber-900 leading-relaxed font-semibold flex items-start gap-3 mt-8 animate-in slide-in-from-bottom-2 duration-300">
                 <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5 animate-pulse" />
                 <div className="space-y-1">
-                  <span className="font-bold text-sm block">📋 Aktion erforderlich:</span>
-                  <p>Um die KI-Modernisierung zu starten, müssen folgende Schritte durchgeführt werden:</p>
+                  <span className="font-bold text-sm block">📋 Action Required:</span>
+                  <p>To start the AI modernization analysis, please complete the following steps:</p>
                   <ul className="list-disc pl-5 mt-2 space-y-1 font-medium">
                     {!targetDeployment && (
-                      <li>Wähle dein <strong>S/4HANA Ziel-Betriebsmodell</strong> aus (Public Cloud oder Private Cloud RISE Edition oben).</li>
+                      <li>Select your <strong>S/4HANA Target Operating Model</strong> (Public Cloud or Private Cloud RISE Edition above).</li>
                     )}
                     {!acceptedTerms && (
-                      <li>Bestätige die <strong>Pilot-Nutzungsbedingungen</strong> (über die Checkbox in der Security-Box oben).</li>
+                      <li>Accept the <strong>Pilot Terms & Conditions</strong> (via the checkbox in the Security section above).</li>
                     )}
                   </ul>
                 </div>
