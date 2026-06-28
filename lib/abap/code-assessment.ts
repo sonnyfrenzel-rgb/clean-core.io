@@ -223,7 +223,8 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
 }
 
 /**
- * Compute a complexity score (0-100) based on code structure.
+ * Compute a complexity score (1-10) based on code structure.
+ * Scale: 1 = trivial, 5 = moderate, 10 = highly complex
  */
 export function computeComplexityScore(code: string): number {
   const lines = code.split(/\r?\n/).filter((l) => l.trim().length > 0);
@@ -248,49 +249,56 @@ export function computeComplexityScore(code: string): number {
   // DB write operations
   const dbWrites = (upper.match(/\b(INSERT|UPDATE|MODIFY|DELETE)\s+/g) || []).length;
 
-  // Calculate score
-  let score = 0;
-  score += Math.min(30, (loc / 20)); // LOC: up to 30 points
-  score += Math.min(25, maxNesting * 5); // Nesting: up to 25 points
-  score += Math.min(20, externalCalls * 4); // External calls: up to 20 points
-  score += Math.min(25, dbWrites * 5); // DB writes: up to 25 points
+  // Calculate raw score 0-100
+  let raw = 0;
+  raw += Math.min(30, (loc / 20)); // LOC: up to 30 points
+  raw += Math.min(25, maxNesting * 5); // Nesting: up to 25 points
+  raw += Math.min(20, externalCalls * 4); // External calls: up to 20 points
+  raw += Math.min(25, dbWrites * 5); // DB writes: up to 25 points
 
-  return Math.min(100, Math.round(score));
+  // Normalize to 1-10 scale
+  const normalized = Math.max(1, Math.min(10, Math.round(raw / 10)));
+  return normalized;
 }
 
 /**
- * Compute a business-criticality score (0-100) based on module heuristics and write tasks.
+ * Compute a business-criticality score (1-10) based on module heuristics and data sensitivity.
+ * Scale: 1 = low impact (simple read-only utility), 5 = important, 10 = mission-critical
  */
 export function computeCriticalityScore(code: string): number {
   const upper = code.toUpperCase();
 
-  // Module heuristics
+  // Module heuristics — check if code touches critical SAP modules
   const criticalModules = ['FI', 'CO', 'MM', 'SD', 'HR', 'PP', 'PM', 'QM'];
   let moduleFactor = 0;
   for (const mod of criticalModules) {
-    // Check for module-related keywords in the code
     if (upper.includes(`_${mod}_`) || upper.includes(`${mod}_`) || upper.includes(`MODULE ${mod}`)) {
-      moduleFactor += 8;
+      moduleFactor += 1; // Each module match = +1
     }
   }
+  moduleFactor = Math.min(3, moduleFactor); // Cap at 3
 
   // Financial table access (high criticality)
   const financialTables = ['BSEG', 'BKPF', 'ACDOCA', 'FAGLFLEXT', 'BSID', 'BSAD', 'BSIK', 'BSAK'];
   let financeFactor = 0;
   for (const t of financialTables) {
-    if (upper.includes(t)) financeFactor += 10;
+    if (upper.includes(t)) financeFactor += 1;
   }
+  financeFactor = Math.min(3, financeFactor); // Cap at 3
 
   // Write-intensity (MODIFY, INSERT, UPDATE, DELETE)
   const writes = (upper.match(/\b(INSERT|UPDATE|MODIFY|DELETE)\s+/g) || []).length;
-  const writeFactor = Math.min(30, writes * 6);
+  const writeFactor = Math.min(2, writes); // 0-2 points
 
   // Authority checks (indicates business-critical processes)
   const authChecks = (upper.match(/\bAUTHORITY-CHECK\b/g) || []).length;
-  const authFactor = Math.min(15, authChecks * 5);
+  const authFactor = Math.min(2, authChecks); // 0-2 points
 
-  let score = Math.min(100, moduleFactor + financeFactor + writeFactor + authFactor);
-  return Math.max(10, Math.round(score)); // Minimum 10 if code exists
+  // Sum: max possible = 3 + 3 + 2 + 2 = 10
+  const score = moduleFactor + financeFactor + writeFactor + authFactor;
+  
+  // Minimum 1 (code exists), maximum 10
+  return Math.max(1, Math.min(10, score));
 }
 
 /**
