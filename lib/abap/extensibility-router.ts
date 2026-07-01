@@ -26,6 +26,12 @@ export interface ExtensibilityRouteReport {
     inAppABAPCloud: ComparativeTrack;
     sideBySideBTP: ComparativeTrack;
   };
+  evidenceCounts: {
+    totalFindings: number;
+    criticalFindings: number;
+    supportingFindings: number;
+  };
+  assumptions: string[];
 }
 
 export function routeExtensibility(
@@ -174,7 +180,7 @@ export function routeExtensibility(
       ? 'Perfect fit. SAP BTP CAP decoupled persistence safely isolates custom code and legacy APIs from S/4HANA core.'
       : 'Feasible, but introduces architectural overhead for simple read-only reports.',
     pros: [
-      '100% upgrade safety for S/4HANA core',
+      'Maximizes upgrade readiness and isolates extensions',
       'Supports modern web runtimes (Node.js, Java, Python)',
       'Decoupled scaling and independent lifecycle management'
     ],
@@ -183,6 +189,40 @@ export function routeExtensibility(
       'Requires separate licensing for SAP BTP runtimes'
     ]
   };
+
+  // 5. Calculate evidence counts
+  const supportingFindings = needsBtp
+    ? customWrites.length + bdcCalls.length + rfcCalls.length + nativeSql.length + fileAccess.length + (deploymentModel === 'public' ? standardWrites.length : 0)
+    : standardReads.length;
+
+  const evidenceCounts = {
+    totalFindings: findings.length,
+    criticalFindings: findings.filter(f => f.severity === 'Critical').length,
+    supportingFindings,
+  };
+
+  // 6. Generate context-sensitive assumptions
+  const assumptions: string[] = [];
+  if (deploymentModel === 'public') {
+    assumptions.push('S/4HANA Public Cloud deployment model selected — no Tier-2 unreleased API access available.');
+  } else {
+    assumptions.push('S/4HANA Private Cloud deployment model selected — Tier-2 unreleased API wrapping is available.');
+  }
+  if (standardWrites.length > 0 && !needsBtp) {
+    assumptions.push('Standard table writes can be wrapped via Tier-2 API proxies or replaced with released BAPIs.');
+  }
+  if (rfcCalls.length > 0) {
+    assumptions.push('RFC destinations are not yet migrated to SAP Integration Suite or Event Mesh.');
+  }
+  if (customWrites.length > 0) {
+    assumptions.push('Custom table persistence is not yet decoupled into a BTP-managed database or CAP service.');
+  }
+  if (bdcCalls.length > 0) {
+    assumptions.push('BDC screen automations have no equivalent Fiori/API-based replacement yet.');
+  }
+  if (findings.length === 0) {
+    assumptions.push('No legacy patterns detected — code may already be partially modernized or very simple.');
+  }
 
   return {
     recommendedRoute,
@@ -194,6 +234,8 @@ export function routeExtensibility(
     comparativeAnalysis: {
       inAppABAPCloud,
       sideBySideBTP
-    }
+    },
+    evidenceCounts,
+    assumptions,
   };
 }

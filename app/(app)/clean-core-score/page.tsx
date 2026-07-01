@@ -79,7 +79,7 @@ export default function CleanCoreScorePage() {
       {/* GEO Quick Answer Block */}
       <QuickAnswer 
         question="How is the SAP Clean Core Score calculated and what does it measure?"
-        answer="The SAP Clean Core Score is a KPI that measures the degree of decoupling between custom code extensions and the standard ERP core. Calculated by analyzing syntax trees and data dependencies, the score weights direct database modifications, calls to unreleased APIs, and key-user extensibility. A high score (closer to 100%) indicates modular code that allows instant S/4HANA upgrades and reduces Total Cost of Ownership (TCO) by up to 50%."
+        answer="The SAP Clean Core Score is a KPI that measures the degree of decoupling between custom code extensions and the standard ERP core. Calculated by analyzing syntax trees and data dependencies, the score weights direct database modifications, calls to unreleased APIs, and key-user extensibility. A high score (closer to 100%) indicates modular code that supports upgrade readiness assessment, simplifies maintenance, and reduces Total Cost of Ownership (TCO) by up to 50%."
       />
 
       {/* Main Content */}

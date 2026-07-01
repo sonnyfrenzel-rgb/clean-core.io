@@ -5,7 +5,25 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
----
+## [v1.16.0] — 2026-07-01
+
+### Security Hardening
+- **Phase 2 — Immutable Analysis Runs & Fallback Hardening (F-01)**: Fully completed the transition to server-authoritative calculations for runs in [route.ts](file:///c:/Users/felix/antigravity/Project-Platform/app/api/runs/create/route.ts). Enforced that the server loads/validates inputs (`legacyCode` & `s4Deployment`) directly from the parent project, with a fallback to body parameters for initial uploads or re-analysis.
+- **Run Metadata Cleanup**: Ensured the deletion of denormalized analysis result fields on the parent project document to prevent stale data conflicts.
+- **Strict Firestore Rules Allowlist**: Overhauled update rules in [firestore.rules](file:///c:/Users/felix/antigravity/Project-Platform/firestore.rules) to enforce a strict allowlist of permitted client-writable draft/interactive fields (e.g. `status`, `s4Environment`, `solutionDesign`, `targetArchitecture`), ensuring all other metadata and results remain immutable.
+- **Workflows Signing Key Verification**: Configured the GitHub Actions [deploy.yml](file:///c:/Users/felix/antigravity/Project-Platform/.github/workflows/deploy.yml) workflow to assert that the `AUDIT_SIGNING_KEY` environment secret is set before triggering compilation.
+- **Cryptographic Export Signing**: Upgraded the [export-source.ps1](file:///c:/Users/felix/antigravity/Project-Platform/scripts/export-source.ps1) script to dynamically read the platform version from `package.json`, generate a `manifest.json` with file hashes, and compute an HMAC-SHA256 signature using the `AUDIT_SIGNING_KEY`.
+- **Export Verification Utility**: Added a new PowerShell script [verify-export.ps1](file:///c:/Users/felix/antigravity/Project-Platform/scripts/verify-export.ps1) to verify manifest integrity and authenticate signatures of exported codebase zip archives.
+- **Downstream Page Hydration**: Unified downstream page state loading by replacing direct `getDoc` calls with a shared `loadProjectAndHydrate()` resolver across all stage controllers.
+
+## [v1.15.0] — 2026-06-30
+
+### Security Hardening
+- **Phase 2 — BYOK Server-Only Secret Store (F-01)**: Migrated Gemini API Key storage from client-readable Firestore profiles (`users/{uid}`) to a server-only encrypted collection (`user_secrets/{uid}/providers/gemini`). Credentials are encrypted at rest using AES-256-GCM under the `S4_ENCRYPTION_KEY` environment variable.
+- **Client Profile Security Isolation**: Restricted Firestore client-side update access rules by removing `'geminiApiKey'` from the permitted client update keys and fully blocking direct client-side read/write access to the `user_secrets` collection.
+- **Client-to-Server BYOK Endpoints**: Implemented new API routes `/api/secrets/gemini` (POST to save, DELETE to delete) and `/api/secrets/gemini/test` (POST to verify connectivity using server-side decrypted credentials) to ensure client-side code never handles cleartext keys in transit or at rest.
+- **Playwright E2E Security Tests**: Added automated E2E test suites in `tests/security-compliance.spec.ts` asserting secure key rotation, API key deletion, connection testing, and Firestore rules blocking client-side access.
+- **Admin Panel Reference Sanitization**: Verified and ensured the removal of name placeholders ("e.g. Sonny Frenzel") from the platform administrator and tenant approval panels.
 
 ## [v1.14.0] — 2026-06-29
 

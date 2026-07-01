@@ -11,7 +11,6 @@ export async function callGemini(
   prompt: string,
   modelName: string = 'gemini-3-flash-preview',
   jsonResponse: boolean = false,
-  customApiKey?: string | null,
 ): Promise<string> {
   let userId: string | undefined;
   let idToken: string | undefined;
@@ -36,7 +35,6 @@ export async function callGemini(
       prompt,
       model: modelName,
       jsonResponse,
-      customApiKey: customApiKey || undefined,
       userId,
       idToken,
     }),

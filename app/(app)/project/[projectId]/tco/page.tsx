@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
+import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { Project } from '@/lib/types';
 import Stepper from '@/components/Stepper';
@@ -65,10 +66,8 @@ export default function TcoCalculatorPage() {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const db = getDb();
-        const docSnap = await getDoc(doc(db, 'projects', projectId as string));
-        if (docSnap.exists()) {
-          const data = docSnap.data() as Project;
+        const data = await loadProjectAndHydrate(projectId as string);
+        if (data) {
           setProject(data);
           // Set initial LoC based on legacy code size if available
           if (data.legacyCode) {

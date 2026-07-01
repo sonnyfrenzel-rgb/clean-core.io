@@ -104,7 +104,7 @@ export default function TenantSecurityPage() {
 
         <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 sm:p-8 space-y-5">
           <p className="text-gray-700 leading-relaxed font-medium">
-            Your connection credentials are encrypted using AES-256-GCM and stored securely on Google Cloud Platform in Europe (completely blocked from direct client SDK access). All actual business data (such as transactional records or metadata lists) retrieved from your S/4HANA OData tenant is processed strictly in-memory and never persisted, cached, or logged on our servers. Uploaded code files are stored in your project workspace, which you can permanently erase at any time.
+            Your connection credentials are encrypted using AES-256-GCM and stored securely on Google Cloud Platform in Europe (completely blocked from direct client SDK access). All actual business data (such as transactional records or metadata lists) retrieved from your S/4HANA OData tenant is processed transiently and never persisted, cached, or logged on our servers. Uploaded code files are stored in your encrypted, user-isolated project workspace, which you can permanently delete at any time.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -232,6 +232,12 @@ export async function POST(req: Request) {
         build.onResolve({ filter: /\.js$/ }, (args: any) => {
           if (args.kind === 'entry-point' || !args.path.startsWith('.')) return;
           const base = path.resolve(args.resolveDir, args.path);
+          
+          // Prevent directory traversal out of testDir
+          if (!base.startsWith(testDir + path.sep) && base !== testDir) {
+            return { errors: [{ text: 'Path traversal detected.' }] };
+          }
+
           const tsCandidate = base.replace(/\.js$/, '.ts');
           if (fssync.existsSync(tsCandidate)) return { path: tsCandidate };
           return undefined;

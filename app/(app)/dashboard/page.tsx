@@ -495,11 +495,12 @@ export default function Dashboard() {
   };
 
   const handleCopyProject = async (project: any) => {
-    const { id, createdAt, ...projectData } = project;
     try {
       await addDoc(collection(db, 'projects'), {
-        ...projectData,
         name: `${project.name} - Copy`,
+        status: 'uploaded',
+        legacyCode: project.legacyCode || '',
+        userId: user.uid,
         createdAt: serverTimestamp()
       });
     } catch (error) {

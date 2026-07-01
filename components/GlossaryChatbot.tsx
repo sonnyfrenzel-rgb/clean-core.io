@@ -85,7 +85,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
 
       const promptContext = `${systemPrompt}\n\nUser Question: ${text}\nAssistant Response:`;
 
-      const responseText = await callGemini(promptContext, 'gemini-3-flash-preview', false, profile?.geminiApiKey);
+      const responseText = await callGemini(promptContext, 'gemini-3-flash-preview', false);
 
       const botMessage: Message = {
         sender: 'bot',

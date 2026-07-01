@@ -4,8 +4,9 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
+import { loadProjectAndHydrate } from '@/lib/project-loader';
 import Stepper from '@/components/Stepper';
 import { FileText, Download, ArrowRight, ArrowLeft, RefreshCw, Eye, LayoutTemplate, Info, X, ShieldCheck, Network } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
@@ -155,8 +156,7 @@ export default function DesignPage() {
     setLoadingMessage('Architecting solution design...');
     try {
       const db = getDb();
-      const docSnap = await getDoc(doc(db, 'projects', projectId as string));
-      const projData = docSnap.exists() ? docSnap.data() : null;
+      const projData = await loadProjectAndHydrate(projectId as string);
       const route = projData?.extensibilityRoute || 'Side-by-Side (SAP BTP)';
       const isAbapCloud = !route.includes('BTP');
 
@@ -245,7 +245,7 @@ ${analysis}`;
 
       console.log('Generating solution design for project:', projectRef.current?.name);
 
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, profile?.geminiApiKey);
+      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true);
         
       if (!responseText) {
         throw new Error('Gemini returned an empty response.');
@@ -264,20 +264,23 @@ ${analysis}`;
       setLoading(false);
       setLoadingMessage('');
     }
-  }, [projectId, profile]);
+  }, [projectId, profile?.byokConfigured]);
+
+  const generateDesignRef = useRef(generateDesign);
+  useEffect(() => {
+    generateDesignRef.current = generateDesign;
+  }, [generateDesign]);
 
   useEffect(() => {
     const fetchProject = async () => {
-      const db = getDb();
-      const docSnap = await getDoc(doc(db, 'projects', projectId as string));
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setProject({ id: docSnap.id, ...data } as unknown as Project);
+      const data = await loadProjectAndHydrate(projectId as string);
+      if (data) {
+        setProject(data);
         if (data.solutionDesign) {
             setDesign(data.solutionDesign);
             setLoading(false);
         } else if (data.analysis) {
-            generateDesign(data.analysis);
+            generateDesignRef.current(data.analysis);
         } else {
             setLoading(false);
         }
@@ -286,7 +289,7 @@ ${analysis}`;
       }
     };
     fetchProject();
-  }, [projectId, generateDesign]);
+  }, [projectId]);
 
 
   const exportToConfluence = async (viewOnly = false) => {

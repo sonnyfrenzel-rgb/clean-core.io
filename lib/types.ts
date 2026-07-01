@@ -97,6 +97,7 @@ export interface Project {
   // v1.10.0: Compliance Audit Pack
   auditMetadata?: AuditMetadata;
   worklist?: WorklistItem[];
+  activeRunId?: string;
 }
 
 /**
@@ -268,5 +269,8 @@ export interface WorklistItem {
   targetAnchor?: string;
   detail?: string;
 }
+
+export * from './types/analysis-run';
+
 
 

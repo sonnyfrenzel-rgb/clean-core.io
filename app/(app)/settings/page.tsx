@@ -411,21 +411,38 @@ export default function SettingsPage() {
     if (!profile || !isPilotTier || !geminiKey.trim()) return;
     setIsSavingKey(true);
     try {
-      await updateProfile({ geminiApiKey: geminiKey.trim() });
+      const auth = getAuth();
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('/api/secrets/gemini', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ apiKey: geminiKey.trim() }),
+      });
+
+      if (!res.ok) {
+        const errorBody = await res.json().catch(() => ({ error: 'Failed to save key.' }));
+        throw new Error(errorBody.error || 'Failed to save key.');
+      }
+
       setKeySaved(true);
       setGeminiKey('');
       setValidationStatus('idle'); // Reset test connection banner after saving
       setTimeout(() => setKeySaved(false), 3000);
     } catch (error) {
       console.error(error);
+      alert(error instanceof Error ? error.message : 'Failed to save API key.');
     } finally {
       setIsSavingKey(false);
     }
   };
 
   const handleTestConnection = async () => {
-    const testKey = geminiKey.trim() || profile?.geminiApiKey;
-    if (!testKey) {
+    const enteredKey = geminiKey.trim();
+    const hasSavedKey = profile?.byokConfigured;
+    if (!enteredKey && !hasSavedKey) {
       setValidationStatus('error');
       setValidationError('Please enter or save a Gemini API Key first.');
       return;
@@ -436,8 +453,22 @@ export default function SettingsPage() {
     setValidationError('');
 
     try {
-      // Light connectivity request to proxy endpoint
-      await callGemini("Ping. Respond with exactly 'OK' to confirm connectivity.", 'gemini-3-flash-preview', false, testKey);
+      const auth = getAuth();
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('/api/secrets/gemini/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(enteredKey ? { apiKey: enteredKey } : {}),
+      });
+
+      if (!res.ok) {
+        const errorBody = await res.json().catch(() => ({ error: 'Connection test failed.' }));
+        throw new Error(errorBody.error || 'Connection test failed.');
+      }
+
       setValidationStatus('success');
     } catch (error) {
       console.error('Gemini Key connectivity test failed:', error);
@@ -455,11 +486,25 @@ export default function SettingsPage() {
 
     setIsDeletingKey(true);
     try {
-      await updateProfile({ geminiApiKey: '' });
+      const auth = getAuth();
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('/api/secrets/gemini', {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!res.ok) {
+        const errorBody = await res.json().catch(() => ({ error: 'Failed to delete key.' }));
+        throw new Error(errorBody.error || 'Failed to delete key.');
+      }
+
       setGeminiKey('');
       setValidationStatus('idle');
     } catch (error) {
       console.error('Error removing API Key:', error);
+      alert(error instanceof Error ? error.message : 'Failed to delete API key.');
     } finally {
       setIsDeletingKey(false);
     }
@@ -715,7 +760,7 @@ export default function SettingsPage() {
     }
   };
 
-  const tierInfo = getTierInfo(profile?.tier, !!profile?.geminiApiKey);
+  const tierInfo = getTierInfo(profile?.tier, !!profile?.byokConfigured);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
@@ -1202,7 +1247,7 @@ export default function SettingsPage() {
                   <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Bring Your Own Key</h2>
                 </div>
                 
-                {profile?.geminiApiKey && (
+                {profile?.byokConfigured && (
                   <span className="text-[10px] md:text-xs font-black uppercase tracking-widest bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full border border-purple-200">
                     BYOK Active
                   </span>
@@ -1219,7 +1264,7 @@ export default function SettingsPage() {
                     <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">
                       Gemini API Key
                     </label>
-                    {profile?.geminiApiKey && (
+                    {profile?.byokConfigured && (
                       <span className="text-[11px] font-bold text-green-600 flex items-center gap-1">
                         <CheckCircle2 size={12} /> Currently configured
                       </span>
@@ -1234,7 +1279,7 @@ export default function SettingsPage() {
                         setGeminiKey(e.target.value);
                         if (validationStatus !== 'idle') setValidationStatus('idle');
                       }}
-                      placeholder={profile?.geminiApiKey ? "••••••••••••••••••••••••••••••••" : "AIzaSy..."}
+                      placeholder={profile?.byokConfigured ? (profile.byokLast4 ? "••••••••••••" + profile.byokLast4 : "••••••••••••••••••••••••••••••••") : "AIzaSy..."}
                       className="w-full bg-gray-50 border border-gray-200 pl-4 pr-12 py-3.5 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none transition-all font-medium text-gray-900 font-mono text-sm tracking-wider"
                     />
                     <button
@@ -1281,7 +1326,7 @@ export default function SettingsPage() {
                   <button 
                     type="button"
                     onClick={handleTestConnection}
-                    disabled={isValidatingKey || (!geminiKey.trim() && !profile?.geminiApiKey)}
+                    disabled={isValidatingKey || (!geminiKey.trim() && !profile?.byokConfigured)}
                     className="flex-1 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 text-gray-900 py-3.5 px-4 rounded-xl font-bold transition-all disabled:opacity-50 disabled:bg-gray-50 flex items-center justify-center gap-2 text-sm shadow-sm"
                   >
                     {isValidatingKey ? (
@@ -1317,7 +1362,7 @@ export default function SettingsPage() {
                     )}
                   </button>
 
-                  {profile?.geminiApiKey && (
+                  {profile?.byokConfigured && (
                     <button 
                       type="button"
                       onClick={handleDeleteKey}
@@ -1722,7 +1767,7 @@ export default function SettingsPage() {
               <div className="flex justify-between items-center text-sm">
                 <span className="font-bold text-gray-600">Usage</span>
                 <span className="font-black text-gray-900">
-                  {profile?.geminiApiKey 
+                  {profile?.byokConfigured 
                     ? `${profile?.transformationsUsed || 0} / Unlimited (BYOK)`
                     : `${profile?.transformationsUsed || 0} / ${profile?.transformationsLimit || 5}`
                   }

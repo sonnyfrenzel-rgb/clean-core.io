@@ -7,8 +7,9 @@ import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
+import { loadProjectAndHydrate } from '@/lib/project-loader';
 import Stepper from '@/components/Stepper';
 import { PresentationViewer, PresentationData } from '@/components/PresentationViewer';
 import { buildBoardDeck } from '@/lib/board-deck';
@@ -83,11 +84,8 @@ export default function DeliveryPage() {
     let isMounted = true;
     const fetchProject = async () => {
       try {
-        const db = getDb();
-        const docSnap = await getDoc(doc(db, 'projects', projectId as string));
-        if (docSnap.exists() && isMounted) {
-          const data = docSnap.data();
-          const projectData = { id: docSnap.id, ...data } as unknown as Project;
+        const projectData = await loadProjectAndHydrate(projectId as string);
+        if (projectData && isMounted) {
           setProject(projectData);
           
           if (projectData.documentation) {

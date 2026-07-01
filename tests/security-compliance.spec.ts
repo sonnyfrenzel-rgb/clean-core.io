@@ -544,4 +544,87 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     // It should either return 200 (success) or 502/500 if Gemini API is offline, but NOT 403 (MFA blocked)!
     expect(allowedRes.status()).not.toBe(403);
   });
+
+  test('BYOK Server-Only Secret Store Flow (F-01) E2E Test', async ({ request }) => {
+    // 1. Sign in as the normal test user to get an auth token
+    const userCred = await signInWithEmailAndPassword(firebaseAuth, NORMAL_USER_EMAIL, TEST_PASSWORD);
+    const token = await userCred.user.getIdToken();
+
+    // 2. Save the API Key securely (MFA is disabled by default, should pass)
+    const dummyKey = 'AIzaSyDummyKeyForTestingBYOK1234';
+    const saveRes = await request.post('/api/secrets/gemini', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      data: { apiKey: dummyKey }
+    });
+    expect(saveRes.status()).toBe(200);
+    const saveBody = await saveRes.json();
+    expect(saveBody.ok).toBe(true);
+    expect(saveBody.byokConfigured).toBe(true);
+    expect(saveBody.byokLast4).toBe('1234');
+
+    // 3. Enable MFA and verify that the BYOK endpoints are now blocked with 403
+    await adminMergeDoc('users', userCred.user.uid, { mfaEnabled: true });
+
+    const mfaBlockedSaveRes = await request.post('/api/secrets/gemini', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      data: { apiKey: dummyKey }
+    });
+    expect(mfaBlockedSaveRes.status()).toBe(403);
+
+    const mfaBlockedDeleteRes = await request.delete('/api/secrets/gemini', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    expect(mfaBlockedDeleteRes.status()).toBe(403);
+
+    // Disable MFA again to complete the rest of the test
+    await adminMergeDoc('users', userCred.user.uid, { mfaEnabled: false });
+
+    // 4. Test that direct client-side Firestore access to user_secrets is blocked by rules
+    let directReadFailed = false;
+    try {
+      const docRef = doc(firestoreDb, 'user_secrets', userCred.user.uid, 'providers', 'gemini');
+      await getDoc(docRef);
+    } catch (e: any) {
+      directReadFailed = true;
+    }
+    expect(directReadFailed).toBe(true);
+
+    // 5. Test Key connection testing endpoint (expect 400 since it is a dummy key, but it proves the endpoint decrypted and used the key)
+    const testRes = await request.post('/api/secrets/gemini/test', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      data: {} // tests the saved key
+    });
+    expect(testRes.status()).toBe(400); // Invalid key error expected
+    const testBody = await testRes.json();
+    expect(testBody.error).toBeDefined();
+
+    // 6. Delete the key securely
+    const deleteRes = await request.delete('/api/secrets/gemini', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    expect(deleteRes.status()).toBe(200);
+    const deleteBody = await deleteRes.json();
+    expect(deleteBody.ok).toBe(true);
+
+    // 7. Verify profile metadata is updated
+    const userDocRef = doc(firestoreDb, 'users', userCred.user.uid);
+    const userSnap = await getDoc(userDocRef);
+    const userData = userSnap.data();
+    expect(userData?.byokConfigured).toBeUndefined();
+    expect(userData?.byokLast4).toBeUndefined();
+    expect(userData?.geminiApiKey).toBeUndefined();
+  });
 });
