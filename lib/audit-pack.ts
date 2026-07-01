@@ -430,7 +430,7 @@ export async function generateAuditPack(project: Project, idToken: string): Prom
     // Compute local manifest hash for integrity (even without server signature)
     const sortedFiles = [...manifestFiles].sort((a, b) => a.path.localeCompare(b.path));
     const runHash = (project as any).runHash || '';
-    const engineVersion = (project.auditMetadata?.modelCard as any)?.engineVersion || APP_VERSION;
+    const engineVersion = APP_VERSION;
     const sapApiCatalogVersion = (project.auditMetadata?.modelCard as any)?.catalogVersion || '2024.FPS02';
     const canonicalSuffix = `${projectId}:${runId}:${runHash}:${engineVersion}:${sapApiCatalogVersion};`;
     const canonicalManifest = sortedFiles.map(f => `${f.path}:${f.sha256}`).join(';') + ';' + canonicalSuffix;
