@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
     const targetFileName = uploadedFileName || 'unknown_file.abap';
 
     // deterministic server-side calculations
-    const evidenceReport = buildAbapEvidence(legacyCode, targetFileName);
+    const evidenceReport = buildAbapEvidence(legacyCode, targetFileName, targetDeployment as 'public' | 'private');
     const extensibilityReport = routeExtensibility(evidenceReport, targetDeployment);
     const codeInventory = extractCodeInventory(legacyCode);
     const dataCoupling = extractDataCoupling(legacyCode);

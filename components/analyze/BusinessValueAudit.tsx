@@ -8,7 +8,8 @@ interface BusinessValueAuditProps {
   bizFallback: {
     legacyAssetScore: number;
     technicalDebtLevel: string;
-    estimatedMaintenanceCost: number;
+    estimatedMaintenanceCost?: number;
+    estimatedMaintenanceCostRange?: { low: number; high: number };
     valueDrivers: string[];
     cloudRoiSummary: string;
   };
@@ -51,7 +52,13 @@ export default function BusinessValueAudit({ projectId, bizFallback }: BusinessV
               </span>
             </div>
             <div className="mt-2 text-[10px] text-slate-500 font-bold leading-none">
-              Est. Maint. Cost: <span className="text-slate-900 font-black font-mono">{(bizFallback.estimatedMaintenanceCost).toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}/yr</span>
+              Est. Maint. Cost: <span className="text-slate-900 font-black font-mono">
+                {bizFallback.estimatedMaintenanceCostRange
+                  ? `${bizFallback.estimatedMaintenanceCostRange.low.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}–${bizFallback.estimatedMaintenanceCostRange.high.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}/yr`
+                  : bizFallback.estimatedMaintenanceCost
+                    ? `~${bizFallback.estimatedMaintenanceCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}/yr`
+                    : '— requires calibration'}
+              </span>
             </div>
           </div>
         </div>

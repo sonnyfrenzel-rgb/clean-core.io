@@ -1,5 +1,5 @@
 import { tokenize } from './declaration-parser';
-import { SAP_API_CATALOG } from './sap-api-catalog';
+import { SAP_API_CATALOG, SAP_API_CATALOG_VERSION } from './sap-api-catalog';
 
 export type EvidenceKind =
   | 'table-access'
@@ -18,6 +18,8 @@ export type EvidenceKind =
   | 'authority-check'
   | 'hardcoded-value'
   | 'unreleased-api'
+  | 'legacy-mail'
+  | 'credit-management'
   | 'batch-input'
   | 'business-rule';
 
@@ -42,8 +44,11 @@ export interface EvidenceFinding {
   sapReplacement?: {
     objectName: string;
     objectType: 'CDS View' | 'OData API' | 'BAPI' | 'Fiori App' | 'Business Event' | 'Unknown';
-    confidence: 'Verified' | 'Candidate' | 'Needs Validation';
+    confidence: 'Catalog Match' | 'Verified' | 'Candidate' | 'Needs Validation';
+    catalogVersion?: string;
   };
+  /** Set when a finding requires explicit business/architect decision */
+  needsBusinessDecision?: boolean;
 }
 
 export interface AbapEvidenceReport {
@@ -60,10 +65,26 @@ export interface AbapEvidenceReport {
 // SAP standard table map is now imported from sap-api-catalog.ts
 const STANDARD_TABLE_MAP = SAP_API_CATALOG;
 
-export function buildAbapEvidence(code: string, fileName: string): AbapEvidenceReport {
+/**
+ * Resolves ABAP CONSTANTS declarations to their literal values.
+ * e.g. `CONSTANTS c_tcode_va02 VALUE 'VA02'` → { 'C_TCODE_VA02': 'VA02' }
+ */
+function resolveConstants(code: string): Record<string, string> {
+  const map: Record<string, string> = {};
+  const re = /CONSTANTS\s+(\w+).*?VALUE\s+'([^']+)'/gi;
+  let m;
+  while ((m = re.exec(code)) !== null) {
+    map[m[1].toUpperCase()] = m[2];
+  }
+  return map;
+}
+
+export function buildAbapEvidence(code: string, fileName: string, deployment?: 'public' | 'private'): AbapEvidenceReport {
   const findings: EvidenceFinding[] = [];
   const statements = tokenize(code);
   let idCounter = 1;
+  const constantsMap = resolveConstants(code);
+  const isPublicCloud = deployment === 'public';
 
   const FAKE_TABLES = new Set([
     'MODE', 'TASK', 'RISK', 'SCREEN', 'LINE', 'TABLE', 'INTO', 'FROM',
@@ -143,31 +164,36 @@ export function buildAbapEvidence(code: string, fileName: string): AbapEvidenceR
           sapReplacement: hasReplacement ? {
             objectName: STANDARD_TABLE_MAP[table].view,
             objectType: STANDARD_TABLE_MAP[table].type,
-            confidence: 'Verified'
+            confidence: 'Catalog Match',
+            catalogVersion: SAP_API_CATALOG_VERSION
           } : undefined
         });
       } else {
         addFinding({
           kind: 'standard-table-read',
           title: `Direct Read from SAP Standard Table ${table}`,
-          severity: 'Medium',
+          severity: isPublicCloud ? 'High' : 'Medium',
           confidence: 'High',
           objectName: table,
           objectType: 'Database Table',
           lineStart: line,
           snippet: text,
-          technicalDetail: `Direct SELECT statement on standard SAP table ${table}.`,
-          cleanCoreImpact: 'Direct read access to standard SAP tables couples custom code directly to SAP data models, creating upgrade dependencies.',
+          technicalDetail: `Direct SELECT statement on standard SAP table ${table}.${isPublicCloud ? ' In Public Cloud this is a hard break — no direct table access allowed.' : ' In Private Cloud this creates upgrade risk that can be mitigated with Tier 2 wrappers.'}`,
+          cleanCoreImpact: isPublicCloud
+            ? 'In SAP S/4HANA Public Cloud, direct reads on standard tables are strictly forbidden. The system will reject custom code accessing unreleased objects.'
+            : 'Direct read access to standard SAP tables couples custom code to SAP data models, creating upgrade dependencies. In Private Cloud, Tier 2 wrappers can mitigate this.',
           recommendation: `Replace with released CDS views (e.g. I_ views) or official APIs.`,
           targetOptions: ['Developer Extensibility / RAP', 'Key User Extensibility'],
           sapReplacement: hasReplacement ? {
             objectName: STANDARD_TABLE_MAP[table].view,
             objectType: STANDARD_TABLE_MAP[table].type,
-            confidence: 'Verified'
+            confidence: 'Catalog Match',
+            catalogVersion: SAP_API_CATALOG_VERSION
           } : {
             objectName: `I_${table}`,
             objectType: 'CDS View',
-            confidence: 'Candidate'
+            confidence: 'Candidate',
+            catalogVersion: SAP_API_CATALOG_VERSION
           }
         });
       }
@@ -404,7 +430,7 @@ export function buildAbapEvidence(code: string, fileName: string): AbapEvidenceR
     // SAPOffice legacy mailing
     if (/SO_NEW_DOCUMENT_SEND_API1/i.test(text)) {
       addFinding({
-        kind: 'unreleased-api',
+        kind: 'legacy-mail',
         title: 'Legacy Mail Service (SO_NEW_DOCUMENT_SEND_API1)',
         severity: 'Medium',
         confidence: 'High',
@@ -414,6 +440,23 @@ export function buildAbapEvidence(code: string, fileName: string): AbapEvidenceR
         cleanCoreImpact: 'Classic SAPOffice APIs are unreleased and deprecated in S/4HANA Cloud.',
         recommendation: `Migrate to modern BCS (Business Communication Services) APIs, SAP Alert Notification Service, or BTP Email Broker.`,
         targetOptions: ['Developer Extensibility / RAP', 'Integration Suite']
+      });
+    }
+
+    // Credit Management custom logic
+    if (/Z_CREDIT|CREDIT.*EXPOSURE|CREDIT.*RISK|FSCM/i.test(text) && /CALL\s+FUNCTION/i.test(text)) {
+      addFinding({
+        kind: 'credit-management',
+        title: `Credit Management Custom Logic`,
+        severity: 'High',
+        confidence: 'High',
+        lineStart: stmt.line,
+        snippet: text,
+        technicalDetail: `Custom credit management function module detected. Evaluate if SAP FSCM / Advanced Credit Management (F1007) can replace this custom risk engine.`,
+        cleanCoreImpact: 'Custom credit/risk engines duplicate functionality that SAP Financial Supply Chain Management (FSCM) provides as standard. Maintaining custom logic increases TCO and blocks cloud migration.',
+        recommendation: `Evaluate if SAP FSCM / Advanced Credit Management (F1007) covers this use case. If standard coverage is insufficient, implement remaining gap as a Side-by-Side microservice on SAP BTP.`,
+        targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP'],
+        needsBusinessDecision: true
       });
     }
   }

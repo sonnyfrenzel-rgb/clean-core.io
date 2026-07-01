@@ -250,10 +250,10 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
     else if (isStandard) riskLevel = 'Medium';
 
     let recommendation = '';
-    let replacementConfidence: 'Verified' | 'Candidate' | 'Needs Validation' = 'Needs Validation';
+    let replacementConfidence: 'Catalog Match' | 'Verified' | 'Candidate' | 'Needs Validation' = 'Needs Validation';
     if (isStandard && STANDARD_TABLE_MAP[tableName]) {
       recommendation = STANDARD_TABLE_MAP[tableName];
-      replacementConfidence = 'Verified';
+      replacementConfidence = 'Catalog Match';
     } else if (isStandard) {
       recommendation = 'Verify API availability in SAP API Hub';
       replacementConfidence = 'Candidate';
