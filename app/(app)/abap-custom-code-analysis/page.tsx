@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     question: "How does automated ABAP analysis help?",
-    answer: "The analysis isolates modifications in the ABAP code and automatically maps direct access to tables like VBAK, LIKP, or BSEG to released standard OData/REST APIs in the SAP API Business Hub, decoupling the system."
+    answer: "The analysis isolates modifications in the ABAP code and automatically maps direct access to tables like VBAK, LIKP, or BSEG to their official successors via SAP's Cloudification Repository, layered with curated field-level entries — decoupling the system deterministically."
   }
 ];
 
@@ -120,9 +120,9 @@ export default function AbapAnalysisPage() {
                   <Link2 size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-955">SAP API Hub Alignment</h3>
+                  <h3 className="text-lg font-bold text-gray-955">SAP Cloudification Catalog</h3>
                   <p className="text-gray-600 text-sm font-medium mt-1">
-                    Detected table accesses are matched against the official API Business Hub database. The system automatically searches for released OData or REST interfaces (e.g., Business Partner, Sales Order APIs) and suggests them as replacements.
+                    Detected table accesses are resolved against SAP&apos;s official Cloudification Repository (23,000+ classified objects) layered with curated field-level entries. Each mapping links to the official successor with its source layer and confidence level.
                   </p>
                 </div>
               </div>

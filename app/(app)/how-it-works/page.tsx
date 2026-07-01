@@ -27,7 +27,7 @@ const faqs = [
   },
   {
     question: 'What role does the LLM play in the transformation?',
-    answer: 'The LLM (Google Gemini) handles semantic understanding of business logic context, generates human-readable documentation, and produces the final target code. All table-to-API mappings are deterministic rule-based lookups against the SAP API Business Hub catalog — not LLM guesses.'
+    answer: 'The LLM (Google Gemini) handles semantic understanding of business logic context, generates human-readable documentation, and produces the final target code. All table-to-API mappings are deterministic lookups against SAP\'s official Cloudification Repository (the same data source behind SAP ATC checks), layered with curated field-level entries — never LLM guesses.'
   },
   {
     question: 'Can I verify the generated code yourself?',
@@ -115,7 +115,7 @@ export default function HowItWorksPage() {
       {/* Quick Answer */}
       <QuickAnswer
         question="How does Clean-Core.io transform legacy ABAP code?"
-        answer="The pipeline uses deterministic AST parsing to extract table references and function module calls, maps them to official SAP API Business Hub entries via rule-based lookups, and generates target code in your chosen architecture (ABAP Cloud RAP or BTP CAP). The LLM handles only semantic tasks like documentation and naming — never the critical table-to-API mappings."
+        answer="The pipeline uses deterministic AST parsing to extract table references and function module calls, maps them to official successors via SAP's Cloudification Repository (auto-synced weekly) layered with curated field-level entries, and generates target code in your chosen architecture (ABAP Cloud RAP or BTP CAP). The LLM handles only semantic tasks like documentation and naming — never the critical table-to-API mappings."
       />
 
       {/* Section A: Pipeline Overview */}
@@ -154,7 +154,7 @@ export default function HowItWorksPage() {
               <Database size={20} />
             </div>
             <p className="text-gray-600 text-sm font-medium leading-relaxed">
-              Extracted table references (e.g., VBAK, BSEG, LIKP) are resolved against the SAP API Business Hub catalog using deterministic rule-based lookups. Each mapping links to the official API documentation.
+              Extracted table references (e.g., VBAK, BSEG, LIKP) are resolved against a layered catalog: SAP&apos;s official Cloudification Repository (23,000+ objects, auto-synced weekly) provides authoritative coverage, while hand-curated entries add field-level mapping precision. Every finding carries its source layer and the catalog version for audit traceability.
             </p>
           </div>
 

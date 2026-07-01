@@ -5,6 +5,19 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.20.0] — 2026-07-02
+
+### Added
+- **SAP Cloudification Repository Integration**: Analysis engine now maps against SAP's official Cloudification Repository (23,696 classified objects) — the same authoritative source SAP's own ATC compliance checks use.
+- **Layered Catalog Architecture**: Curated field-level entries (Layer 1) always take precedence; SAP repository entries (Layer 2) provide broad, authoritative coverage. Each finding carries its source layer (`curated` vs. `sap-official`) for full audit traceability.
+- **No-Path Verdicts**: Objects without released successors now produce a positive "no clean path" signal backed by SAP's official classification — not just absence from a curated list.
+- **Auto-Sync Pipeline**: Weekly GitHub Actions workflow (`sync-catalog.yml`) syncs the repository, generates a deterministic artifact (SHA-256 verified), and opens a PR. Catalog version in every Audit Pack includes commit hash, entry count, and fetch date.
+- **Dynamic Catalog Badge**: Landing page comparison section shows live classified-object count from the synced artifact.
+
+### Changed
+- **Narrative Correction**: Corrected terminology from "SAP API Business Hub" to "SAP Cloudification Repository" across all public-facing pages (landing page, how-it-works, ABAP analysis, QuickAnswer blocks).
+- **T005 Mapping Upgrade**: T005 (Countries) now correctly maps to `I_COUNTRY` (SAP-official) instead of guessed `I_T005`.
+
 ## [v1.19.0] — 2026-07-02
 
 ### Trust Chain Closure (Security / P0)

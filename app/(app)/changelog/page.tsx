@@ -20,9 +20,21 @@ export const metadata: Metadata = {
 
 const releases = [
   {
-    version: 'v1.19.0',
+    version: 'v1.20.0',
     date: 'July 2, 2026',
     tag: 'Latest',
+    icon: Shield,
+    changes: [
+      'SAP Cloudification Repository Integration — Analysis engine now maps against SAP\'s official Cloudification Repository (23,696 classified objects), the same authoritative source SAP\'s own ATC compliance checks use.',
+      'Layered Catalog Architecture — Curated field-level entries (Layer 1) always take precedence; SAP repository entries (Layer 2) provide authoritative breadth. Each finding carries its source layer (curated vs. sap-official) for audit traceability.',
+      'No-Path Verdicts — Objects without released successors now produce a positive "no clean path" signal backed by SAP\'s official classification, not just absence from a curated list.',
+      'Auto-Sync Pipeline — Weekly GitHub Actions workflow syncs the repository, generates a deterministic artifact (SHA-256 verified), and opens a PR. Catalog version in every Audit Pack includes commit hash, entry count, and fetch date.',
+      'Landing Page Narrative Update — Corrected terminology from "SAP API Business Hub" to the accurate "SAP Cloudification Repository" across all public-facing pages. Added dynamic catalog badge showing live classified-object count.',
+    ],
+  },
+  {
+    version: 'v1.19.0',
+    date: 'July 2, 2026',
     icon: Shield,
     changes: [
       'Trust Chain Closure — All 6 downstream pages (Design, Transformation, Testing, Documentation, Delivery, TCO) now enforce activeRunId presence. Projects without an immutable analysis run are redirected to the Analyze page.',

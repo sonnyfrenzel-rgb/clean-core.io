@@ -25,6 +25,7 @@ import TransformationShowroom from '@/components/TransformationShowroom';
 import TransformationReplay from '@/components/TransformationReplay';
 import SamplePackageDownload from '@/components/SamplePackageDownload';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+import { getCatalogStats } from '@/lib/abap/catalog-service';
 
 export const metadata: Metadata = {
   title: 'The SAP Architect\'s Clean Core Accelerator | Clean-Core.io',
@@ -47,6 +48,7 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
+  const catalogStats = getCatalogStats();
   const schemaJson = {
     "@context": "https://schema.org",
     "@graph": [
@@ -293,7 +295,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-6 mt-16 relative z-20 animate-in fade-in slide-in-from-bottom-20 duration-1000 delay-600">
           <QuickAnswer 
             question="How do you automate SAP Clean Core custom ABAP refactoring?"
-            answer="Clean-Core.io automatically modernizes legacy SAP architectures by parsing custom ABAP code (classes, reports, custom tables) via syntax trees and data-flow analyses. It maps direct database reads (e.g., VBAK, BSEG) to standard, released OData/REST APIs in the SAP API Business Hub, refactoring tightly-coupled logic into cloud-compliant BTP CAP Node.js microservices or in-app RAP components."
+            answer="Clean-Core.io automatically modernizes legacy SAP architectures by parsing custom ABAP code (classes, reports, custom tables) via syntax trees and data-flow analyses. It maps direct database reads (e.g., VBAK, BSEG) to standard, released APIs using SAP's official Cloudification Repository — the same source SAP's own ATC compliance checks use — layered with hand-curated field-level mappings. Tightly-coupled logic is refactored into cloud-compliant BTP CAP Node.js microservices or in-app RAP components."
           />
         </div>
         
@@ -383,8 +385,14 @@ export default function Home() {
                 Technical Capability Comparison
               </h3>
               <p className="text-slate-500 text-sm md:text-base max-w-3xl font-medium leading-relaxed">
-                SAP native tools report where dependencies fail compliance. clean-core.io automates the replacement mappings and compiles ready-to-run BTP or RAP structures.
+                SAP native tools report where dependencies fail compliance. clean-core.io resolves them against SAP&apos;s official Cloudification Repository and compiles ready-to-run BTP or RAP structures.
               </p>
+              {catalogStats.classifiedObjects > 0 && (
+                <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  {catalogStats.classifiedObjects.toLocaleString()} classified SAP objects · Auto-synced from SAP&apos;s official repository
+                </div>
+              )}
             </div>
 
             {/* Mobile View: Stacked Comparison Cards (hidden on desktop) */}
@@ -401,9 +409,9 @@ export default function Home() {
                   cc: { badge: "Interactive", desc: "Visualizes compliance scores, code-minimap heatmaps, and developer checklists in real-time." }
                 },
                 {
-                  title: "Automated SAP API Hub Mapping",
-                  sap: { badge: "Manual Only", desc: "Requires manual search in documentation." },
-                  cc: { badge: "Resolved", desc: "Resolves database reads (VBAK, BSEG) directly to standard APIs." }
+                  title: "SAP Object Successor Mapping",
+                  sap: { badge: "ATC Flags Only", desc: "SAP ATC flags unreleased API usage but doesn't resolve to successors." },
+                  cc: { badge: "Resolved + Synced", desc: "Maps against SAP's official Cloudification Repository (23,000+ objects) with curated field-level precision. Auto-synced weekly." }
                 },
                 {
                   title: "Code Refactoring (Remediation)",
@@ -485,9 +493,9 @@ export default function Home() {
                   cc: { badge: "Interactive", desc: "Visualizes compliance scores, code-minimap heatmaps, and developer checklists in real-time." }
                 },
                 {
-                  title: "SAP API Hub Mapping",
-                  sap: { badge: "Manual Only", level: "weak", desc: "Requires manual search in documentation." },
-                  cc: { badge: "Resolved", desc: "Resolves database reads (VBAK, BSEG) directly to standard APIs." }
+                  title: "SAP Object Successor Mapping",
+                  sap: { badge: "ATC Flags Only", level: "partial", desc: "SAP ATC flags unreleased API usage but doesn't resolve to successors." },
+                  cc: { badge: "Resolved + Synced", desc: "Maps against SAP's official Cloudification Repository (23,000+ objects) with curated field-level precision. Auto-synced weekly." }
                 },
                 {
                   title: "Code Refactoring (Remediation)",
@@ -586,8 +594,8 @@ export default function Home() {
               },
               {
                 icon: <Globe className="w-8 h-8 text-green-600" />,
-                title: 'SAP API Hub Mapping',
-                desc: 'Maps legacy database table operations to released, standard SAP APIs with interactive references to official API Hub listings.',
+                title: 'SAP Cloudification Catalog',
+                desc: 'Maps legacy objects against SAP\'s official Cloudification Repository — the same source behind SAP ATC checks — layered with curated field-level mappings. Weekly auto-synced, versioned, and audit-traceable.',
                 link: '/how-it-works',
                 testId: 'feature-sap-api-hub-mapping'
               },
