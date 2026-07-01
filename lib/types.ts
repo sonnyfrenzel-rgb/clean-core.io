@@ -152,7 +152,7 @@ export interface DataCouplingEntry {
   writeCount?: number;
   lineNumbers?: number[];
   snippets?: string[];
-  replacementConfidence?: 'Verified' | 'Candidate' | 'Needs Validation';
+  replacementConfidence?: 'Catalog Match' | 'Verified' | 'Candidate' | 'Needs Validation';
 }
 
 

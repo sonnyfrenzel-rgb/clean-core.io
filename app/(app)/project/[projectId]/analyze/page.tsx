@@ -259,7 +259,7 @@ export default function AnalyzePage() {
       }
     }, 2000);    try {
       // 1. Gather deterministic evidence and perform extensibility routing
-      const evidenceReport = buildAbapEvidence(codeToAnalyze, uploadedFileName || 'main.abap');
+      const evidenceReport = buildAbapEvidence(codeToAnalyze, uploadedFileName || 'main.abap', targetDeployment as 'public' | 'private');
       const computedRouteReport = routeExtensibility(evidenceReport, targetDeployment || 'private');
       setRouteReport(computedRouteReport);
 
@@ -288,7 +288,7 @@ interface AnalysisData {
     complexity: 'High' | 'Medium' | 'Low'; 
   }>;
   recommendations: {
-    keepCoreClean: string; // STEP 1: What standard SAP replacement exists? Name the EXACT standard object (e.g. "Use released CDS view I_Customer instead of SELECT on KNA1"). Mark each API as "(Verified)", "(Candidate)", or "(Needs Validation)" based on whether you are certain the API exists and covers the use case. Do NOT say "rewrite" here — only name the standard alternative.
+    keepCoreClean: string; // STEP 1: What standard SAP replacement exists? Name the EXACT standard object (e.g. "Use released CDS view I_Customer instead of SELECT on KNA1"). Mark each API as "(Catalog Match)", "(Candidate)", or "(Needs Validation)" based on whether you are certain the API exists and covers the use case. Do NOT say "rewrite" here — only name the standard alternative.
     decommissioning: string; // STEP 2: What legacy objects can be RETIRED after the standard alternative from Step 1 is adopted and validated? Never say "delete" — use "retire after replacement validation, data migration assessment, and business sign-off". Be explicit about which custom objects are candidates for retirement. Must be consistent with keepCoreClean.
     cloudReadiness: string; // STEP 3: If Step 1 fully replaces the legacy code, state "No rewrite needed — standard replacement covers all functionality." If Step 1 only partially covers, describe ONLY the remaining gap that needs ABAP Cloud or Tier 2 wrapping. For complex programs, describe a HYBRID approach: which components go to RAP/In-App, which to CAP/BTP, which to Integration Suite/Event Mesh, and which to Fiori/UI5. NEVER contradict Step 1 or Step 2.
   };
@@ -305,9 +305,9 @@ interface AnalysisData {
   businessValueAnalysis: {
     legacyAssetScore: number; 
     technicalDebtLevel: 'Low' | 'Medium' | 'High';
-    estimatedMaintenanceCost: number; // Provide a RANGE estimate (e.g. lower bound). Always state "estimated" and note key assumptions.
+    estimatedMaintenanceCostRange: { low: number; high: number }; // Provide a RANGE, e.g. { low: 3000, high: 8000 }. Never a single precise number. Add the disclaimer in cloudRoiSummary: 'Estimate requires calibration against actual maintenance baseline data.'
     valueDrivers: string[]; 
-    cloudRoiSummary: string; // Use hedged language: "estimated ~X% reduction", "projected savings of approximately Y". Never claim "100% elimination" or "guaranteed" outcomes. State key assumptions.
+    cloudRoiSummary: string; // Use hedged language: "estimated ~X% reduction", "projected savings of approximately $Y–$Z per year". Always present costs as a range. Never claim "100% elimination" or "guaranteed" outcomes. Always add: "Estimate requires calibration against actual maintenance baseline data."
     plainEnglishActionPlan: string[]; 
   };
 }
@@ -901,7 +901,7 @@ ${codeToAnalyze}`;
 
             ${(() => {
               // Evidence Findings table for Confluence export — deduplicated, sorted by severity
-              const evidenceForExport = legacyCode ? buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap').findings : [];
+              const evidenceForExport = legacyCode ? buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap', targetDeployment as 'public' | 'private').findings : [];
               if (evidenceForExport.length === 0) return '';
               const sevOrd: Record<string, number> = { Critical: 0, High: 1, Medium: 2, Low: 3, Info: 4 };
               const grp = new Map<string, { f: typeof evidenceForExport[0]; lines: number[]; snippets: string[] }>();
@@ -914,7 +914,7 @@ ${codeToAnalyze}`;
               const sorted = Array.from(grp.values()).sort((a, b) => (sevOrd[a.f.severity] ?? 9) - (sevOrd[b.f.severity] ?? 9));
               const rows = sorted.map(({ f, lines, snippets }) => {
                 const sevColor = f.severity === 'Critical' ? '#ffebe6;color:#de350b' : f.severity === 'High' ? '#fff0b3;color:#974f0c' : f.severity === 'Medium' ? '#fffae6;color:#974f0c' : '#e3fcef;color:#006644';
-                const confColor = f.sapReplacement?.confidence === 'Verified' ? '#006644' : f.sapReplacement?.confidence === 'Candidate' ? '#974f0c' : '#de350b';
+                const confColor = (f.sapReplacement?.confidence === 'Catalog Match' || f.sapReplacement?.confidence === 'Verified') ? '#006644' : f.sapReplacement?.confidence === 'Candidate' ? '#974f0c' : '#de350b';
                 return `<tr>
                   <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${f.title}${lines.length > 1 ? ` (${lines.length}×)` : ''}<br/><span style="font-size:10px;color:#6b778c;">${f.kind}</span></td>
                   <td style="padding:10px;border-bottom:1px solid #ebecf0;font-family:monospace;font-size:11px;">${lines.join(', ')}</td>
@@ -1077,8 +1077,8 @@ ${codeToAnalyze}`;
   // Re-derive evidence findings (with snippets, targetOptions, sapReplacement) for the Evidence table
   const evidenceFindings = useMemo(() => {
     if (!legacyCode) return [];
-    return buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap').findings;
-  }, [legacyCode, uploadedFileName]);
+    return buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap', targetDeployment as 'public' | 'private').findings;
+  }, [legacyCode, uploadedFileName, targetDeployment]);
 
   // ── Live-reconcile Clean Core Score ──
   // Generic formula: deterministic construct coverage is the primary signal.
@@ -1500,11 +1500,12 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                                 <div>
                                   <div className="font-medium text-slate-700">{ef.sapReplacement.objectName}</div>
                                   <span className={`text-[10px] font-bold ${
-                                    ef.sapReplacement.confidence === 'Verified' ? 'text-green-600' :
+                                    (ef.sapReplacement.confidence === 'Catalog Match' || ef.sapReplacement.confidence === 'Verified') ? 'text-green-600' :
                                     ef.sapReplacement.confidence === 'Candidate' ? 'text-amber-600' :
                                     'text-red-500'
                                   }`}>
-                                    {ef.sapReplacement.confidence}
+                                    {ef.sapReplacement.confidence === 'Verified' ? 'Catalog Match' : ef.sapReplacement.confidence}
+                                    {ef.sapReplacement.catalogVersion && <span className="text-slate-400 ml-1">(v{ef.sapReplacement.catalogVersion})</span>}
                                   </span>
                                 </div>
                               ) : (

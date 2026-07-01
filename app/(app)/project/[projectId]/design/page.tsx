@@ -43,6 +43,8 @@ import SecurityHardeningChecklist from '@/components/design/SecurityHardeningChe
 import ModernizationRoadmap from '@/components/design/ModernizationRoadmap';
 import RoutingRationale from '@/components/design/RoutingRationale';
 import TargetArchitectureDiagram from '@/components/design/TargetArchitectureDiagram';
+import NonFunctionalRequirements from '@/components/design/NonFunctionalRequirements';
+import type { NFRData } from '@/components/design/NonFunctionalRequirements';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 import { detectFindings, summarize } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
@@ -79,6 +81,7 @@ export default function DesignPage() {
   const router = useRouter();
 
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [nfrData, setNfrData] = useState<NFRData | null>(null);
 
 
   const [activeTerm, setActiveTerm] = useState<string | null>(null);
@@ -257,6 +260,39 @@ ${analysis}`;
       });
       setDesign(responseText);
       setProject((prev: Project | null) => prev ? { ...prev, solutionDesign: responseText } : prev);
+
+      // Separate NFR generation call (non-blocking)
+      setLoadingMessage('Generating non-functional requirements...');
+      try {
+        const nfrPrompt = `You are an SAP Enterprise Architect. Based on the following solution design, generate comprehensive Non-Functional Requirements. Return ONLY a JSON object matching this schema exactly:
+
+{
+  "dataMigration": "Z-table migration strategy: how custom data (e.g. ZSD_*, ZLOG_*) will be migrated to the target system. Include data volume assessment, ETL approach, and validation strategy.",
+  "dataRetention": "Archival and retention policies for legacy and new data. Include regulatory requirements (GoBD, SOX) and archiving approach (ILM, SARA, cloud storage).",
+  "auditTrail": "Change tracking and compliance logging strategy. Include which objects need audit logging, format (SAP Change Documents, Application Log, custom), and retention.",
+  "authorizationConcept": "Role and authorization mapping from legacy auth objects to target model. Include IAM business roles, app descriptors, restriction types, and separation of duties.",
+  "errorHandling": "Retry patterns, circuit breakers, dead-letter queues. Include error classification (transient vs permanent), alerting thresholds, and recovery procedures.",
+  "monitoring": "Observability strategy: dashboards, alerts, log aggregation. Include KPIs (response time, error rate, throughput), health checks, and escalation paths.",
+  "slaRequirements": "Availability targets (e.g. 99.5%), latency budgets (p95 < 2s), throughput requirements, and planned maintenance windows.",
+  "cutoverStrategy": "Migration cutover plan including parallel operation phase, feature flags, rollback procedures, data sync during dual-run, and go-live criteria."
+}
+
+Solution Design Context:
+${responseText.substring(0, 4000)}`;
+
+        const nfrResponse = await callGemini(nfrPrompt, 'gemini-3-flash-preview', true);
+        if (nfrResponse) {
+          try {
+            const cleaned = nfrResponse.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
+            const parsed = JSON.parse(cleaned);
+            setNfrData(parsed);
+            // Persist NFR alongside design
+            await updateDoc(doc(db, 'projects', projectId as string), {
+              nonFunctionalRequirements: parsed
+            });
+          } catch { /* NFR parse failure is non-critical */ }
+        }
+      } catch { /* NFR generation failure is non-critical */ }
     } catch (err: unknown) {
       console.error(err);
       alert(err instanceof Error ? err.message : 'Failed to generate design.');
@@ -279,6 +315,10 @@ ${analysis}`;
         setProject(data);
         if (data.solutionDesign) {
             setDesign(data.solutionDesign);
+            // Restore persisted NFR data if available
+            if ((data as any).nonFunctionalRequirements) {
+              setNfrData((data as any).nonFunctionalRequirements);
+            }
             setLoading(false);
         } else if (data.analysis) {
             generateDesignRef.current(data.analysis);
@@ -605,6 +645,9 @@ ${analysis}`;
 
           {/* Phased Modernization Roadmap timeline */}
           <ModernizationRoadmap roadmap={data.roadmap} />
+
+          {/* Non-Functional Requirements — Enterprise Readiness */}
+          <NonFunctionalRequirements nfr={nfrData} />
 
           {/* Architect sign-off / decision — always last */}
           <div className="bg-white rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-sm">

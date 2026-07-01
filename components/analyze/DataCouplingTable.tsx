@@ -69,10 +69,10 @@ export default function DataCouplingTable({ dataCoupling }: DataCouplingTablePro
                 <td className="py-2 px-2">
                   <span className={clsx(
                     'px-2 py-0.5 rounded-full text-[10px] font-bold border',
-                    entry.replacementConfidence === 'Verified' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                    (entry.replacementConfidence === 'Catalog Match' || entry.replacementConfidence === 'Verified') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                     entry.replacementConfidence === 'Candidate' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                     'bg-slate-50 text-slate-600 border-slate-200'
-                  )}>{entry.replacementConfidence ?? 'Needs Validation'}</span>
+                  )}>{entry.replacementConfidence === 'Verified' ? 'Catalog Match' : (entry.replacementConfidence ?? 'Needs Validation')}</span>
                 </td>
                 <td className="py-2 px-2 text-slate-600 text-[11px]">{entry.recommendation}</td>
               </tr>
