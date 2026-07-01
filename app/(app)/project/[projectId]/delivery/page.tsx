@@ -8,7 +8,7 @@ import type { Project } from '@/lib/types';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { doc, updateDoc } from 'firebase/firestore';
-import { getDb } from '@/lib/firebase';
+import { getDb, getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import Stepper from '@/components/Stepper';
 import { PresentationViewer, PresentationData } from '@/components/PresentationViewer';
@@ -665,14 +665,11 @@ jobs:
                   onClick={async () => {
                     if (!project) return;
                     try {
-                      const blob = await generateAuditPack(project);
+                      const idToken = await getAuth().currentUser?.getIdToken();
+                      if (!idToken) throw new Error('Not authenticated');
+                      const blob = await generateAuditPack(project, idToken);
                       const fileName = (project.name || 'Project').replace(/\s+/g, '_');
                       await saveAs(blob, `${fileName}_AuditPack.zip`);
-                      // Save export timestamp
-                      const db = getDb();
-                      await updateDoc(doc(db, 'projects', projectId as string), {
-                        'auditMetadata.auditPackExportedAt': new Date().toISOString(),
-                      });
                     } catch (err) {
                       console.error('Audit pack generation failed:', err);
                     }
@@ -682,8 +679,13 @@ jobs:
                   <Download size={16} /> Download Audit Pack
                 </button>
                 <span className="text-[10px] text-gray-400 font-medium leading-relaxed">
-                  ZIP contains: executive summary, input fingerprint, decision record, findings, model card, and known limitations.
+                  ZIP contains: executive summary, input fingerprint, decision record, findings, model card, known limitations, and signed manifest.
                 </span>
+              </div>
+              <div className="pt-1">
+                <Link href="/verify-pack" className="text-[10px] text-emerald-600 hover:text-emerald-700 font-semibold underline underline-offset-2">
+                  Verify an existing Audit Pack →
+                </Link>
               </div>
             </div>
           </CollapsibleAccordion>
