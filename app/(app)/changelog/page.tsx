@@ -20,9 +20,22 @@ export const metadata: Metadata = {
 
 const releases = [
   {
-    version: 'v1.20.0',
+    version: 'v1.21.0',
     date: 'July 2, 2026',
     tag: 'Latest',
+    icon: Sparkles,
+    changes: [
+      'Evidence Sweep Animation — Real-time animated overlay during analysis that replays deterministic buildAbapEvidence() scan results. Findings appear sequentially with a glowing scan-line sweeping through the ABAP source code.',
+      'SweepCodeViewer — Monospace ABAP code viewer with syntax highlighting, line numbers, severity-colored finding badges pinned to exact code lines, and auto-scroll following the scan-line.',
+      'SweepVerdictBar — Animated severity counter tiles (Critical/High/Medium/Low) that tick up as findings appear. Verdict locks in with glow pulse on completion.',
+      'Parallel Gemini Timing — Evidence Sweep runs during the 8–15s Gemini API call. Results are buffered and shown after sweep completes. Minimum sweep duration 3.5s.',
+      'Accessibility — prefers-reduced-motion skips animation entirely. aria-live on verdict region. All new components fully responsive (mobile-first).',
+      'Solution Design 1000+ LOC Bug Fix — Fixed critical bug where large ABAP programs failed to generate Solution Design. Smart analysis truncation extracts only design-relevant fields (capped at 15K chars).',
+    ],
+  },
+  {
+    version: 'v1.20.0',
+    date: 'July 2, 2026',
     icon: Shield,
     changes: [
       'SAP Cloudification Repository Integration — Analysis engine now maps against SAP\'s official Cloudification Repository (23,696 classified objects), the same authoritative source SAP\'s own ATC compliance checks use.',

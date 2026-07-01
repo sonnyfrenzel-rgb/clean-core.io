@@ -162,11 +162,11 @@ Make the deterministic scan visible: replay the instant `buildAbapEvidence()` re
 
 | # | Item | Status | Delta Ref |
 |---|------|--------|-----------|
-| 1 | **SweepCodeViewer**: Monospace code viewer with line numbers and annotation slots for finding badges. Supports auto-scroll to next finding position. | 📋 | Evidence Sweep |
-| 2 | **EvidenceSweep Orchestrator**: Sorts findings by `lineStart`, reveals them sequentially over ~3.5s with scan-line animation. Severity-colored badges pin to exact code lines. | 📋 | Evidence Sweep |
-| 3 | **SweepVerdictBar**: Animated counter tiles (Critical/High/Medium/Low) that tick up as findings appear. Coverage verdict "locks in" with glow effect at animation end. | 📋 | Evidence Sweep |
-| 4 | **Parallel Gemini Timing**: Evidence Sweep runs during the 8–15s Gemini API call. Minimum sweep duration 3s; Gemini result is buffered and shown after sweep completes. | 📋 | Evidence Sweep |
-| 5 | **Accessibility**: `prefers-reduced-motion` → instant end-state. `aria-live` on verdict region. Optional timeline scrubber for replay control. | 📋 | Evidence Sweep |
+| 1 | **SweepCodeViewer**: Monospace code viewer with line numbers and annotation slots for finding badges. Supports auto-scroll to next finding position. | ✅ v1.21.0 | Evidence Sweep |
+| 2 | **EvidenceSweep Orchestrator**: Sorts findings by `lineStart`, reveals them sequentially over ~3.5s with scan-line animation. Severity-colored badges pin to exact code lines. | ✅ v1.21.0 | Evidence Sweep |
+| 3 | **SweepVerdictBar**: Animated counter tiles (Critical/High/Medium/Low) that tick up as findings appear. Coverage verdict "locks in" with glow effect at animation end. | ✅ v1.21.0 | Evidence Sweep |
+| 4 | **Parallel Gemini Timing**: Evidence Sweep runs during the 8–15s Gemini API call. Minimum sweep duration 3s; Gemini result is buffered and shown after sweep completes. | ✅ v1.21.0 | Evidence Sweep |
+| 5 | **Accessibility**: `prefers-reduced-motion` → instant end-state. `aria-live` on verdict region. Optional timeline scrubber for replay control. | ✅ v1.21.0 | Evidence Sweep |
 
 ---
 

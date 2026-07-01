@@ -5,6 +5,19 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.21.0] — 2026-07-02
+
+### Added
+- **Evidence Sweep Animation (v1.21 Roadmap)**: Real-time animated overlay during analysis that replays the instant `buildAbapEvidence()` scan results. Findings appear sequentially with a glowing scan-line sweeping through the source code, replacing the previous fake loading stages.
+- **SweepCodeViewer**: Monospace ABAP code viewer with syntax highlighting, line numbers, finding badges pinned to exact code lines, and auto-scroll following the scan-line position.
+- **SweepVerdictBar**: Animated severity counter tiles (Critical/High/Medium/Low) that tick up as findings appear. Verdict "locks in" with glow pulse on completion.
+- **EvidenceSweep Orchestrator**: Sequences finding reveals over ~3.5s minimum duration. Gemini API call runs in parallel — results are buffered until the sweep animation completes.
+- **Accessibility**: `prefers-reduced-motion` skips animation entirely and shows instant end-state. `aria-live` on verdict region. All new components fully responsive (mobile-first).
+
+### Fixed
+- **Solution Design 1000+ LOC Bug**: Fixed critical bug where Solution Design generation failed for large ABAP programs (1000+ LOC). Added `prepareAnalysisContext()` that extracts only design-relevant analysis fields (capped at 15K chars) instead of dumping the full 30-50KB raw analysis JSON into the design prompt.
+- **Design Error State**: Replaced silent `alert()` with persistent `designError` state and visible error UI with retry button and contextual guidance.
+
 ## [v1.20.0] — 2026-07-02
 
 ### Added
