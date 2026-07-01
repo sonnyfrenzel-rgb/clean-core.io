@@ -120,7 +120,7 @@ $signedByKey = $false
 if ($signingKey) {
     $hmac = New-Object System.Security.Cryptography.HMACSHA256
     $hmac.Key = [System.Text.Encoding]::UTF8.GetBytes($signingKey)
-    $sigBytes = $hmac.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($canonicalManifest))
+    $sigBytes = $hmac.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($manifestHash))
     $signatureHex = [System.BitConverter]::ToString($sigBytes).Replace("-", "").ToLower()
     $signedByKey = $true
 }

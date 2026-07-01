@@ -20,9 +20,24 @@ export const metadata: Metadata = {
 
 const releases = [
   {
-    version: 'v1.17.0',
+    version: 'v1.18.0',
     date: 'July 1, 2026',
     tag: 'Latest',
+    icon: Rocket,
+    changes: [
+      'Codex Assessment v1.18 Improvements — Implemented comprehensive analysis and solution design updates matching expert SAP architect feedback.',
+      'Deployment-Aware Severity — Standard table reads are flagged as High severity in Public Cloud (hard SaaS break) and Medium severity in Private Cloud (upgrade risk/Tier 2 wrapper allowed).',
+      'Granular API Mappings — Upgraded stock/inventory mapping to specific entities like I_MaterialStockInStorageLocation (MARD), I_MaterialStockHistory (MARDH), and I_MaterialStockByBatch (MCHB).',
+      'Credit Management Detection — Added custom Credit Management logic detection (Z_CREDIT_*, FSCM, credit-management kind) with standard SAP FSCM recommendation and business decision flag.',
+      'ROI Range Estimations — Replaced precise single-value maintenance cost with ranges (low/high) and clear calibration disclaimers.',
+      'Enterprise Non-Functional Requirements — Added a separate Gemini-powered NFR call in Solution Design generating requirements for Data Migration, Retention, Audit Trail, Authorization, Error Handling, Monitoring, SLA, and Cutover.',
+      'HMAC Signature Consistency — Aligned local PowerShell exports and web exports to sign the SHA-256 manifestHash.',
+      'Verify Pack Warning Statuses — Drag-and-drop verify UI now explicitly differentiates fully authentic (cryptographically signed) packs from unsigned integrity-only packs with warning badges.',
+    ],
+  },
+  {
+    version: 'v1.17.0',
+    date: 'July 1, 2026',
     icon: Rocket,
     changes: [
       'Audit Pack v2: Cryptographic Manifest — Every Audit Pack ZIP now contains a manifest.json with SHA-256 file hashes, engine metadata, and SAP API Catalog version for full audit traceability.',

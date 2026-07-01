@@ -27,9 +27,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (canonicalManifest.length > 32768) {
+      return NextResponse.json(
+        { error: 'Canonical manifest exceeds maximum allowed size of 32KB.' },
+        { status: 400 },
+      );
+    }
+
     if (!signature || typeof signature !== 'string') {
       return NextResponse.json(
         { error: 'Missing required parameter: signature.' },
+        { status: 400 },
+      );
+    }
+
+    if (signature.length !== 64 || !/^[0-9a-fA-F]{64}$/.test(signature)) {
+      return NextResponse.json(
+        { error: 'Invalid signature format. Must be a 64-character hex string.' },
         { status: 400 },
       );
     }

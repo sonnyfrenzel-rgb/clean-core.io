@@ -5,6 +5,21 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.18.0] — 2026-07-01
+
+### Added
+- **Enterprise Non-Functional Requirements**: Dedicated Gemini-powered call in Solution Design to generate detailed guidelines across 8 categories (Data Migration, Retention, Audit Trail, Authorization, Error Handling, Monitoring, SLAs, Cutover). Rendered using a premium accordion UI.
+- **Credit Management Detection**: Deterministic finding for legacy Credit Management patterns (Z_CREDIT_*, FSCM) indicating SAP standard replacement paths and tagging for architect review.
+- **Verify Pack Distinction**: Visual warning states in the Audit Verification page to clearly flag unsigned integrity-only packages from authentic (cryptographically signed) exports.
+- **E2E Test Coverage**: Complete regression suite (`tests/evidence-engine-v118.spec.ts`) asserting new scanner mechanics and scoring calibrations.
+
+### Changed
+- **Verified -> Catalog Match**: Global rename of confidence labels to align with professional auditing terminology. Full backward compatibility maintained for existing Firestore runs.
+- **Deployment-Aware Severity**: Calibration of Standard Fit severity where Public Cloud table reads trigger Critical/High severity warnings, and Private Cloud table reads show Medium severity upgrade risks.
+- **Granular API Mappings**: Matched tables like MARD to `I_MaterialStockInStorageLocation` instead of broad Product master data, adding MARDH and MCHB mappings.
+- **ROI Range Estimates**: Replaced single-value dollar figures with range-based TCO projections and baseline calibration warnings.
+- **Signature Input Alignment**: Uniform HMAC-SHA256 calculation over the manifest SHA-256 hash across both PowerShell and Web-based exports.
+
 ## [v1.17.0] — 2026-07-01
 
 ### Audit Pack v2 & Signed Exports

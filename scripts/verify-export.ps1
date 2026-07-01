@@ -79,7 +79,7 @@ if ($manifest.signed) {
     if ($SigningKey) {
         $hmac = New-Object System.Security.Cryptography.HMACSHA256
         $hmac.Key = [System.Text.Encoding]::UTF8.GetBytes($SigningKey)
-        $sigBytes = $hmac.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($canonicalManifest))
+        $sigBytes = $hmac.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($localManifestHash))
         $localSignature = [System.BitConverter]::ToString($sigBytes).Replace("-", "").ToLower()
         
         if ($localSignature -eq $manifest.signature) {
