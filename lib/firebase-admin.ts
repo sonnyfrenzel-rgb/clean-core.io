@@ -1,6 +1,6 @@
 import { FIRESTORE_DB_ID } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
-import { decrypt } from './s4-credentials';
+import { encrypt, decrypt } from './s4-credentials';
 
 let adminAppModule: any = null;
 let adminAuthModule: any = null;
@@ -459,7 +459,7 @@ export async function assertMfaStepUp(req: Request, decodedToken: any) {
 // Admin Governance Helpers with Audit Event Logging
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function logAuditEvent(db: any, actorUid: string, action: string, targetUid: string) {
+export async function logAuditEvent(db: any, actorUid: string, action: string, targetUid: string) {
   let actorEmail = 'system-admin';
   try {
     const actorDoc = await db.collection('users').doc(actorUid).get();
@@ -541,6 +541,77 @@ export async function adminDeleteUser(adminUid: string, targetUid: string) {
   await db.collection('registration_requests').doc(targetUid).delete();
   await db.collection('users').doc(targetUid).delete();
   await logAuditEvent(db, adminUid, 'DELETE_USER', targetUid);
+}
+
+/**
+ * Saves the user's custom Gemini API key securely:
+ * 1. Encrypts the key using AES-256-GCM.
+ * 2. Saves it in the server-only user_secrets collection.
+ * 3. Updates the user profile with BYOK metadata (configured status, last 4 chars, timestamp)
+ *    and deletes the legacy cleartext key.
+ */
+export async function saveGeminiApiKey(uid: string, apiKey: string): Promise<any> {
+  await ensureInitialized();
+  const { db, FieldValue } = await getAdminDb();
+  const encrypted = encrypt(apiKey);
+  const last4 = apiKey.length > 4 ? apiKey.slice(-4) : apiKey;
+
+  // Set the secret document
+  await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').set({
+    encryptedApiKey: encrypted,
+    last4,
+    rotatedAt: FieldValue.serverTimestamp(),
+  });
+
+  // Mirror metadata to the user profile and remove legacy key
+  await db.collection('users').doc(uid).set({
+    byokConfigured: true,
+    byokLast4: last4,
+    byokRotatedAt: FieldValue.serverTimestamp(),
+    geminiApiKey: FieldValue.delete(),
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  return {
+    byokConfigured: true,
+    byokLast4: last4,
+  };
+}
+
+/**
+ * Loads and decrypts the user's custom Gemini API key.
+ * Returns null if not configured or if decryption fails.
+ */
+export async function loadGeminiApiKey(uid: string): Promise<string | null> {
+  await ensureInitialized();
+  const { db } = await getAdminDb();
+  const snap = await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').get();
+  if (!snap.exists) return null;
+  const data = snap.data();
+  if (!data || !data.encryptedApiKey) return null;
+  
+  try {
+    return decrypt(data.encryptedApiKey);
+  } catch (err) {
+    console.error('Failed to decrypt Gemini API key for user:', uid, err);
+    return null;
+  }
+}
+
+/**
+ * Deletes the user's custom Gemini API key.
+ */
+export async function deleteGeminiApiKey(uid: string): Promise<void> {
+  await ensureInitialized();
+  const { db, FieldValue } = await getAdminDb();
+  await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').delete().catch(() => {});
+  await db.collection('users').doc(uid).set({
+    byokConfigured: FieldValue.delete(),
+    byokLast4: FieldValue.delete(),
+    byokRotatedAt: FieldValue.delete(),
+    geminiApiKey: FieldValue.delete(),
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true }).catch(() => {});
 }
 
 

@@ -251,20 +251,20 @@
       <li><strong>Data Minimization (Art. 5 GDPR):</strong> The system collects only the minimal authentication records required (Name, Email) and strictly processes uploaded ABAP code to extract abstract syntactic structures. No actual master or transactional business records (e.g., customer addresses or bank details) are parsed or processed.</li>
     </ul>
 
-    <h2>2. Browser-Side Cryptographic Vault (BYOK)</h2>
+    <h2>2. Bring Your Own Key (BYOK) Encryption Vault</h2>
     <p>
       Clean-Core.io features a pioneering <strong>Bring Your Own Key (BYOK)</strong> capability to give enterprises full control over their generative AI resources.
     </p>
     
     <div class="highlight-card">
-      <h3>🔒 Browser-Side PBKDF2 & AES-GCM Encrypted Vault</h3>
+      <h3>🔒 Server-Side Envelope Encryption Vault</h3>
       <p>
-        When a pilot user registers their own Google Gemini API key:
+        When a user registers their own Google Gemini API key:
       </p>
       <ol>
-        <li>The key is encrypted directly inside the user's browser using the native Web Cryptography API (SubtleCrypto).</li>
-        <li>We derive a 256-bit AES key using PBKDF2 with 100,000 iterations and a dynamic, random salt.</li>
-        <li>The key is encrypted in authenticated <strong>AES-GCM mode</strong>, guaranteeing that the raw key never transit or sit on our database in plaintext.</li>
+        <li>The key is securely transmitted over TLS and encrypted server-side using authenticated <strong>AES-256-GCM</strong>.</li>
+        <li>Encryption keys are isolated and managed securely, ensuring that credentials never reside on our database in plaintext.</li>
+        <li>Decryption occurs only in ephemeral server-side memory during active AI modernization requests, preventing credential leakage.</li>
       </ol>
     </div>
 

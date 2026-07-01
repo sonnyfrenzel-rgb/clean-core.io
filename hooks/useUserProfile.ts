@@ -16,7 +16,9 @@ export interface UserProfile {
   identityProvider?: 'google' | 'okta' | 'azure_ad';
   accessUntil?: any;
   trialUsed?: boolean;
-  geminiApiKey?: string;
+  byokConfigured?: boolean;
+  byokLast4?: string;
+  byokRotatedAt?: any;
   createdAt: any;
   updatedAt?: any;
   isAdmin?: boolean;

@@ -6,6 +6,7 @@ import {
   refundTransformationQuota,
   QuotaError,
   assertMfaSatisfied,
+  loadGeminiApiKey,
 } from '@/lib/firebase-admin';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 
@@ -110,12 +111,10 @@ export async function POST(request: NextRequest) {
       prompt,
       model = 'gemini-3-flash-preview',
       jsonResponse = false,
-      customApiKey,
     } = body as {
       prompt: string;
       model?: string;
       jsonResponse?: boolean;
-      customApiKey?: string;
     };
 
     if (!prompt) {
@@ -141,9 +140,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Resolve the AI client first (cheap) — BYOK key if provided, else server key.
-    const ai = customApiKey
-      ? new GoogleGenAI({ apiKey: customApiKey })
+    // Resolve the AI client — load BYOK key from secure user_secrets if it exists, else server key.
+    const byokKey = await loadGeminiApiKey(decodedToken.uid);
+    const ai = byokKey
+      ? new GoogleGenAI({ apiKey: byokKey })
       : getDefaultAI();
 
     if (!ai) {
@@ -152,13 +152,12 @@ export async function POST(request: NextRequest) {
           error:
             'Gemini API is not configured. Please set GEMINI_API_KEY in your environment or provide a custom API key in your profile.',
         },
-        { status: 500 },
+        { status: 503 },
       );
     }
 
     // Quota only for the NON-BYOK path: atomically verify + reserve.
-    // Authoritative UID comes from the verified token, never from the body.
-    if (!customApiKey) {
+    if (!byokKey) {
       try {
         await reserveTransformationQuota(decodedToken.uid);
       } catch (err: unknown) {
@@ -192,7 +191,7 @@ export async function POST(request: NextRequest) {
       });
     } catch (genErr) {
       // Refund the reserved unit so failed calls don't consume quota.
-      if (!customApiKey) {
+      if (!byokKey) {
         await refundTransformationQuota(decodedToken.uid);
       }
       throw genErr; // handled by the outer catch below

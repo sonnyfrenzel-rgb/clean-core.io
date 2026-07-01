@@ -857,7 +857,7 @@ export default function Home() {
                 <strong>Limitation of Liability:</strong> In no event shall the administrator, contributors, or developers be held liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, loss of data, system crashes, integration failures, or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort arising in any way out of the use of this software, even if advised of the possibility of such damage.
               </p>
               <p>
-                <strong>Data Privacy & GDPR:</strong> This platform is deployed on secure European cloud nodes in the Belgium (europe-west1) region. Secure stateless proxy layers ensure that uploaded code is processed in memory and never persisted or utilized by Google for LLM model training. All users retain the absolute right to immediate, recursive erasure (Art. 17 GDPR) via the settings dashboard.
+                <strong>Data Privacy & GDPR:</strong> This platform is deployed on secure European cloud nodes in the Belgium (europe-west1) region. Secure stateless proxy layers ensure that uploaded code is processed transiently and saved in your encrypted, user-isolated project workspace (never utilized by Google for LLM model training). All users retain the absolute right to immediate, recursive erasure (Art. 17 GDPR) via the settings dashboard.
               </p>
             </div>
           </div>

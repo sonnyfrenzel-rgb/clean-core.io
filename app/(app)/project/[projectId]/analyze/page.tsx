@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
+import { getDb, handleFirestoreError, OperationType, getAuth } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
 import { UploadCloud, FileCode2, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, Activity, Download, ChevronDown, X, HelpCircle, Info, Sparkles, Trash2, Layers, Shield, BarChart3, Package, Link2, Cpu, Zap } from 'lucide-react';
 import clsx from 'clsx';
@@ -14,12 +14,14 @@ import { DocumentSection } from '@/components/DocumentSection';
 import { Components } from 'react-markdown';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGemini } from '@/lib/gemini';
+import { loadProjectAndHydrate } from '@/lib/project-loader';
 import type { Project, AnalysisData, CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
+import { SAP_API_CATALOG_VERSION } from '@/lib/abap/sap-api-catalog';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import { APP_VERSION } from '@/lib/version';
@@ -68,6 +70,7 @@ export default function AnalyzePage() {
   const [activeTab, setActiveTab] = useState<'evidence' | 'backlog' | 'detailed' | 'strategy'>('evidence');
   const [evidenceFilter, setEvidenceFilter] = useState<'All' | 'Critical' | 'High' | 'Medium' | 'Low'>('All');
   const [isSticky, setIsSticky] = useState(false);
+  const [routeReport, setRouteReport] = useState<import('@/lib/abap/extensibility-router').ExtensibilityRouteReport | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -116,15 +119,14 @@ export default function AnalyzePage() {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const docSnap = await getDoc(doc(getDb(), 'projects', projectId as string));
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setProject({ id: docSnap.id, ...data } as any);
-          setLegacyCode(data.legacyCode || '');
-          if (data.s4Deployment) {
-            setTargetDeployment(data.s4Deployment as 'public' | 'private');
+        const hydratedProject = await loadProjectAndHydrate(projectId as string);
+        if (hydratedProject) {
+          setProject(hydratedProject);
+          setLegacyCode(hydratedProject.legacyCode || '');
+          if (hydratedProject.s4Deployment) {
+            setTargetDeployment(hydratedProject.s4Deployment as 'public' | 'private');
           }
-          if (data.fromExample || data.isExample || searchParams.get('fromExample') === 'true') {
+          if (hydratedProject.fromExample || hydratedProject.isExample || searchParams.get('fromExample') === 'true') {
             setAcceptedTerms(true);
           }
         }
@@ -258,7 +260,8 @@ export default function AnalyzePage() {
     }, 2000);    try {
       // 1. Gather deterministic evidence and perform extensibility routing
       const evidenceReport = buildAbapEvidence(codeToAnalyze, uploadedFileName || 'main.abap');
-      const routeReport = routeExtensibility(evidenceReport, targetDeployment || 'private');
+      const computedRouteReport = routeExtensibility(evidenceReport, targetDeployment || 'private');
+      setRouteReport(computedRouteReport);
 
       const prompt = `You are analyzing a legacy SAP ABAP custom codebase for modernization. The customer has defined their target operating model as: SAP S/4HANA Cloud, ${targetDeployment === 'public' ? 'Public Edition (strict SaaS, zero modifications allowed)' : 'Private Edition / RISE (3-Tier Extensibility Model, allowing custom Tier 2 API wrappers)'}.
 
@@ -269,7 +272,7 @@ Analyze the legacy SAP ABAP code and the evidence findings to provide a highly p
 
 interface AnalysisData {
   projectTitle: string; 
-  cleanCoreScore: number; // YOU MUST USE EXACTLY THIS VALUE: ${routeReport.cleanCoreScore}
+  cleanCoreScore: number; // YOU MUST USE EXACTLY THIS VALUE: ${computedRouteReport.cleanCoreScore}
   summary: string; // Plain english business executive summary.
   asIsContext: string; // Describe what the legacy program does.
   standardFit: {
@@ -292,12 +295,12 @@ interface AnalysisData {
   strategicNextSteps: string[]; 
   extensibilityRouting: {
     // YOU MUST USE EXACTLY THESE PRE-CALCULATED VALUES:
-    recommendedRoute: "${routeReport.recommendedRoute}";
-    confidenceScore: ${routeReport.confidenceScore};
-    rationale: "${routeReport.rationale.replace(/"/g, '\\"')}";
-    targetArtifact: "${routeReport.targetArtifact}";
-    decisionTreeCheckpoints: ${JSON.stringify(routeReport.checkpoints)};
-    comparativeAnalysis: ${JSON.stringify(routeReport.comparativeAnalysis)};
+    recommendedRoute: "${computedRouteReport.recommendedRoute}";
+    confidenceScore: ${computedRouteReport.confidenceScore};
+    rationale: "${computedRouteReport.rationale.replace(/"/g, '\\"')}";
+    targetArtifact: "${computedRouteReport.targetArtifact}";
+    decisionTreeCheckpoints: ${JSON.stringify(computedRouteReport.checkpoints)};
+    comparativeAnalysis: ${JSON.stringify(computedRouteReport.comparativeAnalysis)};
   };
   businessValueAnalysis: {
     legacyAssetScore: number; 
@@ -312,10 +315,10 @@ interface AnalysisData {
 Legacy Code to Analyze:
 ${codeToAnalyze}`;
 
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, profile?.geminiApiKey);
+      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true);
       
-      let recommendedRoute = routeReport.recommendedRoute;
-      let cleanCoreScore = routeReport.cleanCoreScore;
+      let recommendedRoute = computedRouteReport.recommendedRoute;
+      let cleanCoreScore = computedRouteReport.cleanCoreScore;
       let normalizedAnalysis = responseText;
       let initialWorklist: any[] = [];
       try {
@@ -418,40 +421,45 @@ ${codeToAnalyze}`;
           return 'ABAP Source';
         };
 
-        await updateDoc(doc(getDb(), 'projects', projectId as string), {
-          legacyCode: codeToAnalyze,
-          s4Deployment: targetDeployment,
-          analysis: normalizedAnalysis,
-          extensibilityRoute: recommendedRoute,
-          cleanCoreScore: cleanCoreScore,
-          status: 'analyzed',
-          charged: true,
-          transformationBypass: true,
-          worklist: initialWorklist,
-          codeInventory: inventory,
-          dataCoupling: coupling,
-          complexityScore,
-          criticalityScore,
-          originalRecommendation: recommendedRoute === 'Side-by-Side (SAP BTP)' ? 'cap' : 'rap',
-          recommendationConfidence: routeReport.confidenceScore,
-          recommendationJustification: routeReport.rationale,
-          evidenceReport: JSON.parse(JSON.stringify(evidenceReport)),
-          'auditMetadata.inputFingerprint': {
-            sha256: hashHex,
-            fileName: uploadedFileName,
-            lineCount: codeToAnalyze.split('\n').length,
-            byteSize: encoder.encode(codeToAnalyze).byteLength,
-            uploadedAt: new Date().toISOString(),
-            objectType: detectObjectType(codeToAnalyze),
+        const idToken = await getAuth().currentUser?.getIdToken();
+        const response = await fetch('/api/runs/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {}),
           },
-          'auditMetadata.modelCard': {
-            provider: 'google-gemini',
-            model: 'gemini-3-flash-preview',
-            engineVersion: APP_VERSION,
-            byokUsed: !!profile?.geminiApiKey,
-            analysisTimestamp: new Date().toISOString(),
-          },
+          body: JSON.stringify({
+            projectId,
+            legacyCode: codeToAnalyze,
+            s4Deployment: targetDeployment,
+            analysis: normalizedAnalysis,
+            extensibilityRoute: recommendedRoute,
+            cleanCoreScore,
+            complexityScore,
+            criticalityScore,
+            worklist: initialWorklist,
+            codeInventory: inventory,
+            dataCoupling: coupling,
+            evidenceReport: JSON.parse(JSON.stringify(evidenceReport)),
+            originalRecommendation: recommendedRoute === 'Side-by-Side (SAP BTP)' ? 'cap' : 'rap',
+            recommendationConfidence: computedRouteReport.confidenceScore,
+            recommendationJustification: computedRouteReport.rationale,
+            uploadedFileName,
+            modelCard: {
+              provider: 'google-gemini',
+              model: 'gemini-3-flash-preview',
+              byokUsed: !!profile?.byokConfigured,
+            }
+          }),
         });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || 'Failed to record analysis run.');
+        }
+
+        const runResult = await response.json();
+        const activeRunId = runResult.runId;
 
         if (!isAlreadyCharged) {
           try {
@@ -460,32 +468,35 @@ ${codeToAnalyze}`;
             console.error("Non-blocking error during incrementTransformations:", e);
           }
         }
+
+        setProject((prev: Project | null) => 
+          prev 
+            ? { 
+                ...prev, 
+                activeRunId,
+                legacyCode: codeToAnalyze,
+                analysis: normalizedAnalysis, 
+                extensibilityRoute: recommendedRoute, 
+                s4Deployment: targetDeployment, 
+                cleanCoreScore,
+                charged: true,
+                transformationBypass: true,
+                worklist: initialWorklist,
+                codeInventory: inventory,
+                dataCoupling: coupling,
+                complexityScore,
+                criticalityScore,
+                originalRecommendation: recommendedRoute === 'Side-by-Side (SAP BTP)' ? 'cap' : 'rap',
+                recommendationConfidence: computedRouteReport.confidenceScore,
+                recommendationJustification: computedRouteReport.rationale,
+                evidenceReport,
+              } 
+            : null
+        );
       } catch (error) {
-        handleFirestoreError(error, OperationType.UPDATE, `projects/${projectId}`);
+        console.error('Error during analysis persistence:', error);
+        throw error;
       }
-      setProject((prev: Project | null) => 
-        prev 
-          ? { 
-              ...prev, 
-              legacyCode: codeToAnalyze,
-              analysis: normalizedAnalysis, 
-              extensibilityRoute: recommendedRoute, 
-              s4Deployment: targetDeployment, 
-              cleanCoreScore,
-              charged: true,
-              transformationBypass: true,
-              worklist: initialWorklist,
-              codeInventory: inventory,
-              dataCoupling: coupling,
-              complexityScore,
-              criticalityScore,
-              originalRecommendation: recommendedRoute === 'Side-by-Side (SAP BTP)' ? 'cap' : 'rap',
-              recommendationConfidence: routeReport.confidenceScore,
-              recommendationJustification: routeReport.rationale,
-              evidenceReport,
-            } 
-          : null
-      );
     } catch (err: unknown) {
       console.error('Analysis Error:', err);
       const errMessage = err instanceof Error ? err.message : String(err);
@@ -909,6 +920,7 @@ ${codeToAnalyze}`;
                   <td style="padding:10px;border-bottom:1px solid #ebecf0;font-family:monospace;font-size:11px;">${lines.join(', ')}</td>
                   <td style="padding:10px;border-bottom:1px solid #ebecf0;"><code style="font-size:10px;background:#f4f5f7;padding:2px 4px;border-radius:3px;">${snippets[0] || '—'}</code></td>
                   <td style="padding:10px;border-bottom:1px solid #ebecf0;"><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;background:${sevColor};">${f.severity}</span></td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;background:${f.source === 'static-parser' ? '#e3fcef;color:#006644' : f.source === 'catalog-match' ? '#fffae6;color:#974f0c' : '#deebff;color:#0747a6'};">${f.source === 'static-parser' ? '⚙ Parser' : f.source === 'catalog-match' ? '📋 Catalog' : '🤖 LLM'}</span></td>
                   <td style="padding:10px;border-bottom:1px solid #ebecf0;">${f.sapReplacement ? `${f.sapReplacement.objectName}<br/><span style="font-size:10px;font-weight:bold;color:${confColor};">${f.sapReplacement.confidence}</span>` : '—'}</td>
                   <td style="padding:10px;border-bottom:1px solid #ebecf0;font-size:10px;">${(f.targetOptions || []).slice(0, 2).join(', ') || '—'}</td>
                 </tr>`;
@@ -923,6 +935,7 @@ ${codeToAnalyze}`;
                     <th style="padding:10px;border-bottom:2px solid #dfe1e6;font-weight:bold;font-size:11px;text-transform:uppercase;">Lines</th>
                     <th style="padding:10px;border-bottom:2px solid #dfe1e6;font-weight:bold;font-size:11px;text-transform:uppercase;">Snippet</th>
                     <th style="padding:10px;border-bottom:2px solid #dfe1e6;font-weight:bold;font-size:11px;text-transform:uppercase;">Severity</th>
+                    <th style="padding:10px;border-bottom:2px solid #dfe1e6;font-weight:bold;font-size:11px;text-transform:uppercase;">Source</th>
                     <th style="padding:10px;border-bottom:2px solid #dfe1e6;font-weight:bold;font-size:11px;text-transform:uppercase;">SAP Replacement</th>
                     <th style="padding:10px;border-bottom:2px solid #dfe1e6;font-weight:bold;font-size:11px;text-transform:uppercase;">Target</th>
                   </tr>
@@ -1284,6 +1297,50 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   </div>
                 </div>
 
+                {/* ── Evidence Metadata Bar — Confidence + Evidence Count + Assumptions ── */}
+                {routeReport && (
+                  <div className="bg-gradient-to-r from-indigo-50/80 to-violet-50/80 rounded-2xl px-5 py-3 border border-indigo-100/60 flex flex-wrap items-center gap-4 lg:col-span-4">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-wider">Confidence</span>
+                      <span className={clsx(
+                        "text-xs font-black px-2 py-0.5 rounded-full",
+                        routeReport.confidenceScore >= 85 ? "bg-green-100 text-green-700" :
+                        routeReport.confidenceScore >= 70 ? "bg-amber-100 text-amber-700" :
+                        "bg-red-100 text-red-700"
+                      )}>{routeReport.confidenceScore}%</span>
+                    </div>
+                    <div className="h-4 w-px bg-indigo-200/60"></div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-wider">Based on</span>
+                      <span className="text-xs font-bold text-slate-700">
+                        {routeReport.evidenceCounts.totalFindings} findings
+                        {routeReport.evidenceCounts.criticalFindings > 0 && (
+                          <span className="text-red-600 ml-1">({routeReport.evidenceCounts.criticalFindings} critical)</span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="h-4 w-px bg-indigo-200/60"></div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-wider">Supporting</span>
+                      <span className="text-xs font-bold text-slate-700">{routeReport.evidenceCounts.supportingFindings} findings drive the route</span>
+                    </div>
+                    {routeReport.assumptions.length > 0 && (
+                      <>
+                        <div className="h-4 w-px bg-indigo-200/60"></div>
+                        <details className="text-[10px] text-slate-500 cursor-pointer">
+                          <summary className="text-[9px] font-bold text-indigo-400 uppercase tracking-wider hover:text-indigo-600 transition-colors">
+                            {routeReport.assumptions.length} Assumption{routeReport.assumptions.length > 1 ? 's' : ''}
+                          </summary>
+                          <ul className="mt-2 space-y-1 pl-2 max-w-xl">
+                            {routeReport.assumptions.map((a, i) => (
+                              <li key={i} className="text-[10px] text-slate-600 leading-snug">• {a}</li>
+                            ))}
+                          </ul>
+                        </details>
+                      </>
+                    )}
+                  </div>
+                )}
                 {/* Project Summary Card */}
                 <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between lg:col-span-2 relative group">
                   <div>
@@ -1392,13 +1449,14 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                           <th className="px-4 py-2.5">Lines</th>
                           <th className="px-4 py-2.5 min-w-[200px]">Code Snippet</th>
                           <th className="px-4 py-2.5">Severity</th>
+                          <th className="px-4 py-2.5">Source</th>
                           <th className="px-4 py-2.5">SAP Replacement</th>
                           <th className="px-4 py-2.5">Target</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {filtered.length === 0 ? (
-                          <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-400">No findings match the selected filter.</td></tr>
+                          <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-400">No findings match the selected filter.</td></tr>
                         ) : filtered.map(({ finding: ef, lines, snippets }, idx) => (
                           <tr key={`${ef.kind}-${idx}`} className="hover:bg-indigo-50/30 transition-colors">
                             <td className="px-4 py-2.5">
@@ -1424,6 +1482,17 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                                 'bg-green-100 text-green-700'
                               }`}>
                                 {ef.severity}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                ef.source === 'static-parser' ? 'bg-emerald-100 text-emerald-700' :
+                                ef.source === 'catalog-match' ? 'bg-amber-100 text-amber-700' :
+                                'bg-blue-100 text-blue-700'
+                              }`}>
+                                {ef.source === 'static-parser' ? '⚙ Parser' :
+                                 ef.source === 'catalog-match' ? '📋 Catalog' :
+                                 '🤖 LLM'}
                               </span>
                             </td>
                             <td className="px-4 py-2.5">

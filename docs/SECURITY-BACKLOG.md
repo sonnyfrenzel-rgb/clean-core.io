@@ -9,16 +9,16 @@
 
 **Priorität:** Hoch | **Aufwand:** ~5h
 
-- [ ] `geminiApiKey` aus `users/{uid}` Firestore-Profil entfernen
-- [ ] Neue server-only Collection `user_secrets/{uid}/providers/gemini`
-- [ ] Neue API-Routes:
-  - `POST /api/secrets/gemini` — Key setzen/rotieren
-  - `GET /api/secrets/gemini/status` — nur Metadaten (`last4`, `rotatedAt`, `provider`)
-  - `DELETE /api/secrets/gemini` — Key löschen
-- [ ] `/api/gemini`: `customApiKey` Body-Feld entfernen, `useByok: true` Flag
-- [ ] Server lädt BYOK-Key aus `user_secrets`, decryptet, loggt Key-Fingerprint
-- [ ] User-Profil: nur noch `byokConfigured: boolean`, `byokLast4`, `byokRotatedAt`
-- [ ] Settings-UI auf neue API umstellen
+- [x] `geminiApiKey` aus `users/{uid}` Firestore-Profil entfernen
+- [x] Neue server-only Collection `user_secrets/{uid}/providers/gemini`
+- [x] Neue API-Routes:
+  - [x] `POST /api/secrets/gemini` — Key setzen/rotieren
+  - [x] `GET /api/secrets/gemini/status` — nur Metadaten (`last4`, `rotatedAt`, `provider`)
+  - [x] `DELETE /api/secrets/gemini` — Key löschen
+- [x] `/api/gemini`: `customApiKey` Body-Feld entfernen, `useByok: true` Flag
+- [x] Server lädt BYOK-Key aus `user_secrets`, decryptet, loggt Key-Fingerprint
+- [x] User-Profil: nur noch `byokConfigured: boolean`, `byokLast4`, `byokRotatedAt`
+- [x] Settings-UI auf neue API umstellen
 
 **Betroffene Dateien:**
 - `firestore.rules`, `hooks/useUserProfile.ts`, `app/(app)/settings/page.tsx`
@@ -73,6 +73,35 @@
 - [ ] Firebase App Check evaluieren und aktivieren
 
 ### Admin-Panel Referenzen bereinigen
-- [ ] "e.g. Sonny Frenzel" aus Admin-Panelseiten entfernen:
+- [x] "e.g. Sonny Frenzel" aus Admin-Panelseiten entfernen:
   - `app/(app)/admin/approve-tenant/page.tsx:207`
   - `app/(app)/admin/approve/page.tsx:208`
+
+---
+
+## UX Backlog — Codex Audit „Enterprise-Architekten-Reife" (30.06.2026)
+
+### UX-4: Business-Kritikalität editierbar + signierbar
+**Priorität:** Mittel | **Aufwand:** ~3h | **Voraussetzung:** Woche 2 Immutable Runs
+- [ ] Override-Button neben Criticality-Badge (Slider 1-10 + Freitext-Begründung)
+- [ ] `criticalityOverride` Feld im Projekt (score, justification, overriddenBy, overriddenAt)
+- [ ] UI zeigt: „8/10 (overridden from 5/10 by architect@corp.com)"
+- [ ] Confluence/PDF-Export zeigt Override mit Begründung
+- [ ] Kryptographische Signatur des Overrides (nach Immutable Runs)
+
+### UX-5: Audit-Pack Review-Workflow
+**Priorität:** Niedrig | **Aufwand:** ~8h+ | **Voraussetzung:** Woche 2 Immutable Runs + UX-4
+- [ ] Neue Subcollection `projects/{id}/approvals/{approvalId}`
+- [ ] Rollenbasierte Status-Machine (Draft → Prepared → Under Review → Approved)
+- [ ] E-Mail-Notifications an Reviewer/Approver
+- [ ] Signatur-Mechanismus (HMAC oder asymmetrisch)
+- [ ] Audit-Trail für Status-Übergänge
+- [ ] Zwischenlösung: Freitext-Felder „Prepared by / Reviewed by" im Audit-Pack
+
+### UX-6: Revisionssicherer Export
+**Priorität:** Mittel | **Aufwand:** ~3h | **Voraussetzung:** Woche 2 Immutable Runs
+- [ ] `manifest.json` im ZIP-Export mit SHA-256-Hashes aller Dateien
+- [ ] Projektmetadaten, Engine-Version, Katalogversion, Timestamp
+- [ ] SHA-256-Gesamthash als `documentHash`
+- [ ] HMAC-Signierung über neuen API-Endpunkt `/api/export/sign`
+- [ ] Verifizierungs-Upload-Funktion auf der Plattform

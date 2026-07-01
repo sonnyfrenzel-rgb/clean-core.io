@@ -4,8 +4,9 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
+import { loadProjectAndHydrate } from '@/lib/project-loader';
 import Stepper from '@/components/Stepper';
 import { Code2, ArrowRight, ArrowLeft, RefreshCw, FileCode2, Terminal, AlertCircle, CheckCircle2, Cpu, Zap, Copy, Check, X, Folder, Lock, Unlock, Activity, Shield, Layers } from 'lucide-react';
 import clsx from 'clsx';
@@ -411,9 +412,7 @@ CMD ["node", "srv/service.js"]`
     setError('');
     
     try {
-      const db = getDb();
-      const docSnap = await getDoc(doc(db, 'projects', projectId as string));
-      const projData = docSnap.exists() ? docSnap.data() : null;
+      const projData = await loadProjectAndHydrate(projectId as string);
       const route = projData?.extensibilityRoute || 'Side-by-Side (SAP BTP)';
       const isAbapCloud = !route.includes('BTP');
 
@@ -549,7 +548,7 @@ CMD ["node", "srv/service.js"]`
 
       console.log('Transforming code for project:', projectRef.current?.name);
 
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, profile?.geminiApiKey);
+      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true);
       
       let filesArray: ProjectFile[] = [];
       let tests = { config: '', spec: '' };
@@ -588,7 +587,7 @@ CMD ["node", "srv/service.js"]`
       
       setTransformationLog(prev => [...prev, 'Code generation complete.', 'Optimizing imports...', 'Finalizing transformation...']);
       
-      await updateDoc(doc(db, 'projects', projectId as string), {
+      await updateDoc(doc(getDb(), 'projects', projectId as string), {
         generatedCode: JSON.stringify(filesArray),
         testSuite: tests,
         status: 'transformed'
@@ -605,16 +604,14 @@ CMD ["node", "srv/service.js"]`
       setLoading(false);
       setProgress(100);
     }
-  }, [projectId, profile?.geminiApiKey]);
+  }, [projectId, profile?.byokConfigured]);
 
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const db = getDb();
-        const docSnap = await getDoc(doc(db, 'projects', projectId as string));
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setProject(({ id: docSnap.id, ...data } as unknown) as Project);
+        const data = await loadProjectAndHydrate(projectId as string);
+        if (data) {
+          setProject(data);
           if (data.generatedCode) {
             const parsedFiles = parseGeneratedCode(data.generatedCode);
             setFiles(parsedFiles);

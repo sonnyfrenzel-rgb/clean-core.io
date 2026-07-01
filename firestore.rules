@@ -40,7 +40,7 @@ service cloud.firestore {
     function userClientUpdateKeys() {
       return [
         'firstName', 'lastName', 'theme', 'landingPageDefault',
-        'backupEnabled', 'desktopChatbotEnabled', 'geminiApiKey', 'updatedAt'
+        'backupEnabled', 'desktopChatbotEnabled', 'updatedAt'
       ];
     }
 
@@ -90,6 +90,10 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /user_secrets/{userId}/{allPaths=**} {
+      allow read, write: if false; // Block all client-side read/write access.
+    }
+
     // Validate Project entity
     function isValidProject(data, isUpdate) {
       return (isUpdate || (data.name is string && data.name.size() > 0 && data.name.size() < 255)) &&
@@ -115,16 +119,33 @@ service cloud.firestore {
       // Quota enforcement and field validation are server-side
       allow create: if isAuthenticated() && 
                     request.resource.data.keys().hasAll(['name', 'status', 'userId', 'createdAt']) &&
-                    request.resource.data.userId == request.auth.uid;
+                    request.resource.data.keys().hasOnly(['name', 'status', 'userId', 'createdAt', 'legacyCode', 'fromExample']) &&
+                    request.resource.data.userId == request.auth.uid &&
+                    request.resource.data.status in ['uploaded', 'created'] &&
+                    request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 255;
       // F-01: Owner may update their project, but userId and createdAt are immutable.
       // Field-level size validation is enforced by isValidProject().
       allow update: if isAuthenticated() && (
                     isAdmin() || (
                       resource.data.userId == request.auth.uid &&
-                      request.resource.data.userId == resource.data.userId &&
-                      request.resource.data.createdAt == resource.data.createdAt
+                      // Strict allowlist of client-writable draft & interactive fields (Finding P1)
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                        'status', 'legacyCode', 's4Deployment', 'extensibilityRoute', 'solutionDesign',
+                        'targetArchitecture', 'approvedByArchitect', 'architectJustifiedOverride', 'architectSignOffAt', 'approvedBy',
+                        'generatedCode', 'documentation', 'businessDocumentation', 'presentation',
+                        'testCases', 'testSuite', 'coverageEstimate', 'manualTestingRequirements',
+                        'worklist', 'exports', 'updatedAt', 's4Environment'
+                      ])
                     )) && isValidProject(request.resource.data, true);
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /projects/{projectId}/runs/{runId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (resource != null && resource.data.userId == request.auth.uid)
+      );
+      allow write: if false;
     }
 
     // Validate SupportTicket

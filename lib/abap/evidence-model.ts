@@ -1,4 +1,5 @@
 import { tokenize } from './declaration-parser';
+import { SAP_API_CATALOG } from './sap-api-catalog';
 
 export type EvidenceKind =
   | 'table-access'
@@ -20,12 +21,15 @@ export type EvidenceKind =
   | 'batch-input'
   | 'business-rule';
 
+export type EvidenceSource = 'static-parser' | 'catalog-match' | 'llm-narrative';
+
 export interface EvidenceFinding {
   id: string;
   kind: EvidenceKind;
   title: string;
   severity: 'Critical' | 'High' | 'Medium' | 'Low' | 'Info';
   confidence: 'High' | 'Medium' | 'Low';
+  source: EvidenceSource;
   objectName?: string;
   objectType?: string;
   lineStart: number;
@@ -53,34 +57,8 @@ export interface AbapEvidenceReport {
   };
 }
 
-// Map for standard SAP tables and their replacements (from code-assessment)
-const STANDARD_TABLE_MAP: Record<string, { view: string; type: 'CDS View' | 'OData API' | 'BAPI' | 'Fiori App' | 'Business Event' | 'Unknown' }> = {
-  'BSEG': { view: 'I_JournalEntryItem', type: 'CDS View' },
-  'BKPF': { view: 'I_JournalEntry', type: 'CDS View' },
-  'VBAK': { view: 'API_SALES_ORDER_SRV', type: 'OData API' },
-  'VBAP': { view: 'API_SALES_ORDER_SRV', type: 'OData API' },
-  'EKKO': { view: 'API_PURCHASEORDER_PROCESS_SRV', type: 'OData API' },
-  'EKPO': { view: 'API_PURCHASEORDER_PROCESS_SRV', type: 'OData API' },
-  'MARA': { view: 'API_PRODUCT_SRV', type: 'OData API' },
-  'MARC': { view: 'I_ProductPlant', type: 'CDS View' },
-  'MARD': { view: 'I_MaterialStock', type: 'CDS View' },
-  'KNA1': { view: 'API_BUSINESS_PARTNER', type: 'OData API' },
-  'LFA1': { view: 'API_BUSINESS_PARTNER', type: 'OData API' },
-  'LIKP': { view: 'API_OUTBOUND_DELIVERY_SRV', type: 'OData API' },
-  'LIPS': { view: 'API_OUTBOUND_DELIVERY_SRV', type: 'OData API' },
-  'AFKO': { view: 'I_ProductionOrder', type: 'CDS View' },
-  'AUFK': { view: 'I_InternalOrder', type: 'CDS View' },
-  'CDHDR': { view: 'I_ChangeDocument', type: 'CDS View' },
-  'CDPOS': { view: 'I_ChangeDocumentItem', type: 'CDS View' },
-  'T001': { view: 'I_CompanyCode', type: 'CDS View' },
-  'T001W': { view: 'I_Plant', type: 'CDS View' },
-  'MAKT': { view: 'I_ProductDescription', type: 'CDS View' },
-  'ADRC': { view: 'I_Address', type: 'CDS View' },
-  'BUT000': { view: 'API_BUSINESS_PARTNER', type: 'OData API' },
-  'KONV': { view: 'I_PricingElement', type: 'CDS View' },
-  'MSEG': { view: 'I_MaterialDocumentItem', type: 'CDS View' },
-  'MKPF': { view: 'I_MaterialDocument', type: 'CDS View' },
-};
+// SAP standard table map is now imported from sap-api-catalog.ts
+const STANDARD_TABLE_MAP = SAP_API_CATALOG;
 
 export function buildAbapEvidence(code: string, fileName: string): AbapEvidenceReport {
   const findings: EvidenceFinding[] = [];
@@ -97,10 +75,13 @@ export function buildAbapEvidence(code: string, fileName: string): AbapEvidenceR
     'ENTRIES', 'BY', 'ORDER', 'GROUP', 'HAVING'
   ]);
 
-  const addFinding = (finding: Omit<EvidenceFinding, 'id'>) => {
+  const addFinding = (finding: Omit<EvidenceFinding, 'id' | 'source'> & { source?: EvidenceSource }) => {
     findings.push({
       ...finding,
-      id: `CC-${String(idCounter++).padStart(3, '0')}`
+      id: `CC-${String(idCounter++).padStart(3, '0')}`,
+      // Default source: 'static-parser' for all scanner findings.
+      // Upgraded to 'catalog-match' when a sapReplacement is present.
+      source: finding.source || (finding.sapReplacement ? 'catalog-match' : 'static-parser'),
     });
   };
 

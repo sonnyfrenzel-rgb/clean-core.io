@@ -4,8 +4,9 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
+import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import Stepper from '@/components/Stepper';
@@ -102,10 +103,9 @@ export default function TestingSandboxPage() {
 
   useEffect(() => {
     const fetchProject = async () => {
-      const db = getDb();
-      const docSnap = await getDoc(doc(db, 'projects', projectId as string));
-      if (docSnap.exists()) {
-        setProject(docSnap.data() as Project);
+      const data = await loadProjectAndHydrate(projectId as string);
+      if (data) {
+        setProject(data);
       }
       setLoading(false);
     };

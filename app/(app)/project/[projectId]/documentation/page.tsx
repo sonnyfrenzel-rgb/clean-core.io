@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
+import { loadProjectAndHydrate } from '@/lib/project-loader';
 import Stepper from '@/components/Stepper';
 import NavigationButtons from '@/components/NavigationButtons';
 import { Download, ArrowLeft, ArrowRight, RefreshCw, AlertCircle, FileCode2, Briefcase, Target, Users, Settings, Activity, Layers, Cpu, Database, Box, Lock, CheckCircle2, X, Rocket } from 'lucide-react';
@@ -286,11 +287,10 @@ export default function DocumentationPage() {
       if (!projectId) return;
       const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
       try {
-        const db = getDb();
-        const docSnap = await getDoc(doc(db, 'projects', idStr));
-        if (docSnap.exists() && isMounted) {
-          const data = docSnap.data();
-          setProject({ id: docSnap.id, ...data } as unknown as Project);
+        const hydratedData = await loadProjectAndHydrate(idStr);
+        if (hydratedData && isMounted) {
+          setProject(hydratedData);
+          const data = hydratedData;
           if (data.documentation) {
             setDocumentation(data.documentation);
           }
@@ -369,7 +369,7 @@ ${context}`;
 
       console.log('Generating documentation for project:', project.name);
 
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', false, profile?.geminiApiKey);
+      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', false);
       
       if (!responseText) {
         throw new Error('Gemini returned an empty response.');
@@ -398,7 +398,7 @@ ${context}`;
     } finally {
       setIsGeneratingDoc(false);
     }
-  }, [projectId, project, profile?.geminiApiKey]);
+  }, [projectId, project, profile?.byokConfigured]);
 
   const parsedDoc = useMemo(() => {
     if (!documentation) return null;
@@ -473,7 +473,7 @@ Structure the JSON exactly like this:
 }`;
 
       console.log('Generating business process compliance for project:', project.name);
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', false, profile?.geminiApiKey);
+      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', false);
       
       if (!responseText) {
         throw new Error('Gemini returned an empty response.');
@@ -502,7 +502,7 @@ Structure the JSON exactly like this:
     } finally {
       setIsGeneratingBusinessDoc(false);
     }
-  }, [projectId, project, documentation, profile?.geminiApiKey]);
+  }, [projectId, project, documentation, profile?.byokConfigured]);
 
   const downloadBPMN = () => {
     if (profile?.tier === 'pilot') {

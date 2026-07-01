@@ -26,8 +26,8 @@ const trustCards = [
   },
   {
     icon: Server,
-    title: 'Stateless Processing',
-    description: 'Your code is processed in-memory and never persisted on our servers.',
+    title: 'Workspace Isolation',
+    description: 'Your code is stored in your secure project workspace and can be permanently deleted at any time.',
   },
   {
     icon: ShieldCheck,

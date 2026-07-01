@@ -127,6 +127,21 @@ jobs:
             exit 1
           fi
 
+      # F-16: Assert production secrets are configured before deploying (Finding F2)
+      - name: Assert Production Secrets Configured
+        env:
+          AUDIT_SIGNING_KEY: ${{ secrets.AUDIT_SIGNING_KEY }}
+          S4_HOST_ALLOWLIST: ${{ secrets.S4_HOST_ALLOWLIST }}
+        run: |
+          if [ -z "$AUDIT_SIGNING_KEY" ]; then
+            echo "::error::FATAL: AUDIT_SIGNING_KEY secret is not configured in GitHub Repository secrets!"
+            exit 1
+          fi
+          if [ -z "$S4_HOST_ALLOWLIST" ]; then
+            echo "::error::FATAL: S4_HOST_ALLOWLIST secret is not configured in GitHub Repository secrets!"
+            exit 1
+          fi
+
       # Authenticate securely with Google Cloud using OIDC Workload Identity Federation
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
@@ -155,6 +170,7 @@ jobs:
             RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
             S4_ENCRYPTION_KEY=${{ secrets.S4_ENCRYPTION_KEY }}
             S4_HOST_ALLOWLIST=${{ secrets.S4_HOST_ALLOWLIST }}
+            AUDIT_SIGNING_KEY=${{ secrets.AUDIT_SIGNING_KEY }}
             MFA_BACKUP_CODE_PEPPER=${{ secrets.MFA_BACKUP_CODE_PEPPER }}
             PILOT_APPROVAL_SECRET=${{ secrets.PILOT_APPROVAL_SECRET }}
             NODE_OPTIONS=--max-old-space-size=4096

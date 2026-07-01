@@ -1,0 +1,22 @@
+{
+  "name": "clean-core-video",
+  "version": "1.0.0",
+  "description": "clean-core.io LinkedIn spot (Remotion)",
+  "scripts": {
+    "dev": "remotion studio",
+    "render": "remotion render src/index.ts CleanCoreSquare out/clean-core.mp4",
+    "render:vertical": "remotion render src/index.ts CleanCoreVertical out/clean-core-vertical.mp4",
+    "upgrade": "remotion upgrade",
+    "render:short": "remotion render src/index.ts CleanCoreShort out/clean-core-15s.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.4.0"
+  }
+}

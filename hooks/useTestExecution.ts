@@ -52,7 +52,7 @@ export const useTestExecution = (projectId: string, project: Project | null, set
     Return ONLY the raw fixed TypeScript code without any markdown formatting or explanation.`;
     
     try {
-      const fixedCode = await callGemini(prompt, 'gemini-3-flash-preview', false, profile?.geminiApiKey);
+      const fixedCode = await callGemini(prompt, 'gemini-3-flash-preview', false);
       // Strip markdown blocks if present
       return fixedCode.replace(/^```typescript\n?/gm, '').replace(/^```\n?/gm, '');
     } catch (err) {
@@ -71,7 +71,7 @@ export const useTestExecution = (projectId: string, project: Project | null, set
       ERROR:
       ${errorOutput}`;
       
-      const explanation = await callGemini(prompt, 'gemini-3-flash-preview', false, profile?.geminiApiKey);
+      const explanation = await callGemini(prompt, 'gemini-3-flash-preview', false);
       setAiExplanation(explanation || "No explanation provided by AI.");
     } catch (e) {
       console.error("Failed to generate AI explanation", e);

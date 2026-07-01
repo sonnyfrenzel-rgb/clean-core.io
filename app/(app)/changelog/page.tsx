@@ -20,10 +20,36 @@ export const metadata: Metadata = {
 
 const releases = [
   {
-    version: 'v1.14.0',
-    date: 'June 29, 2026',
+    version: 'v1.16.0',
+    date: 'July 1, 2026',
     tag: 'Latest',
     icon: Rocket,
+    changes: [
+      'Phase 2: Immutable Analysis Runs & Fallback Hardening (F-01) — Completed transition to server-authoritative calculations for runs, loading inputs directly from the parent project with fallbacks for upload/re-analysis flows.',
+      'Run Metadata Cleanup — Automatically clears denormalized analysis result fields on the parent project document to prevent stale data conflicts.',
+      'Strict Firestore Rules Allowlist — Enforces strict client write limits on projects via a strict allowlist of interactive/draft fields, making all other results and metadata fully immutable.',
+      'Workflow signing verification — Enforced pre-compilation check in deploy workflow ensuring AUDIT_SIGNING_KEY secret is defined.',
+      'Cryptographic Export Manifest & Verification — Added automated manifest.json generation inside the code archive and verify-export.ps1 verification script with SHA-256 HMAC-SHA256 signature checks.',
+      'Unified Downstream State Hydration — Standardized state loading using a unified resolver helper across all downstream stages.',
+    ],
+  },
+  {
+    version: 'v1.15.0',
+    date: 'June 30, 2026',
+    icon: Shield,
+    changes: [
+      'Phase 2: BYOK Server-Only Secret Store (F-01) — Migrated custom Gemini API Key storage from client-readable Firestore profiles to a server-only encrypted collection (user_secrets/{uid}/providers/gemini) using AES-256-GCM.',
+      'Client Profile Security Isolation — Blocked client-side update access rules to geminiApiKey and fully prohibited client-side operations on the user_secrets collection.',
+      'Client-to-Server BYOK Endpoints — Added secure API routes /api/secrets/gemini (POST/DELETE) and /api/secrets/gemini/test (POST) to test keys and handle rotations server-side, preventing raw keys in the client bundle.',
+      'BYOK Endpoint Hardening (F-02) — Enforced assertMfaSatisfied() step-up gates and strict assertRateLimit() protections on all secret APIs, returning standardized status codes and neutral error messages.',
+      'Admin Panel Reference Sanitization — Cleaned up name placeholders ("e.g. Sonny Frenzel") from the platform administrator and tenant approval panels.',
+      'Automated E2E Test Suite — Added full Playwright E2E coverage for BYOK secure storage and Firestore rule access gating.',
+    ],
+  },
+  {
+    version: 'v1.14.0',
+    date: 'June 29, 2026',
+    icon: Shield,
     changes: [
       'Phase 2 & 3: Deterministic Evidence Scanner — Implemented a statement-based scanner (buildAbapEvidence) to collect static code evidence (BDC, RFC, Native SQL, DB Writes, Dynpro, ALV, GUI Downloads) and fully persist the report in Firestore.',
       'Phase 4 & 7: Extensibility Router & Score Calibration — Added extensibility-router to mathematically calculate the Clean Core score, recommendation confidence, and target architectures (In-App RAP vs Side-by-Side CAP) from scanner findings, preventing LLM score hallucinations.',
