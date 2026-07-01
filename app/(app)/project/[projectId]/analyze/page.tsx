@@ -1164,8 +1164,8 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
       return (
         <div className="space-y-8 font-sans">
           {/* Tab Navigation Menu — Premium with Icons */}
-          <div className="sticky top-[128px] z-40 -mx-6 md:-mx-12 bg-white/95 backdrop-blur-md border-b-2 border-slate-200 shadow-md">
-            <div className="px-4 md:px-8 pt-2 pb-0 flex items-center gap-0 overflow-x-auto">
+          <div className="sticky top-[128px] z-40 -mx-6 md:-mx-12 bg-white/95 backdrop-blur-md border-b-2 border-slate-200 shadow-lg">
+            <div className="px-4 md:px-8 pt-1 pb-0 flex items-center gap-1 overflow-x-auto">
               {[
                 { id: 'evidence', label: 'Decision & Evidence', Icon: Shield },
                 { id: 'backlog', label: 'Gaps Backlog', Icon: AlertCircle },
@@ -1177,13 +1177,13 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   type="button"
                   onClick={() => setActiveTab(tab.id as any)}
                   className={clsx(
-                    "relative px-4 py-3 text-xs font-extrabold uppercase tracking-wider transition-all flex items-center gap-2 border-b-[3px] whitespace-nowrap",
+                    "relative px-5 py-3.5 text-sm font-black uppercase tracking-widest transition-all flex items-center gap-2.5 border-b-[4px] whitespace-nowrap",
                     activeTab === tab.id
-                      ? "border-emerald-500 text-slate-900 bg-emerald-50/40"
+                      ? "border-emerald-500 text-slate-900 bg-emerald-50/60"
                       : "border-transparent text-slate-400 hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50/60"
                   )}
                 >
-                  <tab.Icon size={15} className={clsx(
+                  <tab.Icon size={18} className={clsx(
                     "shrink-0 transition-all",
                     activeTab === tab.id ? "text-emerald-600" : "text-slate-400"
                   )} />
@@ -1342,12 +1342,12 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   </div>
                 )}
                 {/* Project Summary Card */}
-                <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between lg:col-span-2 relative group">
-                  <div>
-                    <div className="flex items-center justify-between">
+                <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between lg:col-span-2 relative group overflow-hidden">
+                  <div className="min-w-0">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Analysis Summary</span>
                       <span className={clsx(
-                        "text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-sm",
+                        "text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-sm shrink-0",
                         (project.s4Deployment || 'public') === 'public'
                           ? "bg-green-50 text-green-700 border-green-200/60"
                           : "bg-blue-50 text-blue-700 border-blue-200/60"
@@ -1355,8 +1355,8 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                         {(project.s4Deployment || 'public') === 'public' ? '☁️ S/4HANA Public Cloud' : '🛡️ Private Cloud / RISE'}
                       </span>
                     </div>
-                    <h3 className="text-2xl font-black text-slate-900 mt-2 mb-3">{analysisData.projectTitle || project.name}</h3>
-                    <p className="text-slate-655 text-sm leading-relaxed">{analysisData.summary}</p>
+                    <h3 className="text-2xl font-black text-slate-900 mt-2 mb-3 break-words">{analysisData.projectTitle || project.name}</h3>
+                    <p className="text-slate-655 text-sm leading-relaxed break-words">{analysisData.summary}</p>
                   </div>
                   <div className="border-t border-slate-100 pt-4 mt-6 flex flex-wrap items-center gap-6">
                     <div>
