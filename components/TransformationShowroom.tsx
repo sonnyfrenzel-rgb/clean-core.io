@@ -5,6 +5,8 @@
    All code examples rendered in the DOM at build time for SEO.
    ========================================================================== */}
 
+import { APP_VERSION } from '@/lib/version';
+
 export default function TransformationShowroom() {
   return (
     <div
@@ -559,7 +561,7 @@ lv_func = get_dynamic_function( ).
         {/* ── Version Stamp ── */}
         <div className="mt-6 text-center">
           <span className="text-[11px] font-mono font-bold text-slate-400 tracking-wide">
-            Verified against Clean-Core Engine v1.13.2 · June 2026
+            Verified against Clean-Core Engine {APP_VERSION} · July 2026
           </span>
         </div>
       </div>
