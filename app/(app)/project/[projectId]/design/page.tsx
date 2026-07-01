@@ -73,6 +73,41 @@ const cleanAndParseJSON = (str: string) => {
   return JSON.parse(cleaned);
 };
 
+/**
+ * Smart analysis context preparation for the Design prompt.
+ * Extracts only design-relevant fields from the analysis JSON instead of
+ * dumping the entire raw response (which can be 30-50KB for large programs).
+ * This prevents Gemini from receiving too much noise and returning malformed JSON.
+ */
+const DESIGN_CONTEXT_LIMIT = 15_000;
+
+const prepareAnalysisContext = (analysis: string): string => {
+  try {
+    const parsed = JSON.parse(analysis);
+    // Extract only design-relevant fields — skip raw evidence, line-level findings, etc.
+    const designContext = {
+      summary: parsed.summary,
+      recommendations: parsed.recommendations,
+      businessProcess: parsed.businessProcess,
+      gaps: Array.isArray(parsed.gaps) ? parsed.gaps.slice(0, 10) : parsed.gaps,
+      strategicNextSteps: parsed.strategicNextSteps,
+      extensibilityRouting: parsed.extensibilityRouting,
+      businessValueAnalysis: parsed.businessValueAnalysis,
+    };
+    const condensed = JSON.stringify(designContext);
+    if (condensed.length > DESIGN_CONTEXT_LIMIT) {
+      return condensed.substring(0, DESIGN_CONTEXT_LIMIT) + '\n... [analysis truncated for design prompt]';
+    }
+    return condensed;
+  } catch {
+    // Fallback: raw string truncation
+    if (analysis.length > DESIGN_CONTEXT_LIMIT) {
+      return analysis.substring(0, DESIGN_CONTEXT_LIMIT) + '\n... [analysis truncated for design prompt]';
+    }
+    return analysis;
+  }
+};
+
 export default function DesignPage() {
   const { projectId } = useParams();
   const { profile } = useUserProfile();
@@ -83,6 +118,7 @@ export default function DesignPage() {
 
   const [loadingMessage, setLoadingMessage] = useState('');
   const [nfrData, setNfrData] = useState<NFRData | null>(null);
+  const [designError, setDesignError] = useState<string | null>(null);
 
 
   const [activeTerm, setActiveTerm] = useState<string | null>(null);
@@ -157,6 +193,7 @@ export default function DesignPage() {
 
   const generateDesign = useCallback(async (analysis: string) => {
     setLoading(true);
+    setDesignError(null);
     setLoadingMessage('Architecting solution design...');
     try {
       const db = getDb();
@@ -201,7 +238,7 @@ interface DesignData {
 }
 
 Analysis Context:
-${analysis}`
+${prepareAnalysisContext(analysis)}`
         : `Act as a Senior SAP Cloud Solutions Architect. Analyze the legacy business analysis results and design a modern, highly professional modular SAP CAP (Cloud Application Programming) side-by-side transformed cloud architecture.
 You must return your output strictly in JSON format. Do not include any markdown formatting, HTML, or explanations outside the JSON object. The JSON must exactly match this TypeScript schema:
 
@@ -245,7 +282,7 @@ interface DesignData {
 }
 
 Analysis Context:
-${analysis}`;
+${prepareAnalysisContext(analysis)}`;
 
       console.log('Generating solution design for project:', projectRef.current?.name);
 
@@ -295,8 +332,9 @@ ${responseText.substring(0, 4000)}`;
         }
       } catch { /* NFR generation failure is non-critical */ }
     } catch (err: unknown) {
-      console.error(err);
-      alert(err instanceof Error ? err.message : 'Failed to generate design.');
+      const msg = err instanceof Error ? err.message : 'Failed to generate design.';
+      console.error('Design generation failed:', err);
+      setDesignError(msg);
     } finally {
       setLoading(false);
       setLoadingMessage('');
@@ -830,6 +868,15 @@ ${responseText.substring(0, 4000)}`;
               <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
                 The target architecture design is empty or was not generated automatically. Click below to trigger the AI Modernization engine.
               </p>
+              {designError && (
+                <div className="mt-4 mx-auto max-w-lg bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 text-left">
+                  <div className="flex items-center gap-2 font-bold mb-1">
+                    <X size={14} className="text-red-500" /> Generation failed
+                  </div>
+                  <p className="text-red-600">{designError}</p>
+                  <p className="text-red-500/70 text-xs mt-2">This may happen with large ABAP programs. The retry uses a condensed analysis context.</p>
+                </div>
+              )}
               <button
                 onClick={() => {
                   if (project?.analysis) {
@@ -840,7 +887,7 @@ ${responseText.substring(0, 4000)}`;
                 }}
                 className="mt-6 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all shadow-md active:scale-95"
               >
-                <RefreshCw className="w-4 h-4" /> Generate Solution Design
+                <RefreshCw className="w-4 h-4" /> {designError ? 'Retry Generation' : 'Generate Solution Design'}
               </button>
             </div>
           )}
