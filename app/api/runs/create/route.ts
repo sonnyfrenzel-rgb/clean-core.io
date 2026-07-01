@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
 import { APP_VERSION } from '@/lib/version';
-import { SAP_API_CATALOG_VERSION } from '@/lib/abap/sap-api-catalog';
+import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
@@ -204,7 +204,7 @@ export async function POST(req: NextRequest) {
       },
       analyzerVersion: APP_VERSION,
       rulesetVersion: 'rules-v1.0',
-      sapApiCatalogVersion: SAP_API_CATALOG_VERSION,
+      sapApiCatalogVersion: getMergedCatalogVersion(),
       model: {
         provider,
         modelId,
@@ -274,7 +274,7 @@ export async function POST(req: NextRequest) {
           provider,
           model: modelId,
           engineVersion: APP_VERSION,
-          catalogVersion: SAP_API_CATALOG_VERSION,
+          catalogVersion: getMergedCatalogVersion(),
           byokUsed,
           analysisTimestamp: new Date().toISOString(),
         }

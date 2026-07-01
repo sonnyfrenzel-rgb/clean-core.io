@@ -21,7 +21,7 @@ import GlossaryTerm from '@/components/GlossaryTerm';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
-import { SAP_API_CATALOG_VERSION } from '@/lib/abap/sap-api-catalog';
+import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import { APP_VERSION } from '@/lib/version';
