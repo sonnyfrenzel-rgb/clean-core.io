@@ -30,6 +30,7 @@ test.describe('Audit & Compliance Hardening v1.18.1 Tests', () => {
       modelCard: {
         provider: 'google-gemini',
         model: 'gemini-3-flash-preview',
+        engineVersion: 'v1.18.1',
         byokUsed: false,
         analysisTimestamp: new Date().toISOString(),
         catalogVersion: '2024.FPS02',
@@ -97,5 +98,35 @@ test.describe('Audit & Compliance Hardening v1.18.1 Tests', () => {
     const body = await res.json();
     expect(body.valid).toBe(true);
     expect(body.manifestHash).toBe(expectedHash);
+  });
+
+  test('api/export/verify should validate run-bound signature and reject tampered metadata', async ({ request }) => {
+    const crypto = require('crypto');
+    const filesString = '00-executive-summary.md:hash123;';
+    const projectId = 'test-project-123';
+    const runId = 'run-555';
+    const runHash = 'runhash777';
+    const engineVersion = 'v1.18.1';
+    const sapApiCatalogVersion = '2024.FPS02';
+    
+    // Correct bound manifest
+    const correctManifest = `${filesString}${projectId}:${runId}:${runHash}:${engineVersion}:${sapApiCatalogVersion};`;
+    const correctHash = crypto.createHash('sha256').update(correctManifest).digest('hex');
+    const signature = crypto.createHmac('sha256', 'dev_audit_signing_key_fallback_clean_core').update(correctHash).digest('hex');
+
+    // Verify correct signature
+    const res1 = await request.post('/api/export/verify', {
+      data: { canonicalManifest: correctManifest, signature }
+    });
+    expect(res1.status()).toBe(200);
+    expect((await res1.json()).valid).toBe(true);
+
+    // Verify with tampered runId
+    const tamperedManifest = `${filesString}${projectId}:run-666:${runHash}:${engineVersion}:${sapApiCatalogVersion};`;
+    const res2 = await request.post('/api/export/verify', {
+      data: { canonicalManifest: tamperedManifest, signature }
+    });
+    expect(res2.status()).toBe(200);
+    expect((await res2.json()).valid).toBe(false);
   });
 });

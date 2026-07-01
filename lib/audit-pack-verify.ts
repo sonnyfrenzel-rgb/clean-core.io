@@ -43,7 +43,7 @@ export interface VerifyResult {
  * 3. Verifies the manifest hash (canonical string)
  * 4. Optionally verifies the HMAC signature via /api/export/verify
  */
-export async function verifyAuditPack(zipBlob: Blob): Promise<VerifyResult> {
+export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Promise<VerifyResult> {
   const errors: string[] = [];
   const fileResults: FileVerifyResult[] = [];
   let manifest: AuditPackManifest | null = null;
@@ -51,8 +51,12 @@ export async function verifyAuditPack(zipBlob: Blob): Promise<VerifyResult> {
   let signatureValid: boolean | null = null;
 
   try {
-    // 1. Load ZIP
-    const zip = await JSZip.loadAsync(zipBlob);
+    // 1. Load ZIP (converting Blobs to ArrayBuffer for Node.js compatibility in tests)
+    let inputData: any = zipBlob;
+    if (zipBlob && typeof (zipBlob as any).arrayBuffer === 'function') {
+      inputData = await (zipBlob as any).arrayBuffer();
+    }
+    const zip = await JSZip.loadAsync(inputData);
 
     // 2. Extract manifest.json
     const manifestFile = zip.file('manifest.json');
@@ -117,7 +121,11 @@ export async function verifyAuditPack(zipBlob: Blob): Promise<VerifyResult> {
 
     // 4. Verify manifest hash
     const sortedFiles = [...manifest.files].sort((a, b) => a.path.localeCompare(b.path));
-    const canonicalManifest = sortedFiles.map(f => `${f.path}:${f.sha256}`).join(';') + ';';
+    let canonicalManifest = sortedFiles.map(f => `${f.path}:${f.sha256}`).join(';') + ';';
+    if (manifest.runHash !== undefined) {
+      const suffix = `${manifest.projectId || ''}:${manifest.runId || ''}:${manifest.runHash || ''}:${manifest.engineVersion || ''}:${manifest.sapApiCatalogVersion || ''};`;
+      canonicalManifest += suffix;
+    }
     const computedManifestHash = await sha256(canonicalManifest);
     manifestHashValid = computedManifestHash === manifest.manifestHash;
 

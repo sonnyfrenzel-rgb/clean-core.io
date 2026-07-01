@@ -20,9 +20,19 @@ export const metadata: Metadata = {
 
 const releases = [
   {
-    version: 'v1.18.0',
+    version: 'v1.18.1',
     date: 'July 1, 2026',
     tag: 'Latest',
+    icon: Rocket,
+    changes: [
+      'Cryptographic Run Binding — Server-side signing endpoint is now bound to the Firestore Run document by including the project ID, run ID, run hash, engine version, and SAP API catalog version in the signature input.',
+      'Unsigned Suffix Alignment — Unsigned manifest exports also compute and check the same suffix metadata context, ensuring uniform integrity verification across all platforms.',
+      'Signature verification hardening — Enforced input length and hex constraints on signature verification to protect the public API endpoint.',
+    ],
+  },
+  {
+    version: 'v1.18.0',
+    date: 'July 1, 2026',
     icon: Rocket,
     changes: [
       'Codex Assessment v1.18 Improvements — Implemented comprehensive analysis and solution design updates matching expert SAP architect feedback.',

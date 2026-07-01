@@ -23,6 +23,7 @@ async function ensureInitialized() {
     }
   }
 
+
   if (adminAppModule.getApps().length > 0) return;
 
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;

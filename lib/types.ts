@@ -45,6 +45,8 @@ export interface S4Config {
 }
 
 export interface Project {
+  id?: string;
+  userId?: string;
   name: string;
   legacyCode?: string;
   analysis?: string;
@@ -122,6 +124,7 @@ export interface AuditMetadata {
     analysisTimestamp?: string;
     designTimestamp?: string;
     transformationTimestamp?: string;
+    catalogVersion?: string;
   };
   auditPackExportedAt?: string;
 }
