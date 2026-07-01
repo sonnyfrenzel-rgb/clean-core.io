@@ -44,6 +44,7 @@ import ConstructFindings from '@/components/analyze/ConstructFindings';
 import GapsWorklist from '@/components/analyze/GapsWorklist';
 import MissingDependencyPrompt from '@/components/analyze/MissingDependencyPrompt';
 import PreAnalysisPreview from '@/components/analyze/PreAnalysisPreview';
+import EvidenceSweep from '@/components/analyze/EvidenceSweep';
 
 import { DocumentSkeleton } from '@/components/Skeleton';
 
@@ -143,6 +144,11 @@ export default function AnalyzePage() {
   const [error, setError] = useState('');
   const [isNavigating, setIsNavigating] = useState(false);
   const hasAutoAnalyzed = useRef(false);
+  const [sweepActive, setSweepActive] = useState(false);
+  const [sweepFindings, setSweepFindings] = useState<import('@/lib/abap/evidence-model').EvidenceFinding[]>([]);
+  const [sweepCode, setSweepCode] = useState('');
+  const geminiResultRef = useRef<{ text: string; evidenceReport: any; computedRouteReport: any; codeToAnalyze: string } | null>(null);
+  const sweepCompleteRef = useRef(false);
 
   const isLegacyCode = (code: string) => {
     // For legacy code, we might want to relax this or change the keywords
@@ -242,26 +248,21 @@ export default function AnalyzePage() {
         return;
     }
     setLoading(true);
-    setLoadingMessage('Parsing ABAP grammar structures and legacy tokens...');
+    setLoadingMessage('Initializing evidence scanner...');
+    sweepCompleteRef.current = false;
+    geminiResultRef.current = null;
 
-    const stages = [
-      'Parsing ABAP grammar structures and legacy tokens...',
-      'Resolving inheritance trees and class dependencies...',
-      'Cross-referencing S/4HANA best-practice released APIs...',
-      'Running extensibility audits & findings assessments...',
-      'Structuring operational JSON metadata profile...'
-    ];
-    let stageIdx = 0;
-    const stageInterval = setInterval(() => {
-      if (stageIdx < stages.length - 1) {
-        stageIdx++;
-        setLoadingMessage(stages[stageIdx]);
-      }
-    }, 2000);    try {
-      // 1. Gather deterministic evidence and perform extensibility routing
+    try {
+      // 1. Gather deterministic evidence and perform extensibility routing (instant)
       const evidenceReport = buildAbapEvidence(codeToAnalyze, uploadedFileName || 'main.abap', targetDeployment as 'public' | 'private');
       const computedRouteReport = routeExtensibility(evidenceReport, targetDeployment || 'private');
       setRouteReport(computedRouteReport);
+
+      // 2. Start Evidence Sweep animation
+      setSweepCode(codeToAnalyze);
+      setSweepFindings(evidenceReport.findings);
+      setSweepActive(true);
+      setLoadingMessage('Evidence Scanner active — scanning code...');
 
       const prompt = `You are analyzing a legacy SAP ABAP custom codebase for modernization. The customer has defined their target operating model as: SAP S/4HANA Cloud, ${targetDeployment === 'public' ? 'Public Edition (strict SaaS, zero modifications allowed)' : 'Private Edition / RISE (3-Tier Extensibility Model, allowing custom Tier 2 API wrappers)'}.
 
@@ -315,6 +316,7 @@ interface AnalysisData {
 Legacy Code to Analyze:
 ${codeToAnalyze}`;
 
+      // 3. Fire Gemini call in parallel — result is buffered until sweep completes
       const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true);
       
       let recommendedRoute = computedRouteReport.recommendedRoute;
@@ -505,7 +507,7 @@ ${codeToAnalyze}`;
       }
       setError(`Failed to analyze the code: ${errMessage || 'Unknown error'}. Please try again.`);
     } finally {
-      clearInterval(stageInterval);
+      setSweepActive(false);
       setLoading(false);
       setLoadingMessage('');
     }
@@ -1775,19 +1777,32 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
       {!project?.analysis ? (
         loading ? (
           <div className="space-y-6">
-            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+            <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
                   <RefreshCw className="w-5 h-5 animate-spin" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">AI Modernization Engine Active</h3>
+                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900">AI Modernization Engine Active</h3>
                   <p className="text-xs text-slate-500">{loadingMessage || 'Performing deep code analysis...'}</p>
                 </div>
               </div>
               <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full uppercase tracking-wider animate-pulse">Running</span>
             </div>
-            <ScannerConsole code={legacyCode} />
+            {sweepActive && sweepFindings.length > 0 ? (
+              <EvidenceSweep
+                code={sweepCode}
+                findings={sweepFindings}
+                isActive={sweepActive}
+                onComplete={() => {
+                  sweepCompleteRef.current = true;
+                  setLoadingMessage('Evidence scan complete — waiting for AI narrative...');
+                }}
+                minDuration={3500}
+              />
+            ) : (
+              <ScannerConsole code={legacyCode} />
+            )}
           </div>
         ) : (
           <div className="space-y-8">
