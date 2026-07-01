@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
+import { enforceActiveRun } from '@/lib/run-guard';
 import Stepper from '@/components/Stepper';
 import { Code2, ArrowRight, ArrowLeft, RefreshCw, FileCode2, Terminal, AlertCircle, CheckCircle2, Cpu, Zap, Copy, Check, X, Folder, Lock, Unlock, Activity, Shield, Layers } from 'lucide-react';
 import clsx from 'clsx';
@@ -610,6 +611,7 @@ CMD ["node", "srv/service.js"]`
     const fetchProject = async () => {
       try {
         const data = await loadProjectAndHydrate(projectId as string);
+        if (!enforceActiveRun(data, projectId as string)) return;
         if (data) {
           setProject(data);
           if (data.generatedCode) {

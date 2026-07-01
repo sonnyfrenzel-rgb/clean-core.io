@@ -71,7 +71,25 @@ export async function POST(req: NextRequest) {
     }
 
     const runData = runDoc.data();
-    const runHash = runData?.runHash || '';
+
+    // 5b. Verify this is the active run for the project (prevents signing stale/orphaned runs)
+    const projectActiveRunId = projectData?.activeRunId;
+    if (projectActiveRunId && projectActiveRunId !== runId) {
+      return NextResponse.json(
+        { error: 'Requested run is not the active run for this project. Please re-run the analysis.' },
+        { status: 409 },
+      );
+    }
+
+    // 5c. Verify run has a valid runHash (ensures run was properly created via /api/runs/create)
+    if (!runData?.runHash) {
+      return NextResponse.json(
+        { error: 'Run document is incomplete (missing runHash). Please re-run the analysis.' },
+        { status: 422 },
+      );
+    }
+
+    const runHash = runData.runHash;
     const engineVersion = runData?.analyzerVersion || '';
     const sapApiCatalogVersion = runData?.sapApiCatalogVersion || '';
 

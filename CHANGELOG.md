@@ -5,6 +5,15 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.19.0] — 2026-07-02
+
+### Trust Chain Closure (Security / P0)
+- **Downstream Run Enforcement**: All 6 downstream pages (Design, Transformation, Testing, Documentation, Delivery, TCO) now enforce `activeRunId` presence via `enforceActiveRun()` guard. Projects without an immutable analysis run are redirected to the Analyze page with an informational banner.
+- **Run Guard Module**: New `lib/run-guard.ts` provides `hasActiveRun()` and `enforceActiveRun()` utilities for centralized Trust Chain enforcement across the platform.
+- **Audit Pack Run Gate**: Audit Pack export now throws an explicit error when no `activeRunId` exists, preventing generation of unbound packs with empty run references.
+- **Server-Authoritative Run Validation**: The `/api/export/sign` endpoint now validates that the requested run is the active run for the project (HTTP 409 if stale) and that the run has a valid `runHash` (HTTP 422 if incomplete).
+- **E2E Trust Chain Test**: New `tests/trust-chain-e2e.spec.ts` with 15 test cases covering run guard logic, audit pack run gate, sign endpoint validation, downstream page guards, and module completeness.
+
 ## [v1.18.1] — 2026-07-01
 
 ### Added

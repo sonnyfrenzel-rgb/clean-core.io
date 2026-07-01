@@ -20,9 +20,21 @@ export const metadata: Metadata = {
 
 const releases = [
   {
+    version: 'v1.19.0',
+    date: 'July 2, 2026',
+    tag: 'Latest',
+    icon: Shield,
+    changes: [
+      'Trust Chain Closure — All 6 downstream pages (Design, Transformation, Testing, Documentation, Delivery, TCO) now enforce activeRunId presence. Projects without an immutable analysis run are redirected to the Analyze page.',
+      'Run Guard Module — New centralized lib/run-guard.ts enforces the Trust Chain with hasActiveRun() and enforceActiveRun() utilities.',
+      'Audit Pack Run Gate — Audit Pack export now blocks generation when no active analysis run exists, preventing unbound evidence packs.',
+      'Server-Authoritative Run Validation — Sign endpoint validates that the requested run is the active run (HTTP 409 if stale) and has a valid runHash (HTTP 422 if incomplete).',
+      'E2E Trust Chain Test — 15-test regression suite validating run guards, audit pack gate, sign endpoint validation, and downstream page enforcement.',
+    ],
+  },
+  {
     version: 'v1.18.1',
     date: 'July 1, 2026',
-    tag: 'Latest',
     icon: Rocket,
     changes: [
       'Cryptographic Run Binding — Server-side signing endpoint is now bound to the Firestore Run document by including the project ID, run ID, run hash, engine version, and SAP API catalog version in the signature input.',

@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
+import { enforceActiveRun } from '@/lib/run-guard';
 import Stepper from '@/components/Stepper';
 import { FileText, Download, ArrowRight, ArrowLeft, RefreshCw, Eye, LayoutTemplate, Info, X, ShieldCheck, Network } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
@@ -310,6 +311,7 @@ ${responseText.substring(0, 4000)}`;
   useEffect(() => {
     const fetchProject = async () => {
       const data = await loadProjectAndHydrate(projectId as string);
+      if (!enforceActiveRun(data, projectId as string)) return;
       if (data) {
         // Batch all state updates together to prevent layout shift ("wobble")
         setProject(data);

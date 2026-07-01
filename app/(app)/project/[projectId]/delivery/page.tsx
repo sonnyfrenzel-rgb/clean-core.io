@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { doc, updateDoc } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
+import { enforceActiveRun } from '@/lib/run-guard';
 import Stepper from '@/components/Stepper';
 import { PresentationViewer, PresentationData } from '@/components/PresentationViewer';
 import { buildBoardDeck } from '@/lib/board-deck';
@@ -85,6 +86,7 @@ export default function DeliveryPage() {
     const fetchProject = async () => {
       try {
         const projectData = await loadProjectAndHydrate(projectId as string);
+        if (!enforceActiveRun(projectData, projectId as string)) return;
         if (projectData && isMounted) {
           setProject(projectData);
           
@@ -670,8 +672,9 @@ jobs:
                       const blob = await generateAuditPack(project, idToken);
                       const fileName = (project.name || 'Project').replace(/\s+/g, '_');
                       await saveAs(blob, `${fileName}_AuditPack.zip`);
-                    } catch (err) {
+                    } catch (err: any) {
                       console.error('Audit pack generation failed:', err);
+                      alert(err?.message || 'Audit pack generation failed. Please try again.');
                     }
                   }}
                   className="flex items-center justify-center gap-2 bg-[#006b2c] text-white px-6 py-3 rounded-xl hover:bg-[#00873a] transition-all font-bold shadow-md shadow-green-600/10 uppercase tracking-widest text-[10px] sm:text-xs"

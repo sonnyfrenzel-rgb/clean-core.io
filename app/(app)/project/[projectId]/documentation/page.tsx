@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
+import { enforceActiveRun } from '@/lib/run-guard';
 import Stepper from '@/components/Stepper';
 import NavigationButtons from '@/components/NavigationButtons';
 import { Download, ArrowLeft, ArrowRight, RefreshCw, AlertCircle, FileCode2, Briefcase, Target, Users, Settings, Activity, Layers, Cpu, Database, Box, Lock, CheckCircle2, X, Rocket } from 'lucide-react';
@@ -288,6 +289,7 @@ export default function DocumentationPage() {
       const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
       try {
         const hydratedData = await loadProjectAndHydrate(idStr);
+        if (!enforceActiveRun(hydratedData, idStr)) return;
         if (hydratedData && isMounted) {
           setProject(hydratedData);
           const data = hydratedData;
