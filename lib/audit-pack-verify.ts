@@ -27,6 +27,7 @@ export interface FileVerifyResult {
 
 export interface VerifyResult {
   success: boolean;
+  status: 'authentic' | 'integrity-only' | 'failed';
   fileIntegrity: FileVerifyResult[];
   manifestHashValid: boolean;
   signatureValid: boolean | null; // null = unsigned or verification skipped
@@ -58,6 +59,7 @@ export async function verifyAuditPack(zipBlob: Blob): Promise<VerifyResult> {
     if (!manifestFile) {
       return {
         success: false,
+        status: 'failed',
         fileIntegrity: [],
         manifestHashValid: false,
         signatureValid: null,
@@ -72,6 +74,7 @@ export async function verifyAuditPack(zipBlob: Blob): Promise<VerifyResult> {
     } catch {
       return {
         success: false,
+        status: 'failed',
         fileIntegrity: [],
         manifestHashValid: false,
         signatureValid: null,
@@ -157,10 +160,22 @@ export async function verifyAuditPack(zipBlob: Blob): Promise<VerifyResult> {
     }
 
     const allFilesValid = fileResults.every(f => f.valid);
-    const success = allFilesValid && manifestHashValid && (signatureValid === true || signatureValid === null);
+    const integrityValid = allFilesValid && manifestHashValid;
+
+    let status: 'authentic' | 'integrity-only' | 'failed' = 'failed';
+    if (integrityValid) {
+      if (signatureValid === true) {
+        status = 'authentic';
+      } else if (signatureValid === null) {
+        status = 'integrity-only';
+      }
+    }
+
+    const success = status === 'authentic' || status === 'integrity-only';
 
     return {
       success,
+      status,
       fileIntegrity: fileResults,
       manifestHashValid,
       signatureValid,
@@ -170,6 +185,7 @@ export async function verifyAuditPack(zipBlob: Blob): Promise<VerifyResult> {
   } catch (err: any) {
     return {
       success: false,
+      status: 'failed',
       fileIntegrity: fileResults,
       manifestHashValid: false,
       signatureValid: null,

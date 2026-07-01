@@ -604,13 +604,35 @@ ${responseText.substring(0, 4000)}`;
     }
 
     if (data) {
-      const isAbapCloud = !(project?.extensibilityRoute || data.architectureOverview?.runtimePlatform || 'BTP').includes('BTP');
+      // Bulletproof defense against malformed/null/undefined elements in arrays (Codex robust rendering)
+      const sanitizedData: DesignData = {
+        projectName: data.projectName || project?.name || 'Transformed System',
+        architectureOverview: {
+          approachDescription: data.architectureOverview?.approachDescription || '',
+          nodeFramework: data.architectureOverview?.nodeFramework || '',
+          runtimePlatform: data.architectureOverview?.runtimePlatform || '',
+        },
+        nodeAppBlueprint: {
+          projectStructure: (data.nodeAppBlueprint?.projectStructure || []).filter(Boolean),
+          apiEndpoints: (data.nodeAppBlueprint?.apiEndpoints || []).filter(Boolean),
+        },
+        cloudServices: (data.cloudServices || []).filter(Boolean),
+        dataSync: {
+          patternName: data.dataSync?.patternName || 'Data Sync',
+          description: data.dataSync?.description || '',
+        },
+        sapStandardApiMapping: (data.sapStandardApiMapping || []).filter(Boolean),
+        securityHardening: (data.securityHardening || []).filter(Boolean),
+        roadmap: (data.roadmap || []).filter(Boolean),
+      };
+
+      const isAbapCloud = !(project?.extensibilityRoute || sanitizedData.architectureOverview?.runtimePlatform || 'BTP').includes('BTP');
       
       return (
         <div className="space-y-12">
           {/* Routing Rationale — Design ↔ Analyze evidence binding */}
           <RoutingRationale
-            extensibilityRoute={project?.extensibilityRoute || data.architectureOverview?.runtimePlatform || 'Side-by-Side (SAP BTP)'}
+            extensibilityRoute={project?.extensibilityRoute || sanitizedData.architectureOverview?.runtimePlatform || 'Side-by-Side (SAP BTP)'}
             cleanCoreScore={project?.cleanCoreScore}
             s4Deployment={project?.s4Deployment}
             findings={findings}
@@ -618,33 +640,33 @@ ${responseText.substring(0, 4000)}`;
 
           {/* Target Architecture Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-            <ArchitectureOverview overview={data.architectureOverview} />
-            <SyncPatternCard dataSync={data.dataSync} />
+            <ArchitectureOverview overview={sanitizedData.architectureOverview} />
+            <SyncPatternCard dataSync={sanitizedData.dataSync} />
           </div>
 
           {/* Decoupling topology diagram */}
           <InteractiveTopology isAbapCloud={isAbapCloud} />
 
           {/* Auto-generated Mermaid architecture diagram */}
-          <TargetArchitectureDiagram data={data} isAbapCloud={isAbapCloud} />
+          <TargetArchitectureDiagram data={sanitizedData} isAbapCloud={isAbapCloud} />
 
           {/* Project blueprint and API catalog */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-            <ProjectBlueprintExplorer projectStructure={data.nodeAppBlueprint?.projectStructure} />
-            <ApiEndpointsCatalog apiEndpoints={data.nodeAppBlueprint?.apiEndpoints} />
+            <ProjectBlueprintExplorer projectStructure={sanitizedData.nodeAppBlueprint?.projectStructure} />
+            <ApiEndpointsCatalog apiEndpoints={sanitizedData.nodeAppBlueprint?.apiEndpoints} />
           </div>
 
           {/* Standard API Hub Reference mappings */}
-          <ApiBusinessHubMapping sapStandardApiMapping={data.sapStandardApiMapping} />
+          <ApiBusinessHubMapping sapStandardApiMapping={sanitizedData.sapStandardApiMapping} />
 
           {/* Cloud Service bindings grid & drawer */}
-          <CloudServiceIntegrations cloudServices={data.cloudServices} />
+          <CloudServiceIntegrations cloudServices={sanitizedData.cloudServices} />
 
           {/* Security Hardening checklist — full width */}
-          <SecurityHardeningChecklist securityHardening={data.securityHardening} findings={findings} />
+          <SecurityHardeningChecklist securityHardening={sanitizedData.securityHardening} findings={findings} />
 
           {/* Phased Modernization Roadmap timeline */}
-          <ModernizationRoadmap roadmap={data.roadmap} />
+          <ModernizationRoadmap roadmap={sanitizedData.roadmap} />
 
           {/* Non-Functional Requirements — Enterprise Readiness */}
           <NonFunctionalRequirements nfr={nfrData} />
@@ -797,7 +819,29 @@ ${responseText.substring(0, 4000)}`;
         </div>
         
         <div className="p-6 md:p-12 bg-[#FDFDFD]">
-          {renderDesignContent()}
+          {design ? (
+            renderDesignContent()
+          ) : (
+            <div className="text-center py-12">
+              <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-slate-800">No Solution Design Found</h3>
+              <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
+                The target architecture design is empty or was not generated automatically. Click below to trigger the AI Modernization engine.
+              </p>
+              <button
+                onClick={() => {
+                  if (project?.analysis) {
+                    generateDesign(project.analysis);
+                  } else {
+                    alert("Analysis data not found. Please go back to Step 2 and run the analysis first.");
+                  }
+                }}
+                className="mt-6 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all shadow-md active:scale-95"
+              >
+                <RefreshCw className="w-4 h-4" /> Generate Solution Design
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -26,6 +26,7 @@ export default function VerifyPackPage() {
     } catch (err: any) {
       setResult({
         success: false,
+        status: 'failed',
         fileIntegrity: [],
         manifestHashValid: false,
         signatureValid: null,
@@ -130,21 +131,41 @@ export default function VerifyPackPage() {
             >
               {/* Overall Status */}
               <div className={`rounded-2xl p-6 border ${
-                result.success
+                result.status === 'authentic'
                   ? 'bg-emerald-50 border-emerald-200'
-                  : 'bg-red-50 border-red-200'
+                  : result.status === 'integrity-only'
+                    ? 'bg-amber-50 border-amber-200'
+                    : 'bg-red-50 border-red-200'
               }`}>
                 <div className="flex items-start gap-4">
-                  {result.success ? (
+                  {result.status === 'authentic' ? (
                     <CheckCircle2 size={32} className="text-emerald-600 shrink-0 mt-0.5" />
+                  ) : result.status === 'integrity-only' ? (
+                    <AlertCircle size={32} className="text-amber-600 shrink-0 mt-0.5" />
                   ) : (
                     <XCircle size={32} className="text-red-600 shrink-0 mt-0.5" />
                   )}
                   <div>
-                    <h2 className={`text-xl font-black ${result.success ? 'text-emerald-800' : 'text-red-800'}`}>
-                      {result.success ? 'Integrity Verified' : 'Verification Failed'}
+                    <h2 className={`text-xl font-black ${
+                      result.status === 'authentic'
+                        ? 'text-emerald-800'
+                        : result.status === 'integrity-only'
+                          ? 'text-amber-800'
+                          : 'text-red-800'
+                    }`}>
+                      {result.status === 'authentic'
+                        ? 'Authenticity & Integrity Verified'
+                        : result.status === 'integrity-only'
+                          ? 'Integrity Verified (Unsigned)'
+                          : 'Verification Failed'}
                     </h2>
-                    <p className={`text-sm mt-1 ${result.success ? 'text-emerald-700' : 'text-red-700'}`}>
+                    <p className={`text-sm mt-1 ${
+                      result.status === 'authentic'
+                        ? 'text-emerald-700'
+                        : result.status === 'integrity-only'
+                          ? 'text-amber-700'
+                          : 'text-red-700'
+                    }`}>
                       {fileName}
                     </p>
                   </div>
