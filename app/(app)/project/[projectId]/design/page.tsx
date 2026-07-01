@@ -275,6 +275,7 @@ ${analysis}`;
     const fetchProject = async () => {
       const data = await loadProjectAndHydrate(projectId as string);
       if (data) {
+        // Batch all state updates together to prevent layout shift ("wobble")
         setProject(data);
         if (data.solutionDesign) {
             setDesign(data.solutionDesign);
@@ -606,7 +607,7 @@ ${analysis}`;
           <ModernizationRoadmap roadmap={data.roadmap} />
 
           {/* Architect sign-off / decision — always last */}
-          <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
+          <div className="bg-white rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-sm">
               <ArchitectSignOff
                 recommendation={project?.originalRecommendation || (project?.extensibilityRoute?.includes('BTP') ? 'cap' : 'rap')}
                 confidenceScore={project?.recommendationConfidence || 75}
@@ -686,15 +687,15 @@ ${analysis}`;
   };
 
   if (loading && !design) return (
-    <div className="animate-in fade-in duration-500">
+    <div className="animate-in fade-in duration-500 min-h-screen">
       <Stepper currentStep={3} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       <div className="bg-white rounded-[2rem] shadow-xl border border-gray-100 overflow-hidden mt-8">
-        <div className="bg-green-600 px-10 py-12 text-white flex items-center justify-between">
+        <div className="bg-green-600 px-6 sm:px-10 py-10 sm:py-12 text-white flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-extrabold tracking-tight">Designing Solution...</h2>
-            <p className="text-green-100 mt-2">{loadingMessage || 'Loading project data...'}</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Designing Solution...</h2>
+            <p className="text-green-100 mt-2 text-sm sm:text-base">{loadingMessage || 'Loading project data...'}</p>
           </div>
-          <RefreshCw className="w-12 h-12 text-white/20 animate-spin" />
+          <RefreshCw className="w-10 h-10 sm:w-12 sm:h-12 text-white/20 animate-spin shrink-0" />
         </div>
         <DocumentSkeleton />
       </div>
@@ -702,32 +703,32 @@ ${analysis}`;
   );
 
   return (
-    <div className="animate-in fade-in duration-500">
+    <div className="animate-in fade-in duration-500 min-h-screen">
       <Stepper currentStep={3} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">Solution Design</h1>
-          <p className="text-gray-500">Review the generated target architecture and technical design.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-2">Solution Design</h1>
+          <p className="text-gray-500 text-sm sm:text-base">Review the generated target architecture and technical design.</p>
         </div>
         {design && (
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
 
             <button 
               onClick={() => project?.analysis && generateDesign(project.analysis)}
-              className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-sm"
+              className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-xs sm:text-sm"
             >
               <RefreshCw size={16} /> Regenerate
             </button>
             <button 
               onClick={() => exportToConfluence(true)} 
-              className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-sm"
+              className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-xs sm:text-sm"
             >
               <Eye size={16} /> View HTML
             </button>
             <button 
               onClick={() => exportToConfluence(false)} 
-              className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-sm"
+              className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-xs sm:text-sm"
             >
               <Download size={16} /> Export HTML
             </button>
@@ -738,14 +739,14 @@ ${analysis}`;
 
 
       <div id="design-report" className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mb-12">
-        <div className="bg-gray-50 border-b border-gray-200 px-8 py-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="bg-green-600 p-2.5 rounded-xl shadow-green-200 shadow-lg">
-              <LayoutTemplate className="w-6 h-6 text-white" />
+        <div className="bg-gray-50 border-b border-gray-200 px-4 sm:px-8 py-4 sm:py-6 flex items-center justify-between">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div className="bg-green-600 p-2 sm:p-2.5 rounded-xl shadow-green-200 shadow-lg shrink-0">
+              <LayoutTemplate className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Architecture & Design Specification</h2>
-              <p className="text-sm text-gray-500">Project: {project?.name || 'Loading...'}</p>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-xl font-bold text-gray-900 truncate">Architecture & Design Specification</h2>
+              <p className="text-xs sm:text-sm text-gray-500 truncate">Project: {project?.name || 'Loading...'}</p>
             </div>
           </div>
           <div className="flex gap-3">
