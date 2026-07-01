@@ -141,15 +141,18 @@ The single most important milestone: close the server-authoritative evidence cha
 
 ### v1.20 — Audit & Verify Hardening *(Security / P1)*
 
-Harden the signature and verification layer for external auditor credibility.
+Harden the signature and verification layer for external auditor credibility. Close the remaining Trust Chain gaps identified in the [Codex v1.19.0 Audit](docs/codex-audit-v119.md).
 
-| # | Item | Status | Delta Ref |
+| # | Item | Status | Codex Ref |
 |---|------|--------|-----------|
-| 1 | **Unsigned Pack Visual Distinction**: Verify UI shows amber "Integrity Only" status for unsigned packs instead of green success. Three-tier model: `authentic` → `integrity-only` → `failed`. | ✅ v1.18.0 | P1 §3 |
-| 2 | **Verify Endpoint Input Hardening**: Enforce `signature.length === 64`, hex regex, `canonicalManifest` max 32KB, structured error codes. | ✅ v1.18.1 | P2 §2 |
-| 3 | **Signature Format Unification**: Web and PowerShell exports both use `HMAC_SHA256(signingKey, manifestHash)` — single canonical format. | ✅ v1.18.0 | P1 §4 |
-| 4 | **Draft vs. Final Field Separation**: Introduce `draft_` prefix convention for client-writable fields (`draftSolutionDesign`, `draftGeneratedCode`). Final artifacts only in immutable Run sub-documents. | 📋 | P1 §5 |
-| 5 | **Server-Side Audit Pack Generation**: Manifest and evidence files generated server-side from Run data. Client only triggers download, never supplies file content for signing. | 📋 | P1 §2 |
+| 1 | **Unsigned Pack Visual Distinction**: Verify UI shows amber "Integrity Only" status for unsigned packs instead of green success. Three-tier model: `authentic` → `integrity-only` → `failed`. | ✅ v1.18.0 | — |
+| 2 | **Verify Endpoint Input Hardening**: Enforce `signature.length === 64`, hex regex, `canonicalManifest` max 32KB, structured error codes. | ✅ v1.18.1 | — |
+| 3 | **Signature Format Unification**: Web and PowerShell exports both use `HMAC_SHA256(signingKey, manifestHash)` — single canonical format. | ✅ v1.18.0 | — |
+| 4 | **Draft vs. Final Field Separation**: Introduce governance-level separation of `runEvidence` (immutable, server-authoritative) and `projectWorkspace` (interactive, editable). UI labels: "Server Evidence", "Editable Draft", "Architect-Approved". Audit Pack exclusively uses `runEvidence`. | 📋 | P1 §4 (Hydration), P1 §5 (Allowlist) |
+| 5 | **Server-Side Audit Pack Generation**: New `POST /api/audit-pack/create` route. Server loads active Run, generates all evidence files from versioned template, computes manifest, signs ZIP, and streams download. Client never supplies file content for signing. | 📋 | P1 §3 (Audit Pack) |
+| 6 | **Server-Authoritative Narrative Separation**: `/api/runs/create` stops accepting client-supplied `analysis` text. Server generates narrative from `legacyCode` + Evidence. Run document splits into `serverEvidence` (signed) and `aiNarrative` (with model/promptHash/responseHash metadata, clearly marked non-evidentiary). | 📋 | P1 §2 (Narrative) |
+| 7 | **Export Hygiene CI Gate**: CI step that fails the build if `.env*`, `dist`, `.agents`, `.antigravity`, `scratch`, `tmp`, `playwright-report`, `test-results` are present in source exports. Enforce use of `scripts/export-source.ps1`. | 📋 | P0 §1 (Secrets) |
+| 8 | **E2E Trust Chain Integration Test**: Full emulator-backed E2E test: User → Project → Analyze → Run → Downstream → Audit Pack → Verify. Negative tests: foreign user sign, stale run rejection, missing runHash rejection, tampered manifest rejection. | 📋 | P2 §6 (Tests) |
 
 ---
 
@@ -191,7 +194,7 @@ Turn the internal SAP API mapping into a public differentiating asset.
 | 2 | **Honest Confidence Labels**: Display `Catalog Match`, `Candidate`, `Needs Validation`, `No Released API Found` — never imply SAP certification. | ✅ v1.18.0 | Konzept §2 |
 | 3 | **SEO-Optimized Detail Pages**: Individual pages per SAP module (FI, SD, MM, PP, CO, PM, HR) with proper meta tags, structured data, and internal linking. | 📋 | Konzept §2 |
 | 4 | **Community Feedback Loop**: "Report Missing Mapping" button per entry allowing authenticated users to suggest new table→API mappings. | 💡 | Konzept §2 |
-| 5 | **Versioned Catalog Updates**: Catalog entries tagged with SAP release version (e.g. `2024.FPS02`). Changelog visible per entry. | ✅ Partial | Konzept §2 |
+| 5 | **Versioned Catalog Updates**: Catalog entries tagged with SAP release version (e.g. `2024.FPS02`). Changelog visible per entry. Source URL, confidence level, and "Catalog Match" label per entry. | ✅ Partial | Konzept §2, Codex §Catalog |
 
 ---
 
@@ -199,12 +202,13 @@ Turn the internal SAP API mapping into a public differentiating asset.
 
 Enable transformation program steering through immutable run comparison.
 
-| # | Item | Status | Delta Ref |
+| # | Item | Status | Codex Ref |
 |---|------|--------|-----------|
-| 1 | **Run History Timeline**: Visual timeline of all analysis runs per project with date, Clean Core Score, and finding count delta. | 📋 | Konzept §4 |
-| 2 | **Diff View**: Side-by-side comparison of two runs showing new findings, closed findings, changed severity, and changed recommendations. | 📋 | Konzept §4 |
-| 3 | **Risk Reduction Metrics**: Dashboard widget showing cumulative risk reduction across runs (e.g., "Critical findings: 12 → 4 across 3 sprints"). | 📋 | Konzept §4 |
-| 4 | **Progress Export**: PDF/Markdown export of run-over-run progress for steering committee reporting. | 📋 | Konzept §4 |
+| 1 | **Run History Timeline**: Visual timeline of all analysis runs per project with date, Clean Core Score, and finding count delta. | 📋 | Codex §Mittelfristig 1 |
+| 2 | **Diff View**: Side-by-side comparison of two runs showing new findings, closed findings, changed severity, and changed recommendations. | 📋 | Codex §Mittelfristig 1 |
+| 3 | **Risk Reduction Metrics**: Dashboard widget showing cumulative risk reduction across runs (e.g., "Critical findings: 12 → 4 across 3 sprints"). | 📋 | Codex §Mittelfristig 1 |
+| 4 | **Progress Export**: PDF/Markdown export of run-over-run progress for steering committee reporting. | 📋 | Codex §Mittelfristig 1 |
+| 5 | **Re-Analysis UX**: UI shows run version selector and prepares a diff overlay when re-analyzing the same code object. | 📋 | Codex §UX "Re-Analyse" |
 
 ---
 
@@ -212,13 +216,14 @@ Enable transformation program steering through immutable run comparison.
 
 Close remaining security gaps and prepare for enterprise operational requirements.
 
-| # | Item | Status | Delta Ref |
+| # | Item | Status | Codex Ref |
 |---|------|--------|-----------|
-| 1 | **CSP `unsafe-inline` Removal**: Migrate all inline styles to CSS modules or styled components. Document any remaining exceptions with security justification. | 📋 | Delta §CSP |
+| 1 | **CSP `unsafe-inline` Removal**: Migrate all inline styles to CSS modules or styled components. Document remaining exceptions with security justification. Accept as known risk until Firebase improves CSP support. | 📋 | Codex P2 §CSP |
 | 2 | **SBOM & SCA in CI**: Generate Software Bill of Materials on every build. Integrate dependency vulnerability scanning (e.g., `npm audit`, Snyk, or Trivy). | 📋 | Enterprise §4 |
 | 3 | **Monitoring & Alerting**: Cloud Run health checks, error rate alerting, Firestore usage monitoring, and signing key rotation reminders. | 📋 | Delta §Ops |
 | 4 | **Incident Response Playbook**: Documented procedure for security incidents, key compromise, and data breach notification. | 📋 | Enterprise §3 |
 | 5 | **Retention & Backup Policy**: Documented data retention periods per collection, automated Firestore backup schedule, and GDPR Article 17 compliance verification. | 📋 | Enterprise §3 |
+| 6 | **Secret Scanner Gate**: Gitleaks or TruffleHog as mandatory CI step before any export or release. Block pipeline if secrets detected. | 📋 | Codex P0 §4 |
 
 ---
 
@@ -238,34 +243,36 @@ Lower time-to-insight for prospects and enable self-service sales demos.
 
 The platform is enterprise-contract-ready: fully auditable, operationally hardened, and multi-tenant capable.
 
-| # | Item | Status | Delta Ref |
+| # | Item | Status | Codex Ref |
 |---|------|--------|-----------|
-| 1 | **External Penetration Test**: Commissioned security assessment by independent firm. Remediation of all Critical/High findings before launch. | 📋 | Enterprise §1 |
-| 2 | **Trust Center**: Public page documenting security architecture, compliance certifications, data residency, subprocessor list, and incident history. | 📋 | Enterprise §2 |
-| 3 | **DPA / TOMs / Subprocessor Documentation**: Data Processing Agreement template, Technical & Organizational Measures document, and subprocessor registry for enterprise procurement. | 📋 | Enterprise §3 |
-| 4 | **SSO / Org / RBAC**: SAML/OIDC SSO integration, organizational hierarchy support, and role-based access control (Viewer, Analyst, Architect, Admin) — at minimum as Enterprise add-on. | 📋 | Enterprise §5 |
+| 1 | **External Penetration Test**: Commissioned security assessment by independent firm. Remediation of all Critical/High findings before launch. | 📋 | Enterprise §1, Codex §Enterprise |
+| 2 | **Trust Center Light**: Public page documenting security architecture, compliance certifications, data residency, subprocessor list, incident history, DPA/TOMs, and retention/deletion policy. | 📋 | Enterprise §2, Codex §Mittelfristig 4 |
+| 3 | **DPA / TOMs / Subprocessor Documentation**: Data Processing Agreement template, Technical & Organizational Measures document, and subprocessor registry for enterprise procurement. | 📋 | Enterprise §3, Codex §Enterprise |
+| 4 | **SSO / Org / RBAC**: SAML/OIDC SSO integration, organizational hierarchy support, and role-based access control (Viewer, Analyst, Architect, Admin, Auditor). Projektfreigabe and Audit-Pack access separately controllable. | 📋 | Enterprise §5, Codex §Mittelfristig 5 |
 | 5 | **Claims Matrix Review**: Legal review of all platform claims (accuracy, reliability, compliance) with documented limitations and disclaimers per feature area. | 📋 | Enterprise §Legal |
-| 6 | **SECURITY.md v4.0**: Full documentation of Trust Chain, Run immutability, Audit Pack cryptographic guarantees, and all v1.19–v2.0 security improvements. | 📋 | Delta §Security |
+| 6 | **SECURITY.md v4.0**: Full documentation of Trust Chain, Run immutability, Audit Pack cryptographic guarantees, server-authoritative narrative separation, and all v1.19–v2.0 security improvements. | 📋 | Delta §Security |
 
 ---
 
 ### Enterprise Readiness Scorecard (Current → Target)
 
-| Dimension | v1.18.1 | v2.0 Target |
-|---|:---:|:---:|
-| Fachlicher Produktwert | 8.5 | 9.0 |
-| SAP Clean-Core Fit | 8.4 | 9.0 |
-| UX / Journey | 8.3 | 8.8 |
-| Evidence / Nachvollziehbarkeit | 8.0 | 9.2 |
-| Auditierbarkeit | 7.2 | 9.0 |
-| Security | 7.7 | 9.0 |
-| Enterprise Betriebsreife | 6.8 | 8.5 |
-| **Gesamtplattform** | **8.0** | **9.0** |
+| Dimension | v1.18.1 | v1.19.0 | v2.0 Target |
+|---|:---:|:---:|:---:|
+| Fachlicher Produktwert | 8.5 | 8.5 | 9.0 |
+| SAP Clean-Core Fit | 8.4 | 8.4 | 9.0 |
+| UX / Journey | 8.3 | 8.0 | 8.8 |
+| Evidence / Nachvollziehbarkeit | 8.0 | 7.5 | 9.2 |
+| Auditierbarkeit | 7.2 | 7.5 | 9.0 |
+| Security | 7.7 | 8.0 | 9.0 |
+| Enterprise Betriebsreife | 6.8 | 7.0 | 8.5 |
+| Release-/Supply-Chain-Hygiene | — | 4.0 | 8.5 |
+| **Gesamtplattform** | **8.0** | **7.9** | **9.0** |
 
-> Source: Delta Report & Werteinschätzung (2026-07-01)
+> Sources: Delta Report & Werteinschätzung (2026-07-01), Codex v1.19.0 Code Review Audit (2026-07-01)
 
 ---
 
 ## 📄 Open Source License
 
 This project is licensed under the **MIT License** — completely open source, secure, and free for collaborative enterprise development.
+
