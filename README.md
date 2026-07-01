@@ -153,7 +153,21 @@ Harden the signature and verification layer for external auditor credibility.
 
 ---
 
-### v1.21 — Usage Import & Risk Prioritization *(Feature / Enterprise)*
+### v1.21 — Evidence Sweep *(UX / Analyze)*
+
+Make the deterministic scan visible: replay the instant `buildAbapEvidence()` results as a live animated overlay during the Gemini loading phase. High-impact, zero backend changes.
+
+| # | Item | Status | Delta Ref |
+|---|------|--------|-----------|
+| 1 | **SweepCodeViewer**: Monospace code viewer with line numbers and annotation slots for finding badges. Supports auto-scroll to next finding position. | 📋 | Evidence Sweep |
+| 2 | **EvidenceSweep Orchestrator**: Sorts findings by `lineStart`, reveals them sequentially over ~3.5s with scan-line animation. Severity-colored badges pin to exact code lines. | 📋 | Evidence Sweep |
+| 3 | **SweepVerdictBar**: Animated counter tiles (Critical/High/Medium/Low) that tick up as findings appear. Coverage verdict "locks in" with glow effect at animation end. | 📋 | Evidence Sweep |
+| 4 | **Parallel Gemini Timing**: Evidence Sweep runs during the 8–15s Gemini API call. Minimum sweep duration 3s; Gemini result is buffered and shown after sweep completes. | 📋 | Evidence Sweep |
+| 5 | **Accessibility**: `prefers-reduced-motion` → instant end-state. `aria-live` on verdict region. Optional timeline scrubber for replay control. | 📋 | Evidence Sweep |
+
+---
+
+### v1.22 — Usage Import & Risk Prioritization *(Feature / Enterprise)*
 
 Transform the platform from static code analysis to usage-weighted risk assessment.
 
@@ -167,7 +181,7 @@ Transform the platform from static code analysis to usage-weighted risk assessme
 
 ---
 
-### v1.22 — Public API Catalog & SEO *(Feature / Marketing)*
+### v1.23 — Public API Catalog & SEO *(Feature / Marketing)*
 
 Turn the internal SAP API mapping into a public differentiating asset.
 
@@ -181,7 +195,7 @@ Turn the internal SAP API mapping into a public differentiating asset.
 
 ---
 
-### v1.23 — Run Diff & Progress Tracking *(Feature / Enterprise)*
+### v1.24 — Run Diff & Progress Tracking *(Feature / Enterprise)*
 
 Enable transformation program steering through immutable run comparison.
 
@@ -194,7 +208,7 @@ Enable transformation program steering through immutable run comparison.
 
 ---
 
-### v1.24 — CSP Hardening & Operational Readiness *(Security / Operations)*
+### v1.25 — CSP Hardening & Operational Readiness *(Security / Operations)*
 
 Close remaining security gaps and prepare for enterprise operational requirements.
 
@@ -208,7 +222,7 @@ Close remaining security gaps and prepare for enterprise operational requirement
 
 ---
 
-### v1.25 — Demo & Sales Enablement *(Product / Growth)*
+### v1.26 — Demo & Sales Enablement *(Product / Growth)*
 
 Lower time-to-insight for prospects and enable self-service sales demos.
 
