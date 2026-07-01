@@ -43,6 +43,7 @@ export interface AuditPackManifest {
   signed: boolean;
   signature: string;
   signatureError?: string;
+  runHash?: string;
 }
 
 const ARCH_LABELS: Record<string, string> = {
@@ -417,6 +418,7 @@ export async function generateAuditPack(project: Project, idToken: string): Prom
       manifestHash: signData.manifestHash,
       signed: true,
       signature: signData.signature,
+      runHash: (project as any).runHash || '',
     };
   } catch (err: any) {
     // Graceful fallback: generate unsigned manifest
@@ -424,7 +426,11 @@ export async function generateAuditPack(project: Project, idToken: string): Prom
 
     // Compute local manifest hash for integrity (even without server signature)
     const sortedFiles = [...manifestFiles].sort((a, b) => a.path.localeCompare(b.path));
-    const canonicalManifest = sortedFiles.map(f => `${f.path}:${f.sha256}`).join(';') + ';';
+    const runHash = (project as any).runHash || '';
+    const engineVersion = (project.auditMetadata?.modelCard as any)?.engineVersion || APP_VERSION;
+    const sapApiCatalogVersion = (project.auditMetadata?.modelCard as any)?.catalogVersion || '2024.FPS02';
+    const canonicalSuffix = `${projectId}:${runId}:${runHash}:${engineVersion}:${sapApiCatalogVersion};`;
+    const canonicalManifest = sortedFiles.map(f => `${f.path}:${f.sha256}`).join(';') + ';' + canonicalSuffix;
     const localManifestHash = await sha256(canonicalManifest);
 
     manifest = {
@@ -439,11 +445,17 @@ export async function generateAuditPack(project: Project, idToken: string): Prom
       signed: false,
       signature: '',
       signatureError: err.message || 'Signing service unavailable',
+      runHash,
     };
   }
 
   // 4. Add manifest.json as the last file (it does NOT list itself)
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+
+  if (typeof window === 'undefined') {
+    const buf = await zip.generateAsync({ type: 'nodebuffer' });
+    return buf as any;
+  }
 
   return zip.generateAsync({ type: 'blob' });
 }

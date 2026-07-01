@@ -5,6 +5,13 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.18.1] — 2026-07-01
+
+### Added
+- **Cryptographic Run Binding**: Server-side signing endpoint is now bound to the Firestore Run document by including the project ID, run ID, run hash, engine version, and SAP API catalog version in the signature input.
+- **Unsigned Suffix Alignment**: Unsigned manifest exports also compute and check the same suffix metadata context, ensuring uniform integrity verification across all platforms.
+- **Signature verification hardening**: Enforced input length and hex constraints on signature verification to protect the public API endpoint.
+
 ## [v1.18.0] — 2026-07-01
 
 ### Added

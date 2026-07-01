@@ -52,10 +52,24 @@ let adminFirestoreModule: any = null;
 async function getAdminDb() {
   if (!adminAppModule) adminAppModule = await import('firebase-admin/app');
   if (!adminFirestoreModule) adminFirestoreModule = await import('firebase-admin/firestore');
+  
+  const isEmulatorMode = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true';
+  if (isEmulatorMode) {
+    if (!process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+      process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+    }
+    if (!process.env.FIRESTORE_EMULATOR_HOST) {
+      process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
+    }
+  }
+
   if (adminAppModule.getApps().length === 0) {
     const sa = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (sa) adminAppModule.initializeApp({ credential: adminAppModule.cert(JSON.parse(sa)) });
-    else adminAppModule.initializeApp();
+    if (sa && !isEmulatorMode) {
+      adminAppModule.initializeApp({ credential: adminAppModule.cert(JSON.parse(sa)) });
+    } else {
+      adminAppModule.initializeApp({ projectId: 'cleancore-491216' });
+    }
   }
   const app = adminAppModule.getApps()[0];
   return {

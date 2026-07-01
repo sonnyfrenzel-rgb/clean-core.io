@@ -70,9 +70,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Run not found.' }, { status: 404 });
     }
 
+    const runData = runDoc.data();
+    const runHash = runData?.runHash || '';
+    const engineVersion = runData?.analyzerVersion || '';
+    const sapApiCatalogVersion = runData?.sapApiCatalogVersion || '';
+
     // 6. Sort files alphabetically and build canonical manifest string
     const sortedFiles = [...files].sort((a: any, b: any) => a.path.localeCompare(b.path));
-    const canonicalManifest = sortedFiles.map((f: any) => `${f.path}:${f.sha256}`).join(';') + ';';
+    const canonicalSuffix = `${projectId}:${runId}:${runHash}:${engineVersion}:${sapApiCatalogVersion};`;
+    const canonicalManifest = sortedFiles.map((f: any) => `${f.path}:${f.sha256}`).join(';') + ';' + canonicalSuffix;
 
     // 7. Compute manifest hash
     const manifestHash = crypto.createHash('sha256').update(canonicalManifest).digest('hex');
