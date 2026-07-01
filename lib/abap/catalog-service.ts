@@ -110,6 +110,15 @@ export function hasNoReleasedApiPath(objectName: string): boolean {
 
 export const MERGED_CATALOG_SIZE = Object.keys(MERGED_TABLE_MAP).length;
 
+/** Lightweight stats for landing page badge — avoids importing the full artifact. */
+export function getCatalogStats(): { classifiedObjects: number; mappedWithSuccessor: number; syncDate: string } {
+  return {
+    classifiedObjects: CR.meta?.entryCount || 0,
+    mappedWithSuccessor: MERGED_CATALOG_SIZE,
+    syncDate: (CR.meta?.fetchedAt || '').slice(0, 10),
+  };
+}
+
 /**
  * Traceability string for Audit Pack / model card, e.g.
  * "2024.FPS02 + CR:latest@e3b0c442 (4812 entries, fetched 2026-07-01)"
@@ -121,3 +130,4 @@ export function getMergedCatalogVersion(): string {
   const day = (m.fetchedAt || '').slice(0, 10);
   return `${SAP_API_CATALOG_VERSION} + CR:${m.release}@${shortSha} (${m.entryCount} entries, fetched ${day})`;
 }
+
