@@ -5,6 +5,18 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.17.0] — 2026-07-01
+
+### Audit Pack v2 & Signed Exports
+- **Cryptographic Manifest**: Every Audit Pack ZIP now contains a `manifest.json` with SHA-256 hashes for all included files, engine metadata, and SAP API Catalog version.
+- **Server-Side HMAC Signing**: New API endpoint `POST /api/export/sign` computes an HMAC-SHA256 signature over the canonical manifest using the server-only `AUDIT_SIGNING_KEY`, ensuring tamper-proof audit exports without exposing the signing key to the client.
+- **Public Verification Endpoint**: New `POST /api/export/verify` endpoint allows external auditors (e.g., KPMG, SAP) to verify audit pack signatures without a platform account.
+- **Verification Engine** (`lib/audit-pack-verify.ts`): Client-side ZIP integrity checker that validates file hashes, manifest consistency, and cryptographic signatures via the server endpoint.
+- **Verify Pack Page** (`/verify-pack`): Drag-and-drop compliance verification page with real-time integrity badges, file-by-file hash status, signature verification, and export metadata display.
+- **AnalysisRun Completeness**: Extended the `AnalysisRun` interface with `dataCoupling`, `codeInventory`, `worklist`, and recommendation fields to ensure audit packs contain all assessment data from immutable run documents.
+- **Graceful Fallback**: If the signing service is unavailable, audit packs are exported with an unsigned manifest and a clear warning — no data loss or export failure.
+- **Catalog Version Display**: Executive Summary and Model Card now include the SAP API Catalog version for full audit traceability.
+
 ## [v1.16.0] — 2026-07-01
 
 ### Security Hardening

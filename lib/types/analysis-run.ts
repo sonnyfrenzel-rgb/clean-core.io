@@ -1,4 +1,5 @@
-import { EvidenceFinding } from '../abap/evidence-model';
+import type { EvidenceFinding } from '../abap/evidence-model';
+import type { DataCouplingEntry, CodeInventoryItem, WorklistItem } from '../types';
 
 export interface AnalysisRun {
   runId: string;
@@ -29,6 +30,13 @@ export interface AnalysisRun {
   criticalityScore: number;
   analysis: string;
   evidenceReport: EvidenceFinding[];
+  // v1.17: Audit Pack completeness — fields previously only on the project doc
+  dataCoupling?: DataCouplingEntry[];
+  codeInventory?: CodeInventoryItem[];
+  worklist?: WorklistItem[];
+  originalRecommendation?: string;
+  recommendationConfidence?: number;
+  recommendationJustification?: string;
   // Integrity signatures
   runHash: string;
   signature: string;

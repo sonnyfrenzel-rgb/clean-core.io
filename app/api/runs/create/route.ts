@@ -217,6 +217,13 @@ export async function POST(req: NextRequest) {
       criticalityScore,
       analysis: finalAnalysisText,
       evidenceReport: evidenceReport.findings,
+      // v1.17: Store full assessment data for Audit Pack completeness
+      dataCoupling,
+      codeInventory,
+      worklist: initialWorklist as import('@/lib/types').WorklistItem[],
+      originalRecommendation: extensibilityReport.recommendedRoute,
+      recommendationConfidence: extensibilityReport.confidenceScore,
+      recommendationJustification: extensibilityReport.rationale,
     };
 
     // Calculate cryptographic runHash over sorted canonical representation of complete payload (Finding 2)

@@ -20,9 +20,22 @@ export const metadata: Metadata = {
 
 const releases = [
   {
-    version: 'v1.16.0',
+    version: 'v1.17.0',
     date: 'July 1, 2026',
     tag: 'Latest',
+    icon: Rocket,
+    changes: [
+      'Audit Pack v2: Cryptographic Manifest — Every Audit Pack ZIP now contains a manifest.json with SHA-256 file hashes, engine metadata, and SAP API Catalog version for full audit traceability.',
+      'Server-Side HMAC Signing — New /api/export/sign endpoint computes HMAC-SHA256 signatures using the server-only AUDIT_SIGNING_KEY, ensuring tamper-proof exports without client key exposure.',
+      'Public Verification Endpoint — New /api/export/verify endpoint allows external auditors to verify audit pack signatures without a platform account.',
+      'Audit Pack Verification Page — New /verify-pack page with drag-and-drop upload, real-time integrity badges, file-by-file hash validation, and cryptographic signature verification.',
+      'AnalysisRun Completeness — Extended immutable run documents with dataCoupling, codeInventory, worklist, and recommendation fields for complete audit pack data.',
+      'Graceful Signing Fallback — Unsigned manifests are generated with clear warnings when the signing service is unavailable.',
+    ],
+  },
+  {
+    version: 'v1.16.0',
+    date: 'July 1, 2026',
     icon: Rocket,
     changes: [
       'Phase 2: Immutable Analysis Runs & Fallback Hardening (F-01) — Completed transition to server-authoritative calculations for runs, loading inputs directly from the parent project with fallbacks for upload/re-analysis flows.',

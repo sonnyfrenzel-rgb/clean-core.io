@@ -100,8 +100,8 @@
 
 ### UX-6: Revisionssicherer Export
 **Priorität:** Mittel | **Aufwand:** ~3h | **Voraussetzung:** Woche 2 Immutable Runs
-- [ ] `manifest.json` im ZIP-Export mit SHA-256-Hashes aller Dateien
-- [ ] Projektmetadaten, Engine-Version, Katalogversion, Timestamp
-- [ ] SHA-256-Gesamthash als `documentHash`
-- [ ] HMAC-Signierung über neuen API-Endpunkt `/api/export/sign`
-- [ ] Verifizierungs-Upload-Funktion auf der Plattform
+- [x] `manifest.json` im ZIP-Export mit SHA-256-Hashes aller Dateien
+- [x] Projektmetadaten, Engine-Version, Katalogversion, Timestamp
+- [x] SHA-256-Gesamthash als `documentHash`
+- [x] HMAC-Signierung über neuen API-Endpunkt `/api/export/sign`
+- [x] Verifizierungs-Upload-Funktion auf der Plattform

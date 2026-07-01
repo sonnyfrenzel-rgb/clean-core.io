@@ -1,18 +1,49 @@
 /**
- * Compliance Audit Pack Generator (v1.10.0)
+ * Compliance Audit Pack Generator (v1.17.0)
  *
  * Generates an exportable ZIP containing structured evidence for
  * architecture governance reviews, compliance audits, and enterprise
  * decision documentation.
  *
+ * v1.17: Adds manifest.json with SHA-256 file hashes and HMAC-SHA256
+ * cryptographic signature via server-side /api/export/sign endpoint.
+ *
  * Security: This module never includes secrets, credentials, API keys,
- * or unmaksed tenant URLs in the export. Only hashes, timestamps,
+ * or unmasked tenant URLs in the export. Only hashes, timestamps,
  * model identifiers, and architecture decisions are included.
  */
 
 import JSZip from 'jszip';
 import type { Project } from '@/lib/types';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+
+/** Compute SHA-256 hash of a string using the Web Crypto API (browser-compatible). */
+async function sha256(content: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(content);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+interface ManifestFile {
+  path: string;
+  sha256: string;
+  bytes: number;
+}
+
+export interface AuditPackManifest {
+  version: string;
+  runId: string;
+  projectId: string;
+  generatedAt: string;
+  engineVersion: string;
+  sapApiCatalogVersion: string;
+  files: ManifestFile[];
+  manifestHash: string;
+  signed: boolean;
+  signature: string;
+  signatureError?: string;
+}
 
 const ARCH_LABELS: Record<string, string> = {
   rap: 'In-App ABAP Cloud (RAP)',
@@ -69,6 +100,7 @@ function generateExecutiveSummary(project: Project): string {
 | Field | Value |
 |---|---|
 | Platform Version | ${mc?.engineVersion || APP_VERSION} |
+| SAP API Catalog | ${(mc as any)?.catalogVersion || '2024.FPS02'} |
 | Model Provider | ${mc?.provider || 'google-gemini'} |
 | Model | ${mc?.model || '—'} |
 | BYOK Used | ${mc?.byokUsed ? 'Yes' : 'No'} |
@@ -251,6 +283,7 @@ function generateModelCard(project: Project): string {
 | Model Provider | ${mc?.provider || 'google-gemini'} |
 | Model Identifier | ${mc?.model || '—'} |
 | Platform Version | ${mc?.engineVersion || APP_VERSION} |
+| SAP API Catalog | ${(mc as any)?.catalogVersion || '2024.FPS02'} |
 | BYOK (Bring Your Own Key) | ${mc?.byokUsed ? 'Yes — user-provided API key' : 'No — platform key'} |
 
 ## Processing Timestamps
@@ -314,31 +347,103 @@ function generateKnownLimitations(): string {
 /**
  * Generates a Compliance Audit Pack as a ZIP blob.
  *
- * The pack contains only non-sensitive data: hashes, timestamps,
- * architecture decisions, and model metadata. No secrets, no
- * credentials, no unmaksed tenant URLs.
+ * v1.17: Includes a signed manifest.json with SHA-256 hashes of all
+ * files. The HMAC signature is obtained from the server-side
+ * /api/export/sign endpoint to keep the signing key secret.
+ *
+ * @param project  Hydrated project (includes active run data)
+ * @param idToken  Firebase ID token for authenticating the sign request
  */
-export async function generateAuditPack(project: Project): Promise<Blob> {
+export async function generateAuditPack(project: Project, idToken: string): Promise<Blob> {
   const zip = new JSZip();
 
-  zip.file('00-executive-summary.md', generateExecutiveSummary(project));
-  zip.file('00-executive-summary.doc', generateExecutiveSummaryDoc(project));
+  // 1. Generate all audit pack files in memory
+  const fileContents: Record<string, string> = {
+    '00-executive-summary.md': generateExecutiveSummary(project),
+    '00-executive-summary.doc': generateExecutiveSummaryDoc(project),
+    '01-input-fingerprint.json': JSON.stringify(
+      project.auditMetadata?.inputFingerprint || { note: 'No fingerprint available — analysis may predate v1.10.0' },
+      null, 2
+    ),
+    '02-decision-record.json': JSON.stringify(
+      generateDecisionRecord(project),
+      null, 2
+    ),
+    '03-findings.csv': generateFindingsCsv(project),
+    '04-model-card.md': generateModelCard(project),
+    '05-known-limitations.md': generateKnownLimitations(),
+  };
 
-  zip.file('01-input-fingerprint.json', JSON.stringify(
-    project.auditMetadata?.inputFingerprint || { note: 'No fingerprint available — analysis may predate v1.10.0' },
-    null, 2
-  ));
+  // 2. Compute SHA-256 hashes of each file using Web Crypto API
+  const manifestFiles: ManifestFile[] = [];
+  for (const [path, content] of Object.entries(fileContents)) {
+    const hash = await sha256(content);
+    const bytes = new TextEncoder().encode(content).byteLength;
+    manifestFiles.push({ path, sha256: hash, bytes });
+    zip.file(path, content);
+  }
 
-  zip.file('02-decision-record.json', JSON.stringify(
-    generateDecisionRecord(project),
-    null, 2
-  ));
+  // 3. Request cryptographic signature from server
+  let manifest: AuditPackManifest;
+  const generatedAt = new Date().toISOString();
+  const projectId = (project as any).id || '';
+  const runId = project.activeRunId || '';
 
-  zip.file('03-findings.csv', generateFindingsCsv(project));
+  try {
+    const signResponse = await fetch('/api/export/sign', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ projectId, runId, files: manifestFiles }),
+    });
 
-  zip.file('04-model-card.md', generateModelCard(project));
+    if (!signResponse.ok) {
+      const errText = await signResponse.text().catch(() => 'Unknown error');
+      throw new Error(`Sign API returned ${signResponse.status}: ${errText}`);
+    }
 
-  zip.file('05-known-limitations.md', generateKnownLimitations());
+    const signData = await signResponse.json();
+
+    manifest = {
+      version: '2.0',
+      runId,
+      projectId,
+      generatedAt: signData.generatedAt || generatedAt,
+      engineVersion: APP_VERSION,
+      sapApiCatalogVersion: (project.auditMetadata?.modelCard as any)?.catalogVersion || '2024.FPS02',
+      files: manifestFiles,
+      manifestHash: signData.manifestHash,
+      signed: true,
+      signature: signData.signature,
+    };
+  } catch (err: any) {
+    // Graceful fallback: generate unsigned manifest
+    console.warn('Audit Pack signing failed, generating unsigned manifest:', err.message);
+
+    // Compute local manifest hash for integrity (even without server signature)
+    const sortedFiles = [...manifestFiles].sort((a, b) => a.path.localeCompare(b.path));
+    const canonicalManifest = sortedFiles.map(f => `${f.path}:${f.sha256}`).join(';') + ';';
+    const localManifestHash = await sha256(canonicalManifest);
+
+    manifest = {
+      version: '2.0',
+      runId,
+      projectId,
+      generatedAt,
+      engineVersion: APP_VERSION,
+      sapApiCatalogVersion: (project.auditMetadata?.modelCard as any)?.catalogVersion || '2024.FPS02',
+      files: manifestFiles,
+      manifestHash: localManifestHash,
+      signed: false,
+      signature: '',
+      signatureError: err.message || 'Signing service unavailable',
+    };
+  }
+
+  // 4. Add manifest.json as the last file (it does NOT list itself)
+  zip.file('manifest.json', JSON.stringify(manifest, null, 2));
 
   return zip.generateAsync({ type: 'blob' });
 }

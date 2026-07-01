@@ -188,13 +188,19 @@ export default function TenantSecurityPage() {
         <p className="text-sm text-gray-500 font-medium mb-4">
           Questions about tenant security? Reach out anytime.
         </p>
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-3 flex-wrap">
           <a
             href="mailto:info@clean-core.io"
             className="inline-flex items-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-gray-800 transition-all shadow-md hover:shadow-lg"
           >
             Contact Us
           </a>
+          <Link
+            href="/verify-pack"
+            className="inline-flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg"
+          >
+            <ShieldCheck size={16} /> Verify Audit Pack
+          </Link>
           <Link
             href="/about"
             className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all border border-gray-200"
