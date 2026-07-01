@@ -87,14 +87,24 @@ test.describe('Evidence Engine v1.18 — Codex Improvements', () => {
     expect(mard!.sapReplacement!.objectName).toBe('I_MaterialStockInStorageLocation');
   });
 
-  test('should produce Candidate for standard tables not in catalog', () => {
+  test('should produce sap-official Catalog Match for T005 via Cloudification Repository', () => {
     const code = `SELECT * FROM t005 INTO TABLE @lt_data.`;
     const report = buildAbapEvidence(code, 'test.abap');
     const t005 = report.findings.find(f => f.objectName === 'T005');
     expect(t005).toBeDefined();
     expect(t005!.sapReplacement).toBeDefined();
-    expect(t005!.sapReplacement!.confidence).toBe('Candidate');
-    expect(t005!.sapReplacement!.objectName).toBe('I_T005');
+    expect(t005!.sapReplacement!.confidence).toBe('Catalog Match');
+    expect(t005!.sapReplacement!.objectName).toBe('I_COUNTRY');
+  });
+
+  test('should produce Candidate for standard tables not in any catalog layer', () => {
+    const code = `SELECT * FROM t888z INTO TABLE @lt_data.`;
+    const report = buildAbapEvidence(code, 'test.abap');
+    const t888z = report.findings.find(f => f.objectName === 'T888Z');
+    expect(t888z).toBeDefined();
+    expect(t888z!.sapReplacement).toBeDefined();
+    expect(t888z!.sapReplacement!.confidence).toBe('Candidate');
+    expect(t888z!.sapReplacement!.objectName).toBe('I_T888Z');
   });
 
   test('golden 1000-LOC file should produce valid evidence report', () => {

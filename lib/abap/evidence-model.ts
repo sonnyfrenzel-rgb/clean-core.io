@@ -1,5 +1,6 @@
 import { tokenize } from './declaration-parser';
-import { SAP_API_CATALOG, SAP_API_CATALOG_VERSION } from './sap-api-catalog';
+import { SAP_API_CATALOG_VERSION } from './sap-api-catalog';
+import { MERGED_TABLE_MAP, getMergedCatalogVersion, hasNoReleasedApiPath } from './catalog-service';
 
 export type EvidenceKind =
   | 'table-access'
@@ -62,8 +63,8 @@ export interface AbapEvidenceReport {
   };
 }
 
-// SAP standard table map is now imported from sap-api-catalog.ts
-const STANDARD_TABLE_MAP = SAP_API_CATALOG;
+// Layered catalog: curated entries win, SAP Cloudification Repository underneath.
+const STANDARD_TABLE_MAP = MERGED_TABLE_MAP;
 
 /**
  * Resolves ABAP CONSTANTS declarations to their literal values.
@@ -165,7 +166,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
             objectName: STANDARD_TABLE_MAP[table].view,
             objectType: STANDARD_TABLE_MAP[table].type,
             confidence: 'Catalog Match',
-            catalogVersion: SAP_API_CATALOG_VERSION
+            catalogVersion: getMergedCatalogVersion()
           } : undefined
         });
       } else {
@@ -188,12 +189,12 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
             objectName: STANDARD_TABLE_MAP[table].view,
             objectType: STANDARD_TABLE_MAP[table].type,
             confidence: 'Catalog Match',
-            catalogVersion: SAP_API_CATALOG_VERSION
+            catalogVersion: getMergedCatalogVersion()
           } : {
             objectName: `I_${table}`,
             objectType: 'CDS View',
             confidence: 'Candidate',
-            catalogVersion: SAP_API_CATALOG_VERSION
+            catalogVersion: getMergedCatalogVersion()
           }
         });
       }
