@@ -1764,6 +1764,13 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
           <p className="text-sm font-medium">{error}</p>
         </div>
       )}
+
+      {searchParams.get('reason') === 'no-run' && !project?.activeRunId && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-2xl mb-8 flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2">
+          <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+          <p className="text-sm font-medium">Analysis required. Please run the analysis first to create an immutable evidence record before proceeding to downstream stages.</p>
+        </div>
+      )}
       
       {!project?.analysis ? (
         loading ? (

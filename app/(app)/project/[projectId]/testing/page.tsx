@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { doc, setDoc } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
+import { enforceActiveRun } from '@/lib/run-guard';
 import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import Stepper from '@/components/Stepper';
@@ -104,6 +105,7 @@ export default function TestingSandboxPage() {
   useEffect(() => {
     const fetchProject = async () => {
       const data = await loadProjectAndHydrate(projectId as string);
+      if (!enforceActiveRun(data, projectId as string)) return;
       if (data) {
         setProject(data);
       }

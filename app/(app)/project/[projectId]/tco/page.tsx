@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { doc, setDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
+import { enforceActiveRun } from '@/lib/run-guard';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { Project } from '@/lib/types';
 import Stepper from '@/components/Stepper';
@@ -67,6 +68,7 @@ export default function TcoCalculatorPage() {
     const fetchProject = async () => {
       try {
         const data = await loadProjectAndHydrate(projectId as string);
+        if (!enforceActiveRun(data, projectId as string)) return;
         if (data) {
           setProject(data);
           // Set initial LoC based on legacy code size if available

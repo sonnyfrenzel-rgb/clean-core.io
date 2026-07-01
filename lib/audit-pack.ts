@@ -388,7 +388,10 @@ export async function generateAuditPack(project: Project, idToken: string): Prom
   let manifest: AuditPackManifest;
   const generatedAt = new Date().toISOString();
   const projectId = (project as any).id || '';
-  const runId = project.activeRunId || '';
+  const runId = project.activeRunId;
+  if (!runId) {
+    throw new Error('Cannot generate Audit Pack without an active analysis run. Please re-run the analysis first.');
+  }
 
   try {
     const signResponse = await fetch('/api/export/sign', {

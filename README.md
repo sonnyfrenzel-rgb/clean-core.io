@@ -131,11 +131,11 @@ The single most important milestone: close the server-authoritative evidence cha
 
 | # | Item | Status | Delta Ref |
 |---|------|--------|-----------|
-| 1 | **Analyze → Run Integration**: Analyze page calls `/api/runs/create` as mandatory step after successful Gemini analysis. No analysis persists without an immutable server-side Run. | 📋 | P0 §1 |
-| 2 | **Downstream Run Enforcement**: All downstream pages (Design, Transformation, Testing, Docs, Delivery) enforce `activeRunId` presence via `loadProjectAndHydrate()`. Missing Run → redirect to Analyze. | 📋 | P0 §1 |
-| 3 | **Audit Pack Run Gate**: Audit Pack export requires `activeRunId`. Packs without a bound Run are blocked or explicitly exported as `legacy-unsigned` with a visible warning badge. | 📋 | P0 §1, P1 §3 |
-| 4 | **Server-Authoritative Manifest**: Sign endpoint reads Run document from Firestore and validates that `runHash` in manifest matches stored `runHash`. Client cannot forge run binding. | 📋 | P1 §2 |
-| 5 | **E2E Trust Chain Test**: Playwright test: Upload ABAP → Analyze → Run created → `activeRunId` set → Audit Pack exported → Verify Pack confirms `authentic` status. | 📋 | P0 §1 |
+| 1 | **Analyze → Run Integration**: Analyze page calls `/api/runs/create` as mandatory step after successful Gemini analysis. No analysis persists without an immutable server-side Run. | ✅ v1.16.0 | P0 §1 |
+| 2 | **Downstream Run Enforcement**: All downstream pages (Design, Transformation, Testing, Docs, Delivery, TCO) enforce `activeRunId` presence via `enforceActiveRun()`. Missing Run → redirect to Analyze. | ✅ v1.19.0 | P0 §1 |
+| 3 | **Audit Pack Run Gate**: Audit Pack export requires `activeRunId`. Packs without a bound Run are blocked with an explicit error. | ✅ v1.19.0 | P0 §1, P1 §3 |
+| 4 | **Server-Authoritative Manifest**: Sign endpoint validates that the requested run is the active run (HTTP 409) and has a valid `runHash` (HTTP 422). Client cannot forge run binding. | ✅ v1.19.0 | P1 §2 |
+| 5 | **E2E Trust Chain Test**: 15-test regression suite covering run guards, audit pack gate, sign endpoint validation, and downstream page enforcement. | ✅ v1.19.0 | P0 §1 |
 
 ---
 
