@@ -1,0 +1,16 @@
+# Gitleaks configuration for Clean-Core.io
+# Extends the built-in ruleset; adds narrowly-scoped allowlists for values that
+# are public by design (not secrets). Keep allowlists path-scoped, never broad
+# regexes, so real leaked keys are still caught.
+
+title = "Clean-Core.io gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public-by-design values (Firebase Web app config apiKey is a public client identifier, not a secret)."
+paths = [
+  '''firebase-applet-config\.json''',
+  '''\.env\.example''',
+]
