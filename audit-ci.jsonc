@@ -1,19 +1,10 @@
 {
   // Dependency vulnerability gate for CI (used by .github/workflows/security-ci.yml).
-  // Fails on High/Critical advisories. Every allowlisted advisory MUST have a
-  // documented rationale + remediation + review date below. Re-review on expiry.
+  // Fails on High/Critical advisories. Any allowlisted advisory MUST carry a
+  // rationale + remediation + review date here, and be re-reviewed on expiry.
   "high": true,
   "critical": true,
-  "allowlist": [
-    // --- xlsx (SheetJS): High, NO upstream fix available ---
-    // GHSA-4r6h-8v6p-xvw6  Prototype Pollution
-    // GHSA-5pgg-2g8v-p4x9  ReDoS
-    // Usage: lib/abap/usage-parser.ts only — parsing user-uploaded SCMON/UPL/ST03N
-    //   Excel exports (v1.22 usage import). Not used in any auth/crypto path.
-    // Remediation: migrate usage-parser from `xlsx` to `exceljs` (already a
-    //   dependency) and drop `xlsx`. Tracked follow-up.
-    // Review by: 2026-10-01
-    "GHSA-4r6h-8v6p-xvw6",
-    "GHSA-5pgg-2g8v-p4x9"
-  ]
+  "allowlist": []
+  // (No active exceptions. The former xlsx/SheetJS High advisories were resolved
+  //  by migrating lib/abap/usage-parser.ts to exceljs and dropping the xlsx dep.)
 }
