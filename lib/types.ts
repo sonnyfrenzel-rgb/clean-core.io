@@ -100,6 +100,9 @@ export interface Project {
   auditMetadata?: AuditMetadata;
   worklist?: WorklistItem[];
   activeRunId?: string;
+
+  // v1.22: Usage Import & Risk Prioritization
+  usageReport?: import('./abap/usage-model').UsageReport;
 }
 
 /**

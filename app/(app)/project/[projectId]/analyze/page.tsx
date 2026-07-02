@@ -45,6 +45,12 @@ import GapsWorklist from '@/components/analyze/GapsWorklist';
 import MissingDependencyPrompt from '@/components/analyze/MissingDependencyPrompt';
 import PreAnalysisPreview from '@/components/analyze/PreAnalysisPreview';
 import EvidenceSweep from '@/components/analyze/EvidenceSweep';
+import UsageUpload from '@/components/analyze/UsageUpload';
+import UsageRiskMatrix from '@/components/analyze/UsageRiskMatrix';
+import SectionBoundary from '@/components/SectionBoundary';
+import { getRunCapabilities } from '@/lib/run-capabilities';
+import { joinUsageWithEvidence } from '@/lib/abap/usage-join';
+import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
 
 import { DocumentSkeleton } from '@/components/Skeleton';
 
@@ -72,6 +78,7 @@ export default function AnalyzePage() {
   const [evidenceFilter, setEvidenceFilter] = useState<'All' | 'Critical' | 'High' | 'Medium' | 'Low'>('All');
   const [isSticky, setIsSticky] = useState(false);
   const [routeReport, setRouteReport] = useState<import('@/lib/abap/extensibility-router').ExtensibilityRouteReport | null>(null);
+  const [usageReport, setUsageReport] = useState<UsageReportType | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -129,6 +136,10 @@ export default function AnalyzePage() {
           }
           if (hydratedProject.fromExample || hydratedProject.isExample || searchParams.get('fromExample') === 'true') {
             setAcceptedTerms(true);
+          }
+          // v1.22: restore persisted usage report
+          if (hydratedProject.usageReport) {
+            setUsageReport(hydratedProject.usageReport);
           }
         }
       } catch (error) {
@@ -1387,6 +1398,20 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               {/* Construct Findings checklist */}
               <ConstructFindings findings={findings} />
 
+              {/* v1.22: Usage × Evidence Risk Matrix */}
+              {(usageReport || project?.usageReport) && evidenceFindings.length > 0 && routeReport && (
+                <SectionBoundary name="Usage Risk Matrix">
+                  <UsageRiskMatrix
+                    rows={joinUsageWithEvidence(
+                      (usageReport || project!.usageReport)!,
+                      { findings: evidenceFindings, summary: { criticalCount: 0, highCount: 0, mediumCount: 0, lowCount: 0, infoCount: 0 } },
+                      routeReport,
+                    )}
+                    usageReport={(usageReport || project!.usageReport)!}
+                  />
+                </SectionBoundary>
+              )}
+
               {/* ── Evidence Findings Detail Table — deduplicated, sorted, filterable ── */}
               {evidenceFindings.length > 0 && (() => {
                 // Deduplicate by kind+objectName, aggregate lines
@@ -1923,6 +1948,34 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                     I agree to the <strong>Terms & Conditions</strong> of the Clean-Core.io community pilot. I understand this is a free prototyping platform under absolute warranty and liability disclaimer, utilizing secure Gemini models on EU-compliant servers.
                   </span>
                 </label>
+              </div>
+            )}
+
+            {/* v1.22: Optional usage data upload */}
+            {legacyCode && (
+              <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-4 animate-in slide-in-from-bottom-4 mb-8">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[9px] font-bold tracking-widest text-emerald-600 uppercase font-mono">Optional</span>
+                    <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">v1.22</span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight">Add Usage Data</h3>
+                  <p className="text-xs text-slate-500 mt-1">Upload SAP usage exports (SCMON, UPL, ST03N) to enable usage-weighted risk prioritization. This is optional — analysis works without it.</p>
+                </div>
+                <UsageUpload
+                  onImport={async (report) => {
+                    setUsageReport(report);
+                    // Persist to project
+                    try {
+                      const docRef = doc(getDb(), 'projects', projectId as string);
+                      await updateDoc(docRef, { usageReport: report });
+                      setProject((prev: any) => prev ? { ...prev, usageReport: report } : prev);
+                    } catch (err) {
+                      console.error('Failed to persist usage report:', err);
+                    }
+                  }}
+                  existingReport={usageReport}
+                />
               </div>
             )}
 

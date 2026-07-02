@@ -20,9 +20,23 @@ export const metadata: Metadata = {
 
 const releases = [
   {
-    version: 'v1.21.0',
+    version: 'v1.22.0',
     date: 'July 2, 2026',
     tag: 'Latest',
+    icon: Rocket,
+    changes: [
+      'Usage Import & Risk Prioritization — Upload SAP usage exports (SCMON, UPL, ST03N) to enable usage-weighted risk analysis. Format-tolerant parser with CSV delimiter sniffing (semicolon/comma/tab) and XLSX support.',
+      'Risk/Usage Matrix — Interactive 2D quadrant visualization (Usage × Feasibility). Objects color-coded by quadrant: Danger Zone (high usage + no path), Prioritize (high usage + feasible), Retire Candidate (dormant), Low Priority, Unknown.',
+      '"Unknown ≠ Dormant" Safeguard — Objects without usage data are always "Unknown", never "Unused". Mandatory tooltip on every unknown-status display. Missing data is not evidence of non-use.',
+      'Privacy-First Import — Whitelist-based sanitization strips all PII (usernames, terminals, IPs) before persistence. Only object × frequency data is stored. 90-day retention TTL.',
+      'UPL Aggregation — Usage & Procedure Logging exports are automatically aggregated from method-level to object-level to match evidence engine granularity.',
+      'Run Capabilities Extended — Shape-based `hasUsageData` capability detection. Usage data is optional — its absence does not trigger legacy run status.',
+      'Solution Design Rendering Patch — All design page sections wrapped in SectionBoundary for crash isolation. LegacyRunBanner for honest pre-v1.14 run state. RoutingRationale and TargetArchitectureDiagram guarded against missing data.',
+    ],
+  },
+  {
+    version: 'v1.21.0',
+    date: 'July 2, 2026',
     icon: Sparkles,
     changes: [
       'Evidence Sweep Animation — Real-time animated overlay during analysis that replays deterministic buildAbapEvidence() scan results. Findings appear sequentially with a glowing scan-line sweeping through the ABAP source code.',

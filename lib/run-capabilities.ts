@@ -26,6 +26,8 @@ export interface RunEvidenceSource {
   evidenceReport?: unknown;
   cleanCoreScore?: number;
   auditMetadata?: { modelCard?: { engineVersion?: string } };
+  /** v1.22: usage import data (SCMON/UPL/ST03N) */
+  usageReport?: unknown;
 }
 
 export interface RunCapabilities {
@@ -36,6 +38,8 @@ export interface RunCapabilities {
   hasFindings: boolean;
   /** evidence report present → scanner-backed sections can render */
   hasEvidenceReport: boolean;
+  /** v1.22: usage import data present → risk matrix can render */
+  hasUsageData: boolean;
   /** run exists but predates current engine capabilities */
   isLegacy: boolean;
   engineVersion?: string;
@@ -48,17 +52,20 @@ export function getRunCapabilities(src: RunEvidenceSource | null | undefined): R
   const hasRoutingEvidence = typeof src?.extensibilityRoute === 'string' && src.extensibilityRoute.length > 0;
   const hasFindings = Array.isArray(src?.findings) && (src!.findings!.length > 0);
   const hasEvidenceReport = src?.evidenceReport !== undefined && src?.evidenceReport !== null;
+  const hasUsageData = src?.usageReport !== undefined && src?.usageReport !== null;
 
   const missing: string[] = [];
   if (hasRun && !hasRoutingEvidence) missing.push('extensibility routing decision');
   if (hasRun && !hasFindings) missing.push('deterministic findings');
   if (hasRun && !hasEvidenceReport) missing.push('evidence scan report');
+  // Note: usage data is OPTIONAL — its absence does NOT mark a run as legacy
 
   return {
     hasRun,
     hasRoutingEvidence,
     hasFindings,
     hasEvidenceReport,
+    hasUsageData,
     isLegacy: hasRun && missing.length > 0,
     engineVersion: src?.auditMetadata?.modelCard?.engineVersion,
     missing,

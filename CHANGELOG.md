@@ -5,6 +5,21 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.22.0] — 2026-07-02
+
+### Added
+- **Usage Import & Risk Prioritization**: Upload SAP usage exports (SCMON, UPL, ST03N) for usage-weighted risk analysis. Format-tolerant parser with CSV delimiter sniffing and XLSX support via SheetJS.
+- **Risk/Usage Matrix**: Interactive 2D quadrant visualization (Usage × Feasibility) with drill-down object detail flyout. Quadrants: Danger Zone, Prioritize, Retire Candidate, Low Priority, Unknown.
+- **"Unknown ≠ Dormant" Safeguard**: Objects without usage data always show "Unknown" status with mandatory tooltip. Never classified as unused or retire-candidate without evidence.
+- **Privacy-First Import Layer**: Whitelist-based PII sanitization strips usernames, terminals, IPs before persistence. Only object × frequency stored. 90-day retention TTL.
+- **UPL Aggregation**: Procedure-level Usage & Procedure Logging exports automatically aggregated to object-level for evidence engine matching.
+- **Run Capabilities Extension**: Shape-based `hasUsageData` capability. Usage is optional — absence does not trigger legacy run.
+- **Solution Design Rendering Patch**: All design page sections wrapped in SectionBoundary for crash isolation. LegacyRunBanner for pre-v1.14 runs. RoutingRationale/TargetArchitectureDiagram data guards.
+
+### Changed
+- `lib/run-capabilities.ts` extended with `usageReport` field and `hasUsageData` capability
+- `lib/types.ts` Project interface extended with `usageReport` field
+
 ## [v1.21.0] — 2026-07-02
 
 ### Added
