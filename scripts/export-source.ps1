@@ -28,6 +28,8 @@ $excludePatterns = @(
     ".next",
     ".agents",
     ".antigravity",
+    ".claude",
+    ".vscode",
     "scratch",
     "playwright-report",
     "test-results",
