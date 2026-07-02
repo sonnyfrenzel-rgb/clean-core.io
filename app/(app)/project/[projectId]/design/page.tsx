@@ -45,6 +45,9 @@ import ModernizationRoadmap from '@/components/design/ModernizationRoadmap';
 import RoutingRationale from '@/components/design/RoutingRationale';
 import TargetArchitectureDiagram from '@/components/design/TargetArchitectureDiagram';
 import NonFunctionalRequirements from '@/components/design/NonFunctionalRequirements';
+import { getRunCapabilities } from '@/lib/run-capabilities';
+import LegacyRunBanner from '@/components/LegacyRunBanner';
+import SectionBoundary from '@/components/SectionBoundary';
 import type { NFRData } from '@/components/design/NonFunctionalRequirements';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 import { detectFindings, summarize } from '@/lib/abap/findings-detector';
@@ -667,49 +670,77 @@ ${responseText.substring(0, 4000)}`;
       };
 
       const isAbapCloud = !(project?.extensibilityRoute || sanitizedData.architectureOverview?.runtimePlatform || 'BTP').includes('BTP');
+
+      // Structural fix: determine run capabilities once (shape-based, not version-based)
+      const caps = getRunCapabilities(project);
       
       return (
         <div className="space-y-12">
+          {/* Legacy run banner — visible, honest state instead of silent section gaps */}
+          <LegacyRunBanner capabilities={caps} projectId={projectId as string} />
+
           {/* Routing Rationale — Design ↔ Analyze evidence binding */}
-          <RoutingRationale
-            extensibilityRoute={project?.extensibilityRoute || sanitizedData.architectureOverview?.runtimePlatform || 'Side-by-Side (SAP BTP)'}
-            cleanCoreScore={project?.cleanCoreScore}
-            s4Deployment={project?.s4Deployment}
-            findings={findings}
-          />
+          <SectionBoundary name="Routing Rationale">
+            {caps.hasRoutingEvidence && (
+              <RoutingRationale
+                extensibilityRoute={project?.extensibilityRoute}
+                cleanCoreScore={project?.cleanCoreScore}
+                s4Deployment={project?.s4Deployment}
+                findings={findings}
+              />
+            )}
+          </SectionBoundary>
 
           {/* Target Architecture Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-            <ArchitectureOverview overview={sanitizedData.architectureOverview} />
-            <SyncPatternCard dataSync={sanitizedData.dataSync} />
-          </div>
+          <SectionBoundary name="Architecture Overview">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+              <ArchitectureOverview overview={sanitizedData.architectureOverview} />
+              <SyncPatternCard dataSync={sanitizedData.dataSync} />
+            </div>
+          </SectionBoundary>
 
           {/* Decoupling topology diagram */}
-          <InteractiveTopology isAbapCloud={isAbapCloud} />
+          <SectionBoundary name="Interactive Topology">
+            <InteractiveTopology isAbapCloud={isAbapCloud} />
+          </SectionBoundary>
 
           {/* Auto-generated Mermaid architecture diagram */}
-          <TargetArchitectureDiagram data={sanitizedData} isAbapCloud={isAbapCloud} />
+          <SectionBoundary name="Target Architecture">
+            <TargetArchitectureDiagram data={sanitizedData} isAbapCloud={isAbapCloud} />
+          </SectionBoundary>
 
           {/* Project blueprint and API catalog */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-            <ProjectBlueprintExplorer projectStructure={sanitizedData.nodeAppBlueprint?.projectStructure} />
-            <ApiEndpointsCatalog apiEndpoints={sanitizedData.nodeAppBlueprint?.apiEndpoints} />
-          </div>
+          <SectionBoundary name="Project Blueprint">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+              <ProjectBlueprintExplorer projectStructure={sanitizedData.nodeAppBlueprint?.projectStructure} />
+              <ApiEndpointsCatalog apiEndpoints={sanitizedData.nodeAppBlueprint?.apiEndpoints} />
+            </div>
+          </SectionBoundary>
 
           {/* Standard API Hub Reference mappings */}
-          <ApiBusinessHubMapping sapStandardApiMapping={sanitizedData.sapStandardApiMapping} />
+          <SectionBoundary name="API Business Hub Mapping">
+            <ApiBusinessHubMapping sapStandardApiMapping={sanitizedData.sapStandardApiMapping} />
+          </SectionBoundary>
 
           {/* Cloud Service bindings grid & drawer */}
-          <CloudServiceIntegrations cloudServices={sanitizedData.cloudServices} />
+          <SectionBoundary name="Cloud Service Integrations">
+            <CloudServiceIntegrations cloudServices={sanitizedData.cloudServices} />
+          </SectionBoundary>
 
           {/* Security Hardening checklist — full width */}
-          <SecurityHardeningChecklist securityHardening={sanitizedData.securityHardening} findings={findings} />
+          <SectionBoundary name="Security Hardening">
+            <SecurityHardeningChecklist securityHardening={sanitizedData.securityHardening} findings={findings} />
+          </SectionBoundary>
 
           {/* Phased Modernization Roadmap timeline */}
-          <ModernizationRoadmap roadmap={sanitizedData.roadmap} />
+          <SectionBoundary name="Modernization Roadmap">
+            <ModernizationRoadmap roadmap={sanitizedData.roadmap} />
+          </SectionBoundary>
 
           {/* Non-Functional Requirements — Enterprise Readiness */}
-          <NonFunctionalRequirements nfr={nfrData} />
+          <SectionBoundary name="Non-Functional Requirements">
+            <NonFunctionalRequirements nfr={nfrData} />
+          </SectionBoundary>
 
           {/* Architect sign-off / decision — always last */}
           <div className="bg-white rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-sm">

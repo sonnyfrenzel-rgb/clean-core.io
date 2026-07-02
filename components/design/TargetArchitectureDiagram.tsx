@@ -13,6 +13,9 @@ interface TargetArchitectureDiagramProps {
  * no extra LLM call. Shows the full target architecture as an interactive diagram.
  */
 export default function TargetArchitectureDiagram({ data, isAbapCloud }: TargetArchitectureDiagramProps) {
+  // Guard: never let a missing design payload crash the page (defense-in-depth).
+  if (!data) return null;
+
   const chart = isAbapCloud ? buildRapChart(data) : buildCapChart(data);
 
   return (

@@ -7,10 +7,12 @@ import type { SupportFinding } from '@/lib/abap/class-model';
 import { LEVEL_EMOJI, LEVEL_LABEL } from '@/lib/abap/support-matrix';
 
 interface RoutingRationaleProps {
-  extensibilityRoute: string;
+  /** Optional: absent on runs created before the extensibility router (pre-v1.14). */
+  extensibilityRoute?: string;
   cleanCoreScore?: number;
   s4Deployment?: 'public' | 'private';
-  findings: SupportFinding[];
+  /** Optional: defaults to [] — never crash the page on legacy runs. */
+  findings?: SupportFinding[];
 }
 
 /**
@@ -22,8 +24,13 @@ export default function RoutingRationale({
   extensibilityRoute,
   cleanCoreScore,
   s4Deployment,
-  findings,
+  findings = [],
 }: RoutingRationaleProps) {
+  // Guard: legacy projects/runs analyzed before the extensibility router carry no
+  // route on the run document. Render nothing instead of crashing the page —
+  // consistent with every other design section component.
+  if (!extensibilityRoute) return null;
+
   const isBtp = extensibilityRoute.includes('BTP');
 
   // Pick the top 4 most impactful findings (not-supported first, then partial)
