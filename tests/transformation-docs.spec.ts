@@ -8,7 +8,7 @@ test.describe('Stage 3 & 4: Code Transformation & Process Blueprinting E2E Tests
     await expect(page).toHaveTitle(/Clean-Core/i);
     
     // 2. Check that the hero CTA to get basic or pro access is present
-    const ctaButton = page.locator('button, a').filter({ hasText: /Get Pilot Access|Open Workspace/ }).first();
+    const ctaButton = page.locator('button, a').filter({ hasText: /Get Free Access|Open Workspace/ }).first();
     await expect(ctaButton).toBeVisible();
   });
 

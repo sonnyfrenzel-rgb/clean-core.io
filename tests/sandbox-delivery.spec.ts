@@ -14,11 +14,11 @@ test.describe('Stage 5 & 6: Sandboxed Testing & Handover Delivery E2E Tests', ()
   test('should verify community access tier cards are present on the landing page', async ({ page }) => {
     await page.goto('/');
 
-    // 1. Check Pilot Sandbox card
+    // 1. Check Free Community Edition card
     const sandboxCard = page.getByTestId('card-sandbox');
     await expect(sandboxCard).toBeVisible();
 
-    // 2. Check Developer Upgrade (BYOK) card
+    // 2. Check the BYOK access card
     const developerCard = page.getByTestId('card-developer');
     await expect(developerCard).toBeVisible();
   });

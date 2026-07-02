@@ -70,7 +70,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
         s4TenantAccessRequested: false,
         mfaEnabled: false,
       });
-      console.log('Created new E2E test user profile with pilot/pending defaults.');
+      console.log('Created new E2E test user profile with free/pending defaults.');
     }
 
     // 3. Register admin user if not exists (try both known passwords for emulator reuse)
@@ -140,7 +140,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await expect(page).toHaveTitle(/Clean-Core/i);
 
     // Open Sign-In Modal
-    await page.click('a:has-text("Get Pilot Access"), button:has-text("Get Pilot Access")');
+    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
     await page.waitForSelector('input[type="email"]');
 
     // Fill Credentials
@@ -246,7 +246,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     const startAnalysisBtn = page.locator('button:has-text("Start Analysis")');
     await expect(startAnalysisBtn).toBeDisabled();
 
-    // Accept Pilot Terms & Conditions Checkbox
+    // Accept Terms & Conditions checkbox
     await page.locator('input[type="checkbox"]').check();
     await expect(startAnalysisBtn).toBeEnabled();
     console.log('Terms accepted checkbox verified.');
