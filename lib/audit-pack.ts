@@ -13,17 +13,8 @@
  * model identifiers, and architecture decisions are included.
  */
 
-import JSZip from 'jszip';
 import type { Project } from '@/lib/types';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
-
-/** Compute SHA-256 hash of a string using the Web Crypto API (browser-compatible). */
-async function sha256(content: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(content);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
 
 interface ManifestFile {
   path: string;
@@ -54,7 +45,7 @@ const ARCH_LABELS: Record<string, string> = {
   retire: 'Retire / Decommission',
 };
 
-function generateExecutiveSummary(project: Project): string {
+export function generateExecutiveSummary(project: Project): string {
   const fp = project.auditMetadata?.inputFingerprint;
   const mc = project.auditMetadata?.modelCard;
   const arch = project.targetArchitecture ? ARCH_LABELS[project.targetArchitecture] || project.targetArchitecture : 'Not determined';
@@ -119,7 +110,7 @@ Generated code is a draft for review — not a production-ready deliverable.
 `;
 }
 
-function generateExecutiveSummaryDoc(project: Project): string {
+export function generateExecutiveSummaryDoc(project: Project): string {
   const fp = project.auditMetadata?.inputFingerprint;
   const mc = project.auditMetadata?.modelCard;
   const arch = project.targetArchitecture ? ARCH_LABELS[project.targetArchitecture] || project.targetArchitecture : 'Not determined';
@@ -235,7 +226,7 @@ function generateExecutiveSummaryDoc(project: Project): string {
 </html>`;
 }
 
-function generateDecisionRecord(project: Project): object {
+export function generateDecisionRecord(project: Project): object {
   return {
     projectName: project.name,
     generatedAt: new Date().toISOString(),
@@ -260,7 +251,7 @@ function generateDecisionRecord(project: Project): object {
   };
 }
 
-function generateFindingsCsv(project: Project): string {
+export function generateFindingsCsv(project: Project): string {
   const entries = project.dataCoupling || [];
   if (entries.length === 0) return 'Table Name,Access Type,Is Custom,Risk Level,Recommendation\n(No data coupling entries detected)\n';
 
@@ -271,7 +262,7 @@ function generateFindingsCsv(project: Project): string {
   return [header, ...rows].join('\n') + '\n';
 }
 
-function generateModelCard(project: Project): string {
+export function generateModelCard(project: Project): string {
   const mc = project.auditMetadata?.modelCard;
   return `# Model Card — AI Component Documentation
 
@@ -308,7 +299,7 @@ The AI output is a draft for human review. All architecture decisions require ex
 `;
 }
 
-function generateKnownLimitations(): string {
+export function generateKnownLimitations(): string {
   return `# Known Limitations
 
 > This document lists known limitations of the automated analysis and transformation engine.
@@ -356,109 +347,29 @@ function generateKnownLimitations(): string {
  * @param idToken  Firebase ID token for authenticating the sign request
  */
 export async function generateAuditPack(project: Project, idToken: string): Promise<Blob> {
-  const zip = new JSZip();
-
-  // 1. Generate all audit pack files in memory
-  const fileContents: Record<string, string> = {
-    '00-executive-summary.md': generateExecutiveSummary(project),
-    '00-executive-summary.doc': generateExecutiveSummaryDoc(project),
-    '01-input-fingerprint.json': JSON.stringify(
-      project.auditMetadata?.inputFingerprint || { note: 'No fingerprint available — analysis may predate v1.10.0' },
-      null, 2
-    ),
-    '02-decision-record.json': JSON.stringify(
-      generateDecisionRecord(project),
-      null, 2
-    ),
-    '03-findings.csv': generateFindingsCsv(project),
-    '04-model-card.md': generateModelCard(project),
-    '05-known-limitations.md': generateKnownLimitations(),
-  };
-
-  // 2. Compute SHA-256 hashes of each file using Web Crypto API
-  const manifestFiles: ManifestFile[] = [];
-  for (const [path, content] of Object.entries(fileContents)) {
-    const hash = await sha256(content);
-    const bytes = new TextEncoder().encode(content).byteLength;
-    manifestFiles.push({ path, sha256: hash, bytes });
-    zip.file(path, content);
-  }
-
-  // 3. Request cryptographic signature from server
-  let manifest: AuditPackManifest;
-  const generatedAt = new Date().toISOString();
+  // v1.20 §5 — Server-authoritative audit-pack generation.
+  // The pack (evidence files + signed manifest) is generated and signed entirely
+  // server-side from the immutable run, so the signature attests to server content,
+  // not to client-supplied file hashes. The client only downloads the result.
   const projectId = (project as any).id || '';
   const runId = project.activeRunId;
   if (!runId) {
     throw new Error('Cannot generate Audit Pack without an active analysis run. Please re-run the analysis first.');
   }
 
-  try {
-    const signResponse = await fetch('/api/export/sign', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${idToken}`,
-      },
-      body: JSON.stringify({ projectId, runId, files: manifestFiles }),
-    });
+  const res = await fetch('/api/audit-pack/create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ projectId }),
+  });
 
-    if (!signResponse.ok) {
-      const errText = await signResponse.text().catch(() => 'Unknown error');
-      throw new Error(`Sign API returned ${signResponse.status}: ${errText}`);
-    }
-
-    const signData = await signResponse.json();
-
-    manifest = {
-      version: '2.0',
-      runId,
-      projectId,
-      generatedAt: signData.generatedAt || generatedAt,
-      engineVersion: APP_VERSION,
-      sapApiCatalogVersion: (project.auditMetadata?.modelCard as any)?.catalogVersion || '2024.FPS02',
-      files: manifestFiles,
-      manifestHash: signData.manifestHash,
-      signed: true,
-      signature: signData.signature,
-      runHash: (project as any).runHash || '',
-    };
-  } catch (err: any) {
-    // Graceful fallback: generate unsigned manifest
-    console.warn('Audit Pack signing failed, generating unsigned manifest:', err.message);
-
-    // Compute local manifest hash for integrity (even without server signature)
-    const sortedFiles = [...manifestFiles].sort((a, b) => a.path.localeCompare(b.path));
-    const runHash = (project as any).runHash || '';
-    const engineVersion = APP_VERSION;
-    const sapApiCatalogVersion = (project.auditMetadata?.modelCard as any)?.catalogVersion || '2024.FPS02';
-    const canonicalSuffix = `${projectId}:${runId}:${runHash}:${engineVersion}:${sapApiCatalogVersion};`;
-    const canonicalManifest = sortedFiles.map(f => `${f.path}:${f.sha256}`).join(';') + ';' + canonicalSuffix;
-    const localManifestHash = await sha256(canonicalManifest);
-
-    manifest = {
-      version: '2.0',
-      runId,
-      projectId,
-      generatedAt,
-      engineVersion: APP_VERSION,
-      sapApiCatalogVersion: (project.auditMetadata?.modelCard as any)?.catalogVersion || '2024.FPS02',
-      files: manifestFiles,
-      manifestHash: localManifestHash,
-      signed: false,
-      signature: '',
-      signatureError: err.message || 'Signing service unavailable',
-      runHash,
-    };
+  if (!res.ok) {
+    const errText = await res.text().catch(() => 'Unknown error');
+    throw new Error(`Audit pack generation failed (${res.status}): ${errText}`);
   }
 
-  // 4. Add manifest.json as the last file (it does NOT list itself)
-  zip.file('manifest.json', JSON.stringify(manifest, null, 2));
-
-  if (typeof window === 'undefined') {
-    const buf = await zip.generateAsync({ type: 'nodebuffer' });
-    return buf as any;
-  }
-
-  return zip.generateAsync({ type: 'blob' });
+  return await res.blob();
 }
