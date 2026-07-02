@@ -663,7 +663,7 @@ export default function Dashboard() {
     ];
     for (const keyword of illegalKeywords) {
       if (combined.includes(keyword)) {
-        return `Security Policy Violation: The term "${keyword}" is blacklisted under Clean-Core.io's Pilot Safety standard (blocks illegal warez, keygens, casinos, and explicit references).`;
+        return `Security Policy Violation: The term "${keyword}" is blacklisted under Clean-Core.io's Safety standard (blocks illegal warez, keygens, casinos, and explicit references).`;
       }
     }
 
@@ -673,12 +673,12 @@ export default function Dashboard() {
   const [forumPosts, setForumPosts] = useState<any[]>([
     {
       id: 'post-pinned',
-      title: '📌 Welcome to the Clean-Core.io Pilot Forum & Tech Escalations',
+      title: '📌 Welcome to the Clean-Core.io Community Forum & Tech Escalations',
       author: 'Clean-Core Admin',
       authorEmail: 'admin@clean-core.io',
       isAdmin: true,
       category: 'announcements',
-      message: 'Welcome everyone! This forum serves as our technical pilot community board where you can share modernization learnings, raise edge-case ABAP statements, and map architectural questions. For direct inquiries, platform upgrades, or account approvals, please use our secure admin forwarder admin@clean-core.io. All correspondence is privately routed directly to my desk. Happy transforming!',
+      message: 'Welcome everyone! This forum serves as our technical community board where you can share modernization learnings, raise edge-case ABAP statements, and map architectural questions. For direct inquiries, platform upgrades, or account approvals, please use our secure admin forwarder admin@clean-core.io. All correspondence is privately routed directly to my desk. Happy transforming!',
       createdAt: 'Just now',
       likes: 0,
       comments: 0,
@@ -864,7 +864,7 @@ export default function Dashboard() {
                 {profile.tier === 'enterprise' ? (
                   <span>Enterprise: Unlimited</span>
                 ) : (
-                  <span>Pilot Balance: {Math.max(0, profile.transformationsLimit - profile.transformationsUsed)} / {profile.transformationsLimit} Free</span>
+                  <span>Free Balance: {Math.max(0, profile.transformationsLimit - profile.transformationsUsed)} / {profile.transformationsLimit} Free</span>
                 )}
               </div>
             )}
@@ -910,7 +910,7 @@ export default function Dashboard() {
             
             {/* System Disclaimer & Terms */}
             <div className="mb-4 bg-amber-50/50 border border-amber-200/50 rounded-xl p-3 text-[11px] text-amber-900 leading-relaxed font-medium">
-              ⚠️ <strong>Pilot Terms:</strong> This is a free community Modernization Platform powered by AI. Generated code may contain errors and is provided without warranty or liability. Review our <a href="/settings" className="underline font-bold text-amber-950 hover:text-green-700 transition-colors">Privacy Policy</a> & Legal Notice in settings.
+              ⚠️ <strong>Terms:</strong> This is a free community Modernization Platform powered by AI. Generated code may contain errors and is provided without warranty or liability. Review our <a href="/settings" className="underline font-bold text-amber-950 hover:text-green-700 transition-colors">Privacy Policy</a> & Legal Notice in settings.
             </div>
 
             {/* Quota limit feedback */}
@@ -932,7 +932,7 @@ export default function Dashboard() {
                   <Activity className="w-5 h-5 text-green-600 animate-pulse" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-green-800 font-mono">Pilot Balance Status</h4>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-green-800 font-mono">Free Balance Status</h4>
                   <p className="text-sm text-green-700 font-semibold mt-0.5 leading-snug">
                     {profile?.tier === 'enterprise' ? (
                       <span>✨ Unlimited enterprise transformations remaining.</span>
@@ -979,7 +979,7 @@ export default function Dashboard() {
             
             {/* System Disclaimer & Terms */}
             <div className="mb-4 bg-amber-50/50 border border-amber-200/50 rounded-xl p-3 text-[11px] text-amber-900 leading-relaxed font-medium">
-              ⚠️ <strong>AI Processing Notice:</strong> Uploaded codes are analyzed server-side using Generative AI. This community pilot is free of charge, provided completely without warranty or liability.
+              ⚠️ <strong>AI Processing Notice:</strong> Uploaded codes are analyzed server-side using Generative AI. This Free Community Edition is free of charge, provided completely without warranty or liability.
             </div>
 
             <div className="mb-6">
@@ -1041,7 +1041,7 @@ export default function Dashboard() {
                   <Activity className="w-5 h-5 text-green-600 animate-pulse" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-green-800 font-mono">Pilot Balance Status</h4>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-green-800 font-mono">Free Balance Status</h4>
                   <p className="text-sm text-green-700 font-semibold mt-0.5 leading-snug">
                     {profile?.tier === 'enterprise' ? (
                       <span>✨ Unlimited enterprise transformations remaining.</span>
@@ -1169,9 +1169,9 @@ export default function Dashboard() {
               </div>
 
               <div className="bg-amber-50 border border-amber-200/50 rounded-xl p-4 text-amber-900 space-y-2">
-                <h4 className="font-bold text-sm">💡 Community Pilot Limits</h4>
+                <h4 className="font-bold text-sm">💡 Free Community Edition Limits</h4>
                 <p className="text-xs leading-relaxed font-medium">
-                  As a free community platform, standard pilot accounts are limited to <strong>5 transformations</strong>. 
+                  As a free community platform, standard free accounts are limited to <strong>5 transformations</strong>. 
                   To perform unlimited transformations, you can configure your own Gemini API Key in <a href="/settings" className="underline font-black hover:text-green-700 transition-colors">Profile Settings</a> (BYOK mode) at no extra cost.
                 </p>
               </div>
@@ -1182,7 +1182,7 @@ export default function Dashboard() {
                   <li><strong>Create Projects:</strong> Spin up a fresh project for a custom report, function module, or table mapping.</li>
                   <li><strong>Full Lifecycle Tracking:</strong> Track analysis, target architectural solution designs, Node.js generation, test case compilations, and executive summaries.</li>
                   <li><strong>Deliverables Explorer:</strong> View generated assets, download standard code modules, or read executive summaries live on screen.</li>
-                  <li><strong>Community Feedback:</strong> Engage with verified administrators and pilot users to discuss edge cases.</li>
+                  <li><strong>Community Feedback:</strong> Engage with verified administrators and community users to discuss edge cases.</li>
                 </ul>
               </div>
               <p className="text-xs text-gray-450 border-t border-gray-100 pt-4">
@@ -1729,7 +1729,7 @@ export default function Dashboard() {
                         <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl text-center text-xs font-semibold leading-relaxed animate-in zoom-in-95 duration-200">
                           <CheckCircle2 className="mx-auto text-green-600 mb-2" size={24} />
                           <p className="font-bold">Thread Posted Successfully!</p>
-                          <p className="mt-1 text-green-700/90">Thank you for contributing to our pilot developer community.</p>
+                          <p className="mt-1 text-green-700/90">Thank you for contributing to our developer community.</p>
                         </div>
                       ) : (
                         <form onSubmit={handleCreateForumPost} className="space-y-4">

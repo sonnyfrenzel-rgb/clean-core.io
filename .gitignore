@@ -13,3 +13,4 @@ test-results/
 scratch/
 .agents/
 .antigravity/
+.claude/

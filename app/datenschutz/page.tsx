@@ -41,7 +41,7 @@ export default function DatenschutzPage() {
               1. Privacy at a Glance
             </h2>
             <p className="text-base mb-3">
-              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our Pilot program.
+              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our platform (Free Community Edition).
             </p>
             <p className="text-sm text-gray-500">
               <strong>Controller:</strong> Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, E-Mail: <a href="mailto:info@clean-core.io" className="text-green-600 hover:underline font-semibold">info@clean-core.io</a>.
@@ -53,7 +53,7 @@ export default function DatenschutzPage() {
               2. Data Collection &amp; Processing Purposes
             </h2>
             <p className="text-base mb-4">
-              We process personal data of our users only as far as necessary to provide a functional pilot platform as well as our contents and services.
+              We process personal data of our users only as far as necessary to provide a functional platform as well as our contents and services.
             </p>
             <ul className="list-disc pl-5 space-y-3 text-sm text-gray-600">
               <li>
@@ -84,19 +84,25 @@ export default function DatenschutzPage() {
 
           <section>
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
-              4. Cloud Node Hosting &amp; Third-Party Services
+              4. Hosting &amp; Subprocessors
             </h2>
             <p className="text-base mb-4">
-              To provide this service, we rely on the following trusted cloud services:
+              To provide this service, we rely on the following subprocessors:
             </p>
             <ul className="list-disc pl-5 space-y-3 text-sm text-gray-600">
               <li>
-                <strong className="text-gray-800">Google Cloud Platform &amp; Firebase:</strong> Hosted on secure European servers in the <strong>Belgium (europe-west1)</strong> region for low-latency, fully GDPR-compliant authentication and database operations.
+                <strong className="text-gray-800">Google Cloud Platform &amp; Firebase:</strong> Hosting, authentication, and database operations on European servers in the <strong>Belgium (europe-west1)</strong> region — data residency in the EU, operated in line with GDPR requirements.
               </li>
               <li>
-                <strong className="text-gray-800">Google Gemini API:</strong> Generative AI models used exclusively for code transformation, utilizing secure stateless proxy layers.
+                <strong className="text-gray-800">Google Gemini API:</strong> Generative AI models used exclusively for code transformation, via secure stateless proxy layers.
+              </li>
+              <li>
+                <strong className="text-gray-800">Resend:</strong> Transactional email delivery (e.g. access-approval and status notifications). Your email address is processed to send these messages.
               </li>
             </ul>
+            <p className="text-sm text-gray-500 mt-4">
+              <strong>International transfers:</strong> Google and Resend are US-based providers. Where personal data is transferred outside the EU/EEA, it is safeguarded by the EU Standard Contractual Clauses (SCCs) and the providers&apos; data-processing terms; hosting and storage of your projects remain in the EU (europe-west1).
+            </p>
           </section>
 
           <section>
@@ -113,9 +119,22 @@ export default function DatenschutzPage() {
               <li>Right to Restriction of Processing (Art. 18 GDPR)</li>
               <li>Right to Data Portability (Art. 20 GDPR)</li>
               <li>Right to Withdraw Consent (Art. 7 Abs. 3 GDPR)</li>
+              <li>Right to Lodge a Complaint with a Supervisory Authority (Art. 77 GDPR)</li>
             </ul>
             <p className="text-sm text-gray-500 mt-4">
               To exercise these rights, particularly to cascadingly erase all your data immediately, you can trigger account deletion directly in your Profile Settings under the <strong>Danger Zone</strong>, which will permanently and instantly wipe all database and authentication entries. Alternatively, contact us at <a href="mailto:info@clean-core.io" className="text-green-600 hover:underline font-semibold">info@clean-core.io</a>.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
+              6. Legal Basis &amp; Data Retention
+            </h2>
+            <p className="text-base mb-3">
+              <strong>Legal basis (Art. 6 GDPR):</strong> We process account and usage data to perform the service you request (Art. 6(1)(b)), to operate and secure the platform under our legitimate interest (Art. 6(1)(f)), and — where applicable — on your consent (Art. 6(1)(a)), which you may withdraw at any time.
+            </p>
+            <p className="text-base">
+              <strong>Retention:</strong> Personal data is retained for the life of your account and removed on account erasure (Art. 17); residual copies in encrypted backups age out within 30 days. Security audit records may be kept longer where required for accountability. Detailed per-collection retention is documented in our internal data-retention policy.
             </p>
           </section>
 

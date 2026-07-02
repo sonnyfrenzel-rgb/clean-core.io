@@ -445,8 +445,8 @@ export default function TcoCalculatorPage() {
 
         {/* Corporate Certification Footer (Visible when printing) */}
         <div className="hidden print:block border-t border-gray-300 pt-8 mt-12 text-center text-xs text-gray-400">
-          <p className="font-bold">Clean-Core.io Business Value Suite</p>
-          <p>Certified in compliance with S/4HANA Clean Core Extensibility Framework. All data encrypted client-side.</p>
+          <p className="font-bold">Clean-Core.io Business Value Report</p>
+          <p>Generated in alignment with SAP Clean Core Extensibility principles — not an official SAP certification. Requires your own review and validation. Data encrypted client-side.</p>
         </div>
 
       </div>

@@ -59,7 +59,7 @@ const auditPack = [
 ];
 
 const securityControls = [
-  'Use non-production or representative code for the public pilot, unless a customer-specific agreement is in place.',
+  'Use non-production or representative code for the public release, unless a customer-specific agreement is in place.',
   'Keep AI-provider keys, platform secrets and tenant credentials separated by responsibility and storage boundary.',
   'Store only what the workflow requires, and define retention and deletion behavior clearly.',
   'Document which data is sent to AI providers, which region processes it, and which contractual terms apply.',
@@ -131,7 +131,7 @@ export default function WhitepaperPage() {
         <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs mb-8 border border-emerald-100 shadow-sm">
             <ShieldCheck className="w-4 h-4" />
-            <span className="uppercase tracking-wider">Community Pilot · Edition 2.0</span>
+            <span className="uppercase tracking-wider">Free Community Edition · Edition 2.0</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-7xl font-black tracking-tighter mb-6 leading-[0.9] text-gray-950">

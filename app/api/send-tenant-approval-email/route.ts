@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
               </td>
               <td align="right" valign="middle" style="text-align: right;">
                 <span style="display: inline-block; font-size: 11px; font-weight: 700; color: #0284c7; background-color: #f0f9ff; padding: 6px 12px; border-radius: 8px; line-height: 1.2; text-align: center; white-space: nowrap;">
-                  Community Pilot
+                  Free Community Edition
                 </span>
               </td>
             </tr>
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
           <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
             Warm regards,<br />
             <strong>The Clean-Core.io Team</strong><br />
-            <span style="font-size: 12px; color: #94a3b8;">Community Pilot Program</span>
+            <span style="font-size: 12px; color: #94a3b8;">Free Community Edition Program</span>
           </div>
 
         </div>
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
         <!-- Anti-Spam / Legal Footer -->
         <div style="text-align: center; margin-top: 32px; padding: 0 20px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
           <p style="margin: 0 0 8px 0;">
-            This transactional email was sent to ${email} regarding your unlocked pilot program capabilities on Clean-Core.io.
+            This transactional email was sent to ${email} regarding your unlocked free community program capabilities on Clean-Core.io.
           </p>
           <p style="margin: 0 0 12px 0; font-weight: 600;">
             Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
 
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
-      console.log(`[Email] Sending Pilot Welcome Email to applicant ${email}...`);
+      console.log(`[Email] Sending Welcome Email to applicant ${email}...`);
       await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {

@@ -32,7 +32,7 @@ const slides = [
   {
     id: 'transform',
     title: 'Automated Refactoring',
-    description: 'Flawless transformation from legacy ABAP to Node.js & TypeScript. Clean, maintainable code that follows SAP Clean Core best practices.',
+    description: 'AI-assisted transformation from legacy ABAP to Node.js & TypeScript — clean, maintainable draft code aligned with SAP Clean Core best practices, for you to review.',
     icon: <Cpu className="w-6 h-6" />,
     image: '/screenshots/step-3.jpg',
     alt: 'Clean-Core.io Automated Refactoring interface converting legacy ABAP source code into clean TypeScript and Node.js code side-by-side.',

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     question: "What does a Clean Core Score of 100% mean?",
-    answer: "A score of 100% indicates that all analyzed customer-specific extensions align with SAP's clean core guidelines. This means in-app modifications only run through released key-user apps, and side-by-side BTP extensions communicate exclusively via certified interfaces. The SAP system is considered upgrade-ready based on these criteria."
+    answer: "A score of 100% indicates that all analyzed customer-specific extensions align with SAP's published Clean Core guidelines. This means in-app modifications only run through released key-user apps, and side-by-side BTP extensions communicate via SAP-released interfaces. On these criteria the analyzed extensions are well-positioned for upgrades — subject to your own testing and validation."
   },
   {
     question: "How are the Clean Core Score and TCO connected?",
@@ -79,7 +79,7 @@ export default function CleanCoreScorePage() {
       {/* GEO Quick Answer Block */}
       <QuickAnswer 
         question="How is the SAP Clean Core Score calculated and what does it measure?"
-        answer="The SAP Clean Core Score is a KPI that measures the degree of decoupling between custom code extensions and the standard ERP core. Calculated by analyzing syntax trees and data dependencies, the score weights direct database modifications, calls to unreleased APIs, and key-user extensibility. A high score (closer to 100%) indicates modular code that supports upgrade readiness assessment, simplifies maintenance, and reduces Total Cost of Ownership (TCO) by up to 50%."
+        answer="The SAP Clean Core Score is a KPI that measures the degree of decoupling between custom code extensions and the standard ERP core. Calculated by analyzing syntax trees and data dependencies, the score weights direct database modifications, calls to unreleased APIs, and key-user extensibility. A high score (closer to 100%) indicates modular code that supports upgrade readiness assessment, simplifies maintenance, and can meaningfully reduce the Total Cost of Ownership (TCO) of custom code over time."
       />
 
       {/* Main Content */}
@@ -198,7 +198,7 @@ export default function CleanCoreScorePage() {
 
       {/* Footer Disclaimer */}
       <div className="text-center text-[10px] text-gray-500 font-mono font-bold uppercase tracking-wider pt-10 border-t border-gray-200">
-        Clean-Core.io {APP_VERSION} • {APP_RELEASE_DATE} • Free Community Pilot
+        Clean-Core.io {APP_VERSION} • {APP_RELEASE_DATE} • Free Community Edition
       </div>
     </div>
   );

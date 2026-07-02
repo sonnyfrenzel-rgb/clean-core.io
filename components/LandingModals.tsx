@@ -192,7 +192,7 @@ export default function LandingModals() {
             }),
           });
         } catch (emailErr) {
-          console.error('Failed to trigger pilot registration email:', emailErr);
+          console.error('Failed to trigger registration email:', emailErr);
         }
       }
       
@@ -328,7 +328,7 @@ export default function LandingModals() {
           console.warn('[Email Signup] request-pilot returned', pilotResp.status);
         }
       } catch (emailErr) {
-        console.error('Failed to trigger pilot registration approval email:', emailErr);
+        console.error('Failed to trigger registration approval email:', emailErr);
       }
       
       setIsNavigating(true);
@@ -786,7 +786,7 @@ export default function LandingModals() {
                           >
                             GDPR provisions and Privacy Policy
                           </button>{' '}
-                          and understand this is a free community pilot.
+                          and understand this is a Free Community Edition.
                         </span>
                       </label>
 
@@ -859,7 +859,7 @@ export default function LandingModals() {
                     <div className="mt-4 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-200/80 rounded-2xl flex items-center justify-between gap-3 shadow-inner text-left animate-in fade-in slide-in-from-top-2 duration-500">
                       <div>
                         <p className="text-[10px] font-black text-green-800 uppercase tracking-widest leading-none mb-1">New to Clean-Core.io?</p>
-                        <p className="text-[11px] text-gray-500 font-bold leading-none">Join our closed pilot program</p>
+                        <p className="text-[11px] text-gray-500 font-bold leading-none">Join our free community program</p>
                       </div>
                       <button
                         type="button"
@@ -996,7 +996,7 @@ export default function LandingModals() {
           <div className="pt-4 border-t border-slate-100">
             <h3 className="text-base font-bold mb-2 text-slate-900">Disclaimer</h3>
             <p className="text-xs text-slate-500 leading-normal mb-3">
-              <strong>Liability for Content:</strong> The contents of our pages were created with the greatest care. Since this is a non-commercial, collaborative research pilot application (Community Pilot), we cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
+              <strong>Liability for Content:</strong> The contents of our pages were created with the greatest care. Since this is a non-commercial, collaborative research pilot application (Free Community Edition), we cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
             </p>
             <p className="text-xs text-slate-500 leading-normal">
               <strong>Copyright:</strong> The content and works created by the site operator on these pages are subject to German copyright law. Contributions from third parties are marked as such. Reproduction, editing, and distribution require written consent.
@@ -1018,7 +1018,7 @@ export default function LandingModals() {
           <div>
             <h3 className="text-lg font-bold mb-2">1. Privacy at a Glance</h3>
             <p className="text-sm leading-relaxed mb-2">
-              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our Pilot program.
+              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our platform program.
             </p>
             <p className="text-xs text-slate-500">
               <strong>Controller:</strong> Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, E-Mail: info@clean-core.io.
@@ -1094,7 +1094,7 @@ export default function LandingModals() {
           <div>
             <h3 className="text-lg font-bold mb-2">1. Privacy at a Glance</h3>
             <p className="text-sm leading-relaxed mb-2">
-              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our Pilot program.
+              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our platform program.
             </p>
             <p className="text-xs text-slate-500">
               <strong>Controller:</strong> Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, E-Mail: info@clean-core.io.
@@ -1139,13 +1139,13 @@ export default function LandingModals() {
           <div>
             <h3 className="text-lg font-bold mb-2">1. Scope and Purpose</h3>
             <p className="text-sm leading-relaxed">
-              This Clean-Core.io pilot program is designed solely for research and evaluation purposes in the domain of automated code modernization (ABAP to Cloud-Native). By participating, you help shape and improve this community utility.
+              This Clean-Core.io free community program is designed solely for research and evaluation purposes in the domain of automated code modernization (ABAP to Cloud-Native). By participating, you help shape and improve this community utility.
             </p>
           </div>
           <div>
-            <h3 className="text-lg font-bold mb-2">2. Community Pilot Usage</h3>
+            <h3 className="text-lg font-bold mb-2">2. Free Community Edition Usage</h3>
             <p className="text-sm leading-relaxed text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100 font-medium">
-              During this community pilot phase, platform access is completely free and intended for prototyping, educational, and research-based testing. Commercial deployment of generated code requires a separate agreement.
+              During this Free Community Edition phase, platform access is completely free and intended for prototyping, educational, and research-based testing. Commercial deployment of generated code requires a separate agreement.
             </p>
           </div>
           <div>

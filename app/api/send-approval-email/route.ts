@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const dashboardUrl = `${BASE_URL}/dashboard`;
     const whitepaperUrl = `${BASE_URL}/Enterprise_Security_Compliance_Whitepaper.pdf`;
 
-    const emailSubject = `🎉 Welcome to Clean-Core.io: Pilot Access Approved!`;
+    const emailSubject = `🎉 Welcome to Clean-Core.io: Access Approved!`;
     
     // Professional, spam-resilient, trusted business-grade HTML email template
     const emailHtml = `
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
               </td>
               <td align="right" valign="middle" style="text-align: right;">
                 <span style="display: inline-block; font-size: 11px; font-weight: 700; color: #0f172a; background-color: #f1f5f9; padding: 6px 12px; border-radius: 8px; line-height: 1.2; text-align: center; white-space: nowrap;">
-                  Community Pilot
+                  Free Community Edition
                 </span>
               </td>
             </tr>
@@ -85,11 +85,11 @@ export async function POST(request: NextRequest) {
           </p>
           
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            We are pleased to inform you that your application for the <strong>Clean-Core.io Pilot Program</strong> has been successfully verified. Your pilot workspace is now active.
+            We are pleased to inform you that your application for the <strong>Clean-Core.io Free Community Edition</strong> has been successfully verified. Your workspace is now active.
           </p>
 
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            Thank you so much for joining our pilot program and taking the time to test our platform. We are incredibly grateful for your participation and look forward to your valuable feedback to help us refine and improve the experience.
+            Thank you so much for joining our free community program and taking the time to test our platform. We are incredibly grateful for your participation and look forward to your valuable feedback to help us refine and improve the experience.
           </p>
 
           <!-- Security Trust Indicator -->
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
           <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
             Warm regards,<br />
             <strong>The Clean-Core.io Team</strong><br />
-            <span style="font-size: 12px; color: #94a3b8;">Community Pilot Program</span>
+            <span style="font-size: 12px; color: #94a3b8;">Free Community Edition Program</span>
           </div>
 
         </div>
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
         <!-- Anti-Spam / Legal Footer -->
         <div style="text-align: center; margin-top: 32px; padding: 0 20px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
           <p style="margin: 0 0 8px 0;">
-            This transactional email was sent to ${email} regarding your approved pilot program application on Clean-Core.io.
+            This transactional email was sent to ${email} regarding your approved free community program application on Clean-Core.io.
           </p>
           <p style="margin: 0 0 12px 0; font-weight: 600;">
             Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
     // Check Resend config
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
-      console.log(`[Email] Sending Pilot Welcome Email to applicant ${email}...`);
+      console.log(`[Email] Sending Welcome Email to applicant ${email}...`);
       const resendRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {

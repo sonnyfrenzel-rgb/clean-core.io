@@ -10,14 +10,14 @@ const inter = Inter({
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: 'Clean-Core.io | Enterprise S/4HANA Modernization Suite',
+  title: 'Clean-Core.io — Free SAP Clean Core Modernization Assistant',
   description: 'Automatically analyze and transform custom legacy ABAP operations into clean-code, cloud-native Node.js architectures following official SAP Clean Core guidelines.',
   icons: {
     icon: '/icon.svg',
   },
   openGraph: {
-    title: 'Clean-Core.io | Enterprise S/4HANA Modernization Suite',
-    description: 'Automatically analyze and transform custom legacy ABAP operations into clean-code, cloud-native Node.js architectures following official SAP Clean Core guidelines.',
+    title: 'Clean-Core.io — Free SAP Clean Core Modernization Assistant',
+    description: 'A free, community-built assistant that analyzes custom SAP ABAP and drafts clean-core-aligned RAP/CAP designs. Evidence-based and complementary to your SAP tooling — review and verify before you deploy.',
     url: 'https://clean-core.io',
     type: 'website',
     siteName: 'Clean-Core.io',
@@ -26,14 +26,14 @@ export const metadata: Metadata = {
         url: 'https://clean-core.io/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Clean-Core.io — SAP S/4HANA Modernization Suite',
+        alt: 'Clean-Core.io — Free SAP Clean Core Modernization',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Clean-Core.io | Enterprise S/4HANA Modernization Suite',
-    description: 'Automatically analyze and transform custom legacy ABAP operations into clean-code, cloud-native Node.js architectures following official SAP Clean Core guidelines.',
+    title: 'Clean-Core.io — Free SAP Clean Core Modernization Assistant',
+    description: 'A free, community-built assistant that analyzes custom SAP ABAP and drafts clean-core-aligned RAP/CAP designs. Evidence-based and complementary to your SAP tooling — review and verify before you deploy.',
     images: ['https://clean-core.io/og-image.png'],
   },
 };

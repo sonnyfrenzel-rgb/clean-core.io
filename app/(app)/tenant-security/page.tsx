@@ -151,7 +151,7 @@ export default function TenantSecurityPage() {
 
         <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 sm:p-8 space-y-5">
           <p className="text-gray-700 leading-relaxed font-medium">
-            To prevent misuse during the community pilot, <strong>every tenant connection request is manually reviewed and approved</strong> by our admin team before activation. There is no self-service provisioning — this is by design.
+            To prevent misuse during the Free Community Edition, <strong>every tenant connection request is manually reviewed and approved</strong> by our admin team before activation. There is no self-service provisioning — this is by design.
           </p>
 
           <div className="space-y-4">
@@ -178,7 +178,7 @@ export default function TenantSecurityPage() {
           </div>
 
           <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-4 text-xs text-amber-900 font-medium leading-relaxed">
-            <strong>Why manual approval?</strong> Since this is a free community pilot, we want to ensure every connection is legitimate and intentional. This protects both the platform and your system from unintended exposure.
+            <strong>Why manual approval?</strong> Since this is a Free Community Edition, we want to ensure every connection is legitimate and intentional. This protects both the platform and your system from unintended exposure.
           </div>
         </div>
       </section>

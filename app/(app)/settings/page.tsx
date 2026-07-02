@@ -730,7 +730,7 @@ export default function SettingsPage() {
 
       await auth.signOut();
 
-      alert("Your user account and all associated data have been successfully and permanently removed from our system in accordance with GDPR (Right to Erasure). Thank you for participating in the Community Pilot.");
+      alert("Your user account and all associated data have been successfully and permanently removed from our system in accordance with GDPR (Right to Erasure). Thank you for participating in the Free Community Edition.");
       router.push('/');
     } catch (error: any) {
       console.error("GDPR Account Erasure failed:", error);
@@ -748,7 +748,7 @@ export default function SettingsPage() {
     if (hasCustomKey && (tier === 'pilot' || tier === 'pilot_byok')) {
       return { 
         icon: <Infinity className="text-purple-600 animate-pulse" />, 
-        label: 'Pilot (BYOK Active)', 
+        label: 'Community (BYOK Active)', 
         color: 'bg-purple-50 border-purple-100 shadow-md shadow-purple-50', 
         text: 'Your custom Gemini API Key is active. Transformations are unlimited under your key.' 
       };
@@ -756,7 +756,7 @@ export default function SettingsPage() {
 
     switch (tier) {
       case 'pilot_byok': return { icon: <Infinity className="text-purple-600" />, label: 'BYOK Pilot', color: 'bg-purple-50 border-purple-100', text: 'Bring Your Own Key for limitless pilot transformations.' };
-      default: return { icon: <Shield className="text-gray-600" />, label: 'Pilot Standard', color: 'bg-gray-50 border-gray-100', text: 'Limited to 5 transformations for testing.' };
+      default: return { icon: <Shield className="text-gray-600" />, label: 'Community Standard', color: 'bg-gray-50 border-gray-100', text: 'Limited to 5 transformations for testing.' };
     }
   };
 
@@ -1255,7 +1255,7 @@ export default function SettingsPage() {
               </div>
               
               <p className="text-gray-600 font-medium mb-8 text-sm md:text-base leading-relaxed">
-                Add your own Google Gemini API Key to bypass the standard 5-transformations pilot limit. Your credentials are encrypted in transit, proxied through our secure backend, and never exposed to the client-side bundle.
+                Add your own Google Gemini API Key to bypass the standard 5-transformations free limit. Your credentials are encrypted in transit, proxied through our secure backend, and never exposed to the client-side bundle.
               </p>
 
               <form onSubmit={handleSaveKey} className="space-y-6 text-gray-900">
@@ -1410,7 +1410,7 @@ export default function SettingsPage() {
               <div className="bg-sky-50/60 border border-sky-200 p-4 rounded-2xl mb-8 flex items-start gap-3">
                 <Globe className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-bold text-sky-900 mb-1">Pilot Connectivity Mode</p>
+                  <p className="text-xs font-bold text-sky-900 mb-1">Connectivity Mode</p>
                   <p className="text-[11px] text-sky-800/90 leading-relaxed font-medium">
                     The &quot;Test Connection&quot; button performs a real HTTP handshake against your S/4HANA endpoint to verify reachability and authentication status. Full OData entity integration is planned for a future release.
                   </p>
@@ -1609,7 +1609,7 @@ export default function SettingsPage() {
                   <div className="bg-sky-50/50 border border-sky-100 p-5 rounded-2xl">
                     <h3 className="text-xs font-black text-sky-950 uppercase tracking-widest mb-3">📋 Instructions (Setup Guide)</h3>
                     <ol className="list-decimal pl-4 text-xs text-sky-850 space-y-2 font-medium">
-                      <li><strong>Request access:</strong> Use the form below to request pilot access for your organization.</li>
+                      <li><strong>Request access:</strong> Use the form below to request access for your organization.</li>
                       <li><strong>Provide HTTPS endpoint:</strong> Set up a secure HTTPS connection to your S/4HANA sandbox or test system.</li>
                       <li><strong>Configure credentials:</strong> Once approved, you can configure your credentials (Basic Auth or OAuth 2.0).</li>
                       <li><strong>Test & use connection:</strong> Run live test cases against OData interfaces directly from the Stage 5 testing environment.</li>
@@ -1630,7 +1630,7 @@ export default function SettingsPage() {
                   <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
                     <h3 className="text-xs font-black text-amber-950 uppercase tracking-widest mb-2">⚠️ Warranty Disclaimer</h3>
                     <p className="text-xs text-amber-800 leading-relaxed font-medium">
-                      This platform is a non-commercial community pilot environment. Access is provided entirely without warranty, guarantee, or liability. Under no circumstances should you use productive ERP data or real passwords.
+                      This platform is a non-commercial Free Community Edition environment. Access is provided entirely without warranty, guarantee, or liability. Under no circumstances should you use productive ERP data or real passwords.
                     </p>
                   </div>
 
@@ -1649,7 +1649,7 @@ export default function SettingsPage() {
                     <form onSubmit={handleRequestByot} className="space-y-4 pt-2">
                       <div className="space-y-2">
                         <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                          Description of your pilot use case (Motivation)
+                          Description of your use case (Motivation)
                         </label>
                         <textarea 
                           value={byotMotivation}
@@ -1725,7 +1725,7 @@ export default function SettingsPage() {
               <div className="flex flex-col items-center justify-center p-6 bg-red-50 rounded-2xl border border-red-100 space-y-4">
                 <Loader2 className="animate-spin text-red-600" size={32} />
                 <p className="text-sm font-black text-red-950">Securely purging all data in accordance with GDPR...</p>
-                <p className="text-xs text-red-700/80 text-center max-w-sm">We are removing all your projects, custom source code uploads, pilot registration requests, profile configuration preferences, and core authentication credentials from our database.</p>
+                <p className="text-xs text-red-700/80 text-center max-w-sm">We are removing all your projects, custom source code uploads, registration requests, profile configuration preferences, and core authentication credentials from our database.</p>
               </div>
             ) : (
               <button
@@ -1785,8 +1785,8 @@ export default function SettingsPage() {
           </div>
 
           <div className="bg-gray-950 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] text-white shadow-2xl">
-            <h3 className="text-xl font-black mb-4 tracking-tight">Community Pilot Status</h3>
-            <p className="text-gray-400 text-sm font-medium mb-8">You are currently participating in our closed pilot program.</p>
+            <h3 className="text-xl font-black mb-4 tracking-tight">Free Community Edition Status</h3>
+            <p className="text-gray-400 text-sm font-medium mb-8">You are currently participating in our free community program.</p>
             <div className="bg-white/10 p-4 rounded-xl border border-white/20 mb-6">
               <p className="text-xs text-white/80 leading-relaxed font-medium">To talk about a commercial license, unlocking more transformations, or if you want to Bring Your Own Key (BYOK), simply <a href="mailto:info@clean-core.io" className="text-green-400 hover:text-green-300 font-bold underline">contact the admin</a>.</p>
             </div>
@@ -1830,9 +1830,9 @@ export default function SettingsPage() {
               </div>
 
               <div className="border-t border-slate-800 pt-4">
-                <span className="font-bold text-amber-500 block uppercase tracking-wider mb-1">⚠️ Pilot Warranty Disclaimer</span>
+                <span className="font-bold text-amber-500 block uppercase tracking-wider mb-1">⚠️ Warranty Disclaimer</span>
                 <p className="leading-relaxed italic text-slate-400">
-                  This application is a <strong>non-commercial pilot preview</strong>. Operations are provided completely <strong>without warranty, guarantees, or liability</strong> of any kind. All generated codes must be vetted by qualified architects before deployment.
+                  This application is a <strong>non-commercial community preview</strong>. Operations are provided completely <strong>without warranty, guarantees, or liability</strong> of any kind. All generated codes must be vetted by qualified architects before deployment.
                 </p>
               </div>
             </div>

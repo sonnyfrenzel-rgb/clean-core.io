@@ -51,7 +51,7 @@ export default function FooterCTA() {
       href="?auth=signin"
       className="bg-green-600 hover:bg-green-700 text-white px-10 md:px-12 py-4 md:py-5 rounded-2xl font-bold text-lg transition-all shadow-xl shadow-green-900/20 hover:-translate-y-1 text-center inline-block"
     >
-      Get Pilot Access or Login
+      Get Free Access or Login
     </Link>
   );
 }
