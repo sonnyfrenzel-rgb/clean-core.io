@@ -107,7 +107,7 @@ const concepts = [
   {
     title: "Native CAP & CDS Schemas",
     details: [
-      { label: "Official SAP Standard", text: "Built on SAP Cloud Application Programming Model (CAP), the official design pattern for cloud extensions." },
+      { label: "SAP CAP Model", text: "Built on SAP Cloud Application Programming Model (CAP), SAP's recommended design pattern for side-by-side cloud extensions." },
       { label: "CDS Declarative Schema", text: "Core Data Services (.cds) files define data structures and API service models with strict typing." },
       { label: "HANA & SQL Compatibility", text: "Supports automated persistence migrations for SAP HANA Cloud, SQLite, or PostgreSQL." }
     ]

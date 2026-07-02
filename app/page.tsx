@@ -18,6 +18,7 @@ import HeaderAuthButton from '@/components/HeaderAuthButton';
 import HeroCTA from '@/components/HeroCTA';
 import PricingCTA from '@/components/PricingCTA';
 import FooterCTA from '@/components/FooterCTA';
+import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import LandingModals from '@/components/LandingModals';
 import LandingSlideshow from '@/components/LandingSlideshow';
 import QuickAnswer from '@/components/QuickAnswer';
@@ -867,6 +868,9 @@ export default function Home() {
               <p>
                 <strong>Data Privacy & GDPR:</strong> This platform is deployed on secure European cloud nodes in the Belgium (europe-west1) region. Secure stateless proxy layers ensure that uploaded code is processed transiently and saved in your encrypted, user-isolated project workspace (never utilized by Google for LLM model training). All users retain the absolute right to immediate, recursive erasure (Art. 17 GDPR) via the settings dashboard.
               </p>
+              <div className="pt-1 border-t border-gray-900">
+                <SapTrademarkNotice className="!text-gray-550" />
+              </div>
             </div>
           </div>
         </div>

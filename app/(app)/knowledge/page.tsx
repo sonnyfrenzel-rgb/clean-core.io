@@ -81,7 +81,7 @@ export default function KnowledgePage() {
             Clean Core & BTP <span className="text-green-400">Reference Hub</span>
           </h1>
           <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
-            Discover the technical architectures, security guidelines, and extensibility patterns approved by SAP for S/4HANA clean-core compliance.
+            Discover the technical architectures, security guidelines, and extensibility patterns aligned with SAP's published Clean Core guidelines for S/4HANA.
           </p>
         </div>
       </div>
@@ -150,13 +150,13 @@ export default function KnowledgePage() {
         <div className="absolute right-0 bottom-0 w-96 h-96 bg-[radial-gradient(circle_at_70%_70%,rgba(16,185,129,0.05),transparent)] pointer-events-none"></div>
         <div className="max-w-3xl space-y-3 relative z-10">
           <h3 className="text-2xl md:text-3xl font-black text-slate-100 uppercase tracking-tight">
-            SAP Verified Extensibility Compliance
+            Clean Core Extensibility Alignment
           </h3>
           <p className="text-sm text-slate-300 leading-relaxed font-medium">
             Clean-Core.io leverages standard SAP technologies, securing transactions according to the SAP Cloud SDK guidelines. Keep your ERP core system upgradeable while expanding functionality with cloud-native scalability.
           </p>
           <div className="inline-flex items-center gap-1.5 text-green-400 font-bold text-xs uppercase tracking-widest pt-4">
-            SAP Verified Strategy <Check size={14} className="stroke-[3]" />
+            Clean Core Aligned Strategy <Check size={14} className="stroke-[3]" />
           </div>
         </div>
       </div>

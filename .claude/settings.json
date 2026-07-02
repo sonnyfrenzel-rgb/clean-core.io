@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo \"=== DEPLOY EXIT $? ===\")",
+      "Bash(gh run *)",
+      "Bash(gcloud run *)",
+      "Bash(curl -s -o /dev/null -w \"clean-core.io HTTP %{http_code}\\\\n\" https://clean-core.io)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(echo \"=== EXIT $? ===\")",
+      "Bash(git checkout *)",
+      "Bash(gcloud builds *)",
+      "Bash(git merge *)"
+    ]
+  }
+}

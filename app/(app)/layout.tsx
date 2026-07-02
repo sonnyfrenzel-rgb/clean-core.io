@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import GlossarySidebar from '@/components/GlossarySidebar';
 import GlossaryChatbot from '@/components/GlossaryChatbot';
+import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 
 export default function AppLayout({children}: {children: React.ReactNode}) {
   const pathname = usePathname();
@@ -267,6 +268,11 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-32">
         {children}
       </main>
+      <footer className="border-t border-gray-100 bg-white/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center">
+          <SapTrademarkNotice className="max-w-3xl mx-auto" />
+        </div>
+      </footer>
       <GlossaryChatbot />
     </div>
   );
