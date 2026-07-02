@@ -49,7 +49,7 @@ export default function HeaderAuthButton() {
       href="?auth=signin"
       className="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-6 py-2 rounded-lg font-medium transition-colors shadow-sm text-sm sm:text-base text-center inline-block"
     >
-      Get Pilot Access or Login
+      Get Free Access or Login
     </Link>
   );
 }

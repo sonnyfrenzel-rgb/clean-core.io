@@ -80,14 +80,14 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
 
   const getTierBadge = (tier: string = 'basic') => {
     if (profile?.isAdmin) {
-      return <span className="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Crown size={10} /> PILOT ADMIN</span>;
+      return <span className="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Crown size={10} /> Admin</span>;
     }
     switch (tier) {
-      case 'enterprise': return <span className="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Crown size={10} /> PILOT ADMIN</span>;
-      case 'unlimited': return <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1"><Infinity size={10} /> BYOK Pilot</span>;
-      case 'premium': return <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1"><Crown size={10} /> Pilot Pro</span>;
-      case 'starter': return <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1"><Zap size={10} /> Pilot Standard</span>;
-      default: return <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1"><Shield size={10} /> Pilot Basic</span>;
+      case 'enterprise': return <span className="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Crown size={10} /> Admin</span>;
+      case 'unlimited': return <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1"><Infinity size={10} /> Community BYOK</span>;
+      case 'premium': return <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1"><Crown size={10} /> Community Pro</span>;
+      case 'starter': return <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1"><Zap size={10} /> Community Standard</span>;
+      default: return <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1"><Shield size={10} /> Community Basic</span>;
     }
   };
 
@@ -97,7 +97,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
       {showBanner && (
         <div className="bg-amber-50/95 backdrop-blur text-amber-900 py-2 sm:py-2.5 px-4 pr-4 sm:pr-40 text-center text-[10px] sm:text-xs font-semibold border-b border-amber-200 flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 transition-all shrink-0 relative animate-in slide-in-from-top duration-300">
           <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-950 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider select-none shrink-0">
-            ⚡ Community Pilot
+            ⚡ Free Community Edition
           </span>
           <span className="leading-relaxed">
             Free Community SAP Modernization Platform. Powered by Generative AI. Provided without warranty.
@@ -126,7 +126,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-lg sm:text-2xl tracking-tight text-gray-900 leading-none">Clean-Core<span className="text-green-600">.io</span></span>
-              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-gray-500 mt-1">Community Pilot</span>
+              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-gray-500 mt-1">Free Community Edition</span>
             </div>
           </Link>
 
@@ -229,7 +229,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
               {profile?.tier === 'pilot' ? (
                 <div className="space-y-4">
                   <p className="text-lg text-gray-700 leading-relaxed font-medium">
-                    You are currently using the <span className="text-gray-900 font-bold underline decoration-green-500 underline-offset-4 tracking-tight">Pilot Standard</span> plan.
+                    You are currently using the <span className="text-gray-900 font-bold underline decoration-green-500 underline-offset-4 tracking-tight">Community Standard</span> plan.
                   </p>
                   <ul className="space-y-2 text-sm text-gray-600 font-medium italic">
                     <li className="flex items-center gap-2">• Up to 5 App transformations</li>

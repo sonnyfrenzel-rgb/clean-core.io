@@ -53,7 +53,7 @@ export default function HeroCTA() {
           href="?auth=signin"
           className="w-full sm:w-auto flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white px-12 py-5 rounded-2xl font-black text-lg transition-all shadow-lg hover:shadow-2xl hover:-translate-y-1 text-center"
         >
-          Get Pilot Access or Login <ArrowRight className="w-5 h-5" />
+          Get Free Access or Login <ArrowRight className="w-5 h-5" />
         </Link>
       )}
       <Link
