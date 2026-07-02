@@ -1,6 +1,8 @@
 # Security Architecture — Clean-Core.io Platform
 
-> **Version:** 3.7 · **Date:** 2026-06-28 · **Classification:** Internal
+> **Version:** 4.0 · **Date:** 2026-07-02 · **Classification:** Internal
+
+> **v4.0 changes:** documented the Evidence Trust Chain (run immutability, `runHash` + HMAC signature, audit-pack cryptography — §14) and operational readiness (§15: health probe, complete GDPR Art. 17 cascade, data-retention & incident-response policies, supply-chain CI gates). Corrected the admin-gating description (§3.2) to match the custom-claim implementation.
 
 ---
 
@@ -40,9 +42,11 @@ This document describes the security architecture and hardening measures impleme
 
 ### 3.2 Admin Gating (F-04)
 - Admin routes use `verifyAdminRequest()` which checks:
-  1. Valid Firebase ID token
-  2. Email in the hardcoded admin allowlist (`lib/constants.ts`)
-  3. `isAdmin: true` flag in the user's Firestore document (REST lookup)
+  1. Valid Firebase ID token, and
+  2. The `admin` **custom claim** (`decoded.admin === true`) — the sole authority in production.
+  - Emulator/CI only: a Firestore `users/{uid}.isAdmin` fallback is allowed (never in production).
+  - Firestore rules mirror this: `isAdmin()` reads `request.auth.token.admin` (custom claim) only.
+  - Privileged admin actions additionally require recent auth + MFA step-up (`assertAdminStepUp`).
 - Protected admin routes: `/api/send-approval-email`, `/api/send-tenant-approval-email`, `/api/send-tenant-revoke-email`
 - Non-admin tokens receive **403** (not 401) — fail-closed.
 - Recipient email addresses are format-validated (defense-in-depth).
@@ -308,4 +312,37 @@ Before deploying any CSP modification:
 4. **Click Google Sign-In** — a popup should open to `accounts.google.com`
 5. **Check browser console** — NO `auth/internal-error` or CSP violations
 6. If the popup doesn't open, check the console for `Refused to load` or `Refused to execute` errors — these indicate a CSP block
+
+---
+
+## 14. Evidence Trust Chain (Run Immutability & Audit Pack Cryptography)
+
+The platform's core assurance is that an analysis result cannot be silently altered after the fact. This is enforced server-side.
+
+### 14.1 Immutable, signed Runs
+- Every successful analysis is persisted as a **Run** document at `projects/{id}/runs/{runId}` by `app/api/runs/create/route.ts`.
+- The server **recomputes** the deterministic evidence, scores, and extensibility routing (it does not trust client-supplied scores).
+- A canonical (key-sorted) JSON serialization of the run payload is hashed with **SHA-256 → `runHash`**, then signed with **HMAC-SHA256** using `AUDIT_SIGNING_KEY` → `signature`.
+- Runs are **immutable to clients**: `firestore.rules` sets `allow write: if false` on the `runs` subcollection; only the Admin SDK writes them. Read is owner/admin-scoped.
+
+### 14.2 Downstream enforcement
+- `enforceActiveRun()` gates every downstream page (Design, Transformation, Documentation, Testing, TCO, Delivery); a missing run redirects to Analyze.
+- The sign endpoint (`/api/export/sign`) validates that the requested run **is** the project's active run (**HTTP 409** otherwise) and that it carries a valid `runHash` (**HTTP 422** otherwise) — the client cannot forge run binding.
+
+### 14.3 Audit Pack verification
+- Audit packs carry a SHA-256 **manifest** and an HMAC **signature** (`lib/audit-pack.ts` / `lib/audit-pack-verify.ts`).
+- The verify endpoint hardens input (64-char hex signature, ≤32 KB canonical manifest) and compares with `timingSafeEqual`.
+- Verification is reported in **three honest tiers**: `authentic` → `integrity-only` (unsigned but hash-consistent) → `failed`. A green "authentic" state is never shown without a valid signature.
+
+> **Known residual (roadmap):** narrative text is currently client-supplied into the signed payload, and audit-pack file hashes are computed client-side before signing. Moving narrative generation and pack assembly fully server-side (server-authoritative evidence) is tracked for the next hardening release; until then, packs prove *integrity* of the recorded content, and the deterministic scores/routing are already server-authoritative.
+
+---
+
+## 15. Operational Readiness
+
+- **Health probe:** `GET /api/health` (liveness + config presence; `?deep=1` adds a Firestore ping) for Cloud Run checks and uptime monitoring. Returns 503 when misconfigured; response is minimal (no per-check disclosure).
+- **GDPR Art. 17 erasure:** `deleteUserDataAndAccount()` purges every collection in `docs/DATA-RETENTION.md`, including the `runs` subcollection and encrypted BYOK keys (`user_secrets`) via `recursiveDelete`. Completeness is enforced by an automated test (`tests/security-compliance.spec.ts`).
+- **Data retention & residency:** documented per-collection in `docs/DATA-RETENTION.md`; all data in Firestore **europe-west1 (EU)**. Public transparency page at `/trust`.
+- **Incident response:** `docs/INCIDENT-RESPONSE.md` — severity classes, key-compromise / data-breach (GDPR 72h) / exposed-seed runbooks, blameless post-mortem.
+- **Supply-chain hygiene (CI):** `.github/workflows/security-ci.yml` runs secret scanning (gitleaks), dependency audit (`npm audit --audit-level=high`, blocking), and a CycloneDX SBOM on PRs, deploy-branch pushes, and weekly.
 
