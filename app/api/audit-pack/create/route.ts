@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
 import JSZip from 'jszip';
 import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
@@ -165,7 +166,7 @@ export async function POST(req: NextRequest) {
     if (error?.statusCode === 429) {
       return NextResponse.json({ error: error.message }, { status: 429 });
     }
-    console.error('Error in /api/audit-pack/create:', error);
+    logger.error('audit-pack/create failed', { route: 'api/audit-pack/create', error: errMessage(error) });
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }

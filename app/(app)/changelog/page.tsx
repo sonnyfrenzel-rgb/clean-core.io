@@ -20,9 +20,24 @@ export const metadata: Metadata = {
 
 const releases = [
   {
-    version: 'v1.22.1',
+    version: 'v2.0.0',
     date: 'July 2, 2026',
     tag: 'Latest',
+    icon: Rocket,
+    changes: [
+      'Enterprise-grade trust chain — audit packs are generated and HMAC-signed entirely server-side from the immutable run; the AI narrative is excluded from the signed payload.',
+      'Complete GDPR Art. 17 erasure — account deletion now purges analysis runs, encrypted BYOK keys and MFA data (verified by an automated test).',
+      'Supply-chain CI — secret scanning (gitleaks), a dependency-audit gate, and a CycloneDX SBOM on every build; removed the vulnerable xlsx dependency.',
+      'Operational readiness — /api/health probe, structured JSON logging, data-retention & incident-response docs, SECURITY.md v4.0, and a public /trust page.',
+      'Public SAP Object Catalog — hundreds of SEO/GEO reference pages mapping SAP objects to their released successors.',
+      'Test auto-healing — on a compilation error the AI repairs the generated module/test code and retries automatically.',
+      'Sharpened narrative — free & community-first, complementary to SAP tools (not a competitor), no premium signals, no misleading claims. All "pilot" wording retired.',
+      'Fixes — empty Solution Design (Firestore rules deployed to every database), blank Target Architecture diagram (mermaid label sanitization), false "legacy run" banner, and the test-sandbox esbuild error.',
+    ],
+  },
+  {
+    version: 'v1.22.1',
+    date: 'July 2, 2026',
     icon: Shield,
     changes: [
       'Usage Persistence Fix — Usage imports now persist in Firestore after page reload. Added usageReport to project update allowlist with map validation.',

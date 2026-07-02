@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
 import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
 import { APP_VERSION } from '@/lib/version';
@@ -316,7 +317,7 @@ export async function POST(req: NextRequest) {
       signature,
     });
   } catch (error: any) {
-    console.error('Error creating analysis run:', error);
+    logger.error('runs/create failed', { route: 'api/runs/create', error: errMessage(error) });
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }

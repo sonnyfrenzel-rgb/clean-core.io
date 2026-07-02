@@ -1,6 +1,6 @@
-# Clean-Core.io — Enterprise SAP Code Modernization Platform
+# Clean-Core.io — Free, Community SAP Clean Core Modernization
 
-Clean-Core.io is a modern, high-performance, and secure web and desktop client application designed to streamline SAP ABAP legacy migrations to TypeScript/Node.js. Fully aligned with the official SAP **Clean Core Extensibility Paradigm**, it enables enterprise architects and developers to modernize custom transactional operations, verify compliance with released APIs, and compile modular side-by-side cloud architectures.
+Clean-Core.io is a free, community-built web application that helps SAP practitioners modernize custom ABAP toward TypeScript/Node.js, aligned with SAP's **Clean Core Extensibility** principles. It helps architects and developers assess custom-code Clean Core readiness, map to released APIs, and draft modular RAP/CAP designs for review — **complementary to SAP's own tooling (ADT, ATC), not a replacement**. Not affiliated with or endorsed by SAP SE.
 
 ---
 
@@ -12,11 +12,11 @@ Clean-Core.io is a modern, high-performance, and secure web and desktop client a
     *   **Code-Integrity Minimap (Heatmap Scrollbar):** A vertical scroll strip containing colored markers matching translation findings (Fully Grounded, SQL Quirks, RTTI gaps) with smooth scroll-to-line navigation.
     *   **Grounded Grounding Audit Panel (Sliding Drawer):** Includes an interactive developer sign-off checklist that updates the compliance score in real-time, detailed SQL CDS matches (mapping tables to released standard views), active Open SQL quirk remediation settings, and a **Differential Sandbox Result-Set Tester** that simulates S/4HANA live query checks.
 *   **Realistic OO & Complex SQL Join Test Balloon:**
-    A comprehensive test script (`abap-test-files/Z_ORDER_INTEGRITY_CHECK.txt`) modeling legacy invoice processing with abstract classes, subclasses, redefinitions, and a complex 3-table SELECT query with `FOR ALL ENTRIES` and `LEFT OUTER JOIN` quirks, designed for pilot users to verify the engine's grounding behavior.
+    A comprehensive test script (`abap-test-files/Z_ORDER_INTEGRITY_CHECK.txt`) modeling legacy invoice processing with abstract classes, subclasses, redefinitions, and a complex 3-table SELECT query with `FOR ALL ENTRIES` and `LEFT OUTER JOIN` quirks, designed for users to verify the engine's grounding behavior.
 *   **S/4HANA Live Bridge (BYOT - Bring Your Own Tenant):**
     Connect your own S/4HANA Public Cloud Test/Sandbox Tenant to run E2E unit tests on live ERP destinations. Credentials are encrypted at rest (AES-256-GCM) in a server-only Firestore collection, inaccessible to client SDKs.
-*   **Unified Pilot & Tenant Administration Console:**
-    Comprehensive admin workbench (`/admin`) allowing administrators to instantly review, approve, or revoke pilot access requests, track tenant bridge applications, and toggle Bring-Your-Own-Tenant (BYOT) privileges with live status badges.
+*   **Unified Access & Tenant Administration Console:**
+    Comprehensive admin workbench (`/admin`) allowing administrators to instantly review, approve, or revoke access requests, track tenant bridge applications, and toggle Bring-Your-Own-Tenant (BYOT) privileges with live status badges.
 *   **Transactional Verification & Responsive Email Automations:**
     Fully integrated with the Resend API to deliver secure, responsive, HTML-table-formatted notifications. Sonny receives manual approval emails with cryptographic verification links, and applicants receive dynamic welcome activation emails.
 *   **Legacy-to-Modern AI Transformation Engine:**
@@ -93,7 +93,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the client.
 Clean-Core.io bridges the gap between static code analysis and live sandbox verification. **Connections are restricted to non-production sandbox systems only — never production environments.** All communication is encrypted, read-only, and admin-gated.
 
 ### How it Works:
-1.  **Request Access:** Pilot users click "Request Live Tenant Access" inside Stage 5 (Testing Sandbox).
+1.  **Request Access:** Users click "Request Live Tenant Access" inside Stage 5 (Testing Sandbox).
 2.  **Security Review:** Administrators receive a cryptographically signed email linking to `/admin/approve-tenant`.
 3.  **Privilege Granting:** Admin grants the `s4TenantAccessAllowed` right directly in the Unified Admin Console.
 4.  **Secure Connection:** The locked connection panel slides open. Users enter their S/4HANA URL and Basic/OAuth credentials.
@@ -118,157 +118,19 @@ Clean-Core.io prioritizes data security and user privacy above all else:
 
 ---
 
-## 🗺️ Roadmap to v2.0
+## 🗺️ Status: v2.0 shipped
 
-> Prioritized based on the [Delta Report & Werteinschätzung (2026-07-01)](docs/delta-report-v117.md) and internal security review.
-> Status legend: ✅ Done · 🔧 In Progress · 📋 Planned · 💡 Under Evaluation
+Clean-Core.io is at **v2.0.0** — enterprise-grade trust, security and operational readiness for the **Free Community Edition**, and a sharpened, honest narrative (free · community · **complementary to SAP tooling**, not a competitor).
 
----
+Highlights: server-authoritative, HMAC-signed audit packs · complete GDPR Art. 17 erasure (with an automated completeness test) · supply-chain CI (secret scanning + dependency audit + CycloneDX SBOM) · `/api/health` + structured logging · a public SAP Object Catalog · and a public [/trust](https://clean-core.io/trust) transparency page.
 
-### v1.19 — Trust Chain Closure *(Security / P0)*
+Full release notes: [CHANGELOG.md](CHANGELOG.md) · live at [/changelog](https://clean-core.io/changelog).
 
-The single most important milestone: close the server-authoritative evidence chain end-to-end.
+### Deliberately in the backlog
 
-| # | Item | Status | Delta Ref |
-|---|------|--------|-----------|
-| 1 | **Analyze → Run Integration**: Analyze page calls `/api/runs/create` as mandatory step after successful Gemini analysis. No analysis persists without an immutable server-side Run. | ✅ v1.16.0 | P0 §1 |
-| 2 | **Downstream Run Enforcement**: All downstream pages (Design, Transformation, Testing, Docs, Delivery, TCO) enforce `activeRunId` presence via `enforceActiveRun()`. Missing Run → redirect to Analyze. | ✅ v1.19.0 | P0 §1 |
-| 3 | **Audit Pack Run Gate**: Audit Pack export requires `activeRunId`. Packs without a bound Run are blocked with an explicit error. | ✅ v1.19.0 | P0 §1, P1 §3 |
-| 4 | **Server-Authoritative Manifest**: Sign endpoint validates that the requested run is the active run (HTTP 409) and has a valid `runHash` (HTTP 422). Client cannot forge run binding. | ✅ v1.19.0 | P1 §2 |
-| 5 | **E2E Trust Chain Test**: 15-test regression suite covering run guards, audit pack gate, sign endpoint validation, and downstream page enforcement. | ✅ v1.19.0 | P0 §1 |
+Classic enterprise identity/governance items — **SSO (SAML/OIDC), multi-role RBAC, org/project sharing, formal DPA/TOMs, run-over-run diffing, CSP nonce migration, and a commissioned external penetration test** — are intentionally deferred. Clean-Core.io targets **individual** SAP architects, developers and decision-makers (a free community tool), not multi-user enterprise procurement, so these add cost and complexity without matching current need. Full rationale: **[docs/ROADMAP-2.0.md](docs/ROADMAP-2.0.md)**.
 
----
-
-### v1.20 — Audit & Verify Hardening *(Security / P1)*
-
-Harden the signature and verification layer for external auditor credibility. Close the remaining Trust Chain gaps identified in the [Codex v1.19.0 Audit](docs/codex-audit-v119.md).
-
-| # | Item | Status | Codex Ref |
-|---|------|--------|-----------|
-| 1 | **Unsigned Pack Visual Distinction**: Verify UI shows amber "Integrity Only" status for unsigned packs instead of green success. Three-tier model: `authentic` → `integrity-only` → `failed`. | ✅ v1.18.0 | — |
-| 2 | **Verify Endpoint Input Hardening**: Enforce `signature.length === 64`, hex regex, `canonicalManifest` max 32KB, structured error codes. | ✅ v1.18.1 | — |
-| 3 | **Signature Format Unification**: Web and PowerShell exports both use `HMAC_SHA256(signingKey, manifestHash)` — single canonical format. | ✅ v1.18.0 | — |
-| 4 | **Draft vs. Final Field Separation**: Introduce governance-level separation of `runEvidence` (immutable, server-authoritative) and `projectWorkspace` (interactive, editable). UI labels: "Server Evidence", "Editable Draft", "Architect-Approved". Audit Pack exclusively uses `runEvidence`. | 📋 | P1 §4 (Hydration), P1 §5 (Allowlist) |
-| 5 | **Server-Side Audit Pack Generation**: New `POST /api/audit-pack/create` route. Server loads active Run, generates all evidence files from versioned template, computes manifest, signs ZIP, and streams download. Client never supplies file content for signing. | 📋 | P1 §3 (Audit Pack) |
-| 6 | **Server-Authoritative Narrative Separation**: `/api/runs/create` stops accepting client-supplied `analysis` text. Server generates narrative from `legacyCode` + Evidence. Run document splits into `serverEvidence` (signed) and `aiNarrative` (with model/promptHash/responseHash metadata, clearly marked non-evidentiary). | 📋 | P1 §2 (Narrative) |
-| 7 | **Export Hygiene CI Gate**: CI step that fails the build if `.env*`, `dist`, `.agents`, `.antigravity`, `scratch`, `tmp`, `playwright-report`, `test-results` are present in source exports. Enforce use of `scripts/export-source.ps1`. | 📋 | P0 §1 (Secrets) |
-| 8 | **E2E Trust Chain Integration Test**: Full emulator-backed E2E test: User → Project → Analyze → Run → Downstream → Audit Pack → Verify. Negative tests: foreign user sign, stale run rejection, missing runHash rejection, tampered manifest rejection. | 📋 | P2 §6 (Tests) |
-
----
-
-### v1.21 — Evidence Sweep *(UX / Analyze)*
-
-Make the deterministic scan visible: replay the instant `buildAbapEvidence()` results as a live animated overlay during the Gemini loading phase. High-impact, zero backend changes.
-
-| # | Item | Status | Delta Ref |
-|---|------|--------|-----------|
-| 1 | **SweepCodeViewer**: Monospace code viewer with line numbers and annotation slots for finding badges. Supports auto-scroll to next finding position. | ✅ v1.21.0 | Evidence Sweep |
-| 2 | **EvidenceSweep Orchestrator**: Sorts findings by `lineStart`, reveals them sequentially over ~3.5s with scan-line animation. Severity-colored badges pin to exact code lines. | ✅ v1.21.0 | Evidence Sweep |
-| 3 | **SweepVerdictBar**: Animated counter tiles (Critical/High/Medium/Low) that tick up as findings appear. Coverage verdict "locks in" with glow effect at animation end. | ✅ v1.21.0 | Evidence Sweep |
-| 4 | **Parallel Gemini Timing**: Evidence Sweep runs during the 8–15s Gemini API call. Minimum sweep duration 3s; Gemini result is buffered and shown after sweep completes. | ✅ v1.21.0 | Evidence Sweep |
-| 5 | **Accessibility**: `prefers-reduced-motion` → instant end-state. `aria-live` on verdict region. Optional timeline scrubber for replay control. | ✅ v1.21.0 | Evidence Sweep |
-
----
-
-### v1.22 — Usage Import & Risk Prioritization *(Feature / Enterprise)*
-
-Transform the platform from static code analysis to usage-weighted risk assessment.
-
-| # | Item | Status | Delta Ref |
-|---|------|--------|-----------|
-| 1 | **SCMON / UPL Import Parser**: Upload and parse SAP Custom Code Migration Worklist (SCMON) and Usage & Procedure Logging (UPL) exports (CSV/Excel). | 📋 | Konzept §1 |
-| 2 | **ST03N Workload Integration**: Parse ST03N transaction statistics to weight code objects by actual production utilization frequency. | 📋 | Konzept §1 |
-| 3 | **Usage-Weighted Risk Matrix**: Combine static findings severity with usage frequency to produce a 2D risk/usage prioritization matrix. High-risk + high-usage = top priority. | 📋 | Konzept §1 |
-| 4 | **Unknown ≠ Dormant Safeguard**: Objects without usage data display "Unknown" status (never "Unused"). Tooltip explains that missing data requires manual verification. | 📋 | Konzept §1 |
-| 5 | **Usage Data Compliance**: Pseudonymization of user-identifiable fields, tenant-isolated storage, configurable retention period, GDPR-compliant deletion. | 📋 | Konzept §1 |
-
----
-
-### v1.23 — Public API Catalog & SEO *(Feature / Marketing)*
-
-Turn the internal SAP API mapping into a public differentiating asset.
-
-| # | Item | Status | Delta Ref |
-|---|------|--------|-----------|
-| 1 | **Public API Catalog Page**: Browsable, searchable page showing all 80+ SAP table → released API mappings with confidence levels and catalog version. | 📋 | Konzept §2 |
-| 2 | **Honest Confidence Labels**: Display `Catalog Match`, `Candidate`, `Needs Validation`, `No Released API Found` — never imply SAP certification. | ✅ v1.18.0 | Konzept §2 |
-| 3 | **SEO-Optimized Detail Pages**: Individual pages per SAP module (FI, SD, MM, PP, CO, PM, HR) with proper meta tags, structured data, and internal linking. | 📋 | Konzept §2 |
-| 4 | **Community Feedback Loop**: "Report Missing Mapping" button per entry allowing authenticated users to suggest new table→API mappings. | 💡 | Konzept §2 |
-| 5 | **Versioned Catalog Updates**: Catalog entries tagged with SAP release version (e.g. `2024.FPS02`). Changelog visible per entry. Source URL, confidence level, and "Catalog Match" label per entry. | ✅ Partial | Konzept §2, Codex §Catalog |
-
----
-
-### v1.24 — Run Diff & Progress Tracking *(Feature / Enterprise)*
-
-Enable transformation program steering through immutable run comparison.
-
-| # | Item | Status | Codex Ref |
-|---|------|--------|-----------|
-| 1 | **Run History Timeline**: Visual timeline of all analysis runs per project with date, Clean Core Score, and finding count delta. | 📋 | Codex §Mittelfristig 1 |
-| 2 | **Diff View**: Side-by-side comparison of two runs showing new findings, closed findings, changed severity, and changed recommendations. | 📋 | Codex §Mittelfristig 1 |
-| 3 | **Risk Reduction Metrics**: Dashboard widget showing cumulative risk reduction across runs (e.g., "Critical findings: 12 → 4 across 3 sprints"). | 📋 | Codex §Mittelfristig 1 |
-| 4 | **Progress Export**: PDF/Markdown export of run-over-run progress for steering committee reporting. | 📋 | Codex §Mittelfristig 1 |
-| 5 | **Re-Analysis UX**: UI shows run version selector and prepares a diff overlay when re-analyzing the same code object. | 📋 | Codex §UX "Re-Analyse" |
-
----
-
-### v1.25 — CSP Hardening & Operational Readiness *(Security / Operations)*
-
-Close remaining security gaps and prepare for enterprise operational requirements.
-
-| # | Item | Status | Codex Ref |
-|---|------|--------|-----------|
-| 1 | **CSP `unsafe-inline` Removal**: Migrate all inline styles to CSS modules or styled components. Document remaining exceptions with security justification. Accept as known risk until Firebase improves CSP support. | 📋 | Codex P2 §CSP |
-| 2 | **SBOM & SCA in CI**: Generate Software Bill of Materials on every build. Integrate dependency vulnerability scanning (e.g., `npm audit`, Snyk, or Trivy). | 📋 | Enterprise §4 |
-| 3 | **Monitoring & Alerting**: Cloud Run health checks, error rate alerting, Firestore usage monitoring, and signing key rotation reminders. | 📋 | Delta §Ops |
-| 4 | **Incident Response Playbook**: Documented procedure for security incidents, key compromise, and data breach notification. | 📋 | Enterprise §3 |
-| 5 | **Retention & Backup Policy**: Documented data retention periods per collection, automated Firestore backup schedule, and GDPR Article 17 compliance verification. | 📋 | Enterprise §3 |
-| 6 | **Secret Scanner Gate**: Gitleaks or TruffleHog as mandatory CI step before any export or release. Block pipeline if secrets detected. | 📋 | Codex P0 §4 |
-
----
-
-### v1.26 — Demo & Sales Enablement *(Product / Growth)*
-
-Lower time-to-insight for prospects and enable self-service sales demos.
-
-| # | Item | Status | Delta Ref |
-|---|------|--------|-----------|
-| 1 | **One-Click Sample Analysis**: Pre-loaded 1000-LOC ABAP sample with instant analysis results — no upload required. Clear "Sample" badge throughout. | 📋 | Konzept §5 |
-| 2 | **Shareable Verdict Links**: Public permalink to a read-only assessment summary (findings count, score, recommendation) for sharing in pre-sales conversations. | 💡 | Konzept §5 |
-| 3 | **Lean Code Traceability Mapping**: Contextual "peek & jump" overlay linking modernized TypeScript/RAP statements back to their legacy ABAP syntax sources. | 💡 | Backlog |
-
----
-
-### v2.0 — Enterprise Grade *(Milestone)*
-
-The platform is enterprise-contract-ready: fully auditable, operationally hardened, and multi-tenant capable.
-
-| # | Item | Status | Codex Ref |
-|---|------|--------|-----------|
-| 1 | **External Penetration Test**: Commissioned security assessment by independent firm. Remediation of all Critical/High findings before launch. | 📋 | Enterprise §1, Codex §Enterprise |
-| 2 | **Trust Center Light**: Public page documenting security architecture, compliance certifications, data residency, subprocessor list, incident history, DPA/TOMs, and retention/deletion policy. | 📋 | Enterprise §2, Codex §Mittelfristig 4 |
-| 3 | **DPA / TOMs / Subprocessor Documentation**: Data Processing Agreement template, Technical & Organizational Measures document, and subprocessor registry for enterprise procurement. | 📋 | Enterprise §3, Codex §Enterprise |
-| 4 | **SSO / Org / RBAC**: SAML/OIDC SSO integration, organizational hierarchy support, and role-based access control (Viewer, Analyst, Architect, Admin, Auditor). Projektfreigabe and Audit-Pack access separately controllable. | 📋 | Enterprise §5, Codex §Mittelfristig 5 |
-| 5 | **Claims Matrix Review**: Legal review of all platform claims (accuracy, reliability, compliance) with documented limitations and disclaimers per feature area. | 📋 | Enterprise §Legal |
-| 6 | **SECURITY.md v4.0**: Full documentation of Trust Chain, Run immutability, Audit Pack cryptographic guarantees, server-authoritative narrative separation, and all v1.19–v2.0 security improvements. | 📋 | Delta §Security |
-
----
-
-### Enterprise Readiness Scorecard (Current → Target)
-
-| Dimension | v1.18.1 | v1.19.0 | v2.0 Target |
-|---|:---:|:---:|:---:|
-| Fachlicher Produktwert | 8.5 | 8.5 | 9.0 |
-| SAP Clean-Core Fit | 8.4 | 8.4 | 9.0 |
-| UX / Journey | 8.3 | 8.0 | 8.8 |
-| Evidence / Nachvollziehbarkeit | 8.0 | 7.5 | 9.2 |
-| Auditierbarkeit | 7.2 | 7.5 | 9.0 |
-| Security | 7.7 | 8.0 | 9.0 |
-| Enterprise Betriebsreife | 6.8 | 7.0 | 8.5 |
-| Release-/Supply-Chain-Hygiene | — | 4.0 | 8.5 |
-| **Gesamtplattform** | **8.0** | **7.9** | **9.0** |
-
-> Sources: Delta Report & Werteinschätzung (2026-07-01), Codex v1.19.0 Code Review Audit (2026-07-01)
+Operations, monitoring, backups and rules deployment: **[docs/OPERATIONS.md](docs/OPERATIONS.md)** · Security architecture: **[SECURITY.md](SECURITY.md)** · Data handling: **[docs/DATA-RETENTION.md](docs/DATA-RETENTION.md)**.
 
 ---
 

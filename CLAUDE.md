@@ -83,5 +83,5 @@ gcloud builds list --limit=10     # Cloud Build history
 ## Gotchas
 
 - **Node version:** package.json requires `>=22.8`; the local machine currently runs **v20.12.2**. `npm run dev`/`build` may warn or fail on engine checks — bump Node to 22 LTS for parity with CI/Cloud Run.
-- Ignore for code work: `scratch/`, `tmp/`, `dist/` (Electron build), `clean-core-video/`, and committed `*-debug.log` files.
+- Ignore for code work: `scratch/`, `tmp/`, `dist/` (stray build artifact — gitignored; the project is web-only, there is no desktop/Electron app), `clean-core-video/`, and committed `*-debug.log` files.
 - Builds fail on any TS or ESLint error (`next.config.mjs` sets `ignoreBuildErrors: false`) — keep the tree clean before committing.

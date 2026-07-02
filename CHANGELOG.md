@@ -5,6 +5,33 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.0.0] — 2026-07-02
+
+Special milestone release: **enterprise-grade trust, security and operational readiness** for the Free Community Edition, plus a **sharpened community / complementary narrative**. Enterprise identity/governance features (SSO, multi-role RBAC, formal DPA/TOMs) are intentionally in the backlog for the current audience — see `docs/ROADMAP-2.0.md`.
+
+### Added
+- **Server-authoritative audit packs** (`POST /api/audit-pack/create`): evidence files are generated, hashed and HMAC-signed entirely server-side from the immutable run — the client never supplies content or hashes for signing.
+- **Complete GDPR Art. 17 erasure**: the deletion cascade now purges `runs` subcollections, encrypted BYOK keys (`user_secrets`) and `mfa_pending`; enforced by an automated test.
+- **Supply-chain CI** (`.github/workflows/security-ci.yml`): gitleaks secret scan, `audit-ci` High/Critical gate, and a CycloneDX SBOM.
+- **`/api/health`** liveness/readiness probe and **structured JSON logging** on critical routes (`lib/logger.ts`).
+- **Public `/trust` page**, `docs/DATA-RETENTION.md`, `docs/INCIDENT-RESPONSE.md`, `docs/OPERATIONS.md`, `docs/ROADMAP-2.0.md`, and **SECURITY.md v4.0** documenting the evidence trust chain.
+- **Public SAP Object Catalog** (`/catalog`) — hundreds of SEO/GEO reference pages generated from the merged Cloudification catalog.
+- **Test auto-healing**: on a compilation error the AI repairs the offending module/test code and retries automatically.
+- Full emulator-backed trust-chain E2E tests (audit-pack + sign endpoint negatives: foreign user, stale run, missing runHash).
+
+### Changed
+- **Narrative**: all user-visible "pilot" wording retired (Free Community Edition); pricing presented as free access tiers without premium signals; positioned as **complementary** to SAP tooling (ADT/ATC), not a competitor.
+- The **AI narrative is excluded from the signed run payload** — signatures attest to server-computed evidence, not client free-text.
+- Global **SAP non-affiliation trademark disclaimer**; removed false "certified / SAP-approved" claims; unified ROI figures; hedged absolute claims.
+- Migrated Excel parsing from `xlsx` (unfixed advisory) to `exceljs`; dropped `xlsx`.
+
+### Fixed
+- **Empty Solution Design** (production): Firestore rules had never been deployed to the named production database, so the `runs` subcollection was unreadable and analysis never reached downstream pages. Rules deployed to all databases + multi-database `firebase.json` and an `npm run deploy:rules` script.
+- **Blank Target Architecture diagram**: the SVG sanitizer stripped mermaid's `<foreignObject>` labels; added a mermaid-aware sanitizer that preserves labels while stripping active content.
+- **False "analyzed with an older engine" banner**: run-capability detection now reads findings from `evidenceReport`.
+- **Test sandbox "esbuild not installed"**: moved `esbuild` to runtime dependencies.
+- `loadProjectAndHydrate` now surfaces run-load failures instead of silently rendering an empty page.
+
 ## [v1.22.1] — 2026-07-02
 
 ### Fixed

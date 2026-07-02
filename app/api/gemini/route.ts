@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { GoogleGenAI } from '@google/genai';
 import {
   verifyRequestAuth,
@@ -200,7 +201,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ text });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Gemini API route error:', message);
+    logger.error('gemini route failed', { route: 'api/gemini', error: message });
 
     if (message.includes('fetch')) {
       return NextResponse.json(
