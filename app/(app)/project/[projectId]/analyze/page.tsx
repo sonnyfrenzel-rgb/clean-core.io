@@ -1823,7 +1823,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   sweepCompleteRef.current = true;
                   setLoadingMessage('Evidence scan complete — waiting for AI narrative...');
                 }}
-                minDuration={3500}
+                minDuration={6000}
               />
             ) : (
               <ScannerConsole code={legacyCode} />

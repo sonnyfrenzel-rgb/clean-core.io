@@ -84,9 +84,12 @@ const cleanAndParseJSON = (str: string) => {
  */
 const DESIGN_CONTEXT_LIMIT = 15_000;
 
-const prepareAnalysisContext = (analysis: string): string => {
+const prepareAnalysisContext = (analysis: string | object): string => {
   try {
-    const parsed = JSON.parse(analysis);
+    // Handle both string and object forms of analysis
+    const parsed = typeof analysis === 'object' && analysis !== null
+      ? analysis
+      : JSON.parse(analysis as string);
     // Extract only design-relevant fields — skip raw evidence, line-level findings, etc.
     const designContext = {
       summary: parsed.summary,
@@ -98,16 +101,19 @@ const prepareAnalysisContext = (analysis: string): string => {
       businessValueAnalysis: parsed.businessValueAnalysis,
     };
     const condensed = JSON.stringify(designContext);
+    console.log('[Design] prepareAnalysisContext: condensed length =', condensed.length, 'chars');
     if (condensed.length > DESIGN_CONTEXT_LIMIT) {
       return condensed.substring(0, DESIGN_CONTEXT_LIMIT) + '\n... [analysis truncated for design prompt]';
     }
     return condensed;
-  } catch {
+  } catch (e) {
+    console.warn('[Design] prepareAnalysisContext: JSON parse failed, using raw string fallback', e);
     // Fallback: raw string truncation
-    if (analysis.length > DESIGN_CONTEXT_LIMIT) {
-      return analysis.substring(0, DESIGN_CONTEXT_LIMIT) + '\n... [analysis truncated for design prompt]';
+    const raw = typeof analysis === 'string' ? analysis : JSON.stringify(analysis);
+    if (raw.length > DESIGN_CONTEXT_LIMIT) {
+      return raw.substring(0, DESIGN_CONTEXT_LIMIT) + '\n... [analysis truncated for design prompt]';
     }
-    return analysis;
+    return raw;
   }
 };
 
@@ -287,12 +293,15 @@ interface DesignData {
 Analysis Context:
 ${prepareAnalysisContext(analysis)}`;
 
-      console.log('Generating solution design for project:', projectRef.current?.name);
+      console.log('[Design] Generating solution design for:', projectRef.current?.name);
+      console.log('[Design] Analysis type:', typeof analysis, '| length:', typeof analysis === 'string' ? analysis.length : JSON.stringify(analysis).length);
 
       const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true);
+      
+      console.log('[Design] Gemini response received, length:', responseText?.length);
         
       if (!responseText) {
-        throw new Error('Gemini returned an empty response.');
+        throw new Error('Gemini returned an empty response. The AI model did not produce any output for the design prompt.');
       }
 
       await updateDoc(doc(db, 'projects', projectId as string), {
@@ -336,7 +345,8 @@ ${responseText.substring(0, 4000)}`;
       } catch { /* NFR generation failure is non-critical */ }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to generate design.';
-      console.error('Design generation failed:', err);
+      console.error('[Design] Generation FAILED:', err);
+      console.error('[Design] Error details:', msg);
       setDesignError(msg);
     } finally {
       setLoading(false);
@@ -364,8 +374,10 @@ ${responseText.substring(0, 4000)}`;
             }
             setLoading(false);
         } else if (data.analysis) {
-            generateDesignRef.current(data.analysis);
+            console.log('[Design] Auto-generating design from analysis, type:', typeof data.analysis);
+            generateDesignRef.current(typeof data.analysis === 'object' ? JSON.stringify(data.analysis) : data.analysis);
         } else {
+            console.warn('[Design] No analysis data found on project — cannot auto-generate design.');
             setLoading(false);
         }
       } else {
@@ -851,7 +863,12 @@ ${responseText.substring(0, 4000)}`;
           <div className="flex flex-wrap gap-2 sm:gap-3">
 
             <button 
-              onClick={() => project?.analysis && generateDesign(project.analysis)}
+              onClick={() => {
+                if (project?.analysis) {
+                  const analysisStr = typeof project.analysis === 'object' ? JSON.stringify(project.analysis) : project.analysis;
+                  generateDesign(analysisStr);
+                }
+              }}
               className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-xs sm:text-sm"
             >
               <RefreshCw size={16} /> Regenerate
@@ -911,9 +928,10 @@ ${responseText.substring(0, 4000)}`;
               <button
                 onClick={() => {
                   if (project?.analysis) {
-                    generateDesign(project.analysis);
+                    const analysisStr = typeof project.analysis === 'object' ? JSON.stringify(project.analysis) : project.analysis;
+                    generateDesign(analysisStr);
                   } else {
-                    alert("Analysis data not found. Please go back to Step 2 and run the analysis first.");
+                    setDesignError('Analysis data not found. Please go back to Step 2 (Analyze) and run the analysis first.');
                   }
                 }}
                 className="mt-6 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all shadow-md active:scale-95"

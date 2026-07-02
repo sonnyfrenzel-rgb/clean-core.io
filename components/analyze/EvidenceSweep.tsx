@@ -21,7 +21,7 @@ export default function EvidenceSweep({
   findings,
   isActive,
   onComplete,
-  minDuration = 3500,
+  minDuration = 6000,
 }: EvidenceSweepProps) {
   const [revealedCount, setRevealedCount] = useState(0);
   const [scanLineProgress, setScanLineProgress] = useState(0);
