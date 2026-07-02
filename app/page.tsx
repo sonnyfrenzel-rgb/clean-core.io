@@ -147,7 +147,7 @@ export default function Home() {
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-lg sm:text-2xl tracking-tight text-gray-900 leading-none">Clean-Core<span className="text-green-600">.io</span></span>
-              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-gray-500 mt-1">Community Pilot</span>
+              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-gray-500 mt-1">Free Community Edition</span>
             </div>
           </Link>
 
@@ -380,13 +380,13 @@ export default function Home() {
             
             <div className="relative z-10 text-center md:text-left mb-10">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-100">
-                Beyond Static Code Analysis
+                Complements SAP ATC &amp; ADT
               </span>
               <h3 className="text-2xl sm:text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none mb-4 uppercase">
-                Technical Capability Comparison
+                How We Complement Your SAP Tools
               </h3>
               <p className="text-slate-500 text-sm md:text-base max-w-3xl font-medium leading-relaxed">
-                SAP native tools report where dependencies fail compliance. clean-core.io resolves them against SAP&apos;s official Cloudification Repository and compiles ready-to-run BTP or RAP structures.
+                SAP ATC is the authoritative check for Clean Core violations — keep using it. Clean-Core.io picks up from there: it maps each finding against SAP&apos;s Cloudification Repository and drafts BTP or RAP scaffolding for you to review, then validate back in ADT and ATC.
               </p>
               {catalogStats.classifiedObjects > 0 && (
                 <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-xs font-bold">
@@ -729,15 +729,15 @@ export default function Home() {
               100% Free &mdash; No Credit Card Required
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">Community Access</h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Start immediately with 5 free transformations, or bring your own API key to unlock unlimited access and full exports.</p>
+            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Start with 5 free transformations, or bring your own API key for unlimited runs and full exports — both tiers are 100% free.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Card 1: Pilot Sandbox */}
+            {/* Card 1: Free Community Edition (no API key needed) */}
             <div data-testid="card-sandbox" className="relative flex flex-col p-8 sm:p-10 rounded-[2.5rem] border border-gray-200 bg-white text-gray-900 hover:border-green-300 hover:shadow-xl transition-all duration-300">
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-black">Pilot Sandbox</h3>
-                  <span className="text-[9px] font-black uppercase tracking-widest bg-gray-100 text-gray-500 px-3 py-1 rounded-full border border-gray-200">Evaluate</span>
+                  <h3 className="text-xl font-black">Free Community Edition</h3>
+                  <span className="text-[9px] font-black uppercase tracking-widest bg-gray-100 text-gray-500 px-3 py-1 rounded-full border border-gray-200">No API key needed</span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-black">Free</span>
@@ -764,11 +764,11 @@ export default function Home() {
             {/* Card 2: Developer Upgrade (BYOK) */}
             <div data-testid="card-developer" className="relative flex flex-col p-8 sm:p-10 rounded-[2.5rem] border border-gray-900 bg-gray-950 text-white shadow-2xl transition-all duration-300">
               <div className="absolute top-0 right-1/2 translate-x-1/2 -translate-y-1/2 bg-green-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
-                Recommended
+                Unlimited · Free
               </div>
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-black">Developer Upgrade</h3>
+                  <h3 className="text-xl font-black">Free + Your Own Key</h3>
                   <span className="text-[9px] font-black uppercase tracking-widest bg-green-500/10 text-green-400 px-3 py-1 rounded-full border border-green-500/20">BYOK</span>
                 </div>
                 <div className="flex items-baseline gap-2">
@@ -779,7 +779,7 @@ export default function Home() {
               </div>
               <ul className="space-y-3.5 mb-10 flex-grow">
                 {[
-                  'Includes all Pilot Sandbox features',
+                  'Includes everything in the Free Community Edition',
                   'Unlimited code transformations (via BYOK)*',
                   'Full multi-file abapGit ZIP export (src/ + abapgit.xml)',
                   'Automated ABAP-Unit test class generation',
@@ -795,7 +795,7 @@ export default function Home() {
                   );
                 })}
               </ul>
-              <PricingCTA cta="Unlock Developer Access" highlight={true} disabled={false} />
+              <PricingCTA cta="Add Your Gemini Key" highlight={true} disabled={false} />
             </div>
           </div>
 
