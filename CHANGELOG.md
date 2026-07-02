@@ -5,6 +5,21 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.22.1] — 2026-07-02
+
+### Fixed
+- **Usage Persistence**: Added `usageReport` to Firestore Rules project update allowlist with `is map` validation. Usage imports now persist across page reloads.
+- **Usage Bucketing (Low ≠ Dormant)**: Introduced new `low` usage bucket for objects with below-average but non-zero, recent usage. Low-frequency objects (monthly closings, year-end, audit reports) are no longer misclassified as `dormant` or `retire-candidate`.
+- **Retire-Candidate Guardrails**: `retire-candidate` quadrant now requires zero usage or 13+ months dormancy. Description updated to require "business owner confirmation" before retirement.
+- **Call Count Locale Parsing**: Fixed number format ambiguity where `1,234` (EN) was misinterpreted as `1.234` → rounded to `1`. New locale-aware parser correctly handles DE (`1.234`), EN (`1,234`), mixed (`1.234,00` / `1,234.00`), and space-separated (`1 234`) formats.
+- **Solution Design Generation**: Fixed object/string type mismatch in `prepareAnalysisContext()` where Firestore hydration returned analysis as an object instead of a string. Added comprehensive `[Design]`-prefixed debug logging.
+- **Evidence Scan Visual Overhaul**: SweepVerdictBar with stronger contrast, colored top borders, scale effects. SweepCodeViewer with larger fonts, line-level severity highlighting. Minimum scan duration increased to 6 seconds.
+- **Export Script P0 Fix**: Replaced all `-Path` with `-LiteralPath` in `export-source.ps1` to correctly handle Next.js dynamic routes with square brackets (`[projectId]`).
+
+### Changed
+- **Risk Matrix UI**: Added `Low Usage` row with yellow color scheme between Moderate and Dormant. Tooltips for Low, Dormant, and Unknown rows explaining classification logic.
+- **package-lock.json**: Regenerated from scratch to fix Cloud Build `npm ci` sync failures (missing `js-yaml@3.15.0`, `argparse@1.0.10`).
+
 ## [v1.22.0] — 2026-07-02
 
 ### Added

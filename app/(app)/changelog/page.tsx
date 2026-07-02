@@ -20,9 +20,23 @@ export const metadata: Metadata = {
 
 const releases = [
   {
-    version: 'v1.22.0',
+    version: 'v1.22.1',
     date: 'July 2, 2026',
     tag: 'Latest',
+    icon: Shield,
+    changes: [
+      'Usage Persistence Fix — Usage imports now persist in Firestore after page reload. Added usageReport to project update allowlist with map validation.',
+      'Usage Bucketing: Low ≠ Dormant — New \"Low Usage\" bucket for objects with below-average but non-zero, recent usage. Low-frequency objects (monthly closings, year-end, audit) are no longer misclassified as retire candidates.',
+      'Retire-Candidate Guardrails — Retirement quadrant now requires zero usage or 13+ months dormancy. Always requires business owner confirmation.',
+      'Call Count Locale Fix — Correctly handles both German (1.234) and English (1,234) thousand separators in SAP usage exports.',
+      'Solution Design Generation Fix — Fixed type mismatch where Firestore returned analysis as object instead of string. Added debug logging.',
+      'Evidence Scan Visual Overhaul — Higher contrast verdict tiles, severity-colored line highlighting in code viewer, 6-second minimum scan duration.',
+      'Export Script Fix — Correctly handles Next.js dynamic routes with square brackets ([projectId]) using LiteralPath.',
+    ],
+  },
+  {
+    version: 'v1.22.0',
+    date: 'July 2, 2026',
     icon: Rocket,
     changes: [
       'Usage Import & Risk Prioritization — Upload SAP usage exports (SCMON, UPL, ST03N) to enable usage-weighted risk analysis. Format-tolerant parser with CSV delimiter sniffing (semicolon/comma/tab) and XLSX support.',
