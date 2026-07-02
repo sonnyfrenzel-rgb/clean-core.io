@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, connectAuthEmulator } from 'firebase/auth';
 import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, connectFirestoreEmulator } from 'firebase/firestore';
-import { adminSetDoc, adminSetCustomClaim, adminMergeDoc } from './helpers/admin-seed';
+import { adminSetDoc, adminSetCustomClaim, adminMergeDoc, adminDocExists } from './helpers/admin-seed';
 
 // Set test secret first so that imports initializing getSecret don't throw
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
@@ -239,6 +239,16 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       createdAt: new Date(),
     });
 
+    // 2b. Seed the collections that previously escaped the deletion cascade:
+    //     an immutable run under the project, BYOK secret, and single-doc secrets.
+    await adminSetDoc(`projects/proj-${tempUid}/runs`, `run-${tempUid}`, {
+      runId: `run-${tempUid}`, userId: tempUid, analysis: '{"summary":"x"}', runHash: 'deadbeef',
+    });
+    await adminSetDoc(`user_secrets/${tempUid}/providers`, 'gemini', { encryptedKey: 'ciphertext', userId: tempUid });
+    await adminSetDoc('s4_credentials', tempUid, { userId: tempUid, encrypted: 'x' });
+    await adminSetDoc('mfa_secrets', tempUid, { userId: tempUid, secret: 'x' });
+    await adminSetDoc('mfa_pending', tempUid, { userId: tempUid, secret: 'x' });
+
     // 3. Call secure deletion API
     const deleteResponse = await request.post('/api/account/delete', {
       headers: {
@@ -259,6 +269,16 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
 
     const userSnap = await getDoc(doc(firestoreDb, 'users', tempUid));
     expect(userSnap.exists()).toBe(false);
+
+    // The run subcollection under the (now-deleted) project must be gone too.
+    const runSnap = await getDoc(doc(firestoreDb, 'projects', `proj-${tempUid}`, 'runs', `run-${tempUid}`));
+    expect(runSnap.exists()).toBe(false);
+
+    // Collections locked to `if false` in rules — verify server-side via the seed API.
+    expect(await adminDocExists(`user_secrets/${tempUid}/providers`, 'gemini')).toBe(false);
+    expect(await adminDocExists('s4_credentials', tempUid)).toBe(false);
+    expect(await adminDocExists('mfa_secrets', tempUid)).toBe(false);
+    expect(await adminDocExists('mfa_pending', tempUid)).toBe(false);
   });
 
   test('should restrict privilege escalation on profile creation (Hardened Rules)', async () => {
