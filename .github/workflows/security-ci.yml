@@ -35,10 +35,10 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci --ignore-scripts
-      # Fail the build on High/Critical advisories. Track accepted exceptions
-      # explicitly (with an expiry) rather than lowering this gate.
-      - name: npm audit (high+)
-        run: npm audit --audit-level=high
+      # Fail on High/Critical advisories. Accepted exceptions are documented with
+      # a rationale + review date in audit-ci.jsonc (no blanket lowering of the gate).
+      - name: Dependency audit (high+, reviewed allowlist)
+        run: npx --yes audit-ci@^7 --config audit-ci.jsonc
 
   sbom:
     name: SBOM (CycloneDX)
