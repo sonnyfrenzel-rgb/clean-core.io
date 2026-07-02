@@ -103,6 +103,13 @@ export interface Project {
 
   // v1.22: Usage Import & Risk Prioritization
   usageReport?: import('./abap/usage-model').UsageReport;
+
+  // In-memory only (never persisted): set by loadProjectAndHydrate when an
+  // activeRunId is present but the run document could not be read (e.g. a
+  // Firestore rules gap or network error). Lets pages surface a real error
+  // instead of silently rendering an empty state. See lib/project-loader.ts.
+  _runLoadFailed?: boolean;
+  _runLoadError?: string;
 }
 
 /**

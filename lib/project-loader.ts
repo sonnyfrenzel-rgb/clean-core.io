@@ -24,11 +24,22 @@ export async function loadProjectAndHydrate(projectId: string): Promise<Project 
           extensibilityRoute: data.extensibilityRoute || runData.extensibilityRoute,
           exports: data.exports || runData.exports,
         } as Project;
+      } else {
+        // activeRunId points to a missing run — evidence-bearing fields (analysis, etc.)
+        // live only in the run, so downstream pages must not silently render empty.
+        console.error(`Active run ${data.activeRunId} does not exist for project ${projectId}.`);
+        data._runLoadFailed = true;
+        data._runLoadError = 'The active analysis run could not be found.';
       }
     } catch (err) {
-      console.error('Failed to load active run, using fallback project fields:', err);
+      // Do NOT swallow: the analysis narrative lives only in the run, so a failed
+      // run read (e.g. Firestore rules gap, network) would otherwise show as an
+      // empty Solution Design with no explanation. Flag it so callers can surface it.
+      console.error('Failed to load active run:', err);
+      data._runLoadFailed = true;
+      data._runLoadError = err instanceof Error ? err.message : 'Failed to load the analysis run.';
     }
   }
-  
+
   return { id: docSnap.id, ...data } as Project;
 }

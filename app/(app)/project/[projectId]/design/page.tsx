@@ -376,6 +376,12 @@ ${responseText.substring(0, 4000)}`;
         } else if (data.analysis) {
             console.log('[Design] Auto-generating design from analysis, type:', typeof data.analysis);
             generateDesignRef.current(typeof data.analysis === 'object' ? JSON.stringify(data.analysis) : data.analysis);
+        } else if (data._runLoadFailed) {
+            // The run (which holds the analysis) could not be read — surface it instead
+            // of a silent empty state, so the real cause (permissions/network) is visible.
+            console.error('[Design] Active run could not be loaded:', data._runLoadError);
+            setDesignError(`Could not load the analysis run: ${data._runLoadError || 'unknown error'}. This is usually a permissions or connectivity issue — reload the page, or re-run the analysis in Step 2.`);
+            setLoading(false);
         } else {
             console.warn('[Design] No analysis data found on project — cannot auto-generate design.');
             setLoading(false);
