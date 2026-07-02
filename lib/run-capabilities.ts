@@ -50,14 +50,29 @@ export interface RunCapabilities {
 export function getRunCapabilities(src: RunEvidenceSource | null | undefined): RunCapabilities {
   const hasRun = !!src?.activeRunId;
   const hasRoutingEvidence = typeof src?.extensibilityRoute === 'string' && src.extensibilityRoute.length > 0;
-  const hasFindings = Array.isArray(src?.findings) && (src!.findings!.length > 0);
-  const hasEvidenceReport = src?.evidenceReport !== undefined && src?.evidenceReport !== null;
+
+  // Deterministic findings live in `evidenceReport`, which the current engine
+  // stores as the findings ARRAY (runs/create: `evidenceReport: evidenceReport.findings`).
+  // Also accept a legacy top-level `findings[]` and the in-memory `{ findings: [] }`
+  // object shape so detection is robust across shapes.
+  const er = src?.evidenceReport as unknown;
+  const findingsArr: unknown[] | null =
+    Array.isArray(src?.findings) ? (src!.findings as unknown[])
+    : Array.isArray(er) ? (er as unknown[])
+    : (er && Array.isArray((er as { findings?: unknown[] }).findings)) ? (er as { findings: unknown[] }).findings
+    : null;
+
+  // The run carries the deterministic-scan capability when the evidence field is
+  // present at all — an EMPTY findings list (clean code) is valid, not legacy.
+  const hasEvidenceReport = er !== undefined && er !== null;
+  const hasFindings = Array.isArray(findingsArr) && findingsArr.length > 0;
   const hasUsageData = src?.usageReport !== undefined && src?.usageReport !== null;
 
   const missing: string[] = [];
   if (hasRun && !hasRoutingEvidence) missing.push('extensibility routing decision');
-  if (hasRun && !hasFindings) missing.push('deterministic findings');
-  if (hasRun && !hasEvidenceReport) missing.push('evidence scan report');
+  // Legacy iff the run lacks the deterministic evidence scan entirely. Do NOT flag
+  // a run as legacy merely because it found zero issues.
+  if (hasRun && !hasEvidenceReport) missing.push('deterministic evidence scan');
   // Note: usage data is OPTIONAL — its absence does NOT mark a run as legacy
 
   return {
