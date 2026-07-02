@@ -11,7 +11,6 @@
  * See §3 of the v1.22 concept.
  */
 
-import * as XLSX from 'xlsx';
 import type { UsageRecord, UsageReport, UsageSource } from './usage-model';
 import { sanitizeUsageRecords } from './usage-privacy';
 
@@ -178,23 +177,56 @@ function splitCsvLine(line: string, delimiter: string): string[] {
 
 // ── XLSX Parser ────────────────────────────────────────────────────
 
+/** Coerce an ExcelJS cell value (which may be a Date, formula, hyperlink or rich-text object) to a flat string. */
+function cellToString(v: unknown): string {
+  if (v === null || v === undefined) return '';
+  if (v instanceof Date) return v.toISOString().split('T')[0];
+  if (typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    if (Array.isArray(o.richText)) return (o.richText as Array<{ text?: string }>).map(r => r.text ?? '').join('');
+    if ('result' in o) return String(o.result ?? '');          // formula → computed result
+    if (typeof o.text === 'string') return o.text;               // hyperlink
+    return '';
+  }
+  return String(v);
+}
+
 async function parseXlsx(file: File): Promise<Record<string, string>[]> {
+  // Migrated from SheetJS (xlsx) to ExcelJS to drop the unfixed xlsx advisory
+  // (prototype pollution + ReDoS). Dynamic import keeps exceljs out of the main
+  // bundle, matching the testing page's export flow.
   const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: 'array' });
-  const sheetName = workbook.SheetNames[0];
-  if (!sheetName) throw new Error('XLSX file contains no worksheets.');
+  const mod = await import('exceljs');
+  // Interop: the browser bundle exposes `.Workbook` directly; CJS/node under `.default`.
+  const ExcelJS = ((mod as unknown as { default?: typeof import('exceljs') }).default ?? mod);
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
 
-  const sheet = workbook.Sheets[sheetName];
-  const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+  const sheet = workbook.worksheets[0];
+  if (!sheet) throw new Error('XLSX file contains no worksheets.');
 
-  // Normalize all keys to uppercase
-  return jsonData.map(row => {
-    const normalized: Record<string, string> = {};
-    for (const [key, value] of Object.entries(row)) {
-      normalized[key.toUpperCase().trim()] = String(value ?? '');
-    }
-    return normalized;
+  // First row = headers (uppercased); ExcelJS columns are 1-indexed.
+  const headers: string[] = [];
+  sheet.getRow(1).eachCell({ includeEmpty: true }, (cell, col) => {
+    headers[col] = cellToString(cell.value).toUpperCase().trim();
   });
+
+  const rows: Record<string, string>[] = [];
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) return; // skip header row
+    const record: Record<string, string> = {};
+    let hasValue = false;
+    for (let col = 1; col < headers.length; col++) {
+      const key = headers[col];
+      if (!key) continue;
+      const value = cellToString(row.getCell(col).value);
+      record[key] = value; // keep empty cells as '' (parity with previous defval:'')
+      if (value !== '') hasValue = true;
+    }
+    if (hasValue) rows.push(record);
+  });
+
+  return rows;
 }
 
 // ── Column mapping resolution ──────────────────────────────────────

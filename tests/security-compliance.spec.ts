@@ -3,6 +3,8 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, connectAuthEmulator } from 'firebase/auth';
 import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, connectFirestoreEmulator } from 'firebase/firestore';
 import { adminSetDoc, adminSetCustomClaim, adminMergeDoc, adminDocExists } from './helpers/admin-seed';
+import JSZip from 'jszip';
+import { createHash } from 'crypto';
 
 // Set test secret first so that imports initializing getSecret don't throw
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
@@ -279,6 +281,87 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     expect(await adminDocExists('s4_credentials', tempUid)).toBe(false);
     expect(await adminDocExists('mfa_secrets', tempUid)).toBe(false);
     expect(await adminDocExists('mfa_pending', tempUid)).toBe(false);
+  });
+
+  // ── v1.20 §5/§8: server-authoritative audit pack (generated & signed server-side) ──
+
+  async function seedRunnableProject(uid: string, suffix: string) {
+    const projectId = `apk-${suffix}-${uid}`;
+    const runId = `apkrun-${suffix}-${uid}`;
+    await adminSetDoc('projects', projectId, {
+      name: 'Audit Pack Test', status: 'analyzed', userId: uid, activeRunId: runId,
+      extensibilityRoute: 'Side-by-Side (SAP BTP)', createdAt: new Date(),
+      auditMetadata: {
+        inputFingerprint: { sha256: 'abc', fileName: 'Z.abap', lineCount: 10, byteSize: 100, objectType: 'Report', uploadedAt: new Date().toISOString() },
+        modelCard: { provider: 'google-gemini', model: 'gemini-3-flash-preview', engineVersion: 'v1.22.1', catalogVersion: '2024.FPS02', byokUsed: false, analysisTimestamp: new Date().toISOString() },
+      },
+    });
+    await adminSetDoc(`projects/${projectId}/runs`, runId, {
+      runId, projectId, userId: uid, status: 'completed', runHash: 'testrunhash', signature: 'sig',
+      analyzerVersion: 'v1.22.1', rulesetVersion: 'rules-v1.0', sapApiCatalogVersion: '2024.FPS02',
+      extensibilityRoute: 'Side-by-Side (SAP BTP)', cleanCoreScore: 88, complexityScore: 40, criticalityScore: 30,
+      evidenceReport: [], dataCoupling: [], codeInventory: [], worklist: [],
+      originalRecommendation: 'cap', recommendationConfidence: 80, recommendationJustification: 'x',
+    });
+    return { projectId, runId };
+  }
+
+  test('audit pack is generated and signed server-side for the owner', async ({ request }) => {
+    const email = `apk-owner-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
+    const uid = cred.user.uid;
+    const token = await cred.user.getIdToken();
+    const { projectId } = await seedRunnableProject(uid, 'ok');
+
+    const res = await request.post('/api/audit-pack/create', {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { projectId },
+    });
+    expect(res.status()).toBe(200);
+    expect(res.headers()['content-type']).toContain('application/zip');
+
+    // The returned ZIP must carry a server-signed manifest whose file hashes match.
+    const zip = await JSZip.loadAsync(await res.body());
+    const manifest = JSON.parse(await zip.file('manifest.json')!.async('string'));
+    expect(manifest.signed).toBe(true);
+    expect(typeof manifest.signature).toBe('string');
+    expect(manifest.signature.length).toBeGreaterThan(0);
+    expect(manifest.files.length).toBeGreaterThan(0);
+    // Re-hash a file from the ZIP and confirm it matches the manifest (integrity).
+    const first = manifest.files[0];
+    const content = await zip.file(first.path)!.async('string');
+    const hex = createHash('sha256').update(content).digest('hex');
+    expect(hex).toBe(first.sha256);
+  });
+
+  test('audit pack create rejects foreign user, missing run, and unauthenticated', async ({ request }) => {
+    const ownerEmail = `apk-o2-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const owner = await createUserWithEmailAndPassword(firebaseAuth, ownerEmail, TEST_PASSWORD);
+    const { projectId } = await seedRunnableProject(owner.user.uid, 'neg');
+
+    // Foreign user → 403
+    const otherEmail = `apk-x-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const other = await createUserWithEmailAndPassword(firebaseAuth, otherEmail, TEST_PASSWORD);
+    const otherToken = await other.user.getIdToken();
+    const foreign = await request.post('/api/audit-pack/create', {
+      headers: { Authorization: `Bearer ${otherToken}` },
+      data: { projectId },
+    });
+    expect(foreign.status()).toBe(403);
+
+    // Owner but project has no active run → 422
+    const ownerToken = await owner.user.getIdToken();
+    const noRunProjectId = `apk-norun-${branchSuffix}-${owner.user.uid}`;
+    await adminSetDoc('projects', noRunProjectId, { name: 'No Run', status: 'uploaded', userId: owner.user.uid, createdAt: new Date() });
+    const noRun = await request.post('/api/audit-pack/create', {
+      headers: { Authorization: `Bearer ${ownerToken}` },
+      data: { projectId: noRunProjectId },
+    });
+    expect(noRun.status()).toBe(422);
+
+    // Unauthenticated → 401
+    const unauth = await request.post('/api/audit-pack/create', { data: { projectId } });
+    expect(unauth.status()).toBe(401);
   });
 
   test('should restrict privilege escalation on profile creation (Hardened Rules)', async () => {
