@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { sanitizeSvg } from '@/lib/sanitize-html';
+import { sanitizeMermaidSvg } from '@/lib/sanitize-html';
 
 export default function MermaidDiagram({ chart }: { chart: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -18,10 +18,7 @@ export default function MermaidDiagram({ chart }: { chart: string }) {
           securityLevel: 'strict',
           flowchart: {
             useMaxWidth: false,
-            // htmlLabels render node text inside <foreignObject> HTML, which the
-            // SVG sanitizer (sanitizeSvg) strips on the XHTML namespace — leaving
-            // empty boxes. Native SVG <text> labels survive sanitization.
-            htmlLabels: false,
+            htmlLabels: true,
             curve: 'basis',
             padding: 15,
             nodeSpacing: 30,
@@ -30,9 +27,11 @@ export default function MermaidDiagram({ chart }: { chart: string }) {
         });
         const id = 'm' + Math.random().toString(36).substr(2, 9);
         const { svg } = await mermaid.render(id, chart);
-        
-        // Clean rendered SVG with DOMPurify config (retains foreignObjects for labels)
-        const cleanSvg = sanitizeSvg(svg);
+
+        // Use the mermaid-aware sanitizer: DOMPurify's SVG profile strips the
+        // <foreignObject> label HTML (empty boxes); this keeps labels while still
+        // removing scripts/handlers. See lib/sanitize-html.ts.
+        const cleanSvg = sanitizeMermaidSvg(svg);
         if (ref.current) {
           ref.current.innerHTML = cleanSvg;
         }

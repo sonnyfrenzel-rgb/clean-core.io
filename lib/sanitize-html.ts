@@ -50,7 +50,30 @@ export function sanitizeHtml(html: string): string {
   return getPurify().sanitize(html ?? '', HTML_CONFIG);
 }
 
-/** Sanitize SVG output (e.g. mermaid) using the SVG profile. */
+/**
+ * Lightweight sanitizer for OUR OWN mermaid SVG output.
+ *
+ * DOMPurify's SVG profile (sanitizeSvg) strips the XHTML content INSIDE
+ * <foreignObject> — which is exactly where mermaid v11 renders node labels —
+ * leaving empty boxes (the "Target Architecture Diagram is blank" bug). The
+ * mermaid input here is deterministic and its dynamic label parts are already
+ * neutralised upstream (e.g. TargetArchitectureDiagram's sanitize()), so instead
+ * of dropping the labels we keep the structure and strip only active content:
+ * <script>/<iframe>, inline event handlers, and javascript: URLs.
+ */
+export function sanitizeMermaidSvg(svg: string): string {
+  if (!svg) return '';
+  return svg
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
+    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
+    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '')
+    .replace(/(?:href|xlink:href)\s*=\s*(["'])\s*javascript:[^"']*\1/gi, '')
+    .replace(/javascript:/gi, '');
+}
+
+/** Sanitize SVG output using the strict SVG profile (drops foreignObject HTML). */
 export function sanitizeSvg(svg: string): string {
   return getPurify().sanitize(svg ?? '', {
     USE_PROFILES: { svg: true, svgFilters: true, html: true },
