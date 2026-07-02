@@ -36,27 +36,37 @@ export const useTestExecution = (projectId: string, project: Project | null, set
     return report;
   };
 
-  const autoHealTestCode = async (errorOutput: string, currentCode: string) => {
-    setSandboxOutput(prev => prev + '\n\n[Auto-Healing] Syntax error detected. Asking AI to fix the test code...');
-    const prompt = `The following Node.js test code failed with a syntax or type error:
-    
-    ERROR:
-    ${errorOutput}
-    
-    CURRENT TEST CODE:
-    ${currentCode}
-    
-    Please fix the test code. 
-    IMPORTANT: The application code is located in a file named 'app.ts' in the same directory. You MUST import the functions/classes you want to test from './app'. Do not import from './index' or any other file.
+  const stripCodeFences = (s: string) =>
+    s.replace(/^```[a-zA-Z]*\n?/gm, '').replace(/```$/gm, '').trim();
 
-    Return ONLY the raw fixed TypeScript code without any markdown formatting or explanation.`;
-    
+  /**
+   * Auto-healing: on a compilation/syntax error, ask the AI to repair the
+   * offending generated code and return the fixed source. `kind` selects whether
+   * we are fixing the transformed application module (app.ts) or the test suite,
+   * because either can carry an AI-introduced syntax error.
+   */
+  const autoHealCode = async (errorOutput: string, currentCode: string, kind: 'module' | 'test') => {
+    const label = kind === 'module' ? 'transformed application module (app.ts)' : 'Node.js test suite (test.ts)';
+    setSandboxOutput(prev => prev + `\n\n[Auto-Healing] Compilation error detected. Asking the AI to repair the ${kind === 'module' ? 'module' : 'test'} code...`);
+    const prompt = `The following ${label} failed to compile in an esbuild/TypeScript sandbox. Fix ONLY what is needed so it compiles and runs — preserve the intended behaviour, imports, and test cases. Do not remove test cases or change business logic.
+
+Common causes: a colon used where a semicolon/comma was expected, a missing bracket, an invalid TypeScript annotation, or a bad import path.
+${kind === 'test' ? "IMPORTANT: the application under test is in './app' (app.ts) in the same directory — import from './app', not './index'." : "IMPORTANT: this is a self-contained module; keep all exported functions/classes so the tests can import them from './app'."}
+
+COMPILER ERROR:
+${errorOutput}
+
+CURRENT CODE:
+${currentCode}
+
+Return ONLY the raw, corrected TypeScript source — no markdown fences, no commentary.`;
+
     try {
       const fixedCode = await callGemini(prompt, 'gemini-3-flash-preview', false);
-      // Strip markdown blocks if present
-      return fixedCode.replace(/^```typescript\n?/gm, '').replace(/^```\n?/gm, '');
+      const cleaned = stripCodeFences(fixedCode);
+      return cleaned && cleaned.length > 0 ? cleaned : currentCode;
     } catch (err) {
-      console.error("Auto-healing failed", err);
+      console.error('Auto-healing failed', err);
       return currentCode;
     }
   };
@@ -78,7 +88,7 @@ export const useTestExecution = (projectId: string, project: Project | null, set
     }
   };
 
-  const executeWithHealing = async (payload: { tests: Project['testSuite']; projectId: string; code: string | undefined }, maxRetries = 1): Promise<{ exitCode: number; output: string; error?: string; testResults?: any[] }> => {
+  const executeWithHealing = async (payload: { tests: Project['testSuite']; projectId: string; code: string | undefined }, maxRetries = 2): Promise<{ exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean }> => {
     let currentPayload = { ...payload };
     
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -106,39 +116,51 @@ export const useTestExecution = (projectId: string, project: Project | null, set
         throw new Error('Network error. Test Sandbox might be restarting.');
       }
       
-      let result: { exitCode: number; output: string; error?: string; testResults?: any[] };
+      let result: { exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean };
       try {
         const textResponse = await response.text();
         result = JSON.parse(textResponse);
       } catch (err) {
         throw new Error(`Execution environment failure (Status ${response.status}). The sandbox may be restarting, or returned an invalid API response.`);
       }
-      
-      if (!response.ok) {
-        // If it's a syntax error (400) and we have retries left, try to heal
-        if (response.status === 400 && attempt < maxRetries) {
-          try {
-            const fixedCode = await autoHealTestCode(result.error || '', currentPayload.tests?.code || '');
-            currentPayload = { ...currentPayload, tests: { ...currentPayload.tests, code: fixedCode } };
-            
-            // Save the healed code to Firestore
+
+      // Compilation/syntax error in AI-generated code (returned as HTTP 200 + buildError).
+      // Auto-heal the offending source — the transformed module (app.ts) or the test
+      // suite, chosen from the compiler error — then persist and retry.
+      if (result.buildError && attempt < maxRetries) {
+        const errText = result.error || '';
+        const targetsModule = /app\.ts/.test(errText) || !currentPayload.tests?.code;
+        try {
+          if (targetsModule) {
+            const fixed = await autoHealCode(errText, currentPayload.code || '', 'module');
+            currentPayload = { ...currentPayload, code: fixed };
             if (setProject && project) {
               const db = getDb();
-              const updatedTestSuite = { ...project.testSuite, code: fixedCode };
+              await updateDoc(doc(db, 'projects', projectId), { generatedCode: fixed });
+              setProject((prev: Project | null) => prev ? { ...prev, generatedCode: fixed } : prev);
+            }
+          } else {
+            const fixed = await autoHealCode(errText, currentPayload.tests?.code || '', 'test');
+            currentPayload = { ...currentPayload, tests: { ...currentPayload.tests, code: fixed } };
+            if (setProject && project) {
+              const db = getDb();
+              const updatedTestSuite = { ...project.testSuite, code: fixed };
               await updateDoc(doc(db, 'projects', projectId), { testSuite: updatedTestSuite });
               setProject((prev: Project | null) => prev ? { ...prev, testSuite: updatedTestSuite } : prev);
             }
-            
-            setSandboxOutput(prev => prev + '\n[Auto-Healing] Code updated. Retrying execution...\n');
-            continue; // Retry
-          } catch (healError) {
-            console.error("Auto-healing failed", healError);
-            throw new Error(result.error || 'Test execution failed');
           }
+          setSandboxOutput(prev => prev + `\n[Auto-Healing] ${targetsModule ? 'Module' : 'Test'} code repaired. Retrying execution...\n`);
+          continue;
+        } catch (healError) {
+          console.error('Auto-healing failed', healError);
+          return result;
         }
+      }
+
+      if (!response.ok) {
         throw new Error(result.error || 'Test execution failed');
       }
-      
+
       return result;
     }
     // TypeScript: should never reach here but satisfies return type

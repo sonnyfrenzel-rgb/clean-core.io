@@ -263,8 +263,10 @@ export async function POST(req: Request) {
       });
     } catch (buildErr: any) {
       const msg = (buildErr?.message || String(buildErr)).slice(0, 4000);
+      // `buildError` lets the client auto-heal (ask the AI to repair the offending
+      // generated module/test code) and retry, rather than surfacing a dead end.
       return NextResponse.json(
-        { output: '', error: `Compilation failed:\n${msg}`, exitCode: 1, testResults: [] },
+        { output: '', error: `Compilation failed:\n${msg}`, exitCode: 1, testResults: [], buildError: true },
         { status: 200 },
       );
     }
