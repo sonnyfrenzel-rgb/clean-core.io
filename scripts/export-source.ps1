@@ -15,8 +15,8 @@ if (-not $OutputZip) {
 $tempDir = Join-Path $SourceDir "tmp_archive_src"
 
 # Clean any existing temp dir or zip
-if (Test-Path $tempDir) { Remove-Item -Recurse -Force $tempDir }
-if (Test-Path $OutputZip) { Remove-Item -Force $OutputZip }
+if (Test-Path -LiteralPath $tempDir) { Remove-Item -LiteralPath $tempDir -Recurse -Force }
+if (Test-Path -LiteralPath $OutputZip) { Remove-Item -LiteralPath $OutputZip -Force }
 
 # Create temp dir
 New-Item -ItemType Directory -Path $tempDir | Out-Null
@@ -52,7 +52,9 @@ $excludePatterns = @(
 )
 
 # Get all files, filter out the excluded directories and files
-Get-ChildItem -Path $SourceDir -Recurse | ForEach-Object {
+# CRITICAL: Use -LiteralPath to handle Next.js dynamic routes with square brackets
+# e.g. [projectId] — PowerShell treats [] as wildcard globs with -Path
+Get-ChildItem -LiteralPath $SourceDir -Recurse | ForEach-Object {
     $relativePath = $_.FullName.Substring($SourceDir.Length + 1)
     if ($relativePath -eq "") { return }
     
@@ -69,18 +71,18 @@ Get-ChildItem -Path $SourceDir -Recurse | ForEach-Object {
         # Copy to temp directory maintaining folder structure
         $targetFile = Join-Path $tempDir $relativePath
         $targetSubDir = Split-Path $targetFile -Parent
-        if (-not (Test-Path $targetSubDir)) {
+        if (-not (Test-Path -LiteralPath $targetSubDir)) {
             New-Item -ItemType Directory -Path $targetSubDir | Out-Null
         }
-        Copy-Item -Path $_.FullName -Destination $targetFile -Force
+        Copy-Item -LiteralPath $_.FullName -Destination $targetFile -Force
     }
 }
 
 # Read platform version dynamically from package.json (Finding P1)
 $packageJsonPath = Join-Path $SourceDir "package.json"
 $platformVersion = "v1.0.0"
-if (Test-Path $packageJsonPath) {
-    $packageJson = Get-Content -Raw -Path $packageJsonPath | ConvertFrom-Json
+if (Test-Path -LiteralPath $packageJsonPath) {
+    $packageJson = Get-Content -Raw -LiteralPath $packageJsonPath | ConvertFrom-Json
     if ($packageJson.version) {
         $platformVersion = "v" + $packageJson.version
     }
@@ -88,8 +90,8 @@ if (Test-Path $packageJsonPath) {
 
 # Generate manifest.json (Finding 10)
 $manifestFiles = @()
-Get-ChildItem -Path $tempDir -Recurse | Where-Object { -not $_.PSIsContainer } | ForEach-Object {
-    $fileHash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash.ToLower()
+Get-ChildItem -LiteralPath $tempDir -Recurse | Where-Object { -not $_.PSIsContainer } | ForEach-Object {
+    $fileHash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLower()
     $fileSize = $_.Length
     $relPath = $_.FullName.Substring($tempDir.Length + 1).Replace("\", "/")
     
@@ -143,6 +145,8 @@ $manifestObj | ConvertTo-Json -Depth 10 | Out-File -FilePath $manifestJsonPath -
 Compress-Archive -Path "$tempDir\*" -DestinationPath $OutputZip -Force
 
 # Clean up temp directory
-Remove-Item -Recurse -Force $tempDir
+Remove-Item -LiteralPath $tempDir -Recurse -Force
 
 Write-Output "Zip archive successfully created at: $OutputZip"
+Write-Output "Platform version: $platformVersion"
+Write-Output "Files exported: $($manifestFiles.Count)"
