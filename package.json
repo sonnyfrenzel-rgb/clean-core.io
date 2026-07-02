@@ -13,7 +13,8 @@
     "clean": "next clean",
     "build:report": "node scripts/generate-report.js && node scripts/generate-whitepaper.js",
     "sync:catalog": "tsx scripts/sync-cloudification-repo.ts latest",
-    "sync:catalog:all": "tsx scripts/sync-cloudification-repo.ts all"
+    "sync:catalog:all": "tsx scripts/sync-cloudification-repo.ts all",
+    "deploy:rules": "firebase deploy --only firestore:rules --config firebase.rules-all-dbs.json --project cleancore-491216"
   },
   "dependencies": {
     "@google/genai": "^1.17.0",

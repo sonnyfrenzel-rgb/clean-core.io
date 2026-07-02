@@ -1,0 +1,10 @@
+{
+  "//": "Multi-database Firestore rules deploy target. Used ONLY by `npm run deploy:rules` (firebase deploy --config this-file). Kept separate from firebase.json because the array/multi-db form breaks the local emulator's default-database rules enforcement used by the test suite. Deploy rules to every database the app uses so they never drift again. Add new ai-studio-* databases here.",
+  "firestore": [
+    { "database": "(default)", "rules": "firestore.rules" },
+    { "database": "ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e", "rules": "firestore.rules" },
+    { "database": "ai-studio-39b46c45-cda0-481e-9847-19682e979043", "rules": "firestore.rules" },
+    { "database": "ai-studio-030e1ee1-7e1d-4208-beda-28735bc1a360", "rules": "firestore.rules" },
+    { "database": "ai-studio-d80950ff-29db-4c7a-a202-688b019c1bf9", "rules": "firestore.rules" }
+  ]
+}
