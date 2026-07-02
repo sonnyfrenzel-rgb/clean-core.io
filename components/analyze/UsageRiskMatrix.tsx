@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { AlertTriangle, TrendingUp, Trash2, HelpCircle, BarChart3, Clock, X, ExternalLink } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Trash2, HelpCircle, BarChart3, Clock, X, ExternalLink, MinusCircle } from 'lucide-react';
 import clsx from 'clsx';
 import type { UsageJoinRow, Quadrant, UsageBucket, Feasibility } from '@/lib/abap/usage-model';
 import type { UsageReport } from '@/lib/abap/usage-model';
@@ -19,6 +19,7 @@ type CellKey = `${UsageBucket}-${Feasibility}`;
 const USAGE_LABELS: { bucket: UsageBucket; label: string; icon: React.ReactNode }[] = [
   { bucket: 'heavy',    label: 'Heavy Usage',    icon: <TrendingUp className="w-3.5 h-3.5" /> },
   { bucket: 'moderate', label: 'Moderate',       icon: <BarChart3 className="w-3.5 h-3.5" /> },
+  { bucket: 'low',      label: 'Low Usage',      icon: <MinusCircle className="w-3.5 h-3.5" /> },
   { bucket: 'dormant',  label: 'Dormant',        icon: <Clock className="w-3.5 h-3.5" /> },
   { bucket: 'unknown',  label: 'Unknown',        icon: <HelpCircle className="w-3.5 h-3.5" /> },
 ];
@@ -36,6 +37,9 @@ const CELL_COLORS: Record<string, string> = {
   'moderate-no-released-api-path':'bg-orange-50 border-orange-200 text-orange-700',
   'moderate-needs-architect':     'bg-amber-50 border-amber-200 text-amber-700',
   'moderate-clean-core-ready':    'bg-slate-50 border-slate-200 text-slate-600',
+  'low-no-released-api-path':     'bg-yellow-50 border-yellow-200 text-yellow-700',
+  'low-needs-architect':          'bg-yellow-50/50 border-yellow-100 text-yellow-600',
+  'low-clean-core-ready':         'bg-slate-50 border-slate-200 text-slate-500',
   'dormant-no-released-api-path': 'bg-amber-50 border-amber-200 text-amber-700',
   'dormant-needs-architect':      'bg-amber-50/50 border-amber-100 text-amber-600',
   'dormant-clean-core-ready':     'bg-slate-50/50 border-slate-100 text-slate-500',
@@ -130,6 +134,22 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
               <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 pr-2">
                 {u.icon}
                 <span>{u.label}</span>
+                {u.bucket === 'dormant' && (
+                  <span className="group relative">
+                    <HelpCircle className="w-3 h-3 text-amber-400 cursor-help" />
+                    <span className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-slate-800 text-white text-[10px] rounded-lg w-56 hidden group-hover:block z-20 leading-relaxed">
+                      Zero executions or last used 13+ months ago. Retire only after business owner confirmation — some dormant objects may be required for periodic processes.
+                    </span>
+                  </span>
+                )}
+                {u.bucket === 'low' && (
+                  <span className="group relative">
+                    <HelpCircle className="w-3 h-3 text-yellow-400 cursor-help" />
+                    <span className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-slate-800 text-white text-[10px] rounded-lg w-56 hidden group-hover:block z-20 leading-relaxed">
+                      Below-average usage but recently active. May include business-critical periodic processes (monthly closings, year-end, audit reports). Low ≠ dormant.
+                    </span>
+                  </span>
+                )}
                 {u.bucket === 'unknown' && (
                   <span className="group relative">
                     <HelpCircle className="w-3 h-3 text-slate-400 cursor-help" />

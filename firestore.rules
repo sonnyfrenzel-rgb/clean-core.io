@@ -108,7 +108,8 @@ service cloud.firestore {
              (!('presentation' in data) || (data.presentation is string && data.presentation.size() < 1000000)) &&
              (!('testCases' in data) || (data.testCases is list && data.testCases.size() < 100)) &&
              (!('testSuite' in data) || (data.testSuite is map)) &&
-             (!('exports' in data) || (data.exports is map));
+             (!('exports' in data) || (data.exports is map)) &&
+             (!('usageReport' in data) || (data.usageReport is map));
     }
 
     match /projects/{projectId} {
@@ -134,7 +135,8 @@ service cloud.firestore {
                         'targetArchitecture', 'approvedByArchitect', 'architectJustifiedOverride', 'architectSignOffAt', 'approvedBy',
                         'generatedCode', 'documentation', 'businessDocumentation', 'presentation',
                         'testCases', 'testSuite', 'coverageEstimate', 'manualTestingRequirements',
-                        'worklist', 'exports', 'updatedAt', 's4Environment'
+                        'worklist', 'exports', 'updatedAt', 's4Environment',
+                        'usageReport'
                       ])
                     )) && isValidProject(request.resource.data, true);
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());

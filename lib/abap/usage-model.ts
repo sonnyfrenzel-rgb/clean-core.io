@@ -10,7 +10,7 @@
 
 export type UsageSource = 'scmon' | 'upl' | 'st03n' | 'manual';
 
-export type UsageBucket = 'heavy' | 'moderate' | 'dormant' | 'unknown';
+export type UsageBucket = 'heavy' | 'moderate' | 'low' | 'dormant' | 'unknown';
 
 // ── Usage Record & Report ──────────────────────────────────────────
 

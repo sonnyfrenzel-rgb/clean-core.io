@@ -115,7 +115,7 @@ function classifyUsageBucket(
   // Zero calls → dormant
   if (record.callCount === 0) return 'dormant';
 
-  // Last used too long ago → dormant
+  // Last used too long ago → dormant (regardless of call count)
   if (dormancyThreshold && record.lastUsed && record.lastUsed < dormancyThreshold) {
     return 'dormant';
   }
@@ -123,7 +123,11 @@ function classifyUsageBucket(
   // Percentile-based bucketing (relative, not magic numbers)
   if (record.callCount >= p75) return 'heavy';
   if (record.callCount >= p25) return 'moderate';
-  return 'dormant';
+
+  // Below p25 but non-zero and recent → low, NOT dormant.
+  // Low-frequency objects may still be business-critical (monthly closings,
+  // year-end processes, audit reports, escalation programs).
+  return 'low';
 }
 
 // ── Risk Level derivation ──────────────────────────────────────────
@@ -159,13 +163,14 @@ function deriveFeasibility(objectName: string, findings: EvidenceFinding[]): Fea
 /**
  * Usage × Feasibility → Quadrant
  *
- * |                        | heavy       | moderate     | dormant          | unknown |
- * |------------------------|-------------|--------------|------------------|---------|
- * | no-released-api-path   | 🔴 danger   | high         | 🟡 retire-cand.  | ⚪ unknown |
- * | needs-architect        | 🔴 danger   | medium       | retire-cand.     | ⚪ unknown |
- * | clean-core-ready       | 🟢 prioritize | low-priority | retire-cand.   | ⚪ unknown |
+ * |                        | heavy       | moderate     | low            | dormant          | unknown |
+ * |------------------------|-------------|--------------|----------------|------------------|---------|
+ * | no-released-api-path   | 🔴 danger   | high         | 🟡 low-prio    | 🟡 retire-cand.  | ⚪ unknown |
+ * | needs-architect        | 🔴 danger   | medium       | low-prio       | retire-cand.     | ⚪ unknown |
+ * | clean-core-ready       | 🟢 prioritize | low-priority | low-prio     | retire-cand.     | ⚪ unknown |
  *
  * §5 SAFEGUARD: unknown usage → ALWAYS 'unknown' quadrant, regardless of feasibility.
+ * §6 SAFEGUARD: 'low' usage → NEVER 'retire-candidate'. Low ≠ dormant.
  */
 function computeQuadrant(usage: UsageBucket, feasibility: Feasibility): Quadrant {
   // §5: Unknown usage = unknown quadrant. Period.
@@ -180,7 +185,13 @@ function computeQuadrant(usage: UsageBucket, feasibility: Feasibility): Quadrant
     return 'low-priority';
   }
 
-  // dormant
+  // §6: Low usage = low-priority, NEVER retire-candidate.
+  // Low-frequency objects may be business-critical (monthly closings, year-end, audit).
+  if (usage === 'low') {
+    return 'low-priority';
+  }
+
+  // dormant (zero calls or last used > 13 months ago)
   return 'retire-candidate';
 }
 
@@ -214,7 +225,7 @@ export const QUADRANT_META: Record<Quadrant, { label: string; emoji: string; col
     emoji: '🟡',
     color: 'text-amber-700',
     bgColor: 'bg-amber-50 border-amber-200',
-    description: 'Dormant or low usage — retire after business sign-off.',
+    description: 'Zero usage or dormant for 13+ months — retire after business owner confirmation.',
   },
   'low-priority': {
     label: 'Low Priority',

@@ -251,9 +251,41 @@ function normalizeObjectName(name: string): string {
   return name.toUpperCase().trim();
 }
 
+/**
+ * Parse a call count from SAP usage data.
+ * Call counts are ALWAYS integers — decimal results are rounded.
+ *
+ * Handles locale-ambiguous separators:
+ *   - "1.234"   → 1234 (DE thousand sep: dot followed by 3 digits)
+ *   - "1,234"   → 1234 (EN thousand sep: comma followed by 3 digits)
+ *   - "1234"    → 1234
+ *   - "1 234"   → 1234 (space thousand sep)
+ *   - "1.234,00" → 1234 (DE decimal format)
+ *   - "1,234.00" → 1234 (EN decimal format)
+ */
 function parseCallCount(raw: unknown): number | undefined {
   if (raw === null || raw === undefined || raw === '') return undefined;
-  const num = Number(String(raw).replace(/[.,]/g, match => match === '.' ? '' : '.').replace(/\s/g, ''));
+  let str = String(raw).trim().replace(/\s/g, '');
+
+  // Detect DE format: "1.234,56" → dots are thousands, comma is decimal
+  if (/\.\d{3},/.test(str)) {
+    str = str.replace(/\./g, '').replace(',', '.');
+  }
+  // Detect EN format: "1,234.56" → commas are thousands, dot is decimal
+  else if (/,\d{3}\./.test(str)) {
+    str = str.replace(/,/g, '');
+  }
+  // Detect standalone thousand separator: "1.234" or "1,234" (exactly 3 digits after separator)
+  else if (/^[\d]+[.,]\d{3}$/.test(str)) {
+    str = str.replace(/[.,]/g, '');
+  }
+  // Detect DE decimal only: "1,5" → treat comma as decimal
+  else if (/,/.test(str)) {
+    str = str.replace(',', '.');
+  }
+  // Dot as decimal: "1.5" → keep as-is (will be rounded below)
+
+  const num = Number(str);
   return isNaN(num) ? undefined : Math.round(num);
 }
 
