@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
           </p>
           
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            A pilot user has requested live tenant access to connect their <strong>Live S/4HANA Public Cloud Sandbox/Test Tenant</strong> (BYOT) inside the Stage 5 Testing Cockpit. Please review their details:
+            A community user has requested live tenant access to connect their <strong>Live S/4HANA Public Cloud Sandbox/Test Tenant</strong> (BYOT) inside the Stage 5 Testing Cockpit. Please review their details:
           </p>
 
           <!-- Applicant Detail Card -->
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
           <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
             Warm regards,<br />
             <strong>The Clean-Core.io Team</strong><br />
-            <span style="font-size: 12px; color: #94a3b8;">Community Pilot Program</span>
+            <span style="font-size: 12px; color: #94a3b8;">Free Community Edition Program</span>
           </div>
 
         </div>
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Clean-Core Pilot <system@clean-core.io>',
+          from: 'Clean-Core.io <system@clean-core.io>',
           to: 'info@clean-core.io',
           subject: emailSubject,
           html: emailHtml,
@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
               <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
                 Warm regards,<br />
                 <strong>The Clean-Core.io Team</strong><br />
-                <span style="font-size: 12px; color: #94a3b8;">Community Pilot Program</span>
+                <span style="font-size: 12px; color: #94a3b8;">Free Community Edition Program</span>
               </div>
 
             </div>

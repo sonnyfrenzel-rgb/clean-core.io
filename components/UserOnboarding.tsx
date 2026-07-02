@@ -139,7 +139,7 @@ export default function UserOnboarding() {
           }),
         });
       } catch (emailErr) {
-        console.error('Failed to trigger pilot registration approval email:', emailErr);
+        console.error('Failed to trigger registration approval email:', emailErr);
       }
 
       setShowSuccess(true);
@@ -194,7 +194,7 @@ export default function UserOnboarding() {
             <div className="bg-white/20 p-1.5 md:p-2 rounded-lg md:rounded-xl">
               <ShieldCheck className="w-6 h-6 md:w-8 md:h-8" />
             </div>
-            <h2 className="text-xl md:text-3xl font-black tracking-tight uppercase">Join the Pilot</h2>
+            <h2 className="text-xl md:text-3xl font-black tracking-tight uppercase">Join the platform</h2>
           </div>
           <p className="text-green-50 text-xs md:text-sm font-medium opacity-90 leading-relaxed">
             Apply for our non-commercial Pilot program. Access is currently limited.
@@ -260,7 +260,7 @@ export default function UserOnboarding() {
                 >
                   GDPR provisions and Privacy Policy
                 </button>{' '}
-                and understand that this is a free community pilot.
+                and understand that this is a Free Community Edition.
               </span>
             </label>
 
@@ -299,10 +299,10 @@ export default function UserOnboarding() {
             </ul>
           </div>
 
-          {/* System Disclaimer & Pilot Terms */}
+          {/* System Disclaimer & Terms */}
           <div className="bg-amber-50/50 p-4 rounded-xl md:rounded-2xl border border-amber-200/60 text-[10px] md:text-xs text-amber-900 space-y-2">
             <h4 className="font-black uppercase tracking-wider flex items-center gap-1.5 text-amber-950 text-xs md:text-sm">
-              ⚡ System Disclaimer & Pilot Terms
+              ⚡ System Disclaimer & Terms
             </h4>
             <p className="leading-relaxed font-medium">
               This application is a <strong>non-commercial pilot research project</strong>. All transformation analyses and code migrations are powered by <strong>Generative AI models</strong> and may contain inaccuracies, hallucinations, or syntactical errors.
@@ -329,7 +329,7 @@ export default function UserOnboarding() {
               disabled={isSubmitting || !agreedGDPR || !agreedTerms || !firstName || !lastName}
               className="flex-[2] flex items-center justify-center gap-2 bg-gray-950 hover:bg-gray-900 text-white py-3.5 md:py-4 rounded-xl md:rounded-2xl font-black text-sm md:text-base transition-all shadow-lg hover:shadow-xl disabled:bg-gray-300 disabled:shadow-none"
             >
-              {isSubmitting ? 'Submitting...' : 'Request Pilot Access'} <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
+              {isSubmitting ? 'Submitting...' : 'Request Community Access'} <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
             </button>
             <button
               type="button"
@@ -348,7 +348,7 @@ export default function UserOnboarding() {
           <div>
             <h3 className="text-lg font-bold mb-2">1. Privacy at a Glance</h3>
             <p className="text-sm leading-relaxed mb-2">
-              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our Pilot program.
+              Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our platform program.
             </p>
             <p className="text-xs text-slate-500">
               <strong>Controller:</strong> Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, E-Mail: info@clean-core.io.
@@ -424,14 +424,14 @@ export default function UserOnboarding() {
           <div>
             <h3 className="text-lg font-bold mb-2">1. Scope and Purpose</h3>
             <p className="text-sm leading-relaxed">
-              This Clean-Core.io pilot program is designed solely for research and evaluation purposes in the domain of automated code modernization (ABAP to Cloud-Native Node.js). By participating, you help shape and improve this community utility.
+              This Clean-Core.io free community program is designed solely for research and evaluation purposes in the domain of automated code modernization (ABAP to Cloud-Native Node.js). By participating, you help shape and improve this community utility.
             </p>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">2. Community Pilot Usage</h3>
+            <h3 className="text-lg font-bold mb-2">2. Free Community Edition Usage</h3>
             <p className="text-sm leading-relaxed text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100 font-medium">
-              During this community pilot phase, platform access is completely free of charge and intended for prototyping, educational, and research-based testing. Commercial deployment of generated code in live production environments requires a separate agreement.
+              During this Free Community Edition phase, platform access is completely free of charge and intended for prototyping, educational, and research-based testing. Commercial deployment of generated code in live production environments requires a separate agreement.
             </p>
           </div>
 
@@ -448,7 +448,7 @@ export default function UserOnboarding() {
           <div>
             <h3 className="text-lg font-bold mb-2">4. Community Guidelines & Code of Conduct</h3>
             <p className="text-sm leading-relaxed mb-2">
-              As a community pilot participant, you agree to adhere to constructive and respectful rules of engagement:
+              As a Free Community Edition participant, you agree to adhere to constructive and respectful rules of engagement:
             </p>
             <ul className="list-disc pl-5 space-y-1 text-xs text-slate-600">
               <li>Do not upload malicious software, illegal scripts, or proprietary source code that violates intellectual property rights.</li>

@@ -79,7 +79,7 @@ export default function ImpressumPage() {
             </h2>
             <div className="space-y-4 text-sm text-gray-600">
               <p>
-                <strong className="text-gray-800">Liability for Content:</strong> The contents of our pages were created with the greatest care. Since this is a non-commercial, collaborative research pilot application (Community Pilot), we cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
+                <strong className="text-gray-800">Liability for Content:</strong> The contents of our pages were created with the greatest care. Since this is a non-commercial, collaborative research pilot application (Free Community Edition), we cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
               </p>
               <p>
                 <strong className="text-gray-800">Copyright:</strong> The content and works created by the site operator on these pages are subject to German copyright law. Contributions from third parties are marked as such. Reproduction, editing, and distribution require written consent.

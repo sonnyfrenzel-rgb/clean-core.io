@@ -1925,7 +1925,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
             {legacyCode && !isFromExample && (
               <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-4 animate-in slide-in-from-bottom-4 mb-8">
                 <h4 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <Shield size={16} className="text-green-600 animate-pulse" /> Security Scan & Pilot Agreement
+                  <Shield size={16} className="text-green-600 animate-pulse" /> Security Scan & Terms Agreement
                 </h4>
                 
                 {/* Visual Security Badge */}
@@ -1945,7 +1945,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                     className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-0.5 accent-green-600 shrink-0 cursor-pointer"
                   />
                   <span className="text-xs text-gray-700 leading-relaxed font-medium">
-                    I agree to the <strong>Terms & Conditions</strong> of the Clean-Core.io community pilot. I understand this is a free prototyping platform under absolute warranty and liability disclaimer, utilizing secure Gemini models on EU-compliant servers.
+                    I agree to the <strong>Terms & Conditions</strong> of the Clean-Core.io Free Community Edition. I understand this is a free prototyping platform under absolute warranty and liability disclaimer, utilizing secure Gemini models on EU-compliant servers.
                   </span>
                 </label>
               </div>
@@ -2014,7 +2014,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                       <li>Select your <strong>S/4HANA Target Operating Model</strong> (Public Cloud or Private Cloud RISE Edition above).</li>
                     )}
                     {!acceptedTerms && (
-                      <li>Accept the <strong>Pilot Terms & Conditions</strong> (via the checkbox in the Security section above).</li>
+                      <li>Accept the <strong>Terms & Conditions</strong> (via the checkbox in the Security section above).</li>
                     )}
                   </ul>
                 </div>

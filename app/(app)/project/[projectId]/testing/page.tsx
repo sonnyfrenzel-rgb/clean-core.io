@@ -1217,7 +1217,7 @@ export default function TestingSandboxPage() {
                   <div className="bg-sky-50/50 border border-sky-100 p-5 rounded-2xl">
                     <h3 className="text-xs font-black text-sky-950 uppercase tracking-widest mb-3">📋 Instructions (Setup Guide)</h3>
                     <ol className="list-decimal pl-4 text-xs text-sky-850 space-y-2 font-medium">
-                      <li><strong>Request access:</strong> Use the form below to request pilot access for your organization.</li>
+                      <li><strong>Request access:</strong> Use the form below to request access for your organization.</li>
                       <li><strong>Provide HTTPS endpoint:</strong> Set up a secure HTTPS connection to your S/4HANA sandbox or test system.</li>
                       <li><strong>Configure credentials:</strong> Once approved, you can configure your credentials (Basic Auth or OAuth 2.0).</li>
                       <li><strong>Test & use connection:</strong> Run live test cases against OData interfaces directly from the Stage 5 testing environment.</li>
@@ -1238,7 +1238,7 @@ export default function TestingSandboxPage() {
                   <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
                     <h3 className="text-xs font-black text-amber-950 uppercase tracking-widest mb-2">⚠️ Warranty Disclaimer</h3>
                     <p className="text-xs text-amber-800 leading-relaxed font-medium">
-                      This platform is a non-commercial community pilot environment. Access is provided entirely without warranty, guarantee, or liability. Under no circumstances should you use productive ERP data or real passwords.
+                      This platform is a non-commercial Free Community Edition environment. Access is provided entirely without warranty, guarantee, or liability. Under no circumstances should you use productive ERP data or real passwords.
                     </p>
                   </div>
 
@@ -1257,7 +1257,7 @@ export default function TestingSandboxPage() {
                     <div className="space-y-4 pt-2">
                       <div className="space-y-2">
                         <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                          Description of your pilot use case (Motivation)
+                          Description of your use case (Motivation)
                         </label>
                         <textarea 
                           placeholder="E.g., connecting our non-productive S/4HANA Public Cloud Sandbox to validate OData interfaces..."

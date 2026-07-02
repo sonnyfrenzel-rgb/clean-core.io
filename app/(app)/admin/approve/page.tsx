@@ -205,7 +205,7 @@ function ApprovalPanelContent() {
         </div>
         <h2 className="text-2xl font-black text-white mb-3 uppercase tracking-tight">Access Denied</h2>
         <p className="text-slate-400 text-sm font-medium mb-8 leading-relaxed">
-          You must be logged in as a platform administrator to access this panel and approve pilot licenses.
+          You must be logged in as a platform administrator to access this panel and approve community access.
         </p>
         <button 
           onClick={() => {
@@ -241,7 +241,7 @@ function ApprovalPanelContent() {
               </div>
               <div>
                 <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">Clean-Core.io Admin</span>
-                <h2 className="text-xl font-black text-white uppercase tracking-tight">Pilot License Approval</h2>
+                <h2 className="text-xl font-black text-white uppercase tracking-tight">Community Access Approved</h2>
               </div>
             </div>
 
@@ -330,7 +330,7 @@ function ApprovalPanelContent() {
             </div>
             <h2 className="text-3xl font-black text-white mb-3 uppercase tracking-tight">Access Approved!</h2>
             <p className="text-slate-300 font-medium text-sm max-w-sm mx-auto mb-8 leading-relaxed">
-              The user has been successfully activated in Firestore. Their pilot license is now active with 5 complimentary app transformations.
+              The user has been successfully activated in Firestore. Their community access is now active with 5 complimentary app transformations.
             </p>
             
             {applicant && (
