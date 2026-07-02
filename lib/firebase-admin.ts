@@ -266,20 +266,39 @@ export async function deleteUserDataAndAccount(uid: string): Promise<void> {
     }
   };
 
-  // 1. Paginated deletion of user-owned collections
-  await deleteCollectionByUid('projects');
+  // 1. Projects — recursiveDelete so the immutable `runs/{runId}` subcollection
+  //    (which holds the analysis narrative/evidence) is purged too. A plain doc
+  //    delete would orphan the subcollection.
+  {
+    const q = db.collection('projects').where('userId', '==', uid).limit(200);
+    let snapshot = await q.get();
+    while (snapshot.size > 0) {
+      for (const projectDoc of snapshot.docs) {
+        await db.recursiveDelete(projectDoc.ref);
+      }
+      snapshot = await q.get();
+    }
+  }
+
+  // 2. Other user-owned top-level collections
   await deleteCollectionByUid('abap_examples');
   await deleteCollectionByUid('support_tickets');
   await deleteCollectionByUid('files');
 
-  // 2. Delete single documents
+  // 3. Delete single documents keyed by uid.
+  //    user_secrets uses recursiveDelete to purge the BYOK `providers/*`
+  //    subcollection (encrypted Gemini API keys) — a plain delete would leave it.
+  await db.recursiveDelete(db.collection('user_secrets').doc(uid)).catch(() => {});
   await db.collection('registration_requests').doc(uid).delete().catch(() => {});
   await db.collection('tenant_access_requests').doc(uid).delete().catch(() => {});
   await db.collection('s4_credentials').doc(uid).delete().catch(() => {});
   await db.collection('mfa_secrets').doc(uid).delete().catch(() => {});
+  await db.collection('mfa_pending').doc(uid).delete().catch(() => {});
   await db.collection('users').doc(uid).delete().catch(() => {});
+  // Note: rate_limits keys are composite (`gemini:<uid>:<ip>`) and self-expiring
+  // via their sliding window; they hold no durable PII and are intentionally left.
 
-  // 3. Delete the Firebase Auth User
+  // 4. Delete the Firebase Auth User
   await adminAuthModule.getAuth().deleteUser(uid);
 }
 

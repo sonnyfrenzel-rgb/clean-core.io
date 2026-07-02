@@ -39,6 +39,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    // Read-back for verifying deletion of collections that client SDKs cannot read
+    // (user_secrets, s4_credentials, mfa_* are `if false` in firestore.rules).
+    if (action === 'existsDoc') {
+      const snap = await db.collection(collectionPath).doc(docId).get();
+      return NextResponse.json({ exists: snap.exists });
+    }
+
     return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
   } catch (err: any) {
     console.error('[Test Seed API] Error:', err);

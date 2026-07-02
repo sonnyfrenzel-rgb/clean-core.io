@@ -48,3 +48,14 @@ export async function adminSetTenantRequested(uid: string) {
 export async function adminSetCustomClaim(uid: string, claims: Record<string, any>) {
   await callSeedApi({ action: 'setCustomClaim', uid, claims });
 }
+
+/** Server-side existence check — for collections client SDKs cannot read (user_secrets, mfa_*, s4_credentials). */
+export async function adminDocExists(collectionPath: string, docId: string): Promise<boolean> {
+  const response = await fetch(`${BASE_URL}/api/test/seed`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-test-seed-token': process.env.PILOT_APPROVAL_SECRET || '' },
+    body: JSON.stringify({ action: 'existsDoc', collectionPath, docId }),
+  });
+  if (!response.ok) throw new Error(`existsDoc failed: ${await response.text()}`);
+  return (await response.json()).exists === true;
+}

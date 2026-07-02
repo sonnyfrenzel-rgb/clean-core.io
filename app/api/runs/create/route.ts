@@ -188,8 +188,15 @@ export async function POST(req: NextRequest) {
     const provider = 'google-gemini';
     const modelId = byokUsed ? (userData?.byokModel || 'gemini-3-flash-preview') : 'gemini-3-flash-preview';
 
-    // Create intermediate payload for hashing
-    const unsignedRunPayload: Omit<AnalysisRun, 'runHash' | 'signature'> = {
+    // v1.20 §6 — Server-authoritative narrative separation.
+    // The AI narrative (`finalAnalysisText`) is client/LLM-produced, not server
+    // evidence. We commit only its content hash into the signed payload; the raw
+    // text is stored on the run doc (below) OUTSIDE the signed set. This keeps
+    // arbitrary client free-text out of the cryptographic evidence guarantee.
+    const responseHash = crypto.createHash('sha256').update(finalAnalysisText).digest('hex');
+
+    // Create intermediate payload for hashing (analysis excluded — see above)
+    const unsignedRunPayload: Omit<AnalysisRun, 'runHash' | 'signature' | 'analysis'> = {
       runId,
       projectId,
       userId: decodedToken.uid,
@@ -211,11 +218,16 @@ export async function POST(req: NextRequest) {
         engineVersion: APP_VERSION,
         byokUsed,
       },
+      aiNarrativeMeta: {
+        provider,
+        modelId,
+        responseHash,
+        evidentiary: false,
+      },
       extensibilityRoute: extensibilityReport.recommendedRoute,
       cleanCoreScore,
       complexityScore,
       criticalityScore,
-      analysis: finalAnalysisText,
       evidenceReport: evidenceReport.findings,
       // v1.17: Store full assessment data for Audit Pack completeness
       dataCoupling,
@@ -239,6 +251,8 @@ export async function POST(req: NextRequest) {
 
     const analysisRun: AnalysisRun = {
       ...unsignedRunPayload,
+      // Narrative stored for display/downstream, but NOT part of the signed hash.
+      analysis: finalAnalysisText,
       runHash,
       signature,
     };
