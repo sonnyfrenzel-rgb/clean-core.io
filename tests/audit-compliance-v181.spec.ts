@@ -1,49 +1,32 @@
 import { test, expect } from '@playwright/test';
+import JSZip from 'jszip';
+import { createHash } from 'crypto';
 import { verifyAuditPack } from '../lib/audit-pack-verify';
-import { generateAuditPack } from '../lib/audit-pack';
-import type { Project } from '../lib/types';
 
 test.describe('Audit & Compliance Hardening v1.18.1 Tests', () => {
 
-  const mockProject: Project = {
-    id: 'test-project-123',
-    name: 'Test Project',
-    userId: 'test-user',
-    status: 'analyzed',
-    activeRunId: 'run-555',
-    cleanCoreScore: 85,
-    complexityScore: 40,
-    criticalityScore: 30,
-    extensibilityRoute: 'Side-by-Side (SAP BTP)',
-    approvedByArchitect: true,
-    approvedBy: 'architect@enterprise.com',
-    architectSignOffAt: new Date().toISOString(),
-    auditMetadata: {
-      inputFingerprint: {
-        fileName: 'zextractor.abap',
-        objectType: 'Report',
-        lineCount: 150,
-        byteSize: 4096,
-        sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
-        uploadedAt: new Date().toISOString(),
-      },
-      modelCard: {
-        provider: 'google-gemini',
-        model: 'gemini-3-flash-preview',
-        engineVersion: 'v1.18.1',
-        byokUsed: false,
-        analysisTimestamp: new Date().toISOString(),
-        catalogVersion: '2024.FPS02',
-      }
-    }
-  };
+  test('verifyAuditPack classifies an unsigned pack as integrity-only', async () => {
+    // Generation is now server-authoritative and always signed (v1.20 §5), so an
+    // unsigned pack is constructed directly here to exercise the verify path — the
+    // integrity-only tier still applies to externally-supplied unsigned packs.
+    const sha = (s: string) => createHash('sha256').update(s).digest('hex');
+    const content = '# Executive Summary\nUnsigned integrity-only test pack.';
+    const files = [{ path: '00-executive-summary.md', sha256: sha(content), bytes: new TextEncoder().encode(content).byteLength }];
+    const projectId = 'test-project-123', runId = 'run-555', runHash = 'runhash777', engineVersion = 'v1.18.1', sapApiCatalogVersion = '2024.FPS02';
+    const suffix = `${projectId}:${runId}:${runHash}:${engineVersion}:${sapApiCatalogVersion};`;
+    const canonical = [...files].sort((a, b) => a.path.localeCompare(b.path)).map(f => `${f.path}:${f.sha256}`).join(';') + ';' + suffix;
+    const manifestHash = sha(canonical);
+    const manifest = {
+      version: '2.0', runId, projectId, generatedAt: new Date().toISOString(),
+      engineVersion, sapApiCatalogVersion, files, manifestHash,
+      signed: false, signature: '', runHash,
+    };
+    const zip = new JSZip();
+    zip.file('00-executive-summary.md', content);
+    zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+    const buf = await zip.generateAsync({ type: 'nodebuffer' });
 
-  test('should generate and verify unsigned audit pack as integrity-only', async () => {
-    // Generate unsigned pack (empty idToken will cause fetch to fail or fall back)
-    const zipBlob = await generateAuditPack(mockProject, '');
-    const result = await verifyAuditPack(zipBlob);
-    console.log('VERIFY RESULT:', JSON.stringify(result, null, 2));
-
+    const result = await verifyAuditPack(buf as unknown as Blob);
     expect(result.success).toBe(true);
     expect(result.status).toBe('integrity-only');
     expect(result.manifestHashValid).toBe(true);

@@ -96,16 +96,14 @@ test.describe('v1.19 Trust Chain Closure', () => {
         .rejects.toThrow('Cannot generate Audit Pack without an active analysis run');
     });
 
-    test('proceeds (and falls back to unsigned) when activeRunId is present', async () => {
+    test('passes the run gate and delegates to the server when activeRunId is present', async () => {
       const projectWithRun = { ...baseProject, activeRunId: 'run-valid-123' };
-      // This will attempt to call /api/export/sign which will fail in test env,
-      // but critically it should NOT throw the "no active run" error — it should
-      // produce an unsigned fallback pack instead.
-      const blob = await generateAuditPack(projectWithRun, 'fake-token');
-      expect(blob).toBeTruthy();
-      // Verify it's a valid blob with content
-      const size = blob instanceof Blob ? blob.size : (blob as any).length;
-      expect(size).toBeGreaterThan(0);
+      // Generation is now server-authoritative (v1.20 §5): with a run present it must
+      // NOT throw the "no active run" gate error — it delegates to
+      // /api/audit-pack/create. That endpoint is unreachable in this in-process unit
+      // test, so the call rejects, but with a fetch/generation error, never the gate error.
+      await expect(generateAuditPack(projectWithRun, 'fake-token'))
+        .rejects.not.toThrow('Cannot generate Audit Pack without an active analysis run');
     });
 
   });

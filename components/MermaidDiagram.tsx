@@ -18,7 +18,10 @@ export default function MermaidDiagram({ chart }: { chart: string }) {
           securityLevel: 'strict',
           flowchart: {
             useMaxWidth: false,
-            htmlLabels: true,
+            // htmlLabels render node text inside <foreignObject> HTML, which the
+            // SVG sanitizer (sanitizeSvg) strips on the XHTML namespace — leaving
+            // empty boxes. Native SVG <text> labels survive sanitization.
+            htmlLabels: false,
             curve: 'basis',
             padding: 15,
             nodeSpacing: 30,

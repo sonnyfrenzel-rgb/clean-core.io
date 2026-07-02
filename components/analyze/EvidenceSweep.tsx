@@ -115,19 +115,19 @@ export default function EvidenceSweep({
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20">
-          <Shield className="w-5 h-5 text-emerald-400" />
+        <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-200">
+          <Shield className="w-5 h-5 text-emerald-600" />
         </div>
         <div>
-          <h3 className="text-base sm:text-lg font-black text-white tracking-tight">
+          <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
             Evidence Scanner
           </h3>
-          <p className="text-[10px] sm:text-xs text-slate-400 font-bold">
+          <p className="text-[10px] sm:text-xs text-slate-500 font-bold">
             Deterministic ABAP analysis • No AI guesswork
           </p>
         </div>
         {!isComplete && (
-          <div className="ml-auto flex items-center gap-2 text-xs text-emerald-400 font-bold">
+          <div className="ml-auto flex items-center gap-2 text-xs text-emerald-600 font-bold">
             <Cpu className="w-4 h-4 animate-spin" style={{ animationDuration: '3s' }} />
             <span className="hidden sm:inline">Scanning…</span>
           </div>
