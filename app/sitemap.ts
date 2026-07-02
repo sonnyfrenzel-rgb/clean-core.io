@@ -19,6 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/changelog`, lastModified: releaseDate, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${baseUrl}/whitepaper`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/tenant-security`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${baseUrl}/trust`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${baseUrl}/impressum`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.4 },
     { url: `${baseUrl}/datenschutz`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.4 },
   ];
