@@ -162,7 +162,7 @@ export default function UserOnboarding() {
           </div>
           <h2 className="text-2xl font-black mb-3">Registration pending</h2>
           <p className="text-gray-600 font-medium mb-6">
-            Your request for the Clean-Core.io Pilot has been submitted. Because we are in a closed beta phase, access needs to be manually approved.
+            Your request to join Clean-Core.io (Free Community Edition) has been submitted. Access is manually reviewed and approved by an administrator.
           </p>
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm mb-6 text-left">
             <p className="font-bold text-gray-900 mb-2">Next Step:</p>
@@ -197,7 +197,7 @@ export default function UserOnboarding() {
             <h2 className="text-xl md:text-3xl font-black tracking-tight uppercase">Join the platform</h2>
           </div>
           <p className="text-green-50 text-xs md:text-sm font-medium opacity-90 leading-relaxed">
-            Apply for our non-commercial Pilot program. Access is currently limited.
+            Apply for free access to our non-commercial community edition. Access is manually reviewed.
           </p>
         </div>
 
@@ -291,7 +291,7 @@ export default function UserOnboarding() {
           </div>
 
           <div className="bg-gray-50 p-3 md:p-4 rounded-xl md:rounded-2xl border border-gray-100">
-            <h4 className="font-black text-gray-900 mb-1 text-[10px] md:text-sm uppercase tracking-wider">Pilot Plan Details</h4>
+            <h4 className="font-black text-gray-900 mb-1 text-[10px] md:text-sm uppercase tracking-wider">Free Community Edition</h4>
             <ul className="text-[10px] md:text-xs text-gray-600 space-y-1">
               <li className="flex items-center gap-2">• Up to 5 App Transformations for testing</li>
               <li className="flex items-center gap-2">• Community feedback & collaboration</li>

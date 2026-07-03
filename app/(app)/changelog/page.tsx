@@ -31,7 +31,7 @@ const releases = [
       'Operational readiness — /api/health probe, structured JSON logging, data-retention & incident-response docs, SECURITY.md v4.0, and a public /trust page.',
       'Public SAP Object Catalog — hundreds of SEO/GEO reference pages mapping SAP objects to their released successors.',
       'Test auto-healing — on a compilation error the AI repairs the generated module/test code and retries automatically.',
-      'Sharpened narrative — free & community-first, complementary to SAP tools (not a competitor), no premium signals, no misleading claims. All "pilot" wording retired.',
+      'Sharpened narrative — free & community-first, complementary to SAP tools (not a competitor), no premium signals or locked exports, no misleading claims. Visible "pilot" wording retired (internal tier identifiers kept for compatibility).',
       'Fixes — empty Solution Design (Firestore rules deployed to every database), blank Target Architecture diagram (mermaid label sanitization), false "legacy run" banner, and the test-sandbox esbuild error.',
     ],
   },

@@ -710,7 +710,7 @@ CMD ["node", "srv/service.js"]`
                 {profile.tier === 'enterprise' ? (
                   <span>Enterprise: Unlimited</span>
                 ) : (
-                  <span>Pilot Balance: {Math.max(0, profile.transformationsLimit - profile.transformationsUsed)} / {profile.transformationsLimit} Free</span>
+                  <span>Free Transformations: {Math.max(0, profile.transformationsLimit - profile.transformationsUsed)} / {profile.transformationsLimit}</span>
                 )}
               </div>
             )}

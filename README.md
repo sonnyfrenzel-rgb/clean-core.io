@@ -136,5 +136,5 @@ Operations, monitoring, backups and rules deployment: **[docs/OPERATIONS.md](doc
 
 ## 📄 Open Source License
 
-This project is licensed under the **MIT License** — completely open source, secure, and free for collaborative enterprise development.
+This project is licensed under the **MIT License** — completely open source, secure, and free to use.
 

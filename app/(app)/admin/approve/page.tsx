@@ -278,7 +278,7 @@ function ApprovalPanelContent() {
               <div className="bg-slate-950 border border-slate-850 p-4 rounded-2xl text-xs text-slate-400 space-y-1.5 font-medium">
                 <p className="font-bold text-white uppercase tracking-wide">⚠️ Provisioning Scope:</p>
                 <p>• Sets user status to <strong className="text-green-400">approved</strong></p>
-                <p>• Allocates the <strong className="text-white">pilot</strong> license tier</p>
+                <p>• Allocates the <strong className="text-white">free community</strong> access tier</p>
                 <p>• Configures a hard limit of <strong className="text-white">5 transformations</strong></p>
               </div>
 

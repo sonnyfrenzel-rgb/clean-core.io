@@ -93,7 +93,7 @@ const steps = [
     time: "02:55 - 03:12",
     title: "Phase 6: Project Delivery",
     desc: "Downloading the completed BTP cloud service. The ZIP folder exports package.json, selective unit tests, and Confluence docs.",
-    narration: "Once validated, we generate the final deployable asset. Click 'Download Handover Package' to export a complete ZIP bundle with package.json configs, tests, and markdown documentation. Keep your ERP core pristine. Build fast, scale safe, and join the Clean-Core.io Pilot today.",
+    narration: "Once validated, we generate the final deployable asset. Click 'Download Handover Package' to export a complete ZIP bundle with package.json configs, tests, and markdown documentation. Keep your ERP core pristine. Build fast, scale safe, and join the Clean-Core.io community today.",
     icon: Download,
     color: "from-rose-500/10 to-red-500/10 text-rose-600 border-rose-200/50",
     hotspots: [

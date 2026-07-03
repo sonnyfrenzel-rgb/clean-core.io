@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v2.0.0] — 2026-07-02
 
-Special milestone release: **enterprise-grade trust, security and operational readiness** for the Free Community Edition, plus a **sharpened community / complementary narrative**. Enterprise identity/governance features (SSO, multi-role RBAC, formal DPA/TOMs) are intentionally in the backlog for the current audience — see `docs/ROADMAP-2.0.md`.
+Special milestone release: a **security-hardened, audit-friendly trust chain and operational readiness** for the Free Community Edition, plus a **sharpened community / complementary narrative**. This is not a certified, procurement-grade enterprise platform — enterprise identity/governance features (SSO, multi-role RBAC, formal DPA/TOMs, external pentest) are intentionally in the backlog for the current audience — see `docs/ROADMAP-2.0.md`.
 
 ### Added
 - **Server-authoritative audit packs** (`POST /api/audit-pack/create`): evidence files are generated, hashed and HMAC-signed entirely server-side from the immutable run — the client never supplies content or hashes for signing.
@@ -20,7 +20,7 @@ Special milestone release: **enterprise-grade trust, security and operational re
 - Full emulator-backed trust-chain E2E tests (audit-pack + sign endpoint negatives: foreign user, stale run, missing runHash).
 
 ### Changed
-- **Narrative**: all user-visible "pilot" wording retired (Free Community Edition); pricing presented as free access tiers without premium signals; positioned as **complementary** to SAP tooling (ADT/ATC), not a competitor.
+- **Narrative**: removed monetization/locked-export UI and premium signals — every feature is free (5 transformations; BYOK for unlimited); retired visible "pilot" wording in favour of "Free Community Edition" (internal tier identifiers are kept for compatibility); positioned as **complementary** to SAP tooling (ADT/ATC), not a competitor.
 - The **AI narrative is excluded from the signed run payload** — signatures attest to server-computed evidence, not client free-text.
 - Global **SAP non-affiliation trademark disclaimer**; removed false "certified / SAP-approved" claims; unified ROI figures; hedged absolute claims.
 - Migrated Excel parsing from `xlsx` (unfixed advisory) to `exceljs`; dropped `xlsx`.
@@ -134,12 +134,12 @@ Special milestone release: **enterprise-grade trust, security and operational re
 ## [v1.16.0] — 2026-07-01
 
 ### Security Hardening
-- **Phase 2 — Immutable Analysis Runs & Fallback Hardening (F-01)**: Fully completed the transition to server-authoritative calculations for runs in [route.ts](file:///c:/Users/felix/antigravity/Project-Platform/app/api/runs/create/route.ts). Enforced that the server loads/validates inputs (`legacyCode` & `s4Deployment`) directly from the parent project, with a fallback to body parameters for initial uploads or re-analysis.
+- **Phase 2 — Immutable Analysis Runs & Fallback Hardening (F-01)**: Fully completed the transition to server-authoritative calculations for runs in [route.ts](app/api/runs/create/route.ts). Enforced that the server loads/validates inputs (`legacyCode` & `s4Deployment`) directly from the parent project, with a fallback to body parameters for initial uploads or re-analysis.
 - **Run Metadata Cleanup**: Ensured the deletion of denormalized analysis result fields on the parent project document to prevent stale data conflicts.
-- **Strict Firestore Rules Allowlist**: Overhauled update rules in [firestore.rules](file:///c:/Users/felix/antigravity/Project-Platform/firestore.rules) to enforce a strict allowlist of permitted client-writable draft/interactive fields (e.g. `status`, `s4Environment`, `solutionDesign`, `targetArchitecture`), ensuring all other metadata and results remain immutable.
-- **Workflows Signing Key Verification**: Configured the GitHub Actions [deploy.yml](file:///c:/Users/felix/antigravity/Project-Platform/.github/workflows/deploy.yml) workflow to assert that the `AUDIT_SIGNING_KEY` environment secret is set before triggering compilation.
-- **Cryptographic Export Signing**: Upgraded the [export-source.ps1](file:///c:/Users/felix/antigravity/Project-Platform/scripts/export-source.ps1) script to dynamically read the platform version from `package.json`, generate a `manifest.json` with file hashes, and compute an HMAC-SHA256 signature using the `AUDIT_SIGNING_KEY`.
-- **Export Verification Utility**: Added a new PowerShell script [verify-export.ps1](file:///c:/Users/felix/antigravity/Project-Platform/scripts/verify-export.ps1) to verify manifest integrity and authenticate signatures of exported codebase zip archives.
+- **Strict Firestore Rules Allowlist**: Overhauled update rules in [firestore.rules](firestore.rules) to enforce a strict allowlist of permitted client-writable draft/interactive fields (e.g. `status`, `s4Environment`, `solutionDesign`, `targetArchitecture`), ensuring all other metadata and results remain immutable.
+- **Workflows Signing Key Verification**: Configured the GitHub Actions [deploy.yml](.github/workflows/deploy.yml) workflow to assert that the `AUDIT_SIGNING_KEY` environment secret is set before triggering compilation.
+- **Cryptographic Export Signing**: Upgraded the [export-source.ps1](scripts/export-source.ps1) script to dynamically read the platform version from `package.json`, generate a `manifest.json` with file hashes, and compute an HMAC-SHA256 signature using the `AUDIT_SIGNING_KEY`.
+- **Export Verification Utility**: Added a new PowerShell script [verify-export.ps1](scripts/verify-export.ps1) to verify manifest integrity and authenticate signatures of exported codebase zip archives.
 - **Downstream Page Hydration**: Unified downstream page state loading by replacing direct `getDoc` calls with a shared `loadProjectAndHydrate()` resolver across all stage controllers.
 
 ## [v1.15.0] — 2026-06-30

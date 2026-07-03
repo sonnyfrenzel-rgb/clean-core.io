@@ -2038,7 +2038,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                     return;
                   }
                   if (!acceptedTerms) {
-                    setError('Please agree to the Terms & Conditions of the Clean-Core.io pilot before starting the analysis.');
+                    setError('Please agree to the Terms & Conditions of Clean-Core.io (Free Community Edition) before starting the analysis.');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     return;
                   }
@@ -2288,7 +2288,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 type="button" 
                 onClick={() => {
                   if (!acceptedTerms) {
-                    setError('Please agree to the Terms & Conditions of the Clean-Core.io pilot before starting the analysis.');
+                    setError('Please agree to the Terms & Conditions of Clean-Core.io (Free Community Edition) before starting the analysis.');
                     setShowConceptQuestion(false);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     return;
