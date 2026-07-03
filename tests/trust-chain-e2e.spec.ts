@@ -109,25 +109,41 @@ test.describe('v1.19 Trust Chain Closure', () => {
   });
 
   // ────────────────────────────────────────────────
-  // Item #4 — Sign Endpoint Validation (structural)
+  // Item #4 — Audit-pack signing is server-authoritative (structural)
   // ────────────────────────────────────────────────
 
-  test.describe('Sign Endpoint Trust Chain Requirements', () => {
+  test.describe('Audit Pack Trust Chain Requirements', () => {
 
-    test('sign route file contains activeRunId validation', async () => {
+    test('legacy /api/export/sign is retired (410 Gone, no signing)', async () => {
       const fs = await import('fs');
       const path = await import('path');
       const signRoutePath = path.join(__dirname, '..', 'app', 'api', 'export', 'sign', 'route.ts');
       const content = fs.readFileSync(signRoutePath, 'utf-8');
 
-      // Verify active run check exists
-      expect(content).toContain('projectActiveRunId');
-      expect(content).toContain('activeRunId');
-      expect(content).toContain('status: 409');
+      // The endpoint no longer signs client-supplied file hashes — it returns 410 Gone
+      // and points callers at the server-authoritative route.
+      expect(content).toContain('410');
+      expect(content).toContain('/api/audit-pack/create');
+      // It must not compute signatures or touch the signing key anymore.
+      expect(content).not.toContain('createHmac');
+      expect(content).not.toContain('AUDIT_SIGNING_KEY');
+    });
 
-      // Verify runHash validation exists
-      expect(content).toContain('runData?.runHash');
+    test('server audit-pack route enforces the run gate and signs server-side', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const createRoutePath = path.join(__dirname, '..', 'app', 'api', 'audit-pack', 'create', 'route.ts');
+      const content = fs.readFileSync(createRoutePath, 'utf-8');
+
+      // Server selects the active run (client cannot request a foreign/stale run) and
+      // requires a valid runHash, returning 422 otherwise.
+      expect(content).toContain('activeRunId');
+      expect(content).toContain('runHash');
       expect(content).toContain('status: 422');
+
+      // The signature is computed server-side over server-generated content.
+      expect(content).toContain('createHmac');
+      expect(content).toContain('AUDIT_SIGNING_KEY');
     });
 
   });
