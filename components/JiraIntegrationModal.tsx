@@ -134,7 +134,7 @@ export default function JiraIntegrationModal({ isOpen, onClose, solutionDesign, 
                 <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3 text-blue-900">
                   <AlertCircle className="w-5 h-5 shrink-0" />
                   <p className="text-sm">
-                    <strong>Big4 Sync Profile active:</strong> Will create 1 Master Epic, ~12 User Stories, and attach the Solution Design document automatically.
+                    <strong>Sync profile active:</strong> Will create 1 Master Epic, ~12 User Stories, and attach the Solution Design document automatically.
                   </p>
                 </div>
 

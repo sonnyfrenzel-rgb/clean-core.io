@@ -2,11 +2,8 @@
 
 import { X, Crown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useRouter } from 'next/navigation';
 
 export default function UpgradeModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  const router = useRouter();
-  
   if (!isOpen) return null;
 
   return (
@@ -23,16 +20,16 @@ export default function UpgradeModal({ isOpen, onClose }: { isOpen: boolean, onC
           </button>
           
           <Crown className="w-16 h-16 text-purple-600 mx-auto mb-4" />
-          <h3 className="text-xl font-black text-gray-950 mb-2">Enterprise Feature</h3>
+          <h3 className="text-xl font-black text-gray-950 mb-2">Jira Integration (Planned)</h3>
           <p className="text-gray-500 mb-8 text-sm">
-            Big4-ready Jira Integration is reserved for Enterprise customers. Upgrade your workspace to automate Epics and user stories generation directly into your Jira Cloud.
+            Direct Jira Cloud sync — auto-generating Epics and user stories from your Solution Design — is on the roadmap and not enabled yet. For now, export your design and import it into Jira manually. Everything on Clean-Core.io is free.
           </p>
-          
-          <button 
-            onClick={() => router.push('/settings')} 
+
+          <button
+            onClick={onClose}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md active:scale-95"
           >
-            Upgrade Workspace
+            Got it
           </button>
         </motion.div>
       </div>
