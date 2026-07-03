@@ -6,13 +6,13 @@ import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = {
   title: 'SAP Clean Core Score & TCO Analysis | Clean-Core.io',
-  description: 'Learn how the Clean Core Score is calculated and how to reduce your upgrade efforts by up to 80% via decoupling.',
+  description: 'Learn how the Clean Core Score is calculated and how decoupling custom code reduces upgrade risk and regression-testing effort.',
   alternates: {
     canonical: 'https://clean-core.io/clean-core-score',
   },
   openGraph: {
     title: 'SAP Clean Core Score & TCO Analysis | Clean-Core.io',
-    description: 'Learn how the Clean Core Score is calculated and how to reduce your upgrade efforts by up to 80% via decoupling.',
+    description: 'Learn how the Clean Core Score is calculated and how decoupling custom code reduces upgrade risk and regression-testing effort.',
     url: 'https://clean-core.io/clean-core-score',
     type: 'website',
   }
@@ -156,7 +156,7 @@ export default function CleanCoreScorePage() {
                 <Check className="text-green-600 shrink-0" size={16} /> Identification of critical couplings
               </li>
               <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> Up to 80% savings in testing
+                <Check className="text-green-600 shrink-0" size={16} /> Less regression testing through decoupling
               </li>
             </ul>
             <div className="pt-4 border-t border-gray-200">

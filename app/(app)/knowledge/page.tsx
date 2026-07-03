@@ -34,11 +34,11 @@ const faqs = [
   },
   {
     question: "What is the BYOT (Bring Your Own Tenant) connectivity model?",
-    answer: "The BYOT model allows enterprise customers to connect their own SAP S/4HANA and SAP BTP subaccount instances to the Clean-Core.io conversion and testing engine. Instead of hosting client data, Clean-Core.io securely runs static analysis and deploys sandbox environments directly into the customer’s verified tenants using secure credentials, designed to support compliance with corporate security, data residency, and governance rules."
+    answer: "BYOT lets a developer connect their own non-production S/4HANA sandbox so generated tests can run against a real OData service. It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier."
   },
   {
-    question: "How does Clean-Core.io automate legacy ABAP modernization?",
-    answer: "The tool parses legacy custom ABAP code (classes, reports, custom tables) and maps them to modern BTP services. It uses generative AI to refactor tight coupling into OData APIs, RAP services, or CAP Node.js microservices. Additionally, it generates comprehensive test scripts and exportable BPMN 2.0 process blueprints for Signavio, reducing manual upgrade efforts by up to 80%."
+    question: "How does Clean-Core.io help modernize legacy ABAP?",
+    answer: "A deterministic ABAP evidence engine parses the custom code first (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. Google Gemini then narrates and drafts modern TypeScript/Node.js (CAP) or ABAP Cloud (RAP) on top of that evidence, and can generate draft test suites and BPMN 2.0 blueprints for Signavio. All AI output is a draft for architect review — it accelerates the assessment; it complements SAP's own tooling and does not replace human judgment."
   }
 ];
 

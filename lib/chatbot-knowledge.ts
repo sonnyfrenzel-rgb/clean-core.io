@@ -29,10 +29,10 @@ A: In-App RAP (ABAP RESTful Application Programming Model) runs directly within 
 A: Clean-Core.io configures secure tunnels and authentication pathways on SAP BTP. It implements JSON Web Tokens (JWT) validated by the SAP XSUAA (Extended Services for User Account and Authentication) service. This allows stateless, secure API communication and enforces role-based access control (RBAC). For S/4HANA core connections, it uses SAP BTP Connectivity and Destination services, routing RFC and OData traffic securely via SAP Cloud Connector without exposing internal endpoints.
 
 ### Q: What is the BYOT (Bring Your Own Tenant) connectivity model?
-A: The BYOT model allows enterprise customers to connect their own SAP S/4HANA and SAP BTP subaccount instances to the Clean-Core.io conversion and testing engine. Instead of hosting client data, Clean-Core.io securely runs static analysis and deploys sandbox environments directly into the customer's verified tenants using secure credentials, designed to support compliance with corporate security, data residency, and governance rules.
+A: BYOT lets a developer connect their own NON-PRODUCTION S/4HANA sandbox so generated tests can run against a real OData service. It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier.
 
-### Q: How does Clean-Core.io automate legacy ABAP modernization?
-A: The tool parses legacy custom ABAP code (classes, reports, custom tables) and maps them to modern BTP services. It uses generative AI to refactor tight coupling into OData APIs, RAP services, or CAP Node.js microservices. Additionally, it generates comprehensive test scripts and exportable BPMN 2.0 process blueprints for Signavio, reducing manual upgrade efforts by up to 80%.
+### Q: How does Clean-Core.io help modernize legacy ABAP?
+A: A deterministic ABAP evidence engine parses the custom code FIRST (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. Google Gemini then narrates and drafts modern TypeScript/Node.js (CAP) or ABAP Cloud (RAP) on top of that evidence, and can generate draft test suites and BPMN 2.0 blueprints for Signavio. All AI output is a DRAFT for architect review — it accelerates the assessment; it does not replace human judgment or SAP's own upgrade tooling.
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -89,7 +89,7 @@ export const HOWTO_WALKTHROUGH = `
 ## HOW-TO WALKTHROUGH — COMPLETE PLATFORM GUIDE
 
 ### Introduction
-Enterprise core modifications are the single greatest barrier to S/4HANA upgrades. Clean-Core.io is the automated SaaS engine designed to transform legacy ABAP logic into modern, side-by-side cloud services on SAP BTP. The platform enables enterprise architects to keep the SAP core clean while accelerating cloud transformation.
+Custom core modifications are one of the biggest barriers to S/4HANA upgrades. Clean-Core.io is a free, community-built assistant that helps SAP architects and developers assess custom ABAP and draft modern side-by-side cloud services (CAP) or in-app extensions (RAP), keeping the SAP core clean. It is complementary to SAP's own tools (ADT, ATC, Readiness Check, Signavio), not a replacement, and is not affiliated with or certified by SAP. Every analysis is captured as an immutable, HMAC-signed evidence Run.
 
 ### Phase 1: Technical Analytics (Upload & Analyze)
 Upload custom legacy ABAP source files directly into the Technical Analytics workspace. The static analysis engine parses the legacy custom code, maps external database dependencies, and highlights hard-coded workarounds. You get a clear compliance baseline showing which parts of the legacy package violate the clean-core philosophy.
@@ -229,19 +229,19 @@ Total Cost of Ownership estimation for your modernization project.
 ### Settings (/settings)
 Global platform configuration.
 - **Profile**: User profile management (name, email, company)
-- **Gemini API Key (BYOK)**: Bring Your Own Key — enter your personal Google Gemini API key for unlimited AI usage. Without BYOK, the platform uses a shared key with usage quotas.
-- **S/4HANA Live Tenant Integration**: Configure your S/4HANA system connection for live testing (same as Testing page configuration, but global)
-- **Subscription Tier**: View and manage your tier (Free, Pilot, Premium)
+- **Gemini API Key (BYOK)**: Bring Your Own Key — enter your personal Google Gemini API key (encrypted server-side with AES-256-GCM, used only via the backend proxy) for unlimited transformations. Without a key you get 5 free transformations on the shared platform key.
+- **S/4HANA Live Tenant Integration**: Configure your S/4HANA sandbox connection for live testing (same as the Testing page configuration, but global). Read-only, non-production only, admin-gated.
+- **Access & Usage**: Clean-Core.io is 100% free. Every user has the Free Community Edition with full feature access and 5 transformations; add your own Gemini key for unlimited runs. There are no paid, premium, or purchasable tiers.
 
 ### Knowledge Hub (/knowledge)
 Reference library for SAP Clean Core architecture and BTP extensibility patterns.
 - **FAQ Section**: Detailed answers to common architecture questions
 - **Glossary**: Key SAP, BTP, and Cloud Extensibility terms with Clean Core implications
 - **RAP vs CAP Comparison Table**: Decision framework for choosing the right extensibility paradigm
-- **SAP Compliance Certification**: Information about SAP Verified Extensibility Compliance
+- **Clean Core Alignment**: How findings map to SAP's Clean Core extensibility guidance. Clean-Core.io is not affiliated with or certified by SAP — it complements SAP's own tools (ADT, ATC, Readiness Check).
 
 ### How-To Tutorials (/how-to)
-Interactive walkthrough presentation guiding users through all 6 phases of the platform.
+Interactive walkthrough guiding users through the platform's stages (Analyze → Design → Transformation → Documentation → Testing → TCO → Delivery).
 - **Slideshow Presentation**: Full-screen capable, keyboard-navigable slide deck
 - **Interactive Hotspots**: Clickable question marks on screenshots revealing detailed Q&A popups
 - **Speech Scripts**: Pre-written narration scripts for each phase (useful for demos/presentations)
@@ -258,7 +258,7 @@ export const S4HANA_BRIDGE_GUIDE = `
 Clean-Core.io supports connecting non-productive S/4HANA Cloud or On-Premise tenants directly for live OData connection tests and schema validation.
 
 ### Prerequisites
-- Pilot or Premium tier subscription
+- Admin-approved S/4HANA sandbox access. The live-connection feature is admin-gated — request it from the Testing page; an administrator reviews and grants it. It is free (there is no paid tier).
 - Access to a non-productive S/4HANA system (Development, Quality, or Sandbox)
 - A technical communication user with appropriate OData service authorizations
 
@@ -306,6 +306,89 @@ Paste the full JSON export from your SAP BTP Destination configuration.
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FREE COMMUNITY MODEL — ACCESS, PRICING & POSITIONING
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const FREE_COMMUNITY_MODEL = `
+## FREE COMMUNITY MODEL — ACCESS, PRICING & POSITIONING
+
+Clean-Core.io is a **free, community-built** SAP Clean Core modernization assistant. There are no paid, premium, or purchasable tiers — do not describe or imply any.
+
+### Who it is for
+Individual SAP architects, developers, and modernization decision-makers. It is a community tool, not a multi-user enterprise procurement product (SSO/SAML, org/role management, DPA/TOMs and a commissioned external pentest are deliberately on the backlog).
+
+### What every user gets (Free Community Edition)
+- The FULL 7-stage workflow and every feature — nothing is locked behind a paywall: analysis, solution design, code transformation, documentation (BPMN/Confluence), testing, TCO, delivery (ZIP bundle), and the server-signed audit evidence pack.
+- 5 free transformations on the shared platform Gemini key.
+
+### BYOK (Bring Your Own Key) — unlimited, still free
+- Add your own Google Gemini API key in Settings for UNLIMITED transformations. Your key is encrypted at rest (AES-256-GCM) in a server-only store and used exclusively via the secure backend proxy — it is never returned to the client. Usage is billed by Google to your key; Clean-Core.io charges no platform fee.
+
+### Live S/4HANA sandbox (developer, admin-gated)
+- Connecting a real, NON-PRODUCTION S/4HANA sandbox for live OData tests is opt-in, read-only, encrypted, and admin-gated (manually approved). It is free — approval is granted by an administrator, not purchased.
+
+### Positioning (state honestly)
+- COMPLEMENTARY to SAP's own tools (ADT, ATC, Readiness Check, Signavio) — it does not replace them.
+- NOT affiliated with, endorsed by, or certified by SAP SE. Never claim "SAP-approved", "SAP-certified", or "enterprise-grade platform" without qualification.
+- Best described as a decision-support / evidence assistant, not automated certification.
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRUST CHAIN & AUDIT EVIDENCE (the platform's core differentiator)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const TRUST_CHAIN_AND_EVIDENCE = `
+## TRUST CHAIN & AUDIT EVIDENCE
+
+The platform is **deterministic-first, AI-second**: a static ABAP evidence engine produces the auditable facts, and Gemini only narrates/transforms on top of them. This is what makes the output trustworthy and reviewable.
+
+### Deterministic evidence engine
+- Runs before any AI call. It builds a code inventory (classes, reports, function modules), detects findings (SQL quirks, direct table access, unreleased APIs, RTTI gaps), scores complexity and business-criticality, resolves OO inheritance (MRO) to prevent structure hallucination, and routes RAP (in-app) vs CAP (side-by-side).
+- The server RECOMPUTES this evidence; it does not trust client-supplied scores.
+
+### Immutable, signed Runs
+- Each successful analysis is frozen as an immutable **Run** at projects/{id}/runs/{runId}. A canonical (key-sorted) JSON of the run is hashed (SHA-256 → runHash) and signed (HMAC-SHA256 with a server-only key). Runs are read-only to clients — only the server writes them.
+- The AI narrative is NOT part of the signed payload; it is referenced separately (responseHash) and stored unsigned, so deterministic evidence and free-text narrative stay cleanly separated.
+
+### Server-authoritative audit evidence pack
+- The audit pack (executive summary, decision record, findings CSV, model card, known-limitations) is generated, hashed, and HMAC-signed entirely SERVER-SIDE from the active run. The client never supplies file content or hashes for signing, so a valid signature attests to server-generated content.
+- Verification is reported in three honest tiers: authentic (valid signature) → integrity-only (unsigned but hash-consistent) → failed.
+
+### Architect sign-off = self-attestation
+- The target-architecture sign-off is a SELF-ATTESTATION recorded from the signed-in user's own session — a decision record, not a formally governed organizational approval. The audit pack labels it as self-attested.
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECURITY & PRIVACY
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const SECURITY_AND_PRIVACY = `
+## SECURITY & PRIVACY
+
+- **AI keys never client-side**: all Gemini calls proxy through the server. BYOK keys are AES-256-GCM encrypted in a server-only store and never returned to the client.
+- **Auth**: mutating API routes require a verified Firebase ID token; admin routes add an email-allowlist check. Sensitive MFA/credential collections are server-only (clients cannot read them).
+- **S/4HANA SSRF defense**: HTTPS-only, DNS/IP re-checks, host allowlist, private/metadata-IP blocking, redirect validation, IP pinning. Production endpoints are blocked — sandbox only.
+- **Sandboxed test runner**: generated tests run in an isolated Node process (esbuild bundle + Node Permission Model — filesystem scoped to a temp dir, no child-process/worker/native access, no platform secrets). Live S/4 egress stays off unless explicitly enforced at the infra level.
+- **GDPR Art. 17 erasure**: account deletion recursively purges projects (incl. immutable runs), encrypted BYOK keys, and MFA data; completeness is covered by an automated test. Data is stored in Firestore in the EU (europe-west1).
+- **Transparency**: a public /trust page and /changelog document the security posture and release history.
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HONEST LIMITATIONS & DISCLAIMERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const HONEST_LIMITATIONS = `
+## HONEST LIMITATIONS & DISCLAIMERS (always be candid about these)
+
+- **AI output is a draft**: transformed code, narratives, TCO and effort estimates are drafts for review by qualified architects — never production-ready deliverables and never formal SAP, legal, or security advice.
+- **Static analysis has limits**: dynamic ABAP (e.g. CALL FUNCTION with variable names), Dynpro/screen flows, and batch-input scenarios cannot be fully resolved automatically and need manual redesign. Unreleased APIs must be confirmed with SAP before production use.
+- **Not a certification**: Clean-Core.io does not issue SAP certification and is not an SAP acceptance test or a formal security/data-protection audit.
+- **Estimates, not measurements**: test coverage and TCO figures are estimates; ABAP-Unit / Node.js tests must be executed in a real sandbox to be authoritative.
+- **Sandbox only**: live S/4HANA connections are restricted to non-production systems and are admin-gated.
+- If you are unsure or the knowledge base does not cover something, say so plainly rather than inventing an answer.
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
 // COMBINED KNOWLEDGE BASE EXPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -315,6 +398,8 @@ Paste the full JSON export from your SAP BTP Destination configuration.
  */
 export function buildKnowledgeBase(): string {
   return [
+    FREE_COMMUNITY_MODEL,
+    TRUST_CHAIN_AND_EVIDENCE,
     KNOWLEDGE_HUB_FAQS,
     EXTENDED_GLOSSARY,
     RAP_VS_CAP_COMPARISON,
@@ -322,5 +407,7 @@ export function buildKnowledgeBase(): string {
     CORE_CONCEPTS,
     PLATFORM_NAVIGATION,
     S4HANA_BRIDGE_GUIDE,
+    SECURITY_AND_PRIVACY,
+    HONEST_LIMITATIONS,
   ].join('\n');
 }
