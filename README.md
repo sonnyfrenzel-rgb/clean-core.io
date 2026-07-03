@@ -4,7 +4,7 @@ Clean-Core.io is a free, community-built web application that helps SAP practiti
 
 ---
 
-## 🌟 Premium Key Features
+## ✨ Key Capabilities
 
 *   **Visual Code-Transformation Integrity HUD & Heatmap (English UI):**
     Provides real-time feedback on code modernization status:
@@ -111,7 +111,7 @@ Clean-Core.io prioritizes data security and user privacy above all else:
 *   **Encrypted Credentials (AES-256-GCM):** S/4HANA credentials are encrypted at rest in a server-only Firestore collection (`s4_credentials`). Client SDKs cannot read this collection (`allow read, write: if false`). Passwords follow a write-only pattern — they are never returned to the client.
 *   **Admin Gating:** All privileged routes (email sending, tenant management) require `verifyAdminRequest()` with email allowlist enforcement.
 *   **Quota Enforcement:** Transformation quotas are enforced via atomic server-side Firestore transactions. Client-side counters are decorative only.
-*   **RCE Prevention:** The `/api/run-tests` route is permanently disabled (HTTP 503) to prevent remote code execution.
+*   **Sandboxed Test Runner:** The `/api/run-tests` route executes generated unit tests in a hardened, isolated child process — esbuild bundling, Node's Permission Model (filesystem scoped to a temp dir; no child-process/worker/native-addon access), a minimal env with no platform secrets, and time/output/input-size limits. **Live S/4HANA test execution stays disabled unless network egress is explicitly enforced at the infrastructure level (`S4_TEST_RUNNER_EGRESS_ENFORCED=true`).** See [`SECURITY.md`](SECURITY.md).
 *   **Field-Level Security:** Firestore Security Rules freeze all privileged fields (isAdmin, tier, quota counters) so only admins can modify them.
 *   **Art. 17 GDPR Cascade Deletion:** Instantly purges authentication profiles, custom uploads, ABAP scripts, analysis metadata, modernized designs, blueprints, generated ZIP packages, sandbox outputs, configurations, and **encrypted S/4HANA credentials**.
 *   **Full Security Documentation:** See [`SECURITY.md`](SECURITY.md) for the complete security architecture, threat model, and developer checklist.
@@ -120,7 +120,7 @@ Clean-Core.io prioritizes data security and user privacy above all else:
 
 ## 🗺️ Status: v2.0 shipped
 
-Clean-Core.io is at **v2.0.0** — enterprise-grade trust, security and operational readiness for the **Free Community Edition**, and a sharpened, honest narrative (free · community · **complementary to SAP tooling**, not a competitor).
+Clean-Core.io is at **v2.0.0** — a security-hardened **Free Community Edition** with an audit-friendly, server-generated evidence chain and operational readiness (health check, structured logging, documented runbooks), plus a sharpened, honest narrative (free · community · **complementary to SAP tooling**, not a competitor). It is not a certified, procurement-grade enterprise platform — see the deliberately deferred items below.
 
 Highlights: server-authoritative, HMAC-signed audit packs · complete GDPR Art. 17 erasure (with an automated completeness test) · supply-chain CI (secret scanning + dependency audit + CycloneDX SBOM) · `/api/health` + structured logging · a public SAP Object Catalog · and a public [/trust](https://clean-core.io/trust) transparency page.
 

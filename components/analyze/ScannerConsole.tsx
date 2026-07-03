@@ -70,7 +70,7 @@ export default function ScannerConsole({ code, onComplete }: ScannerConsoleProps
             <span className="w-3.5 h-3.5 rounded-full bg-amber-500/80 inline-block"></span>
             <span className="w-3.5 h-3.5 rounded-full bg-emerald-500/80 inline-block"></span>
           </div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enterprise Code Analyzer v2.0.0</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Clean-Core Analyzer v2.0.0</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block"></span>

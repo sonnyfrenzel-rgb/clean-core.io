@@ -109,7 +109,8 @@ service cloud.firestore {
              (!('testCases' in data) || (data.testCases is list && data.testCases.size() < 100)) &&
              (!('testSuite' in data) || (data.testSuite is map)) &&
              (!('exports' in data) || (data.exports is map)) &&
-             (!('usageReport' in data) || (data.usageReport is map));
+             (!('usageReport' in data) || (data.usageReport is map)) &&
+             (!('nonFunctionalRequirements' in data) || (data.nonFunctionalRequirements is map));
     }
 
     match /projects/{projectId} {
@@ -136,7 +137,7 @@ service cloud.firestore {
                         'generatedCode', 'documentation', 'businessDocumentation', 'presentation',
                         'testCases', 'testSuite', 'coverageEstimate', 'manualTestingRequirements',
                         'worklist', 'exports', 'updatedAt', 's4Environment',
-                        'usageReport'
+                        'usageReport', 'nonFunctionalRequirements'
                       ])
                     )) && isValidProject(request.resource.data, true);
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());

@@ -176,10 +176,15 @@ export default function ArchitectSignOff({
             <div className="flex flex-wrap items-center gap-2 text-slate-500">
               <Lock size={12} />
               <span>
-                Locked by <strong className="text-slate-800">{lockedByEmail || 'unknown'}</strong>{' '}
+                Self-attested by <strong className="text-slate-800">{lockedByEmail || 'unknown'}</strong>{' '}
                 {lockedAt && <>on {new Date(lockedAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</>}
               </span>
             </div>
+
+            <p className="text-[11px] text-slate-400 flex items-start gap-1.5 leading-relaxed">
+              <Info size={11} className="shrink-0 mt-0.5" />
+              This is a self-attested architecture decision recorded from your own session — not a formal organizational approval or a substitute for a governed sign-off.
+            </p>
 
             {lockedOption && (
               <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-2.5 animate-in fade-in duration-200">

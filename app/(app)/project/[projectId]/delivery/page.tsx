@@ -17,7 +17,7 @@ import { buildBoardDeck } from '@/lib/board-deck';
 import { detectFindings } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel } from '@/lib/abap/class-model';
-import { Download, CheckCircle2, FileCode2, ArrowLeft, Home, RefreshCw, X, Rocket, ShieldCheck, Zap, Layout, Eye, Presentation, AlertCircle, Lock, Briefcase, BookOpen } from 'lucide-react';
+import { Download, CheckCircle2, FileCode2, ArrowLeft, Home, RefreshCw, X, Rocket, ShieldCheck, Zap, Layout, Eye, Presentation, AlertCircle, Briefcase, BookOpen } from 'lucide-react';
 import NavigationButtons from '@/components/NavigationButtons';
 import JSZip from 'jszip';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
@@ -25,7 +25,6 @@ import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown,
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { saveAs } from '@/lib/fileSaver';
 import { motion } from 'motion/react';
-import { clsx } from 'clsx';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { generateAuditPack } from '@/lib/audit-pack';
 import { APP_VERSION } from '@/lib/version';
@@ -73,7 +72,6 @@ export default function DeliveryPage() {
   const isAbapCloud = (project?.extensibilityRoute || '').includes('ABAP Cloud');
   const [loading, setLoading] = useState(true);
   const [documentation, setDocumentation] = useState('');
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const router = useRouter();
   const projectRef = useRef(project);
 
@@ -129,10 +127,6 @@ export default function DeliveryPage() {
   }, [project, findings]);
 
   const downloadZip = async () => {
-    if (profile?.tier === 'pilot') {
-      setShowUpgradeModal(true);
-      return;
-    }
     if (!project) return;
     try {
       const zip = new JSZip();
@@ -397,24 +391,12 @@ jobs:
               One-Click ZIP Bundle containing your Source Code, Tests, Dependencies (package.json) and documentation.
             </p>
             <div className="w-full relative group/tooltip">
-              <button 
+              <button
                 onClick={downloadZip}
-                className={clsx(
-                  "w-full flex items-center justify-center gap-2 px-8 py-4 rounded-2xl transition-all font-bold shadow-lg uppercase tracking-widest text-xs md:text-sm",
-                  profile?.tier === 'pilot' ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-[#006b2c] text-white hover:bg-[#00873a] shadow-green-600/20"
-                )}
+                className="w-full flex items-center justify-center gap-2 px-8 py-4 rounded-2xl transition-all font-bold shadow-lg uppercase tracking-widest text-xs md:text-sm bg-[#006b2c] text-white hover:bg-[#00873a] shadow-green-600/20"
               >
-                {profile?.tier === 'pilot' ? (
-                  <><Lock size={18} /> Basic Restricted</>
-                ) : (
-                  <><Download size={20} /> Download Bundle</>
-                )}
+                <Download size={20} /> Download Bundle
               </button>
-              {profile?.tier === 'pilot' && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
-                  ZIP Package downloads are reserved for <span className="text-green-400 font-bold uppercase tracking-widest">Starter</span> & Premium users.
-                </div>
-              )}
             </div>
           </div>
 
@@ -429,15 +411,8 @@ jobs:
             </p>
             
             <div className="w-full relative group/tooltip">
-              {profile?.tier === 'pilot' ? (
-                <button 
-                  onClick={() => setShowUpgradeModal(true)}
-                  className="w-full bg-gray-100 text-gray-400 py-4 rounded-2xl font-black flex items-center justify-center gap-2 uppercase tracking-widest text-xs md:text-sm"
-                >
-                  <Lock size={18} /> Basic Locked
-                </button>
-              ) : deck ? (
-                <button 
+              {deck ? (
+                <button
                   onClick={() => {
                     document.getElementById('presentation-preview')?.scrollIntoView({ behavior: 'smooth' });
                   }}
@@ -448,11 +423,6 @@ jobs:
               ) : (
                 <div className="w-full text-center py-4 text-gray-400 font-bold text-xs uppercase tracking-widest">
                   No slides available
-                </div>
-              )}
-              {profile?.tier === 'pilot' && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
-                  AI Briefings are a <span className="text-green-400 font-bold uppercase tracking-widest">Starter</span> feature.
                 </div>
               )}
             </div>
@@ -469,14 +439,7 @@ jobs:
             </p>
             
             <div className="w-full relative group/tooltip">
-              {profile?.tier === 'pilot' ? (
-                <button 
-                  onClick={() => setShowUpgradeModal(true)}
-                  className="w-full bg-gray-100 text-gray-400 py-4 rounded-2xl font-black flex items-center justify-center gap-2 uppercase tracking-widest text-xs md:text-sm"
-                >
-                  <Lock size={18} /> Basic Locked
-                </button>
-              ) : project?.businessDocumentation ? (
+              {project?.businessDocumentation ? (
                 <button 
                   onClick={() => {
                     const blob = new Blob([formatBusinessDocsToMarkdown(project.businessDocumentation || '')], { type: "text/markdown;charset=utf-8" });
@@ -495,11 +458,7 @@ jobs:
                   <AlertCircle size={16} /> Not Generated
                 </button>
               )}
-              {profile?.tier === 'pilot' ? (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
-                  SOP Reports are reserved for <span className="text-green-400 font-bold uppercase tracking-widest">Starter</span> & Premium users.
-                </div>
-              ) : !project?.businessDocumentation && (
+              {!project?.businessDocumentation && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
                   Go to the <Link href={`/project/${projectId}/documentation`} className="text-blue-400 hover:underline">Documentation Stage</Link> to generate Level 5 SOPs.
                 </div>
@@ -710,61 +669,6 @@ jobs:
         </div>
       )}
 
-      {/* Upgrade Modal */}
-      {showUpgradeModal && (
-        <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-xl z-[110] flex items-center justify-center p-4 overflow-y-auto" onClick={() => setShowUpgradeModal(false)}>
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9, y: 40 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white rounded-[2.5rem] p-8 md:p-12 max-w-xl w-full shadow-2xl relative" 
-            onClick={e => e.stopPropagation()}
-          >
-            <button onClick={() => setShowUpgradeModal(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <X size={24} className="text-gray-400" />
-            </button>
-            
-            <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 bg-green-50 rounded-3xl flex items-center justify-center mb-8 shadow-inner shadow-green-100">
-                <Rocket size={40} className="text-green-600" />
-              </div>
-              <h2 className="text-2xl md:text-4xl font-black text-gray-950 tracking-tighter mb-4 uppercase">Modernize Your Assets</h2>
-              <p className="text-gray-600 font-medium mb-10 leading-relaxed text-sm md:text-base">
-                Downloading your production bundle and generating interactive executive briefings is a **Starter** tier feature. Complete your transformation journey now.
-              </p>
-              
-              <div className="w-full bg-gray-50 rounded-2xl p-6 border border-gray-100 mb-10 text-left">
-                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Starter Features</h4>
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-3 text-xs md:text-sm font-bold text-gray-900">
-                    <CheckCircle2 size={16} className="text-green-600" /> Full Codebase ZIP Exports
-                  </li>
-                  <li className="flex items-center gap-3 text-xs md:text-sm font-bold text-gray-900">
-                    <CheckCircle2 size={16} className="text-green-600" /> AI-Driven Presentation Engine
-                  </li>
-                  <li className="flex items-center gap-3 text-xs md:text-sm font-bold text-gray-900">
-                    <CheckCircle2 size={16} className="text-green-600" /> Enterprise BPMN 2.0 Mapping
-                  </li>
-                </ul>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-4 w-full">
-                <button 
-                  onClick={() => router.push('/settings')}
-                  className="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black shadow-lg shadow-green-600/30 transition-all uppercase tracking-widest text-xs"
-                >
-                  Upgrade Now
-                </button>
-                <button 
-                  onClick={() => setShowUpgradeModal(false)}
-                  className="flex-1 bg-gray-100 text-gray-600 py-4 rounded-2xl font-black hover:bg-gray-200 transition-all uppercase tracking-widest text-xs"
-                >
-                  Return to Page
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
 
       <div className="flex justify-center pb-20">
         <button 

@@ -1028,7 +1028,7 @@ export default function LandingModals() {
           <div>
             <h3 className="text-lg font-bold mb-2">2. Data Collection & Processing Purposes</h3>
             <p className="text-sm leading-relaxed mb-3">
-              We process personal data of our users only as far as necessary to provide a functional pilot platform as well as our contents and services.
+              We process personal data of our users only as far as necessary to provide a functional community platform as well as our contents and services.
             </p>
             <ul className="list-disc pl-5 space-y-2 text-xs text-slate-600">
               <li>

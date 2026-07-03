@@ -24,7 +24,7 @@ export default function PilotWarningBanner() {
   return (
     <div className="bg-amber-50/95 backdrop-blur text-amber-900 py-2 sm:py-2.5 px-4 text-center text-[10px] sm:text-xs font-semibold border-b border-amber-200 flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 transition-all shrink-0 relative animate-in slide-in-from-top duration-300 z-50">
       <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-950 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider select-none shrink-0">
-        ⚡ Community Pilot
+        ⚡ Free Community Edition
       </span>
       <span className="leading-relaxed">
         Free Community SAP Modernization Platform. Powered by Generative AI. Provided without warranty.

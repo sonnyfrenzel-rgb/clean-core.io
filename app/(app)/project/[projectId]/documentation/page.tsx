@@ -254,7 +254,6 @@ export default function DocumentationPage() {
   const [documentation, setDocumentation] = useState('');
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
   const [docError, setDocError] = useState('');
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<any | null>(null);
 
@@ -507,10 +506,6 @@ Structure the JSON exactly like this:
   }, [projectId, project, documentation, profile?.byokConfigured]);
 
   const downloadBPMN = () => {
-    if (profile?.tier === 'pilot') {
-      setShowUpgradeModal(true);
-      return;
-    }
     if (!parsedDoc?.l3_flow) return;
     const xml = generateBPMN(parsedDoc.l3_flow, parsedBusinessDoc);
     const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
@@ -519,10 +514,6 @@ Structure the JSON exactly like this:
   };
 
   const downloadConfluenceHTML = () => {
-    if (profile?.tier === 'pilot') {
-      setShowUpgradeModal(true);
-      return;
-    }
     if (!parsedDoc) return;
     
     const confluenceCSS = `
@@ -1271,62 +1262,6 @@ Structure the JSON exactly like this:
           >
             Start Architectural Mapping
           </button>
-        </div>
-      )}
-
-      {/* Upgrade Modal */}
-      {showUpgradeModal && (
-        <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-xl z-[110] flex items-center justify-center p-4 overflow-y-auto" onClick={() => setShowUpgradeModal(false)}>
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9, y: 40 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white rounded-[2.5rem] p-8 md:p-12 max-w-xl w-full shadow-2xl relative" 
-            onClick={e => e.stopPropagation()}
-          >
-            <button onClick={() => setShowUpgradeModal(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <X size={24} className="text-gray-400" />
-            </button>
-            
-            <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 bg-green-50 rounded-3xl flex items-center justify-center mb-8 shadow-inner shadow-green-100">
-                <Rocket size={40} className="text-green-600" />
-              </div>
-              <h2 className="text-3xl md:text-4xl font-black text-gray-950 tracking-tighter mb-4 uppercase">Unlock BPMN Experts</h2>
-              <p className="text-gray-600 font-medium mb-10 leading-relaxed">
-                Exporting professional **BPMN 2.0 XML** and **Confluence Blueprints** is a feature reserved for our higher license tiers. Modernize your documentation pipeline with Starter.
-              </p>
-              
-              <div className="w-full bg-gray-50 rounded-2xl p-6 border border-gray-100 mb-10 text-left">
-                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Starter Benefits</h4>
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-3 text-sm font-bold text-gray-900">
-                    <CheckCircle2 size={16} className="text-green-600" /> BPMN 2.0 Interoperability
-                  </li>
-                  <li className="flex items-center gap-3 text-sm font-bold text-gray-900">
-                    <CheckCircle2 size={16} className="text-green-600" /> Professional Documentation Exports
-                  </li>
-                  <li className="flex items-center gap-3 text-sm font-bold text-gray-900">
-                    <CheckCircle2 size={16} className="text-green-600" /> Enhanced Data Transformation Quota
-                  </li>
-                </ul>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-4 w-full">
-                <button 
-                  onClick={() => router.push('/settings')}
-                  className="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black shadow-lg hover:shadow-green-600/30 transition-all uppercase tracking-widest text-sm"
-                >
-                  Upgrade Now
-                </button>
-                <button 
-                  onClick={() => setShowUpgradeModal(false)}
-                  className="flex-1 bg-gray-100 text-gray-600 py-4 rounded-2xl font-black hover:bg-gray-200 transition-all uppercase tracking-widest text-sm"
-                >
-                  Maybe Later
-                </button>
-              </div>
-            </div>
-          </motion.div>
         </div>
       )}
 

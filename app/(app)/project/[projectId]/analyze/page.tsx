@@ -1866,7 +1866,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">Upload Legacy Asset</h3>
                   <p className="text-gray-500 mb-6 max-w-md">Drag and drop your legacy code file here, or click to browse. Supports .abap and .txt formats.</p>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-4 py-1.5 rounded-full border border-gray-200">Enterprise Grade</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-4 py-1.5 rounded-full border border-gray-200">Evidence-Backed</span>
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-4 py-1.5 rounded-full border border-gray-200">Max 1MB</span>
                   </div>
                 </>
@@ -2420,7 +2420,7 @@ function ScannerConsole({ code, onComplete }: { code: string; onComplete?: () =>
             <span className="w-3.5 h-3.5 rounded-full bg-amber-500/80 inline-block"></span>
             <span className="w-3.5 h-3.5 rounded-full bg-emerald-500/80 inline-block"></span>
           </div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enterprise Code Analyzer v2.0.0</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Clean-Core Analyzer v2.0.0</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block"></span>

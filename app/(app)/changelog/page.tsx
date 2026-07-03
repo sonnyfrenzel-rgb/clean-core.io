@@ -25,7 +25,7 @@ const releases = [
     tag: 'Latest',
     icon: Rocket,
     changes: [
-      'Enterprise-grade trust chain — audit packs are generated and HMAC-signed entirely server-side from the immutable run; the AI narrative is excluded from the signed payload.',
+      'Server-authoritative trust chain — audit packs are generated and HMAC-signed entirely server-side from the immutable run; the AI narrative is excluded from the signed payload. The legacy client-hash signing endpoint was retired.',
       'Complete GDPR Art. 17 erasure — account deletion now purges analysis runs, encrypted BYOK keys and MFA data (verified by an automated test).',
       'Supply-chain CI — secret scanning (gitleaks), a dependency-audit gate, and a CycloneDX SBOM on every build; removed the vulnerable xlsx dependency.',
       'Operational readiness — /api/health probe, structured JSON logging, data-retention & incident-response docs, SECURITY.md v4.0, and a public /trust page.',

@@ -1,5 +1,5 @@
 /**
- * Structured JSON logger for API routes (v1.25 §3 — operational visibility).
+ * Structured JSON logger for API routes (operational visibility).
  *
  * Emits one JSON object per line to stdout/stderr. Cloud Run / Cloud Logging
  * parse the `severity` field and promote the rest to the log entry's jsonPayload,

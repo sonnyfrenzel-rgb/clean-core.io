@@ -63,7 +63,6 @@ export default function TestingSandboxPage() {
   const [loading, setLoading] = useState(true);
   const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
   const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // S/4HANA Connection states
   const [activeEnvTab, setActiveEnvTab] = useState<'mock' | 'live'>('mock');
@@ -466,10 +465,6 @@ export default function TestingSandboxPage() {
   };
 
   const exportTestCasesToExcel = async () => {
-    if ((profile?.tier as string) === 'basic') {
-      setShowUpgradeModal(true);
-      return;
-    }
     try {
       if (!testCases || testCases.length === 0) return;
       
@@ -1346,20 +1341,12 @@ export default function TestingSandboxPage() {
                   <div className="flex items-center gap-4">
                     <span className="text-[10px] font-black text-[#0b1c30]/50 uppercase tracking-widest">{selectedTestCases.length} of {testCases.length} selected</span>
                     <div className="relative group/tooltip">
-                      <button 
+                      <button
                         onClick={exportTestCasesToExcel}
-                        className={clsx(
-                          "flex items-center gap-2 text-xs font-bold uppercase tracking-widest transition-all",
-                          (profile?.tier as string) === 'basic' ? "text-gray-400 cursor-not-allowed" : "text-[#006b2c] hover:text-[#00873a]"
-                        )}
+                        className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest transition-all text-[#006b2c] hover:text-[#00873a]"
                       >
-                        <Download size={14} /> Export Excel {(profile?.tier as string) === 'basic' && <Lock size={12} className="ml-0.5" />}
+                        <Download size={14} /> Export Excel
                       </button>
-                      {(profile?.tier as string) === 'basic' && (
-                        <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none">
-                          Upgrade to <span className="text-green-400 font-black">Starter</span> or higher to export professional test protocols in Excel format.
-                        </div>
-                      )}
                     </div>
                   </div>
                   <button 
@@ -1686,61 +1673,6 @@ export default function TestingSandboxPage() {
         </div>
       )}
 
-      {/* Upgrade Modal */}
-      {showUpgradeModal && (
-        <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-xl z-[110] flex items-center justify-center p-4 overflow-y-auto" onClick={() => setShowUpgradeModal(false)}>
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9, y: 40 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white rounded-[2.5rem] p-8 md:p-12 max-w-xl w-full shadow-2xl relative" 
-            onClick={e => e.stopPropagation()}
-          >
-            <button onClick={() => setShowUpgradeModal(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <X size={24} className="text-gray-400" />
-            </button>
-            
-            <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 bg-green-50 rounded-3xl flex items-center justify-center mb-8 shadow-inner shadow-green-100">
-                <Rocket size={40} className="text-green-600" />
-              </div>
-              <h2 className="text-3xl md:text-4xl font-black text-gray-950 tracking-tighter mb-4 uppercase">Unlock Enterprise Protocols</h2>
-              <p className="text-gray-600 font-medium mb-10 leading-relaxed">
-                Professional **Excel & PDF exports** are exclusively available for our premium tiers. Upgrade now to generate management-ready documentation for your organization.
-              </p>
-              
-              <div className="w-full bg-gray-50 rounded-2xl p-6 border border-gray-100 mb-10 text-left">
-                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Starter Benefits</h4>
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-3 text-sm font-bold text-gray-900">
-                    <CheckCircle2 size={16} className="text-green-600" /> Pro Excel Test suite Export
-                  </li>
-                  <li className="flex items-center gap-3 text-sm font-bold text-gray-900">
-                    <CheckCircle2 size={16} className="text-green-600" /> BPMN 2.0 Process Downloads
-                  </li>
-                  <li className="flex items-center gap-3 text-sm font-bold text-gray-900">
-                    <CheckCircle2 size={16} className="text-green-600" /> Executive ZIP Bundle delivery
-                  </li>
-                </ul>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-4 w-full">
-                <button 
-                  onClick={() => router.push('/settings')}
-                  className="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black shadow-lg hover:shadow-green-600/30 transition-all uppercase tracking-widest text-sm"
-                >
-                  Upgrade Now
-                </button>
-                <button 
-                  onClick={() => setShowUpgradeModal(false)}
-                  className="flex-1 bg-gray-100 text-gray-600 py-4 rounded-2xl font-black hover:bg-gray-200 transition-all uppercase tracking-widest text-sm"
-                >
-                  Maybe Later
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
 
       <NavigationButtons 
         backPath={`/project/${projectId}/transformation`}
@@ -1751,20 +1683,3 @@ export default function TestingSandboxPage() {
     </div>
   );
 }
-
-const Lock = ({ size, className }: { size: number, className: string }) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="3" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-  </svg>
-);

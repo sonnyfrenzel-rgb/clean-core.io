@@ -5,8 +5,10 @@
  * architecture governance reviews, compliance audits, and enterprise
  * decision documentation.
  *
- * v1.17: Adds manifest.json with SHA-256 file hashes and HMAC-SHA256
- * cryptographic signature via server-side /api/export/sign endpoint.
+ * v2.0: The pack (evidence files + manifest with SHA-256 hashes + HMAC-SHA256
+ * signature) is generated and signed entirely server-side by
+ * /api/audit-pack/create, so the signature attests to server content — not to
+ * client-supplied hashes. The legacy /api/export/sign endpoint is retired (410).
  *
  * Security: This module never includes secrets, credentials, API keys,
  * or unmasked tenant URLs in the export. Only hashes, timestamps,
@@ -45,6 +47,36 @@ const ARCH_LABELS: Record<string, string> = {
   retire: 'Retire / Decommission',
 };
 
+/**
+ * Escape a value for safe interpolation into the HTML/Word executive summary.
+ * Project/user/AI-supplied fields (name, approver email, file name, …) must never
+ * be able to inject markup or active content into the exported document.
+ */
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Guard a CSV cell against spreadsheet formula injection: a value that a
+ * spreadsheet would evaluate (leading =, +, -, @, tab, or CR) is prefixed with a
+ * single quote, then quoted and its inner quotes doubled per RFC 4180.
+ */
+function csvCell(value: unknown): string {
+  let s = String(value ?? '');
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
+/** Normalise a value for a Markdown table cell (escape pipes / collapse newlines). */
+function mdCell(value: unknown): string {
+  return String(value ?? '—').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim() || '—';
+}
+
 export function generateExecutiveSummary(project: Project): string {
   const fp = project.auditMetadata?.inputFingerprint;
   const mc = project.auditMetadata?.modelCard;
@@ -66,39 +98,39 @@ export function generateExecutiveSummary(project: Project): string {
 
 | Field | Value |
 |---|---|
-| Project Name | ${project.name} |
-| Analysis Status | ${project.status || 'unknown'} |
+| Project Name | ${mdCell(project.name)} |
+| Analysis Status | ${mdCell(project.status || 'unknown')} |
 | Clean Core Score | ${project.cleanCoreScore ?? '—'}/100 |
 | Complexity Score | ${project.complexityScore ?? '—'}/100 |
 | Criticality Score | ${project.criticalityScore ?? '—'}/100 |
-| Target Architecture | ${arch} |
-| Architect Approval | ${approved}${approver} |
-| Sign-Off Date | ${signOffDate} |
-| Extensibility Route | ${project.extensibilityRoute || '—'} |
+| Target Architecture | ${mdCell(arch)} |
+| Architect Sign-Off (self-attested) | ${mdCell(approved + approver)} |
+| Sign-Off Date | ${mdCell(signOffDate)} |
+| Extensibility Route | ${mdCell(project.extensibilityRoute || '—')} |
 
 ## Input Summary
 
 | Field | Value |
 |---|---|
-| File Name | ${fp?.fileName || '—'} |
-| Object Type | ${fp?.objectType || '—'} |
+| File Name | ${mdCell(fp?.fileName || '—')} |
+| Object Type | ${mdCell(fp?.objectType || '—')} |
 | Lines of Code | ${fp?.lineCount ?? '—'} |
 | Input Size | ${fp?.byteSize ? `${(fp.byteSize / 1024).toFixed(1)} KB` : '—'} |
-| SHA-256 Fingerprint | \`${fp?.sha256 || '—'}\` |
-| Upload Timestamp | ${fp?.uploadedAt || '—'} |
+| SHA-256 Fingerprint | \`${mdCell(fp?.sha256 || '—')}\` |
+| Upload Timestamp | ${mdCell(fp?.uploadedAt || '—')} |
 
 ## Engine Metadata
 
 | Field | Value |
 |---|---|
-| Platform Version | ${mc?.engineVersion || APP_VERSION} |
-| SAP API Catalog | ${(mc as any)?.catalogVersion || '2024.FPS02'} |
-| Model Provider | ${mc?.provider || 'google-gemini'} |
-| Model | ${mc?.model || '—'} |
+| Platform Version | ${mdCell(mc?.engineVersion || APP_VERSION)} |
+| SAP API Catalog | ${mdCell((mc as any)?.catalogVersion || '2024.FPS02')} |
+| Model Provider | ${mdCell(mc?.provider || 'google-gemini')} |
+| Model | ${mdCell(mc?.model || '—')} |
 | BYOK Used | ${mc?.byokUsed ? 'Yes' : 'No'} |
-| Analysis Timestamp | ${mc?.analysisTimestamp || '—'} |
-| Design Timestamp | ${mc?.designTimestamp || '—'} |
-| Transformation Timestamp | ${mc?.transformationTimestamp || '—'} |
+| Analysis Timestamp | ${mdCell(mc?.analysisTimestamp || '—')} |
+| Design Timestamp | ${mdCell(mc?.designTimestamp || '—')} |
+| Transformation Timestamp | ${mdCell(mc?.transformationTimestamp || '—')} |
 
 ---
 
@@ -166,15 +198,15 @@ export function generateExecutiveSummaryDoc(project: Project): string {
       </tr>
     </thead>
     <tbody>
-      <tr><td>Project Name</td><td>${project.name}</td></tr>
-      <tr><td>Analysis Status</td><td>${project.status || 'unknown'}</td></tr>
+      <tr><td>Project Name</td><td>${escapeHtml(project.name)}</td></tr>
+      <tr><td>Analysis Status</td><td>${escapeHtml(project.status || 'unknown')}</td></tr>
       <tr><td>Clean Core Score</td><td>${score}/100</td></tr>
       <tr><td>Complexity Score</td><td>${complexity}/100</td></tr>
       <tr><td>Criticality Score</td><td>${criticality}/100</td></tr>
-      <tr><td>Target Architecture</td><td>${arch}</td></tr>
-      <tr><td>Architect Approval</td><td>${approved}${approver}</td></tr>
-      <tr><td>Sign-Off Date</td><td>${signOffDate}</td></tr>
-      <tr><td>Extensibility Route</td><td>${project.extensibilityRoute || '—'}</td></tr>
+      <tr><td>Target Architecture</td><td>${escapeHtml(arch)}</td></tr>
+      <tr><td>Architect Sign-Off (self-attested)</td><td>${escapeHtml(approved + approver)}</td></tr>
+      <tr><td>Sign-Off Date</td><td>${escapeHtml(signOffDate)}</td></tr>
+      <tr><td>Extensibility Route</td><td>${escapeHtml(project.extensibilityRoute || '—')}</td></tr>
     </tbody>
   </table>
 
@@ -187,12 +219,12 @@ export function generateExecutiveSummaryDoc(project: Project): string {
       </tr>
     </thead>
     <tbody>
-      <tr><td>File Name</td><td>${fp?.fileName || '—'}</td></tr>
-      <tr><td>Object Type</td><td>${fp?.objectType || '—'}</td></tr>
+      <tr><td>File Name</td><td>${escapeHtml(fp?.fileName || '—')}</td></tr>
+      <tr><td>Object Type</td><td>${escapeHtml(fp?.objectType || '—')}</td></tr>
       <tr><td>Lines of Code</td><td>${fp?.lineCount ?? '—'}</td></tr>
       <tr><td>Input Size</td><td>${fp?.byteSize ? `${(fp.byteSize / 1024).toFixed(1)} KB` : '—'}</td></tr>
-      <tr><td>SHA-256 Fingerprint</td><td><code>${fp?.sha256 || '—'}</code></td></tr>
-      <tr><td>Upload Timestamp</td><td>${fp?.uploadedAt || '—'}</td></tr>
+      <tr><td>SHA-256 Fingerprint</td><td><code>${escapeHtml(fp?.sha256 || '—')}</code></td></tr>
+      <tr><td>Upload Timestamp</td><td>${escapeHtml(fp?.uploadedAt || '—')}</td></tr>
     </tbody>
   </table>
 
@@ -205,13 +237,13 @@ export function generateExecutiveSummaryDoc(project: Project): string {
       </tr>
     </thead>
     <tbody>
-      <tr><td>Platform Version</td><td>${mc?.engineVersion || APP_VERSION}</td></tr>
-      <tr><td>Model Provider</td><td>${mc?.provider || 'google-gemini'}</td></tr>
-      <tr><td>Model</td><td>${mc?.model || '—'}</td></tr>
+      <tr><td>Platform Version</td><td>${escapeHtml(mc?.engineVersion || APP_VERSION)}</td></tr>
+      <tr><td>Model Provider</td><td>${escapeHtml(mc?.provider || 'google-gemini')}</td></tr>
+      <tr><td>Model</td><td>${escapeHtml(mc?.model || '—')}</td></tr>
       <tr><td>BYOK Used</td><td>${mc?.byokUsed ? 'Yes' : 'No'}</td></tr>
-      <tr><td>Analysis Timestamp</td><td>${mc?.analysisTimestamp || '—'}</td></tr>
-      <tr><td>Design Timestamp</td><td>${mc?.designTimestamp || '—'}</td></tr>
-      <tr><td>Transformation Timestamp</td><td>${mc?.transformationTimestamp || '—'}</td></tr>
+      <tr><td>Analysis Timestamp</td><td>${escapeHtml(mc?.analysisTimestamp || '—')}</td></tr>
+      <tr><td>Design Timestamp</td><td>${escapeHtml(mc?.designTimestamp || '—')}</td></tr>
+      <tr><td>Transformation Timestamp</td><td>${escapeHtml(mc?.transformationTimestamp || '—')}</td></tr>
     </tbody>
   </table>
 
@@ -238,6 +270,10 @@ export function generateDecisionRecord(project: Project): object {
       justification: project.recommendationJustification || null,
     },
     architectReview: {
+      // Self-attestation: the sign-off is recorded from the signed-in user's own
+      // client session, not verified by a separate approver or an org role model.
+      // It is a decision record, not a formal organizational approval.
+      attestationType: 'self-attested',
       approved: project.approvedByArchitect ?? false,
       approvedBy: project.approvedBy || null,
       signOffTimestamp: project.architectSignOffAt || null,
@@ -257,7 +293,9 @@ export function generateFindingsCsv(project: Project): string {
 
   const header = 'Table Name,Access Type,Is Custom,Risk Level,Recommendation';
   const rows = entries.map(e =>
-    `"${e.tableName}","${e.accessType}","${e.isCustom ? 'Yes' : 'No'}","${e.riskLevel}","${e.recommendation.replace(/"/g, '""')}"`
+    [e.tableName, e.accessType, e.isCustom ? 'Yes' : 'No', e.riskLevel, e.recommendation]
+      .map(csvCell)
+      .join(',')
   );
   return [header, ...rows].join('\n') + '\n';
 }
@@ -339,9 +377,9 @@ export function generateKnownLimitations(): string {
 /**
  * Generates a Compliance Audit Pack as a ZIP blob.
  *
- * v1.17: Includes a signed manifest.json with SHA-256 hashes of all
- * files. The HMAC signature is obtained from the server-side
- * /api/export/sign endpoint to keep the signing key secret.
+ * v2.0: Delegates entirely to the server-authoritative /api/audit-pack/create,
+ * which generates the evidence files, hashes them, and HMAC-signs the manifest
+ * server-side. The client only downloads the resulting ZIP.
  *
  * @param project  Hydrated project (includes active run data)
  * @param idToken  Firebase ID token for authenticating the sign request

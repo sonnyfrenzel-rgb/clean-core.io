@@ -729,7 +729,7 @@ export default function Home() {
               100% Free &mdash; No Credit Card Required
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">Community Access</h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Start with 5 free transformations, or bring your own API key for unlimited runs and full exports — both tiers are 100% free.</p>
+            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Every feature is included for free — no locked exports, no premium tiers. The only limit is 5 transformations; bring your own Gemini API key for unlimited runs. Both are 100% free.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Card 1: Free Community Edition (no API key needed) */}
@@ -747,11 +747,12 @@ export default function Home() {
               </div>
               <ul className="space-y-3.5 mb-10 flex-grow">
                 {[
-                  'Up to 5 standard ABAP-to-Cloud transformations',
-                  'Syntax analysis & compliance scoring',
-                  'SAP API Business Hub mapping preview',
-                  'Online code preview (input vs. output)',
-                  'Solution design architecture catalog'
+                  'Full 7-stage modernization workflow — every feature included',
+                  'Up to 5 ABAP-to-Cloud transformations (RAP / CAP)',
+                  'Deterministic evidence engine + compliance & criticality scoring',
+                  'SAP API Business Hub mapping & Clean Core routing',
+                  'abapGit ZIP export, ABAP-Unit tests, BPMN & Confluence exports',
+                  'Server-signed audit evidence pack'
                 ].map((f, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm font-bold">
                     <Check className="w-5 h-5 shrink-0 text-green-600" /> {f}
@@ -779,13 +780,10 @@ export default function Home() {
               </div>
               <ul className="space-y-3.5 mb-10 flex-grow">
                 {[
-                  'Includes everything in the Free Community Edition',
+                  'Everything in the Free Community Edition — no features locked',
                   'Unlimited code transformations (via BYOK)*',
-                  'Full multi-file abapGit ZIP export (src/ + abapgit.xml)',
-                  'Automated ABAP-Unit test class generation',
-                  'Granular sandbox test execution & runs',
-                  'BPMN 2.0 & Confluence blueprint exports',
-                  'S/4HANA sandbox connection (encrypted, read-only, admin-gated)'
+                  'Live S/4HANA sandbox connection (encrypted, read-only, admin-gated)',
+                  'Ideal for developers running large or ongoing modernizations'
                 ].map((f, i) => {
                   const isAll = f.toLowerCase().includes('includes all');
                   return (

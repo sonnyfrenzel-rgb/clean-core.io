@@ -305,7 +305,7 @@ export default function UserOnboarding() {
               ⚡ System Disclaimer & Terms
             </h4>
             <p className="leading-relaxed font-medium">
-              This application is a <strong>non-commercial pilot research project</strong>. All transformation analyses and code migrations are powered by <strong>Generative AI models</strong> and may contain inaccuracies, hallucinations, or syntactical errors.
+              This application is a <strong>free, non-commercial community research project</strong>. All transformation analyses and code migrations are powered by <strong>Generative AI models</strong> and may contain inaccuracies, hallucinations, or syntactical errors.
             </p>
             <p className="leading-relaxed font-medium">
               We assume <strong>no warranty, guarantees, or liability</strong> for the performance, reliability, or execution safety of generated codes. Before deploying any output, it must be thoroughly inspected and verified by qualified software architects.
@@ -358,7 +358,7 @@ export default function UserOnboarding() {
           <div>
             <h3 className="text-lg font-bold mb-2">2. Data Collection & Processing Purposes</h3>
             <p className="text-sm leading-relaxed mb-3">
-              We process personal data of our users only as far as necessary to provide a functional pilot platform as well as our contents and services.
+              We process personal data of our users only as far as necessary to provide a functional community platform as well as our contents and services.
             </p>
             <ul className="list-disc pl-5 space-y-2 text-xs text-slate-600">
               <li>

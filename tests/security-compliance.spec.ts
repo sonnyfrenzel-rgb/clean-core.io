@@ -364,48 +364,32 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     expect(unauth.status()).toBe(401);
   });
 
-  // ── v1.20 §8: full trust-chain — sign endpoint negative cases ──
+  // ── v2.0 trust-chain: legacy /api/export/sign must no longer sign client-supplied hashes ──
   const SIGN_FILES = [{ path: '00-executive-summary.md', sha256: 'a'.repeat(64), bytes: 42 }];
 
-  test('sign endpoint enforces the run trust chain (active run + ownership)', async ({ request }) => {
+  test('legacy /api/export/sign is disabled (410) and never signs client-supplied file hashes', async ({ request }) => {
     const email = `sign-owner-${branchSuffix}-${Date.now()}@cleancore-test.io`;
     const owner = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
     const uid = owner.user.uid;
     const token = await owner.user.getIdToken();
     const { projectId, runId } = await seedRunnableProject(uid, 'sign');
-    // Seed a second, valid-but-non-active run to exercise the stale-run gate.
-    const staleRunId = `apkrun-stale-${uid}`;
-    await adminSetDoc(`projects/${projectId}/runs`, staleRunId, {
-      runId: staleRunId, projectId, userId: uid, status: 'completed', runHash: 'stalehash', analyzerVersion: 'v2.0.0', sapApiCatalogVersion: '2024.FPS02',
+
+    // Even the legitimate owner with the active run must NOT get a signature for
+    // arbitrary, client-supplied file hashes. The endpoint is retired in favour
+    // of the server-authoritative /api/audit-pack/create.
+    const res = await request.post('/api/export/sign', {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { projectId, runId, files: SIGN_FILES },
     });
+    expect(res.status()).toBe(410);
+    const body = await res.json();
+    expect(body.signature).toBeUndefined();
+    expect(body.signed).toBeUndefined();
+    expect(body.replacement).toBe('/api/audit-pack/create');
 
-    // Active run → 200
-    const ok = await request.post('/api/export/sign', { headers: { Authorization: `Bearer ${token}` }, data: { projectId, runId, files: SIGN_FILES } });
-    expect(ok.status()).toBe(200);
-    expect((await ok.json()).signed).toBe(true);
-
-    // Stale (existing but non-active) run → 409
-    const stale = await request.post('/api/export/sign', { headers: { Authorization: `Bearer ${token}` }, data: { projectId, runId: staleRunId, files: SIGN_FILES } });
-    expect(stale.status()).toBe(409);
-
-    // Foreign user → 403
-    const other = await createUserWithEmailAndPassword(firebaseAuth, `sign-x-${branchSuffix}-${Date.now()}@cleancore-test.io`, TEST_PASSWORD);
-    const otherToken = await other.user.getIdToken();
-    const foreign = await request.post('/api/export/sign', { headers: { Authorization: `Bearer ${otherToken}` }, data: { projectId, runId, files: SIGN_FILES } });
-    expect(foreign.status()).toBe(403);
-  });
-
-  test('sign endpoint rejects a run missing its runHash (422)', async ({ request }) => {
-    const owner = await createUserWithEmailAndPassword(firebaseAuth, `sign-nohash-${branchSuffix}-${Date.now()}@cleancore-test.io`, TEST_PASSWORD);
-    const uid = owner.user.uid;
-    const token = await owner.user.getIdToken();
-    const projectId = `apk-nohash-${branchSuffix}-${uid}`;
-    const runId = `run-nohash-${uid}`;
-    await adminSetDoc('projects', projectId, { name: 'No Hash', status: 'analyzed', userId: uid, activeRunId: runId, createdAt: new Date() });
-    await adminSetDoc(`projects/${projectId}/runs`, runId, { runId, projectId, userId: uid, status: 'completed' }); // no runHash
-
-    const res = await request.post('/api/export/sign', { headers: { Authorization: `Bearer ${token}` }, data: { projectId, runId, files: SIGN_FILES } });
-    expect(res.status()).toBe(422);
+    // Unauthenticated callers get the same closed door (no oracle for probing).
+    const unauth = await request.post('/api/export/sign', { data: { projectId, runId, files: SIGN_FILES } });
+    expect(unauth.status()).toBe(410);
   });
 
   test('should restrict privilege escalation on profile creation (Hardened Rules)', async () => {
