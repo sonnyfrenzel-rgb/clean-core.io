@@ -614,7 +614,7 @@ export default function TestingSandboxPage() {
             )}
           >
             Connected S/4HANA Tenant
-            <span className="bg-blue-500/20 text-blue-200 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-normal">Premium</span>
+            <span className="bg-blue-500/20 text-blue-200 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-normal">Admin-Gated</span>
           </button>
         </div>
       </div>

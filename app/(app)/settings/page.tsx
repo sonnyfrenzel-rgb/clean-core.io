@@ -755,8 +755,8 @@ export default function SettingsPage() {
     }
 
     switch (tier) {
-      case 'pilot_byok': return { icon: <Infinity className="text-purple-600" />, label: 'BYOK Pilot', color: 'bg-purple-50 border-purple-100', text: 'Bring Your Own Key for limitless pilot transformations.' };
-      default: return { icon: <Shield className="text-gray-600" />, label: 'Community Standard', color: 'bg-gray-50 border-gray-100', text: 'Limited to 5 transformations for testing.' };
+      case 'pilot_byok': return { icon: <Infinity className="text-purple-600" />, label: 'BYOK · Unlimited', color: 'bg-purple-50 border-purple-100', text: 'Your own Gemini key is active — unlimited transformations, all features, always free.' };
+      default: return { icon: <Shield className="text-gray-600" />, label: 'Free Community Edition', color: 'bg-gray-50 border-gray-100', text: 'Full access to every feature — 5 free transformations. Add your own Gemini key for unlimited runs.' };
     }
   };
 
@@ -1394,7 +1394,7 @@ export default function SettingsPage() {
                 
                 {profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
                   <span className="text-[10px] md:text-xs font-black uppercase tracking-widest bg-sky-100 text-sky-700 px-3 py-1.5 rounded-full border border-sky-200 flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Active / Premium
+                    <CheckCircle2 size={12} /> Active · Admin-Gated
                   </span>
                 ) : profile?.s4TenantAccessRequested ? (
                   <span className="text-[10px] md:text-xs font-black uppercase tracking-widest bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200 flex items-center gap-1">

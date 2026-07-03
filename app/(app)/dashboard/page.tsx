@@ -309,7 +309,7 @@ export default function Dashboard() {
     
     // Check limit
     if (profile.transformationsUsed >= profile.transformationsLimit) {
-      alert(`Limit reached! Your plan (${profile.tier}) allows a maximum of ${profile.transformationsLimit} transformations. Visit settings to upgrade.`);
+      alert(`Limit reached! You've used all ${profile.transformationsLimit} free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.`);
       return;
     }
 
@@ -461,7 +461,7 @@ export default function Dashboard() {
     if (!projectName || isCreating || !profile) return;
 
     if (profile.transformationsUsed >= profile.transformationsLimit) {
-      alert(`Limit reached! Your plan (${profile.tier}) allows a maximum of ${profile.transformationsLimit} transformations. Please upgrade your plan in settings.`);
+      alert(`Limit reached! You've used all ${profile.transformationsLimit} free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.`);
       return;
     }
 
@@ -572,7 +572,7 @@ export default function Dashboard() {
 
     const newComment = {
       id: `comment-${Date.now()}`,
-      author: profile ? `${profile.firstName} ${profile.lastName}` : 'Anonymous Pilot',
+      author: profile ? `${profile.firstName} ${profile.lastName}` : 'Community Member',
       message: newCommentText.trim(),
       createdAt: 'Just now',
       likes: 0
@@ -678,7 +678,7 @@ export default function Dashboard() {
       authorEmail: 'admin@clean-core.io',
       isAdmin: true,
       category: 'announcements',
-      message: 'Welcome everyone! This forum serves as our technical community board where you can share modernization learnings, raise edge-case ABAP statements, and map architectural questions. For direct inquiries, platform upgrades, or account approvals, please use our secure admin forwarder admin@clean-core.io. All correspondence is privately routed directly to my desk. Happy transforming!',
+      message: 'Welcome everyone! This is our free community board — share modernization learnings, raise tricky edge-case ABAP statements, and ask architectural questions. Everything on Clean-Core.io is free to use: every user gets the full 7-stage workflow (5 transformations to start; bring your own Gemini key for unlimited runs). For account approvals or an admin-gated S/4HANA sandbox connection, reach the admin team at admin@clean-core.io. Happy modernizing!',
       createdAt: 'Just now',
       likes: 0,
       comments: 0,
@@ -692,7 +692,7 @@ export default function Dashboard() {
       authorEmail: 'admin@clean-core.io',
       isAdmin: true,
       category: 'technical',
-      message: `Welcome to the official technical blueprint of Clean-Core.io!\n\nTo achieve standard SAP Clean Core modernizations, our serverless architectural stack transforms custom SAP legacy code (ABAP) from ERP kernels:\n\n- Frontend Core: Built on Next.js 14 App Router, React 18, TypeScript, and Tailwind CSS.\n- Transformed API & LLM Gateway: Google Gemini 3 models (including gemini-3-pro and gemini-3-flash) generate modern Node.js/TypeScript code.\n- Transformed Security (BYOK): Supports client-side SubtleCrypto PBKDF2 AES-GCM encrypted Google Gemini keys that never transit in plaintext.\n- Sandbox Testing: Transformed TypeScript packages are automatically validated in a secure, containerized sandbox.\n- Persistence Layer: Enforces strict multi-tenant isolation via structured secure Firestore document rules.\n\nFeel free to ask technical questions about our transformation strategies below!`,
+      message: `Welcome to the official technical blueprint of Clean-Core.io!\n\nClean-Core.io modernizes custom SAP ABAP toward clean, upgrade-safe TypeScript/Node.js — deterministic evidence first, AI second. The stack:\n\n- Frontend: Next.js 15 (App Router), React 19, TypeScript (strict), Tailwind v4.\n- Evidence engine: a deterministic ABAP parser/analyzer runs first and produces the auditable facts (code inventory, findings, complexity/criticality scores, RAP vs CAP routing) — before any AI call, to prevent structure hallucination.\n- AI gateway: Google Gemini (gemini-3-flash-preview) narrates and transforms on top of that evidence. Keys never reach the client — every call is proxied through our server.\n- BYOK: your own Gemini API key is encrypted at rest (AES-256-GCM) in a server-only store and used exclusively via the secure backend proxy — it is never returned to the client.\n- Sandbox testing: generated tests run in a hardened, isolated Node process (esbuild bundle + Node Permission Model — no platform secrets, no host access).\n- Trust chain: every analysis is frozen as an immutable, HMAC-signed Run that anchors a server-generated, verifiable audit evidence pack.\n- Persistence: strict per-user isolation via Firestore security rules.\n\nFeel free to ask technical questions about the evidence engine or our transformation strategies below!`,
       createdAt: 'Just now',
       likes: 0,
       comments: 0,
@@ -757,7 +757,7 @@ export default function Dashboard() {
         id: `post-${Date.now()}`,
         title: forumTitle,
         category: forumCategory,
-        author: isAdminUser ? 'Clean-Core Admin' : (forumAuthor.trim() || (profile ? `${profile.firstName} ${profile.lastName}` : 'Anonymous Pilot')),
+        author: isAdminUser ? 'Clean-Core Admin' : (forumAuthor.trim() || (profile ? `${profile.firstName} ${profile.lastName}` : 'Community Member')),
         authorEmail: isAdminUser ? 'admin@clean-core.io' : (profile?.email || 'anonymous'),
         isAdmin: isAdminUser,
         message: forumMessage,
@@ -803,7 +803,7 @@ export default function Dashboard() {
         </div>
         <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Hang tight!</h2>
         <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-          Your request for the <strong>Clean-Core.io Pilot</strong> program is currently under review. 
+          Your request to join <strong>Clean-Core.io</strong> — our Free Community Edition — is currently under review.
           To ensure quality and manage capacity, our admins manually approve new accounts.
         </p>
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm text-left w-full">
@@ -829,7 +829,7 @@ export default function Dashboard() {
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-black text-amber-900 tracking-tight">Limit Reached</h3>
-            <p className="text-amber-800 font-medium text-sm">Your {profile.tier} plan allows a maximum of {profile.transformationsLimit} transformation. Visit your profile settings for an upgrade.</p>
+            <p className="text-amber-800 font-medium text-sm">You've used your {profile.transformationsLimit} free transformations. Add your own Gemini API key in settings for unlimited runs — at no cost.</p>
           </div>
           <button 
             onClick={() => router.push('/settings')}
@@ -922,7 +922,7 @@ export default function Dashboard() {
                 <div className="flex-1">
                   <h4 className="text-xs font-black uppercase tracking-wider text-red-800 font-mono">Quota Exceeded</h4>
                   <p className="text-xs text-red-700 font-semibold mt-0.5 leading-snug">
-                    You have used all <strong>{profile.transformationsLimit}</strong> free transformations. Please upgrade or configure your own Gemini API key in settings to proceed.
+                    You have used all <strong>{profile.transformationsLimit}</strong> free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.
                   </p>
                 </div>
               </div>
@@ -1031,7 +1031,7 @@ export default function Dashboard() {
                 <div className="flex-1">
                   <h4 className="text-xs font-black uppercase tracking-wider text-red-800 font-mono">Quota Exceeded</h4>
                   <p className="text-xs text-red-700 font-semibold mt-0.5 leading-snug">
-                    You have used all <strong>{profile.transformationsLimit}</strong> free transformations. Please upgrade or configure your own Gemini API key in settings to proceed.
+                    You have used all <strong>{profile.transformationsLimit}</strong> free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.
                   </p>
                 </div>
               </div>
@@ -1617,7 +1617,10 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   {/* Left/Middle Column: Discussions List */}
                   <div className="lg:col-span-2 space-y-5">
-                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Active Discussions</h3>
+                    <div className="mb-2">
+                      <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Active Discussions</h3>
+                      <p className="text-[11px] text-gray-400 font-medium mt-0.5">Tap any thread to read it in full and join the conversation.</p>
+                    </div>
                     
                     {filteredForumPosts.length === 0 ? (
                       <div className="bg-white border border-dashed border-gray-300 rounded-[2rem] p-10 flex flex-col items-center justify-center text-center shadow-sm">
@@ -1708,7 +1711,7 @@ export default function Dashboard() {
                       </div>
                       
                       <p className="text-slate-400 text-xs leading-relaxed font-semibold mb-6">
-                        Our administrative team manages approvals, platform updates, and technical escalation mappings.
+                        Our admin team handles account approvals, admin-gated S/4HANA sandbox access, and platform questions. Post publicly below, or email us for anything account-related.
                       </p>
                       
                       <div className="flex items-center justify-between gap-3 bg-slate-950/60 border border-slate-800/80 px-4 py-2.5 rounded-xl min-w-0">
@@ -1723,8 +1726,11 @@ export default function Dashboard() {
                     </div>
 
                     <div className="bg-white p-6 rounded-[2rem] border border-gray-200/70 shadow-sm space-y-5">
-                      <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Start Discussion</h3>
-                      
+                      <div>
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Start Discussion</h3>
+                        <p className="text-[11px] text-gray-400 font-medium mt-1.5 leading-relaxed">Ask a question or share a learning — it posts publicly to the board. Free to use; just add a title, pick a category, and write your message.</p>
+                      </div>
+
                       {forumSent ? (
                         <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl text-center text-xs font-semibold leading-relaxed animate-in zoom-in-95 duration-200">
                           <CheckCircle2 className="mx-auto text-green-600 mb-2" size={24} />
@@ -1782,7 +1788,7 @@ export default function Dashboard() {
                             <textarea 
                               value={forumMessage}
                               onChange={(e) => { setForumMessage(e.target.value); setForumError(null); }}
-                              placeholder="Describe your issue or sharing your lesson learned with the team..."
+                              placeholder="Describe your question, or share a lesson learned — code snippets welcome. Be specific so others can help."
                               className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 min-h-[100px] resize-none text-sm font-medium text-gray-900 focus:ring-2 focus:ring-green-500 outline-none transition-all font-sans"
                               required
                             ></textarea>

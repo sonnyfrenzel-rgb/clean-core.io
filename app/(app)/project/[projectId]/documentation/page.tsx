@@ -727,41 +727,21 @@ Structure the JSON exactly like this:
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <div className="relative group/tooltip">
-            <button 
-              onClick={downloadBPMN}
-              disabled={!parsedDoc?.l3_flow || isGeneratingDoc}
-              className={clsx(
-                "flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border",
-                profile?.tier === 'pilot' ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed" : "bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff] opacity-100 disabled:opacity-50"
-              )}
-            >
-              <FileCode2 size={16} /> Export BPMN {profile?.tier === 'pilot' && <Lock size={12} className="ml-1" />}
-            </button>
-            {profile?.tier === 'pilot' && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
-                BPMN 2.0 Exports are reserved for <span className="text-green-400 font-bold tracking-widest uppercase">Starter</span> & Premium users.
-              </div>
-            )}
-          </div>
+          <button
+            onClick={downloadBPMN}
+            disabled={!parsedDoc?.l3_flow || isGeneratingDoc}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff] opacity-100 disabled:opacity-50"
+          >
+            <FileCode2 size={16} /> Export BPMN
+          </button>
 
-          <div className="relative group/tooltip">
-            <button 
-              onClick={downloadConfluenceHTML}
-              disabled={!parsedDoc || isGeneratingDoc}
-              className={clsx(
-                "flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border",
-                profile?.tier === 'pilot' ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed" : "bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff] opacity-100 disabled:opacity-50"
-              )}
-            >
-              <Download size={16} /> Export Confluence {profile?.tier === 'pilot' && <Lock size={12} className="ml-1" />}
-            </button>
-            {profile?.tier === 'pilot' && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-10 pointer-events-none text-center">
-                Confluence HTML format is a <span className="text-green-400 font-bold uppercase tracking-widest">Starter</span> feature.
-              </div>
-            )}
-          </div>
+          <button
+            onClick={downloadConfluenceHTML}
+            disabled={!parsedDoc || isGeneratingDoc}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff] opacity-100 disabled:opacity-50"
+          >
+            <Download size={16} /> Export Confluence
+          </button>
 
           <button 
             onClick={generateDocumentation}
