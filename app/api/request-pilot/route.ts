@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const approveUrl = `${APP_BASE_URL}/admin/approve?${new URLSearchParams({ uid, token: approveToken, auto: 'true' })}`;
     const rejectUrl = `${APP_BASE_URL}/admin/approve?${new URLSearchParams({ uid, token: rejectToken, action: 'reject' })}`;
 
-    const emailSubject = `🚀 Clean-Core.io Pilot Request: ${name}`;
+    const emailSubject = `🚀 Clean-Core.io Access Request: ${name}`;
     const emailHtml = `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a;">
         <!-- Card Container -->
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
             <span style="font-size: 10px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.1em; background-color: #ecfdf5; padding: 6px 12px; border-radius: 9999px; border: 1px solid #a7f3d0;">
               📋 Review Required
             </span>
-            <h1 style="font-size: 26px; font-weight: 800; color: #0f172a; margin: 18px 0 0 0; letter-spacing: -0.03em; line-height: 1.15;">New Pilot Application</h1>
+            <h1 style="font-size: 26px; font-weight: 800; color: #0f172a; margin: 18px 0 0 0; letter-spacing: -0.03em; line-height: 1.15;">New Access Request</h1>
           </div>
 
           <!-- Content -->
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
           </p>
           
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            A new user has submitted a registration request for the <strong>Clean-Core.io Community Pilot</strong>. Please review their application details below:
+            A new user has submitted a registration request for the <strong>Clean-Core.io Free Community Edition</strong>. Please review their application details below:
           </p>
 
           <!-- Applicant Detail Card -->
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
           <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
             Warm regards,<br />
             <strong>The Clean-Core.io Team</strong><br />
-            <span style="font-size: 12px; color: #94a3b8;">Community Pilot Program</span>
+            <span style="font-size: 12px; color: #94a3b8;">Free Community Edition</span>
           </div>
 
         </div>
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Clean-Core Pilot <system@clean-core.io>',
+          from: 'Clean-Core <system@clean-core.io>',
           to: 'info@clean-core.io',
           subject: emailSubject,
           html: emailHtml,
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
       // ALSO send a pending confirmation email to the applicant (professional marketing email)
       try {
         console.log(`[Email] Sending Pilot Pending notification email to applicant ${email}...`);
-        const pendingSubject = `⏳ Clean-Core.io: We are reviewing your Pilot Application!`;
+        const pendingSubject = `⏳ Clean-Core.io: We are reviewing your access request!`;
         const pendingHtml = `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a;">
             <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; padding: 40px;">
@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
               </p>
               
               <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
-                Thank you for requesting access to the <strong>Clean-Core.io Community Pilot</strong>. We have received your application and are reviewing it to set up your workspace.
+                Thank you for requesting access to the <strong>Clean-Core.io Free Community Edition</strong>. We have received your application and are reviewing it to set up your workspace.
               </p>
 
               <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
@@ -273,7 +273,7 @@ export async function POST(request: NextRequest) {
               <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
                 Warm regards,<br />
                 <strong>The Clean-Core.io Team</strong><br />
-                <span style="font-size: 12px; color: #94a3b8;">Community Pilot Program</span>
+                <span style="font-size: 12px; color: #94a3b8;">Free Community Edition</span>
               </div>
 
             </div>

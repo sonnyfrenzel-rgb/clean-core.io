@@ -379,7 +379,7 @@ export default function TestingSandboxPage() {
       await setDoc(doc(db, 'tenant_access_requests', uid), {
         name: `${profile.firstName} ${profile.lastName}`,
         email: profile.email,
-        motivation: accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection Pilot',
+        motivation: accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection',
         status: 'pending',
         createdAt: new Date()
       });
@@ -396,7 +396,7 @@ export default function TestingSandboxPage() {
           uid,
           email: profile.email,
           name: `${profile.firstName} ${profile.lastName}`,
-          motivation: accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection Pilot'
+          motivation: accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection'
         })
       });
 
