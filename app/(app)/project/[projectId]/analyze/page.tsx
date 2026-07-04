@@ -1808,8 +1808,8 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   <RefreshCw className="w-5 h-5 animate-spin" />
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900">AI Modernization Engine Active</h3>
-                  <p className="text-xs text-slate-500">{loadingMessage || 'Performing deep code analysis...'}</p>
+                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900">Deterministic Evidence Engine</h3>
+                  <p className="text-xs text-slate-500">{loadingMessage || 'Analyzing your code — deterministic, before any AI...'}</p>
                 </div>
               </div>
               <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full uppercase tracking-wider animate-pulse">Running</span>
@@ -2362,17 +2362,16 @@ function ScannerConsole({ code, onComplete }: { code: string; onComplete?: () =>
   const logIndexRef = useRef(0);
 
   const logTemplates = [
-    "[SYSTEM] Booting secure AI modernization sandbox...",
-    "[SYSTEM] Accessing legacy repository staging areas...",
-    "[LEXER] Parsing ABAP grammar structures and legacy tokens...",
-    "[LEXER] Analyzing custom database query structures (joins, indexes)...",
-    "[STANDARDIZATION] Cross-referencing S/4HANA best-practice directories...",
-    "[STANDARDIZATION] Evaluating SAP standard function fits & BAPI mappings...",
-    "[CLEAN_CORE] Running extensibility audits against SAP Clean Core principles...",
-    "[CLEAN_CORE] Simulating Side-by-Side extensibility decoupling constraints...",
-    "[DECISION_MATRIX] Prioritizing identified functional gaps (2x2 Matrix mapping)...",
-    "[SYNTHESIS] Structuring operational JSON metadata profile...",
-    "[SYSTEM] Deep Code Analysis completed successfully. Synchronizing report..."
+    "[ENGINE] Starting deterministic ABAP evidence scan...",
+    "[PARSE] Tokenizing ABAP — classes, reports, function modules...",
+    "[SQL] Detecting Open SQL patterns, joins & quirks (FOR ALL ENTRIES)...",
+    "[OO] Linearizing class/interface inheritance (MRO resolver)...",
+    "[COUPLING] Mapping standard-table access & data-coupling risk...",
+    "[CATALOG] Matching objects to released S/4HANA successors (Cloudification repo)...",
+    "[CLEAN CORE] Scoring complexity, criticality & clean-core readiness...",
+    "[ROUTING] Evaluating In-App RAP vs Side-by-Side CAP track...",
+    "[EVIDENCE] Assembling a replayable, signed evidence report...",
+    "[DONE] Deterministic analysis complete — findings ready for review."
   ];
 
   useEffect(() => {
