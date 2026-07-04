@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 import { APP_RELEASE_DATE } from '@/lib/version';
-import { getMappedCatalogObjectNames, objectToSlug, CATALOG_LETTERS } from '@/lib/abap/catalog-index';
+import { CATALOG_LETTERS } from '@/lib/abap/catalog-index';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
@@ -28,9 +28,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/datenschutz`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.4 },
   ];
 
-  // Catalog hub + A–Z browse.
+  // Catalog hub + A–Z browse. The ~400 individual object pages live in their own
+  // /catalog-sitemap.xml (referenced from robots.txt) so this core sitemap stays small
+  // and is crawled/processed fully — the thin templated object pages no longer dilute
+  // the crawl budget for the core marketing/legal pages.
   const catalogRoutes: MetadataRoute.Sitemap = [
-    { url: `${baseUrl}/catalog`, lastModified: releaseDate, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${baseUrl}/catalog`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     ...CATALOG_LETTERS.map((l) => ({
       url: `${baseUrl}/catalog/browse/${l.toLowerCase()}`,
       lastModified: releaseDate,
@@ -39,14 +42,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
   ];
 
-  // Object pages — only those with a real mapped successor (unique, index-worthy).
-  // No-path pages are noindex, so they are intentionally omitted here. Well under the 50k limit.
-  const objectRoutes: MetadataRoute.Sitemap = getMappedCatalogObjectNames().map((n) => ({
-    url: `${baseUrl}/catalog/${objectToSlug(n)}`,
-    lastModified: releaseDate,
-    changeFrequency: 'monthly' as const,
-    priority: 0.5,
-  }));
-
-  return [...staticRoutes, ...catalogRoutes, ...objectRoutes];
+  return [...staticRoutes, ...catalogRoutes];
 }

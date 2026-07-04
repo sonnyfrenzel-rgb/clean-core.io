@@ -28,6 +28,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/admin/', '/project/', '/dashboard/', '/settings/', '/api/'],
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: [`${baseUrl}/sitemap.xml`, `${baseUrl}/catalog-sitemap.xml`],
   };
 }

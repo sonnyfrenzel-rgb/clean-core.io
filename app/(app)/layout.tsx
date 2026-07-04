@@ -10,6 +10,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import GlossarySidebar from '@/components/GlossarySidebar';
 import GlossaryChatbot from '@/components/GlossaryChatbot';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
+import SiteFooter from '@/components/SiteFooter';
 
 export default function AppLayout({children}: {children: React.ReactNode}) {
   const pathname = usePathname();
@@ -269,8 +270,11 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
         {children}
       </main>
       <footer className="border-t border-gray-100 bg-white/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center">
-          <SapTrademarkNotice className="max-w-3xl mx-auto" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <SiteFooter />
+          <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+            <SapTrademarkNotice className="max-w-3xl mx-auto" />
+          </div>
         </div>
       </footer>
       <GlossaryChatbot />

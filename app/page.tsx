@@ -22,6 +22,7 @@ import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import LandingModals from '@/components/LandingModals';
 import LandingSlideshow from '@/components/LandingSlideshow';
 import QuickAnswer from '@/components/QuickAnswer';
+import SiteFooter from '@/components/SiteFooter';
 import TransformationShowroom from '@/components/TransformationShowroom';
 import TransformationReplay from '@/components/TransformationReplay';
 import SamplePackageDownload from '@/components/SamplePackageDownload';
@@ -849,8 +850,12 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
           <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-8 tracking-tighter">Verify It Yourself</h2>
           <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-12 font-light max-w-2xl mx-auto">Import the generated abapGit package into your Eclipse ADT, compile the code, and run the ABAP-Unit tests&mdash;all in your own sandbox.</p>
           <FooterCTA />
-          
-          <div className="mt-24 pt-12 border-t border-gray-800 text-sm text-gray-500 font-light">
+
+          <div className="mt-20 pt-12 border-t border-gray-800">
+            <SiteFooter dark />
+          </div>
+
+          <div className="mt-16 pt-12 border-t border-gray-800 text-sm text-gray-500 font-light">
             <p>&copy; 2026 Clean-Core.io. All rights reserved.</p>
             <p className="mt-2 text-xs text-gray-600 font-mono font-bold uppercase tracking-wider">
               System Version: {APP_VERSION} • {APP_RELEASE_DATE}
