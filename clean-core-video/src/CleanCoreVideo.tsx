@@ -126,7 +126,7 @@ const S1Hook: React.FC = () => {
     <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', opacity: op }}>
       <div style={{ transform: `scale(${scale})` }}>
         <div style={{ opacity: badge, display: 'inline-flex', alignItems: 'center', gap: 12, border: `1px solid ${C.border}`, background: C.greenDim, borderRadius: 999, padding: '10px 22px', marginBottom: 34 }}>
-          <span style={{ color: C.green, fontFamily: FONT, fontWeight: 800, fontSize: 22, letterSpacing: 2 }}>FREE FOR THE SAP COMMUNITY</span>
+          <span style={{ color: C.green, fontFamily: FONT, fontWeight: 800, fontSize: 22, letterSpacing: 2 }}>v2.0 · FREE COMMUNITY EDITION</span>
         </div>
         <div style={{ color: C.text, fontFamily: FONT, fontWeight: 900, fontSize: 92, lineHeight: 1, letterSpacing: -1 }}>The SAP Architect's</div>
         <div style={{ color: C.green, fontFamily: FONT, fontWeight: 900, fontSize: 100, lineHeight: 1.05, letterSpacing: -1 }}>Clean Core Accelerator</div>
@@ -231,10 +231,10 @@ const S5Live: React.FC = () => {
               </div>
             ))}
           </div>
-          <div style={{ color: C.text, fontSize: 26, marginTop: 26, lineHeight: 1.5 }}>abapGit export · generated tests · evidence-bound report</div>
+          <div style={{ color: C.text, fontSize: 26, marginTop: 26, lineHeight: 1.5 }}>Server-signed audit evidence pack · abapGit · tests</div>
         </div>
       </div>
-      <Caption kicker="See it on your own code" line="Run an analysis in minutes." delay={40} />
+      <Caption kicker="Proof, not promises" line="A signed evidence pack — every run." delay={40} />
     </AbsoluteFill>
   );
 };
@@ -246,16 +246,86 @@ const S6CTA: React.FC = () => {
   return (
     <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', opacity: op }}>
       <div style={{ transform: `scale(${interpolate(pop, [0, 1], [0.92, 1])})` }}>
-        <div style={{ color: C.muted, fontFamily: FONT, fontWeight: 700, fontSize: 34, letterSpacing: 1, marginBottom: 12 }}>Belegt, nicht behauptet.</div>
-        <div style={{ color: C.text, fontFamily: FONT, fontWeight: 900, fontSize: 78, lineHeight: 1.05 }}>Accelerator with a</div>
-        <div style={{ color: C.green, fontFamily: FONT, fontWeight: 900, fontSize: 86, lineHeight: 1.05, marginBottom: 46 }}>trust guarantee.</div>
+        <div style={{ display: 'inline-flex', border: `1px solid ${C.border}`, background: C.greenDim, borderRadius: 999, padding: '8px 20px', marginBottom: 24 }}>
+          <span style={{ color: C.green, fontFamily: FONT, fontWeight: 800, fontSize: 22, letterSpacing: 2 }}>FREE COMMUNITY EDITION · v2.0</span>
+        </div>
+        <div style={{ color: C.text, fontFamily: FONT, fontWeight: 900, fontSize: 84, lineHeight: 1.03 }}>Proven,</div>
+        <div style={{ color: C.green, fontFamily: FONT, fontWeight: 900, fontSize: 92, lineHeight: 1.05, marginBottom: 40 }}>not claimed.</div>
         <div style={{ transform: `scale(${btn})`, display: 'inline-flex', alignItems: 'center', gap: 14, background: C.green, color: '#04240f', fontFamily: FONT, fontWeight: 900, fontSize: 40, padding: '22px 48px', borderRadius: 16 }}>
           Start free → clean-core.io
+        </div>
+        <div style={{ color: C.muted, fontFamily: FONT, fontWeight: 500, fontSize: 28, marginTop: 26, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto' }}>
+          Complementary to your SAP tools. You review before you deploy.
         </div>
       </div>
     </AbsoluteFill>
   );
 };
+
+/* ---------- v2.0 section scenes (features + security) ---------- */
+const ShieldDot: React.FC<{ size?: number }> = ({ size = 32 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24">
+    <path d="M12 2l7 3v6c0 4.6-3 7.9-7 9-4-1.1-7-4.4-7-9V5l7-3z" fill={C.green} opacity={0.16} stroke={C.green} strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M8.4 12l2.4 2.4L15.7 9.4" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const SectionHead: React.FC<{ kicker: string; title: string }> = ({ kicker, title }) => {
+  const op = useFadeIn(0, 12);
+  const y = interpolate(usePop(4), [0, 1], [20, 0]);
+  return (
+    <div style={{ position: 'absolute', top: 120, left: 90, right: 90, textAlign: 'center', opacity: op, transform: `translateY(${y}px)` }}>
+      <div style={{ color: C.green, fontFamily: FONT, fontWeight: 800, fontSize: 26, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>{kicker}</div>
+      <div style={{ color: C.text, fontFamily: FONT, fontWeight: 900, fontSize: 58, lineHeight: 1.05 }}>{title}</div>
+    </div>
+  );
+};
+
+const IconList: React.FC<{ items: string[]; icon: 'ok' | 'shield' }> = ({ items, icon }) => (
+  <div style={{ position: 'absolute', top: 350, left: 90, right: 90 }}>
+    {items.map((label, i) => {
+      const p = usePop(12 + i * 10);
+      return (
+        <div key={i} style={{ opacity: p, transform: `translateX(${interpolate(p, [0, 1], [44, 0])}px)`, display: 'flex', alignItems: 'center', gap: 20, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 24px', marginBottom: 16 }}>
+          {icon === 'shield' ? <ShieldDot size={32} /> : <StatusDot type="ok" size={30} />}
+          <div style={{ color: C.text, fontFamily: FONT, fontWeight: 700, fontSize: 30, lineHeight: 1.2 }}>{label}</div>
+        </div>
+      );
+    })}
+  </div>
+);
+
+const SFeatures: React.FC = () => (
+  <AbsoluteFill style={{ opacity: useFadeIn(0, 10) }}>
+    <SectionHead kicker="Everything included — no paywall" title="One free workspace. Every feature." />
+    <IconList
+      icon="ok"
+      items={[
+        'Deterministic ABAP evidence engine',
+        '7-stage workflow: analyze → delivery',
+        'abapGit export · ABAP-Unit tests · BPMN',
+        'Server-signed audit evidence pack',
+        '5 free runs — unlimited with your own key',
+      ]}
+    />
+  </AbsoluteFill>
+);
+
+const SSecurity: React.FC = () => (
+  <AbsoluteFill style={{ opacity: useFadeIn(0, 10) }}>
+    <SectionHead kicker="Secure by design" title="Security-hardened. Audit-friendly." />
+    <IconList
+      icon="shield"
+      items={[
+        'AI keys never leave the server',
+        'Your key encrypted at rest (AES-256-GCM)',
+        'Server-authoritative, HMAC-signed runs',
+        'SSRF-hardened S/4 sandbox, read-only',
+        'GDPR erasure · EU hosting (europe-west1)',
+      ]}
+    />
+  </AbsoluteFill>
+);
 
 /* ================= MAIN ================= */
 export const CleanCoreVideo: React.FC<{ short?: boolean }> = ({ short = false }) => {
@@ -271,14 +341,15 @@ export const CleanCoreVideo: React.FC<{ short?: boolean }> = ({ short = false })
           <Series.Sequence durationInFrames={150}><S6CTA /></Series.Sequence>
         </Series>
       ) : (
-        /* 30s cut — full narrative incl. the honesty beat + live product */
+        /* 35s cut — hook → morph → features → security → limits → proof → CTA */
         <Series>
           <Series.Sequence durationInFrames={90}><S1Hook /></Series.Sequence>
-          <Series.Sequence durationInFrames={180}><S2Morph /></Series.Sequence>
-          <Series.Sequence durationInFrames={180}><S3Coverage /></Series.Sequence>
-          <Series.Sequence durationInFrames={150}><S4Honesty /></Series.Sequence>
-          <Series.Sequence durationInFrames={150}><S5Live /></Series.Sequence>
-          <Series.Sequence durationInFrames={150}><S6CTA /></Series.Sequence>
+          <Series.Sequence durationInFrames={150}><S2Morph /></Series.Sequence>
+          <Series.Sequence durationInFrames={180}><SFeatures /></Series.Sequence>
+          <Series.Sequence durationInFrames={180}><SSecurity /></Series.Sequence>
+          <Series.Sequence durationInFrames={165}><S3Coverage /></Series.Sequence>
+          <Series.Sequence durationInFrames={120}><S5Live /></Series.Sequence>
+          <Series.Sequence durationInFrames={165}><S6CTA /></Series.Sequence>
         </Series>
       )}
     </AbsoluteFill>

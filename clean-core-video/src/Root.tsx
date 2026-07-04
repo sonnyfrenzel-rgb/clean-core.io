@@ -2,13 +2,13 @@ import { Composition } from 'remotion';
 import { CleanCoreVideo } from './CleanCoreVideo';
 
 const FPS = 30;
-const DURATION = 30 * FPS; // 30 seconds
+const DURATION = 35 * FPS; // 35 seconds — v2.0 full cut (hook → morph → features → security → limits → proof → CTA)
 const DURATION_SHORT = 15 * FPS; // 15 seconds
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
-      {/* 30s — full narrative. LinkedIn feed, square (highest completion). */}
+      {/* 35s — full v2.0 narrative. LinkedIn feed, square (highest completion). */}
       <Composition
         id="CleanCoreSquare"
         component={CleanCoreVideo}
@@ -28,7 +28,7 @@ export const RemotionRoot: React.FC = () => {
         height={1080}
         defaultProps={{ short: true }}
       />
-      {/* Optional vertical variant (Stories / mobile-first) — 30s. */}
+      {/* Optional vertical variant (Stories / mobile-first) — 35s. */}
       <Composition
         id="CleanCoreVertical"
         component={CleanCoreVideo}
