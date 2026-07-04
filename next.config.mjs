@@ -4,8 +4,21 @@ import withBundleAnalyzer from '@next/bundle-analyzer';
 const nextConfig = {
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
+  // Do not leak the framework via the X-Powered-By header (ZAP 10037).
+  poweredByHeader: false,
   async headers() {
     return [
+      {
+        // API responses are JSON — lock them down with a restrictive CSP so a scanner
+        // (and browsers) see an explicit policy on every /api response (ZAP 10038).
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
+          },
+        ],
+      },
       {
         source: '/:path*',
         headers: [
