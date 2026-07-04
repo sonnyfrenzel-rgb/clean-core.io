@@ -329,25 +329,37 @@ const SSecurity: React.FC = () => (
 );
 
 /* ================= MAIN ================= */
-const FADE = () => (
-  <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
-);
+// Background music with a gentle fade-in and a fade-out over the final ~1.5s.
+const BgAudio: React.FC<{ src: string }> = ({ src }) => {
+  const { durationInFrames } = useVideoConfig();
+  return (
+    <Audio
+      src={staticFile(src)}
+      volume={(f) =>
+        interpolate(f, [0, 20, durationInFrames - 45, durationInFrames - 1], [0, 0.55, 0.55, 0], {
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'clamp',
+        })
+      }
+    />
+  );
+};
 
 export const CleanCoreVideo: React.FC<{ short?: boolean; audioSrc?: string }> = ({ short = false, audioSrc }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: C.bg0 }}>
       <Background />
       {/* Background music — drop an mp3 in public/ and set audioSrc (e.g. "audio/bg.mp3"). */}
-      {audioSrc && <Audio src={staticFile(audioSrc)} volume={0.55} />}
+      {audioSrc && <BgAudio src={audioSrc} />}
       {short ? (
         /* 15s cut — hook → morph → coverage(+limits) → CTA. Sequences 60/123/153/168 − 3×18 = 450. */
         <TransitionSeries>
           <TransitionSeries.Sequence durationInFrames={60}><S1Hook /></TransitionSeries.Sequence>
-          <FADE />
+          <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
           <TransitionSeries.Sequence durationInFrames={123}><S2Morph /></TransitionSeries.Sequence>
-          <FADE />
+          <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
           <TransitionSeries.Sequence durationInFrames={153}><S3Coverage /></TransitionSeries.Sequence>
-          <FADE />
+          <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
           <TransitionSeries.Sequence durationInFrames={168}><S6CTA /></TransitionSeries.Sequence>
         </TransitionSeries>
       ) : (
@@ -355,17 +367,17 @@ export const CleanCoreVideo: React.FC<{ short?: boolean; audioSrc?: string }> = 
            Sequences 90/183/243/243/213/153/183 − 6×18 = 1200. */
         <TransitionSeries>
           <TransitionSeries.Sequence durationInFrames={90}><S1Hook /></TransitionSeries.Sequence>
-          <FADE />
+          <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
           <TransitionSeries.Sequence durationInFrames={183}><S2Morph /></TransitionSeries.Sequence>
-          <FADE />
+          <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
           <TransitionSeries.Sequence durationInFrames={243}><SFeatures /></TransitionSeries.Sequence>
-          <FADE />
+          <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
           <TransitionSeries.Sequence durationInFrames={243}><SSecurity /></TransitionSeries.Sequence>
-          <FADE />
+          <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
           <TransitionSeries.Sequence durationInFrames={213}><S3Coverage /></TransitionSeries.Sequence>
-          <FADE />
+          <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
           <TransitionSeries.Sequence durationInFrames={153}><S5Live /></TransitionSeries.Sequence>
-          <FADE />
+          <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
           <TransitionSeries.Sequence durationInFrames={183}><S6CTA /></TransitionSeries.Sequence>
         </TransitionSeries>
       )}
