@@ -109,6 +109,14 @@ export default function Home() {
               "@type": "Answer",
               "text": "Clean-Core.io automatically analyzes ABAP code and converts it to SAP BTP CAP Node.js services or cloud-ready RAP components."
             }
+          },
+          {
+            "@type": "Question",
+            "name": "How do you accelerate SAP Clean Core custom ABAP refactoring?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Clean-Core.io accelerates Clean Core modernization — it speeds the work up for you, it doesn't blindly automate it. A deterministic engine parses your custom ABAP (classes, reports, custom tables) with syntax-tree and data-flow analysis, then maps direct database reads (e.g. VBAK, BSEG) to released successor APIs using SAP's official Cloudification Repository — the same source behind the SAP ABAP Test Cockpit (ATC) — plus hand-curated field-level mappings. Tightly-coupled logic is drafted into cloud-compliant SAP Business Technology Platform (BTP) Cloud Application Programming Model (CAP) services or in-app RESTful Application Programming Model (RAP) components for you to review. Every finding is evidence-backed — proven, not claimed — and frozen into a signed, exportable audit evidence pack."
+            }
           }
         ]
       },
