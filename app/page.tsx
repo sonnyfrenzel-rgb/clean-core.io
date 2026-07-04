@@ -851,7 +851,7 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
           <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-12 font-light max-w-2xl mx-auto">Import the generated abapGit package into your Eclipse ADT, compile the code, and run the ABAP-Unit tests&mdash;all in your own sandbox.</p>
           <FooterCTA />
 
-          <div className="mt-20 pt-12 border-t border-gray-800">
+          <div id="site-footer" className="mt-20 pt-12 border-t border-gray-800 scroll-mt-24">
             <SiteFooter dark />
           </div>
 
