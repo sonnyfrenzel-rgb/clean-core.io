@@ -5,21 +5,25 @@ import { getMappedCatalogObjectNames, objectToSlug, CATALOG_LETTERS } from '@/li
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
   const releaseDate = new Date(APP_RELEASE_DATE);
+  // Core marketing/legal pages are edited far more often than the release date implies.
+  // Stamp them with the sitemap generation (deploy) time so Google gets a genuine freshness
+  // signal and re-crawls them, instead of a single static lastmod for every URL.
+  const now = new Date();
 
-  // Existing static routes (unchanged).
+  // Core, index-worthy routes — freshness-stamped at build/ISR time.
   const staticRoutes: MetadataRoute.Sitemap = [
-    { url: baseUrl, lastModified: releaseDate, changeFrequency: 'daily', priority: 1.0 },
-    { url: `${baseUrl}/how-to`, lastModified: releaseDate, changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${baseUrl}/knowledge`, lastModified: releaseDate, changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${baseUrl}/abap-custom-code-analysis`, lastModified: releaseDate, changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${baseUrl}/clean-core-score`, lastModified: releaseDate, changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${baseUrl}/sap-tier-2-extensions`, lastModified: releaseDate, changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${baseUrl}/how-it-works`, lastModified: releaseDate, changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${baseUrl}/about`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${baseUrl}/changelog`, lastModified: releaseDate, changeFrequency: 'weekly', priority: 0.6 },
-    { url: `${baseUrl}/whitepaper`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.9 },
-    { url: `${baseUrl}/tenant-security`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${baseUrl}/trust`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.6 },
+    { url: baseUrl, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${baseUrl}/how-to`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${baseUrl}/knowledge`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${baseUrl}/abap-custom-code-analysis`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${baseUrl}/clean-core-score`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${baseUrl}/sap-tier-2-extensions`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${baseUrl}/how-it-works`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${baseUrl}/about`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${baseUrl}/changelog`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
+    { url: `${baseUrl}/whitepaper`, lastModified: now, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${baseUrl}/tenant-security`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${baseUrl}/trust`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${baseUrl}/impressum`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.4 },
     { url: `${baseUrl}/datenschutz`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.4 },
   ];
