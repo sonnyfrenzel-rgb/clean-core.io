@@ -13,7 +13,11 @@ export const metadata: Metadata = {
   title: 'Clean-Core.io — Free SAP Clean Core Modernization Assistant',
   description: 'Automatically analyze and transform custom legacy ABAP operations into clean-code, cloud-native Node.js architectures following official SAP Clean Core guidelines.',
   icons: {
-    icon: '/icon.svg',
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/logo.png', type: 'image/png', sizes: '512x512' },
+    ],
+    apple: '/logo.png',
   },
   openGraph: {
     title: 'Clean-Core.io — Free SAP Clean Core Modernization Assistant',

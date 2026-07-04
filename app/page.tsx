@@ -58,7 +58,7 @@ export default function Home() {
         "@id": "https://clean-core.io/#organization",
         "name": "Clean-Core.io",
         "url": "https://clean-core.io",
-        "logo": "https://clean-core.io/icon.svg",
+        "logo": "https://clean-core.io/logo.png",
         "sameAs": [
           "https://github.com/sonnyfrenzel-rgb/clean-core.io",
           "https://www.linkedin.com/company/clean-core-io"
