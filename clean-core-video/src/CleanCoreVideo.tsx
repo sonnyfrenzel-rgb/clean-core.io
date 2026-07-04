@@ -1,20 +1,22 @@
 import React from 'react';
 import {
   AbsoluteFill,
-  Series,
+  Audio,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
   interpolate,
   spring,
   Easing,
-  // OffthreadVideo,   // ← uncomment to drop in real screen recordings
-  // staticFile,
 } from 'remotion';
+import { TransitionSeries, linearTiming } from '@remotion/transitions';
+import { fade } from '@remotion/transitions/fade';
 
 /* ------------------------------------------------------------------ *
- *  clean-core.io — LinkedIn spot
+ *  clean-core.io — LinkedIn spot (v2.0)
  *  Narrative: deterministic, transparent coverage, honest limitations.
- *  30s @ 30fps. Text-driven (LinkedIn autoplays muted).
+ *  40s @ 30fps. Text-driven (LinkedIn autoplays muted).
+ *  Premium motion: aurora bg · crossfades · draw-on icons · count-ups.
  * ------------------------------------------------------------------ */
 
 const FONT = '"Archivo", "Inter", system-ui, -apple-system, sans-serif';
@@ -36,47 +38,75 @@ const useFadeIn = (start = 0, len = 12) => {
   const frame = useCurrentFrame();
   return interpolate(frame, [start, start + len], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
 };
-const usePop = (delay = 0, damping = 14) => {
+// Slightly over-damped spring = clean, confident entrances with no playful overshoot.
+const usePop = (delay = 0, damping = 20) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  return spring({ frame: frame - delay, fps, config: { damping, mass: 0.7 } });
+  return spring({ frame: frame - delay, fps, config: { damping, mass: 0.6, stiffness: 120 } });
+};
+// Gentle "breathing" 0..1 for tasteful glow pulses.
+const useBreath = (speed = 0.06, phase = 0) => {
+  const frame = useCurrentFrame();
+  return 0.5 + 0.5 * Math.sin(frame * speed + phase);
 };
 
 /* ---------- shared visuals ---------- */
 const Background: React.FC = () => {
   const frame = useCurrentFrame();
-  const drift = interpolate(frame, [0, 900], [0, 40]);
+  const { durationInFrames } = useVideoConfig();
+  const t = frame / 30; // seconds
+  // Slowly drifting aurora blobs — depth, not decoration.
+  const b1x = 30 + Math.sin(t * 0.45) * 12;
+  const b1y = 24 + Math.cos(t * 0.38) * 9;
+  const b2x = 72 + Math.cos(t * 0.33) * 10;
+  const b2y = 80 + Math.sin(t * 0.42) * 8;
+  const gridDrift = interpolate(frame, [0, durationInFrames], [0, 60]);
   return (
-    <AbsoluteFill style={{ background: `radial-gradient(120% 120% at 30% 20%, ${C.bg1} 0%, ${C.bg0} 60%)` }}>
+    <AbsoluteFill style={{ background: `radial-gradient(120% 120% at 30% 20%, ${C.bg1} 0%, ${C.bg0} 62%)` }}>
+      <AbsoluteFill style={{ background: `radial-gradient(38% 30% at ${b1x}% ${b1y}%, rgba(99,102,241,0.22) 0%, transparent 70%)` }} />
+      <AbsoluteFill style={{ background: `radial-gradient(42% 33% at ${b2x}% ${b2y}%, rgba(52,211,153,0.16) 0%, transparent 70%)` }} />
+      <AbsoluteFill style={{ background: `radial-gradient(30% 26% at ${100 - b1x}% ${Math.max(0, b2y - 34)}%, rgba(45,212,191,0.10) 0%, transparent 72%)` }} />
       {/* faint grid */}
       <AbsoluteFill
         style={{
           backgroundImage:
             'linear-gradient(rgba(148,163,184,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.06) 1px, transparent 1px)',
           backgroundSize: '54px 54px',
-          transform: `translateY(${drift}px)`,
-          maskImage: 'radial-gradient(80% 80% at 50% 40%, black 40%, transparent 100%)',
+          transform: `translateY(${gridDrift}px)`,
+          maskImage: 'radial-gradient(85% 85% at 50% 40%, black 35%, transparent 100%)',
         }}
       />
-      {/* green glow */}
-      <AbsoluteFill
-        style={{
-          background: `radial-gradient(40% 30% at 70% 85%, ${C.greenDim} 0%, transparent 70%)`,
-        }}
-      />
+      {/* vignette for focus */}
+      <AbsoluteFill style={{ background: 'radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(2,6,23,0.55) 100%)' }} />
     </AbsoluteFill>
   );
 };
 
-const StatusDot: React.FC<{ type: 'ok' | 'warn' | 'no'; size?: number }> = ({ type, size = 34 }) => {
+/* Status icon with an optional draw-on-stroke animation (drawAt = frame delay). */
+const StatusDot: React.FC<{ type: 'ok' | 'warn' | 'no'; size?: number; drawAt?: number }> = ({ type, size = 34, drawAt }) => {
   const fill = type === 'ok' ? C.green : type === 'warn' ? C.amber : C.red;
+  const draw = usePop(drawAt ?? 0);
+  const dash = 26;
+  const off = drawAt != null ? dash * (1 - draw) : 0;
   return (
     <svg width={size} height={size} viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="11" fill={fill} opacity={0.18} />
       <circle cx="12" cy="12" r="11" fill="none" stroke={fill} strokeWidth="1.5" />
-      {type === 'ok' && <path d="M7 12.5l3 3 7-7" fill="none" stroke={fill} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />}
+      {type === 'ok' && <path d="M7 12.5l3 3 7-7" fill="none" stroke={fill} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={dash} strokeDashoffset={off} />}
       {type === 'warn' && <path d="M12 6.5v7M12 16.6v.2" fill="none" stroke={fill} strokeWidth="2.4" strokeLinecap="round" />}
       {type === 'no' && <path d="M8 8l8 8M16 8l-8 8" fill="none" stroke={fill} strokeWidth="2.2" strokeLinecap="round" />}
+    </svg>
+  );
+};
+
+const ShieldDot: React.FC<{ size?: number; drawAt?: number }> = ({ size = 32, drawAt }) => {
+  const draw = usePop(drawAt ?? 0);
+  const dash = 20;
+  const off = drawAt != null ? dash * (1 - draw) : 0;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24">
+      <path d="M12 2l7 3v6c0 4.6-3 7.9-7 9-4-1.1-7-4.4-7-9V5l7-3z" fill={C.green} opacity={0.16} stroke={C.green} strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M8.4 12l2.4 2.4L15.7 9.4" fill="none" stroke={C.green} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={dash} strokeDashoffset={off} />
     </svg>
   );
 };
@@ -118,18 +148,18 @@ const CodePanel: React.FC<{ title: string; lines: string[]; accent: string; opac
 /* ================= SCENES ================= */
 
 const S1Hook: React.FC = () => {
-  const pop = usePop(6, 12);
-  const op = useFadeIn(0, 12);
-  const scale = interpolate(pop, [0, 1], [0.92, 1]);
-  const badge = useFadeIn(20, 12);
+  const pop = usePop(4);
+  const scale = interpolate(pop, [0, 1], [0.94, 1]);
+  const badge = useFadeIn(16, 12);
+  const glow = useBreath(0.07);
   return (
-    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', opacity: op }}>
+    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
       <div style={{ transform: `scale(${scale})` }}>
-        <div style={{ opacity: badge, display: 'inline-flex', alignItems: 'center', gap: 12, border: `1px solid ${C.border}`, background: C.greenDim, borderRadius: 999, padding: '10px 22px', marginBottom: 34 }}>
+        <div style={{ opacity: badge, display: 'inline-flex', alignItems: 'center', gap: 12, border: `1px solid rgba(52,211,153,0.4)`, background: C.greenDim, borderRadius: 999, padding: '10px 22px', marginBottom: 34, boxShadow: `0 0 ${26 * glow}px rgba(52,211,153,${0.18 * glow})` }}>
           <span style={{ color: C.green, fontFamily: FONT, fontWeight: 800, fontSize: 22, letterSpacing: 2 }}>v2.0 · FREE COMMUNITY EDITION</span>
         </div>
         <div style={{ color: C.text, fontFamily: FONT, fontWeight: 900, fontSize: 92, lineHeight: 1, letterSpacing: -1 }}>The SAP Architect's</div>
-        <div style={{ color: C.green, fontFamily: FONT, fontWeight: 900, fontSize: 100, lineHeight: 1.05, letterSpacing: -1 }}>Clean Core Accelerator</div>
+        <div style={{ color: C.green, fontFamily: FONT, fontWeight: 900, fontSize: 100, lineHeight: 1.05, letterSpacing: -1, textShadow: `0 0 ${40 * glow}px rgba(52,211,153,${0.35 * glow})` }}>Clean Core Accelerator</div>
       </div>
     </AbsoluteFill>
   );
@@ -142,15 +172,14 @@ const S2Morph: React.FC = () => {
   const ts = ['const items = await', '  salesOrderItem', "  .select('SalesOrder',", "          'Material');"];
   const okPop = usePop(70);
   return (
-    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', opacity: useFadeIn(0, 10) }}>
+    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
       <div style={{ position: 'relative', width: 860 }}>
         <CodePanel title="Legacy ABAP" lines={abap} accent={C.muted} opacity={interpolate(t, [0, 1], [1, 0.16])} />
         <div style={{ position: 'absolute', inset: 0 }}>
-          <CodePanel title="Clean Core · TypeScript" lines={ts} accent={C.green} opacity={t} style={{ borderColor: 'rgba(52,211,153,0.35)' }} />
+          <CodePanel title="Clean Core · TypeScript" lines={ts} accent={C.green} opacity={t} style={{ borderColor: 'rgba(52,211,153,0.35)', boxShadow: `0 0 ${interpolate(t, [0, 1], [0, 60])}px rgba(52,211,153,0.12)` }} />
         </div>
-        {/* deterministic ✓ marker */}
         <div style={{ position: 'absolute', right: -18, top: 96, display: 'flex', alignItems: 'center', gap: 10, transform: `scale(${okPop})`, background: C.panel, border: `1px solid rgba(52,211,153,0.4)`, borderRadius: 12, padding: '8px 14px' }}>
-          <StatusDot type="ok" size={26} />
+          <StatusDot type="ok" size={26} drawAt={74} />
           <span style={{ color: C.green, fontFamily: FONT, fontWeight: 700, fontSize: 22 }}>released CDS view · I_SalesOrderItem</span>
         </div>
       </div>
@@ -166,13 +195,14 @@ const S3Coverage: React.FC = () => {
     { type: 'no', label: 'Dynpro UI · kernel calls', note: 'Out of scope — flagged' },
   ];
   return (
-    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', opacity: useFadeIn(0, 10) }}>
+    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
       <div style={{ width: 900 }}>
         {rows.map((r, i) => {
-          const p = usePop(10 + i * 12);
+          const d = 10 + i * 12;
+          const p = usePop(d);
           return (
             <div key={i} style={{ opacity: p, transform: `translateX(${interpolate(p, [0, 1], [40, 0])}px)`, display: 'flex', alignItems: 'center', gap: 22, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 18, padding: '24px 26px', marginBottom: 20 }}>
-              <StatusDot type={r.type} />
+              <StatusDot type={r.type} drawAt={r.type === 'ok' ? d + 3 : undefined} />
               <div style={{ flex: 1 }}>
                 <div style={{ color: C.text, fontFamily: FONT, fontWeight: 700, fontSize: 34 }}>{r.label}</div>
                 <div style={{ color: r.type === 'ok' ? C.green : r.type === 'warn' ? C.amber : C.red, fontFamily: FONT, fontWeight: 600, fontSize: 24, marginTop: 4 }}>{r.note}</div>
@@ -186,47 +216,24 @@ const S3Coverage: React.FC = () => {
   );
 };
 
-const S4Honesty: React.FC = () => {
-  const op = useFadeIn(0, 12);
-  const pop = usePop(10);
-  return (
-    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', opacity: op }}>
-      <div style={{ transform: `scale(${interpolate(pop, [0, 1], [0.94, 1])})`, maxWidth: 900 }}>
-        <div style={{ display: 'inline-flex', gap: 16, marginBottom: 30 }}>
-          <StatusDot type="warn" size={64} />
-        </div>
-        <div style={{ color: C.text, fontFamily: FONT, fontWeight: 800, fontSize: 66, lineHeight: 1.08 }}>
-          Honest limitations.
-        </div>
-        <div style={{ color: C.muted, fontFamily: FONT, fontWeight: 500, fontSize: 36, lineHeight: 1.35, marginTop: 22 }}>
-          We tell you exactly what to hand to an expert — instead of pretending it's fully automatic.
-        </div>
-      </div>
-    </AbsoluteFill>
-  );
-};
-
 const S5Live: React.FC = () => {
-  const op = useFadeIn(0, 12);
-  const pop = usePop(8);
+  const frame = useCurrentFrame();
+  const pop = usePop(6);
+  const cnt = (target: number) => Math.round(interpolate(frame, [12, 48], [0, target], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }));
+  const metrics = [{ v: cnt(68), l: 'Fully', c: C.green }, { v: cnt(24), l: 'Review', c: C.amber }, { v: cnt(8), l: 'Out of scope', c: C.red }];
   return (
-    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', opacity: op }}>
-      {/* Browser frame — drop your real screen recording where noted below */}
-      <div style={{ width: 900, borderRadius: 20, overflow: 'hidden', border: `1px solid ${C.border}`, transform: `scale(${interpolate(pop, [0, 1], [0.95, 1])})`, boxShadow: '0 30px 80px rgba(0,0,0,0.5)' }}>
+    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
+      <div style={{ width: 900, borderRadius: 20, overflow: 'hidden', border: `1px solid ${C.border}`, transform: `scale(${interpolate(pop, [0, 1], [0.96, 1])})`, boxShadow: '0 30px 80px rgba(0,0,0,0.5)' }}>
         <div style={{ height: 52, background: '#0b1220', display: 'flex', alignItems: 'center', gap: 10, padding: '0 20px' }}>
           {['#f87171', '#fbbf24', '#34d399'].map((c) => <div key={c} style={{ width: 14, height: 14, borderRadius: 99, background: c }} />)}
           <div style={{ marginLeft: 16, color: C.muted, fontFamily: FONT, fontSize: 22 }}>clean-core.io / analyze</div>
         </div>
-        {/*
-          REAL FOOTAGE: replace the mock below with your screen recording:
-          <OffthreadVideo src={staticFile('screens/analyze.mp4')} style={{ width: '100%', display: 'block' }} muted />
-        */}
         <div style={{ background: '#0d1526', height: 470, padding: 34, fontFamily: FONT }}>
           <div style={{ color: C.muted, fontSize: 22, fontWeight: 700, letterSpacing: 2 }}>COVERAGE VERDICT</div>
           <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
-            {[{ v: '68%', l: 'Fully', c: C.green }, { v: '24%', l: 'Review', c: C.amber }, { v: '8%', l: 'Out of scope', c: C.red }].map((m) => (
+            {metrics.map((m) => (
               <div key={m.l} style={{ flex: 1, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22 }}>
-                <div style={{ color: m.c, fontSize: 54, fontWeight: 900 }}>{m.v}</div>
+                <div style={{ color: m.c, fontSize: 54, fontWeight: 900 }}>{m.v}%</div>
                 <div style={{ color: C.muted, fontSize: 24, fontWeight: 600 }}>{m.l}</div>
               </div>
             ))}
@@ -240,18 +247,18 @@ const S5Live: React.FC = () => {
 };
 
 const S6CTA: React.FC = () => {
-  const op = useFadeIn(0, 12);
-  const pop = usePop(8, 11);
-  const btn = usePop(28, 12);
+  const pop = usePop(6);
+  const btn = usePop(24);
+  const glow = useBreath(0.08);
   return (
-    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', opacity: op }}>
-      <div style={{ transform: `scale(${interpolate(pop, [0, 1], [0.92, 1])})` }}>
-        <div style={{ display: 'inline-flex', border: `1px solid ${C.border}`, background: C.greenDim, borderRadius: 999, padding: '8px 20px', marginBottom: 24 }}>
+    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+      <div style={{ transform: `scale(${interpolate(pop, [0, 1], [0.94, 1])})` }}>
+        <div style={{ display: 'inline-flex', border: `1px solid rgba(52,211,153,0.4)`, background: C.greenDim, borderRadius: 999, padding: '8px 20px', marginBottom: 24 }}>
           <span style={{ color: C.green, fontFamily: FONT, fontWeight: 800, fontSize: 22, letterSpacing: 2 }}>FREE COMMUNITY EDITION · v2.0</span>
         </div>
         <div style={{ color: C.text, fontFamily: FONT, fontWeight: 900, fontSize: 84, lineHeight: 1.03 }}>Proven,</div>
         <div style={{ color: C.green, fontFamily: FONT, fontWeight: 900, fontSize: 92, lineHeight: 1.05, marginBottom: 40 }}>not claimed.</div>
-        <div style={{ transform: `scale(${btn})`, display: 'inline-flex', alignItems: 'center', gap: 14, background: C.green, color: '#04240f', fontFamily: FONT, fontWeight: 900, fontSize: 40, padding: '22px 48px', borderRadius: 16 }}>
+        <div style={{ transform: `scale(${btn})`, display: 'inline-flex', alignItems: 'center', gap: 14, background: C.green, color: '#04240f', fontFamily: FONT, fontWeight: 900, fontSize: 40, padding: '22px 48px', borderRadius: 16, boxShadow: `0 0 ${50 * glow}px rgba(52,211,153,${0.45 * glow})` }}>
           Start free → clean-core.io
         </div>
         <div style={{ color: C.muted, fontFamily: FONT, fontWeight: 500, fontSize: 28, marginTop: 26, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto' }}>
@@ -263,16 +270,9 @@ const S6CTA: React.FC = () => {
 };
 
 /* ---------- v2.0 section scenes (features + security) ---------- */
-const ShieldDot: React.FC<{ size?: number }> = ({ size = 32 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24">
-    <path d="M12 2l7 3v6c0 4.6-3 7.9-7 9-4-1.1-7-4.4-7-9V5l7-3z" fill={C.green} opacity={0.16} stroke={C.green} strokeWidth="1.4" strokeLinejoin="round" />
-    <path d="M8.4 12l2.4 2.4L15.7 9.4" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
 const SectionHead: React.FC<{ kicker: string; title: string }> = ({ kicker, title }) => {
   const op = useFadeIn(0, 12);
-  const y = interpolate(usePop(4), [0, 1], [20, 0]);
+  const y = interpolate(usePop(2), [0, 1], [20, 0]);
   return (
     <div style={{ position: 'absolute', top: 120, left: 90, right: 90, textAlign: 'center', opacity: op, transform: `translateY(${y}px)` }}>
       <div style={{ color: C.green, fontFamily: FONT, fontWeight: 800, fontSize: 26, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>{kicker}</div>
@@ -284,10 +284,11 @@ const SectionHead: React.FC<{ kicker: string; title: string }> = ({ kicker, titl
 const IconList: React.FC<{ items: string[]; icon: 'ok' | 'shield' }> = ({ items, icon }) => (
   <div style={{ position: 'absolute', top: 350, left: 90, right: 90 }}>
     {items.map((label, i) => {
-      const p = usePop(12 + i * 10);
+      const d = 12 + i * 11;
+      const p = usePop(d);
       return (
         <div key={i} style={{ opacity: p, transform: `translateX(${interpolate(p, [0, 1], [44, 0])}px)`, display: 'flex', alignItems: 'center', gap: 20, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 24px', marginBottom: 16 }}>
-          {icon === 'shield' ? <ShieldDot size={32} /> : <StatusDot type="ok" size={30} />}
+          {icon === 'shield' ? <ShieldDot size={32} drawAt={d + 3} /> : <StatusDot type="ok" size={30} drawAt={d + 3} />}
           <div style={{ color: C.text, fontFamily: FONT, fontWeight: 700, fontSize: 30, lineHeight: 1.2 }}>{label}</div>
         </div>
       );
@@ -296,7 +297,7 @@ const IconList: React.FC<{ items: string[]; icon: 'ok' | 'shield' }> = ({ items,
 );
 
 const SFeatures: React.FC = () => (
-  <AbsoluteFill style={{ opacity: useFadeIn(0, 10) }}>
+  <AbsoluteFill>
     <SectionHead kicker="Everything included — no paywall" title="One free workspace. Every feature." />
     <IconList
       icon="ok"
@@ -312,7 +313,7 @@ const SFeatures: React.FC = () => (
 );
 
 const SSecurity: React.FC = () => (
-  <AbsoluteFill style={{ opacity: useFadeIn(0, 10) }}>
+  <AbsoluteFill>
     <SectionHead kicker="Secure by design" title="Security-hardened. Audit-friendly." />
     <IconList
       icon="shield"
@@ -328,29 +329,45 @@ const SSecurity: React.FC = () => (
 );
 
 /* ================= MAIN ================= */
-export const CleanCoreVideo: React.FC<{ short?: boolean }> = ({ short = false }) => {
+const FADE = () => (
+  <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
+);
+
+export const CleanCoreVideo: React.FC<{ short?: boolean; audioSrc?: string }> = ({ short = false, audioSrc }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: C.bg0 }}>
       <Background />
+      {/* Background music — drop an mp3 in public/ and set audioSrc (e.g. "audio/bg.mp3"). */}
+      {audioSrc && <Audio src={staticFile(audioSrc)} volume={0.55} />}
       {short ? (
-        /* 15s cut — core + limitations, fast to CTA. Hook → Morph → Coverage(+limits) → CTA */
-        <Series>
-          <Series.Sequence durationInFrames={60}><S1Hook /></Series.Sequence>
-          <Series.Sequence durationInFrames={105}><S2Morph /></Series.Sequence>
-          <Series.Sequence durationInFrames={135}><S3Coverage /></Series.Sequence>
-          <Series.Sequence durationInFrames={150}><S6CTA /></Series.Sequence>
-        </Series>
+        /* 15s cut — hook → morph → coverage(+limits) → CTA. Sequences 60/123/153/168 − 3×18 = 450. */
+        <TransitionSeries>
+          <TransitionSeries.Sequence durationInFrames={60}><S1Hook /></TransitionSeries.Sequence>
+          <FADE />
+          <TransitionSeries.Sequence durationInFrames={123}><S2Morph /></TransitionSeries.Sequence>
+          <FADE />
+          <TransitionSeries.Sequence durationInFrames={153}><S3Coverage /></TransitionSeries.Sequence>
+          <FADE />
+          <TransitionSeries.Sequence durationInFrames={168}><S6CTA /></TransitionSeries.Sequence>
+        </TransitionSeries>
       ) : (
-        /* 40s cut — hook → morph → features → security → limits → proof → CTA, paced for readability */
-        <Series>
-          <Series.Sequence durationInFrames={90}><S1Hook /></Series.Sequence>
-          <Series.Sequence durationInFrames={165}><S2Morph /></Series.Sequence>
-          <Series.Sequence durationInFrames={225}><SFeatures /></Series.Sequence>
-          <Series.Sequence durationInFrames={225}><SSecurity /></Series.Sequence>
-          <Series.Sequence durationInFrames={195}><S3Coverage /></Series.Sequence>
-          <Series.Sequence durationInFrames={135}><S5Live /></Series.Sequence>
-          <Series.Sequence durationInFrames={165}><S6CTA /></Series.Sequence>
-        </Series>
+        /* 40s cut — hook → morph → features → security → limits → proof → CTA.
+           Sequences 90/183/243/243/213/153/183 − 6×18 = 1200. */
+        <TransitionSeries>
+          <TransitionSeries.Sequence durationInFrames={90}><S1Hook /></TransitionSeries.Sequence>
+          <FADE />
+          <TransitionSeries.Sequence durationInFrames={183}><S2Morph /></TransitionSeries.Sequence>
+          <FADE />
+          <TransitionSeries.Sequence durationInFrames={243}><SFeatures /></TransitionSeries.Sequence>
+          <FADE />
+          <TransitionSeries.Sequence durationInFrames={243}><SSecurity /></TransitionSeries.Sequence>
+          <FADE />
+          <TransitionSeries.Sequence durationInFrames={213}><S3Coverage /></TransitionSeries.Sequence>
+          <FADE />
+          <TransitionSeries.Sequence durationInFrames={153}><S5Live /></TransitionSeries.Sequence>
+          <FADE />
+          <TransitionSeries.Sequence durationInFrames={183}><S6CTA /></TransitionSeries.Sequence>
+        </TransitionSeries>
       )}
     </AbsoluteFill>
   );

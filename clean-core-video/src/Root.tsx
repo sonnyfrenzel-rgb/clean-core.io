@@ -5,6 +5,10 @@ const FPS = 30;
 const DURATION = 40 * FPS; // 40 seconds — v2.0 full cut (hook → morph → features → security → limits → proof → CTA), paced for readability
 const DURATION_SHORT = 15 * FPS; // 15 seconds
 
+// Background music: drop a track in public/ (e.g. public/audio/bg.mp3) and set AUDIO.
+// Leave undefined to render silent. See README for licensing-safe sources.
+const AUDIO: string | undefined = undefined; // e.g. 'audio/bg.mp3'
+
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -16,7 +20,7 @@ export const RemotionRoot: React.FC = () => {
         fps={FPS}
         width={1080}
         height={1080}
-        defaultProps={{ short: false }}
+        defaultProps={{ short: false, audioSrc: AUDIO }}
       />
       {/* 15s — core + limitations, fast to CTA. Best for cold reach / higher completion. */}
       <Composition
@@ -26,9 +30,9 @@ export const RemotionRoot: React.FC = () => {
         fps={FPS}
         width={1080}
         height={1080}
-        defaultProps={{ short: true }}
+        defaultProps={{ short: true, audioSrc: AUDIO }}
       />
-      {/* Optional vertical variant (Stories / mobile-first) — 35s. */}
+      {/* Optional vertical variant (Stories / mobile-first) — 40s. */}
       <Composition
         id="CleanCoreVertical"
         component={CleanCoreVideo}
@@ -36,7 +40,7 @@ export const RemotionRoot: React.FC = () => {
         fps={FPS}
         width={1080}
         height={1920}
-        defaultProps={{ short: false }}
+        defaultProps={{ short: false, audioSrc: AUDIO }}
       />
     </>
   );
