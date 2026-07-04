@@ -294,9 +294,9 @@ export default function Home() {
 
         {/* GEO Quick Answer Block */}
         <div className="max-w-4xl mx-auto px-6 mt-16 relative z-20 animate-in fade-in slide-in-from-bottom-20 duration-1000 delay-600">
-          <QuickAnswer 
-            question="How do you automate SAP Clean Core custom ABAP refactoring?"
-            answer="Clean-Core.io automatically modernizes legacy SAP architectures by parsing custom ABAP code (classes, reports, custom tables) via syntax trees and data-flow analyses. It maps direct database reads (e.g., VBAK, BSEG) to standard, released APIs using SAP's official Cloudification Repository — the same source SAP's own ATC compliance checks use — layered with hand-curated field-level mappings. Tightly-coupled logic is refactored into cloud-compliant BTP CAP Node.js microservices or in-app RAP components."
+          <QuickAnswer
+            question="How do you accelerate SAP Clean Core custom ABAP refactoring?"
+            answer="Clean-Core.io accelerates Clean Core modernization — it speeds the work up for you, it doesn't blindly automate it. A deterministic engine parses your custom ABAP (classes, reports, custom tables) with syntax-tree and data-flow analysis, then maps direct database reads (e.g. VBAK, BSEG) to released successor APIs using SAP's official Cloudification Repository — the same source behind the SAP ABAP Test Cockpit (ATC) — plus hand-curated field-level mappings. Tightly-coupled logic is drafted into cloud-compliant SAP Business Technology Platform (BTP) Cloud Application Programming Model (CAP) services or in-app RESTful Application Programming Model (RAP) components for you to review. Every finding is evidence-backed — proven, not claimed — and frozen into a signed, exportable audit evidence pack, so you get a faster first draft and a defensible decision trail with an architect always in the loop."
           />
         </div>
         
@@ -380,13 +380,13 @@ export default function Home() {
             
             <div className="relative z-10 text-center md:text-left mb-10">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-100">
-                Complements SAP ATC &amp; ADT
+                Complements Your SAP Toolchain
               </span>
               <h3 className="text-2xl sm:text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none mb-4 uppercase">
                 How We Complement Your SAP Tools
               </h3>
               <p className="text-slate-500 text-sm md:text-base max-w-3xl font-medium leading-relaxed">
-                SAP ATC is the authoritative check for Clean Core violations — keep using it. Clean-Core.io picks up from there: it maps each finding against SAP&apos;s Cloudification Repository and drafts BTP or RAP scaffolding for you to review, then validate back in ADT and ATC.
+The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violations — keep using it. Clean-Core.io picks up from there: it maps each finding against SAP&apos;s Cloudification Repository and drafts BTP or RAP scaffolding for you to review, then validate back in your ABAP Development Tools (ADT) and ATC.
               </p>
               {catalogStats.classifiedObjects > 0 && (
                 <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-xs font-bold">
@@ -427,7 +427,7 @@ export default function Home() {
                 {
                   title: "Business Process Blueprinting",
                   sap: { badge: "Not Supported", desc: "No process flow visualization available." },
-                  cc: { badge: "Visualized", desc: "Generates BPMN 2.0 flows directly from custom code analysis." }
+                  cc: { badge: "Visualized", desc: "Generates Business Process Model and Notation (BPMN 2.0) flows directly from custom code analysis." }
                 }
               ].map((row, idx) => (
                 <div key={idx} className="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden">
@@ -511,7 +511,7 @@ export default function Home() {
                 {
                   title: "Business Process Blueprinting",
                   sap: { badge: "Not Available", level: "none", desc: "No process flow visualization available." },
-                  cc: { badge: "Visualized", desc: "Generates BPMN 2.0 flows directly from custom code analysis." }
+                  cc: { badge: "Visualized", desc: "Generates Business Process Model and Notation (BPMN 2.0) flows directly from custom code analysis." }
                 }
               ].map((row, idx) => (
                 <div key={idx} className="grid grid-cols-[1fr_1fr_1fr] gap-4 items-stretch">
@@ -624,8 +624,8 @@ export default function Home() {
               },
               {
                 icon: <Layers className="w-8 h-8 text-green-600" />,
-                title: 'BPMN 2.0 & Business SOP',
-                desc: 'Maps modernized processes into standard BPMN 2.0 XML with swimlanes. Features a two-stage blueprint layer with RACI matrices, Level 5 SOP narratives, and internal compliance controls.',
+                title: 'BPMN 2.0 & Business Standard Operating Procedures',
+                desc: 'Maps modernized processes into standard BPMN 2.0 XML with swimlanes. Features a two-stage blueprint layer with Responsible-Accountable-Consulted-Informed (RACI) matrices, Level 5 Standard Operating Procedure (SOP) narratives, and internal compliance controls.',
                 link: '/knowledge',
                 testId: 'feature-bpmn-2-0-business-sop'
               }
