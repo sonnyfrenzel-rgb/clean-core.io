@@ -341,14 +341,14 @@ export const CleanCoreVideo: React.FC<{ short?: boolean }> = ({ short = false })
           <Series.Sequence durationInFrames={150}><S6CTA /></Series.Sequence>
         </Series>
       ) : (
-        /* 35s cut — hook → morph → features → security → limits → proof → CTA */
+        /* 40s cut — hook → morph → features → security → limits → proof → CTA, paced for readability */
         <Series>
           <Series.Sequence durationInFrames={90}><S1Hook /></Series.Sequence>
-          <Series.Sequence durationInFrames={150}><S2Morph /></Series.Sequence>
-          <Series.Sequence durationInFrames={180}><SFeatures /></Series.Sequence>
-          <Series.Sequence durationInFrames={180}><SSecurity /></Series.Sequence>
-          <Series.Sequence durationInFrames={165}><S3Coverage /></Series.Sequence>
-          <Series.Sequence durationInFrames={120}><S5Live /></Series.Sequence>
+          <Series.Sequence durationInFrames={165}><S2Morph /></Series.Sequence>
+          <Series.Sequence durationInFrames={225}><SFeatures /></Series.Sequence>
+          <Series.Sequence durationInFrames={225}><SSecurity /></Series.Sequence>
+          <Series.Sequence durationInFrames={195}><S3Coverage /></Series.Sequence>
+          <Series.Sequence durationInFrames={135}><S5Live /></Series.Sequence>
           <Series.Sequence durationInFrames={165}><S6CTA /></Series.Sequence>
         </Series>
       )}

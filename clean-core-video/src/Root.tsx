@@ -2,7 +2,7 @@ import { Composition } from 'remotion';
 import { CleanCoreVideo } from './CleanCoreVideo';
 
 const FPS = 30;
-const DURATION = 35 * FPS; // 35 seconds — v2.0 full cut (hook → morph → features → security → limits → proof → CTA)
+const DURATION = 40 * FPS; // 40 seconds — v2.0 full cut (hook → morph → features → security → limits → proof → CTA), paced for readability
 const DURATION_SHORT = 15 * FPS; // 15 seconds
 
 export const RemotionRoot: React.FC = () => {
