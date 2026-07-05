@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
 import { APP_RELEASE_DATE } from '@/lib/version';
 import { CATALOG_LETTERS } from '@/lib/abap/catalog-index';
+import { FEATURE_SLUGS } from '@/lib/features-content';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
@@ -42,5 +43,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
   ];
 
-  return [...staticRoutes, ...catalogRoutes];
+  // Feature detail pages (the landing "Learn more" subpages).
+  const featureRoutes: MetadataRoute.Sitemap = FEATURE_SLUGS.map((slug) => ({
+    url: `${baseUrl}/features/${slug}`,
+    lastModified: now,
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...featureRoutes, ...catalogRoutes];
 }

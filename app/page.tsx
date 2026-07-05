@@ -587,7 +587,7 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
       </section>
 
       {/* Features Section */}
-      <section className="py-24 md:py-32 bg-white relative">
+      <section id="features" className="py-24 md:py-32 bg-white relative scroll-mt-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20">
             <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">What You Can Do Today</h2>
@@ -599,28 +599,28 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
                 icon: <Layers className="w-8 h-8 text-green-600" />,
                 title: 'Extensibility Routing & Sign-Off',
                 desc: 'Classifies legacy custom logic against SAP Clean Core guidelines, routes between In-App RAP and Side-by-Side CAP tracks, and gates transformation behind an explicit architecture decision.',
-                link: '/sap-tier-2-extensions',
+                link: '/features/extensibility-routing',
                 testId: 'feature-extensibility-routing'
               },
               {
                 icon: <Globe className="w-8 h-8 text-green-600" />,
                 title: 'SAP Cloudification Catalog',
                 desc: 'Maps legacy objects against SAP\'s official Cloudification Repository — the same source behind SAP ATC checks — layered with curated field-level mappings. Weekly auto-synced, versioned, and audit-traceable.',
-                link: '/how-it-works',
+                link: '/features/cloudification-catalog',
                 testId: 'feature-sap-api-hub-mapping'
               },
               {
                 icon: <Cpu className="w-8 h-8 text-green-600" />,
                 title: 'Dual RAP & CAP Engine',
                 desc: 'Generates clean In-App ABAP Cloud RAP handlers or decoupled BTP CAP services. Powered by a deterministic AST resolver that linearizes OO inheritance chains before translation, preventing structural AI hallucinations.',
-                link: '/how-it-works',
+                link: '/features/rap-cap-engine',
                 testId: 'feature-dual-rap-cap-engine'
               },
               {
                 icon: <Activity className="w-8 h-8 text-green-600" />,
                 title: 'Modernization Assessment',
                 desc: 'Computes complexity and business-criticality scores, extracts a full code inventory, and maps data coupling with standard SAP table risk analysis — all before transformation.',
-                link: '/how-it-works',
+                link: '/features/modernization-assessment',
                 isNew: true,
                 testId: 'feature-business-value-audit-tco'
               },
@@ -628,14 +628,14 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
                 icon: <ShieldCheck className="w-8 h-8 text-green-600" />,
                 title: 'Compliance & Audit Evidence',
                 desc: 'Visual compliance dashboard with exportable audit pack: input fingerprints, architecture decision records, model cards, and known limitations — ready for governance reviews.',
-                link: '/how-it-works',
+                link: '/features/audit-evidence',
                 testId: 'feature-adt-cockpit-simulation'
               },
               {
                 icon: <Layers className="w-8 h-8 text-green-600" />,
                 title: 'BPMN 2.0 & Business Standard Operating Procedures',
                 desc: 'Maps modernized processes into standard BPMN 2.0 XML with swimlanes. Features a two-stage blueprint layer with Responsible-Accountable-Consulted-Informed (RACI) matrices, Level 5 Standard Operating Procedure (SOP) narratives, and internal compliance controls.',
-                link: '/knowledge',
+                link: '/features/process-blueprints',
                 testId: 'feature-bpmn-2-0-business-sop'
               }
             ].map((feature, idx) => (
