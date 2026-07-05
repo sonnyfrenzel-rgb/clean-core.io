@@ -8,6 +8,7 @@ import {
   getAllCatalogObjectNames,
 } from '@/lib/abap/catalog-index';
 import CatalogAttribution from '@/components/catalog/CatalogAttribution';
+import { jsonLdHtml } from '@/lib/json-ld';
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 
@@ -111,7 +112,7 @@ export default async function CatalogObjectPage({
 
   return (
     <main className="max-w-3xl mx-auto px-6 py-16">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
 
       <nav className="text-sm text-slate-500 mb-6">
         <Link href="/catalog" className="hover:text-slate-700">Catalog</Link>

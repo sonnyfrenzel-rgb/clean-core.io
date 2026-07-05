@@ -53,6 +53,11 @@ async function syncOne(release: string): Promise<boolean> {
   const out = JSON.stringify({ meta: artifact.meta, entries: sortedEntries }, null, 1);
 
   mkdirSync(OUT_DIR, { recursive: true });
+  // `release` originates from a CLI argument — constrain it so it can never traverse
+  // out of OUT_DIR via the path.join below.
+  if (!/^[A-Za-z0-9._-]+$/.test(release)) {
+    throw new Error(`Invalid release identifier: ${release}`);
+  }
   const outFile = path.join(OUT_DIR, `cloudification-repo.${release}.json`);
 
   // Only rewrite when content (minus fetchedAt) actually changed → stable diffs.

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Check, Info, Layers, Globe, Cpu, Activity, ShieldCheck, Workflow } from 'lucide-react';
 import { FEATURE_SLUGS, getFeature } from '@/lib/features-content';
+import { jsonLdHtml } from '@/lib/json-ld';
 
 export const revalidate = 300;
 
@@ -132,7 +133,7 @@ export default async function FeaturePage({ params }: { params: Promise<{ slug: 
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: jsonLdHtml({
             '@context': 'https://schema.org',
             '@type': 'Article',
             headline: f.title,
