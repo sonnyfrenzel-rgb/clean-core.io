@@ -235,7 +235,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                   <ul className="space-y-2 text-sm text-gray-600 font-medium italic">
                     <li className="flex items-center gap-2">• Up to 5 App transformations</li>
                     <li className="flex items-center gap-2">• Community Feedback access</li>
-                    <li className="flex items-center gap-2">• Non-commercial use only</li>
+                    <li className="flex items-center gap-2">• Free to use — review outputs before production</li>
                   </ul>
                   <p className="text-sm text-gray-500 font-bold border-t border-gray-200 pt-4">
                     Are you sure you want to sign out?

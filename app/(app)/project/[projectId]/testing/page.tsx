@@ -1233,7 +1233,7 @@ export default function TestingSandboxPage() {
                   <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
                     <h3 className="text-xs font-black text-amber-950 uppercase tracking-widest mb-2">⚠️ Warranty Disclaimer</h3>
                     <p className="text-xs text-amber-800 leading-relaxed font-medium">
-                      This platform is a non-commercial Free Community Edition environment. Access is provided entirely without warranty, guarantee, or liability. Under no circumstances should you use productive ERP data or real passwords.
+                      This is the Free Community Edition. Access is provided entirely without warranty, guarantee, or liability. Under no circumstances should you use productive ERP data or real passwords.
                     </p>
                   </div>
 

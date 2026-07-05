@@ -79,7 +79,7 @@ export default function ImpressumPage() {
             </h2>
             <div className="space-y-4 text-sm text-gray-600">
               <p>
-                <strong className="text-gray-800">Liability for Content:</strong> The contents of our pages were created with the greatest care. Since this is a free, non-commercial community application using generative AI (Free Community Edition), we cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
+                <strong className="text-gray-800">Liability for Content:</strong> The contents of our pages were created with the greatest care. Since this is a free community application using generative AI (Free Community Edition), we cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
               </p>
               <p>
                 <strong className="text-gray-800">Copyright:</strong> The content and works created by the site operator on these pages are subject to German copyright law. Contributions from third parties are marked as such. Reproduction, editing, and distribution require written consent.
@@ -89,7 +89,7 @@ export default function ImpressumPage() {
 
           <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl">
             <p className="text-sm text-amber-800 font-bold">
-              Important Note: Clean-Core.io is a purely academic, non-commercial tool for testing modern software architectures in the context of legacy code. No paid services are offered.
+              Important Note: Clean-Core.io is a free community tool for assessing and modernizing legacy SAP code. Generated outputs are drafts and must be reviewed, tested and approved by qualified architects before any productive use.
             </p>
           </div>
 

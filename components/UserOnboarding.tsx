@@ -197,7 +197,7 @@ export default function UserOnboarding() {
             <h2 className="text-xl md:text-3xl font-black tracking-tight uppercase">Join the platform</h2>
           </div>
           <p className="text-green-50 text-xs md:text-sm font-medium opacity-90 leading-relaxed">
-            Apply for free access to our non-commercial community edition. Access is manually reviewed.
+            Apply for free access to our Free Community Edition. Access is manually reviewed.
           </p>
         </div>
 
@@ -305,7 +305,7 @@ export default function UserOnboarding() {
               ⚡ System Disclaimer & Terms
             </h4>
             <p className="leading-relaxed font-medium">
-              This application is a <strong>free, non-commercial community research project</strong>. All transformation analyses and code migrations are powered by <strong>Generative AI models</strong> and may contain inaccuracies, hallucinations, or syntactical errors.
+              This application is a <strong>free community project</strong>. All transformation analyses and code migrations are powered by <strong>Generative AI models</strong> and may contain inaccuracies, hallucinations, or syntactical errors.
             </p>
             <p className="leading-relaxed font-medium">
               We assume <strong>no warranty, guarantees, or liability</strong> for the performance, reliability, or execution safety of generated codes. Before deploying any output, it must be thoroughly inspected and verified by qualified software architects.
@@ -431,7 +431,7 @@ export default function UserOnboarding() {
           <div>
             <h3 className="text-lg font-bold mb-2">2. Free Community Edition Usage</h3>
             <p className="text-sm leading-relaxed text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100 font-medium">
-              During this Free Community Edition phase, platform access is completely free of charge and intended for prototyping, educational, and research-based testing. Commercial deployment of generated code in live production environments requires a separate agreement.
+              Platform access is completely free of charge and open to everyone, for any purpose. Generated code is a draft — it must be reviewed, tested and approved by qualified architects before deployment to any live production environment.
             </p>
           </div>
 

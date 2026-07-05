@@ -996,7 +996,7 @@ export default function LandingModals() {
           <div className="pt-4 border-t border-slate-100">
             <h3 className="text-base font-bold mb-2 text-slate-900">Disclaimer</h3>
             <p className="text-xs text-slate-500 leading-normal mb-3">
-              <strong>Liability for Content:</strong> The contents of our pages were created with the greatest care. Since this is a free, non-commercial community application using generative AI (Free Community Edition), we cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
+              <strong>Liability for Content:</strong> The contents of our pages were created with the greatest care. Since this is a free community application using generative AI (Free Community Edition), we cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
             </p>
             <p className="text-xs text-slate-500 leading-normal">
               <strong>Copyright:</strong> The content and works created by the site operator on these pages are subject to German copyright law. Contributions from third parties are marked as such. Reproduction, editing, and distribution require written consent.
@@ -1004,7 +1004,7 @@ export default function LandingModals() {
           </div>
 
           <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 p-3 rounded-lg font-bold">
-            Important Note: Clean-Core.io is a purely academic, non-commercial tool for testing modern software architectures in the context of legacy code. No paid services are offered.
+            Important Note: Clean-Core.io is a free community tool for assessing and modernizing legacy SAP code. Generated outputs are drafts and must be reviewed, tested and approved by qualified architects before any productive use.
           </p>
 
           <div className="pt-4 border-t border-slate-100 text-center text-[10px] text-slate-400 font-black font-mono uppercase tracking-wider">
@@ -1145,7 +1145,7 @@ export default function LandingModals() {
           <div>
             <h3 className="text-lg font-bold mb-2">2. Free Community Edition Usage</h3>
             <p className="text-sm leading-relaxed text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100 font-medium">
-              During this Free Community Edition phase, platform access is completely free and intended for prototyping, educational, and research-based testing. Commercial deployment of generated code requires a separate agreement.
+              Platform access is completely free and open to everyone, for any purpose. Generated code and evidence are drafts — review, test and approve them with qualified architects before any productive use.
             </p>
           </div>
           <div>

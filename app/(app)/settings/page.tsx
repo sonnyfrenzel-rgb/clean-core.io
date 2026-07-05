@@ -1630,7 +1630,7 @@ export default function SettingsPage() {
                   <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
                     <h3 className="text-xs font-black text-amber-950 uppercase tracking-widest mb-2">⚠️ Warranty Disclaimer</h3>
                     <p className="text-xs text-amber-800 leading-relaxed font-medium">
-                      This platform is a non-commercial Free Community Edition environment. Access is provided entirely without warranty, guarantee, or liability. Under no circumstances should you use productive ERP data or real passwords.
+                      This is the Free Community Edition. Access is provided entirely without warranty, guarantee, or liability. Under no circumstances should you use productive ERP data or real passwords.
                     </p>
                   </div>
 
@@ -1788,7 +1788,7 @@ export default function SettingsPage() {
             <h3 className="text-xl font-black mb-4 tracking-tight">Free Community Edition Status</h3>
             <p className="text-gray-400 text-sm font-medium mb-8">You are currently participating in our free community program.</p>
             <div className="bg-white/10 p-4 rounded-xl border border-white/20 mb-6">
-              <p className="text-xs text-white/80 leading-relaxed font-medium">To talk about a commercial license, unlocking more transformations, or if you want to Bring Your Own Key (BYOK), simply <a href="mailto:info@clean-core.io" className="text-green-400 hover:text-green-300 font-bold underline">contact the admin</a>.</p>
+              <p className="text-xs text-white/80 leading-relaxed font-medium">For unlimited transformations, add your own Gemini API key (BYOK) in settings — or <a href="mailto:info@clean-core.io" className="text-green-400 hover:text-green-300 font-bold underline">contact the admin</a> with any questions.</p>
             </div>
             <div className="mt-6 flex flex-col gap-3">
               <div className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-gray-400">
@@ -1832,7 +1832,7 @@ export default function SettingsPage() {
               <div className="border-t border-slate-800 pt-4">
                 <span className="font-bold text-amber-500 block uppercase tracking-wider mb-1">⚠️ Warranty Disclaimer</span>
                 <p className="leading-relaxed italic text-slate-400">
-                  This application is a <strong>non-commercial community preview</strong>. Operations are provided completely <strong>without warranty, guarantees, or liability</strong> of any kind. All generated codes must be vetted by qualified architects before deployment.
+                  This application is the <strong>Free Community Edition</strong>. Operations are provided completely <strong>without warranty, guarantees, or liability</strong> of any kind. All generated code must be vetted by qualified architects before deployment.
                 </p>
               </div>
             </div>
