@@ -11,7 +11,7 @@ export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: 'Clean-Core.io — Free SAP Clean Core Modernization Assistant',
-  description: 'Automatically analyze and transform custom legacy ABAP operations into clean-code, cloud-native Node.js architectures following official SAP Clean Core guidelines.',
+  description: 'Free community assistant for SAP Clean Core modernization: analyze custom ABAP, identify clean-core risks, draft RAP/CAP target designs, and export audit-friendly evidence packs for architect review. Complementary to SAP tooling.',
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },

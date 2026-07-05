@@ -162,11 +162,11 @@ export async function reserveTransformationQuota(uid: string): Promise<void> {
     if (isUnlimited) return; // no metering
 
     if (status !== 'approved') {
-      throw new QuotaError('Your beta pilot account is currently pending admin approval.', 403);
+      throw new QuotaError('Your community account is currently pending admin approval.', 403);
     }
     if (used >= limit) {
       throw new QuotaError(
-        `Transformation limit reached! Your pilot plan allows a maximum of ${limit} free transformations. Please upgrade or configure your own Gemini API key in settings.`,
+        `You've used all ${limit} free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.`,
         403,
       );
     }
@@ -240,7 +240,7 @@ export async function assertS4TenantAccess(
   const s4TenantAccessAllowed = data.s4TenantAccessAllowed === true;
 
   if (!isAdminUser && !s4TenantAccessAllowed) {
-    throw new QuotaError('Access to S/4HANA live tenant endpoints is restricted to approved pilot users or administrators. Please request access in settings.', 403);
+    throw new QuotaError('Access to S/4HANA live tenant endpoints is restricted to admin-approved accounts or administrators. Please request access in settings.', 403);
   }
 }
 

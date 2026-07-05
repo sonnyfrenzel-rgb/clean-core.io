@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
           <!-- Administrative Actions -->
           <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px; text-align: center;">
             <h3 style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 0.05em;">Administrative Controls:</h3>
-            <p style="font-size: 13px; color: #64748b; margin: 0 0 20px 0; line-height: 1.5;">Click the button below to instantly approve and provision this pilot user.</p>
+            <p style="font-size: 13px; color: #64748b; margin: 0 0 20px 0; line-height: 1.5;">Click the button below to instantly approve and provision this community user.</p>
             
             <div style="margin-bottom: 16px;">
               <a href="${approveUrl}" style="display: inline-block; background: linear-gradient(135deg, #006b2c 0%, #00873a 100%); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 4px 12px rgba(0, 107, 44, 0.15);">
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
         <!-- Anti-Spam / Legal Footer -->
         <div style="text-align: center; margin-top: 32px; padding: 0 20px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
           <p style="margin: 0 0 8px 0;">
-            This transactional email was sent to info@clean-core.io regarding a new pilot program application on Clean-Core.io.
+            This transactional email was sent to info@clean-core.io regarding a new Free Community access request on Clean-Core.io.
           </p>
           <p style="margin: 0 0 12px 0; font-weight: 600;">
             Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
@@ -267,7 +267,7 @@ export async function POST(request: NextRequest) {
 
               <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 30px; font-size: 13px; line-height: 1.6; color: #475569;">
                 <strong>What happens next?</strong><br />
-                We review pilot requests manually. Typically, this takes less than 24 hours. Once approved, you will receive an automatic confirmation email with your instant workspace launch link. We appreciate your patience and look forward to welcoming you aboard!
+                We review access requests manually. Typically, this takes less than 24 hours. Once approved, you will receive an automatic confirmation email with your instant workspace launch link. We appreciate your patience and look forward to welcoming you aboard!
               </div>
 
               <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
@@ -280,7 +280,7 @@ export async function POST(request: NextRequest) {
 
             <div style="text-align: center; margin-top: 32px; padding: 0 20px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
               <p style="margin: 0 0 8px 0;">
-                This transactional email was sent to ${email} confirming your pilot program application on Clean-Core.io.
+                This transactional email was sent to ${email} confirming your Free Community access request on Clean-Core.io.
               </p>
               <p style="margin: 0 0 12px 0; font-weight: 600;">
                 Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />

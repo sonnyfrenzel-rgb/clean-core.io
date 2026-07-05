@@ -194,7 +194,7 @@ export default function WhitepaperPage() {
             <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-2xl p-6">
               <div className="text-xs font-black uppercase tracking-wider text-green-700 mb-3">What it is</div>
               <p className="text-sm text-gray-600 leading-relaxed">
-                A prototyping, assessment and governance accelerator — fast enough for exploration, structured enough for governance, honest enough for enterprise review.
+An assessment, evidence and governance accelerator — fast enough for exploration, structured enough for governance, honest enough to hold up under review.
               </p>
             </div>
             <div className="bg-red-50/50 border border-red-200/70 rounded-2xl p-6">

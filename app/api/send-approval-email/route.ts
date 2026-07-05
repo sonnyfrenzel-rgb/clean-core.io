@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // Hardcoded base URL to prevent Host-Header injection
     const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
     const dashboardUrl = `${BASE_URL}/dashboard`;
-    const whitepaperUrl = `${BASE_URL}/Enterprise_Security_Compliance_Whitepaper.pdf`;
+    const whitepaperUrl = `${BASE_URL}/trust`;
 
     const emailSubject = `🎉 Welcome to Clean-Core.io: Access Approved!`;
     
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
               To support GDPR (DSGVO) alignment, your projects are hosted in the <strong>Belgium (europe-west1)</strong> region. Generative AI transformations use stateless APIs designed so that your source code is not cached, persisted, or used for LLM training (per Google Cloud API Terms of Service).
             </span>
             <span style="color: #03543f; font-size: 12px; line-height: 1.5; display: block; margin-top: 10px; font-weight: 600;">
-              📎 A detailed <strong>Security & Privacy Whitepaper</strong> is available for review. Download it anytime via the link below.
+              📎 Our public <strong>Trust &amp; Security overview</strong> is available for review anytime via the link below.
             </span>
           </div>
 
@@ -147,17 +147,17 @@ export async function POST(request: NextRequest) {
           <!-- Security Whitepaper Downloader Card -->
           <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 32px;">
             <span style="font-size: 10px; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Security & Data Privacy</span>
-            <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; letter-spacing: -0.01em;">Security & Privacy Whitepaper</h4>
+            <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; letter-spacing: -0.01em;">Trust &amp; Security Overview</h4>
             <p style="font-size: 12px; line-height: 1.5; color: #475569; margin: 0 0 12px 0;">
-              To facilitate your internal IT audit and accelerate compliance approval, our comprehensive security datasheet details:
+              To support your internal IT review, our public trust page documents:
             </p>
             <ul style="margin: 0 0 16px 0; padding-left: 18px; font-size: 11px; color: #475569; line-height: 1.5;">
-              <li><strong>Sovereign Cloud Hosting:</strong> 100% data processing in europe-west1 (Belgium).</li>
-              <li><strong>Web Cryptography (BYOK):</strong> Browser-side PBKDF2 AES-GCM credentials encryption.</li>
-              <li><strong>Zero-Cache Policy:</strong> Data exclusion from generative AI model training cycles.</li>
+              <li><strong>EU Cloud Hosting:</strong> data processed in europe-west1 (Belgium).</li>
+              <li><strong>BYOK:</strong> your Gemini key is encrypted at rest (AES-256-GCM) in a server-only store and used only via the backend proxy.</li>
+              <li><strong>Zero-Cache Policy:</strong> your code is excluded from generative-AI model training.</li>
             </ul>
             <a href="${whitepaperUrl}" target="_blank" style="display: inline-block; background-color: #ffffff; border: 1px solid #0284c7; color: #0284c7; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
-              📎 Read Security Whitepaper (PDF)
+              🔒 View Trust &amp; Security Overview
             </a>
           </div>
 
