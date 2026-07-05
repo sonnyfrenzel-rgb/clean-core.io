@@ -47,6 +47,10 @@ These are the traditional "enterprise-grade" items. They are **not** blockers fo
 - Cloud Monitoring **alert policies** on 5xx error rate (structured logging + `/api/health` are in place to support this).
 - **Signing-key rotation** on the documented cadence.
 
+## Tooling / developer-experience backlog
+
+- **OpenWiki (LangChain) agent documentation** — a CLI that auto-generates and maintains an `openwiki/` docs folder purpose-built for coding agents (it wires a pointer into `CLAUDE.md` and can open a daily update PR via a GitHub Action). *Evaluated 2026-07-05:* good conceptual fit, **deferred**. It requires **Node 22+** (the local machine runs Node 20, so the CLI currently crashes) and its **own LLM API key** (OpenRouter/Anthropic/OpenAI — not Gemini), plus it adds a daily bot PR and token spend. The existing `CLAUDE.md` + `docs/ARCHITECTURE.md` + `SECURITY.md` + the memory system already cover agent orientation. Adopt post-launch via the CI GitHub Action (`examples/openwiki-update.yml`, runs on Node 22) if richer, auto-maintained per-subsystem docs are wanted. Ref: `github.com/langchain-ai/openwiki`.
+
 ## Principle
 
 The consistent thread — *"belegt, nicht behauptet"* (proven, not claimed) — is now applied at three levels: the **analysis output** is evidence-backed, the **platform operation** is documented and testable, and the **public narrative** claims only what is true. Enterprise identity/governance is a separate product stage, opened only when the audience calls for it.
