@@ -198,7 +198,7 @@ export default function LandingSlideshow() {
               transition={{ duration: 0.4, ease: "easeOut" }}
               className="absolute inset-0 p-2 sm:p-3 md:p-4 flex items-center justify-center"
             >
-              <div className="w-full aspect-[16/10] relative rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-gray-200/50 bg-white flex items-center justify-center">
+              <div className="w-full h-full relative rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-gray-200/50 bg-white flex items-center justify-center">
                 {/* Clean Loading Placeholder (No visible Dev text or layout issues for SEO crawlers) */}
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-0">
                   <div className="w-8 h-8 rounded-full border-4 border-gray-200 border-t-green-600 animate-spin" />
@@ -210,7 +210,7 @@ export default function LandingSlideshow() {
                   alt={slides[currentIndex].alt}
                   fill
                   sizes="(max-width: 1024px) 100vw, 66vw"
-                  className="object-cover relative z-10 transition-opacity duration-300"
+                  className="object-contain relative z-10 transition-opacity duration-300"
                   onError={(e) => {
                     // Hide image if it fails to load
                     (e.target as HTMLImageElement).style.opacity = '0';
