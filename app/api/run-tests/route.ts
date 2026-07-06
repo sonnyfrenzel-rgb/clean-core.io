@@ -4,6 +4,7 @@ import fs from 'fs/promises';
 import fssync from 'fs';
 import os from 'os';
 import path from 'path';
+import { isBuiltin } from 'module';
 import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 
@@ -40,6 +41,67 @@ import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 const EXEC_TIMEOUT_MS = 15_000;
 const MAX_OUTPUT_BYTES = 10 * 1024 * 1024; // 10 MB stdout/stderr cap
 const MAX_INPUT_BYTES = 2 * 1024 * 1024;   // 2 MB combined code/test payload
+
+/**
+ * Universal stub for an npm package that the AI-generated code imports but that
+ * is NOT installed in this environment (e.g. express, pino, pino-pretty, typeorm,
+ * @sap-cloud-sdk/http-client, @sap/xssec, passport). Without this, `require('express')`
+ * inside the sandbox throws "Cannot find module" and every unit test fails before the
+ * business logic can even load. The stub resolves every property access / call / `new`
+ * to a harmless universal mock, so the module under test loads and its pure functions
+ * (validation, defaulting, mapping, …) can be genuinely unit-tested. Server bootstrap
+ * (`app.listen`) is separately neutralized, so nothing actually binds a port.
+ */
+const UNIVERSAL_STUB = `
+const handler = {
+  get(_t, prop) {
+    // Report as CommonJS (not an ES module) so esbuild's interop maps a default
+    // import ('import express from ...') straight to this callable proxy.
+    if (prop === '__esModule') return false;
+    if (prop === 'then') return undefined;
+    if (prop === 'default') return universal;
+    if (prop === 'toString') return () => '';
+    if (prop === 'valueOf') return () => 0;
+    if (prop === 'toJSON') return () => null;
+    if (typeof prop === 'symbol') return undefined;
+    return universal;
+  },
+  apply() { return universal; },
+  construct() { return universal; },
+};
+const universal = new Proxy(function () {}, handler);
+module.exports = universal;
+`;
+
+/**
+ * esbuild's CJS↔ESM interop only copies a required module's OWN enumerable keys, so
+ * a bare Proxy exposes a callable default but every NAMED import (`import { DataSource }
+ * from 'typeorm'`) resolves to undefined → `new DataSource()` throws. We therefore scan
+ * the generated sources for named-import bindings and attach each one to the stub as a
+ * real own property (all pointing at the universal mock), so named imports work too.
+ */
+function collectNamedImports(sources: string[]): string[] {
+  const names = new Set<string>();
+  const re = /import[^{};]*\{([^}]*)\}/g;
+  for (const src of sources) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(src)) !== null) {
+      for (const raw of m[1].split(',')) {
+        // Use the exported name (before `as`), strip a leading `type` modifier.
+        const name = raw.trim().split(/\s+as\s+/)[0].trim().replace(/^type\s+/, '');
+        if (/^[A-Za-z_$][\w$]*$/.test(name)) names.add(name);
+      }
+    }
+  }
+  return [...names];
+}
+
+function buildStubModule(namedExports: string[]): string {
+  const assigns = namedExports
+    .map((n) => `try{module.exports[${JSON.stringify(n)}]=universal;}catch(e){}`)
+    .join('\n');
+  return `${UNIVERSAL_STUB}\n${assigns}`;
+}
 
 interface TestRunResult {
   id: string;
@@ -194,6 +256,9 @@ export async function POST(req: Request) {
     // ── 1) Materialise sources (modular vs legacy flat) ────────────────────
     const testEntry = path.join(testDir, 'test.ts');
     let filesParsed = false;
+    // Raw source of every materialised file — scanned for named imports so the
+    // hermetic stub can expose exactly the bindings the generated code imports.
+    const sourceTexts: string[] = [testCode];
 
     if (code) {
       try {
@@ -210,6 +275,7 @@ export async function POST(req: Request) {
               safeContent = neutralize(safeContent);
             }
             await fs.writeFile(filePath, safeContent);
+            sourceTexts.push(safeContent);
           }
           filesParsed = true;
         }
@@ -219,10 +285,14 @@ export async function POST(req: Request) {
     }
 
     if (!filesParsed && code) {
-      await fs.writeFile(path.join(testDir, 'app.ts'), neutralize(code));
+      const flat = neutralize(code);
+      await fs.writeFile(path.join(testDir, 'app.ts'), flat);
+      sourceTexts.push(flat);
     }
 
     await fs.writeFile(testEntry, testCode);
+
+    const stubModuleSource = buildStubModule(collectNamedImports(sourceTexts));
 
     // ── 2) Bundle in the parent: relative .ts/.js inlined, npm packages external ─
     // Plugin mirrors the tsx/Node resolution "import './x.js' → ./x.ts".
@@ -245,6 +315,31 @@ export async function POST(req: Request) {
       },
     };
 
+    // Make the sandbox hermetic: every bare npm import from the generated code
+    // (express, pino, pino-pretty, typeorm, @sap-cloud-sdk/*, @sap/xssec, passport, …)
+    // is replaced with the universal stub and inlined into the bundle. The suite only
+    // needs Node built-ins (node:test / node:assert), and business-logic unit tests
+    // never need real infra libraries — so stubbing unconditionally guarantees the
+    // module under test loads identically in dev and in the pruned production image,
+    // instead of crashing the whole suite with "Cannot find module 'express'".
+    // Relative paths use the default resolver; Node built-ins stay external.
+    const stubMissingPackages = {
+      name: 'stub-missing-packages',
+      setup(build: any) {
+        build.onResolve({ filter: /.*/ }, (args: any) => {
+          const p: string = args.path;
+          if (args.kind === 'entry-point') return undefined;
+          if (p.startsWith('.') || path.isAbsolute(p)) return undefined; // relative → default resolver
+          if (p.startsWith('node:') || isBuiltin(p)) return { external: true };
+          return { path: p, namespace: 'cc-stub' }; // any other bare import → universal stub, inlined
+        });
+        build.onLoad({ filter: /.*/, namespace: 'cc-stub' }, () => ({
+          contents: stubModuleSource,
+          loader: 'js',
+        }));
+      },
+    };
+
     const bundlePath = path.join(testDir, '__sandbox_bundle.cjs');
     try {
       await esbuild.build({
@@ -253,12 +348,13 @@ export async function POST(req: Request) {
         platform: 'node',
         format: 'cjs',
         target: 'node22',
-        packages: 'external',
         outfile: bundlePath,
         sourcemap: 'inline',
         logLevel: 'silent',
         resolveExtensions: ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.json'],
-        plugins: [tsJsResolve],
+        // Enable TS decorators so typeorm-style entities (@Entity/@Column/…) compile.
+        tsconfigRaw: { compilerOptions: { experimentalDecorators: true } },
+        plugins: [tsJsResolve, stubMissingPackages],
         loader: { '.ts': 'ts', '.tsx': 'tsx' },
       });
     } catch (buildErr: any) {
