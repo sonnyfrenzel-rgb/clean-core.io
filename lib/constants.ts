@@ -15,6 +15,22 @@ export const FIRESTORE_DB_ID = process.env.NEXT_PUBLIC_FIRESTORE_DB_ID || 'ai-st
 export const CONTACT_EMAIL = 'info@clean-core.io';
 
 /**
+ * Free community transformation quota granted per account (a one-time,
+ * lifetime allotment — not reset daily/monthly). Single source of truth for the
+ * client default and the server-side quota gate (`reserveTransformationQuota`).
+ * NOTE: the Firestore users-create rule independently hardcodes
+ * `transformationsLimit == 5`; if this value changes, that rule must change too.
+ */
+export const COMMUNITY_QUOTA = 5;
+
+/**
+ * Current Terms of Service version, recorded on the user profile at signup
+ * (`termsVersionAccepted`) so a later Terms change can request re-consent and
+ * the accepted version is provable. Kept in sync with the effective date on /terms.
+ */
+export const TERMS_VERSION = '2026-07-08';
+
+/**
  * Canonical base URL of the application (no trailing slash).
  *
  * Used instead of `request.headers.get('host')` to prevent Host-Header

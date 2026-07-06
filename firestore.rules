@@ -33,7 +33,8 @@ service cloud.firestore {
         'transformationsUsed', 'transformationsLimit',
         'maxTeamMembers', 'orgId',
         'identityProvider', 'createdAt', 'authMethod', 'isAdmin',
-        's4TenantAccessAllowed', 's4TenantAccessRequested', 'mfaEnabled'
+        's4TenantAccessAllowed', 's4TenantAccessRequested', 'mfaEnabled',
+        'termsVersionAccepted', 'termsAcceptedAt'
       ];
     }
 

@@ -1,4 +1,4 @@
-import { FIRESTORE_DB_ID } from '@/lib/constants';
+import { FIRESTORE_DB_ID, COMMUNITY_QUOTA } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { encrypt, decrypt } from './s4-credentials';
 
@@ -156,7 +156,7 @@ export async function reserveTransformationQuota(uid: string): Promise<void> {
     const tier = data.tier || 'pilot';
     const status = data.status || 'pending';
     const used = typeof data.transformationsUsed === 'number' ? data.transformationsUsed : 0;
-    const limit = typeof data.transformationsLimit === 'number' ? data.transformationsLimit : 5;
+    const limit = typeof data.transformationsLimit === 'number' ? data.transformationsLimit : COMMUNITY_QUOTA;
 
     const isUnlimited = tier === 'enterprise';
     if (isUnlimited) return; // no metering
@@ -323,7 +323,7 @@ export async function approveUserWithToken(
     await db.collection('users').doc(uid).set({
       status: 'approved',
       tier: 'pilot',
-      transformationsLimit: 5,
+      transformationsLimit: COMMUNITY_QUOTA,
       transformationsUsed: 0
     }, { merge: true });
 

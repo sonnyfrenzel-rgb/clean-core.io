@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import LegalOverlay from '@/app/components/LegalOverlay';
+import { COMMUNITY_QUOTA, TERMS_VERSION } from '@/lib/constants';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export default function LandingModals() {
@@ -160,13 +161,15 @@ export default function LandingModals() {
           tier: 'pilot',
           status: 'pending',
           transformationsUsed: 0,
-          transformationsLimit: 5,
+          transformationsLimit: COMMUNITY_QUOTA,
           maxTeamMembers: 1,
           orgId: null,
           identityProvider: 'google',
           createdAt: serverTimestamp(),
           isAdmin: false,
           authMethod: 'google',
+          termsVersionAccepted: TERMS_VERSION,
+          termsAcceptedAt: serverTimestamp(),
         };
         await setDoc(userDocRef, newProfile);
 
@@ -290,13 +293,15 @@ export default function LandingModals() {
         tier: 'pilot',
         status: 'pending',
         transformationsUsed: 0,
-        transformationsLimit: 5,
+        transformationsLimit: COMMUNITY_QUOTA,
         maxTeamMembers: 1,
         orgId: null,
         identityProvider: 'google',
         createdAt: new Date(),
         isAdmin: false,
         authMethod: 'password',
+        termsVersionAccepted: TERMS_VERSION,
+        termsAcceptedAt: new Date(),
       };
       
       await setDoc(userDocRef, newProfile);

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { doc, onSnapshot, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { User } from 'firebase/auth';
+import { COMMUNITY_QUOTA, TERMS_VERSION } from '@/lib/constants';
 
 export interface UserProfile {
   firstName: string;
@@ -30,6 +31,8 @@ export interface UserProfile {
   mfaSecret?: string;
   mfaBackupCodes?: string[];
   authMethod?: 'google' | 'password';
+  termsVersionAccepted?: string;
+  termsAcceptedAt?: any;
   s4TenantAccessRequested?: boolean;
   s4TenantAccessAllowed?: boolean;
   /** @deprecated Use s4Meta instead — s4Config contained cleartext secrets */
@@ -125,13 +128,15 @@ export function useUserProfile() {
       tier: 'pilot',
       status: 'pending',
       transformationsUsed: 0,
-      transformationsLimit: 5,
+      transformationsLimit: COMMUNITY_QUOTA,
       maxTeamMembers: 1,
       orgId: null,
       identityProvider: 'google',
       createdAt: serverTimestamp(),
       isAdmin: false,
       authMethod,
+      termsVersionAccepted: TERMS_VERSION,
+      termsAcceptedAt: serverTimestamp(),
     };
 
     try {
