@@ -5,10 +5,8 @@
   <title>Clean-Core.io — The Clean Core Accelerator: Community Whitepaper</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-    
-    * {
-      box-sizing: border-box;
-    }
+
+    * { box-sizing: border-box; }
 
     body {
       font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -23,11 +21,10 @@
       text-rendering: optimizeLegibility;
     }
 
-    /* Page container setup for clean PDF page boundaries with spacious paddings */
     .page {
       width: 210mm;
       height: 297mm;
-      padding: 18mm 20mm;
+      padding: 16mm 20mm;
       margin: 0 auto;
       background-color: #ffffff;
       position: relative;
@@ -38,7 +35,6 @@
       justify-content: space-between;
     }
 
-    /* Cover Page Specific Styles */
     .cover-page {
       background: linear-gradient(135deg, #0b1c30 0%, #080f1e 100%);
       color: #ffffff;
@@ -54,16 +50,8 @@
       padding-bottom: 25px;
     }
 
-    .logo {
-      font-size: 32px;
-      font-weight: 900;
-      color: #ffffff;
-      letter-spacing: -0.03em;
-    }
-
-    .logo span {
-      color: #10b981;
-    }
+    .logo { font-size: 32px; font-weight: 900; color: #ffffff; letter-spacing: -0.03em; }
+    .logo span { color: #10b981; }
 
     .cover-tag {
       font-size: 11px;
@@ -77,11 +65,7 @@
       letter-spacing: 0.1em;
     }
 
-    .cover-middle {
-      margin-top: auto;
-      margin-bottom: auto;
-      max-width: 90%;
-    }
+    .cover-middle { margin-top: auto; margin-bottom: auto; max-width: 92%; }
 
     .cover-title {
       font-size: 46px;
@@ -93,20 +77,14 @@
     }
 
     .cover-subtitle {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 500;
       color: #94a3b8;
-      line-height: 1.5;
+      line-height: 1.55;
       margin: 0 0 40px 0;
     }
 
-    .divider-line {
-      width: 80px;
-      height: 5px;
-      background-color: #10b981;
-      border-radius: 9999px;
-      margin-bottom: 40px;
-    }
+    .divider-line { width: 80px; height: 5px; background-color: #10b981; border-radius: 9999px; margin-bottom: 40px; }
 
     .cover-footer {
       border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -116,40 +94,20 @@
       font-size: 13px;
       color: #64748b;
     }
+    .cover-footer strong { color: #e2e8f0; }
 
-    .cover-footer strong {
-      color: #e2e8f0;
-    }
-
-    /* Unified Page Headers and Footers */
     .page-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 2px solid #f1f5f9;
       padding-bottom: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       height: 35px;
     }
-
-    .page-header .brand {
-      font-size: 18px;
-      font-weight: 900;
-      color: #0f172a;
-      letter-spacing: -0.02em;
-    }
-
-    .page-header .brand span {
-      color: #10b981;
-    }
-
-    .page-header .title-tag {
-      font-size: 9px;
-      font-weight: 800;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-    }
+    .page-header .brand { font-size: 18px; font-weight: 900; color: #0f172a; letter-spacing: -0.02em; }
+    .page-header .brand span { color: #10b981; }
+    .page-header .title-tag { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
 
     .page-footer {
       border-top: 1px solid #f1f5f9;
@@ -164,377 +122,121 @@
       height: 30px;
     }
 
-    .page-content {
-      flex-grow: 1;
-      padding: 10px 0;
-    }
+    .page-content { flex-grow: 1; padding: 6px 0; }
 
-    /* Typography Details */
     h2 {
       font-size: 22px;
       font-weight: 800;
       color: #0f172a;
       letter-spacing: -0.03em;
-      margin: 0 0 14px 0;
+      margin: 0 0 12px 0;
       display: flex;
       align-items: center;
       gap: 8px;
     }
+    h2 span { color: #10b981; }
 
-    h2 span {
-      color: #10b981;
-    }
+    p { font-size: 13px; color: #334155; margin: 0 0 12px 0; text-align: justify; line-height: 1.55; }
 
-    p {
-      font-size: 13.5px;
-      color: #334155;
-      margin: 0 0 14px 0;
-      text-align: justify;
-      line-height: 1.6;
-    }
+    .lead-paragraph { font-size: 14px; color: #0f172a; font-weight: 500; margin-bottom: 14px; line-height: 1.5; text-align: left; }
 
-    .lead-paragraph {
-      font-size: 14.5px;
-      color: #0f172a;
-      font-weight: 500;
-      margin-bottom: 16px;
-      line-height: 1.5;
-    }
-
-    /* Structured Components */
-    .grid-2 {
-      display: grid;
-      grid-template-cols: 1fr 1fr;
-      gap: 16px;
-      margin: 16px 0;
-    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
 
     .card {
       background-color: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 16px;
-      padding: 18px;
+      padding: 16px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.01);
     }
+    .card-navy { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border: none; color: #ffffff; }
+    .card-title { font-size: 12.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 8px 0; }
+    .card-title.emerald { color: #10b981; }
+    .card-title.navy { color: #38bdf8; }
+    .card p { font-size: 11.5px; line-height: 1.5; margin: 0; color: inherit; }
+    .card-navy p { color: #94a3b8; }
 
-    .card-navy {
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      border: none;
-      color: #ffffff;
-    }
+    ul.check-list { margin: 0 0 14px 0; padding-left: 0; list-style: none; }
+    ul.check-list li { font-size: 12.5px; color: #334155; margin-bottom: 8px; position: relative; padding-left: 20px; line-height: 1.5; }
+    ul.check-list li::before { content: "✓"; position: absolute; left: 0; color: #10b981; font-weight: 900; }
 
-    .card-title {
-      font-size: 13px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin: 0 0 10px 0;
-    }
+    .highlight-box { border-left: 4px solid #10b981; background-color: #f0fdf4; padding: 13px 18px; border-radius: 0 16px 16px 0; margin: 14px 0; }
+    .highlight-box p { margin: 0; font-size: 12px; color: #065f46; font-weight: 500; text-align: left; }
 
-    .card-title.emerald {
-      color: #10b981;
-    }
+    .amber-box { border-left: 4px solid #f59e0b; background-color: #fffbeb; padding: 13px 18px; border-radius: 0 16px 16px 0; margin: 14px 0; }
+    .amber-box p { margin: 0; font-size: 12px; color: #92400e; font-weight: 500; text-align: left; }
 
-    .card-title.navy {
-      color: #38bdf8;
-    }
+    code { font-family: 'JetBrains Mono', monospace; font-size: 11px; background-color: #f1f5f9; color: #0f172a; padding: 2px 4px; border-radius: 4px; border: 1px solid #e2e8f0; }
 
-    .card p {
-      font-size: 12px;
-      line-height: 1.5;
-      margin: 0;
-      color: inherit;
-    }
+    table.matrix-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12px; }
+    table.matrix-table th { background-color: #0f172a; color: #ffffff; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 12px; text-align: left; border: 1px solid #1e293b; }
+    table.matrix-table td { padding: 10px 12px; border: 1px solid #e2e8f0; vertical-align: top; color: #334155; line-height: 1.5; }
+    table.matrix-table tr:nth-child(even) td { background-color: #f8fafc; }
 
-    .card-navy p {
-      color: #94a3b8;
-    }
+    .badge-wrap { display: inline-block; font-size: 9px; font-weight: 800; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .badge-rap { background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .badge-cap { background-color: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
 
-    ul.check-list {
-      margin: 0 0 16px 0;
-      padding-left: 0;
-      list-style: none;
-    }
+    .sign-section { margin-top: 24px; display: flex; justify-content: space-between; gap: 30px; }
+    .sign-block { flex: 1; border-top: 1px solid #cbd5e1; padding-top: 10px; font-size: 11px; color: #64748b; line-height: 1.4; }
+    .sign-block strong { color: #334155; }
 
-    ul.check-list li {
-      font-size: 13px;
-      color: #334155;
-      margin-bottom: 10px;
-      position: relative;
-      padding-left: 20px;
-      line-height: 1.5;
-    }
+    /* Stat row */
+    .stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 14px 0; }
+    .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; text-align: center; }
+    .stat-value { font-size: 24px; font-weight: 900; color: #0f172a; letter-spacing: -0.03em; line-height: 1.1; }
+    .stat-value span { color: #10b981; }
+    .stat-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
 
-    ul.check-list li::before {
-      content: "✓";
-      position: absolute;
-      left: 0;
-      color: #10b981;
-      font-weight: 900;
-    }
-
-    .highlight-box {
-      border-left: 4px solid #10b981;
-      background-color: #f0fdf4;
-      padding: 14px 18px;
-      border-radius: 0 16px 16px 0;
-      margin: 16px 0;
-    }
-
-    .highlight-box p {
-      margin: 0;
-      font-size: 12.5px;
-      color: #065f46;
-      font-weight: 500;
-    }
-
-    code {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      background-color: #f1f5f9;
-      color: #0f172a;
-      padding: 2px 4px;
-      border-radius: 4px;
-      border: 1px solid #e2e8f0;
-    }
-
-    /* Comparison Table */
-    table.matrix-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0;
-      font-size: 12px;
-    }
-
-    table.matrix-table th {
-      background-color: #0f172a;
-      color: #ffffff;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 10px 12px;
-      text-align: left;
-      border: 1px solid #1e293b;
-    }
-
-    table.matrix-table td {
-      padding: 10px 12px;
-      border: 1px solid #e2e8f0;
-      vertical-align: top;
-      color: #334155;
-      line-height: 1.5;
-    }
-
-    table.matrix-table tr:nth-child(even) td {
-      background-color: #f8fafc;
-    }
-
-    .badge-wrap {
-      display: inline-block;
-      font-size: 9px;
-      font-weight: 800;
-      padding: 3px 8px;
-      border-radius: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .badge-rap {
-      background-color: #ecfdf5;
-      color: #065f46;
-      border: 1px solid #a7f3d0;
-    }
-
-    .badge-cap {
-      background-color: #eff6ff;
-      color: #1e40af;
-      border: 1px solid #bfdbfe;
-    }
-
-    /* Sign-off structures */
-    .sign-section {
-      margin-top: 30px;
-      display: flex;
-      justify-content: space-between;
-      gap: 30px;
-    }
-
-    .sign-block {
-      flex: 1;
-      border-top: 1px solid #cbd5e1;
-      padding-top: 10px;
-      font-size: 11px;
-      color: #64748b;
-      line-height: 1.4;
-    }
-
-    .sign-block strong {
-      color: #334155;
-    }
-
-    /* Premium Benefits Page Redesign Styles */
-    .benefit-grid {
-      display: grid;
-      grid-template-cols: 1fr 1fr;
-      gap: 18px;
-      margin: 15px 0;
-    }
+    /* Premium feature cards */
+    .benefit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0; }
 
     .benefit-card-premium {
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 16px;
-      padding: 20px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
       position: relative;
       overflow: hidden;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
+    .benefit-card-premium::before { content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: linear-gradient(to bottom, #10b981, #3b82f6); }
+    .benefit-card-premium.time::before { background: linear-gradient(to bottom, #10b981, #059669); }
+    .benefit-card-premium.resilience::before { background: linear-gradient(to bottom, #3b82f6, #2563eb); }
+    .benefit-card-premium.testing::before { background: linear-gradient(to bottom, #8b5cf6, #7c3aed); }
+    .benefit-card-premium.bpmn::before { background: linear-gradient(to bottom, #ec4899, #db2777); }
+    .benefit-card-premium.evidence::before { background: linear-gradient(to bottom, #10b981, #0ea5e9); }
+    .benefit-card-premium.amber::before { background: linear-gradient(to bottom, #f59e0b, #d97706); }
 
-    .benefit-card-premium::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 4px;
-      height: 100%;
-      background: linear-gradient(to bottom, #10b981, #3b82f6);
-    }
+    .benefit-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .benefit-icon-wrapper { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .benefit-card-premium.time .benefit-icon-wrapper, .benefit-card-premium.evidence .benefit-icon-wrapper { background-color: #ecfdf5; color: #10b981; }
+    .benefit-card-premium.resilience .benefit-icon-wrapper { background-color: #eff6ff; color: #3b82f6; }
+    .benefit-card-premium.testing .benefit-icon-wrapper { background-color: #f5f3ff; color: #8b5cf6; }
+    .benefit-card-premium.bpmn .benefit-icon-wrapper { background-color: #fdf2f8; color: #ec4899; }
+    .benefit-card-premium.amber .benefit-icon-wrapper { background-color: #fffbeb; color: #f59e0b; }
 
-    .benefit-card-premium.time::before {
-      background: linear-gradient(to bottom, #10b981, #059669);
-    }
+    .benefit-title-premium { font-size: 13px; font-weight: 800; color: #0f172a; letter-spacing: -0.01em; text-transform: uppercase; margin: 0; }
+    .benefit-description { font-size: 11px; line-height: 1.5; color: #475569; margin: 0; text-align: justify; }
 
-    .benefit-card-premium.resilience::before {
-      background: linear-gradient(to bottom, #3b82f6, #2563eb);
-    }
-
-    .benefit-card-premium.testing::before {
-      background: linear-gradient(to bottom, #8b5cf6, #7c3aed);
-    }
-
-    .benefit-card-premium.bpmn::before {
-      background: linear-gradient(to bottom, #ec4899, #db2777);
-    }
-
-    .benefit-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .benefit-icon-wrapper {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .benefit-card-premium.time .benefit-icon-wrapper {
-      background-color: #ecfdf5;
-      color: #10b981;
-    }
-
-    .benefit-card-premium.resilience .benefit-icon-wrapper {
-      background-color: #eff6ff;
-      color: #3b82f6;
-    }
-
-    .benefit-card-premium.testing .benefit-icon-wrapper {
-      background-color: #f5f3ff;
-      color: #8b5cf6;
-    }
-
-    .benefit-card-premium.bpmn .benefit-icon-wrapper {
-      background-color: #fdf2f8;
-      color: #ec4899;
-    }
-
-    .benefit-title-premium {
-      font-size: 13.5px;
-      font-weight: 800;
-      color: #0f172a;
-      letter-spacing: -0.01em;
-      text-transform: uppercase;
-      margin: 0;
-    }
-
-    .benefit-description {
-      font-size: 11.5px;
-      line-height: 1.5;
-      color: #475569;
-      margin: 0;
-      text-align: justify;
-    }
-
-    /* Fast-Pass Feature Banner */
     .fast-pass-banner {
       background: linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%);
       border: 1px solid #a7f3d0;
       border-radius: 16px;
-      padding: 20px;
-      margin-top: 18px;
+      padding: 18px;
+      margin-top: 14px;
       display: flex;
       gap: 16px;
       align-items: flex-start;
       box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.05);
-      position: relative;
-      overflow: hidden;
     }
-
-    .fast-pass-icon-wrapper {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background-color: #10b981;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-    }
-
-    .fast-pass-content {
-      flex: 1;
-    }
-
-    .fast-pass-title {
-      font-size: 14px;
-      font-weight: 800;
-      color: #065f46;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin: 0 0 6px 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .fast-pass-badge {
-      background-color: #065f46;
-      color: #ffffff;
-      font-size: 9px;
-      font-weight: 800;
-      padding: 2px 8px;
-      border-radius: 9999px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .fast-pass-text {
-      font-size: 12px;
-      line-height: 1.6;
-      color: #065f46;
-      margin: 0;
-      text-align: justify;
-    }
+    .fast-pass-icon-wrapper { width: 42px; height: 42px; border-radius: 12px; background-color: #10b981; color: #ffffff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
+    .fast-pass-content { flex: 1; }
+    .fast-pass-title { font-size: 13.5px; font-weight: 800; color: #065f46; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px; }
+    .fast-pass-badge { background-color: #065f46; color: #ffffff; font-size: 9px; font-weight: 800; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .fast-pass-text { font-size: 11.5px; line-height: 1.55; color: #065f46; margin: 0; text-align: justify; }
   </style>
 </head>
 <body>
@@ -545,12 +247,12 @@
       <div class="logo">Clean-Core<span>.io</span></div>
       <div class="cover-tag">Free Community Edition</div>
     </div>
-    
+
     <div class="cover-middle">
       <div class="divider-line"></div>
       <h1 class="cover-title">The Clean Core<br />Accelerator</h1>
       <p class="cover-subtitle">
-        A free, community-built SAP Clean Core modernization assistant that generates Clean-Core-compliant drafts and audit-friendly evidence for architect review and approval. Complementary to SAP's own tooling. Built by someone who was affected by an S/4HANA transformation — not by a consulting firm.
+        A free, community-built accelerator for SAP Clean Core modernization. It runs a deterministic evidence engine <em>first</em>, then AI — turning legacy custom ABAP into Clean-Core-compliant drafts and cryptographically signed audit evidence for architect review and approval. Complementary to SAP's own tooling, never a replacement. Built by someone who lived through an S/4HANA transformation — not by a consulting firm.
       </p>
     </div>
 
@@ -566,35 +268,41 @@
     </div>
   </div>
 
-  <!-- PAGE 2: PAGE 2 - WHAT IS CLEAN-CORE.IO & INTRODUCTION -->
+  <!-- PAGE 2: INTRODUCTION -->
   <div class="page">
     <div class="page-header">
       <div class="brand">Clean-Core<span>.io</span></div>
-      <div class="title-tag">Section 1: The Introduction</div>
+      <div class="title-tag">Section 1: Introduction</div>
     </div>
 
     <div class="page-content">
       <h2><span>01.</span> What is Clean-Core.io?</h2>
       <p class="lead-paragraph">
-        In simple terms, Clean Core means keeping the standard SAP ERP core code completely untouched. When custom code is mixed directly with standard classes and tables, future S/4HANA system updates become complex, slow, and expensive.
+        Clean Core means keeping the standard SAP ERP core untouched. When custom code is mixed directly into standard classes and tables, every future S/4HANA update becomes slow, risky and expensive.
       </p>
       <p>
-        This is exactly where <strong>Clean-Core.io</strong> comes in. Built as a free community tool by someone who was personally affected by an S/4HANA transformation, this platform works as an intelligent accelerator. Upload your legacy ABAP code (such as raw database SELECTs or obsolete function modules) and generate the first Clean-Core-compliant draft for review and approval — saving days of manual mapping and boilerplate generation, without replacing the judgment of the expert.
+        <strong>Clean-Core.io</strong> is a free community tool built by someone personally affected by an S/4HANA transformation. Upload your legacy ABAP (raw database SELECTs, obsolete function modules, dynpro logic) and it generates the <strong>first Clean-Core-compliant draft plus signed evidence</strong> for review and approval — saving days of manual mapping and boilerplate, without ever replacing the judgment of the expert.
       </p>
 
-      <div class="card" style="margin-top: 20px; background-color: #f8fafc;">
-        <div class="card-title" style="color: #0f172a;">The Problem: Z-Table Chaos & Rigid Core Modifications</div>
-        <p style="color: #475569; font-size: 12.5px; margin-bottom: 8px;">
-          Historically grown SAP systems often contain hundreds of custom database tables and direct modifications. These Z-objects block standard upgrades because SAP can modify the underlying standard structures at any time.
-        </p>
-        <p style="color: #475569; font-size: 12.5px;">
-          The Clean Core Accelerator analyzes your legacy Z-objects and automatically recommends the optimal modernization track — ABAP Cloud RAP for in-app extensions or BTP CAP for side-by-side decoupling.
+      <div class="highlight-box">
+        <p>
+          <strong>The governing principle — “belegt, nicht behauptet” (proven, not claimed):</strong> a deterministic ABAP evidence engine runs <em>before</em> any AI. Every finding, score and routing decision is tied to concrete evidence in your code. The AI writes the human-readable narrative on top — and that narrative is deliberately excluded from the signed evidence, so a signature always attests to server-computed facts, not to free text.
         </p>
       </div>
 
-      <div class="highlight-box" style="margin-top: 20px;">
+      <div class="card" style="margin-top: 16px; background-color: #f8fafc;">
+        <div class="card-title" style="color: #0f172a;">The Problem: Z-Table Chaos &amp; Rigid Core Modifications</div>
+        <p style="color: #475569; font-size: 12px; margin-bottom: 8px;">
+          Historically grown SAP systems contain hundreds of custom Z-tables and direct modifications. These objects block standard upgrades, because SAP can change the underlying standard structures at any time.
+        </p>
+        <p style="color: #475569; font-size: 12px;">
+          The Clean Core Accelerator analyzes your legacy Z-objects and recommends the optimal modernization track — <strong>In-App ABAP Cloud (RAP)</strong> for tightly-coupled logic, or <strong>Side-by-Side BTP (CAP)</strong> for decoupling — with a transparent, evidence-backed rationale.
+        </p>
+      </div>
+
+      <div class="highlight-box">
         <p>
-          <strong>S/4HANA Extensibility Rule:</strong> Custom developments belong either as In-App Extensibility directly in the SAP ABAP Cloud Stack (RAP) or as Side-by-Side Extensibility on the SAP Business Technology Platform (BTP CAP). The standard core remains completely clean and untouched.
+          <strong>S/4HANA Extensibility Rule:</strong> custom developments belong either as In-App Extensibility in the SAP ABAP Cloud stack (RAP) or as Side-by-Side Extensibility on SAP BTP (CAP). The standard core stays completely clean and upgrade-safe.
         </p>
       </div>
     </div>
@@ -606,29 +314,41 @@
     </div>
   </div>
 
-  <!-- PAGE 3: PAGE 3 - WHAT BENEFITS DOES IT BRING / USER VALUE -->
+  <!-- PAGE 3: BENEFITS I -->
   <div class="page">
     <div class="page-header">
       <div class="brand">Clean-Core<span>.io</span></div>
-      <div class="title-tag">Section 2: User Benefits</div>
+      <div class="title-tag">Section 2: Benefits — Evidence &amp; Speed</div>
     </div>
 
     <div class="page-content">
-      <h2><span>02.</span> The Value: What benefits does it bring to you?</h2>
+      <h2><span>02.</span> The Value, Part 1: Evidence-First Acceleration</h2>
       <p class="lead-paragraph">
-        Clean-Core.io is not just a code translator &mdash; it is a comprehensive Clean Core Accelerator. SAP developers, architects, and community members benefit from immediate, tangible advantages:
+        Clean-Core.io is not a code translator — it is an evidence-first Clean Core accelerator. Architects, developers and decision-makers get immediate, defensible advantages:
       </p>
 
       <div class="benefit-grid">
+        <div class="benefit-card-premium evidence">
+          <div class="benefit-header">
+            <div class="benefit-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </div>
+            <h3 class="benefit-title-premium">Evidence, Not Opinions</h3>
+          </div>
+          <p class="benefit-description">
+            A deterministic AST engine parses your code and maps every custom-table access, RFC call and dynpro pattern to concrete findings — <em>before</em> any AI runs. You get a defensible baseline you can take into an audit, not a black-box guess.
+          </p>
+        </div>
+
         <div class="benefit-card-premium time">
           <div class="benefit-header">
             <div class="benefit-icon-wrapper">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
-            <h3 class="benefit-title-premium">Enormous Time Savings</h3>
+            <h3 class="benefit-title-premium">Days &rarr; Minutes</h3>
           </div>
           <p class="benefit-description">
-            Manually searching for modern SAP standard APIs and rewriting legacy ABAP into modern Node.js microservices or RAP classes takes days. Clean-Core.io executes the analysis and code generation in under 2 minutes.
+            Manually finding released SAP APIs and rewriting legacy ABAP into RAP classes or CAP services takes days to weeks. Clean-Core.io produces the <strong>first qualified draft plus evidence in minutes</strong> — the expert then reviews, instead of starting from a blank page.
           </p>
         </div>
 
@@ -640,7 +360,7 @@
             <h3 class="benefit-title-premium">Upgrade Resilience</h3>
           </div>
           <p class="benefit-description">
-            By replacing unreleased database dependencies with officially released standard SAP APIs (like I_Customer or API_PRODUCT_SRV), your ERP core remains fully upgradable and future-proof.
+            By replacing unreleased database dependencies with officially released SAP APIs (e.g. <code>I_Customer</code>, <code>API_PRODUCT_SRV</code>), your ERP core stays fully upgradable — decoupling update cycles from months to days.
           </p>
         </div>
 
@@ -652,19 +372,7 @@
             <h3 class="benefit-title-premium">Automated Test Stubs</h3>
           </div>
           <p class="benefit-description">
-            The tool writes matching automated unit tests immediately – as ABAP Unit Test Doubles for RAP or as Playwright/Express testcases for CAP. This saves extensive QA cycles.
-          </p>
-        </div>
-
-        <div class="benefit-card-premium bpmn">
-          <div class="benefit-header">
-            <div class="benefit-icon-wrapper">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
-            </div>
-            <h3 class="benefit-title-premium">BPMN 2.0 &amp; Business SOP</h3>
-          </div>
-          <p class="benefit-description">
-            Business processes are exported in standard BPMN 2.0 XML schema with swimlanes. A two-stage blueprint layer maps RACI matrices, Level 5 SOP narratives, and internal compliance controls &mdash; importable into SAP Signavio or SAP Build.
+            Matching unit tests are generated with the code — ABAP Unit test doubles for RAP, or Express/Node test suites for CAP — and executed in an isolated, hermetic sandbox. QA cycles start covered, not empty.
           </p>
         </div>
       </div>
@@ -678,81 +386,241 @@
             The Fast-Pass Advantage <span class="fast-pass-badge">Accelerator</span>
           </div>
           <p class="fast-pass-text">
-            Using the integrated Fast-Pass Stepper, you can bypass intermediate wizard stages and jump straight from the analysis page to the Delivery view to download your compiled ZIP package containing all modularized project files.
+            A guided 7-stage workflow takes you from Analyze &rarr; Design &rarr; Transformation &rarr; Documentation &rarr; Testing &rarr; TCO &rarr; Delivery. The Fast-Pass Stepper lets you jump straight from analysis to the Delivery view and download a compiled ZIP with all modularized project files, standard abapGit export and tests.
           </p>
         </div>
       </div>
     </div>
 
     <div class="page-footer">
-      <span>Section 2: Value for the User</span>
+      <span>Section 2: Benefits — Evidence &amp; Speed</span>
       <span>Clean-Core.io Whitepaper</span>
       <span>Page 3</span>
     </div>
   </div>
 
-  <!-- PAGE 4: PAGE 4 - CLOSED PILOT, SECURITY & COMPLIANCE -->
+  <!-- PAGE 4: BENEFITS II -->
   <div class="page">
     <div class="page-header">
       <div class="brand">Clean-Core<span>.io</span></div>
-      <div class="title-tag">Section 3: Security & Compliance</div>
+      <div class="title-tag">Section 2: Benefits — Transparency &amp; Governance</div>
     </div>
 
     <div class="page-content">
-      <h2><span>03.</span> Free Community Edition, Data Security & Compliance</h2>
+      <h2><span>02.</span> The Value, Part 2: Transparency &amp; Governance</h2>
       <p class="lead-paragraph">
-        Proprietary legacy source code is a highly confidential business asset. Clean-Core.io is engineered with strict cryptographic and operational safety boundaries to ensure data compliance and protection.
+        Version 2.0 makes the reasoning inspectable and the progress auditable — so a recommendation survives scrutiny in a board room, not just a demo.
       </p>
 
-      <div class="card" style="margin-bottom: 16px; background-color: #f8fafc;">
-        <div class="card-title" style="color: #0f172a;">Free Community Edition: Free Access & BYOK</div>
-        <p style="color: #475569; font-size: 12.5px; margin-bottom: 8px;">
-          The platform is freely accessible to everyone. Every new user receives 5 free transformations; bring your own Gemini API key for unlimited runs.
-        </p>
-        <p style="color: #475569; font-size: 12.5px;">
-          For unlimited transformations, the platform supports the <strong>Bring Your Own Key (BYOK)</strong> model. Your private Gemini API key is encrypted directly inside your browser using PBKDF2 (100,000 iterations) and AES-GCM 256-bit encryption. Plaintext keys never reach our database. No credit card required &mdash; you only pay for your own Google API usage.
-        </p>
+      <div class="benefit-grid">
+        <div class="benefit-card-premium evidence">
+          <div class="benefit-header">
+            <div class="benefit-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </div>
+            <h3 class="benefit-title-premium">“Why This Route &amp; Score”</h3>
+          </div>
+          <p class="benefit-description">
+            A transparency panel shows exactly why a route (RAP / CAP) and score were chosen: the deterministic router rationale, a confidence indicator, and the driving data-coupling findings by risk. Evidence you can defend — not an AI guess.
+          </p>
+        </div>
+
+        <div class="benefit-card-premium resilience">
+          <div class="benefit-header">
+            <div class="benefit-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </div>
+            <h3 class="benefit-title-premium">Module Risk Heatmap</h3>
+          </div>
+          <p class="benefit-description">
+            A LOC-weighted treemap of the detected ABAP objects grouped by module: tile size = share of the codebase, colour = worst criticality inside it. See at a glance which modules carry the most weight <em>and</em> the most risk — where to focus first.
+          </p>
+        </div>
+
+        <div class="benefit-card-premium testing">
+          <div class="benefit-header">
+            <div class="benefit-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <h3 class="benefit-title-premium">Architecture Decision Record</h3>
+          </div>
+          <p class="benefit-description">
+            Every signed evidence pack now includes a Markdown ADR: the decision, the engine recommendation and any architect override, the rationale, considered options, scope &amp; consequences, and known limitations — governance documentation, generated for you.
+          </p>
+        </div>
+
+        <div class="benefit-card-premium bpmn">
+          <div class="benefit-header">
+            <div class="benefit-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <h3 class="benefit-title-premium">Run-Over-Run Progress</h3>
+          </div>
+          <p class="benefit-description">
+            Because every analysis is an immutable, signed run, the board deck can show a tamper-evident trend: Clean Core Score, findings and complexity deltas versus the previous run — a defensible record of remediation progress, not a re-editable status slide.
+          </p>
+        </div>
       </div>
 
-      <div class="card" style="margin-bottom: 16px; background-color: #f0fdf4; border-color: #d1fae5;">
-        <div class="card-title" style="color: #065f46;">Stateless AI Routing & Model Training Isolation</div>
-        <p style="color: #065f46; font-size: 12.5px; margin-bottom: 8px;">
-          All AI prompts are routed via a secure, server-side API proxy to Google Vertex AI.
-        </p>
-        <p style="color: #065f46; font-size: 12.5px;">
-          In accordance with Google Cloud Enterprise data safety terms, all code snippets sent to the backend proxy are <strong>strictly excluded from LLM model training and reinforcement cycles</strong>. Your intellectual property remains strictly yours.
-        </p>
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-value"><span>3</span> Scores</div>
+          <div class="stat-label">Clean Core · Complexity · Criticality</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">BPMN <span>2.0</span></div>
+          <div class="stat-label">+ RACI &amp; Level-5 SOP blueprints</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">TCO &amp; <span>ROI</span></div>
+          <div class="stat-label">C-level upgrade-impact calculator</div>
+        </div>
       </div>
 
-      <div class="card" style="background-color: #f9fafb;">
-        <div class="card-title" style="color: #0f172a;">GDPR-Aligned Data Processing &amp; Sovereignty (Art. 25 &amp; 17 GDPR)</div>
-        <p style="color: #475569; font-size: 12.5px; margin-bottom: 6px;">
-          All server, database, and compute layers are hosted entirely within the GCP region <strong>Belgium (europe-west1)</strong>, satisfying European data residency policies.
-        </p>
-        <p style="color: #475569; font-size: 12.5px;">
-          Triggering account deletion initiates an atomic backend routine (Art. 17 GDPR - Right to Erasure) that permanently wipes Firebase Auth records, Firestore project documents, and stored ZIP files instantly. The system never parses or processes actual business master data.
-        </p>
-      </div>
-
-      <div class="card" style="background-color: #eff6ff; border-color: #bfdbfe;">
-        <div class="card-title" style="color: #1e40af;">Tenant Security Architecture</div>
-        <p style="color: #1e40af; font-size: 12.5px; margin-bottom: 6px;">
-          Every S/4HANA tenant connection is restricted to <strong>read-only OData metadata reads and test execution</strong>. No write operations are permitted. Credentials are processed in memory only — nothing is persisted on our servers.
-        </p>
-        <p style="color: #1e40af; font-size: 12.5px;">
-          Every tenant connection request is <strong>manually reviewed and approved</strong> by the platform administrator before activation, ensuring no unauthorized system access.
+      <div class="highlight-box">
+        <p>
+          <strong>Portable by design:</strong> outputs are standard — abapGit ZIP export, ABAP-Unit / Express tests, BPMN 2.0 XML (importable into SAP Signavio or SAP Build) and a signed audit pack. You own what you generate. No lock-in.
         </p>
       </div>
     </div>
 
     <div class="page-footer">
-      <span>Section 3: Free Community Edition & Compliance</span>
+      <span>Section 2: Benefits — Transparency &amp; Governance</span>
       <span>Clean-Core.io Whitepaper</span>
       <span>Page 4</span>
     </div>
   </div>
 
-  <!-- PAGE 5: DETAILS 1 - TECHNICAL DETAILS: RAP vs. CAP & API-MAPPING -->
+  <!-- PAGE 5: SECURITY I -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">Clean-Core<span>.io</span></div>
+      <div class="title-tag">Section 3: Security — Keys &amp; AI</div>
+    </div>
+
+    <div class="page-content">
+      <h2><span>03.</span> Security, Part 1: Your Keys &amp; Your Code</h2>
+      <p class="lead-paragraph">
+        Proprietary legacy source code is a highly confidential business asset. Clean-Core.io is engineered with strict, verifiable boundaries around credentials and AI processing.
+      </p>
+
+      <div class="card" style="margin-bottom: 12px; background-color: #f0fdf4; border-color: #d1fae5;">
+        <div class="card-title" style="color: #065f46;">BYOK — Server-Side AES-256-GCM, Never Client-Exposed</div>
+        <p style="color: #065f46; font-size: 11.5px; margin-bottom: 6px;">
+          Bring Your Own Key is optional: without it, every account gets <strong>5 free transformations</strong> on a shared community key; with your own Google Gemini key, usage is unlimited. Your key is encrypted at rest with <strong>AES-256-GCM</strong> in a server-only Firestore store (<code>allow read, write: if false</code>).
+        </p>
+        <p style="color: #065f46; font-size: 11.5px;">
+          The plaintext key is <strong>never returned to the browser</strong> — only the last four characters are ever shown. It is used exclusively to forward your request to the Gemini API through a secure server-side proxy. No credit card; you pay only for your own Google usage.
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="background-color: #f8fafc;">
+          <div class="card-title" style="color: #0f172a;">Keys Never Reach the Client</div>
+          <p style="color: #475569; font-size: 11.5px;">
+            Every AI call is proxied through a hardened server route: a strict model allowlist, a prompt-size cap, per-user rate limiting, and an MFA gate on sensitive actions. Provider keys never touch client code.
+          </p>
+        </div>
+        <div class="card" style="background-color: #f8fafc;">
+          <div class="card-title" style="color: #0f172a;">Model-Training Isolation</div>
+          <p style="color: #475569; font-size: 11.5px;">
+            Under Google's applicable Gemini API data-use terms, the code you send is not used to train Google's foundational models. When you use your own key (BYOK), the terms of your own Google account apply. Your IP stays yours.
+          </p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 12px; background-color: #eff6ff; border-color: #bfdbfe;">
+        <div class="card-title" style="color: #1e40af;">Tenant Security Architecture</div>
+        <p style="color: #1e40af; font-size: 11.5px; margin-bottom: 6px;">
+          Optional S/4HANA connections are strictly <strong>read-only</strong> (OData metadata reads and test execution) — no write operations. Credentials are processed in memory only and never persisted; production domains are automatically blocked, so only non-productive sandbox/test systems are reachable.
+        </p>
+        <p style="color: #1e40af; font-size: 11.5px;">
+          Every live-tenant request is <strong>manually reviewed and approved</strong> by the platform administrator before activation — no unauthorized system access.
+        </p>
+      </div>
+
+      <div class="amber-box">
+        <p>
+          <strong>Honest boundary:</strong> for the paid Gemini API the “not used for training” terms apply directly; if you bring a free-tier key, Google's free-tier data-use terms govern instead. We state the applicable terms rather than an absolute promise we cannot control.
+        </p>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Section 3: Security — Keys &amp; AI</span>
+      <span>Clean-Core.io Whitepaper</span>
+      <span>Page 5</span>
+    </div>
+  </div>
+
+  <!-- PAGE 6: SECURITY II -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">Clean-Core<span>.io</span></div>
+      <div class="title-tag">Section 3: Security — Trust Chain &amp; Data</div>
+    </div>
+
+    <div class="page-content">
+      <h2><span>03.</span> Security, Part 2: Trust Chain &amp; Data Protection</h2>
+      <p class="lead-paragraph">
+        The output is only trustworthy if it is tamper-evident and your data is handled to EU standards. Both are built in.
+      </p>
+
+      <div class="grid-2">
+        <div class="card" style="background-color: #f8fafc;">
+          <div class="card-title" style="color: #0f172a;">Immutable, Signed Runs</div>
+          <p style="color: #475569; font-size: 11.5px;">
+            Every analysis is captured as an immutable, HMAC-signed “Run”. The evidence pack is generated and signed <strong>server-side</strong>, so a valid signature attests to server-computed content — closing any client-forged-hash gap.
+          </p>
+        </div>
+        <div class="card" style="background-color: #f8fafc;">
+          <div class="card-title" style="color: #0f172a;">Three-Tier Verification</div>
+          <p style="color: #475569; font-size: 11.5px;">
+            Anyone can verify a pack's manifest hash and signature. The AI narrative is deliberately excluded from the signed payload — the signature attests to evidence, not to free text.
+          </p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 12px; background-color: #f9fafb;">
+        <div class="card-title" style="color: #0f172a;">GDPR-Aligned Data Processing &amp; EU Sovereignty (Art. 17 &amp; 25)</div>
+        <p style="color: #475569; font-size: 11.5px; margin-bottom: 6px;">
+          All server, database and compute layers run entirely within the GCP region <strong>Belgium (europe-west1)</strong>, satisfying EU data-residency requirements. Transfers to US sub-processors are safeguarded by EU Standard Contractual Clauses.
+        </p>
+        <p style="color: #475569; font-size: 11.5px;">
+          Account deletion triggers an atomic erasure routine (Art. 17) that <strong>immediately deletes your live database and authentication entries</strong>; residual copies in encrypted backups age out within 30 days. The system never parses or stores actual business master data.
+        </p>
+      </div>
+
+      <div class="grid-2" style="margin-top: 12px;">
+        <div class="card" style="background-color: #f8fafc;">
+          <div class="card-title" style="color: #0f172a;">Application Hardening</div>
+          <p style="color: #475569; font-size: 11.5px;">
+            A strict Content-Security-Policy, server-side HTML sanitization (DOMPurify), and authenticated, token-verified API routes for every mutating action.
+          </p>
+        </div>
+        <div class="card" style="background-color: #f8fafc;">
+          <div class="card-title" style="color: #0f172a;">Supply-Chain Assurance</div>
+          <p style="color: #475569; font-size: 11.5px;">
+            CI secret scanning, a dependency-audit gate and a CycloneDX SBOM on every build; GitHub Actions pinned by commit SHA. Only permissive open-source licenses in the dependency tree.
+          </p>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <p>
+          <strong>Cookies &amp; tracking:</strong> only strictly necessary Firebase Auth storage is used — no analytics, advertising or profiling trackers, and no third-party marketing pixels.
+        </p>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Section 3: Security — Trust Chain &amp; Data</span>
+      <span>Clean-Core.io Whitepaper</span>
+      <span>Page 6</span>
+    </div>
+  </div>
+
+  <!-- PAGE 7: TECHNICAL DETAILS -->
   <div class="page">
     <div class="page-header">
       <div class="brand">Clean-Core<span>.io</span></div>
@@ -760,9 +628,9 @@
     </div>
 
     <div class="page-content">
-      <h2><span>04.</span> Technical Details: RAP vs. CAP & API Mapping</h2>
+      <h2><span>04.</span> Technical Details: RAP vs. CAP &amp; API Mapping</h2>
       <p class="lead-paragraph">
-        The modernization engine decides during Stage 1 based on syntax analysis which extensibility path is best suited for your legacy system:
+        During analysis, the engine decides — from syntax and coupling evidence — which extensibility path best fits each object:
       </p>
 
       <table class="matrix-table">
@@ -776,97 +644,100 @@
         <tbody>
           <tr>
             <td><strong>Runtime Engine</strong></td>
-            <td>Runs natively directly within the S/4HANA core.</td>
-            <td>Runs decoupled on the SAP BTP (Node.js/TS).</td>
+            <td>Runs natively within the S/4HANA core.</td>
+            <td>Runs decoupled on SAP BTP (Node.js/TS).</td>
           </tr>
           <tr>
             <td><strong>Interfaces</strong></td>
-            <td>Uses synchronous released CDS views.</td>
+            <td>Synchronous released CDS views.</td>
             <td>Decoupled via OData APIs or Event Mesh.</td>
           </tr>
           <tr>
             <td><strong>RISE Compliance</strong></td>
             <td>Strict SaaS compliance (zero core modifications).</td>
-            <td>Upgrade-resilient Tier 2 custom API wrappers.</td>
+            <td>Upgrade-resilient Tier-2 custom API wrappers.</td>
           </tr>
           <tr>
             <td><strong>Focus Case</strong></td>
             <td>Immediate database updates and transactional locks.</td>
-            <td>Customer portals, external mobile apps, SaaS tools.</td>
+            <td>Customer portals, mobile apps, external SaaS.</td>
           </tr>
         </tbody>
       </table>
 
-      <div class="card" style="margin-top: 15px; background-color: #f8fafc;">
-        <div class="card-title" style="color: #0f172a;">Automated API Mapping & Decoupling</div>
-        <p style="color: #475569; font-size: 12.5px; margin-bottom: 8px;">
-          Direct SELECTs on old tables (like KNA1 for customers or BSEG for financials) trigger immediate audit errors. The engine maps these queries to modern standard interfaces:
+      <div class="card" style="margin-top: 14px; background-color: #f8fafc;">
+        <div class="card-title" style="color: #0f172a;">Automated API Mapping &amp; Decoupling</div>
+        <p style="color: #475569; font-size: 12px; margin-bottom: 8px;">
+          Direct SELECTs on legacy tables (e.g. <code>KNA1</code>, <code>BSEG</code>) are audit blockers. The engine maps them to released standard interfaces, grounded in SAP's own Apache-2.0 Cloudification Repository:
         </p>
         <ul class="check-list" style="margin-bottom: 0;">
-          <li><code>KNA1</code> (Customer Master) &rarr; Maps to CDS View <code>I_Customer</code></li>
-          <li><code>BSEG</code> (Accounting Segment) &rarr; Maps to CDS View <code>I_JournalEntry</code></li>
-          <li><code>MARA</code> (Material Master) &rarr; Maps to OData API <code>API_PRODUCT_SRV</code></li>
-          <li><code>VBAK</code> (Sales Header) &rarr; Maps to RAP Entity <code>I_SalesOrderTP</code></li>
+          <li><code>KNA1</code> (Customer Master) &rarr; CDS View <code>I_Customer</code></li>
+          <li><code>BSEG</code> (Accounting Segment) &rarr; CDS View <code>I_JournalEntry</code></li>
+          <li><code>MARA</code> (Material Master) &rarr; OData API <code>API_PRODUCT_SRV</code></li>
+          <li><code>VBAK</code> (Sales Header) &rarr; RAP Entity <code>I_SalesOrderTP</code></li>
         </ul>
+      </div>
+
+      <div class="highlight-box">
+        <p>
+          <strong>Built on open data:</strong> the object catalog is grounded in SAP's Apache-2.0-licensed Cloudification Repository, merged with Clean-Core.io's curated mappings. The platform is free to use and built on open standards — the reasoning is transparent, the outputs are portable.
+        </p>
       </div>
     </div>
 
     <div class="page-footer">
       <span>Section 4: RAP vs. CAP Details</span>
       <span>Clean-Core.io Whitepaper</span>
-      <span>Page 5</span>
+      <span>Page 7</span>
     </div>
   </div>
 
-  <!-- PAGE 6: DETAILS 2 - QUALITY ENGINEERING & CTA -->
+  <!-- PAGE 8: HONEST CLOSE & CTA -->
   <div class="page">
     <div class="page-header">
       <div class="brand">Clean-Core<span>.io</span></div>
-      <div class="title-tag">Section 5: Quality & Joining</div>
+      <div class="title-tag">Section 5: Scope &amp; Joining</div>
     </div>
 
     <div class="page-content">
-      <h2><span>05.</span> Quality Engineering & New Capabilities</h2>
+      <h2><span>05.</span> Honest Scope &amp; How to Join</h2>
       <p class="lead-paragraph">
-        A clean refactoring is only complete when the result is fully functional, auditable, and governed. The Clean Core Accelerator equips every transformation with built-in quality assurance, business documentation, and governance controls:
+        Trust is built on being clear about the boundaries. Here is what Clean-Core.io deliberately does — and does not — do.
       </p>
 
       <div class="grid-2">
-        <div class="card">
-          <div class="card-title navy">ADT Cockpit Simulation</div>
-          <p style="color: #475569; font-size: 12.5px;">
-            Generates standard ABAP Unit test classes with local database doubles, simulating execution in a virtual Eclipse ADT Test Cockpit console. For BTP CAP, Express unit test suites validate against S/4HANA sandboxes.
-          </p>
+        <div class="card" style="background-color: #f0fdf4; border-color: #d1fae5;">
+          <div class="card-title emerald">What It Does</div>
+          <ul class="check-list" style="margin: 6px 0 0 0;">
+            <li>Generates a first Clean-Core-compliant draft + signed evidence</li>
+            <li>Runs deterministic analysis before any AI</li>
+            <li>Recommends RAP / CAP with a transparent rationale</li>
+            <li>Produces tests, BPMN, TCO and an audit pack</li>
+          </ul>
         </div>
-        <div class="card">
-          <div class="card-title navy">Clean Core Score & TCO Audit</div>
-          <p style="color: #475569; font-size: 12.5px;">
-            Quantifies technical debt and custom IP value. Features an interactive C-Level TCO & ROI calculator predicting upgrade-impact savings based on Clean Core compliance scores.
-          </p>
-        </div>
-      </div>
-
-      <div class="grid-2" style="margin-top: 4px;">
-        <div class="card">
-          <div class="card-title navy">BPMN 2.0 & Business SOP</div>
-          <p style="color: #475569; font-size: 12.5px;">
-            Maps modernized processes into standard BPMN 2.0 XML with swimlanes. Includes a two-stage blueprint layer with RACI matrices, Level 5 SOP narratives, and internal compliance controls.
-          </p>
-        </div>
-        <div class="card">
-          <div class="card-title navy">Live Tenant Validation</div>
-          <p style="color: #475569; font-size: 12.5px;">
-            Connect your S/4HANA tenant and validate in real-time: connectivity, authentication, OData schema discovery, and live data reads &mdash; all read-only scoped and admin-gated.
-          </p>
+        <div class="card" style="background-color: #fffbeb; border-color: #fde68a;">
+          <div class="card-title" style="color: #92400e;">What It Does Not Do</div>
+          <ul class="check-list" style="margin: 6px 0 0 0;">
+            <li style="color:#92400e;">Perform or guarantee an automated migration</li>
+            <li style="color:#92400e;">Replace SAP's own tools (ADT, ATC) or expert judgment</li>
+            <li style="color:#92400e;">Deliver production-ready code without architect review</li>
+            <li style="color:#92400e;">Claim any affiliation with or endorsement by SAP SE</li>
+          </ul>
         </div>
       </div>
 
-      <div class="card" style="margin-top: 15px; margin-bottom: 20px; background: linear-gradient(135deg, #0b1c30 0%, #080f1e 100%); border: none; color: #ffffff; text-align: center; padding: 25px;">
-        <div class="card-title" style="color: #10b981; font-size: 13px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;">Join the Community</div>
-        <p style="color: #cbd5e1; font-size: 13px; margin-bottom: 16px;">
-          Generate the first Clean-Core-compliant draft for review and approval. Start with 5 free transformations or bring your own Gemini API key (BYOK) for unlimited access &mdash; no credit card required.
+      <div class="amber-box">
+        <p>
+          All generated output is a <strong>draft for expert evaluation</strong>. Review, test and approve it with a qualified SAP architect before any productive use. Clean-Core.io is a free, non-commercial community project provided for research and evaluation — independent, and not affiliated with SAP SE or Google LLC.
         </p>
-        <a href="https://clean-core.io" target="_blank" style="display: inline-block; background-color: #10b981; color: #ffffff; font-weight: 800; font-size: 11px; text-decoration: none; padding: 10px 24px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.1em; transition: all 0.2s;">
+      </div>
+
+      <div class="card" style="margin-top: 14px; margin-bottom: 18px; background: linear-gradient(135deg, #0b1c30 0%, #080f1e 100%); border: none; color: #ffffff; text-align: center; padding: 24px;">
+        <div class="card-title" style="color: #10b981; font-size: 13px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;">Join the Community</div>
+        <p style="color: #cbd5e1; font-size: 12.5px; margin-bottom: 14px; text-align: center;">
+          Generate the first Clean-Core-compliant draft for review and approval. Start with 5 free transformations, or bring your own Gemini API key (BYOK) for unlimited access — no credit card required.
+        </p>
+        <a href="https://clean-core.io" target="_blank" style="display: inline-block; background-color: #10b981; color: #ffffff; font-weight: 800; font-size: 11px; text-decoration: none; padding: 10px 24px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.1em;">
           Get Started &rarr; https://clean-core.io
         </a>
       </div>
@@ -884,9 +755,9 @@
     </div>
 
     <div class="page-footer">
-      <span>Section 5: Quality & New Capabilities</span>
+      <span>Section 5: Scope &amp; Joining</span>
       <span>Clean-Core.io Whitepaper</span>
-      <span>Page 6</span>
+      <span>Page 8</span>
     </div>
   </div>
 
