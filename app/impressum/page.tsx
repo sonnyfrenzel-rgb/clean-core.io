@@ -5,7 +5,7 @@ import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = {
   title: 'Impressum – Legal Notice | Clean-Core.io',
-  description: 'Legal notice (Impressum) for Clean-Core.io according to § 5 TMG. Contact information, responsible person, and disclaimer.',
+  description: 'Legal notice (Impressum) for Clean-Core.io according to § 5 DDG. Contact information, responsible person, and disclaimer.',
   alternates: {
     canonical: 'https://clean-core.io/impressum',
   },
@@ -38,7 +38,7 @@ export default function ImpressumPage() {
         <div className="space-y-10 text-gray-700 leading-relaxed">
           <section>
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
-              Information according to § 5 TMG
+              Information according to § 5 DDG (Digitale-Dienste-Gesetz)
             </h2>
             <p className="text-base">
               Felix Frenzel<br />

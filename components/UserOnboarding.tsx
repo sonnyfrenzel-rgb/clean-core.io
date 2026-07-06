@@ -421,6 +421,9 @@ export default function UserOnboarding() {
       {/* Terms of Service & Guidelines overlay */}
       <LegalOverlay isOpen={showTerms} onClose={() => setShowTerms(false)} title="Terms of Service & Guidelines">
         <div className="space-y-6 text-slate-800">
+          <a href="/terms" target="_blank" rel="noopener noreferrer" className="block p-3 bg-green-50 border border-green-200 rounded-lg text-sm font-semibold text-green-800 hover:bg-green-100 transition-colors">
+            This is a short summary. Read the full, authoritative Terms of Service &amp; Community Guidelines at clean-core.io/terms ↗
+          </a>
           <div>
             <h3 className="text-lg font-bold mb-2">1. Scope and Purpose</h3>
             <p className="text-sm leading-relaxed">

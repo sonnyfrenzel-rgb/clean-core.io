@@ -886,6 +886,8 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
               <span className="text-gray-800">|</span>
               <Link href="/datenschutz" className="hover:text-white transition-colors cursor-pointer">Privacy Policy</Link>
               <span className="text-gray-800">|</span>
+              <Link href="/terms" className="hover:text-white transition-colors cursor-pointer">Terms of Service</Link>
+              <span className="text-gray-800">|</span>
               <Link href="/licenses" className="hover:text-white transition-colors cursor-pointer">Licenses</Link>
             </p>
             <div className="mt-12 text-[10px] sm:text-[11px] text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-900 bg-gray-950/50 p-6 rounded-2xl text-left space-y-3">
