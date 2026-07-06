@@ -740,6 +740,27 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
             <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">Community Access</h2>
             <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Every feature is included for free — no locked exports, no premium tiers. The only limit is 5 transformations; bring your own Gemini API key for unlimited runs. Both are 100% free.</p>
           </div>
+
+          {/* The Free Community Model — positioning statement */}
+          <div className="max-w-4xl mx-auto mb-16">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {[
+                { t: 'Free to use', d: 'Free for the SAP community — 5 transformations at no cost, or bring your own Gemini key (BYOK) for unlimited runs under your own terms.' },
+                { t: 'Built on open standards & open data', d: 'Our object catalog is grounded in SAP’s Apache-2.0 Cloudification Repository, and your output is portable — standard abapGit and tests. You own what you generate. No lock-in.' },
+                { t: 'Transparent by design', d: 'Every finding is tied to evidence and a source; coverage is shown per object — including the honest cases where there is no clean path. Belegt, nicht behauptet.' },
+                { t: 'A complement, not a replacement', d: 'We accelerate the first assessment and draft. The architecture decisions — and the judgment — stay with you. An independent product, not affiliated with or endorsed by SAP SE.' },
+              ].map((p) => (
+                <div key={p.t} className="rounded-3xl border border-gray-200 bg-white p-6 text-left hover:border-emerald-300 hover:shadow-lg transition-all">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                    <h3 className="text-base font-black text-gray-900">{p.t}</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 leading-relaxed">{p.d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Card 1: Free Community Edition (no API key needed) */}
             <div data-testid="card-sandbox" className="relative flex flex-col p-8 sm:p-10 rounded-[2.5rem] border border-gray-200 bg-white text-gray-900 hover:border-green-300 hover:shadow-xl transition-all duration-300">
@@ -864,6 +885,8 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
               <Link href="/impressum" className="hover:text-white transition-colors cursor-pointer">Legal Notice</Link>
               <span className="text-gray-800">|</span>
               <Link href="/datenschutz" className="hover:text-white transition-colors cursor-pointer">Privacy Policy</Link>
+              <span className="text-gray-800">|</span>
+              <Link href="/licenses" className="hover:text-white transition-colors cursor-pointer">Licenses</Link>
             </p>
             <div className="mt-12 text-[10px] sm:text-[11px] text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-900 bg-gray-950/50 p-6 rounded-2xl text-left space-y-3">
               <span className="font-extrabold text-gray-400 uppercase tracking-widest block border-b border-gray-900 pb-1.5">Legal Disclaimer & Verification Notice</span>

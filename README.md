@@ -134,7 +134,7 @@ Operations, monitoring, backups and rules deployment: **[docs/OPERATIONS.md](doc
 
 ---
 
-## 📄 Open Source License
+## 📄 License & Usage
 
-This project is licensed under the **MIT License** — completely open source, secure, and free to use.
+Clean-Core.io is **free to use**, built on **open standards and open data** — its object catalog is grounded in SAP's Apache-2.0-licensed [SAP Cloudification Repository](https://github.com/SAP/abap-atc-cr-cv-s4hc). The platform itself (deterministic engine, curated catalog layer, UI and branding) is **proprietary — all rights reserved** and is *not* open source. You own the output you generate.
 
