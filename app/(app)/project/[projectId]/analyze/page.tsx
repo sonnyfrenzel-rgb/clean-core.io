@@ -48,6 +48,7 @@ import EvidenceSweep from '@/components/analyze/EvidenceSweep';
 import UsageUpload from '@/components/analyze/UsageUpload';
 import UsageRiskMatrix from '@/components/analyze/UsageRiskMatrix';
 import SectionBoundary from '@/components/SectionBoundary';
+import WhyScorePanel from '@/components/analyze/WhyScorePanel';
 import { getRunCapabilities } from '@/lib/run-capabilities';
 import { joinUsageWithEvidence } from '@/lib/abap/usage-join';
 import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
@@ -1697,7 +1698,8 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
     }
 
     return (
-      <div 
+      <>
+      <div
         className="prose prose-base md:prose-lg max-w-none text-slate-800
           prose-headings:text-slate-900 prose-headings:font-black prose-headings:tracking-tight
           prose-h1:text-2xl md:text-3xl prose-h1:mb-6 prose-h1:mt-8
@@ -1716,6 +1718,8 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
         "
         dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(project.analysis) }}
       />
+      <WhyScorePanel project={project} />
+      </>
     );
   };
 
