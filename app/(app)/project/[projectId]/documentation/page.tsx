@@ -435,8 +435,15 @@ ${context}`;
     setBusinessDocError('');
     
     try {
-      const prompt = `Act as an Enterprise Business Process Compliance & SOP Expert.
+      const prompt = `Act as an Enterprise Business Process, SOP & Compliance expert writing for a BUSINESS audience — process owners, master-data stewards, compliance and internal audit. This is the BUSINESS layer of the documentation.
 Based on the following Process Blueprint (BPMN flow and Level 4 tasks), generate the corresponding Business SOP & RACI Matrix layer.
+
+CRITICAL — PURE BUSINESS LANGUAGE (no IT/technical content):
+- Write exclusively in business and process terms. Describe WHAT happens for the business and WHO is responsible — never HOW it is implemented technically.
+- Do NOT mention any technical or IT concept. Forbidden terms: source code, API/OData/CDS/CAP/RAP/SDK, database/table/Z-table, JSON/schema/payload, HANA, deployment/pipeline, HTTP, latency/milliseconds, unit test, retry/rollback. All technical detail already lives in the separate Technical Blueprint and must NOT be repeated here.
+- RACI roles must be ORGANIZATIONAL/BUSINESS roles only (e.g. Process Owner, Master Data Steward, Business Unit Lead, Compliance Officer, Internal Audit, Finance, Supply Chain Manager). Avoid IT roles (Developer, Architect, IT Operations, System).
+- KPIs must be BUSINESS KPIs (e.g. process cycle time, data accuracy / quality %, first-pass yield, compliance adherence %, exception rate). Never technical metrics (write success rate, response time in ms, schema adherence).
+- Exceptions and controls must be BUSINESS actions (escalation, four-eyes / dual approval, manual review, segregation of duties, periodic control testing, exception-report review) — not technical remediation.
 
 Return ONLY a JSON object wrapped in a markdown code block (\`\`\`json ... \`\`\`).
 DO NOT include any text before or after the JSON.
@@ -447,28 +454,28 @@ ${documentation}
 Structure the JSON exactly like this:
 {
   "raci_matrix": [
-    { 
-      "stepId": "Task1", 
-      "r": "Responsible Role (matching roles in l3_flow e.g. System, Developer, CISO, User)", 
-      "a": "Accountable Role (e.g. Service Owner, Process Owner)", 
-      "c": "Consulted Role (e.g. CISO, Senior Architect)", 
-      "i": "Informed Role (e.g. IT Operations, finance)" 
+    {
+      "stepId": "Task1",
+      "r": "Responsible business role who performs the step (e.g. Master Data Steward)",
+      "a": "Accountable business role, single owner (e.g. Process Owner)",
+      "c": "Consulted business role (e.g. Compliance Officer, Business Unit Lead)",
+      "i": "Informed business role (e.g. Finance, Internal Audit)"
     }
   ],
   "sop_details": [
-    { 
-      "stepId": "Task1", 
-      "narrative": "Detailed step-by-step description of how this process step is handled (3-4 sentences).", 
-      "businessException": "Fallback guidance on what to do if this step fails (e.g., fallback process, manual controls).", 
-      "kpiTarget": "KPI metrics target for this task (e.g. Process time < 30min, 100% compliance score)." 
+    {
+      "stepId": "Task1",
+      "narrative": "Plain-business, step-by-step description of how the business handles this process step and the outcome it produces (3-4 sentences). No technical detail.",
+      "businessException": "Business fallback if the step cannot be completed (e.g. escalate to the Process Owner, route for manual review, apply dual approval).",
+      "kpiTarget": "Business KPI target (e.g. Process cycle time < 1 business day; 100% data-quality compliance; < 2% exception rate)."
     }
   ],
   "audit_controls": [
-    { 
-      "stepId": "Task1", 
-      "controlObjective": "Compliance risk control goal (e.g. Prevent unauthorized direct database modification).", 
-      "mitigationAction": "Mitigation steps (e.g. Use Tier 1 custom API proxy or released standard API mapping).", 
-      "assertionMethod": "Verification method (e.g. automated pipeline code verification, unit tests verification)." 
+    {
+      "stepId": "Task1",
+      "controlObjective": "Business / compliance control goal (e.g. Ensure master-data accuracy and segregation of duties).",
+      "mitigationAction": "Business mitigation (e.g. mandatory approval workflow, four-eyes principle, data-quality review before release).",
+      "assertionMethod": "Business verification (e.g. periodic internal-audit review, control sign-off, exception-report review)."
     }
   ]
 }`;
