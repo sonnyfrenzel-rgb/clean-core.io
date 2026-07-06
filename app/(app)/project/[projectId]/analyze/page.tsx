@@ -32,6 +32,7 @@ import type { SourceFile } from '@/lib/abap/findings-detector';
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 
 import CodeInventoryTable from '@/components/analyze/CodeInventoryTable';
+import ModuleHeatmap from '@/components/analyze/ModuleHeatmap';
 import DataCouplingTable from '@/components/analyze/DataCouplingTable';
 import BusinessValueAudit from '@/components/analyze/BusinessValueAudit';
 import PlainEnglishGuide from '@/components/analyze/PlainEnglishGuide';
@@ -1636,6 +1637,9 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
               {/* Code Inventory Table */}
               <CodeInventoryTable codeInventory={project.codeInventory || []} />
+
+              {/* Module Risk Heatmap */}
+              <ModuleHeatmap codeInventory={project.codeInventory || []} />
 
               {/* Data Coupling Table */}
               <DataCouplingTable dataCoupling={project.dataCoupling || []} />
