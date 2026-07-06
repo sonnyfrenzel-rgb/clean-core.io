@@ -63,7 +63,7 @@ export default function DatenschutzPage() {
                 <strong className="text-gray-800">Firestore User Profiles:</strong> We store metadata about your platform usage (e.g., number of performed code transformations, system limits, as well as your first and last name) in our secure database.
               </li>
               <li>
-                <strong className="text-gray-800">Bring Your Own Key (BYOK):</strong> If you configure your own Google Gemini API key in the settings, this key is encrypted and stored in our secure Firestore instance. It is used exclusively to forward your transformation requests directly via a secure backend proxy to the Gemini API, never exposing your key to the browser.
+                <strong className="text-gray-800">Bring Your Own Key (BYOK):</strong> Providing your own key is optional; without it, transformations use a shared community key within your free quota. If you configure your own Google Gemini API key in the settings, this key is encrypted and stored in our secure Firestore instance. It is used exclusively to forward your transformation requests directly via a secure backend proxy to the Gemini API, never exposing your key to the browser.
               </li>
             </ul>
           </section>
@@ -77,7 +77,7 @@ export default function DatenschutzPage() {
             </p>
             <div className="p-4 bg-green-50 border border-green-200 rounded-2xl">
               <p className="text-sm text-green-800">
-                <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong>. Our integration utilizes stateless API requests, meaning that your uploaded codes and projects are never stored or used to train Google&apos;s foundational AI models.
+                <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Under Google&apos;s applicable API data-use terms, this content is not used to train Google&apos;s foundational AI models. When you use your own key (BYOK), the terms of your own Google account additionally apply.
               </p>
             </div>
           </section>
@@ -122,7 +122,7 @@ export default function DatenschutzPage() {
               <li>Right to Lodge a Complaint with a Supervisory Authority (Art. 77 GDPR)</li>
             </ul>
             <p className="text-sm text-gray-500 mt-4">
-              To exercise these rights, particularly to cascadingly erase all your data immediately, you can trigger account deletion directly in your Profile Settings under the <strong>Danger Zone</strong>, which will permanently and instantly wipe all database and authentication entries. Alternatively, contact us at <a href="mailto:info@clean-core.io" className="text-green-600 hover:underline font-semibold">info@clean-core.io</a>.
+              To exercise these rights, particularly to erase your data, you can trigger account deletion directly in your Profile Settings under the <strong>Danger Zone</strong>, which immediately deletes your live database and authentication entries. Residual copies in encrypted backups age out within 30 days (see section 6). Alternatively, contact us at <a href="mailto:info@clean-core.io" className="text-green-600 hover:underline font-semibold">info@clean-core.io</a>.
             </p>
           </section>
 
@@ -135,6 +135,15 @@ export default function DatenschutzPage() {
             </p>
             <p className="text-base">
               <strong>Retention:</strong> Personal data is retained for the life of your account and removed on account erasure (Art. 17); residual copies in encrypted backups age out within 30 days. Security audit records may be kept longer where required for accountability. Detailed per-collection retention is documented in our internal data-retention policy.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
+              7. Cookies &amp; Tracking
+            </h2>
+            <p className="text-base">
+              Clean-Core.io uses only strictly necessary cookies and local storage required to authenticate you and maintain your session via Google Firebase Authentication. We do not use analytics, advertising, or tracking cookies, and we embed no third-party marketing or profiling trackers. Because only essential, functional storage is used, no cookie-consent banner is required (§ 25(2) TDDDG / ePrivacy Directive).
             </p>
           </section>
 

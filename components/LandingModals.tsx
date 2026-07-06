@@ -1049,7 +1049,7 @@ export default function LandingModals() {
               The ABAP source files you upload and the generated modernization artifacts (such as solution designs, TypeScript code, and test cases) are stored in our secure Google Firebase cloud environment in Europe.
             </p>
             <p className="text-xs text-slate-500 mt-2">
-              <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong>. Our integration utilizes stateless API requests, meaning that your uploaded codes and projects are never stored or used to train Google's foundational AI models.
+              <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Under Google's applicable API data-use terms, this content is not used to train Google's foundational AI models. When you use your own key (BYOK), the terms of your own Google account additionally apply.
             </p>
           </div>
 

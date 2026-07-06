@@ -37,7 +37,7 @@ export default function TermsPage() {
           Terms of Service <span className="text-gray-400 font-medium text-2xl md:text-3xl">&amp; Community Guidelines</span>
         </h1>
         <p className="text-gray-600 leading-relaxed mb-12">
-          Consolidated version — effective 2 July 2026 (v2.0.0). This document is the single authoritative version of the
+          Consolidated version — effective 8 July 2026 (v2.0.0). This document is the single authoritative version of the
           Terms of Service and Community Guidelines for the website and application available at clean-core.io (the
           &ldquo;Platform&rdquo;). It replaces and supersedes any prior text shown in the onboarding gate or the landing
           sign-up modal.
@@ -135,7 +135,9 @@ export default function TermsPage() {
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">5. Third-Party AI Services and Bring-Your-Own-Key (BYOK)</h2>
             <p className="text-base mb-3">
               The Platform relies on third-party generative AI services provided by Google (the Google Gemini API) to
-              produce output. Where you provide your own API key (&ldquo;Bring Your Own Key&rdquo; / BYOK), that key is
+              produce output. Providing your own key is optional: without it, the Platform uses a shared community key
+              within the free quota (see section 6); with your own key, usage is not quota-limited. Where you provide your
+              own API key (&ldquo;Bring Your Own Key&rdquo; / BYOK), that key is
               stored encrypted and is used solely to forward your requests to the Google Gemini API on your behalf via a
               secure backend proxy; your key is never exposed to the browser. Your use of the Google Gemini API is
               additionally subject to Google&rsquo;s own terms and privacy policy, over which the operator has no control.
@@ -149,9 +151,11 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">6. Usage Limits / Quota</h2>
             <p className="text-base">
-              To keep the Platform available to the community, usage may be subject to a quota (currently 5
-              transformations/analyses per user). The operator may adjust, introduce, or remove quotas at any time to
-              protect the stability and fair use of the Platform.
+              To keep the Platform available to the community, usage without your own API key is subject to a quota:
+              currently a total of 5 transformations/analyses per user account. This is a one-time allotment and is not
+              reset on a daily or monthly basis. When you provide your own Google Gemini API key (BYOK, see section 5), no
+              quota applies. The operator may adjust, introduce, or remove quotas at any time to protect the stability and
+              fair use of the Platform.
             </p>
           </section>
 
