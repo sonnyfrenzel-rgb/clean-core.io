@@ -37,6 +37,10 @@ export default function PilotWarningBanner() {
         <Link href="/impressum" className="underline hover:text-green-750 transition-colors outline-none cursor-pointer">
           Legal Notice
         </Link>
+        <span>•</span>
+        <Link href="/terms" className="underline hover:text-green-750 transition-colors outline-none cursor-pointer">
+          Terms
+        </Link>
 
         <span className="text-amber-300">|</span>
         <button 

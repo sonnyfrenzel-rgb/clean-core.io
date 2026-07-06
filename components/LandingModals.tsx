@@ -949,9 +949,9 @@ export default function LandingModals() {
 
                     <p className="text-[9px] text-gray-400 text-center leading-relaxed font-medium pt-1">
                       By signing in, you agree to our{' '}
-                      <button type="button" onClick={() => updateQueryParams('legal', 'datenschutz')} className="underline hover:text-green-600">Privacy Policy</button>{' '}
+                      <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="underline hover:text-green-600">Privacy Policy</a>{' '}
                       and{' '}
-                      <button type="button" onClick={() => updateQueryParams('legal', 'impressum')} className="underline hover:text-green-600">Terms</button>.
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-green-600">Terms</a>.
                     </p>
                   </div>
                 </form>
