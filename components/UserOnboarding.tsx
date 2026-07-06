@@ -431,7 +431,7 @@ export default function UserOnboarding() {
           <div>
             <h3 className="text-lg font-bold mb-2">2. Free Community Edition Usage</h3>
             <p className="text-sm leading-relaxed text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100 font-medium">
-              Platform access is completely free of charge and open to everyone, for any purpose. Generated code is a draft — it must be reviewed, tested and approved by qualified architects before deployment to any live production environment.
+              Platform access is completely free of charge. Clean-Core.io is a non-commercial community project provided for research and evaluation purposes. Generated code is a draft — it must be reviewed, tested and approved by qualified architects before deployment to any live production environment.
             </p>
           </div>
 

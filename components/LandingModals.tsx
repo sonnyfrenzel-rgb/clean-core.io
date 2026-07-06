@@ -1145,7 +1145,7 @@ export default function LandingModals() {
           <div>
             <h3 className="text-lg font-bold mb-2">2. Free Community Edition Usage</h3>
             <p className="text-sm leading-relaxed text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100 font-medium">
-              Platform access is completely free and open to everyone, for any purpose. Generated code and evidence are drafts — review, test and approve them with qualified architects before any productive use.
+              Platform access is completely free of charge. Clean-Core.io is a non-commercial community project provided for research and evaluation purposes. Generated code and evidence are drafts — review, test and approve them with qualified architects before any productive use.
             </p>
           </div>
           <div>
