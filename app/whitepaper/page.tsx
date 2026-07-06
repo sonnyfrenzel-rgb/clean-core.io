@@ -1,98 +1,79 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, Download, ShieldCheck, FileText, ArrowRight, RotateCw, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Download, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { APP_VERSION } from '@/lib/version';
 
 export const metadata: Metadata = {
-  title: 'S/4HANA Modernization Whitepaper — Edition 2.0 | Clean-Core.io',
-  description: 'From legacy ABAP inventory to governed target-architecture decisions. A structured path from unknown custom code to architect-reviewed modernization choices.',
+  title: 'The Clean Core Accelerator — Community Whitepaper | Clean-Core.io',
+  description: 'Free community accelerator for SAP Clean Core modernization: a deterministic evidence engine first, then AI — Clean-Core-compliant drafts and signed audit evidence for architect review. Readable version of the downloadable PDF.',
   alternates: {
     canonical: 'https://clean-core.io/whitepaper',
   },
   openGraph: {
-    title: 'S/4HANA Modernization Whitepaper — Edition 2.0 | Clean-Core.io',
-    description: 'From legacy ABAP inventory to governed target-architecture decisions. Assessment, decision tree, compliance audit pack and security model.',
+    title: 'The Clean Core Accelerator — Community Whitepaper | Clean-Core.io',
+    description: 'Evidence-first SAP Clean Core modernization: benefits, security model, RAP/CAP routing and a signed audit pack. Complementary to SAP tooling.',
     url: 'https://clean-core.io/whitepaper',
     type: 'article',
     siteName: 'Clean-Core.io',
   },
 };
 
-/* ─── Data arrays (content-driven, as per design spec) ─── */
+/* ─── Content mirrors the downloadable PDF (linkedin whitepaper) ─── */
 
-const deliverables = [
-  'A modernization assessment before transformation starts.',
-  'A custom-code and integration-risk inventory.',
-  'A Clean-Core decision tree with recommended target architecture.',
-  'Draft implementations for RAP, CAP or integration patterns.',
-  'Test stubs and validation checklists.',
-  'BPMN / SOP documentation for business review.',
-  'A compliance and audit pack per project.',
+const benefitsEvidence = [
+  { title: 'Evidence, Not Opinions', desc: 'A deterministic AST engine maps every custom-table access, RFC call and dynpro pattern to concrete findings — before any AI runs. A defensible baseline you can take into an audit, not a black-box guess.' },
+  { title: 'Days → Minutes', desc: 'Manually finding released SAP APIs and rewriting legacy ABAP into RAP classes or CAP services takes days to weeks. Clean-Core.io produces the first qualified draft plus evidence in minutes — the expert reviews instead of starting from a blank page.' },
+  { title: 'Upgrade Resilience', desc: 'Replacing unreleased database dependencies with officially released SAP APIs (e.g. I_Customer, API_PRODUCT_SRV) keeps your ERP core fully upgradable — decoupling update cycles from months to days.' },
+  { title: 'Automated Test Stubs', desc: 'Matching unit tests are generated with the code — ABAP Unit doubles for RAP, or Express/Node suites for CAP — and executed in an isolated, hermetic sandbox. QA starts covered, not empty.' },
 ];
 
-const assessmentRows = [
-  { label: 'Custom-code inventory', desc: 'Programs, classes, function modules, includes, exits, enhancements, forms, tables and generated artifacts.' },
-  { label: 'Table access analysis', desc: 'Direct SELECT / UPDATE / INSERT / DELETE usage, joins on SAP standard tables, Z-table dependencies and data-ownership risks.' },
-  { label: 'API & release analysis', desc: 'Released APIs, unreleased APIs, private classes, obsolete function modules and compatibility concerns.' },
-  { label: 'Legacy pattern findings', desc: 'Dynpro, RFC, update task, batch input, BAPI, user exits, implicit enhancements and background jobs.' },
-  { label: 'Complexity scoring', desc: 'Size, coupling, number of dependencies, critical table access, testability and modernization effort.' },
-  { label: 'Business criticality', desc: 'Process area, user volume, frequency, financial impact, regulatory relevance and operational fallback.' },
-  { label: 'Recommended target architecture', desc: 'Key User Extensibility, Developer Extensibility / RAP, Side-by-Side CAP, Integration Suite, Event Mesh or Retire.' },
+const benefitsGovernance = [
+  { title: '“Why This Route & Score”', desc: 'A transparency panel shows exactly why a route (RAP / CAP) and score were chosen: the deterministic router rationale, a confidence indicator, and the driving data-coupling findings by risk. Evidence you can defend.' },
+  { title: 'Module Risk Heatmap', desc: 'A LOC-weighted treemap of detected ABAP objects grouped by module: tile size = share of the codebase, colour = worst criticality inside it. See at a glance which modules carry the most weight and the most risk.' },
+  { title: 'Architecture Decision Record', desc: 'Every signed evidence pack includes a Markdown ADR: the decision, the engine recommendation and any architect override, the rationale, considered options, scope & consequences, and known limitations.' },
+  { title: 'Run-Over-Run Progress', desc: 'Because every analysis is an immutable, signed run, the board deck can show a tamper-evident trend: Clean Core Score, findings and complexity deltas versus the previous run — remediation progress, not a re-editable slide.' },
 ];
 
-const decisionTree = [
-  { option: 'Key User Extensibility', use: 'Field additions, simple validations, UI adaptations and low-risk process variants via released in-app tooling.', avoid: 'Logic is complex, integration-heavy or needs custom lifecycle control.', output: 'Configuration guidance and implementation checklist.' },
-  { option: 'Developer Extensibility / RAP', use: 'Logic belongs close to S/4HANA, needs transactional consistency and can use released ABAP Cloud APIs.', avoid: 'Scenario depends on unreleased objects or external channels dominate the design.', output: 'RAP BO draft, CDS / service model, ABAP Unit stubs.' },
-  { option: 'Side-by-Side CAP', use: 'Process can be decoupled, needs independent release cycles, external UX or cloud-native integration.', avoid: 'Tight synchronous locking or direct core updates are required.', output: 'CAP service draft, data model, API facade and test suite.' },
-  { option: 'Integration Suite', use: 'Main problem is orchestration, API mediation, mapping, routing or partner connectivity.', avoid: 'Custom business state and complex domain logic are central.', output: 'Integration-flow blueprint, mappings and monitoring controls.' },
-  { option: 'Event Mesh', use: 'Benefits from asynchronous decoupling, event-driven updates and loose consumer coupling.', avoid: 'Immediate consistency and synchronous confirmation are mandatory.', output: 'Event model, topic design and subscriber contract.' },
-  { option: 'Retire', use: 'No usage, duplicate functionality, or replaceable by standard SAP capability.', avoid: 'Business ownership or audit retention is unclear.', output: 'Retirement proposal, validation checklist and decommission plan.' },
+const securityKeys = [
+  { title: 'BYOK — Server-Side AES-256-GCM', desc: 'Bring Your Own Key is optional: without it, every account gets 5 free transformations on a shared community key; with your own Google Gemini key, usage is unlimited. Your key is encrypted at rest with AES-256-GCM in a server-only store — never returned to the browser (only the last four characters are shown), and used solely via a secure server-side proxy.' },
+  { title: 'Keys Never Reach the Client', desc: 'Every AI call is proxied through a hardened server route: a strict model allowlist, a prompt-size cap, per-user rate limiting, and an MFA gate on sensitive actions. Provider keys never touch client code.' },
+  { title: 'Model-Training Isolation', desc: 'Under Google’s applicable Gemini API data-use terms, the code you send is not used to train Google’s foundational models. When you use your own key (BYOK), the terms of your own Google account apply. Your IP stays yours.' },
+  { title: 'Tenant Security', desc: 'Optional S/4HANA connections are strictly read-only (OData metadata reads and test execution) — no write operations. Credentials are processed in memory only; production domains are blocked; every live-tenant request is admin-approved before activation.' },
 ];
 
-const auditPack = [
-  { title: 'Input fingerprint', desc: 'Timestamp, uploaded file hash, project ID, user / tenant context and processing configuration.' },
-  { title: 'Mapping rules', desc: 'Source patterns, matched rules, confidence levels, rejected alternatives and manual override notes.' },
-  { title: 'Model evidence', desc: 'Model / provider, prompt-template version, policy version, settings and generation timestamp.' },
-  { title: 'Review checklist', desc: 'Architecture, security, privacy, SAP release check, test evidence and owner sign-off.' },
-  { title: 'Known limitations', desc: 'Unsupported ABAP constructs, incomplete metadata, assumptions and low-confidence mappings.' },
-  { title: 'Data protection & tenant notes', desc: 'Processing region, storage scope, credential handling, retention / deletion status and BYOK status.' },
+const securityTrust = [
+  { title: 'Immutable, Signed Runs', desc: 'Every analysis is captured as an immutable, HMAC-signed “Run”. The evidence pack is generated and signed server-side, so a valid signature attests to server-computed content — closing any client-forged-hash gap.' },
+  { title: 'Three-Tier Verification', desc: 'Anyone can verify a pack’s manifest hash and signature. The AI narrative is deliberately excluded from the signed payload — the signature attests to evidence, not to free text.' },
+  { title: 'EU-Hosted & Art. 17 Erasure', desc: 'Application storage and primary processing run in europe-west1 (Belgium). Account deletion immediately deletes your live database and authentication entries; residual encrypted backups age out within 30 days. AI and email subprocessors are disclosed separately under their own terms and transfer safeguards.' },
+  { title: 'Hardening & Supply Chain', desc: 'Strict Content-Security-Policy, server-side HTML sanitization, CI secret scanning, a dependency-audit gate and a CycloneDX SBOM on every build. Only strictly necessary Firebase Auth storage — no analytics or marketing trackers.' },
 ];
 
-const securityControls = [
-  'Use non-production or representative code for the public release, unless a customer-specific agreement is in place.',
-  'Keep AI-provider keys, platform secrets and tenant credentials separated by responsibility and storage boundary.',
-  'Store only what the workflow requires, and define retention and deletion behavior clearly.',
-  'Document which data is sent to AI providers, which region processes it, and which contractual terms apply.',
-  'Make tenant connectivity read-scoped by design where possible, admin-approved and auditable.',
-  'Treat generated output as draft material that requires expert review before production use.',
+const rapCapRows = [
+  { dim: 'Runtime engine', rap: 'Runs natively within the S/4HANA core.', cap: 'Runs decoupled on SAP BTP (Node.js/TS).' },
+  { dim: 'Interfaces', rap: 'Synchronous released CDS views.', cap: 'Decoupled via OData APIs or Event Mesh.' },
+  { dim: 'RISE compliance', rap: 'Strict SaaS compliance (zero core modifications).', cap: 'Upgrade-resilient Tier-2 custom API wrappers.' },
+  { dim: 'Focus case', rap: 'Immediate database updates and transactional locks.', cap: 'Customer portals, mobile apps, external SaaS.' },
 ];
 
-const workflowSteps = [
-  'Upload a legacy ABAP package, representative extract or code sample.',
-  'Generate the modernization assessment and risk inventory.',
-  'Review findings by object, process area and risk category.',
-  'Use the Clean-Core decision tree to choose the target pattern.',
-  'Generate a draft implementation and test scaffold.',
-  'Validate APIs, tenant metadata and business assumptions.',
-  'Export the delivery package and compliance / audit pack.',
-  'Complete expert review before productive implementation.',
+const apiMappings = [
+  { table: 'KNA1', label: 'Customer Master', target: 'CDS View I_Customer' },
+  { table: 'BSEG', label: 'Accounting Segment', target: 'CDS View I_JournalEntry' },
+  { table: 'MARA', label: 'Material Master', target: 'OData API API_PRODUCT_SRV' },
+  { table: 'VBAK', label: 'Sales Header', target: 'RAP Entity I_SalesOrderTP' },
 ];
 
-const exampleFindings = [
-  { finding: 'Direct SELECT on KNA1', risk: 'Upgrade fragility and unreleased data dependency.', path: 'Replace with released customer API / CDS view where suitable.' },
-  { finding: 'Direct access to BSEG', risk: 'High financial and performance risk.', path: 'Use released journal-entry interfaces and explicit finance review.' },
-  { finding: 'Batch input for transaction flow', risk: 'UI coupling and fragile automation.', path: 'Replace with released APIs, RAP behavior or integration flow.' },
-  { finding: 'Update-task function module', risk: 'Hidden side effects and transaction coupling.', path: 'Redesign transaction boundary and test failure behavior.' },
-  { finding: 'Unused Z report', risk: 'Maintenance cost without value.', path: 'Validate usage and retire.' },
+const doesDo = [
+  'Generates a first Clean-Core-compliant draft plus signed evidence.',
+  'Runs deterministic analysis before any AI.',
+  'Recommends RAP / CAP with a transparent rationale.',
+  'Produces tests, BPMN, TCO and an audit pack.',
 ];
 
-const qualityCards = [
-  'Unit-test stubs for generated RAP / CAP drafts.',
-  'API contract checks and schema validation.',
-  'Security review checklist for credentials, authorization and data flow.',
-  'Business SOP and BPMN export for process owners.',
-  'Clean-Core score and remediation backlog.',
-  'Manual-review gates for low-confidence mappings.',
+const doesNotDo = [
+  'Perform or guarantee an automated migration.',
+  'Replace SAP’s own tools (ADT, ATC) or expert judgment.',
+  'Deliver production-ready code without architect review.',
+  'Claim any affiliation with or endorsement by SAP SE.',
 ];
 
 /* ─── Component ─── */
@@ -110,7 +91,7 @@ export default function WhitepaperPage() {
               <span className="text-[9px] font-black uppercase tracking-wider text-gray-500 mt-0.5">Whitepaper</span>
             </div>
           </Link>
-          <a 
+          <a
             href="/Clean-Core_S4HANA_Modernization_Whitepaper.pdf"
             download
             className="flex items-center gap-2 text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider px-4 py-2 rounded-full border border-gray-200 hover:border-green-400 bg-white/70 backdrop-blur-sm"
@@ -122,9 +103,7 @@ export default function WhitepaperPage() {
 
       {/* ─── Cover / Hero ─── */}
       <section className="relative py-24 md:py-36 overflow-hidden bg-slate-50/30">
-        {/* Grid background */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:40px_40px] z-0" />
-        {/* Gradient blobs */}
         <div className="absolute top-[15%] left-[8%] w-[340px] h-[340px] bg-emerald-300 rounded-full blur-[120px] opacity-20 z-0 pointer-events-none" />
         <div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] bg-indigo-300 rounded-full blur-[140px] opacity-15 z-0 pointer-events-none" />
 
@@ -135,23 +114,22 @@ export default function WhitepaperPage() {
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-7xl font-black tracking-tighter mb-6 leading-[0.9] text-gray-950">
-            S/4HANA Modernization Assessment &{' '}
+            The Clean Core{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">
-              Clean-Core Decision Support
+              Accelerator
             </span>
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-            From legacy ABAP inventory to governed target-architecture decisions — a structured path from unknown custom code to architect-reviewed modernization choices.
+            A free, community-built accelerator for SAP Clean Core modernization. It runs a deterministic evidence engine first, then AI — turning legacy custom ABAP into Clean-Core-compliant drafts and cryptographically signed audit evidence for architect review. Complementary to SAP’s own tooling, never a replacement.
           </p>
 
-          {/* Meta grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto text-left">
             {[
               { label: 'Author', value: 'Felix Frenzel' },
               { label: 'Platform', value: 'Clean-Core.io' },
               { label: 'Classification', value: 'Public · Community Guide' },
-              { label: 'Date', value: 'June 2026' },
+              { label: 'Edition', value: `2.0 · ${APP_VERSION}` },
             ].map((m) => (
               <div key={m.label} className="bg-white/80 backdrop-blur-sm border border-gray-200/80 rounded-xl p-3">
                 <div className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">{m.label}</div>
@@ -161,293 +139,195 @@ export default function WhitepaperPage() {
           </div>
 
           <p className="text-xs text-gray-400 mt-6 max-w-xl mx-auto">
-            Audience: SAP enterprise architects · transformation leads · security reviewers · audit teams · implementation partners
+            Audience: SAP architects · developers · transformation leads · security &amp; audit reviewers
           </p>
         </div>
       </section>
 
       <main className="max-w-4xl mx-auto px-6 py-16 md:py-24 space-y-28">
 
-        {/* ─── Section 01: Executive Summary ─── */}
-        <section id="executive-summary">
-          <SectionEyebrow number="01" total="10" />
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-6">
-            Executive Summary
-          </h2>
+        {/* 01 — Introduction */}
+        <section id="introduction">
+          <SectionEyebrow number="01" total="08" />
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-6">What is Clean-Core.io?</h2>
           <p className="text-gray-600 leading-relaxed mb-6">
-            S/4HANA transformations rarely fail because teams do not understand the Clean Core principle. They fail because legacy systems contain years of custom ABAP, Z tables, direct database reads, unreleased APIs, batch inputs, update tasks, Dynpro logic, RFC dependencies and business-critical exceptions that are difficult to classify.
+            Clean Core means keeping the standard SAP ERP core untouched. When custom code is mixed directly into standard classes and tables, every future S/4HANA update becomes slow, risky and expensive. Clean-Core.io — built by someone personally affected by an S/4HANA transformation — turns that uncertainty into a structured, evidence-backed modernization backlog.
           </p>
-          <p className="text-gray-600 leading-relaxed mb-8">
-            Clean-Core.io helps teams turn this uncertainty into a structured modernization backlog. The platform analyzes legacy custom code, identifies technical and compliance risks, recommends a Clean-Core target pattern and generates reviewable implementation drafts.
-          </p>
-
-          {/* Goal callout */}
           <div className="bg-emerald-50/70 border border-emerald-200 border-l-4 border-l-green-600 rounded-xl p-6 mb-8">
-            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-green-700 mb-2">The Goal</div>
+            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-green-700 mb-2">The governing principle — “belegt, nicht behauptet” (proven, not claimed)</div>
             <p className="text-sm text-gray-700 leading-relaxed">
-              Not automatic production migration — but a faster, more transparent path from unknown legacy custom code to architect-reviewed modernization decisions.
+              A deterministic ABAP evidence engine runs before any AI. Every finding, score and routing decision is tied to concrete evidence in your code. The AI writes the human-readable narrative on top — and that narrative is deliberately excluded from the signed evidence, so a signature always attests to server-computed facts, not to free text.
             </p>
           </div>
-
-          {/* What it is / is not */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-2xl p-6">
               <div className="text-xs font-black uppercase tracking-wider text-green-700 mb-3">What it is</div>
-              <p className="text-sm text-gray-600 leading-relaxed">
-An assessment, evidence and governance accelerator — fast enough for exploration, structured enough for governance, honest enough to hold up under review.
-              </p>
+              <p className="text-sm text-gray-600 leading-relaxed">An assessment, evidence and governance accelerator — fast enough for exploration, structured enough for governance, honest enough to hold up under review.</p>
             </div>
             <div className="bg-red-50/50 border border-red-200/70 rounded-2xl p-6">
               <div className="text-xs font-black uppercase tracking-wider text-red-700 mb-3">What it is not</div>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                A replacement for enterprise-architecture approval, SAP release checks, privacy review, penetration testing or production migration governance.
-              </p>
+              <p className="text-sm text-gray-600 leading-relaxed">A replacement for enterprise-architecture approval, SAP release checks, privacy review, penetration testing or production migration governance.</p>
             </div>
           </div>
         </section>
 
-        {/* ─── Section 02: Platform Deliverables ─── */}
-        <section id="platform-deliverables">
-          <SectionEyebrow number="02" total="10" />
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">
-            What Clean-Core.io Produces
-          </h2>
-          <p className="text-gray-600 leading-relaxed mb-8">
-            Clean-Core.io is an accelerator for governed modernization work. Code generation is valuable — but the decision evidence around it is what enterprise teams trust.
-          </p>
-          <div className="border border-gray-200 rounded-2xl overflow-hidden">
-            {deliverables.map((item, i) => (
-              <div key={i} className={`flex items-start gap-4 p-4 ${i !== deliverables.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-xs font-black text-green-700">
-                  {String(i + 1).padStart(2, '0')}
-                </div>
-                <p className="text-sm text-gray-700 leading-relaxed pt-1">{item}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ─── Section 03: Modernization Assessment ─── */}
-        <section id="modernization-assessment">
-          <SectionEyebrow number="03" total="10" />
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">
-            Modernization Assessment Before Transformation
-          </h2>
-          <p className="text-gray-600 leading-relaxed mb-8">
-            Before any refactoring starts, the platform creates a project assessment report — a shared view of what exists, how risky it is, and which target architecture fits.
-          </p>
-          <div className="border border-gray-200 rounded-2xl overflow-hidden">
-            {assessmentRows.map((row, i) => (
-              <div key={i} className={`flex flex-col sm:flex-row gap-2 sm:gap-6 p-4 ${i !== assessmentRows.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                <div className="flex-shrink-0 sm:w-56 text-xs font-black uppercase tracking-wider text-green-700 pt-0.5">{row.label}</div>
-                <p className="text-sm text-gray-600 leading-relaxed">{row.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ─── Section 04: Clean-Core Decision Tree ─── */}
-        <section id="decision-tree">
-          <SectionEyebrow number="04" total="10" />
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">
-            Clean-Core Decision Tree
-          </h2>
-          <p className="text-gray-600 leading-relaxed mb-8">
-            A decision tree explains why a recommendation was made — and which alternatives were rejected.
-          </p>
-
-          {/* Desktop table */}
-          <div className="hidden md:block border border-gray-200 rounded-2xl overflow-hidden">
-            {/* Header */}
-            <div className="grid grid-cols-[1.1fr_1.5fr_1.3fr_1.3fr] bg-slate-900 text-white">
-              <div className="p-4 text-[10px] font-black uppercase tracking-wider text-emerald-400 border-r border-slate-700">Decision option</div>
-              <div className="p-4 text-[10px] font-black uppercase tracking-wider text-gray-400 border-r border-slate-700">Use when</div>
-              <div className="p-4 text-[10px] font-black uppercase tracking-wider text-gray-400 border-r border-slate-700">Avoid when</div>
-              <div className="p-4 text-[10px] font-black uppercase tracking-wider text-gray-400">Typical output</div>
-            </div>
-            {decisionTree.map((row, i) => (
-              <div key={i} className={`grid grid-cols-[1.1fr_1.5fr_1.3fr_1.3fr] ${i !== decisionTree.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                <div className="p-4 text-xs font-bold text-green-700 border-r border-gray-100">{row.option}</div>
-                <div className="p-4 text-xs text-gray-600 leading-relaxed border-r border-gray-100">{row.use}</div>
-                <div className="p-4 text-xs text-gray-600 leading-relaxed border-r border-gray-100">{row.avoid}</div>
-                <div className="p-4 text-xs text-gray-600 leading-relaxed">{row.output}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Mobile cards */}
-          <div className="md:hidden space-y-4">
-            {decisionTree.map((row, i) => (
-              <div key={i} className="border border-gray-200 rounded-2xl p-5 space-y-3">
-                <div className="text-sm font-black text-green-700">{row.option}</div>
-                <div className="space-y-2">
-                  <div><span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Use when: </span><span className="text-xs text-gray-600">{row.use}</span></div>
-                  <div><span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Avoid when: </span><span className="text-xs text-gray-600">{row.avoid}</span></div>
-                  <div><span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Output: </span><span className="text-xs text-gray-600">{row.output}</span></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ─── Section 05: Compliance & Audit Pack ─── */}
-        <section id="compliance-audit">
-          <SectionEyebrow number="05" total="10" />
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">
-            Compliance & Audit Pack Per Project
-          </h2>
-          <p className="text-gray-600 leading-relaxed mb-8">
-            Enterprise customers need evidence. Every project export includes an audit pack documenting what the platform saw, what it decided, and what limitations remain.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {auditPack.map((card) => (
-              <div key={card.title} className="border border-gray-200 rounded-2xl p-5">
-                <div className="text-xs font-black uppercase tracking-wider text-gray-900 mb-2">{card.title}</div>
-                <p className="text-xs text-gray-500 leading-relaxed">{card.desc}</p>
-              </div>
-            ))}
-          </div>
-          <div className="bg-emerald-50/70 border border-emerald-200 border-l-4 border-l-green-600 rounded-xl p-6">
+        {/* 02 — Benefits I */}
+        <section id="benefits-evidence">
+          <SectionEyebrow number="02" total="08" />
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">Benefits, Part 1 — Evidence &amp; Speed</h2>
+          <p className="text-gray-600 leading-relaxed mb-8">Clean-Core.io is not a code translator — it is an evidence-first Clean Core accelerator. Architects, developers and decision-makers get immediate, defensible advantages:</p>
+          <CardGrid cards={benefitsEvidence} />
+          <div className="bg-emerald-50/70 border border-emerald-200 border-l-4 border-l-green-600 rounded-xl p-6 mt-8">
             <p className="text-sm text-gray-700 leading-relaxed">
-              Downloadable with the implementation ZIP — the bridge between prototype speed and enterprise governance.
+              A guided 7-stage workflow takes you from Analyze → Design → Transformation → Documentation → Testing → TCO → Delivery, and lets you export a compiled package with all modularized files, standard abapGit export and tests.
             </p>
           </div>
         </section>
 
-        {/* ─── Section 06: Security & Data Handling ─── */}
-        <section id="security">
-          <SectionEyebrow number="06" total="10" />
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">
-            Security & Data Handling
-          </h2>
-          <p className="text-gray-600 leading-relaxed mb-8">
-            The security model is described as implemented controls, intended scope and review boundaries — not as unconditional guarantees. This wording fits enterprise procurement expectations.
-          </p>
-          <div className="space-y-4">
-            {securityControls.map((ctrl, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-2.5 h-2.5 rounded-sm bg-green-600 mt-1.5" />
-                <p className="text-sm text-gray-600 leading-relaxed">{ctrl}</p>
+        {/* 03 — Benefits II */}
+        <section id="benefits-governance">
+          <SectionEyebrow number="03" total="08" />
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">Benefits, Part 2 — Transparency &amp; Governance</h2>
+          <p className="text-gray-600 leading-relaxed mb-8">Version 2.0 makes the reasoning inspectable and the progress auditable — so a recommendation survives scrutiny in a board room, not just a demo.</p>
+          <CardGrid cards={benefitsGovernance} />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
+            {[
+              { v: '3 Scores', l: 'Clean Core · Complexity · Criticality' },
+              { v: 'BPMN 2.0', l: '+ RACI & Level-5 SOP blueprints' },
+              { v: 'TCO & ROI', l: 'Upgrade-impact calculator' },
+            ].map((s) => (
+              <div key={s.v} className="bg-slate-50 border border-gray-200 rounded-2xl p-5 text-center">
+                <div className="text-lg font-black text-gray-900">{s.v}</div>
+                <div className="text-[11px] font-semibold text-gray-500 mt-1">{s.l}</div>
               </div>
             ))}
           </div>
-        </section>
-
-        {/* ─── Section 07: Reference Workflow ─── */}
-        <section id="reference-workflow">
-          <SectionEyebrow number="07" total="10" />
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">
-            Reference Workflow
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {workflowSteps.map((step, i) => (
-              <div key={i} className="flex items-start gap-3 bg-gray-50/80 border border-gray-200/70 rounded-xl p-4">
-                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-xs font-black text-green-700">
-                  {String(i + 1).padStart(2, '0')}
-                </div>
-                <p className="text-sm text-gray-600 leading-relaxed pt-1">{step}</p>
-              </div>
-            ))}
+          <div className="bg-emerald-50/70 border border-emerald-200 border-l-4 border-l-green-600 rounded-xl p-6 mt-4">
+            <p className="text-sm text-gray-700 leading-relaxed"><strong>Portable by design:</strong> outputs are standard — abapGit ZIP, ABAP-Unit / Express tests, BPMN 2.0 XML (importable into SAP Signavio or SAP Build) and a signed audit pack. You own what you generate. No lock-in.</p>
           </div>
         </section>
 
-        {/* ─── Section 08: Example Findings ─── */}
-        <section id="example-findings">
-          <SectionEyebrow number="08" total="10" />
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">
-            Example Findings
-          </h2>
+        {/* 04 — Security I */}
+        <section id="security-keys">
+          <SectionEyebrow number="04" total="08" />
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">Security, Part 1 — Your Keys &amp; Your Code</h2>
+          <p className="text-gray-600 leading-relaxed mb-8">Proprietary legacy source code is a highly confidential business asset. Clean-Core.io is engineered with strict, verifiable boundaries around credentials and AI processing.</p>
+          <CardGrid cards={securityKeys} />
+          <div className="bg-amber-50 border border-amber-200 border-l-4 border-l-amber-500 rounded-xl p-6 mt-8">
+            <p className="text-sm text-amber-800 leading-relaxed"><strong>Honest boundary:</strong> for the paid Gemini API the “not used for training” terms apply directly; if you bring a free-tier key, Google’s free-tier data-use terms govern instead. We state the applicable terms rather than an absolute promise we cannot control.</p>
+          </div>
+        </section>
 
-          {/* Desktop table */}
+        {/* 05 — Security II */}
+        <section id="security-trust">
+          <SectionEyebrow number="05" total="08" />
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">Security, Part 2 — Trust Chain &amp; Data Protection</h2>
+          <p className="text-gray-600 leading-relaxed mb-8">The output is only trustworthy if it is tamper-evident and your data is handled to EU standards. Both are built in.</p>
+          <CardGrid cards={securityTrust} />
+        </section>
+
+        {/* 06 — Technical */}
+        <section id="technical">
+          <SectionEyebrow number="06" total="08" />
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">Technical: RAP vs. CAP &amp; API Mapping</h2>
+          <p className="text-gray-600 leading-relaxed mb-8">During analysis, the engine decides — from syntax and coupling evidence — which extensibility path best fits each object:</p>
+
           <div className="hidden md:block border border-gray-200 rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-[1.2fr_1.3fr_1.5fr] bg-slate-900 text-white">
-              <div className="p-4 text-[10px] font-black uppercase tracking-wider text-emerald-400 border-r border-slate-700">Legacy finding</div>
-              <div className="p-4 text-[10px] font-black uppercase tracking-wider text-gray-400 border-r border-slate-700">Risk</div>
-              <div className="p-4 text-[10px] font-black uppercase tracking-wider text-gray-400">Recommended modernization path</div>
+            <div className="grid grid-cols-[1fr_1.5fr_1.5fr] bg-slate-900 text-white">
+              <div className="p-4 text-[10px] font-black uppercase tracking-wider text-emerald-400 border-r border-slate-700">Dimension</div>
+              <div className="p-4 text-[10px] font-black uppercase tracking-wider text-gray-400 border-r border-slate-700">In-App ABAP Cloud (RAP)</div>
+              <div className="p-4 text-[10px] font-black uppercase tracking-wider text-gray-400">Side-by-Side (BTP CAP)</div>
             </div>
-            {exampleFindings.map((row, i) => (
-              <div key={i} className={`grid grid-cols-[1.2fr_1.3fr_1.5fr] ${i !== exampleFindings.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                <div className="p-4 text-xs font-mono font-bold text-green-700 border-r border-gray-100">{row.finding}</div>
-                <div className="p-4 text-xs text-red-700/80 leading-relaxed border-r border-gray-100">{row.risk}</div>
-                <div className="p-4 text-xs text-gray-600 leading-relaxed">{row.path}</div>
+            {rapCapRows.map((row, i) => (
+              <div key={i} className={`grid grid-cols-[1fr_1.5fr_1.5fr] ${i !== rapCapRows.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                <div className="p-4 text-xs font-bold text-green-700 border-r border-gray-100">{row.dim}</div>
+                <div className="p-4 text-xs text-gray-600 leading-relaxed border-r border-gray-100">{row.rap}</div>
+                <div className="p-4 text-xs text-gray-600 leading-relaxed">{row.cap}</div>
               </div>
             ))}
           </div>
-
-          {/* Mobile cards */}
           <div className="md:hidden space-y-4">
-            {exampleFindings.map((row, i) => (
+            {rapCapRows.map((row, i) => (
               <div key={i} className="border border-gray-200 rounded-2xl p-5 space-y-2">
-                <div className="text-sm font-mono font-bold text-green-700">{row.finding}</div>
-                <div><span className="text-[10px] font-black uppercase tracking-wider text-red-500">Risk: </span><span className="text-xs text-gray-600">{row.risk}</span></div>
-                <div><span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Path: </span><span className="text-xs text-gray-600">{row.path}</span></div>
+                <div className="text-sm font-black text-green-700">{row.dim}</div>
+                <div><span className="text-[10px] font-black uppercase tracking-wider text-gray-400">RAP: </span><span className="text-xs text-gray-600">{row.rap}</span></div>
+                <div><span className="text-[10px] font-black uppercase tracking-wider text-gray-400">CAP: </span><span className="text-xs text-gray-600">{row.cap}</span></div>
               </div>
             ))}
           </div>
-        </section>
 
-        {/* ─── Section 09: Quality Engineering ─── */}
-        <section id="quality-engineering">
-          <SectionEyebrow number="09" total="10" />
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">
-            Quality Engineering
-          </h2>
-          <p className="text-gray-600 leading-relaxed mb-8">
-            Modernization is not complete when code compiles. The platform generates test and review evidence:
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {qualityCards.map((card, i) => (
-              <div key={i} className="border border-gray-200 rounded-2xl p-5 flex items-start gap-3">
-                <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-gray-600 leading-relaxed">{card}</p>
-              </div>
-            ))}
+          <div className="border border-gray-200 rounded-2xl p-6 mt-6">
+            <div className="text-xs font-black uppercase tracking-wider text-gray-900 mb-3">Automated API mapping</div>
+            <p className="text-sm text-gray-600 leading-relaxed mb-4">Direct SELECTs on legacy tables are audit blockers. The engine maps them to released standard interfaces, grounded in SAP’s Apache-2.0 Cloudification Repository:</p>
+            <div className="space-y-2">
+              {apiMappings.map((m) => (
+                <div key={m.table} className="flex items-center gap-3 text-sm">
+                  <code className="font-mono font-bold text-green-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded">{m.table}</code>
+                  <span className="text-gray-400 text-xs">{m.label}</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-gray-300 shrink-0" />
+                  <span className="text-gray-700 text-xs font-medium">{m.target}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-emerald-50/70 border border-emerald-200 border-l-4 border-l-green-600 rounded-xl p-6 mt-6">
+            <p className="text-sm text-gray-700 leading-relaxed"><strong>Built on open data:</strong> the object catalog is grounded in SAP’s Apache-2.0-licensed Cloudification Repository, merged with Clean-Core.io’s curated mappings. The platform is free to use and built on open standards — the reasoning is transparent, the outputs are portable.</p>
           </div>
         </section>
 
-        {/* ─── Section 10: Call to Action ─── */}
+        {/* 07 — Honest Scope */}
+        <section id="scope">
+          <SectionEyebrow number="07" total="08" />
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">Honest Scope</h2>
+          <p className="text-gray-600 leading-relaxed mb-8">Trust is built on being clear about the boundaries. Here is what Clean-Core.io deliberately does — and does not — do.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-2xl p-6">
+              <div className="text-xs font-black uppercase tracking-wider text-green-700 mb-3">What it does</div>
+              <ul className="space-y-2">
+                {doesDo.map((d) => (
+                  <li key={d} className="flex items-start gap-2 text-sm text-gray-600"><CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />{d}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="bg-amber-50/50 border border-amber-200/70 rounded-2xl p-6">
+              <div className="text-xs font-black uppercase tracking-wider text-amber-700 mb-3">What it does not do</div>
+              <ul className="space-y-2">
+                {doesNotDo.map((d) => (
+                  <li key={d} className="flex items-start gap-2 text-sm text-gray-600"><span className="w-2 h-2 rounded-sm bg-amber-500 shrink-0 mt-1.5" />{d}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 border-l-4 border-l-amber-500 rounded-xl p-6 mt-4">
+            <p className="text-sm text-amber-800 leading-relaxed">All generated output is a draft for expert evaluation. Review, test and approve it with a qualified SAP architect before any productive use. Clean-Core.io is a free, non-commercial community project provided for research and evaluation — independent, and not affiliated with SAP SE or Google LLC.</p>
+          </div>
+        </section>
+
+        {/* 08 — CTA */}
         <section id="get-started">
-          <SectionEyebrow number="10" total="10" />
+          <SectionEyebrow number="08" total="08" />
           <div className="bg-slate-900 text-white rounded-[2rem] p-8 sm:p-12 border border-slate-800 shadow-2xl relative overflow-hidden">
-            {/* Ambient glows */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.06),transparent_45%)] pointer-events-none" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(245,158,11,0.04),transparent_40%)] pointer-events-none" />
-
             <div className="relative z-10 space-y-6">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-white leading-tight">
-                Start with a non-production sample
-              </h2>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-white leading-tight">Start with a non-production sample</h2>
               <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl">
-                Use Clean-Core.io to create the first modernization assessment, review the decision tree with your SAP architect and export a governed delivery package for the next implementation step.
-              </p>
-              <p className="text-sm text-slate-400 leading-relaxed max-w-2xl">
-                Clean-Core.io is a practical accelerator for expert teams: fast enough for exploration, structured enough for governance and honest enough for enterprise review.
+                Generate the first Clean-Core-compliant draft for review, walk the decision with your SAP architect, and export a governed delivery package. Start with 5 free transformations, or bring your own Gemini API key (BYOK) for unlimited access — no credit card required.
               </p>
               <div className="flex flex-col sm:flex-row items-start gap-4 pt-2">
-                <Link
-                  href="/?auth=signin"
-                  className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-8 py-4 rounded-xl font-black text-sm transition-all shadow-lg hover:shadow-2xl hover:-translate-y-0.5"
-                >
+                <Link href="/?auth=signin" className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-8 py-4 rounded-xl font-black text-sm transition-all shadow-lg hover:shadow-2xl hover:-translate-y-0.5">
                   Get started <ArrowRight className="w-4 h-4" />
                 </Link>
-                <a
-                  href="/Clean-Core_S4HANA_Modernization_Whitepaper.pdf"
-                  download
-                  className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white px-6 py-4 rounded-xl font-bold text-sm transition-all border border-white/10"
-                >
+                <a href="/Clean-Core_S4HANA_Modernization_Whitepaper.pdf" download className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white px-6 py-4 rounded-xl font-bold text-sm transition-all border border-white/10">
                   <Download className="w-4 h-4" /> Download PDF
                 </a>
               </div>
             </div>
-
-            {/* Author sign-off */}
             <div className="relative z-10 mt-10 pt-8 border-t border-white/10 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400 font-black text-lg">
-                FF
-              </div>
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400 font-black text-lg">FF</div>
               <div>
                 <div className="text-sm font-bold text-white">Felix Frenzel</div>
-                <div className="text-xs text-slate-400">Founder & Community Architect · Bamberg, Germany</div>
+                <div className="text-xs text-slate-400">Founder &amp; Community Architect · Bamberg, Germany</div>
               </div>
             </div>
           </div>
@@ -458,12 +338,10 @@ An assessment, evidence and governance accelerator — fast enough for explorati
       <footer className="border-t border-gray-200 py-8 px-6">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
           <div className="flex items-center gap-2">
-            <div className="bg-slate-900 p-1 rounded-md">
-              <div className="w-2 h-2 rounded-sm bg-green-600" />
-            </div>
+            <div className="bg-slate-900 p-1 rounded-md"><div className="w-2 h-2 rounded-sm bg-green-600" /></div>
             <span className="font-bold text-gray-600">Clean-Core<span className="text-gray-400">.io</span></span>
           </div>
-          <span>Modernization Whitepaper · Edition 2.0 · v{APP_VERSION}</span>
+          <span>Community Whitepaper · Edition 2.0 · v{APP_VERSION}</span>
           <Link href="/impressum" className="hover:text-green-600 transition-colors">Impressum</Link>
         </div>
       </footer>
@@ -471,12 +349,25 @@ An assessment, evidence and governance accelerator — fast enough for explorati
   );
 }
 
-/* ─── Reusable subcomponent ─── */
+/* ─── Reusable subcomponents ─── */
 
 function SectionEyebrow({ number, total }: { number: string; total: string }) {
   return (
     <div className="text-[11px] font-black uppercase tracking-[0.16em] text-green-600 mb-3">
       Section {number} / {total}
+    </div>
+  );
+}
+
+function CardGrid({ cards }: { cards: { title: string; desc: string }[] }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {cards.map((c) => (
+        <div key={c.title} className="border border-gray-200 rounded-2xl p-6">
+          <div className="text-sm font-black text-gray-900 mb-2">{c.title}</div>
+          <p className="text-xs text-gray-600 leading-relaxed">{c.desc}</p>
+        </div>
+      ))}
     </div>
   );
 }
