@@ -4,11 +4,59 @@ import { rollupLevel } from '@/lib/abap/support-matrix';
 import { APP_VERSION } from '@/lib/version';
 import type { PresentationData, SlideData } from '@/components/PresentationViewer';
 
+/** A lightweight, per-run snapshot used to render the run-over-run trend slide. */
+export interface RunTrendPoint {
+  createdAt: string;
+  cleanCoreScore: number;
+  complexityScore: number;
+  criticalityScore: number;
+  findings: number;
+  version?: string;
+}
+
+/** Format a run-over-run delta with a direction arrow and a good/bad verdict. */
+function fmtDelta(delta: number, higherIsBetter: boolean): string {
+  if (delta === 0) return 'no change vs. previous run';
+  const arrow = delta > 0 ? '▲' : '▼';
+  const good = higherIsBetter ? delta > 0 : delta < 0;
+  const sign = delta > 0 ? '+' : '';
+  return `${arrow} ${sign}${delta} — ${good ? 'improved' : 'regressed'}`;
+}
+
+/** Build the "Progress vs. Previous Run" slide from ≥2 immutable analysis runs. */
+function buildRunTrendSlide(history: RunTrendPoint[]): SlideData {
+  const sorted = [...history].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const curr = sorted[sorted.length - 1];
+  const prev = sorted[sorted.length - 2];
+  const dScore = curr.cleanCoreScore - prev.cleanCoreScore;
+  const dFindings = curr.findings - prev.findings;
+  const dComplexity = curr.complexityScore - prev.complexityScore;
+  const overall = curr.cleanCoreScore - sorted[0].cleanCoreScore;
+
+  return {
+    title: 'Progress vs. Previous Run',
+    type: 'metrics',
+    subtitle: `Run-over-run delta across ${sorted.length} immutable, signed analysis runs`,
+    metrics: [
+      { label: 'Clean Core Score', value: `${curr.cleanCoreScore}/100`, sub: fmtDelta(dScore, true) },
+      { label: 'Findings', value: `${curr.findings}`, sub: fmtDelta(dFindings, false) },
+      { label: 'Complexity', value: `${curr.complexityScore}/100`, sub: fmtDelta(dComplexity, false) },
+    ],
+    content: [
+      `**Trajectory**: Clean Core Score has moved **${overall >= 0 ? '+' : ''}${overall} point${Math.abs(overall) === 1 ? '' : 's'}** since the first recorded run (${sorted.length} runs total).`,
+      `**Latest change**: ${dScore > 0 ? `Score improved by ${dScore}` : dScore < 0 ? `Score dropped by ${Math.abs(dScore)}` : 'Score held steady'}; ${dFindings < 0 ? `${Math.abs(dFindings)} fewer finding${Math.abs(dFindings) === 1 ? '' : 's'}` : dFindings > 0 ? `${dFindings} new finding${dFindings === 1 ? '' : 's'}` : 'no change in findings'} versus the previous run.`,
+      `**Governance value**: Each run is immutable and HMAC-signed, so this trend is a tamper-evident record of remediation progress — not a re-editable status slide.`,
+    ],
+    speakerNotes: `Compares the current run against the previous one and the baseline. Score delta ${dScore >= 0 ? '+' : ''}${dScore}, findings delta ${dFindings >= 0 ? '+' : ''}${dFindings}. Because runs are signed and immutable, the progression is auditable, not a self-reported claim.`,
+  };
+}
+
 export function buildBoardDeck(input: {
   project: Project;
   findings: SupportFinding[];
+  runHistory?: RunTrendPoint[];
 }): PresentationData {
-  const { project, findings } = input;
+  const { project, findings, runHistory } = input;
   
   // Calculate rollup level
   const levels = findings.map(f => f.level);
@@ -259,10 +307,18 @@ export function buildBoardDeck(input: {
     speakerNotes: 'This register summarizes the project-specific risks identified during static analysis. Each risk has an assigned owner, clear mitigation strategy, and a concrete gate.'
   };
 
+  const slides: SlideData[] = [slide1, slide2, slide3, slide4, slide5, slide6, slide7];
+
+  // Run-over-run progress — only meaningful with at least two recorded runs.
+  if (runHistory && runHistory.length >= 2) {
+    // Insert after the business case (slide5), before the trust/security posture.
+    slides.splice(5, 0, buildRunTrendSlide(runHistory));
+  }
+
   return {
     title: project.name || 'Executive Summary',
     date: new Date().toLocaleDateString(),
     author: 'Clean-Core Transformation Board',
-    slides: [slide1, slide2, slide3, slide4, slide5, slide6, slide7]
+    slides
   };
 }

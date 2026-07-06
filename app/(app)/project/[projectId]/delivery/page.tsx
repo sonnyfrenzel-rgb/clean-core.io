@@ -7,13 +7,13 @@ import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import Stepper from '@/components/Stepper';
 import { PresentationViewer, PresentationData } from '@/components/PresentationViewer';
-import { buildBoardDeck } from '@/lib/board-deck';
+import { buildBoardDeck, type RunTrendPoint } from '@/lib/board-deck';
 import { detectFindings } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel } from '@/lib/abap/class-model';
@@ -69,6 +69,7 @@ export default function DeliveryPage() {
   const { projectId } = useParams();
   const { profile } = useUserProfile();
   const [project, setProject] = useState<Project | null>(null);
+  const [runHistory, setRunHistory] = useState<RunTrendPoint[]>([]);
   const isAbapCloud = (project?.extensibilityRoute || '').includes('ABAP Cloud');
   const [loading, setLoading] = useState(true);
   const [documentation, setDocumentation] = useState('');
@@ -98,6 +99,37 @@ export default function DeliveryPage() {
               status: 'completed'
             });
           }
+
+          // Load the signed run history for the board-deck run-over-run trend.
+          try {
+            const uid = getAuth().currentUser?.uid;
+            if (uid) {
+              const snap = await getDocs(
+                query(
+                  collection(getDb(), 'projects', projectId as string, 'runs'),
+                  where('userId', '==', uid),
+                ),
+              );
+              const points: RunTrendPoint[] = snap.docs
+                .map((d) => d.data() as Record<string, unknown>)
+                .filter((r) => typeof r.runHash === 'string' && typeof r.createdAt === 'string')
+                .map((r) => ({
+                  createdAt: r.createdAt as string,
+                  cleanCoreScore: typeof r.cleanCoreScore === 'number' ? r.cleanCoreScore : 0,
+                  complexityScore: typeof r.complexityScore === 'number' ? r.complexityScore : 0,
+                  criticalityScore: typeof r.criticalityScore === 'number' ? r.criticalityScore : 0,
+                  findings: Array.isArray(r.worklist)
+                    ? r.worklist.length
+                    : Array.isArray(r.codeInventory)
+                    ? r.codeInventory.length
+                    : 0,
+                  version: typeof r.analyzerVersion === 'string' ? r.analyzerVersion : undefined,
+                }));
+              if (isMounted) setRunHistory(points);
+            }
+          } catch (histErr) {
+            console.error('Error loading run history:', histErr);
+          }
         }
       } catch (err) {
         console.error("Error fetching project:", err);
@@ -123,8 +155,8 @@ export default function DeliveryPage() {
 
   const deck = useMemo(() => {
     if (!project) return null;
-    return buildBoardDeck({ project, findings });
-  }, [project, findings]);
+    return buildBoardDeck({ project, findings, runHistory });
+  }, [project, findings, runHistory]);
 
   const downloadZip = async () => {
     if (!project) return;
