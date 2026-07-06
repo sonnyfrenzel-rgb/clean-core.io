@@ -10,6 +10,7 @@ import {
   generateExecutiveSummary,
   generateExecutiveSummaryDoc,
   generateDecisionRecord,
+  generateArchitectureDecisionRecord,
   generateFindingsCsv,
   generateModelCard,
   generateKnownLimitations,
@@ -99,6 +100,7 @@ export async function POST(req: NextRequest) {
       '03-findings.csv': generateFindingsCsv(project),
       '04-model-card.md': generateModelCard(project),
       '05-known-limitations.md': generateKnownLimitations(),
+      '06-architecture-decision-record.md': generateArchitectureDecisionRecord(project),
     };
 
     // 2. Hash server-side
