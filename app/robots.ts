@@ -17,7 +17,7 @@ export default function robots(): MetadataRoute.Robots {
           '/catalog',
           '/abap-custom-code-analysis',
           '/clean-core-score',
-          '/sap-tier-2-extensions',
+          '/sap-clean-core-object-classification',
           '/knowledge',
           '/how-it-works',
           '/about',

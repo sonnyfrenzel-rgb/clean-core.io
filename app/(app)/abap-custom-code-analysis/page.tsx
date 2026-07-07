@@ -176,8 +176,8 @@ export default function AbapAnalysisPage() {
               <Link href="/clean-core-score" className="block text-green-600 hover:underline">
                 → What is the Clean Core Score?
               </Link>
-              <Link href="/sap-tier-2-extensions" className="block text-green-600 hover:underline">
-                → ABAP Cloud & Tier-2 Extensions
+              <Link href="/sap-clean-core-object-classification" className="block text-green-600 hover:underline">
+                → Clean Core Object Classification (A–D)
               </Link>
             </div>
           </div>

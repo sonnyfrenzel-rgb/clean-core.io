@@ -37,7 +37,7 @@ export const FEATURES: FeatureContent[] = [
       'The sign-off is self-attested (recorded from your own session), not a formal organizational approval or a governed workflow.',
     ],
     related: [
-      { href: '/sap-tier-2-extensions', label: 'SAP Tier 2 Extensions' },
+      { href: '/sap-clean-core-object-classification', label: 'SAP Object Classification (A–D)' },
       { href: '/how-it-works', label: 'How it works' },
     ],
   },

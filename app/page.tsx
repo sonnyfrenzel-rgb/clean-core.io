@@ -165,8 +165,8 @@ export default function Home() {
             <Link href="/how-it-works" className="text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
               How It Works
             </Link>
-            <Link href="/sap-tier-2-extensions" className="text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
-              Tier 2 Extensions
+            <Link href="/sap-clean-core-object-classification" className="text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
+              Classification A–D
             </Link>
             <Link href="/knowledge" className="text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
               Knowledge Base

@@ -17,6 +17,7 @@
 
 import type { Project, WorklistItem } from '@/lib/types';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+import { gradeFromCoupling, gradeDistribution, ABCD_META } from '@/lib/abap/abcd-classification';
 
 interface ManifestFile {
   path: string;
@@ -308,6 +309,7 @@ export function generateArchitectureDecisionRecord(project: Project): string {
   const fully = worklist.filter((w) => lvlOf(w) === 'fully');
   const review = worklist.filter((w) => lvlOf(w) === 'review');
   const oos = worklist.filter((w) => w.level === 'out_of_scope');
+  const abcd = gradeDistribution((project.dataCoupling || []).map(gradeFromCoupling));
   const list = (items: WorklistItem[]) =>
     items.length
       ? items.map((w) => `- **${mdCell(w.title)}** (${w.severity || w.effort || '—'}) — ${mdCell(w.recommendation)}${w.location ? ` — at ${mdCell(w.location)}` : ''}`).join('\n')
@@ -354,6 +356,19 @@ ${list(review)}
 
 **Out of scope / deferred — ${oos.length}**
 ${list(oos)}
+
+## Cloud Readiness Classification (A–D)
+
+SAP's Clean Core object classification (released → cloud-ready), derived deterministically from the detected dependencies:
+
+| Grade | Meaning | Objects |
+|---|---|---|
+| A | ${ABCD_META.A.label} | ${abcd.A} |
+| B | ${ABCD_META.B.label} | ${abcd.B} |
+| C | ${ABCD_META.C.label} | ${abcd.C} |
+| D | ${ABCD_META.D.label} | ${abcd.D} |
+
+${abcd.D > 0 ? `**${abcd.D} object(s) graded D** are upgrade blockers and must be replaced before Clean Core.` : 'No grade-D blockers detected among the analyzed dependencies.'}
 
 ## Evidence
 

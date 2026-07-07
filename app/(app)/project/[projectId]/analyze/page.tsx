@@ -33,6 +33,7 @@ const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false }
 
 import CodeInventoryTable from '@/components/analyze/CodeInventoryTable';
 import ModuleHeatmap from '@/components/analyze/ModuleHeatmap';
+import AbcdClassificationPanel from '@/components/analyze/AbcdClassificationPanel';
 import DataCouplingTable from '@/components/analyze/DataCouplingTable';
 import BusinessValueAudit from '@/components/analyze/BusinessValueAudit';
 import PlainEnglishGuide from '@/components/analyze/PlainEnglishGuide';
@@ -1643,6 +1644,9 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
               {/* Data Coupling Table */}
               <DataCouplingTable dataCoupling={project.dataCoupling || []} />
+
+              {/* Cloud Readiness Classification (A–D) */}
+              <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} />
 
               {/* Valuation details */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">

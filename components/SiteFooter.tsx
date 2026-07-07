@@ -21,7 +21,7 @@ const COLUMNS: { heading: string; links: { href: string; label: string }[] }[] =
       { href: '/knowledge', label: 'Knowledge Base' },
       { href: '/catalog', label: 'SAP Object Catalog' },
       { href: '/clean-core-score', label: 'Clean Core Score' },
-      { href: '/sap-tier-2-extensions', label: 'Tier 2 Extensions' },
+      { href: '/sap-clean-core-object-classification', label: 'Object Classification (A–D)' },
       { href: '/abap-custom-code-analysis', label: 'ABAP Code Analysis' },
     ],
   },

@@ -363,14 +363,14 @@ export const CleanCoreVideo: React.FC<{ short?: boolean; audioSrc?: string }> = 
           <TransitionSeries.Sequence durationInFrames={168}><S6CTA /></TransitionSeries.Sequence>
         </TransitionSeries>
       ) : (
-        /* 40s cut — hook → morph → features → security → limits → proof → CTA.
-           Sequences 90/183/243/243/213/153/183 − 6×18 = 1200. */
+        /* 43s cut — hook → morph → features → security → limits → proof → CTA.
+           Sequences 90/183/333/243/213/153/183 − 6×18 = 1290. Features held ~3s longer. */
         <TransitionSeries>
           <TransitionSeries.Sequence durationInFrames={90}><S1Hook /></TransitionSeries.Sequence>
           <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
           <TransitionSeries.Sequence durationInFrames={183}><S2Morph /></TransitionSeries.Sequence>
           <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
-          <TransitionSeries.Sequence durationInFrames={243}><SFeatures /></TransitionSeries.Sequence>
+          <TransitionSeries.Sequence durationInFrames={333}><SFeatures /></TransitionSeries.Sequence>
           <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
           <TransitionSeries.Sequence durationInFrames={243}><SSecurity /></TransitionSeries.Sequence>
           <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 18 })} />
