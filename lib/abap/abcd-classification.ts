@@ -37,7 +37,7 @@ export const ABCD_META: Record<CloudReadinessGrade, GradeMeta> = {
     short: 'Cloud-ready',
     description: 'Released SAP APIs / CDS views — clean and upgrade-safe. Adopt as-is.',
     color: '#059669',
-    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    badge: 'bg-emerald-100 text-emerald-800 border-emerald-300',
   },
   B: {
     grade: 'B',
@@ -45,7 +45,7 @@ export const ABCD_META: Record<CloudReadinessGrade, GradeMeta> = {
     short: 'Stable',
     description: 'A released path exists but with caveats — minor refactor or a thin wrapper is advisable.',
     color: '#2563eb',
-    badge: 'bg-blue-50 text-blue-700 border-blue-200',
+    badge: 'bg-blue-100 text-blue-800 border-blue-300',
   },
   C: {
     grade: 'C',
@@ -53,7 +53,7 @@ export const ABCD_META: Record<CloudReadinessGrade, GradeMeta> = {
     short: 'Review',
     description: 'Expert sign-off needed — deprecated-adjacent, or no direct released path yet.',
     color: '#d97706',
-    badge: 'bg-amber-50 text-amber-700 border-amber-200',
+    badge: 'bg-amber-100 text-amber-800 border-amber-300',
   },
   D: {
     grade: 'D',
@@ -61,7 +61,7 @@ export const ABCD_META: Record<CloudReadinessGrade, GradeMeta> = {
     short: 'Replace',
     description: 'Unreleased objects, direct writes to standard tables, or kernel/dynpro — replace before Clean Core.',
     color: '#dc2626',
-    badge: 'bg-red-50 text-red-700 border-red-200',
+    badge: 'bg-red-100 text-red-800 border-red-300',
   },
 };
 

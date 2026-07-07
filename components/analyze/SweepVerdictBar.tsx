@@ -13,51 +13,55 @@ interface SweepVerdictBarProps {
   isComplete: boolean;
 }
 
-/* ---------- Tile config ---------- */
+/* ---------- Tile config (light background — punchy, distinguishable) ---------- */
 const TILES = [
   {
     key: 'critical',
     label: 'Critical',
-    colorBg: 'bg-red-500/20',
-    colorBgActive: 'bg-red-500/30',
-    colorText: 'text-red-400',
-    colorBorder: 'border-red-500/30',
-    colorGlow: 'shadow-red-500/30',
+    bg: 'bg-red-50',
+    bgActive: 'bg-red-100',
+    text: 'text-red-600',
+    labelText: 'text-red-500',
+    border: 'border-red-200',
     topBorder: 'border-t-red-500',
-    ring: 'ring-red-500/50',
+    glow: 'shadow-red-300/50',
+    ring: 'ring-red-400',
   },
   {
     key: 'high',
     label: 'High',
-    colorBg: 'bg-orange-500/20',
-    colorBgActive: 'bg-orange-500/30',
-    colorText: 'text-orange-400',
-    colorBorder: 'border-orange-500/30',
-    colorGlow: 'shadow-orange-500/30',
+    bg: 'bg-orange-50',
+    bgActive: 'bg-orange-100',
+    text: 'text-orange-600',
+    labelText: 'text-orange-500',
+    border: 'border-orange-200',
     topBorder: 'border-t-orange-500',
-    ring: 'ring-orange-500/50',
+    glow: 'shadow-orange-300/50',
+    ring: 'ring-orange-400',
   },
   {
     key: 'medium',
     label: 'Medium',
-    colorBg: 'bg-amber-500/20',
-    colorBgActive: 'bg-amber-500/30',
-    colorText: 'text-amber-400',
-    colorBorder: 'border-amber-500/30',
-    colorGlow: 'shadow-amber-500/30',
+    bg: 'bg-amber-50',
+    bgActive: 'bg-amber-100',
+    text: 'text-amber-600',
+    labelText: 'text-amber-600',
+    border: 'border-amber-200',
     topBorder: 'border-t-amber-500',
-    ring: 'ring-amber-500/50',
+    glow: 'shadow-amber-300/50',
+    ring: 'ring-amber-400',
   },
   {
     key: 'low',
     label: 'Low',
-    colorBg: 'bg-blue-500/20',
-    colorBgActive: 'bg-blue-500/30',
-    colorText: 'text-blue-400',
-    colorBorder: 'border-blue-500/30',
-    colorGlow: 'shadow-blue-500/30',
+    bg: 'bg-blue-50',
+    bgActive: 'bg-blue-100',
+    text: 'text-blue-600',
+    labelText: 'text-blue-500',
+    border: 'border-blue-200',
     topBorder: 'border-t-blue-500',
-    ring: 'ring-blue-500/50',
+    glow: 'shadow-blue-300/50',
+    ring: 'ring-blue-400',
   },
 ] as const;
 
@@ -93,21 +97,24 @@ export default function SweepVerdictBar({
               key={tile.key}
               className={clsx(
                 'relative rounded-xl border border-t-[3px] p-4 sm:p-5 text-center transition-all duration-500',
-                hasFindings ? tile.colorBgActive : tile.colorBg,
-                tile.colorBorder,
+                hasFindings ? tile.bgActive : tile.bg,
+                tile.border,
                 tile.topBorder,
-                hasFindings && `shadow-lg ${tile.colorGlow}`,
-                isComplete && hasFindings && `ring-1 ring-offset-1 ring-offset-slate-900 ${tile.ring}`,
+                hasFindings && `shadow-md ${tile.glow}`,
+                isComplete && hasFindings && `ring-2 ring-offset-1 ring-offset-white ${tile.ring}`,
               )}
             >
               <div className={clsx(
                 'text-3xl sm:text-4xl font-black tabular-nums transition-all duration-300',
-                tile.colorText,
+                hasFindings ? tile.text : 'text-slate-300',
                 isComplete && hasFindings && 'scale-110',
               )}>
                 {count}
               </div>
-              <div className="text-[10px] sm:text-xs font-extrabold text-slate-400 uppercase tracking-widest mt-1.5">
+              <div className={clsx(
+                'text-[10px] sm:text-xs font-extrabold uppercase tracking-widest mt-1.5',
+                hasFindings ? tile.labelText : 'text-slate-400',
+              )}>
                 {tile.label}
               </div>
             </div>
@@ -120,27 +127,27 @@ export default function SweepVerdictBar({
         className={clsx(
           'rounded-xl border px-4 sm:px-5 py-3.5 flex items-center justify-between gap-3 transition-all duration-700',
           isComplete
-            ? 'bg-emerald-500/15 border-emerald-500/40 shadow-lg shadow-emerald-500/15'
-            : 'bg-slate-800/50 border-slate-700/40'
+            ? 'bg-emerald-50 border-emerald-300 shadow-sm shadow-emerald-200/60'
+            : 'bg-slate-50 border-slate-200'
         )}
       >
         <div className="flex items-center gap-2.5">
           <div className={clsx(
             'w-3 h-3 rounded-full transition-all duration-500',
             isComplete
-              ? 'bg-emerald-400 shadow-[0_0_12px_3px_rgba(52,211,153,0.6)]'
-              : 'bg-slate-500 animate-pulse'
+              ? 'bg-emerald-500 shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]'
+              : 'bg-slate-400 animate-pulse'
           )} />
           <span className={clsx(
             'text-xs sm:text-sm font-extrabold tracking-wide transition-colors duration-500',
-            isComplete ? 'text-emerald-400' : 'text-slate-400'
+            isComplete ? 'text-emerald-700' : 'text-slate-500'
           )}>
             {isComplete ? '✓ Evidence Scan Complete' : 'Scanning…'}
           </span>
         </div>
         <span className={clsx(
           'text-xs sm:text-sm font-black tabular-nums transition-colors duration-500',
-          isComplete ? 'text-emerald-300' : 'text-slate-300'
+          isComplete ? 'text-emerald-600' : 'text-slate-500'
         )}>
           {totalFindings} {totalFindings === 1 ? 'finding' : 'findings'}
         </span>
