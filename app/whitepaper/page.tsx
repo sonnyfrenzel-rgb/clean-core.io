@@ -151,7 +151,7 @@ export default function WhitepaperPage() {
           <SectionEyebrow number="01" total="08" />
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-6">What is Clean-Core.io?</h2>
           <p className="text-gray-600 leading-relaxed mb-6">
-            Clean Core means keeping the standard SAP ERP core untouched. When custom code is mixed directly into standard classes and tables, every future S/4HANA update becomes slow, risky and expensive. Clean-Core.io — built by someone personally affected by an S/4HANA transformation — turns that uncertainty into a structured, evidence-backed modernization backlog.
+            Clean Core means keeping the standard SAP ERP core untouched. When custom code is mixed directly into standard classes and tables, every future S/4HANA update becomes slow, risky and expensive. Clean-Core.io turns that uncertainty into a structured, evidence-backed modernization backlog.
           </p>
           <div className="bg-emerald-50/70 border border-emerald-200 border-l-4 border-l-green-600 rounded-xl p-6 mb-8">
             <div className="text-[10px] font-black uppercase tracking-[0.16em] text-green-700 mb-2">The governing principle — “belegt, nicht behauptet” (proven, not claimed)</div>
