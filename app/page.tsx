@@ -695,12 +695,12 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
               {
                 icon: <Globe className="w-6 h-6 text-green-600" />,
                 title: "Belgium Hosting (Europe)",
-                desc: "All workspaces, analytical engines, and database systems are hosted strictly in the europe-west1 GCP region (Belgium) ensuring high-speed processing."
+                desc: "Application storage and primary processing run in the europe-west1 GCP region (Belgium); AI and transactional-email subprocessors are disclosed separately."
               },
               {
                 icon: <ShieldCheck className="w-6 h-6 text-green-600" />,
-                title: "DSGVO / GDPR Compliant",
-                desc: "Full enforcement of Art. 17 DSGVO. Purge all user footprints, uploads, and data in Settings. Transactional emails are securely routed via Resend API with DSGVO imprints."
+                title: "DSGVO / GDPR-aligned",
+                desc: "Art. 17 DSGVO erasure: purge all your uploads and data in Settings. Transactional emails are routed via the Resend API; subprocessors process data under their own terms."
               },
               {
                 icon: <Layers className="w-6 h-6 text-green-600" />,

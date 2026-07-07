@@ -52,10 +52,10 @@ Zur Verifizierung stellt die Plattform den neuen TypeScript-Code automatisch in 
 Das System führt gezielte, granulare Unit-Tests aus und zeigt Testergebnisse sowie TAP-Protokolle in Echtzeit.
 
 02:50.000 --> 02:57.000
-Nach erfolgreicher Validierung erstellen wir das fertige Bereitstellungs-Paket.
+Nach erfolgreicher Validierung erstellen wir ein reviewbares Übergabepaket für Ihre Architektin oder Ihren Architekten.
 
 02:57.000 --> 03:07.000
 Klicken Sie auf 'Übergabe-Paket herunterladen', um ein vollständiges ZIP mit package.json, Tests und Markdown-Dokumentation zu exportieren.
 
 03:07.000 --> 03:12.000
-Halten Sie Ihren ERP-Kern sauber. Entwickeln Sie schneller und starten Sie noch heute mit dem Clean-Core.io Pilot!
+Halten Sie Ihren ERP-Kern sauber. Entwickeln Sie schneller und nutzen Sie noch heute die Clean-Core.io Free Community Edition!

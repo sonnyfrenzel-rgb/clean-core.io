@@ -31,8 +31,8 @@ const trustCards = [
   },
   {
     icon: ShieldCheck,
-    title: 'GDPR Compliant',
-    description: 'Full Art. 17 GDPR erasure rights via the settings dashboard.',
+    title: 'GDPR-aligned',
+    description: 'Art. 17 GDPR erasure rights via the settings dashboard; EU-hosted storage.',
   },
   {
     icon: Users,

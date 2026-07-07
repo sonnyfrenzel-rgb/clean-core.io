@@ -52,10 +52,10 @@ Para la verificación, la plataforma monta automáticamente el código de TypeSc
 El sistema ejecuta pruebas unitarias específicas y muestra resultados y registros formateados en TAP en tiempo real.
 
 02:50.000 --> 02:57.000
-Una vez validado, generamos el paquete final para el despliegue.
+Una vez validado, generamos un paquete de entrega revisable para su arquitecto.
 
 02:57.000 --> 03:07.000
 Haga clic en 'Descargar paquete de entrega' para exportar un ZIP con package.json, pruebas y documentación en Markdown.
 
 03:07.000 --> 03:12.000
-Mantenga limpio su núcleo de ERP. Desarrolle más rápido y únase hoy mismo al piloto de Clean-Core.io.
+Mantenga limpio su núcleo de ERP. Desarrolle más rápido y únase hoy mismo a la Free Community Edition de Clean-Core.io.

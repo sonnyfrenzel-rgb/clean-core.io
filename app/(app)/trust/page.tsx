@@ -40,10 +40,12 @@ export default function TrustPage() {
         <span className="text-slate-400"> (Reflects {APP_VERSION}.)</span>
       </p>
 
-      <Section icon={MapPin} title="Data residency — EU only">
+      <Section icon={MapPin} title="Data residency — EU-hosted">
         <p>
-          All data is stored in Google Cloud Firestore in <strong>europe-west1 (Belgium, EU)</strong>.
-          The application runs on Google Cloud Run in the same region. Your data does not leave the EU.
+          Application storage and primary processing run in Google Cloud Firestore and Cloud Run in{' '}
+          <strong>europe-west1 (Belgium, EU)</strong>. AI processing (Google Gemini API) and transactional
+          email (Resend) are disclosed subprocessors that may process data under their own terms and
+          transfer safeguards.
         </p>
       </Section>
 

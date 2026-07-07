@@ -27,6 +27,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/trust`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${baseUrl}/impressum`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.4 },
     { url: `${baseUrl}/datenschutz`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${baseUrl}/terms`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${baseUrl}/licenses`, lastModified: releaseDate, changeFrequency: 'monthly', priority: 0.4 },
   ];
 
   // Catalog hub + A–Z browse. The ~400 individual object pages live in their own

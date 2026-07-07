@@ -5,6 +5,42 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — Promo-readiness hardening (2026-07-07)
+
+Claim-hygiene and a real GDPR erasure fix ahead of broader promotion, per the Codex
+Promo-Readiness Delta review (2026-07-06). No feature changes.
+
+### Fixed
+- **Admin account deletion now runs the full GDPR Art. 17 cascade.** `adminDeleteUser`
+  previously removed only `users` + `registration_requests`, orphaning projects, immutable
+  runs, encrypted BYOK/S4 secrets, MFA data and the Firebase Auth account. It now delegates
+  to `deleteUserDataAndAccount` (identical to self-service deletion); the Auth delete is
+  idempotent (`auth/user-not-found` tolerated). Covered by a new emulator E2E test
+  (_admin console delete-user runs the full GDPR erasure cascade_).
+
+### Changed
+- **Softened absolute GDPR/EU/sovereignty claims** to defensible wording across the trust
+  page, landing page, about page and board deck: "GDPR-aligned", "EU-hosted storage", and
+  explicit disclosure that AI (Gemini) and email (Resend) subprocessors process data under
+  their own terms — instead of "GDPR Compliant", "data does not leave the EU",
+  "strictly enforced / fully sovereign".
+- **Landing `/whitepaper` page** now mirrors the downloadable PDF (LinkedIn whitepaper)
+  content and drops the "fits enterprise procurement expectations" wording.
+- **Business SOP & Compliance** documentation is generated in pure business language — no
+  IT/technical terms (those already live in the Technical Blueprint).
+- **Video subtitles** (en/de/es): "Pilot" → "Free Community Edition", "automated SaaS engine"
+  → "free community assistant", "final deployable asset" → "reviewable handover package".
+- **Footer & sitemap**: added `/terms` and `/licenses` to the shared site footer and sitemap.
+- **Terms consent**: record `termsVersionAccepted` + `termsAcceptedAt` at signup (additive
+  Firestore rule, deployed to all databases); `COMMUNITY_QUOTA` centralized.
+
+### Removed
+- **Stale public self-certification / marketing artifacts** carrying unsupported claims:
+  `public/whitepaper-template.html` ("CISO APPROVED", "Customer-Grade", "fully sovereign"),
+  `public/QE_Engineer_Report.pdf` + `public/report-template.html` ("RELEASE-TESTS PASSED",
+  "This document certifies…"), the `generate-report.js` script + `build:report` npm script,
+  and the admin "Quality Engineering Audit" banner.
+
 ## [v2.0.0] — 2026-07-02
 
 Special milestone release: a **security-hardened, audit-friendly trust chain and operational readiness** for the Free Community Edition, plus a **sharpened community / complementary narrative**. This is not a certified, procurement-grade enterprise platform — enterprise identity/governance features (SSO, multi-role RBAC, formal DPA/TOMs, external pentest) are intentionally in the backlog for the current audience — see `docs/ROADMAP-2.0.md`.

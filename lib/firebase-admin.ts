@@ -298,8 +298,12 @@ export async function deleteUserDataAndAccount(uid: string): Promise<void> {
   // Note: rate_limits keys are composite (`gemini:<uid>:<ip>`) and self-expiring
   // via their sliding window; they hold no durable PII and are intentionally left.
 
-  // 4. Delete the Firebase Auth User
-  await adminAuthModule.getAuth().deleteUser(uid);
+  // 4. Delete the Firebase Auth User (idempotent — tolerate an already-deleted account)
+  try {
+    await adminAuthModule.getAuth().deleteUser(uid);
+  } catch (e: any) {
+    if (e?.code !== 'auth/user-not-found') throw e;
+  }
 }
 
 /**
@@ -558,9 +562,11 @@ export async function adminRevokeS4(adminUid: string, targetUid: string) {
 export async function adminDeleteUser(adminUid: string, targetUid: string) {
   await ensureInitialized();
   const { db } = await getAdminDb();
-  await db.collection('registration_requests').doc(targetUid).delete();
-  await db.collection('users').doc(targetUid).delete();
-  await logAuditEvent(db, adminUid, 'DELETE_USER', targetUid);
+  // GDPR Art. 17: run the SAME full erasure cascade as self-service deletion.
+  // Previously this only removed registration_requests + users, which orphaned
+  // projects, immutable runs, BYOK/S4 secrets, MFA data and the Firebase Auth account.
+  await deleteUserDataAndAccount(targetUid);
+  await logAuditEvent(db, adminUid, 'DELETE_USER_CASCADE', targetUid);
 }
 
 /**

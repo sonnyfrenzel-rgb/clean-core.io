@@ -237,7 +237,7 @@ export function buildBoardDeck(input: {
     content: [
       '**Stateless Analysis Sandbox**: Source code parsing and AST analysis is completed entirely in memory. Zero user source code is stored or used for model training.',
       '**Credential Sandbox Isolation**: ERP connectivity uses short-lived tokens and BTP Destinations. Credentials are never written to disk.',
-      '**GDPR & Sovereign Compliance**: Stateless AI pipelines operate within European residency regions. Data residency is strictly enforced.',
+      '**GDPR-aligned & EU-hosted**: Application storage and primary processing run in the EU region (europe-west1). AI and transactional-email subprocessors are disclosed and process data under their own terms.',
       '**Cryptographic Integrity Checks**: Every generated release pack is cryptographically signed and hashed. Fingerprints are stored in the Audit Pack.'
     ],
     speakerNotes: 'Our platform enforces strict isolation boundaries. We never store SAP credentials or let standard data leak into model training cycles.'

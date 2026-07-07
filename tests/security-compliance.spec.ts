@@ -283,6 +283,52 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     expect(await adminDocExists('mfa_pending', tempUid)).toBe(false);
   });
 
+  test('admin console delete-user runs the full GDPR erasure cascade (not just users)', async ({ request }) => {
+    // 1. Temp user + a broad data seed, including the collections a naive admin-delete
+    //    (users + registration_requests only) would have orphaned.
+    const tempEmail = `temp-admindel-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const tempCred = await createUserWithEmailAndPassword(firebaseAuth, tempEmail, TEST_PASSWORD);
+    const tempUid = tempCred.user.uid;
+
+    await adminSetDoc('projects', `aproj-${tempUid}`, { name: 'Admin Del Project', status: 'uploaded', userId: tempUid, createdAt: new Date() });
+    await adminSetDoc(`projects/aproj-${tempUid}/runs`, `arun-${tempUid}`, { runId: `arun-${tempUid}`, userId: tempUid, analysis: '{"summary":"x"}', runHash: 'deadbeef' });
+    await adminSetDoc('abap_examples', `aex-${tempUid}`, { name: 'x', code: '" x', userId: tempUid, createdAt: new Date() });
+    await adminSetDoc('users', tempUid, {
+      firstName: 'Temp', lastName: 'AdminDel', email: tempEmail, tier: 'pilot', status: 'pending', isAdmin: false,
+      transformationsUsed: 0, transformationsLimit: 5, maxTeamMembers: 1,
+      s4TenantAccessAllowed: false, s4TenantAccessRequested: false, mfaEnabled: false, createdAt: new Date(),
+    });
+    await adminSetDoc(`user_secrets/${tempUid}/providers`, 'gemini', { encryptedKey: 'ciphertext', userId: tempUid });
+    await adminSetDoc('s4_credentials', tempUid, { userId: tempUid, encrypted: 'x' });
+    await adminSetDoc('mfa_secrets', tempUid, { userId: tempUid, secret: 'x' });
+    await adminSetDoc('mfa_pending', tempUid, { userId: tempUid, secret: 'x' });
+    await adminSetDoc('registration_requests', tempUid, { userId: tempUid, status: 'pending', email: tempEmail });
+    await adminSetDoc('tenant_access_requests', tempUid, { userId: tempUid, status: 'pending' });
+
+    // 2. Fresh admin token — satisfies the recent-auth step-up; the test admin has MFA disabled.
+    const adminCred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
+    const adminToken = await adminCred.user.getIdToken(true);
+
+    // 3. Admin console delete
+    const res = await request.post('/api/admin/console-action', {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+      data: { uid: tempUid, action: 'delete-user' },
+    });
+    expect(res.status()).toBe(200);
+
+    // 4. The whole cascade must be purged — not only users + registration_requests.
+    expect(await adminDocExists('projects', `aproj-${tempUid}`)).toBe(false);
+    expect(await adminDocExists(`projects/aproj-${tempUid}/runs`, `arun-${tempUid}`)).toBe(false);
+    expect(await adminDocExists('abap_examples', `aex-${tempUid}`)).toBe(false);
+    expect(await adminDocExists('users', tempUid)).toBe(false);
+    expect(await adminDocExists(`user_secrets/${tempUid}/providers`, 'gemini')).toBe(false);
+    expect(await adminDocExists('s4_credentials', tempUid)).toBe(false);
+    expect(await adminDocExists('mfa_secrets', tempUid)).toBe(false);
+    expect(await adminDocExists('mfa_pending', tempUid)).toBe(false);
+    expect(await adminDocExists('registration_requests', tempUid)).toBe(false);
+    expect(await adminDocExists('tenant_access_requests', tempUid)).toBe(false);
+  });
+
   // ── v1.20 §5/§8: server-authoritative audit pack (generated & signed server-side) ──
 
   async function seedRunnableProject(uid: string, suffix: string) {

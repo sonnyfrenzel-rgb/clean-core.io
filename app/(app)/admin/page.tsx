@@ -296,32 +296,6 @@ export default function AdminConsole() {
         </div>
       </div>
 
-      {/* QE Quality Gate Report Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none"></div>
-        <div className="flex items-center gap-4 z-10">
-          <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 border border-emerald-500/20 shadow-inner">
-            <CheckCircle2 className="w-7 h-7" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-950/60 border border-emerald-900/40 px-2 py-0.5 rounded-full">Quality Gate Passed</span>
-            </div>
-            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight mt-1">Quality Engineering Audit</h2>
-            <p className="text-xs text-slate-400 mt-1">Playwright Headless Audit report compiled dynamically upon release deployment.</p>
-          </div>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3 z-10 shrink-0 w-full md:w-auto">
-          <a
-            href="/QE_Engineer_Report.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95 text-center no-underline"
-          >
-            <FileText className="w-4 h-4" /> Open QE Report (PDF)
-          </a>
-        </div>
-      </div>
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-2xl border border-gray-250 shadow-sm w-full">

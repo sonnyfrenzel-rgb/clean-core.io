@@ -4,7 +4,7 @@ WEBVTT
 Enterprise core modifications are the single greatest barrier to S/4HANA upgrades.
 
 00:07.500 --> 00:16.000
-Welcome to Clean-Core.io—the automated SaaS engine designed to decouple legacy ABAP logic into modern, side-by-side cloud services on SAP BTP.
+Welcome to Clean-Core.io—the free community assistant designed to help decouple legacy ABAP logic into modern, side-by-side cloud services on SAP BTP.
 
 00:16.000 --> 00:25.000
 Our platform enables enterprise architects to keep the SAP digital core clean while accelerating cloud transformation.
@@ -52,10 +52,10 @@ For verification, the platform automatically mounts the new TypeScript code insi
 The system runs selective, granular unit tests, showing real-time TAP-formatted execution logs and passing assertions.
 
 02:50.000 --> 02:57.000
-Once validated, we generate the final deployable asset.
+Once validated, we generate a reviewable handover package for your architect.
 
 02:57.000 --> 03:07.000
 Click 'Download Handover Package' to export a complete ZIP bundle with package.json configs, tests, and markdown documentation.
 
 03:07.000 --> 03:12.000
-Keep your ERP core pristine. Build fast, scale safe, and join the Clean-Core.io Pilot today.
+Keep your ERP core pristine. Build fast, scale safe, and join the Clean-Core.io Free Community Edition today.
