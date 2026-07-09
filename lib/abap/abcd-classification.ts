@@ -6,10 +6,10 @@
  * cloud-readiness classification, driven by API release status, upgrade safety and
  * extensibility compliance:
  *
- *   A = released and cloud-ready
- *   B = stable, acceptable with caution
- *   C = conditional, requires risk review
- *   D = not clean, should be replaced
+ *   A = released SAP APIs & extension points (ABAP Cloud / BTP)     — ATC: no message
+ *   B = classic SAP APIs, following SAP recommendations            — ATC: Priority 3 (info)
+ *   C = internal SAP APIs — conditionally clean (changelog check)  — ATC: Priority 2 (warning)
+ *   D = not-recommended objects & technologies (modifications, …)  — ATC: Priority 1 (error)
  *
  * Clean-Core.io derives this grade DETERMINISTICALLY — from the Cloudification
  * Repository release state where an object is known, and otherwise from the
@@ -26,40 +26,47 @@ export interface GradeMeta {
   label: string;
   short: string;
   description: string;
+  atc: string; // matching ABAP Test Cockpit message priority (SAP clean core level concept)
   color: string; // hex — charts
   badge: string; // tailwind badge classes
 }
 
+// Aligned to SAP's official clean core level concept (ABAP extensibility guide, 2025)
+// and the matching ABAP Test Cockpit behaviour.
 export const ABCD_META: Record<CloudReadinessGrade, GradeMeta> = {
   A: {
     grade: 'A',
-    label: 'Released & cloud-ready',
+    label: 'Released SAP APIs & extension points',
     short: 'Cloud-ready',
-    description: 'Released SAP APIs / CDS views — clean and upgrade-safe. Adopt as-is.',
+    description: 'Released SAP APIs (local & remote) and extension points — ABAP Cloud on-stack, or side-by-side on SAP BTP. Fully supported and upgrade-stable.',
+    atc: 'No message',
     color: '#059669',
     badge: 'bg-emerald-100 text-emerald-800 border-emerald-300',
   },
   B: {
     grade: 'B',
-    label: 'Stable — acceptable with caution',
-    short: 'Stable',
-    description: 'A released path exists but with caveats — minor refactor or a thin wrapper is advisable.',
+    label: 'Classic SAP APIs — SAP-recommended',
+    short: 'Classic OK',
+    description: 'Classic SAP APIs and extension points that follow SAP recommendations — used where no Level A path is available.',
+    atc: 'Priority 3 · info',
     color: '#2563eb',
     badge: 'bg-blue-100 text-blue-800 border-blue-300',
   },
   C: {
     grade: 'C',
-    label: 'Conditional — requires risk review',
-    short: 'Review',
-    description: 'Expert sign-off needed — deprecated-adjacent, or no direct released path yet.',
+    label: 'Internal SAP APIs — conditional',
+    short: 'Internal',
+    description: 'Uses internal SAP objects/APIs — conditionally clean if verified via the changelog-for-SAP-objects approach before each upgrade.',
+    atc: 'Priority 2 · warning',
     color: '#d97706',
     badge: 'bg-amber-100 text-amber-800 border-amber-300',
   },
   D: {
     grade: 'D',
-    label: 'Not clean — should be replaced',
+    label: 'Not recommended — replace',
     short: 'Replace',
-    description: 'Unreleased objects, direct writes to standard tables, or kernel/dynpro — replace before Clean Core.',
+    description: 'Not-recommended objects & technologies — modifications, implicit enhancements, direct table writes, non-released access. Not clean; replace before upgrade.',
+    atc: 'Priority 1 · error',
     color: '#dc2626',
     badge: 'bg-red-100 text-red-800 border-red-300',
   },

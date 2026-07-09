@@ -91,7 +91,10 @@ export default function CleanCoreClassificationPage() {
                 <div key={g} className="p-5 border rounded-2xl flex items-start gap-4" style={{ borderColor: `${ABCD_META[g].color}33`, background: `${ABCD_META[g].color}0d` }}>
                   <span className={`shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl text-lg font-black border ${ABCD_META[g].badge}`}>{g}</span>
                   <div>
-                    <h3 className="font-black text-gray-955 text-base">{ABCD_META[g].label}</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-black text-gray-955 text-base">{ABCD_META[g].label}</h3>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-white border border-gray-200 rounded-full px-2 py-0.5">ATC: {ABCD_META[g].atc}</span>
+                    </div>
                     <p className="text-xs text-gray-600 mt-1 font-medium leading-relaxed">{ABCD_META[g].description}</p>
                   </div>
                 </div>

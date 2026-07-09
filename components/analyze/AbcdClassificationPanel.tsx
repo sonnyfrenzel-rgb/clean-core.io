@@ -71,7 +71,10 @@ export default function AbcdClassificationPanel({
           <div key={g} className="flex items-start gap-2">
             <span className={`shrink-0 mt-0.5 inline-flex items-center justify-center w-6 h-6 rounded-lg text-[11px] font-black border ${ABCD_META[g].badge}`}>{g}</span>
             <div>
-              <div className="text-xs font-bold text-slate-800">{ABCD_META[g].label}</div>
+              <div className="text-xs font-bold text-slate-800">
+                {ABCD_META[g].label}
+                <span className="ml-1 text-[10px] font-semibold text-slate-400">· ATC {ABCD_META[g].atc}</span>
+              </div>
               <div className="text-[11px] text-slate-500 leading-snug">{ABCD_META[g].description}</div>
             </div>
           </div>
