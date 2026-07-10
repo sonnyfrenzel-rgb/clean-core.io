@@ -58,7 +58,7 @@ jobs:
       - name: Run End-to-End Tests
         run: npx playwright test
         env:
-          NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.TEST_GEMINI_API_KEY }}
+          # F-11: server-side test key only — do NOT expose a NEXT_PUBLIC_ (client-bundled) key.
           GEMINI_API_KEY: ${{ secrets.TEST_GEMINI_API_KEY }}
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true'
           FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099'
@@ -67,9 +67,25 @@ jobs:
           PILOT_APPROVAL_SECRET: ${{ secrets.PILOT_APPROVAL_SECRET }}
           S4_ENCRYPTION_KEY: ${{ secrets.S4_ENCRYPTION_KEY }}
 
+  # Job 1b: Security gate — a failed dependency audit blocks the deploy (F-11)
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: 'npm'
+      # F-11: production dependency audit is now a required deploy gate. Blocks the
+      # deploy on CRITICAL advisories (tighten to --audit-level=high once triaged).
+      - name: Dependency Audit (production)
+        run: npm audit --omit=dev --audit-level=critical
+
   # Job 2: Build & Deploy to Google Cloud Run
   deploy:
-    needs: validate
+    needs: [validate, security]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

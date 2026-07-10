@@ -7,12 +7,12 @@ import { APP_VERSION } from '@/lib/version';
 export const metadata: Metadata = {
   title: 'Trust & Privacy — Clean-Core.io',
   description:
-    'How Clean-Core.io handles your data: EU-only residency, encrypted credentials, server-authoritative evidence, subprocessors, and your GDPR rights including one-click erasure. Plain and honest — built for the SAP community.',
+    'How Clean-Core.io handles your data: EU-hosted primary storage and compute, encrypted credentials, server-authoritative evidence, disclosed subprocessors, and your GDPR rights including self-service erasure. Plain and honest — built for the SAP community.',
   alternates: { canonical: 'https://clean-core.io/trust' },
   openGraph: {
     title: 'Trust & Privacy — Clean-Core.io',
     description:
-      'EU-only residency, encrypted credentials, server-authoritative evidence, subprocessors, and your GDPR rights. Transparency for individual architects, developers and decision-makers.',
+      'EU-hosted primary storage and compute, encrypted credentials, server-authoritative evidence, disclosed subprocessors, and your GDPR rights. Transparency for individual architects, developers and decision-makers.',
     url: 'https://clean-core.io/trust',
     type: 'website',
   },

@@ -1,4 +1,4 @@
-import { FIRESTORE_DB_ID, COMMUNITY_QUOTA } from '@/lib/constants';
+import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, TERMS_VERSION } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { encrypt, decrypt } from './s4-credentials';
 
@@ -109,6 +109,18 @@ export function assertRecentAuth(decodedToken: any, maxAgeSeconds = 300): void {
 
 export async function assertAdminStepUp(req: Request, decodedAdmin: any): Promise<void> {
   assertRecentAuth(decodedAdmin, 300);
+  // F-06: admin actions require an actually-enrolled second factor. Fail closed if
+  // the admin never enabled MFA, instead of silently skipping the step-up
+  // (assertMfaStepUp returns early when mfaEnabled !== true). Skipped under the
+  // Firebase emulator so CI/E2E and local dev — which cannot complete a real TOTP
+  // step-up — still exercise the admin flows; production always enforces it.
+  if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true') {
+    const { db } = await getAdminDb();
+    const snap = await db.collection('users').doc(decodedAdmin.uid).get();
+    if (!snap.exists || snap.data()?.mfaEnabled !== true) {
+      throw new QuotaError('Admin actions require multi-factor authentication. Enable MFA in your settings first.', 403);
+    }
+  }
   await assertMfaStepUp(req, decodedAdmin);
 }
 
@@ -193,6 +205,47 @@ export async function refundTransformationQuota(uid: string): Promise<void> {
     });
   } catch {
     /* best-effort; intentionally ignored */
+  }
+}
+
+/**
+ * F-02: Central account-state gate used by every business API so that a
+ * `pending`, `suspended` or `deleted` account — or a stale-Terms account — gets a
+ * consistent 403, INCLUDING the BYOK path (which previously skipped the
+ * quota-based approval check). Admins and enterprise accounts are exempt from the
+ * approval gate. Pass the caller's `admin` custom claim via `isAdminClaim`.
+ */
+export async function assertAccountActive(
+  uid: string,
+  opts: { requireApproved?: boolean; requireCurrentTerms?: boolean; isAdminClaim?: boolean } = {},
+): Promise<void> {
+  const { db } = await getAdminDb();
+  const snap = await db.collection('users').doc(uid).get();
+  if (!snap.exists) {
+    throw new QuotaError('User profile not found. Please complete registration.', 403);
+  }
+  const data = snap.data() || {};
+  const isAdmin = opts.isAdminClaim === true || data.isAdmin === true;
+  const status = data.status || 'pending';
+
+  if (status === 'suspended' || status === 'deleted' || data.disabled === true) {
+    throw new QuotaError('This account has been suspended. Please contact support.', 403);
+  }
+
+  const isEnterprise = data.tier === 'enterprise';
+  if (opts.requireApproved && !isAdmin && !isEnterprise && status !== 'approved') {
+    throw new QuotaError('Your community account is currently pending admin approval.', 403);
+  }
+
+  // Terms: block only when a *previously accepted* version is now stale, so a
+  // future Terms bump forces re-consent. A missing acceptance (legacy account) is
+  // grandfathered — it must not lock out pre-existing users before the reconsent
+  // UI runs. The client cannot forge/remove this field (see firestore.rules).
+  if (opts.requireCurrentTerms && !isAdmin) {
+    const accepted = data.termsVersionAccepted || null;
+    if (accepted !== null && accepted !== TERMS_VERSION) {
+      throw new QuotaError('The Terms of Service have been updated. Please re-accept them in the app to continue.', 403);
+    }
   }
 }
 
@@ -284,25 +337,57 @@ export async function deleteUserDataAndAccount(uid: string): Promise<void> {
   await deleteCollectionByUid('abap_examples');
   await deleteCollectionByUid('support_tickets');
   await deleteCollectionByUid('files');
+  await deleteCollectionByUid('consent_events'); // F-16: purge consent records (hold uid/email)
 
-  // 3. Delete single documents keyed by uid.
+  // 3. Delete single documents keyed by uid. F-07: do NOT silently swallow
+  //    failures — tolerate an idempotent "not found" but collect any real error
+  //    so a *partial* erasure can never be reported to the caller as success.
+  const erasureErrors: string[] = [];
+  const isNotFound = (e: any) =>
+    e?.code === 5 || e?.code === 'not-found' || /NOT_FOUND/i.test(String(e?.message || ''));
+  const tryDelete = async (label: string, op: () => Promise<any>) => {
+    try { await op(); }
+    catch (e: any) { if (!isNotFound(e)) erasureErrors.push(`${label}: ${e?.message || e}`); }
+  };
+
   //    user_secrets uses recursiveDelete to purge the BYOK `providers/*`
   //    subcollection (encrypted Gemini API keys) — a plain delete would leave it.
-  await db.recursiveDelete(db.collection('user_secrets').doc(uid)).catch(() => {});
-  await db.collection('registration_requests').doc(uid).delete().catch(() => {});
-  await db.collection('tenant_access_requests').doc(uid).delete().catch(() => {});
-  await db.collection('s4_credentials').doc(uid).delete().catch(() => {});
-  await db.collection('mfa_secrets').doc(uid).delete().catch(() => {});
-  await db.collection('mfa_pending').doc(uid).delete().catch(() => {});
-  await db.collection('users').doc(uid).delete().catch(() => {});
-  // Note: rate_limits keys are composite (`gemini:<uid>:<ip>`) and self-expiring
-  // via their sliding window; they hold no durable PII and are intentionally left.
+  await tryDelete('user_secrets', () => db.recursiveDelete(db.collection('user_secrets').doc(uid)));
+  await tryDelete('registration_requests', () => db.collection('registration_requests').doc(uid).delete());
+  await tryDelete('tenant_access_requests', () => db.collection('tenant_access_requests').doc(uid).delete());
+  await tryDelete('s4_credentials', () => db.collection('s4_credentials').doc(uid).delete());
+  await tryDelete('mfa_secrets', () => db.collection('mfa_secrets').doc(uid).delete());
+  await tryDelete('mfa_pending', () => db.collection('mfa_pending').doc(uid).delete());
+  await tryDelete('users', () => db.collection('users').doc(uid).delete());
+  // Note: rate_limits docs are pseudonymised (HMAC ids) and self-expire via a
+  // Firestore TTL on `expiresAt`; they hold no durable PII and are left to age out.
+
+  // 3b. Backstop (F-03): purge immutable runs that were orphaned by an earlier
+  //     client-side project delete. Best-effort — a missing collection-group index
+  //     must never abort the erasure, so failures here are logged, not fatal.
+  try {
+    const q = db.collectionGroup('runs').where('userId', '==', uid).limit(400);
+    let s = await q.get();
+    while (!s.empty) {
+      const batch = db.batch();
+      s.docs.forEach((d: any) => batch.delete(d.ref));
+      await batch.commit();
+      s = await q.get();
+    }
+  } catch (e: any) {
+    console.warn('[erasure] orphan-runs backstop skipped:', e?.message || e);
+  }
 
   // 4. Delete the Firebase Auth User (idempotent — tolerate an already-deleted account)
   try {
     await adminAuthModule.getAuth().deleteUser(uid);
   } catch (e: any) {
-    if (e?.code !== 'auth/user-not-found') throw e;
+    if (e?.code !== 'auth/user-not-found') erasureErrors.push(`auth-user: ${e?.message || e}`);
+  }
+
+  // 5. F-07: verification — surface a partial erasure instead of a false success.
+  if (erasureErrors.length > 0) {
+    throw new Error(`Account erasure incomplete for ${uid}: ${erasureErrors.join(' | ')}`);
   }
 }
 

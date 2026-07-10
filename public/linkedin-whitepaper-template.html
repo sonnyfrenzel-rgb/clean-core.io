@@ -336,7 +336,7 @@
             <h3 class="benefit-title-premium">Evidence, Not Opinions</h3>
           </div>
           <p class="benefit-description">
-            A deterministic AST engine parses your code and maps every custom-table access, RFC call and dynpro pattern to concrete findings — <em>before</em> any AI runs. You get a defensible baseline you can take into an audit, not a black-box guess.
+            A deterministic evidence scanner with token- and rule-based ABAP analysis parses your code and maps custom-table access, RFC calls and dynpro patterns to concrete findings — <em>before</em> any AI runs. You get a defensible baseline you can take into an audit, not a black-box guess.
           </p>
         </div>
 
@@ -360,7 +360,7 @@
             <h3 class="benefit-title-premium">Upgrade Resilience</h3>
           </div>
           <p class="benefit-description">
-            By replacing unreleased database dependencies with officially released SAP APIs (e.g. <code>I_Customer</code>, <code>API_PRODUCT_SRV</code>), your ERP core stays fully upgradable — decoupling update cycles from months to days.
+            By replacing unreleased database dependencies with officially released SAP APIs (e.g. <code>I_Customer</code>, <code>API_PRODUCT_SRV</code>), your ERP core stays upgrade-stable — reducing coupling between custom code and the core update cycle.
           </p>
         </div>
 
@@ -372,7 +372,7 @@
             <h3 class="benefit-title-premium">Automated Test Stubs</h3>
           </div>
           <p class="benefit-description">
-            Matching unit tests are generated with the code — ABAP Unit test doubles for RAP, or Express/Node test suites for CAP — and executed in an isolated, hermetic sandbox. QA cycles start covered, not empty.
+            Matching unit tests are generated with the code — ABAP Unit test doubles for RAP, or Express/Node test suites for CAP — and executed in a sandboxed Node process (filesystem-scoped and time-limited). QA cycles start covered, not empty.
           </p>
         </div>
       </div>
@@ -409,7 +409,7 @@
     <div class="page-content">
       <h2><span>02.</span> The Value, Part 2: Transparency &amp; Governance</h2>
       <p class="lead-paragraph">
-        Version 2.0 makes the reasoning inspectable and the progress auditable — so a recommendation survives scrutiny in a board room, not just a demo.
+        Version 2.1 makes the reasoning inspectable and the progress auditable — so a recommendation survives scrutiny in a board room, not just a demo.
       </p>
 
       <div class="benefit-grid">
@@ -532,7 +532,7 @@
       <div class="card" style="margin-top: 12px; background-color: #eff6ff; border-color: #bfdbfe;">
         <div class="card-title" style="color: #1e40af;">Tenant Security Architecture</div>
         <p style="color: #1e40af; font-size: 11.5px; margin-bottom: 6px;">
-          Optional S/4HANA connections are strictly <strong>read-only</strong> (OData metadata reads and test execution) — no write operations. Credentials are processed in memory only and never persisted; production domains are automatically blocked, so only non-productive sandbox/test systems are reachable.
+          Optional S/4HANA connections are strictly <strong>read-only</strong> (OData metadata reads and test execution) — no write operations. Credentials are encrypted at rest (AES-256-GCM), stored server-side only and never returned to the browser; live connections are restricted to an administrator-managed allowlist, and productive use is contractually and operationally prohibited.
         </p>
         <p style="color: #1e40af; font-size: 11.5px;">
           Every live-tenant request is <strong>manually reviewed and approved</strong> by the platform administrator before activation — no unauthorized system access.
@@ -570,7 +570,7 @@
         <div class="card" style="background-color: #f8fafc;">
           <div class="card-title" style="color: #0f172a;">Immutable, Signed Runs</div>
           <p style="color: #475569; font-size: 11.5px;">
-            Every analysis is captured as an immutable, HMAC-signed “Run”. The evidence pack is generated and signed <strong>server-side</strong>, so a valid signature attests to server-computed content — closing any client-forged-hash gap.
+            Every analysis is captured as an immutable, HMAC-signed “Run”. The evidence pack is generated and signed <strong>server-side</strong>, so a valid signature protects the integrity of the generated package; provenance is shown per evidence class.
           </p>
         </div>
         <div class="card" style="background-color: #f8fafc;">
@@ -584,10 +584,10 @@
       <div class="card" style="margin-top: 12px; background-color: #f9fafb;">
         <div class="card-title" style="color: #0f172a;">GDPR-Aligned Data Processing &amp; EU Sovereignty (Art. 17 &amp; 25)</div>
         <p style="color: #475569; font-size: 11.5px; margin-bottom: 6px;">
-          All server, database and compute layers run entirely within the GCP region <strong>Belgium (europe-west1)</strong>, satisfying EU data-residency requirements. Transfers to US sub-processors are safeguarded by EU Standard Contractual Clauses.
+          Primary application storage and compute run in the GCP region <strong>Belgium (europe-west1)</strong>. AI processing (Google Gemini) and transactional email (Resend) are separately disclosed subprocessors that may process or transfer data under their own terms and safeguards (EU Standard Contractual Clauses where applicable).
         </p>
         <p style="color: #475569; font-size: 11.5px;">
-          Account deletion triggers an atomic erasure routine (Art. 17) that <strong>immediately deletes your live database and authentication entries</strong>; residual copies in encrypted backups age out within 30 days. The system never parses or stores actual business master data.
+          Account deletion runs an idempotent, multi-system erasure workflow (Art. 17) across your live database and authentication entries; residual copies in encrypted backups age out within 30 days. The S/4 test bridge reads only minimal OData metadata and does not store business master data.
         </p>
       </div>
 
@@ -595,13 +595,13 @@
         <div class="card" style="background-color: #f8fafc;">
           <div class="card-title" style="color: #0f172a;">Application Hardening</div>
           <p style="color: #475569; font-size: 11.5px;">
-            A strict Content-Security-Policy, server-side HTML sanitization (DOMPurify), and authenticated, token-verified API routes for every mutating action.
+            A Content-Security-Policy (with documented compatibility exceptions), server-side HTML sanitization (DOMPurify), and authenticated, token-verified API routes for every mutating action.
           </p>
         </div>
         <div class="card" style="background-color: #f8fafc;">
           <div class="card-title" style="color: #0f172a;">Supply-Chain Assurance</div>
           <p style="color: #475569; font-size: 11.5px;">
-            CI secret scanning, a dependency-audit gate and a CycloneDX SBOM on every build; GitHub Actions pinned by commit SHA. Only permissive open-source licenses in the dependency tree.
+            CI secret scanning, a dependency-audit gate and a CycloneDX SBOM generated by the security workflow; GitHub Actions pinned by commit SHA. The license inventory is generated and reviewed per build.
           </p>
         </div>
       </div>
@@ -655,7 +655,7 @@
           <tr>
             <td><strong>RISE Compliance</strong></td>
             <td>Strict SaaS compliance (zero core modifications).</td>
-            <td>Upgrade-resilient Tier-2 custom API wrappers.</td>
+            <td>Upgrade-resilient classic custom API wrappers.</td>
           </tr>
           <tr>
             <td><strong>Focus Case</strong></td>

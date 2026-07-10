@@ -50,6 +50,17 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        // F-17: the old Tier-2 knowledge URL was replaced by the A–D classification
+        // page. Permanent-redirect so external links and search results keep working.
+        source: '/sap-tier-2-extensions',
+        destination: '/sap-clean-core-object-classification',
+        permanent: true,
+      },
+    ];
+  },
   typescript: {
     // F-07: Build errors must block deployment (was: ignoreBuildErrors: true)
     ignoreBuildErrors: false,

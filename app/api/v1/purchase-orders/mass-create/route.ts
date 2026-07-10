@@ -3,6 +3,13 @@ import { verifyRequestAuth } from '@/lib/firebase-admin';
 
 export async function POST(request: Request) {
   try {
+    // F-20: demo/mock route — NOT a real SAP integration. Disabled in production so a
+    // simulated "COMPLETED" success can never be mistaken for a live purchase-order
+    // action. Enable in non-prod only via ENABLE_MOCK_PO_ROUTE=true.
+    if (process.env.NODE_ENV === 'production' && process.env.ENABLE_MOCK_PO_ROUTE !== 'true') {
+      return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+    }
+
     const decodedToken = await verifyRequestAuth(request);
     if (!decodedToken) {
       return NextResponse.json(

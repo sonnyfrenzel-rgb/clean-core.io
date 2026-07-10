@@ -71,11 +71,11 @@ export const FEATURES: FeatureContent[] = [
     title: 'Dual RAP & CAP Engine',
     eyebrow: 'Code transformation',
     summary:
-      'Generate clean In-App ABAP Cloud (RAP) handlers or decoupled BTP CAP services, with a deterministic AST resolver that prevents structural AI hallucinations.',
+      'Generate clean In-App ABAP Cloud (RAP) handlers or decoupled BTP CAP services, with a deterministic dependency resolver that reduces structural AI hallucinations.',
     stage: 'Stage 3 — Transformation',
     what: [
       'Depending on the routing decision, the engine drafts either In-App ABAP Cloud RAP artifacts or decoupled Side-by-Side CAP (Node.js / TypeScript) services.',
-      'A deterministic Abstract Syntax Tree (AST) resolver linearizes object-oriented inheritance chains (MRO), maps constructors and interface aliases, and grounds the translation in released APIs before the language model runs — preventing structural hallucinations.',
+      'A deterministic dependency resolver linearizes object-oriented inheritance chains (MRO), maps constructors and interface aliases, and grounds the translation in released APIs before the language model runs — reducing structural hallucinations.',
     ],
     capabilities: [
       'Dual output: In-App RAP (ABAP Cloud) or Side-by-Side CAP (Node.js / TypeScript)',

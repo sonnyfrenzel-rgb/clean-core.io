@@ -5,6 +5,63 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.1.0] — 2026-07-10
+
+Trust-boundary hardening per the Codex v2.0.0 Delta / Tiefenanalyse review (2026-07-10).
+Closes the central-authorization, deletion, admin-MFA, provenance-labeling and claim-hygiene
+findings (gates G0–G2). The untrusted test-runner network isolation (F-01, P0) is tracked
+separately and intentionally deferred in this release.
+
+### Added
+- **Central account-state gate `assertAccountActive`** applied to every business API
+  (`/api/gemini`, `/api/runs/create`, `/api/audit-pack/create`, `/api/run-tests`,
+  `/api/secrets/gemini`): a `pending`/`suspended`/stale-Terms account is consistently 403 —
+  **including the BYOK path**, which previously bypassed the shared-quota approval check (F-02).
+- **Server-authoritative project deletion** `DELETE /api/projects/{id}` using Admin SDK
+  `recursiveDelete`, so the immutable `runs/{runId}` subcollection is purged too. Client
+  project deletes are disabled in Firestore rules; the account-erasure cascade gained a
+  collection-group backstop for legacy orphaned runs (F-03).
+- **Server-authoritative Terms consent** `POST /api/consent`: append-only `consent_events`
+  (server timestamp + server-derived email), mirrored to the profile; the account gate
+  enforces re-consent when a previously accepted version goes stale (F-16).
+
+### Changed
+- **A/B/C/D "Cloud Readiness Classification" is now an explicit Experimental Preview** in the
+  analysis panel and knowledge page, and is **removed from the signed audit pack** — it is a
+  heuristic estimate, not an authoritative SAP ATC classification (F-05).
+- **Admin actions require enrolled MFA** — `assertAdminStepUp` fails closed without it in
+  production (relaxed only under the Firebase emulator for CI/E2E) (F-06).
+- **Account erasure no longer swallows partial failures** — errors are collected, a missing
+  resource is tolerated as idempotent, and a partial erasure throws instead of reporting
+  success (F-07).
+- **Rate-limit records are pseudonymised** (HMAC document id) and carry an `expiresAt` for a
+  Firestore TTL, so they hold no durable PII and self-expire (F-10).
+- **Gemini model allowlist** cleaned — dead 2.0 IDs removed; GA vs. preview documented (F-09).
+- **Overstated public claims corrected** across the whitepaper page + PDF, board deck,
+  homepage, trust page, feature content, transactional emails, settings and onboarding:
+  "deterministic AST engine" → deterministic evidence scanner; "credentials in memory only" →
+  encrypted at rest, server-side only; "atomic/immediate erasure" → idempotent multi-system
+  workflow; "GDPR-compliant by design" / "conform fully to GDPR" → GDPR-aligned; "all
+  permissive licenses" → generated inventory reviewed per build; residual "Tier-2" → "classic";
+  fixed the `vv2.0.0` double-`v` render (F-08, F-14).
+- **Security dependency audit is now a required deploy gate** (`deploy.needs: [validate,
+  security]`, `npm audit --omit=dev --audit-level=critical`); the client-bundled
+  `NEXT_PUBLIC_GEMINI_API_KEY` test env var was removed (F-11).
+- **Old `/sap-tier-2-extensions` URL** permanently redirects to
+  `/sap-clean-core-object-classification` (F-17).
+
+### Fixed
+- **`scripts/verify-export.ps1`** uses `-LiteralPath` throughout, so Next.js dynamic-route
+  files (`[projectId]` etc.) no longer report a false "File missing" (F-15).
+
+### Security / deferred
+- The mock purchase-order route and the incomplete Jira OAuth callback are gated out of
+  production behind flags so they cannot return a simulated success (F-19, F-20).
+- **Deferred (roadmap):** isolated zero-trust test runner (F-01, P0), full per-field audit
+  provenance model (F-04), full SAP-exact A/B/C/D derivation (F-05), asymmetric offline-
+  verifiable signatures (F-18), operational control-evidence (F-13) and the enterprise
+  identity/governance track.
+
 ## [Unreleased] — Promo-readiness hardening (2026-07-07)
 
 Claim-hygiene and a real GDPR erasure fix ahead of broader promotion, per the Codex

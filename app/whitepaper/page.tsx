@@ -21,10 +21,10 @@ export const metadata: Metadata = {
 /* ─── Content mirrors the downloadable PDF (linkedin whitepaper) ─── */
 
 const benefitsEvidence = [
-  { title: 'Evidence, Not Opinions', desc: 'A deterministic AST engine maps every custom-table access, RFC call and dynpro pattern to concrete findings — before any AI runs. A defensible baseline you can take into an audit, not a black-box guess.' },
+  { title: 'Evidence, Not Opinions', desc: 'A deterministic evidence scanner with token- and rule-based ABAP analysis maps custom-table access, RFC calls and dynpro patterns to concrete findings — before any AI runs. A defensible baseline you can take into an audit, not a black-box guess.' },
   { title: 'Days → Minutes', desc: 'Manually finding released SAP APIs and rewriting legacy ABAP into RAP classes or CAP services takes days to weeks. Clean-Core.io produces the first qualified draft plus evidence in minutes — the expert reviews instead of starting from a blank page.' },
-  { title: 'Upgrade Resilience', desc: 'Replacing unreleased database dependencies with officially released SAP APIs (e.g. I_Customer, API_PRODUCT_SRV) keeps your ERP core fully upgradable — decoupling update cycles from months to days.' },
-  { title: 'Automated Test Stubs', desc: 'Matching unit tests are generated with the code — ABAP Unit doubles for RAP, or Express/Node suites for CAP — and executed in an isolated, hermetic sandbox. QA starts covered, not empty.' },
+  { title: 'Upgrade Resilience', desc: 'Replacing unreleased database dependencies with officially released SAP APIs (e.g. I_Customer, API_PRODUCT_SRV) helps keep your ERP core upgrade-stable — reducing coupling between custom code and the core update cycle.' },
+  { title: 'Automated Test Stubs', desc: 'Matching unit tests are generated with the code — ABAP Unit doubles for RAP, or Express/Node suites for CAP — and executed in a sandboxed Node process (filesystem-scoped and time-limited). QA starts covered, not empty.' },
 ];
 
 const benefitsGovernance = [
@@ -38,20 +38,20 @@ const securityKeys = [
   { title: 'BYOK — Server-Side AES-256-GCM', desc: 'Bring Your Own Key is optional: without it, every account gets 5 free transformations on a shared community key; with your own Google Gemini key, usage is unlimited. Your key is encrypted at rest with AES-256-GCM in a server-only store — never returned to the browser (only the last four characters are shown), and used solely via a secure server-side proxy.' },
   { title: 'Keys Never Reach the Client', desc: 'Every AI call is proxied through a hardened server route: a strict model allowlist, a prompt-size cap, per-user rate limiting, and an MFA gate on sensitive actions. Provider keys never touch client code.' },
   { title: 'Model-Training Isolation', desc: 'Under Google’s applicable Gemini API data-use terms, the code you send is not used to train Google’s foundational models. When you use your own key (BYOK), the terms of your own Google account apply. Your IP stays yours.' },
-  { title: 'Tenant Security', desc: 'Optional S/4HANA connections are strictly read-only (OData metadata reads and test execution) — no write operations. Credentials are processed in memory only; production domains are blocked; every live-tenant request is admin-approved before activation.' },
+  { title: 'Tenant Security', desc: 'Optional S/4HANA connections are strictly read-only (OData metadata reads and test execution) — no write operations. Credentials are encrypted at rest (AES-256-GCM), stored server-side only and never returned to the browser; live connections are restricted to an administrator-managed allowlist; every live-tenant request is admin-approved before activation.' },
 ];
 
 const securityTrust = [
-  { title: 'Immutable, Signed Runs', desc: 'Every analysis is captured as an immutable, HMAC-signed “Run”. The evidence pack is generated and signed server-side, so a valid signature attests to server-computed content — closing any client-forged-hash gap.' },
+  { title: 'Immutable, Signed Runs', desc: 'Every analysis is captured as an immutable, HMAC-signed “Run”. The evidence pack is generated and signed server-side, so a valid signature protects the integrity of the generated package; provenance is shown per evidence class.' },
   { title: 'Three-Tier Verification', desc: 'Anyone can verify a pack’s manifest hash and signature. The AI narrative is deliberately excluded from the signed payload — the signature attests to evidence, not to free text.' },
-  { title: 'EU-Hosted & Art. 17 Erasure', desc: 'Application storage and primary processing run in europe-west1 (Belgium). Account deletion immediately deletes your live database and authentication entries; residual encrypted backups age out within 30 days. AI and email subprocessors are disclosed separately under their own terms and transfer safeguards.' },
-  { title: 'Hardening & Supply Chain', desc: 'Strict Content-Security-Policy, server-side HTML sanitization, CI secret scanning, a dependency-audit gate and a CycloneDX SBOM on every build. Only strictly necessary Firebase Auth storage — no analytics or marketing trackers.' },
+  { title: 'EU-Hosted & Art. 17 Erasure', desc: 'Application storage and primary processing run in europe-west1 (Belgium). Account deletion runs an idempotent, multi-system erasure of your live database and authentication entries; residual encrypted backups age out within 30 days. AI and email subprocessors are disclosed separately under their own terms and transfer safeguards.' },
+  { title: 'Hardening & Supply Chain', desc: 'A Content-Security-Policy (with documented compatibility exceptions), server-side HTML sanitization, CI secret scanning, a dependency-audit gate and a CycloneDX SBOM generated by the security workflow. Only strictly necessary Firebase Auth storage — no analytics or marketing trackers.' },
 ];
 
 const rapCapRows = [
   { dim: 'Runtime engine', rap: 'Runs natively within the S/4HANA core.', cap: 'Runs decoupled on SAP BTP (Node.js/TS).' },
   { dim: 'Interfaces', rap: 'Synchronous released CDS views.', cap: 'Decoupled via OData APIs or Event Mesh.' },
-  { dim: 'RISE compliance', rap: 'Strict SaaS compliance (zero core modifications).', cap: 'Upgrade-resilient Tier-2 custom API wrappers.' },
+  { dim: 'RISE compliance', rap: 'Strict SaaS compliance (zero core modifications).', cap: 'Upgrade-resilient classic custom API wrappers.' },
   { dim: 'Focus case', rap: 'Immediate database updates and transactional locks.', cap: 'Customer portals, mobile apps, external SaaS.' },
 ];
 
@@ -110,7 +110,7 @@ export default function WhitepaperPage() {
         <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs mb-8 border border-emerald-100 shadow-sm">
             <ShieldCheck className="w-4 h-4" />
-            <span className="uppercase tracking-wider">Free Community Edition · Edition 2.0</span>
+            <span className="uppercase tracking-wider">Free Community Edition · Edition 2.1</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-7xl font-black tracking-tighter mb-6 leading-[0.9] text-gray-950">
@@ -129,7 +129,7 @@ export default function WhitepaperPage() {
               { label: 'Author', value: 'Felix Frenzel' },
               { label: 'Platform', value: 'Clean-Core.io' },
               { label: 'Classification', value: 'Public · Community Guide' },
-              { label: 'Edition', value: `2.0 · ${APP_VERSION}` },
+              { label: 'Edition', value: `2.1 · ${APP_VERSION}` },
             ].map((m) => (
               <div key={m.label} className="bg-white/80 backdrop-blur-sm border border-gray-200/80 rounded-xl p-3">
                 <div className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">{m.label}</div>
@@ -188,7 +188,7 @@ export default function WhitepaperPage() {
         <section id="benefits-governance">
           <SectionEyebrow number="03" total="08" />
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">Benefits, Part 2 — Transparency &amp; Governance</h2>
-          <p className="text-gray-600 leading-relaxed mb-8">Version 2.0 makes the reasoning inspectable and the progress auditable — so a recommendation survives scrutiny in a board room, not just a demo.</p>
+          <p className="text-gray-600 leading-relaxed mb-8">Version 2.1 makes the reasoning inspectable and the progress auditable — so a recommendation survives scrutiny in a board room, not just a demo.</p>
           <CardGrid cards={benefitsGovernance} />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
             {[
@@ -258,7 +258,7 @@ export default function WhitepaperPage() {
 
           <div className="border border-gray-200 rounded-2xl p-6 mt-6">
             <div className="text-xs font-black uppercase tracking-wider text-gray-900 mb-3">Automated API mapping</div>
-            <p className="text-sm text-gray-600 leading-relaxed mb-4">Direct SELECTs on legacy tables are audit blockers. The engine maps them to released standard interfaces, grounded in SAP’s Apache-2.0 Cloudification Repository:</p>
+            <p className="text-sm text-gray-600 leading-relaxed mb-4">Direct reads and writes to internal tables carry different Clean Core weight — direct writes to standard tables are the more critical case. The engine maps such access to released standard interfaces, grounded in SAP’s Apache-2.0 Cloudification Repository:</p>
             <div className="space-y-2">
               {apiMappings.map((m) => (
                 <div key={m.table} className="flex items-center gap-3 text-sm">
@@ -341,7 +341,7 @@ export default function WhitepaperPage() {
             <div className="bg-slate-900 p-1 rounded-md"><div className="w-2 h-2 rounded-sm bg-green-600" /></div>
             <span className="font-bold text-gray-600">Clean-Core<span className="text-gray-400">.io</span></span>
           </div>
-          <span>Community Whitepaper · Edition 2.0 · v{APP_VERSION}</span>
+          <span>Community Whitepaper · Edition 2.1 · {APP_VERSION}</span>
           <Link href="/impressum" className="hover:text-green-600 transition-colors">Impressum</Link>
         </div>
       </footer>

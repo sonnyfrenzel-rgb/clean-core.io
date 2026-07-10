@@ -35,8 +35,8 @@ Clean-Core.io is a free, community-built web application that helps SAP practiti
     Provision a virtual Eclipse ADT Test Cockpit to compile and execute unit tests with process-level isolation. If S/4HANA Live Bridge is activated, only the required S/4 credentials are injected as environment variables — no other server secrets are exposed.
 *   **Process Blueprinting & BPMN 2.0 Mapping:**
     Generates dynamic Level 1-4 functional blueprints and interactive BPMN process flow maps directly from modernized business logic.
-*   **GDPR / DSGVO Sovereign Data Erasure:**
-    Strict enforcement of Article 17 GDPR (Right to Erasure). A secure transactional deletion cascade in the settings panel recursively purges all user footprints, project workspaces, custom snippets, and authentication keys.
+*   **GDPR / DSGVO Data Erasure:**
+    Support for Article 17 GDPR (Right to Erasure). An idempotent, multi-system deletion cascade in the settings panel recursively purges user footprints, project workspaces, custom snippets, and authentication keys.
 *   **Frosted-glass UI:**
     Visually stunning dark-mode design featuring vibrant HSL-tailored emerald mesh gradients, smooth framer-motion transitions, and polished glassmorphism aesthetics.
 *   **SEO & AI-Search Engine Optimization (GEO):**
@@ -111,9 +111,9 @@ Clean-Core.io prioritizes data security and user privacy above all else:
 *   **Encrypted Credentials (AES-256-GCM):** S/4HANA credentials are encrypted at rest in a server-only Firestore collection (`s4_credentials`). Client SDKs cannot read this collection (`allow read, write: if false`). Passwords follow a write-only pattern — they are never returned to the client.
 *   **Admin Gating:** All privileged routes (email sending, tenant management) require `verifyAdminRequest()` with email allowlist enforcement.
 *   **Quota Enforcement:** Transformation quotas are enforced via atomic server-side Firestore transactions. Client-side counters are decorative only.
-*   **Sandboxed Test Runner:** The `/api/run-tests` route executes generated unit tests in a hardened, isolated child process — esbuild bundling, Node's Permission Model (filesystem scoped to a temp dir; no child-process/worker/native-addon access), a minimal env with no platform secrets, and time/output/input-size limits. **Live S/4HANA test execution stays disabled unless network egress is explicitly enforced at the infrastructure level (`S4_TEST_RUNNER_EGRESS_ENFORCED=true`).** See [`SECURITY.md`](SECURITY.md).
+*   **Sandboxed Test Runner:** The `/api/run-tests` route executes generated unit tests in a sandboxed child process — esbuild bundling, Node's Permission Model (filesystem scoped to a temp dir; no child-process/worker/native-addon access), a minimal env with no platform secrets, and time/output/input-size limits. Note: the Node Permission Model does not restrict outbound network access, so this is defence-in-depth, not a full isolation boundary — see [`SECURITY.md`](SECURITY.md) and the roadmap for the isolated-runner track. **Live S/4HANA test execution stays disabled unless network egress is explicitly enforced at the infrastructure level (`S4_TEST_RUNNER_EGRESS_ENFORCED=true`).** See [`SECURITY.md`](SECURITY.md).
 *   **Field-Level Security:** Firestore Security Rules freeze all privileged fields (isAdmin, tier, quota counters) so only admins can modify them.
-*   **Art. 17 GDPR Cascade Deletion:** Instantly purges authentication profiles, custom uploads, ABAP scripts, analysis metadata, modernized designs, blueprints, generated ZIP packages, sandbox outputs, configurations, and **encrypted S/4HANA credentials**.
+*   **Art. 17 GDPR Cascade Deletion:** An idempotent cascade purges authentication profiles, custom uploads, ABAP scripts, analysis metadata, modernized designs, blueprints, generated ZIP packages, sandbox outputs, configurations, and **encrypted S/4HANA credentials**; a partial failure is surfaced rather than reported as success, and encrypted backups age out within 30 days.
 *   **Full Security Documentation:** See [`SECURITY.md`](SECURITY.md) for the complete security architecture, threat model, and developer checklist.
 
 ---

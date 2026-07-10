@@ -94,9 +94,9 @@ export async function POST(request: NextRequest) {
 
           <!-- Security Trust Indicator -->
           <div style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 16px; padding: 18px; margin-bottom: 30px;">
-            <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">🛡️ Sovereign Data Privacy Assured</span>
+            <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">🛡️ EU-Hosted Data Processing</span>
             <span style="color: #047857; font-size: 13px; line-height: 1.5; display: block;">
-              To support GDPR (DSGVO) alignment, your projects are hosted in the <strong>Belgium (europe-west1)</strong> region. Generative AI transformations use stateless APIs designed so that your source code is not cached, persisted, or used for LLM training (per Google Cloud API Terms of Service).
+              To support GDPR (DSGVO) alignment, your projects are hosted in the <strong>Belgium (europe-west1)</strong> region. Your source code is not used to train Google's models (per the Gemini API terms); transient processing and caching may occur under those terms.
             </span>
             <span style="color: #03543f; font-size: 12px; line-height: 1.5; display: block; margin-top: 10px; font-weight: 600;">
               📎 Our public <strong>Trust &amp; Security overview</strong> is available for review anytime via the link below.
@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
             Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Modernization Platform
           </p>
           <p style="margin: 0;">
-            <strong>Data Sovereignty (Art. 17 GDPR):</strong> You have the absolute right to erasure. To permanently and instantly wipe all database and authentication entries associated with your profile, visit the <em>Danger Zone</em> inside your Settings dashboard.
+            <strong>Data Erasure (Art. 17 GDPR):</strong> You have the right to erasure. To remove the database and authentication entries associated with your profile, visit the <em>Danger Zone</em> inside your Settings dashboard; encrypted backups age out within 30 days.
           </p>
         </div>
       </div>

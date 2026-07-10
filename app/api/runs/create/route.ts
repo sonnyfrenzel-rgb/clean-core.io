@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
-import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError } from '@/lib/firebase-admin';
 import { APP_VERSION } from '@/lib/version';
 import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
@@ -65,6 +65,14 @@ export async function POST(req: NextRequest) {
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'Unauthorized to write to this project.' }, { status: 403 });
+    }
+
+    // F-02: account-state gate — a pending/suspended/stale-Terms account cannot mint signed runs.
+    try {
+      await assertAccountActive(decodedToken.uid, { requireApproved: true, requireCurrentTerms: true, isAdminClaim: isAdmin });
+    } catch (gateErr: any) {
+      if (gateErr instanceof QuotaError) return NextResponse.json({ error: gateErr.message }, { status: gateErr.status });
+      throw gateErr;
     }
 
     let legacyCode = body.legacyCode || projectData?.legacyCode || '';

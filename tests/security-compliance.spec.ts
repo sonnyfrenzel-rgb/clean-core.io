@@ -329,11 +329,60 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     expect(await adminDocExists('tenant_access_requests', tempUid)).toBe(false);
   });
 
+  test('F-03: DELETE /api/projects/{id} recursively purges the project AND its runs', async ({ request }) => {
+    const email = `temp-projdel-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
+    const uid = cred.user.uid;
+    await adminSetDoc('users', uid, {
+      firstName: 'T', lastName: 'PD', email, tier: 'pilot', status: 'approved', isAdmin: false,
+      transformationsUsed: 0, transformationsLimit: 5, maxTeamMembers: 1,
+      s4TenantAccessAllowed: false, s4TenantAccessRequested: false, mfaEnabled: false, createdAt: new Date(),
+    });
+    const projectId = `pdproj-${uid}`;
+    await adminSetDoc('projects', projectId, { name: 'PD', status: 'uploaded', userId: uid, createdAt: new Date() });
+    await adminSetDoc(`projects/${projectId}/runs`, `pdrun-${uid}`, { runId: `pdrun-${uid}`, userId: uid, analysis: '{}', runHash: 'x' });
+
+    const token = await cred.user.getIdToken(true);
+    const res = await request.delete(`/api/projects/${projectId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.status()).toBe(200);
+    // Parent AND the immutable runs subcollection must be gone (no orphaned run).
+    expect(await adminDocExists('projects', projectId)).toBe(false);
+    expect(await adminDocExists(`projects/${projectId}/runs`, `pdrun-${uid}`)).toBe(false);
+  });
+
+  test('F-02: a pending account is blocked at a business API (run-tests → 403)', async ({ request }) => {
+    const email = `temp-pending-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
+    const uid = cred.user.uid;
+    await adminSetDoc('users', uid, {
+      firstName: 'T', lastName: 'PE', email, tier: 'pilot', status: 'pending', isAdmin: false,
+      transformationsUsed: 0, transformationsLimit: 5, maxTeamMembers: 1,
+      s4TenantAccessAllowed: false, s4TenantAccessRequested: false, mfaEnabled: false, createdAt: new Date(),
+    });
+    const token = await cred.user.getIdToken(true);
+    // Account-state gate runs before the body is used, so a minimal payload is fine.
+    const res = await request.post('/api/run-tests', {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { tests: [], projectId: 'x', code: '', selectedTestIds: [] },
+    });
+    expect(res.status()).toBe(403);
+  });
+
   // ── v1.20 §5/§8: server-authoritative audit pack (generated & signed server-side) ──
 
   async function seedRunnableProject(uid: string, suffix: string) {
     const projectId = `apk-${suffix}-${uid}`;
     const runId = `apkrun-${suffix}-${uid}`;
+    // F-02: business APIs now require an approved account — seed an approved profile
+    // so the account-state gate passes (the owner reaches the ownership/run checks).
+    await adminSetDoc('users', uid, {
+      firstName: 'APK', lastName: 'Owner', email: `apk-${uid}@cleancore-test.io`, tier: 'pilot',
+      status: 'approved', isAdmin: false, transformationsUsed: 0, transformationsLimit: 5,
+      maxTeamMembers: 1, s4TenantAccessAllowed: false, s4TenantAccessRequested: false,
+      mfaEnabled: false, createdAt: new Date(),
+    });
     await adminSetDoc('projects', projectId, {
       name: 'Audit Pack Test', status: 'analyzed', userId: uid, activeRunId: runId,
       extensibilityRoute: 'Side-by-Side (SAP BTP)', createdAt: new Date(),

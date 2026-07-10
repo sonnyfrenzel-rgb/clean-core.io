@@ -59,6 +59,10 @@ function htmlResponse(ok: boolean, appOrigin: string, status = ok ? 200 : 400) {
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const appOrigin = url.origin;
+  // F-19: integration not GA (token persistence unimplemented) — never simulate success.
+  if (process.env.JIRA_INTEGRATION_ENABLED !== 'true') {
+    return htmlResponse(false, appOrigin, 404);
+  }
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
 

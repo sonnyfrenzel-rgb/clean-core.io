@@ -141,7 +141,10 @@ service cloud.firestore {
                         'usageReport', 'nonFunctionalRequirements'
                       ])
                     )) && isValidProject(request.resource.data, true);
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      // F-03: project deletion is server-only via the Admin SDK (recursiveDelete
+      // through DELETE /api/projects/{projectId}). A client deleteDoc() would orphan
+      // the immutable runs/{runId} subcollection, so client delete is disabled here.
+      allow delete: if false;
     }
 
     match /projects/{projectId}/runs/{runId} {
@@ -250,6 +253,12 @@ service cloud.firestore {
 
     // Audit events: server-only via Admin SDK. No client access.
     match /audit_events/{eventId} {
+      allow read, write: if false;
+    }
+
+    // F-16: append-only Terms/Privacy consent events — server-only via Admin SDK
+    // (POST /api/consent). The client cannot forge or read consent records.
+    match /consent_events/{eventId} {
       allow read, write: if false;
     }
 

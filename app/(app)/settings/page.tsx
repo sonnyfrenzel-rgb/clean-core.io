@@ -1818,7 +1818,7 @@ export default function SettingsPage() {
               <div className="border-t border-slate-800 pt-4" id="privacy">
                 <span className="font-bold text-white block uppercase tracking-wider mb-1">🔒 Privacy Policy (Datenschutz)</span>
                 <p className="leading-relaxed">
-                  Your profile and project assets are hosted on secure European cloud nodes (Google Firebase). We conform fully to GDPR (DSGVO) standards. You can download or cascadingly erase all your data instantly inside the Settings Danger Zone at any time.
+                  Your profile and project assets are hosted on secure European cloud nodes (Google Firebase). The platform is designed to support GDPR (DSGVO)-aligned processing and erasure workflows. You can download or cascadingly erase your data inside the Settings Danger Zone at any time.
                 </p>
               </div>
 

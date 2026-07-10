@@ -14,6 +14,13 @@ import { verifyRequestAuth, assertMfaSatisfied } from '@/lib/firebase-admin';
  *    in the callback.
  */
 export async function GET(request: Request) {
+  // F-19: Jira integration is not GA — server-side token persistence is not yet
+  // implemented, so the OAuth flow must not be reachable in production (it would end
+  // in a simulated success). Enable only once persistence is done (JIRA_INTEGRATION_ENABLED=true).
+  if (process.env.JIRA_INTEGRATION_ENABLED !== 'true') {
+    return NextResponse.json({ error: 'Jira integration is not available yet.' }, { status: 404 });
+  }
+
   const decodedToken = await verifyRequestAuth(request);
   if (!decodedToken) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });

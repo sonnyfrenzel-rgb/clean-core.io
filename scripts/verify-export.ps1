@@ -3,7 +3,7 @@ param(
     [string]$SigningKey = $env:AUDIT_SIGNING_KEY
 )
 
-if (-not $ZipPath -or -not (Test-Path $ZipPath)) {
+if (-not $ZipPath -or -not (Test-Path -LiteralPath $ZipPath)) {
     Write-Error "Please specify a valid path to the exported zip file via -ZipPath"
     exit 1
 }
@@ -14,7 +14,7 @@ if (Test-Path $tempDir) { Remove-Item -Recurse -Force $tempDir }
 New-Item -ItemType Directory -Path $tempDir | Out-Null
 
 Write-Output "Extracting archive to: $tempDir"
-Expand-Archive -Path $ZipPath -DestinationPath $tempDir -Force
+Expand-Archive -LiteralPath $ZipPath -DestinationPath $tempDir -Force
 
 $manifestPath = Join-Path $tempDir "manifest.json"
 if (-not (Test-Path $manifestPath)) {
@@ -40,13 +40,13 @@ $canonicalManifest = ""
 $sortedFiles = $manifest.files | Sort-Object -Property path
 foreach ($file in $sortedFiles) {
     $filePath = Join-Path $tempDir $file.path
-    if (-not (Test-Path $filePath)) {
+    if (-not (Test-Path -LiteralPath $filePath)) {
         Write-Warning "File missing: $($file.path)"
         $allPassed = $false
         continue
     }
-    
-    $localHash = (Get-FileHash -Path $filePath -Algorithm SHA256).Hash.ToLower()
+
+    $localHash = (Get-FileHash -LiteralPath $filePath -Algorithm SHA256).Hash.ToLower()
     if ($localHash -ne $file.sha256) {
         Write-Warning "Hash mismatch for $($file.path): expected $($file.sha256), got $localHash"
         $allPassed = $false

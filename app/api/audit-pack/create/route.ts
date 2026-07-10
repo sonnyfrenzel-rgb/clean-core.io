@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
 import JSZip from 'jszip';
-import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { APP_VERSION } from '@/lib/version';
 import type { Project } from '@/lib/types';
@@ -57,6 +57,14 @@ export async function POST(req: NextRequest) {
     const isOwner = projectData.userId === decodedToken.uid;
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'Unauthorized.' }, { status: 403 });
+    }
+
+    // F-02: account-state gate — pending/suspended/stale-Terms accounts cannot mint signed audit packs.
+    try {
+      await assertAccountActive(decodedToken.uid, { requireApproved: true, requireCurrentTerms: true, isAdminClaim: isAdmin });
+    } catch (gateErr: any) {
+      if (gateErr instanceof QuotaError) return NextResponse.json({ error: gateErr.message }, { status: gateErr.status });
+      throw gateErr;
     }
 
     // Active run gate (server decides the run — client cannot request a stale/foreign run)

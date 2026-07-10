@@ -113,7 +113,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
       const projectsSnapshot = await getDocs(projectsQuery);
       console.log(`Cleaning up ${projectsSnapshot.docs.length} legacy test projects...`);
       for (const docSnap of projectsSnapshot.docs) {
-        await deleteDoc(doc(firestoreDb, 'projects', docSnap.id));
+        // F-03: client project deletes are disabled (server-only recursiveDelete via
+        // /api/projects/{id}). Best-effort cleanup — ignore the expected denial.
+        try { await deleteDoc(doc(firestoreDb, 'projects', docSnap.id)); } catch { /* server-managed */ }
       }
       
       const examplesQuery = query(collection(firestoreDb, 'abap_examples'), where('userId', '==', uid));

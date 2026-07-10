@@ -7,6 +7,7 @@ import {
   refundTransformationQuota,
   QuotaError,
   assertMfaSatisfied,
+  assertAccountActive,
   loadGeminiApiKey,
 } from '@/lib/firebase-admin';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
@@ -38,13 +39,15 @@ function getDefaultAI(): GoogleGenAI | null {
   return defaultAI;
 }
 
-// F-07: Server-side model governance — only approved models may be used.
+// F-09: Server-side model register / allowlist. Only approved models may be used.
+// GA = generally available & stable; PREVIEW = opt-in canary (may change or retire).
+// Dead Gemini 2.0 IDs were removed (lifecycle ended per Google's deprecation page).
+// The POST default below is pinned to the current product model; promoting the
+// default to a GA model is gated on a golden-set regression check (2.2 roadmap).
 const ALLOWED_MODELS = new Set([
-  'gemini-2.5-flash',
-  'gemini-2.5-pro',
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite',
-  'gemini-3-flash-preview',
+  'gemini-2.5-flash',       // GA — stable fallback
+  'gemini-2.5-pro',         // GA — stable fallback
+  'gemini-3-flash-preview', // PREVIEW — current product default (see POST body)
 ]);
 
 // F-07: Hard prompt-size limit to prevent cost/quota abuse.
@@ -105,6 +108,22 @@ export async function POST(request: NextRequest) {
         { error: mfaErr.message || 'MFA verification required.' },
         { status: 403 }
       );
+    }
+
+    // F-02: central account-state gate — approval + current Terms are enforced for
+    // ALL requests, INCLUDING the BYOK path (which previously skipped the
+    // quota-based approval check). Admins/enterprise are exempt from approval.
+    try {
+      await assertAccountActive(decodedToken.uid, {
+        requireApproved: true,
+        requireCurrentTerms: true,
+        isAdminClaim: decodedToken.admin === true,
+      });
+    } catch (gateErr: any) {
+      if (gateErr instanceof QuotaError) {
+        return NextResponse.json({ error: gateErr.message }, { status: gateErr.status });
+      }
+      throw gateErr;
     }
 
     const body = await request.json();

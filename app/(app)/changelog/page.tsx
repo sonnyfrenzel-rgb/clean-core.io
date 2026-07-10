@@ -20,9 +20,23 @@ export const metadata: Metadata = {
 
 const releases = [
   {
+    version: 'v2.1.0',
+    date: 'July 10, 2026',
+    tag: 'Latest',
+    icon: Shield,
+    changes: [
+      'Central account-state gate on every business API — pending, suspended or stale-Terms accounts are consistently blocked, including the BYOK path which previously bypassed approval.',
+      'Server-authoritative project deletion (recursiveDelete) so analysis runs are never orphaned; client project deletes are disabled in Firestore rules, and account erasure no longer hides partial failures.',
+      'Server-authoritative Terms consent with append-only consent events and re-consent enforcement.',
+      'The A/B/C/D "Cloud Readiness Classification" is now an explicit Experimental Preview and is excluded from the signed audit pack — a heuristic estimate to verify against SAP ADT/ATC.',
+      'Admin actions now require enrolled MFA; rate-limit records are pseudonymised with a self-expiring TTL.',
+      'Claim hygiene — corrected overstated wording across the whitepaper, board deck, homepage, trust page, emails and settings (evidence scanner instead of "AST engine", encrypted-at-rest credentials, idempotent erasure, GDPR-aligned).',
+      'Security dependency audit is now a required deploy gate; the old /sap-tier-2-extensions URL now redirects to the A–D classification page.',
+    ],
+  },
+  {
     version: 'v2.0.0',
     date: 'July 2, 2026',
-    tag: 'Latest',
     icon: Rocket,
     changes: [
       'Server-authoritative trust chain — audit packs are generated and HMAC-signed entirely server-side from the immutable run; the AI narrative is excluded from the signed payload. The legacy client-hash signing endpoint was retired.',

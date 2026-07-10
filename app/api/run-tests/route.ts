@@ -5,7 +5,7 @@ import fssync from 'fs';
 import os from 'os';
 import path from 'path';
 import { isBuiltin } from 'module';
-import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied, assertAccountActive } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 
 /**
@@ -201,6 +201,16 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { output: '', error: mfaErr.message || 'MFA verification required.', exitCode: 1 },
       { status: 403 }
+    );
+  }
+
+  // F-02: account-state gate — pending/suspended/stale-Terms accounts cannot run tests.
+  try {
+    await assertAccountActive(decodedToken.uid, { requireApproved: true, requireCurrentTerms: true, isAdminClaim: decodedToken.admin === true });
+  } catch (gateErr: any) {
+    return NextResponse.json(
+      { output: '', error: gateErr?.message || 'Account not permitted.', exitCode: 1 },
+      { status: gateErr?.status || 403 },
     );
   }
 

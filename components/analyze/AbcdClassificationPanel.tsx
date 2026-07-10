@@ -46,11 +46,19 @@ export default function AbcdClassificationPanel({
   return (
     <CollapsibleAccordion
       icon={<ListChecks size={16} />}
-      title="Cloud Readiness Classification (A–D)"
+      title="Cloud Readiness Classification (A–D) · Preview"
       badge={`A ${dist.A} · B ${dist.B} · C ${dist.C} · D ${dist.D}`}
       badgeSeverity={dist.D > 0 ? 'red' : dist.C > 0 ? 'amber' : 'green'}
-      tooltip="SAP's Clean Core object classification (A–D) that superseded Tier 1/2/3. A = released & cloud-ready, B = stable with caution, C = conditional/review, D = not clean/replace. Derived deterministically from the detected dependencies and inventory."
+      tooltip="Experimental A–D readiness estimate aligned to SAP's clean core level concept (A = released, B = classic SAP-recommended, C = internal/conditional, D = not recommended). Heuristic, derived from the detected dependencies and inventory — not an authoritative SAP ATC classification. Verify with SAP ADT/ATC."
     >
+      {/* F-05: honest preview labeling — this is a heuristic estimate, not an
+          authoritative SAP ATC classification, and is deliberately excluded from
+          the signed audit pack. */}
+      <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800 leading-snug">
+        Experimental preview — a heuristic A–D readiness estimate derived from the detected
+        dependencies, not an authoritative SAP ATC classification. Not part of the signed audit
+        pack. Verify each grade with SAP ADT / ATC for your target release before relying on it.
+      </div>
       {/* Distribution bar */}
       <div className="mb-4">
         <div className="flex h-3 w-full overflow-hidden rounded-full border border-slate-100">

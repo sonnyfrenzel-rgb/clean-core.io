@@ -4,6 +4,7 @@ import {
   saveGeminiApiKey,
   deleteGeminiApiKey,
   assertMfaSatisfied,
+  assertAccountActive,
   getAdminDb,
   logAuditEvent,
   QuotaError,
@@ -25,6 +26,11 @@ export async function POST(req: NextRequest) {
   try {
     // 1. MFA Step-up Gate
     await assertMfaSatisfied(req, decodedToken);
+
+    // F-02: block suspended/stale-Terms accounts from managing a BYOK key. Approval is
+    // NOT required to *store* a key — the bypass the finding is about is *using* it, which
+    // is gated at /api/gemini (requireApproved). QuotaError is handled by the catch below.
+    await assertAccountActive(decodedToken.uid, { requireCurrentTerms: true, isAdminClaim: decodedToken.admin === true });
 
     // 2. Rate Limiting Gate (10 requests per hour)
     const ip = getClientIp(req);

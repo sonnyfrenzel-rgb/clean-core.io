@@ -87,7 +87,7 @@ export function buildBoardDeck(input: {
     type: 'split',
     subtitle: `Recommendation: ${recommendation}`,
     leftContent: `**Decision summary:**\n\n• **Target Architecture**: Clean Core Compliance tier using ${project.extensibilityRoute || 'In-App RAP / Side-by-Side CAP'}.\n• **Overall Readiness**: Clean Core Score is **${project.cleanCoreScore ?? 100}/100**.\n• **Rollup Risk Rating**: **${riskRating}** (${overallLevel.toUpperCase()}).\n• **Required Actions**: ${overallLevel === 'not-supported' ? 'Block deployment, redesign unsupported structures.' : overallLevel === 'partial' ? 'Require Lead Architect sign-off before transport.' : 'Proceed to release queue.'}`,
-    rightContent: `**Governance Status:**\n\n• **Risk Assessment**: ${riskRating}\n• **Evidence Level**: Evidentiary Board Presentation derived from Static AST Analysis\n• **Fingerprint Identity**: ${project.auditMetadata?.inputFingerprint?.sha256?.substring(0, 12) || 'N/A'}\n• **Model Registry**: ${project.auditMetadata?.modelCard?.model || `Clean-Core Compiler ${APP_VERSION}`}`,
+    rightContent: `**Governance Status:**\n\n• **Risk Assessment**: ${riskRating}\n• **Evidence Level**: Evidentiary Board Presentation derived from the deterministic evidence engine\n• **Fingerprint Identity**: ${project.auditMetadata?.inputFingerprint?.sha256?.substring(0, 12) || 'N/A'}\n• **Model Registry**: ${project.auditMetadata?.modelCard?.model || `Clean-Core Compiler ${APP_VERSION}`}`,
     speakerNotes: `Decision-first board recommendation. This project is rated as ${riskRating} due to worst-case rollup of ${overallLevel} compliance. The target architecture is ${project.extensibilityRoute || 'standard Cloud SDK'}.`
   };
 
@@ -235,12 +235,12 @@ export function buildBoardDeck(input: {
     type: 'bullets',
     subtitle: 'Stateless processing and credential isolation boundaries',
     content: [
-      '**Stateless Analysis Sandbox**: Source code parsing and AST analysis is completed entirely in memory. Zero user source code is stored or used for model training.',
-      '**Credential Sandbox Isolation**: ERP connectivity uses short-lived tokens and BTP Destinations. Credentials are never written to disk.',
+      '**Deterministic Evidence Analysis**: Code parsing and evidence extraction run server-side. Source code is stored only in your encrypted, access-controlled project workspace and is not used for model training.',
+      '**Credential Isolation**: Optional ERP connectivity credentials are encrypted at rest (AES-256-GCM), stored server-side only and never returned to the browser.',
       '**GDPR-aligned & EU-hosted**: Application storage and primary processing run in the EU region (europe-west1). AI and transactional-email subprocessors are disclosed and process data under their own terms.',
-      '**Cryptographic Integrity Checks**: Every generated release pack is cryptographically signed and hashed. Fingerprints are stored in the Audit Pack.'
+      '**Cryptographic Integrity Checks**: The audit pack manifest is hashed and HMAC-signed server-side. Fingerprints are stored in the Audit Pack.'
     ],
-    speakerNotes: 'Our platform enforces strict isolation boundaries. We never store SAP credentials or let standard data leak into model training cycles.'
+    speakerNotes: 'SAP credentials are encrypted at rest and never returned to the browser; standard data is not used for model training. Application storage and primary processing run in the EU.'
   };
 
   // Slide 7: Risk Register & Quality Gates (risk slide)

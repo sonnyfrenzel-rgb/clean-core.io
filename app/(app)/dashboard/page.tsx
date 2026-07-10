@@ -486,7 +486,19 @@ export default function Dashboard() {
   const handleDeleteProject = async () => {
     if (deleteId) {
       try {
-        await deleteDoc(doc(db, 'projects', deleteId));
+        // F-03: delete server-side so the immutable runs/{runId} subcollection is
+        // recursively purged too — a client deleteDoc() would orphan it (Firestore
+        // does not cascade subcollections). Client project-delete is disabled in rules.
+        const idToken = await auth.currentUser?.getIdToken();
+        if (!idToken) throw new Error('Not authenticated.');
+        const res = await fetch(`/api/projects/${encodeURIComponent(deleteId)}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        if (!res.ok) {
+          const { error } = await res.json().catch(() => ({ error: 'Delete failed.' }));
+          throw new Error(error || 'Delete failed.');
+        }
         setDeleteId(null);
       } catch (error) {
         handleFirestoreError(error, OperationType.DELETE, `projects/${deleteId}`);

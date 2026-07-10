@@ -612,7 +612,7 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
               {
                 icon: <Cpu className="w-8 h-8 text-green-600" />,
                 title: 'Dual RAP & CAP Engine',
-                desc: 'Generates clean In-App ABAP Cloud RAP handlers or decoupled BTP CAP services. Powered by a deterministic AST resolver that linearizes OO inheritance chains before translation, preventing structural AI hallucinations.',
+                desc: 'Generates clean In-App ABAP Cloud RAP handlers or decoupled BTP CAP services. Powered by a deterministic evidence resolver that linearizes OO inheritance chains before translation, reducing structural AI hallucinations.',
                 link: '/features/rap-cap-engine',
                 testId: 'feature-dual-rap-cap-engine'
               },
@@ -686,7 +686,7 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
               Your Data Stays Yours
             </h2>
             <p className="text-gray-600 font-medium text-sm md:text-base max-w-xl mx-auto leading-relaxed">
-              European hosting, GDPR-compliant by design, with full self-service data erasure control. We built the security architecture the way we&apos;d want it for our own SAP systems.
+              European hosting, designed to support GDPR-aligned processing and erasure workflows, with self-service data erasure control. We built the security architecture the way we&apos;d want it for our own SAP systems.
             </p>
           </div>
 
@@ -705,7 +705,7 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
               {
                 icon: <Layers className="w-6 h-6 text-green-600" />,
                 title: "Cloud-Native Security",
-                desc: "Fully containerized on Google Cloud Run with server-side encryption, stateless APIs, and zero persistent local data. All processing happens in hardened, ephemeral containers."
+                desc: "Runs on Google Cloud Run with server-side encryption and stateless request handling — no persistent local data on the request path. Processing happens in managed, ephemeral containers."
               },
               {
                 icon: <Shield className="w-6 h-6 text-green-600" />,
@@ -902,7 +902,7 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
                 <strong>Limitation of Liability:</strong> In no event shall the administrator, contributors, or developers be held liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, loss of data, system crashes, integration failures, or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort arising in any way out of the use of this software, even if advised of the possibility of such damage.
               </p>
               <p>
-                <strong>Data Privacy & GDPR:</strong> This platform is deployed on secure European cloud nodes in the Belgium (europe-west1) region. Secure stateless proxy layers ensure that uploaded code is processed transiently and saved in your encrypted, user-isolated project workspace (never utilized by Google for LLM model training). All users retain the absolute right to immediate, recursive erasure (Art. 17 GDPR) via the settings dashboard.
+                <strong>Data Privacy & GDPR:</strong> Primary application storage and compute run on European cloud nodes in the Belgium (europe-west1) region. Uploaded code is processed via server-side proxy layers and saved in your encrypted, access-controlled project workspace (not used by Google to train its models, per the Gemini API terms). Users retain the right to erasure (Art. 17 GDPR) via the settings dashboard; AI and email subprocessors are disclosed separately.
               </p>
               <div className="pt-1 border-t border-gray-900">
                 <SapTrademarkNotice className="!text-gray-550" />

@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
             Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
             Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Modernization Platform
           </p>
-          <p style="margin: 0;"><strong>Data Sovereignty (Art. 17 GDPR):</strong> You have the absolute right to erasure. To permanently and instantly wipe all database and authentication entries associated with your profile, visit the <em>Danger Zone</em> inside your Settings dashboard.</p>
+          <p style="margin: 0;"><strong>Data Erasure (Art. 17 GDPR):</strong> You have the right to erasure. To remove the database and authentication entries associated with your profile, visit the <em>Danger Zone</em> inside your Settings dashboard; encrypted backups age out within 30 days.</p>
         </div>
       </div>
     `;

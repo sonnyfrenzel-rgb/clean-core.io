@@ -26,7 +26,7 @@ const faqs = [
   },
   {
     question: 'How does Clean-Core.io assign an A–D grade?',
-    answer: 'Deterministically. Where an object is known in the Cloudification Repository, the grade comes from its release state (released, deprecated, not-to-be-released). Otherwise it is derived from the evidence the engine already computes — access type, risk level and whether the object is custom. It is a derived, evidence-backed grade — proven, not guessed.',
+    answer: 'As an experimental preview estimate. It is a heuristic derived from the evidence the engine already computes — access type, risk level, object type and whether the object is custom. It is a fast orientation aid, not an authoritative SAP ATC classification, and it is not part of the signed audit pack. Every grade should be verified with SAP ADT/ATC for your target release.',
   },
   {
     question: 'What should I do with grade D objects?',
@@ -75,7 +75,7 @@ export default function CleanCoreClassificationPage() {
       {/* GEO Quick Answer */}
       <QuickAnswer
         question="What is the A/B/C/D Clean Core object classification?"
-        answer="It is SAP's cloud-readiness classification for technical objects, grounded in the Cloudification Repository. A = released and cloud-ready; B = stable, acceptable with caution; C = conditional, requires risk review; D = not clean, should be replaced. It supersedes the older Tier 1/2/3 wording and makes assessing custom code, controlling technical debt and planning upgrade-safe SAP development far clearer."
+        answer="It is SAP's cloud-readiness classification for technical objects. A = released SAP APIs and extension points; B = classic SAP APIs, SAP-recommended; C = internal SAP APIs, conditionally clean; D = not-recommended objects and technologies, to be replaced. It maps to the ABAP Test Cockpit priorities and gives a clearer way to assess custom code and plan upgrade-safe SAP development than a binary clean/not-clean view."
       />
 
       {/* Main */}
@@ -106,12 +106,15 @@ export default function CleanCoreClassificationPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-955">How Clean-Core.io applies it</h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-3xl font-black tracking-tight text-gray-955">How Clean-Core.io applies it</h2>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 border border-amber-300 rounded-full px-2 py-0.5">Experimental preview</span>
+            </div>
             <p className="text-gray-700 leading-relaxed font-medium">
-              Clean-Core.io derives the A–D grade <strong>deterministically</strong>. Where an object is known in the Cloudification Repository, the grade follows its release state. Otherwise it is derived from the evidence the engine already computes — access type, risk level and whether the object is custom. It is a derived, evidence-backed grade, shown per object in the analysis and included in the signed audit pack.
+              Clean-Core.io shows an <strong>experimental A–D readiness estimate</strong>: a heuristic derived from the evidence the engine already computes — access type, risk level, object type and whether the object is custom. It is a fast orientation aid, <strong>not</strong> an authoritative SAP ATC classification, and it is <strong>not</strong> part of the signed audit pack. Treat every grade as a draft and verify it with SAP ADT / ATC for your specific target release.
             </p>
             <p className="text-gray-700 leading-relaxed font-medium">
-              The result is a faster assessment of custom code, better technical-debt control, and more upgrade-stable SAP development — with a clear, defensible path from every A, B, C and D object to its Clean Core target.
+              Used that way it speeds up first-pass triage and the technical-debt conversation — a starting point for the defensible A–D remediation plan you then confirm against SAP's own tooling.
             </p>
           </section>
         </div>
