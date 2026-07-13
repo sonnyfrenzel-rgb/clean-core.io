@@ -5,6 +5,40 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.2.0] — 2026-07-11
+
+Codex Delta "part 2" — the trust-boundary items deferred from v2.1.0, done as
+non-breaking changes with live-production safety as the hard constraint (E2E stays
+green, the environment stays runnable). Structured and verified via the fable-method loop.
+
+### Changed
+- **Untrusted test runner is now network-egress-blocked (F-01, P0).** `/api/run-tests`
+  preloads a guard into the sandboxed child (`--import __netguard.mjs`) that neutralises every
+  outbound path — `net.Socket.prototype.connect`, `net.connect`/`createConnection`, `dgram`,
+  global `fetch`, `process.binding`, and every `dns` entry point (c-ares/getaddrinfo bypass
+  `net.Socket`) — BEFORE the test bundle loads. With the existing Node
+  permission model (no child-process/worker/native-addon escape), pure-JS test code can no
+  longer reach the GCP metadata endpoint (`169.254.169.254`) or any network — closing the
+  runtime-identity token-exfiltration path. **In-cloud CAP test execution is kept.** Verified
+  locally through the real `node:test` runner path (fetch/`net.connect` blocked, normal tests
+  pass). Defense-in-depth, not a formal microVM boundary — the isolated runner service remains
+  roadmap.
+- **Audit pack ships a signed provenance manifest (F-04).** A new \`00-provenance.md\` (hashed +
+  HMAC-signed like every other file) labels each evidence file and headline field by class —
+  \`server-computed\` / \`model-generated\` / \`user-attested\` / \`static\` — making the
+  signature's meaning explicit (package integrity, not per-value determinism) so auditors can
+  separate deterministic facts from AI drafts and self-attested inputs.
+- **A/B/C/D preview derivation is more honest (F-05).** Added an \`Unknown\` grade for
+  insufficient evidence (no more silent default to Medium), unknown catalog state now maps to
+  \`Unknown\`, and a \`worstGrade()\` worst-finding rollup helper — unit-tested
+  (\`tests/abcd-classification.spec.ts\`). Still a labelled preview, excluded from the signed pack.
+
+### Deferred (roadmap)
+- Fully isolated zero-trust runner service (F-01 gold standard), append-only reviewEvents
+  provenance refactor (F-04), full SAP target-release A/B/C/D model (F-05), dedicated runtime
+  service account (F-12), operational control-evidence pack (F-13), and asymmetric
+  offline-verifiable signatures (F-18) — infra/crypto-heavy, deferred to protect live stability.
+
 ## [v2.1.0] — 2026-07-10
 
 Trust-boundary hardening per the Codex v2.0.0 Delta / Tiefenanalyse review (2026-07-10).

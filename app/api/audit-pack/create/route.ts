@@ -14,6 +14,7 @@ import {
   generateFindingsCsv,
   generateModelCard,
   generateKnownLimitations,
+  generateProvenanceManifest,
 } from '@/lib/audit-pack';
 
 /**
@@ -100,6 +101,8 @@ export async function POST(req: NextRequest) {
     const fileContents: Record<string, string> = {
       '00-executive-summary.md': generateExecutiveSummary(project),
       '00-executive-summary.doc': generateExecutiveSummaryDoc(project),
+      '00-provenance.md': generateProvenanceManifest(project), // F-04: per-file/field provenance classes
+
       '01-input-fingerprint.json': JSON.stringify(
         project.auditMetadata?.inputFingerprint || { note: 'No fingerprint available.' },
         null, 2,

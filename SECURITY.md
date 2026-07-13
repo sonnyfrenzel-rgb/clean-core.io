@@ -17,7 +17,7 @@ This document describes the security architecture and hardening measures impleme
 | ID | Finding | Severity | Status | Remediation |
 |----|---------|----------|--------|-------------|
 | F-01 | Live API keys in repository | **P0** | ✅ Resolved | Keys rotated; `.env.example` contains only placeholders. `.gitignore` enforces exclusion of `.env*` files. |
-| F-02 | Remote Code Execution via `/api/run-tests` | **P0** | ✅ Resolved | esbuild in-process bundling + Node Permission Model sandbox (`--permission`). Child process restricted to fs-only access. |
+| F-02 | Remote Code Execution via `/api/run-tests` | **P0** | ✅ Mitigated | esbuild in-process bundling + Node Permission Model (`--permission`; no child-process/worker/native-addon escape) + a **network-egress block** preloaded into the child (`__netguard.mjs`) that denies all outbound connections (GCP metadata endpoint, internal, internet). Defense-in-depth — a fully isolated runner service is the roadmap gold standard. |
 | F-03 | SAP credentials stored in cleartext | **P0** | ✅ Resolved | AES-256-GCM encryption via `S4_ENCRYPTION_KEY`. Credentials in server-only `s4_credentials` collection. |
 | F-04 | Missing admin check on email routes | **P1** | ✅ Resolved | `verifyAdminRequest()` + email format validation on all 3 mail routes. |
 | F-05 | SSRF filter bypass | **P1** | ✅ Resolved | Async DNS resolution, full IPv4/v6 CIDR blocking, `safeFetch()` with IP pinning and redirect re-validation. |
@@ -179,6 +179,8 @@ Server (API Route)
   │     --allow-fs-read={sandboxDir,node_modules}
   │     --allow-fs-write={sandboxDir}
   │     → child_process, worker_threads, native addons: BLOCKED
+  │     --import __netguard.mjs
+  │     → outbound network (net/dgram/dns/fetch/process.binding): BLOCKED  ← F-01 egress guard
   │  7. Parse TAP output, return results
   ▼
   Ephemeral sandbox directory (cleaned up in finally block)
@@ -186,6 +188,7 @@ Server (API Route)
 
 ### Security Properties
 - **No shell execution**: `spawn()` with explicit args array, never `exec()` or shell strings.
+- **Network egress blocked (F-01)**: a preloaded guard (`__netguard.mjs`, via `--import`) neutralises `net.Socket.prototype.connect`, `net.connect`/`createConnection`, `dgram`, global `fetch`, `process.binding`, and every `dns` entry point (c-ares `resolve*` + getaddrinfo `lookup` + `dns.promises` + `Resolver`, which bypass `net.Socket`) before the test bundle loads. Since the permission model blocks child-process/worker/native-addon escapes, pure-JS test code cannot obtain an un-patched socket — so it cannot reach the GCP metadata endpoint (`169.254.169.254`) or any network. Skipped only when infra-level egress enforcement is active (`S4_TEST_RUNNER_EGRESS_ENFORCED`). This is defense-in-depth, not a formal microVM boundary — a fully isolated runner service remains the roadmap gold standard.
 - **Fail-closed**: Without esbuild or Node >= 22.8, route returns HTTP 500 (no silent unsafe fallback).
 - **Minimal environment**: Child process receives only `PATH`, `SYSTEMROOT`, `NODE_ENV=test`, and S4 env vars.
 - **S4 credentials**: Never from request body — always loaded server-side from encrypted store (F-03 closure).

@@ -5,6 +5,7 @@ import fssync from 'fs';
 import os from 'os';
 import path from 'path';
 import { isBuiltin } from 'module';
+import { pathToFileURL } from 'url';
 import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied, assertAccountActive } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 
@@ -402,6 +403,42 @@ process.exitCode = failed ? 1 : 0;
 `;
     await fs.writeFile(runnerPath, runnerSrc);
 
+    // ── F-01: hard network-egress block for the untrusted sandbox ───────────
+    // Unit tests need no network. This preload neutralises every outbound path
+    // (GCP metadata endpoint 169.254.169.254, internal services, the internet)
+    // BEFORE the test bundle loads — closing the runtime-identity token
+    // exfiltration path. The child already runs under Node's permission model
+    // (no child-process / worker / native-addon escape), and Node built-ins are
+    // process singletons, so pure-JS test code cannot obtain an un-patched socket.
+    // Every http/https/tls/http2/fetch(undici) egress funnels through
+    // net.Socket.prototype.connect, so neutralising it covers TCP comprehensively.
+    // Skipped only when the infra-level egress policy is enforced
+    // (S4_TEST_RUNNER_EGRESS_ENFORCED), where controlled live-tenant egress is
+    // handled at the network layer instead. Defense-in-depth, not a formal
+    // microVM boundary — see docs for the isolated-runner roadmap item.
+    const applyNetGuard = process.env.S4_TEST_RUNNER_EGRESS_ENFORCED !== 'true';
+    const netGuardPath = path.join(testDir, '__netguard.mjs');
+    if (applyNetGuard) {
+      await fs.writeFile(netGuardPath, `import net from 'node:net';
+import dgram from 'node:dgram';
+import dns from 'node:dns';
+const BLOCK = () => { throw new Error('Network access is disabled in the Clean-Core.io test sandbox.'); };
+try { net.Socket.prototype.connect = BLOCK; } catch {}
+try { net.connect = BLOCK; net.createConnection = BLOCK; } catch {}
+try { dgram.createSocket = BLOCK; } catch {}
+try { globalThis.fetch = BLOCK; } catch {}
+try { process.binding = BLOCK; } catch {}
+// DNS uses the native c-ares/getaddrinfo resolver, which bypasses net.Socket — block
+// every JS entry point so DNS queries (incl. DNS-tunnelling exfil) cannot leave either.
+for (const o of [dns, dns.promises, dns.Resolver && dns.Resolver.prototype]) {
+  if (!o) continue;
+  for (const k of Object.getOwnPropertyNames(o)) {
+    try { if (typeof o[k] === 'function') o[k] = BLOCK; } catch {}
+  }
+}
+`);
+    }
+
     // ── 4) Resolve S/4 credentials server-side (F-03), never from the body ──
     let s4Env: Record<string, string> = {};
     if (s4Environment === 'live') {
@@ -447,6 +484,10 @@ process.exitCode = failed ? 1 : 0;
         `--allow-fs-read=${projectNodeModules}`,
         `--allow-fs-write=${testDir}`
       );
+    }
+    // F-01: preload the network-egress block before the test runner.
+    if (applyNetGuard) {
+      args.push(`--import=${pathToFileURL(netGuardPath).href}`);
     }
     args.push(runnerPath);
 

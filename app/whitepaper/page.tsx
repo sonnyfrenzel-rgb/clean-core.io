@@ -110,7 +110,7 @@ export default function WhitepaperPage() {
         <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs mb-8 border border-emerald-100 shadow-sm">
             <ShieldCheck className="w-4 h-4" />
-            <span className="uppercase tracking-wider">Free Community Edition · Edition 2.1</span>
+            <span className="uppercase tracking-wider">Free Community Edition · Edition 2.2</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-7xl font-black tracking-tighter mb-6 leading-[0.9] text-gray-950">
@@ -129,7 +129,7 @@ export default function WhitepaperPage() {
               { label: 'Author', value: 'Felix Frenzel' },
               { label: 'Platform', value: 'Clean-Core.io' },
               { label: 'Classification', value: 'Public · Community Guide' },
-              { label: 'Edition', value: `2.1 · ${APP_VERSION}` },
+              { label: 'Edition', value: `2.2 · ${APP_VERSION}` },
             ].map((m) => (
               <div key={m.label} className="bg-white/80 backdrop-blur-sm border border-gray-200/80 rounded-xl p-3">
                 <div className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">{m.label}</div>
@@ -188,7 +188,7 @@ export default function WhitepaperPage() {
         <section id="benefits-governance">
           <SectionEyebrow number="03" total="08" />
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">Benefits, Part 2 — Transparency &amp; Governance</h2>
-          <p className="text-gray-600 leading-relaxed mb-8">Version 2.1 makes the reasoning inspectable and the progress auditable — so a recommendation survives scrutiny in a board room, not just a demo.</p>
+          <p className="text-gray-600 leading-relaxed mb-8">Version 2.2 makes the reasoning inspectable and the progress auditable — so a recommendation survives scrutiny in a board room, not just a demo.</p>
           <CardGrid cards={benefitsGovernance} />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
             {[
@@ -341,7 +341,7 @@ export default function WhitepaperPage() {
             <div className="bg-slate-900 p-1 rounded-md"><div className="w-2 h-2 rounded-sm bg-green-600" /></div>
             <span className="font-bold text-gray-600">Clean-Core<span className="text-gray-400">.io</span></span>
           </div>
-          <span>Community Whitepaper · Edition 2.1 · {APP_VERSION}</span>
+          <span>Community Whitepaper · Edition 2.2 · {APP_VERSION}</span>
           <Link href="/impressum" className="hover:text-green-600 transition-colors">Impressum</Link>
         </div>
       </footer>

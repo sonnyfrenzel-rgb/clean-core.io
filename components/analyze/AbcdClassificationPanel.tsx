@@ -4,7 +4,7 @@ import { ListChecks } from 'lucide-react';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import type { DataCouplingEntry, CodeInventoryItem } from '@/lib/types';
 import {
-  ABCD_META, GRADES, gradeDistribution, gradeFromCoupling, gradeFromInventory,
+  ABCD_META, GRADES, ALL_GRADES, gradeDistribution, gradeFromCoupling, gradeFromInventory,
   type CloudReadinessGrade,
 } from '@/lib/abap/abcd-classification';
 
@@ -62,14 +62,14 @@ export default function AbcdClassificationPanel({
       {/* Distribution bar */}
       <div className="mb-4">
         <div className="flex h-3 w-full overflow-hidden rounded-full border border-slate-100">
-          {GRADES.map((g) =>
+          {ALL_GRADES.map((g) =>
             dist[g] > 0 ? (
               <div key={g} style={{ width: `${(dist[g] / total) * 100}%`, background: ABCD_META[g].color }} title={`${g}: ${dist[g]}`} />
             ) : null,
           )}
         </div>
         <div className="mt-2 text-[11px] font-semibold text-slate-500">
-          {cleanPct}% cloud-ready or stable (A–B) · {dist.C} to review · {dist.D} to replace
+          {cleanPct}% cloud-ready or stable (A–B) · {dist.C} to review · {dist.D} to replace{dist.Unknown > 0 ? ` · ${dist.Unknown} not assessed` : ''}
         </div>
       </div>
 

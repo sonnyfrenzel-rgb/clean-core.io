@@ -20,9 +20,19 @@ export const metadata: Metadata = {
 
 const releases = [
   {
+    version: 'v2.2.0',
+    date: 'July 11, 2026',
+    tag: 'Latest',
+    icon: Shield,
+    changes: [
+      'Test runner network-egress block — untrusted CAP/Node test code can no longer reach the cloud metadata endpoint or any network, closing the runtime-identity exfiltration path. In-cloud test execution is kept; ABAP/RAP and live-tenant validation are unchanged.',
+      'Audit pack now includes a signed provenance manifest that labels every evidence file and field by class (server-computed / model-generated / user-attested), so the signature’s meaning is explicit.',
+      'A/B/C/D readiness preview is more honest — an Unknown grade for insufficient evidence (no more guessed defaults), plus a worst-finding rollup. Still a labelled preview, verified with SAP ADT/ATC.',
+    ],
+  },
+  {
     version: 'v2.1.0',
     date: 'July 10, 2026',
-    tag: 'Latest',
     icon: Shield,
     changes: [
       'Central account-state gate on every business API — pending, suspended or stale-Terms accounts are consistently blocked, including the BYOK path which previously bypassed approval.',

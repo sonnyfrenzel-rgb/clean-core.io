@@ -17,9 +17,13 @@
  * It is a *derived* readiness grade aligned to the A–D scheme — proven, not guessed.
  */
 
-export type CloudReadinessGrade = 'A' | 'B' | 'C' | 'D';
+export type CloudReadinessGrade = 'A' | 'B' | 'C' | 'D' | 'Unknown';
 
+/** The four assessable SAP clean-core levels (used for the legend). */
 export const GRADES: CloudReadinessGrade[] = ['A', 'B', 'C', 'D'];
+
+/** All grades incl. the Unknown / insufficient-evidence bucket (distribution bar). */
+export const ALL_GRADES: CloudReadinessGrade[] = ['A', 'B', 'C', 'D', 'Unknown'];
 
 export interface GradeMeta {
   grade: CloudReadinessGrade;
@@ -70,6 +74,15 @@ export const ABCD_META: Record<CloudReadinessGrade, GradeMeta> = {
     color: '#dc2626',
     badge: 'bg-red-100 text-red-800 border-red-300',
   },
+  Unknown: {
+    grade: 'Unknown',
+    label: 'Insufficient evidence',
+    short: 'Unknown',
+    description: 'Not enough evidence to assign a clean-core level. Provide risk/criticality or import ATC results to classify — shown honestly instead of a guessed grade.',
+    atc: 'Not assessed',
+    color: '#64748b',
+    badge: 'bg-slate-100 text-slate-700 border-slate-300',
+  },
 };
 
 /** Map a Cloudification Repository release state to an A–D grade. */
@@ -82,7 +95,7 @@ export function gradeFromCatalogState(state?: string, hasSuccessor?: boolean): C
     case 'notToBeReleased':
       return 'D';
     default:
-      return 'C';
+      return 'Unknown'; // F-05: unknown catalog state → Unknown, not a guessed C
   }
 }
 
@@ -91,8 +104,11 @@ export function gradeFromCatalogState(state?: string, hasSuccessor?: boolean): C
  * (access type + risk level). Writes are graded more strictly than reads.
  */
 export function gradeFromCoupling(c: { accessType?: string; riskLevel?: string; isCustom?: boolean }): CloudReadinessGrade {
+  // F-05: don't fabricate a level when the risk signal is missing — return Unknown
+  // instead of silently defaulting to Medium (avoids false precision).
+  const risk = c.riskLevel;
+  if (risk !== 'High' && risk !== 'Medium' && risk !== 'Low') return 'Unknown';
   const isWrite = (c.accessType || '').toLowerCase() !== 'read';
-  const risk = c.riskLevel || 'Medium';
   if (risk === 'High') return isWrite ? 'D' : 'C';
   if (risk === 'Medium') return isWrite ? 'C' : 'B';
   return 'A'; // Low risk
@@ -102,15 +118,34 @@ export function gradeFromCoupling(c: { accessType?: string; riskLevel?: string; 
 export function gradeFromInventory(item: { criticality?: string; type?: string }): CloudReadinessGrade {
   const t = (item.type || '').toLowerCase();
   if (t.includes('dynpro') || t.includes('screen')) return 'D';
-  const crit = item.criticality || 'Medium';
+  // F-05: Unknown when the criticality signal is missing (no silent Medium default).
+  const crit = item.criticality;
+  if (crit !== 'High' && crit !== 'Medium' && crit !== 'Low') return 'Unknown';
   if (crit === 'High') return 'C';
   if (crit === 'Low') return 'A';
   return 'B';
 }
 
-/** Count grades into an ordered A→D distribution. */
+/** Count grades into an ordered A→D (+Unknown) distribution. */
 export function gradeDistribution(grades: CloudReadinessGrade[]): Record<CloudReadinessGrade, number> {
-  const dist: Record<CloudReadinessGrade, number> = { A: 0, B: 0, C: 0, D: 0 };
+  const dist: Record<CloudReadinessGrade, number> = { A: 0, B: 0, C: 0, D: 0, Unknown: 0 };
   for (const g of grades) dist[g] += 1;
   return dist;
+}
+
+/** Severity order for rolling a customer object up to its worst finding. */
+const GRADE_SEVERITY: Record<CloudReadinessGrade, number> = { Unknown: 0, A: 1, B: 2, C: 3, D: 4 };
+
+/**
+ * F-05: worst-finding rollup. SAP rolls a customer object's clean-core level up to
+ * its most-severe relevant finding. Unknown findings are ignored unless nothing is
+ * assessable (then the object is Unknown); an empty list is treated as clean (A).
+ */
+export function worstGrade(grades: CloudReadinessGrade[]): CloudReadinessGrade {
+  const assessable = grades.filter((g) => g !== 'Unknown');
+  if (assessable.length === 0) return grades.length ? 'Unknown' : 'A';
+  return assessable.reduce<CloudReadinessGrade>(
+    (worst, g) => (GRADE_SEVERITY[g] > GRADE_SEVERITY[worst] ? g : worst),
+    'A',
+  );
 }
