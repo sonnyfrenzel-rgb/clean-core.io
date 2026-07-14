@@ -9,8 +9,14 @@ title = "Clean-Core.io gitleaks configuration"
 useDefault = true
 
 [allowlist]
-description = "Public-by-design values (Firebase Web app config apiKey is a public client identifier, not a secret)."
+description = "Public-by-design values (Firebase Web app config apiKey is a public client identifier, not a secret) and deterministic CI test placeholders."
 paths = [
   '''firebase-applet-config\.json''',
   '''\.env\.example''',
+  '''playwright\.config\.ts''',
+]
+regexes = [
+  # Deterministic CI test placeholders — not real credentials.
+  '''test-approval-secret-key-\d+''',
+  '''test-mfa-pepper-[a-z0-9-]+''',
 ]
