@@ -21,7 +21,6 @@ export default function robots(): MetadataRoute.Robots {
           '/knowledge',
           '/how-it-works',
           '/about',
-          '/changelog',
           '/whitepaper',
           '/tenant-security',
         ],

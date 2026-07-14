@@ -370,7 +370,7 @@ export const SECURITY_AND_PRIVACY = `
 - **S/4HANA SSRF defense**: HTTPS-only, DNS/IP re-checks, host allowlist, private/metadata-IP blocking, redirect validation, IP pinning. Production endpoints are blocked — sandbox only.
 - **Sandboxed test runner**: generated tests run in an isolated Node process (esbuild bundle + Node Permission Model — filesystem scoped to a temp dir, no child-process/worker/native access, no platform secrets). Live S/4 egress stays off unless explicitly enforced at the infra level.
 - **GDPR Art. 17 erasure**: account deletion recursively purges projects (incl. immutable runs), encrypted BYOK keys, and MFA data; completeness is covered by an automated test. Data is stored in Firestore in the EU (europe-west1).
-- **Transparency**: a public /trust page and /changelog document the security posture and release history.
+- **Transparency**: a public /trust page documents the security posture.
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────

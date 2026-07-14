@@ -33,8 +33,6 @@ const SCAN_EXTENSIONS = new Set(['.ts', '.tsx']);
  * These are contexts where historical versions are intentional.
  */
 const ALLOWLISTED_FILES = new Set([
-  // Changelog pages list ALL historical versions — that's their purpose
-  path.resolve(ROOT, 'app/(app)/changelog/page.tsx'),
   // The version.ts file itself defines the version
   path.resolve(ROOT, 'lib/version.ts'),
 ]);
@@ -171,27 +169,5 @@ test.describe('Version Drift Guard', () => {
   test('CHANGELOG.md has an entry for the current version', () => {
     const changelog = fs.readFileSync(path.resolve(ROOT, 'CHANGELOG.md'), 'utf8');
     expect(changelog).toContain(`[${APP_VERSION}]`);
-  });
-
-  test('changelog page has an entry for the current version', () => {
-    const changelogPage = fs.readFileSync(
-      path.resolve(ROOT, 'app/(app)/changelog/page.tsx'), 
-      'utf8'
-    );
-    expect(changelogPage).toContain(`version: '${APP_VERSION}'`);
-  });
-
-  test('current changelog entry has the Latest tag', () => {
-    const changelogPage = fs.readFileSync(
-      path.resolve(ROOT, 'app/(app)/changelog/page.tsx'), 
-      'utf8'
-    );
-    
-    // Find the first release entry — it should be the current version with 'Latest' tag
-    const firstVersionMatch = changelogPage.match(/version:\s*'(v[\d.]+)'/);
-    const firstTagMatch = changelogPage.match(/tag:\s*'(\w+)'/);
-    
-    expect(firstVersionMatch?.[1]).toBe(APP_VERSION);
-    expect(firstTagMatch?.[1]).toBe('Latest');
   });
 });

@@ -31,7 +31,6 @@ const COLUMNS: { heading: string; links: { href: string; label: string }[] }[] =
       { href: '/about', label: 'About' },
       { href: '/how-to', label: 'How-To Guide' },
       { href: '/whitepaper', label: 'Whitepaper' },
-      { href: '/changelog', label: 'Changelog' },
       { href: '/trust', label: 'Trust & Transparency' },
       { href: '/tenant-security', label: 'Tenant Security' },
     ],

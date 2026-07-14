@@ -124,7 +124,7 @@ Clean-Core.io is at **v2.0.0** — a security-hardened **Free Community Edition*
 
 Highlights: server-authoritative, HMAC-signed audit packs · complete GDPR Art. 17 erasure (with an automated completeness test) · supply-chain CI (secret scanning + dependency audit + CycloneDX SBOM) · `/api/health` + structured logging · a public SAP Object Catalog · and a public [/trust](https://clean-core.io/trust) transparency page.
 
-Full release notes: [CHANGELOG.md](CHANGELOG.md) · live at [/changelog](https://clean-core.io/changelog).
+Full release notes: [CHANGELOG.md](CHANGELOG.md) (kept internal; the public /changelog page was retired).
 
 ### Deliberately in the backlog
 

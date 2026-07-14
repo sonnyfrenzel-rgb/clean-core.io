@@ -59,6 +59,13 @@ const nextConfig = {
         destination: '/sap-clean-core-object-classification',
         permanent: true,
       },
+      {
+        // Public /changelog page retired — release history is kept internal
+        // (CHANGELOG.md in the repo). Redirect any old links to the homepage.
+        source: '/changelog',
+        destination: '/',
+        permanent: true,
+      },
     ];
   },
   typescript: {
