@@ -116,6 +116,17 @@ export default function CleanCoreClassificationPage() {
             <p className="text-gray-700 leading-relaxed font-medium">
               Used that way it speeds up first-pass triage and the technical-debt conversation — a starting point for the defensible A–D remediation plan you then confirm against SAP's own tooling.
             </p>
+            <p className="text-gray-700 leading-relaxed font-medium">
+              For a hands-on walkthrough of the A–D model — how to classify each object and what to do with grade C and D code — see our SAP Community post:{' '}
+              <a
+                href="https://community.sap.com/t5/technology-blog-posts-by-members/clean-core-levels-a-d-how-to-classify-your-custom-abap-and-what-to-do-with/ba-p/14437956"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-green-600 font-bold hover:underline"
+              >
+                Clean Core Levels A–D: how to classify your custom ABAP ↗
+              </a>.
+            </p>
           </section>
         </div>
 

@@ -698,6 +698,20 @@ export default function Dashboard() {
       commentsList: []
     },
     {
+      id: 'post-abcd-blog',
+      title: '📌 New on SAP Community: Clean Core Levels A–D — classify your custom ABAP',
+      author: 'Clean-Core Admin',
+      authorEmail: 'admin@clean-core.io',
+      isAdmin: true,
+      category: 'announcements',
+      message: `We just published a full write-up on SAP Community — "Clean Core Levels A–D: how to classify your custom ABAP (and what to do with it)". Here's the short version:\n\nSAP Clean Core guidance moved from a fuzzy "clean / not clean" view to a four-grade, cloud-readiness classification for technical objects — A, B, C, D:\n\n- A — Released SAP APIs & extension points. Cloud-ready; build here.\n- B — Classic SAP APIs, SAP-recommended. Usable; plan for released successors over time.\n- C — Internal SAP APIs, conditionally clean. Wrap behind a clean interface; verify per release.\n- D — Not-recommended objects/tech (direct writes to standard tables, unreleased dependencies, dynpro/kernel). The upgrade blockers — replace or re-architect.\n\nThe grades map to ABAP Test Cockpit (ATC) priorities. Practical flow: identify each object → look it up in SAP's Cloudification Repository → assign a grade → decide remediation (map to a released API/CDS view, wrap, or re-architect) → confirm with SAP ADT/ATC.\n\n📖 Full post on SAP Community: https://community.sap.com/t5/technology-blog-posts-by-members/clean-core-levels-a-d-how-to-classify-your-custom-abap-and-what-to-do-with/ba-p/14437956\n\n🛠️ Try the A–D readiness estimate on your own code (free): https://clean-core.io/sap-clean-core-object-classification\n\nNote: Clean-Core.io's A–D grade is an experimental preview estimate — a fast orientation aid, not an authoritative SAP ATC classification. Always verify with SAP ADT/ATC for your target release.`,
+      createdAt: 'Just now',
+      likes: 0,
+      comments: 0,
+      pinned: true,
+      commentsList: []
+    },
+    {
       id: 'post-pinned-techstack',
       title: '📌 Clean-Core.io Technical Architecture & Tech Stack Deep Dive',
       author: 'Clean-Core Admin',
@@ -741,6 +755,25 @@ export default function Dashboard() {
   ];
 
   const allExamples = STATIC_EXAMPLES;
+
+  // Render a forum message as plain text with any http(s) URL turned into a clickable link.
+  // Newlines are preserved by the container's `whitespace-pre-line`.
+  const renderMessageWithLinks = (text: string) =>
+    (text || '').split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+      /^https?:\/\//.test(part) ? (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-green-600 font-semibold hover:underline break-all"
+        >
+          {part}
+        </a>
+      ) : (
+        part
+      )
+    );
 
   const handleCreateForumPost = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1881,7 +1914,7 @@ export default function Dashboard() {
                   {activePost.title}
                 </h3>
                 <p className="text-slate-650 text-sm leading-relaxed whitespace-pre-line bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
-                  {activePost.message}
+                  {renderMessageWithLinks(activePost.message)}
                 </p>
               </div>
 

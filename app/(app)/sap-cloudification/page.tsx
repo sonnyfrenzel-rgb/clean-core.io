@@ -283,6 +283,18 @@ export default function SapCloudificationPage() {
               </Link>
             </div>
           </div>
+
+          <div className="border border-slate-200 rounded-[2rem] p-6 space-y-4 bg-white">
+            <h3 className="font-black text-sm text-gray-400 uppercase tracking-wider">Further reading</h3>
+            <a
+              href="https://community.sap.com/t5/technology-blog-posts-by-members/clean-core-levels-a-d-how-to-classify-your-custom-abap-and-what-to-do-with/ba-p/14437956"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-green-600 hover:underline font-bold text-sm"
+            >
+              → Clean Core Levels A–D: how to classify your custom ABAP (SAP Community) ↗
+            </a>
+          </div>
         </div>
       </div>
 
