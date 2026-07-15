@@ -181,7 +181,8 @@ export default async function CatalogObjectPage({
         <h2 className="font-black text-slate-900 mb-2">See how your code uses {name}</h2>
         <p className="text-sm text-slate-600 leading-relaxed mb-4">
           This is the object-level answer. To see, per object, whether your actual ABAP can move to the
-          successor or needs an architect — with evidence — run a free analysis.
+          successor or needs an architect — with evidence — run a free{' '}
+          <Link href="/abap-custom-code-analysis" className="text-emerald-700 font-bold hover:underline">ABAP static code analysis</Link>.
         </p>
         <Link
           href="/"

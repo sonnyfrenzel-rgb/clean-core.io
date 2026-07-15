@@ -10,8 +10,8 @@ const inter = Inter({
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: 'Clean-Core.io — Free SAP Clean Core Modernization Assistant',
-  description: 'Free community assistant for SAP Clean Core modernization: analyze custom ABAP, identify clean-core risks, draft RAP/CAP target designs, and export audit-friendly evidence packs for architect review. Complementary to SAP tooling.',
+  title: 'SAP Clean Core — Free ABAP Analysis & Clean Core Score',
+  description: 'Free tool for SAP Clean Core: run static ABAP custom-code analysis, get a Clean Core Score, and map to released SAP APIs. Evidence-based, community-built, and complementary to SAP ADT/ATC.',
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },

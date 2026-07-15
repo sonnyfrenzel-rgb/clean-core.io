@@ -5,14 +5,14 @@ import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = {
-  title: 'ABAP Custom Code Analysis for S/4HANA Upgrades | Clean-Core.io',
-  description: 'Automated static analysis of legacy ABAP code, database table access detection, and mapping to official released standard SAP APIs.',
+  title: 'Free ABAP Static Code Analysis Tool for S/4HANA Clean Core | Clean-Core.io',
+  description: 'A free tool for static analysis of custom ABAP: detect risky table access, unreleased calls and modifications, and map them to released SAP APIs for a clean S/4HANA core. No install — review-ready evidence.',
   alternates: {
     canonical: 'https://clean-core.io/abap-custom-code-analysis',
   },
   openGraph: {
-    title: 'ABAP Custom Code Analysis for S/4HANA Upgrades | Clean-Core.io',
-    description: 'Automated static analysis of legacy ABAP code, database table access detection, and mapping to official released standard SAP APIs.',
+    title: 'Free ABAP Static Code Analysis Tool for S/4HANA Clean Core | Clean-Core.io',
+    description: 'A free tool for static analysis of custom ABAP: detect risky table access, unreleased calls and modifications, and map them to released SAP APIs for a clean S/4HANA core.',
     url: 'https://clean-core.io/abap-custom-code-analysis',
     type: 'website',
   }
@@ -26,6 +26,18 @@ const faqs = [
   {
     question: "How does automated ABAP analysis help?",
     answer: "The analysis isolates modifications in the ABAP code and automatically maps direct access to tables like VBAK, LIKP, or BSEG to their official successors via SAP's Cloudification Repository, layered with curated field-level entries — decoupling the system deterministically."
+  },
+  {
+    question: "Is there a free ABAP static code analysis tool?",
+    answer: "Yes. Clean-Core.io runs free static analysis of custom ABAP in the browser — no install. It parses your code deterministically, flags risky table access, unreleased calls and modifications, and maps them to released SAP APIs. It is a free community tool, complementary to SAP ADT and ATC."
+  },
+  {
+    question: "How do I find custom code that will break an S/4HANA upgrade?",
+    answer: "Run a static analysis that checks each database access and API call against SAP's released-object contract (the Cloudification Repository). Direct writes to standard tables, unreleased or not-to-be-released objects, modifications and native SQL are the usual upgrade blockers — the analysis surfaces them as line-level evidence so you can prioritise remediation."
+  },
+  {
+    question: "Does static ABAP analysis replace SAP ATC?",
+    answer: "No — it is complementary. SAP ATC (ABAP Test Cockpit) stays the authoritative in-system check. Clean-Core.io gives a fast, free first-pass assessment plus a target-architecture and remediation view around those findings; always verify with SAP ADT/ATC before acting."
   }
 ];
 
@@ -68,10 +80,10 @@ export default function AbapAnalysisPage() {
             <Cpu size={14} /> Core Technology
           </div>
           <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none text-slate-50">
-            ABAP Custom Code <span className="text-green-400">Analysis</span>
+            ABAP Static Code <span className="text-green-400">Analysis</span>
           </h1>
           <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
-            Decouple your legacy systems. Analyze unstructured ABAP code and automatically transform it into a future-proof side-by-side BTP architecture.
+            A free tool to run static analysis on your custom ABAP — detect risky table access and unreleased calls, then map them to released SAP APIs. Decouple legacy systems into an upgrade-safe S/4HANA architecture.
           </p>
         </div>
       </div>
@@ -94,7 +106,7 @@ export default function AbapAnalysisPage() {
               In SAP ERP systems that have grown over decades, there are often thousands of lines of custom ABAP developments. Many of these directly access standard tables or unreleased SAP function modules. During an upgrade to <strong>SAP S/4HANA</strong>, this tight coupling leads to system breakages, high modernization costs, and months of testing phases.
             </p>
             <p className="text-gray-700 leading-relaxed font-medium">
-              Manual <strong>ABAP custom code analysis</strong> and subsequent refactoring is extremely time-consuming. This is exactly where the automated platform of Clean-Core.io comes in: Our tool reads your legacy ABAP code, parses syntax trees, and analyzes data flows to automatically isolate dependencies.
+              Manual <strong>ABAP custom code analysis</strong> and subsequent refactoring is extremely time-consuming. This is exactly where the free Clean-Core.io tool comes in: it reads your legacy ABAP, runs a deterministic <strong>static code analysis</strong>, and traces data flows to isolate the dependencies automatically.
             </p>
           </section>
 
@@ -108,9 +120,9 @@ export default function AbapAnalysisPage() {
                   <ShieldCheck size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-955">Static AST Parsing</h3>
+                  <h3 className="text-lg font-bold text-gray-955">Deterministic Static Parsing</h3>
                   <p className="text-gray-600 text-sm font-medium mt-1">
-                    The ABAP source code is broken down into abstract syntax trees (AST). This allows us to detect control flows, database operations (SELECT, INSERT, UPDATE), and external calls.
+                    The ABAP source is scanned deterministically with token- and rule-based static analysis. This detects control flows, database operations (SELECT, INSERT, UPDATE, MODIFY, DELETE), and external calls — before any AI runs.
                   </p>
                 </div>
               </div>
@@ -139,6 +151,24 @@ export default function AbapAnalysisPage() {
                 </div>
               </div>
             </div>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+              What the ABAP static analysis detects
+            </h2>
+            <p className="text-gray-700 leading-relaxed font-medium">
+              The scan surfaces the clean-core risks that most often block an S/4HANA upgrade, each as concrete, line-level evidence:
+            </p>
+            <ul className="space-y-2 text-gray-700 font-medium">
+              <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Direct standard-table access</strong> (reads and writes to VBAK, BSEG, LIKP, KNA1 …) with the released API or CDS successor for each.</span></li>
+              <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Unreleased or not-to-be-released objects</strong> and function modules, checked against SAP&apos;s Cloudification Repository.</span></li>
+              <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Modifications, implicit enhancements and native SQL</strong> — the not-recommended patterns that break on upgrade.</span></li>
+              <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Dynpro / classic UI, BDC and RFC coupling</strong> that needs a redesign rather than a lift-and-shift.</span></li>
+            </ul>
+            <p className="text-gray-700 leading-relaxed font-medium">
+              Every finding is deterministic evidence for a qualified architect to review — not a black-box verdict. It is complementary to SAP ADT and ATC, not a replacement.
+            </p>
           </section>
         </div>
 
@@ -178,6 +208,9 @@ export default function AbapAnalysisPage() {
               </Link>
               <Link href="/sap-clean-core-object-classification" className="block text-green-600 hover:underline">
                 → Clean Core Object Classification (A–D)
+              </Link>
+              <Link href="/knowledge" className="block text-green-600 hover:underline">
+                → SAP Clean Core guide (RAP vs CAP)
               </Link>
             </div>
           </div>

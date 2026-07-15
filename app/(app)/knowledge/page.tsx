@@ -1,17 +1,18 @@
 import type { Metadata } from 'next';
 import { BookOpen, Layers, Check } from 'lucide-react';
+import Link from 'next/link';
 import KnowledgeClient from '@/components/KnowledgeClient';
 import BackButton from '@/components/BackButton';
 
 // Server-side Metadata configuration for SEO & GEO Crawlers
 export const metadata: Metadata = {
-  title: 'SAP S/4HANA Clean Core & BTP Extensibility | Clean-Core.io',
+  title: 'SAP Clean Core Guide: RAP vs CAP & Extensibility Patterns',
   description: 'Explore standard SAP Clean Core architectural strategies, In-App RAP vs. Side-by-Side CAP decision patterns, and BTP integration security guidelines.',
   alternates: {
     canonical: 'https://clean-core.io/knowledge',
   },
   openGraph: {
-    title: 'SAP S/4HANA Clean Core & BTP Extensibility | Clean-Core.io',
+    title: 'SAP Clean Core Guide: RAP vs CAP & Extensibility Patterns',
     description: 'Explore standard SAP Clean Core architectural strategies, In-App RAP vs. Side-by-Side CAP decision patterns, and BTP integration security guidelines.',
     url: 'https://clean-core.io/knowledge',
     type: 'website',
@@ -158,6 +159,16 @@ export default function KnowledgePage() {
           <div className="inline-flex items-center gap-1.5 text-green-400 font-bold text-xs uppercase tracking-widest pt-4">
             Clean Core Aligned Strategy <Check size={14} className="stroke-[3]" />
           </div>
+        </div>
+      </div>
+
+      {/* Related tools & guides (internal linking) */}
+      <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-gray-100 space-y-4">
+        <h2 className="text-xl font-black text-gray-950">Related tools &amp; guides</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-bold text-sm">
+          <Link href="/abap-custom-code-analysis" className="block text-green-600 hover:underline">→ Free ABAP static code analysis</Link>
+          <Link href="/clean-core-score" className="block text-green-600 hover:underline">→ What is the Clean Core Score?</Link>
+          <Link href="/sap-clean-core-object-classification" className="block text-green-600 hover:underline">→ Clean Core object classification (A–D)</Link>
         </div>
       </div>
 
