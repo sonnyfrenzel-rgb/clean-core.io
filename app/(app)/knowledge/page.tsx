@@ -169,6 +169,7 @@ export default function KnowledgePage() {
           <Link href="/abap-custom-code-analysis" className="block text-green-600 hover:underline">→ Free ABAP static code analysis</Link>
           <Link href="/clean-core-score" className="block text-green-600 hover:underline">→ What is the Clean Core Score?</Link>
           <Link href="/sap-clean-core-object-classification" className="block text-green-600 hover:underline">→ Clean Core object classification (A–D)</Link>
+          <Link href="/sap-cloudification" className="block text-green-600 hover:underline">→ SAP cloudification (cloudify ABAP)</Link>
         </div>
       </div>
 

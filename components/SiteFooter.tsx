@@ -23,6 +23,7 @@ const COLUMNS: { heading: string; links: { href: string; label: string }[] }[] =
       { href: '/clean-core-score', label: 'Clean Core Score' },
       { href: '/sap-clean-core-object-classification', label: 'Object Classification (A–D)' },
       { href: '/abap-custom-code-analysis', label: 'ABAP Code Analysis' },
+      { href: '/sap-cloudification', label: 'SAP Cloudification' },
     ],
   },
   {

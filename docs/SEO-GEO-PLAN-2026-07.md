@@ -55,17 +55,45 @@ on-page audit (`seo-geo-optimizer` skill + direct source review).
 ### Left unchanged (already working)
 - `/clean-core-score` and `/sap-clean-core-object-classification` titles (3.5% / 11% CTR) — the templates.
 
-## Not implemented here (manual / off-page)
+## Pass 2 (2026-07-15) — new `/sap-cloudification` answer page
 
-- **Authority / backlinks** (the long game for head terms like "clean core" @48, "abap code
-  analysis"): publish the pending SAP Community blog, link from LinkedIn, a dev.to post — 2–3
-  quality links. Off-page, owner action.
-- A dedicated "SAP Cloudify / Cloudification" page for "sap cloudify"/"cloudify sap" (53+34 impr
-  @14–21) — candidate for the next pass.
+Targets "sap cloudify" / "cloudify sap" (53+34 impr @14–21, no dedicated page before) — the
+candidate flagged below. Built as a top-level answer page on the winning template (distinctive
+"thing" + QuickAnswer + FAQPage JSON-LD), **not** as another `/features/*` detail page.
+
+- **New route** `app/(app)/sap-cloudification/page.tsx`: title `SAP Cloudification: How to Cloudify
+  Custom ABAP to Clean Core`; H1 `SAP Cloudification`; QuickAnswer "What does it mean to cloudify
+  SAP custom code?"; a 4-step "How to cloudify" section; a "What blocks cloudification" honesty
+  section; sidebar stats pulled live from `getCatalogStats()` (no hardcoded numbers).
+- **Honesty / AEO:** an explicit "there is no SAP product called *Cloudify*" disambiguation block +
+  FAQ. This is deliberate — it both keeps us honest and is exactly the kind of definitional answer
+  ChatGPT/Perplexity/Gemini cite. Grounds the term in SAP's real **Cloudification Repository**.
+- **5 FAQs** matching real queries (what is SAP cloudification / how to cloudify / is "SAP Cloudify"
+  a product / what is the Cloudification Repository / does it mean rewriting everything) → FAQPage schema.
+- **Registration:** added to `sitemap.ts` (priority 0.8) and to the **AI-crawler allowlist** in
+  `robots.ts` (GPTBot/PerplexityBot/ClaudeBot/… — it was an explicit allowlist, so a new GEO page
+  must be added or the AI bots can't read it).
+- **Internal links (both ways):** site-wide **footer** (`SiteFooter`, every page) + `/knowledge`
+  related block + `/abap-custom-code-analysis` Related Topics + the `cloudification-catalog` feature
+  page all now link in; the page links back out to ABAP analysis, catalog, A–D, Score, knowledge.
+  Kept out of the top nav on purpose (UX focus).
+
+## Off-page (owner action)
+
+- **SAP Community blog — DONE (2026-07-15):** "Clean Core Levels A–D: how to classify your custom
+  ABAP…" is **live** →
+  https://community.sap.com/t5/technology-blog-posts-by-members/clean-core-levels-a-d-how-to-classify-your-custom-abap-and-what-to-do-with/ba-p/14437956
+  First authority link, pointing at the A–D page (our 11%-CTR flagship). SAP Community links are
+  typically `nofollow`, but still valuable for referral traffic + brand/entity signals to AI engines.
+- **Still open:** LinkedIn + a dev.to cross-post (2–3 quality links) for the head terms
+  ("clean core" @48, "abap code analysis").
 
 ## Measurement
 
 Re-pull GSC in **2–4 weeks**. Watch:
 - CTR on the retitled pages (homepage, `/abap-custom-code-analysis`, `/knowledge`).
 - Position of `/abap-custom-code-analysis` for "abap (static) code analysis" (target: page 33 → page 1–2).
+- **New:** does `/sap-cloudification` start ranking for "sap cloudify" / "cloudify sap" (was @14–21
+  with no page) and pick up the impressions.
 - Whether the catalog→analysis internal links lift the analysis page's ranking.
+- Referral traffic + any position lift on `/sap-clean-core-object-classification` from the SAP Community blog.

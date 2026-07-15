@@ -209,6 +209,9 @@ export default function AbapAnalysisPage() {
               <Link href="/sap-clean-core-object-classification" className="block text-green-600 hover:underline">
                 → Clean Core Object Classification (A–D)
               </Link>
+              <Link href="/sap-cloudification" className="block text-green-600 hover:underline">
+                → SAP Cloudification: how to cloudify ABAP
+              </Link>
               <Link href="/knowledge" className="block text-green-600 hover:underline">
                 → SAP Clean Core guide (RAP vs CAP)
               </Link>

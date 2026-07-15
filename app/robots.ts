@@ -18,6 +18,7 @@ export default function robots(): MetadataRoute.Robots {
           '/abap-custom-code-analysis',
           '/clean-core-score',
           '/sap-clean-core-object-classification',
+          '/sap-cloudification',
           '/knowledge',
           '/how-it-works',
           '/about',

@@ -62,6 +62,7 @@ export const FEATURES: FeatureContent[] = [
       'Objects without a released successor are flagged, not invented; unreleased APIs must be confirmed with SAP before production use.',
     ],
     related: [
+      { href: '/sap-cloudification', label: 'SAP Cloudification: how to cloudify ABAP' },
       { href: '/catalog', label: 'Browse the catalog' },
       { href: '/how-it-works', label: 'How it works' },
     ],
