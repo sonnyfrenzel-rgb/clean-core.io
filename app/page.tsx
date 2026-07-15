@@ -30,7 +30,7 @@ import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { getCatalogStats } from '@/lib/abap/catalog-service';
 
 export const metadata: Metadata = {
-  title: 'SAP Clean Core Accelerator: Free ABAP Analysis & Clean Core Score',
+  title: 'SAP Clean Core Accelerator — Free ABAP Analysis | Clean-Core.io',
   description: 'Free SAP Clean Core tool: analyze custom ABAP, get a Clean Core Score, and generate the first Clean-Core-compliant RAP/CAP draft for review — with verifiable abapGit exports and ABAP-Unit tests. Community-built, complementary to SAP ADT/ATC.',
   alternates: {
     canonical: 'https://clean-core.io',
