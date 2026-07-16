@@ -1118,7 +1118,7 @@ export default function LandingModals() {
           <div>
             <h3 className="text-lg font-bold mb-2">3. Source Code Processing</h3>
             <p className="text-sm leading-relaxed">
-              Uploaded ABAP files and generated artifacts are stored in Google Firebase (Europe). Source code is transmitted via secure channels to the Google Gemini API using stateless requests — never stored or used for AI training.
+              Uploaded ABAP files and generated artifacts are stored in Google Firebase (Europe). Source code is transmitted over encrypted channels to the Google Gemini API for analysis and transformation. We do not retain it outside your project, and we do not use it to train models; Google&apos;s handling of API data is governed by their applicable API terms.
             </p>
           </div>
 

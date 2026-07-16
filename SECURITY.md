@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary
 
-This document describes the security architecture and hardening measures implemented in the Clean-Core.io platform following a comprehensive security audit (Code Review 2026-06). All critical and high-severity findings (P0/P1) have been remediated.
+This document describes the security architecture and hardening measures implemented in the Clean-Core.io platform following a comprehensive security audit (Code Review 2026-06). Most critical and high-severity findings (P0/P1) have been remediated; the ones that remain **mitigated rather than closed** are called out below and in the code. Most importantly, the `/api/run-tests` runner is **defense-in-depth, not a complete isolation boundary** (see F-02), and the audit-pack signature still covers some client-editable fields. Live runner egress stays disabled unless enforced at the infrastructure level (`S4_TEST_RUNNER_EGRESS_ENFORCED`).
 
 ---
 
@@ -17,7 +17,7 @@ This document describes the security architecture and hardening measures impleme
 | ID | Finding | Severity | Status | Remediation |
 |----|---------|----------|--------|-------------|
 | F-01 | Live API keys in repository | **P0** | ✅ Resolved | Keys rotated; `.env.example` contains only placeholders. `.gitignore` enforces exclusion of `.env*` files. |
-| F-02 | Remote Code Execution via `/api/run-tests` | **P0** | ✅ Mitigated | esbuild in-process bundling + Node Permission Model (`--permission`; no child-process/worker/native-addon escape) + a **network-egress block** preloaded into the child (`__netguard.mjs`) that denies all outbound connections (GCP metadata endpoint, internal, internet). Defense-in-depth — a fully isolated runner service is the roadmap gold standard. |
+| F-02 | Remote Code Execution via `/api/run-tests` | **P0** | ⚠️ Mitigated (not closed) | esbuild in-process bundling + Node Permission Model (`--permission`; no child-process/worker/native-addon escape) + a **network-egress guard** preloaded into the child (`__netguard.mjs`) that blocks the common JS egress paths (TCP, the `dgram` factory + `dgram.Socket` constructor, DNS, `fetch`, `process.binding`). This is **defense-in-depth, not a complete isolation boundary** — a code-level monkey-patch is not a kernel/infra guarantee, and Node's permission model does not restrict the network on the current runtime. Live egress stays disabled unless enforced at the infrastructure level (`S4_TEST_RUNNER_EGRESS_ENFORCED`); a fully isolated runner service is the roadmap gold standard. |
 | F-03 | SAP credentials stored in cleartext | **P0** | ✅ Resolved | AES-256-GCM encryption via `S4_ENCRYPTION_KEY`. Credentials in server-only `s4_credentials` collection. |
 | F-04 | Missing admin check on email routes | **P1** | ✅ Resolved | `verifyAdminRequest()` + email format validation on all 3 mail routes. |
 | F-05 | SSRF filter bypass | **P1** | ✅ Resolved | Async DNS resolution, full IPv4/v6 CIDR blocking, `safeFetch()` with IP pinning and redirect re-validation. |
@@ -188,7 +188,7 @@ Server (API Route)
 
 ### Security Properties
 - **No shell execution**: `spawn()` with explicit args array, never `exec()` or shell strings.
-- **Network egress blocked (F-01)**: a preloaded guard (`__netguard.mjs`, via `--import`) neutralises `net.Socket.prototype.connect`, `net.connect`/`createConnection`, `dgram`, global `fetch`, `process.binding`, and every `dns` entry point (c-ares `resolve*` + getaddrinfo `lookup` + `dns.promises` + `Resolver`, which bypass `net.Socket`) before the test bundle loads. Since the permission model blocks child-process/worker/native-addon escapes, pure-JS test code cannot obtain an un-patched socket — so it cannot reach the GCP metadata endpoint (`169.254.169.254`) or any network. Skipped only when infra-level egress enforcement is active (`S4_TEST_RUNNER_EGRESS_ENFORCED`). This is defense-in-depth, not a formal microVM boundary — a fully isolated runner service remains the roadmap gold standard.
+- **Common network-egress paths blocked**: a preloaded guard (`__netguard.mjs`, via `--import`) neutralises `net.Socket.prototype.connect`, `net.connect`/`createConnection`, the `dgram` factory and the `dgram.Socket` constructor (incl. `prototype.send`/`bind`/`connect`), global `fetch`, `process.binding`, and every `dns` entry point (c-ares `resolve*` + getaddrinfo `lookup` + `dns.promises` + `Resolver`, which bypass `net.Socket`) before the test bundle loads. This blocks the usual JS egress routes to the GCP metadata endpoint (`169.254.169.254`) and the network, but it is a **code-level guard, not a kernel/infra boundary** — Node's permission model is explicitly not a security guarantee against malicious code, so treat the runner as defense-in-depth, not a sandbox for untrusted code. Skipped only when infra-level egress enforcement is active (`S4_TEST_RUNNER_EGRESS_ENFORCED`). A fully isolated runner service remains the roadmap gold standard.
 - **Fail-closed**: Without esbuild or Node >= 22.8, route returns HTTP 500 (no silent unsafe fallback).
 - **Minimal environment**: Child process receives only `PATH`, `SYSTEMROOT`, `NODE_ENV=test`, and S4 env vars.
 - **S4 credentials**: Never from request body — always loaded server-side from encrypted store (F-03 closure).

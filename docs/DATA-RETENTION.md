@@ -6,7 +6,7 @@ Single source of truth for what data Clean-Core.io stores, where, for how long, 
 
 ## Storage location
 
-All persistent data lives in **Google Cloud Firestore**, project `cleancore-491216`, region **europe-west1 (Belgium, EU)**. Per-environment databases: prod `ai-studio-e57d33e3…`, test `…39b46c45…`, dev `…030e1ee1…`. No user data leaves the EU region.
+All persistent data lives in **Google Cloud Firestore**, project `cleancore-491216`, region **europe-west1 (Belgium, EU)**. Per-environment databases: prod `ai-studio-e57d33e3…`, test `…39b46c45…`, dev `…030e1ee1…`. Persistent storage stays in the EU region. Note that two sub-processors receive data in transit for the features that require them — the **Google Gemini API** (your ABAP source, for analysis/transformation) and **Resend** (email address, for transactional mail) — and may process it outside the EU under their own terms; neither is used as a persistent store.
 
 ## Collection registry
 

@@ -53,6 +53,7 @@ const ALLOWLISTED_LINE_PATTERNS = [
   /^\s*\*.*\(v\d+\.\d+/,              // JSDoc comment headers: "* Module Name (v1.X.0)"
   /^\s*\/\/\s*v\d+\.\d+/,             // Code history comments: "// v1.9.0: Feature name"
   /predate\s+v\d/,                     // Historical notes: "may predate v1.10.0"
+  /effective\s.*\(v\d+\.\d+\.\d+\)/,   // Terms-of-Service document version, e.g. "effective 7 July 2026 (v2.0.0)"
 ];
 
 /** Extract the semver-like version without 'v' prefix for flexible matching */
@@ -113,8 +114,13 @@ test.describe('Version Drift Guard', () => {
      */
     const staleFindings: Array<{ file: string; line: number; content: string; version: string }> = [];
     
-    // Pattern matches "v1.X.Y" format — our version scheme
-    const VERSION_PATTERN = /v1\.\d+\.\d+/g;
+    // Match stale app-version strings for majors 1..current (e.g. a leftover
+    // "v2.0.0" when the app is "v2.2.0"), but NOT unrelated version schemes such
+    // as the Node runtime ("v22.x") or engine/catalog versions — the major is
+    // bounded by the current APP_VERSION major instead of a fixed "v1.".
+    const CURRENT_MAJOR = parseInt(VERSION_BARE.split('.')[0], 10);
+    const MAJOR_ALTERNATION = Array.from({ length: CURRENT_MAJOR }, (_, i) => i + 1).join('|');
+    const VERSION_PATTERN = new RegExp(`v(?:${MAJOR_ALTERNATION})\\.\\d+\\.\\d+`, 'g');
     
     for (const dir of SCAN_DIRS) {
       const files = collectFiles(path.resolve(ROOT, dir));

@@ -426,6 +426,16 @@ const BLOCK = () => { throw new Error('Network access is disabled in the Clean-C
 try { net.Socket.prototype.connect = BLOCK; } catch {}
 try { net.connect = BLOCK; net.createConnection = BLOCK; } catch {}
 try { dgram.createSocket = BLOCK; } catch {}
+// The factory is not the only UDP path — the exported Socket constructor and its
+// prototype methods can build and send datagrams directly, so neutralise them too.
+try {
+  if (dgram.Socket && dgram.Socket.prototype) {
+    dgram.Socket.prototype.send = BLOCK;
+    dgram.Socket.prototype.bind = BLOCK;
+    dgram.Socket.prototype.connect = BLOCK;
+  }
+} catch {}
+try { dgram.Socket = BLOCK; } catch {}
 try { globalThis.fetch = BLOCK; } catch {}
 try { process.binding = BLOCK; } catch {}
 // DNS uses the native c-ares/getaddrinfo resolver, which bypasses net.Socket — block
