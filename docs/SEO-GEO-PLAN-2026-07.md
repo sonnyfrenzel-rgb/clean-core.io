@@ -85,8 +85,19 @@ candidate flagged below. Built as a top-level answer page on the winning templat
   https://community.sap.com/t5/technology-blog-posts-by-members/clean-core-levels-a-d-how-to-classify-your-custom-abap-and-what-to-do-with/ba-p/14437956
   First authority link, pointing at the A–D page (our 11%-CTR flagship). SAP Community links are
   typically `nofollow`, but still valuable for referral traffic + brand/entity signals to AI engines.
-- **Still open:** LinkedIn + a dev.to cross-post (2–3 quality links) for the head terms
-  ("clean core" @48, "abap code analysis").
+- **dev.to cross-post — DONE (2026-07-16):** "The 3-tier model is dead. Your ABAP now gets a grade
+  from A to D" →
+  https://dev.to/sonnyfrenzelrgb/the-3-tier-model-is-dead-your-abap-now-gets-a-grade-from-a-to-d-2251
+  Same substance as the SAP post, rewritten in a looser dev.to register (benefit-first title, TL;DR
+  up top). **`canonical_url` points at the SAP Community original** — deliberate: the two must not
+  compete for the same query. So dev.to is not an organic-ranking play; its value is community reach
+  + two follow backlinks to clean-core.io (homepage and the A–D page) + referral traffic.
+- **LinkedIn — dropped (owner decision, 2026-07-16):** low reach/impact for this audience right now.
+- **Trade-off to watch:** that leaves **two** off-page sources instead of three, so the head-term
+  lever ("clean core" @48, "abap code analysis") is thinner than planned and the on-page work has to
+  carry more. If GSC has not moved in 4 weeks, candidates for a third source: Reddit r/SAP, or a
+  second SAP Community post targeting the cloudification/"sap cloudify" theme (now that
+  `/sap-cloudification` exists to land it on).
 
 ## Measurement
 
@@ -96,4 +107,5 @@ Re-pull GSC in **2–4 weeks**. Watch:
 - **New:** does `/sap-cloudification` start ranking for "sap cloudify" / "cloudify sap" (was @14–21
   with no page) and pick up the impressions.
 - Whether the catalog→analysis internal links lift the analysis page's ranking.
-- Referral traffic + any position lift on `/sap-clean-core-object-classification` from the SAP Community blog.
+- Referral traffic + any position lift on `/sap-clean-core-object-classification` from the two
+  off-page sources (SAP Community blog, dev.to cross-post) — both point at the A–D page.
