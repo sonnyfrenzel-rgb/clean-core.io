@@ -6,8 +6,9 @@ import os from 'os';
 import path from 'path';
 import { isBuiltin } from 'module';
 import { pathToFileURL } from 'url';
-import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied, assertAccountActive } from '@/lib/firebase-admin';
+import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied, assertAccountActive, getAdminDb } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
+import { assertRateLimit } from '@/lib/rate-limit';
 
 /**
  * POST /api/run-tests
@@ -40,8 +41,15 @@ import { loadS4ConfigForUser } from '@/lib/s4-credentials';
  */
 
 const EXEC_TIMEOUT_MS = 15_000;
-const MAX_OUTPUT_BYTES = 10 * 1024 * 1024; // 10 MB stdout/stderr cap
+const MAX_OUTPUT_BYTES = 10 * 1024 * 1024; // 10 MB combined stdout+stderr cap
 const MAX_INPUT_BYTES = 2 * 1024 * 1024;   // 2 MB combined code/test payload
+const CHILD_HEAP_MB = 256;                 // caps child V8 heap → contains heap-bomb DoS
+const MAX_CONCURRENT_RUNS = 4;             // per-instance cap on simultaneous heavy runs
+
+// Per-instance counter of in-flight sandbox runs (bundle + child process). Bounds how
+// many heavy executions one Cloud Run instance does at once, so a single approved user
+// cannot exhaust CPU/memory by firing many runs in parallel (Audit F-01 sub-finding).
+let activeRuns = 0;
 
 /**
  * Universal stub for an npm package that the AI-generated code imports but that
@@ -226,6 +234,41 @@ export async function POST(req: Request) {
     );
   }
 
+  // Per-user rate limit (skipped in emulator/E2E). Bounds burst abuse of the runner.
+  try {
+    await assertRateLimit(`run-tests:${decodedToken.uid}`, 20, 60_000);
+  } catch (rlErr: any) {
+    return NextResponse.json(
+      { output: '', error: rlErr?.message || 'Too many test runs. Please wait a moment and retry.', exitCode: 1 },
+      { status: rlErr?.status || 429 },
+    );
+  }
+
+  // Ownership: the runner may only execute against a project the caller owns.
+  // (`projectId` was previously only sanitised for the temp-dir name, so any approved
+  // account could run against an arbitrary id — Audit F-01 sub-finding.)
+  try {
+    const { db } = await getAdminDb();
+    const snap = await db.collection('projects').doc(sanitizedProjectId).get();
+    if (!snap.exists) {
+      return NextResponse.json(
+        { output: '', error: 'Project not found.', exitCode: 1 },
+        { status: 404 },
+      );
+    }
+    if (snap.data()?.userId !== decodedToken.uid && decodedToken.admin !== true) {
+      return NextResponse.json(
+        { output: '', error: 'You are not authorized to run tests for this project.', exitCode: 1 },
+        { status: 403 },
+      );
+    }
+  } catch {
+    return NextResponse.json(
+      { output: '', error: 'Project ownership verification failed.', exitCode: 1 },
+      { status: 500 },
+    );
+  }
+
   const testCode = (tests && tests.code) ? tests.code : (tests && tests.spec) ? tests.spec : null;
   if (!testCode) {
     return NextResponse.json(
@@ -259,11 +302,24 @@ export async function POST(req: Request) {
     );
   }
 
-  // Sandbox dir outside the project tree (never write into cwd).
-  const testDir = await fs.mkdtemp(path.join(os.tmpdir(), `cc-tests-${sanitizedProjectId}-`));
+  // Concurrency cap (per instance): refuse new heavy runs at capacity so one user
+  // cannot exhaust the instance with many parallel executions. Check + increment run
+  // synchronously (no await between) so the guard is race-free; the try/finally below
+  // guarantees the decrement even if setup throws.
+  if (activeRuns >= MAX_CONCURRENT_RUNS) {
+    return NextResponse.json(
+      { output: '', error: 'The test runner is at capacity right now. Please retry in a few seconds.', exitCode: 1 },
+      { status: 429 },
+    );
+  }
+  activeRuns++;
+
   const projectNodeModules = path.join(process.cwd(), 'node_modules');
+  let testDir = '';
 
   try {
+    // Sandbox dir outside the project tree (never write into cwd).
+    testDir = await fs.mkdtemp(path.join(os.tmpdir(), `cc-tests-${sanitizedProjectId}-`));
     // ── 1) Materialise sources (modular vs legacy flat) ────────────────────
     const testEntry = path.join(testDir, 'test.ts');
     let filesParsed = false;
@@ -486,7 +542,9 @@ for (const o of [dns, dns.promises, dns.Resolver && dns.Resolver.prototype]) {
     }
 
     // ── 5) Start the sandboxed child (no shell, no exec string) ─────────────
-    const args = [];
+    // --max-old-space-size caps the child V8 heap so a heap-bomb test OOMs the
+    // child instead of the whole instance.
+    const args: string[] = [`--max-old-space-size=${CHILD_HEAP_MB}`];
     if (permissionFlag && permissionFlag !== 'none') {
       args.push(
         permissionFlag,
@@ -519,8 +577,9 @@ for (const o of [dns, dns.promises, dns.Resolver && dns.Resolver.prototype]) {
       { status: 500 },
     );
   } finally {
+    activeRuns--;
     try {
-      await fs.rm(testDir, { recursive: true, force: true });
+      if (testDir) await fs.rm(testDir, { recursive: true, force: true });
     } catch {
       /* ignore cleanup errors */
     }
@@ -562,7 +621,16 @@ function runSandboxed(
     });
 
     child.stderr.on('data', (d: Buffer) => {
-      if (outBytes <= MAX_OUTPUT_BYTES) stderr += d.toString();
+      // stderr shares the combined output cap so an stderr-only flood cannot bypass it.
+      outBytes += d.length;
+      if (outBytes > MAX_OUTPUT_BYTES) {
+        if (!killedForLimit) {
+          killedForLimit = true;
+          child.kill('SIGKILL');
+        }
+        return;
+      }
+      stderr += d.toString();
     });
 
     child.on('error', (e) => {
