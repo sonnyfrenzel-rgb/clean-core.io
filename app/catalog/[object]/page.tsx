@@ -192,6 +192,18 @@ export default async function CatalogObjectPage({
         </Link>
       </div>
 
+      <div className="border border-slate-200 rounded-2xl p-6 mb-6">
+        <h2 className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-3">Related</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-bold">
+          <Link href="/abap-custom-code-analysis" className="text-emerald-700 hover:underline">→ ABAP static code analysis</Link>
+          <Link href="/sap-clean-core-object-classification" className="text-emerald-700 hover:underline">→ Clean Core object classification (A–D)</Link>
+          <Link href="/clean-core-score" className="text-emerald-700 hover:underline">→ What is the Clean Core Score?</Link>
+          <Link href="/sap-cloudification" className="text-emerald-700 hover:underline">→ SAP cloudification explained</Link>
+          <Link href="/knowledge" className="text-emerald-700 hover:underline">→ Clean Core guide (RAP vs CAP)</Link>
+          <Link href="/catalog" className="text-emerald-700 hover:underline">→ Browse the full catalog</Link>
+        </div>
+      </div>
+
       <CatalogAttribution />
     </main>
   );

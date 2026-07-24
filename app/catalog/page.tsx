@@ -8,9 +8,9 @@ import CatalogAttribution from '@/components/catalog/CatalogAttribution';
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 
 export const metadata: Metadata = {
-  title: 'SAP Clean Core Object Catalog — Released API Successors | Clean-Core.io',
+  title: 'SAP Cloudification Repository Viewer & Clean Core Object Catalog | Clean-Core.io',
   description:
-    'Look up any SAP standard object: its Clean Core readiness and released S/4HANA API successor. Reference data from the SAP Cloudification Repository, enriched by Clean-Core.io. Free.',
+    'Browse the SAP Cloudification Repository: look up any SAP standard object, its Clean Core readiness, and its released S/4HANA API successor. Official plus curated reference data, enriched by Clean-Core.io — free.',
   alternates: { canonical: `${BASE}/catalog` },
 };
 

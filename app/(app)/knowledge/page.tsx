@@ -3,17 +3,18 @@ import { BookOpen, Layers, Check } from 'lucide-react';
 import Link from 'next/link';
 import KnowledgeClient from '@/components/KnowledgeClient';
 import BackButton from '@/components/BackButton';
+import QuickAnswer from '@/components/QuickAnswer';
 
 // Server-side Metadata configuration for SEO & GEO Crawlers
 export const metadata: Metadata = {
   title: 'SAP Clean Core Guide: RAP vs CAP & Extensibility Patterns',
-  description: 'Explore standard SAP Clean Core architectural strategies, In-App RAP vs. Side-by-Side CAP decision patterns, and BTP integration security guidelines.',
+  description: 'What SAP Clean Core is (its five dimensions), how to assess readiness, and the In-App RAP vs Side-by-Side CAP decision — a plain-language guide to clean-core extensibility patterns and upgrade-safe SAP development.',
   alternates: {
     canonical: 'https://clean-core.io/knowledge',
   },
   openGraph: {
     title: 'SAP Clean Core Guide: RAP vs CAP & Extensibility Patterns',
-    description: 'Explore standard SAP Clean Core architectural strategies, In-App RAP vs. Side-by-Side CAP decision patterns, and BTP integration security guidelines.',
+    description: 'What SAP Clean Core is (its five dimensions), how to assess readiness, and the In-App RAP vs Side-by-Side CAP decision — a plain-language guide to clean-core extensibility patterns and upgrade-safe SAP development.',
     url: 'https://clean-core.io/knowledge',
     type: 'website',
     siteName: 'Clean-Core.io',
@@ -40,6 +41,14 @@ const faqs = [
   {
     question: "How does Clean-Core.io help modernize legacy ABAP?",
     answer: "A deterministic ABAP evidence engine parses the custom code first (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. Google Gemini then narrates and drafts modern TypeScript/Node.js (CAP) or ABAP Cloud (RAP) on top of that evidence, and can generate draft test suites and BPMN 2.0 blueprints for Signavio. All AI output is a draft for architect review — it accelerates the assessment; it complements SAP's own tooling and does not replace human judgment."
+  },
+  {
+    question: "What are the five dimensions of SAP Clean Core?",
+    answer: "SAP frames Clean Core across five dimensions: business processes (keep competitiveness while reducing complexity), extensibility (decouple custom extensions from the standard core), data (govern data to current standards), integration (a reliable, flexible landscape), and operations (stay current with patches and upgrades). It is a set of guiding principles for continuous transformation, not a single technical configuration — so 'clean core' means more than just custom-code (technical) debt."
+  },
+  {
+    question: "How do you run a SAP Clean Core assessment?",
+    answer: "Assess maturity across all five dimensions honestly. For the extensibility dimension specifically, that means getting object-level visibility into your custom ABAP — what touches standard tables or unreleased objects — and attaching KPIs: a Clean Core Score and an A–D readiness grade mapped to ABAP Test Cockpit priorities, so remediation is prioritised. Clean-Core.io provides a free first pass on that extensibility slice; SAP Cloud ALM, LeanIX, Signavio and ATC remain the authoritative, cross-dimension toolchain."
   }
 ];
 
@@ -86,6 +95,12 @@ export default function KnowledgePage() {
           </p>
         </div>
       </div>
+
+      {/* GEO Quick Answer Block */}
+      <QuickAnswer
+        question="What is the SAP Clean Core approach, and how do you assess readiness?"
+        answer="SAP Clean Core is a set of guiding principles for keeping the S/4HANA core standard and upgradeable across five dimensions — business processes, extensibility (custom code), data, integration, and operations. A Clean Core assessment measures maturity across those dimensions. For the extensibility dimension specifically it means getting object-level visibility into custom ABAP (what touches standard tables or unreleased objects) and attaching KPIs — a Clean Core Score and an A–D readiness grade mapped to ABAP Test Cockpit priorities — so the highest-risk objects are remediated first. It is complementary to SAP ADT/ATC and the SAP toolchain (Cloud ALM, LeanIX, Signavio), which remain the authoritative checks."
+      />
 
       {/* Interactive FAQ & Glossary client component */}
       <KnowledgeClient />

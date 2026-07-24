@@ -38,6 +38,18 @@ const faqs = [
   {
     question: "Does static ABAP analysis replace SAP ATC?",
     answer: "No — it is complementary. SAP ATC (ABAP Test Cockpit) stays the authoritative in-system check. Clean-Core.io gives a fast, free first-pass assessment plus a target-architecture and remediation view around those findings; always verify with SAP ADT/ATC before acting."
+  },
+  {
+    question: "What ABAP code analysis tools are available?",
+    answer: "The authoritative, in-system tools are SAP ABAP Test Cockpit (ATC) and ABAP Development Tools (ADT), which run inside your SAP system. Clean-Core.io is a free, browser-based static code analysis tool that runs a first-pass scan without an install: it parses custom ABAP deterministically, flags risky table access and unreleased calls, and maps each to its released SAP API or CDS successor. Use it as a fast orientation aid, then confirm findings with ATC/ADT for your target release."
+  },
+  {
+    question: "Can it identify unused or dead ABAP custom code?",
+    answer: "Static analysis flags the risky and non-compliant patterns — direct standard-table access, unreleased or not-to-be-released objects, modifications and native SQL — and objects that have no released successor. Detecting genuinely unused (dead) code, however, needs runtime usage data, which comes from SAP's ABAP Call Monitor (SCMON) / Usage & Procedure Logging inside the system. The two are complementary: static analysis tells you what is risky, runtime usage tells you what is actually still called."
+  },
+  {
+    question: "How do I plan SAP custom code remediation?",
+    answer: "Prioritise by risk. Use the A–D readiness grade (mapped to ATC priorities) to fix the highest-risk objects first, re-point direct table reads to released CDS views or OData APIs, and route the remaining logic to in-app ABAP Cloud (RAP) or side-by-side BTP (CAP). Objects with no released path are flagged for re-architecture rather than a drop-in successor. Every step is deterministic evidence for an architect to confirm with SAP ADT/ATC."
   }
 ];
 
