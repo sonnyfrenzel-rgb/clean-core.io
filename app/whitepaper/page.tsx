@@ -57,7 +57,7 @@ const rapCapRows = [
 
 const apiMappings = [
   { table: 'KNA1', label: 'Customer Master', target: 'CDS View I_Customer' },
-  { table: 'BSEG', label: 'Accounting Segment', target: 'CDS View I_JournalEntry' },
+  { table: 'BSEG', label: 'Accounting Segment', target: 'CDS View I_JournalEntryItem' },
   { table: 'MARA', label: 'Material Master', target: 'OData API API_PRODUCT_SRV' },
   { table: 'VBAK', label: 'Sales Header', target: 'RAP Entity I_SalesOrderTP' },
 ];

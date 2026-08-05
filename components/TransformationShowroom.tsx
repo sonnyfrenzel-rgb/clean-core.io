@@ -258,7 +258,7 @@ export default function TransformationShowroom() {
                 <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-full">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                   <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">
-                    Confidence: High — deterministic rule match
+                    Deterministic object match — verify semantics
                   </span>
                 </div>
               </div>
@@ -299,7 +299,7 @@ export default function TransformationShowroom() {
                 </div>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1 block">Business Context</span>
-                  <p className="text-sm text-slate-600 leading-relaxed font-medium">The finance controlling team extracts accounting document line items for company code 1000 to feed an external reporting tool. The legacy code reads BSEG directly — one of SAP&apos;s largest and most problematic cluster tables, deprecated in S/4HANA. The engine maps this to the released CDS view <code className="px-1 py-0.5 bg-emerald-50 text-emerald-700 rounded text-xs font-bold font-mono">I_JournalEntry</code>, wrapped in a cloud-native CAP Node.js service that decouples the reporting logic from the core ERP entirely.</p>
+                  <p className="text-sm text-slate-600 leading-relaxed font-medium">The finance controlling team extracts accounting document line items for company code 1000 to feed an external reporting tool. The legacy code reads BSEG directly — one of SAP&apos;s largest and most problematic cluster tables, deprecated in S/4HANA. The engine maps this to the released CDS view <code className="px-1 py-0.5 bg-emerald-50 text-emerald-700 rounded text-xs font-bold font-mono">I_JournalEntryItem</code>, wrapped in a cloud-native CAP Node.js service that decouples the reporting logic from the core ERP entirely.</p>
                 </div>
               </div>
             </div>
@@ -357,11 +357,11 @@ export default function TransformationShowroom() {
                     <code className="font-mono text-slate-800">
                       <span className="text-slate-400">{'// srv/journal-service.cds'}</span>
 {`
-`}<span className="text-blue-700 font-bold">using</span>{` { `}<span className="text-emerald-700 font-bold">I_JournalEntry</span>{` } `}<span className="text-blue-700 font-bold">from</span>{` `}<span className="text-green-700">'../srv/external'</span>{`;
+`}<span className="text-blue-700 font-bold">using</span>{` { `}<span className="text-emerald-700 font-bold">I_JournalEntryItem</span>{` } `}<span className="text-blue-700 font-bold">from</span>{` `}<span className="text-green-700">'../srv/external'</span>{`;
 
 `}<span className="text-blue-700 font-bold">service</span>{` JournalService {
   `}<span className="text-violet-600">@readonly</span>{`
-  `}<span className="text-blue-700 font-bold">entity</span>{` JournalEntries `}<span className="text-blue-700 font-bold">as projection on</span>{` `}<span className="text-emerald-700 font-bold">I_JournalEntry</span>{` {
+  `}<span className="text-blue-700 font-bold">entity</span>{` JournalEntries `}<span className="text-blue-700 font-bold">as projection on</span>{` `}<span className="text-emerald-700 font-bold">I_JournalEntryItem</span>{` {
     `}<span className="text-blue-700 font-bold">key</span>{` CompanyCode,
     `}<span className="text-blue-700 font-bold">key</span>{` AccountingDocument,
     `}<span className="text-blue-700 font-bold">key</span>{` FiscalYear,
@@ -387,14 +387,14 @@ export default function TransformationShowroom() {
                   </span>
                 </div>
                 <p className="text-sm text-slate-700 font-medium leading-relaxed">
-                  Table <code className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold font-mono">BSEG</code> → Resolved to released CDS view{' '}
-                  <code className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs font-bold font-mono">I_JournalEntry</code>{' '}
-                  <span className="text-slate-400">(SAP API Business Hub)</span>.
+                  Table <code className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold font-mono">BSEG</code> → candidate released item view{' '}
+                  <code className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs font-bold font-mono">I_JournalEntryItem</code>{' '}
+                  <span className="text-slate-400">(SAP Business Accelerator Hub)</span>. Field/semantic equivalence — currency, authorizations, client handling — still needs architect review.
                 </p>
                 <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-full">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                   <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">
-                    Confidence: High — deterministic rule match
+                    Deterministic object match — verify semantics
                   </span>
                 </div>
               </div>

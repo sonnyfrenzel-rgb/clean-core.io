@@ -41,7 +41,7 @@ ABAP Cloud / Developer Extensibility model for S/4HANA. All code must align with
 1. **Zero Database Coupling**: Direct SELECT/INSERT/UPDATE on standard tables (VBAK, BSEG, KNA1, etc.) is blocked.
 2. **Released API Consumption**: Use released CDS views or standard APIs:
    - VBAK -> Use CDS view 'I_SalesOrder'
-   - BSEG -> Use CDS view 'I_JournalEntry'
+   - BSEG -> Use CDS view 'I_JournalEntryItem'
    - KNA1 -> Use CDS view 'I_Customer'
 3. **RAP Service Tiering**:
    - Encapsulate business logic in Behavior Implementations (ZCL_DEMO_RAP_BEHAVIOR).
