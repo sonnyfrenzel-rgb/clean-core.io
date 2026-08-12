@@ -23,6 +23,10 @@ jobs:
       - name: gitleaks
         uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
+          # Authenticated API calls avoid the unauthenticated rate limit that made the
+          # action fail to confirm this is a free personal account (then wrongly enforce
+          # a license). The gitleaks CLI/scan itself is free; only org use needs a license.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
 
   dependency-audit:
