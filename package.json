@@ -81,7 +81,7 @@
     "postcss": "^8.5.23",
     "js-yaml": "^4.2.0",
     "firebase-tools": {
-      "js-yaml": "^3.15.0"
+      "js-yaml": "^3.15.1"
     },
     "protobufjs": "^7.6.3",
     "tar": "^7.5.16",
