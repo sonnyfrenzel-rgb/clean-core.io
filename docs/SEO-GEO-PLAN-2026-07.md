@@ -92,12 +92,18 @@ candidate flagged below. Built as a top-level answer page on the winning templat
   up top). **`canonical_url` points at the SAP Community original** — deliberate: the two must not
   compete for the same query. So dev.to is not an organic-ranking play; its value is community reach
   + two follow backlinks to clean-core.io (homepage and the A–D page) + referral traffic.
+- **SAP Community blog #2 — DONE (2026-08-05):** "You can't clean what you can't see: visibility and
+  KPIs for the Extensibility dimension" →
+  https://community.sap.com/t5/technology-blog-posts-by-members/you-can-t-clean-what-you-can-t-see-visibility-and-kpis-for-the/ba-p/14448151
+  A response piece to Rajen Patel's "What is clean core anyway?" — deliberately funnels authority at
+  the two **stuck pages**: it links to `/abap-custom-code-analysis` and `/knowledge` (plus Score / A–D).
+  Reciprocal "Further reading" links added **on those two pages back to the post** (co-citation, like
+  the A–D page ↔ post #1). Third authority source now live.
 - **LinkedIn — dropped (owner decision, 2026-07-16):** low reach/impact for this audience right now.
-- **Trade-off to watch:** that leaves **two** off-page sources instead of three, so the head-term
-  lever ("clean core" @48, "abap code analysis") is thinner than planned and the on-page work has to
-  carry more. If GSC has not moved in 4 weeks, candidates for a third source: Reddit r/SAP, or a
-  second SAP Community post targeting the cloudification/"sap cloudify" theme (now that
-  `/sap-cloudification` exists to land it on).
+- **Trade-off update:** now **three** off-page sources (two SAP Community posts + dev.to). Post #2
+  targets the previously-thin `/abap-custom-code-analysis` (@32) and `/knowledge` (@22) — exactly the
+  pages the head-term/"abap code analysis" push needed. If GSC still hasn't moved in 4 weeks, remaining
+  candidate: Reddit r/SAP.
 
 ## Measurement
 

@@ -229,6 +229,18 @@ export default function AbapAnalysisPage() {
               </Link>
             </div>
           </div>
+
+          <div className="border border-slate-200 rounded-[2rem] p-6 space-y-4 bg-white">
+            <h3 className="font-black text-sm text-gray-400 uppercase tracking-wider">Further reading</h3>
+            <a
+              href="https://community.sap.com/t5/technology-blog-posts-by-members/you-can-t-clean-what-you-can-t-see-visibility-and-kpis-for-the/ba-p/14448151"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-green-600 hover:underline font-bold text-sm"
+            >
+              → You can&apos;t clean what you can&apos;t see: visibility &amp; KPIs (SAP Community) ↗
+            </a>
+          </div>
         </div>
       </div>
 

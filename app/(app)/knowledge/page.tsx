@@ -188,6 +188,19 @@ export default function KnowledgePage() {
         </div>
       </div>
 
+      {/* Further reading (SAP Community, external) */}
+      <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-gray-100 space-y-3">
+        <h2 className="text-xl font-black text-gray-950">Further reading</h2>
+        <a
+          href="https://community.sap.com/t5/technology-blog-posts-by-members/you-can-t-clean-what-you-can-t-see-visibility-and-kpis-for-the/ba-p/14448151"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-green-600 hover:underline font-bold text-sm"
+        >
+          → You can&apos;t clean what you can&apos;t see: visibility &amp; KPIs for the Extensibility dimension (SAP Community) ↗
+        </a>
+      </div>
+
     </div>
   );
 }
