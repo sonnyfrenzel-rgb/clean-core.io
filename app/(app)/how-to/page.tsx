@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { BookOpen, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import HowToClient from '@/components/HowToClient';
+import FirstRunGuide from '@/components/FirstRunGuide';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 // Server-side Metadata configuration for SEO & GEO Crawlers
@@ -101,6 +102,10 @@ export default function HowToPage() {
           </p>
         </div>
       </div>
+
+      {/* Practical activation guide — what to do in the next fifteen minutes.
+          Sits above the narrated tour, which explains what the platform is. */}
+      <FirstRunGuide />
 
       {/* Client-side Slideshow Component */}
       <HowToClient />

@@ -18,6 +18,7 @@ import { saveAs } from '@/lib/fileSaver';
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 
 import { ProjectSkeleton, ExampleSkeleton } from '@/components/Skeleton';
+import StarterExamples from '@/components/StarterExamples';
 
 const STATIC_EXAMPLES = [
   {
@@ -1353,6 +1354,22 @@ export default function Dashboard() {
               />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Starter examples — shipped with the product, identical for every account.
+          Placed above the personal library because a new account's library is empty,
+          and "bring your own ABAP first" is where most accounts stop. */}
+      {user && (
+        <div className="mt-12">
+          <StarterExamples
+            userId={user.uid}
+            limit={profile?.transformationsLimit ?? 5}
+            atLimit={
+              profile?.tier !== 'enterprise' &&
+              (profile?.transformationsUsed || 0) >= (profile?.transformationsLimit || 5)
+            }
+          />
         </div>
       )}
 

@@ -1,0 +1,87 @@
+*&---------------------------------------------------------------------*
+*& Report  Z_INVOICE_EXTRACTOR
+*& Reads billing documents and extracts them to a local server CSV file
+*&---------------------------------------------------------------------*
+REPORT z_invoice_extractor.
+
+TABLES: vbrk, vbrp.
+
+TYPES: BEGIN OF ty_invoice,
+         vbeln TYPE vbrk-vbeln,
+         fkdat TYPE vbrk-fkdat,
+         fkart TYPE vbrk-fkart,
+         kunrg TYPE vbrk-kunrg,
+         netwr TYPE vbrk-netwr,
+         waerk TYPE vbrk-waerk,
+         posnr TYPE vbrp-posnr,
+         matnr TYPE vbrp-matnr,
+         fkimg TYPE vbrp-fkimg,
+       END OF ty_invoice.
+
+DATA: gt_invoices TYPE TABLE OF ty_invoice,
+      gs_invoice  TYPE ty_invoice,
+      gv_csv_line TYPE string.
+
+PARAMETERS: p_file TYPE string OBLIGATORY DEFAULT '/tmp/invoices_export.csv',
+            p_date TYPE vbrk-fkdat DEFAULT sy-datum.
+
+SELECT-OPTIONS: s_fkart FOR vbrk-fkart.
+
+START-OF-SELECTION.
+  PERFORM fetch_invoice_details.
+  PERFORM export_to_application_server.
+
+*&---------------------------------------------------------------------*
+*&      Form  FETCH_INVOICE_DETAILS
+*&---------------------------------------------------------------------*
+FORM fetch_invoice_details.
+  SELECT h~vbeln h~fkdat h~fkart h~kunrg h~netwr h~waerk i~posnr i~matnr i~fkimg
+    INTO TABLE gt_invoices
+    FROM vbrk AS h
+    INNER JOIN vbrp AS i ON i~vbeln = h~vbeln
+    WHERE h~fkdat <= p_date
+      AND h~fkart IN s_fkart.
+
+  IF sy-subrc <> 0.
+    MESSAGE 'No invoices found for extraction' TYPE 'E'.
+  ENDIF.
+ENDFORM.                    " FETCH_INVOICE_DETAILS
+
+*&---------------------------------------------------------------------*
+*&      Form  EXPORT_TO_APPLICATION_SERVER
+*&---------------------------------------------------------------------*
+FORM export_to_application_server.
+  DATA: lv_amount_str TYPE c LENGTH 20,
+        lv_qty_str    TYPE c LENGTH 20.
+
+  " Open application server dataset in legacy text mode
+  OPEN DATASET p_file FOR OUTPUT IN TEXT MODE ENCODING DEFAULT.
+  IF sy-subrc <> 0.
+    MESSAGE 'Error opening file in Application Server' TYPE 'E'.
+  ENDIF.
+
+  " Header CSV line
+  TRANSFER 'Invoice_ID;Date;Billing_Type;Customer;Net_Amount;Currency;Item_ID;Material;Quantity' TO p_file.
+
+  " Write invoice details
+  LOOP AT gt_invoices INTO gs_invoice.
+    WRITE gs_invoice-netwr TO lv_amount_str LEFT-JUSTIFIED.
+    WRITE gs_invoice-fkimg TO lv_qty_str LEFT-JUSTIFIED.
+
+    CONCATENATE gs_invoice-vbeln
+                gs_invoice-fkdat
+                gs_invoice-fkart
+                gs_invoice-kunrg
+                lv_amount_str
+                gs_invoice-waerk
+                gs_invoice-posnr
+                gs_invoice-matnr
+                lv_qty_str
+           INTO gv_csv_line SEPARATED BY ';'.
+
+    TRANSFER gv_csv_line TO p_file.
+  ENDLOOP.
+
+  CLOSE DATASET p_file.
+  WRITE: / 'CSV File export completed successfully. Path:', p_file COLOR COL_POSITIVE.
+ENDFORM.                    " EXPORT_TO_APPLICATION_SERVER

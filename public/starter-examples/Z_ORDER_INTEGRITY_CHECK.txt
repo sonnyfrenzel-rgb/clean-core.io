@@ -1,0 +1,99 @@
+*&---------------------------------------------------------------------*
+*& Report  Z_ORDER_INTEGRITY_CHECK
+*& Decoupled Sales Order and Invoice Integrity Audit
+*& Demonstrates ABAP OO Inheritance and Complex SQL Join Quirks
+*&---------------------------------------------------------------------*
+REPORT z_order_integrity_check.
+
+CLASS lcl_billing_document DEFINITION ABSTRACT.
+  PUBLIC SECTION.
+    DATA: mv_vbeln TYPE vbak-vbeln,
+          mv_netwr TYPE vbak-netwr.
+    METHODS: constructor IMPORTING iv_vbeln TYPE vbak-vbeln iv_netwr TYPE vbak-netwr,
+             calculate_tax ABSTRACT RETURNING VALUE(rv_tax) TYPE vbak-netwr,
+             get_details ABSTRACT RETURNING VALUE(rv_desc) TYPE string.
+ENDCLASS.
+
+CLASS lcl_invoice_document DEFINITION INHERITING FROM lcl_billing_document.
+  PUBLIC SECTION.
+    DATA: mv_fkart TYPE vbrk-fkart.
+    METHODS: constructor IMPORTING iv_vbeln TYPE vbak-vbeln iv_netwr TYPE vbak-netwr iv_fkart TYPE vbrk-fkart,
+             calculate_tax REDEFINITION,
+             get_details REDEFINITION.
+ENDCLASS.
+
+CLASS lcl_invoice_document IMPLEMENTATION.
+  METHOD constructor.
+    super->constructor( iv_vbeln = iv_vbeln iv_netwr = iv_netwr ).
+    mv_fkart = iv_fkart.
+  ENDMETHOD.
+  METHOD calculate_tax.
+    " Standard invoice tax: 19%
+    rv_tax = mv_netwr * '0.19'.
+  ENDMETHOD.
+  METHOD get_details.
+    CONCATENATE 'Invoice document' mv_vbeln 'with type' mv_fkart INTO rv_desc SEPARATED BY space.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_credit_note_document DEFINITION INHERITING FROM lcl_billing_document.
+  PUBLIC SECTION.
+    METHODS: calculate_tax REDEFINITION,
+             get_details REDEFINITION.
+ENDCLASS.
+
+CLASS lcl_credit_note_document IMPLEMENTATION.
+  METHOD calculate_tax.
+    " Credit notes have inverted tax or zero tax depending on amount
+    IF mv_netwr > 1000.
+      rv_tax = mv_netwr * '0.19'.
+    ELSE.
+      rv_tax = 0.
+    ENDIF.
+  ENDMETHOD.
+  METHOD get_details.
+    CONCATENATE 'Credit Note document' mv_vbeln INTO rv_desc SEPARATED BY space.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_billing_document IMPLEMENTATION.
+  METHOD constructor.
+    mv_vbeln = iv_vbeln.
+    mv_netwr = iv_netwr.
+  ENDMETHOD.
+ENDCLASS.
+
+*&---------------------------------------------------------------------*
+*& Data Definitions & Driver Tables
+*&---------------------------------------------------------------------*
+TYPES: BEGIN OF ty_sales_details,
+         vbeln TYPE vbak-vbeln,
+         erdat TYPE vbak-erdat,
+         kunnr TYPE vbak-kunnr,
+         name1 TYPE kna1-name1,
+         posnr TYPE vbap-posnr,
+         matnr TYPE vbap-matnr,
+         netwr TYPE vbap-netwr,
+       END OF ty_sales_details.
+
+DATA: gt_sales_data TYPE TABLE OF ty_sales_details,
+      gt_driver     TYPE TABLE OF vbak.
+
+*&---------------------------------------------------------------------*
+*& Form to extract complex joined data with SQL quirks
+*&---------------------------------------------------------------------*
+FORM perform_sales_audit.
+  " Complex 3-Table Join matching I_SalesOrderItem superset, with OUTER JOIN (DB NULLs)
+  SELECT h~vbeln, h~erdat, h~kunnr, k~name1, i~posnr, i~matnr, i~netwr
+    INTO CORRESPONDING FIELDS OF TABLE @gt_sales_data
+    FROM vbak AS h
+    INNER JOIN vbap AS i ON i~vbeln = h~vbeln
+    LEFT OUTER JOIN kna1 AS k ON h~kunnr = k~kunnr
+    FOR ALL ENTRIES IN @gt_driver
+    WHERE h~vbeln = @gt_driver-vbeln.
+
+  IF sy-subrc <> 0.
+    " Fallback or logging
+    WRITE: / 'Audit returned empty dataset.'.
+  ENDIF.
+ENDFORM.

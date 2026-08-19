@@ -1,0 +1,113 @@
+*&---------------------------------------------------------------------*
+*& Report  Z_BUSINESS_PARTNER_SYNC
+*& Legacy ABAP Business Partner Data Sync via classical ALV Grid
+*&---------------------------------------------------------------------*
+REPORT z_business_partner_sync.
+
+TABLES: but000, adrc.
+
+TYPES: BEGIN OF ty_bp_data,
+         partner  TYPE but000-partner,
+         type     TYPE but000-bpkind,
+         name1    TYPE but000-name_org1,
+         name2    TYPE but000-name_org2,
+         city     TYPE adrc-city1,
+         post_code TYPE adrc-post_code1,
+         street   TYPE adrc-street,
+         country  TYPE adrc-country,
+       END OF ty_bp_data.
+
+DATA: gt_bp_data TYPE TABLE OF ty_bp_data,
+      gs_bp_data TYPE ty_bp_data.
+
+* ALV Grid declarations
+DATA: gt_fieldcat TYPE slis_t_fieldcat_alv,
+      gs_fieldcat TYPE slis_fieldcat_alv,
+      gs_layout   TYPE slis_layout_alv.
+
+SELECT-OPTIONS: s_part FOR but000-partner,
+                s_type FOR but000-bpkind.
+
+START-OF-SELECTION.
+  PERFORM fetch_bp_data.
+
+END-OF-SELECTION.
+  IF gt_bp_data IS INITIAL.
+    MESSAGE 'No Business Partners found matching criteria' TYPE 'I'.
+  ELSE.
+    PERFORM build_fieldcat.
+    PERFORM display_alv.
+  ENDIF.
+
+*&---------------------------------------------------------------------*
+*&      Form  FETCH_BP_DATA
+*&---------------------------------------------------------------------*
+FORM fetch_bp_data.
+  SELECT b~partner b~bpkind b~name_org1 b~name_org2 a~city1 a~post_code1 a~street a~country
+    INTO TABLE gt_bp_data
+    FROM but000 AS b
+    LEFT OUTER JOIN adrc AS a ON a~addrnumber = b~partner
+    WHERE b~partner IN s_part
+      AND b~bpkind  IN s_type.
+
+  * Cleanup names and do legacy formatting
+  LOOP AT gt_bp_data INTO gs_bp_data.
+    IF gs_bp_data-name1 IS INITIAL.
+      gs_bp_data-name1 = 'Unknown Partner'.
+    ENDIF.
+    TRANSLATE gs_bp_data-country TO UPPER CASE.
+    MODIFY gt_bp_data FROM gs_bp_data.
+  ENDLOOP.
+ENDFORM.                    " FETCH_BP_DATA
+
+*&---------------------------------------------------------------------*
+*&      Form  BUILD_FIELDCAT
+*&---------------------------------------------------------------------*
+FORM build_fieldcat.
+  CLEAR gs_fieldcat.
+  gs_fieldcat-fieldname = 'PARTNER'.
+  gs_fieldcat-seltext_m = 'BP ID'.
+  gs_fieldcat-key       = 'X'.
+  APPEND gs_fieldcat TO gt_fieldcat.
+
+  CLEAR gs_fieldcat.
+  gs_fieldcat-fieldname = 'TYPE'.
+  gs_fieldcat-seltext_m = 'BP Type'.
+  APPEND gs_fieldcat TO gt_fieldcat.
+
+  CLEAR gs_fieldcat.
+  gs_fieldcat-fieldname = 'NAME1'.
+  gs_fieldcat-seltext_m = 'First Name / Org'.
+  APPEND gs_fieldcat TO gt_fieldcat.
+
+  CLEAR gs_fieldcat.
+  gs_fieldcat-fieldname = 'CITY'.
+  gs_fieldcat-seltext_m = 'City'.
+  APPEND gs_fieldcat TO gt_fieldcat.
+
+  CLEAR gs_fieldcat.
+  gs_fieldcat-fieldname = 'COUNTRY'.
+  gs_fieldcat-seltext_m = 'Country'.
+  APPEND gs_fieldcat TO gt_fieldcat.
+ENDFORM.                    " BUILD_FIELDCAT
+
+*&---------------------------------------------------------------------*
+*&      Form  DISPLAY_ALV
+*&---------------------------------------------------------------------*
+FORM display_alv.
+  gs_layout-colwidth_optimize = 'X'.
+  gs_layout-zebra             = 'X'.
+
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      is_layout     = gs_layout
+      it_fieldcat   = gt_fieldcat
+    TABLES
+      t_outtab      = gt_bp_data
+    EXCEPTIONS
+      program_error = 1
+      OTHERS        = 2.
+  IF sy-subrc <> 0.
+    MESSAGE 'Error generating ALV Report' TYPE 'E'.
+  ENDIF.
+ENDFORM.                    " DISPLAY_ALV

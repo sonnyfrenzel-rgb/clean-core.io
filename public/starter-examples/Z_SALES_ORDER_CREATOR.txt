@@ -1,0 +1,98 @@
+*&---------------------------------------------------------------------*
+*& Report  Z_SALES_ORDER_CREATOR
+*& Simulates bulk Sales Order Creation using BAPI_SALESORDER_CREATEFROMDAT2
+*&---------------------------------------------------------------------*
+REPORT z_sales_order_creator.
+
+* SAP structures for BAPI parameters
+TYPES: BEGIN OF ty_order_header,
+         doc_type   TYPE c LENGTH 4,
+         sales_org  TYPE c LENGTH 4,
+         distr_chan TYPE c LENGTH 2,
+         division   TYPE c LENGTH 2,
+         partn_numb TYPE c LENGTH 10,
+       END OF ty_order_header.
+
+TYPES: BEGIN OF ty_order_item,
+         material   TYPE c LENGTH 18,
+         plant      TYPE c LENGTH 4,
+         target_qty TYPE p DECIMALS 3,
+       END OF ty_order_item.
+
+TYPES: BEGIN OF ty_bapi_return,
+         type       TYPE c LENGTH 1,
+         id         TYPE c LENGTH 20,
+         number     TYPE c LENGTH 3,
+         message    TYPE c LENGTH 220,
+       END OF ty_bapi_return.
+
+DATA: gs_header TYPE ty_order_header,
+      gt_items  TYPE TABLE OF ty_order_item,
+      gs_item   TYPE ty_order_item,
+      gt_return TYPE TABLE OF ty_bapi_return,
+      gs_return TYPE ty_bapi_return.
+
+DATA: gv_order_id TYPE c LENGTH 10,
+      gv_err_count TYPE i.
+
+PARAMETERS: p_cust   TYPE c LENGTH 10 OBLIGATORY DEFAULT '0000100234',
+            p_mat    TYPE c LENGTH 18 OBLIGATORY DEFAULT 'MAT-100-AB',
+            p_qty    TYPE i DEFAULT 10.
+
+START-OF-SELECTION.
+  PERFORM prepare_order_data.
+  PERFORM execute_bapi_creation.
+
+*&---------------------------------------------------------------------*
+*&      Form  PREPARE_ORDER_DATA
+*&---------------------------------------------------------------------*
+FORM prepare_order_data.
+  gs_header-doc_type   = 'TA'.     "Standard Order
+  gs_header-sales_org  = '1000'.
+  gs_header-distr_chan = '10'.
+  gs_header-division   = '00'.
+  gs_header-partn_numb = p_cust.
+
+  CLEAR gt_items.
+  gs_item-material   = p_mat.
+  gs_item-plant      = '1000'.
+  gs_item-target_qty = p_qty.
+  APPEND gs_item TO gt_items.
+ENDFORM.                    " PREPARE_ORDER_DATA
+
+*&---------------------------------------------------------------------*
+*&      Form  EXECUTE_BAPI_CREATION
+*&---------------------------------------------------------------------*
+FORM execute_bapi_creation.
+  WRITE: / 'Initiating Sales Order creation sequence...'.
+  ULINE.
+
+  * Call BAPI Function Module Simulation
+  CALL FUNCTION 'BAPI_SALESORDER_CREATEFROMDAT2'
+    EXPORTING
+      order_header_in      = gs_header
+    IMPORTING
+      salesdocument        = gv_order_id
+    TABLES
+      order_items_in       = gt_items
+      return               = gt_return.
+
+  " In real SAP, BAPI return tells if there are errors
+  LOOP AT gt_return INTO gs_return WHERE type = 'E' OR type = 'A'.
+    gv_err_count = gv_err_count + 1.
+    WRITE: / 'Error found:', gs_return-message COLOR COL_NEGATIVE.
+  ENDLOOP.
+
+  IF gv_err_count = 0.
+    " Commit changes on success
+    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+      EXPORTING
+        wait = 'X'.
+    
+    WRITE: / 'Sales Order created successfully! ID:', gv_order_id COLOR COL_POSITIVE.
+  ELSE.
+    " Rollback changes on failures
+    CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+    WRITE: / 'BAPI execution aborted due to errors.' COLOR COL_NEGATIVE.
+  ENDIF.
+ENDFORM.                    " EXECUTE_BAPI_CREATION
