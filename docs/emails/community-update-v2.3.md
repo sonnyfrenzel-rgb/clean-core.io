@@ -29,12 +29,19 @@ transactional welcome mail may carry one; a message going to the whole list shou
 ## From / Reply-To
 
 ```
-From:      Felix Frenzel — Clean-Core.io <team@clean-core.io>
+From:      Felix Frenzel — Clean-Core.io <info@clean-core.io>
 Reply-To:  info@clean-core.io
 ```
 
-A personal from-name with the brand attached reads better than a bare brand, it matches
-the imprint in the footer, and it makes "just reply, it reaches a person" true.
+Sent from `info@clean-core.io`, the address already printed in the imprint and on the
+site — so the visible sender, the reply target and the published contact are one and the
+same, which is exactly what a receiving filter wants to see. The personal from-name with
+the brand attached matches the signature and makes "just reply, it reaches a person" true.
+
+Note that the existing transactional mails go out as `team@clean-core.io`. Both
+addresses must be covered by the same SPF/DKIM/DMARC setup on the domain before this
+send; adding a new envelope sender that is not aligned is a fast way into the spam
+folder.
 
 ---
 
