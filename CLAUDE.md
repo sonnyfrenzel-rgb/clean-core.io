@@ -83,5 +83,6 @@ gcloud builds list --limit=10     # Cloud Build history
 ## Gotchas
 
 - **Node version:** package.json requires `>=22.8`; the local machine currently runs **v20.12.2**. `npm run dev`/`build` may warn or fail on engine checks — bump Node to 22 LTS for parity with CI/Cloud Run.
+- **Never regenerate `package-lock.json` on local Node 20.** npm 10.5 resolves the `overrides` block differently from the npm 11 in the Cloud Run buildpack: it silently drops nested entries (e.g. `@apidevtools/json-schema-ref-parser/node_modules/js-yaml`), CI's `npm ci` still passes, and the deploy then dies in Cloud Build with `npm ci can only install packages when your package.json and package-lock.json are in sync`. Use the matching toolchain — `npx --yes --package=node@22 --package=npm@11 -- npm install --package-lock-only` — and validate with the same prefix plus `npm ci --dry-run` before pushing.
 - Ignore for code work: `scratch/`, `tmp/`, `dist/` (stray build artifact — gitignored; the project is web-only, there is no desktop/Electron app), `clean-core-video/`, and committed `*-debug.log` files.
 - Builds fail on any TS or ESLint error (`next.config.mjs` sets `ignoreBuildErrors: false`) — keep the tree clean before committing.
