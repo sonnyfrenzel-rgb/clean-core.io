@@ -11,12 +11,12 @@ HTML body: [`community-update-v2.3.html`](./community-update-v2.3.html).
 
 **Primary**
 
-> We keep growing — and everyone gets five fresh transformations
+> Five fresh transformations — and something to try them on
 
 **Alternatives**
 
-> One object, one transformation — and your five are back
-> A welcome, a fix, and five fresh transformations for everyone
+> Your five are back, and you no longer need your own code to start
+> One object, one transformation — plus examples to try it on
 
 Deliberately free of the words that push a bulk mail toward the promotions tab or the
 spam folder: no "free", no urgency, no exclamation marks, no ALL CAPS, no emoji. The
@@ -24,7 +24,7 @@ transactional welcome mail may carry one; a message going to the whole list shou
 
 ## Preheader
 
-> One ABAP object now counts as one transformation. Every account starts again with a full five.
+> Five fresh transformations, and ready-made examples so you can try it without your own code.
 
 ## From / Reply-To
 
@@ -56,28 +56,37 @@ Hello {{FIRST_NAME}},
 A warm welcome to everyone who joined us recently - the Clean-Core.io community is
 growing week by week, and it is good to have you here.
 
-With that growth came a fix worth telling you about. Until now, every AI step counted
-against your quota: the analysis, the solution design, the generated code, the
-documentation, the tests. A single ABAP object could eat six or seven of your five.
-That was never the intention. From today, one transformation means one ABAP object -
-and because nobody should be left short by the old count, every account has been reset
-to a full five.
+Two things have changed for you. First, we were counting wrong: every AI step used
+to draw on your quota, so a single ABAP object could eat six or seven of your five.
+From today one transformation means one ABAP object, with the whole seven-stage
+workflow included - and every account has been reset to a full five.
 
-WHAT ONE TRANSFORMATION COVERS NOW
+Second, and more useful: you no longer need your own code to try it. Getting custom
+ABAP out of a customer system just to see whether a tool is any good is a lot to
+ask, and we suspect it is why many of you never got past the dashboard. So there are
+now ready-made starter examples waiting there - realistic, fictional legacy reports,
+from a 99-line stock valuation to a 1,000-line order-fulfilment audit. One click and
+you are in the analysis.
 
-The complete seven-stage workflow for that object - analyse, design, transform,
-document, test, cost, deliver - including the signed audit evidence pack.
-Re-analysing the same source is free, and the glossary assistant no longer counts at
-all. Your own Gemini key stays unlimited, as always.
+FIFTEEN MINUTES, START TO FINISH
 
-Launch your workspace: https://clean-core.io/dashboard
+The guide walks one object through all seven stages - analysis and Clean Core Score,
+target design, generated RAP or CAP code, tests, BPMN documentation, and the abapGit
+package with its signed audit evidence. What each stage gives you, and what it costs.
+
+  https://clean-core.io/how-to
+
+Start with an example: https://clean-core.io/dashboard
+
+If anything is unclear, or the engine handles one of your objects badly, write to
+info@clean-core.io - or simply reply to this message. A person answers, and awkward
+objects are exactly what we want to see.
 
 IN TWO WEEKS
 
-We will send you a brief satisfaction survey - a couple of minutes, no sales pitch.
-We want to know whether the platform holds up against real legacy code, and where it
-still does not. If you would rather tell us sooner, just reply to this message; it
-reaches a person.
+We will send you a brief survey - a couple of minutes, no sales pitch. The question
+we most want answered is a simple one: if you have not run anything yet, what got in
+the way? That answer is worth more to us than any feature request.
 
 Thanks for building this with us,
 Felix Frenzel
