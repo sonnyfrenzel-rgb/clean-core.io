@@ -32,13 +32,17 @@ jobs:
         run: npm run lint
 
       # Only Chromium is installed: playwright.config.ts defines a single
-      # `chromium` project, so pulling Firefox and WebKit (and their apt
-      # dependency sets) was download and install time spent on browsers no test
-      # ever launches. The timeout is a circuit breaker — this step hung for 40+
-      # minutes on consecutive runs on 2026-08-19; failing fast beats burning an
-      # hour of runner time on a stalled mirror.
+      # `chromium` project, so pulling Firefox and WebKit was download time spent
+      # on browsers no test ever launches.
+      #
+      # No `--with-deps`: that runs apt, and on 2026-08-19 the runners' Ubuntu
+      # mirror (azure.archive.ubuntu.com) stopped responding, hanging this step
+      # for 40+ minutes and blocking every deploy. The ubuntu-latest image already
+      # ships Chromium's system libraries, so the browser binary comes straight
+      # from the Playwright CDN and apt is out of the picture entirely.
+      # The timeout stays as a circuit breaker.
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
         timeout-minutes: 10
 
       - name: Setup Java JDK
