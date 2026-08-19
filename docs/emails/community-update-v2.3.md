@@ -11,30 +11,30 @@ HTML body: [`community-update-v2.3.html`](./community-update-v2.3.html).
 
 **Primary**
 
-> We changed how we count — your five transformations are back
+> We keep growing — and everyone gets five fresh transformations
 
 **Alternatives**
 
-> Your five transformations, counted the way we promised
-> One object, one transformation — and your balance is reset
+> One object, one transformation — and your five are back
+> A welcome, a fix, and five fresh transformations for everyone
 
-Deliberately avoids the words that push a bulk mail toward the promotions tab or the
-spam folder: no "free", no "act now", no exclamation marks, no ALL CAPS, no emoji in
-the subject (the transactional welcome mail may carry one; a bulk send should not).
+Deliberately free of the words that push a bulk mail toward the promotions tab or the
+spam folder: no "free", no urgency, no exclamation marks, no ALL CAPS, no emoji. The
+transactional welcome mail may carry one; a message going to the whole list should not.
 
 ## Preheader
 
-> One ABAP object now costs one transformation instead of six. Your balance is back to five.
+> One ABAP object now counts as one transformation. Every account starts again with a full five.
 
 ## From / Reply-To
 
 ```
-From:      Sonny Frenzel — Clean-Core.io <team@clean-core.io>
+From:      Felix Frenzel — Clean-Core.io <team@clean-core.io>
 Reply-To:  info@clean-core.io
 ```
 
-A personal from-name with the brand attached reads better than a bare brand for a
-message that admits a mistake — and it makes "just reply, it reaches a person" true.
+A personal from-name with the brand attached reads better than a bare brand, it matches
+the imprint in the footer, and it makes "just reply, it reaches a person" true.
 
 ---
 
@@ -46,46 +46,34 @@ cheapest ways to lose spam-score points.
 ```text
 Hello {{FIRST_NAME}},
 
-Short version: we were counting your transformations wrong, we fixed it, and
-everyone's balance has been reset to a full five. Nothing you need to do - but
-here is what happened, because you deserve the honest version.
+A warm welcome to everyone who joined us recently - the Clean-Core.io community is
+growing week by week, and it is good to have you here.
 
-Until now, every AI step counted as one transformation. Analysing an ABAP object,
-drafting the solution design, generating the RAP or CAP code, writing the
-documentation, building the tests - each one quietly took a unit off your balance.
-A single object could consume six or seven of your five. Some of you ran out before
-finishing your first one, and a few questions to the glossary assistant were enough
-to end things early. That is not what the pricing card promised, and it is not what
-we meant.
+With that growth came a fix worth telling you about. Until now, every AI step counted
+against your quota: the analysis, the solution design, the generated code, the
+documentation, the tests. A single ABAP object could eat six or seven of your five.
+That was never the intention. From today, one transformation means one ABAP object -
+and because nobody should be left short by the old count, every account has been reset
+to a full five.
 
-WHAT ONE TRANSFORMATION MEANS NOW
+WHAT ONE TRANSFORMATION COVERS NOW
 
-One ABAP object taken through the analysis. That is it. Everything downstream -
-solution design, code transformation, documentation, testing, TCO and delivery - is
-included and costs nothing extra. Re-analysing the same source is free, so a retry
-or a second look never costs you a unit. The glossary assistant no longer counts at
-all.
-
-WHERE YOU STAND TODAY
-
-* Five transformations, counted fairly. Your counter is back to zero. Whatever the
-  old model charged you has been written off.
-* The complete seven-stage workflow, per object. Analyse, design, transform,
-  document, test, cost, deliver - with the signed audit evidence pack at the end.
-* Your own Gemini key stays unlimited. If you have connected your own key, nothing
-  about your account changes.
+The complete seven-stage workflow for that object - analyse, design, transform,
+document, test, cost, deliver - including the signed audit evidence pack.
+Re-analysing the same source is free, and the glossary assistant no longer counts at
+all. Your own Gemini key stays unlimited, as always.
 
 Launch your workspace: https://clean-core.io/dashboard
 
 IN TWO WEEKS
 
 We will send you a brief satisfaction survey - a couple of minutes, no sales pitch.
-We want to know whether the platform now holds up when you put real legacy code
-through it, and where it still does not. If you would rather tell us sooner, simply
-reply to this message; it reaches a person.
+We want to know whether the platform holds up against real legacy code, and where it
+still does not. If you would rather tell us sooner, just reply to this message; it
+reaches a person.
 
 Thanks for building this with us,
-Sonny Frenzel
+Felix Frenzel
 Clean-Core.io - Free Community Edition Program
 
 ---
