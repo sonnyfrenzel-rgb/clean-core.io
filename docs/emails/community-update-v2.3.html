@@ -1,0 +1,147 @@
+<!--
+  Clean-Core.io — Community update email, v2.3 metering change.
+
+  Bulk (non-transactional) send to all existing community accounts.
+  Design system matches app/api/send-approval-email/route.ts exactly.
+
+  Merge tags: {{FIRST_NAME}}  {{EMAIL}}  {{UNSUBSCRIBE_URL}}
+  Subject and plain-text alternative: see docs/emails/community-update-v2.3.md
+-->
+<div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a;">
+
+  <!-- Preheader: shown in the inbox preview, hidden in the body -->
+  <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: transparent; height: 0; width: 0;">
+    One ABAP object now costs one transformation instead of six. Your balance is back to five.
+  </div>
+
+  <!-- Card Container -->
+  <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; padding: 40px;">
+
+    <!-- Logo & Branding -->
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 32px; border-bottom: 1px solid #f1f5f9; padding-bottom: 24px;">
+      <tr>
+        <td align="left" valign="middle">
+          <div style="font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; margin: 0; line-height: 1.2;">
+            Clean-Core<span style="color: #10b981;">.io</span>
+          </div>
+          <div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.15em; margin-top: 4px; line-height: 1.2;">
+            Free Community SAP Modernization Platform
+          </div>
+        </td>
+        <td align="right" valign="middle" style="text-align: right;">
+          <span style="display: inline-block; font-size: 11px; font-weight: 700; color: #0f172a; background-color: #f1f5f9; padding: 6px 12px; border-radius: 8px; line-height: 1.2; text-align: center; white-space: nowrap;">
+            Community Update
+          </span>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Main Heading -->
+    <div style="margin-bottom: 28px;">
+      <span style="font-size: 10px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.1em; background-color: #d1fae5; padding: 6px 12px; border-radius: 9999px; border: 1px solid #a7f3d0;">
+        Balance Reset
+      </span>
+      <h1 style="font-size: 26px; font-weight: 800; color: #0f172a; margin: 18px 0 0 0; letter-spacing: -0.03em; line-height: 1.15;">Your five transformations are back &mdash; and this time they last</h1>
+    </div>
+
+    <!-- Content -->
+    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
+      Hello {{FIRST_NAME}},
+    </p>
+
+    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
+      Short version: we were counting your transformations wrong, we fixed it, and everyone&rsquo;s balance
+      has been reset to a full five. Nothing you need to do &mdash; but here is what happened, because you
+      deserve the honest version.
+    </p>
+
+    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
+      Until now, every AI step counted as one transformation. Analysing an ABAP object, drafting the solution
+      design, generating the RAP or CAP code, writing the documentation, building the tests &mdash; each one
+      quietly took a unit off your balance. A single object could consume six or seven of your five. Some of
+      you ran out before finishing your first one, and a few questions to the glossary assistant were enough
+      to end things early. That is not what the pricing card promised, and it is not what we meant.
+    </p>
+
+    <!-- What changed -->
+    <div style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 16px; padding: 18px; margin-bottom: 28px;">
+      <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px;">What one transformation means now</span>
+      <span style="color: #047857; font-size: 13px; line-height: 1.6; display: block;">
+        One ABAP object taken through the analysis. That is it. Everything downstream &mdash; solution design,
+        code transformation, documentation, testing, TCO and delivery &mdash; is included and costs nothing
+        extra. Re-analysing the same source is free, so a retry or a second look never costs you a unit.
+        The glossary assistant no longer counts at all.
+      </span>
+    </div>
+
+    <!-- Your balance -->
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 28px;">
+      <h3 style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin: 0 0 16px 0; letter-spacing: 0.05em;">Where you stand today</h3>
+
+      <div style="margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+        <span style="font-weight: 700; color: #0f172a; font-size: 14px; display: block;">Five transformations, counted fairly</span>
+        <span style="color: #64748b; font-size: 13px; display: block; margin-top: 4px; line-height: 1.5;">Your counter is back to zero. Whatever the old model charged you has been written off &mdash; you start again with the full allotment.</span>
+      </div>
+
+      <div style="margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+        <span style="font-weight: 700; color: #0f172a; font-size: 14px; display: block;">The complete seven-stage workflow, per object</span>
+        <span style="color: #64748b; font-size: 13px; display: block; margin-top: 4px; line-height: 1.5;">Analyse, design, transform, document, test, cost, deliver. All of it, on every one of your five objects, with the signed audit evidence pack at the end.</span>
+      </div>
+
+      <div>
+        <span style="font-weight: 700; color: #0f172a; font-size: 14px; display: block;">Your own Gemini key stays unlimited</span>
+        <span style="color: #64748b; font-size: 13px; display: block; margin-top: 4px; line-height: 1.5;">If you have connected your own key, nothing about your account changes &mdash; no quota applies, and it never did.</span>
+      </div>
+    </div>
+
+    <!-- CTA Button -->
+    <div style="text-align: center; margin-bottom: 32px;">
+      <a href="https://clean-core.io/dashboard" style="display: inline-block; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+        Launch Workspace
+      </a>
+    </div>
+
+    <!-- Survey heads-up -->
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 32px;">
+      <span style="font-size: 10px; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px;">In two weeks</span>
+      <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; letter-spacing: -0.01em;">A short satisfaction survey</h4>
+      <p style="font-size: 13px; line-height: 1.6; color: #475569; margin: 0;">
+        In fourteen days we will send you a brief survey &mdash; a couple of minutes, no sales pitch. We want
+        to know whether the platform now holds up when you put real legacy code through it, and where it
+        still does not. If you would rather tell us sooner, simply reply to this message; it reaches a person.
+      </p>
+    </div>
+
+    <!-- Professional Signature -->
+    <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
+      Thanks for building this with us,<br />
+      <strong style="color: #0f172a;">Sonny Frenzel</strong><br />
+      <span style="font-size: 12px; color: #94a3b8;">Clean-Core.io &bull; Free Community Edition Program</span>
+    </div>
+
+  </div>
+
+  <!-- Anti-Spam / Legal Footer -->
+  <div style="text-align: center; margin-top: 32px; padding: 0 20px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
+    <p style="margin: 0 0 8px 0;">
+      You are receiving this message at {{EMAIL}} because you hold a Clean-Core.io Free Community Edition account.
+      It describes a change to the usage terms of that account.
+    </p>
+    <p style="margin: 0 0 12px 0; font-weight: 600;">
+      Imprint: Felix Frenzel &bull; Hellerstra&szlig;e 9 &bull; 96047 Bamberg &bull; Germany &bull; E-Mail: info@clean-core.io<br />
+      Clean-Core.io System-Version: v2.3.0 &bull; Free Community SAP Modernization Platform
+    </p>
+    <p style="margin: 0 0 8px 0;">
+      <a href="{{UNSUBSCRIBE_URL}}" style="color: #64748b; text-decoration: underline;">Unsubscribe from community updates</a>
+      &nbsp;&bull;&nbsp;
+      <a href="https://clean-core.io/datenschutz" style="color: #64748b; text-decoration: underline;">Privacy Policy</a>
+      &nbsp;&bull;&nbsp;
+      <a href="https://clean-core.io/terms" style="color: #64748b; text-decoration: underline;">Terms of Service</a>
+    </p>
+    <p style="margin: 0;">
+      <strong>Data Erasure (Art. 17 GDPR):</strong> You have the right to erasure. To remove the database and
+      authentication entries associated with your profile, visit the <em>Danger Zone</em> inside your Settings
+      dashboard; encrypted backups age out within 30 days.
+    </p>
+  </div>
+</div>
