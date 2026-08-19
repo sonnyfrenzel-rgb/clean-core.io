@@ -28,6 +28,7 @@ import { createHash } from 'node:crypto';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { createUnsubscribeToken, normaliseEmail } from '../lib/unsubscribe-token';
+import { isTestAccount } from '../lib/test-accounts';
 
 const PROJECT_ID = 'cleancore-491216';
 const DATABASE_ID = 'ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e';
@@ -49,11 +50,6 @@ const LIMIT = Number(argValue('--limit') || 0);
 function argValue(flag: string): string | undefined {
   const i = process.argv.indexOf(flag);
   return i >= 0 ? process.argv[i + 1] : undefined;
-}
-
-/** CI creates a user document per pipeline run; none of them are people. */
-function isTestAccount(email: string): boolean {
-  return /@cleancore-test\.io$/i.test(email) || /^(superduper-e2e|security-user-|temp-delete-|perf-user-)/i.test(email);
 }
 
 function readEnv(key: string): string {

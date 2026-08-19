@@ -33,6 +33,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import LegalOverlay from '@/app/components/LegalOverlay';
 import { COMMUNITY_QUOTA, TERMS_VERSION } from '@/lib/constants';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+import MaintenanceNotice from '@/components/MaintenanceNotice';
 
 export default function LandingModals() {
   const auth = getAuth();
@@ -861,6 +862,8 @@ export default function LandingModals() {
                 <form onSubmit={handleEmailSignIn} className="p-8 sm:p-10">
                   <div className="text-center mb-6">
                     <h3 className="text-3xl font-black text-gray-950 tracking-tight mb-1">Welcome Back</h3>
+                    {/* Incident notice — self-expiring, see components/MaintenanceNotice.tsx */}
+                    <MaintenanceNotice />
                     <div className="mt-4 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-200/80 rounded-2xl flex items-center justify-between gap-3 shadow-inner text-left animate-in fade-in slide-in-from-top-2 duration-500">
                       <div>
                         <p className="text-[10px] font-black text-green-800 uppercase tracking-widest leading-none mb-1">New to Clean-Core.io?</p>
