@@ -62,20 +62,27 @@ test.describe('Dashboard — starter examples', () => {
     try {
       await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 });
     } catch {
-      await page.evaluate(() => window.stop());
+      // The evaluate itself can throw if the aborted navigation already tore down
+      // the execution context — that is the case we are recovering from, not a failure.
+      await page.evaluate(() => window.stop()).catch(() => {});
       await page.waitForTimeout(1000);
       await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 });
     }
 
-    await expect(page.getByRole('heading', { name: /Try it with an example/i })).toBeVisible({ timeout: 30000 });
+    // Scoped to the panel: projects created by earlier runs carry the same names,
+    // so an unscoped text match collides with the project list further up the page.
+    const panel = page.getByTestId('starter-examples');
+    await expect(panel.getByRole('heading', { name: /Try it with an example/i })).toBeVisible({ timeout: 30000 });
 
     // Every shipped example is offered, including the large one.
-    await expect(page.getByText('Z_MATERIAL_STOCK_CALC', { exact: true })).toBeVisible();
-    await expect(page.getByText('ZLEGACY_ORDER_FULFILLMENT_AUDIT', { exact: true })).toBeVisible();
-    await expect(page.getByText('1,000 lines').first()).toBeVisible();
+    const names = panel.getByTestId('starter-example-name');
+    await expect(names).toHaveCount(7);
+    await expect(names.filter({ hasText: /^Z_MATERIAL_STOCK_CALC$/ })).toBeVisible();
+    await expect(names.filter({ hasText: /^ZLEGACY_ORDER_FULFILLMENT_AUDIT$/ })).toBeVisible();
+    await expect(panel.getByText('1,000 lines').first()).toBeVisible();
 
     // One click must create the project AND carry the source into the analyze stage.
-    await page.getByText('Z_MATERIAL_STOCK_CALC', { exact: true }).click();
+    await names.filter({ hasText: /^Z_MATERIAL_STOCK_CALC$/ }).click();
     await page.waitForURL(/\/project\/[^/]+\/analyze/, { timeout: 45000 });
 
     // The code has to be there — a project that lands empty is the failure mode
@@ -83,5 +90,15 @@ test.describe('Dashboard — starter examples', () => {
     await expect(page.getByText(/z_material_stock_calc/i).first()).toBeVisible({ timeout: 30000 });
 
     await page.screenshot({ path: 'test-results/starter-example-loaded.png', fullPage: false });
+  });
+
+  test('the first-run guide is publicly readable and points at the examples', async ({ page }) => {
+    // Linked straight from the community mail, so it must render without a session.
+    await page.goto('/first-run');
+    await expect(page.getByRole('heading', { name: 'Your first run', exact: true })).toBeVisible();
+    await expect(page.getByText(/Scroll to "Try it with an example"/)).toBeVisible();
+    await expect(page.getByText('Z_MATERIAL_STOCK_CALC').first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /Open the How-To Guide/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'info@clean-core.io' })).toBeVisible();
   });
 });

@@ -14,6 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Core, index-worthy routes — freshness-stamped at build/ISR time.
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: baseUrl, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${baseUrl}/first-run`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${baseUrl}/how-to`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${baseUrl}/knowledge`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${baseUrl}/abap-custom-code-analysis`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },

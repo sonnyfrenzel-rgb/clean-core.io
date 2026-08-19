@@ -32,6 +32,28 @@ Admin Control Room gained a live view of that consumption per user.
   re-analysis is free.
 
 ### Added
+- **Starter examples for every account.** `abap_examples` is per-user and starts
+  empty, so an approved account's first task was extracting custom ABAP out of a
+  customer system — an IP and effort hurdle before any value had been shown, and
+  two thirds of accounts never cleared it. Seven realistic, fictional legacy reports
+  (87 to 1,000 lines, the same files the engine is regression-tested against) now sit
+  on the dashboard above the personal library. One click creates the project with the
+  source staged and lands in the analysis. Served from `public/starter-examples/` and
+  fetched on demand, so the ABAP never enters the client bundle.
+- **`/first-run` — the click-by-click first run.** Seven steps from signing in to a
+  downloadable package, naming the literal on-screen labels and what should appear
+  after each click. `/how-to` keeps the narrated tour and links here.
+- **One-click unsubscribe (RFC 8058).** `POST /api/unsubscribe` honours an
+  unauthenticated, signed-token opt-out — the `List-Unsubscribe` /
+  `List-Unsubscribe-Post` target Gmail and Yahoo require of bulk senders. GET hands
+  the reader the `/unsubscribe` confirmation page instead of acting, since scanners
+  and prefetchers follow GETs. Opt-outs land in `email_suppressions`, server-only in
+  the rules. Tokens are HMAC-signed with `PILOT_APPROVAL_SECRET` under a separate
+  `unsub` purpose (`lib/unsubscribe-token.ts`), so no new deployment secret is needed.
+- **`scripts/send-community-mail.ts`** — batched bulk sender. Dry run by default;
+  excludes CI accounts, suppressions and anyone already recorded in `email_sends` for
+  the campaign, so an interrupted run resumes without double-sending.
+
 - **Admin Control Room: "Usage & Quota" section** (`components/admin/UsageQuotaPanel.tsx`).
   Live `onSnapshot` on `users` — no new API surface — with a KPI strip (units consumed
   vs. granted, distinct ABAP objects, active last 7 days, accounts at limit, BYOK,

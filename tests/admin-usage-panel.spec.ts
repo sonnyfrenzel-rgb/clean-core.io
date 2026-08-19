@@ -103,7 +103,7 @@ test.describe('Admin Console — Usage & Quota panel', () => {
     try {
       await page.goto('/admin', { waitUntil: 'commit', timeout: 45000 });
     } catch {
-      await page.evaluate(() => window.stop());
+      await page.evaluate(() => window.stop()).catch(() => {});
       await page.waitForTimeout(1000);
       await page.goto('/admin', { waitUntil: 'commit', timeout: 45000 });
     }

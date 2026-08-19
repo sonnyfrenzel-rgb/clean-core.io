@@ -54,7 +54,7 @@ export default function StarterExamples({
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-sm w-full">
+    <div data-testid="starter-examples" className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-sm w-full">
       <div className="flex flex-wrap items-start justify-between gap-4 mb-2">
         <div>
           <h2 className="text-2xl font-black text-[#0b1c30] tracking-tight uppercase flex items-center gap-2.5">
@@ -93,7 +93,7 @@ export default function StarterExamples({
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <span className="font-mono text-[13px] font-bold text-gray-900 truncate">{example.name}</span>
+                  <span data-testid="starter-example-name" className="font-mono text-[13px] font-bold text-gray-900 truncate">{example.name}</span>
                   <span
                     className={clsx(
                       'text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border',

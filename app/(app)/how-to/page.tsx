@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { BookOpen, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import HowToClient from '@/components/HowToClient';
-import FirstRunGuide from '@/components/FirstRunGuide';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 // Server-side Metadata configuration for SEO & GEO Crawlers
@@ -103,9 +102,32 @@ export default function HowToPage() {
         </div>
       </div>
 
-      {/* Practical activation guide — what to do in the next fifteen minutes.
-          Sits above the narrated tour, which explains what the platform is. */}
-      <FirstRunGuide />
+      {/* This page explains what the platform is and why. Anyone who is already
+          convinced and just wants to be told which button to press belongs on
+          /first-run instead, so send them there before the narrated tour. */}
+      <Link
+        href="/first-run"
+        className="block bg-white border border-green-200 rounded-[2rem] p-6 sm:p-8 shadow-sm hover:shadow-md hover:border-green-300 transition-all group"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center gap-5 justify-between">
+          <div>
+            <span className="text-[10px] font-black text-green-700 uppercase tracking-widest bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
+              Just want to get started?
+            </span>
+            <h2 className="text-2xl font-black text-gray-950 tracking-tight mt-3 mb-1.5">
+              Your first run, click by click
+            </h2>
+            <p className="text-sm text-gray-600 leading-relaxed max-w-2xl">
+              Seven steps from signing in to a downloadable package, in about fifteen minutes. No SAP
+              connection and no code of your own needed &mdash; there are ready-made examples on the
+              dashboard.
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-2 shrink-0 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider shadow group-hover:shadow-lg transition-all">
+            Open the step-by-step guide
+          </span>
+        </div>
+      </Link>
 
       {/* Client-side Slideshow Component */}
       <HowToClient />
