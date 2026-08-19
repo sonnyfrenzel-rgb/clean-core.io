@@ -1,14 +1,36 @@
-<!--
-  Clean-Core.io — Community update email for the v2.3 release.
-
-  Bulk (non-transactional) send to all existing community accounts.
-  Design system matches app/api/send-approval-email/route.ts exactly.
-
-  Merge tags: {{FIRST_NAME}}  {{EMAIL}}  {{UNSUBSCRIBE_URL}}
-  Subject, plain-text alternative and send checklist:
-  docs/emails/community-update-v2.3.md — sent by scripts/send-community-mail.ts
--->
-<div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a;">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Clean-Core.io 2.3</title>
+<style>
+  /* Base styles stay inline on every element, so a client that strips this block
+     still renders the desktop layout correctly. These rules only narrow things
+     down for small screens — progressive enhancement, not a dependency. */
+  @media only screen and (max-width: 600px) {
+    .wrap        { padding: 20px 12px !important; }
+    .card        { padding: 24px 20px !important; border-radius: 18px !important; }
+    .brand-cell  { display: block !important; width: 100% !important; text-align: left !important; }
+    .badge-cell  { display: block !important; width: 100% !important; text-align: left !important; padding-top: 12px !important; }
+    h1.headline  { font-size: 22px !important; line-height: 1.2 !important; }
+    .body-text   { font-size: 16px !important; }
+    .panel       { padding: 16px !important; border-radius: 14px !important; }
+    .cta         { display: block !important; width: 100% !important; padding: 16px 12px !important; box-sizing: border-box !important; }
+    .cta-wrap    { padding: 0 !important; }
+    .ghost-cta   { display: block !important; text-align: center !important; padding: 13px 12px !important; }
+    .footer      { padding: 0 8px !important; font-size: 12px !important; }
+    .footer-links a { display: inline-block !important; padding: 6px 0 !important; }
+  }
+  /* Long addresses and URLs must never force a sideways scroll. */
+  body, table, td, p, a { -webkit-text-size-adjust: 100%; }
+  a { word-break: break-word; }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#f8fafc;">
+<div class="wrap" style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a;">
 
   <!-- Preheader: shown in the inbox preview, hidden in the body -->
   <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: transparent; height: 0; width: 0;">
@@ -16,21 +38,21 @@
   </div>
 
   <!-- Card Container -->
-  <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; padding: 40px;">
+  <div class="card" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; padding: 40px;">
 
     <!-- Logo & Branding -->
-    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 32px; border-bottom: 1px solid #f1f5f9; padding-bottom: 24px;">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 28px; border-bottom: 1px solid #f1f5f9; padding-bottom: 22px;">
       <tr>
-        <td align="left" valign="middle">
-          <div style="font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; margin: 0; line-height: 1.2;">
+        <td class="brand-cell" align="left" valign="middle">
+          <div style="font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; margin: 0; line-height: 1.2;">
             Clean-Core<span style="color: #10b981;">.io</span>
           </div>
-          <div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.15em; margin-top: 4px; line-height: 1.2;">
+          <div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 4px; line-height: 1.3;">
             Free Community SAP Modernization Platform
           </div>
         </td>
-        <td align="right" valign="middle" style="text-align: right;">
-          <span style="display: inline-block; font-size: 11px; font-weight: 700; color: #0f172a; background-color: #f1f5f9; padding: 6px 12px; border-radius: 8px; line-height: 1.2; text-align: center; white-space: nowrap;">
+        <td class="badge-cell" align="right" valign="middle" style="text-align: right;">
+          <span style="display: inline-block; font-size: 11px; font-weight: 700; color: #0f172a; background-color: #f1f5f9; padding: 6px 12px; border-radius: 8px; line-height: 1.2; white-space: nowrap;">
             Release 2.3
           </span>
         </td>
@@ -38,65 +60,65 @@
     </table>
 
     <!-- Main Heading -->
-    <div style="margin-bottom: 28px;">
-      <span style="font-size: 10px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.1em; background-color: #d1fae5; padding: 6px 12px; border-radius: 9999px; border: 1px solid #a7f3d0;">
+    <div style="margin-bottom: 24px;">
+      <span style="display: inline-block; font-size: 10px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.1em; background-color: #d1fae5; padding: 6px 12px; border-radius: 9999px; border: 1px solid #a7f3d0;">
         Now live
       </span>
-      <h1 style="font-size: 26px; font-weight: 800; color: #0f172a; margin: 18px 0 0 0; letter-spacing: -0.03em; line-height: 1.15;">Clean-Core.io 2.3 &mdash; and five fresh transformations for you</h1>
+      <h1 class="headline" style="font-size: 26px; font-weight: 800; color: #0f172a; margin: 16px 0 0 0; letter-spacing: -0.03em; line-height: 1.15;">Clean-Core.io 2.3 &mdash; and five fresh transformations for you</h1>
     </div>
 
     <!-- Content -->
-    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
+    <p class="body-text" style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 18px 0;">
       Hello {{FIRST_NAME}},
     </p>
 
-    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
+    <p class="body-text" style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 18px 0;">
       Version 2.3 is live, and a warm welcome to everyone who joined recently &mdash; the community is
       growing week by week. Two things worth a minute of your time.
     </p>
 
-    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
+    <p class="body-text" style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 18px 0;">
       <strong>Every account now has five fresh transformations.</strong> One transformation means one
       ABAP object, and the complete seven-stage workflow around it is included &mdash; analysis, design,
       generated RAP or CAP code, tests, documentation and the final package.
     </p>
 
-    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
+    <p class="body-text" style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 22px 0;">
       <strong>And you no longer need your own code to start.</strong> There are ready-made examples on
       the dashboard now &mdash; realistic legacy reports, from a 99-line stock valuation to a
       1,000-line order-fulfilment audit. One click and you are in the analysis.
     </p>
 
     <!-- Getting started -->
-    <div style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 16px; padding: 18px; margin-bottom: 28px;">
+    <div class="panel" style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 16px; padding: 18px; margin-bottom: 24px;">
       <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px;">Fifteen minutes, click by click</span>
-      <span style="color: #047857; font-size: 13px; line-height: 1.6; display: block; margin-bottom: 14px;">
+      <span style="color: #047857; font-size: 14px; line-height: 1.6; display: block; margin-bottom: 14px;">
         A short guide takes you from signing in to a downloadable package in seven steps &mdash; which
         button, and what you should see after it. No SAP connection, no credentials, no data.
       </span>
-      <a href="https://clean-core.io/first-run" style="display: inline-block; background-color: #ffffff; border: 1px solid #047857; color: #047857; text-decoration: none; padding: 9px 18px; border-radius: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
+      <a class="ghost-cta" href="https://clean-core.io/first-run" style="display: inline-block; background-color: #ffffff; border: 1px solid #047857; color: #047857; text-decoration: none; padding: 11px 18px; border-radius: 8px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
         Your first run, step by step
       </a>
     </div>
 
     <!-- CTA Button -->
-    <div style="text-align: center; margin-bottom: 28px;">
-      <a href="https://clean-core.io/dashboard" style="display: inline-block; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+    <div class="cta-wrap" style="text-align: center; margin-bottom: 24px;">
+      <a class="cta" href="https://clean-core.io/dashboard" style="display: inline-block; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
         Start with an example
       </a>
     </div>
 
     <!-- Support -->
-    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
+    <p class="body-text" style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 22px 0;">
       Stuck anywhere, or the engine handles one of your objects badly? Write to
       <a href="mailto:info@clean-core.io" style="color: #047857; font-weight: 700; text-decoration: underline;">info@clean-core.io</a>
       &mdash; a person answers, and awkward objects are exactly what we want to see.
     </p>
 
     <!-- Spread the word -->
-    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 32px;">
-      <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; letter-spacing: -0.01em;">Know someone wrestling with custom ABAP?</h4>
-      <p style="font-size: 13px; line-height: 1.6; color: #475569; margin: 0;">
+    <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 26px;">
+      <h4 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; letter-spacing: -0.01em;">Know someone wrestling with custom ABAP?</h4>
+      <p style="font-size: 14px; line-height: 1.6; color: #475569; margin: 0;">
         Clean-Core.io is free for the SAP community and grows by word of mouth. If it is useful to you,
         pass it on &mdash; to a colleague, in your SAP community group, or wherever the Clean Core
         conversation is happening. Send them to
@@ -105,25 +127,25 @@
     </div>
 
     <!-- Signature -->
-    <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
+    <div style="border-top: 1px solid #f1f5f9; padding-top: 22px; font-size: 15px; color: #64748b; line-height: 1.5;">
       Thanks for building this with us,<br />
       <strong style="color: #0f172a;">Felix Frenzel</strong><br />
-      <span style="font-size: 12px; color: #94a3b8;">Clean-Core.io &bull; Free Community Edition Program</span>
+      <span style="font-size: 13px; color: #94a3b8;">Clean-Core.io &bull; Free Community Edition Program</span>
     </div>
 
   </div>
 
   <!-- Anti-Spam / Legal Footer -->
-  <div style="text-align: center; margin-top: 32px; padding: 0 20px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
+  <div class="footer" style="text-align: center; margin-top: 28px; padding: 0 16px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
     <p style="margin: 0 0 8px 0;">
       You are receiving this message at {{EMAIL}} because you hold a Clean-Core.io Free Community
       Edition account.
     </p>
     <p style="margin: 0 0 12px 0; font-weight: 600;">
-      Imprint: Felix Frenzel &bull; Hellerstra&szlig;e 9 &bull; 96047 Bamberg &bull; Germany &bull; E-Mail: info@clean-core.io<br />
-      Clean-Core.io System-Version: v2.3.0 &bull; Free Community SAP Modernization Platform
+      Imprint: Felix Frenzel &bull; Hellerstra&szlig;e 9 &bull; 96047 Bamberg &bull; Germany<br />
+      E-Mail: info@clean-core.io &bull; System-Version: v2.3.0
     </p>
-    <p style="margin: 0 0 8px 0;">
+    <p class="footer-links" style="margin: 0 0 8px 0;">
       <a href="{{UNSUBSCRIBE_URL}}" style="color: #64748b; text-decoration: underline;">Unsubscribe from community updates</a>
       &nbsp;&bull;&nbsp;
       <a href="https://clean-core.io/datenschutz" style="color: #64748b; text-decoration: underline;">Privacy Policy</a>
@@ -137,3 +159,5 @@
     </p>
   </div>
 </div>
+</body>
+</html>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { APP_VERSION } from '@/lib/version';
 import { verifyAdminRequest, assertAdminStepUp } from '@/lib/firebase-admin';
 import { escapeHtml } from '@/lib/utils';
+import { wrapEmailDocument } from '@/lib/email-layout';
 
 export async function POST(request: NextRequest) {
   try {
@@ -179,7 +180,7 @@ export async function POST(request: NextRequest) {
           from: 'Clean-Core.io <team@clean-core.io>',
           to: email,
           subject: emailSubject,
-          html: emailHtml,
+          html: wrapEmailDocument(emailHtml),
         }),
       });
       console.log('[Email] Success sending Welcome Email.');

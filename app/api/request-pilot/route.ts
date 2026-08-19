@@ -5,6 +5,7 @@ import { verifyRequestAuth } from '@/lib/firebase-admin';
 import { APP_BASE_URL } from '@/lib/constants';
 import { escapeHtml } from '@/lib/utils';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
+import { wrapEmailDocument } from '@/lib/email-layout';
 
 export async function POST(request: NextRequest) {
   try {
@@ -167,7 +168,7 @@ export async function POST(request: NextRequest) {
           from: 'Clean-Core <system@clean-core.io>',
           to: 'info@clean-core.io',
           subject: emailSubject,
-          html: emailHtml,
+          html: wrapEmailDocument(emailHtml),
         }),
       });
 
@@ -303,7 +304,7 @@ export async function POST(request: NextRequest) {
             from: 'Clean-Core.io Team <team@clean-core.io>',
             to: email,
             subject: pendingSubject,
-            html: pendingHtml,
+            html: wrapEmailDocument(pendingHtml),
           }),
         });
         console.log('[Email] Success sending pending welcome email to applicant.');
