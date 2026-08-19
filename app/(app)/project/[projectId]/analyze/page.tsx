@@ -67,7 +67,7 @@ export default function AnalyzePage() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { profile, incrementTransformations } = useUserProfile();
+  const { profile } = useUserProfile();
   // Help Mode removed — Ask AI chatbot replaces this functionality
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(0);
@@ -423,7 +423,6 @@ ${codeToAnalyze}`;
       const criticalityScore = computeCriticalityScore(codeToAnalyze);
 
       try {
-        const isAlreadyCharged = project?.charged || false;
         const encoder = new TextEncoder();
         const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(codeToAnalyze));
         const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -477,15 +476,10 @@ ${codeToAnalyze}`;
         const runResult = await response.json();
         const activeRunId = runResult.runId;
 
-        if (!isAlreadyCharged) {
-          try {
-            await incrementTransformations();
-          } catch (e) {
-            console.error("Non-blocking error during incrementTransformations:", e);
-          }
-        }
+        // v2.3: no client-side charging. /api/runs/create reserved the unit
+        // atomically (idempotent per source fingerprint) before signing the run.
 
-        setProject((prev: Project | null) => 
+        setProject((prev: Project | null) =>
           prev 
             ? { 
                 ...prev, 

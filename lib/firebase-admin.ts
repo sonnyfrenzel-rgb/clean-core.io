@@ -151,17 +151,42 @@ export class QuotaError extends Error {
   }
 }
 
+/** Outcome of a run-quota reservation — see `reserveRunQuota`. */
+export interface RunQuotaResult {
+  /** true only when a unit was actually deducted (and must be refunded on failure). */
+  charged: boolean;
+  reason: 'charged' | 'reanalysis' | 'byok' | 'enterprise';
+  used: number;
+  limit: number;
+}
+
 /**
- * Atomically verifies the pilot quota AND reserves one transformation.
- * - Enterprise tier and hardcoded super-admins are unlimited (no increment).
- * - Non-enterprise: status must be 'approved' and used < limit, else QuotaError(403).
- * Throws nothing on success; the counter has already been incremented on return.
+ * Atomically verifies the community quota AND reserves one *analysis run*.
+ *
+ * v2.3 — the metered unit is one analysis run (one ABAP object taken through the
+ * evidence engine), NOT one AI call. Before this, every `/api/gemini` request was
+ * charged, so a single object cost 6–7 units across the seven stages and the free
+ * tier could not complete one project — which contradicted the "5 ABAP-to-Cloud
+ * transformations" and "full 7-stage workflow included" claims on the landing page
+ * and in Terms §6. Downstream stages (design, transformation, documentation,
+ * testing) and the glossary chatbot are now unmetered.
+ *
+ * Charging is **idempotent per input fingerprint**: re-analysing the same ABAP
+ * source (a retry, a tweaked prompt, the same object in a second project) is free.
+ * The set of already-paid-for fingerprints lives on `users/{uid}.chargedInputs`,
+ * which the Firestore rules keep out of the client's reach (`userClientUpdateKeys`),
+ * so it cannot be forged to mint free runs.
+ *
+ * - `tier === 'enterprise'` and BYOK accounts are unmetered (Terms §6).
+ * - Otherwise: status must be 'approved' and used < limit, else QuotaError(403).
+ *
+ * @param inputHash SHA-256 of the analysed source (hex, so a safe Firestore map key).
  */
-export async function reserveTransformationQuota(uid: string): Promise<void> {
+export async function reserveRunQuota(uid: string, inputHash: string): Promise<RunQuotaResult> {
   const { db, FieldValue } = await getAdminDb();
   const ref = db.collection('users').doc(uid);
 
-  await db.runTransaction(async (tx: any) => {
+  return db.runTransaction(async (tx: any) => {
     const snap = await tx.get(ref);
     const data = snap.exists ? snap.data() : {};
 
@@ -170,12 +195,23 @@ export async function reserveTransformationQuota(uid: string): Promise<void> {
     const used = typeof data.transformationsUsed === 'number' ? data.transformationsUsed : 0;
     const limit = typeof data.transformationsLimit === 'number' ? data.transformationsLimit : COMMUNITY_QUOTA;
 
-    const isUnlimited = tier === 'enterprise';
-    if (isUnlimited) return; // no metering
+    if (tier === 'enterprise') {
+      return { charged: false, reason: 'enterprise' as const, used, limit };
+    }
+    if (data.byokConfigured === true) {
+      // BYOK runs are on the user's own Gemini key — "unlimited" per Terms §6.
+      return { charged: false, reason: 'byok' as const, used, limit };
+    }
 
     if (status !== 'approved') {
       throw new QuotaError('Your community account is currently pending admin approval.', 403);
     }
+
+    // Already paid for this exact source — a re-analysis, not a new transformation.
+    if (data.chargedInputs && data.chargedInputs[inputHash] === true) {
+      return { charged: false, reason: 'reanalysis' as const, used, limit };
+    }
+
     if (used >= limit) {
       throw new QuotaError(
         `You've used all ${limit} free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.`,
@@ -183,25 +219,37 @@ export async function reserveTransformationQuota(uid: string): Promise<void> {
       );
     }
 
-    tx.update(ref, {
-      transformationsUsed: FieldValue.increment(1),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+    tx.set(
+      ref,
+      {
+        transformationsUsed: FieldValue.increment(1),
+        chargedInputs: { [inputHash]: true },
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    return { charged: true, reason: 'charged' as const, used: used + 1, limit };
   });
 }
 
-/** Best-effort refund of a reserved unit (e.g. when the Gemini call fails). Never goes below 0. */
-export async function refundTransformationQuota(uid: string): Promise<void> {
+/**
+ * Best-effort refund of a reserved run unit (e.g. when the run could not be signed
+ * or written). Never goes below 0, and drops the fingerprint again so the next
+ * attempt is charged normally instead of being mistaken for a free re-analysis.
+ */
+export async function refundRunQuota(uid: string, inputHash: string): Promise<void> {
   try {
     const { db, FieldValue } = await getAdminDb();
     const ref = db.collection('users').doc(uid);
     await db.runTransaction(async (tx: any) => {
       const snap = await tx.get(ref);
-      const used = snap.exists && typeof snap.data().transformationsUsed === 'number'
-        ? snap.data().transformationsUsed
-        : 0;
-      if (used <= 0) return;
-      tx.update(ref, { transformationsUsed: FieldValue.increment(-1) });
+      if (!snap.exists) return;
+      const data = snap.data();
+      const used = typeof data.transformationsUsed === 'number' ? data.transformationsUsed : 0;
+      const updates: Record<string, any> = { [`chargedInputs.${inputHash}`]: FieldValue.delete() };
+      if (used > 0) updates.transformationsUsed = FieldValue.increment(-1);
+      tx.update(ref, updates);
     });
   } catch {
     /* best-effort; intentionally ignored */

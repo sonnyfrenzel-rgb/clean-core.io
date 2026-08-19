@@ -17,7 +17,14 @@ export const CONTACT_EMAIL = 'info@clean-core.io';
 /**
  * Free community transformation quota granted per account (a one-time,
  * lifetime allotment — not reset daily/monthly). Single source of truth for the
- * client default and the server-side quota gate (`reserveTransformationQuota`).
+ * client default and the server-side quota gate (`reserveRunQuota`).
+ *
+ * The metered unit is one **analysis run** — one ABAP source object taken through
+ * the evidence engine — charged in `/api/runs/create`. The six downstream workflow
+ * stages and the glossary chatbot are unmetered, and re-analysing the same source
+ * fingerprint is free. That keeps "5 ABAP-to-Cloud transformations" and "full
+ * 7-stage workflow included" (landing page, Terms §6) simultaneously true.
+ *
  * NOTE: the Firestore users-create rule independently hardcodes
  * `transformationsLimit == 5`; if this value changes, that rule must change too.
  */

@@ -5,6 +5,52 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.0] — 2026-08-19
+
+Metering realignment. The free community quota now counts what the product actually
+promises — ABAP-to-Cloud transformations — instead of individual AI calls, and the
+Admin Control Room gained a live view of that consumption per user.
+
+### Changed
+- **The metered unit is now one analysis run, not one Gemini call (BREAKING for
+  metering semantics).** The quota gate moved from `/api/gemini` to
+  `/api/runs/create` (`reserveRunQuota` in `lib/firebase-admin.ts`). Previously every
+  AI request was charged, so a single ABAP object cost 6–7 units across the seven
+  workflow stages — a free account could not finish one project, which contradicted
+  both "Up to 5 ABAP-to-Cloud transformations" and "Full 7-stage modernization
+  workflow — every feature included" on the pricing card, and Terms §6. One object
+  now costs exactly one unit; design, transformation, documentation, testing, TCO and
+  delivery are unmetered.
+- **The glossary chatbot no longer consumes quota.** It falls out of metering with the
+  gate move, without a special case in the code. The same applies to the test-suite
+  self-healing loop, which could previously burn up to five units in a single click.
+- **Charging is idempotent per source fingerprint.** Re-analysing the same ABAP source
+  — a retry, a tweak, the same object in a second project — is free. Paid-for
+  fingerprints live in `users/{uid}.chargedInputs`, which the Firestore rules keep
+  outside the client's write allowlist, so it cannot be forged.
+- **Terms §6 now names the unit precisely** — what counts, what does not, and that
+  re-analysis is free.
+
+### Added
+- **Admin Control Room: "Usage & Quota" section** (`components/admin/UsageQuotaPanel.tsx`).
+  Live `onSnapshot` on `users` — no new API surface — with a KPI strip (units consumed
+  vs. granted, distinct ABAP objects, active last 7 days, accounts at limit, BYOK,
+  total), per-user meters, filters (at limit / active / unused / BYOK), search, sorting
+  and an expandable per-user detail row.
+- `tests/admin-usage-panel.spec.ts` — E2E coverage of the panel against a seeded cohort
+  (fresh, partial, exhausted, BYOK, pending), including a clipping measurement on the
+  expanded detail row.
+
+### Removed
+- The dead client-side charging path: the `incrementTransformations()` no-op in
+  `useUserProfile` and the `charged`-flag guard in the analyze stage, both of which
+  suggested a per-project charge that had not been in effect since F-06.
+
+### Security
+- `/api/gemini` keeps authentication, MFA, the account-state gate and `assertRateLimit`.
+  With per-call metering gone, that rate limit (20/h per user+IP) is now the primary
+  cost guard on the shared community Gemini key.
+
 ## [v2.2.0] — 2026-07-11
 
 Codex Delta "part 2" — the trust-boundary items deferred from v2.1.0, done as

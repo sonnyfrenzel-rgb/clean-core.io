@@ -172,11 +172,9 @@ export function useUserProfile() {
     }
   };
 
-  const incrementTransformations = async () => {
-    // F-06: No-op — Quota-Increment ist jetzt atomar serverseitig in /api/gemini.
-    // Diese Stub-Funktion bleibt, damit bestehende Aufrufer nicht brechen.
-    console.debug('[useUserProfile] incrementTransformations is now a server-side no-op.');
-  };
+  // v2.3: the former `incrementTransformations` stub was removed. Quota is charged
+  // server-side, atomically, once per analysis run in /api/runs/create
+  // (`reserveRunQuota`) — never from the client.
 
-  return { profile, loading, error, createProfile, updateProfile, incrementTransformations };
+  return { profile, loading, error, createProfile, updateProfile };
 }

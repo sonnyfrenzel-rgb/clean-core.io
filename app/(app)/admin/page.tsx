@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { ShieldCheck, ShieldAlert, CheckCircle2, Trash2, User, Mail, FileText, Clock, Search, Shield, UserX, UserCheck, Globe } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, CheckCircle2, Trash2, User, Mail, FileText, Clock, Search, Shield, UserX, UserCheck, Globe, Gauge } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { clsx } from 'clsx';
 import { APP_VERSION } from '@/lib/version';
+import UsageQuotaPanel from '@/components/admin/UsageQuotaPanel';
 
 export default function AdminConsole() {
   const { profile, loading: profileLoading } = useUserProfile();
@@ -16,6 +17,7 @@ export default function AdminConsole() {
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved'>('all');
+  const [consoleSection, setConsoleSection] = useState<'applications' | 'usage'>('applications');
   
   const [actionUid, setActionUid] = useState<string | null>(null);
   const [actionType, setActionType] = useState<'approving' | 'revoking' | 'deleting' | null>(null);
@@ -296,7 +298,29 @@ export default function AdminConsole() {
         </div>
       </div>
 
+      {/* Console sections */}
+      <div className="flex gap-1.5 p-1 bg-gray-100 rounded-2xl w-full sm:w-auto sm:inline-flex">
+        {([
+          { key: 'applications', label: 'Applications', icon: User },
+          { key: 'usage', label: 'Usage & Quota', icon: Gauge },
+        ] as const).map((section) => (
+          <button
+            key={section.key}
+            onClick={() => setConsoleSection(section.key)}
+            className={clsx(
+              'flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer',
+              consoleSection === section.key ? 'bg-white text-gray-950 shadow' : 'text-gray-500 hover:text-gray-900',
+            )}
+          >
+            <section.icon className="w-4 h-4" /> {section.label}
+          </button>
+        ))}
+      </div>
 
+      {consoleSection === 'usage' && <UsageQuotaPanel />}
+
+      {consoleSection === 'applications' && (
+      <>
       {/* Filter and Search Bar */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-2xl border border-gray-250 shadow-sm w-full">
         
@@ -460,6 +484,8 @@ export default function AdminConsole() {
           </div>
         )}
       </div>
+      </>
+      )}
 
     </div>
   );

@@ -3,8 +3,6 @@ import { logger } from '@/lib/logger';
 import { GoogleGenAI } from '@google/genai';
 import {
   verifyRequestAuth,
-  reserveTransformationQuota,
-  refundTransformationQuota,
   QuotaError,
   assertMfaSatisfied,
   assertAccountActive,
@@ -22,9 +20,17 @@ import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
  * Returns:
  *   { text: string }
  *
- * F-06: The transformation quota is verified AND incremented server-side, atomically,
- * via reserveTransformationQuota() — directly before the call, so parallel requests
- * cannot bypass the limit. On a failed generation the unit is refunded.
+ * v2.3 — this route is NO LONGER the metering point. The community quota is charged
+ * per *analysis run* in /api/runs/create (see `reserveRunQuota`), so one ABAP object
+ * costs exactly one unit and the remaining six workflow stages — plus the glossary
+ * chatbot — run unmetered. That is what makes "5 ABAP-to-Cloud transformations" and
+ * "full 7-stage workflow included" simultaneously true.
+ *
+ * What still gates this route: authentication, MFA, the account-state gate
+ * (approved + current Terms) and the per-user rate limit. With per-call metering
+ * gone, `assertRateLimit` below is the primary cost guard on the shared community
+ * Gemini key — one full project journey is ~7 calls (plus up to 5 for test
+ * self-healing), so 20/h leaves headroom while still bounding abuse.
  */
 
 // Cache the default instance so we don't create a new one per request.
@@ -176,46 +182,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Quota only for the NON-BYOK path: atomically verify + reserve.
-    if (!byokKey) {
-      try {
-        await reserveTransformationQuota(decodedToken.uid);
-      } catch (err: unknown) {
-        if (err instanceof QuotaError) {
-          return NextResponse.json({ error: err.message }, { status: err.status });
-        }
-        console.error('Quota reservation error:', err);
-        return NextResponse.json(
-          { error: 'Internal quota validation failed.' },
-          { status: 500 },
-        );
-      }
-    }
-
-    let text: string;
-    try {
-      text = await callWithRetry(async () => {
-        const result = await ai.models.generateContent({
-          model,
-          contents: prompt,
-          config: jsonResponse
-            ? { responseMimeType: 'application/json' }
-            : undefined,
-        });
-
-        if (!result.text) {
-          throw new Error('Gemini returned an empty response.');
-        }
-
-        return result.text;
+    // No quota reservation here — metering happens once per analysis run in
+    // /api/runs/create. See the module header.
+    const text = await callWithRetry(async () => {
+      const result = await ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: jsonResponse
+          ? { responseMimeType: 'application/json' }
+          : undefined,
       });
-    } catch (genErr) {
-      // Refund the reserved unit so failed calls don't consume quota.
-      if (!byokKey) {
-        await refundTransformationQuota(decodedToken.uid);
+
+      if (!result.text) {
+        throw new Error('Gemini returned an empty response.');
       }
-      throw genErr; // handled by the outer catch below
-    }
+
+      return result.text;
+    });
 
     return NextResponse.json({ text });
   } catch (error: unknown) {

@@ -152,10 +152,13 @@ export default function TermsPage() {
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">6. Usage Limits / Quota</h2>
             <p className="text-base">
               To keep the Platform available to the community, usage without your own API key is subject to a quota:
-              currently a total of 5 transformations/analyses per user account. This is a one-time allotment and is not
-              reset on a daily or monthly basis. When you provide your own Google Gemini API key (BYOK, see section 5), no
-              quota applies. The operator may adjust, introduce, or remove quotas at any time to protect the stability and
-              fair use of the Platform.
+              currently a total of 5 transformations per user account. One transformation is counted when a new ABAP
+              source object is submitted for analysis. All subsequent stages of that transformation &mdash; solution
+              design, code transformation, documentation, testing, TCO and delivery &mdash; as well as the glossary
+              assistant are not counted, and re-analysing the same source object does not count again. This is a one-time
+              allotment and is not reset on a daily or monthly basis. When you provide your own Google Gemini API key
+              (BYOK, see section 5), no quota applies. Fair-use rate limits apply to all accounts. The operator may
+              adjust, introduce, or remove quotas at any time to protect the stability and fair use of the Platform.
             </p>
           </section>
 

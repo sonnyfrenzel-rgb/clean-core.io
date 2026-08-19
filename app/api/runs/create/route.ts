@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
-import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError } from '@/lib/firebase-admin';
+import {
+  verifyRequestAuth,
+  getAdminDb,
+  assertAccountActive,
+  QuotaError,
+  reserveRunQuota,
+  refundRunQuota,
+} from '@/lib/firebase-admin';
 import { APP_VERSION } from '@/lib/version';
 import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
@@ -24,6 +31,11 @@ function canonicalizeJson(obj: any): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Tracked outside the try so the catch below can refund a reserved unit when the
+  // run fails after it was charged.
+  let chargedUid: string | null = null;
+  let chargedHash: string | null = null;
+
   try {
     // 1. Production Key Check (Finding 3)
     const isProduction = process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true';
@@ -96,6 +108,24 @@ export async function POST(req: NextRequest) {
     const hashHex = Array.from(new Uint8Array(hashBuffer))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
+
+    // v2.3 — THE metering point. One analysis run = one community unit; every
+    // downstream stage (design → delivery) and the glossary chatbot are free, so a
+    // free account can take an ABAP object through the whole 7-stage workflow.
+    // Idempotent per source fingerprint: re-analysing the same code costs nothing.
+    // Reserved before the expensive evidence build so an exhausted account fails fast.
+    try {
+      const quota = await reserveRunQuota(decodedToken.uid, hashHex);
+      if (quota.charged) {
+        chargedUid = decodedToken.uid;
+        chargedHash = hashHex;
+      }
+    } catch (quotaErr: any) {
+      if (quotaErr instanceof QuotaError) {
+        return NextResponse.json({ error: quotaErr.message }, { status: quotaErr.status });
+      }
+      throw quotaErr;
+    }
 
     const detectObjectType = (code: string): string => {
       if (/^\s*CLASS\s+/im.test(code)) return 'Class';
@@ -325,6 +355,11 @@ export async function POST(req: NextRequest) {
       signature,
     });
   } catch (error: any) {
+    // The run never completed — give the unit back and forget the fingerprint, so
+    // the next attempt is charged normally rather than passing as a re-analysis.
+    if (chargedUid && chargedHash) {
+      await refundRunQuota(chargedUid, chargedHash);
+    }
     logger.error('runs/create failed', { route: 'api/runs/create', error: errMessage(error) });
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }

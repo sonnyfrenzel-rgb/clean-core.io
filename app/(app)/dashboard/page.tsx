@@ -221,7 +221,7 @@ export default function Dashboard() {
 
   const auth = getAuth();
   const db = getDb();
-  const { profile, loading: loadingProfile, incrementTransformations } = useUserProfile();
+  const { profile, loading: loadingProfile } = useUserProfile();
 
   const [user, setUser] = useState<any>(null);
   const [projects, setProjects] = useState<any[]>([]);

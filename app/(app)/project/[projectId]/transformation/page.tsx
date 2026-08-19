@@ -49,7 +49,7 @@ export default function TransformationPage() {
   const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [insightOverlay, setInsightOverlay] = useState<{ title: string, content: string } | null>(null);
   const router = useRouter();
-  const { profile, incrementTransformations } = useUserProfile();
+  const { profile } = useUserProfile();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [signedOffIds, setSignedOffIds] = useState<Set<string>>(new Set());
