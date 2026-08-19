@@ -31,8 +31,15 @@ jobs:
       - name: Run Linting Checks
         run: npm run lint
 
+      # Only Chromium is installed: playwright.config.ts defines a single
+      # `chromium` project, so pulling Firefox and WebKit (and their apt
+      # dependency sets) was download and install time spent on browsers no test
+      # ever launches. The timeout is a circuit breaker — this step hung for 40+
+      # minutes on consecutive runs on 2026-08-19; failing fast beats burning an
+      # hour of runner time on a stalled mirror.
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps chromium
+        timeout-minutes: 10
 
       - name: Setup Java JDK
         uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5
