@@ -15,8 +15,8 @@ const report: UsageReport = {
   generatedAt: new Date('2026-08-21T10:00:00Z'),
   periodStart: new Date('2026-08-14T10:00:00Z'),
   periodEnd: new Date('2026-08-21T10:00:00Z'),
-  current: { registrations: 3, activations: 2, runs: 9, projects: 5, units: 9 },
-  previous: { registrations: 1, activations: 0, runs: 2, projects: 3, units: 2 },
+  current: { registrations: 3, activations: 2, activeAccounts: 5, runs: 9, projects: 5, units: 9 },
+  previous: { registrations: 1, activations: 0, activeAccounts: 2, runs: 2, projects: 3, units: 2 },
   totals: {
     accounts: 34, activated: 8, neverStarted: 26, atLimit: 3, byok: 1,
     unitsUsed: 21, unitsGranted: 165, objectsAnalysed: 17, runsAllTime: 37,
@@ -46,6 +46,18 @@ for (const [name, width] of [['mobile-320', 320], ['mobile-375', 375], ['desktop
     // "erstmals aktiviert" and getByText matches case-insensitively, so a loose
     // locator resolves to a display:none element and fails toBeVisible.
     await expect(page.getByText('Erstmals aktiviert diese Woche')).toBeVisible();
+
+    // Every figure the report promises has to actually be on the page — a metric
+    // silently dropped in a layout change is exactly what this guards against.
+    for (const label of [
+      'Neue Registrierungen', 'Erstmals aktiviert', 'Aktive Accounts',
+      'Analysen durchgeführt', 'Neue Projekte', 'Verbrauchte Einheiten',
+      'Accounts (ohne Testkonten)', 'Analysen insgesamt', 'Eindeutige ABAP-Objekte',
+      'Einheiten verbraucht', 'Accounts am Limit', 'Noch nie gestartet',
+      'Mit eigenem Gemini-Key (BYOK)',
+    ]) {
+      await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
+    }
     await expect(page.getByRole('link', { name: /Im Admin-Panel öffnen/ })).toHaveAttribute(
       'href', 'https://clean-core.io/admin?tab=usage',
     );

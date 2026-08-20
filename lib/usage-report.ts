@@ -38,6 +38,8 @@ export interface Cohort {
 export interface PeriodMetrics {
   registrations: number;
   activations: number;
+  /** Distinct accounts that ran at least one analysis — breadth, not volume. */
+  activeAccounts: number;
   runs: number;
   projects: number;
   units: number;
@@ -143,6 +145,8 @@ export async function buildUsageReport(db: Firestore, periodEnd: Date = new Date
   const period = (from: Date, to: Date): PeriodMetrics => ({
     registrations: cohort.filter((u) => inWindow(u.createdAt, from, to)).length,
     activations: [...firstRunByUser.values()].filter((d) => inWindow(d, from, to)).length,
+    // Ten analyses by one person and ten by ten people mean very different things.
+    activeAccounts: new Set(runs.filter((r) => inWindow(r.at, from, to)).map((r) => r.userId)).size,
     runs: runs.filter((r) => inWindow(r.at, from, to)).length,
     projects: projects.filter((p) => inWindow(p.at, from, to)).length,
     // One metered run is one unit; unmetered accounts consume none.

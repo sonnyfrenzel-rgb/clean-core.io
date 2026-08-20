@@ -153,6 +153,7 @@ export function renderUsageReportEmail(report: UsageReport): string {
     <div style="margin-bottom: 26px;">
       ${metricRow('Neue Registrierungen', current.registrations, previous.registrations)}
       ${metricRow('Erstmals aktiviert', current.activations, previous.activations)}
+      ${metricRow('Aktive Accounts', current.activeAccounts, previous.activeAccounts)}
       ${metricRow('Analysen durchgeführt', current.runs, previous.runs)}
       ${metricRow('Neue Projekte', current.projects, previous.projects)}
       ${metricRow('Verbrauchte Einheiten', current.units, previous.units)}
@@ -164,8 +165,9 @@ export function renderUsageReportEmail(report: UsageReport): string {
       ${totalRow('Accounts (ohne Testkonten)', String(totals.accounts))}
       ${totalRow('Analysen insgesamt', String(totals.runsAllTime))}
       ${totalRow('Eindeutige ABAP-Objekte', String(totals.objectsAnalysed))}
-      ${totalRow('Einheiten verbraucht von vergeben', `${totals.unitsUsed} von ${totals.unitsGranted}`)}
+      ${totalRow('Einheiten verbraucht', `${totals.unitsUsed} von ${totals.unitsGranted} vergebenen`)}
       ${totalRow('Accounts am Limit', String(totals.atLimit), totals.atLimit > 0)}
+      ${totalRow('Noch nie gestartet', String(totals.neverStarted))}
       ${totalRow('Mit eigenem Gemini-Key (BYOK)', String(totals.byok))}
     </div>
 
@@ -238,6 +240,7 @@ ${totals.neverStarted} haben noch nie eine gestartet.
 DIESE WOCHE
 ${line('Neue Registrierungen', current.registrations, previous.registrations)}
 ${line('Erstmals aktiviert', current.activations, previous.activations)}
+${line('Aktive Accounts', current.activeAccounts, previous.activeAccounts)}
 ${line('Analysen durchgefuehrt', current.runs, previous.runs)}
 ${line('Neue Projekte', current.projects, previous.projects)}
 ${line('Verbrauchte Einheiten', current.units, previous.units)}
@@ -246,7 +249,8 @@ GESAMTBESTAND
   Accounts (ohne Testkonten)  ${totals.accounts}
   Analysen insgesamt          ${totals.runsAllTime}
   Eindeutige ABAP-Objekte     ${totals.objectsAnalysed}
-  Einheiten verbraucht        ${totals.unitsUsed} von ${totals.unitsGranted}
+  Einheiten verbraucht        ${totals.unitsUsed} von ${totals.unitsGranted} vergebenen
+  Noch nie gestartet          ${totals.neverStarted}
   Am Limit                    ${totals.atLimit}
   BYOK                        ${totals.byok}
 
