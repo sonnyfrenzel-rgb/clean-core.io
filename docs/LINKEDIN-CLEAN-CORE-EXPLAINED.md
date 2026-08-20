@@ -1,89 +1,104 @@
 # LinkedIn post — Clean Core Explained
 
 Für [`/clean-core-explained`](https://clean-core.io/clean-core-explained).
-Englisch, kurz, mit Selbstironie.
+Englisch, kurz, ironisch, kein Eigenlob.
+
+**Die Idee:** Den Reflex des Lesers zuerst aussprechen — „schon wieder erklärt mir
+jemand auf LinkedIn die Welt, und am Ende soll ich mich registrieren" — und ihn
+dann entkräften. Wer den Einwand selbst formuliert, muss ihn nicht mehr
+abwehren.
 
 ---
 
 ## Version A — die, die ich posten würde
 
 ```text
-I wrote a PDF about SAP Clean Core.
+Someone on LinkedIn is about to explain Clean Core to you. It's me. I'm someone.
 
-I know. Nobody has ever read that sentence and felt joy.
+I know how this usually goes. Two paragraphs of insight, a link, a form, a
+"quick 15 minutes next week?", and a newsletter you never asked for.
 
-Blame the person who asked me to explain Clean Core in five minutes. Two minutes
-in I had said RAP, released API, in-app and side-by-side without defining any of
-them. I was explaining an acronym using four other acronyms. Very SAP of me.
+There's none of that. It's a page. You read it and you leave.
 
-So I wrote down the version I should have said out loud. It starts at zero: what
-"the core" even is, and why touching SAP's own code turns a routine upgrade into
-a project. It ends somewhere useful — RAP vs CAP on real criteria instead of
-taste, and a way to grade your own Z-code A to D, so people argue about specific
-objects instead of a slogan.
+What's on it: what "the core" actually is, why touching SAP's own code turns a
+routine upgrade into a project, RAP vs CAP with criteria instead of taste, and a
+way to sort your own Z-code A to D. Every term gets explained before it's used,
+because I once tried to explain Clean Core using four acronyms I hadn't defined
+and watched someone quietly give up.
 
-15 pages. I tried to cut it. Every cut made it worse.
-
-Free, no login, no "enter your work email to download". Low bar. Still proud of
-clearing it.
+It got longer than planned. Sorry about that.
 
 https://clean-core.io/clean-core-explained
-```
 
-**Warum das trägt.** „Blame the person who asked me" schiebt die Schuld weg und
-macht sofort klar, dass hier niemand eine Kampagne fährt. „Explaining an acronym
-using four other acronyms. Very SAP of me." ist die Pointe — sie trifft eine
-Branchenwahrheit, über die alle lachen können, ohne dass jemand angegriffen
-wird. „Every cut made it worse" sagt ohne ein Werbewort, dass Substanz drin ist.
-Und der Schluss über die E-Mail-Schranke ist ein Seitenhieb auf die halbe
-Branche, den du dir leisten kannst, weil du es besser machst.
+If something in it is wrong, tell me. That's the only thing I want out of this.
+```
 
 ---
 
-## Version B — noch kürzer, falls dir A zu lang ist
+## Version B — kürzer
 
 ```text
-I wrote a PDF about SAP Clean Core. I know. Nobody has ever felt joy reading
-that sentence.
+Someone on LinkedIn is about to explain Clean Core to you. It's me. I'm someone.
 
-Blame the person who asked me to explain Clean Core in five minutes. Two minutes
-in, I was defining an acronym with four other acronyms. Very SAP of me.
+You know the drill by now: link, form, "got 15 minutes next week?", newsletter.
 
-So: 15 pages, starting at zero, ending at how to grade your own Z-code A to D.
-I tried to cut it. Every cut made it worse.
+None of that. It's a page. You read it and you leave.
 
-No login, no email wall.
+What "the core" is, why modifying it makes upgrades expensive, RAP vs CAP with
+actual criteria, and how to sort your own Z-code A to D. Nothing assumed — I
+once explained Clean Core using four acronyms I hadn't defined and watched
+someone quietly give up.
 
 https://clean-core.io/clean-core-explained
+
+If something's wrong in it, tell me. That's all I want out of this.
 ```
 
 ---
 
-## Was an den ersten Entwürfen falsch war
+## Warum das so gebaut ist
 
-Damit ich nicht nochmal hineinlaufe. Die erste Fassung hatte jeden Marker eines
-generierten LinkedIn-Posts:
+**„It's me. I'm someone."** — der Autor stellt sich sofort auf eine Stufe mit den
+Leuten, über die man sich beim Scrollen ärgert. Ab da kann er niemandem mehr von
+oben herab kommen.
 
-- Widerspruchs-Einstieg („Die Hälfte der Leute kann Clean Core nicht definieren")
-- die geständnishafte Wendung direkt danach
-- jeder Satz ein eigener Absatz, damit es „luftig" wirkt
-- Dreierliste in der Mitte
-- Schlussfrage als Engagement-Köder
+**Die Aufzählung des Trichters** (Link, Formular, 15-Minuten-Termin, Newsletter)
+ist der Satz, bei dem die Leute nicken. Jeder kennt ihn, keiner sagt ihn.
 
-Diese Form wird täglich tausendfach gepostet und im Vorbeiscrollen übersprungen.
-Was stattdessen funktioniert: eine konkrete kleine Geschichte mit Details, die
-sich niemand ausdenkt, eine echte Pointe, ungleich lange Sätze, und ein Link,
-der einfach dasteht statt inszeniert zu werden.
+**„It's a page. You read it and you leave."** — die eigentliche Botschaft, in
+sieben Wörtern und ohne ein einziges Werbewort.
+
+**Die Anekdote steht am Ende, nicht am Anfang.** Sie begründet, warum jeder
+Begriff erklärt wird, statt sich als Geschichte wichtig zu machen. Und der
+Erzähler ist darin der Blamierte.
+
+**„It got longer than planned. Sorry about that."** — ersetzt jedes „15 Seiten
+voller Substanz". Es sagt dasselbe, aber als Entschuldigung statt als Angebot.
+
+**Kein Eigenlob, nirgends.** Frühere Fassungen hatten Sätze wie „Low bar, still
+proud of clearing it" — das war Selbstbeweihräucherung durch die Hintertür und
+ist raus. Auch „ich habe versucht zu kürzen, jede Kürzung hat es schlechter
+gemacht" ist weg: klingt bescheiden, verkauft aber Substanz.
+
+**Der Schlusssatz** macht die einzige Bitte des Posts zu einer, die dem Leser
+nichts abverlangt und dir nichts einbringt außer einer besseren Seite.
+
+---
 
 ## Praktisches
 
 - **Kein Emoji.** Bei diesem Ton wäre schon eins zu viel.
 - **Hashtags:** höchstens `#SAP #CleanCore #ABAP`, gern gar keine.
-- **Link im Beitrag lassen**, nicht im ersten Kommentar. Der Algorithmus mag das
-  angeblich weniger, aber bei deiner Reichweite ist der Unterschied Rauschen —
-  und ein weiterleitbarer Link ist der ganze Zweck der Übung.
+- **Link im Beitrag lassen**, nicht im ersten Kommentar. Ein weiterleitbarer Link
+  ist der ganze Zweck der Übung.
 - **Zeitfenster:** Dienstag bis Donnerstag, 07:30–09:00 MEZ.
 - **In den ersten zwei Stunden auf jeden Kommentar antworten.** Das ist bei dieser
-  Reichweite der gesamte Verteilmechanismus.
-- **Version B nicht kurz nach A posten.** Frühestens ein bis zwei Wochen später,
-  sonst wirkt es wie eine Kampagne statt wie ein Mensch.
+  Reichweite der gesamte Verteilmechanismus — und passt zur Haltung des Posts.
+- **Version B nicht kurz nach A posten.** Frühestens ein bis zwei Wochen später.
+
+## Was an den allerersten Entwürfen falsch war
+
+Damit ich nicht nochmal hineinlaufe: Widerspruchs-Einstieg, geständnishafte
+Wendung direkt danach, jeder Satz ein eigener Absatz, Dreierliste in der Mitte,
+Schlussfrage als Engagement-Köder. Diese Form wird täglich tausendfach gepostet
+und im Vorbeiscrollen übersprungen.
