@@ -37,7 +37,7 @@ const PRINT_CSS = `
     background: #ffffff;
     color: #1a2433;
     font-size: 10.5pt;
-    line-height: 1.62;
+    line-height: 1.52;
   }
 
   .doc { max-width: 176mm; margin: 0 auto; padding: 0 0 12mm; }
@@ -74,9 +74,12 @@ const PRINT_CSS = `
 
   /* --- Structure ------------------------------------------------------ */
   .part { break-before: page; }
-  .part:first-of-type { break-before: auto; }
+  .part.part-first { break-before: auto; }
 
-  .part-head { border-bottom: 1.5pt solid #0f172a; padding-bottom: 4mm; margin-bottom: 7mm; }
+  .part-head {
+    border-bottom: 1.5pt solid #0f172a; padding-bottom: 3.5mm; margin-bottom: 5mm;
+    break-inside: avoid; break-after: avoid;
+  }
 
   .part-eyebrow {
     font-size: 7.5pt; font-weight: 900; letter-spacing: 0.16em;
@@ -90,36 +93,47 @@ const PRINT_CSS = `
 
   .part-intro { font-size: 10pt; color: #475569; margin: 0; line-height: 1.55; }
 
-  .chapter { break-inside: avoid; margin-bottom: 9mm; }
+  /* Chapters deliberately do NOT set break-inside: avoid. Several of them are
+     taller than a printed page, so an unbreakable chapter cannot be honoured —
+     the fragmenter pushes it to a fresh page, overflows it anyway, and leaves
+     the page before it nearly blank. Keeping the small units atomic (headings
+     with their opening line, notes, table rows, definitions) gives tidy pages
+     without any of that. */
+  .chapter { margin-bottom: 6mm; }
 
   .chapter h3 {
     font-size: 13pt; font-weight: 900; letter-spacing: -0.015em;
     line-height: 1.25; margin: 0 0 3mm; color: #0f172a;
+    break-inside: avoid; break-after: avoid;
   }
 
   .chapter h3 .num { color: #047857; margin-right: 2.5mm; }
 
   .lede {
     font-size: 11pt; font-weight: 700; line-height: 1.5; color: #0f172a;
-    border-left: 1.5pt solid #10b981; padding-left: 5mm; margin: 0 0 5mm;
+    border-left: 1.5pt solid #10b981; padding-left: 5mm; margin: 0 0 4mm;
+    break-inside: avoid; break-after: avoid;
   }
 
-  .chapter p { margin: 0 0 3.5mm; }
+  .chapter p { margin: 0 0 3.5mm; orphans: 3; widows: 3; }
 
   /* --- Definition lists ----------------------------------------------- */
-  dl { margin: 5mm 0 0; }
+  dl { margin: 2mm 0 0; break-inside: auto; }
 
+  /* The twelve-term list is the longest run of these, and a narrower term column
+     buys the definitions a wider measure — which costs fewer lines than the
+     column itself takes. */
   .def {
-    break-inside: avoid; display: grid; grid-template-columns: 42mm 1fr;
-    gap: 0 6mm; padding: 2.6mm 0; border-bottom: 0.4pt solid #e8edf3;
+    break-inside: avoid; display: grid; grid-template-columns: 37mm 1fr;
+    gap: 0 5mm; padding: 1.5mm 0; border-bottom: 0.4pt solid #e8edf3;
   }
 
   .def:last-child { border-bottom: 0; }
-  .def dt { font-weight: 800; color: #0f172a; font-size: 9.5pt; }
-  .def dd { margin: 0; color: #475569; font-size: 9.5pt; line-height: 1.5; }
+  .def dt { font-weight: 800; color: #0f172a; font-size: 9pt; line-height: 1.4; }
+  .def dd { margin: 0; color: #475569; font-size: 9pt; line-height: 1.42; }
 
   /* --- Tables ---------------------------------------------------------- */
-  figure { margin: 6mm 0 0; break-inside: avoid; }
+  figure { margin: 5mm 0 0; break-inside: avoid; }
 
   figcaption {
     font-size: 7.5pt; font-weight: 900; letter-spacing: 0.13em;
@@ -146,7 +160,7 @@ const PRINT_CSS = `
 
   /* --- Margin notes ----------------------------------------------------- */
   .note {
-    break-inside: avoid; margin: 5mm 0 0; padding: 4mm 5mm;
+    break-inside: avoid; margin: 3.5mm 0 0; padding: 3.5mm 4.5mm;
     border-radius: 3mm; border: 0.5pt solid #d7dee7; background: #f7f9fb;
   }
 
@@ -242,7 +256,7 @@ const PRINT_CSS = `
   .scope .def dd { color: #b6c2d2; }
 
   .colophon {
-    margin-top: 10mm; padding-top: 5mm; border-top: 0.5pt solid #cbd5e1;
+    margin-top: 7mm; padding-top: 4mm; border-top: 0.5pt solid #cbd5e1;
     font-size: 8.5pt; color: #64748b; line-height: 1.55; break-inside: avoid;
   }
 
@@ -330,8 +344,10 @@ export default function CleanCoreExplainedPrintPage() {
         </section>
 
         {/* Parts 1–5 */}
-        {GUIDE_PARTS.map((part) => (
-          <section className="part" key={part.id}>
+        {GUIDE_PARTS.map((part, partIndex) => (
+          // Part 1 follows the short-answer box on the same page; forcing a break
+          // there would leave the contents spread half empty for no gain.
+          <section className={partIndex === 0 ? 'part part-first' : 'part'} key={part.id}>
             <div className="part-head">
               <p className="part-eyebrow">{part.eyebrow}</p>
               <h2>{part.title}</h2>
