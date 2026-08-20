@@ -13,7 +13,8 @@ abwehren.
 ## Version A — die, die ich posten würde
 
 ```text
-I wrote 15 pages about SAP Clean Core, which is either useful or a cry for help.
+Nothing in this post will change your life. Best case, it kills one meeting
+about SAP Clean Core.
 
 I know how this looks from your side. Someone in your feed, explaining a thing,
 and at the end there's a form, or a "got 15 minutes next week?", or a newsletter
@@ -43,17 +44,19 @@ Vor dem „…see more" steht nur die erste Zeile — sie trägt den Post allein
 funktionieren mit dem Rest unverändert:
 
 ```text
+Nothing in this post will change your life. Best case, it kills one meeting
+about SAP Clean Core.
+```
+```text
+This post will not change your life. At best it deletes one SAP Clean Core
+meeting from your calendar.
+```
+```text
+Nothing here will change your life. Best case, it saves you a meeting where
+nobody defines SAP Clean Core.
+```
+```text
 I wrote 15 pages about SAP Clean Core, which is either useful or a cry for help.
-```
-```text
-Nothing in this post will change your life. It might save you one meeting.
-```
-```text
-I have become one of those people who posts about SAP Clean Core. It happened
-gradually.
-```
-```text
-SAP Clean Core is not an exciting topic and I'm not going to pretend otherwise.
 ```
 
 ---
@@ -61,7 +64,8 @@ SAP Clean Core is not an exciting topic and I'm not going to pretend otherwise.
 ## Version B — kürzer
 
 ```text
-I wrote 15 pages about SAP Clean Core, which is either useful or a cry for help.
+Nothing in this post will change your life. Best case, it kills one meeting
+about SAP Clean Core.
 
 You know both versions of this by now. Form, "got 15 minutes next week?",
 newsletter. Or: comment "CLEAN CORE" below and a bot DMs you the file like it's
@@ -81,20 +85,21 @@ Don't comment "CLEAN CORE". Nothing happens. There's no bot.
 
 ## Warum das so gebaut ist
 
-**„…which is either useful or a cry for help."** — die Zeile nennt eine harte
-Zahl und zieht sie im selben Atemzug ins Lächerliche. Dadurch erfährt der Leser,
-dass da Substanz ist, ohne dass jemand sie anpreist: die Prahlerei wird vom Witz
-sofort kassiert. Und „cry for help" ist die Sorte Selbstironie, die man nicht
-inszeniert, sondern hat.
+**„Best case, it kills one meeting about SAP Clean Core."** — die Zeile
+verspricht bewusst fast nichts und dann etwas sehr Konkretes. „Best case" ist
+trockener als „it might"; es klingt nach jemandem, der die Erwartungen selbst
+niedrig hängt, statt zu werben. Und „kills one meeting" hat Haltung — es ist der
+einzige Nutzen, den auf LinkedIn wirklich jeder sofort versteht.
 
-Sie ersetzt zwei Vorgänger. „It's me. I'm someone." war ein Wortspiel — der Leser
-musste ein kleines Rätsel lösen, und gelungene Wortspiele klingen *geschrieben*.
-„Nobody asked for this" war ehrlich, aber brav; es machte den Post kleiner, ohne
-dafür etwas zurückzugeben.
+Sie ersetzt drei Vorgänger. „It's me. I'm someone." war ein Wortspiel, und
+gelungene Wortspiele klingen *geschrieben*. „Nobody asked for this" war ehrlich,
+aber brav — machte den Post kleiner, ohne etwas zurückzugeben. Die 15-Seiten-Zeile
+war witzig, rückte aber das Dokument in den Vordergrund statt den Leser; sie steht
+weiter unten als Alternative.
 
-Der frühere Satz „It got longer than planned. Sorry about that." ist damit
-überflüssig geworden und gestrichen — der Längenwitz steht jetzt in der ersten
-Zeile, wo er gesehen wird.
+Der frühere Satz „It got longer than planned. Sorry about that." bleibt
+gestrichen. Der Post ist dadurch kürzer, und der Umfang ist ohnehin kein
+Verkaufsargument.
 
 **Die Aufzählung des Trichters** (Formular, 15-Minuten-Termin, Newsletter) ist
 der Satz, bei dem die Leute nicken. Jeder kennt ihn, keiner sagt ihn.
