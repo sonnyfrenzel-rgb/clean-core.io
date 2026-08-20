@@ -15,22 +15,28 @@ abwehren.
 ```text
 Someone on LinkedIn is about to explain Clean Core to you. It's me. I'm someone.
 
-I know how this usually goes. Two paragraphs of insight, a link, a form, a
-"quick 15 minutes next week?", and a newsletter you never asked for.
+I know how this usually goes. A bit of insight, then a form, then "got 15
+minutes next week?", then a newsletter you never asked for. Or the other
+version: comment "CLEAN CORE" below and a bot slides the link into your DMs
+like it's contraband.
 
-There's none of that. It's a page. You read it and you leave.
+Turns out you're allowed to just put the link in the post. So that's what this
+is. A page. You read it and you leave.
 
 What's on it: what "the core" actually is, why touching SAP's own code turns a
-routine upgrade into a project, RAP vs CAP with criteria instead of taste, and a
-way to sort your own Z-code A to D. Every term gets explained before it's used,
-because I once tried to explain Clean Core using four acronyms I hadn't defined
-and watched someone quietly give up.
+routine upgrade into a project, RAP vs CAP with criteria instead of taste, and
+a way to sort your own Z-code A to D. Every term gets explained before it's
+used, because I once tried to explain Clean Core using four acronyms I hadn't
+defined and watched someone quietly give up.
 
 It got longer than planned. Sorry about that.
 
 https://clean-core.io/clean-core-explained
 
-If something in it is wrong, tell me. That's the only thing I want out of this.
+Don't comment "CLEAN CORE". Nothing happens. There's no bot.
+
+If something in it is wrong, though — tell me. That's the only thing I want out
+of this.
 ```
 
 ---
@@ -40,18 +46,18 @@ If something in it is wrong, tell me. That's the only thing I want out of this.
 ```text
 Someone on LinkedIn is about to explain Clean Core to you. It's me. I'm someone.
 
-You know the drill by now: link, form, "got 15 minutes next week?", newsletter.
+You know both versions of this by now. Link, form, "got 15 minutes next week?",
+newsletter. Or: comment "CLEAN CORE" below and a bot DMs you the file like it's
+contraband.
 
-None of that. It's a page. You read it and you leave.
+Turns out you can just put the link in the post.
 
 What "the core" is, why modifying it makes upgrades expensive, RAP vs CAP with
-actual criteria, and how to sort your own Z-code A to D. Nothing assumed — I
-once explained Clean Core using four acronyms I hadn't defined and watched
-someone quietly give up.
+actual criteria, and how to sort your own Z-code A to D. Nothing assumed.
 
 https://clean-core.io/clean-core-explained
 
-If something's wrong in it, tell me. That's all I want out of this.
+Don't comment "CLEAN CORE". Nothing happens. There's no bot.
 ```
 
 ---
@@ -62,8 +68,20 @@ If something's wrong in it, tell me. That's all I want out of this.
 Leuten, über die man sich beim Scrollen ärgert. Ab da kann er niemandem mehr von
 oben herab kommen.
 
-**Die Aufzählung des Trichters** (Link, Formular, 15-Minuten-Termin, Newsletter)
-ist der Satz, bei dem die Leute nicken. Jeder kennt ihn, keiner sagt ihn.
+**Die Aufzählung des Trichters** (Formular, 15-Minuten-Termin, Newsletter) ist
+der Satz, bei dem die Leute nicken. Jeder kennt ihn, keiner sagt ihn.
+
+**Der Kommentar-Gag ist das Herzstück.** „Kommentiere CLEAN CORE und ich schicke
+dir das Dokument" ist auf LinkedIn eine eigene Gattung — und der Punkt daran ist
+ja gerade, dass der Link absichtlich zurückgehalten wird, damit die Kommentarzahl
+steigt. „a bot slides the link into your DMs like it's contraband" benennt genau
+das. Danach kommt der trockene Nachsatz, dass man einen Link auch einfach
+hinschreiben darf.
+
+**Der Rückgriff am Ende ist die eigentliche Pointe.** „Don't comment CLEAN CORE.
+Nothing happens. There's no bot." zahlt den Aufbau von oben ein. Nebeneffekt:
+Leute kommentieren es trotzdem, aus Spaß — und das ist dann echte Reaktion statt
+erpresster.
 
 **„It's a page. You read it and you leave."** — die eigentliche Botschaft, in
 sieben Wörtern und ohne ein einziges Werbewort.
