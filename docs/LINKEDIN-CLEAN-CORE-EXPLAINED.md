@@ -10,7 +10,63 @@ abwehren.
 
 ---
 
-## Version A — die, die ich posten würde
+## Tatsächlich gepostet am 20.08.2026
+
+Das ist die Fassung, die live gegangen ist. Für künftige Posts gilt sie als
+Referenz — nicht die Entwürfe darunter.
+
+```text
+You know that meeting where everyone says "Clean Core" and quietly hopes nobody
+asks what it means? I wrote the thing you send afterwards.
+
+I know how it looks from your side. Someone in your feed, explaining a thing,
+and at the end there's a form, or a "got 15 minutes next week?", or a newsletter
+you never signed up for.
+
+Turns out you're allowed to just put the link in the post. So that's what this
+is. A page. You read it and you leave.
+
+What's on it: what "the core" actually is, why touching SAP's own code turns a
+routine upgrade into a project, RAP vs CAP with criteria instead of taste, and
+a way to sort your own Z-code A to D. Every term gets explained before it's
+used, because I once tried to explain Clean Core using four acronyms I hadn't
+defined and watched someone quietly give up.
+
+It got longer than planned. Sorry about that.
+
+https://clean-core.io/clean-core-explained
+
+Don't comment "CLEAN CORE". Nothing happens. There's no bot.
+
+If something in it is wrong, though — tell me. That's the only thing I want out
+of this.
+```
+
+### Was Felix an meinem Entwurf geändert hat
+
+Drei Eingriffe, und jeder davon ist ein Hinweis für das nächste Mal.
+
+**Den Aufbau zum Kommentar-Gag gestrichen.** Mein Satz „Or the other one: comment
+'CLEAN CORE' below and a bot slides the link into your DMs like it's contraband"
+ist raus — die Pointe am Ende steht aber unverändert. Der Witz funktioniert also
+besser *ohne* Vorbereitung: „Don't comment CLEAN CORE. Nothing happens. There's
+no bot." trifft aus dem Nichts härter, weil der Leser die Gattung ohnehin kennt.
+Merke: nicht erklären, worüber gleich gewitzelt wird.
+
+**„It got longer than planned. Sorry about that." wieder eingesetzt**, obwohl ich
+es gestrichen hatte. Die kleine Entschuldigung bleibt drin — sie ist ihm wichtiger
+als die Kürze.
+
+**Die Eröffnung mit der Szene gewählt** statt der Anti-Hook-Variante. Eine
+konkrete Situation, die jeder sofort vor sich sieht, schlägt eine kluge
+Formulierung.
+
+**Netto:** kürzer als mein Entwurf, ein Witz weniger im Mittelteil, dafür beide
+menschlichen Beiläufigkeiten (Entschuldigung, Bitte um Korrektur) intakt.
+
+---
+
+## Entwurf A (vor der Überarbeitung durch Felix)
 
 ```text
 Nothing in this post will change your life. Best case, it kills one meeting
@@ -61,7 +117,7 @@ I wrote 15 pages about SAP Clean Core, which is either useful or a cry for help.
 
 ---
 
-## Version B — kürzer
+## Entwurf B — kürzere Variante
 
 ```text
 Nothing in this post will change your life. Best case, it kills one meeting
