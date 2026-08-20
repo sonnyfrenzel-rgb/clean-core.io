@@ -351,7 +351,7 @@ export const GUIDE_PARTS: Part[] = [
             ['A', 'Released SAP APIs and extension points', 'Nothing — this is where you want to be. Build here.', 'None'],
             ['B', 'Classic SAP APIs, still SAP-recommended', 'Keep, and plan for released successors over time.', 'Low'],
             ['C', 'Internal SAP APIs — conditionally clean', 'Wrap behind a clean interface, verify each release.', 'Medium'],
-            ['D', 'Direct writes to standard tables, unreleased dependencies, dynpro, kernel calls', 'Replace or re-architect. These are the upgrade blockers.', 'High'],
+            ['D', 'Direct writes to standard tables, unreleased dependencies, classic screen programs, low-level kernel calls', 'Replace or re-architect. These are the upgrade blockers.', 'High'],
           ],
         },
         notes: [
