@@ -37,16 +37,28 @@ function trend(current: number, previous: number): { text: string; colour: strin
 
 function metricRow(label: string, current: number, previous: number): string {
   const t = trend(current, previous);
+  // Block layout, not a two-column row: at 320px a long German label and a right
+  // aligned number collide, and Gmail's app is exactly where that shows. Stacked,
+  // it reads the same at any width and needs no media query to do it.
   return `
-    <tr>
-      <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; font-weight: 600;">
+    <div style="padding: 14px 0; border-bottom: 1px solid #f1f5f9;">
+      <div style="font-size: 15px; color: #334155; font-weight: 600; line-height: 1.4; margin-bottom: 4px;">
         ${label}
-      </td>
-      <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9; text-align: right; white-space: nowrap;">
-        <span style="font-size: 18px; font-weight: 800; color: #0f172a; margin-right: 10px;">${current}</span>
-        <span style="font-size: 11px; font-weight: 700; color: ${t.colour};">${t.text}</span>
-      </td>
-    </tr>`;
+      </div>
+      <div>
+        <span style="font-size: 26px; font-weight: 800; color: #0f172a; line-height: 1.1; vertical-align: middle;">${current}</span>
+        <span style="font-size: 13px; font-weight: 700; color: ${t.colour}; margin-left: 10px; vertical-align: middle;">${t.text}</span>
+      </div>
+    </div>`;
+}
+
+/** Same reasoning as metricRow: label above value, never side by side. */
+function totalRow(label: string, value: string, highlight = false): string {
+  return `
+    <div style="padding: 9px 0; border-bottom: 1px solid #eef2f6;">
+      <div style="font-size: 13px; color: #64748b; line-height: 1.4;">${label}</div>
+      <div style="font-size: 17px; font-weight: 800; color: ${highlight ? '#b45309' : '#0f172a'}; line-height: 1.3;">${value}</div>
+    </div>`;
 }
 
 function personList(
@@ -59,14 +71,14 @@ function personList(
         .map(
           (p) => `
         <div style="padding: 9px 0; border-bottom: 1px solid #f1f5f9;">
-          <div style="font-size: 14px; font-weight: 700; color: #0f172a;">${p.name}${
+          <div style="font-size: 15px; font-weight: 700; color: #0f172a;">${p.name}${
             p.suffix ? ` <span style="font-weight: 600; color: #047857;">${p.suffix}</span>` : ''
           }</div>
-          <div style="font-size: 12px; color: #64748b; word-break: break-word;">${p.email}</div>
+          <div style="font-size: 13px; color: #64748b; word-break: break-word; line-height: 1.5;">${p.email}</div>
         </div>`,
         )
         .join('')
-    : `<p style="font-size: 13px; color: #94a3b8; margin: 6px 0 0 0; font-style: italic;">${emptyText}</p>`;
+    : `<p style="font-size: 14px; color: #94a3b8; margin: 6px 0 0 0; font-style: italic; line-height: 1.5;">${emptyText}</p>`;
 
   return `
     <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
@@ -138,43 +150,23 @@ export function renderUsageReportEmail(report: UsageReport): string {
     <p class="body-text" style="font-size: 12px; color: #94a3b8; margin: 0 0 10px 0;">
       ${fmtDate(report.periodStart)} bis ${fmtDate(report.periodEnd)}
     </p>
-    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 26px;">
+    <div style="margin-bottom: 26px;">
       ${metricRow('Neue Registrierungen', current.registrations, previous.registrations)}
       ${metricRow('Erstmals aktiviert', current.activations, previous.activations)}
       ${metricRow('Analysen durchgeführt', current.runs, previous.runs)}
       ${metricRow('Neue Projekte', current.projects, previous.projects)}
       ${metricRow('Verbrauchte Einheiten', current.units, previous.units)}
-    </table>
+    </div>
 
     <!-- Bestand -->
     <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
       <span style="font-weight: 800; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 12px;">Gesamtbestand</span>
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="font-size: 13px; color: #334155;">
-        <tr>
-          <td style="padding: 5px 0;">Accounts (ohne Testkonten)</td>
-          <td style="padding: 5px 0; text-align: right; font-weight: 800; color: #0f172a;">${totals.accounts}</td>
-        </tr>
-        <tr>
-          <td style="padding: 5px 0;">Analysen insgesamt</td>
-          <td style="padding: 5px 0; text-align: right; font-weight: 800; color: #0f172a;">${totals.runsAllTime}</td>
-        </tr>
-        <tr>
-          <td style="padding: 5px 0;">Eindeutige ABAP-Objekte</td>
-          <td style="padding: 5px 0; text-align: right; font-weight: 800; color: #0f172a;">${totals.objectsAnalysed}</td>
-        </tr>
-        <tr>
-          <td style="padding: 5px 0;">Einheiten verbraucht / vergeben</td>
-          <td style="padding: 5px 0; text-align: right; font-weight: 800; color: #0f172a;">${totals.unitsUsed} / ${totals.unitsGranted}</td>
-        </tr>
-        <tr>
-          <td style="padding: 5px 0;">Am Limit</td>
-          <td style="padding: 5px 0; text-align: right; font-weight: 800; color: ${totals.atLimit ? '#b45309' : '#0f172a'};">${totals.atLimit}</td>
-        </tr>
-        <tr>
-          <td style="padding: 5px 0;">Mit eigenem Gemini-Key (BYOK)</td>
-          <td style="padding: 5px 0; text-align: right; font-weight: 800; color: #0f172a;">${totals.byok}</td>
-        </tr>
-      </table>
+      ${totalRow('Accounts (ohne Testkonten)', String(totals.accounts))}
+      ${totalRow('Analysen insgesamt', String(totals.runsAllTime))}
+      ${totalRow('Eindeutige ABAP-Objekte', String(totals.objectsAnalysed))}
+      ${totalRow('Einheiten verbraucht von vergeben', `${totals.unitsUsed} von ${totals.unitsGranted}`)}
+      ${totalRow('Accounts am Limit', String(totals.atLimit), totals.atLimit > 0)}
+      ${totalRow('Mit eigenem Gemini-Key (BYOK)', String(totals.byok))}
     </div>
 
     ${personList(
