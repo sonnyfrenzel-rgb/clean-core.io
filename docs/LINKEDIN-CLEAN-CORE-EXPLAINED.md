@@ -13,12 +13,12 @@ abwehren.
 ## Version A — die, die ich posten würde
 
 ```text
-Someone on LinkedIn is about to explain Clean Core to you. It's me. I'm someone.
+Nobody asked for this, but here's a post about SAP Clean Core.
 
-I know how this usually goes. A bit of insight, then a form, then "got 15
-minutes next week?", then a newsletter you never asked for. Or the other
-version: comment "CLEAN CORE" below and a bot slides the link into your DMs
-like it's contraband.
+I know how it looks from your side. Someone in your feed, explaining a thing,
+and at the end there's a form, or a "got 15 minutes next week?", or a newsletter
+you never signed up for. Or the other one: comment "CLEAN CORE" below and a bot
+slides the link into your DMs like it's contraband.
 
 Turns out you're allowed to just put the link in the post. So that's what this
 is. A page. You read it and you leave.
@@ -39,14 +39,30 @@ If something in it is wrong, though — tell me. That's the only thing I want ou
 of this.
 ```
 
+### Alternative erste Zeilen
+
+Nur die erste Zeile ist vor dem „…see more" sichtbar, sie trägt also den Post.
+Alle drei funktionieren mit dem Rest unverändert:
+
+```text
+Nobody asked for this, but here's a post about SAP Clean Core.
+```
+```text
+Fair warning: I'm about to be one of those people who explains something to you
+on LinkedIn. Today it's SAP Clean Core.
+```
+```text
+Hi. I'm the guy in your feed about to explain Clean Core to you.
+```
+
 ---
 
 ## Version B — kürzer
 
 ```text
-Someone on LinkedIn is about to explain Clean Core to you. It's me. I'm someone.
+Nobody asked for this, but here's a post about SAP Clean Core.
 
-You know both versions of this by now. Link, form, "got 15 minutes next week?",
+You know both versions of this by now. Form, "got 15 minutes next week?",
 newsletter. Or: comment "CLEAN CORE" below and a bot DMs you the file like it's
 contraband.
 
@@ -64,9 +80,13 @@ Don't comment "CLEAN CORE". Nothing happens. There's no bot.
 
 ## Warum das so gebaut ist
 
-**„It's me. I'm someone."** — der Autor stellt sich sofort auf eine Stufe mit den
-Leuten, über die man sich beim Scrollen ärgert. Ab da kann er niemandem mehr von
-oben herab kommen.
+**„Nobody asked for this."** — die demütigste denkbare Eröffnung, und sie ist ein
+Satz, den Leute wirklich sagen. Der Autor räumt ein, ungefragt im Feed zu stehen,
+bevor irgendjemand es ihm vorwerfen kann.
+
+Die Vorgängerzeile „It's me. I'm someone." ist raus: Das war ein Wortspiel, der
+Leser musste kurz ein Rätsel lösen. Gelungene Wortspiele klingen *geschrieben* —
+und genau das soll der Post nicht.
 
 **Die Aufzählung des Trichters** (Formular, 15-Minuten-Termin, Newsletter) ist
 der Satz, bei dem die Leute nicken. Jeder kennt ihn, keiner sagt ihn.
