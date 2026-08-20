@@ -93,3 +93,48 @@ Ob die Starter-Beispiele daran etwas geändert haben, lässt sich im Admin-Tab a
 „Objekte" ablesen.
 
 **Dringlichkeit:** terminiert.
+
+---
+
+## PDF-Drift-Check in die Pipeline hängen
+
+**Warum:** `public/clean-core-explained.pdf` ist ein eingecheckter Build-Artefakt.
+Es wird bewusst nicht pro Anfrage erzeugt — ein Headless-Chromium im Cloud-Run-Image
+kostet hunderte Megabyte für ein Dokument, das sich vielleicht monatlich ändert.
+Der Preis dafür ist die Möglichkeit stiller Drift: jemand ändert ein Kapitel, die
+Webseite ist aktuell, und das PDF, das die Leute weiterreichen, sagt weiter das Alte.
+
+Der Prüfschritt existiert bereits und braucht weder Browser noch Server:
+
+```bash
+npm run build:guide-pdf -- --check
+```
+
+Er hasht `lib/clean-core-guide.ts`, `lib/clean-core-capabilities.ts` und
+`app/clean-core-explained-print/page.tsx` gegen `public/clean-core-explained.pdf.sha256`
+und endet mit Exit-Code 1, wenn sie auseinanderlaufen.
+
+**Was zu tun ist:** eine Stufe im `validate`-Job von `.github/workflows/deploy.yml`,
+zwischen Lint und Build.
+
+**Bewusst offen gelassen:** die Stufe blockiert dann jeden Deploy, bei dem Inhalt
+geändert, aber das PDF nicht neu erzeugt wurde. Das ist der Zweck — aber es ist eine
+Entscheidung, die getroffen werden sollte, statt sie nebenbei einzubauen.
+
+**Dringlichkeit:** niedrig, solange Inhaltsänderungen am Guide selten sind.
+
+---
+
+## Seitenzahl im Share-Bereich wird nicht mitgezogen
+
+**Warum:** Die Kachel „Download the PDF" in
+[components/GuideShareBar.tsx](../components/GuideShareBar.tsx) nennt „21 pages,
+typeset for printing". Die Zahl ist hart notiert. Wächst der Guide, stimmt sie nicht
+mehr — eine kleine Unwahrheit auf einer Seite, deren ganzes Argument Belegbarkeit ist.
+
+**Optionen:** entweder der PDF-Generator schreibt die Seitenzahl in die Sidecar-Datei
+und die Kachel liest sie beim Build, oder die Angabe entfällt zugunsten der Dateigrösse
+(die der Browser ohnehin anzeigt).
+
+**Dringlichkeit:** niedrig — aber beim nächsten inhaltlichen Ausbau des Guides mit
+erledigen.
