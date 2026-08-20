@@ -11,7 +11,8 @@ import {
   ShieldCheck, 
   Shield, 
   Check, 
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
 import PilotWarningBanner from '@/components/PilotWarningBanner';
 import HeaderAuthButton from '@/components/HeaderAuthButton';
@@ -161,23 +162,23 @@ export default function Home() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-6">
-            <Link href="/clean-core-explained" className="text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
+          <nav className="hidden lg:flex items-center gap-7 xl:gap-9">
+            <Link href="/clean-core-explained" className="whitespace-nowrap text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
               Clean Core Explained
             </Link>
-            <Link href="/how-it-works" className="text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
+            <Link href="/how-it-works" className="whitespace-nowrap text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
               How It Works
             </Link>
-            <Link href="/sap-clean-core-object-classification" className="text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
+            <Link href="/sap-clean-core-object-classification" className="hidden xl:inline whitespace-nowrap text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
               Classification A–D
             </Link>
-            <Link href="/knowledge" className="text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
+            <Link href="/knowledge" className="whitespace-nowrap text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
               Knowledge Base
             </Link>
           </nav>
 
           <div className="shrink-0 flex items-center gap-3">
-             <div className="hidden xl:flex text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full items-center gap-1">
+             <div className="hidden 2xl:flex text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full items-center gap-1">
                <Users size={14} /> Free for the SAP Community
              </div>
              <HeaderAuthButton />
@@ -280,6 +281,28 @@ export default function Home() {
         </div>
 
         <div className="max-w-6xl mx-auto px-6 relative z-10 text-center">
+          {/* Announcement — the newest thing we have made, in the most-seen spot on
+              the site. Distinct from the eyebrow badge below it on purpose: dark
+              chip, white pill, so the two read as announcement and category
+              rather than competing for the same job. */}
+          <div className="flex justify-center mb-5">
+            <Link
+              href="/clean-core-explained"
+              className="group inline-flex items-center gap-2.5 pl-2 pr-4 py-2 rounded-full bg-white border border-gray-200 shadow-sm hover:border-green-300 hover:shadow-md transition-all animate-in fade-in slide-in-from-bottom-2 duration-700"
+          >
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-950 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+              <Sparkles size={11} className="text-green-400" /> New
+            </span>
+            <span className="text-xs md:text-sm font-extrabold text-gray-800 group-hover:text-green-700 transition-colors">
+              SAP Clean Core, explained without the jargon
+            </span>
+            <ArrowRight
+              size={14}
+              className="text-green-600 transition-transform duration-200 group-hover:translate-x-1"
+            />
+            </Link>
+          </div>
+
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs md:text-sm mb-8 border border-emerald-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
             <ShieldCheck className="w-4 h-4" />
             <span className="uppercase tracking-wider">Free for the SAP Community · Clean Core & ABAP Transformation</span>

@@ -4,6 +4,7 @@ import {
   ArrowLeft, ArrowRight, BookOpen, Lightbulb, AlertTriangle, GraduationCap,
   MessageSquareQuote, PlayCircle, ExternalLink, Check, Clock, Ban, Sparkles,
 } from 'lucide-react';
+import GuideShareBar from '@/components/GuideShareBar';
 import { GUIDE_PARTS, GUIDE_FAQ, NOTE_LABELS, type NoteKind } from '@/lib/clean-core-guide';
 import { CAPABILITIES, HONEST_SCOPE } from '@/lib/clean-core-capabilities';
 import { CONTACT_EMAIL } from '@/lib/constants';
@@ -110,6 +111,8 @@ export default function CleanCoreExplainedPage() {
           </div>
         </div>
       </header>
+
+      <GuideShareBar />
 
       {/* Answer-first summary — what a hurried reader and an answer engine both take away */}
       <section className="bg-white border border-green-200 rounded-[2rem] p-7 sm:p-10 shadow-sm">
