@@ -23,48 +23,57 @@ const fp = (seed: string, n: number) =>
   Object.fromEntries(Array.from({ length: n }, (_, i) => [`${seed}${i}`.padEnd(64, '0'), true]));
 
 /**
- * Seeded cohort — one account per state the Usage & Quota panel must render.
- * These are Firestore profiles only; the panel reads `users` and needs no Auth accounts.
+ * Seeded cohort — one account per state the panel must render.
+ *
+ * The addresses deliberately look like real people: the panel hides CI accounts by
+ * default, so a cohort on a test domain would be invisible and the test would pass
+ * against an empty table. The one CI-looking account is there on purpose, to prove
+ * the filter both hides and reveals it.
  */
 const COHORT = [
   {
     uid: 'usage-e2e-fresh',
-    firstName: 'Lena', lastName: 'Vogt', email: 'lena.vogt@usage-e2e.io',
+    firstName: 'Lena', lastName: 'Vogt', email: 'lena.vogt@northwind-industries.com',
     tier: 'pilot', status: 'approved', transformationsUsed: 0, transformationsLimit: 5,
   },
   {
     uid: 'usage-e2e-partial',
-    firstName: 'Maria', lastName: 'Huber', email: 'maria.huber@usage-e2e.io',
+    firstName: 'Maria', lastName: 'Huber', email: 'maria.huber@northwind-industries.com',
     tier: 'pilot', status: 'approved', transformationsUsed: 3, transformationsLimit: 5,
     chargedInputs: fp('a', 3),
   },
   {
     uid: 'usage-e2e-atlimit',
-    firstName: 'Jonas', lastName: 'Roth', email: 'jonas.roth@usage-e2e.io',
+    firstName: 'Jonas', lastName: 'Roth', email: 'jonas.roth@northwind-industries.com',
     tier: 'pilot', status: 'approved', transformationsUsed: 5, transformationsLimit: 5,
     chargedInputs: fp('b', 5),
   },
   {
     uid: 'usage-e2e-byok',
-    firstName: 'Tim', lastName: 'Bauer', email: 'tim.bauer@usage-e2e.io',
+    firstName: 'Tim', lastName: 'Bauer', email: 'tim.bauer@northwind-industries.com',
     tier: 'pilot', status: 'approved', transformationsUsed: 0, transformationsLimit: 5,
     byokConfigured: true, byokLast4: '9f2c',
   },
   {
     uid: 'usage-e2e-pending',
-    firstName: 'Sabine', lastName: 'Klein', email: 'sabine.klein@usage-e2e.io',
+    firstName: 'Sabine', lastName: 'Klein', email: 'sabine.klein@northwind-industries.com',
     tier: 'pilot', status: 'pending', transformationsUsed: 0, transformationsLimit: 5,
+  },
+  {
+    // A pipeline account — must be hidden until explicitly asked for.
+    uid: 'usage-e2e-ci',
+    firstName: 'Superduper', lastName: 'E2E', email: 'superduper-e2e-99999@cleancore-test.io',
+    tier: 'starter', status: 'approved', transformationsUsed: 1, transformationsLimit: 25,
   },
 ];
 
 test.describe('Admin Console — Usage & Quota panel', () => {
   test.beforeAll(async () => {
-    // Admin account (Auth + profile + custom claim — the rules gate on the claim).
     let adminUid = '';
     try {
       adminUid = (await createUserWithEmailAndPassword(firebaseAuth, ADMIN_EMAIL, ADMIN_PASSWORD)).user.uid;
-    } catch (error: any) {
-      if (error.code !== 'auth/email-already-in-use') throw error;
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code !== 'auth/email-already-in-use') throw error;
       try {
         adminUid = (await signInWithEmailAndPassword(firebaseAuth, ADMIN_EMAIL, ADMIN_PASSWORD)).user.uid;
       } catch {
@@ -85,11 +94,7 @@ test.describe('Admin Console — Usage & Quota panel', () => {
     }
   });
 
-  test('admin sees live per-user consumption of the free transformations', async ({ page }) => {
-    test.setTimeout(120 * 1000);
-    page.on('pageerror', (err) => process.stdout.write(`[BROWSER ERROR] ${err.message}\n`));
-
-    // --- Sign in ---
+  async function signInAsAdmin(page: import('@playwright/test').Page) {
     await page.goto('/');
     await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
     await page.waitForSelector('input[type="email"]');
@@ -97,9 +102,8 @@ test.describe('Admin Console — Usage & Quota panel', () => {
     await page.fill('input[type="password"]', ADMIN_PASSWORD);
     await page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Anmelden")');
     await page.waitForTimeout(3000);
-    await page.evaluate(() => window.stop());
+    await page.evaluate(() => window.stop()).catch(() => {});
 
-    // Retry once — the router.push started by the sign-in can abort this navigation.
     try {
       await page.goto('/admin', { waitUntil: 'commit', timeout: 45000 });
     } catch {
@@ -108,15 +112,17 @@ test.describe('Admin Console — Usage & Quota panel', () => {
       await page.goto('/admin', { waitUntil: 'commit', timeout: 45000 });
     }
     await expect(page.getByRole('heading', { name: /Admin Control Room/i })).toBeVisible({ timeout: 30000 });
-
-    // --- Switch to the new section ---
     await page.click('button:has-text("Usage & Quota")');
-    await expect(page.getByRole('heading', { name: /Verbrauch der freien Transformationen/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Free transformation usage/i })).toBeVisible();
+    await expect(page.getByText('Streaming usage data...')).toHaveCount(0, { timeout: 20000 });
+    await expect(page.getByText('Access failed')).toHaveCount(0);
+  }
 
-    // The stream must resolve — the loading state must not stick, and a rules
-    // rejection would surface as the explicit "Zugriff fehlgeschlagen" panel.
-    await expect(page.getByText('Verbrauchsdaten werden gestreamt...')).toHaveCount(0, { timeout: 20000 });
-    await expect(page.getByText('Zugriff fehlgeschlagen')).toHaveCount(0);
+  test('admin sees live per-user consumption of the free transformations', async ({ page }) => {
+    test.setTimeout(120 * 1000);
+    page.on('pageerror', (err) => process.stdout.write(`[BROWSER ERROR] ${err.message}\n`));
+
+    await signInAsAdmin(page);
 
     // --- Rows render the counters straight from Firestore ---
     const partialRow = page.locator('button', { hasText: 'Maria Huber' }).first();
@@ -128,50 +134,89 @@ test.describe('Admin Console — Usage & Quota panel', () => {
 
     const byokRow = page.locator('button', { hasText: 'Tim Bauer' }).first();
     await expect(byokRow).toContainText('BYOK');
-    await expect(byokRow).toContainText('unbegrenzt');
+    await expect(byokRow).toContainText('unlimited');
 
     await expect(page.locator('button', { hasText: 'Sabine Klein' }).first()).toContainText('Pending');
 
-    // --- KPI strip ---
-    await expect(page.getByText('Einheiten', { exact: true })).toBeVisible();
-    await expect(page.getByText('ABAP-Objekte', { exact: true })).toBeVisible();
-    await expect(page.getByText('Am Limit', { exact: true }).first()).toBeVisible();
+    // --- KPI strip, in English ---
+    await expect(page.getByText('Units', { exact: true })).toBeVisible();
+    await expect(page.getByText('ABAP objects', { exact: true })).toBeVisible();
+    await expect(page.getByText('At limit', { exact: true }).first()).toBeVisible();
 
-    // --- Filter: only the exhausted account survives "Am Limit" ---
-    await page.click('button:has-text("Am Limit")');
+    // --- Filters ---
+    await page.getByRole('button', { name: 'At limit', exact: true }).click();
     await expect(page.locator('button', { hasText: 'Jonas Roth' }).first()).toBeVisible();
     await expect(page.locator('button', { hasText: 'Maria Huber' })).toHaveCount(0);
 
-    await page.click('button:has-text("BYOK")');
+    await page.getByRole('button', { name: 'BYOK', exact: true }).click();
     await expect(page.locator('button', { hasText: 'Tim Bauer' }).first()).toBeVisible();
     await expect(page.locator('button', { hasText: 'Jonas Roth' })).toHaveCount(0);
 
-    await page.click('button:has-text("Alle")');
+    await page.getByRole('button', { name: 'All', exact: true }).click();
 
     // --- Search ---
-    await page.fill('input[placeholder="Name oder E-Mail suchen..."]', 'jonas.roth');
+    await page.fill('input[placeholder="Search name or email..."]', 'jonas.roth');
     await expect(page.locator('button', { hasText: 'Jonas Roth' }).first()).toBeVisible();
     await expect(page.locator('button', { hasText: 'Maria Huber' })).toHaveCount(0);
-    await page.fill('input[placeholder="Name oder E-Mail suchen..."]', '');
+    await page.fill('input[placeholder="Search name or email..."]', '');
 
-    // --- Drill-down shows the distinct billed ABAP sources ---
+    // --- Drill-down ---
     await partialRow.click();
-    await expect(page.getByText('Eindeutige ABAP-Objekte')).toBeVisible();
-    await expect(page.getByText('3 von 5')).toBeVisible();
-    // The panel must expand to its FULL height. `toBeVisible()` alone would pass on
-    // content clipped by the container's overflow-hidden, so measure it instead:
-    // once the height animation settles, nothing may overflow.
+    await expect(page.getByText('Distinct ABAP objects')).toBeVisible();
+    await expect(page.getByText('3 of 5')).toBeVisible();
     await expect(page.getByText('UID', { exact: true })).toBeVisible();
-    await expect(page.getByText(/Gezählt wird ausschließlich der Analyse-Run/)).toBeVisible();
+    await expect(page.getByText(/Only the analysis run in/)).toBeVisible();
+
+    // Fully expanded, not clipped by the container's overflow-hidden.
     await expect
       .poll(
         async () =>
           page.locator('[data-testid="usage-detail"]').evaluate((el) => el.scrollHeight - el.clientHeight),
-        { timeout: 5000, message: 'expanded detail panel is clipped by its container' },
+        { timeout: 5000, message: 'expanded detail panel is clipped' },
       )
       .toBeLessThanOrEqual(1);
+  });
 
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({ path: 'test-results/admin-usage-panel.png', fullPage: true });
+  test('CI accounts are hidden by default and revealed on request', async ({ page }) => {
+    test.setTimeout(120 * 1000);
+    await signInAsAdmin(page);
+
+    // The pipeline creates a user per run; they outnumbered real accounts four to
+    // one, which is what made the panel unusable for its actual purpose.
+    await expect(page.locator('button', { hasText: 'Superduper E2E' })).toHaveCount(0);
+    await expect(page.locator('button', { hasText: 'Maria Huber' }).first()).toBeVisible();
+
+    // The count has to be honest about what is being withheld.
+    const toggle = page.getByText(/Show \d+ CI test accounts?/);
+    await expect(toggle).toBeVisible();
+
+    await page.getByRole('checkbox').check();
+    await expect(page.locator('button', { hasText: 'Superduper E2E' }).first()).toBeVisible();
+    await expect(page.locator('button', { hasText: 'Superduper E2E' }).first()).toContainText('CI');
+
+    await page.getByRole('checkbox').uncheck();
+    await expect(page.locator('button', { hasText: 'Superduper E2E' })).toHaveCount(0);
+  });
+
+  test('the panel is usable on a phone', async ({ page }) => {
+    test.setTimeout(120 * 1000);
+    await signInAsAdmin(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+
+    // Nothing may push the page sideways — the failure mode that makes an admin
+    // table unusable on a phone.
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow, `page overflows by ${overflow}px at 375px`).toBeLessThanOrEqual(1);
+
+    // The per-row data must still be readable, with its own labels now that the
+    // column headers are hidden.
+    const row = page.locator('button', { hasText: 'Maria Huber' }).first();
+    await expect(row).toBeVisible();
+    await expect(row).toContainText('3 / 5');
+    await expect(row).toContainText('Objects:');
+
+    await page.screenshot({ path: 'test-results/admin-usage-panel-mobile.png', fullPage: true });
   });
 });
