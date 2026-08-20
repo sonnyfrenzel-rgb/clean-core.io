@@ -1,4 +1,5 @@
 import { wrapEmailDocument } from './email-layout';
+import { APP_VERSION } from './version';
 import type { UsageReport } from './usage-report';
 
 /**
@@ -215,7 +216,7 @@ export function renderUsageReportEmail(report: UsageReport): string {
   </div>
 
   <div class="footer" style="text-align: center; margin-top: 28px; padding: 0 16px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
-    Interner Bericht für Administratoren &middot; Clean-Core.io &middot; System-Version v2.3.0
+    Interner Bericht für Administratoren &middot; Clean-Core.io &middot; System-Version ${APP_VERSION}
   </div>
 </div>`;
 

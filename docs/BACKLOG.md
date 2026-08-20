@@ -3,6 +3,33 @@
 Offene Punkte, die aus der Arbeit vom 19./20. August 2026 übrig geblieben sind.
 Kurz gehalten: was, warum, und wie dringend.
 
+**Stand 20.08.2026, das Wichtigste zuerst:**
+
+| Punkt | Wer | Dringlichkeit |
+|---|---|---|
+| LinkedIn-Post veröffentlichen (Entwürfe liegen fertig) | Felix | hoch — die Seite ist live, der Anlass verfällt |
+| Artifact Registry aufräumen, 143 GB | Felix (GCP-Konsole) | hoch — Kostentreiber |
+| Veraltete Cloud-Run-Dienste löschen | Felix (GCP-Konsole) | mittel |
+| Zufriedenheitsumfrage vorbereiten, fällig 02.09. | gemeinsam | mittel — Termin steht |
+| PDF-Drift-Check in die Pipeline hängen | Entscheidung Felix | niedrig |
+
+---
+
+## LinkedIn-Post zum Clean-Core-Guide
+
+**Warum:** Die Seite `/clean-core-explained` ist live, die Community-Mail ist an
+30 Empfänger raus, der Share-Bereich oben auf der Seite ist gebaut. Der Post ist
+das letzte Stück der Aktivierungskette und das einzige, das noch aussteht.
+
+**Wo:** Drei fertige Fassungen plus Notizen zu Zeitpunkt und Hashtags in
+[docs/LINKEDIN-CLEAN-CORE-EXPLAINED.md](./LINKEDIN-CLEAN-CORE-EXPLAINED.md).
+Empfehlung ist Version A; Version B eignet sich für einen zweiten Anlauf rund
+eine Woche später.
+
+**Bestes Zeitfenster** für ein deutsch-/europäisches SAP-Publikum: Dienstag bis
+Donnerstag, 07:30–09:00 MEZ. In den ersten zwei Stunden auf jeden Kommentar
+antworten — das ist bei dieser Reichweite der gesamte Verteilmechanismus.
+
 ---
 
 ## Alte Cloud-Run-Dienste und Buckets abräumen

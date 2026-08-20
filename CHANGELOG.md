@@ -5,6 +5,74 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.1] — 2026-08-20
+
+Community activation. A long-form Clean Core explainer built to be forwarded, a
+paper edition of it as a PDF, and the sharing affordances around both. Nothing in
+the analysis engine or the trust chain changed.
+
+### Added
+- **`/clean-core-explained` — the complete Clean Core explainer.** Seven parts,
+  about twenty minutes, every term defined before it is used: from what "the core"
+  is and why modifying it breaks upgrades, through the five dimensions and the
+  in-app-versus-side-by-side decision, to the A–D grading model. Part 6 states what
+  Clean-Core.io does per stage with its benefit, its effort and — as plainly —
+  *where it stops*, followed by Honest Scope.
+- **Content as data.** `lib/clean-core-guide.ts` and `lib/clean-core-capabilities.ts`
+  hold the material; the visible text and the `Article` + `FAQPage` JSON-LD are
+  generated from the same objects, so the two cannot drift.
+- **`/clean-core-explained-print` and a PDF build step.** A second renderer over the
+  same data with a cover, controlled page breaks and ink-frugal styling, printed to
+  `public/clean-core-explained.pdf` by `npm run build:guide-pdf` (Chromium, so the
+  result is vector text with real page numbers). `-- --check` compares a hash of the
+  source files against `public/clean-core-explained.pdf.sha256` and fails if the PDF
+  is stale. The route is `noindex` and outside the `(app)` group, so it inherits no
+  header, footer or chatbot.
+- **Share bar at the top of the guide** (`components/GuideShareBar.tsx`): copy the
+  link, download the PDF, share on LinkedIn. Staggered entrance, hover lift and a
+  copied-state confirmation; everything collapses to a plain fade under
+  `prefers-reduced-motion`.
+- **Landing announcement.** A "NEW" pill above the hero eyebrow pointing at the
+  guide, plus nav, footer, sitemap and knowledge-hub entries.
+- **Campaign registry in the bulk sender.** `scripts/send-community-mail.ts` now takes
+  `--campaign`; the id recorded in `email_sends`, the subject and the two template
+  files are registered together so they cannot drift apart.
+
+### Changed
+- **Landing header spacing.** A fourth nav item made the labels wrap onto two lines,
+  which read as uneven spacing. Labels are now `whitespace-nowrap`; to make room the
+  community badge appears from `2xl` and *Classification A–D* from `xl` (both remain
+  reachable from the hero eyebrow and the footer). Verified at 390 / 768 / 1024 /
+  1152 / 1280 / 1440 / 1536 / 1920 px.
+- **Comparison tables restack on phones.** `.doc-table` (in `app/globals.css`) turns
+  three-column tables into labelled blocks below 640px — one DOM, so crawlers and
+  screen readers still receive a real `<table>` instead of a sideways scroll.
+- **Print edition: 21 pages down to 15.** `break-inside: avoid` on `.chapter` was the
+  cause; two chapters measured 1001px and 1090px against a 979px page, so the rule
+  could not be honoured and the fragmenter stranded the pages before them at under
+  16% full. Only small units stay atomic now, `.part:first-of-type` (which never
+  matched, because the answer box is also a `<section>`) became an explicit class,
+  and the setting is tighter — body leading 1.62 → 1.52, a narrower term column —
+  so the vocabulary list and the FAQ each fit their page.
+
+### Removed
+- **`/api/share/guide`, the mail-the-PDF endpoint.** Removed at the owner's call
+  before it saw real traffic. An unauthenticated endpoint that sends mail from this
+  domain to an address a stranger types is a spam relay unless every defence holds
+  at once, and the domain also carries the community list — one abuse incident would
+  have cost deliverability for every recipient on it. The defences were in place
+  (constant subject, name stripped to letters, per-IP and global rate limits,
+  honeypot, nothing stored), but the downside was uncapped and the upside was saving
+  a sharer one attachment step. The download covers the same intention.
+
+### Operations
+- Community mail `clean-core-explained` sent to 30 recipients (0 failures); the
+  account holder had already received it as the test send.
+- The manually-registered "Super Duper" test account was added to
+  `email_suppressions` — `lib/test-accounts.ts` only recognises CI-created accounts,
+  and `ifcoat.com` is a disposable-mail domain, so a bounce there would have cost
+  reputation on the first bulk campaign.
+
 ## [v2.3.0] — 2026-08-19
 
 Metering realignment. The free community quota now counts what the product actually

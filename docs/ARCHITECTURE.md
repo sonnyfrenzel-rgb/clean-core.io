@@ -138,7 +138,55 @@ Switch `service_name` to `clean-core-test` / `clean-core-dev` for the other envs
 - Styling: Tailwind v4 + `clsx`/`tailwind-merge` (`lib/utils.ts`); dark mode via `dark` class from profile; icons `lucide-react`, diagrams `mermaid`/`@xyflow/react`, charts `recharts`, animation `motion`.
 - `lib/version.ts` (`APP_VERSION`, `APP_RELEASE_DATE`) drives sitemap `lastModified` and drift-guard tests — keep it in sync on release.
 
-## 10. Gotchas
+## 10. Public content surface (the Clean Core guide)
+
+`/clean-core-explained` is a long-form explainer that exists to be forwarded — it
+is the top of the funnel, not a product page. Three properties matter when
+changing it.
+
+**Content is data, not markup.** `lib/clean-core-guide.ts` (parts, chapters,
+notes, tables, FAQ) and `lib/clean-core-capabilities.ts` (the seven stages with
+benefit / effort / *where it stops*, plus Honest Scope) are the single source.
+The visible text and the `Article` + `FAQPage` JSON-LD are generated from the
+same objects, so a correction cannot land in one and miss the other. Edit the
+data module, never the page.
+
+**There are two renderers over that data.**
+
+| Route | Purpose | Notes |
+|---|---|---|
+| `app/(app)/clean-core-explained/page.tsx` | The web version | Hero, share bar, CTAs; indexed, canonical, in the sitemap |
+| `app/clean-core-explained-print/page.tsx` | The paper version | Cover, page breaks, ink-frugal; **noindex**, outside `(app)` so it inherits no shell |
+
+The print route is a second renderer rather than a print stylesheet because the
+web version leads with things that have no place in a forwarded document.
+
+**The PDF is a committed build artefact.**
+
+```bash
+npm run build:guide-pdf              # renders the print route via Chromium → public/clean-core-explained.pdf
+npm run build:guide-pdf -- --check   # no browser: is the committed PDF still current?
+```
+
+It is not generated per request: a headless Chromium in the Cloud Run image
+would cost hundreds of megabytes to produce a document that changes monthly.
+The price of that choice is silent drift — content edited, website current,
+forwarded PDF still saying the old thing — so the generator writes a hash of its
+source files to `public/clean-core-explained.pdf.sha256` and `--check` compares
+against it. **After any edit to the two data modules or the print page,
+regenerate the PDF and commit it.** The check is not wired into CI yet (see
+`docs/BACKLOG.md`).
+
+**Print pagination, if you touch the CSS.** Never put `break-inside: avoid` on a
+`.chapter` — several are taller than an A4 text block, so the rule cannot be
+honoured and the fragmenter strands the preceding page nearly blank. Keep
+`avoid` for small units only (headings, notes, figures, table rows, definition
+rows, capability cards) and use `break-after: avoid` to keep headings attached
+to what follows. To verify a change, measure each `.part` against the 979px page
+box with print media emulated; every part should either fit a page or leave a
+tail above ~60%.
+
+## 11. Gotchas
 
 - Local Node is v20.x but the project requires ≥22.8 (CI/Cloud Run use 22). Bump local Node for parity.
 - Builds fail on any TS/ESLint error (`ignoreBuildErrors: false`).
