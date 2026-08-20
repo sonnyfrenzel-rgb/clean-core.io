@@ -112,7 +112,7 @@ jobs:
           case "$REF_NAME" in
             main)
               echo "service=clean-core" >> "$GITHUB_OUTPUT"
-              echo "db_id=ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e" >> "$GITHUB_OUTPUT"
+              echo "db_id=clean-core-eu" >> "$GITHUB_OUTPUT"
               echo "app_url=https://clean-core.io" >> "$GITHUB_OUTPUT"
               ;;
             release)

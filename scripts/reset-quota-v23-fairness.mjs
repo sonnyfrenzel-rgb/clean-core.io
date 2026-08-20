@@ -24,7 +24,8 @@ import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 const PROJECT_ID = 'cleancore-491216';
-const DATABASE_ID = 'ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e';
+// Production moved to europe-west1 on 2026-08-20; see docs/PLAN-FIRESTORE-MIGRATION.md.
+const DATABASE_ID = 'clean-core-eu';
 const APPLY = process.argv.includes('--apply');
 
 if (process.env.FIRESTORE_EMULATOR_HOST) {

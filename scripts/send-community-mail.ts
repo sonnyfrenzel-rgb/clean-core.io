@@ -29,9 +29,12 @@ import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { createUnsubscribeToken, normaliseEmail } from '../lib/unsubscribe-token';
 import { isTestAccount } from '../lib/test-accounts';
+import { FIRESTORE_DB_ID } from '../lib/constants';
 
 const PROJECT_ID = 'cleancore-491216';
-const DATABASE_ID = 'ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e';
+// Imported rather than hardcoded so a database migration cannot leave the
+// sender reading a retired database.
+const DATABASE_ID = FIRESTORE_DB_ID;
 
 /** Bump when a genuinely new mail goes out, so `email_sends` stays per-campaign. */
 const CAMPAIGN = 'community-update-v2.3';

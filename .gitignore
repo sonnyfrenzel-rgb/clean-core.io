@@ -14,3 +14,6 @@ scratch/
 .agents/
 .antigravity/
 .claude/
+
+# Firestore migration artefacts (baselines, exported rulesets) — evidence, not source
+migration/

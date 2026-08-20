@@ -9,7 +9,7 @@
 export const FIREBASE_PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'cleancore-491216';
 
 /** Firestore database ID. */
-export const FIRESTORE_DB_ID = process.env.NEXT_PUBLIC_FIRESTORE_DB_ID || 'ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e';
+export const FIRESTORE_DB_ID = process.env.NEXT_PUBLIC_FIRESTORE_DB_ID || 'clean-core-eu';
 
 /** Contact email shown in UI and email footers. */
 export const CONTACT_EMAIL = 'info@clean-core.io';

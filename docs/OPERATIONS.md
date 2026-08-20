@@ -45,7 +45,7 @@ gcloud beta monitoring channels create --display-name="Ops" \
 - **Scheduled Firestore exports** (managed) to a dedicated EU GCS bucket, daily, 30-day retention:
 ```bash
 gcloud firestore export gs://cleancore-backups/$(date +%F) \
-  --database=ai-studio-e57d33e3-9092-46bd-9c18-ac19c9a8b67e --region=europe-west1
+  --database=clean-core-eu --region=europe-west1
 # Schedule via Cloud Scheduler → a small job / Cloud Function invoking the export.
 ```
 - **Restore must be tested** at least annually (an untested backup is not a backup); record the result in the ops log.
