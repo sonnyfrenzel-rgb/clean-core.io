@@ -1,93 +1,142 @@
 # LinkedIn post — Clean Core Explained
 
-Announcing [`/clean-core-explained`](https://clean-core.io/clean-core-explained).
-
-Written to be readable by someone scrolling: short lines, no consultant register,
-no "excited to announce", no hashtag wall. LinkedIn truncates at roughly 210
-characters on mobile, so the first two lines have to carry the hook on their own.
-
-**One emoji, at most.** Zero is also fine and probably better.
+Für [`/clean-core-explained`](https://clean-core.io/clean-core-explained).
 
 ---
 
-## Version A — the one I would post
+## Was an der ersten Fassung falsch war
+
+Die erste Version hier war zu glatt. Sie hatte alles, woran man einen
+generierten LinkedIn-Post erkennt:
+
+- Widerspruchs-Einstieg („Die Hälfte der Leute kann Clean Core nicht definieren")
+- die Wendung danach („Das ist kein Vorwurf. Ich konnte es auch lange nicht.")
+- jeder Satz ein eigener Absatz, damit es „luftig" wirkt
+- Dreierliste in der Mitte
+- Schlussfrage als Engagement-Köder
+
+Das ist eine Schablone, und Leute, die viel auf LinkedIn lesen, überspringen sie
+im Vorbeiscrollen.
+
+Was stattdessen funktioniert: eine **konkrete kleine Geschichte** mit Details,
+die sich niemand ausdenkt, eine echte Meinung, ungleich lange Sätze, und ein
+Link, der einfach dasteht statt inszeniert zu werden. Selbstironie hilft — vor
+allem, wenn man ankündigt, ein PDF geschrieben zu haben.
+
+---
+
+## Version A — Deutsch, meine Empfehlung
 
 ```text
-Half the people I talk to about Clean Core cannot actually define it.
+Ich habe ein PDF über SAP Clean Core geschrieben.
 
-That is not a dig. I could not either, for a long time. It is one of those terms
-that everyone repeats in meetings and nobody stops to unpack, because stopping to
-ask would look bad.
+Ich weiß, wie das klingt. Über diesen Satz hat sich noch nie jemand gefreut.
 
-So I wrote the thing down properly.
+Der Anlass war banal: Jemand wollte in fünf Minuten von mir wissen, was Clean
+Core eigentlich ist. Nach zwei Minuten habe ich gemerkt, dass ich vier Begriffe
+benutzt hatte, die ich vorher hätte erklären müssen. RAP. Released API. In-App.
+Side-by-Side. Alles Wörter, die genau das voraussetzen, was ich gerade erklären
+wollte.
 
-It starts at zero: what "the core" even is, why a modification breaks an upgrade,
-what SAP actually changed. Then it keeps going — the twelve terms you need, the
-in-app versus side-by-side decision, RAP versus CAP with real signals instead of
-preference, and a model for grading your own custom code from A to D.
+Also habe ich es ordentlich aufgeschrieben. Es fängt bei null an — was der
+"Core" überhaupt ist und warum ein Upgrade teuer wird, sobald jemand SAPs
+eigenen Code anfasst. Danach geht es weiter, als ich eigentlich vorhatte: RAP
+oder CAP anhand echter Kriterien statt Bauchgefühl, und ein Modell, um den
+eigenen Z-Code von A bis D einzusortieren. Dann redet man endlich über einzelne
+Objekte statt über ein Schlagwort.
 
-Every term is defined before it gets used. No prior SAP knowledge assumed. About
-twenty minutes.
+15 Seiten sind daraus geworden. Ich habe versucht zu kürzen. Jede Kürzung hat es
+schlechter gemacht.
 
-It is free, there is no sign-in, and I built it to be forwarded — to a colleague,
-to a manager who keeps asking what this is about, into whatever channel the
-argument is currently happening in.
+Kostenlos, kein Login, kein "erst E-Mail-Adresse eintragen". Im Browser lesen
+oder das PDF nehmen und an die Leute weiterschicken, die dich alle zwei Wochen
+fragen, was Clean Core denn nun bedeutet.
+
+https://clean-core.io/clean-core-explained
+
+Falls etwas darin falsch ist: sag es mir. Ich korrigiere lieber, als zu
+verteidigen.
+```
+
+Warum das trägt: „Der Anlass war banal" nimmt sofort die Wichtigtuerei raus. Die
+vier Begriffe sind konkret genug, dass jeder aus dem Umfeld nickt. „Jede Kürzung
+hat es schlechter gemacht" sagt ohne Werbesprache, dass da Substanz drin ist.
+Und der Schluss ist eine Einladung, kein Köder.
+
+---
+
+## Version B — Deutsch, kurz, für einen zweiten Anlauf in ein bis zwei Wochen
+
+```text
+"Sag mal, was ist dieses Clean Core eigentlich genau?"
+
+Wer irgendwo in der Nähe von SAP arbeitet, hat diese Frage schon bekommen.
+Meistens von jemandem, der ungefähr 40 Sekunden Aufmerksamkeit übrig hat. Die
+ehrliche Antwort dauert länger als 40 Sekunden, und deshalb sagen die meisten
+von uns irgendwas mit Upgrades und hoffen, dass das Meeting weitergeht.
+
+Ich habe die lange Antwort aufgeschrieben.
+
+Ohne SAP-Vorwissen lesbar, bis hoch zur Einordnung des eigenen Z-Codes von A bis
+D. Jeder Begriff wird erklärt, bevor er benutzt wird — klingt selbstverständlich,
+ist es offenbar nicht.
+
+Kostenlos, kein Login. Als PDF zum Weiterleiten gibt es das Ganze auch.
+
+https://clean-core.io/clean-core-explained
+```
+
+---
+
+## Version C — Englisch, falls du international posten willst
+
+```text
+I wrote a PDF about SAP Clean Core.
+
+I know how that sounds. Nobody has ever been thrilled by that sentence.
+
+It started somewhere mundane. Someone asked me to explain Clean Core in five
+minutes, and about two minutes in I noticed I had used four terms I never
+defined. RAP. Released API. In-app. Side-by-side. All of them quietly assuming
+the thing I was supposed to be explaining.
+
+So I sat down and did it properly. It starts at zero — what "the core" actually
+is, why touching SAP's own code turns a routine upgrade into a project. Then it
+goes further than I planned: RAP versus CAP with real criteria instead of taste,
+and a way to sort your own Z-code from A to D, so the discussion is about
+specific objects rather than a slogan.
+
+It came out at 15 pages. I tried to cut it. Every cut made it worse.
+
+Free, no sign-in, no "enter your email to download". Read it in the browser, or
+take the PDF and send it to whoever keeps asking you what Clean Core means.
 
 https://clean-core.io/clean-core-explained
 
 If something in it is wrong, tell me. I would rather fix it than defend it.
 ```
 
-## Version B — shorter, for a second push a week later
-
-```text
-"We need to be Clean Core."
-
-Fine. What does that mean for the 40,000 lines of Z-code nobody has touched
-since 2016?
-
-That question is why I wrote this. It goes from what "the core" is, through the
-in-app versus side-by-side decision, to a model for grading every custom object
-you own from A to D — so the conversation can be about specific objects instead
-of a slogan.
-
-No jargon that is not explained first. Free, no sign-in, about twenty minutes.
-
-https://clean-core.io/clean-core-explained
-```
-
-## Version C — the personal angle
-
-```text
-I have spent the last months building a tool that analyses custom ABAP for Clean
-Core readiness. The thing that surprised me was not technical.
-
-It was how often the conversation stalls before the tool is even relevant —
-because the people in the room mean four different things by "Clean Core" and
-none of them wants to be the one who asks.
-
-So before anything else, here is the explanation. From scratch, every term
-defined, through to grading your own objects A to D. Twenty minutes, free, no
-sign-in.
-
-https://clean-core.io/clean-core-explained
-
-Written to be forwarded. If it is useful, send it on.
-```
-
 ---
 
-## Notes on posting
+## Sprache
 
-- **Link placement.** LinkedIn's algorithm has historically demoted posts with an
-  outbound link in the body. The workaround people use — link in the first comment —
-  costs reach on the click-through instead. At this account size the difference is
-  noise; keeping the link in the body is more honest and easier to forward.
-- **No hashtags, or three at most.** `#SAP #CleanCore #ABAP` if any. A block of ten
-  reads as reach-farming.
-- **Best window** for a German/EU SAP audience: Tuesday–Thursday, 07:30–09:00 CET.
-- **Reply to every comment** in the first two hours. That is the entire distribution
-  mechanism at this size.
-- **Cross-post** the same text to the SAP Community as a short blog post pointing at
-  the page, and link it from the two existing posts — the reciprocal links are
-  already in place on the site side.
+Der Guide selbst ist auf Englisch, der Empfängerkreis der Community-Mail
+international (Indien, Thailand, Südafrika, Frankreich, Deutschland). Trotzdem
+würde ich **auf Deutsch posten**: dein LinkedIn-Umfeld ist überwiegend
+deutschsprachig, und ein persönlicher Post wirkt in der eigenen Sprache
+glaubwürdiger. Dass die verlinkte Seite englisch ist, stört im SAP-Umfeld
+niemanden.
+
+## Praktisches
+
+- **Kein Emoji.** Bei diesem Ton wäre schon eins zu viel.
+- **Hashtags:** höchstens `#SAP #CleanCore #ABAP`, gern auch gar keine. Ein Block
+  aus zehn Stück liest sich wie Reichweitenfarming.
+- **Link im Beitrag lassen**, nicht in den ersten Kommentar. Der Algorithmus mag
+  das angeblich weniger, aber bei deiner Reichweite ist der Unterschied Rauschen —
+  und ein Link, den man weiterleiten kann, ist der ganze Zweck der Übung.
+- **Zeitfenster:** Dienstag bis Donnerstag, 07:30–09:00 MEZ.
+- **In den ersten zwei Stunden auf jeden Kommentar antworten.** Das ist bei dieser
+  Reichweite der gesamte Verteilmechanismus.
+- **Nicht beide Versionen kurz hintereinander posten.** Version B frühestens ein
+  bis zwei Wochen nach A, sonst wirkt es wie eine Kampagne statt wie ein Mensch.
