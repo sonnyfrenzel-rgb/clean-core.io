@@ -1,0 +1,73 @@
+name: Weekly Usage Report
+
+# Fridays at 12:00 Europe/Berlin.
+#
+# GitHub cron only understands UTC, and Berlin is UTC+2 in summer and UTC+1 in
+# winter — a single UTC time would drift by an hour twice a year. So the job is
+# scheduled at both candidate hours and the first step checks what the actual local
+# time is, exiting quietly on the run that is an hour off. That keeps the report
+# landing at 12:00 local all year without anyone remembering to adjust a cron line.
+on:
+  schedule:
+    - cron: '0 10 * * 5' # 12:00 Berlin during CEST (summer)
+    - cron: '0 11 * * 5' # 12:00 Berlin during CET (winter)
+  workflow_dispatch:
+    inputs:
+      recipient:
+        description: 'Send to a different address (optional)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write # OIDC for Google Cloud
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check this is really 12:00 in Berlin
+        id: clock
+        run: |
+          HOUR=$(TZ=Europe/Berlin date +%H)
+          echo "Berlin local time: $(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "manual run — proceeding regardless of the clock"
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          elif [ "$HOUR" = "12" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "not 12:00 in Berlin (it is ${HOUR}:00) — this is the other DST slot, skipping"
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout Code
+        if: steps.clock.outputs.proceed == 'true'
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup Node.js
+        if: steps.clock.outputs.proceed == 'true'
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        if: steps.clock.outputs.proceed == 'true'
+        run: npm ci --foreground-scripts
+
+      - name: Authenticate with Google Cloud
+        if: steps.clock.outputs.proceed == 'true'
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
+        with:
+          workload_identity_provider: 'projects/819734065839/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: '819734065839-compute@developer.gserviceaccount.com'
+          project_id: 'cleancore-491216'
+
+      - name: Send the report
+        if: steps.clock.outputs.proceed == 'true'
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          npx tsx scripts/send-usage-report.ts --apply \
+            ${{ inputs.recipient && format('--to {0}', inputs.recipient) || '' }}

@@ -18,6 +18,20 @@ export default function AdminConsole() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved'>('all');
   const [consoleSection, setConsoleSection] = useState<'applications' | 'usage'>('applications');
+
+  // The weekly report links straight here, so ?tab=usage has to land on the usage
+  // section rather than the default one — a link that drops you on the wrong tab
+  // is a link people stop clicking.
+  //
+  // Read from window rather than useSearchParams: that hook forces the page into a
+  // Suspense boundary during prerendering and fails the build without one, which is
+  // a lot of ceremony for reading one query parameter on an already-client page.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (new URLSearchParams(window.location.search).get('tab') === 'usage') {
+      setConsoleSection('usage');
+    }
+  }, []);
   
   const [actionUid, setActionUid] = useState<string | null>(null);
   const [actionType, setActionType] = useState<'approving' | 'revoking' | 'deleting' | null>(null);
