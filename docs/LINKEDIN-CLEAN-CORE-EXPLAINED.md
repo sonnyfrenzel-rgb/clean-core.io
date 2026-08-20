@@ -87,14 +87,21 @@ nichts abverlangt und dir nichts einbringt außer einer besseren Seite.
 
 ## Praktisches
 
+Reine Geschmacksfragen, keine Reichweiten-Taktik:
+
 - **Kein Emoji.** Bei diesem Ton wäre schon eins zu viel.
 - **Hashtags:** höchstens `#SAP #CleanCore #ABAP`, gern gar keine.
-- **Link im Beitrag lassen**, nicht im ersten Kommentar. Ein weiterleitbarer Link
-  ist der ganze Zweck der Übung.
-- **Zeitfenster:** Dienstag bis Donnerstag, 07:30–09:00 MEZ.
-- **In den ersten zwei Stunden auf jeden Kommentar antworten.** Das ist bei dieser
-  Reichweite der gesamte Verteilmechanismus — und passt zur Haltung des Posts.
-- **Version B nicht kurz nach A posten.** Frühestens ein bis zwei Wochen später.
+- **Link in den Beitrag**, nicht in den ersten Kommentar. Nicht wegen des
+  Algorithmus, sondern weil ein Link, den man im Vorbeigehen kopieren kann, der
+  ganze Zweck der Übung ist.
+- **Version B nicht kurz nach A posten.** Frühestens ein bis zwei Wochen später —
+  sonst wirkt es wie eine Kampagne statt wie ein Mensch.
+
+Was hier früher stand — bestes Zeitfenster, in den ersten zwei Stunden auf jeden
+Kommentar antworten, Link lieber in den Kommentar — habe ich gestrichen. Das
+waren Behauptungen über einen Algorithmus, den niemand von außen kennt, und es
+ist genau die Sorte Ratschlag, gegen die sich der Post richtet. Antworte den
+Leuten, weil sie dir geschrieben haben, nicht weil es die Reichweite hebt.
 
 ## Was an den allerersten Entwürfen falsch war
 
