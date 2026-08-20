@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>SAP Clean Core, explained</title>
+<style>
+  /* Base styles stay inline on every element, so a client that strips this block
+     still renders the desktop layout correctly. These rules only narrow things
+     down for small screens — progressive enhancement, not a dependency. */
+  @media only screen and (max-width: 600px) {
+    .wrap        { padding: 20px 12px !important; }
+    .card        { padding: 24px 20px !important; border-radius: 18px !important; }
+    .brand-cell  { display: block !important; width: 100% !important; text-align: left !important; }
+    .badge-cell  { display: block !important; width: 100% !important; text-align: left !important; padding-top: 12px !important; }
+    h1.headline  { font-size: 22px !important; line-height: 1.2 !important; }
+    .body-text   { font-size: 16px !important; }
+    .panel       { padding: 16px !important; border-radius: 14px !important; }
+    .cta         { display: block !important; width: 100% !important; padding: 16px 12px !important; box-sizing: border-box !important; }
+    .cta-wrap    { padding: 0 !important; }
+    .ghost-cta   { display: block !important; text-align: center !important; padding: 13px 12px !important; }
+    .toc-item    { font-size: 14px !important; }
+    .footer      { padding: 0 8px !important; font-size: 12px !important; }
+    .footer-links a { display: inline-block !important; padding: 6px 0 !important; }
+  }
+  /* Long addresses and URLs must never force a sideways scroll. */
+  body, table, td, p, a { -webkit-text-size-adjust: 100%; }
+  a { word-break: break-word; }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#f8fafc;">
+<div class="wrap" style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a;">
+
+  <!-- Preheader: shown in the inbox preview, hidden in the body -->
+  <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: transparent; height: 0; width: 0;">
+    A complete plain-language guide to SAP Clean Core &mdash; and the platform is fully back up.
+  </div>
+
+  <!-- Card Container -->
+  <div class="card" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; padding: 40px;">
+
+    <!-- Logo & Branding -->
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 28px; border-bottom: 1px solid #f1f5f9; padding-bottom: 22px;">
+      <tr>
+        <td class="brand-cell" align="left" valign="middle">
+          <div style="font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; margin: 0; line-height: 1.2;">
+            Clean-Core<span style="color: #10b981;">.io</span>
+          </div>
+          <div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 4px; line-height: 1.3;">
+            Free Community SAP Modernization Platform
+          </div>
+        </td>
+        <td class="badge-cell" align="right" valign="middle" style="text-align: right;">
+          <span style="display: inline-block; font-size: 11px; font-weight: 700; color: #0f172a; background-color: #f1f5f9; padding: 6px 12px; border-radius: 8px; line-height: 1.2; white-space: nowrap;">
+            New guide
+          </span>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Main Heading -->
+    <div style="margin-bottom: 24px;">
+      <span style="display: inline-block; font-size: 10px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.1em; background-color: #d1fae5; padding: 6px 12px; border-radius: 9999px; border: 1px solid #a7f3d0;">
+        Free to read &amp; share
+      </span>
+      <h1 class="headline" style="font-size: 26px; font-weight: 800; color: #0f172a; margin: 16px 0 0 0; letter-spacing: -0.03em; line-height: 1.15;">SAP Clean Core, explained without the jargon</h1>
+    </div>
+
+    <!-- Content -->
+    <p class="body-text" style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 18px 0;">
+      Hello {{FIRST_NAME}},
+    </p>
+
+    <p class="body-text" style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 18px 0;">
+      Two things. First: the platform maintenance is finished. Everything is back up and running
+      normally &mdash; sign-in, analysis, all seven stages, exports. Thank you for your patience if you
+      hit the maintenance window.
+    </p>
+
+    <p class="body-text" style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 22px 0;">
+      Second, and the actual reason I am writing: there is now a complete guide to Clean Core on the
+      site. Not a product page &mdash; a guide. It starts from &ldquo;what even is the core&rdquo; and
+      goes all the way to grading every object in your estate A to D. Every term is defined before it
+      is used, so it works whether you have been doing ABAP for twenty years or are trying to follow
+      what your SAP team is talking about.
+    </p>
+
+    <!-- What's in it -->
+    <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 24px;">
+      <span style="font-weight: 800; color: #0f172a; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 12px;">About 20 minutes, seven parts</span>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr><td class="toc-item" style="font-size: 14px; line-height: 1.65; color: #475569; padding-bottom: 4px;">&bull;&nbsp; Why modifications break upgrades &mdash; from scratch</td></tr>
+        <tr><td class="toc-item" style="font-size: 14px; line-height: 1.65; color: #475569; padding-bottom: 4px;">&bull;&nbsp; The twelve terms you actually need, plainly</td></tr>
+        <tr><td class="toc-item" style="font-size: 14px; line-height: 1.65; color: #475569; padding-bottom: 4px;">&bull;&nbsp; In-app or side-by-side: RAP or CAP, and how to decide</td></tr>
+        <tr><td class="toc-item" style="font-size: 14px; line-height: 1.65; color: #475569; padding-bottom: 4px;">&bull;&nbsp; The A&ndash;D grading model, and what each grade costs you</td></tr>
+        <tr><td class="toc-item" style="font-size: 14px; line-height: 1.65; color: #475569;">&bull;&nbsp; What Clean-Core.io does &mdash; with the benefit, the effort, and where it stops</td></tr>
+      </table>
+    </div>
+
+    <!-- CTA Button -->
+    <div class="cta-wrap" style="text-align: center; margin-bottom: 24px;">
+      <a class="cta" href="https://clean-core.io/clean-core-explained" style="display: inline-block; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+        Read the guide
+      </a>
+    </div>
+
+    <p class="body-text" style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 22px 0;">
+      It is a normal web page, free, no sign-in. Forward it, print it, drop it in a Teams channel
+      &mdash; whatever is useful. If your management keeps asking what Clean Core means and why it
+      matters, that page is the answer you can send instead of writing one.
+    </p>
+
+    <!-- Try it -->
+    <div class="panel" style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 16px; padding: 18px; margin-bottom: 24px;">
+      <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px;">Your five transformations are still there</span>
+      <span style="color: #047857; font-size: 14px; line-height: 1.6; display: block; margin-bottom: 14px;">
+        Reading about it only gets you so far. There are ready-made ABAP examples on the dashboard, so
+        you can watch a full analysis run without extracting anything from your own system. About
+        fifteen minutes, click by click.
+      </span>
+      <a class="ghost-cta" href="https://clean-core.io/first-run" style="display: inline-block; background-color: #ffffff; border: 1px solid #047857; color: #047857; text-decoration: none; padding: 11px 18px; border-radius: 8px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
+        Your first run, step by step
+      </a>
+    </div>
+
+    <!-- Support -->
+    <p class="body-text" style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 22px 0;">
+      Something in the guide wrong, unclear, or missing? Tell me &mdash;
+      <a href="mailto:info@clean-core.io" style="color: #047857; font-weight: 700; text-decoration: underline;">info@clean-core.io</a>.
+      Corrections from people who do this daily are worth more to that page than anything I can write
+      alone, and I will credit them.
+    </p>
+
+    <!-- Signature -->
+    <div style="border-top: 1px solid #f1f5f9; padding-top: 22px; font-size: 15px; color: #64748b; line-height: 1.5;">
+      Thanks for reading,<br />
+      <strong style="color: #0f172a;">Felix Frenzel</strong><br />
+      <span style="font-size: 13px; color: #94a3b8;">Clean-Core.io &bull; Free Community Edition Program</span>
+    </div>
+
+  </div>
+
+  <!-- Anti-Spam / Legal Footer -->
+  <div class="footer" style="text-align: center; margin-top: 28px; padding: 0 16px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
+    <p style="margin: 0 0 8px 0;">
+      You are receiving this message at {{EMAIL}} because you hold a Clean-Core.io Free Community
+      Edition account.
+    </p>
+    <p style="margin: 0 0 12px 0; font-weight: 600;">
+      Imprint: Felix Frenzel &bull; Hellerstra&szlig;e 9 &bull; 96047 Bamberg &bull; Germany<br />
+      E-Mail: info@clean-core.io &bull; System-Version: v2.3.0
+    </p>
+    <p class="footer-links" style="margin: 0 0 8px 0;">
+      <a href="{{UNSUBSCRIBE_URL}}" style="color: #64748b; text-decoration: underline;">Unsubscribe from community updates</a>
+      &nbsp;&bull;&nbsp;
+      <a href="https://clean-core.io/datenschutz" style="color: #64748b; text-decoration: underline;">Privacy Policy</a>
+      &nbsp;&bull;&nbsp;
+      <a href="https://clean-core.io/terms" style="color: #64748b; text-decoration: underline;">Terms of Service</a>
+    </p>
+    <p style="margin: 0;">
+      <strong>Data Erasure (Art. 17 GDPR):</strong> You have the right to erasure. To remove the database
+      and authentication entries associated with your profile, visit the <em>Danger Zone</em> inside your
+      Settings dashboard; encrypted backups age out within 30 days.
+    </p>
+  </div>
+</div>
+</body>
+</html>

@@ -161,7 +161,10 @@ export default function Home() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-6">
+            <Link href="/clean-core-explained" className="text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
+              Clean Core Explained
+            </Link>
             <Link href="/how-it-works" className="text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
               How It Works
             </Link>
@@ -174,7 +177,7 @@ export default function Home() {
           </nav>
 
           <div className="shrink-0 flex items-center gap-3">
-             <div className="hidden sm:flex text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full items-center gap-1">
+             <div className="hidden xl:flex text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full items-center gap-1">
                <Users size={14} /> Free for the SAP Community
              </div>
              <HeaderAuthButton />

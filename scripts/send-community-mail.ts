@@ -16,10 +16,11 @@
  *     sent transactional mail is a reputation event; spreading it out matters.
  *
  * Usage:
- *   npx tsx scripts/send-community-mail.ts                  # dry run
+ *   npx tsx scripts/send-community-mail.ts                  # dry run, default campaign
  *   npx tsx scripts/send-community-mail.ts --apply          # send
  *   npx tsx scripts/send-community-mail.ts --apply --only me@example.com
  *   npx tsx scripts/send-community-mail.ts --apply --limit 5
+ *   npx tsx scripts/send-community-mail.ts --campaign community-update-v2.3
  */
 
 import fs from 'node:fs';
@@ -36,9 +37,33 @@ const PROJECT_ID = 'cleancore-491216';
 // sender reading a retired database.
 const DATABASE_ID = FIRESTORE_DB_ID;
 
-/** Bump when a genuinely new mail goes out, so `email_sends` stays per-campaign. */
-const CAMPAIGN = 'community-update-v2.3';
-const SUBJECT = 'Clean-Core.io 2.3 is live — and everyone has five fresh transformations';
+/**
+ * One entry per mail that has gone out, keyed by the id recorded in `email_sends`.
+ *
+ * Registered together rather than edited in place so the campaign id, the subject
+ * and the two template files cannot drift apart — and so re-running an older
+ * campaign still skips exactly the people who already received it.
+ */
+interface Campaign {
+  subject: string;
+  /** Basename under docs/emails/ — both .html and .md must exist. */
+  template: string;
+}
+
+const CAMPAIGNS: Record<string, Campaign> = {
+  'community-update-v2.3': {
+    subject: 'Clean-Core.io 2.3 is live — and everyone has five fresh transformations',
+    template: 'community-update-v2.3',
+  },
+  'clean-core-explained': {
+    subject: 'SAP Clean Core, explained without the jargon',
+    template: 'clean-core-explained',
+  },
+};
+
+/** The campaign a bare invocation sends. Update when a newer mail supersedes it. */
+const DEFAULT_CAMPAIGN = 'clean-core-explained';
+
 const FROM = 'Felix Frenzel — Clean-Core.io <info@clean-core.io>';
 const REPLY_TO = 'info@clean-core.io';
 const BASE_URL = 'https://clean-core.io';
@@ -49,6 +74,14 @@ const PAUSE_MS = 60_000;
 const APPLY = process.argv.includes('--apply');
 const ONLY = argValue('--only');
 const LIMIT = Number(argValue('--limit') || 0);
+const CAMPAIGN = argValue('--campaign') || DEFAULT_CAMPAIGN;
+
+const campaign = CAMPAIGNS[CAMPAIGN];
+if (!campaign) {
+  console.error(`Unknown campaign "${CAMPAIGN}". Known: ${Object.keys(CAMPAIGNS).join(', ')}`);
+  process.exit(1);
+}
+const SUBJECT = campaign.subject;
 
 function argValue(flag: string): string | undefined {
   const i = process.argv.indexOf(flag);
@@ -125,9 +158,9 @@ async function main() {
   process.env.PILOT_APPROVAL_SECRET = readEnv('PILOT_APPROVAL_SECRET');
 
   const htmlTemplate = fs
-    .readFileSync('docs/emails/community-update-v2.3.html', 'utf8')
+    .readFileSync(`docs/emails/${campaign.template}.html`, 'utf8')
     .replace(/^<!--[\s\S]*?-->\s*/, '');
-  const md = fs.readFileSync('docs/emails/community-update-v2.3.md', 'utf8').replace(/\r/g, '');
+  const md = fs.readFileSync(`docs/emails/${campaign.template}.md`, 'utf8').replace(/\r/g, '');
   const fence = '```text\n';
   const textTemplate = md.slice(md.indexOf(fence) + fence.length).split('\n```')[0];
 

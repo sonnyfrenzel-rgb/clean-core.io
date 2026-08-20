@@ -181,6 +181,7 @@ export default function KnowledgePage() {
       <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-gray-100 space-y-4">
         <h2 className="text-xl font-black text-gray-950">Related tools &amp; guides</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-bold text-sm">
+          <Link href="/clean-core-explained" className="block text-green-600 hover:underline">→ SAP Clean Core, explained from scratch</Link>
           <Link href="/abap-custom-code-analysis" className="block text-green-600 hover:underline">→ Free ABAP static code analysis</Link>
           <Link href="/clean-core-score" className="block text-green-600 hover:underline">→ What is the Clean Core Score?</Link>
           <Link href="/sap-clean-core-object-classification" className="block text-green-600 hover:underline">→ Clean Core object classification (A–D)</Link>

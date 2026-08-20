@@ -30,6 +30,7 @@ const COLUMNS: { heading: string; links: { href: string; label: string }[] }[] =
     heading: 'Resources',
     links: [
       { href: '/about', label: 'About' },
+      { href: '/clean-core-explained', label: 'Clean Core Explained' },
       { href: '/first-run', label: 'Your First Run' },
       { href: '/how-to', label: 'How-To Guide' },
       { href: '/whitepaper', label: 'Whitepaper' },
