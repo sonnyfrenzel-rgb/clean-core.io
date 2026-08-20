@@ -125,16 +125,7 @@ Entscheidung, die getroffen werden sollte, statt sie nebenbei einzubauen.
 
 ---
 
-## Seitenzahl im Share-Bereich wird nicht mitgezogen
+## ~~Seitenzahl im Share-Bereich wird nicht mitgezogen~~
 
-**Warum:** Die Kachel „Download the PDF" in
-[components/GuideShareBar.tsx](../components/GuideShareBar.tsx) nennt „21 pages,
-typeset for printing". Die Zahl ist hart notiert. Wächst der Guide, stimmt sie nicht
-mehr — eine kleine Unwahrheit auf einer Seite, deren ganzes Argument Belegbarkeit ist.
-
-**Optionen:** entweder der PDF-Generator schreibt die Seitenzahl in die Sidecar-Datei
-und die Kachel liest sie beim Build, oder die Angabe entfällt zugunsten der Dateigrösse
-(die der Browser ohnehin anzeigt).
-
-**Dringlichkeit:** niedrig — aber beim nächsten inhaltlichen Ausbau des Guides mit
-erledigen.
+**Erledigt am 20.08.2026** — die Seitenzahl steht nicht mehr in der Kachel. Sie
+kam aus derselben Überarbeitung, in der der Mailversand entfernt wurde.
