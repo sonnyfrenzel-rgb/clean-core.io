@@ -175,9 +175,14 @@ export async function POST(req: NextRequest) {
     zip.file('manifest.json', JSON.stringify(manifest, null, 2));
     const buf = await zip.generateAsync({ type: 'nodebuffer' });
 
-    // 5. Record export timestamp
+    // 5. Record export timestamp.
+    // Written nested, not as a dotted path: `set` does not interpret dotted
+    // field names (only `update` does), so the previous form created a literal
+    // top-level field called "auditMetadata.auditPackExportedAt" and the real
+    // one was never set. Nested + merge is safe here because Firestore merges
+    // map fields recursively — sibling auditMetadata keys survive.
     await db.collection('projects').doc(projectId).set(
-      { 'auditMetadata.auditPackExportedAt': generatedAt },
+      { auditMetadata: { auditPackExportedAt: generatedAt } },
       { merge: true },
     );
 

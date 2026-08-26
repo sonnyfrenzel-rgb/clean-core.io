@@ -220,3 +220,24 @@ export async function safeFetch(
   }
   throw new SsrfError('Too many redirects.');
 }
+
+/**
+ * Whether an OData service path may be appended to an allowlisted S/4 host.
+ *
+ * Getting onto the host is the SSRF check's job; this decides what may be
+ * requested once there. Without it, a caller could reach any path the tenant
+ * credentials can read — the credentials being the stored ones, which is the
+ * whole point of the allowlist in the first place.
+ *
+ * Lived only in test-s4-odata-read while fetch-s4-metadata concatenated the raw
+ * body value. One copy now, because the next OData route will be written by
+ * copying one of these two.
+ */
+export function isSafeODataServicePath(servicePath: string): boolean {
+  if (typeof servicePath !== 'string' || !servicePath) return false;
+  // Percent-encoded traversal is checked before the shape test, because the
+  // shape test alone would accept %2e%2e as ordinary path characters.
+  if (servicePath.includes('..')) return false;
+  if (/%2e|%2f|%5c/i.test(servicePath)) return false;
+  return /^\/sap\/opu\/odata\/[A-Za-z0-9_/-]+$/.test(servicePath);
+}

@@ -154,11 +154,26 @@ export default function TransformationPage() {
     }, 1200);
   };
 
-  const initialScore = project?.cleanCoreScore || 70;
+  // Two substitutions used to live here. `|| 70` invented a baseline for a
+  // project that never got scored, and the `: 100` branch declared full
+  // compliance whenever no finding happened to require sign-off — which is not
+  // the same as clean code. It happens on a parse miss, on empty legacy source,
+  // and on any file whose findings are all informational, and it overrode a real
+  // stored score of 40 with a green 100% ring.
+  const scoredCleanCore =
+    typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : undefined;
   const signOffFindings = findings.filter(f => f.requiresSignOff);
-  const currentScore = signOffFindings.length > 0 
-    ? Math.min(100, Math.round(initialScore + (100 - initialScore) * (signedOffIds.size / signOffFindings.length)))
-    : 100;
+  const currentScore =
+    scoredCleanCore === undefined
+      ? undefined
+      : signOffFindings.length > 0
+        ? Math.min(
+            100,
+            Math.round(
+              scoredCleanCore + (100 - scoredCleanCore) * (signedOffIds.size / signOffFindings.length),
+            ),
+          )
+        : scoredCleanCore;
 
 
 
@@ -739,11 +754,13 @@ CMD ["node", "srv/service.js"]`
                 <circle
                   className={clsx(
                     "transition-all duration-500",
-                    currentScore >= 90 ? "text-emerald-400" : currentScore >= 70 ? "text-amber-400" : "text-rose-400"
+                    currentScore === undefined
+                      ? "text-white/20"
+                      : currentScore >= 90 ? "text-emerald-400" : currentScore >= 70 ? "text-amber-400" : "text-rose-400"
                   )}
                   strokeWidth="3.5"
                   strokeDasharray={2 * Math.PI * 18}
-                  strokeDashoffset={2 * Math.PI * 18 - (currentScore / 100) * 2 * Math.PI * 18}
+                  strokeDashoffset={2 * Math.PI * 18 - ((currentScore ?? 0) / 100) * 2 * Math.PI * 18}
                   strokeLinecap="round"
                   stroke="currentColor"
                   fill="transparent"
@@ -753,7 +770,7 @@ CMD ["node", "srv/service.js"]`
                 />
               </svg>
               <span className="absolute text-[10px] font-black font-mono">
-                {currentScore}%
+                {currentScore === undefined ? '—' : `${currentScore}%`}
               </span>
             </div>
             <div>
@@ -1013,11 +1030,13 @@ CMD ["node", "srv/service.js"]`
                     <circle
                       className={clsx(
                         "transition-all duration-500",
-                        currentScore >= 90 ? "text-emerald-400" : currentScore >= 70 ? "text-amber-400" : "text-rose-400"
+                        currentScore === undefined
+                          ? "text-white/20"
+                          : currentScore >= 90 ? "text-emerald-400" : currentScore >= 70 ? "text-amber-400" : "text-rose-400"
                       )}
                       strokeWidth="5"
                       strokeDasharray={2 * Math.PI * 32}
-                      strokeDashoffset={2 * Math.PI * 32 - (currentScore / 100) * 2 * Math.PI * 32}
+                      strokeDashoffset={2 * Math.PI * 32 - ((currentScore ?? 0) / 100) * 2 * Math.PI * 32}
                       strokeLinecap="round"
                       stroke="currentColor"
                       fill="transparent"
@@ -1027,13 +1046,15 @@ CMD ["node", "srv/service.js"]`
                     />
                   </svg>
                   <span className="absolute text-sm font-black font-mono">
-                    {currentScore}%
+                    {currentScore === undefined ? '\u2014' : `${currentScore}%`}
                   </span>
                 </div>
                 <div>
                   <h4 className="text-xs font-black uppercase text-gray-500 tracking-wider">Overall Support Rollup</h4>
                   <p className="text-2xl font-black mt-0.5">
-                    {currentScore >= 90 ? 'Grounded & Ready' : currentScore >= 70 ? 'Requires Verification' : 'High Risk Gaps'}
+                    {currentScore === undefined
+                      ? 'Not scored yet'
+                      : currentScore >= 90 ? 'Grounded & Ready' : currentScore >= 70 ? 'Requires Verification' : 'High Risk Gaps'}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     {signedOffIds.size} of {findings.filter(f => f.requiresSignOff).length} manual findings signed off.

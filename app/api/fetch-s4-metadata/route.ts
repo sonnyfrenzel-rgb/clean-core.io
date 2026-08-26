@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isUrlSafe, safeFetch, SsrfError } from '@/lib/url-validation';
+import { isUrlSafe, safeFetch, SsrfError, isSafeODataServicePath } from '@/lib/url-validation';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 
@@ -281,7 +281,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Build the $metadata URL
-    const servicePath = body.servicePath || '/sap/opu/odata/sap/API_BUSINESS_PARTNER';
+    const servicePath = resolvedBody.servicePath || '/sap/opu/odata/sap/API_BUSINESS_PARTNER';
+    // The SSRF allowlist decides which HOST may be reached; this decides which
+    // path. Without it, a request could read any path those credentials can —
+    // and with useStoredCredentials they are the vault's.
+    if (!isSafeODataServicePath(servicePath)) {
+      return NextResponse.json(
+        { status: 'failed', message: 'Invalid OData service path.' },
+        { status: 400 },
+      );
+    }
     const baseUrl = targetUrl.replace(/\/$/, '');
     const metadataUrl = `${baseUrl}${servicePath}/$metadata`;
 

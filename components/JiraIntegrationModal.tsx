@@ -13,6 +13,7 @@ interface JiraIntegrationModalProps {
 
 export default function JiraIntegrationModal({ isOpen, onClose, solutionDesign, projectId }: JiraIntegrationModalProps) {
   const [step, setStep] = useState<'connect' | 'connecting' | 'configure' | 'syncing' | 'success'>('connect');
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [jiraProject, setJiraProject] = useState('TRANSFORM-1');
   
   useEffect(() => {
@@ -28,8 +29,14 @@ export default function JiraIntegrationModal({ isOpen, onClose, solutionDesign, 
       if (!origin.endsWith('.run.app') && !origin.includes('localhost')) {
         return;
       }
+      // The callback reports JIRA_AUTH_INCOMPLETE while token persistence is
+      // unimplemented; JIRA_AUTH_SUCCESS is kept for when it is.
       if (event.data?.type === 'JIRA_AUTH_SUCCESS') {
         setStep('configure');
+      }
+      if (event.data?.type === 'JIRA_AUTH_INCOMPLETE') {
+        setStep('connect');
+        setSyncError('Jira authorisation completed, but the server cannot store the tokens yet.');
       }
     };
     window.addEventListener('message', handleMessage);
@@ -59,12 +66,16 @@ export default function JiraIntegrationModal({ isOpen, onClose, solutionDesign, 
     }
   };
 
+  // This used to run a 2.5-second timer and then jump to the success step — a simulated
+  // sync that reported success for work that never happened, in a component
+  // whose backing token persistence is still a TODO (see
+  // app/api/auth/jira/callback/route.ts). Nothing renders this modal today, but
+  // a fake success sitting in the tree is a trap for whoever wires it up.
+  // It now says what is true and does nothing.
   const handleSync = () => {
-    setStep('syncing');
-    // Simulate Jira API Sync Delay
-    setTimeout(() => {
-      setStep('success');
-    }, 2500);
+    setSyncError(
+      'Jira sync is not available yet: the server does not persist the OAuth tokens, so nothing can be written to your board.',
+    );
   };
 
   if (!isOpen) return null;
@@ -137,6 +148,12 @@ export default function JiraIntegrationModal({ isOpen, onClose, solutionDesign, 
                     <strong>Sync profile active:</strong> Will create 1 Master Epic, ~12 User Stories, and attach the Solution Design document automatically.
                   </p>
                 </div>
+
+                {syncError && (
+                  <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 leading-relaxed">
+                    {syncError}
+                  </div>
+                )}
 
                 <div className="pt-2">
                   <button

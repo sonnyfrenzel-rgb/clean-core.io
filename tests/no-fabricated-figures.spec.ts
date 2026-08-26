@@ -23,6 +23,7 @@ const ROOT = path.resolve(__dirname, '..');
 /** Files that display measured values to a user. */
 const MEASURED_VALUE_SURFACES = [
   'app/(app)/project/[projectId]/delivery/page.tsx',
+  'app/(app)/project/[projectId]/transformation/page.tsx',
   'app/(app)/project/[projectId]/analyze/page.tsx',
   'app/(app)/project/[projectId]/design/page.tsx',
   'components/ArchitectSignOff.tsx',
@@ -38,6 +39,8 @@ const BANNED = [
   'confidenceScore ?? 95',
   'recommendationConfidence || 75',
   'recommendationConfidence ?? 75',
+  'cleanCoreScore || 70',
+  'cleanCoreScore ?? 70',
 ];
 
 test.describe('no fabricated figures on measured values', () => {
@@ -120,4 +123,33 @@ test.describe('hooks run before any early return', () => {
       );
     });
   }
+});
+
+test.describe('nothing reports success it did not achieve', () => {
+  test('the compliance HUD does not claim 100% when nothing needs sign-off', () => {
+    const source = fs.readFileSync(
+      path.join(ROOT, 'app/(app)/project/[projectId]/transformation/page.tsx'),
+      'utf8',
+    );
+    // `: 100` declared full compliance whenever no finding happened to require
+    // sign-off — a parse miss, empty source, or purely informational findings —
+    // and overrode a real stored score of 40 with a green ring.
+    expect(source).not.toMatch(/signOffFindings\.length > 0[\s\S]{0,220}:\s*100;/);
+    expect(source).toContain("typeof project?.cleanCoreScore === 'number'");
+    expect(source).toContain("'Not scored yet'");
+  });
+
+  test('the Jira modal does not simulate a sync', () => {
+    const source = fs.readFileSync(path.join(ROOT, 'components/JiraIntegrationModal.tsx'), 'utf8');
+    // It used to setTimeout its way to a success screen while the server has no
+    // token persistence at all.
+    expect(source).not.toMatch(/setTimeout\([\s\S]{0,120}setStep\('success'\)/);
+    expect(source).toContain('not available yet');
+  });
+
+  test('the Jira callback does not report a success it cannot back', () => {
+    const source = fs.readFileSync(path.join(ROOT, 'app/api/auth/jira/callback/route.ts'), 'utf8');
+    expect(source).toContain('JIRA_AUTH_INCOMPLETE');
+    expect(source).not.toMatch(/ok \? 'JIRA_AUTH_SUCCESS'/);
+  });
 });

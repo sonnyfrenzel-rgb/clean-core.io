@@ -30,7 +30,11 @@ function readCookie(request: Request, name: string): string | undefined {
 }
 
 function resultPage(ok: boolean, appOrigin: string): string {
-  const type = ok ? 'JIRA_AUTH_SUCCESS' : 'JIRA_AUTH_ERROR';
+  // Token persistence is not implemented (see the TODO below), so a successful
+  // exchange still leaves the server with nothing stored. Reporting success
+  // would have the UI show a connected Jira that does not exist. Until the
+  // tokens are persisted, this reports the truth.
+  const type = ok ? 'JIRA_AUTH_INCOMPLETE' : 'JIRA_AUTH_ERROR';
   return `<!doctype html><html><body style="font-family: sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; flex-direction:column;">
     <h2 style="color:${ok ? '#10b981' : '#dc2626'};">Jira Authentication ${ok ? 'Successful' : 'Failed'}</h2>
     <p>${ok ? 'Connecting your account…' : 'You can close this window and try again.'}</p>

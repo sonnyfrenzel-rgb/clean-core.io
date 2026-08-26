@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isUrlSafe, safeFetch, SsrfError } from '@/lib/url-validation';
+import { isUrlSafe, safeFetch, SsrfError, isSafeODataServicePath } from '@/lib/url-validation';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 
@@ -149,11 +149,7 @@ export async function POST(req: NextRequest) {
     // Build OData read URL: GET EntitySet?$top=1&$format=json
     const servicePath = resolvedBody.servicePath || '/sap/opu/odata/sap/API_BUSINESS_PARTNER';
     // Audit P2: constrain path building — no arbitrary GET paths on the allowed host.
-    if (
-      !/^\/sap\/opu\/odata\/[A-Za-z0-9_/-]+$/.test(servicePath) ||
-      servicePath.includes('..') ||
-      /%2e|%2f|%5c/i.test(servicePath)
-    ) {
+    if (!isSafeODataServicePath(servicePath)) {
       return NextResponse.json({ status: 'failed', message: 'Invalid OData service path.', entitySet }, { status: 400 });
     }
     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(entitySet || '')) {
