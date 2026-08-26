@@ -6,16 +6,16 @@ import { getCatalogStats } from '@/lib/abap/catalog-service';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = {
-  title: 'SAP Cloudification: How to Cloudify Custom ABAP to Clean Core | Clean-Core.io',
+  title: 'SAP Cloudification Repository: Look Up Any Object’s Released Successor | Clean-Core.io',
   description:
-    'What it means to cloudify SAP: move custom ABAP off unreleased objects onto released S/4HANA APIs (RAP) or side-by-side BTP CAP, aligned with SAP Clean Core. Map any object to its released successor via SAP’s Cloudification Repository — free.',
+    'Free lookup against SAP’s official Cloudification Repository: enter any SAP standard object and get its released S/4HANA successor, or an honest “no released path” verdict. Plus what cloudifying custom ABAP means for Clean Core — in-app RAP or side-by-side BTP CAP.',
   alternates: {
     canonical: 'https://clean-core.io/sap-cloudification',
   },
   openGraph: {
-    title: 'SAP Cloudification: How to Cloudify Custom ABAP to Clean Core | Clean-Core.io',
+    title: 'SAP Cloudification Repository: Look Up Any Object’s Released Successor | Clean-Core.io',
     description:
-      'What it means to cloudify SAP custom code: replace unreleased objects with released S/4HANA APIs, aligned with SAP Clean Core. Grounded in SAP’s official Cloudification Repository.',
+      'Free lookup against SAP’s official Cloudification Repository — any SAP object, its released S/4HANA successor, or an honest “no released path” verdict. Plus what cloudification means for Clean Core.',
     url: 'https://clean-core.io/sap-cloudification',
     type: 'website',
   },
@@ -101,6 +101,35 @@ export default function SapCloudificationPage() {
           </p>
         </div>
       </div>
+
+      {/*
+        Search demand for this page is a tool query -- "cloudification repository
+        viewer", "sap cloudification repository". It ranked at position 8 and drew
+        0.11% CTR over three months because it reads as an article. The lookup it
+        promises lives at /catalog, so that entry point belongs above the fold,
+        not as an inline link halfway down a three-step explanation.
+      */}
+      <Link
+        href="/catalog"
+        className="group flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 bg-white border-2 border-green-500/30 hover:border-green-500 rounded-[2rem] p-6 sm:p-8 shadow-lg hover:shadow-xl transition-all"
+      >
+        <div className="p-4 rounded-2xl bg-green-500/10 border border-green-500/20 text-green-600 shrink-0 w-fit">
+          <Database size={28} />
+        </div>
+        <div className="flex-1 space-y-1">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-gray-955">
+            Look up an object in the Cloudification Repository
+          </h2>
+          <p className="text-sm text-gray-600 font-medium leading-relaxed">
+            Enter any SAP standard object &mdash; VBAK, BSEG, MARA &mdash; and get its released
+            S/4HANA successor, or an honest &ldquo;no released path&rdquo; verdict.
+            {classified ? ` ${classified} classified objects.` : ''} Free, no sign-up.
+          </p>
+        </div>
+        <span className="inline-flex items-center gap-2 text-sm font-black text-green-600 group-hover:gap-3 transition-all shrink-0">
+          Open the viewer <Route size={16} />
+        </span>
+      </Link>
 
       {/* GEO Quick Answer Block */}
       <QuickAnswer
