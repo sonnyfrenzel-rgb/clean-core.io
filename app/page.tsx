@@ -30,7 +30,8 @@ import SamplePackageDownload from '@/components/SamplePackageDownload';
 import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/version';
 import { getCatalogStats } from '@/lib/abap/catalog-service';
 import { SUPPORT_MATRIX } from '@/lib/abap/support-matrix';
-import ProofStrip, { type ProofFigure } from '@/components/ProofStrip';
+import BenefitCard from '@/components/BenefitCard';
+import { getReferenceAnalysis } from '@/lib/reference-analysis';
 
 export const metadata: Metadata = {
   title: 'SAP Clean Core Accelerator — Free ABAP Analysis | Clean-Core.io',
@@ -61,35 +62,10 @@ export default function Home() {
   // page changes with it — it cannot quietly drift into a claim.
   const constructs = Object.values(SUPPORT_MATRIX);
   const fullyCovered = constructs.filter((c) => c.level === 'fully').length;
-  const needsReview = constructs.filter((c) => c.level === 'partial').length;
-  const handedBack = constructs.filter((c) => c.level === 'not-supported').length;
 
-  const proofFigures: ProofFigure[] = [
-    {
-      value: catalogStats.classifiedObjects.toLocaleString('en-US'),
-      label: 'SAP objects classified, each with its clean core level',
-      detail: `Levels A–D come from SAP's own published state for the object, not from our judgement. Synced ${catalogStats.syncDate || 'weekly'}, with the source file hash on the page.`,
-      href: '/catalog',
-      hrefLabel: 'Look it up',
-      icon: 'catalog',
-    },
-    {
-      value: `${fullyCovered} of ${constructs.length}`,
-      label: 'ABAP construct classes fully covered — and we name the rest',
-      detail: `${needsReview} need architect review, ${handedBack} are handed back untouched. Published per class before you upload anything, not discovered afterwards.`,
-      href: '/how-it-works',
-      hrefLabel: 'See the matrix',
-      icon: 'coverage',
-    },
-    {
-      value: 'Every run',
-      label: 'frozen into an HMAC-signed audit pack',
-      detail: 'Findings, catalog version and model card are sealed and independently verifiable — so a decision made today can still be defended at the next upgrade.',
-      href: '/verify-pack',
-      hrefLabel: 'Verify one',
-      icon: 'evidence',
-    },
-  ];
+  // The published reference run. Computed at request time from a file that ships
+  // in this repository, so no figure below can drift from what the engine does.
+  const reference = getReferenceAnalysis();
   const schemaJson = {
     "@context": "https://schema.org",
     "@graph": [
@@ -367,10 +343,22 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Proof strip — the benefit as three checkable numbers, each linking to
-            the page that proves it. Replaces the unprovable "save days" claim. */}
+        {/* Benefit card. Leads with the situation — the documentation for a legacy
+            program is usually gone — then shows how much of a real run settles
+            itself, then what each side walks away with. Replaces the unprovable
+            "save days" claim with a run the reader can reproduce. */}
         <div className="max-w-5xl mx-auto px-6 mt-16 relative z-20 animate-in fade-in slide-in-from-bottom-20 duration-1000 delay-500">
-          <ProofStrip figures={proofFigures} />
+          <BenefitCard
+            linesOfCode={reference.linesOfCode}
+            totalFindings={reference.totalFindings}
+            resolved={reference.resolved.count}
+            decision={reference.decision.count}
+            handedBack={reference.handedBack.count}
+            handedBackKinds={reference.handedBackKinds}
+            classifiedObjects={catalogStats.classifiedObjects}
+            constructsTotal={constructs.length}
+            constructsFullyCovered={fullyCovered}
+          />
         </div>
 
         {/* GEO Quick Answer Block */}

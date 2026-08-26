@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Download, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { APP_VERSION } from '@/lib/version';
+import { getReferenceAnalysis } from '@/lib/reference-analysis';
+import { SUPPORT_MATRIX } from '@/lib/abap/support-matrix';
 
 // Search demand for this page is the generic term — "clean core whitepaper",
 // "sap clean core whitepaper", "sap clean core pdf" — not the product name. The
@@ -26,7 +28,7 @@ export const metadata: Metadata = {
 
 const benefitsEvidence = [
   { title: 'Evidence, Not Opinions', desc: 'A deterministic evidence scanner with token- and rule-based ABAP analysis maps custom-table access, RFC calls and dynpro patterns to concrete findings — before any AI runs. A defensible baseline you can take into an audit, not a black-box guess.' },
-  { title: 'Days → Minutes', desc: 'Manually finding released SAP APIs and rewriting legacy ABAP into RAP classes or CAP services takes days to weeks. Clean-Core.io produces the first qualified draft plus evidence in minutes — the expert reviews instead of starting from a blank page.' },
+  { title: 'The Documentation Nobody Wrote', desc: 'For most legacy programs the documentation was never written or is long gone, the process behind it was never described, and the person who built it has left. The source is the one document that still says what the thing does. A run reads it back in both directions — down into released SAP APIs for the developer, up into process, roles and procedure for the business — and hands both sides a draft to correct rather than a blank page.' },
   { title: 'Upgrade Resilience', desc: 'Replacing unreleased database dependencies with officially released SAP APIs (e.g. I_Customer, API_PRODUCT_SRV) helps keep your ERP core upgrade-stable — reducing coupling between custom code and the core update cycle.' },
   { title: 'Automated Test Stubs', desc: 'Matching unit tests are generated with the code — ABAP Unit doubles for RAP, or Express/Node suites for CAP — and executed in a sandboxed Node process (filesystem-scoped and time-limited). QA starts covered, not empty.' },
 ];
@@ -77,12 +79,23 @@ const doesNotDo = [
   'Perform or guarantee an automated migration.',
   'Replace SAP’s own tools (ADT, ATC) or expert judgment.',
   'Deliver production-ready code without architect review.',
+  'Transform SAP GUI dynpro screens, core modifications, native SQL, dynamic call routing or kernel internals — these are flagged and handed back, never guessed at.',
+  'Promise a time saving. How long the work takes depends on the decisions, and those stay with you.',
   'Claim any affiliation with or endorsement by SAP SE.',
 ];
 
 /* ─── Component ─── */
 
 export default function WhitepaperPage() {
+  // Computed at render time from the shipped reference file and the same support
+  // matrix the engine runs on — so the whitepaper cannot drift into a claim.
+  const reference = getReferenceAnalysis();
+  const constructs = Object.values(SUPPORT_MATRIX);
+  const constructCount = constructs.length;
+  const fullyCovered = constructs.filter((c) => c.level === 'fully').length;
+  const partialCover = constructs.filter((c) => c.level === 'partial').length;
+  const notCovered = constructs.filter((c) => c.level === 'not-supported').length;
+
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900">
       {/* Header */}
@@ -282,6 +295,45 @@ export default function WhitepaperPage() {
         {/* 07 — Honest Scope */}
         <section id="scope">
           <SectionEyebrow number="07" total="08" />
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">Evidence — a run you can reproduce</h2>
+          <p className="text-gray-700 leading-relaxed font-medium mb-6">
+            Claims about tools like this are usually unverifiable. This one is not. The figures below
+            come from analysing a legacy ABAP program that ships in our public repository, computed
+            when this page is rendered rather than written into it. Download the file, run it, and
+            compare.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            {[
+              { k: 'Lines of ABAP', v: reference.linesOfCode.toLocaleString('en-US') },
+              { k: 'Findings', v: String(reference.totalFindings) },
+              { k: 'Clean Core Score', v: String(reference.cleanCoreScore) },
+              { k: 'Construct classes tracked', v: String(constructCount) },
+            ].map((x) => (
+              <div key={x.k} className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="text-2xl font-black tabular-nums text-gray-950">{x.v}</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">{x.k}</div>
+              </div>
+            ))}
+          </div>
+          <p className="text-gray-700 leading-relaxed font-medium mb-4">
+            Of those {reference.totalFindings} findings,{' '}
+            <strong>{reference.resolved.count} resolve to a released SAP successor</strong> looked up
+            in SAP&rsquo;s own published data,{' '}
+            <strong>{reference.decision.count} need an architect&rsquo;s decision</strong> because
+            business intent has to be weighed against the target design, and{' '}
+            <strong>{reference.handedBack.count} are handed back untouched</strong> as structurally
+            out of reach for any generator. Of the {constructCount} ABAP construct classes we track,{' '}
+            {fullyCovered} are fully covered, {partialCover} require sign-off and {notCovered} are not
+            supported — published per class, before you upload anything.
+          </p>
+          <p className="text-sm text-gray-500 leading-relaxed mb-10">
+            One synthetic reference program is not a codebase, and your ratio will differ. It is
+            published so the method and the boundary can be checked, not as a forecast.{' '}
+            <Link href="/reference-analysis" className="text-green-700 font-bold hover:underline">
+              See the full run
+            </Link>.
+          </p>
+
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">Honest Scope</h2>
           <p className="text-gray-600 leading-relaxed mb-8">Trust is built on being clear about the boundaries. Here is what Clean-Core.io deliberately does — and does not — do.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
