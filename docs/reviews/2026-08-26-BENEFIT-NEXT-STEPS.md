@@ -131,3 +131,93 @@ proposal, and it is recorded here rather than quietly dropped.)*
 
 Everyone ships a backlog. A backlog never says why the program exists. That gap is the whole
 argument for spending effort on the left column rather than the right.
+
+---
+
+# Benefit-intent search terms in the card
+
+Added 26 Aug 2026, from the Search Console export of the preceding three months plus a scan of
+what the market ranks for.
+
+## The trap to avoid first
+
+The benefit keyword space in this market is owned by figures none of us can compute:
+
+> "20–30% faster upgrades" · "70% of processes standardised" · "up to 75% more business value over
+> ten years" · "reduce TCO by 62%" · "over 50% of custom code unused"
+
+That is precisely the genre this page spent a release removing. Chasing those terms means writing
+those claims. **Leave them.** It is a decision, not an oversight, and it should stay a decision the
+next time someone looks at the traffic and wonders why we rank below LeverX for "clean core
+benefits".
+
+## What the card is missing, and what it already has
+
+| Present in the copy | Absent entirely |
+|---|---|
+| `benefit` ×6, `process` ×6, `draft` ×4, `worth` ×2, `free` ×2 | **`upgrade`**, **`risk`**, **`audit`**, **`cost`**, **`value`** |
+
+All five absent terms are true of the product and simply are not written down. `upgrade risk` most
+of all: clean core exists for upgrade stability, and a level-D object *is* an upgrade blocker. The
+engine knows that; the card never says it.
+
+## The more interesting finding
+
+The benefit-intent queries that actually reach the site are **long-form questions, mostly German**,
+sitting at positions 2–10 on an English page:
+
+| Query | Position |
+|---|---|
+| *how do enterprises continuously validate clean core adherence?* | 2 |
+| *wie kann die überwachung sauberer kerne das upgrade-risiko in s/4hana reduzieren?* | 4 |
+| *worauf sollten it-verantwortliche bei der auswahl von clean-core-monitoring-tools achten?* | 6 |
+| *wie schnell lässt sich eine automatisierte überwachung sauberer kerne implementieren?* | 9 |
+
+Those positions do not come from keyword density on an English page — they come from generative
+answer systems extracting it. **The lever is extractability, not repetition.**
+
+## Concrete edits — sentences, not a keyword list
+
+**1 · Name the trigger in the opening**
+
+> "No documentation, no process description, and the colleague who built it left years ago. So the
+> code sits there — and nobody dares touch it **before the next S/4HANA upgrade**."
+
+**2 · Call the offer what people search for**
+
+> "You get an answer to both here — a **free SAP custom code assessment** that hands you drafts to
+> correct, with the limits named up front."
+
+**3 · Say what the red band actually is**
+
+> "4 stays hand work — **the upgrade blockers**. Out of reach for any generator, flagged rather
+> than guessed at."
+
+This one earns its keyword: it is also the clearest explanation of that number the card has had.
+
+**4 · Close on the evidence chain**
+
+> "…and the limits are published before you upload anything. Every run is frozen into a **signed
+> audit trail** you can hand to a reviewer."
+
+**5 · The real lever — answer the questions that already rank**
+
+A `FAQPage` JSON-LD on the section, carrying the questions that are already placing, in both
+languages, because the German ones hold the better positions:
+
+- *What does a free SAP clean core assessment actually give me?*
+- *How does clean core reduce S/4HANA upgrade risk?*
+- *Wie reduziert Clean Core das Upgrade-Risiko in S/4HANA?*
+
+The answers are already in the card. They are simply not marked up as question-answer pairs — which
+is the whole difference between text on a page and something an answer engine will quote.
+
+Note the language asymmetry before acting on it: German questions rank on an English page. That is
+evidence for the German content cluster in `docs/CONCEPT-DE-LOCALIZATION.md`, not a reason to write
+German copy into an English card.
+
+## The rule these edits follow
+
+Every added term has to be true of the shipped product and checkable: `upgrade blocker` because a
+level-D object is one, `audit trail` because the pack is signed, `free` because it is. No term goes
+in because it has volume.
