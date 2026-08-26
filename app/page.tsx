@@ -27,7 +27,7 @@ import SiteFooter from '@/components/SiteFooter';
 import TransformationShowroom from '@/components/TransformationShowroom';
 import TransformationReplay from '@/components/TransformationReplay';
 import SamplePackageDownload from '@/components/SamplePackageDownload';
-import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/version';
 import { getCatalogStats } from '@/lib/abap/catalog-service';
 
 export const metadata: Metadata = {
@@ -90,7 +90,9 @@ export default function Home() {
         },
         "description": "Automated ABAP custom code analysis and S/4HANA modernization following official SAP Clean Core guidelines.",
         "datePublished": "2025-01-15",
-        "dateModified": "2026-06-26"
+        // Tracks the release constant so the freshness signal moves with every ship
+        // instead of going stale at a hardcoded date.
+        "dateModified": APP_RELEASE_DATE_ISO
       },
       {
         "@type": "FAQPage",

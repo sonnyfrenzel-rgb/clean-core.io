@@ -80,34 +80,53 @@ export default function KnowledgeClient() {
               const isActive = activeFaq === i;
               const Icon = faq.icon;
               return (
-                <article 
+                <article
                   key={i}
-                  className={`border border-slate-100 rounded-2xl p-5 cursor-pointer transition-all duration-300 ${isActive ? 'bg-green-50/20 border-green-250 ring-1 ring-green-200 shadow-md' : 'bg-slate-50/40 hover:bg-slate-50/80 border-slate-200/50'}`}
-                  onClick={() => setActiveFaq(isActive ? null : i)}
+                  className={`border border-slate-100 rounded-2xl p-5 transition-all duration-300 ${isActive ? 'bg-green-50/20 border-green-250 ring-1 ring-green-200 shadow-md' : 'bg-slate-50/40 hover:bg-slate-50/80 border-slate-200/50'}`}
                 >
-                  <header className="flex items-start gap-4">
-                    <div className={`p-2.5 rounded-xl border ${isActive ? 'bg-green-500/10 border-green-500/20 text-green-600' : 'bg-white border-slate-200 text-slate-500'} shrink-0`}>
-                      <Icon size={20} />
-                    </div>
-                    <div className="space-y-1 flex-1">
-                      <span className="text-[9px] font-black uppercase tracking-wider text-green-600 bg-green-500/10 px-2 py-0.5 rounded">
-                        {faq.tag}
-                      </span>
-                      <h3 className="font-bold text-slate-900 text-base sm:text-lg leading-snug pt-1">
-                        {faq.question}
-                      </h3>
-                    </div>
-                    <ChevronRight 
-                      size={18} 
-                      className={`text-slate-400 shrink-0 transition-transform duration-300 mt-2 ${isActive ? 'rotate-90 text-green-650' : ''}`}
-                    />
-                  </header>
-                  
-                  {isActive && (
-                    <p className="mt-4 text-sm text-slate-700 font-medium leading-relaxed border-t border-slate-200/50 pt-4 animate-in fade-in duration-200">
+                  <h3 className="m-0">
+                    <button
+                      type="button"
+                      id={`faq-question-${i}`}
+                      aria-expanded={isActive}
+                      aria-controls={`faq-answer-${i}`}
+                      onClick={() => setActiveFaq(isActive ? null : i)}
+                      className="flex items-start gap-4 w-full text-left cursor-pointer"
+                    >
+                      <div className={`p-2.5 rounded-xl border ${isActive ? 'bg-green-500/10 border-green-500/20 text-green-600' : 'bg-white border-slate-200 text-slate-500'} shrink-0`}>
+                        <Icon size={20} />
+                      </div>
+                      <div className="space-y-1 flex-1">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-green-600 bg-green-500/10 px-2 py-0.5 rounded">
+                          {faq.tag}
+                        </span>
+                        <span className="block font-bold text-slate-900 text-base sm:text-lg leading-snug pt-1">
+                          {faq.question}
+                        </span>
+                      </div>
+                      <ChevronRight
+                        size={18}
+                        className={`text-slate-400 shrink-0 transition-transform duration-300 mt-2 ${isActive ? 'rotate-90 text-green-650' : ''}`}
+                      />
+                    </button>
+                  </h3>
+
+                  {/*
+                    The answer stays in the DOM at all times and is only collapsed visually
+                    (grid-rows 0fr → 1fr). Rendering it conditionally kept it out of the
+                    server HTML entirely, so crawlers that do not execute JavaScript — the
+                    majority of LLM crawlers — saw five headings and no substance.
+                  */}
+                  <div
+                    id={`faq-answer-${i}`}
+                    role="region"
+                    aria-labelledby={`faq-question-${i}`}
+                    className={`grid transition-all duration-300 ease-out ${isActive ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0'}`}
+                  >
+                    <p className="overflow-hidden text-sm text-slate-700 font-medium leading-relaxed border-t border-slate-200/50 pt-4">
                       {faq.answer}
                     </p>
-                  )}
+                  </div>
                 </article>
               );
             })}

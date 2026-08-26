@@ -3,15 +3,19 @@ import Link from 'next/link';
 import { ArrowLeft, Download, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { APP_VERSION } from '@/lib/version';
 
+// Search demand for this page is the generic term — "clean core whitepaper",
+// "sap clean core whitepaper", "sap clean core pdf" — not the product name. The
+// title led with "The Clean Core Accelerator", so the snippet never matched the
+// query: position 12 at 0% CTR over three months. Lead with what was searched for.
 export const metadata: Metadata = {
-  title: 'The Clean Core Accelerator — Community Whitepaper | Clean-Core.io',
-  description: 'Free community accelerator for SAP Clean Core modernization: a deterministic evidence engine first, then AI — Clean-Core-compliant drafts and signed audit evidence for architect review. Readable version of the downloadable PDF.',
+  title: 'SAP Clean Core Whitepaper — Free Modernization Guide (PDF) | Clean-Core.io',
+  description: 'Free SAP Clean Core whitepaper: how to assess custom ABAP, route it to in-app RAP or side-by-side BTP CAP, and keep a defensible audit trail. Read it here or download the PDF. Community-built, complementary to SAP ADT and ATC.',
   alternates: {
     canonical: 'https://clean-core.io/whitepaper',
   },
   openGraph: {
-    title: 'The Clean Core Accelerator — Community Whitepaper | Clean-Core.io',
-    description: 'Evidence-first SAP Clean Core modernization: benefits, security model, RAP/CAP routing and a signed audit pack. Complementary to SAP tooling.',
+    title: 'SAP Clean Core Whitepaper — Free Modernization Guide (PDF) | Clean-Core.io',
+    description: 'Free SAP Clean Core whitepaper: custom ABAP assessment, RAP vs. CAP routing, security model and signed audit evidence. Complementary to SAP tooling.',
     url: 'https://clean-core.io/whitepaper',
     type: 'article',
     siteName: 'Clean-Core.io',
