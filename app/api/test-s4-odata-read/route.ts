@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUrlSafe, safeFetch, SsrfError } from '@/lib/url-validation';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
-import { loadS4ConfigForUser } from '@/lib/s4-credentials';
+import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 
 /**
  * POST /api/test-s4-odata-read
@@ -112,14 +112,17 @@ export async function POST(req: NextRequest) {
 
     // F-03: Resolve credentials — stored (server-side) or transient (from body)
     const stored = body.useStoredCredentials ? await loadS4ConfigForUser(decodedToken.uid) : null;
+    // The vault is all-or-nothing: asking for stored credentials must not let
+    // the request redirect them to a URL of its choosing. See resolveS4Connection.
+    const { config: s4 } = resolveS4Connection(body, stored);
     const resolvedBody = {
       ...body,
-      url: body.url ?? stored?.url,
-      username: body.username ?? stored?.username,
-      password: body.password ?? stored?.password,
-      authType: body.authType ?? stored?.authType,
-      tokenUrl: body.tokenUrl ?? stored?.tokenUrl,
-      btpDestinationJson: body.btpDestinationJson ?? stored?.btpDestinationJson,
+      url: s4.url,
+      username: s4.username,
+      password: s4.password,
+      authType: s4.authType,
+      tokenUrl: s4.tokenUrl,
+      btpDestinationJson: s4.btpDestinationJson,
     };
 
     if (!entitySet) {

@@ -180,3 +180,49 @@ export async function deleteS4Credentials(uid: string): Promise<void> {
     { merge: true },
   ).catch(() => {});
 }
+
+/**
+ * Resolve the connection to use for an outbound S/4 call.
+ *
+ * The vault is all-or-nothing. Every route used to merge field by field —
+ * `url: body.url ?? stored?.url` alongside `password: body.password ??
+ * stored?.password` — so a request could ask for the stored credentials and
+ * supply its own URL, and the decrypted vault password was sent there. The
+ * SSRF allowlist narrowed where "there" could be, but an allowlist is a config
+ * value: with S4_HOST_ALLOWLIST unset, any public host qualified, and with it
+ * set the password still reached a different tenant on the same domain.
+ *
+ * So: if the caller asks for stored credentials, the whole connection identity
+ * comes from storage and body overrides for those fields are ignored. If it
+ * does not, nothing is read from storage at all. There is no in-between.
+ */
+export function resolveS4Connection(
+  body: Record<string, unknown>,
+  stored: S4ConfigResolved | null,
+): { config: S4ConfigInput; source: 'stored' | 'request' } {
+  if (stored) {
+    return {
+      config: {
+        url: stored.url,
+        username: stored.username,
+        password: stored.password,
+        authType: stored.authType,
+        tokenUrl: stored.tokenUrl,
+        btpDestinationJson: stored.btpDestinationJson,
+      },
+      source: 'stored',
+    };
+  }
+  const str = (v: unknown) => (typeof v === 'string' ? v : '');
+  return {
+    config: {
+      url: str(body.url),
+      username: str(body.username),
+      password: str(body.password),
+      authType: body.authType as S4ConfigInput['authType'],
+      tokenUrl: str(body.tokenUrl),
+      btpDestinationJson: str(body.btpDestinationJson),
+    },
+    source: 'request',
+  };
+}

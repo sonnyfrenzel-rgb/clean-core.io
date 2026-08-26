@@ -169,8 +169,11 @@ export default function LandingModals() {
           createdAt: serverTimestamp(),
           isAdmin: false,
           authMethod: 'google',
-          termsVersionAccepted: TERMS_VERSION,
-          termsAcceptedAt: serverTimestamp(),
+          // Deliberately NOT termsVersionAccepted / termsAcceptedAt. This branch
+          // provisions an account from a Google popup, and the popup asks for
+          // nothing. Recording acceptance here wrote a consent the person never
+          // gave — and, because the record existed, meant they were never asked.
+          // With the fields absent, onboarding collects the agreement properly.
         };
         await setDoc(userDocRef, newProfile);
 
@@ -297,7 +300,9 @@ export default function LandingModals() {
         transformationsLimit: COMMUNITY_QUOTA,
         maxTeamMembers: 1,
         orgId: null,
-        identityProvider: 'google',
+        // This is the email/password registration path; it recorded 'google',
+        // which mislabels the provenance of the consent record beside it.
+        identityProvider: 'password',
         createdAt: new Date(),
         isAdmin: false,
         authMethod: 'password',
@@ -850,11 +855,17 @@ export default function LandingModals() {
                     <button
                       type="button"
                       onClick={handleSignIn}
-                      className="w-full bg-gray-50 hover:bg-gray-100 text-gray-900 border border-gray-200 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2.5 shadow-sm"
+                      disabled={!agreedGDPR || !agreedTerms}
+                      className="w-full bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed text-gray-900 border border-gray-200 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2.5 shadow-sm"
                     >
                       <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.2-5.136 4.2A5.72 5.72 0 0 1 8.24 12.9a5.72 5.72 0 0 1 5.751-5.7 5.6 5.6 0 0 1 3.916 1.547l3.076-3.076A10.15 10.15 0 0 0 14.004 2a10.05 10.05 0 0 0-10 10.05 10.05 10.05 0 0 0 10 10.05c5.787 0 9.878-3.9 9.878-9.882 0-.67-.066-1.3-.2-1.933H12.24Z"/></svg>
                       Google Account
                     </button>
+                    {(!agreedGDPR || !agreedTerms) && (
+                      <p className="text-[10px] text-gray-400 text-center font-medium">
+                        Accept the data protection notice and the terms above to continue with Google.
+                      </p>
+                    )}
                   </div>
                 </form>
               ) : (

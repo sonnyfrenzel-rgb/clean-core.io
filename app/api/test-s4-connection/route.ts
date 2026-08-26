@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
-import { loadS4ConfigForUser } from '@/lib/s4-credentials';
+import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 import { isUrlSafe, safeFetch, SsrfError } from '@/lib/url-validation';
 
 /**
@@ -268,12 +268,15 @@ export async function POST(req: NextRequest) {
 
     // F-03: Resolve credentials — stored (server-side) or transient (from body)
     const stored = body.useStoredCredentials ? await loadS4ConfigForUser(decodedToken.uid) : null;
-    const url = body.url ?? stored?.url;
-    const username = body.username ?? stored?.username;
-    const password = body.password ?? stored?.password;
-    const authType = body.authType ?? stored?.authType;
-    const tokenUrl = body.tokenUrl ?? stored?.tokenUrl;
-    const btpDestinationJson = body.btpDestinationJson ?? stored?.btpDestinationJson;
+    // The vault is all-or-nothing: asking for stored credentials must not let
+    // the request redirect them to a URL of its choosing. See resolveS4Connection.
+    const { config: s4 } = resolveS4Connection(body, stored);
+    const url = s4.url;
+    const username = s4.username;
+    const password = s4.password;
+    const authType = s4.authType;
+    const tokenUrl = s4.tokenUrl;
+    const btpDestinationJson = s4.btpDestinationJson;
 
     // --- BTP Destination: parse JSON, resolve auth, and override parameters ---
     if (authType === 'btp_destination') {
