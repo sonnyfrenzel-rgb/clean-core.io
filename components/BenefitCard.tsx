@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Cpu, Users, Handshake } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export interface BenefitCardProps {
   linesOfCode: number;
@@ -14,26 +14,21 @@ export interface BenefitCardProps {
 }
 
 /**
- * The landing page's benefit block.
+ * The landing page's benefit block, built around the two questions every legacy
+ * decision waits on.
  *
- * It leads with the situation rather than the feature, because the situation is
- * the reason anyone is here: for most legacy programs the documentation was
- * never written or has been lost, the process was never described, and the
- * person who built it left years ago. The source is the only artifact that still
- * says what the thing does. A run reads it back in both directions — down into
- * released SAP APIs for the developer, up into process, roles and procedure for
- * the business.
+ * The market answers only one of them. smartShift inventories custom code and
+ * reports what to retain, retire or redesign. CoreAssess.AI produces a backlog
+ * mapped to approach, effort and complexity. Both speak to IT, and both sell on
+ * coverage or on a percentage ("up to 70% faster") that a reader cannot check.
+ * SAP Signavio Process Insights is the only one facing the business, and it
+ * mines transaction data — it can show that a process is slow; it cannot say
+ * what a Z-program does inside it.
  *
- * Two rules this component exists to keep:
- *
- *   - No time claim. How long the work takes depends on the decisions, and those
- *     stay with the reader. "Saves days" was unprovable and is gone.
- *   - No hand-typed figure. Everything is passed in from a run computed at
- *     request time against a file that ships in this repository, so the page
- *     cannot drift away from what the engine does.
- *
- * What it reconstructs is a DRAFT the business corrects — correcting a draft is
- * a different job from writing on a blank page, and that is the honest claim.
+ * So the question nobody answers is the first one a process owner asks. It gets
+ * the larger half of this card, and the order of the two columns is itself the
+ * argument. Deliberately absent: any time or percentage claim. We compete on a
+ * figure that can be recomputed, not on a bigger one.
  */
 export default function BenefitCard({
   linesOfCode,
@@ -50,70 +45,33 @@ export default function BenefitCard({
   const pct = (n: number) => (n / total) * 100;
 
   const bands = [
-    {
-      n: resolved,
-      title: 'the tool settles',
-      body: 'Points at a released SAP successor, looked up in SAP’s own published data. You review the mapping instead of hunting for it.',
-      bar: 'bg-emerald-500',
-      dot: 'bg-emerald-500',
-      text: 'text-emerald-700',
-    },
-    {
-      n: decision,
-      title: 'your decision',
-      body: 'Transformable, but somebody has to weigh business intent against the target design. The tool lays out the evidence and stops.',
-      bar: 'bg-amber-400',
-      dot: 'bg-amber-400',
-      text: 'text-amber-700',
-    },
-    {
-      n: handedBack,
-      title: 'stays hand work',
-      body: `Out of reach for any generator (${handedBackKinds.join(', ')}). Flagged and isolated rather than guessed at, so nothing false lands in your draft.`,
-      bar: 'bg-rose-500',
-      dot: 'bg-rose-500',
-      text: 'text-rose-700',
-    },
+    { n: resolved, label: 'settled', bar: 'bg-emerald-500', text: 'text-emerald-700' },
+    { n: decision, label: 'your call', bar: 'bg-amber-400', text: 'text-amber-700' },
+    { n: handedBack, label: 'hand work', bar: 'bg-rose-500', text: 'text-rose-700' },
   ];
 
-  const audiences = [
-    {
-      icon: Cpu,
-      who: 'Reading down — for the developer',
-      items: [
-        'Which object maps to which released SAP API',
-        'A first RAP or CAP draft to review',
-        'Matching test scaffolding',
-      ],
-    },
-    {
-      icon: Users,
-      who: 'Reading up — for the business',
-      items: [
-        'What the program actually does, in plain words',
-        'The process behind it, drawn as a BPMN diagram',
-        'Who owns which step — a RACI in business roles, not IT ones',
-        'A standard operating procedure for it',
-      ],
-    },
-    {
-      icon: Handshake,
-      who: 'Where they meet',
-      items: [
-        'Where you have to act — and where you explicitly do not',
-        'What the legacy code is still worth to the business',
-        'A signed record of how the decision was reached',
-      ],
-    },
+  // A four-step flow, drawn the way BPMN draws one: start, task, gateway, end.
+  const flow = [
+    { shape: 'circle', label: 'Order' },
+    { shape: 'task', label: 'Check limit' },
+    { shape: 'gateway', label: 'Over?' },
+    { shape: 'task', label: 'Block' },
+    { shape: 'circle-end', label: 'Done' },
+  ];
+
+  const raci = [
+    { step: 'Check credit limit', r: 'R', who: 'Credit Analyst' },
+    { step: 'Approve exception', r: 'A', who: 'Finance Lead' },
+    { step: 'Notify customer', r: 'C', who: 'Sales Ops' },
   ];
 
   return (
     <section
       aria-labelledby="benefit-heading"
-      className="rounded-[2.5rem] border border-slate-200 bg-white/90 backdrop-blur-sm shadow-xl overflow-hidden"
+      className="rounded-[2.5rem] border border-slate-200 bg-white shadow-xl overflow-hidden"
     >
-      {/* The situation, then the reframe */}
-      <div className="p-6 sm:p-10 border-b border-slate-100">
+      {/* The situation, in three lines rather than three paragraphs. */}
+      <div className="px-6 sm:px-10 pt-8 sm:pt-10 pb-6">
         <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
           The usual starting point
         </p>
@@ -123,96 +81,163 @@ export default function BenefitCard({
         >
           Nobody remembers what this program does.
         </h2>
-        <p className="mt-3 text-sm sm:text-base text-slate-600 font-medium max-w-2xl leading-relaxed">
-          The documentation was never written or is long gone. The process behind it was never
-          described. The colleague who built it left years ago. So the code sits there, and nobody
-          dares touch it.
-        </p>
-        <p className="mt-3 text-sm sm:text-base text-slate-800 font-bold max-w-2xl leading-relaxed">
-          The source is the one document that never lied. A run reads it back in both directions —
-          and hands you a draft to correct, which is a very different job from writing on a blank
-          page.
+        <p className="mt-3 text-sm sm:text-base text-slate-600 font-medium max-w-3xl leading-relaxed">
+          No documentation, no process description, and the colleague who built it left years ago.
+          Every decision about it then waits on two questions — and only one of them usually gets
+          answered.
         </p>
       </div>
 
-      {/* Where you stand */}
-      <div className="p-6 sm:p-10 border-b border-slate-100">
-        <h3 className="text-sm font-black uppercase tracking-widest text-slate-500">
-          And how much of it settles itself
-        </h3>
-        <p className="mt-2 text-sm text-slate-600 font-medium">
-          On the reference program we publish — {linesOfCode.toLocaleString('en-US')} lines of legacy
-          ABAP, {totalFindings} findings. Download it and get the same result.
-        </p>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-px bg-slate-200">
+        {/* The question nobody answers — the larger half. */}
+        <div className="lg:col-span-3 bg-white p-6 sm:p-9">
+          <p className="text-[11px] font-black uppercase tracking-widest text-emerald-600">
+            The business asks
+          </p>
+          <h3 className="mt-2 text-xl sm:text-3xl font-black tracking-tight text-gray-950 leading-tight">
+            &ldquo;What does this thing actually do?&rdquo;
+          </h3>
 
-        <div className="mt-6 flex h-4 w-full overflow-hidden rounded-full border border-slate-200">
-          {bands.map((b) => (
-            <div
-              key={b.title}
-              className={b.bar}
-              style={{ width: `${pct(b.n)}%` }}
-              title={`${b.n} ${b.title}`}
-            />
-          ))}
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {bands.map((b) => (
-            <div key={b.title} className="space-y-1.5">
-              <div className="flex items-baseline gap-2">
-                <span className={`inline-block w-2.5 h-2.5 rounded-full ${b.dot} shrink-0`} />
-                <span className="text-3xl font-black tabular-nums text-gray-950 leading-none">{b.n}</span>
-                <span className={`text-sm font-black ${b.text}`}>{b.title}</span>
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed pl-[1.15rem]">{b.body}</p>
+          <div className="mt-6 space-y-5">
+            {/* In plain words */}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                In plain words
+              </p>
+              <p className="mt-1.5 text-sm text-slate-700 leading-relaxed italic">
+                &ldquo;Checks open orders against the customer&rsquo;s credit limit and blocks
+                delivery when it is exceeded.&rdquo;
+              </p>
             </div>
-          ))}
-        </div>
 
-        <Link
-          href="/reference-analysis"
-          className="mt-6 inline-flex items-center gap-2 text-sm font-black text-emerald-700 hover:gap-3 transition-all"
-        >
-          See the full run and download the file <ArrowRight size={15} />
-        </Link>
-      </div>
-
-      {/* What each side walks away with */}
-      <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100 bg-slate-50/50">
-        {audiences.map((a) => {
-          const Icon = a.icon;
-          return (
-            <div key={a.who} className="p-6 sm:p-7 space-y-3">
-              <div className="flex items-center gap-2 text-emerald-600">
-                <Icon size={16} />
-                <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">
-                  {a.who}
-                </span>
-              </div>
-              <ul className="space-y-2">
-                {a.items.map((it) => (
-                  <li key={it} className="flex items-start gap-2 text-sm text-slate-700 leading-snug">
-                    <span className="mt-1.5 w-1 h-1 rounded-full bg-slate-400 shrink-0" />
-                    <span>{it}</span>
-                  </li>
+            {/* The process, drawn */}
+            <div className="rounded-2xl border border-slate-200 p-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                The process behind it &middot; BPMN 2.0
+              </p>
+              <div className="mt-3 flex items-center gap-1 overflow-x-auto pb-1">
+                {flow.map((s, i) => (
+                  <div key={s.label} className="flex items-center gap-1 shrink-0">
+                    {s.shape === 'circle' && (
+                      <span className="w-5 h-5 rounded-full border-2 border-slate-400" aria-hidden />
+                    )}
+                    {s.shape === 'circle-end' && (
+                      <span className="w-5 h-5 rounded-full border-[3px] border-emerald-600" aria-hidden />
+                    )}
+                    {s.shape === 'task' && (
+                      <span className="px-2 py-1 rounded-md border-2 border-slate-300 text-[10px] font-bold text-slate-600 whitespace-nowrap">
+                        {s.label}
+                      </span>
+                    )}
+                    {s.shape === 'gateway' && (
+                      <span
+                        className="w-5 h-5 border-2 border-amber-500 rotate-45 shrink-0"
+                        aria-hidden
+                      />
+                    )}
+                    {i < flow.length - 1 && <span className="w-3 h-px bg-slate-300" aria-hidden />}
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
-          );
-        })}
+
+            {/* Who owns what */}
+            <div className="rounded-2xl border border-slate-200 p-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                Who owns which step &middot; RACI, in business roles
+              </p>
+              <table className="mt-3 w-full text-left">
+                <tbody className="divide-y divide-slate-100">
+                  {raci.map((row) => (
+                    <tr key={row.step}>
+                      <td className="py-1.5 pr-3 text-xs text-slate-700">{row.step}</td>
+                      <td className="py-1.5 pr-3">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-black border border-emerald-300">
+                          {row.r}
+                        </span>
+                      </td>
+                      <td className="py-1.5 text-xs font-semibold text-slate-500">{row.who}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Plus the standard operating procedure, and what the legacy code is still worth to the
+              business. A draft to correct — which is a different job from writing on a blank page.
+            </p>
+          </div>
+        </div>
+
+        {/* The question everybody answers — compact. */}
+        <div className="lg:col-span-2 bg-slate-50/60 p-6 sm:p-9">
+          <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+            IT asks
+          </p>
+          <h3 className="mt-2 text-lg sm:text-xl font-black tracking-tight text-gray-800 leading-tight">
+            &ldquo;How much work is this?&rdquo;
+          </h3>
+
+          <p className="mt-5 text-xs text-slate-500 leading-relaxed">
+            On the {linesOfCode.toLocaleString('en-US')}-line reference program we publish —{' '}
+            {totalFindings} findings:
+          </p>
+
+          <div className="mt-3 flex h-3 w-full overflow-hidden rounded-full border border-slate-200">
+            {bands.map((b) => (
+              <div key={b.label} className={b.bar} style={{ width: `${pct(b.n)}%` }} title={`${b.n} ${b.label}`} />
+            ))}
+          </div>
+
+          <dl className="mt-4 space-y-2.5">
+            {bands.map((b) => (
+              <div key={b.label} className="flex items-baseline gap-2">
+                <dt className="text-2xl font-black tabular-nums text-gray-950 leading-none w-9">{b.n}</dt>
+                <dd className={`text-xs font-black ${b.text}`}>{b.label}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-2 text-[11px] text-slate-500 leading-relaxed">
+            Settled = a released SAP successor from SAP&rsquo;s own data. Hand work ={' '}
+            {handedBackKinds.join(', ')} — flagged, never guessed at.
+          </p>
+
+          <ul className="mt-5 space-y-1.5 border-t border-slate-200 pt-4">
+            {['Object → released API mapping', 'A first RAP or CAP draft', 'Matching test scaffolding'].map(
+              (t) => (
+                <li key={t} className="flex items-start gap-2 text-xs text-slate-600">
+                  <span className="mt-1.5 w-1 h-1 rounded-full bg-slate-400 shrink-0" />
+                  <span>{t}</span>
+                </li>
+              ),
+            )}
+          </ul>
+
+          <Link
+            href="/reference-analysis"
+            className="mt-5 inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 hover:gap-2.5 transition-all"
+          >
+            The full run, and the file <ArrowRight size={13} />
+          </Link>
+        </div>
       </div>
 
-      {/* The honest line, and the figures behind the claim */}
-      <div className="px-6 sm:px-10 py-6 border-t border-slate-100 space-y-4">
-        <p className="text-base sm:text-lg font-bold text-gray-900 leading-snug">
+      {/* The point of the ordering. */}
+      <div className="px-6 sm:px-10 py-7 border-t border-slate-200 space-y-4">
+        <p className="text-base sm:text-lg font-bold text-gray-900 leading-snug max-w-3xl">
+          Assessment tools answer the question on the right. The one on the left has been open for
+          years — and it is the one that decides whether the code is worth keeping at all.
+        </p>
+        <p className="text-sm text-slate-600 font-medium">
           It does not replace the architect. It shows them where to look — and the business why.
         </p>
-        <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500">
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500 pt-1">
           <Link href="/catalog" className="hover:text-emerald-700">
             <strong className="text-slate-700 tabular-nums">
               {classifiedObjects.toLocaleString('en-US')}
             </strong>{' '}
-            SAP objects classified from SAP’s own data
+            SAP objects classified from SAP&rsquo;s own data
           </Link>
           <Link href="/how-it-works" className="hover:text-emerald-700">
             <strong className="text-slate-700 tabular-nums">

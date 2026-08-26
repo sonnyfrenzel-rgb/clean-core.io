@@ -343,24 +343,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Benefit card. Leads with the situation — the documentation for a legacy
-            program is usually gone — then shows how much of a real run settles
-            itself, then what each side walks away with. Replaces the unprovable
-            "save days" claim with a run the reader can reproduce. */}
-        <div className="max-w-5xl mx-auto px-6 mt-16 relative z-20 animate-in fade-in slide-in-from-bottom-20 duration-1000 delay-500">
-          <BenefitCard
-            linesOfCode={reference.linesOfCode}
-            totalFindings={reference.totalFindings}
-            resolved={reference.resolved.count}
-            decision={reference.decision.count}
-            handedBack={reference.handedBack.count}
-            handedBackKinds={reference.handedBackKinds}
-            classifiedObjects={catalogStats.classifiedObjects}
-            constructsTotal={constructs.length}
-            constructsFullyCovered={fullyCovered}
-          />
-        </div>
-
         {/* GEO Quick Answer Block */}
         <div className="max-w-4xl mx-auto px-6 mt-16 relative z-20 animate-in fade-in slide-in-from-bottom-20 duration-1000 delay-600">
           <QuickAnswer
@@ -372,6 +354,25 @@ export default function Home() {
         {/* Interactive Slideshow */}
         <div className="relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
           <LandingSlideshow />
+        </div>
+
+        {/* Benefit card, placed after the slideshow: the reader has seen what the
+            product does, and this answers "so where does that leave me". Built
+            around the two questions a legacy decision waits on — the business one
+            first and larger, because the market answers only the technical one.
+            Replaces the unprovable "save days" claim with a reproducible run. */}
+        <div className="max-w-5xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
+          <BenefitCard
+            linesOfCode={reference.linesOfCode}
+            totalFindings={reference.totalFindings}
+            resolved={reference.resolved.count}
+            decision={reference.decision.count}
+            handedBack={reference.handedBack.count}
+            handedBackKinds={reference.handedBackKinds}
+            classifiedObjects={catalogStats.classifiedObjects}
+            constructsTotal={constructs.length}
+            constructsFullyCovered={fullyCovered}
+          />
         </div>
 
         {/* Verifiable Integrity & Honest Limits Section */}
