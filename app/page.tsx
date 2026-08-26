@@ -29,6 +29,8 @@ import TransformationReplay from '@/components/TransformationReplay';
 import SamplePackageDownload from '@/components/SamplePackageDownload';
 import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/version';
 import { getCatalogStats } from '@/lib/abap/catalog-service';
+import { SUPPORT_MATRIX } from '@/lib/abap/support-matrix';
+import ProofStrip, { type ProofFigure } from '@/components/ProofStrip';
 
 export const metadata: Metadata = {
   title: 'SAP Clean Core Accelerator — Free ABAP Analysis | Clean-Core.io',
@@ -52,6 +54,42 @@ export const metadata: Metadata = {
 
 export default function Home() {
   const catalogStats = getCatalogStats();
+
+  // Both figures are computed from what actually ships, not typed into the copy:
+  // the object count from the generated catalog artifact, the coverage split from
+  // the same support matrix the engine runs on. If either changes, the landing
+  // page changes with it — it cannot quietly drift into a claim.
+  const constructs = Object.values(SUPPORT_MATRIX);
+  const fullyCovered = constructs.filter((c) => c.level === 'fully').length;
+  const needsReview = constructs.filter((c) => c.level === 'partial').length;
+  const handedBack = constructs.filter((c) => c.level === 'not-supported').length;
+
+  const proofFigures: ProofFigure[] = [
+    {
+      value: catalogStats.classifiedObjects.toLocaleString('en-US'),
+      label: 'SAP objects classified, each with its clean core level',
+      detail: `Levels A–D come from SAP's own published state for the object, not from our judgement. Synced ${catalogStats.syncDate || 'weekly'}, with the source file hash on the page.`,
+      href: '/catalog',
+      hrefLabel: 'Look it up',
+      icon: 'catalog',
+    },
+    {
+      value: `${fullyCovered} of ${constructs.length}`,
+      label: 'ABAP construct classes fully covered — and we name the rest',
+      detail: `${needsReview} need architect review, ${handedBack} are handed back untouched. Published per class before you upload anything, not discovered afterwards.`,
+      href: '/how-it-works',
+      hrefLabel: 'See the matrix',
+      icon: 'coverage',
+    },
+    {
+      value: 'Every run',
+      label: 'frozen into an HMAC-signed audit pack',
+      detail: 'Findings, catalog version and model card are sealed and independently verifiable — so a decision made today can still be defended at the next upgrade.',
+      href: '/verify-pack',
+      hrefLabel: 'Verify one',
+      icon: 'evidence',
+    },
+  ];
   const schemaJson = {
     "@context": "https://schema.org",
     "@graph": [
@@ -314,7 +352,7 @@ export default function Home() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">Clean Core Accelerator</span>
           </h1>
           <p className="text-base sm:text-lg md:text-2xl text-gray-700 max-w-3xl mx-auto mb-12 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200">
-            Generate the first Clean-Core-compliant draft for review and approval. Save days of manual mapping and boilerplate generation&mdash;without replacing the judgment of the expert.
+            Generate the first Clean-Core-compliant draft for review and approval &mdash; grounded in SAP&apos;s own published object data, with the limits named before you upload, and the expert&apos;s judgment never replaced.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
             <HeroCTA />
@@ -327,6 +365,12 @@ export default function Home() {
               </Link>
             </div>
           </div>
+        </div>
+
+        {/* Proof strip — the benefit as three checkable numbers, each linking to
+            the page that proves it. Replaces the unprovable "save days" claim. */}
+        <div className="max-w-5xl mx-auto px-6 mt-16 relative z-20 animate-in fade-in slide-in-from-bottom-20 duration-1000 delay-500">
+          <ProofStrip figures={proofFigures} />
         </div>
 
         {/* GEO Quick Answer Block */}
@@ -428,7 +472,7 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
               {catalogStats.classifiedObjects > 0 && (
                 <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-xs font-bold">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  {catalogStats.classifiedObjects.toLocaleString()} classified SAP objects · Auto-synced from SAP&apos;s official repository
+                  {catalogStats.classifiedObjects.toLocaleString('en-US')} classified SAP objects · Auto-synced from SAP&apos;s official repository
                 </div>
               )}
             </div>

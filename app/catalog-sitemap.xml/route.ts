@@ -1,4 +1,5 @@
 import { getMappedCatalogObjectNames, objectToSlug } from '@/lib/abap/catalog-index';
+import { getCatalogStats } from '@/lib/abap/catalog-service';
 import { APP_RELEASE_DATE } from '@/lib/version';
 
 /**
@@ -13,7 +14,11 @@ export const revalidate = 86400; // refresh daily
 
 export function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
-  const lastmod = new Date(APP_RELEASE_DATE).toISOString();
+  // These pages change when the catalog is synced, not when the app ships, so
+  // lastmod follows the artifact's fetch date and falls back to the release date
+  // before the first sync.
+  const syncDate = getCatalogStats().syncDate;
+  const lastmod = new Date(syncDate || APP_RELEASE_DATE).toISOString();
 
   const urls = getMappedCatalogObjectNames()
     .map(

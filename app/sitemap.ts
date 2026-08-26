@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 import { APP_RELEASE_DATE } from '@/lib/version';
-import { CATALOG_LETTERS } from '@/lib/abap/catalog-index';
+import { CATALOG_LETTERS, getModuleAreas } from '@/lib/abap/catalog-index';
 import { FEATURE_SLUGS } from '@/lib/features-content';
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -44,6 +44,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: releaseDate,
       changeFrequency: 'weekly' as const,
       priority: 0.5,
+    })),
+    // Application-area hubs (SD, FI, MM, …). These carry real content — every
+    // object in the area with its clean core level and successor — and are the
+    // parent pages that tie the ~400 object pages into topical clusters, so they
+    // belong in the core sitemap rather than the long-tail catalog one.
+    ...getModuleAreas().map((a) => ({
+      url: `${baseUrl}/catalog/module/${a.code.toLowerCase()}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
     })),
   ];
 

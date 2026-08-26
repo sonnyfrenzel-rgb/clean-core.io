@@ -121,12 +121,34 @@ export function hasNoReleasedApiPath(objectName: string): boolean {
 
 export const MERGED_CATALOG_SIZE = Object.keys(MERGED_TABLE_MAP).length;
 
-/** Lightweight stats for landing page badge — avoids importing the full artifact. */
-export function getCatalogStats(): { classifiedObjects: number; mappedWithSuccessor: number; syncDate: string } {
+/**
+ * Lightweight stats for the public surfaces.
+ *
+ * `classifiedObjects` counts the UNION of both repository artifacts, because
+ * that is the set of objects we can state a clean core level for. Counting only
+ * the release file would understate coverage by the 8,587 objects the
+ * classification file adds — and would contradict the A–D census on
+ * /sap-clean-core-object-classification, which is the kind of mismatch that gets
+ * a figure mis-cited.
+ */
+export function getCatalogStats(): {
+  classifiedObjects: number;
+  mappedWithSuccessor: number;
+  syncDate: string;
+} {
+  const keys = new Set<string>([
+    ...Object.keys(CR.entries ?? {}),
+    ...Object.keys(CR_CLASS.entries ?? {}),
+  ]);
+  // Newest of the two syncs — the figure is only as current as its stalest half,
+  // but the label reads "as of", so the later date is the honest one to show.
+  const dates = [CR.meta?.fetchedAt, CR_CLASS.meta?.fetchedAt].filter(Boolean) as string[];
+  const syncDate = dates.length ? dates.sort().slice(-1)[0].slice(0, 10) : '';
+
   return {
-    classifiedObjects: CR.meta?.entryCount || 0,
+    classifiedObjects: keys.size,
     mappedWithSuccessor: MERGED_CATALOG_SIZE,
-    syncDate: (CR.meta?.fetchedAt || '').slice(0, 10),
+    syncDate,
   };
 }
 

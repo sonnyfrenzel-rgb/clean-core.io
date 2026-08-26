@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getCatalogStats, getMergedCatalogVersion } from '@/lib/abap/catalog-service';
-import { getCatalogSearchIndex, CATALOG_LETTERS } from '@/lib/abap/catalog-index';
+import { getCatalogSearchIndex, CATALOG_LETTERS, getModuleAreas } from '@/lib/abap/catalog-index';
 import CatalogSearch from '@/components/catalog/CatalogSearch';
 import CatalogAttribution from '@/components/catalog/CatalogAttribution';
 
@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 export default function CatalogIndexPage() {
   const stats = getCatalogStats();
   const names = getCatalogSearchIndex();
+  const areas = getModuleAreas();
 
   return (
     <main className="max-w-4xl mx-auto px-6 py-16">
@@ -35,14 +36,39 @@ export default function CatalogIndexPage() {
       </p>
       {stats.classifiedObjects > 0 && (
         <p className="text-sm text-slate-500 mb-8">
-          {stats.classifiedObjects.toLocaleString()} classified SAP objects ·{' '}
-          {stats.mappedWithSuccessor.toLocaleString()} with a released successor · reflects the SAP
+          {stats.classifiedObjects.toLocaleString('en-US')} classified SAP objects ·{' '}
+          {stats.mappedWithSuccessor.toLocaleString('en-US')} with a released successor · reflects the SAP
           Cloudification Repository as of {stats.syncDate || 'the latest sync'}.
         </p>
       )}
 
       <div className="mb-12">
         <CatalogSearch names={names} />
+      </div>
+
+      <h2 className="text-sm font-bold tracking-widest text-slate-400 uppercase mb-4">
+        Browse by SAP area
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-12">
+        {areas.map((a) => (
+          <Link
+            key={a.code}
+            href={`/catalog/module/${a.code.toLowerCase()}`}
+            className="group flex items-start gap-3 p-4 rounded-2xl border border-slate-200 bg-white hover:border-emerald-400 transition-colors"
+          >
+            <span className="shrink-0 inline-flex items-center justify-center min-w-[3rem] h-8 px-2 rounded-lg bg-slate-100 border border-slate-200 font-black text-sm text-slate-700 group-hover:bg-emerald-50 group-hover:text-emerald-700 group-hover:border-emerald-200">
+              {a.code}
+            </span>
+            <span className="min-w-0">
+              <span className="block font-bold text-sm text-slate-800 group-hover:text-emerald-700">
+                {a.name}
+              </span>
+              <span className="block text-xs text-slate-500">
+                {a.objectCount} object{a.objectCount === 1 ? '' : 's'} with a released successor
+              </span>
+            </span>
+          </Link>
+        ))}
       </div>
 
       <h2 className="text-sm font-bold tracking-widest text-slate-400 uppercase mb-4">

@@ -7,6 +7,10 @@ import {
   slugToObject,
   objectToSlug,
   getAllCatalogObjectNames,
+  getObjectAppComponent,
+  getObjectModuleArea,
+  getModuleArea,
+  getRelatedObjects,
 } from '@/lib/abap/catalog-index';
 import CatalogAttribution from '@/components/catalog/CatalogAttribution';
 import { jsonLdHtml } from '@/lib/json-ld';
@@ -45,9 +49,14 @@ export async function generateMetadata({
   const title = successor
     ? `${name} → ${successor} · Released API successor | Clean-Core.io`
     : `${name} · No released API path | Clean-Core.io`;
+  const { graded } = facts(name);
+  const levelPhrase =
+    graded.grade === 'Unknown'
+      ? ''
+      : ` Clean core level ${graded.grade}${graded.state ? ` (SAP state: ${graded.state})` : ''}.`;
   const description = successor
-    ? `${name} maps to the released S/4HANA successor ${successor}. Clean Core readiness reference from the SAP Cloudification Repository.`
-    : `${name} has no released API successor in the SAP Cloudification Repository — it requires re-architecture for a Clean Core target. Reference for SAP custom-code modernization.`;
+    ? `${name} maps to the released S/4HANA successor ${successor}.${levelPhrase} Clean Core readiness reference from the SAP Cloudification Repository.`
+    : `${name} has no released API successor in the SAP Cloudification Repository — it requires re-architecture for a Clean Core target.${levelPhrase}`;
 
   return {
     title,
@@ -71,9 +80,34 @@ export default async function CatalogObjectPage({
   if (!entry && !noPath) notFound();
 
   // Structured data: DefinedTerm (object → successor) + FAQPage (the two questions people ask).
+  const area = getObjectModuleArea(name);
+  const areaMeta = getModuleArea(area);
+  const related = getRelatedObjects(name);
+  const component = getObjectAppComponent(name);
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Catalog', item: `${BASE}/catalog` },
+          ...(areaMeta
+            ? [{
+                '@type': 'ListItem',
+                position: 2,
+                name: `${areaMeta.name} (${areaMeta.code})`,
+                item: `${BASE}/catalog/module/${areaMeta.code.toLowerCase()}`,
+              }]
+            : []),
+          {
+            '@type': 'ListItem',
+            position: areaMeta ? 3 : 2,
+            name,
+            item: `${BASE}/catalog/${object}`,
+          },
+        ],
+      },
       {
         '@type': 'DefinedTerm',
         name,
@@ -117,6 +151,17 @@ export default async function CatalogObjectPage({
 
       <nav className="text-sm text-slate-500 mb-6">
         <Link href="/catalog" className="hover:text-slate-700">Catalog</Link>
+        {areaMeta && (
+          <>
+            <span className="mx-2">/</span>
+            <Link
+              href={`/catalog/module/${areaMeta.code.toLowerCase()}`}
+              className="hover:text-slate-700"
+            >
+              {areaMeta.name} ({areaMeta.code})
+            </Link>
+          </>
+        )}
         <span className="mx-2">/</span>
         <span className="font-mono font-bold text-slate-700">{name}</span>
       </nav>
@@ -226,6 +271,40 @@ export default async function CatalogObjectPage({
           <Link href="/catalog" className="text-emerald-700 hover:underline">→ Browse the full catalog</Link>
         </div>
       </div>
+
+      {(areaMeta || component) && (
+        <section className="mt-14 border-t border-slate-200 pt-8">
+          <h2 className="text-lg font-black text-gray-900 mb-1">
+            {areaMeta ? `More from SAP ${areaMeta.name}` : 'Application component'}
+          </h2>
+          {component && (
+            <p className="text-sm text-slate-500 mb-4">
+              Application component: <span className="font-mono">{component}</span>
+            </p>
+          )}
+          {related.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+              {related.map((n) => (
+                <Link
+                  key={n}
+                  href={`/catalog/${objectToSlug(n)}`}
+                  className="px-3 py-2 rounded-lg border border-slate-100 bg-white font-mono text-sm font-bold text-slate-700 hover:border-emerald-400 hover:text-emerald-700 truncate"
+                >
+                  {n}
+                </Link>
+              ))}
+            </div>
+          )}
+          {areaMeta && (
+            <Link
+              href={`/catalog/module/${areaMeta.code.toLowerCase()}`}
+              className="inline-flex items-center gap-1 text-sm font-bold text-emerald-700 hover:underline"
+            >
+              All {areaMeta.name} objects &rarr;
+            </Link>
+          )}
+        </section>
+      )}
 
       <CatalogAttribution />
     </main>
