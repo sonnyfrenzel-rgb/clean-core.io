@@ -73,6 +73,46 @@ the free tier's 5 transformations is configuration, not a measurement.
   is gated on the same checkboxes as its submit button. The email registration
   path also recorded `identityProvider: 'google'`.
 
+### Fixed — four more, from the same review
+
+- **An OData service path was constrained in one route and not its sibling.** The
+  SSRF allowlist decides which *host* may be reached; nothing decided which
+  *path*, so `/api/fetch-s4-metadata` concatenated the raw body value onto an
+  allowlisted host and could read anything those credentials can — the vault's,
+  under `useStoredCredentials`. `isSafeODataServicePath()` now lives in
+  `lib/url-validation.ts` and both routes use it.
+- **The audit pack export timestamp never landed.** Firestore's `set` does not
+  interpret dotted field names — only `update` does — so
+  `set({ 'auditMetadata.auditPackExportedAt': x }, { merge: true })` created a
+  literal top-level field with a dot in its name and left the intended one unset.
+  No exception, no warning. Written nested now; a scan confirmed it was the only
+  instance.
+- **The compliance HUD claimed 100 %.** Two substitutions:
+  `project?.cleanCoreScore || 70` invented a baseline for an unscored project,
+  and `signOffFindings.length > 0 ? … : 100` declared full compliance whenever no
+  finding happened to require sign-off — which happens on a parse miss, on empty
+  source, and whenever all findings are informational. It overrode a real stored
+  score of 40 with a green ring. The project's own score now stands, and an
+  unscored project shows "Not scored yet" rather than a number.
+- **The Jira flow reported success it had not achieved.** The callback sent
+  `JIRA_AUTH_SUCCESS` while token persistence is still a TODO, and the modal's
+  sync ran a timer and jumped to a success screen. Nothing renders that modal
+  today, but a fake success in the tree is a trap for whoever wires it up.
+
+### Known, not fixed in this release
+
+- Sign-offs in the transformation view are component state only, so a refresh
+  discards them and the score moves back. Persisting them is a product change,
+  not a fix.
+- The published fallback signing key (`dev_audit_signing_key_fallback_clean_core`)
+  remains in three routes, and `tests/audit-compliance-v181.spec.ts` signs with
+  it and asserts the result is valid — so setting a real `AUDIT_SIGNING_KEY` in
+  CI would break the suite. Production is protected by the deploy guard, which
+  fails the deploy when the secret is missing. Closing this needs a decision
+  about giving CI its own key.
+- Four medium findings remain open and are listed in
+  `docs/reviews/2026-08-26-TRIAGE.md`.
+
 ### Fixed — two Rules of Hooks violations
 
 `UserOnboarding` returned on `!auth` before its `useEffect`: the server render
@@ -124,7 +164,7 @@ nothing counts as settled without a real catalog lookup, and the handed-back
 bucket is never silently emptied. An empty red band would read as "we transform
 everything".
 
-213 passed, 0 failed.
+223 passed, 0 failed.
 
 ## [v2.4.0] — 2026-08-26
 
