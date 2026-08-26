@@ -5,6 +5,99 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.4.0] — 2026-08-26
+
+Clean core levels stop being an estimate. SAP publishes a second classification
+file that this repo was not syncing; with it, levels A, B and D become lookups
+against SAP's own data instead of inferences from a risk heuristic. Alongside
+that, the search-visibility fixes that three months of Search Console data
+showed were losing traffic the site had already earned.
+
+### Added
+- **`objectClassifications_SAP.json` is now synced** (formatVersion 2, 8,587
+  entries after normalisation). It carries the two states that separate level B
+  from level D: `classicAPI` (8,116 — documented, upgrade-stable classic APIs)
+  and `noAPI` (471 — not intended for customer use). It is near-disjoint from
+  `objectReleaseInfoLatest.json` (196 keys overlap), so catalog coverage grows
+  from 23,696 to **32,103** classified objects.
+- **`gradeFromSapStates()` and `gradeSapObject()`** derive the clean core level
+  from SAP data: `released` → A, `classicAPI` → B, `noAPI` / `notToBeReleased`
+  → D, `deprecated` → C with a successor and D without. An SAP object listed in
+  neither file is graded C, which is what the clean core level concept defines
+  level C to be. Every result carries a `provenance` field (`catalog`,
+  `catalog-residual`, `heuristic`).
+- **`/api/abcd-classify`** — auth-gated, read-only batch lookup, capped at 500
+  objects per call. It exists because the analyze panel is a client component
+  and the catalog artifacts are ~4 MB: names go out, grades come back, and the
+  analyze bundle stays at 161 kB.
+- **A–D census on `/sap-clean-core-object-classification`** — the distribution
+  across everything SAP publishes (A 72.1% · B 24.8% · C 0.2% · D 2.9% over
+  32,103 objects), with both source files named by sha256 and fetch date so the
+  figures can be reproduced. Labelled as a census of SAP's data, not a
+  benchmark of any customer's code.
+- **Enhancement and modification detection** — two new evidence kinds. Statement
+  level: `ENHANCEMENT`, `ENHANCEMENT-POINT`, `ENHANCEMENT-SECTION` (level D
+  technologies), `GET`/`CALL BADI` and `CL_EXITHANDLER=>GET_INSTANCE` (level B,
+  reported at low severity so an SAP-provided extension point is not penalised
+  like a modification). Modification markers (`*{ INSERT|REPLACE|DELETE`) are
+  full-line comments that `tokenize()` drops by design, so they are matched
+  against the raw source in a separate pass — without it, the most severe clean
+  core violation was invisible to the engine. Both feed the Clean Core Score.
+- **`/llms.txt`** — previously a 404. States what the site holds, the figures
+  worth citing with their provenance, the entry points and the limits. Figures
+  are read from the generated artifact, not hardcoded.
+- Registry entries for the 2025 PCE releases and the BTP release file. A grade
+  is release-dependent: an object released in 2025 is still unreleased against
+  a 2023 target.
+
+### Changed
+- **The A–D grade is now presented in two tiers instead of one blanket
+  disclaimer.** Looked-up grades are marked "SAP data" with the state that
+  produced them; only customer Z/Y objects, which SAP cannot have classified,
+  fall back to the heuristic and are marked "est.". The analyze panel states
+  the split ("N of M grades come from SAP's published object data"). The grade
+  remains outside the signed audit pack, and every surface still says so.
+- **Catalog object pages show the clean core level** under the object name
+  (VBAK → D, `notToBeReleased`; MAKT → C, listed in neither file).
+- **`/knowledge` FAQ answers are in the server HTML.** They were rendered as
+  `{isActive && (...)}` with `activeFaq` starting at `null`, so the page shipped
+  five headings and no substance — 5,401 characters of visible text in a 63,719
+  byte page, with the answers reachable only inside the JSON-LD block that text
+  extractors strip. The answer now stays in the DOM and collapses visually; the
+  header became a real button with `aria-expanded`/`aria-controls`. Visible
+  text: 5,401 → 8,633 characters.
+- **`dateModified` in the homepage JSON-LD tracks the release constant.** It was
+  frozen at 2026-06-26. The new `APP_RELEASE_DATE_ISO` is an explicit literal:
+  deriving it from `APP_RELEASE_DATE` via `toISOString()` shifts the date one
+  day back in every positive UTC offset, CET included.
+- **`/sap-cloudification` leads with the lookup.** It held position 8.4 on
+  "cloudification repository (viewer)" queries at 0.11% CTR because its snippet
+  read as an article. Title, description and an above-the-fold entry point now
+  point at `/catalog`, which already carried the correct title but ranked lower.
+- **`/whitepaper` retitled** to lead with the searched term rather than the
+  product name (position 12, 0% CTR over three months).
+- **SAP BAIP is documented alongside SAP BTP, not instead of it.** SAP announced
+  the Business AI Platform at Sapphire 2026, but shipped "SAP BTP ABAP
+  Environment — Release 2608" on 15 August 2026 under the old name. BTP stays
+  as the name of the concrete services; BAIP is noted as the portfolio around
+  them in the glossary, the chatbot knowledge base and on `/knowledge`.
+
+### Fixed
+- **The ATC severity mapping is no longer asserted as SAP doctrine.** `ABCD_META`
+  published A/B/C/D = no message/P3/P2/P1 as fact, and no SAP source for that
+  mapping could be cited. The field is now `atcReading` and is shown as our
+  reading; the four places in public copy claiming the grades "map to ATC
+  priorities" no longer say so.
+- **FUGR rows in the classification file are indexed by function module.** SAP
+  puts the function GROUP in `tadirObjName` and the MODULE in `objectKey`, and
+  custom code calls the module — 5,246 entries would otherwise have been filed
+  under a name nothing looks up.
+- `released` takes precedence over `classicAPI` for the 196 objects listed in
+  both files. Reversed, it would have silently downgraded released objects from
+  A to B. Covered by test.
+- The hero on the classification page said SAP grades "technical objects"; SAP
+  grades extensions.
+
 ## [v2.3.1] — 2026-08-20
 
 Community activation. A long-form Clean Core explainer built to be forwarded, a

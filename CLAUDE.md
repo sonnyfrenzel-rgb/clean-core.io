@@ -17,6 +17,7 @@ npm start            # serve production build
 npm run lint         # eslint
 npx playwright test  # E2E/integration tests (need Firebase emulators running)
 npm run sync:catalog # refresh SAP cloudification catalog (latest)
+npm run sync:catalog:all # refresh every registry entry incl. the A-D classification file
 ```
 
 Emulators for tests: `firebase emulators:start --only auth,firestore` (auth :9099, firestore :8080).
@@ -25,7 +26,7 @@ Emulators for tests: `firebase emulators:start --only auth,firestore` (auth :909
 
 - `app/` — App Router. `app/(app)/` = authenticated product shell; public/legal pages + `api/` at top level.
 - `app/(app)/project/[projectId]/` — the **7-stage workflow**, one page each: `analyze` → `design` → `transformation` → `documentation` → `testing` → `tco` → `delivery`.
-- `app/api/*/route.ts` — ~32 route handlers (gemini proxy, runs/create, mfa, admin, export sign/verify, s4 connectivity, email).
+- `app/api/*/route.ts` — ~38 route handlers (gemini proxy, runs/create, mfa, admin, export sign/verify, s4 connectivity, email, abcd-classify).
 - `components/` — shared `.tsx`; feature subfolders `components/analyze/`, `components/design/`.
 - `lib/` — non-UI logic. `lib/abap/` is the deterministic evidence/grounding engine (~24 files).
 - `hooks/`, `scripts/`, `tests/`, `docs/`.
@@ -34,6 +35,7 @@ Emulators for tests: `firebase emulators:start --only auth,firestore` (auth :909
 - Auth/DB: `lib/firebase.ts` (client, `getDb`/`getAuth`), `lib/firebase-admin.ts` (`verifyRequestAuth`, `getAdminDb`).
 - Trust chain: `app/api/runs/create/route.ts` (immutable HMAC-signed runs), `lib/run-guard.ts` (`enforceActiveRun`), `lib/project-loader.ts` (`loadProjectAndHydrate`), `lib/audit-pack.ts` / `lib/audit-pack-verify.ts`.
 - ABAP engine: `lib/abap/evidence-model.ts` (`buildAbapEvidence`), `code-assessment.ts`, `extensibility-router.ts`, catalog layer (`catalog-service.ts`, `sap-api-catalog.ts`).
+- Clean core levels A–D: `lib/abap/abcd-classification.ts` (pure, no imports — the consuming panel is a client component), lookup via `gradeSapObject()` in `catalog-service.ts` (server-only), batch lookup for clients via `/api/abcd-classify`. Two synced SAP artifacts back it; see `docs/ARCHITECTURE.md` §4.1–4.3. The grade is **never** part of the signed audit pack.
 - Crypto/secrets: `lib/s4-credentials.ts` (AES-256-GCM), `lib/mfa.ts`, `lib/approval-token.ts`.
 
 ## Conventions

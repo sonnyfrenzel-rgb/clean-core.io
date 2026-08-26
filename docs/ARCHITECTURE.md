@@ -63,7 +63,59 @@ Deterministic, no LLM. Runs synchronously so results can be replayed as the Evid
 - `extensibility-router.ts` — `routeExtensibility` decides RAP (in-app) vs CAP (side-by-side) track.
 - OO resolver: `class-model.ts` / `class-model-resolver.ts` — linearizes inheritance (MRO), maps constructors/interface aliases before LLM to prevent structure hallucination.
 - Usage import: `usage-*.ts` — SCMON/UPL/ST03N parsing + `usage-privacy.ts` (pseudonymization).
-- Catalog: `catalog-service.ts` (`getMergedCatalogVersion`, `MERGED_TABLE_MAP`), `sap-api-catalog.ts`, `cds-catalog.ts`, `cloudification-repo.ts`, `support-matrix.ts`, `generated/cloudification-repo.latest.json`. Refresh via `npm run sync:catalog`.
+- Catalog: `catalog-service.ts` (`getMergedCatalogVersion`, `MERGED_TABLE_MAP`), `sap-api-catalog.ts`, `cds-catalog.ts`, `cloudification-repo.ts`, `support-matrix.ts`. Refresh via `npm run sync:catalog` (single release) or `npm run sync:catalog:all`.
+
+### 4.1 The two catalog files, and why both
+
+SAP's [Cloudification Repository](https://github.com/SAP/abap-atc-cr-cv-s4hc) ships two schemas, and the engine syncs both into `lib/abap/generated/`:
+
+| Artifact | Source | formatVersion | Entries | States |
+|---|---|---|---|---|
+| `cloudification-repo.latest.json` | `objectReleaseInfoLatest.json` | 1 | 23,696 | `released`, `deprecated`, `notToBeReleased` |
+| `cloudification-repo.classifications-sap.json` | `objectClassifications_SAP.json` | 2 | 8,587 | `classicAPI`, `noAPI` |
+
+They are **near-disjoint** — 196 keys overlap — so the second file is additional coverage, not a restatement. Together they classify **32,103** objects.
+
+Two things about the second file are easy to get wrong:
+
+- **FUGR rows name the function GROUP in `tadirObjName` and the function MODULE in `objectKey`.** Custom code calls the module (`CALL FUNCTION 'BAPI_…'`), so `normalizeClassificationFile()` indexes FUGR rows by `objectKey` and everything else by `tadirObjName`. Indexing all rows the same way would file 5,246 entries under a name nothing looks up.
+- **`released` beats `classicAPI`** on the 196 overlapping objects. Reversed, released (level A) objects would be silently downgraded to B.
+
+`scripts/sync-cloudification-repo.ts` dispatches on the registry entry (`CLASSIFICATION_RELEASES`) rather than sniffing the payload, and throws on a shape mismatch — a half-parsed catalog would produce confidently wrong grades.
+
+### 4.2 Clean core levels A–D, and their provenance
+
+`abcd-classification.ts` is deliberately **dependency-free**: the panel that renders grades is a client component, and importing the catalog there would ship ~4 MB of JSON to the browser. The lookup therefore lives in `catalog-service.ts` (server-only) and the pure grading functions live in `abcd-classification.ts`.
+
+| SAP state | Level | `provenance` |
+|---|---|---|
+| `released` | A | `catalog` |
+| `classicAPI` | B | `catalog` |
+| `deprecated` + successor | C | `catalog` |
+| `deprecated` without successor | D | `catalog` |
+| `noAPI`, `notToBeReleased` | D | `catalog` |
+| SAP object in neither file | C | `catalog-residual` |
+| customer Z/Y object | — falls back to `gradeFromCoupling` / `gradeFromInventory` | `heuristic` |
+
+The `catalog-residual` case is not a guess: "SAP internal objects, not classified or intended for customer use" is what the clean core level concept defines level C to be.
+
+Client surfaces receive resolved grades, never the maps:
+
+- Server components (`/catalog/[object]`, `/sap-clean-core-object-classification`) call `gradeSapObject()` / `getPublishedGradeDistribution()` directly.
+- The client `AbcdClassificationPanel` posts object names to **`/api/abcd-classify`** (auth-gated, read-only, max 500 objects) and renders heuristic grades until the lookup lands, so a slow or failed call never blanks the panel.
+
+**The A–D grade is deliberately excluded from the signed audit pack.** It is an orientation aid, not evidence; a wrong grade must never become signed material. Every surface that shows a grade repeats this.
+
+The ATC severity per level is stored as `atcReading` — *our* reading, not an SAP-published mapping. No SAP source stating it outright could be cited; what SAP does document is the recommendation to run ATC in blocking mode for Priority 1 and 2 findings. Do not present it as SAP doctrine without a source.
+
+### 4.3 Enhancement and modification detection
+
+The clean core level concept turns on *which extension technology* was used, which is also what SAP's ATC check "Allowed Enhancement Technologies" examines. Two evidence kinds cover it:
+
+- `enhancement` — `ENHANCEMENT`, `ENHANCEMENT-POINT`, `ENHANCEMENT-SECTION` (level D technologies, High severity); `GET`/`CALL BADI` and `CL_EXITHANDLER=>GET_INSTANCE` (level B, Low severity — an SAP-provided extension point must not be penalised like a modification).
+- `modification` — `*{ INSERT|REPLACE|DELETE` markers, Critical.
+
+**Modification markers are full-line comments, which `tokenize()` drops by design** (`declaration-parser.ts`). They are matched against the raw source in a separate pass after the statement loop. Removing that pass makes the most severe clean core violation invisible to the engine — `tests/enhancement-detection.spec.ts` guards it.
 
 ---
 
