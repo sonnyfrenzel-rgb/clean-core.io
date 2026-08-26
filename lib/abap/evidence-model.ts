@@ -1,6 +1,6 @@
 import { tokenize } from './declaration-parser';
 import { SAP_API_CATALOG_VERSION } from './sap-api-catalog';
-import { MERGED_TABLE_MAP, getMergedCatalogVersion, hasNoReleasedApiPath } from './catalog-service';
+import { MERGED_TABLE_MAP, getMergedCatalogVersion, hasNoReleasedApiPath, getSapObjectStates } from './catalog-service';
 
 export type EvidenceKind =
   | 'table-access'
@@ -82,11 +82,66 @@ function resolveConstants(code: string): Record<string, string> {
   return map;
 }
 
+/**
+ * Names declared as local data objects in the source.
+ *
+ * The write detectors match the first token after INSERT / MODIFY / DELETE, and
+ * ABAP uses those same keywords for internal tables. Without this, every
+ * `INSERT ls_wa INTO TABLE lt_items` became a Critical "direct write to SAP
+ * standard table LS_WA" — fabricated findings on ordinary code, which inflate
+ * the Critical count, depress the Clean Core Score and can flip the routing
+ * decision to side-by-side.
+ *
+ * Approximate by design: an unknown name is still treated as a table, so a real
+ * database write is never missed. What this removes is the noise.
+ */
+/**
+ * Conventional ABAP prefixes for local/global data objects and parameters.
+ * Used only in combination with "not present in either SAP artifact" — 103 real
+ * SAP objects (CS_BOM_EXPL_MAT_V2, RS_*, CT_*) share these prefixes and must
+ * stay detectable.
+ */
+const LOCAL_NAME_PREFIX = /^(?:L[TSVORXD]_|G[TSVOR]_|[EIC][TSV]_|R[TSV]_|ME_|MO_|MT_|MS_|MV_)/;
+
+function collectLocalDataObjects(code: string): Set<string> {
+  const names = new Set<string>();
+  const add = (n?: string) => {
+    const v = (n || '').toUpperCase().replace(/[<>]/g, '').trim();
+    if (v) names.add(v);
+  };
+
+  // DATA foo TYPE …, CLASS-DATA, STATICS, CONSTANTS, FIELD-SYMBOLS, TYPES,
+  // PARAMETERS, SELECT-OPTIONS, RANGES — declaration keyword followed by a name.
+  const decl = /\b(?:CLASS-DATA|DATA|STATICS|CONSTANTS|FIELD-SYMBOLS|TYPES|PARAMETERS|SELECT-OPTIONS|RANGES)\s*:?\s*([\w<>\/]+)/gi;
+  for (const m of code.matchAll(decl)) add(m[1]);
+
+  // Chained declarations: DATA: a TYPE i, b TYPE string.
+  const chained = /\b(?:CLASS-DATA|DATA|STATICS|CONSTANTS|FIELD-SYMBOLS|TYPES)\s*:\s*([\s\S]*?)\./gi;
+  for (const m of code.matchAll(chained)) {
+    for (const part of m[1].split(',')) add(part.trim().split(/\s+/)[0]);
+  }
+
+  // Inline declarations: DATA(lv_x), @DATA(lt_x), FINAL(lv_y), FIELD-SYMBOL(<fs>)
+  const inline = /\b(?:@?DATA|FINAL|FIELD-SYMBOL)\(\s*([\w<>\/]+)\s*\)/gi;
+  for (const m of code.matchAll(inline)) add(m[1]);
+
+  // Signature parameters of methods and forms.
+  const params = /\b(?:IMPORTING|EXPORTING|CHANGING|RETURNING|USING|VALUE\(|REFERENCE\()\s*([\w\/]+)/gi;
+  for (const m of code.matchAll(params)) add(m[1]);
+
+  // LOOP AT it INTO wa / ASSIGNING <fs> — the target is a data object.
+  const targets = /\b(?:INTO|ASSIGNING)\s+(?:TABLE\s+)?([\w<>\/]+)/gi;
+  for (const m of code.matchAll(targets)) add(m[1]);
+
+  return names;
+}
+
 export function buildAbapEvidence(code: string, fileName: string, deployment?: 'public' | 'private'): AbapEvidenceReport {
   const findings: EvidenceFinding[] = [];
   const statements = tokenize(code);
   let idCounter = 1;
   const constantsMap = resolveConstants(code);
+  const localDataObjects = collectLocalDataObjects(code);
   const isPublicCloud = deployment === 'public';
 
   const FAKE_TABLES = new Set([
@@ -112,8 +167,27 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
   const processTableAccess = (tableName: string, isWrite: boolean, line: number, text: string) => {
     const table = tableName.toUpperCase().trim();
     if (!table || table.length < 2 || FAKE_TABLES.has(table) || /^\d/.test(table)) return;
+    // A name declared in this source is a variable, not a database table.
+    if (localDataObjects.has(table)) return;
 
-    const isCustom = table.startsWith('Z') || table.startsWith('Y');
+    const sapStates = getSapObjectStates(table);
+    const knownToSap = Boolean(sapStates.releaseState || sapStates.classificationState);
+    // Conventional ABAP local-data prefix AND unknown to SAP → a variable whose
+    // declaration this upload does not contain (a common case with partial code).
+    if (!knownToSap && LOCAL_NAME_PREFIX.test(table)) return;
+
+    // An object SAP has released is the target state, not a violation. Reporting
+    // `SELECT FROM i_salesorder` as an illegal standard-table read told architects
+    // that the correct ABAP Cloud pattern was a finding.
+    if (sapStates.releaseState === 'released') return;
+
+    // A reserved-namespace table SAP does not list is of unknown provenance —
+    // more likely a partner or customer object than SAP standard. Calling it a
+    // standard SAP table produced a Critical finding on someone else's table.
+    const isCustom =
+      table.startsWith('Z') ||
+      table.startsWith('Y') ||
+      (!knownToSap && /^\/[^/]+\//.test(table));
     const hasReplacement = STANDARD_TABLE_MAP[table] !== undefined;
 
     if (isCustom) {
@@ -192,12 +266,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
             objectType: STANDARD_TABLE_MAP[table].type,
             confidence: 'Catalog Match',
             catalogVersion: getMergedCatalogVersion()
-          } : {
-            objectName: `I_${table}`,
-            objectType: 'CDS View',
-            confidence: 'Candidate',
-            catalogVersion: getMergedCatalogVersion()
-          }
+          } : undefined // never guess a successor name: `I_${table}` invented objects that do not exist
         });
       }
     }
@@ -224,23 +293,33 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
       }
     }
 
-    // INSERT
-    const insertMatch = text.match(/^INSERT\s+(?:INTO\s+)?([\w\/]+)/i);
-    if (insertMatch) processTableAccess(insertMatch[1], true, stmt.line, text);
+    // ABAP spells internal-table and database operations with the same keywords.
+    // These clauses only ever appear on the internal-table form, so they are the
+    // reliable discriminator; the declared-name check in processTableAccess
+    // catches the rest.
+    const INTERNAL_TABLE_CLAUSE = /\b(?:INTO\s+TABLE|LINES\s+OF|INITIAL\s+LINE|ADJACENT\s+DUPLICATES|ASSIGNING|REFERENCE\s+INTO|TRANSPORTING|\bINDEX\b)/i;
+    const isInternalTableOp = INTERNAL_TABLE_CLAUSE.test(text);
 
-    // UPDATE
+    // INSERT — database form is `INSERT tab FROM …` / `INSERT INTO tab VALUES …`.
+    const insertMatch = text.match(/^INSERT\s+(?:INTO\s+)?([\w\/]+)/i);
+    if (insertMatch && !isInternalTableOp) processTableAccess(insertMatch[1], true, stmt.line, text);
+
+    // UPDATE — no internal-table form, so no guard needed.
     const updateMatch = text.match(/^UPDATE\s+([\w\/]+)/i);
     if (updateMatch) processTableAccess(updateMatch[1], true, stmt.line, text);
 
-    // MODIFY
+    // MODIFY — `MODIFY TABLE itab`, `MODIFY itab … INDEX n` and TRANSPORTING are internal.
     const modifyMatch = text.match(/^MODIFY\s+([\w\/]+)/i);
-    if (modifyMatch && !['SCREEN', 'LINE', 'TABLE'].includes(modifyMatch[1].toUpperCase())) {
+    if (modifyMatch && !isInternalTableOp && !['SCREEN', 'LINE', 'TABLE'].includes(modifyMatch[1].toUpperCase())) {
       processTableAccess(modifyMatch[1], true, stmt.line, text);
     }
 
-    // DELETE
+    // DELETE — database form is `DELETE FROM tab WHERE …`; `DELETE itab …` is internal.
     const deleteMatch = text.match(/^DELETE\s+(?:FROM\s+)?([\w\/]+)/i);
-    if (deleteMatch && !['FROM', 'TABLE', 'ADJACENT'].includes(deleteMatch[1].toUpperCase())) {
+    const isDbDelete = /^DELETE\s+FROM\b/i.test(text) || /^DELETE\s+[\w\/]+\s+FROM\b/i.test(text);
+    // `DELETE itab WHERE …` (no FROM) only exists for internal tables.
+    const isInternalDelete = !isDbDelete && /^DELETE\s+[\w\/]+\s+WHERE\b/i.test(text);
+    if (deleteMatch && !isInternalDelete && (isDbDelete || !isInternalTableOp) && !['FROM', 'TABLE', 'ADJACENT'].includes(deleteMatch[1].toUpperCase())) {
       processTableAccess(deleteMatch[1], true, stmt.line, text);
     }
 

@@ -31,7 +31,7 @@ showed were losing traffic the site had already earned.
   and the catalog artifacts are ~4 MB: names go out, grades come back, and the
   analyze bundle stays at 161 kB.
 - **A–D census on `/sap-clean-core-object-classification`** — the distribution
-  across everything SAP publishes (A 72.1% · B 24.8% · C 0.2% · D 2.9% over
+  across everything SAP publishes (A 72.1% · B 24.7% · C 0.2% · D 3.0% over
   32,103 objects), with both source files named by sha256 and fetch date so the
   figures can be reproduced. Labelled as a census of SAP's data, not a
   benchmark of any customer's code.
@@ -97,6 +97,57 @@ showed were losing traffic the site had already earned.
   A to B. Covered by test.
 - The hero on the classification page said SAP grades "technical objects"; SAP
   grades extensions.
+
+### Fixed — false positives found by an external code review
+
+A Grok 4.6 review over the full codebase surfaced four defects in the evidence
+engine, all reproduced before fixing. Three of them predate this release; they
+are fixed here because they put wrong findings in front of architects.
+
+- **Internal table operations were reported as database writes.** ABAP spells
+  internal-table and database access with the same keywords, and the detectors
+  matched the first token after INSERT/MODIFY/DELETE. `INSERT ls_wa INTO TABLE
+  lt_vbap.` produced a Critical "direct write to SAP standard table LS_WA", and
+  `INSERT LINES OF …` produced one against an object called LINES. Since every
+  real ABAP program uses internal tables constantly, this inflated the Critical
+  count, depressed the Clean Core Score and could flip the routing decision to
+  side-by-side. The engine now collects the data objects declared in the source
+  and excludes them, guards on the clauses that only exist in the internal-table
+  form, and treats `DELETE itab WHERE` (no FROM) as internal. Where syntax alone
+  cannot decide — `MODIFY lt_x FROM ls_y` and `MODIFY dbtab FROM ls_y` are
+  identical — a conventional ABAP prefix decides, but only for names absent from
+  both SAP artifacts: 103 real SAP objects (CS_BOM_EXPL_MAT_V2, RS_*, CT_*) share
+  those prefixes and must stay detectable.
+- **The correct ABAP Cloud pattern was reported as a violation.** `SELECT * FROM
+  i_salesorder` was a High "illegal standard-table read" on public cloud, with
+  the invented successor `I_I_SALESORDER`. I_SALESORDER is `released` in the
+  artifact the engine already loads. Released objects are now the target state,
+  not a finding.
+- **Successors are no longer guessed.** An unmapped object produced
+  `sapReplacement: I_${name}` at confidence "Candidate" — an object that does not
+  exist, shown beside a catalog version. Only real catalog matches are emitted.
+- **The release state now decides before the classification state.** 180 objects
+  appear in both SAP files; 158 are released, and the other 22 are `classicAPI`
+  together with `notToBeReleased` or `deprecated`. 21 of those 22 carry an
+  explicit successor (CL_HTTP_CLIENT → IF_WEB_HTTP_CLIENT, CL_BCS →
+  CL_BCS_MAIL_MESSAGE). Level B means "usable where no level A path exists", and
+  here SAP names the path, so B was wrong. The published census moves
+  accordingly: B 7,958 → 7,936, D 938 → 959, C 68 → 69.
+- **Reserved-namespace objects are no longer claimed as SAP-internal.**
+  `/ACME/TABLE1` was graded residual C, and a write to `/ACME/ZTAB` was a
+  Critical standard-table violation. A `/NS/` name can belong to SAP, a partner
+  or the customer; when it appears in neither artifact the grade falls through to
+  the heuristic and is labelled estimated. Namespaced objects SAP does list
+  (/AIF/CL_TRANSFORM_DATA) keep their catalog grade.
+
+### Added — a guard against the class of bug above
+
+`tests/false-positive-guard.spec.ts` (16 tests). The three existing engine specs
+carry 116 assertions between them and not one asserts absence — no
+`toHaveLength(0)`, no `.not.`, no `toBe(0)`. Every test states that a pattern
+*produces* a finding, so a detector that fires on everything passes all 116. That
+is how these defects survived. The new spec asserts what must NOT be reported,
+with a "must still fire" block so suppression cannot regress the other way.
 - **`tar` bumped past GHSA-r292-9mhp-454m.** The existing override pinned
   `^7.5.16`, which resolved to 7.5.19 — still inside the advisory's `<=7.5.20`
   range, so the Security CI gate (audit-ci, high+) failed while the deploy gate

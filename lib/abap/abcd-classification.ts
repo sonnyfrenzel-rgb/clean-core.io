@@ -197,10 +197,19 @@ export interface SapObjectStates {
 /**
  * Grade an object from SAP's published data.
  *
- * Precedence matters at the 196 objects that appear in BOTH files: `released`
- * wins over `classicAPI`, because a released API is level A even if the classic
- * list also mentions it. Getting this backwards would silently downgrade 194
- * released objects to B.
+ * Precedence matters at the 180 objects that appear in BOTH files, and the order
+ * of the checks is the whole substance of this function:
+ *
+ *   1. `released` wins outright — a released API is level A even if the classic
+ *      list also mentions it (158 of the 180 overlaps).
+ *   2. The RELEASE state is then decided before the classification state. The
+ *      remaining 22 overlaps are objects like CL_HTTP_CLIENT, CL_BCS and
+ *      IF_HTTP_REQUEST: SAP lists them as `classicAPI` and simultaneously as
+ *      `notToBeReleased`, and 21 of the 22 carry an explicit successor
+ *      (IF_WEB_HTTP_CLIENT, CL_BCS_MAIL_MESSAGE, …). Level B means "usable where
+ *      no level A path exists"; here SAP names the level A path, so B would be
+ *      the wrong answer. Checking `classicAPI` first — as this did — published
+ *      B for all 22.
  *
  * Returns grade 'Unknown' with provenance 'heuristic' when no SAP data applies —
  * the caller then falls back to gradeFromCoupling / gradeFromInventory.
@@ -210,12 +219,12 @@ export function gradeFromSapStates(s: SapObjectStates): GradedObject {
   const classification = (s.classificationState || '').toLowerCase();
 
   if (release === 'released') return { grade: 'A', provenance: 'catalog', state: 'released' };
-  if (classification === 'classicapi') return { grade: 'B', provenance: 'catalog', state: 'classicAPI' };
-  if (classification === 'noapi') return { grade: 'D', provenance: 'catalog', state: 'noAPI' };
   if (release === 'nottobereleased') return { grade: 'D', provenance: 'catalog', state: 'notToBeReleased' };
   if (release === 'deprecated') {
     return { grade: s.hasSuccessor ? 'C' : 'D', provenance: 'catalog', state: 'deprecated' };
   }
+  if (classification === 'classicapi') return { grade: 'B', provenance: 'catalog', state: 'classicAPI' };
+  if (classification === 'noapi') return { grade: 'D', provenance: 'catalog', state: 'noAPI' };
 
   // Listed nowhere. For an SAP object that is the level C definition itself.
   if (s.isSapObject) return { grade: 'C', provenance: 'catalog-residual' };
@@ -227,6 +236,17 @@ export function gradeFromSapStates(s: SapObjectStates): GradedObject {
 export function isCustomerObject(name: string): boolean {
   const n = (name || '').toUpperCase().trim();
   if (!n) return false;
-  // Customer namespace /.../ prefixes are partner/SAP-adjacent, not customer-owned.
   return /^[ZY]/.test(n);
+}
+
+/**
+ * Reserved-namespace object, e.g. /ACME/TABLE1.
+ *
+ * These can belong to SAP (/AIF/ is SAP_BASIS), to a partner, or to the customer
+ * — the name alone does not say which. So a namespaced object that appears in
+ * neither SAP artifact must NOT be graded C "SAP-internal": we do not know that.
+ * It falls through to the heuristic and is labelled as estimated.
+ */
+export function isNamespacedObject(name: string): boolean {
+  return /^\/[^/]+\//.test((name || '').toUpperCase().trim());
 }

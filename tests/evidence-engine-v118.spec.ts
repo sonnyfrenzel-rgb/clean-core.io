@@ -97,14 +97,21 @@ test.describe('Evidence Engine v1.18 — Codex Improvements', () => {
     expect(t005!.sapReplacement!.objectName).toBe('I_COUNTRY');
   });
 
-  test('should produce Candidate for standard tables not in any catalog layer', () => {
+  test('proposes no successor for standard tables not in any catalog layer', () => {
+    // Changed in v2.4.0. This previously asserted `I_T888Z` at confidence
+    // "Candidate" — a name derived by string concatenation, not a lookup.
+    // SAP's released views are not mechanically named I_<TABLE>, so the value
+    // was an object that does not exist, shown in the field reserved for
+    // catalog results and next to a catalog version. The rest of the engine
+    // already models this case honestly (NO_PATH_OBJECTS, "no released path"),
+    // and the UI renders a missing replacement as an em dash.
     const code = `SELECT * FROM t888z INTO TABLE @lt_data.`;
     const report = buildAbapEvidence(code, 'test.abap');
     const t888z = report.findings.find(f => f.objectName === 'T888Z');
     expect(t888z).toBeDefined();
-    expect(t888z!.sapReplacement).toBeDefined();
-    expect(t888z!.sapReplacement!.confidence).toBe('Candidate');
-    expect(t888z!.sapReplacement!.objectName).toBe('I_T888Z');
+    expect(t888z!.sapReplacement).toBeUndefined();
+    // The finding itself must still be raised — only the guessed name is gone.
+    expect(t888z!.kind).toBe('standard-table-read');
   });
 
   test('golden 1000-LOC file should produce valid evidence report', () => {

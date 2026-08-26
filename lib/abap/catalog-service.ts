@@ -22,6 +22,7 @@ import type { CloudificationArtifact, NormalizedEntry } from './cloudification-r
 import {
   gradeFromSapStates,
   isCustomerObject,
+  isNamespacedObject,
   type GradedObject,
   type SapObjectStates,
   type CloudReadinessGrade,
@@ -179,11 +180,16 @@ export function getSapObjectStates(objectName: string): SapObjectStates {
   const release = CR.entries?.[key];
   const classification = CR_CLASS.entries?.[key];
 
+  // "isSapObject" drives the residual level C verdict, so it must mean "we know
+  // this is SAP's". A Z/Y object is not, and a /NS/ object that appears in
+  // neither artifact is unknown provenance — claiming either is SAP-internal
+  // would be a grade we cannot support.
+  const listed = Boolean(release || classification);
   return {
     releaseState: release?.state,
     classificationState: classification?.state,
     hasSuccessor: Boolean(release?.successors?.length || classification?.successors?.length),
-    isSapObject: !isCustomerObject(key),
+    isSapObject: !isCustomerObject(key) && (listed || !isNamespacedObject(key)),
   };
 }
 

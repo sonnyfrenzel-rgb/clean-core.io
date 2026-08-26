@@ -83,11 +83,33 @@ test.describe('catalog-backed A/B/C/D grading (SAP published data)', () => {
     expect(gradeFromSapStates({ releaseState: 'deprecated', hasSuccessor: false })).toMatchObject({ grade: 'D' });
   });
 
-  test('released wins over classicAPI where both files list an object', () => {
-    // 196 objects appear in both repository files. Getting this precedence
-    // backwards would silently downgrade released (level A) objects to B.
+  test('the release state decides before the classification state', () => {
+    // 180 objects appear in both repository files. 158 are released; the other
+    // 22 are classicAPI AND notToBeReleased/deprecated, and 21 of those carry an
+    // explicit successor (CL_HTTP_CLIENT -> IF_WEB_HTTP_CLIENT). Checking
+    // classicAPI first published level B for all 22.
     expect(gradeFromSapStates({ releaseState: 'released', classificationState: 'classicAPI' }))
       .toMatchObject({ grade: 'A', state: 'released' });
+    expect(gradeFromSapStates({ releaseState: 'notToBeReleased', classificationState: 'classicAPI' }))
+      .toMatchObject({ grade: 'D', state: 'notToBeReleased' });
+    expect(gradeFromSapStates({ releaseState: 'deprecated', hasSuccessor: true, classificationState: 'classicAPI' }))
+      .toMatchObject({ grade: 'C', state: 'deprecated' });
+    // classicAPI on its own is still level B.
+    expect(gradeFromSapStates({ classificationState: 'classicAPI' }))
+      .toMatchObject({ grade: 'B', state: 'classicAPI' });
+  });
+
+  test('real conflicted objects resolve to the release state', () => {
+    expect(gradeSapObject('CL_HTTP_CLIENT')).toMatchObject({ grade: 'D', state: 'notToBeReleased' });
+    expect(gradeSapObject('IF_AUNIT_CONSTANTS')).toMatchObject({ grade: 'C', state: 'deprecated' });
+  });
+
+  test('a reserved-namespace object SAP does not list is not claimed as SAP-internal', () => {
+    // /ACME/ could be SAP, a partner or the customer. Grading it residual C
+    // asserts knowledge we do not have; it must fall through to the heuristic.
+    expect(gradeSapObject('/ACME/TABLE1')).toMatchObject({ provenance: 'heuristic' });
+    // …while a namespaced object SAP DOES list keeps its catalog grade.
+    expect(gradeSapObject('/AIF/CL_TRANSFORM_DATA')).toMatchObject({ grade: 'D', provenance: 'catalog' });
   });
 
   test('an unlisted SAP object is level C by definition, not a guess', () => {
@@ -113,9 +135,10 @@ test.describe('catalog-backed A/B/C/D grading (SAP published data)', () => {
     const { distribution, totalObjects } = getPublishedGradeDistribution();
     // Every key in either artifact carries a state, so none may fall through.
     expect(distribution.Unknown).toBe(0);
-    expect(distribution.A).toBeGreaterThan(20000);
-    expect(distribution.B).toBeGreaterThan(7000);
-    expect(distribution.D).toBeGreaterThan(0);
+    expect(distribution.A).toBe(23139);
+    expect(distribution.B).toBe(7936);
+    expect(distribution.C).toBe(69);
+    expect(distribution.D).toBe(959);
     expect(totalObjects).toBe(
       distribution.A + distribution.B + distribution.C + distribution.D + distribution.Unknown,
     );
