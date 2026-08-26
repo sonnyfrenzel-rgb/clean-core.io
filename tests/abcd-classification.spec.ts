@@ -9,11 +9,14 @@ import {
   gradeFromCoupling,
   gradeFromInventory,
   gradeFromCatalogState,
+  gradeFromSapStates,
+  isCustomerObject,
   gradeDistribution,
   worstGrade,
   ABCD_META,
   ALL_GRADES,
 } from '../lib/abap/abcd-classification';
+import { gradeSapObject, getPublishedGradeDistribution } from '../lib/abap/catalog-service';
 
 test.describe('A/B/C/D readiness derivation', () => {
   test('gradeFromCoupling maps access + risk to A/B/C/D', () => {
@@ -65,7 +68,56 @@ test.describe('A/B/C/D readiness derivation', () => {
     for (const g of ALL_GRADES) {
       expect(ABCD_META[g]).toBeTruthy();
       expect(ABCD_META[g].badge).toBeTruthy();
-      expect(ABCD_META[g].atc).toBeTruthy();
+      expect(ABCD_META[g].atcReading).toBeTruthy();
     }
+  });
+});
+
+test.describe('catalog-backed A/B/C/D grading (SAP published data)', () => {
+  test('maps each SAP state to its clean core level', () => {
+    expect(gradeFromSapStates({ releaseState: 'released' })).toMatchObject({ grade: 'A', provenance: 'catalog' });
+    expect(gradeFromSapStates({ classificationState: 'classicAPI' })).toMatchObject({ grade: 'B', provenance: 'catalog' });
+    expect(gradeFromSapStates({ classificationState: 'noAPI' })).toMatchObject({ grade: 'D', provenance: 'catalog' });
+    expect(gradeFromSapStates({ releaseState: 'notToBeReleased' })).toMatchObject({ grade: 'D', provenance: 'catalog' });
+    expect(gradeFromSapStates({ releaseState: 'deprecated', hasSuccessor: true })).toMatchObject({ grade: 'C' });
+    expect(gradeFromSapStates({ releaseState: 'deprecated', hasSuccessor: false })).toMatchObject({ grade: 'D' });
+  });
+
+  test('released wins over classicAPI where both files list an object', () => {
+    // 196 objects appear in both repository files. Getting this precedence
+    // backwards would silently downgrade released (level A) objects to B.
+    expect(gradeFromSapStates({ releaseState: 'released', classificationState: 'classicAPI' }))
+      .toMatchObject({ grade: 'A', state: 'released' });
+  });
+
+  test('an unlisted SAP object is level C by definition, not a guess', () => {
+    expect(gradeFromSapStates({ isSapObject: true }))
+      .toMatchObject({ grade: 'C', provenance: 'catalog-residual' });
+  });
+
+  test('customer objects fall through to the heuristic', () => {
+    expect(isCustomerObject('ZMY_TABLE')).toBe(true);
+    expect(isCustomerObject('YOLD_REPORT')).toBe(true);
+    expect(isCustomerObject('VBAK')).toBe(false);
+    expect(gradeFromSapStates({ isSapObject: false }))
+      .toMatchObject({ grade: 'Unknown', provenance: 'heuristic' });
+  });
+
+  test('real objects resolve against the generated artifacts', () => {
+    // VBAK/BSEG are notToBeReleased in SAP's own release data.
+    expect(gradeSapObject('VBAK')).toMatchObject({ grade: 'D', provenance: 'catalog', state: 'notToBeReleased' });
+    expect(gradeSapObject('ZDOES_NOT_EXIST')).toMatchObject({ provenance: 'heuristic' });
+  });
+
+  test('published distribution covers both artifacts and leaves nothing Unknown', () => {
+    const { distribution, totalObjects } = getPublishedGradeDistribution();
+    // Every key in either artifact carries a state, so none may fall through.
+    expect(distribution.Unknown).toBe(0);
+    expect(distribution.A).toBeGreaterThan(20000);
+    expect(distribution.B).toBeGreaterThan(7000);
+    expect(distribution.D).toBeGreaterThan(0);
+    expect(totalObjects).toBe(
+      distribution.A + distribution.B + distribution.C + distribution.D + distribution.Unknown,
+    );
   });
 });

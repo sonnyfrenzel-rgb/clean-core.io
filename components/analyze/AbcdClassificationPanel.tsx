@@ -81,7 +81,7 @@ export default function AbcdClassificationPanel({
             <div>
               <div className="text-xs font-bold text-slate-800">
                 {ABCD_META[g].label}
-                <span className="ml-1 text-[10px] font-semibold text-slate-400">· ATC {ABCD_META[g].atc}</span>
+                <span className="ml-1 text-[10px] font-semibold text-slate-400">· ATC {ABCD_META[g].atcReading} (our reading)</span>
               </div>
               <div className="text-[11px] text-slate-500 leading-snug">{ABCD_META[g].description}</div>
             </div>

@@ -17,7 +17,14 @@
 import { createHash } from 'crypto';
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'fs';
 import path from 'path';
-import { RELEASE_FILES, normalizeCrFile, type CrFile } from '../lib/abap/cloudification-repo';
+import {
+  RELEASE_FILES,
+  CLASSIFICATION_RELEASES,
+  normalizeCrFile,
+  normalizeClassificationFile,
+  type CrFile,
+  type CrClassificationFile,
+} from '../lib/abap/cloudification-repo';
 
 const OUT_DIR = path.resolve(__dirname, '../lib/abap/generated');
 
@@ -34,17 +41,35 @@ async function syncOne(release: string): Promise<boolean> {
   const rawText = await res.text();
   const sourceSha256 = createHash('sha256').update(rawText).digest('hex');
 
-  let raw: CrFile;
+  let raw: unknown;
   try {
-    raw = JSON.parse(rawText) as CrFile;
+    raw = JSON.parse(rawText);
   } catch (e) {
     throw new Error(`Invalid JSON from ${url}: ${(e as Error).message}`);
   }
-  if (!Array.isArray(raw.objectReleaseInfo)) {
-    throw new Error(`Unexpected schema (missing objectReleaseInfo[]) — repo format may have changed.`);
-  }
 
-  const artifact = normalizeCrFile(raw, { source: url, release, sourceSha256 });
+  // The repository ships two schemas. Dispatch on the registry entry rather than
+  // sniffing the payload, and fail loudly on a shape mismatch — a silently
+  // half-parsed catalog would produce confidently wrong clean core grades.
+  const isClassification = CLASSIFICATION_RELEASES.has(release);
+  let artifact;
+  if (isClassification) {
+    const file = raw as CrClassificationFile;
+    if (!Array.isArray(file.objectClassifications)) {
+      throw new Error(
+        `Unexpected schema for '${release}' (missing objectClassifications[]) — repo format may have changed.`,
+      );
+    }
+    artifact = normalizeClassificationFile(file, { source: url, release, sourceSha256 });
+  } else {
+    const file = raw as CrFile;
+    if (!Array.isArray(file.objectReleaseInfo)) {
+      throw new Error(
+        `Unexpected schema for '${release}' (missing objectReleaseInfo[]) — repo format may have changed.`,
+      );
+    }
+    artifact = normalizeCrFile(file, { source: url, release, sourceSha256 });
+  }
 
   // Deterministic serialization (sorted keys) → clean CI diffs.
   const sortedEntries = Object.fromEntries(

@@ -49,7 +49,7 @@ const faqs = [
   },
   {
     question: "How do I plan SAP custom code remediation?",
-    answer: "Prioritise by risk. Use the A–D readiness grade (mapped to ATC priorities) to fix the highest-risk objects first, re-point direct table reads to released CDS views or OData APIs, and route the remaining logic to in-app ABAP Cloud (RAP) or side-by-side BTP (CAP). Objects with no released path are flagged for re-architecture rather than a drop-in successor. Every step is deterministic evidence for an architect to confirm with SAP ADT/ATC."
+    answer: "Prioritise by risk. Use the A–D readiness grade to fix the highest-risk objects first, re-point direct table reads to released CDS views or OData APIs, and route the remaining logic to in-app ABAP Cloud (RAP) or side-by-side BTP (CAP). Objects with no released path are flagged for re-architecture rather than a drop-in successor. Every step is deterministic evidence for an architect to confirm with SAP ADT/ATC."
   }
 ];
 

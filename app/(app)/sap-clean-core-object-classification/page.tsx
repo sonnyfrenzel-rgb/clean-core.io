@@ -93,7 +93,7 @@ export default function CleanCoreClassificationPage() {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-black text-gray-955 text-base">{ABCD_META[g].label}</h3>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-white border border-gray-200 rounded-full px-2 py-0.5">ATC: {ABCD_META[g].atc}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-white border border-gray-200 rounded-full px-2 py-0.5">ATC (our reading): {ABCD_META[g].atcReading}</span>
                     </div>
                     <p className="text-xs text-gray-600 mt-1 font-medium leading-relaxed">{ABCD_META[g].description}</p>
                   </div>
