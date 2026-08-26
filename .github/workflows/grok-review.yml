@@ -1,0 +1,61 @@
+name: Grok Review
+
+# Opt-in AI code review on pull requests. Complementary to the quality gates in
+# deploy.yml — it does not gate the merge and must never be treated as one.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Explicit, least-privilege. Every other workflow in this repo declares its
+# permissions; relying on the repository default would grant whatever the org
+# setting happens to be today.
+permissions:
+  contents: read
+  pull-requests: write
+
+# A new push to the same PR supersedes the previous review run.
+concurrency:
+  group: grok-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Secrets are not exposed to pull requests from forks, so the job would fail
+    # with an unhelpful auth error rather than being skipped. Skip it explicitly.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          # The reviewer needs the merge base to diff against; a shallow clone
+          # would give it a single commit and no context.
+          fetch-depth: 0
+
+      # NOTE ON SUPPLY CHAIN: this pipes a remote installer into a shell, which
+      # is the one place in this repo where code is executed without being
+      # pinned to a digest — every action above is pinned to a commit SHA. It is
+      # the vendor's documented install path and there is no pinned alternative
+      # today, so the mitigations are the narrow permissions above, the fork
+      # guard, and the fact that this job holds no deployment credentials. If
+      # xAI publishes a versioned release artifact, pin it here.
+      - name: Install Grok CLI
+        run: curl -fsSL https://x.ai/cli/install.sh | bash
+
+      - name: Review the pull request
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        # --always-approve lets the agent run its tools without a prompt, which
+        # is what makes it usable in CI. It also means the agent acts on this
+        # repository with the token above unattended — the reason the permission
+        # block is limited to reading code and writing PR comments.
+        run: |
+          grok -p "Review this pull request for correctness bugs, security issues \
+          and clean-core/SAP-domain mistakes. This is a Next.js 15 + TypeScript \
+          codebase with a deterministic ABAP analysis engine under lib/abap/. \
+          Prioritise: wrong or unprovable claims in user-facing copy, incorrect \
+          SAP semantics, unhandled failure paths, and anything that could put an \
+          incorrect figure in front of a customer. Skip style nits." \
+          --always-approve
