@@ -21,10 +21,12 @@ export default function UserOnboarding() {
   const [showTerms, setShowTerms] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
-  // Return early during SSR if Firebase Auth is bypassed on the server
-  if (!auth) return null;
-
+  // The effect must run on every render, so it cannot sit behind the SSR guard
+  // below: the server render returned before reaching it while the browser
+  // render ran it, and React throws on the hook-count mismatch during
+  // hydration. Guard inside the effect instead of around it.
   useEffect(() => {
+    if (!auth) return;
     if (auth.currentUser?.displayName && !firstName && !lastName) {
       const displayName = auth.currentUser.displayName.trim();
       const parts = displayName.split(/\s+/);
@@ -35,7 +37,10 @@ export default function UserOnboarding() {
         }
       }
     }
-  }, [auth.currentUser, firstName, lastName]);
+  }, [auth, firstName, lastName]);
+
+  // Firebase Auth is bypassed on the server; render nothing there.
+  if (!auth) return null;
 
   if (loading) return null;
   if (profile || !auth.currentUser) return null;

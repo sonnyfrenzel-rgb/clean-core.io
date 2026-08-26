@@ -68,6 +68,15 @@ jobs:
         if: steps.clock.outputs.proceed == 'true'
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # The dispatch input reaches the shell as an environment variable,
+          # never as interpolated text. Written inline as a ${{ }} expression
+          # inside `run:`, a value such as `x@y.com; curl ...` executed as
+          # extra commands in a job that holds id-token: write, GCP workload
+          # identity federation and the Resend API key.
+          RECIPIENT: ${{ inputs.recipient }}
         run: |
-          npx tsx scripts/send-usage-report.ts --apply \
-            ${{ inputs.recipient && format('--to {0}', inputs.recipient) || '' }}
+          if [ -n "$RECIPIENT" ]; then
+            npx tsx scripts/send-usage-report.ts --apply --to "$RECIPIENT"
+          else
+            npx tsx scripts/send-usage-report.ts --apply
+          fi

@@ -1274,7 +1274,9 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                           : <GlossaryTerm termKey="RAP" className="border-b-0 hover:text-emerald-700 text-emerald-700">⚙️ ABAP Cloud (RAP)</GlossaryTerm>}
                       </span>
                       <span className="text-[10px] font-bold text-slate-400">
-                        {analysisData.extensibilityRouting?.confidenceScore || 95}% Conf.
+                        {typeof analysisData.extensibilityRouting?.confidenceScore === 'number'
+                          ? `${analysisData.extensibilityRouting.confidenceScore}% Conf.`
+                          : 'Confidence not computed'}
                       </span>
                     </div>
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight mb-1">

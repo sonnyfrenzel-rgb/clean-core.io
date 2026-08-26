@@ -74,11 +74,21 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ valid, manifestHash });
   } catch (error: any) {
-    if (error?.statusCode === 429) {
+    // QuotaError exposes `.status`, not `.statusCode`. Testing the wrong property
+    // made this branch unreachable, so a rate-limited caller fell through to the
+    // catch below and was told HTTP 200 { valid: false } — a genuine audit pack
+    // reported as forged. For a product whose whole claim is verifiable evidence
+    // that is the most damaging answer this endpoint can give.
+    if (error?.status === 429 || error?.statusCode === 429) {
       return NextResponse.json({ error: error.message }, { status: 429 });
     }
-    // Don't reveal internal details to unauthenticated callers
+    // Don't reveal internal details to unauthenticated callers. `valid` is
+    // deliberately absent: we did not determine that the signature is bad, we
+    // failed to check it, and those are different statements.
     console.error('Error in /api/export/verify:', error);
-    return NextResponse.json({ valid: false, error: 'Verification failed.' }, { status: 200 });
+    return NextResponse.json(
+      { error: 'Verification could not be completed. This is not a statement about the signature.' },
+      { status: 500 },
+    );
   }
 }

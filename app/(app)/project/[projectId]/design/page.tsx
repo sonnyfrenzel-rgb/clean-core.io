@@ -764,7 +764,7 @@ ${responseText.substring(0, 4000)}`;
           <div className="bg-white rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-sm">
               <ArchitectSignOff
                 recommendation={project?.originalRecommendation || (project?.extensibilityRoute?.includes('BTP') ? 'cap' : 'rap')}
-                confidenceScore={project?.recommendationConfidence || 75}
+                confidenceScore={project?.recommendationConfidence}
                 justificationText={project?.recommendationJustification || `Based on the code analysis, the ${project?.extensibilityRoute?.includes('BTP') ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`}
                 isLocked={project?.approvedByArchitect === true}
                 currentArchitecture={project?.targetArchitecture}

@@ -29,11 +29,11 @@ export default function RoutingRationale({
   // Guard: legacy projects/runs analyzed before the extensibility router carry no
   // route on the run document. Render nothing instead of crashing the page —
   // consistent with every other design section component.
-  if (!extensibilityRoute) return null;
-
-  const isBtp = extensibilityRoute.includes('BTP');
-
-  // Pick the top 4 most impactful findings (not-supported first, then partial)
+  // Pick the top 4 most impactful findings (not-supported first, then partial).
+  // This runs before the early return below: a project loads asynchronously, so
+  // the same component instance renders once without a route and again with one.
+  // With the guard above the hook, React sees a different hook count on the
+  // second render and throws instead of quietly showing nothing.
   const keyFindings = useMemo(() => {
     const sorted = [...findings].sort((a, b) => {
       const order = { 'not-supported': 0, 'partial': 1, 'fully': 2 };
@@ -41,6 +41,10 @@ export default function RoutingRationale({
     });
     return sorted.slice(0, 4);
   }, [findings]);
+
+  if (!extensibilityRoute) return null;
+
+  const isBtp = extensibilityRoute.includes('BTP');
 
   return (
     <div className="bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white rounded-3xl p-8 border border-slate-800 shadow-xl relative overflow-hidden">

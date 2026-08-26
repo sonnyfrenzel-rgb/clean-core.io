@@ -38,7 +38,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing required field: uid.' }, { status: 400 });
   }
 
-  const grant = isAdmin !== false; // default: grant
+  // This used to grant the claim for every value that was not the boolean false
+  // — including the STRING "false" and the string "0". Privilege changes have to
+  // be explicit, so the payload must say which way it means.
+  if (typeof isAdmin !== 'boolean') {
+    return NextResponse.json(
+      { error: 'Field "isAdmin" must be a boolean — true to grant, false to revoke.' },
+      { status: 400 },
+    );
+  }
+  const grant = isAdmin;
   try {
     await setAdminClaim(uid, grant);
     return NextResponse.json({ ok: true, uid, isAdmin: grant });

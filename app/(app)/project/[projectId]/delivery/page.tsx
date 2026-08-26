@@ -71,6 +71,16 @@ export default function DeliveryPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [runHistory, setRunHistory] = useState<RunTrendPoint[]>([]);
   const isAbapCloud = (project?.extensibilityRoute || '').includes('ABAP Cloud');
+  // A count of tests that were never generated is not an integrity statement.
+  // The integrity report used to read `|| 10` and `|| 92`, and because
+  // `length === 0` is falsy a run that produced nothing at all still showed
+  // "10 Automated Tests" and "92% Estimated Coverage" under a green tick — on
+  // the one screen a customer photographs for a steering pack.
+  const testCaseCount = Array.isArray(project?.testCases) ? project.testCases.length : 0;
+  const coveragePercentage =
+    typeof project?.coverageEstimate?.percentage === 'number'
+      ? project.coverageEstimate.percentage
+      : undefined;
   const [loading, setLoading] = useState(true);
   const [documentation, setDocumentation] = useState('');
   const router = useRouter();
@@ -550,12 +560,16 @@ jobs:
                 </div>
               </li>
               <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
-                <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                {testCaseCount > 0 ? (
+                  <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                ) : (
+                  <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
+                )}
                 <div>
                   <span className="text-white block font-bold">
                     {isAbapCloud 
-                      ? `${project?.testCases?.length || 10} Automated ABAP Unit Tests`
-                      : `${project?.testCases?.length || 10} Automated Sandbox Tests`
+                      ? (testCaseCount > 0 ? `${testCaseCount} Automated ABAP Unit Tests` : 'No test suite generated')
+                      : (testCaseCount > 0 ? `${testCaseCount} Automated Sandbox Tests` : 'No test suite generated')
                     }
                   </span>
                   <span className="text-[10px] text-gray-400">
@@ -567,9 +581,13 @@ jobs:
                 </div>
               </li>
               <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
-                <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                {coveragePercentage !== undefined ? (
+                  <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                ) : (
+                  <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
+                )}
                 <div>
-                  <span className="text-white block font-bold">{project?.coverageEstimate?.percentage || 92}% Estimated Coverage</span>
+                  <span className="text-white block font-bold">{coveragePercentage !== undefined ? `${coveragePercentage}% Estimated Coverage` : 'Coverage not estimated'}</span>
                   <span className="text-[10px] text-gray-400">
                     {isAbapCloud
                       ? 'Quality: Restricted clean ABAP syntax check compliant'

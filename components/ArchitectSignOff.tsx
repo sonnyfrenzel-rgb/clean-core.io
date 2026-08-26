@@ -62,7 +62,9 @@ interface ArchitectSignOffProps {
   /** AI-recommended target architecture */
   recommendation: TargetArchitecture;
   /** Confidence score (0-100) */
-  confidenceScore: number;
+  /** Omitted when the engine never computed one — the panel then says so
+   *  rather than showing a filled bar the architect would sign against. */
+  confidenceScore?: number;
   /** AI justification text */
   justificationText: string;
   /** Current locked state from Firestore */
@@ -271,19 +273,26 @@ export default function ArchitectSignOff({
               {recommendedOption?.label || recommendation}
             </h4>
             <p className="text-sm text-slate-600 mt-1.5 leading-relaxed">{justificationText}</p>
-            {/* Confidence bar */}
-            <div className="flex items-center gap-3 mt-3">
-              <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[200px]">
-                <div
-                  className={clsx(
-                    'h-full rounded-full transition-all duration-700',
-                    confidenceScore >= 80 ? 'bg-emerald-500' : confidenceScore >= 60 ? 'bg-amber-500' : 'bg-red-500'
-                  )}
-                  style={{ width: `${confidenceScore}%` }}
-                />
+            {/* Confidence bar. A default here would put a number under the
+                architect's signature that the engine never produced. */}
+            {typeof confidenceScore === 'number' ? (
+              <div className="flex items-center gap-3 mt-3">
+                <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[200px]">
+                  <div
+                    className={clsx(
+                      'h-full rounded-full transition-all duration-700',
+                      confidenceScore >= 80 ? 'bg-emerald-500' : confidenceScore >= 60 ? 'bg-amber-500' : 'bg-red-500'
+                    )}
+                    style={{ width: `${confidenceScore}%` }}
+                  />
+                </div>
+                <span className="text-xs font-bold text-slate-500">{confidenceScore}% Confidence</span>
               </div>
-              <span className="text-xs font-bold text-slate-500">{confidenceScore}% Confidence</span>
-            </div>
+            ) : (
+              <p className="text-xs font-bold text-slate-400 mt-3">
+                No confidence score was computed for this recommendation.
+              </p>
+            )}
           </div>
         </div>
       </div>

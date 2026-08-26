@@ -176,7 +176,9 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error: any) {
-    if (error?.statusCode === 429) {
+    // QuotaError carries `.status`; `.statusCode` alone never matched, so quota
+    // exhaustion surfaced as a 500 instead of a 429.
+    if (error?.status === 429 || error?.statusCode === 429) {
       return NextResponse.json({ error: error.message }, { status: 429 });
     }
     logger.error('audit-pack/create failed', { route: 'api/audit-pack/create', error: errMessage(error) });
