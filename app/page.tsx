@@ -361,7 +361,7 @@ export default function Home() {
             around the two questions a legacy decision waits on — the business one
             first and larger, because the market answers only the technical one.
             Replaces the unprovable "save days" claim with a reproducible run. */}
-        <div className="max-w-5xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
+        <div className="max-w-6xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
           <BenefitCard
             linesOfCode={reference.linesOfCode}
             totalFindings={reference.totalFindings}

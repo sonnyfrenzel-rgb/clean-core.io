@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 
 export interface BenefitCardProps {
   linesOfCode: number;
@@ -68,10 +68,10 @@ export default function BenefitCard({
   return (
     <section
       aria-labelledby="benefit-heading"
-      className="rounded-[2.5rem] border border-slate-200 bg-white shadow-xl overflow-hidden"
+      className="rounded-[2rem] border border-slate-200 bg-white shadow-xl overflow-hidden"
     >
       {/* The situation, in three lines rather than three paragraphs. */}
-      <div className="px-6 sm:px-10 pt-8 sm:pt-10 pb-6">
+      <div className="px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 pb-6">
         <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
           The usual starting point
         </p>
@@ -86,14 +86,23 @@ export default function BenefitCard({
           Every decision about it then waits on two questions — and only one of them usually gets
           answered.
         </p>
+        <p className="mt-4 text-sm sm:text-base font-bold text-gray-900 max-w-3xl leading-relaxed">
+          You get an answer to both here. As a draft you correct, with the limits named up front —
+          and free.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-px bg-slate-200">
         {/* The question nobody answers — the larger half. */}
-        <div className="lg:col-span-3 bg-white p-6 sm:p-9">
-          <p className="text-[11px] font-black uppercase tracking-widest text-emerald-600">
-            The business asks
-          </p>
+        <div className="lg:col-span-3 bg-white p-6 sm:p-10 md:p-12">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] font-black uppercase tracking-widest text-emerald-600">
+              The business asks
+            </p>
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-emerald-700">
+              <Check size={11} /> Answered here
+            </span>
+          </div>
           <h3 className="mt-2 text-xl sm:text-3xl font-black tracking-tight text-gray-950 leading-tight">
             &ldquo;What does this thing actually do?&rdquo;
           </h3>
@@ -171,10 +180,15 @@ export default function BenefitCard({
         </div>
 
         {/* The question everybody answers — compact. */}
-        <div className="lg:col-span-2 bg-slate-50/60 p-6 sm:p-9">
-          <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
-            IT asks
-          </p>
+        <div className="lg:col-span-2 bg-slate-50/60 p-6 sm:p-10 md:p-12">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+              IT asks
+            </p>
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-emerald-700">
+              <Check size={11} /> Answered here
+            </span>
+          </div>
           <h3 className="mt-2 text-lg sm:text-xl font-black tracking-tight text-gray-800 leading-tight">
             &ldquo;How much work is this?&rdquo;
           </h3>
@@ -224,13 +238,16 @@ export default function BenefitCard({
       </div>
 
       {/* The point of the ordering. */}
-      <div className="px-6 sm:px-10 py-7 border-t border-slate-200 space-y-4">
+      <div className="px-6 sm:px-10 md:px-12 py-7 border-t border-slate-200 space-y-4">
         <p className="text-base sm:text-lg font-bold text-gray-900 leading-snug max-w-3xl">
-          Assessment tools answer the question on the right. The one on the left has been open for
-          years — and it is the one that decides whether the code is worth keeping at all.
+          Assessment tools answer the question on the right. Answering the left one as well is the
+          difference — and it is the question that decides whether the code is worth keeping at all.
         </p>
-        <p className="text-sm text-slate-600 font-medium">
-          It does not replace the architect. It shows them where to look — and the business why.
+        <p className="text-sm text-slate-600 font-medium max-w-3xl leading-relaxed">
+          Both answers are drafts for you to correct, and the limits are published before you upload
+          anything — {constructsFullyCovered} of {constructsTotal} construct classes fully covered,
+          the rest named. It does not replace the architect. It shows them where to look — and the
+          business why.
         </p>
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500 pt-1">
           <Link href="/catalog" className="hover:text-emerald-700">
