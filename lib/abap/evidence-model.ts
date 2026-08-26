@@ -22,7 +22,9 @@ export type EvidenceKind =
   | 'legacy-mail'
   | 'credit-management'
   | 'batch-input'
-  | 'business-rule';
+  | 'business-rule'
+  | 'enhancement'
+  | 'modification';
 
 export type EvidenceSource = 'static-parser' | 'catalog-match' | 'llm-narrative';
 
@@ -460,6 +462,127 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
         needsBusinessDecision: true
       });
     }
+
+    // -- 3. Enhancement & modification technologies --
+    // SAP's clean core level concept turns on WHICH extension technology was
+    // used, and the ATC check "Allowed Enhancement Technologies" is built on
+    // that. Enhancement implementations and enhancement points are
+    // not-recommended technologies (level D); BAdIs are SAP-provided classic
+    // extension points and stay usable (level B).
+
+    // Enhancement implementation: ENHANCEMENT <n> <name>. ... ENDENHANCEMENT.
+    const enhImpl = text.match(/^ENHANCEMENT\s+(?:\d+\s+)?([\w\/]+)/i);
+    if (enhImpl && !/^ENHANCEMENT-(POINT|SECTION)/i.test(text)) {
+      addFinding({
+        kind: 'enhancement',
+        title: `Enhancement implementation ${enhImpl[1].toUpperCase()}`,
+        severity: 'High',
+        confidence: 'High',
+        objectName: enhImpl[1].toUpperCase(),
+        objectType: 'Enhancement Implementation',
+        lineStart: stmt.line,
+        snippet: text,
+        technicalDetail: `ENHANCEMENT block injecting custom code into an SAP object via the Enhancement Framework.`,
+        cleanCoreImpact: 'Enhancement implementations run inside SAP code and are a not-recommended technology under the clean core level concept (level D). SAP can change the enhanced code at any upgrade, and ABAP Cloud does not allow them.',
+        recommendation: `Replace with a released SAP extension point: a BAdI where SAP provides one, otherwise a released API called from an ABAP Cloud (RAP) or side-by-side (CAP) extension.`,
+        targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
+      });
+    }
+
+    // Explicit and implicit enhancement points / sections
+    const enhPoint = text.match(/^ENHANCEMENT-(POINT|SECTION)\s+([\w\/]+)/i);
+    if (enhPoint) {
+      const kindWord = enhPoint[1].toLowerCase();
+      addFinding({
+        kind: 'enhancement',
+        title: `Enhancement ${kindWord} ${enhPoint[2].toUpperCase()}`,
+        severity: 'High',
+        confidence: 'High',
+        objectName: enhPoint[2].toUpperCase(),
+        objectType: kindWord === 'point' ? 'Enhancement Point' : 'Enhancement Section',
+        lineStart: stmt.line,
+        snippet: text,
+        technicalDetail: `ENHANCEMENT-${enhPoint[1].toUpperCase()} declaration — an anchor for custom code inside SAP's own program flow.`,
+        cleanCoreImpact: 'Enhancement points and sections tie custom logic to SAP internals that carry no stability contract. They are a not-recommended technology under the clean core level concept (level D).',
+        recommendation: `Check whether SAP offers a released BAdI or extension point for this scenario; if not, move the logic out to a released-API-based extension.`,
+        targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
+      });
+    }
+
+    // BAdI usage — SAP's own classic extension point. Reportable, not a blocker.
+    const badi = text.match(/\b(GET|CALL)\s+BADI\s+([\w\/]+)/i);
+    if (badi) {
+      addFinding({
+        kind: 'enhancement',
+        title: `BAdI usage ${badi[2].toUpperCase()}`,
+        severity: 'Low',
+        confidence: 'High',
+        objectName: badi[2].toUpperCase(),
+        objectType: 'BAdI',
+        lineStart: stmt.line,
+        snippet: text,
+        technicalDetail: `Business Add-In accessed via ${badi[1].toUpperCase()} BADI.`,
+        cleanCoreImpact: 'BAdIs are SAP-provided classic extension points. Under the clean core level concept they qualify as level B — acceptable where no released ABAP Cloud alternative exists, but they do not reach level A.',
+        recommendation: `Keep the BAdI, and check whether SAP has since published a released ABAP Cloud extension point or API for the same scenario — that would move the extension from level B to level A.`,
+        targetOptions: ['Developer Extensibility / RAP']
+      });
+    }
+
+    // Classic exit handler — the pre-Enhancement-Framework way into SAP code.
+    if (/\bCL_EXITHANDLER\s*=>\s*GET_INSTANCE\b/i.test(text)) {
+      addFinding({
+        kind: 'enhancement',
+        title: 'Classic exit handler (CL_EXITHANDLER=>GET_INSTANCE)',
+        severity: 'Medium',
+        confidence: 'High',
+        objectName: 'CL_EXITHANDLER',
+        objectType: 'Classic BAdI Handler',
+        lineStart: stmt.line,
+        snippet: text,
+        technicalDetail: `Classic BAdI instantiation through CL_EXITHANDLER=>GET_INSTANCE.`,
+        cleanCoreImpact: 'The classic exit handler predates the Enhancement Framework and is not available in ABAP Cloud. It signals an older extension that needs re-pointing.',
+        recommendation: `Migrate to the new BAdI (GET BADI / enhancement spot) or, where SAP provides one, to a released API.`,
+        targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
+      });
+    }
+  }
+
+  // -- 4. Core modifications --
+  // Modification markers are full-line comments, which tokenize() drops by
+  // design (see declaration-parser.ts). They are therefore scanned against the
+  // raw source rather than the statement stream — without this pass the single
+  // most severe clean core violation would be invisible to the engine.
+  const rawLines = code.split(/\r?\n/);
+  const MOD_MARKER = /^\s*[*"]\{\s*(INSERT|REPLACE|DELETE)\b(.*)$/i;
+  const seenModifications = new Set<string>();
+  for (let i = 0; i < rawLines.length; i++) {
+    const m = rawLines[i].match(MOD_MARKER);
+    if (!m) continue;
+    const action = m[1].toUpperCase();
+    // The marker carries the transport request that registered the modification.
+    const requestMatch = m[2].match(/([A-Z0-9]{3}K\d{6})/i);
+    const request = requestMatch ? requestMatch[1].toUpperCase() : '';
+    // One finding per modification, not one per marker line (each block has an
+    // opening and a closing marker carrying the same request).
+    const dedupKey = request ? `${action}:${request}` : `${action}:${i}`;
+    if (seenModifications.has(dedupKey)) continue;
+    seenModifications.add(dedupKey);
+
+    addFinding({
+      kind: 'modification',
+      title: `Core modification (${action}${request ? ` · ${request}` : ''})`,
+      severity: 'Critical',
+      confidence: 'High',
+      objectName: request || fileName,
+      objectType: 'Modification',
+      lineStart: i + 1,
+      snippet: rawLines[i].trim(),
+      technicalDetail: `Modification marker — SAP standard code was changed under a repair/modification transport${request ? ` (${request})` : ''}.`,
+      cleanCoreImpact: 'A core modification is the most severe clean core violation: level D. It has to be adjusted manually in SPAU at every upgrade, and it is impossible in SAP S/4HANA Cloud.',
+      recommendation: `Remove the modification and reimplement the requirement through a released extension point or API. Reset the object to SAP standard via SPAU once the replacement is live.`,
+      targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP', 'Retire'],
+      needsBusinessDecision: true
+    });
   }
 
   // Calculate counts for summary

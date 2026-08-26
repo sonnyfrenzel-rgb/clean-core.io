@@ -56,12 +56,22 @@ export function routeExtensibility(
   const updateTasks = findings.filter(f => f.kind === 'update-task');
   const fileAccess = findings.filter(f => f.kind === 'gui-download');
   const dynproUi = findings.filter(f => f.kind === 'dynpro');
+  // Enhancement technologies decide the clean core LEVEL, not just the score.
+  // Modifications are level D outright; enhancement implementations and points
+  // are not-recommended technologies; BAdIs are the level-B case and must not
+  // be penalised like the others.
+  const modifications = findings.filter(f => f.kind === 'modification');
+  const enhancements = findings.filter(
+    f => f.kind === 'enhancement' && f.objectType !== 'BAdI',
+  );
 
   // Category-based deductions (capped per category, diminishing returns)
   // First occurrence of a category costs more; additional occurrences add less
   const deduct = (count: number, first: number, additional: number, cap: number) =>
     count === 0 ? 0 : Math.min(cap, first + (count - 1) * additional);
 
+  score -= deduct(modifications.length,   30, 5, 40);    // Core modifications — the hardest blocker
+  score -= deduct(enhancements.length,    12, 3, 20);   // Enhancement implementations / points
   score -= deduct(standardWrites.length, 20, 3, 25);   // Direct writes to standard tables
   score -= deduct(customWrites.length,   12, 2, 18);    // Custom table writes (still transformable)
   score -= deduct(bdcCalls.length,        10, 3, 15);   // BDC screen automation
@@ -101,7 +111,11 @@ export function routeExtensibility(
 
   // Rationale
   let rationale = '';
-  if (customWrites.length > 0) {
+  if (modifications.length > 0) {
+    rationale = `Detected ${modifications.length} core modification(s) to SAP standard code. Modifications are clean core level D: they must be reset to standard via SPAU and the requirement rebuilt on a released extension point before any cloud target is reachable.`;
+  } else if (enhancements.length > 0 && customWrites.length === 0 && standardWrites.length === 0) {
+    rationale = `Detected ${enhancements.length} enhancement implementation(s) or enhancement point(s). These are not-recommended technologies under the clean core level concept; re-point them to a released BAdI or API, which ABAP Cloud (RAP) supports on-stack.`;
+  } else if (customWrites.length > 0) {
     rationale = `Detected ${customWrites.length} custom database persistence writes. Custom tables and side-effect logging require decoupled Side-by-Side architecture (CAP).`;
   } else if (standardWrites.length > 0 && deploymentModel === 'public') {
     rationale = `Direct writes to standard SAP tables are strictly prohibited in S/4HANA Public Cloud. Side-by-Side integration is required.`;
