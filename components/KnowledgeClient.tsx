@@ -41,7 +41,7 @@ const faqs = [
 const glossaryTerms = [
   {
     term: "SAP BTP (Business Technology Platform)",
-    definition: "The integration and extension platform for SAP applications. It enables the development of side-by-side extensions, data orchestration, and custom cloud-native business processes separate from the ERP core."
+    definition: "The integration and extension platform for SAP applications. It enables the development of side-by-side extensions, data orchestration, and custom cloud-native business processes separate from the ERP core. Since SAP Sapphire 2026 it sits under the SAP Business AI Platform (BAIP) umbrella together with SAP Business Data Cloud and SAP Business AI; the BTP services and the product name \"SAP BTP ABAP environment\" continue unchanged."
   },
   {
     term: "SAP Cloud Connector",

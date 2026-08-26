@@ -42,6 +42,7 @@ A: A deterministic ABAP evidence engine parses the custom code FIRST (classes, r
 export const EXTENDED_GLOSSARY = `
 ## EXTENDED GLOSSARY
 
+- **SAP BAIP (SAP Business AI Platform)**: The umbrella SAP announced at Sapphire 2026, consolidating SAP BTP, SAP Business Data Cloud and SAP Business AI into one governed environment. It is not a retirement of SAP BTP: the BTP services keep their names, and SAP was still shipping releases under the name "SAP BTP ABAP environment" in August 2026. Use SAP BTP for the concrete services and SAP BAIP for the portfolio around them.
 - **SAP Cloud Connector**: A secure software link that runs inside the customer's on-premise or private cloud network, establishing an encrypted TLS connection to SAP BTP without requiring complex inbound firewall configurations.
 - **CDS (Core Data Services)**: The data modeling infrastructure used by SAP. CDS views define database tables, relationships, and service projections declaratively inside both the ABAP environment (RAP) and the Node.js/Java environment (CAP).
 - **XSUAA (Extended Services for User Account and Authentication)**: SAP BTP's identity and access management service. It issues and validates OAuth 2.0 tokens (JWTs) for securing microservice-to-microservice communication and enforcing user-level authorization scopes.

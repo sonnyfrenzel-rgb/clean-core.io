@@ -93,6 +93,14 @@ export default function KnowledgePage() {
           <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
             Discover the technical architectures, security guidelines, and extensibility patterns aligned with SAP's published Clean Core guidelines for S/4HANA.
           </p>
+          <p className="text-sm text-slate-400 leading-relaxed max-w-2xl font-medium border-l-2 border-green-500/30 pl-4">
+            Naming note: since SAP Sapphire 2026, SAP BTP sits under the{' '}
+            <strong className="text-slate-300">SAP Business AI Platform (BAIP)</strong> umbrella together with
+            SAP Business Data Cloud and SAP Business AI. This is a portfolio consolidation, not a retirement of
+            SAP BTP &mdash; the services keep their names, and SAP shipped releases under the name &ldquo;SAP BTP
+            ABAP environment&rdquo; as recently as August 2026. We use SAP BTP for the concrete services and
+            SAP BAIP for the portfolio around them.
+          </p>
         </div>
       </div>
 
