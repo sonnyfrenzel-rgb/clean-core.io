@@ -97,6 +97,14 @@ showed were losing traffic the site had already earned.
   A to B. Covered by test.
 - The hero on the classification page said SAP grades "technical objects"; SAP
   grades extensions.
+- **`tar` bumped past GHSA-r292-9mhp-454m.** The existing override pinned
+  `^7.5.16`, which resolved to 7.5.19 — still inside the advisory's `<=7.5.20`
+  range, so the Security CI gate (audit-ci, high+) failed while the deploy gate
+  (`--omit=dev --audit-level=critical`) passed, because `tar` is a dev-only
+  transitive. Override is now `^7.5.21`, resolving to 7.5.22. The lockfile was
+  regenerated with the pinned Node 22 / npm 11 toolchain, and the nested
+  `@apidevtools/json-schema-ref-parser/node_modules/js-yaml` entry that local
+  npm 10.5 silently drops was verified present afterwards.
 
 ## [v2.3.1] — 2026-08-20
 
