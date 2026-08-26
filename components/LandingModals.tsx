@@ -77,15 +77,38 @@ export default function LandingModals() {
   // Handle Google redirect result (fallback from signInWithPopup)
   useEffect(() => {
     if (!auth) return;
-    getRedirectResult(auth).then((result) => {
-      if (result?.user) {
-        console.log('[getRedirectResult] User signed in via redirect:', result.user.email);
+    // A redirect sign-in used to go straight to the dashboard without ever
+    // consulting the profile, so an account with MFA enabled skipped the second
+    // factor entirely on this path while the popup path enforced it. Check the
+    // profile first and route into the MFA step when it is required; on a read
+    // failure, sign out rather than proceeding — the same fail-closed rule the
+    // popup and password paths follow.
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (!result?.user) return;
+        const signedInUser = result.user;
+        try {
+          const snap = await getDoc(doc(getDb(), 'users', signedInUser.uid));
+          const profileData = snap.exists() ? snap.data() : undefined;
+          if (profileData?.mfaEnabled) {
+            setPendingMfaUser(signedInUser);
+            setPendingMfaProfile(profileData);
+            setAuthMode('mfa');
+            updateQueryParams('auth', 'mfa');
+            return;
+          }
+        } catch (profileErr) {
+          console.error('[getRedirectResult] profile read failed — signing out:', profileErr);
+          await signOut(auth).catch(() => {});
+          setAuthError('Could not verify your account. Please sign in again.');
+          return;
+        }
         setIsNavigating(true);
         router.push('/dashboard');
-      }
-    }).catch((err) => {
-      console.error('[getRedirectResult] Error:', err);
-    });
+      })
+      .catch((err) => {
+        console.error('[getRedirectResult] Error:', err);
+      });
   }, [auth, router]);
 
   const updateQueryParams = (key: string, value: string | null) => {
@@ -233,19 +256,33 @@ export default function LandingModals() {
       
       const db = getDb();
       const userDocRef = doc(db, 'users', signedInUser.uid);
-      const userDoc = await getDoc(userDocRef);
-      
-      if (userDoc.exists()) {
-        const profileData = userDoc.data();
-        if (profileData.mfaEnabled) {
-          setPendingMfaUser(signedInUser);
-          setPendingMfaProfile(profileData);
-          setAuthMode('mfa');
-          setIsSubmitting(false);
-          return;
-        }
+
+      // The profile read decides whether MFA is required, so it needs its own
+      // catch. Sharing the outer one meant a Firestore error surfaced as
+      // "Invalid email or password" while the Firebase session stayed live and
+      // the MFA check never ran — the user was signed in by an error message
+      // that told them they were not. Fail closed: sign out and say what
+      // actually happened. (The Google path already does this.)
+      let profileData: Record<string, unknown> | undefined;
+      try {
+        const userDoc = await getDoc(userDocRef);
+        profileData = userDoc.exists() ? userDoc.data() : undefined;
+      } catch (profileErr) {
+        console.error('[handleEmailSignIn] profile read failed — signing out:', profileErr);
+        await signOut(auth).catch(() => {});
+        setAuthError('Could not verify your account. Please try again.');
+        setIsSubmitting(false);
+        return;
       }
-      
+
+      if (profileData?.mfaEnabled) {
+        setPendingMfaUser(signedInUser);
+        setPendingMfaProfile(profileData);
+        setAuthMode('mfa');
+        setIsSubmitting(false);
+        return;
+      }
+
       setIsNavigating(true);
       setTimeout(() => {
         router.push('/dashboard');

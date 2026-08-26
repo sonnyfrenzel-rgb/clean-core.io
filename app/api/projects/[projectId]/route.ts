@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 
 /**
  * DELETE /api/projects/{projectId}
@@ -20,6 +20,18 @@ export async function DELETE(
     const decoded = await verifyRequestAuth(req);
     if (!decoded) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+
+    // Server-side MFA gate: deleting a project destroys its runs, and those
+    // are the evidence chain. An ID token obtained before the TOTP prompt must
+    // not be enough to erase it.
+    try {
+      await assertMfaSatisfied(req, decoded);
+    } catch (mfaErr: any) {
+      return NextResponse.json(
+        { error: mfaErr?.message || 'Multi-factor authentication required.' },
+        { status: mfaErr?.status || 403 },
+      );
     }
 
     const { projectId } = await params;

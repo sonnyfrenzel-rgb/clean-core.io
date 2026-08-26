@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
-import {
-  verifyRequestAuth,
-  getAdminDb,
-  assertAccountActive,
-  QuotaError,
-  reserveRunQuota,
-  refundRunQuota,
-} from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, reserveRunQuota, refundRunQuota, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { APP_VERSION } from '@/lib/version';
 import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
@@ -49,6 +42,20 @@ export async function POST(req: NextRequest) {
     const decodedToken = await verifyRequestAuth(req);
     if (!decodedToken) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+
+    // Server-side MFA gate. Without it, a user with mfaEnabled could mint a
+    // signed run or a signed audit pack from a valid ID token alone, because
+    // the client obtains that token BEFORE the TOTP prompt — the prompt is a
+    // modal, not an authentication step. A stolen token was therefore enough
+    // to write into the very chain that is supposed to prove provenance.
+    try {
+      await assertMfaSatisfied(req, decodedToken);
+    } catch (mfaErr: any) {
+      return NextResponse.json(
+        { error: mfaErr?.message || 'Multi-factor authentication required.' },
+        { status: mfaErr?.status || 403 },
+      );
     }
 
     const body = await req.json().catch(() => ({}));
