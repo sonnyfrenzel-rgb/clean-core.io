@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { resolveApi, hasNoReleasedApiPath } from '@/lib/abap/catalog-service';
+import { resolveApi, hasNoReleasedApiPath, gradeSapObject } from '@/lib/abap/catalog-service';
+import { ABCD_META } from '@/lib/abap/abcd-classification';
 import {
   slugToObject,
   objectToSlug,
@@ -28,7 +29,7 @@ function facts(name: string) {
   const successor = entry?.successors?.[0]?.name || entry?.view;
   const successorType = entry?.type;
   const allSuccessors = entry?.successors?.map((s) => s.name) ?? (successor ? [successor] : []);
-  return { entry, noPath, successor, successorType, allSuccessors };
+  return { entry, noPath, successor, successorType, allSuccessors, graded: gradeSapObject(name) };
 }
 
 export async function generateMetadata({
@@ -65,7 +66,7 @@ export default async function CatalogObjectPage({
 }) {
   const { object } = await params;
   const name = slugToObject(object);
-  const { entry, noPath, successor, successorType, allSuccessors } = facts(name);
+  const { entry, noPath, successor, successorType, allSuccessors, graded } = facts(name);
 
   if (!entry && !noPath) notFound();
 
@@ -121,6 +122,28 @@ export default async function CatalogObjectPage({
       </nav>
 
       <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2 font-mono">{name}</h1>
+
+      {/*
+        The clean core level, shown with the SAP state that produced it. These
+        pages carry the highest click-through on the site, and the level is the
+        first thing an architect wants after the successor. It stays out of the
+        signed audit pack.
+      */}
+      {graded.grade !== 'Unknown' && (
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-black border ${ABCD_META[graded.grade].badge}`}>
+            {graded.grade}
+          </span>
+          <span className="text-sm font-bold text-slate-700">
+            Clean core level {graded.grade} &mdash; {ABCD_META[graded.grade].short}
+          </span>
+          <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
+            {graded.state
+              ? `SAP state: ${graded.state}`
+              : 'listed in neither SAP file — SAP-internal'}
+          </span>
+        </div>
+      )}
 
       {successor ? (
         <>

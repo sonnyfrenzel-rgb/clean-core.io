@@ -3,7 +3,8 @@ import { ArrowLeft, Layers, Check } from 'lucide-react';
 import Link from 'next/link';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
-import { ABCD_META, GRADES } from '@/lib/abap/abcd-classification';
+import { getPublishedGradeDistribution } from '@/lib/abap/catalog-service';
+import { ABCD_META, GRADES, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 
 export const metadata: Metadata = {
   title: 'SAP Clean Core Object Classification (A–D) | Clean-Core.io',
@@ -34,7 +35,19 @@ const faqs = [
   },
 ];
 
+/** Which SAP state produced each level — shown next to the census counts. */
+const CENSUS_STATES: Record<CloudReadinessGrade, string> = {
+  A: 'released',
+  B: 'classicAPI',
+  C: 'deprecated with successor',
+  D: 'noAPI · notToBeReleased · deprecated without successor',
+  Unknown: 'no state published',
+};
+
 export default function CleanCoreClassificationPage() {
+  // Server component: reads the generated artifacts directly, no client payload.
+  const census = getPublishedGradeDistribution();
+
   const schemaJson = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -67,7 +80,7 @@ export default function CleanCoreClassificationPage() {
             Object Classification <span className="text-green-400">A–D</span>
           </h1>
           <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
-            SAP now grades clean-core technical objects A, B, C or D by API release status, upgrade safety and extensibility compliance — replacing the older Tier 1/2/3 wording. Here is the model, and how Clean-Core.io derives it for your custom code.
+            SAP grades clean-core extensions A, B, C or D by API release status, upgrade safety and extensibility compliance — superseding the older Tier 1/2/3 model. Here is the model, the full distribution across SAP’s published data, and how Clean-Core.io derives a grade for your custom code.
           </p>
         </div>
       </div>
@@ -75,7 +88,7 @@ export default function CleanCoreClassificationPage() {
       {/* GEO Quick Answer */}
       <QuickAnswer
         question="What is the A/B/C/D Clean Core object classification?"
-        answer="It is SAP's cloud-readiness classification for technical objects. A = released SAP APIs and extension points; B = classic SAP APIs, SAP-recommended; C = internal SAP APIs, conditionally clean; D = not-recommended objects and technologies, to be replaced. It maps to the ABAP Test Cockpit priorities and gives a clearer way to assess custom code and plan upgrade-safe SAP development than a binary clean/not-clean view."
+        answer="It is SAP's cloud-readiness classification for technical objects. A = released SAP APIs and extension points; B = classic SAP APIs, SAP-recommended; C = internal SAP APIs, conditionally clean; D = not-recommended objects and technologies, to be replaced. Clean-Core.io derives the grade from SAP's own published object data — the Cloudification Repository release states plus SAP's classicAPI/noAPI classification file — so a graded object is a lookup, not an estimate. It gives a clearer way to assess custom code and plan upgrade-safe SAP development than a binary clean/not-clean view."
       />
 
       {/* Main */}
@@ -105,13 +118,75 @@ export default function CleanCoreClassificationPage() {
             </p>
           </section>
 
+          {/*
+            The A-D census of SAP's own published data. This is the one figure on
+            this topic that nobody else has packaged: it falls out of the catalog
+            sync, so it is dated, versioned and traceable to a file hash rather
+            than asserted. It describes SAP's data, not any customer's code --
+            said plainly below so it cannot be mis-cited as a customer benchmark.
+          */}
+          <section className="space-y-4">
+            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+              A–D across everything SAP publishes
+            </h2>
+            <p className="text-gray-700 leading-relaxed font-medium">
+              Applying the rules above to SAP&rsquo;s own two repository files grades{' '}
+              <strong>{census.totalObjects.toLocaleString('en-US')}</strong> objects. This is a census of
+              SAP&rsquo;s published data &mdash; <strong>not</strong> a benchmark of any customer&rsquo;s
+              custom code, where the mix looks very different.
+            </p>
+            <div className="overflow-x-auto rounded-2xl border border-slate-200">
+              <table className="w-full border-collapse text-left text-sm">
+                <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th scope="col" className="px-5 py-3 font-black">Level</th>
+                    <th scope="col" className="px-5 py-3 font-black">SAP state</th>
+                    <th scope="col" className="px-5 py-3 font-black text-right">Objects</th>
+                    <th scope="col" className="px-5 py-3 font-black text-right">Share</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {GRADES.map((g) => (
+                    <tr key={g}>
+                      <td className="px-5 py-3">
+                        <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black border ${ABCD_META[g].badge}`}>{g}</span>
+                        <span className="ml-2 font-bold text-slate-800">{ABCD_META[g].short}</span>
+                      </td>
+                      <td className="px-5 py-3 text-slate-600 font-medium">{CENSUS_STATES[g]}</td>
+                      <td className="px-5 py-3 text-right font-black text-slate-900 tabular-nums">
+                        {census.distribution[g].toLocaleString('en-US')}
+                      </td>
+                      <td className="px-5 py-3 text-right text-slate-600 font-medium tabular-nums">
+                        {((census.distribution[g] / census.totalObjects) * 100).toFixed(1)}&thinsp;%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Sources, so the figures can be reproduced: <code>objectReleaseInfoLatest.json</code>{' '}
+              (sha256 {census.releaseSource.sha256}, fetched {census.releaseSource.fetchedAt}) and{' '}
+              <code>objectClassifications_SAP.json</code> (sha256 {census.classificationSource.sha256},
+              fetched {census.classificationSource.fetchedAt}), both from the{' '}
+              <a href="https://github.com/SAP/abap-atc-cr-cv-s4hc" target="_blank" rel="noreferrer" className="underline hover:text-gray-700">
+                SAP Cloudification Repository
+              </a>{' '}
+              (Apache-2.0). Counted by Clean-Core.io {APP_VERSION}. Objects appearing in both files are
+              counted once, with the released state taking precedence.
+            </p>
+          </section>
+
           <section className="space-y-4">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-3xl font-black tracking-tight text-gray-955">How Clean-Core.io applies it</h2>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 border border-amber-300 rounded-full px-2 py-0.5">Experimental preview</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 border border-emerald-300 rounded-full px-2 py-0.5">Catalog-backed · two-tier</span>
             </div>
             <p className="text-gray-700 leading-relaxed font-medium">
-              Clean-Core.io shows an <strong>experimental A–D readiness estimate</strong>: a heuristic derived from the evidence the engine already computes — access type, risk level, object type and whether the object is custom. It is a fast orientation aid, <strong>not</strong> an authoritative SAP ATC classification, and it is <strong>not</strong> part of the signed audit pack. Treat every grade as a draft and verify it with SAP ADT / ATC for your specific target release.
+              Every grade carries its provenance, because the two are not equally strong. Where SAP has published a state for an object, the grade is a <strong>lookup</strong>: <code>released</code> &rarr; A, <code>classicAPI</code> &rarr; B, <code>noAPI</code> and <code>notToBeReleased</code> &rarr; D, <code>deprecated</code> &rarr; C with a successor and D without. An SAP object listed in neither file is graded C, which is what the clean core level concept defines level C to be &mdash; SAP-internal, not classified for customer use. Only your own Z/Y objects, which SAP cannot have classified, fall back to a <strong>heuristic</strong> over access type, risk and object type, and they are labelled as estimated wherever they appear.
+            </p>
+            <p className="text-gray-700 leading-relaxed font-medium">
+              It remains <strong>not</strong> an authoritative SAP ATC classification and is <strong>not</strong> part of the signed audit pack. Verify every grade with SAP ADT / ATC for your specific target release &mdash; a grade is release-dependent, and an object released in 2025 is still unreleased against a 2023 target.
             </p>
             <p className="text-gray-700 leading-relaxed font-medium">
               Used that way it speeds up first-pass triage and the technical-debt conversation — a starting point for the defensible A–D remediation plan you then confirm against SAP's own tooling.
