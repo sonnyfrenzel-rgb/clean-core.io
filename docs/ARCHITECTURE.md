@@ -135,6 +135,37 @@ Required secrets: `GEMINI_API_KEY`, `RESEND_API_KEY`, `S4_ENCRYPTION_KEY`, `MFA_
 
 ---
 
+### 5.1 Two invariants that are easy to break by copy-paste
+
+**MFA is a server-side control, not a modal.** Firebase Auth issues a valid ID
+token *before* any custom second factor runs — the TOTP prompt is a React state
+change. The client can therefore only ask; the gate is `assertMfaSatisfied` on
+the server, which rejects a token from an `mfaEnabled` account without the
+`mfa_session` cookie. Every route that mints, mutates or destroys evidence must
+call it (or the stronger `assertMfaStepUp` / `assertAdminStepUp`). Enrolment and
+verification must NOT — they cannot depend on the factor being enrolled.
+`tests/mfa-coverage-guard.spec.ts` lists both sides explicitly so a new route
+forces a decision rather than defaulting to unguarded.
+
+**The S/4 credential vault is all-or-nothing.** `resolveS4Connection()` in
+`lib/s4-credentials.ts` owns this: if a request asks for stored credentials the
+whole connection identity comes from storage and body overrides are ignored;
+otherwise storage is not read at all. Merging field by field —
+`url: body.url ?? stored?.url` beside `password: body.password ?? stored?.password`
+— let a request keep the vault password and redirect it to a URL of its own. The
+SSRF allowlist narrows that but is a config value, not a code invariant.
+
+### 5.2 Never substitute a figure for a measurement
+
+`|| <number>` on a value the product measured turns "we do not know" into
+something a customer will quote. The delivery handover once read `|| 10` tests
+and `|| 92` % coverage under a green tick. Say "not generated" / "not computed"
+instead, and let the status icon follow the fact. Product defaults (the free
+tier's 5 transformations) are configuration and are fine.
+`tests/no-fabricated-figures.spec.ts` guards the known sites.
+
+---
+
 ## 6. Testing
 
 - Config: `playwright.config.ts` — chromium, `baseURL localhost:3000`, forces emulator env (`NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true`, auth `127.0.0.1:9099`, firestore `127.0.0.1:8080`), suppresses real emails (`RESEND_API_KEY=''`).

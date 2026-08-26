@@ -5,6 +5,127 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.4.1] — 2026-08-26
+
+Everything an external code review found, worked through. A Grok 4.6 pass over
+the whole codebase produced roughly twenty findings; each was reproduced against
+the code before being acted on, and two were refuted rather than fixed. Five
+engine defects shipped in v2.4.0; this release covers the rest, plus a rebuilt
+benefit section on the landing page.
+
+The full triage, and the raw review output unedited, are in `docs/reviews/`.
+
+### Fixed — numbers nobody measured
+
+The delivery handover screen read `project?.testCases?.length || 10` and
+`coverageEstimate?.percentage || 92`. With those fields missing — and because
+`length === 0` is falsy, also when a run generated nothing at all — it stated
+**10 automated tests and 92% estimated coverage**, under a green tick, on the one
+screen a customer photographs for a steering pack. Two more sites did the same
+for confidence: 95% routing confidence in Analyze, and 75% recommendation
+confidence in Design, the latter directly above the architect's signature.
+
+All four now say what is true: "No test suite generated", "Coverage not
+estimated", "Confidence not computed". `ArchitectSignOff.confidenceScore` is
+optional, so a caller cannot silently default it, and the tick in front of each
+line follows the fact rather than the layout. Product defaults are untouched —
+the free tier's 5 transformations is configuration, not a measurement.
+
+### Fixed — security
+
+- **A rate-limited verification reported a valid pack as forged.** `QuotaError`
+  carries `.status`; `/api/export/verify` and `/api/audit-pack/create` tested
+  `.statusCode`, so the 429 branch was unreachable and the outer catch answered
+  HTTP 200 `{ valid: false }`. The 31st verification in a minute told an auditor
+  the signature was bad. Both now test the property the class sets, and the
+  failure path returns 500 with no `valid` field: failing to check a signature is
+  a different statement from checking it and finding it bad.
+- **The trust chain did not require MFA.** Firebase Auth issues a valid ID token
+  before any custom second factor runs — the TOTP prompt is a React state change,
+  not an authentication step. `assertMfaSatisfied` guarded the S/4, Gemini and
+  secrets routes but not the two that MINT signed runs and signed audit packs,
+  nor project deletion, which destroys the runs underneath. Those three are now
+  gated. An audit of every mutating route found the rest already covered:
+  `account/delete` and `mfa/disable` use `assertMfaStepUp`, and the four admin
+  routes use `assertAdminStepUp`, which also requires recent auth and an enrolled
+  factor.
+- **Two client sign-in paths let a session survive.** The email path read the
+  profile inside the same `try` as the credential check, so a Firestore error
+  surfaced as "Invalid email or password" while the session stayed live and the
+  MFA branch never ran — the user was signed in by an error telling them they
+  were not. The redirect path went straight to the dashboard without consulting
+  the profile at all, skipping the second factor on that path only. Both now fail
+  closed.
+- **Stored S/4 credentials could be sent to a caller-supplied URL.** Four routes
+  merged the stored connection field by field, so a request could ask for the
+  vault and supply its own `url` — and the decrypted password went there.
+  `resolveS4Connection()` now owns the invariant for all four: stored means the
+  whole connection identity comes from storage, or nothing does.
+- **Any non-boolean granted admin.** `isAdmin !== false` gave the claim to the
+  string `"false"` and to `"0"`.
+- **Shell injection in the weekly usage report.** `${{ inputs.recipient }}` was
+  interpolated into a `run:` block in a job holding `id-token: write`, GCP
+  workload identity federation and the Resend key. The input now reaches the
+  shell only as an environment variable.
+- **Consent was recorded where it was never given.** Google auto-provisioning
+  wrote `termsVersionAccepted`, so the record existed and the person was never
+  asked. Those fields are gone from that branch; the sign-up form's Google button
+  is gated on the same checkboxes as its submit button. The email registration
+  path also recorded `identityProvider: 'google'`.
+
+### Fixed — two Rules of Hooks violations
+
+`UserOnboarding` returned on `!auth` before its `useEffect`: the server render
+stopped early (auth is null there) while the browser render ran it, and React
+throws on the hook-count mismatch during hydration. `RoutingRationale` returned
+on a missing route before its `useMemo`, which fires whenever a project loads
+asynchronously and the same instance renders again with a route. Both guards
+moved below the hooks.
+
+### Changed — the landing page benefit section
+
+Rebuilt around the two questions every legacy decision waits on, and moved below
+the slideshow. A competitor scan drove the shape: smartShift inventories code and
+reports retain/retire/redesign; CoreAssess.AI produces a backlog and sells on
+"up to 70% faster"; SAP Signavio is the only one facing the business and it mines
+transaction data, so it can show a process is slow but not what a Z-program does
+inside it. Everyone ships a backlog, and a backlog never says why the program
+exists.
+
+So "What does this thing actually do?" leads and takes three fifths of the
+width, with the artifacts drawn rather than listed — a plain-language answer, a
+BPMN flow, a RACI in business roles. "How much work is this?" sits beside it with
+the 21/17/4 split. Still no time or percentage claim: against "70% faster" the
+answer is a reproducible figure, not a larger one.
+
+### Refuted — checked, not defects
+
+- *"Unhandled release states are counted as residual C."* Both generated
+  artifacts contain only `released`, `notToBeReleased`, `deprecated`,
+  `classicAPI` and `noAPI`. Enumerated.
+- *"`set({chargedInputs}, {merge:true})` replaces the map and breaks quota
+  idempotency."* Firestore merges map fields recursively. Proven on the emulator:
+  after writing a second fingerprint the first is still `true` and the counter
+  reads 2.
+
+### Added — guards for each class of defect
+
+`no-fabricated-figures`, `credential-and-consent-guard` and `mfa-coverage-guard`
+(37 tests). Mostly source-level, because each defect is a shape rather than a
+behaviour: `|| <number>` on a measured value, a `${{ }}` expression inside
+`run:`, a hook after an early return, a field-by-field merge of stored
+credentials. The MFA spec lists both which routes must require the factor and
+which must not — enrolment cannot depend on the factor being enrolled — so adding
+a route forces a decision instead of defaulting to unguarded.
+
+Also `reference-analysis.spec.ts`, which guards the published run's properties
+rather than freezing its numbers: the buckets partition the findings exactly,
+nothing counts as settled without a real catalog lookup, and the handed-back
+bucket is never silently emptied. An empty red band would read as "we transform
+everything".
+
+213 passed, 0 failed.
+
 ## [v2.4.0] — 2026-08-26
 
 Clean core levels stop being an estimate. SAP publishes a second classification
