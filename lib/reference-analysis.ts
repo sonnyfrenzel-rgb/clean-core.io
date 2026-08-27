@@ -152,7 +152,7 @@ export function getReferenceAnalysis(): ReferenceAnalysis {
       count: counts.resolved,
       label: 'the tool settles',
       meaning:
-        'These point at a released SAP successor, looked up in SAP’s own published data. You review the mapping; you do not have to find it.',
+        'Points at a released SAP successor — SAP’s own where it names one, the curated mapping otherwise. The finding says which. You review it; you do not have to find it.',
     },
     decision: {
       count: counts.decision,
@@ -164,7 +164,7 @@ export function getReferenceAnalysis(): ReferenceAnalysis {
       count: counts.handedBack,
       label: 'stays hand work',
       meaning:
-        'Structurally out of reach for any generator. They are flagged and isolated rather than guessed at — so nothing false ends up in your draft.',
+        'Out of reach for any generator. Flagged and isolated rather than guessed at, so nothing false reaches your draft.',
     },
     handedBackKinds: Array.from(kinds).sort(),
     rollCall: buildRollCall(evidence.findings),

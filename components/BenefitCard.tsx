@@ -1,13 +1,18 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import type { ReferenceObject, ReferenceDecision } from '@/lib/reference-analysis';
+import type { ReferenceObject, ReferenceDecision, ReferenceBucket } from '@/lib/reference-analysis';
 
 export interface BenefitCardProps {
   linesOfCode: number;
   totalFindings: number;
-  resolved: number;
-  decision: number;
-  handedBack: number;
+  /**
+   * The buckets, not bare counts. Each carries the sentence explaining what it
+   * means for the reader — written in `lib/reference-analysis.ts` and, until the
+   * "Verifiable Integrity" section was merged in here, never rendered anywhere.
+   */
+  resolved: ReferenceBucket;
+  decision: ReferenceBucket;
+  handedBack: ReferenceBucket;
   handedBackKinds: string[];
   rollCall: ReferenceObject[];
   businessDecisions: ReferenceDecision[];
@@ -71,13 +76,13 @@ export default function BenefitCard({
   constructsTotal,
   constructsFullyCovered,
 }: BenefitCardProps) {
-  const total = Math.max(1, resolved + decision + handedBack);
+  const total = Math.max(1, resolved.count + decision.count + handedBack.count);
   const pct = (n: number) => (n / total) * 100;
 
   const bands = [
-    { n: resolved, label: 'settled', bar: 'bg-emerald-500', text: 'text-emerald-700' },
-    { n: decision, label: 'your call', bar: 'bg-amber-400', text: 'text-amber-700' },
-    { n: handedBack, label: 'hand work', bar: 'bg-rose-500', text: 'text-rose-700' },
+    { b: resolved, short: 'settled', bar: 'bg-emerald-400', text: 'text-emerald-300', dot: 'bg-emerald-400' },
+    { b: decision, short: 'your call', bar: 'bg-amber-400', text: 'text-amber-300', dot: 'bg-amber-400' },
+    { b: handedBack, short: 'hand work', bar: 'bg-rose-400', text: 'text-rose-300', dot: 'bg-rose-400' },
   ];
 
   // Six is what fits without becoming a table; the reference page carries them all.
@@ -115,8 +120,8 @@ export default function BenefitCard({
         this is the half that has to carry the difference. The asymmetry is now
         only visual: nothing in the copy depends on it, so stacking costs nothing.
       */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-px bg-slate-200 border-y border-slate-200">
-        <div className="md:col-span-3 bg-white p-6 sm:p-8 md:p-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-slate-200 border-y border-slate-200">
+        <div className="order-last md:order-none bg-white p-6 sm:p-8 md:p-10">
           <h3 className="text-lg sm:text-xl font-black tracking-tight text-gray-950 leading-tight">
             &ldquo;Do we still need this program?&rdquo;
           </h3>
@@ -163,63 +168,85 @@ export default function BenefitCard({
           </p>
         </div>
 
-        <div className="md:col-span-2 bg-slate-50/60 p-6 sm:p-8 md:p-10">
-          <h3 className="text-lg sm:text-xl font-black tracking-tight text-gray-950 leading-tight">
+        {/*
+          The proof, in the machine's voice.
+
+          Dark on purpose, and it is the only dark thing on this card: the reader
+          has to be able to tell a computed fact from a sentence somebody wrote.
+          Everything in here is produced by the run — the counts, the bar, the
+          object pairs — and the prose around it stays light.
+
+          On a phone this comes first (`order-first`), because the person scanning
+          for "how much work" should not have to scroll past the business half to
+          reach the numbers.
+        */}
+        <div className="order-first md:order-none bg-slate-900 text-slate-100 p-6 sm:p-8 md:p-10">
+          <h3 className="text-lg sm:text-xl font-black tracking-tight text-white leading-tight">
             &ldquo;What will it cost us to move it?&rdquo;
           </h3>
-          <p className="mt-4 text-xs text-slate-500 leading-relaxed">
+          <p className="mt-3 text-xs text-slate-400 leading-relaxed">
             On the {linesOfCode.toLocaleString('en-US')}-line reference program we publish &mdash;{' '}
-            {totalFindings} findings:
+            {totalFindings} findings, split three ways:
           </p>
 
-          <div className="mt-3 flex h-3 w-full overflow-hidden rounded-full border border-slate-200">
-            {bands.map((b) => (
-              <div key={b.label} className={b.bar} style={{ width: `${pct(b.n)}%` }} title={`${b.n} ${b.label}`} />
+          <div className="mt-4 flex h-2 w-full overflow-hidden rounded-full bg-slate-800">
+            {bands.map((x) => (
+              <div key={x.short} className={x.bar} style={{ width: `${pct(x.b.count)}%` }} title={`${x.b.count} ${x.short}`} />
             ))}
           </div>
 
-          <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
-            {bands.map((b) => (
-              <div key={b.label} className="flex items-baseline gap-1.5">
-                <dt className="text-2xl font-black tabular-nums text-gray-950 leading-none">{b.n}</dt>
-                <dd className={`text-xs font-black ${b.text}`}>{b.label}</dd>
+          {/* Each number carries the sentence that says what it means — the three
+              cards from the section that used to sit below this one. */}
+          <dl className="mt-5 space-y-4">
+            {bands.map((x) => (
+              <div key={x.short}>
+                <dt className="flex items-baseline gap-2">
+                  <span className="text-4xl sm:text-5xl font-black tabular-nums text-white leading-none tracking-tight">
+                    {x.b.count}
+                  </span>
+                  <span className={`text-[11px] font-black uppercase tracking-widest ${x.text}`}>{x.short}</span>
+                </dt>
+                <dd className="mt-1.5 text-[11px] text-slate-400 leading-relaxed">{x.b.meaning}</dd>
               </div>
             ))}
           </dl>
 
           {shown.length > 0 && (
-            <ul className="mt-5 space-y-1.5 border-t border-slate-200 pt-4">
-              {shown.map((o) => (
-                <li key={o.name} className="flex flex-wrap items-baseline gap-1.5 text-xs">
-                  <code className="font-mono font-bold text-slate-800">{o.name}</code>
-                  <span className="text-slate-400" aria-hidden>
-                    &rarr;
-                  </span>
-                  <code className="font-mono text-emerald-700">{o.successor}</code>
-                </li>
-              ))}
-              {withoutPath > 0 && (
-                <li className="text-xs text-slate-500 pt-1">
-                  &hellip; and {withoutPath} with no released path, named rather than guessed at.
-                </li>
-              )}
-            </ul>
+            <div className="mt-6 border-t border-white/10 pt-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                SAP&rsquo;s own naming, from its published release data
+              </p>
+              <ul className="mt-2.5 space-y-1">
+                {shown.map((o) => (
+                  <li key={o.name} className="flex flex-wrap items-baseline gap-1.5 text-[11px] font-mono">
+                    <span className="text-slate-300">{o.name}</span>
+                    <span className="text-slate-600" aria-hidden>&rarr;</span>
+                    <span className="text-emerald-400">{o.successor}</span>
+                  </li>
+                ))}
+                {withoutPath > 0 && (
+                  <li className="text-[11px] text-slate-500 pt-1 font-sans">
+                    &hellip; and {withoutPath} with no released path, named rather than guessed at.
+                  </li>
+                )}
+              </ul>
+            </div>
           )}
 
-          <p className="mt-4 text-[11px] text-slate-500 leading-relaxed">
-            Settled = we can point you at a released successor: an upgrade-stable contract instead of
-            the direct table read that carries the risk today. The pairs above are SAP&rsquo;s own
-            naming, straight from its published release data &mdash; the tool also carries curated
-            OData mappings for some of them, and tells you which is which. Hand work ={' '}
-            {handedBackKinds.join(' and ')} &mdash; flagged, never guessed at.
-          </p>
-
-          <Link
-            href="/reference-analysis"
-            className="mt-4 inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 hover:gap-2.5 transition-all"
-          >
-            The full run, and the file <ArrowRight size={13} />
-          </Link>
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Link
+              href="/reference-analysis"
+              className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-400 hover:gap-2.5 transition-all"
+            >
+              The full run, and the file <ArrowRight size={13} />
+            </Link>
+            <Link
+              href="/how-it-works"
+              className="inline-flex items-center gap-1.5 text-xs font-black text-slate-400 hover:text-slate-200 transition-colors"
+            >
+              The full methodology <ArrowRight size={13} />
+            </Link>
+          </div>
         </div>
       </div>
 

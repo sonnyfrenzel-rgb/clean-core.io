@@ -55,8 +55,24 @@ test.describe('the card does not depend on where things sit', () => {
     expect(rendered).toContain('d.recommendation');
     // Quoted from the run rather than written for the page — say so.
     expect(rendered).toContain('quoted unedited');
-    // And the business half is the larger one, as the argument always implied.
-    expect(rendered).toContain('md:col-span-3');
+  });
+
+  test('the two voices are visually separated', () => {
+    // The card used to say the same thing as a full "Verifiable Integrity"
+    // section a thousand pixels below it — same three categories, same three
+    // colours — and that section was the louder of the two while being the one
+    // without a single number in it. It was merged in here, and the rule that
+    // came out of the merge is: computed output looks like computed output.
+    //
+    // Exactly one dark region on this card, and it is the half holding the
+    // evidence. If prose ever goes dark too, the distinction is gone.
+    const rendered = source().slice(source().indexOf('return ('));
+    expect(rendered).toContain('bg-slate-900');
+    expect(rendered.match(/bg-slate-900/g)!.length, 'more than one dark region').toBe(1);
+    expect(rendered).toContain('font-mono');
+    // Data first on a phone; the arrangement returns to normal from md up.
+    expect(rendered).toContain('order-first md:order-none');
+    expect(rendered).toContain('order-last md:order-none');
   });
 
   test('the hand-written sample is labelled as hand-written', () => {
@@ -72,6 +88,32 @@ test.describe('the card does not depend on where things sit', () => {
     // The genre a whole release was spent removing.
     expect(rendered).not.toMatch(/\d+\s*%/);
     expect(rendered).not.toMatch(/faster|save (you )?(days|weeks|hours)|ROI|TCO by/i);
+  });
+});
+
+test.describe('the merged section does not come back', () => {
+  test('the landing page has no separate Verifiable Integrity block', () => {
+    const page = fs.readFileSync(path.join(ROOT, 'app/page.tsx'), 'utf8');
+    // JSX comments stripped: the note left where the section stood names it on
+    // purpose, so the next person knows it was merged rather than lost. Only
+    // markup counts here.
+    const rendered = page
+      .slice(page.indexOf('return ('))
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+    expect(rendered).not.toContain('No AI Black-Box Promises');
+    expect(rendered).not.toContain('Fully Grounded');
+    expect(rendered).not.toContain('Quirk Review');
+    expect(rendered).not.toContain('Manual Handover');
+  });
+
+  test('the card carries what the section used to say', () => {
+    const r = getReferenceAnalysis();
+    // Each bucket's meaning is now printed under its number, so it has to exist.
+    for (const b of [r.resolved, r.decision, r.handedBack]) {
+      expect(b.meaning.length, `${b.label} has no meaning text`).toBeGreaterThan(40);
+      expect(b.label.length).toBeGreaterThan(0);
+    }
+    expect(fs.readFileSync(path.join(ROOT, 'components/BenefitCard.tsx'), 'utf8')).toContain('x.b.meaning');
   });
 });
 
@@ -135,8 +177,12 @@ test.describe('the card fits a phone', () => {
       // moves with the text renderer, and a guard that fails on a different
       // machine's fonts teaches people to ignore it. Word count does not move, so
       // that carries the intent and the pixel bound is only a catastrophe check.
+      // Raised once, from 420, when the "Verifiable Integrity" section was merged
+      // into this card: the three category explanations came with it. The page as
+      // a whole got shorter — 13,752px to 13,227px — so this is not the card
+      // growing, it is a section arriving. It has not moved since.
       const words = (await card.innerText()).trim().split(/\s+/).filter(Boolean).length;
-      expect(words, `card is ${words} words`).toBeLessThan(420);
+      expect(words, `card is ${words} words`).toBeLessThan(470);
 
       const box = await card.boundingBox();
       expect(box!.height, `card is ${Math.round(box!.height)}px tall`).toBeLessThan(2600);

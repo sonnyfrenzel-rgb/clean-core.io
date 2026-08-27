@@ -397,9 +397,9 @@ export default function Home() {
           <BenefitCard
             linesOfCode={reference.linesOfCode}
             totalFindings={reference.totalFindings}
-            resolved={reference.resolved.count}
-            decision={reference.decision.count}
-            handedBack={reference.handedBack.count}
+            resolved={reference.resolved}
+            decision={reference.decision}
+            handedBack={reference.handedBack}
             handedBackKinds={reference.handedBackKinds}
             rollCall={reference.rollCall}
             businessDecisions={reference.businessDecisions}
@@ -409,72 +409,21 @@ export default function Home() {
           />
         </div>
 
-        {/* Verifiable Integrity & Honest Limits Section */}
-        <div className="max-w-6xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-28 duration-1000 delay-750">
-          <div className="bg-slate-900 text-white rounded-[2rem] p-8 sm:p-12 border border-slate-800 shadow-2xl relative overflow-hidden">
-            {/* Ambient glows */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.06),transparent_45%)] pointer-events-none" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(245,158,11,0.04),transparent_40%)] pointer-events-none" />
+        {/*
+          The "Verifiable Integrity — No AI Black-Box Promises" section stood here.
+          It made the same argument as the benefit card a thousand pixels above it,
+          with the same three categories in the same three colours — Fully Grounded
+          / Quirk Review / Manual Handover against settled / your call / hand work —
+          and it was the louder of the two while being the one without a single
+          number in it. The card had the evidence and whispered; this had the
+          typography and shouted.
 
-            <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-green-400 bg-green-500/10 text-[10px] font-black uppercase tracking-wider border border-green-500/20">
-                Methodological Honesty
-              </span>
-              <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-none text-slate-50 uppercase">
-                Verifiable Integrity.<br />No AI Black-Box Promises.
-              </h2>
-              <p className="text-slate-300 text-sm sm:text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
-                Clean-Core.io accelerates your ABAP-to-Clean-Core migration&mdash;deterministic, with transparent coverage and honest limitations. You see exactly what is automated, what needs review, and what is structurally blocked per transformation&mdash;<strong>proven, not claimed.</strong>
-              </p>
+          Merged into the card: the three descriptions became the meaning printed
+          under each computed number, which is where they were always going, and
+          the methodology link moved with them. The card carries the dark treatment
+          now, on the half that holds the proof.
+        */}
 
-              {/* Grid of the three categories */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 text-left">
-                {/* Card 1: Fully Grounded */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-3">
-                  <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm uppercase tracking-wider">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    <span>Fully Grounded</span>
-                  </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Standard tables mapped to released CDS views, static calls, and single-class inheritance. Verified with a green result-set diff.
-                  </p>
-                </div>
-
-                {/* Card 2: Quirk Review */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-3">
-                  <div className="flex items-center gap-2 text-amber-400 font-bold text-sm uppercase tracking-wider">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                    <span>Quirk Review</span>
-                  </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Complex Joins (3+ tables), `FOR ALL ENTRIES` and `INTO CORRESPONDING` are flagged. Remediated via strict custom prompt rules.
-                  </p>
-                </div>
-
-                {/* Card 3: Manual Handover */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-3">
-                  <div className="flex items-center gap-2 text-rose-400 font-bold text-sm uppercase tracking-wider">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                    <span>Manual Handover</span>
-                  </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    GUI Dynpro screens, dynamic call routing, and kernel internals cannot be resolved by AI. Isolated cleanly for architect refactoring.
-                  </p>
-                </div>
-              </div>
-
-              <div className="pt-6">
-                <Link 
-                  href="/how-it-works"
-                  className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-slate-900 font-black text-xs uppercase px-6 py-3.5 rounded-xl transition-all shadow-md tracking-wider"
-                >
-                  <span>Explore the full methodology</span>
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Comparison Highlight Table */}
         <div className="max-w-6xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-28 duration-1000 delay-800">
