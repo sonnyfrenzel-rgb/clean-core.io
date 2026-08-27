@@ -135,13 +135,16 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     expect(body.message || body.error).toContain('Access to S/4HANA live tenant endpoints is restricted');
   });
 
-  test('should reject user approval attempts if admin token is missing or invalid', async ({ request }) => {
+  // Signup no longer routes through an approval endpoint — /api/admin/approve-user
+  // and the one-click links that fed it were removed with the approval gate. What
+  // is still reachable is the admin console action, so that is what has to hold
+  // the line against a caller who is not an administrator.
+  test('should reject account state changes if admin token is missing or invalid', async ({ request }) => {
     // 1. Call without auth header
-    const noAuthResponse = await request.post('/api/admin/approve-user', {
+    const noAuthResponse = await request.post('/api/admin/console-action', {
       data: {
         uid: normalUserUid,
-        token: 'invalid-token',
-        action: 'approve',
+        action: 'approve-user',
       },
     });
     expect(noAuthResponse.status()).toBe(403); // Admin required
@@ -149,26 +152,32 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     // 2. Call with normal user token
     const normalUserCred = await signInWithEmailAndPassword(firebaseAuth, NORMAL_USER_EMAIL, TEST_PASSWORD);
     const normalUserToken = await normalUserCred.user.getIdToken();
-    const badAuthResponse = await request.post('/api/admin/approve-user', {
+    const badAuthResponse = await request.post('/api/admin/console-action', {
       headers: {
         'Authorization': `Bearer ${normalUserToken}`,
       },
       data: {
         uid: normalUserUid,
-        token: 'some-token',
-        action: 'approve',
+        action: 'approve-user',
       },
     });
     expect(badAuthResponse.status()).toBe(403); // Admin required
+
+    // 3. The account must still be untouched.
+    const userDoc = await getDoc(doc(firestoreDb, 'users', normalUserUid));
+    expect(userDoc.data()?.status).not.toBe('approved');
   });
 
+  // Tenant access is the one approval a human still makes, and it is the only
+  // remaining HMAC-token flow. The pilot equivalent went away with the signup
+  // approval gate; this keeps the cryptographic check itself under test.
   test('should cryptographically verify HMAC tokens during admin approvals', async ({ request }) => {
     // Sign in as Admin
     const adminCred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
     const adminToken = await adminCred.user.getIdToken();
 
     // 1. Approve with invalid token
-    const invalidTokenRes = await request.post('/api/admin/approve-user', {
+    const invalidTokenRes = await request.post('/api/admin/approve-tenant', {
       headers: {
         'Authorization': `Bearer ${adminToken}`,
       },
@@ -182,11 +191,15 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     const errBody = await invalidTokenRes.json();
     expect(errBody.error).toContain('Invalid verification token');
 
+    // A refused token must not have granted anything.
+    const beforeDoc = await getDoc(doc(firestoreDb, 'users', normalUserUid));
+    expect(beforeDoc.data()?.s4TenantAccessAllowed).not.toBe(true);
+
     // Generate valid approval token (Audit P2: action-bound, expiring)
-    const validToken = createApprovalToken(normalUserUid, 'pilot', 'approve');
+    const validToken = createApprovalToken(normalUserUid, 'tenant', 'approve');
 
     // 2. Approve with valid token
-    const validTokenRes = await request.post('/api/admin/approve-user', {
+    const validTokenRes = await request.post('/api/admin/approve-tenant', {
       headers: {
         'Authorization': `Bearer ${adminToken}`,
       },
@@ -200,7 +213,152 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
 
     // Verify Firestore document was updated
     const userDoc = await getDoc(doc(firestoreDb, 'users', normalUserUid));
-    expect(userDoc.data()?.status).toBe('approved');
+    expect(userDoc.data()?.s4TenantAccessAllowed).toBe(true);
+  });
+
+  test('registration activates the account and records consent server-side', async ({ request }) => {
+    const signupEmail = `signup-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, signupEmail, TEST_PASSWORD);
+    const signupUid = cred.user.uid;
+    const signupToken = await cred.user.getIdToken();
+
+    // What the browser is allowed to write: a pending profile, no consent.
+    await setDoc(doc(firestoreDb, 'users', signupUid), {
+      firstName: 'Sign',
+      lastName: 'Up',
+      email: signupEmail,
+      tier: 'pilot',
+      status: 'pending',
+      transformationsUsed: 0,
+      transformationsLimit: 5,
+      maxTeamMembers: 1,
+      orgId: null,
+      identityProvider: 'password',
+      createdAt: new Date(),
+      isAdmin: false,
+      authMethod: 'password',
+      s4TenantAccessAllowed: false,
+      s4TenantAccessRequested: false,
+      mfaEnabled: false,
+    });
+
+    const res = await request.post('/api/account/register', {
+      headers: { 'Authorization': `Bearer ${signupToken}` },
+      data: { firstName: 'Sign', lastName: 'Up', acceptedTerms: true, acceptedPrivacy: true },
+    });
+    expect(res.status()).toBe(200);
+    expect((await res.json()).activated).toBe(true);
+
+    const activated = await getDoc(doc(firestoreDb, 'users', signupUid));
+    expect(activated.data()?.status).toBe('approved');
+    expect(activated.data()?.activatedAt).toBeTruthy();
+    // Only the Admin SDK can write this — the client create rule rejects it.
+    expect(activated.data()?.termsVersionAccepted).toBeTruthy();
+    expect(activated.data()?.termsAcceptedAt).toBeTruthy();
+
+    // Idempotent: calling again neither re-activates nor sends a second mail.
+    const again = await request.post('/api/account/register', {
+      headers: { 'Authorization': `Bearer ${signupToken}` },
+      data: { acceptedTerms: true, acceptedPrivacy: true },
+    });
+    expect(again.status()).toBe(200);
+    expect((await again.json()).activated).toBe(false);
+  });
+
+  test('a suspended account cannot reinstate itself through registration', async ({ request }) => {
+    const suspendedEmail = `suspended-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, suspendedEmail, TEST_PASSWORD);
+    const suspendedUid = cred.user.uid;
+    const suspendedToken = await cred.user.getIdToken();
+
+    // Exactly what adminRevokeUser leaves behind.
+    await adminSetDoc('users', suspendedUid, {
+      firstName: 'Sus',
+      lastName: 'Pended',
+      email: suspendedEmail,
+      tier: 'pilot',
+      status: 'suspended',
+      transformationsUsed: 0,
+      transformationsLimit: 0,
+      isAdmin: false,
+      createdAt: new Date(),
+      activatedAt: new Date(),
+    });
+
+    const res = await request.post('/api/account/register', {
+      headers: { 'Authorization': `Bearer ${suspendedToken}` },
+      data: { acceptedTerms: true, acceptedPrivacy: true },
+    });
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body.activated).toBe(false);
+    expect(body.status).toBe('suspended');
+
+    const still = await getDoc(doc(firestoreDb, 'users', suspendedUid));
+    expect(still.data()?.status).toBe('suspended');
+  });
+
+  test('an account revoked before v2.4.2 cannot reinstate itself either', async ({ request }) => {
+    const legacyEmail = `legacy-revoked-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, legacyEmail, TEST_PASSWORD);
+    const legacyUid = cred.user.uid;
+    const legacyToken = await cred.user.getIdToken();
+
+    // The old adminRevokeUser wrote exactly this: back to 'pending' with the
+    // quota zeroed, and no activatedAt — the field did not exist yet. By status
+    // alone it is indistinguishable from a fresh signup.
+    await adminSetDoc('users', legacyUid, {
+      firstName: 'Legacy',
+      lastName: 'Revoked',
+      email: legacyEmail,
+      tier: 'pilot',
+      status: 'pending',
+      transformationsUsed: 3,
+      transformationsLimit: 0,
+      isAdmin: false,
+      createdAt: new Date(),
+    });
+
+    const res = await request.post('/api/account/register', {
+      headers: { 'Authorization': `Bearer ${legacyToken}` },
+      data: { acceptedTerms: true, acceptedPrivacy: true },
+    });
+    expect(res.status()).toBe(200);
+    expect((await res.json()).activated).toBe(false);
+
+    const still = await getDoc(doc(firestoreDb, 'users', legacyUid));
+    expect(still.data()?.status).toBe('pending');
+    expect(still.data()?.transformationsLimit).toBe(0);
+  });
+
+  test('the client cannot assert its own terms acceptance on create', async () => {
+    const forgeEmail = `consent-forge-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, forgeEmail, TEST_PASSWORD);
+
+    // V14: these two fields used to sit in the client-writable create allowlist,
+    // so a browser could record a consent nothing stood behind.
+    await expect(
+      setDoc(doc(firestoreDb, 'users', cred.user.uid), {
+        firstName: 'Con',
+        lastName: 'Sent',
+        email: forgeEmail,
+        tier: 'pilot',
+        status: 'pending',
+        transformationsUsed: 0,
+        transformationsLimit: 5,
+        maxTeamMembers: 1,
+        orgId: null,
+        identityProvider: 'password',
+        createdAt: new Date(),
+        isAdmin: false,
+        authMethod: 'password',
+        s4TenantAccessAllowed: false,
+        s4TenantAccessRequested: false,
+        mfaEnabled: false,
+        termsVersionAccepted: '2026-07-07',
+        termsAcceptedAt: new Date(),
+      }),
+    ).rejects.toThrow();
   });
 
   test('should execute secure cascading deletion (GDPR Right to Erasure)', async ({ request }) => {
@@ -704,21 +862,9 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       createdAt: new Date(),
     });
 
-    // Approve the user using the Admin API
-    const adminCred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
-    const adminToken = await adminCred.user.getIdToken();
-    const validToken = createApprovalToken(mfaUid, 'pilot', 'approve');
-    const approveRes = await request.post('/api/admin/approve-user', {
-      headers: {
-        'Authorization': `Bearer ${adminToken}`,
-      },
-      data: {
-        uid: mfaUid,
-        token: validToken,
-        action: 'approve',
-      },
-    });
-    expect(approveRes.status()).toBe(200);
+    // Activate the account. Registration does this by itself now; seeding it
+    // directly keeps this test about MFA rather than about signup.
+    await adminMergeDoc('users', mfaUid, { status: 'approved', activatedAt: new Date() });
 
     // Sign back in as the MFA user to get a fresh token with approved status
     const mfaCred = await signInWithEmailAndPassword(firebaseAuth, mfaEmail, TEST_PASSWORD);

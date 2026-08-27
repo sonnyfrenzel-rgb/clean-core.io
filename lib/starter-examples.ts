@@ -2,7 +2,7 @@
  * Starter examples — realistic, fictional legacy ABAP available to every account.
  *
  * Registering and then having to extract custom code out of a customer system is
- * the largest step between an approved account and a first result; most accounts
+ * the largest step between a new account and a first result; most accounts
  * never take it. These let anyone see a complete run in minutes without touching
  * their own IP.
  *

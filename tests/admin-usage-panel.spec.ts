@@ -55,9 +55,18 @@ const COHORT = [
     byokConfigured: true, byokLast4: '9f2c',
   },
   {
+    // Activation did not finish. Since signup stopped waiting for an
+    // administrator, this is the only thing 'pending' can still mean.
     uid: 'usage-e2e-pending',
     firstName: 'Sabine', lastName: 'Klein', email: 'sabine.klein@northwind-industries.com',
     tier: 'pilot', status: 'pending', transformationsUsed: 0, transformationsLimit: 5,
+  },
+  {
+    // Access withdrawn by an administrator — a different state, and it has to
+    // read differently from the one above.
+    uid: 'usage-e2e-suspended',
+    firstName: 'Rolf', lastName: 'Maier', email: 'rolf.maier@northwind-industries.com',
+    tier: 'pilot', status: 'suspended', transformationsUsed: 2, transformationsLimit: 0,
   },
   {
     // A pipeline account — must be hidden until explicitly asked for.
@@ -136,7 +145,15 @@ test.describe('Admin Console — Usage & Quota panel', () => {
     await expect(byokRow).toContainText('BYOK');
     await expect(byokRow).toContainText('unlimited');
 
-    await expect(page.locator('button', { hasText: 'Sabine Klein' }).first()).toContainText('Pending');
+    // 'Pending' used to mean "waiting for an administrator to approve". It cannot
+    // mean that any more, and a badge that still said so would send the admin
+    // looking for a queue that no longer exists.
+    await expect(page.locator('button', { hasText: 'Sabine Klein' }).first()).toContainText(
+      'Setup unfinished',
+    );
+    await expect(page.locator('button', { hasText: 'Rolf Maier' }).first()).toContainText(
+      'Suspended',
+    );
 
     // --- KPI strip, in English ---
     await expect(page.getByText('Units', { exact: true })).toBeVisible();

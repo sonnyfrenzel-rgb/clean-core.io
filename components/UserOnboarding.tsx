@@ -17,6 +17,7 @@ export default function UserOnboarding() {
   const [agreedGDPR, setAgreedGDPR] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [showDatenschutz, setShowDatenschutz] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
@@ -122,34 +123,18 @@ export default function UserOnboarding() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreedGDPR || !agreedTerms) return;
+    setSubmitError('');
     setIsSubmitting(true);
     try {
       const user = auth.currentUser!;
+      // Creates the profile and hands it straight to /api/account/register,
+      // which records the consent the two checkboxes above collected, activates
+      // the account and sends the welcome mail. Nothing is queued for review.
       await createProfile(user, firstName, lastName, motivation);
-      
-      // Dispatch the approval request email in the background
-      try {
-        const token = await auth.currentUser?.getIdToken();
-        await fetch('/api/request-pilot', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            uid: user.uid,
-            email: user.email || '',
-            name: `${firstName} ${lastName}`,
-            motivation: motivation,
-          }),
-        });
-      } catch (emailErr) {
-        console.error('Failed to trigger registration approval email:', emailErr);
-      }
-
       setShowSuccess(true);
     } catch (error) {
       console.error('Error creating profile:', error);
+      setSubmitError(error instanceof Error ? error.message : 'Could not finish setting up your account.');
       setIsSubmitting(false);
     }
   };
@@ -165,15 +150,15 @@ export default function UserOnboarding() {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-8 h-8 text-green-600" />
           </div>
-          <h2 className="text-2xl font-black mb-3">Registration pending</h2>
+          <h2 className="text-2xl font-black mb-3">You're in</h2>
           <p className="text-gray-600 font-medium mb-6">
-            Your request to join Clean-Core.io (Free Community Edition) has been submitted. Access is manually reviewed and approved by an administrator.
+            Your Clean-Core.io workspace is active — there is nothing to approve and nothing to wait for.
           </p>
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm mb-6 text-left">
-            <p className="font-bold text-gray-900 mb-2">Next Step:</p>
-            <p className="text-gray-600">Our team will review your request. To speed up the process, you can send an email to <a href="mailto:info@clean-core.io" className="text-green-600 font-bold hover:underline">info@clean-core.io</a> from {auth.currentUser.email}.</p>
+            <p className="font-bold text-gray-900 mb-2">What's next</p>
+            <p className="text-gray-600">A welcome email is on its way to {auth.currentUser.email} with the first-run guide and the security details your IT department will ask for. Or start right now — the dashboard has ready-made ABAP examples, so you need no system connection and no code of your own.</p>
           </div>
-          <button onClick={() => window.location.reload()} className="w-full bg-gray-900 text-white rounded-xl py-3 font-bold">Refresh Page</button>
+          <button onClick={() => window.location.reload()} className="w-full bg-gray-900 text-white rounded-xl py-3 font-bold">Open my workspace</button>
         </motion.div>
       </div>
     );
@@ -191,7 +176,7 @@ export default function UserOnboarding() {
             type="button" 
             onClick={() => setShowCancelConfirmation(true)}
             className="absolute top-5 right-5 md:top-6 md:right-6 p-1.5 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors"
-            title="Cancel Application"
+            title="Cancel"
           >
             <X className="w-5 h-5" />
           </button>
@@ -202,7 +187,7 @@ export default function UserOnboarding() {
             <h2 className="text-xl md:text-3xl font-black tracking-tight uppercase">Join the platform</h2>
           </div>
           <p className="text-green-50 text-xs md:text-sm font-medium opacity-90 leading-relaxed">
-            Apply for free access to our Free Community Edition. Access is manually reviewed.
+            Two details and two agreements, then your Free Community Edition workspace is live. No approval step.
           </p>
         </div>
 
@@ -300,7 +285,7 @@ export default function UserOnboarding() {
             <ul className="text-[10px] md:text-xs text-gray-600 space-y-1">
               <li className="flex items-center gap-2">• Up to 5 App Transformations for testing</li>
               <li className="flex items-center gap-2">• Community feedback & collaboration</li>
-              <li className="flex items-center gap-2 font-bold">• Manual approval by admin required</li>
+              <li className="flex items-center gap-2 font-bold">• Active immediately — no approval step</li>
             </ul>
           </div>
 
@@ -316,7 +301,7 @@ export default function UserOnboarding() {
               We assume <strong>no warranty, guarantees, or liability</strong> for the performance, reliability, or execution safety of generated codes. Before deploying any output, it must be thoroughly inspected and verified by qualified software architects.
             </p>
             <p className="leading-relaxed font-bold text-amber-950">
-              By requesting access, you acknowledge these conditions and agree to our{' '}
+              By creating a workspace, you acknowledge these conditions and agree to our{' '}
               <button 
                 type="button" 
                 onClick={(e) => { e.preventDefault(); setShowDatenschutz(true); }}
@@ -328,13 +313,19 @@ export default function UserOnboarding() {
             </p>
           </div>
 
+          {submitError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-xs font-bold">
+              {submitError}
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button
               type="submit"
               disabled={isSubmitting || !agreedGDPR || !agreedTerms || !firstName || !lastName}
               className="flex-[2] flex items-center justify-center gap-2 bg-gray-950 hover:bg-gray-900 text-white py-3.5 md:py-4 rounded-xl md:rounded-2xl font-black text-sm md:text-base transition-all shadow-lg hover:shadow-xl disabled:bg-gray-300 disabled:shadow-none"
             >
-              {isSubmitting ? 'Submitting...' : 'Request Community Access'} <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
+              {isSubmitting ? 'Setting up your workspace...' : 'Create my workspace'} <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
             </button>
             <button
               type="button"

@@ -46,7 +46,7 @@ const STEPS: Step[] = [
     where: 'clean-core.io',
     action: 'Sign in with the account you registered',
     detail:
-      'Use "Get Free Access" in the top right and sign in with the email address your approval was sent to. You land on the dashboard.',
+      'Use "Get Free Access" in the top right. Registering activates the account immediately — there is nothing to approve and no waiting list — and you land on the dashboard.',
     see: 'The dashboard, with your transformation balance shown in the header — "0 / 5 Transformations" on a fresh account.',
   },
   {
@@ -156,7 +156,7 @@ export default function FirstRunPage() {
       {/* Before you start */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { icon: CheckCircle2, t: 'What you need', d: 'An approved account. That is all — no system connection, no credentials, no data.' },
+          { icon: CheckCircle2, t: 'What you need', d: 'An account. That is all — no approval to wait for, no system connection, no credentials, no data.' },
           { icon: FileCode2, t: 'What it costs', d: 'One of your five transformations, spent at the analysis. The six stages after it are included.' },
           { icon: Clock, t: 'How long', d: 'About fifteen minutes end to end, most of it spent reading the output rather than waiting.' },
         ].map((c) => (

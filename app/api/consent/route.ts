@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
+import { recordConsent } from '@/lib/consent';
 import { TERMS_VERSION } from '@/lib/constants';
 
 /**
@@ -10,6 +11,9 @@ import { TERMS_VERSION } from '@/lib/constants';
  * accepted version onto the user profile via the Admin SDK. The client cannot set
  * the version or timestamp itself — combined with the `requireCurrentTerms` gate
  * in assertAccountActive, this makes consent provable rather than client-asserted.
+ *
+ * The write itself lives in `lib/consent.ts`, shared with the registration route
+ * so signup consent and re-consent produce the same record.
  *
  * Body: { termsVersion?, privacyVersion?, contentSha256?, locale? }
  */
@@ -28,35 +32,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unknown Terms version.' }, { status: 400 });
     }
 
-    const { db, FieldValue } = await getAdminDb();
-
     // Server-derived email — never trust the client for identity.
     let email: string | null = decoded.email || null;
     if (!email) {
+      const { db } = await getAdminDb();
       const snap = await db.collection('users').doc(decoded.uid).get();
       email = snap.exists ? (snap.data()?.email || null) : null;
     }
 
-    // 1) append-only consent event (primary, tamper-evident record; userId lets the
-    //    erasure cascade purge it on account deletion).
-    await db.collection('consent_events').add({
+    await recordConsent({
       uid: decoded.uid,
-      userId: decoded.uid,
       email,
-      termsVersion: TERMS_VERSION,
-      privacyVersion: typeof body?.privacyVersion === 'string' ? body.privacyVersion : TERMS_VERSION,
+      source: 'api/consent',
+      privacyVersion: typeof body?.privacyVersion === 'string' ? body.privacyVersion : null,
       contentSha256: typeof body?.contentSha256 === 'string' ? body.contentSha256 : null,
       locale: typeof body?.locale === 'string' ? body.locale : null,
-      source: 'api/consent',
-      createdAt: FieldValue.serverTimestamp(),
     });
-
-    // 2) mirror the accepted version onto the profile (server timestamp).
-    await db.collection('users').doc(decoded.uid).set({
-      termsVersionAccepted: TERMS_VERSION,
-      termsAcceptedAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
 
     return NextResponse.json({ ok: true, termsVersion: TERMS_VERSION });
   } catch (err: any) {

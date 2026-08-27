@@ -419,7 +419,7 @@ export default function UsageQuotaPanel() {
                       )}
                       {r.revoked && !r.atLimit && (
                         <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border border-gray-200 shrink-0">
-                          {r.status === 'pending' ? 'Pending' : 'Revoked'}
+                          {r.status === 'suspended' ? 'Suspended' : r.status === 'pending' ? 'Setup unfinished' : 'Revoked'}
                         </span>
                       )}
                     </div>

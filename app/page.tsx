@@ -135,6 +135,38 @@ export default function Home() {
               "@type": "Answer",
               "text": "Clean-Core.io accelerates Clean Core modernization — it speeds the work up for you, it doesn't blindly automate it. A deterministic engine parses your custom ABAP (classes, reports, custom tables) with deterministic static (token- and rule-based) and data-flow analysis, then maps direct database reads (e.g. VBAK, BSEG) to released successor APIs using SAP's official Cloudification Repository — the same source behind the SAP ABAP Test Cockpit (ATC) — plus hand-curated field-level mappings. Tightly-coupled logic is drafted into cloud-compliant SAP Business Technology Platform (BTP) Cloud Application Programming Model (CAP) services or in-app RESTful Application Programming Model (RAP) components for you to review. Every finding is evidence-backed and traceable — and frozen into a signed, exportable audit evidence pack."
             }
+          },
+          // The three below answer benefit-intent queries that already place on
+          // this page (positions 2–10) without being marked up as question and
+          // answer — the difference between text a reader scrolls past and
+          // something an answer engine will quote. Every answer is the visible
+          // BenefitCard copy restated, not a new claim; keep it that way, and
+          // keep the market's favourite figures ("20–30% faster upgrades",
+          // "reduce TCO by 62%") out of it. The German pair is deliberate: the
+          // German phrasings hold the better positions on this English page.
+          {
+            "@type": "Question",
+            "name": "What does a free SAP custom code assessment on Clean-Core.io give me?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Two answers, both as drafts you correct. What the program actually does, in business terms — a plain-language description, the process behind it as BPMN 2.0, a RACI in business roles, the standard operating procedure, and what the legacy code is still worth to the business. And how much work the move is — every finding split into what a released SAP successor settles, what is your decision, and what stays hand work. The limits are published before you upload anything, and every run is frozen into a signed audit trail you can hand to a reviewer. It is free for the SAP community: no sales call, no trial, no card."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does Clean Core reduce S/4HANA upgrade risk?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Custom code that modifies or bypasses the SAP standard is what makes an upgrade expensive: a core modification has to be reset in SPAU before the upgrade can proceed, and native SQL bypasses the database abstraction the target model depends on. Clean core keeps that logic out of the standard — extended in-app with ABAP Cloud (RAP) or side-by-side on SAP BTP (CAP), against released APIs. Clean-Core.io names those blockers in your own ABAP rather than guessing at them: findings are mapped against SAP's published Cloudification Repository, and anything structurally out of reach for a generator is flagged and isolated instead of being transformed into something plausible and wrong."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Wie reduziert Clean Core das Upgrade-Risiko in S/4HANA?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Teurer wird ein Upgrade durch Eigenentwicklungen, die den SAP-Standard modifizieren oder umgehen: Eine Kernmodifikation muss in SPAU zurückgesetzt werden, bevor das Upgrade überhaupt laufen kann, und Native SQL umgeht die Datenbankabstraktion, auf der das Zielmodell aufsetzt. Clean Core hält diese Logik aus dem Standard heraus — in-app mit ABAP Cloud (RAP) oder side-by-side auf der SAP BTP (CAP), gegen freigegebene APIs. Clean-Core.io benennt diese Blocker in Ihrem eigenen ABAP, statt sie zu raten: Befunde werden gegen SAPs veröffentlichtes Cloudification Repository gemappt, und alles, was für einen Generator strukturell unerreichbar ist, wird markiert und isoliert statt in etwas Plausibles und Falsches überführt."
+            }
           }
         ]
       },
@@ -834,7 +866,7 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
                   <span className="text-4xl font-black">Free</span>
                   <span className="text-sm text-gray-500 font-medium">5 transformations</span>
                 </div>
-                <p className="text-xs md:text-sm font-medium mt-2 text-gray-500">Register with name and email &mdash; approval within 24 hours.</p>
+                <p className="text-xs md:text-sm font-medium mt-2 text-gray-500">Register with name and email &mdash; your workspace is live straight away.</p>
               </div>
               <ul className="space-y-3.5 mb-10 flex-grow">
                 {[

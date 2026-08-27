@@ -66,7 +66,9 @@ test.describe('server-side MFA coverage', () => {
 
   test('admin routes keep the stronger step-up, not the plain gate', () => {
     const admin = [
-      'app/api/admin/approve-user/route.ts',
+      // 'app/api/admin/approve-user/route.ts' was here. It went away with the
+      // signup approval gate; console-action is the route that changes account
+      // state now, and it is in this list.
       'app/api/admin/approve-tenant/route.ts',
       'app/api/admin/console-action/route.ts',
       'app/api/admin/set-admin-claim/route.ts',

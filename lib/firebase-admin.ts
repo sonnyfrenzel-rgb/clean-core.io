@@ -204,7 +204,7 @@ export async function reserveRunQuota(uid: string, inputHash: string): Promise<R
     }
 
     if (status !== 'approved') {
-      throw new QuotaError('Your community account is currently pending admin approval.', 403);
+      throw new QuotaError('Your account is not active. If you have only just signed up, reload the page to finish setting it up; if it was suspended, contact support.', 403);
     }
 
     // Already paid for this exact source — a re-analysis, not a new transformation.
@@ -282,7 +282,7 @@ export async function assertAccountActive(
 
   const isEnterprise = data.tier === 'enterprise';
   if (opts.requireApproved && !isAdmin && !isEnterprise && status !== 'approved') {
-    throw new QuotaError('Your community account is currently pending admin approval.', 403);
+    throw new QuotaError('Your account is not active. If you have only just signed up, reload the page to finish setting it up; if it was suspended, contact support.', 403);
   }
 
   // Terms: block only when a *previously accepted* version is now stale, so a
@@ -295,6 +295,67 @@ export async function assertAccountActive(
       throw new QuotaError('The Terms of Service have been updated. Please re-accept them in the app to continue.', 403);
     }
   }
+}
+
+/**
+ * Activates a freshly registered account.
+ *
+ * This is what replaced the administrator approval gate. Every new profile is
+ * still *created* by the browser as `pending` — the Firestore rules pin it there
+ * and a client cannot write any other value — and this transaction, reachable
+ * only through POST /api/account/register, is the single thing that moves it to
+ * `approved`. Status therefore stays server-authoritative even though nobody
+ * approves anything by hand any more.
+ *
+ * Three states must never be activated:
+ *  - anything that is not `pending` — a `suspended` account calling the endpoint
+ *    again would otherwise reinstate itself;
+ *  - a profile that already carries `activatedAt`, so a retry is a no-op rather
+ *    than a second welcome mail; and
+ *  - a `pending` profile whose `transformationsLimit` is 0.
+ *
+ * That last one is the pre-v2.4.2 shape of a revoked account: `adminRevokeUser`
+ * used to write `status: 'pending'` with the limit zeroed, which is
+ * indistinguishable from a fresh signup by status alone — and those accounts
+ * predate `activatedAt`, so the marker cannot catch them either. A profile the
+ * client just created always carries a limit of 5 (the Firestore create rule
+ * hardcodes it), so a zero here can only mean an administrator withdrew access.
+ * For the same reason the limit is never "repaired" upwards.
+ *
+ * @returns whether this call performed the activation — the caller uses it to
+ *          decide whether to send the welcome mail, so a retry cannot spam.
+ */
+export async function activateAccount(uid: string): Promise<{ activated: boolean; status: string }> {
+  const { db, FieldValue } = await getAdminDb();
+  const ref = db.collection('users').doc(uid);
+
+  return db.runTransaction(async (tx: any) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) {
+      throw new QuotaError('User profile not found. Please complete registration.', 404);
+    }
+    const data = snap.data() || {};
+    const status = data.status || 'pending';
+    const revokedUnderTheOldScheme = data.transformationsLimit === 0;
+
+    if (status !== 'pending' || data.activatedAt || revokedUnderTheOldScheme) {
+      return { activated: false, status: revokedUnderTheOldScheme ? 'suspended' : status };
+    }
+
+    const updates: Record<string, any> = {
+      status: 'approved',
+      activatedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    if (!data.tier) updates.tier = 'pilot';
+    if (typeof data.transformationsLimit !== 'number') {
+      updates.transformationsLimit = COMMUNITY_QUOTA;
+    }
+
+    tx.set(ref, updates, { merge: true });
+
+    return { activated: true, status: 'approved' };
+  });
 }
 
 /**
@@ -439,53 +500,14 @@ export async function deleteUserDataAndAccount(uid: string): Promise<void> {
   }
 }
 
-/**
- * Server-side cryptographic token validation and user approval.
- */
-export async function approveUserWithToken(
-  adminUid: string,
-  uid: string,
-  token: string,
-  action: 'approve' | 'reject'
-): Promise<void> {
-  await ensureInitialized();
-  
-  // Audit P2: action/type-bound, expiring, timing-safe, fail-closed.
-  verifyApprovalToken(token, { uid, requestType: 'pilot', action });
-
-  const { db } = await getAdminDb();
-
-  if (action === 'approve') {
-    // Update user profile in users/{uid}
-    await db.collection('users').doc(uid).set({
-      status: 'approved',
-      tier: 'pilot',
-      transformationsLimit: COMMUNITY_QUOTA,
-      transformationsUsed: 0
-    }, { merge: true });
-
-    // Update registration request
-    await db.collection('registration_requests').doc(uid).set({
-      status: 'approved',
-    }, { merge: true });
-  } else if (action === 'reject') {
-    // Delete registration request and user document
-    await db.collection('registration_requests').doc(uid).delete();
-    await db.collection('users').doc(uid).delete();
-
-    // A-01: also remove the Firebase Auth user — otherwise a rejected applicant
-    // leaves an orphaned auth account and cannot cleanly re-register later.
-    try {
-      await adminAuthModule.getAuth().deleteUser(uid);
-    } catch (e: any) {
-      // Already gone is fine; anything else is a real failure.
-      if (e?.code !== 'auth/user-not-found') {
-        console.error('[reject] failed to delete auth user:', e?.code || e);
-        throw e;
-      }
-    }
-  }
-}
+// `approveUserWithToken` lived here. It backed two HMAC-signed links in the
+// administrator's signup mail that approved or deleted an account with one click
+// from a mailbox. Accounts now activate on registration, so the links, the page
+// behind them and this function all went with the approval gate — a privileged
+// action that travelled by email is not worth keeping for a decision nobody
+// makes any more. Account state is changed in the admin console instead
+// (`adminApproveUser` / `adminRevokeUser`, both behind admin step-up).
+// Tenant access is a separate, still-manual approval and keeps its token flow.
 
 /**
  * Server-side cryptographic token validation and tenant connection approval.
@@ -634,14 +656,23 @@ export async function logAuditEvent(db: any, actorUid: string, action: string, t
   });
 }
 
+/**
+ * Reinstates a suspended account.
+ *
+ * Signup no longer routes through here — accounts activate themselves via
+ * `activateAccount`. What is left is the other direction: undoing a suspension.
+ * It therefore does NOT reset `transformationsUsed`; a reinstated account keeps
+ * the quota it already spent, which is not what a first approval used to do.
+ */
 export async function adminApproveUser(adminUid: string, targetUid: string) {
   await ensureInitialized();
-  const { db } = await getAdminDb();
+  const { db, FieldValue } = await getAdminDb();
   await db.collection('users').doc(targetUid).set({
     status: 'approved',
     tier: 'pilot',
-    transformationsLimit: 5,
-    transformationsUsed: 0
+    transformationsLimit: COMMUNITY_QUOTA,
+    activatedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
   await db.collection('registration_requests').doc(targetUid).set({
     status: 'approved',
@@ -649,15 +680,25 @@ export async function adminApproveUser(adminUid: string, targetUid: string) {
   await logAuditEvent(db, adminUid, 'APPROVE_USER', targetUid);
 }
 
+/**
+ * Suspends an account.
+ *
+ * This used to push the account back to `pending`, which was indistinguishable
+ * from a brand-new signup. With self-service activation that ambiguity would let
+ * a revoked user reinstate themselves by re-running registration, so a revoked
+ * account is now explicitly `suspended` — a state `assertAccountActive` already
+ * refuses outright, and `activateAccount` will not touch.
+ */
 export async function adminRevokeUser(adminUid: string, targetUid: string) {
   await ensureInitialized();
-  const { db } = await getAdminDb();
+  const { db, FieldValue } = await getAdminDb();
   await db.collection('users').doc(targetUid).set({
-    status: 'pending',
-    transformationsLimit: 0
+    status: 'suspended',
+    transformationsLimit: 0,
+    updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
   await db.collection('registration_requests').doc(targetUid).set({
-    status: 'pending',
+    status: 'suspended',
   }, { merge: true });
   await logAuditEvent(db, adminUid, 'REVOKE_USER', targetUid);
 }

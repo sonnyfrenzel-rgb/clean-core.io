@@ -14,7 +14,7 @@ import {
   signOut
 } from 'firebase/auth';
 import { getAuth, getDb } from '@/lib/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { verifyTOTP } from '@/lib/totp';
 import { 
   X, 
@@ -31,7 +31,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import LegalOverlay from '@/app/components/LegalOverlay';
-import { COMMUNITY_QUOTA, TERMS_VERSION } from '@/lib/constants';
+import { COMMUNITY_QUOTA } from '@/lib/constants';
+import { finishRegistration } from '@/hooks/useUserProfile';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import MaintenanceNotice from '@/components/MaintenanceNotice';
 
@@ -145,87 +146,41 @@ export default function LandingModals() {
       
       const db = getDb();
       const userDocRef = doc(db, 'users', signedInUser.uid);
-      
-      // CRITICAL: Wrap getDoc in its own try/catch so a Firestore error
-      // does NOT silently fall through to the auto-create else branch
-      // and overwrite an existing admin/approved profile.
-      let profileExists = false;
+
+      // The profile read decides whether MFA is required, so it needs its own
+      // catch and must fail closed — the same rule the email and redirect paths
+      // follow. Proceeding on a read error signed the user in with the second
+      // factor never consulted.
       try {
         const userDoc = await getDoc(userDocRef);
-        profileExists = userDoc.exists();
-        
-        if (profileExists) {
-          const profileData = userDoc.data();
-          if (profileData && profileData.mfaEnabled) {
-            setPendingMfaUser(signedInUser);
-            setPendingMfaProfile(profileData);
-            setAuthMode('mfa');
-            return;
-          }
+        const profileData = userDoc.exists() ? userDoc.data() : undefined;
+        if (profileData?.mfaEnabled) {
+          setPendingMfaUser(signedInUser);
+          setPendingMfaProfile(profileData);
+          setAuthMode('mfa');
+          return;
         }
       } catch (firestoreErr) {
-        // If we can't read the profile, assume it exists and skip auto-create.
-        // Better to redirect to dashboard and let useUserProfile handle it
-        // than to accidentally overwrite an existing profile.
-        console.error('[handleSignIn] Firestore read failed — skipping profile auto-create:', firestoreErr);
-        profileExists = true; // Defensive: assume profile exists
+        console.error('[handleSignIn] profile read failed — signing out:', firestoreErr);
+        await signOut(auth).catch(() => {});
+        setAuthError('Could not verify your account. Please sign in again.');
+        return;
       }
-      
-      // Only auto-create if we CONFIRMED the profile does not exist
-      if (!profileExists) {
-        const displayName = signedInUser.displayName || '';
-        const nameParts = displayName.trim().split(/\s+/);
-        const autoFirstName = nameParts[0] || '';
-        const autoLastName = nameParts.slice(1).join(' ') || '';
 
-        const newProfile = {
-          firstName: autoFirstName,
-          lastName: autoLastName,
-          email: signedInUser.email || '',
-          tier: 'pilot',
-          status: 'pending',
-          transformationsUsed: 0,
-          transformationsLimit: COMMUNITY_QUOTA,
-          maxTeamMembers: 1,
-          orgId: null,
-          identityProvider: 'google',
-          createdAt: serverTimestamp(),
-          isAdmin: false,
-          authMethod: 'google',
-          // Deliberately NOT termsVersionAccepted / termsAcceptedAt. This branch
-          // provisions an account from a Google popup, and the popup asks for
-          // nothing. Recording acceptance here wrote a consent the person never
-          // gave — and, because the record existed, meant they were never asked.
-          // With the fields absent, onboarding collects the agreement properly.
-        };
-        await setDoc(userDocRef, newProfile);
+      // A first-time Google user gets no profile here on purpose.
+      //
+      // This branch used to provision one silently. It deliberately omitted the
+      // consent fields — a popup asks for nothing, so recording an acceptance
+      // would have invented one (finding V10) — and left the agreement to the
+      // onboarding modal. But that modal only renders when no profile exists, so
+      // writing one here guaranteed it never appeared: the account ran with no
+      // consent recorded and nobody was ever asked.
+      //
+      // Signing in is now all this does. `UserOnboarding`, mounted in the app
+      // shell, sees the missing profile, asks for a name and both agreements,
+      // and creates the account through the one path that records consent
+      // server-side.
 
-        await setDoc(doc(db, 'registration_requests', signedInUser.uid), {
-          email: signedInUser.email,
-          name: displayName,
-          motivation: '',
-          status: 'pending',
-          createdAt: serverTimestamp(),
-        });
-
-        // Trigger approval email in background
-        try {
-          const token = await signedInUser.getIdToken();
-          await fetch('/api/request-pilot', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({
-              uid: signedInUser.uid,
-              email: signedInUser.email || '',
-              name: displayName,
-              motivation: '',
-            }),
-          });
-        } catch (emailErr) {
-          console.error('Failed to trigger registration email:', emailErr);
-        }
-      }
-      
       setIsNavigating(true);
       setTimeout(() => {
         router.push('/dashboard');
@@ -343,12 +298,16 @@ export default function LandingModals() {
         createdAt: new Date(),
         isAdmin: false,
         authMethod: 'password',
-        termsVersionAccepted: TERMS_VERSION,
-        termsAcceptedAt: new Date(),
+        // Consent is not written from here. The two fields that used to sit on
+        // this object are finding V14 — an acceptance the browser asserted about
+        // itself, timestamped by its own clock, with no consent_events row
+        // behind it. They are out of the Firestore create allowlist now, so this
+        // write would be rejected outright with them present. The agreement the
+        // checkboxes above collect is recorded server-side in the call below.
       };
-      
+
       await setDoc(userDocRef, newProfile);
-      
+
       await setDoc(doc(db, 'registration_requests', signedInUser.uid), {
         email: signedInUser.email,
         name: `${firstName} ${lastName}`,
@@ -356,29 +315,22 @@ export default function LandingModals() {
         status: 'pending',
         createdAt: new Date(),
       });
-      
+
+      // Activates the account, records the consent and sends the one welcome
+      // mail. A failure here leaves a created-but-inactive account rather than
+      // no account at all, and the dashboard offers the same call as a retry —
+      // so this must not block the person from getting in.
       try {
-        const token = await signedInUser.getIdToken();
-        const pilotResp = await fetch('/api/request-pilot', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            uid: signedInUser.uid,
-            email: signedInUser.email || '',
-            name: `${firstName} ${lastName}`,
-            motivation: '',
-          }),
+        await finishRegistration(signedInUser, {
+          firstName,
+          lastName,
+          acceptedTerms: agreedTerms,
+          acceptedPrivacy: agreedGDPR,
         });
-        if (!pilotResp.ok) {
-          console.warn('[Email Signup] request-pilot returned', pilotResp.status);
-        }
-      } catch (emailErr) {
-        console.error('Failed to trigger registration approval email:', emailErr);
+      } catch (registerErr) {
+        console.error('[Email Signup] account activation failed:', registerErr);
       }
-      
+
       setIsNavigating(true);
       setTimeout(() => {
         router.push('/dashboard');

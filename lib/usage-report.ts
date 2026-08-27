@@ -6,7 +6,7 @@ import { isTestAccount } from './test-accounts';
  *
  * The question the report exists to answer is not "how much was used" but "is
  * adoption moving". So every headline number is a week-over-week comparison, and
- * the hero figure is the activation rate — how many approved accounts have ever
+ * the hero figure is the activation rate — how many active accounts have ever
  * completed an analysis, against how many exist. At the time of writing that was
  * 10 of 30, which is the number worth watching.
  *

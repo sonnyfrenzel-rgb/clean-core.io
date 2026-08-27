@@ -101,9 +101,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // Set admin custom claim so Firestore rules (token-only check) recognise this user
     await adminSetCustomClaim(adminUid, { admin: true });
 
-    // 4. Approve user directly via Admin SDK (bypasses API auth verification).
-    // The approve-user API requires verifyIdToken which fails for emulator tokens
-    // in some local/CI environments.
+    // 4. Activate the user directly via Admin SDK. Registration activates an
+    // account by itself now; seeding it keeps this test about the pipeline, and
+    // the seed helper also raises the quota so CI retries do not run it out.
     await adminApproveUser(uid);
     console.log('Admin approved test user via Admin SDK.');
 

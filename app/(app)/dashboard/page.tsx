@@ -244,6 +244,10 @@ export default function Dashboard() {
   const [showUploadExampleDialog, setShowUploadExampleDialog] = useState(false);
   const [showDatabaseInfo, setShowDatabaseInfo] = useState(false);
   const [showWorkspaceInfo, setShowWorkspaceInfo] = useState(false);
+  // Only reachable when the activation call at signup did not land — the account
+  // exists but is still 'pending'. See the retry block further down.
+  const [retryingActivation, setRetryingActivation] = useState(false);
+  const [activationError, setActivationError] = useState('');
   const [exampleFile, setExampleFile] = useState<File | null>(null);
   const [exampleError, setExampleError] = useState('');
   const [isUploadingExample, setIsUploadingExample] = useState(false);
@@ -841,26 +845,85 @@ export default function Dashboard() {
     );
   }
 
+  // A suspended account is the only state an administrator can still put someone
+  // in, and it is not something the person can undo themselves.
+  if (profile?.status === 'suspended' || profile?.status === 'deleted') {
+    return (
+      <div className="flex flex-col items-center justify-center pt-16 md:pt-24 text-center max-w-2xl mx-auto px-4">
+        <div className="w-20 h-20 bg-rose-100 rounded-3xl flex items-center justify-center mb-6">
+          <ShieldAlert className="w-10 h-10 text-rose-600" />
+        </div>
+        <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">This account is suspended</h2>
+        <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+          Access to <strong>Clean-Core.io</strong> has been withdrawn for this account. If you believe that is a
+          mistake, write to us and we will look at it.
+        </p>
+        <a
+          href="mailto:info@clean-core.io"
+          className="inline-flex items-center justify-center w-full max-w-sm bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-900 font-bold py-3 rounded-xl transition-colors"
+        >
+          Email info@clean-core.io
+        </a>
+      </div>
+    );
+  }
+
+  // 'pending' used to mean "waiting for an administrator". It now only means the
+  // activation call at the end of signup did not complete — a dropped request, a
+  // closed tab. The account is one idempotent call away from being active, so
+  // offer that call instead of a waiting room.
   if (profile?.status === 'pending') {
+    const retryActivation = async () => {
+      setActivationError('');
+      setRetryingActivation(true);
+      try {
+        const currentUser = getAuth()?.currentUser;
+        if (!currentUser) throw new Error('You are not signed in any more. Please sign in again.');
+        const token = await currentUser.getIdToken();
+        const res = await fetch('/api/account/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ acceptedTerms: true, acceptedPrivacy: true }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || `Activation failed (HTTP ${res.status}).`);
+        }
+        // The profile listener picks the new status up on its own.
+      } catch (err: any) {
+        setActivationError(err?.message || 'Activation failed. Please try again.');
+      } finally {
+        setRetryingActivation(false);
+      }
+    };
+
     return (
       <div className="flex flex-col items-center justify-center pt-16 md:pt-24 text-center max-w-2xl mx-auto px-4">
         <div className="w-20 h-20 bg-amber-100 rounded-3xl flex items-center justify-center mb-6">
           <Clock className="w-10 h-10 text-amber-600" />
         </div>
-        <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Hang tight!</h2>
+        <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Almost there</h2>
         <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-          Your request to join <strong>Clean-Core.io</strong> — our Free Community Edition — is currently under review.
-          To ensure quality and manage capacity, our admins manually approve new accounts.
+          Your <strong>Clean-Core.io</strong> account was created but the last setup step did not finish.
+          Nobody has to approve anything — one click completes it.
         </p>
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm text-left w-full">
-          <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-3"><MessageSquare size={18} className="text-green-600"/> Fast-track your approval</h3>
-          <p className="text-gray-600 text-sm mb-4">You can reach out directly via email to expedite the process.</p>
-          <a 
-            href="mailto:info@clean-core.io" 
-            className="inline-flex items-center justify-center w-full bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-900 font-bold py-3 rounded-xl transition-colors"
+          <button
+            onClick={retryActivation}
+            disabled={retryingActivation}
+            className="inline-flex items-center justify-center gap-2 w-full bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white font-bold py-3 rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-60"
           >
-            Email info@clean-core.io
-          </a>
+            {retryingActivation ? <RefreshCw size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+            {retryingActivation ? 'Finishing setup…' : 'Finish setting up my workspace'}
+          </button>
+          {activationError && (
+            <p className="text-rose-600 text-sm font-bold mt-4">{activationError}</p>
+          )}
+          <p className="text-gray-500 text-xs mt-4 leading-relaxed">
+            Still stuck? Write to{' '}
+            <a href="mailto:info@clean-core.io" className="font-bold text-green-700 hover:underline">info@clean-core.io</a>{' '}
+            and we will activate it by hand.
+          </p>
         </div>
       </div>
     );

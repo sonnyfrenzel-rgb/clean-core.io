@@ -12,13 +12,14 @@ import { wrapEmailDocument } from '../lib/email-layout';
  * zoomed-out mail.
  */
 
-const ROUTES: { file: string; vars: string[] }[] = [
-  { file: 'app/api/send-approval-email/route.ts', vars: ['emailHtml'] },
-  { file: 'app/api/send-pending-email/route.ts', vars: ['emailHtml'] },
-  { file: 'app/api/send-tenant-approval-email/route.ts', vars: ['emailHtml'] },
-  { file: 'app/api/send-tenant-revoke-email/route.ts', vars: ['emailHtml'] },
-  { file: 'app/api/request-pilot/route.ts', vars: ['emailHtml', 'pendingHtml'] },
-  { file: 'app/api/request-tenant-access/route.ts', vars: ['emailHtml', 'pendingHtml'] },
+const ROUTES: { file: string; label: string; vars: string[] }[] = [
+  // The signup pair — welcome mail and administrator notification — moved out of
+  // the routes into their own modules when the two registration mails became one.
+  { file: 'lib/welcome-email.ts', label: 'welcome-email', vars: ['emailHtml'] },
+  { file: 'lib/admin-signup-email.ts', label: 'admin-signup-email', vars: ['emailHtml'] },
+  { file: 'app/api/send-tenant-approval-email/route.ts', label: 'send-tenant-approval-email', vars: ['emailHtml'] },
+  { file: 'app/api/send-tenant-revoke-email/route.ts', label: 'send-tenant-revoke-email', vars: ['emailHtml'] },
+  { file: 'app/api/request-tenant-access/route.ts', label: 'request-tenant-access', vars: ['emailHtml', 'pendingHtml'] },
 ];
 
 /** Pulls a template literal out of the route source and neutralises its ${…} holes. */
@@ -43,7 +44,7 @@ const WIDTHS = [320, 375, 414];
 for (const route of ROUTES) {
   for (const varName of route.vars) {
     for (const width of WIDTHS) {
-      const label = `${route.file.split('/')[2]}:${varName} @ ${width}px`;
+      const label = `${route.label}:${varName} @ ${width}px`;
 
       test(`renders without sideways scroll — ${label}`, async ({ page }) => {
         const source = fs.readFileSync(route.file, 'utf8');

@@ -29,6 +29,15 @@ export interface BenefitCardProps {
  * the larger half of this card, and the order of the two columns is itself the
  * argument. Deliberately absent: any time or percentage claim. We compete on a
  * figure that can be recomputed, not on a bigger one.
+ *
+ * On the wording: `upgrade`, `audit` and `free SAP custom code assessment` are in
+ * here because each is true of the shipped product and checkable — clean core
+ * exists for upgrade stability, the pack really is signed, and it really is free.
+ * The terms this market actually ranks for are not: "20–30% faster upgrades",
+ * "reduce TCO by 62%", "over 50% of custom code unused". Chasing those means
+ * writing them, which is the exact genre a whole release was spent removing.
+ * Leaving them is a decision, not an oversight. See
+ * `docs/reviews/2026-08-26-BENEFIT-NEXT-STEPS.md`.
  */
 export default function BenefitCard({
   linesOfCode,
@@ -83,12 +92,13 @@ export default function BenefitCard({
         </h2>
         <p className="mt-3 text-sm sm:text-base text-slate-600 font-medium max-w-3xl leading-relaxed">
           No documentation, no process description, and the colleague who built it left years ago.
-          Every decision about it then waits on two questions — and only one of them usually gets
-          answered.
+          So it sits there untouched — until the next S/4HANA upgrade makes it somebody&rsquo;s
+          problem. Every decision about it then waits on two questions, and only one of them usually
+          gets answered.
         </p>
         <p className="mt-4 text-sm sm:text-base font-bold text-gray-900 max-w-3xl leading-relaxed">
-          You get an answer to both here. As a draft you correct, with the limits named up front —
-          and free.
+          You get an answer to both here — a free SAP custom code assessment that hands you drafts to
+          correct, with the limits named up front.
         </p>
       </div>
 
@@ -214,7 +224,15 @@ export default function BenefitCard({
           </dl>
           <p className="mt-2 text-[11px] text-slate-500 leading-relaxed">
             Settled = a released SAP successor from SAP&rsquo;s own data. Hand work ={' '}
-            {handedBackKinds.join(', ')} — flagged, never guessed at.
+            {handedBackKinds.join(', ')} — structurally out of reach for any generator, so they are
+            flagged rather than guessed at.
+            {handedBackKinds.includes('modification') && (
+              <>
+                {' '}
+                The modification among them is an upgrade blocker in the literal sense: it has to be
+                reset in SPAU before an upgrade can proceed.
+              </>
+            )}
           </p>
 
           <ul className="mt-5 space-y-1.5 border-t border-slate-200 pt-4">
@@ -246,8 +264,8 @@ export default function BenefitCard({
         <p className="text-sm text-slate-600 font-medium max-w-3xl leading-relaxed">
           Both answers are drafts for you to correct, and the limits are published before you upload
           anything — {constructsFullyCovered} of {constructsTotal} construct classes fully covered,
-          the rest named. It does not replace the architect. It shows them where to look — and the
-          business why.
+          the rest named. Every run is frozen into a signed audit trail you can hand to a reviewer.
+          It does not replace the architect. It shows them where to look — and the business why.
         </p>
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500 pt-1">
           <Link href="/catalog" className="hover:text-emerald-700">

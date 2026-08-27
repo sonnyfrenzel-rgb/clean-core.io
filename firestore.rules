@@ -33,8 +33,13 @@ service cloud.firestore {
         'transformationsUsed', 'transformationsLimit',
         'maxTeamMembers', 'orgId',
         'identityProvider', 'createdAt', 'authMethod', 'isAdmin',
-        's4TenantAccessAllowed', 's4TenantAccessRequested', 'mfaEnabled',
-        'termsVersionAccepted', 'termsAcceptedAt'
+        's4TenantAccessAllowed', 's4TenantAccessRequested', 'mfaEnabled'
+        // V14: 'termsVersionAccepted' and 'termsAcceptedAt' were here. A browser
+        // could therefore assert its own Terms acceptance, timestamp included,
+        // with no consent_events row behind it — a claim, not a record. Consent
+        // is now written exclusively by the Admin SDK (lib/consent.ts, reached
+        // through POST /api/account/register or POST /api/consent), so a create
+        // carrying either field is rejected outright.
       ];
     }
 

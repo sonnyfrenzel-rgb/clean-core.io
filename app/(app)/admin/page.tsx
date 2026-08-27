@@ -16,7 +16,12 @@ export default function AdminConsole() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved'>('all');
+  // Signup no longer produces a queue to work through: accounts are active the
+  // moment they are created. The interesting split is therefore active vs
+  // suspended, not pending vs approved. 'pending' still exists as a state — an
+  // account whose activation call did not land — so it is folded into
+  // 'not active' rather than given a tab of its own.
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'suspended'>('all');
   const [consoleSection, setConsoleSection] = useState<'applications' | 'usage'>('applications');
 
   // The weekly report links straight here, so ?tab=usage has to land on the usage
@@ -279,10 +284,10 @@ export default function AdminConsole() {
       (req.email && req.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (req.motivation && req.motivation.toLowerCase().includes(searchTerm.toLowerCase()));
       
-    const matchesTab = 
-      activeTab === 'all' || 
-      (activeTab === 'pending' && req.status === 'pending') || 
-      (activeTab === 'approved' && req.status === 'approved');
+    const matchesTab =
+      activeTab === 'all' ||
+      (activeTab === 'active' && req.status === 'approved') ||
+      (activeTab === 'suspended' && req.status !== 'approved');
 
     return matchesSearch && matchesTab;
   });
@@ -307,8 +312,8 @@ export default function AdminConsole() {
         </div>
         <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl text-xs text-slate-400 space-y-1 z-10 shrink-0">
           <p className="font-bold text-white uppercase tracking-wide">⚡ Total Applications: {requests.length}</p>
-          <p>• Pending: <strong className="text-amber-400">{requests.filter(r => r.status === 'pending').length}</strong></p>
-          <p>• Approved: <strong className="text-green-400">{requests.filter(r => r.status === 'approved').length}</strong></p>
+          <p>• Active: <strong className="text-green-400">{requests.filter(r => r.status === 'approved').length}</strong></p>
+          <p>• Not active: <strong className="text-amber-400">{requests.filter(r => r.status !== 'approved').length}</strong></p>
         </div>
       </div>
 
@@ -352,7 +357,7 @@ export default function AdminConsole() {
 
         {/* Tabs */}
         <div className="flex gap-1.5 p-1 bg-gray-100 rounded-xl w-full md:w-auto">
-          {(['all', 'pending', 'approved'] as const).map((tab) => (
+          {(['all', 'active', 'suspended'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -451,12 +456,12 @@ export default function AdminConsole() {
                       </div>
                     ) : (
                       <>
-                        {req.status === 'pending' ? (
+                        {req.status !== 'approved' ? (
                           <button
                             onClick={() => handleApprove(req.uid)}
                             className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95 whitespace-nowrap"
                           >
-                            <UserCheck className="w-4 h-4" /> Approve
+                            <UserCheck className="w-4 h-4" /> Reinstate
                           </button>
                         ) : (
                           <button

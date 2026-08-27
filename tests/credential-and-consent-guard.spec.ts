@@ -9,9 +9,11 @@
  *    config value: unset, any public host qualified; set, the password could
  *    still reach a different tenant on the same domain.
  *
- * 2. Consent is recorded only where it was given. A Google popup asks for
- *    nothing, yet the auto-provisioning branch wrote termsVersionAccepted — so
- *    the record existed and the person was never asked again.
+ * 2. Consent is recorded only where it was given, and only by the server. The
+ *    browser used to write termsVersionAccepted onto its own profile — an
+ *    acceptance asserted by the party it protects, with no consent_events row
+ *    behind it (V14). Both fields are out of the Firestore create allowlist now
+ *    and the only writer is lib/consent.ts, via the Admin SDK.
  *
  * Source-level assertions, because both defects are shapes rather than
  * behaviours: the next route to be added will be written by copying one of
@@ -80,16 +82,58 @@ test.describe('the S/4 credential vault is all-or-nothing', () => {
 test.describe('consent is recorded only where it was given', () => {
   const source = () => fs.readFileSync(path.join(ROOT, 'components/LandingModals.tsx'), 'utf8');
 
-  test('the Google auto-provisioning branch records no terms acceptance', () => {
-    const s = source();
-    // Exactly one profile literal may carry the acceptance: the email
-    // registration path, which is gated on both checkboxes.
-    const occurrences = s.split('termsVersionAccepted: TERMS_VERSION').length - 1;
-    expect(occurrences, 'a second code path writes terms acceptance').toBe(1);
-    // …and that one sits in the password flow.
-    const idx = s.indexOf('termsVersionAccepted: TERMS_VERSION');
-    const around = s.slice(Math.max(0, idx - 600), idx);
-    expect(around).toContain("authMethod: 'password'");
+  const CLIENT_WRITERS = [
+    'components/LandingModals.tsx',
+    'components/UserOnboarding.tsx',
+    'hooks/useUserProfile.ts',
+  ];
+
+  for (const rel of CLIENT_WRITERS) {
+    test(`${rel} does not write a terms acceptance itself`, () => {
+      const s = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+      // Every one of these is a browser context. A consent record written here
+      // is the client vouching for itself; the Firestore rules reject it now,
+      // and a write that fails silently is worse than one that never happens.
+      expect(s, `${rel} writes termsVersionAccepted from the client`).not.toMatch(
+        /termsVersionAccepted\s*:/,
+      );
+      expect(s, `${rel} writes termsAcceptedAt from the client`).not.toMatch(/termsAcceptedAt\s*:/);
+    });
+  }
+
+  test('the create allowlist no longer accepts the consent fields', () => {
+    const rules = fs.readFileSync(path.join(ROOT, 'firestore.rules'), 'utf8');
+    const start = rules.indexOf('function userClientCreateKeys()');
+    expect(start).toBeGreaterThan(-1);
+    // Only the returned key list counts — the comment left in place names both
+    // fields to explain why they are not there any more.
+    const block = rules
+      .slice(start, rules.indexOf('}', start))
+      .split('\n')
+      .filter((line) => !line.trim().startsWith('//'))
+      .join('\n');
+    expect(block).not.toContain("'termsVersionAccepted'");
+    expect(block).not.toContain("'termsAcceptedAt'");
+    // The rest of the allowlist must still be there — an empty match would pass.
+    expect(block).toContain("'firstName'");
+  });
+
+  test('the server records consent through the shared Admin-SDK helper', () => {
+    const consent = fs.readFileSync(path.join(ROOT, 'lib/consent.ts'), 'utf8');
+    expect(consent).toContain("collection('consent_events')");
+    expect(consent).toContain('serverTimestamp');
+    for (const rel of ['app/api/consent/route.ts', 'app/api/account/register/route.ts']) {
+      const s = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+      expect(s, `${rel} must go through lib/consent.ts`).toContain('recordConsent');
+    }
+  });
+
+  test('registration only claims consent that was actually ticked', () => {
+    const s = fs.readFileSync(path.join(ROOT, 'app/api/account/register/route.ts'), 'utf8');
+    // Booleans compared strictly, so a truthy string cannot stand in for a tick.
+    expect(s).toContain('body?.acceptedTerms === true');
+    expect(s).toContain('body?.acceptedPrivacy === true');
+    expect(s).toContain('acceptedTerms && acceptedPrivacy');
   });
 
   test('the sign-up Google button is gated on the same checkboxes as the form', () => {

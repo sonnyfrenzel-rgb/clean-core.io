@@ -11,6 +11,7 @@ import GlossarySidebar from '@/components/GlossarySidebar';
 import GlossaryChatbot from '@/components/GlossaryChatbot';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import SiteFooter from '@/components/SiteFooter';
+import UserOnboarding from '@/components/UserOnboarding';
 
 export default function AppLayout({children}: {children: React.ReactNode}) {
   const pathname = usePathname();
@@ -94,6 +95,13 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8f9ff]">
+      {/* A signed-in visitor with no profile yet — a first Google sign-in — is
+          asked here for a name and the two agreements, and the account is created
+          and activated from that. The component existed but was never mounted,
+          so that path silently provisioned an account with no consent recorded
+          and no way to give one. It renders nothing once a profile exists. */}
+      <UserOnboarding />
+
       {/* Warning Banner */}
       {showBanner && (
         <div className="bg-amber-50/95 backdrop-blur text-amber-900 py-2 sm:py-2.5 px-4 pr-4 sm:pr-40 text-center text-[10px] sm:text-xs font-semibold border-b border-amber-200 flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 transition-all shrink-0 relative animate-in slide-in-from-top duration-300">
