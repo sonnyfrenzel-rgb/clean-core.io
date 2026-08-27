@@ -26,7 +26,19 @@ export interface FileVerifyResult {
 }
 
 export interface VerifyResult {
+  /**
+   * True only for a pack this platform actually signed.
+   *
+   * It used to be true for `integrity-only` as well, which means a ZIP anyone
+   * could assemble — arbitrary files, matching SHA-256 values, `signed: false`,
+   * a consistent manifest hash — came back `success: true`. A caller reading the
+   * documented boolean would show a successful verification for a pack with no
+   * authenticity whatsoever. Local checksum consistency is a real and separate
+   * fact, so it gets its own field rather than being folded into this one.
+   */
   success: boolean;
+  /** Files match the manifest and the manifest hash is consistent. Says nothing about origin. */
+  integrityValid: boolean;
   status: 'authentic' | 'integrity-only' | 'failed';
   fileIntegrity: FileVerifyResult[];
   manifestHashValid: boolean;
@@ -63,6 +75,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
     if (!manifestFile) {
       return {
         success: false,
+      integrityValid: false,
         status: 'failed',
         fileIntegrity: [],
         manifestHashValid: false,
@@ -78,6 +91,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
     } catch {
       return {
         success: false,
+      integrityValid: false,
         status: 'failed',
         fileIntegrity: [],
         manifestHashValid: false,
@@ -179,10 +193,11 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       }
     }
 
-    const success = status === 'authentic' || status === 'integrity-only';
+    const success = status === 'authentic';
 
     return {
       success,
+      integrityValid,
       status,
       fileIntegrity: fileResults,
       manifestHashValid,
@@ -193,6 +208,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
   } catch (err: any) {
     return {
       success: false,
+      integrityValid: false,
       status: 'failed',
       fileIntegrity: fileResults,
       manifestHashValid: false,

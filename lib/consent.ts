@@ -21,17 +21,32 @@ export interface RecordConsentInput {
   email: string | null;
   /** Where the acceptance was collected, e.g. 'api/account/register'. */
   source: string;
-  privacyVersion?: string | null;
-  contentSha256?: string | null;
+  /**
+   * The reader's own locale. Descriptive, not a claim about what they accepted,
+   * so it is the one field here a caller may still supply.
+   */
   locale?: string | null;
 }
+
+/**
+ * Deliberately no `privacyVersion` or `contentSha256` parameter.
+ *
+ * Both were accepted from the request body and written straight into the
+ * append-only record, so an authenticated caller could post
+ * `privacyVersion: 'future-approved'` and an arbitrary hash and have the
+ * immutable audit trail state acceptance of a document this server never served.
+ * A consent record whose contents the consenting party chooses is not evidence.
+ *
+ * The privacy notice is versioned together with the Terms, so the version is
+ * derived. `contentSha256` stays null until there is a versioned artifact on
+ * disk to hash — hashing a React page's rendered output would change with every
+ * build and prove nothing.
+ */
 
 export async function recordConsent({
   uid,
   email,
   source,
-  privacyVersion,
-  contentSha256,
   locale,
 }: RecordConsentInput): Promise<{ termsVersion: string }> {
   const { db, FieldValue } = await getAdminDb();
@@ -43,8 +58,8 @@ export async function recordConsent({
     userId: uid,
     email,
     termsVersion: TERMS_VERSION,
-    privacyVersion: typeof privacyVersion === 'string' ? privacyVersion : TERMS_VERSION,
-    contentSha256: typeof contentSha256 === 'string' ? contentSha256 : null,
+    privacyVersion: TERMS_VERSION,
+    contentSha256: null,
     locale: typeof locale === 'string' ? locale : null,
     source,
     createdAt: FieldValue.serverTimestamp(),

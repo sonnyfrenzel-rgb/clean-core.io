@@ -113,6 +113,39 @@ test.describe('the audit pack refuses what it cannot verify', () => {
   });
 });
 
+test.describe('an unsigned pack is not a successful verification', () => {
+  const verify = () => read('lib/audit-pack-verify.ts');
+
+  test('success means authentic, and nothing else', () => {
+    const s = verify();
+    // It used to read `status === 'authentic' || status === 'integrity-only'`,
+    // so a ZIP anyone could assemble — arbitrary files, matching hashes,
+    // signed: false — came back success: true.
+    expect(s).toContain("const success = status === 'authentic';");
+    expect(s).not.toMatch(/success\s*=\s*status === 'authentic' \|\|/);
+  });
+
+  test('local integrity is still reported, on its own field', () => {
+    const s = verify();
+    expect(s).toContain('integrityValid: boolean;');
+    // Losing the signal entirely would be the opposite error.
+    expect(s).toContain('integrityValid,');
+  });
+});
+
+test.describe('consent records what the server knows, not what the caller says', () => {
+  test('the version and the document hash are not taken from the body', () => {
+    const lib = read('lib/consent.ts');
+    const route = read('app/api/consent/route.ts');
+    // Both were written verbatim into the append-only record.
+    expect(lib).toContain('privacyVersion: TERMS_VERSION');
+    expect(lib).toContain('contentSha256: null');
+    expect(lib, 'privacyVersion is an input again').not.toMatch(/privacyVersion\??:\s*string/);
+    expect(route, 'the route forwards a body value again').not.toMatch(/body\?\.privacyVersion/);
+    expect(route).not.toMatch(/body\?\.contentSha256/);
+  });
+});
+
 test.describe('one canonicaliser, not two', () => {
   test('runs/create uses the shared module', () => {
     const s = read('app/api/runs/create/route.ts');

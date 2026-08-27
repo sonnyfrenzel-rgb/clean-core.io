@@ -26,6 +26,7 @@ export default function VerifyPackPage() {
     } catch (err: any) {
       setResult({
         success: false,
+        integrityValid: false,
         status: 'failed',
         fileIntegrity: [],
         manifestHashValid: false,

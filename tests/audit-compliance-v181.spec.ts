@@ -27,7 +27,15 @@ test.describe('Audit & Compliance Hardening v1.18.1 Tests', () => {
     const buf = await zip.generateAsync({ type: 'nodebuffer' });
 
     const result = await verifyAuditPack(buf as unknown as Blob);
-    expect(result.success).toBe(true);
+
+    // Everything above is a pack anyone can assemble: arbitrary content, hashes
+    // computed over it, `signed: false`. It is internally consistent and carries
+    // no authenticity at all, so it must not come back as a success. This
+    // assertion used to read `toBe(true)`, which is how a caller reading the
+    // documented boolean could show a green verification for it.
+    expect(result.success, 'an unsigned pack reported success').toBe(false);
+    // The consistency is still a real fact and still reported — on its own field.
+    expect(result.integrityValid).toBe(true);
     expect(result.status).toBe('integrity-only');
     expect(result.manifestHashValid).toBe(true);
     expect(result.signatureValid).toBeNull();

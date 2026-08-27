@@ -15,7 +15,9 @@ import { TERMS_VERSION } from '@/lib/constants';
  * The write itself lives in `lib/consent.ts`, shared with the registration route
  * so signup consent and re-consent produce the same record.
  *
- * Body: { termsVersion?, privacyVersion?, contentSha256?, locale? }
+ * Body: { termsVersion?, locale? }. The privacy version and the document hash
+ * are server-derived — a record whose contents the consenting party chooses is
+ * not evidence.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -40,12 +42,13 @@ export async function POST(req: NextRequest) {
       email = snap.exists ? (snap.data()?.email || null) : null;
     }
 
+    // `privacyVersion` and `contentSha256` are no longer read from the body. They
+    // were written verbatim into the append-only record, which let the consenting
+    // party choose what the record said they consented to.
     await recordConsent({
       uid: decoded.uid,
       email,
       source: 'api/consent',
-      privacyVersion: typeof body?.privacyVersion === 'string' ? body.privacyVersion : null,
-      contentSha256: typeof body?.contentSha256 === 'string' ? body.contentSha256 : null,
       locale: typeof body?.locale === 'string' ? body.locale : null,
     });
 
