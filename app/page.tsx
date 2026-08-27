@@ -56,6 +56,65 @@ export const metadata: Metadata = {
 export default function Home() {
   const catalogStats = getCatalogStats();
 
+  /**
+   * The SAP-versus-Clean-Core.io comparison, defined once.
+   *
+   * It used to be two copies of the same array in the JSX below — one for the
+   * stacked cards under `md`, one for the desktop rows — and they had drifted in
+   * three places: the same cell was labelled "Not Supported" in one and "Not
+   * Available" in the other, one row was titled "Sandbox Verification (BYOT)" and
+   * the other "Sandbox Verification", and the object count said `23,000+` in both
+   * while the trust badge directly above it rendered the live figure from the
+   * catalog. On a page whose whole argument is "verifiable, not asserted", that
+   * last one is the most expensive place on the site to carry a stale number.
+   *
+   * So the count is interpolated from the same `catalogStats` the badge uses, and
+   * `level` is the single source for how a cell reads. Both renderers derive
+   * their styling from it rather than comparing badge strings, which is what let
+   * the labels drift apart in the first place.
+   */
+  const catalogObjects =
+    catalogStats.classifiedObjects > 0
+      ? `${catalogStats.classifiedObjects.toLocaleString('en-US')} objects`
+      : '23,000+ objects';
+
+  const comparisonRows: Array<{
+    title: string;
+    sap: { badge: string; level: 'partial' | 'weak' | 'none'; desc: string };
+    cc: { badge: string; desc: string };
+  }> = [
+    {
+      title: "Clean Core Violation Scanning",
+      sap: { badge: "Static Check", level: "partial", desc: "Identifies unreleased APIs & direct database reads." },
+      cc: { badge: "Automated", desc: "Calculates Local Compliance score & prioritizes packages." }
+    },
+    {
+      title: "Developer HUD & Feedback",
+      sap: { badge: "Static Logs", level: "weak", desc: "Requires manually parsing warning lists or waiting for PDF consulting reports." },
+      cc: { badge: "Interactive", desc: "Visualizes compliance scores, code-minimap heatmaps, and developer checklists in real-time." }
+    },
+    {
+      title: "SAP Object Successor Mapping",
+      sap: { badge: "ATC Flags Only", level: "partial", desc: "SAP ATC flags unreleased API usage but doesn't resolve to successors." },
+      cc: { badge: "Resolved + Synced", desc: `Maps against SAP's official Cloudification Repository (${catalogObjects}) with curated field-level precision. Auto-synced weekly.` }
+    },
+    {
+      title: "Code Refactoring (Remediation)",
+      sap: { badge: "Manual Only", level: "weak", desc: "Developers must rewrite legacy code from scratch." },
+      cc: { badge: "Refactored", desc: "Converts legacy statements into BTP CAP Node.js/RAP syntax." }
+    },
+    {
+      title: "Sandbox Verification (BYOT)",
+      sap: { badge: "Not Available", level: "none", desc: "Requires separate manual testing frameworks." },
+      cc: { badge: "Validated", desc: "Runs test suites against your S/4HANA sandbox via encrypted, read-only connection. Never targets production." }
+    },
+    {
+      title: "Business Process Blueprinting",
+      sap: { badge: "Not Available", level: "none", desc: "No process flow visualization available." },
+      cc: { badge: "Visualized", desc: "Generates Business Process Model and Notation (BPMN 2.0) flows directly from custom code analysis." }
+    }
+  ];
+
   // Both figures are computed from what actually ships, not typed into the copy:
   // the object count from the generated catalog artifact, the coverage split from
   // the same support matrix the engine runs on. If either changes, the landing
@@ -451,38 +510,7 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
 
             {/* Mobile View: Stacked Comparison Cards (hidden on desktop) */}
             <div className="space-y-5 md:hidden relative z-10">
-              {[
-                {
-                  title: "Clean Core Violation Scanning",
-                  sap: { badge: "Static Check", desc: "Identifies unreleased APIs & direct database reads." },
-                  cc: { badge: "Automated", desc: "Calculates Local Compliance score & prioritizes packages." }
-                },
-                {
-                  title: "Developer HUD & Feedback",
-                  sap: { badge: "Static Logs", desc: "Requires manually parsing warning lists or waiting for PDF consulting reports." },
-                  cc: { badge: "Interactive", desc: "Visualizes compliance scores, code-minimap heatmaps, and developer checklists in real-time." }
-                },
-                {
-                  title: "SAP Object Successor Mapping",
-                  sap: { badge: "ATC Flags Only", desc: "SAP ATC flags unreleased API usage but doesn't resolve to successors." },
-                  cc: { badge: "Resolved + Synced", desc: "Maps against SAP's official Cloudification Repository (23,000+ objects) with curated field-level precision. Auto-synced weekly." }
-                },
-                {
-                  title: "Code Refactoring (Remediation)",
-                  sap: { badge: "Manual Only", desc: "Developers must rewrite legacy code from scratch." },
-                  cc: { badge: "Refactored", desc: "Converts legacy statements into BTP CAP Node.js/RAP syntax." }
-                },
-                {
-                  title: "Sandbox Verification (BYOT)",
-                  sap: { badge: "Not Supported", desc: "Requires separate manual testing frameworks." },
-                  cc: { badge: "Validated", desc: "Runs test suites against your S/4HANA sandbox via encrypted, read-only connection. Never targets production." }
-                },
-                {
-                  title: "Business Process Blueprinting",
-                  sap: { badge: "Not Supported", desc: "No process flow visualization available." },
-                  cc: { badge: "Visualized", desc: "Generates Business Process Model and Notation (BPMN 2.0) flows directly from custom code analysis." }
-                }
-              ].map((row, idx) => (
+              {comparisonRows.map((row, idx) => (
                 <div key={idx} className="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden">
                   {/* Capability Title */}
                   <div className="bg-slate-100/80 px-5 py-3 border-b border-slate-200/60">
@@ -496,11 +524,11 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
                     <div className="px-5 py-4 space-y-2">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">SAP Native Tooling</span>
                       <span className={`inline-flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full ${
-                        row.sap.badge === 'Static Check' 
+                        row.sap.level === 'partial'
                           ? 'text-slate-700 bg-slate-100 border border-slate-200/60' 
                           : 'text-slate-400 bg-slate-50 border border-slate-200/40'
                       }`}>
-                        {row.sap.badge === 'Not Supported' && <span className="text-red-400">✕</span>}
+                        {row.sap.level === 'none' && <span className="text-red-400">✕</span>}
                         {row.sap.badge}
                       </span>
                       <p className="text-slate-500 text-xs leading-relaxed">{row.sap.desc}</p>
@@ -535,38 +563,7 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
                 <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Clean-Core.io</div>
               </div>
 
-              {[
-                {
-                  title: "Clean Core Violation Scanning",
-                  sap: { badge: "Static Check", level: "partial", desc: "Identifies unreleased APIs & direct database reads." },
-                  cc: { badge: "Automated", desc: "Calculates Local Compliance score & prioritizes packages." }
-                },
-                {
-                  title: "Developer HUD & Feedback",
-                  sap: { badge: "Static Logs", level: "weak", desc: "Requires manually parsing warning lists or waiting for PDF consulting reports." },
-                  cc: { badge: "Interactive", desc: "Visualizes compliance scores, code-minimap heatmaps, and developer checklists in real-time." }
-                },
-                {
-                  title: "SAP Object Successor Mapping",
-                  sap: { badge: "ATC Flags Only", level: "partial", desc: "SAP ATC flags unreleased API usage but doesn't resolve to successors." },
-                  cc: { badge: "Resolved + Synced", desc: "Maps against SAP's official Cloudification Repository (23,000+ objects) with curated field-level precision. Auto-synced weekly." }
-                },
-                {
-                  title: "Code Refactoring (Remediation)",
-                  sap: { badge: "Manual Only", level: "weak", desc: "Developers must rewrite legacy code from scratch." },
-                  cc: { badge: "Refactored", desc: "Converts legacy statements into BTP CAP Node.js/RAP syntax." }
-                },
-                {
-                  title: "Sandbox Verification",
-                  sap: { badge: "Not Available", level: "none", desc: "Requires separate manual testing frameworks." },
-                  cc: { badge: "Validated", desc: "Runs test suites against your S/4HANA sandbox via encrypted, read-only connection. Never targets production." }
-                },
-                {
-                  title: "Business Process Blueprinting",
-                  sap: { badge: "Not Available", level: "none", desc: "No process flow visualization available." },
-                  cc: { badge: "Visualized", desc: "Generates Business Process Model and Notation (BPMN 2.0) flows directly from custom code analysis." }
-                }
-              ].map((row, idx) => (
+              {comparisonRows.map((row, idx) => (
                 <div key={idx} className="grid grid-cols-[1fr_1fr_1fr] gap-4 items-stretch">
                   {/* Capability Name */}
                   <div className="flex items-center px-5 py-4 bg-slate-50/80 rounded-xl border border-slate-100">

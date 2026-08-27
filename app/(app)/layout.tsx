@@ -111,10 +111,17 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           <span className="leading-relaxed">
             Free Community SAP Modernization Platform. Powered by Generative AI. Provided without warranty.
           </span>
+          {/* The public versions. These used to point into the settings page.
+              This shell wraps /knowledge, /how-to and /first-run — pages that are
+              reachable without an account and are in the sitemap — so those two
+              links pointed a signed-out reader at a route behind the login. A
+              privacy policy and an imprint have to be available without
+              registration, immediately and permanently (§ 5 DDG, Art. 12/13
+              GDPR); the footer of the same page already links them correctly. */}
           <div className="flex items-center gap-2 font-black shrink-0">
-            <Link href="/settings#privacy" className="underline hover:text-green-750 transition-colors">Privacy Policy</Link>
+            <Link href="/datenschutz" className="underline hover:text-green-750 transition-colors">Privacy Policy</Link>
             <span>•</span>
-            <Link href="/settings#legal" className="underline hover:text-green-750 transition-colors">Legal Notice</Link>
+            <Link href="/impressum" className="underline hover:text-green-750 transition-colors">Legal Notice</Link>
             <span className="text-amber-300">|</span>
             <button 
               onClick={dismissBanner}
@@ -129,7 +136,12 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
       
       <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-          <Link href="/dashboard" className="flex items-center gap-2 sm:gap-3 text-green-600 hover:opacity-80 transition-opacity shrink-0">
+          {/* Home means the dashboard for someone signed in and the landing page
+              for everyone else. The same shell serves both, and a hard link to
+              /dashboard was a dead end for a visitor who arrived on /knowledge
+              from a search result — and a signal that skewed the internal link
+              graph for crawlers. */}
+          <Link href={profile ? '/dashboard' : '/'} className="flex items-center gap-2 sm:gap-3 text-green-600 hover:opacity-80 transition-opacity shrink-0">
             <div className="bg-green-600/10 p-2 rounded-xl hidden sm:block">
               <RotateCw className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>

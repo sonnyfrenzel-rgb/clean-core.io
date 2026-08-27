@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getCatalogStats } from '@/lib/abap/catalog-service';
 import { GitBranch, Database, Code2, Bot, Ruler, ChevronDown, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
@@ -56,6 +57,18 @@ const llmItems = [
 ];
 
 export default function HowItWorksPage() {
+
+  /**
+   * The object count is read from the catalog artifact, never typed into the copy.
+   * It said `23,000+` here while the landing page rendered the live figure two
+   * scrolls away — on pages that argue for verifiability, a stale number is the
+   * most expensive kind of mistake.
+   */
+  const stats = getCatalogStats();
+  const catalogObjects =
+    stats.classifiedObjects > 0
+      ? `${stats.classifiedObjects.toLocaleString('en-US')} objects`
+      : '23,000+ objects';
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -154,7 +167,7 @@ export default function HowItWorksPage() {
               <Database size={20} />
             </div>
             <p className="text-gray-600 text-sm font-medium leading-relaxed">
-              Extracted table references (e.g., VBAK, BSEG, LIKP) are resolved against a layered catalog: SAP&apos;s official Cloudification Repository (23,000+ objects, auto-synced weekly) provides authoritative coverage, while hand-curated entries add field-level mapping precision. Every finding carries its source layer and the catalog version for audit traceability.
+              Extracted table references (e.g., VBAK, BSEG, LIKP) are resolved against a layered catalog: SAP&apos;s official Cloudification Repository ({catalogObjects}, auto-synced weekly) provides authoritative coverage, while hand-curated entries add field-level mapping precision. Every finding carries its source layer and the catalog version for audit traceability.
             </p>
           </div>
 

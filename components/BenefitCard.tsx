@@ -229,6 +229,18 @@ export default function BenefitCard({
                     &hellip; and {withoutPath} with no released path, named rather than guessed at.
                   </li>
                 )}
+                {/* Without this line the list reads as a mapping error to anyone
+                    who knows S/4: the engine hands a developer
+                    `VBAK -> API_SALES_ORDER_SRV`, and the name here is
+                    `I_SALESDOCUMENT`. Both are defensible, but only one of them
+                    is SAP's, and SAP's is the claim this column makes. Saying so
+                    costs a sentence and demonstrates the care being sold. */}
+                <li className="text-[11px] text-slate-500 pt-2 font-sans leading-relaxed border-t border-white/5 mt-2">
+                  These are the successors SAP&rsquo;s release data names. The run may
+                  hand a developer a narrower target where a curated field-level
+                  mapping is the more practical one &mdash; each finding carries which
+                  of the two it came from.
+                </li>
               </ul>
             </div>
           )}

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getCatalogStats } from '@/lib/abap/catalog-service';
 import { BookOpen, ArrowLeft, Cpu, Activity, ShieldCheck, Link2, Check } from 'lucide-react';
 import Link from 'next/link';
 import QuickAnswer from '@/components/QuickAnswer';
@@ -54,6 +55,18 @@ const faqs = [
 ];
 
 export default function AbapAnalysisPage() {
+
+  /**
+   * The object count is read from the catalog artifact, never typed into the copy.
+   * It said `23,000+` here while the landing page rendered the live figure two
+   * scrolls away — on pages that argue for verifiability, a stale number is the
+   * most expensive kind of mistake.
+   */
+  const stats = getCatalogStats();
+  const catalogObjects =
+    stats.classifiedObjects > 0
+      ? `${stats.classifiedObjects.toLocaleString('en-US')} objects`
+      : '23,000+ objects';
   const schemaJson = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -146,7 +159,7 @@ export default function AbapAnalysisPage() {
                 <div>
                   <h3 className="text-lg font-bold text-gray-955">SAP Cloudification Catalog</h3>
                   <p className="text-gray-600 text-sm font-medium mt-1">
-                    Detected table accesses are resolved against SAP&apos;s official Cloudification Repository (23,000+ classified objects) layered with curated field-level entries. Each mapping links to the official successor with its source layer and confidence level.
+                    Detected table accesses are resolved against SAP&apos;s official Cloudification Repository ({catalogObjects} classified objects) layered with curated field-level entries. Each mapping links to the official successor with its source layer and confidence level.
                   </p>
                 </div>
               </div>

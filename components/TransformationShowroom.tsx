@@ -5,7 +5,7 @@
    All code examples rendered in the DOM at build time for SEO.
    ========================================================================== */}
 
-import { APP_VERSION } from '@/lib/version';
+import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export default function TransformationShowroom() {
   return (
@@ -561,7 +561,11 @@ lv_func = get_dynamic_function( ).
         {/* ── Version Stamp ── */}
         <div className="mt-6 text-center">
           <span className="text-[11px] font-mono font-bold text-slate-400 tracking-wide">
-            Verified against Clean-Core Engine {APP_VERSION} · July 2026
+            {/* The date used to be the literal "July 2026" next to a version that
+                updates itself, so every release pushed the two further apart. It
+                is the release the examples were verified against, and it comes
+                from the same constant as the version. */}
+            Verified against Clean-Core Engine {APP_VERSION} · {APP_RELEASE_DATE}
           </span>
         </div>
       </div>

@@ -6,6 +6,61 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+
+## [v2.5.2] — 2026-08-27
+
+### Eine Seite, die aus Nachprüfbarkeit argumentiert, wird daran gemessen
+
+Ein externer Befund vom 27.08. (`docs/reviews/2026-08-27-EXTERNAL-AUDIT-V2.md`)
+fand vier Widersprüche auf der Startseite: zwei Objektzahlen, zwei Bezeichnungen
+für dieselbe Zelle, zwei Namen für dieselbe Zeile, zwei Datumsangaben. Drei davon
+hatten eine gemeinsame Ursache — **die Vergleichsmatrix stand zweimal wörtlich in
+derselben Datei**, einmal für die gestapelten Karten unter `md`, einmal für die
+Desktop-Zeilen, und die Kopien waren auseinandergelaufen.
+
+Vier Werte anzugleichen hätte den Mechanismus stehen lassen, der sie erzeugt hat.
+Die Matrix ist deshalb jetzt **eine** Definition, zweimal gerendert. Die Objektzahl
+wird aus demselben `catalogStats` interpoliert, das zwei Zentimeter darüber schon
+die Live-Zahl anzeigt — sie stand als `23,000+` im Text, während der Trust-Balken
+32.103 rechnete. Und beide Renderer leiten ihre Darstellung aus `level` ab statt
+aus dem Badge-Text; genau dieser Vergleich hatte „Not Supported" und „Not
+Available" auseinanderdriften lassen, ohne dass eine Ansicht falsch aussah.
+
+Dieselbe Zahl war auf `/how-it-works` und `/abap-custom-code-analysis` ebenfalls
+eingetippt. Beide lesen sie jetzt.
+
+### Datenschutz und Impressum waren hinter dem Login verlinkt
+
+Der Hinweisbanner im App-Shell zeigte auf `/settings#privacy` und
+`/settings#legal`. Der Befund fand das auf `/knowledge`; tatsächlich wiegt es
+schwerer, denn dieses Layout umschließt auch `/how-to` und `/first-run` — also
+jede öffentliche Cluster-Seite, alle im Sitemap, alle ohne Anmeldung erreichbar.
+Datenschutzerklärung und Impressum müssen unmittelbar und ohne Registrierung
+verfügbar sein (§ 5 DDG, Art. 12/13 DSGVO). Sie zeigen jetzt auf `/datenschutz`
+und `/impressum`, wie der Fußbereich derselben Seite es immer schon tat.
+
+Aus demselben Grund führt das Logo für nicht angemeldete Leser auf `/`. Ein harter
+Link auf `/dashboard` war eine Sackgasse für jeden, der über eine Suchanfrage auf
+`/knowledge` landete — und ein Signal, das den internen Linkgraph verzerrte.
+
+### Kleinere Korrekturen
+
+- `{APP_VERSION} · July 2026` im Showroom und im Beispielpaket: die eine Hälfte
+  aktualisierte sich mit jedem Release, die andere nicht. Beide kommen jetzt aus
+  `lib/version.ts`.
+- Die Objektliste auf der Benefit-Karte sagt jetzt, wessen Benennung sie zeigt.
+  Ohne diesen Satz liest sich `VBAK → I_SALESDOCUMENT` wie ein Fehler, wenn der
+  Lauf einem Entwickler `API_SALES_ORDER_SRV` in die Hand gibt. Beide sind
+  vertretbar, aber nur eine ist SAPs — und SAPs ist die Behauptung, die daneben
+  steht.
+
+Neu: `tests/landing-consistency-guard.spec.ts`, neun Prüfungen. Sie sichern den
+Mechanismus, nicht die Werte: dass die Matrix eine Definition hat, dass keine
+Zahl im Text steht, dass kein Datum eingefroren neben einer lebenden Version
+steht, dass die Rechtsseiten öffentlich verlinkt sind.
+
+316 Tests grün.
+
 ## [v2.5.1] — 2026-08-27
 
 ### Zustellung von Mails ist jetzt beobachtbar
