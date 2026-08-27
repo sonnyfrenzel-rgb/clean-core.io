@@ -81,8 +81,8 @@ export default function BenefitCard({
   ];
 
   // Six is what fits without becoming a table; the reference page carries them all.
-  const shown = rollCall.filter((o) => o.fromCatalog).slice(0, 6);
-  const withoutPath = rollCall.filter((o) => !o.fromCatalog).length;
+  const shown = rollCall.filter((o) => o.fromSapData).slice(0, 6);
+  const withoutPath = rollCall.filter((o) => !o.fromSapData).length;
 
   return (
     <section
@@ -207,8 +207,10 @@ export default function BenefitCard({
           )}
 
           <p className="mt-4 text-[11px] text-slate-500 leading-relaxed">
-            Settled = a released SAP successor from SAP&rsquo;s own data: an upgrade-stable contract
-            instead of the direct table read that carries the risk today. Hand work ={' '}
+            Settled = we can point you at a released successor: an upgrade-stable contract instead of
+            the direct table read that carries the risk today. The pairs above are SAP&rsquo;s own
+            naming, straight from its published release data &mdash; the tool also carries curated
+            OData mappings for some of them, and tells you which is which. Hand work ={' '}
             {handedBackKinds.join(' and ')} &mdash; flagged, never guessed at.
           </p>
 

@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { getReferenceAnalysis } from '../lib/reference-analysis';
+import { MERGED_TABLE_MAP } from '../lib/abap/catalog-service';
 
 /**
  * The benefit card, and the one rule its rewrite established.
@@ -75,15 +76,23 @@ test.describe('the card does not depend on where things sit', () => {
 });
 
 test.describe('the roll-call is derived, not curated', () => {
-  test('it names real objects with catalog successors', () => {
+  test('every pair shown is SAP’s own, not a curated mapping wearing its badge', () => {
     const r = getReferenceAnalysis();
     expect(r.rollCall.length).toBeGreaterThan(0);
-    const catalog = r.rollCall.filter((o) => o.fromCatalog);
-    expect(catalog.length, 'no catalog-backed object to show').toBeGreaterThan(0);
-    for (const o of catalog) {
-      expect(o.successor, `${o.name} is catalog-backed but has no successor`).toBeTruthy();
+    const sapSourced = r.rollCall.filter((o) => o.fromSapData);
+    expect(sapSourced.length, 'nothing SAP-sourced to show').toBeGreaterThan(0);
+
+    for (const o of sapSourced) {
+      expect(o.successor, `${o.name} is marked SAP-sourced but has no successor`).toBeTruthy();
       // Identifiers only — several finding titles also live in objectName.
       expect(o.name).toMatch(/^[A-Z][A-Z0-9_]{2,29}$|^\/[A-Z0-9]+\/[A-Z0-9_]+$/);
+      // The card says these come from SAP's published data, so they have to.
+      // The curated layer in sap-api-catalog.ts overrides the repository —
+      // VBAK resolves to API_SALES_ORDER_SRV there while SAP says
+      // I_SALESDOCUMENT — and reading the finding instead of the repository is
+      // exactly how a curated mapping ends up presented as a catalog lookup.
+      const repo = MERGED_TABLE_MAP[o.name]?.successors?.[0]?.name;
+      expect(o.successor, `${o.name}: shown successor is not the one SAP names`).toBe(repo);
     }
   });
 

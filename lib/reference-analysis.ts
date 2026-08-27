@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { buildAbapEvidence, type EvidenceFinding } from '@/lib/abap/evidence-model';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
-import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
+import { getMergedCatalogVersion, MERGED_TABLE_MAP } from '@/lib/abap/catalog-service';
 
 /**
  * The published reference run.
@@ -92,10 +92,20 @@ export interface ReferenceObject {
   name: string;
   /** e.g. 'Database Table', 'Function Module'. */
   objectType: string;
-  /** The released successor, or null where the catalog has no path. */
+  /**
+   * The successor SAP's own release data names for this object, or null when the
+   * repository has none.
+   *
+   * Deliberately NOT the successor the finding carries. Those come from the
+   * curated layer in `sap-api-catalog.ts`, which `buildMerged()` lets win over
+   * the repository — `VBAK` resolves to `API_SALES_ORDER_SRV` there while SAP's
+   * own data says `I_SALESDOCUMENT`. Both are defensible mappings, but only one
+   * of them is "from SAP's own data", and that is the claim the landing page
+   * makes next to these names. So the page shows SAP's.
+   */
   successor: string | null;
-  /** True only for a catalog lookup — never for an inference. */
-  fromCatalog: boolean;
+  /** True only when the name above came from SAP's published release data. */
+  fromSapData: boolean;
 }
 
 function bucketOf(f: EvidenceFinding): 'resolved' | 'decision' | 'handedBack' {
@@ -170,22 +180,20 @@ function buildRollCall(findings: EvidenceFinding[]): ReferenceObject[] {
   const seen = new Map<string, ReferenceObject>();
   for (const f of findings) {
     const name = f.objectName;
-    if (!name || !OBJECT_NAME.test(name)) continue;
-    const existing = seen.get(name);
-    const successor = f.sapReplacement?.objectName ?? null;
-    const fromCatalog = f.sapReplacement?.confidence === 'Catalog Match';
-    // First writer wins, except that a catalog match always beats no match:
-    // the same table can appear in several findings, only one of which carries
-    // the replacement.
-    if (!existing) {
-      seen.set(name, { name, objectType: f.objectType || 'Object', successor, fromCatalog });
-    } else if (!existing.fromCatalog && fromCatalog) {
-      seen.set(name, { name, objectType: existing.objectType, successor, fromCatalog });
-    }
+    if (!name || !OBJECT_NAME.test(name) || seen.has(name)) continue;
+    // Straight from the repository layer, not from the finding: see the note on
+    // `successor` above for why the finding's own name is the wrong source here.
+    const sapSuccessor = MERGED_TABLE_MAP[name]?.successors?.[0]?.name ?? null;
+    seen.set(name, {
+      name,
+      objectType: f.objectType || 'Object',
+      successor: sapSuccessor,
+      fromSapData: sapSuccessor !== null,
+    });
   }
-  // Catalog matches first — they are the part that proves something.
+  // The SAP-sourced ones first — they are the part that proves something.
   return Array.from(seen.values()).sort((a, b) => {
-    if (a.fromCatalog !== b.fromCatalog) return a.fromCatalog ? -1 : 1;
+    if (a.fromSapData !== b.fromSapData) return a.fromSapData ? -1 : 1;
     return a.name.localeCompare(b.name);
   });
 }
