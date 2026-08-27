@@ -119,6 +119,32 @@ Verdacht.** Und lokal immer `--workers=1` — CI macht es auch so.
 
 ---
 
+## `dev.` und `test.clean-core.io` lösen nicht auf
+
+**Was ist:** Beide Hostnamen haben keinen A-Eintrag. Gegen 8.8.8.8 kommt für beide
+NODATA zurück — der Name existiert in der Zone, zeigt aber auf nichts.
+`clean-core.io` selbst ist unauffällig. Erreichbar sind die beiden Umgebungen nur
+über ihre Cloud-Run-Adressen:
+
+```
+https://clean-core-dev-qcevuoi3uq-ew.a.run.app
+https://clean-core-test-qcevuoi3uq-ew.a.run.app
+```
+
+**Warum es auffiel:** beim Nachsehen, ob v2.5.1 auf dev wirklich läuft (tut sie,
+über die run.app-Adresse). Das erklärt vermutlich auch, warum eine geänderte
+Benefit-Karte heute Vormittag „auf dev" nicht zu sehen war.
+
+**Was zu tun ist:** entweder die Domain-Zuordnungen in Cloud Run wiederherstellen
+und die CNAMEs bei Strato setzen — oder die Tabelle in `CLAUDE.md` und
+`docs/ARCHITECTURE.md` auf die run.app-Adressen korrigieren, damit sie nicht
+weiterhin URLs nennt, die es nicht gibt.
+
+**Dringlichkeit:** niedrig für den Betrieb, mittel für die Dokumentation — eine
+Anleitung, die auf eine tote Adresse zeigt, kostet jedes Mal eine Viertelstunde.
+
+---
+
 ## Resend-Webhook scharfschalten
 
 **Warum:** Der Code steht, die Route ist deployt, aber sie antwortet jeder Anfrage
