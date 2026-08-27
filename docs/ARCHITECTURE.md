@@ -307,7 +307,12 @@ at the provider, so a reply to either bounced while the welcome mail was asking
 the reader to reply.
 
 `email_events` is server-only in `firestore.rules` — the documents carry
-recipient addresses.
+recipient addresses. Which is why the verdict does not stay there: the welcome
+mail's send record keeps the `uid`, and a delivery event mirrors its status onto
+`registration_requests/{uid}`, where the admin console already reads. An account
+created and never used now looks different from one whose first-run guide sat in
+a quarantine. `email.sent` deliberately produces no badge — that is the state
+the platform always had, and it is the one that meant nothing.
 
 ### 5.9 Never substitute a figure for a measurement
 

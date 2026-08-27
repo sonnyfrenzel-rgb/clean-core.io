@@ -143,3 +143,49 @@ test.describe('a send is traceable to its delivery', () => {
     }
   });
 });
+
+test.describe('a bounce reaches the operator', () => {
+  test('the welcome mail carries the uid, so a bounce knows whose it was', () => {
+    const s = read('app/api/account/register/route.ts');
+    // The webhook only ever sees a message id. Without the uid stored at send
+    // time, the events pile up in a collection that joins to nothing.
+    expect(s).toMatch(/label: 'welcome',[\s\S]{0,400}?\n\s*uid,/);
+    expect(s).toContain('recordEmailSent(messageId, msg.to, msg.subject, msg.label, msg.uid)');
+  });
+
+  test('the verdict is mirrored where the operator already looks', () => {
+    const s = read('lib/email-events.ts');
+    // `email_events` is server-only because the documents carry recipient
+    // addresses, so the admin console cannot read it. The registration request
+    // is already on that page.
+    expect(s).toContain("db.collection('registration_requests').doc(data.uid)");
+    expect(s).toContain('welcomeMailStatus: status');
+    // Only the welcome mail: the admin notification goes to a watched mailbox
+    // and would land on the wrong person's row.
+    expect(s).toContain("data.kind === 'welcome'");
+  });
+
+  test('a queued mail is not reported as an arrival', () => {
+    const s = read('app/(app)/admin/page.tsx');
+    const badge = s.slice(s.indexOf('function welcomeMailBadge'));
+    // 'sent' means Resend accepted it — precisely the thing that turned out to
+    // be worth nothing. It must not produce a reassuring badge.
+    expect(badge).not.toContain("case 'email.sent'");
+    for (const failed of ['email.bounced', 'email.complained', 'email.delivery_delayed']) {
+      expect(badge).toContain(`case '${failed}'`);
+    }
+    // The two that mean the reader never saw it are the ones that read as red.
+    expect(badge).toMatch(/case 'email\.bounced':[\s\S]{0,200}?bg-red-50/);
+    expect(badge).toMatch(/case 'email\.complained':[\s\S]{0,200}?bg-red-50/);
+  });
+});
+
+test('the send record does not overwrite a verdict that already arrived', () => {
+  const s = read('lib/email-events.ts');
+  const fn = s.slice(s.indexOf('export async function recordEmailSent'));
+  // Resend can report a hard bounce before the send call's own bookkeeping has
+  // landed. A blind `status: 'email.sent'` would erase it.
+  expect(fn).not.toContain("status: 'email.sent',");
+  expect(fn).toContain("status: existing.status || 'email.sent'");
+  expect(fn).toContain('runTransaction');
+});

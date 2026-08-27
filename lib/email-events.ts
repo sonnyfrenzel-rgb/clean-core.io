@@ -152,22 +152,63 @@ export async function recordEmailEvent(input: EmailEventInput, eventId: string):
       },
       { merge: true },
     );
+
+    // The whole point of the exercise: a welcome mail that did not arrive has to
+    // be visible where the operator already looks, not only in a collection they
+    // would have to go looking for. `email_events` is server-only because the
+    // documents carry recipient addresses; the registration request is already on
+    // the admin console, so the verdict goes there.
+    if (data.uid && data.kind === 'welcome') {
+      tx.set(
+        db.collection('registration_requests').doc(data.uid),
+        {
+          welcomeMailStatus: status,
+          welcomeMailDetail: input.detail ?? null,
+          welcomeMailAt: input.occurredAt ?? new Date().toISOString(),
+        },
+        { merge: true },
+      );
+    }
   });
 }
 
-/** Written at send time so a message is visible before any webhook arrives. */
-export async function recordEmailSent(messageId: string, to: string, subject: string, kind: string): Promise<void> {
+/**
+ * Written at send time so a message is visible before any webhook arrives.
+ *
+ * `uid` is what later lets a bounce find its way back to the person it was meant
+ * for: the webhook only ever sees a message id, and without this the events would
+ * accumulate in a collection nobody joins to anything.
+ */
+export async function recordEmailSent(
+  messageId: string,
+  to: string,
+  subject: string,
+  kind: string,
+  uid?: string,
+): Promise<void> {
   const { db, FieldValue } = await getAdminDb();
-  await db.collection('email_events').doc(messageId).set(
-    {
-      messageId,
-      to: [to],
-      subject,
-      kind,
-      status: 'email.sent',
-      sentAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true },
-  );
+  const ref = db.collection('email_events').doc(messageId);
+
+  // A transaction rather than a plain merge, because this races the webhook:
+  // Resend can report a hard bounce before the send call's own bookkeeping has
+  // landed, and a blind `status: 'email.sent'` would then overwrite the verdict
+  // with the one thing we already knew.
+  await db.runTransaction(async (tx: any) => {
+    const snap = await tx.get(ref);
+    const existing = snap.exists ? snap.data() || {} : {};
+    tx.set(
+      ref,
+      {
+        messageId,
+        to: [to],
+        subject,
+        kind,
+        uid: uid ?? null,
+        status: existing.status || 'email.sent',
+        sentAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+  });
 }

@@ -155,6 +155,10 @@ export async function POST(request: NextRequest) {
         subject: WELCOME_EMAIL_SUBJECT,
         html: welcomeHtml,
         label: 'welcome',
+        // Only the welcome mail carries the uid: a bounce on this one is a
+        // person who never got started, and that belongs on their row in the
+        // admin console. The admin notification goes to a mailbox we watch.
+        uid,
       });
       await sendMail(resendApiKey, {
         from: 'Clean-Core <system@clean-core.io>',
@@ -195,7 +199,7 @@ export async function POST(request: NextRequest) {
  */
 async function sendMail(
   apiKey: string,
-  msg: { from: string; to: string; subject: string; html: string; label: string },
+  msg: { from: string; to: string; subject: string; html: string; label: string; uid?: string },
 ): Promise<void> {
   try {
     const res = await fetch('https://api.resend.com/emails', {
@@ -229,7 +233,7 @@ async function sendMail(
     if (messageId) {
       // Best-effort: the mail is already away, and a failure to record it must
       // not surface as a registration error.
-      await recordEmailSent(messageId, msg.to, msg.subject, msg.label).catch((err) =>
+      await recordEmailSent(messageId, msg.to, msg.subject, msg.label, msg.uid).catch((err) =>
         console.error(`[Email] Could not record sent event for ${msg.label}:`, err),
       );
     }

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { ShieldCheck, ShieldAlert, CheckCircle2, Trash2, User, Mail, FileText, Clock, Search, Shield, UserX, UserCheck, Globe, Gauge } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, CheckCircle2, Trash2, User, Mail, FileText, Clock, Search, Shield, UserX, UserCheck, Globe, Gauge, MailWarning, MailCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { clsx } from 'clsx';
@@ -421,6 +421,25 @@ export default function AdminConsole() {
                           <Globe size={10} /> BYOT Requested
                         </span>
                       )}
+                      {/*
+                        Whether the welcome mail actually arrived. An account that
+                        was created and never used looks the same as one whose
+                        first-run guide sat in a corporate quarantine — this is the
+                        only place that difference becomes visible. Silence until a
+                        delivery event arrives; nothing to say is not a warning.
+                      */}
+                      {welcomeMailBadge(req.welcomeMailStatus) && (
+                        <span
+                          title={req.welcomeMailDetail || undefined}
+                          className={clsx(
+                            'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border',
+                            welcomeMailBadge(req.welcomeMailStatus)!.className,
+                          )}
+                        >
+                          {welcomeMailBadge(req.welcomeMailStatus)!.failed ? <MailWarning size={10} /> : <MailCheck size={10} />}
+                          {welcomeMailBadge(req.welcomeMailStatus)!.label}
+                        </span>
+                      )}
                     </div>
 
                     {/* Meta information */}
@@ -508,4 +527,32 @@ export default function AdminConsole() {
 
     </div>
   );
+}
+
+/**
+ * The delivery verdict on a welcome mail, as a badge — or nothing.
+ *
+ * `sent` is deliberately silent: it means Resend queued the message, which is
+ * what the platform always knew and what turned out to be worth nothing. Only
+ * the states that say something about the *reader* get a badge, and only the two
+ * that mean they never saw it are red.
+ */
+function welcomeMailBadge(
+  status: string | undefined,
+): { label: string; className: string; failed: boolean } | null {
+  switch (status) {
+    case 'email.bounced':
+      return { label: 'Welcome mail bounced', className: 'bg-red-50 text-red-700 border-red-200', failed: true };
+    case 'email.complained':
+      return { label: 'Marked as spam', className: 'bg-red-50 text-red-700 border-red-200', failed: true };
+    case 'email.delivery_delayed':
+      return { label: 'Welcome mail delayed', className: 'bg-amber-50 text-amber-700 border-amber-200', failed: true };
+    case 'email.delivered':
+      return { label: 'Welcome mail delivered', className: 'bg-gray-50 text-gray-600 border-gray-200', failed: false };
+    case 'email.opened':
+    case 'email.clicked':
+      return { label: 'Welcome mail read', className: 'bg-green-50 text-green-700 border-green-200', failed: false };
+    default:
+      return null;
+  }
 }
