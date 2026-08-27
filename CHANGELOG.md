@@ -5,6 +5,61 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [2.5.1] — 2026-08-27
+
+### Zustellung von Mails ist jetzt beobachtbar
+
+Ein 200 von `POST https://api.resend.com/emails` heißt „in die Warteschlange
+gestellt" und sonst nichts. Die Plattform hat das als Erfolg protokolliert und
+danach nie wieder etwas erfahren — eine Willkommensmail in der Quarantäne eines
+Konzernfilters und eine im Posteingang sahen im Log identisch aus.
+
+Das wiegt schwerer, als es klingt: an dieser einen Nachricht hängt der komplette
+Registrierungsablauf. Sie trägt den First-Start-Guide und die Sicherheitsantworten,
+die jemand braucht, bevor er ABAP in das Werkzeug einfügt. Dreißig Konten aus der
+Community-Aktivierung wurden angelegt, ohne dass irgendwer sagen könnte, ob die
+Mail angekommen ist. Die geringe Nutzung der Plattform ist durch nicht gesehene
+Mails mindestens so gut erklärt wie durch irgendetwas am Produkt.
+
+**Neu: `POST /api/webhooks/resend`.** Unauthentifiziert aus Notwendigkeit — Resend
+kann kein Firebase-Token tragen —, die Signatur *ist* die Authentifizierung:
+Svix-HMAC über `${svix-id}.${svix-timestamp}.${Rohtext}` mit fünf Minuten
+Replay-Fenster, in `lib/email-events.ts` selbst implementiert statt als Abhängigkeit
+gezogen. Ohne `RESEND_WEBHOOK_SECRET` antwortet die Route 503 und schreibt nichts.
+Für Nutzlasten, die sie nicht versteht, antwortet sie 2xx — ein Webhook, der einen
+Fehler zurückgibt, wird wiederholt.
+
+**Sichtbar wird es dort, wo ohnehin hingeschaut wird.** `email_events` ist
+server-only, weil die Dokumente Empfängeradressen tragen; die Admin-Konsole kann
+sie nicht lesen. Der Sendevermerk der Willkommensmail behält deshalb die `uid`, und
+ein Zustellereignis spiegelt seinen Status auf `registration_requests/{uid}`. Ein
+Konto, das angelegt und nie benutzt wurde, sieht jetzt anders aus als eines, dessen
+First-Start-Guide in einer Quarantäne lag. `email.sent` bekommt bewusst kein
+Abzeichen — das ist der Zustand, den die Plattform immer schon kannte, und genau
+der, der nichts wert war.
+
+### Drei Dinge auf der Sendeseite
+
+- Die Resend-Message-ID wird beim Versand festgehalten. Ohne sie lässt sich ein
+  später eintreffendes Ereignis keinem Versand zuordnen.
+- Jede Mail trägt jetzt einen Text-Teil, erzeugt aus demselben Markup, damit er
+  nicht abdriften kann. Beide Registrierungsmails waren reines HTML — ein seit
+  Jahren bekanntes Spam-Signal.
+- Jede Mail trägt `reply_to: info@clean-core.io`. `team@` und `system@` sind
+  Absenderidentitäten, keine Postfächer beim Provider — eine Antwort darauf ist
+  abgeprallt, während die Willkommensmail zum Antworten aufforderte. Die
+  Authentifizierung war davon nie betroffen (SPF und DKIM gelten für die Domain),
+  der Antwortweg war schlicht kaputt.
+
+### Noch zu tun, und nur von Hand möglich
+
+Den Webhook-Endpunkt im Resend-Dashboard anlegen und sein Signing-Secret als
+GitHub-Secret `RESEND_WEBHOOK_SECRET` hinterlegen. Die Pipeline reicht es bereits
+durch. Siehe `docs/BACKLOG.md`.
+
+307 Tests grün.
+
 ## [v2.5.0] — 2026-08-27
 
 Two more full-codebase reviews, run through OpenRouter against the same bundles

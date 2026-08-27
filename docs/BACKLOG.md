@@ -9,6 +9,7 @@ gefixt wurde, steht im `CHANGELOG.md` unter v2.5.0. Was offen ist, steht hier.
 
 | Punkt | Wer | Dringlichkeit |
 |---|---|---|
+| **Resend-Webhook anlegen + `RESEND_WEBHOOK_SECRET` setzen** | **Felix** | hoch — ohne das antwortet die Route 503 |
 | **V9** — veröffentlichter Fallback-Signaturschlüssel | **Entscheidung Felix** | hoch — blockiert seit zwei Releases |
 | ~50 ungeprüfte Findings aus den GLM/GPT-Reviews durchgehen | gemeinsam | hoch — darunter mehrere „Blocking"/„High" |
 | eslint-Gate prüft weder TypeScript noch React-Hooks | Entwicklung | hoch — aber eigener Change, siehe unten |
@@ -115,6 +116,38 @@ Verdacht.** Und lokal immer `--workers=1` — CI macht es auch so.
 | Veraltete Cloud-Run-Dienste löschen | Felix (GCP-Konsole) | mittel |
 | Zufriedenheitsumfrage vorbereiten, fällig 02.09. | gemeinsam | mittel — Termin steht |
 | PDF-Drift-Check in die Pipeline hängen | Entscheidung Felix | niedrig |
+
+---
+
+## Resend-Webhook scharfschalten
+
+**Warum:** Der Code steht, die Route ist deployt, aber sie antwortet jeder Anfrage
+mit 503, solange kein Signaturschlüssel gesetzt ist. Das ist Absicht — ein Endpunkt,
+der auf Zuruf nach Firestore schreibt, wäre schlimmer als gar keiner —, heißt aber
+auch: bis das hier erledigt ist, wissen wir über zugestellte Mails genauso wenig wie
+gestern.
+
+**Zwei Schritte, beide nur von dir aus machbar:**
+
+1. Im Resend-Dashboard unter *Webhooks* einen Endpunkt anlegen:
+   `https://clean-core.io/api/webhooks/resend`. Ereignisse: `email.delivered`,
+   `email.bounced`, `email.complained`, `email.delivery_delayed` (`opened`/`clicked`
+   optional — sie erzeugen Rauschen durch Scanner, die Links vorab anklicken).
+2. Das dort angezeigte `whsec_…`-Signing-Secret als GitHub-Secret
+   `RESEND_WEBHOOK_SECRET` hinterlegen. Die Pipeline reicht es bereits durch.
+
+**Prüfen, dass es läuft:** Resend hat im Webhook-Dialog einen Test-Versand. Danach
+sollte in den Cloud-Run-Logs kein `signature rejected` stehen — und ein Bounce
+taucht als roter Hinweis auf der Zeile des Nutzers in der Admin-Konsole auf.
+
+**Was danach noch fehlt:** die dreißig Konten aus der Community-Aktivierung liegen
+vor diesem Umbau. Für die gibt es keine Ereignisse und wird es keine geben — was
+mit ihren Willkommensmails passiert ist, bleibt unbekannt. Wenn die Vermutung
+stimmt, dass viele davon gefiltert wurden, ist die Zufriedenheitsumfrage am 02.09.
+der erste Anlass, an dem wir das über einen zweiten Kanal nachholen könnten.
+
+**Dringlichkeit:** hoch. Es ist der einzige offene Punkt, bei dem jeder Tag Wartezeit
+Daten kostet, die nicht nachgeholt werden können.
 
 ---
 
