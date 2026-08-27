@@ -118,9 +118,9 @@ Clean-Core.io prioritizes data security and user privacy above all else:
 
 ---
 
-## 🗺️ Status: v2.4.2 shipped
+## 🗺️ Status: v2.5.0 shipped
 
-Clean-Core.io is at **v2.4.2** — a security-hardened **Free Community Edition** with an audit-friendly, server-generated evidence chain and operational readiness (health check, structured logging, documented runbooks), plus a sharpened, honest narrative (free · community · **complementary to SAP tooling**, not a competitor). It is not a certified, procurement-grade enterprise platform, and some controls remain defense-in-depth or roadmap rather than complete (notably the test-runner isolation and parts of the audit-pack trust chain) — see the deliberately deferred items below and [`SECURITY.md`](SECURITY.md).
+Clean-Core.io is at **v2.5.0** — a security-hardened **Free Community Edition** with an audit-friendly, server-generated evidence chain and operational readiness (health check, structured logging, documented runbooks), plus a sharpened, honest narrative (free · community · **complementary to SAP tooling**, not a competitor). It is not a certified, procurement-grade enterprise platform, and some controls remain defense-in-depth or roadmap rather than complete (notably the test-runner isolation and parts of the audit-pack trust chain) — see the deliberately deferred items below and [`SECURITY.md`](SECURITY.md).
 
 Highlights: server-authoritative, HMAC-signed audit packs · complete GDPR Art. 17 erasure (with an automated completeness test) · supply-chain CI (secret scanning + dependency audit + CycloneDX SBOM) · `/api/health` + structured logging · a public SAP Object Catalog · and a public [/trust](https://clean-core.io/trust) transparency page.
 

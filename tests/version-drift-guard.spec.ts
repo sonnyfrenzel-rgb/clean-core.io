@@ -53,6 +53,7 @@ const ALLOWLISTED_LINE_PATTERNS = [
   /^\s*\*.*\(v\d+\.\d+/,              // JSDoc comment headers: "* Module Name (v1.X.0)"
   /^\s*\/\/\s*v\d+\.\d+/,             // Code history comments: "// v1.9.0: Feature name"
   /predate\s+v\d/,                     // Historical notes: "may predate v1.10.0"
+  /pre-v\d/,                           // Historical notes: "the pre-v2.4.2 shape of a revoked account"
   /effective\s.*\(v\d+\.\d+\.\d+\)/,   // Terms-of-Service document version, e.g. "effective 7 July 2026 (v2.0.0)"
 ];
 

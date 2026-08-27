@@ -191,7 +191,90 @@ answers their IT department will ask for) and one to `info@clean-core.io` that
 carries no privileged action — no approve link, no token in a URL.
 `tests/registration-flow-guard.spec.ts` holds all of this in place.
 
-### 5.3 Never substitute a figure for a measurement
+### 5.3 A signature that is never checked is decoration
+
+`runs/create` hashes the run over a canonical serialisation and signs the hash.
+`audit-pack/create` used to confirm that `runHash` was a non-empty string and
+then sign a manifest attesting to it — it never recomputed the hash and never
+verified the HMAC. A run altered after creation therefore came back out as a
+validly signed pack over the altered content, the signature laundering the change
+rather than catching it.
+
+`lib/run-signature.ts` owns the canonicaliser, `computeRunHash`, `signRunHash`
+and `verifyRunIntegrity`, and both routes use it. That is the point of the
+module: **the verifier has to rebuild the payload the way the producer built it.**
+Two implementations of "canonical" drift, and a verification that drifts is a
+verification that passes.
+
+Two rules follow, and both are guarded by `tests/run-integrity-guard.spec.ts`:
+
+- **Evidence comes from the run, never from the project.** `worklist` and
+  `extensibilityRoute` are both in the client-writable update allowlist in
+  `firestore.rules`, and the pack read them from the project in preference to the
+  run. The owner could delete an inconvenient finding and have the pack sign the
+  edited version as bound to the immutable run. If interactive changes are ever
+  worth exporting, they belong in a separately identified, user-attested file.
+- **`success` means authentic.** `verifyAuditPack` returned true for anything
+  internally consistent, including a ZIP anyone can assemble with `signed: false`.
+  Local checksum consistency is a real fact and keeps its own field,
+  `integrityValid`; it is not the same claim.
+
+### 5.4 Re-enrolment is not enrolment
+
+MFA setup cannot require the factor it is about to create — that is why
+`mfa/setup/start` and `mfa/setup/verify` sit in the `MUST_NOT_GATE` half of
+`tests/mfa-coverage-guard.spec.ts`. The reasoning is right and its scope was
+wrong: applied unconditionally it meant an account that *already* had MFA could
+have its factor replaced with nothing but a stolen ID token — start, take the new
+secret, compute its code, verify, done.
+
+The distinction is the enrolled state, not the route. `assertReEnrolmentAllowed`
+reads `users/{uid}.mfaEnabled` and applies `assertMfaStepUp` only when a factor
+exists. Both routes check it: they are independent endpoints and a caller can
+reach verify directly with a pending secret.
+
+### 5.5 Consent is what the server knows, not what the caller says
+
+`lib/consent.ts` is the single writer of `consent_events`, and it takes no
+version and no document hash from its caller. Both used to arrive in the request
+body and go straight into the append-only row, so an authenticated caller could
+state acceptance of a privacy document this server never served. A consent record
+whose contents the consenting party chooses is not evidence of consent. `locale`
+is the one field a caller still supplies, because it describes the reader rather
+than claiming what they accepted.
+
+### 5.6 Provenance survives the trip to the screen
+
+`MERGED_TABLE_MAP` is two layers: SAP's published release data
+(`confidence: 'sap-official'`) and a hand-curated field-level mapping
+(`'curated'`), with the curated layer winning. Both are useful; only one is a
+lookup. `evidence-model.ts` used to flatten them into `'Catalog Match'` and stamp
+SAP's catalog version alongside, and two UI sites went further and relabelled
+`'Verified'` as `'Catalog Match'` on screen — so a hand-written pairing read as a
+citation. `VBAK -> API_SALES_ORDER_SRV` was presented as SAP's answer when SAP's
+answer is `I_SALESDOCUMENT`.
+
+`replacementProvenance()` maps the two apart, and the catalog version rides only
+on a genuine lookup. `bucketOf` accepts both as settled, because "we can point
+you at a released successor" is true of both — an inference (`'Candidate'`,
+`'Needs Validation'`) still is not.
+
+### 5.7 Computed output has to look computed
+
+The landing benefit card is the visible half of the same rule. It carries prose
+and it carries figures recomputed from a file in this repository, and for a
+product selling auditability a reader must be able to tell them apart without
+reading every word. There is exactly one dark region on that card and it is the
+evidence — numbers, bar, object roll-call in monospace. The prose stays light.
+`tests/benefit-card-guard.spec.ts` fails if a second dark region appears.
+
+The same rule, stated as a prohibition, is why the "Differential Sandbox Tester"
+was deleted rather than relabelled: a screen may not report a verification it did
+not perform. `tests/fabricated-verification-guard.spec.ts` additionally forbids
+any `setTimeout` in the transformation view from writing to `signedOffIds` —
+naming the shape, not just the string.
+
+### 5.8 Never substitute a figure for a measurement
 
 `|| <number>` on a value the product measured turns "we do not know" into
 something a customer will quote. The delivery handover once read `|| 10` tests

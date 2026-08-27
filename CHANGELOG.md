@@ -5,6 +5,184 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.5.0] — 2026-08-27
+
+Two more full-codebase reviews, run through OpenRouter against the same bundles
+as the Grok pass the day before: GLM 5.3 and GPT-5.6-sol. Between them roughly a
+hundred findings, of which thirty-odd were reproduced against the code and five
+refuted. The three reviews overlap less than you would expect — about a third —
+and the two worst defects in the product were each found by exactly one model.
+
+The triage lives in `docs/reviews/2026-08-27-GLM-TRIAGE.md`; the raw output of
+all passes sits beside it, unedited.
+
+### Fixed — a stolen ID token was enough to replace someone's second factor
+
+`mfa/setup/start` and `mfa/setup/verify` checked only that the caller held a
+valid bearer token. For a first enrolment that is unavoidable — the factor cannot
+be required before it exists. For an account that already had MFA it meant the
+factor could be swapped for nothing: call start, take the fresh secret, compute
+its current code, call verify, and both the stored secret and the `mfa_session`
+cookie belong to the caller.
+
+`tests/mfa-coverage-guard.spec.ts` listed both routes as MUST_NOT_GATE with the
+right reasoning attached to the wrong scope, so a test held the hole open. The
+rule is the enrolled state, not the route: no gate without a factor, full
+step-up with one.
+
+Found only by GPT-5.6-sol.
+
+### Fixed — the audit pack signed runs it never verified
+
+`audit-pack/create` confirmed `runHash` was a non-empty string and then signed a
+manifest attesting to it. Nothing recomputed the hash; nothing checked the run's
+HMAC. And it read two client-writable fields from the project in preference to
+the run:
+
+    worklist: projectData.worklist || runData.worklist,
+    extensibilityRoute: projectData.extensibilityRoute || runData.extensibilityRoute,
+
+Both are in the update allowlist in `firestore.rules`. So the owner could delete
+an inconvenient finding, mark one fully mapped, or change the recommended route,
+and the pack would sign the edited version and present it as bound to the
+immutable run. For a product whose argument is a verifiable evidence chain, this
+was the worst reachable defect in it.
+
+Evidence now comes from `runData` only, and `verifyRunIntegrity` runs before
+anything is signed. `lib/run-signature.ts` is new and holds the canonicaliser,
+the hash and the HMAC in one place: the verifier has to rebuild the payload the
+way the producer built it, and two implementations of "canonical" drift. A
+verification that drifts is a verification that passes.
+
+Also found only by GPT-5.6-sol.
+
+### Removed — three things that reported work they had not done
+
+**The "Differential Sandbox Tester" in stage 3.** A button that waited 1200ms on
+a setTimeout and rendered "ResultSet Equivalence Verified" over "S/4HANA: 243
+rows fetched / 243 items compared" — 243 a literal in the markup. It executed
+nothing and contacted nothing, and the same callback added the complex-sql-join
+finding to `signedOffIds`, which feeds the compliance figure on that page. A
+timer raised a score and signed off the one finding class that most needs real
+verification.
+
+The capability it mimed already existed and was reachable from no UI at all:
+`/api/test-s4-odata-read` reads records from the tenant the user connected.
+Stage 5 had every step leading to it, so the read is the last step of that flow
+now — one button per entity type, feeding the console already on the page. It
+reports the count it actually got back, and says in the console that it is a read
+and not a comparison.
+
+**Savings figures in the board deck.** `weeksSaved = complexity * 0.4` and
+`techDebtSaved = complexity * 850`, rendered as "N Weeks" and "€X/yr" in front of
+a steering committee — from a complexity that itself defaulted to 50 when nothing
+had been measured. Deleted rather than rewritten: there is no honest version of a
+savings figure this product can compute. A test asserted one of those labels was
+present, which is how the multipliers survived.
+
+**Invented figures in the Confluence export.** An asset score of 82/55/35 chosen
+by string comparison, a maintenance cost of `(100 - score) * 180 + 1200` rendered
+as €/yr, value drivers picked by searching the context for the word "partner",
+and a flat "~40%" ROI claim. The prompt three hundred lines above asks the model
+for a range, hedged language and a calibration disclaimer; the fallback threw
+that discipline away.
+
+And `?? 100` on the board deck's score and coverage: a project that was never
+scored presented 100/100 and 100 % coverage. That is Grok's V4 in a second file
+the earlier fix never reached.
+
+### Fixed — provenance, in three places
+
+`buildMerged()` resolves SAP's published release data and a hand-curated layer
+and knows which is which. `evidence-model.ts` discarded the distinction, stamped
+every replacement `'Catalog Match'` and hung SAP's catalog version beside it, and
+two UI sites relabelled `'Verified'` as `'Catalog Match'` on screen. Measured
+against the shipped release data, all 21 findings in the reference run's settled
+bucket resolve through the curated layer and none through SAP's — while the
+landing page said "a released SAP successor from SAP's own data" next to six
+pairs of names.
+
+The card reads the repository layer directly now, so `VBAK → I_SALESDOCUMENT` is
+SAP's own naming and the sentence beside it is true. `replacementProvenance()`
+maps 'sap-official' to 'Catalog Match' with the catalog version and 'curated' to
+'Verified' without it. `bucketOf` accepts both, so the published numbers do not
+move.
+
+`verifyAuditPack` returned `success: true` for any internally consistent ZIP,
+including one anyone can assemble with `signed: false`. It means authentic now;
+local consistency keeps its own field.
+
+And consent recorded whatever the consenting party said it recorded —
+`privacyVersion` and `contentSha256` came from the request body straight into the
+append-only row. Both are server-derived now. That one was introduced in v2.4.2
+while fixing V14: recording consent server-side was the right half, taking the
+caller's word for what it covered was a smaller version of the same defect.
+
+### Changed — the landing benefit card, and the section competing with it
+
+A thousand pixels below the card stood "Verifiable Integrity — No AI Black-Box
+Promises": the same argument, the same three categories, the same three colours,
+in 5xl caps on dark. The card had the computed evidence and whispered; the
+section had the typography and not one number in it. Two models were asked what
+was visually wrong with the card and neither could see this — they were shown the
+card, not the page.
+
+The section is merged in. Its three descriptions are the sentence printed under
+each computed number — they already existed in `lib/reference-analysis.ts`,
+written for exactly this and rendered nowhere — and its dark treatment moved to
+the half of the card that holds the proof. There is exactly one dark region on
+the card now and it is the evidence: big tabular numbers, the split bar, the
+object roll-call in monospace. The prose stays light, so a reader can tell a
+measurement from a sentence somebody wrote.
+
+Before that, the card had already been rebuilt around a sentence rather than a
+layout: the old two-column premise was 2231px tall at 360px and its halves
+stacked below 1024px, so the comparison it was built on never happened, and the
+closing line still said "the question on the right" to a phone that has no right.
+
+Page height 13,752px to 13,227px.
+
+### Changed — registration, and both of its mails
+
+Everything from v2.4.2 reaches production with this release, because main was
+still on the previous build. Signing up is no longer an application: accounts
+activate through `POST /api/account/register`, the two registration mails became
+one, and the administrator gets a notification carrying no privileged action.
+
+Both mails were rebuilt as fluid tables. They depended on a media query in the
+document `<style>`, which mail clients are free to strip — reported from a real
+phone as content being cut off. The welcome mail is half its former length, and
+the recipient confirmed both on a device.
+
+### Tests
+
+292, all passing. New: `run-integrity-guard`, `fabricated-verification-guard`,
+`benefit-card-guard`, `registration-email-guard`, `registration-flow-guard`.
+
+Six existing tests were rewritten rather than deleted, because each was pinning a
+defect in place: two asserted `'Catalog Match'` for a curated mapping, one
+asserted the board deck's "Estimated Effort Saved" label existed, one asserted an
+unsigned pack verifies successfully, one listed the MFA setup routes as ungated,
+and one seeded a run with `runHash: 'testrunhash'`.
+
+### Known, not fixed
+
+- 24 GLM findings and most of GPT's remain unverified. Both triage files list
+  them by name rather than implying coverage.
+- **V9** still waits on a decision: the published fallback signing key cannot go
+  until CI has its own `AUDIT_SIGNING_KEY`, because the suite signs with the
+  fallback and asserts the result is valid. GPT adds that the guard is
+  `NODE_ENV === 'production' && !emulator`, so a preview deployment signs with
+  the committed constant.
+- The landing page scrolls sideways on narrow screens under Linux font metrics.
+  One cause, one line: `whitespace-nowrap` on the "S/4HANA Sandbox Connection"
+  label in `app/page.tsx`.
+- V15, V16 and V18 from the Grok triage.
+- `eslint.config.mjs` imports the TypeScript and React-hooks plugins and enables
+  neither, so `npm run lint` checks neither. That is how two Rules of Hooks
+  violations reached production through a green gate. Left for its own change,
+  because turning the rules on will surface a backlog.
+
 ## [v2.4.2] — 2026-08-27
 
 Signing up stopped being an application. An account is now active the moment it
