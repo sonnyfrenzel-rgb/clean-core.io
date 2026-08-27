@@ -5,6 +5,115 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.4.2] — 2026-08-27
+
+Signing up stopped being an application. An account is now active the moment it
+is created, the two registration mails became one, and the consent behind it is
+recorded by the server instead of asserted by the browser — which is finding V14
+from the same review, fixed in the flow it lives in.
+
+### Changed — registration no longer waits for anybody
+
+Creating an account produced a "we are reviewing your application" mail, a
+waiting-room screen, and two HMAC-signed one-click links in an administrator's
+mailbox. If one of those was ever clicked, a second, near-identical "approved"
+mail followed. Until then the account could do nothing.
+
+The browser still writes the profile as `pending` — the Firestore create rule
+pins that value and rejects any other — and `POST /api/account/register` is now
+the only thing that moves it to `approved`. Automatic is not client-decided: the
+decision stays on the server, so a Firestore write cannot mint an active account.
+
+- `activateAccount()` runs once per account, in a transaction, and refuses
+  anything that is not `pending` or that already carries `activatedAt`.
+- `adminRevokeUser` writes `status: 'suspended'` instead of pushing the account
+  back to `pending`. As `pending`, a revoked account was indistinguishable from
+  a fresh signup and would have reinstated itself on the next registration call.
+- The admin console's tabs are `all / active / suspended`; the approve button is
+  a **Reinstate** button, because there is nothing left to approve.
+
+Removed with the gate: `/api/request-pilot`, `/api/send-pending-email`,
+`/api/admin/approve-user`, `/admin/approve` and `approveUserWithToken`. A
+privileged action that travels by email is not worth keeping for a decision
+nobody makes any more. Live-tenant (BYOT) access is a separate approval that a
+human still makes, and it keeps its HMAC token flow unchanged.
+
+### Changed — one welcome mail that does the whole job
+
+`lib/welcome-email.ts` replaces both registration mails. It leads with the
+workspace link, then carries the five-step first run condensed from `/first-run`,
+what "free" actually means (only the stage-2 analysis is metered), and a security
+block written to be forwarded to whoever has to sign the platform off: EU
+processing in europe-west1, code excluded from model training, keys never in the
+browser, BYOK encrypted with AES-256-GCM, HMAC-signed runs, TOTP 2FA, and
+self-service erasure under Art. 17.
+
+`lib/admin-signup-email.ts` is the administrator's copy: every detail of the
+signup, including whether a consent record exists, and no action in it at all —
+the only link goes to the admin console, behind a login and a step-up check.
+
+### Fixed — V14: consent was a claim, not a record
+
+`termsVersionAccepted` and `termsAcceptedAt` sat in `userClientCreateKeys()`, so
+a browser recorded its own Terms acceptance, timestamped by its own clock, with
+no `consent_events` row behind it. Both fields are out of the allowlist.
+`lib/consent.ts` is the single writer — append-only event plus the profile mirror,
+both through the Admin SDK — and is shared by `POST /api/consent` and the
+registration route.
+
+While fixing it: `components/UserOnboarding.tsx` was **not mounted anywhere**. The
+Google sign-in path deliberately created a profile without consent fields on the
+grounds that "onboarding collects the agreement properly" — but the component
+that would have collected it never rendered, so those accounts had no consent
+record and no way to give one. The modal is now mounted in the app shell and the
+silent auto-provisioning branch is gone; a first Google sign-in is asked for a
+name and both agreements before an account exists. That path also now fails
+closed on a profile read error, like the email and redirect paths already did.
+
+### Changed — the landing benefit card says what people search for
+
+`upgrade`, `audit` and "free SAP custom code assessment" are in the card because
+each is true and checkable: clean core exists for upgrade stability, the pack
+really is signed, and it really is free. The three benefit questions that already
+place on this page are now marked up as question-and-answer pairs in the existing
+`FAQPage` node, in both languages, with every answer restating visible copy.
+
+The figures this market ranks for — "20–30% faster upgrades", "reduce TCO by 62%"
+— stay out. One proposed edit was dropped on contact with the data: the reference
+file's hand-work bucket renders as `dynpro, native-sql`, with no `modification` in
+it, so calling those findings "the upgrade blockers" would have contradicted the
+numbers printed beside them. The SPAU sentence now renders only when a
+modification is actually present.
+
+### Tests
+
+`tests/registration-flow-guard.spec.ts` is new. `security-compliance.spec.ts`
+gains emulator-backed proof that registration activates and records consent, that
+a second call is a no-op, that a suspended account cannot reinstate itself, and
+that a client create carrying the consent fields is refused by the rules.
+
+One of those tests exists because of a hole found while writing them: an account
+revoked *before* this release is `pending` with a zeroed quota and no
+`activatedAt` to recognise it by, so the new endpoint would have reinstated it.
+The zeroed quota is the discriminator — a client-created profile always carries a
+limit of 5, because the Firestore create rule hardcodes it.
+
+243 tests, 0 failed. Note for local runs: the suite is flaky at Playwright's
+default worker count against `npm run dev` (ECONNRESET, `auth/email-already-in-use`
+races between workers seeding the same emulator). Run it `--workers=1`, which is
+what CI does.
+
+### Known, not fixed in this release
+
+- The landing benefit card's left column is still the hand-written credit-check
+  story. The copy edits closed the keyword gap; they did not close the gap the
+  review actually named — that the card asserts the differentiator and proves the
+  commodity. Proposals 2 and 3 in `docs/reviews/2026-08-26-BENEFIT-NEXT-STEPS.md`
+  are the work for that.
+- V9, V15, V16 and V18 from the Grok triage remain open. V9 is a decision, not
+  work: removing the published fallback signing key breaks the test that signs
+  with it, so CI needs its own `AUDIT_SIGNING_KEY` first.
+
 ## [v2.4.1] — 2026-08-26
 
 Everything an external code review found, worked through. A Grok 4.6 pass over

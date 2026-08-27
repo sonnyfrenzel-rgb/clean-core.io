@@ -16,9 +16,9 @@ Clean-Core.io is a free, community-built web application that helps SAP practiti
 *   **S/4HANA Live Bridge (BYOT - Bring Your Own Tenant):**
     Connect your own S/4HANA Public Cloud Test/Sandbox Tenant to run E2E unit tests on live ERP destinations. Credentials are encrypted at rest (AES-256-GCM) in a server-only Firestore collection, inaccessible to client SDKs.
 *   **Unified Access & Tenant Administration Console:**
-    Comprehensive admin workbench (`/admin`) allowing administrators to instantly review, approve, or revoke access requests, track tenant bridge applications, and toggle Bring-Your-Own-Tenant (BYOT) privileges with live status badges.
+    Comprehensive admin workbench (`/admin`) for suspending or reinstating accounts, tracking tenant bridge applications, and toggling Bring-Your-Own-Tenant (BYOT) privileges with live status badges. Signing up needs no approval — accounts are active immediately — so the console governs accounts rather than gating them.
 *   **Transactional Verification & Responsive Email Automations:**
-    Fully integrated with the Resend API to deliver secure, responsive, HTML-table-formatted notifications. Sonny receives manual approval emails with cryptographic verification links, and applicants receive dynamic welcome activation emails.
+    Fully integrated with the Resend API to deliver secure, responsive, HTML-formatted notifications. A new account triggers exactly two: one welcome mail carrying the first-run guide and the security answers an IT department will ask for, and one administrator notification that contains no privileged action. Live-tenant requests still send cryptographically signed approval links, because that approval is still made by a human.
 *   **Legacy-to-Modern AI Transformation Engine:**
     Modular code translation from SAP ABAP to structured Node.js/TypeScript code using Google Gemini. Classifies legacy logic to automatically separate **In-App Developer Extensibility (ABAP Cloud RAP)** from **Side-by-Side Extensibility (BTP CAP)** tracks.
 *   **Modernization Assessment Engine (v1.9.0):**
@@ -118,9 +118,9 @@ Clean-Core.io prioritizes data security and user privacy above all else:
 
 ---
 
-## 🗺️ Status: v2.4.0 shipped
+## 🗺️ Status: v2.4.2 shipped
 
-Clean-Core.io is at **v2.4.0** — a security-hardened **Free Community Edition** with an audit-friendly, server-generated evidence chain and operational readiness (health check, structured logging, documented runbooks), plus a sharpened, honest narrative (free · community · **complementary to SAP tooling**, not a competitor). It is not a certified, procurement-grade enterprise platform, and some controls remain defense-in-depth or roadmap rather than complete (notably the test-runner isolation and parts of the audit-pack trust chain) — see the deliberately deferred items below and [`SECURITY.md`](SECURITY.md).
+Clean-Core.io is at **v2.4.2** — a security-hardened **Free Community Edition** with an audit-friendly, server-generated evidence chain and operational readiness (health check, structured logging, documented runbooks), plus a sharpened, honest narrative (free · community · **complementary to SAP tooling**, not a competitor). It is not a certified, procurement-grade enterprise platform, and some controls remain defense-in-depth or roadmap rather than complete (notably the test-runner isolation and parts of the audit-pack trust chain) — see the deliberately deferred items below and [`SECURITY.md`](SECURITY.md).
 
 Highlights: server-authoritative, HMAC-signed audit packs · complete GDPR Art. 17 erasure (with an automated completeness test) · supply-chain CI (secret scanning + dependency audit + CycloneDX SBOM) · `/api/health` + structured logging · a public SAP Object Catalog · and a public [/trust](https://clean-core.io/trust) transparency page.
 

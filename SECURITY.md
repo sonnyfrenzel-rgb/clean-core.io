@@ -26,9 +26,9 @@ This document describes the security architecture and hardening measures impleme
 | F-08 | Client-side GDPR account erasure orchestration | **P1** | ✅ Resolved | Replaced client-side delete routines with transaction-backed server-side deletion route `/api/account/delete`. |
 | F-09 | Decorative-only email approval HMAC checks | **P1** | ✅ Resolved | Transitioned email activation/approval hooks to server-side cryptographic HMAC token re-validation routes. |
 | F-10 | Vulnerability to HTML Injection in transactional emails | **P2** | ✅ Resolved | Added HTML escaping for all interpolated user fields inside the transactional email templates. |
-| A-01 | Orphaned Firebase Auth user after pilot registration reject | **P2** | ✅ Resolved | `approveUserWithToken` reject branch now deletes the Firebase Auth user via `getAuth().deleteUser(uid)`. Idempotent: `auth/user-not-found` is silently ignored. |
+| A-01 | Orphaned Firebase Auth user after pilot registration reject | **P2** | ✅ Resolved (since obsolete) | `approveUserWithToken` deleted the Firebase Auth user on reject. The whole pilot approval path was removed in v2.4.2 — accounts activate on registration — so there is no reject branch left to orphan anything. |
 | F-15 | `/api/test/seed` admin escalation behind single env gate | **P2** | ✅ Resolved | Defense-in-depth: 3 independent gates (NODE_ENV, emulator flag, secret header). Returns 404 in production. CI assertion prevents accidental deployment with emulator flag. |
-| F-05n | Email registration missing Bearer token on `/api/request-pilot` | **P2** | ✅ Resolved | Password sign-up now calls `getIdToken()` and sends `Authorization: Bearer` header, matching the Google sign-in flow. |
+| F-05n | Email registration missing Bearer token on `/api/request-pilot` | **P2** | ✅ Resolved | Registration is authenticated end to end. `/api/request-pilot` was replaced by `/api/account/register` in v2.4.2, which rejects an unverified caller with 401 and derives both the UID and the mail recipient from the token. |
 | F-08n | `mfa_pending` collection lacks explicit Firestore deny rule | **P3** | ✅ Resolved | Added explicit `allow read, write: if false` rule for audit clarity (previously covered by default-deny). |
 | F-03n | Mermaid label sanitizer insufficient against XSS | **P2** | ✅ Resolved | Hardened `sanitize()` to strip HTML tags, JS protocol, event handlers, Mermaid control tokens, and arrow syntax. |
 
@@ -47,7 +47,7 @@ This document describes the security architecture and hardening measures impleme
   - Emulator/CI only: a Firestore `users/{uid}.isAdmin` fallback is allowed (never in production).
   - Firestore rules mirror this: `isAdmin()` reads `request.auth.token.admin` (custom claim) only.
   - Privileged admin actions additionally require recent auth + MFA step-up (`assertAdminStepUp`).
-- Protected admin routes: `/api/send-approval-email`, `/api/send-tenant-approval-email`, `/api/send-tenant-revoke-email`
+- Protected admin routes: `/api/admin/console-action`, `/api/send-approval-email`, `/api/send-tenant-approval-email`, `/api/send-tenant-revoke-email`
 - Non-admin tokens receive **403** (not 401) — fail-closed.
 - Recipient email addresses are format-validated (defense-in-depth).
 
@@ -55,6 +55,8 @@ This document describes the security architecture and hardening measures impleme
 - All collections enforce `isAuthenticated()` for reads.
 - **Hardened Onboarding (F-06 Härtung)**: Direct creation of profiles in `/users/{userId}` is permitted but strictly gated:
   - Non-admin users are restricted to a strict keys allowlist (`userClientCreateKeys()`) and safe default values (`tier == 'pilot'`, `status == 'pending'`, `isAdmin == false`, `transformationsUsed == 0`, `transformationsLimit == 5`, `maxTeamMembers == 1`, `s4TenantAccessAllowed == false`, `mfaEnabled == false`).
+  - **V14 (v2.4.2)**: `termsVersionAccepted` and `termsAcceptedAt` were removed from that allowlist. A client could previously assert its own Terms acceptance, timestamp included, with no `consent_events` row behind it. Consent is now written exclusively by the Admin SDK through `lib/consent.ts` (`POST /api/consent`, `POST /api/account/register`).
+  - `status` stays server-authoritative even though signup no longer needs an approval: the create rule pins it to `pending`, and only `activateAccount()` — reached through `POST /api/account/register` — moves it to `approved`, once per account and never from `suspended`.
   - Creation requires `orgId == null` to prevent unauthorized tenant assignments.
 - **Field-Level Protection**: Client-side updates to user profiles are restricted to an allowlist of uncritical fields (`userClientUpdateKeys()`: firstName, lastName, theme, defaultView, etc.). Modifying status, tier, transformationsLimit, s4 access, or mfaEnabled directly from the client is blocked.
 - **Project Isolation**: Direct creation and updates of `/projects/{projectId}` are restricted to `projectAllowedKeys()`. The `orgId` on projects is validated to match the user's profile `orgId`, preventing cross-tenant project modifications.
@@ -64,8 +66,9 @@ This document describes the security architecture and hardening measures impleme
   - `mfa_secrets/{uid}`: `allow read, write: if false;` — exclusively accessed via Admin SDK.
 
 ### 3.4 Onboarding Link Cryptography (F-09)
+- Applies to **live-tenant (BYOT) access only**. The pilot equivalent — two one-click links in the administrator's signup mail — was removed in v2.4.2 along with the approval gate itself: an emailed link that changes account state is not worth keeping for a decision nobody makes any more. Account state is changed in the admin console, behind a login and `assertAdminStepUp`.
 - Action-bound approval/rejection links (sent via Resend) are protected by a cryptographically signed HMAC token.
-- Tokens are bound to the specific `uid`, `requestType` (e.g. pilot, tenant), and `action` (e.g. approve, reject), and carry a 7-day expiration time (`exp`).
+- Tokens are bound to the specific `uid`, `requestType` (`tenant`), and `action` (e.g. approve, reject), and carry a 7-day expiration time (`exp`).
 - Signature verification uses Node's `crypto.createHmac('sha256')` with `timingSafeEqual` comparison to eliminate timing side-channel attacks.
 - Fail-closed behavior is enforced: if `PILOT_APPROVAL_SECRET` is missing or less than 16 characters, token creation/verification fails immediately.
  

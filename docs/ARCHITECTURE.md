@@ -155,7 +155,43 @@ otherwise storage is not read at all. Merging field by field —
 — let a request keep the vault password and redirect it to a URL of its own. The
 SSRF allowlist narrows that but is a config value, not a code invariant.
 
-### 5.2 Never substitute a figure for a measurement
+### 5.2 Registration is automatic; consent and status are not
+
+There is no administrator approval on signup. A browser writes `users/{uid}` as
+`status: 'pending'` — the create rule pins that value and rejects anything else —
+and then calls `POST /api/account/register`, which is the only thing that can
+move an account to `approved`. Automatic is not the same as client-decided: the
+decision is still made by the server, so a Firestore write cannot mint an active
+account.
+
+`activateAccount()` (`lib/firebase-admin.ts`) runs once per account, in a
+transaction, and refuses anything that is not `pending` or that already carries
+`activatedAt`. That guard is what makes revocation stick — `adminRevokeUser`
+now writes `status: 'suspended'` rather than pushing the account back to
+`pending`, which self-service activation would silently have undone.
+
+**Consent is written by the server or not at all.** `termsVersionAccepted` and
+`termsAcceptedAt` used to sit in `userClientCreateKeys()`, so a browser recorded
+its own Terms acceptance with its own clock and nothing behind it. Both fields
+are out of that allowlist; `lib/consent.ts` is the single writer, appending to
+`consent_events` (server-only, `allow read, write: if false`) and mirroring the
+version onto the profile through the Admin SDK. `POST /api/consent` (re-consent)
+and `POST /api/account/register` (signup) both go through it.
+
+One consequence worth knowing: `components/UserOnboarding.tsx` must stay mounted
+in `app/(app)/layout.tsx`. A first Google sign-in deliberately creates no profile
+— a popup asks for nothing, so there is no agreement to record — and that modal
+is where the name and both agreements are collected. It went unmounted for a
+while, and the auto-provisioning branch that filled the gap produced accounts
+with no consent record and no way to give one.
+
+Registration sends exactly two mails, both built from `lib/welcome-email.ts` and
+`lib/admin-signup-email.ts`: one to the new user (first-run guide + the security
+answers their IT department will ask for) and one to `info@clean-core.io` that
+carries no privileged action — no approve link, no token in a URL.
+`tests/registration-flow-guard.spec.ts` holds all of this in place.
+
+### 5.3 Never substitute a figure for a measurement
 
 `|| <number>` on a value the product measured turns "we do not know" into
 something a customer will quote. The delivery handover once read `|| 10` tests

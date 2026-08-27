@@ -221,3 +221,49 @@ German copy into an English card.
 Every added term has to be true of the shipped product and checkable: `upgrade blocker` because a
 level-D object is one, `audit trail` because the pack is signed, `free` because it is. No term goes
 in because it has volume.
+
+---
+
+# What shipped — 27 August 2026
+
+Edits 1, 2, 4 and 5 are in `components/BenefitCard.tsx` and the landing `@graph`. Edit 3 shipped in
+a corrected form, and the correction is the interesting part.
+
+| Edit | State |
+|---|---|
+| 1 · name the trigger | Shipped. "…until the next S/4HANA upgrade makes it somebody's problem", added *before* the two-questions sentence rather than replacing it — that sentence is what sets up the whole card. |
+| 2 · name the offer | Shipped verbatim: "a free SAP custom code assessment that hands you drafts to correct". |
+| 3 · say what the red band is | Shipped **corrected** — see below. |
+| 4 · close on the evidence chain | Shipped: "Every run is frozen into a signed audit trail you can hand to a reviewer." |
+| 5 · FAQPage | Shipped as three questions appended to the **existing** `FAQPage` node in the landing `@graph`, not a second node — a page gets one. Both languages, per the proposal. Every answer restates visible card copy. |
+
+## Edit 3 was wrong, and rendering it proved it
+
+The proposed sentence was *"4 stays hand work — **the upgrade blockers**."* The reference file's
+hand-work bucket is computed, and it renders as **`dynpro, native-sql`**. There is no `modification`
+in it — which is the one kind of the three that is an upgrade blocker in the literal sense (SPAU).
+A Dynpro screen does not block an ECC-to-S/4HANA upgrade; it blocks the move to ABAP Cloud.
+
+So the card would have been asserting something the numbers beside it contradict, on a page whose
+entire argument is that the figures can be recomputed. What shipped instead:
+
+> Hand work = dynpro, native-sql — structurally out of reach for any generator, so they are flagged
+> rather than guessed at.
+
+…followed by a clause that renders **only when `handedBackKinds` actually contains `modification`**:
+
+> The modification among them is an upgrade blocker in the literal sense: it has to be reset in SPAU
+> before an upgrade can proceed.
+
+The `upgrade` keyword the edit was chasing is in the card either way — it is in edit 1, where it is
+unconditionally true.
+
+`cost` and `value` from the absent-terms table were **not** added. Nothing in the card can carry
+them without either a figure nobody can check or a sentence that is padding. Left deliberately.
+
+## Still open
+
+Proposal 2 (the real frozen pyramid in place of the invented credit-check story) and proposal 3
+(the named-object roll-call) are the plan's step 1 and are **not** built. The copy edits removed
+the keyword gap; they did not remove the mockup reading of the left column, which is what those two
+proposals are for.
