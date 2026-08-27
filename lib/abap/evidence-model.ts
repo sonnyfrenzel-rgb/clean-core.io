@@ -69,6 +69,36 @@ export interface AbapEvidenceReport {
 const STANDARD_TABLE_MAP = MERGED_TABLE_MAP;
 
 /**
+ * Where a successor name came from, said out loud rather than flattened.
+ *
+ * `MERGED_TABLE_MAP` is two layers. The repository layer is SAP's own published
+ * release data and knows the successor it names; the curated layer in
+ * `sap-api-catalog.ts` is field-level knowledge written by hand, and
+ * `buildMerged()` lets it win. Both are useful. Only one of them is a lookup.
+ *
+ * This used to stamp every replacement `'Catalog Match'` and hang SAP's catalog
+ * version next to it, which turned a hand-written pairing into something that
+ * read as a citation — `VBAK -> API_SALES_ORDER_SRV` presented as SAP's answer
+ * when SAP's answer is `I_SALESDOCUMENT`. A test even pinned the behaviour
+ * ("should produce Catalog Match instead of Verified"), so it was a decision
+ * rather than an oversight; it was the wrong one.
+ *
+ * `'Verified'` is not a downgrade in usefulness — a curated OData mapping is
+ * often the more practical target. It is only a downgrade in provenance, and the
+ * catalog version goes with it, because that version identifies SAP's data and
+ * nothing else.
+ */
+function replacementProvenance(entry: { confidence?: string } | undefined): {
+  confidence: 'Catalog Match' | 'Verified';
+  catalogVersion?: string;
+} {
+  const fromSapData = entry?.confidence === 'sap-official';
+  return fromSapData
+    ? { confidence: 'Catalog Match', catalogVersion: getMergedCatalogVersion() }
+    : { confidence: 'Verified' };
+}
+
+/**
  * Resolves ABAP CONSTANTS declarations to their literal values.
  * e.g. `CONSTANTS c_tcode_va02 VALUE 'VA02'` → { 'C_TCODE_VA02': 'VA02' }
  */
@@ -241,8 +271,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
           sapReplacement: hasReplacement ? {
             objectName: STANDARD_TABLE_MAP[table].view,
             objectType: STANDARD_TABLE_MAP[table].type,
-            confidence: 'Catalog Match',
-            catalogVersion: getMergedCatalogVersion()
+            ...replacementProvenance(STANDARD_TABLE_MAP[table]),
           } : undefined
         });
       } else {
@@ -264,8 +293,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
           sapReplacement: hasReplacement ? {
             objectName: STANDARD_TABLE_MAP[table].view,
             objectType: STANDARD_TABLE_MAP[table].type,
-            confidence: 'Catalog Match',
-            catalogVersion: getMergedCatalogVersion()
+            ...replacementProvenance(STANDARD_TABLE_MAP[table]),
           } : undefined // never guess a successor name: `I_${table}` invented objects that do not exist
         });
       }

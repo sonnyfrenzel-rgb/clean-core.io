@@ -91,7 +91,15 @@ test.describe('released SAP objects are the target state, not a violation', () =
     const f = findings(`SELECT * FROM t000 INTO TABLE lt.`);
     expect(f.length).toBeGreaterThan(0);
     for (const x of f) expect(x.sapReplacement?.objectName).not.toBe('I_T000');
-    expect(f.every((x) => !x.sapReplacement || x.sapReplacement.confidence === 'Catalog Match')).toBe(true);
+    // Either provenance is fine here; what may never appear is an inferred name.
+    expect(
+      f.every(
+        (x) =>
+          !x.sapReplacement ||
+          x.sapReplacement.confidence === 'Catalog Match' ||
+          x.sapReplacement.confidence === 'Verified',
+      ),
+    ).toBe(true);
   });
 });
 

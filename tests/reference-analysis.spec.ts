@@ -24,16 +24,25 @@ test.describe('published reference analysis', () => {
     expect(r.resolved.count + r.decision.count + r.handedBack.count).toBe(r.totalFindings);
   });
 
-  test('a settled finding always has a real catalog match behind it', () => {
+  test('a settled finding names a successor, and says where the name came from', () => {
     const r = getReferenceAnalysis();
     const settled = r.findings.filter(
-      (f) => f.sapReplacement?.confidence === 'Catalog Match',
+      (f) =>
+        f.sapReplacement?.confidence === 'Catalog Match' ||
+        f.sapReplacement?.confidence === 'Verified',
     );
-    // Everything counted as settled is a lookup, never an inference.
+    // Everything counted as settled points at a successor, never an inference.
     expect(r.resolved.count).toBeLessThanOrEqual(settled.length);
     for (const f of settled) {
       expect(f.sapReplacement!.objectName.length).toBeGreaterThan(0);
-      expect(f.sapReplacement!.catalogVersion).toBeTruthy();
+      // The catalog version identifies SAP's published release data, so it may
+      // only appear on a finding that actually came from it. Hanging it on a
+      // curated mapping is what made hand-written pairings read as citations.
+      if (f.sapReplacement!.confidence === 'Catalog Match') {
+        expect(f.sapReplacement!.catalogVersion).toBeTruthy();
+      } else {
+        expect(f.sapReplacement!.catalogVersion).toBeUndefined();
+      }
     }
   });
 

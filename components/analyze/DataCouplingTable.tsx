@@ -72,7 +72,7 @@ export default function DataCouplingTable({ dataCoupling }: DataCouplingTablePro
                     (entry.replacementConfidence === 'Catalog Match' || entry.replacementConfidence === 'Verified') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                     entry.replacementConfidence === 'Candidate' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                     'bg-slate-50 text-slate-600 border-slate-200'
-                  )}>{entry.replacementConfidence === 'Verified' ? 'Catalog Match' : (entry.replacementConfidence ?? 'Needs Validation')}</span>
+                  )}>{entry.replacementConfidence ?? 'Needs Validation'}</span>
                 </td>
                 <td className="py-2 px-2 text-slate-600 text-[11px]">{entry.recommendation}</td>
               </tr>

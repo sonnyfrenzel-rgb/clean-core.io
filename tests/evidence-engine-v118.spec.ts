@@ -28,14 +28,22 @@ test.describe('Evidence Engine v1.18 — Codex Improvements', () => {
     COMMIT WORK.
   `;
 
-  test('should produce Catalog Match instead of Verified for known SAP tables', () => {
+  test('a replacement says where its name came from', () => {
+    // This test used to be called "should produce Catalog Match instead of
+    // Verified for known SAP tables" and asserted exactly that, which is how the
+    // two provenances came to be flattened into one label. VBAK resolves through
+    // the curated layer in sap-api-catalog.ts (API_SALES_ORDER_SRV), while SAP's
+    // own release data names I_SALESDOCUMENT. Both are defensible targets; only
+    // one of them is a lookup, and the catalog version belongs to that one.
     const report = buildAbapEvidence(SAMPLE_CODE, 'test.abap', 'public');
     const vbak = report.findings.find(f => f.objectName === 'VBAK' && f.kind === 'standard-table-read');
     expect(vbak).toBeDefined();
     expect(vbak!.sapReplacement).toBeDefined();
-    expect(vbak!.sapReplacement!.confidence).toBe('Catalog Match');
-    expect(vbak!.sapReplacement!.catalogVersion).toBeDefined();
-    expect(vbak!.sapReplacement!.catalogVersion).toContain('2024');
+    expect(vbak!.sapReplacement!.confidence).toBe('Verified');
+    expect(
+      vbak!.sapReplacement!.catalogVersion,
+      'SAP’s catalog version must not be stamped on a curated mapping',
+    ).toBeUndefined();
   });
 
   test('should differentiate severity based on deployment context', () => {
@@ -125,11 +133,20 @@ test.describe('Evidence Engine v1.18 — Codex Improvements', () => {
     expect(report.findings.length).toBeGreaterThan(5);
     expect(report.summary.criticalCount + report.summary.highCount).toBeGreaterThan(0);
 
-    // Verify no 'Verified' confidence — all should be 'Catalog Match' or 'Candidate'
-    const allConfidences = report.findings
-      .map(f => f.sapReplacement?.confidence)
-      .filter(Boolean);
-    expect(allConfidences).not.toContain('Verified');
-    expect(allConfidences.some(c => c === 'Catalog Match')).toBe(true);
+    // This block used to read "Verify no 'Verified' confidence" and assert its
+    // absence, which is the other half of the same flattening: it made the
+    // curated layer indistinguishable from a lookup in SAP's release data. The
+    // invariant that actually matters is that nothing is inferred, and that the
+    // catalog version only ever rides on a genuine lookup.
+    const replacements = report.findings.map(f => f.sapReplacement).filter(Boolean);
+    expect(replacements.length).toBeGreaterThan(0);
+    for (const r of replacements) {
+      expect(['Catalog Match', 'Verified']).toContain(r!.confidence);
+      if (r!.confidence === 'Catalog Match') {
+        expect(r!.catalogVersion).toBeTruthy();
+      } else {
+        expect(r!.catalogVersion).toBeUndefined();
+      }
+    }
   });
 });

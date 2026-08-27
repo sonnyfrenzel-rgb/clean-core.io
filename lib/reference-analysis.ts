@@ -110,8 +110,14 @@ export interface ReferenceObject {
 
 function bucketOf(f: EvidenceFinding): 'resolved' | 'decision' | 'handedBack' {
   if (HANDED_BACK_KINDS.has(f.kind)) return 'handedBack';
-  // A catalog match is a lookup against SAP's own data — nothing is inferred.
-  if (f.sapReplacement?.confidence === 'Catalog Match') return 'resolved';
+  // Settled means "we can point you at a released successor". Both provenances
+  // qualify: 'Catalog Match' is a lookup in SAP's published release data,
+  // 'Verified' is the curated field-level mapping. What may never qualify is an
+  // inference — 'Candidate' and 'Needs Validation' stay in the decision bucket.
+  // The distinction used to be flattened into 'Catalog Match' for both, which is
+  // why this line could once be written as a single comparison.
+  const conf = f.sapReplacement?.confidence;
+  if (conf === 'Catalog Match' || conf === 'Verified') return 'resolved';
   return 'decision';
 }
 

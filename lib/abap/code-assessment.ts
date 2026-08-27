@@ -253,7 +253,8 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
     let replacementConfidence: 'Catalog Match' | 'Verified' | 'Candidate' | 'Needs Validation' = 'Needs Validation';
     if (isStandard && STANDARD_TABLE_MAP[tableName]) {
       recommendation = STANDARD_TABLE_MAP[tableName];
-      replacementConfidence = 'Catalog Match';
+      // Hand-written guidance in this file, not a lookup in SAP's release data.
+      replacementConfidence = 'Verified';
     } else if (isStandard) {
       recommendation = 'Verify API availability in SAP API Hub';
       replacementConfidence = 'Candidate';

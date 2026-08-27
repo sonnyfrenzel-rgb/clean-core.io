@@ -1530,7 +1530,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                                     ef.sapReplacement.confidence === 'Candidate' ? 'text-amber-600' :
                                     'text-red-500'
                                   }`}>
-                                    {ef.sapReplacement.confidence === 'Verified' ? 'Catalog Match' : ef.sapReplacement.confidence}
+                                    {ef.sapReplacement.confidence}
                                     {ef.sapReplacement.catalogVersion && <span className="text-slate-400 ml-1">(v{ef.sapReplacement.catalogVersion})</span>}
                                   </span>
                                 </div>
