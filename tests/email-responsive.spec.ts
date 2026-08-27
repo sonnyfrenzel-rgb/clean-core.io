@@ -13,10 +13,15 @@ import { wrapEmailDocument } from '../lib/email-layout';
  */
 
 const ROUTES: { file: string; label: string; vars: string[] }[] = [
-  // The signup pair — welcome mail and administrator notification — moved out of
-  // the routes into their own modules when the two registration mails became one.
-  { file: 'lib/welcome-email.ts', label: 'welcome-email', vars: ['emailHtml'] },
-  { file: 'lib/admin-signup-email.ts', label: 'admin-signup-email', vars: ['emailHtml'] },
+  // The two registration mails are NOT in this list. They were rebuilt as fluid
+  // tables that do not depend on the media query at all, so scraping their
+  // markup and checking the card padding would assert nothing — the selector no
+  // longer matches. `tests/registration-email-guard.spec.ts` covers them
+  // properly instead: rendered three ways, including with the <style> block
+  // stripped, which is what a mail client is free to do.
+  //
+  // The three below still use the original div-and-media-query design. They are
+  // the next candidates for the same rebuild.
   { file: 'app/api/send-tenant-approval-email/route.ts', label: 'send-tenant-approval-email', vars: ['emailHtml'] },
   { file: 'app/api/send-tenant-revoke-email/route.ts', label: 'send-tenant-revoke-email', vars: ['emailHtml'] },
   { file: 'app/api/request-tenant-access/route.ts', label: 'request-tenant-access', vars: ['emailHtml', 'pendingHtml'] },
