@@ -3,22 +3,36 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
-**Stand 27.08.2026 — nach v2.5.0.** Drei Modell-Reviews des gesamten Codebestands
-liegen jetzt vor (Grok 4.6 am 26., GLM 5.3 und GPT-5.6-sol am 27.). Was daraus
-gefixt wurde, steht im `CHANGELOG.md` unter v2.5.0. Was offen ist, steht hier.
+**Stand 27.08.2026, Feierabend — nach v2.5.2 auf main.** Der Tag hatte drei
+Stränge: die Registrierung vereinfacht (v2.5.0), die Mailzustellung beobachtbar
+gemacht (v2.5.1), die Widersprüche aus dem externen Befund geschlossen (v2.5.2).
+Dazu liegen jetzt vier Reviews vor — Grok 4.6 vom 26., GLM 5.3 und GPT-5.6-sol
+vom 27., und der externe Nutzen/SEO/GEO-Befund v2 vom 27.
+
+**Morgen zuerst, in dieser Reihenfolge:**
+
+| # | Punkt | Wer | Warum jetzt |
+|---|---|---|---|
+| 1 | **Resend-Webhook anlegen + `RESEND_WEBHOOK_SECRET` setzen** | **Felix** | jeder Tag Wartezeit kostet Daten, die nicht nachholbar sind |
+| 2 | **V9** — veröffentlichter Fallback-Signaturschlüssel | **Entscheidung Felix** | blockiert seit drei Releases |
+| 3 | Zustellstatus der 30 Community-Konten klären | gemeinsam | die Vermutung zur geringen Nutzung steht und ist unbelegt |
+| 4 | ~50 ungeprüfte Findings aus GLM/GPT durchgehen | gemeinsam | darunter mehrere „Blocking"/„High" |
+| 5 | Deutschsprachiger Cluster (S-05) | Entscheidung Felix | größte inhaltliche Lücke, DSAG-Zielgruppe |
+
+**Danach:**
 
 | Punkt | Wer | Dringlichkeit |
 |---|---|---|
-| **Resend-Webhook anlegen + `RESEND_WEBHOOK_SECRET` setzen** | **Felix** | hoch — ohne das antwortet die Route 503 |
-| **V9** — veröffentlichter Fallback-Signaturschlüssel | **Entscheidung Felix** | hoch — blockiert seit zwei Releases |
-| ~50 ungeprüfte Findings aus den GLM/GPT-Reviews durchgehen | gemeinsam | hoch — darunter mehrere „Blocking"/„High" |
-| eslint-Gate prüft weder TypeScript noch React-Hooks | Entwicklung | hoch — aber eigener Change, siehe unten |
+| eslint-Gate prüft weder TypeScript noch React-Hooks | Entwicklung | hoch — eigener Change, siehe unten |
+| `llms.txt` anlegen | Entwicklung | mittel — einziger offener Punkt der Befund-Checkliste |
+| N-02: BPMN- und Sandbox-Zeile auf `~` | **Entscheidung Felix** | mittel — Positionierung, keine Korrektur |
+| `dev.` und `test.clean-core.io` lösen nicht auf | Felix (DNS) | mittel für die Doku |
 | Seiten-Überlauf auf schmalen Displays (`whitespace-nowrap`) | Entwicklung | mittel — eine Zeile |
 | V15, V16, V18 aus dem Grok-Befund | Entwicklung | mittel |
 | Die drei Tenant-Mails auf fluide Tabellen umbauen | Entwicklung | mittel |
 | Benefit-Karte: Proposal 2 (der echte Business-Pyramiden-Fixture) | Entscheidung Felix | mittel |
+| Mitte September: Befund v3 / Reindexierung messen | gemeinsam | Termin |
 | Review-Tooling in den Rechenstand committen | Entwicklung | niedrig |
-| Zufriedenheitsumfrage, fällig 02.09. | gemeinsam | mittel — Termin steht |
 
 ---
 
@@ -142,6 +156,36 @@ weiterhin URLs nennt, die es nicht gibt.
 
 **Dringlichkeit:** niedrig für den Betrieb, mittel für die Dokumentation — eine
 Anleitung, die auf eine tote Adresse zeigt, kostet jedes Mal eine Viertelstunde.
+
+---
+
+## Zustellstatus der dreißig Community-Konten
+
+**Warum:** Die Vermutung des Tages — die geringe Nutzung erklärt sich dadurch,
+dass die Freigabe- und Willkommensmails gefiltert wurden — ist plausibel, aber
+unbelegt. Der Webhook ab v2.5.1 beantwortet sie für **künftige** Registrierungen.
+Für die dreißig aus der Community-Aktivierung gibt es keine Ereignisse und wird es
+keine geben; sie liegen vor dem Umbau.
+
+**Was trotzdem geht:**
+
+1. Im Resend-Dashboard sind die Sendungen aus der Aktivierung noch einzeln
+   einsehbar. Die Empfängerdomänen gruppieren (`@knauf.com` und Konsorten gegen
+   Freemailer) gibt einen ersten Anhaltspunkt, ob es ein Konzernfilter-Muster ist.
+2. Der eigene Fall vom 27.08. ist der einzige mit bekanntem Ausgang: eigene
+   Domain, korrektes SPF/DKIM/DMARC, Zustellung mit Verzögerung **in den
+   Junk-Ordner**. Das ist Reputationsaufbau einer jungen Domain, kein Fehler in
+   der Anwendung — und es trifft jede Konzernadresse gleichermaßen.
+3. Die Zufriedenheitsumfrage am 02.09. ist der erste Anlass, diese Leute über
+   einen zweiten Kanal zu erreichen. Wenn sie über LinkedIn geht statt über
+   E-Mail, ist die Antwortquote gleichzeitig die Messung.
+
+**Was das für die Umfrage heißt:** die Frage „hast du die Willkommensmail
+bekommen?" gehört hinein. Sie kostet eine Zeile und beantwortet die teuerste
+offene Frage über die Plattform.
+
+**Dringlichkeit:** hoch, weil an dieser Vermutung hängt, ob das Produkt ein
+Nutzungs- oder ein Zustellproblem hat. Das sind völlig verschiedene Baustellen.
 
 ---
 
