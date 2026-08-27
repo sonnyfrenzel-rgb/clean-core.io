@@ -15,7 +15,7 @@ quietly dropped.
 
 ---
 
-## Blocking
+## Blocking — fixed
 
 **U1 · The "Differential Sandbox Tester" fabricates a passing verification and
 signs a finding off on the strength of it.**
@@ -46,6 +46,21 @@ of nothing, and it is exactly the shape a customer photographs.
 This is the defect class `tests/no-fabricated-figures.spec.ts` exists to prevent,
 at the highest severity it can occur at. Twenty lines below it sits a comment
 explaining two substitutions that were removed for the same reason.
+
+**Fixed.** The widget, its state and its handler are gone from stage 3. The
+capability it mimed was real and unexposed: `/api/test-s4-odata-read` reads
+records from a connected tenant, is auth-, MFA- and S/4-access-gated, returns a
+real `recordCount` and `sampleFields` — and no UI called it. Stage 5 already had
+the flow leading up to it (connect, discover services, pick one, list its entity
+types), so the read is now the last step of that flow: one button per entity
+type, feeding the `[odata-explorer]` console that is already there.
+
+What it reports is what came back. It does not compare anything against the
+generated TypeScript, so it does not use the word equivalence and it signs no
+finding off — the console line says so in as many words.
+`tests/fabricated-verification-guard.spec.ts` pins both halves: the fake stays
+gone, no `setTimeout` may write to `signedOffIds`, and the real read may not grow
+the claim the fake made.
 
 ---
 

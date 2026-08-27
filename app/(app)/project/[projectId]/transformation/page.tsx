@@ -54,7 +54,6 @@ export default function TransformationPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [signedOffIds, setSignedOffIds] = useState<Set<string>>(new Set());
   const [remediationMode, setRemediationMode] = useState<'strict' | 'clean'>('strict');
-  const [diffTestStatus, setDiffTestStatus] = useState<'idle' | 'running' | 'success'>('idle');
   const [findings, setFindings] = useState<SupportFinding[]>([]);
 
   useEffect(() => {
@@ -138,21 +137,19 @@ export default function TransformationPage() {
     el.scrollTo({ top: Math.max(0, targetScrollTop), behavior: 'smooth' });
   }, [transformedCode]);
 
-  const runDiffTest = () => {
-    setDiffTestStatus('running');
-    setTimeout(() => {
-      setDiffTestStatus('success');
-      const joinFinding = findings.find(f => f.construct === 'complex-sql-join');
-      if (joinFinding) {
-        const key = `${joinFinding.construct}-${joinFinding.location?.line}`;
-        setSignedOffIds(prev => {
-          const next = new Set(prev);
-          next.add(key);
-          return next;
-        });
-      }
-    }, 1200);
-  };
+  // `runDiffTest` lived here. It was a "Differential Sandbox Tester": a button
+  // that waited 1200ms on a setTimeout, then rendered "ResultSet Equivalence
+  // Verified" over "S/4HANA: 243 rows fetched / 243 items compared" — 243 being a
+  // literal in the markup — and added the complex-sql-join finding to
+  // `signedOffIds`, which feeds the compliance figure a few lines below. It
+  // executed nothing, contacted nothing and compared nothing, so it raised a
+  // score and signed off a finding on the strength of a timer.
+  //
+  // The capability it mimed is real and lives in stage 5, where the tenant
+  // connection actually exists: the OData explorer there now reads records from
+  // a chosen entity set through /api/test-s4-odata-read and reports the count it
+  // actually got back. What it does not claim is equivalence — nothing compares
+  // the generated TypeScript against those rows, so nothing says it does.
 
   // Two substitutions used to live here. `|| 70` invented a baseline for a
   // project that never got scored, and the `: 100` branch declared full
@@ -1227,49 +1224,6 @@ CMD ["node", "srv/service.js"]`
                 </div>
               </div>
 
-              {/* Section 5: Differential Sandbox Tester Widget */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                  <Terminal size={14} className="text-green-400" />
-                  <span>Differential Sandbox Tester</span>
-                </h4>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
-                  <p className="text-xs text-gray-400 leading-relaxed">
-                    Compare S/4HANA Core database query outputs directly with TS structures to verify data-type alignment and null coercion.
-                  </p>
-                  
-                  {diffTestStatus === 'idle' && (
-                    <button
-                      onClick={runDiffTest}
-                      className="w-full bg-green-600 hover:bg-green-700 text-slate-900 font-black text-xs uppercase py-3 rounded-xl transition-all shadow-md tracking-wider flex items-center justify-center gap-2"
-                    >
-                      <Terminal size={14} />
-                      <span>Run Differential ResultSet Test</span>
-                    </button>
-                  )}
-                  
-                  {diffTestStatus === 'running' && (
-                    <div className="w-full bg-slate-950 border border-white/5 py-4 rounded-xl flex flex-col items-center justify-center gap-2 text-xs font-mono text-green-400">
-                      <RefreshCw className="w-5 h-5 animate-spin" />
-                      <span>Querying S/4HANA Live Bridge...</span>
-                    </div>
-                  )}
-
-                  {diffTestStatus === 'success' && (
-                    <div className="w-full bg-emerald-950/25 border border-emerald-500/20 p-4 rounded-xl space-y-2">
-                      <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
-                        <CheckCircle2 size={14} />
-                        <span>ResultSet Equivalence Verified</span>
-                      </div>
-                      <p className="text-[11px] text-gray-400 font-mono leading-relaxed">
-                        ✅ S/4HANA: 243 rows fetched.<br />
-                        ✅ TypeScript Node.js: 243 items compared.<br />
-                        ✅ Type coercion holds (DB Null normalizations applied).
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
             
             {/* Footer */}

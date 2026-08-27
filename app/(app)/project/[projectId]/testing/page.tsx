@@ -86,6 +86,10 @@ export default function TestingSandboxPage() {
   const [odataSuggestedServices, setOdataSuggestedServices] = useState<Array<{ title: string; path: string }>>([]);
   const [odataEntityTypes, setOdataEntityTypes] = useState<Array<{ name: string; properties: Array<{ name: string; type: string; nullable: boolean }> }>>([]);
   const [odataServicePath, setOdataServicePath] = useState('');
+  // Per-entity-set result of an actual read against the connected tenant.
+  const [odataReadState, setOdataReadState] = useState<
+    Record<string, { status: 'reading' | 'done' | 'failed'; message: string; recordCount?: number }>
+  >({});
   const [odataSelectedService, setOdataSelectedService] = useState('');
   const [odataMessage, setOdataMessage] = useState('');
   const [odataTotalServices, setOdataTotalServices] = useState(0);
@@ -363,6 +367,75 @@ export default function TestingSandboxPage() {
       const msg = err instanceof Error ? err.message : 'Network error';
       setOdataMessage(`Metadata fetch failed: ${msg}`);
       setSandboxOutput(prev => prev + `[odata-explorer] [ERROR] ${msg}\n`);
+    }
+  };
+
+  /**
+   * Reads records from one entity set on the tenant the user has connected.
+   *
+   * This is the honest half of a widget that used to sit in stage 3 as a
+   * "Differential Sandbox Tester": a setTimeout that announced "ResultSet
+   * Equivalence Verified" over a hardcoded row count, having contacted nothing.
+   * The route it should have been calling already existed and was reachable from
+   * no UI at all.
+   *
+   * What this reports is exactly what came back — the record count and the field
+   * names in the first record. It does NOT compare anything against the generated
+   * TypeScript, so it does not use the word equivalence, and it does not sign
+   * any finding off. A read that reaches the tenant proves the entity set is
+   * there and readable with these credentials; that is worth knowing and it is
+   * all it is worth calling.
+   */
+  const handleReadEntitySet = async (entitySet: string) => {
+    setOdataReadState(prev => ({ ...prev, [entitySet]: { status: 'reading', message: '' } }));
+    setSandboxOutput(prev => prev +
+      `
+[odata-explorer] Reading records from ${entitySet} via ${odataSelectedService || 'the selected service'}...
+`);
+
+    try {
+      const token = await getAuth().currentUser?.getIdToken();
+      const response = await fetch('/api/test-s4-odata-read', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          useStoredCredentials: true,
+          servicePath: odataSelectedService || undefined,
+          entitySet,
+        }),
+      });
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        setOdataReadState(prev => ({
+          ...prev,
+          [entitySet]: { status: 'done', message: result.message || '', recordCount: result.recordCount },
+        }));
+        setSandboxOutput(prev => prev +
+          `[odata-explorer] [SUCCESS] ${result.recordCount ?? 0} record(s) returned from ${entitySet}.
+` +
+          (result.sampleFields?.length
+            ? `[odata-explorer] Fields in first record: ${result.sampleFields.join(', ')}
+`
+            : '') +
+          `[odata-explorer] Read complete. Note: this is a read, not a comparison — nothing here checks the generated code against these rows.
+`);
+      } else {
+        setOdataReadState(prev => ({
+          ...prev,
+          [entitySet]: { status: 'failed', message: result.message || 'Read failed.' },
+        }));
+        setSandboxOutput(prev => prev + `[odata-explorer] [ERROR] ${result.message || 'Read failed.'}
+`);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Network error';
+      setOdataReadState(prev => ({ ...prev, [entitySet]: { status: 'failed', message: msg } }));
+      setSandboxOutput(prev => prev + `[odata-explorer] [ERROR] ${msg}
+`);
     }
   };
 
@@ -1146,6 +1219,29 @@ export default function TestingSandboxPage() {
                                   </button>
                                   {odataExpandedEntity === et.name && (
                                     <div className="px-4 pb-3">
+                                      {/* Reads from the tenant that is actually connected. Reports
+                                          what came back and nothing more — no comparison against the
+                                          generated code happens here, so none is claimed. */}
+                                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleReadEntitySet(et.name)}
+                                          disabled={odataReadState[et.name]?.status === 'reading'}
+                                          className="inline-flex items-center gap-1.5 bg-white border border-emerald-200 hover:bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors disabled:opacity-60"
+                                        >
+                                          {odataReadState[et.name]?.status === 'reading' ? 'Reading…' : 'Read records from tenant'}
+                                        </button>
+                                        {odataReadState[et.name]?.status === 'done' && (
+                                          <span className="text-[10px] font-bold text-emerald-700">
+                                            {odataReadState[et.name]?.recordCount ?? 0} record(s) returned
+                                          </span>
+                                        )}
+                                        {odataReadState[et.name]?.status === 'failed' && (
+                                          <span className="text-[10px] font-bold text-rose-600">
+                                            {odataReadState[et.name]?.message}
+                                          </span>
+                                        )}
+                                      </div>
                                       <div className="bg-emerald-50/50 rounded-lg border border-emerald-100 overflow-hidden">
                                         <table className="w-full text-[10px]">
                                           <thead>
