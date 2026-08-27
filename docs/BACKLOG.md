@@ -1,7 +1,110 @@
 # Backlog
 
-Offene Punkte, die aus der Arbeit vom 19./20. August 2026 übrig geblieben sind.
-Kurz gehalten: was, warum, und wie dringend.
+Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
+Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
+
+**Stand 27.08.2026 — nach v2.5.0.** Drei Modell-Reviews des gesamten Codebestands
+liegen jetzt vor (Grok 4.6 am 26., GLM 5.3 und GPT-5.6-sol am 27.). Was daraus
+gefixt wurde, steht im `CHANGELOG.md` unter v2.5.0. Was offen ist, steht hier.
+
+| Punkt | Wer | Dringlichkeit |
+|---|---|---|
+| **V9** — veröffentlichter Fallback-Signaturschlüssel | **Entscheidung Felix** | hoch — blockiert seit zwei Releases |
+| ~50 ungeprüfte Findings aus den GLM/GPT-Reviews durchgehen | gemeinsam | hoch — darunter mehrere „Blocking"/„High" |
+| eslint-Gate prüft weder TypeScript noch React-Hooks | Entwicklung | hoch — aber eigener Change, siehe unten |
+| Seiten-Überlauf auf schmalen Displays (`whitespace-nowrap`) | Entwicklung | mittel — eine Zeile |
+| V15, V16, V18 aus dem Grok-Befund | Entwicklung | mittel |
+| Die drei Tenant-Mails auf fluide Tabellen umbauen | Entwicklung | mittel |
+| Benefit-Karte: Proposal 2 (der echte Business-Pyramiden-Fixture) | Entscheidung Felix | mittel |
+| Review-Tooling in den Rechenstand committen | Entwicklung | niedrig |
+| Zufriedenheitsumfrage, fällig 02.09. | gemeinsam | mittel — Termin steht |
+
+---
+
+### V9 braucht eine Entscheidung, keine Arbeit
+
+Der Fallback-Schlüssel `dev_audit_signing_key_fallback_clean_core` steht in drei
+Produktionsrouten. Er kann nicht weg, solange `tests/audit-compliance-v181.spec.ts`
+mit ihm signiert und das Ergebnis als gültig behauptet — CI würde brechen, sobald
+ein echter `AUDIT_SIGNING_KEY` gesetzt wird.
+
+Zwei Wege: CI bekommt einen eigenen Schlüssel als GitHub-Secret, oder der Fallback
+fliegt und der Test wird umgeschrieben. **Beides ist eine halbe Stunde Arbeit, aber
+es ist deine Entscheidung**, welcher Weg.
+
+GPT hat einen Punkt ergänzt, der die Dringlichkeit erhöht: der Produktions-Guard
+ist `NODE_ENV === 'production' && !emulator`. Ein Preview-Deployment signiert also
+mit der committeten Konstante — und wer die kennt, kann Audit-Packs fälschen, die
+die eigene Verify-Seite als echt ausweist.
+
+### Die ungeprüften Findings
+
+`docs/reviews/2026-08-27-GLM-TRIAGE.md` listet 24 namentlich, die Rohdateien von
+GPT enthalten weitere. **Sie sind Hypothesen, keine Befunde** — von 57 GLM-Claims
+waren fünf schlicht falsch, und zwei weitere hatten recht im Defekt und unrecht im
+Mechanismus.
+
+Am billigsten zuerst: die Engine-Findings brauchen je ein ABAP-Snippet und sind in
+Sekunden entschieden. Danach die Klasse, die alle drei Modelle unabhängig gefunden
+haben — erfundene Zahlen in Artefakten, die beim Kunden landen. Wenn davon auch nur
+die Hälfte hält, ist die Liste in `tests/no-fabricated-figures.spec.ts` deutlich zu
+kurz.
+
+### Der eslint-Gate
+
+`eslint.config.mjs` importiert `@typescript-eslint` und `eslint-plugin-react-hooks`
+und aktiviert **keins von beiden** — der `rules`-Block spreizt nur die Next-Regeln.
+`npm run lint` ist ein Pflichtschritt in der Deploy-Pipeline und prüft damit weder
+Typen noch Hooks. So kamen zwei Rules-of-Hooks-Verstöße durch ein grünes Gate.
+
+Bewusst nicht in v2.5.0 mitgenommen: das Einschalten der Regeln legt einen Rückstau
+frei, den man sehen und sortieren will, statt ihn in einen Release-Commit zu
+quetschen.
+
+### Was aus den Reviews methodisch zu lernen war
+
+Die drei Reviews überlappen **etwa zu einem Drittel**. Die zwei schwersten Defekte
+des Produkts fand jeweils genau ein Modell:
+
+- **Nur GPT:** MFA per gestohlenem ID-Token übernehmbar; der Audit-Pack signierte
+  Runs ohne sie zu prüfen und bevorzugte die client-schreibbare Projekt-Worklist.
+- **Nur GLM:** der gefälschte Sandbox-Tester; die eingeebnete Herkunft von
+  Katalog-Zuordnungen; der blinde eslint-Gate.
+
+**Ein zweites Modell ist keine Kontrolle, sondern ein anderer Suchscheinwerfer.**
+GLM leuchtet breit, GPT tief. Für die nächste Runde: beide, und getrennt triagieren.
+
+### Benefit-Karte
+
+Proposal 3 aus `2026-08-26-BENEFIT-NEXT-STEPS.md` ist erledigt — der Objekt-Roll-Call
+steht auf der Karte und zeigt SAPs eigene Nachfolger. **Proposal 2 ist offen:** die
+erfundene Kreditlimit-Geschichte durch die echte, eingefrorene Business-Pyramide aus
+dem Referenzlauf ersetzen. Der handgeschriebene Satz ist inzwischen als solcher
+gekennzeichnet und verlinkt die Datei zum Nachprüfen, aber generiert ist er nicht.
+
+### Kleinigkeiten mit Ansage
+
+- **Seiten-Überlauf:** `whitespace-nowrap` am Label „S/4HANA Sandbox Connection —
+  Security Profile" in `app/page.tsx`. 340px breit, bricht nicht um, schiebt die
+  Seite. Auf Windows passt es knapp, auf dem Linux-Runner nicht.
+- **Tenant-Mails:** die drei verbliebenen Mails nutzen noch das `<div>`-Padding mit
+  Media-Query. Mail-Clients strippen den `<style>`-Block; die zwei
+  Registrierungsmails sind deshalb bereits auf fluide Tabellen umgebaut.
+- **Review-Tooling:** Bundler und Consult-Skripte liegen nur im Session-Scratchpad.
+  Als `scripts/ai-review.mjs` committen, wenn das zur Gewohnheit wird. Zwei Notizen:
+  GLM 5.3 ist ein Reasoning-Modell und braucht `reasoning: { effort: 'low' }` plus
+  echten `max_tokens`-Spielraum, sonst kommt leerer Inhalt zurück. Für Optikfragen
+  ein Vision-Modell nehmen und Screenshots mitschicken — aber die Modelle sehen nur,
+  was man ihnen schickt.
+
+### Betriebsnotiz
+
+Der Firestore-Emulator sammelt über viele Suite-Läufe Zustand an, bis
+`/api/test/seed` ~29 Sekunden braucht und das 30s-Budget in `beforeAll` sprengt.
+Zwei Läufe fielen heute deswegen durch. **Emulator neu starten, kein Regressions-
+Verdacht.** Und lokal immer `--workers=1` — CI macht es auch so.
+
+---
 
 **Stand 20.08.2026, das Wichtigste zuerst:**
 
