@@ -3,6 +3,7 @@ import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
 import JSZip from 'jszip';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { verifyRunIntegrity } from '@/lib/run-signature';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { APP_VERSION } from '@/lib/version';
 import type { Project } from '@/lib/types';
@@ -102,13 +103,47 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // The run's own signature is checked before anything is signed on top of it.
+    // Confirming that `runHash` merely exists was the whole of the previous
+    // check, so a run altered after the fact came back out as a validly signed
+    // pack attesting to the altered content — the signature laundering the
+    // change rather than catching it.
+    {
+      const key = process.env.AUDIT_SIGNING_KEY || 'dev_audit_signing_key_fallback_clean_core';
+      const integrity = verifyRunIntegrity(runData, key);
+      if (!integrity.valid) {
+        logger.error('audit-pack refused: run integrity check failed', {
+          route: 'api/audit-pack/create',
+          projectId,
+          runId,
+          reason: integrity.reason,
+        });
+        return NextResponse.json(
+          {
+            error:
+              'This run no longer matches its own signature and cannot be exported. Re-run the analysis to produce a fresh, verifiable run.',
+          },
+          { status: 409 },
+        );
+      }
+    }
+
     // Hydrate a Project view (mirrors lib/project-loader) for the pure generators.
     const project = {
       id: projectId,
       ...projectData,
       ...runData,
-      worklist: projectData.worklist || runData.worklist,
-      extensibilityRoute: projectData.extensibilityRoute || runData.extensibilityRoute,
+      // Evidence comes from the run, never from the project.
+      //
+      // Both of these are in the client-writable update allowlist in
+      // firestore.rules, and both were read from the project in preference to
+      // the run. So the owner could delete an inconvenient finding, or mark it
+      // fully mapped, or change the recommended route, and the pack would sign
+      // the edited version and present it as bound to the immutable run. If the
+      // interactive worklist is ever worth exporting, it belongs in a separate,
+      // clearly user-attested file — not in the evidentiary sections.
+      worklist: runData.worklist ?? [],
+      extensibilityRoute: runData.extensibilityRoute,
     } as unknown as Project;
 
     // 1. Server-side file generation (identical set to the former client flow)

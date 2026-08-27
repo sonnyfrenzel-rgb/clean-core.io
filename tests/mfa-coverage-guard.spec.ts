@@ -42,10 +42,23 @@ const MUST_GATE = [
  * the factor being enrolled, and public verification has no session at all.
  */
 const MUST_NOT_GATE = [
-  'app/api/mfa/setup/start/route.ts',
-  'app/api/mfa/setup/verify/route.ts',
   'app/api/mfa/verify/route.ts',
   'app/api/export/verify/route.ts',
+];
+
+/**
+ * The two setup routes were in the list above, with the reasoning "enrolment
+ * cannot depend on the factor being enrolled". True for a first enrolment, and
+ * false for a re-enrolment — and an unconditional no-gate meant an account that
+ * already had MFA could have its factor replaced with nothing but a stolen ID
+ * token: start, take the new secret, compute its code, verify, done.
+ *
+ * So the rule is about the enrolled state rather than the route, and this list
+ * says so.
+ */
+const MUST_GATE_ONLY_WHEN_ALREADY_ENROLLED = [
+  'app/api/mfa/setup/start/route.ts',
+  'app/api/mfa/setup/verify/route.ts',
 ];
 
 test.describe('server-side MFA coverage', () => {
@@ -61,6 +74,18 @@ test.describe('server-side MFA coverage', () => {
     test(`${rel} does not require MFA`, () => {
       // Requiring the factor here would make enrolment impossible.
       expect(read(rel)).not.toMatch(/assertMfa(Satisfied|StepUp)\s*\(/);
+    });
+  }
+
+  for (const rel of MUST_GATE_ONLY_WHEN_ALREADY_ENROLLED) {
+    test(`${rel} gates a re-enrolment but not a first enrolment`, () => {
+      const s = read(rel);
+      // It must look at the stored state rather than gating unconditionally,
+      // which would make enrolling the first factor impossible.
+      expect(s, `${rel} does not check the enrolled state`).toContain('mfaEnabled');
+      expect(s, `${rel} does not require the existing factor`).toContain('assertMfaStepUp');
+      // And it must return before doing anything when the check fails.
+      expect(s).toMatch(/assertReEnrolmentAllowed\s*\(/);
     });
   }
 

@@ -8,20 +8,11 @@ import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
 import { AnalysisRun } from '@/lib/types';
+import { canonicalizeJson } from '@/lib/run-signature';
 
-// Stable canonical JSON serializer to secure cryptographic run integrity (Finding 2)
-function canonicalizeJson(obj: any): string {
-  if (obj === null || obj === undefined) return 'null';
-  if (typeof obj !== 'object') return JSON.stringify(obj);
-  if (Array.isArray(obj)) {
-    return '[' + obj.map(item => canonicalizeJson(item)).join(',') + ']';
-  }
-  const keys = Object.keys(obj).sort();
-  const parts = keys.map(key => {
-    return JSON.stringify(key) + ':' + canonicalizeJson(obj[key]);
-  });
-  return '{' + parts.join(',') + '}';
-}
+// The canonicaliser moved to lib/run-signature.ts so the route that verifies a
+// run uses the same one that produced it. Two implementations of "canonical"
+// drift, and a verification that drifts is a verification that passes.
 
 export async function POST(req: NextRequest) {
   // Tracked outside the try so the catch below can refund a reserved unit when the

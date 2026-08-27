@@ -11,6 +11,7 @@ process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-a
 
 import { createApprovalToken } from '../lib/approval-token';
 import { generateTOTP } from '../lib/totp';
+import { computeRunHash, signRunHash } from '../lib/run-signature';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase SDK in Node context for seeding and validation
@@ -588,15 +589,47 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
         modelCard: { provider: 'google-gemini', model: 'gemini-3-flash-preview', engineVersion: 'v1.22.1', catalogVersion: '2024.FPS02', byokUsed: false, analysisTimestamp: new Date().toISOString() },
       },
     });
-    await adminSetDoc(`projects/${projectId}/runs`, runId, {
-      runId, projectId, userId: uid, status: 'completed', runHash: 'testrunhash', signature: 'sig',
+    // A real signature, not the placeholders this used to seed. The audit-pack
+    // route now recomputes the hash and verifies the HMAC before it signs
+    // anything on top, so `runHash: 'testrunhash'` would be refused — correctly.
+    // Signing here with the same key the route resolves makes the test exercise
+    // the guarantee instead of a fiction.
+    const runPayload = {
+      runId, projectId, userId: uid, status: 'completed',
       analyzerVersion: 'v1.22.1', rulesetVersion: 'rules-v1.0', sapApiCatalogVersion: '2024.FPS02',
       extensibilityRoute: 'Side-by-Side (SAP BTP)', cleanCoreScore: 88, complexityScore: 40, criticalityScore: 30,
       evidenceReport: [], dataCoupling: [], codeInventory: [], worklist: [],
       originalRecommendation: 'cap', recommendationConfidence: 80, recommendationJustification: 'x',
+    };
+    const runHash = computeRunHash(runPayload);
+    const signingKey = process.env.AUDIT_SIGNING_KEY || 'dev_audit_signing_key_fallback_clean_core';
+    await adminSetDoc(`projects/${projectId}/runs`, runId, {
+      ...runPayload,
+      runHash,
+      signature: signRunHash(runHash, signingKey),
     });
-    return { projectId, runId };
+    return { projectId, runId, runHash };
   }
+
+  test('a run edited after signing cannot be exported', async ({ request }) => {
+    const email = `apk-tamper-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
+    const uid = cred.user.uid;
+    const token = await cred.user.getIdToken();
+    const { projectId, runId } = await seedRunnableProject(uid, 'tamper');
+
+    // The realistic edit: change the score in the run document and leave the
+    // signature alone. The route used to check only that runHash was present, so
+    // this produced a validly signed audit pack over the altered number.
+    await adminMergeDoc(`projects/${projectId}/runs`, runId, { cleanCoreScore: 99 });
+
+    const res = await request.post('/api/audit-pack/create', {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { projectId },
+    });
+    expect(res.status()).toBe(409);
+    expect((await res.json()).error).toContain('no longer matches its own signature');
+  });
 
   test('audit pack is generated and signed server-side for the owner', async ({ request }) => {
     const email = `apk-owner-${branchSuffix}-${Date.now()}@cleancore-test.io`;
