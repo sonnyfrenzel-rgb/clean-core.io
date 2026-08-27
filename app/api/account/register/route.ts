@@ -98,6 +98,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // No consent, no account. Recording the acceptance where it was given is only
+    // half of V14: an endpoint that activates regardless of what the body says
+    // makes the whole mechanism optional, because a client can simply post
+    // `acceptedTerms: false` and still come out `approved` with full API access.
+    // `assertAccountActive({ requireCurrentTerms })` would not catch it either —
+    // it grandfathers a *missing* acceptance so that pre-consent accounts are not
+    // locked out, and only blocks a previously accepted version that has gone
+    // stale. So the gate belongs here, at the one door into an active account.
+    if (!termsVersion) {
+      return NextResponse.json(
+        { error: 'The Terms of Service and Privacy Policy must be accepted before an account can be activated.' },
+        { status: 400 },
+      );
+    }
+
     const { activated, status } = await activateAccount(uid);
 
     if (!activated) {

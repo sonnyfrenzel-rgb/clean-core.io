@@ -265,6 +265,45 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     expect((await again.json()).activated).toBe(false);
   });
 
+  test('registration refuses to activate an account that did not accept the terms', async ({ request }) => {
+    const refuseEmail = `no-consent-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, refuseEmail, TEST_PASSWORD);
+    const refuseUid = cred.user.uid;
+    const refuseToken = await cred.user.getIdToken();
+
+    await setDoc(doc(firestoreDb, 'users', refuseUid), {
+      firstName: 'No',
+      lastName: 'Consent',
+      email: refuseEmail,
+      tier: 'pilot',
+      status: 'pending',
+      transformationsUsed: 0,
+      transformationsLimit: 5,
+      maxTeamMembers: 1,
+      orgId: null,
+      identityProvider: 'password',
+      createdAt: new Date(),
+      isAdmin: false,
+      authMethod: 'password',
+      s4TenantAccessAllowed: false,
+      s4TenantAccessRequested: false,
+      mfaEnabled: false,
+    });
+
+    // Recording consent where it was given is only half of V14. An endpoint that
+    // activates regardless of the body makes the mechanism optional: post false
+    // and come out approved with no consent_events row anywhere.
+    const res = await request.post('/api/account/register', {
+      headers: { 'Authorization': `Bearer ${refuseToken}` },
+      data: { acceptedTerms: false, acceptedPrivacy: false },
+    });
+    expect(res.status()).toBe(400);
+
+    const after = await getDoc(doc(firestoreDb, 'users', refuseUid));
+    expect(after.data()?.status).toBe('pending');
+    expect(after.data()?.termsVersionAccepted).toBeFalsy();
+  });
+
   test('a suspended account cannot reinstate itself through registration', async ({ request }) => {
     const suspendedEmail = `suspended-${branchSuffix}-${Date.now()}@cleancore-test.io`;
     const cred = await createUserWithEmailAndPassword(firebaseAuth, suspendedEmail, TEST_PASSWORD);

@@ -98,7 +98,22 @@ revoked *before* this release is `pending` with a zeroed quota and no
 The zeroed quota is the discriminator — a client-created profile always carries a
 limit of 5, because the Firestore create rule hardcodes it.
 
-243 tests, 0 failed. Note for local runs: the suite is flaky at Playwright's
+### Fixed — consent was recorded but not required
+
+A GLM 5.3 review of the whole codebase, run against this release, found a defect
+the release had introduced: `POST /api/account/register` recorded consent where it
+was given but activated the account either way. A client posting
+`acceptedTerms: false` came out `approved` with full API access and no
+`consent_events` row — which makes the V14 mechanism above optional in practice.
+`assertAccountActive` would not have caught it either; it grandfathers a *missing*
+acceptance so pre-consent accounts are not locked out, and only blocks a
+previously accepted version that has gone stale.
+
+The route now refuses activation without a consent record. The full review, and
+the one finding of its ~50 that was checked and refuted, are in
+`docs/reviews/2026-08-27-GLM-INDEX.md`.
+
+244 tests, 0 failed. Note for local runs: the suite is flaky at Playwright's
 default worker count against `npm run dev` (ECONNRESET, `auth/email-already-in-use`
 races between workers seeding the same emulator). Run it `--workers=1`, which is
 what CI does.
