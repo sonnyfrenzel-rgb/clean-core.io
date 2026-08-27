@@ -149,7 +149,7 @@ export default function Home() {
             "name": "What does a free SAP custom code assessment on Clean-Core.io give me?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Two answers, both as drafts you correct. What the program actually does, in business terms — a plain-language description, the process behind it as BPMN 2.0, a RACI in business roles, the standard operating procedure, and what the legacy code is still worth to the business. And how much work the move is — every finding split into what a released SAP successor settles, what is your decision, and what stays hand work. The limits are published before you upload anything, and every run is frozen into a signed audit trail you can hand to a reviewer. It is free for the SAP community: no sales call, no trial, no card."
+              "text": "Two answers, both as drafts you correct. First, what the program actually does — one sentence a process owner can contradict, and with it the process, the operating procedure, who owns which step, and what the code is still worth to the business, all in business language: the generator is not allowed a single technical term. Second, what it will cost to move — every finding split into what a released SAP successor settles, what is your decision, and what stays hand work, with the object-to-API mapping named object by object. The limits are published before you upload anything, and every run is frozen into a signed audit trail you can hand to a reviewer. It is free for the SAP community: no sales call, no trial, no card."
             }
           },
           {
@@ -157,7 +157,7 @@ export default function Home() {
             "name": "How does Clean Core reduce S/4HANA upgrade risk?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Custom code that modifies or bypasses the SAP standard is what makes an upgrade expensive: a core modification has to be reset in SPAU before the upgrade can proceed, and native SQL bypasses the database abstraction the target model depends on. Clean core keeps that logic out of the standard — extended in-app with ABAP Cloud (RAP) or side-by-side on SAP BTP (CAP), against released APIs. Clean-Core.io names those blockers in your own ABAP rather than guessing at them: findings are mapped against SAP's published Cloudification Repository, and anything structurally out of reach for a generator is flagged and isolated instead of being transformed into something plausible and wrong."
+              "text": "Custom code that reads or modifies the SAP standard directly is what makes an upgrade expensive: a core modification has to be reset in SPAU before the upgrade can proceed, native SQL bypasses the database abstraction the target model depends on, and every direct table read is a contract SAP never promised to keep. Clean core replaces those with released APIs — an upgrade-stable contract in place of the direct table read that carries the risk today — extended in-app with ABAP Cloud (RAP) or side-by-side on SAP BTP (CAP). Clean-Core.io names them in your own ABAP rather than guessing: findings are mapped against SAP's published Cloudification Repository object by object, and anything structurally out of reach for a generator is flagged and isolated instead of being transformed into something plausible and wrong."
             }
           },
           {
@@ -165,7 +165,7 @@ export default function Home() {
             "name": "Wie reduziert Clean Core das Upgrade-Risiko in S/4HANA?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Teurer wird ein Upgrade durch Eigenentwicklungen, die den SAP-Standard modifizieren oder umgehen: Eine Kernmodifikation muss in SPAU zurückgesetzt werden, bevor das Upgrade überhaupt laufen kann, und Native SQL umgeht die Datenbankabstraktion, auf der das Zielmodell aufsetzt. Clean Core hält diese Logik aus dem Standard heraus — in-app mit ABAP Cloud (RAP) oder side-by-side auf der SAP BTP (CAP), gegen freigegebene APIs. Clean-Core.io benennt diese Blocker in Ihrem eigenen ABAP, statt sie zu raten: Befunde werden gegen SAPs veröffentlichtes Cloudification Repository gemappt, und alles, was für einen Generator strukturell unerreichbar ist, wird markiert und isoliert statt in etwas Plausibles und Falsches überführt."
+              "text": "Teurer wird ein Upgrade durch Eigenentwicklungen, die direkt auf dem SAP-Standard lesen oder ihn modifizieren: Eine Kernmodifikation muss in SPAU zurückgesetzt werden, bevor das Upgrade überhaupt laufen kann, Native SQL umgeht die Datenbankabstraktion, auf der das Zielmodell aufsetzt, und jeder direkte Tabellenzugriff ist ein Vertrag, den SAP nie zugesagt hat. Clean Core ersetzt das durch freigegebene APIs — ein upgrade-stabiler Vertrag anstelle des direkten Tabellenzugriffs, der heute das Risiko trägt — in-app mit ABAP Cloud (RAP) oder side-by-side auf der SAP BTP (CAP). Clean-Core.io benennt sie in Ihrem eigenen ABAP, statt sie zu raten: Befunde werden Objekt für Objekt gegen SAPs veröffentlichtes Cloudification Repository gemappt, und alles, was für einen Generator strukturell unerreichbar ist, wird markiert und isoliert statt in etwas Plausibles und Falsches überführt."
             }
           }
         ]
@@ -401,6 +401,7 @@ export default function Home() {
             decision={reference.decision.count}
             handedBack={reference.handedBack.count}
             handedBackKinds={reference.handedBackKinds}
+            rollCall={reference.rollCall}
             classifiedObjects={catalogStats.classifiedObjects}
             constructsTotal={constructs.length}
             constructsFullyCovered={fullyCovered}

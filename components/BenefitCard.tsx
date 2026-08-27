@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import type { ReferenceObject } from '@/lib/reference-analysis';
 
 export interface BenefitCardProps {
   linesOfCode: number;
@@ -8,36 +9,53 @@ export interface BenefitCardProps {
   decision: number;
   handedBack: number;
   handedBackKinds: string[];
+  rollCall: ReferenceObject[];
   classifiedObjects: number;
   constructsTotal: number;
   constructsFullyCovered: number;
 }
 
 /**
- * The landing page's benefit block, built around the two questions every legacy
- * decision waits on.
+ * The landing page's benefit block.
  *
- * The market answers only one of them. smartShift inventories custom code and
- * reports what to retain, retire or redesign. CoreAssess.AI produces a backlog
- * mapped to approach, effort and complexity. Both speak to IT, and both sell on
- * coverage or on a percentage ("up to 70% faster") that a reader cannot check.
- * SAP Signavio Process Insights is the only one facing the business, and it
- * mines transaction data — it can show that a process is slow; it cannot say
- * what a Z-program does inside it.
+ * It used to be a two-column comparison whose *order* was the argument: the
+ * business question on the left and larger, the effort question on the right and
+ * smaller, because the market answers only the second one. Measured, that design
+ * did not survive a phone — 2231px at 360px wide, two and a half full screens,
+ * with the two halves stacking below 1024px so the comparison never happened.
+ * The closing sentence still said "the question on the right", which was simply
+ * false for most visitors.
  *
- * So the question nobody answers is the first one a process owner asks. It gets
- * the larger half of this card, and the order of the two columns is itself the
- * argument. Deliberately absent: any time or percentage claim. We compete on a
- * figure that can be recomputed, not on a bigger one.
+ * The lesson, and the rule for anyone editing this file: **the argument is
+ * carried by a sentence, never by the layout.** Layout is the one thing that
+ * cannot be relied on. The header now states the differentiation outright, which
+ * makes the two blocks below it ordinary containers that are free to stack.
  *
- * On the wording: `upgrade`, `audit` and `free SAP custom code assessment` are in
- * here because each is true of the shipped product and checkable — clean core
- * exists for upgrade stability, the pack really is signed, and it really is free.
- * The terms this market actually ranks for are not: "20–30% faster upgrades",
- * "reduce TCO by 62%", "over 50% of custom code unused". Chasing those means
- * writing them, which is the exact genre a whole release was spent removing.
- * Leaving them is a decision, not an oversight. See
- * `docs/reviews/2026-08-26-BENEFIT-NEXT-STEPS.md`.
+ * Deleted with the rewrite: a CSS-drawn BPMN row and a three-row RACI table.
+ * Both were hand-drawn stand-ins, and they were the two elements that made the
+ * whole card read as a mockup — while sitting next to the only genuinely
+ * computed figures on the page.
+ *
+ * What is real here, all computed at request time from an ABAP file that ships
+ * in this repository: the line count, the finding count, the three bands, the
+ * hand-work kinds, and the object roll-call. The one hand-written element left
+ * is the plain-words sentence, and it is labelled as hand-written — the reader
+ * can download the file and check it, which is the whole argument of the product
+ * applied to its own marketing.
+ *
+ * On the vocabulary: `upgrade`, `risk`, `audit`, `cost` and `value` are here
+ * deliberately, because each is true of the shipped product and checkable — a
+ * released successor really is an upgrade-stable contract, the pack really is
+ * signed. The terms this market ranks for are not, and stay out: "20–30% faster
+ * upgrades", "reduce TCO by 62%", "over 50% of custom code unused". Chasing them
+ * means writing them. See `docs/reviews/2026-08-26-BENEFIT-NEXT-STEPS.md`.
+ *
+ * The two block headings are real questions on purpose. The benefit-intent
+ * queries that reach this page are long-form questions sitting at positions
+ * 2–10, which come from answer engines extracting the page rather than from
+ * keyword density. Extractability is the lever, so the page is written as
+ * question and answer and the same pairs are mirrored into the FAQPage node in
+ * `app/page.tsx`. If you change the copy here, change those answers too.
  */
 export default function BenefitCard({
   linesOfCode,
@@ -46,6 +64,7 @@ export default function BenefitCard({
   decision,
   handedBack,
   handedBackKinds,
+  rollCall,
   classifiedObjects,
   constructsTotal,
   constructsFullyCovered,
@@ -59,152 +78,67 @@ export default function BenefitCard({
     { n: handedBack, label: 'hand work', bar: 'bg-rose-500', text: 'text-rose-700' },
   ];
 
-  // A four-step flow, drawn the way BPMN draws one: start, task, gateway, end.
-  const flow = [
-    { shape: 'circle', label: 'Order' },
-    { shape: 'task', label: 'Check limit' },
-    { shape: 'gateway', label: 'Over?' },
-    { shape: 'task', label: 'Block' },
-    { shape: 'circle-end', label: 'Done' },
-  ];
-
-  const raci = [
-    { step: 'Check credit limit', r: 'R', who: 'Credit Analyst' },
-    { step: 'Approve exception', r: 'A', who: 'Finance Lead' },
-    { step: 'Notify customer', r: 'C', who: 'Sales Ops' },
-  ];
+  // Six is what fits without becoming a table; the reference page carries them all.
+  const shown = rollCall.filter((o) => o.fromCatalog).slice(0, 6);
+  const withoutPath = rollCall.filter((o) => !o.fromCatalog).length;
 
   return (
     <section
       aria-labelledby="benefit-heading"
       className="rounded-[2rem] border border-slate-200 bg-white shadow-xl overflow-hidden"
     >
-      {/* The situation, in three lines rather than three paragraphs. */}
-      <div className="px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 pb-6">
-        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
-          The usual starting point
-        </p>
+      {/* The header carries the whole argument, so that nothing below it has to. */}
+      <div className="px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 pb-7">
         <h2
           id="benefit-heading"
-          className="mt-2 text-2xl sm:text-4xl font-black tracking-tight text-gray-950 leading-[1.1]"
+          className="text-2xl sm:text-4xl font-black tracking-tight text-gray-950 leading-[1.1]"
         >
-          Nobody remembers what this program does.
+          Nobody can say what this program does.
         </h2>
-        <p className="mt-3 text-sm sm:text-base text-slate-600 font-medium max-w-3xl leading-relaxed">
-          No documentation, no process description, and the colleague who built it left years ago.
-          So it sits there untouched — until the next S/4HANA upgrade makes it somebody&rsquo;s
-          problem. Every decision about it then waits on two questions, and only one of them usually
-          gets answered.
+        <p className="mt-4 text-sm sm:text-base text-slate-600 font-medium max-w-2xl leading-relaxed">
+          Somewhere in your S/4HANA transformation a Z-object is blocking a keep, adapt or retire
+          decision. The process owner cannot answer &ldquo;do we still need this?&rdquo;, so nobody
+          signs it off &mdash; and the row sits in the spreadsheet until the upgrade date makes it
+          somebody&rsquo;s emergency.
         </p>
-        <p className="mt-4 text-sm sm:text-base font-bold text-gray-900 max-w-3xl leading-relaxed">
-          You get an answer to both here — a free SAP custom code assessment that hands you drafts to
-          correct, with the limits named up front.
+        <p className="mt-4 text-sm sm:text-base font-bold text-gray-900 max-w-2xl leading-relaxed">
+          Every custom code tool will size the work. None of them tells the business what the work
+          is. This one answers both &mdash; a free SAP custom code assessment, with the limits
+          published before you upload anything.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-px bg-slate-200">
-        {/* The question nobody answers — the larger half. */}
-        <div className="lg:col-span-3 bg-white p-6 sm:p-10 md:p-12">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[11px] font-black uppercase tracking-widest text-emerald-600">
-              The business asks
-            </p>
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-emerald-700">
-              <Check size={11} /> Answered here
-            </span>
-          </div>
-          <h3 className="mt-2 text-xl sm:text-3xl font-black tracking-tight text-gray-950 leading-tight">
-            &ldquo;What does this thing actually do?&rdquo;
+      {/* Two blocks, one question each. Nothing in the copy depends on where they sit. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-slate-200 border-y border-slate-200">
+        <div className="bg-white p-6 sm:p-8 md:p-10">
+          <h3 className="text-lg sm:text-xl font-black tracking-tight text-gray-950 leading-tight">
+            &ldquo;Do we still need this program?&rdquo;
           </h3>
-
-          <div className="mt-6 space-y-5">
-            {/* In plain words */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                In plain words
-              </p>
-              <p className="mt-1.5 text-sm text-slate-700 leading-relaxed italic">
-                &ldquo;Checks open orders against the customer&rsquo;s credit limit and blocks
-                delivery when it is exceeded.&rdquo;
-              </p>
-            </div>
-
-            {/* The process, drawn */}
-            <div className="rounded-2xl border border-slate-200 p-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                The process behind it &middot; BPMN 2.0
-              </p>
-              <div className="mt-3 flex items-center gap-1 overflow-x-auto pb-1">
-                {flow.map((s, i) => (
-                  <div key={s.label} className="flex items-center gap-1 shrink-0">
-                    {s.shape === 'circle' && (
-                      <span className="w-5 h-5 rounded-full border-2 border-slate-400" aria-hidden />
-                    )}
-                    {s.shape === 'circle-end' && (
-                      <span className="w-5 h-5 rounded-full border-[3px] border-emerald-600" aria-hidden />
-                    )}
-                    {s.shape === 'task' && (
-                      <span className="px-2 py-1 rounded-md border-2 border-slate-300 text-[10px] font-bold text-slate-600 whitespace-nowrap">
-                        {s.label}
-                      </span>
-                    )}
-                    {s.shape === 'gateway' && (
-                      <span
-                        className="w-5 h-5 border-2 border-amber-500 rotate-45 shrink-0"
-                        aria-hidden
-                      />
-                    )}
-                    {i < flow.length - 1 && <span className="w-3 h-px bg-slate-300" aria-hidden />}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Who owns what */}
-            <div className="rounded-2xl border border-slate-200 p-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                Who owns which step &middot; RACI, in business roles
-              </p>
-              <table className="mt-3 w-full text-left">
-                <tbody className="divide-y divide-slate-100">
-                  {raci.map((row) => (
-                    <tr key={row.step}>
-                      <td className="py-1.5 pr-3 text-xs text-slate-700">{row.step}</td>
-                      <td className="py-1.5 pr-3">
-                        <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-black border border-emerald-300">
-                          {row.r}
-                        </span>
-                      </td>
-                      <td className="py-1.5 text-xs font-semibold text-slate-500">{row.who}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Plus the standard operating procedure, and what the legacy code is still worth to the
-              business. A draft to correct — which is a different job from writing on a blank page.
-            </p>
-          </div>
+          <p className="mt-4 text-sm text-slate-700 leading-relaxed italic border-l-2 border-emerald-500 pl-4">
+            &ldquo;Checks open orders against the customer&rsquo;s credit limit and blocks delivery
+            when it is exceeded.&rdquo;
+          </p>
+          <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+            A sentence a process owner can contradict &mdash; with the process behind it, the
+            operating procedure, who owns each step, and what the code is still worth. No technical
+            terms: the generator is forbidden them.
+          </p>
+          <p className="mt-4 text-xs text-slate-500 leading-relaxed">
+            Written by hand from the reference program we publish; your own upload is where the
+            generator writes it.{' '}
+            <Link href="/reference-analysis/source" className="font-bold text-emerald-700 hover:underline">
+              Download it and check the sentence
+            </Link>
+            .
+          </p>
         </div>
 
-        {/* The question everybody answers — compact. */}
-        <div className="lg:col-span-2 bg-slate-50/60 p-6 sm:p-10 md:p-12">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
-              IT asks
-            </p>
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-emerald-700">
-              <Check size={11} /> Answered here
-            </span>
-          </div>
-          <h3 className="mt-2 text-lg sm:text-xl font-black tracking-tight text-gray-800 leading-tight">
-            &ldquo;How much work is this?&rdquo;
+        <div className="bg-slate-50/60 p-6 sm:p-8 md:p-10">
+          <h3 className="text-lg sm:text-xl font-black tracking-tight text-gray-950 leading-tight">
+            &ldquo;What will it cost us to move it?&rdquo;
           </h3>
-
-          <p className="mt-5 text-xs text-slate-500 leading-relaxed">
-            On the {linesOfCode.toLocaleString('en-US')}-line reference program we publish —{' '}
+          <p className="mt-4 text-xs text-slate-500 leading-relaxed">
+            On the {linesOfCode.toLocaleString('en-US')}-line reference program we publish &mdash;{' '}
             {totalFindings} findings:
           </p>
 
@@ -214,77 +148,82 @@ export default function BenefitCard({
             ))}
           </div>
 
-          <dl className="mt-4 space-y-2.5">
+          <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
             {bands.map((b) => (
-              <div key={b.label} className="flex items-baseline gap-2">
-                <dt className="text-2xl font-black tabular-nums text-gray-950 leading-none w-9">{b.n}</dt>
+              <div key={b.label} className="flex items-baseline gap-1.5">
+                <dt className="text-2xl font-black tabular-nums text-gray-950 leading-none">{b.n}</dt>
                 <dd className={`text-xs font-black ${b.text}`}>{b.label}</dd>
               </div>
             ))}
           </dl>
-          <p className="mt-2 text-[11px] text-slate-500 leading-relaxed">
-            Settled = a released SAP successor from SAP&rsquo;s own data. Hand work ={' '}
-            {handedBackKinds.join(', ')} — structurally out of reach for any generator, so they are
-            flagged rather than guessed at.
-            {handedBackKinds.includes('modification') && (
-              <>
-                {' '}
-                The modification among them is an upgrade blocker in the literal sense: it has to be
-                reset in SPAU before an upgrade can proceed.
-              </>
-            )}
-          </p>
 
-          <ul className="mt-5 space-y-1.5 border-t border-slate-200 pt-4">
-            {['Object → released API mapping', 'A first RAP or CAP draft', 'Matching test scaffolding'].map(
-              (t) => (
-                <li key={t} className="flex items-start gap-2 text-xs text-slate-600">
-                  <span className="mt-1.5 w-1 h-1 rounded-full bg-slate-400 shrink-0" />
-                  <span>{t}</span>
+          {shown.length > 0 && (
+            <ul className="mt-5 space-y-1.5 border-t border-slate-200 pt-4">
+              {shown.map((o) => (
+                <li key={o.name} className="flex flex-wrap items-baseline gap-1.5 text-xs">
+                  <code className="font-mono font-bold text-slate-800">{o.name}</code>
+                  <span className="text-slate-400" aria-hidden>
+                    &rarr;
+                  </span>
+                  <code className="font-mono text-emerald-700">{o.successor}</code>
                 </li>
-              ),
-            )}
-          </ul>
+              ))}
+              {withoutPath > 0 && (
+                <li className="text-xs text-slate-500 pt-1">
+                  &hellip; and {withoutPath} with no released path, named rather than guessed at.
+                </li>
+              )}
+            </ul>
+          )}
+
+          <p className="mt-4 text-[11px] text-slate-500 leading-relaxed">
+            Settled = a released SAP successor from SAP&rsquo;s own data: an upgrade-stable contract
+            instead of the direct table read that carries the risk today. Hand work ={' '}
+            {handedBackKinds.join(' and ')} &mdash; flagged, never guessed at.
+          </p>
 
           <Link
             href="/reference-analysis"
-            className="mt-5 inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 hover:gap-2.5 transition-all"
+            className="mt-4 inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 hover:gap-2.5 transition-all"
           >
             The full run, and the file <ArrowRight size={13} />
           </Link>
         </div>
       </div>
 
-      {/* The point of the ordering. */}
-      <div className="px-6 sm:px-10 md:px-12 py-7 border-t border-slate-200 space-y-4">
+      <div className="px-6 sm:px-10 md:px-12 py-7 space-y-3">
         <p className="text-base sm:text-lg font-bold text-gray-900 leading-snug max-w-3xl">
-          Assessment tools answer the question on the right. Answering the left one as well is the
-          difference — and it is the question that decides whether the code is worth keeping at all.
+          Every tool in this market hands IT a longer list. This one closes the rows nobody could
+          decide.
         </p>
-        <p className="text-sm text-slate-600 font-medium max-w-3xl leading-relaxed">
-          Both answers are drafts for you to correct, and the limits are published before you upload
-          anything — {constructsFullyCovered} of {constructsTotal} construct classes fully covered,
-          the rest named. Every run is frozen into a signed audit trail you can hand to a reviewer.
-          It does not replace the architect. It shows them where to look — and the business why.
-        </p>
-        <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500 pt-1">
-          <Link href="/catalog" className="hover:text-emerald-700">
-            <strong className="text-slate-700 tabular-nums">
-              {classifiedObjects.toLocaleString('en-US')}
-            </strong>{' '}
-            SAP objects classified from SAP&rsquo;s own data
-          </Link>
-          <Link href="/how-it-works" className="hover:text-emerald-700">
-            <strong className="text-slate-700 tabular-nums">
-              {constructsFullyCovered} of {constructsTotal}
-            </strong>{' '}
-            ABAP construct classes fully covered — the rest named up front
-          </Link>
-          <span>
-            <strong className="text-slate-700">Free</strong> for the SAP community. No sales call, no
-            trial, no card.
-          </span>
-        </div>
+        {/* Facts, not prose: this is the part a reader scans rather than reads. */}
+        <ul className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-500">
+          <li>Both answers are drafts you correct</li>
+          <li aria-hidden className="text-slate-300">&middot;</li>
+          <li>
+            <Link href="/how-it-works" className="hover:text-emerald-700">
+              <strong className="text-slate-700 tabular-nums">
+                {constructsFullyCovered} of {constructsTotal}
+              </strong>{' '}
+              construct classes fully covered, the rest named
+            </Link>
+          </li>
+          <li aria-hidden className="text-slate-300">&middot;</li>
+          <li>Every run signed into an audit trail</li>
+          <li aria-hidden className="text-slate-300">&middot;</li>
+          <li>
+            <Link href="/catalog" className="hover:text-emerald-700">
+              <strong className="text-slate-700 tabular-nums">
+                {classifiedObjects.toLocaleString('en-US')}
+              </strong>{' '}
+              SAP objects classified from SAP&rsquo;s own data
+            </Link>
+          </li>
+          <li aria-hidden className="text-slate-300">&middot;</li>
+          <li>
+            <strong className="text-slate-700">Free</strong> &mdash; no sales call, no card
+          </li>
+        </ul>
       </div>
     </section>
   );

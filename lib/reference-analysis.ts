@@ -56,7 +56,28 @@ export interface ReferenceAnalysis {
   handedBack: ReferenceBucket;
   /** The kinds behind the handed-back bucket, so the page can name them. */
   handedBackKinds: string[];
+  /**
+   * The SAP objects this run actually touched, each with the released successor
+   * the catalog returned for it.
+   *
+   * A percentage proves nothing to an ABAP developer; `VBAK → API_SALES_ORDER_SRV`
+   * proves the same thing in a form they recognise on sight. Derived from the
+   * findings rather than curated, so it cannot drift from the run beside it, and
+   * limited to real object identifiers — several finding titles sit in
+   * `objectName` for findings that are about a construct rather than an object.
+   */
+  rollCall: ReferenceObject[];
   findings: EvidenceFinding[];
+}
+
+export interface ReferenceObject {
+  name: string;
+  /** e.g. 'Database Table', 'Function Module'. */
+  objectType: string;
+  /** The released successor, or null where the catalog has no path. */
+  successor: string | null;
+  /** True only for a catalog lookup — never for an inference. */
+  fromCatalog: boolean;
 }
 
 function bucketOf(f: EvidenceFinding): 'resolved' | 'decision' | 'handedBack' {
@@ -112,8 +133,40 @@ export function getReferenceAnalysis(): ReferenceAnalysis {
         'Structurally out of reach for any generator. They are flagged and isolated rather than guessed at — so nothing false ends up in your draft.',
     },
     handedBackKinds: Array.from(kinds).sort(),
+    rollCall: buildRollCall(evidence.findings),
     findings: evidence.findings,
   };
+}
+
+/**
+ * An ABAP identifier, and not a finding title that happens to sit in the same
+ * field. `objectName` carries both — "Legacy ALV Grid Display" is a construct,
+ * `VBAK` is an object — and only the second kind means anything in a roll-call.
+ */
+const OBJECT_NAME = /^[A-Z][A-Z0-9_]{2,29}$|^\/[A-Z0-9]+\/[A-Z0-9_]+$/;
+
+function buildRollCall(findings: EvidenceFinding[]): ReferenceObject[] {
+  const seen = new Map<string, ReferenceObject>();
+  for (const f of findings) {
+    const name = f.objectName;
+    if (!name || !OBJECT_NAME.test(name)) continue;
+    const existing = seen.get(name);
+    const successor = f.sapReplacement?.objectName ?? null;
+    const fromCatalog = f.sapReplacement?.confidence === 'Catalog Match';
+    // First writer wins, except that a catalog match always beats no match:
+    // the same table can appear in several findings, only one of which carries
+    // the replacement.
+    if (!existing) {
+      seen.set(name, { name, objectType: f.objectType || 'Object', successor, fromCatalog });
+    } else if (!existing.fromCatalog && fromCatalog) {
+      seen.set(name, { name, objectType: existing.objectType, successor, fromCatalog });
+    }
+  }
+  // Catalog matches first — they are the part that proves something.
+  return Array.from(seen.values()).sort((a, b) => {
+    if (a.fromCatalog !== b.fromCatalog) return a.fromCatalog ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
 }
 
 /** The raw source, for the download route on the reference page. */
