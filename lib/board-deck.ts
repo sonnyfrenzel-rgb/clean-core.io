@@ -81,12 +81,24 @@ export function buildBoardDeck(input: {
     colorStatus = 'success';
   }
 
+  /**
+   * A measurement, or an honest gap — never a stand-in that reads like one.
+   *
+   * This deck goes in front of a steering committee, which makes it the worst
+   * place in the product for `?? 100`. A project that was never scored used to
+   * present "100/100" and "100% coverage" here, and slide 5 turned an unmeasured
+   * complexity of 50 into "20 Weeks saved" and "€42,500/yr". See
+   * docs/ARCHITECTURE.md §5.3.
+   */
+  const measured = (n: number | null | undefined, fmt: (v: number) => string): string =>
+    typeof n === 'number' && Number.isFinite(n) ? fmt(n) : 'not computed';
+
   // Slide 1: BLUF (split slide)
   const slide1: SlideData = {
     title: 'Clean-Core Transformation Briefing',
     type: 'split',
     subtitle: `Recommendation: ${recommendation}`,
-    leftContent: `**Decision summary:**\n\n• **Target Architecture**: Clean Core Compliance tier using ${project.extensibilityRoute || 'In-App RAP / Side-by-Side CAP'}.\n• **Overall Readiness**: Clean Core Score is **${project.cleanCoreScore ?? 100}/100**.\n• **Rollup Risk Rating**: **${riskRating}** (${overallLevel.toUpperCase()}).\n• **Required Actions**: ${overallLevel === 'not-supported' ? 'Block deployment, redesign unsupported structures.' : overallLevel === 'partial' ? 'Require Lead Architect sign-off before transport.' : 'Proceed to release queue.'}`,
+    leftContent: `**Decision summary:**\n\n• **Target Architecture**: Clean Core Compliance tier using ${project.extensibilityRoute || 'In-App RAP / Side-by-Side CAP'}.\n• **Overall Readiness**: Clean Core Score is **${measured(project.cleanCoreScore, (v) => `${v}/100`)}**.\n• **Rollup Risk Rating**: **${riskRating}** (${overallLevel.toUpperCase()}).\n• **Required Actions**: ${overallLevel === 'not-supported' ? 'Block deployment, redesign unsupported structures.' : overallLevel === 'partial' ? 'Require Lead Architect sign-off before transport.' : 'Proceed to release queue.'}`,
     rightContent: `**Governance Status:**\n\n• **Risk Assessment**: ${riskRating}\n• **Evidence Level**: Evidentiary Board Presentation derived from the deterministic evidence engine\n• **Fingerprint Identity**: ${project.auditMetadata?.inputFingerprint?.sha256?.substring(0, 12) || 'N/A'}\n• **Model Registry**: ${project.auditMetadata?.modelCard?.model || `Clean-Core Compiler ${APP_VERSION}`}`,
     speakerNotes: `Decision-first board recommendation. This project is rated as ${riskRating} due to worst-case rollup of ${overallLevel} compliance. The target architecture is ${project.extensibilityRoute || 'standard Cloud SDK'}.`
   };
@@ -102,8 +114,8 @@ export function buildBoardDeck(input: {
     type: 'metrics',
     subtitle: 'High-confidence automated Clean Core migrations',
     metrics: [
-      { label: 'Coverage Estimate', value: `${project.coverageEstimate?.percentage ?? 100}%`, sub: 'Fully mapped constructs' },
-      { label: 'Clean Core Score', value: `${project.cleanCoreScore ?? 100}/100`, sub: 'Out of 100 maximum' },
+      { label: 'Coverage Estimate', value: measured(project.coverageEstimate?.percentage, (v) => `${v}%`), sub: 'Fully mapped constructs' },
+      { label: 'Clean Core Score', value: measured(project.cleanCoreScore, (v) => `${v}/100`), sub: 'Out of 100 maximum' },
       { label: 'Resolved Objects', value: `${fullySupportedCount} / ${inventoryCount || 1}`, sub: 'Static decomposition success' }
     ],
     content: [
@@ -206,27 +218,41 @@ export function buildBoardDeck(input: {
   };
 
   // Slide 5: Migration & Impact (metrics slide)
-  const complexity = project.complexityScore ?? 50;
-  const criticality = project.criticalityScore ?? 50;
-  const weeksSaved = Math.max(1, Math.round(complexity * 0.4));
-  const techDebtSaved = Math.round(complexity * 850);
-  const blastRadius = complexity > 70 ? 'High Impact' : complexity > 40 ? 'Moderate Impact' : 'Localized Impact';
+  //
+  // "Estimated Effort Saved" and "Annual Tech-Debt Saved" used to live here,
+  // computed as `complexity * 0.4` weeks and `complexity * 850` euros — from a
+  // complexity that itself defaulted to 50 when nothing had been measured. Two
+  // multipliers nobody can source, applied to a placeholder, printed as money in
+  // front of a board. They are gone rather than rewritten: there is no honest
+  // version of a savings figure this product can compute.
+  //
+  // What replaces them is what the run actually knows.
+  const complexity = project.complexityScore;
+  const criticality = project.criticalityScore;
+  const blastRadius =
+    typeof complexity !== 'number'
+      ? 'not computed'
+      : complexity > 70
+        ? 'High Impact'
+        : complexity > 40
+          ? 'Moderate Impact'
+          : 'Localized Impact';
 
   const slide5: SlideData = {
-    title: 'Modernization Business Case & Blast Radius',
+    title: 'Refactoring Impact',
     type: 'metrics',
-    subtitle: 'Evidentiary estimation of savings and refactoring impact',
+    subtitle: 'What the analysis measured — no savings are estimated',
     metrics: [
-      { label: 'Complexity Score', value: `${complexity}/100`, sub: `Criticality: ${criticality}/100` },
-      { label: 'Estimated Effort Saved', value: `${weeksSaved} Weeks`, sub: 'Automated target generation' },
-      { label: 'Annual Tech-Debt Saved', value: `€${techDebtSaved.toLocaleString()}/yr`, sub: 'Reduced maintenance footprint' }
+      { label: 'Complexity Score', value: measured(complexity, (v) => `${v}/100`), sub: `Criticality: ${measured(criticality, (v) => `${v}/100`)}` },
+      { label: 'Needs Hand Work', value: `${notSupportedCount}`, sub: 'Constructs no generator can transform' },
+      { label: 'Needs Review', value: `${partialCount}`, sub: 'Transformable, architect decides' }
     ],
     content: [
       `**Refactoring Blast Radius**: **${blastRadius}** based on external coupling and nesting depths.`,
       `**Migration Sequence**: Standardize custom databases first, followed by method signatures, and then UI integration.`,
-      `**Business Advantage**: Decoupling reduces SAP update cycles from months to days by isolating standard extensions from core upgrades.`
+      `**Effort and cost**: not estimated here. This deck reports what the engine measured; converting that into person-days or euros needs your own rates and your own delivery model.`
     ],
-    speakerNotes: `Complexity rating is ${complexity}/100. This translates to an estimated effort savings of ${weeksSaved} person-weeks via automated code generation. Tech debt reduction yields roughly €${techDebtSaved} annually in avoided custom maintenance.`
+    speakerNotes: `Complexity is ${measured(complexity, (v) => `${v}/100`)} and criticality ${measured(criticality, (v) => `${v}/100`)}. ${notSupportedCount} construct(s) cannot be transformed automatically and ${partialCount} need an architect decision. This deck deliberately carries no savings estimate — the figures it would take are not ours to invent.`
   };
 
   // Slide 6: Trust & Security Boundaries (bullets slide)
@@ -279,7 +305,18 @@ export function buildBoardDeck(input: {
     });
   }
 
-  if (complexity > 60) {
+  if (typeof complexity !== 'number') {
+    // Complexity used to default to 50 here, which is below this threshold — so a
+    // project that was never scored quietly produced no complexity risk row at
+    // all. Silence from a missing measurement reads exactly like a clean result.
+    riskRows.push({
+      col1: 'Complexity was not measured for this project',
+      col2: 'Lead Architect',
+      col3: 'Re-run the analysis so the complexity risk can be judged',
+      col4: 'Complexity score present in the run record',
+      status: 'warning'
+    });
+  } else if (complexity > 60) {
     riskRows.push({
       col1: 'High legacy code complexity',
       col2: 'QA Lead',

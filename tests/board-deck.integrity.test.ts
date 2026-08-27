@@ -118,7 +118,7 @@ test.describe('Board Deck Integrity & Drift Verification', () => {
     expect(dynproRow?.url).toBe(howItWorksUrl('dynpro-screen'));
   });
 
-  test('should correctly compute metrics savings and list risk register based on data-coupling writes', () => {
+  test('the deck states no savings, and lists the data-coupling risk', () => {
     const projectWithCoupling: Project = {
       ...baseProject,
       dataCoupling: [
@@ -128,11 +128,26 @@ test.describe('Board Deck Integrity & Drift Verification', () => {
     
     const deck = buildBoardDeck({ project: projectWithCoupling, findings: [] });
     
-    // Slide 5 (metrics) should contain Complexity and Effort Savings
+    // Slide 5 used to carry "Estimated Effort Saved" and "Annual Tech-Debt Saved",
+    // computed as complexity * 0.4 weeks and complexity * 850 euros — from a
+    // complexity that itself defaulted to 50 when nothing had been measured. This
+    // test asserted the first of those labels was present, which is how two
+    // unsourceable multipliers stayed in a deck meant for a steering committee.
     const slide5 = deck.slides[4];
     expect(slide5.type).toBe('metrics');
     expect(slide5.metrics).toBeDefined();
-    expect(slide5.metrics?.[1].label).toBe('Estimated Effort Saved');
+
+    const labels = slide5.metrics!.map((m) => m.label);
+    for (const gone of ['Estimated Effort Saved', 'Annual Tech-Debt Saved']) {
+      expect(labels, `${gone} came back`).not.toContain(gone);
+    }
+    // Nothing anywhere on the slide may quote money or person-weeks.
+    const slideText = JSON.stringify(slide5);
+    expect(slideText).not.toMatch(/€|person-weeks|Weeks Saved/i);
+
+    // What it does carry is what the run measured.
+    expect(labels).toContain('Complexity Score');
+    expect(labels).toContain('Needs Hand Work');
 
     // Slide 7 (risk) should contain BSEG table write risk
     const slide7 = deck.slides[6];

@@ -5,12 +5,18 @@ import clsx from 'clsx';
 
 interface BusinessValueAuditProps {
   projectId: string;
+  /**
+   * Null means the analysis did not produce it. The page used to substitute — an
+   * asset score of 82/55/35 picked by a string comparison, a maintenance cost
+   * from `(100 - score) * 180 + 1200` — so these were never null and the honest
+   * branches below were unreachable. See docs/ARCHITECTURE.md §5.3.
+   */
   bizFallback: {
-    legacyAssetScore: number;
-    technicalDebtLevel: string;
-    estimatedMaintenanceCost?: number;
-    estimatedMaintenanceCostRange?: { low: number; high: number };
-    valueDrivers: string[];
+    legacyAssetScore: number | null;
+    technicalDebtLevel: string | null;
+    estimatedMaintenanceCost?: number | null;
+    estimatedMaintenanceCostRange?: { low: number; high: number } | null;
+    valueDrivers: string[] | null;
     cloudRoiSummary: string;
   };
 }
@@ -29,13 +35,20 @@ export default function BusinessValueAudit({ projectId, bizFallback }: BusinessV
           {/* Legacy Asset Score */}
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
             <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Legacy Asset Value</span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-black text-slate-900">{bizFallback.legacyAssetScore}%</span>
-              <span className="text-[10px] text-green-600 font-extrabold">IP Score</span>
-            </div>
-            <div className="h-1.5 w-full bg-slate-200 rounded-full mt-2.5 overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${bizFallback.legacyAssetScore}%` }}></div>
-            </div>
+            {bizFallback.legacyAssetScore !== null ? (
+              <>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-black text-slate-900">{bizFallback.legacyAssetScore}%</span>
+                  <span className="text-[10px] text-green-600 font-extrabold">IP Score</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-200 rounded-full mt-2.5 overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${bizFallback.legacyAssetScore}%` }}></div>
+                </div>
+              </>
+            ) : (
+              // No bar either: a zero-width bar reads as "scored zero".
+              <span className="text-sm font-bold text-slate-400">not computed</span>
+            )}
           </div>
 
           {/* Technical Debt Estimate */}
@@ -48,7 +61,7 @@ export default function BusinessValueAudit({ projectId, bizFallback }: BusinessV
                 bizFallback.technicalDebtLevel === 'Medium' ? "bg-amber-100 text-amber-700 border border-amber-200" :
                 "bg-green-100 text-green-700 border border-green-200"
               )}>
-                {bizFallback.technicalDebtLevel} Debt
+                {bizFallback.technicalDebtLevel ? `${bizFallback.technicalDebtLevel} Debt` : 'Debt not computed'}
               </span>
             </div>
             <div className="mt-2 text-[10px] text-slate-500 font-bold leading-none">
@@ -67,12 +80,15 @@ export default function BusinessValueAudit({ projectId, bizFallback }: BusinessV
         <div className="space-y-2">
           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block font-mono">Legacy Business Value Drivers</span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {bizFallback.valueDrivers.map((driver, dIdx) => (
+            {(bizFallback.valueDrivers ?? []).map((driver, dIdx) => (
               <div key={dIdx} className="bg-slate-50/50 px-3 py-2 rounded-xl border border-slate-100 flex items-center gap-2 text-xs font-semibold text-slate-700">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                 <span className="truncate">{driver}</span>
               </div>
             ))}
+            {!bizFallback.valueDrivers?.length && (
+              <span className="text-xs text-slate-400 font-semibold">Not identified for this run.</span>
+            )}
           </div>
         </div>
 

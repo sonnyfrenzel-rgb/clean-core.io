@@ -553,19 +553,27 @@ ${codeToAnalyze}`;
 
     if (isJson && data) {
       // Local fallback for Confluence export
+      // Every field here used to carry a fallback that manufactured the answer when
+      // the model had not produced one: an asset score of 82/55/35 chosen by a
+      // string comparison, a maintenance cost of `(100 - score) * 180 + 1200`
+      // rendered into the export as €/yr, value drivers picked by searching the
+      // context for the word "partner", and a flat "~40%" ROI claim. This document
+      // is exported to Confluence and kept by a customer.
+      //
+      // The prompt three hundred lines above is careful about exactly this — it
+      // asks the model for a RANGE, hedged language and a calibration disclaimer.
+      // The fallback then threw that discipline away. Missing values are now
+      // missing, and the renderer says so.
       const bizFallback = {
-        legacyAssetScore: data.businessValueAnalysis?.legacyAssetScore || 
-          (data.standardFit?.potential === 'Low' ? 82 : data.standardFit?.potential === 'Medium' ? 55 : 35),
-        technicalDebtLevel: data.businessValueAnalysis?.technicalDebtLevel || 
-          ((data.cleanCoreScore || 0) < 50 ? 'High' : (data.cleanCoreScore || 0) < 75 ? 'Medium' : 'Low'),
-        estimatedMaintenanceCost: data.businessValueAnalysis?.estimatedMaintenanceCost || 
-          (Math.max(1500, (100 - (data.cleanCoreScore || 0)) * 180 + 1200)),
-        valueDrivers: data.businessValueAnalysis?.valueDrivers || 
-          (data.asIsContext?.toLowerCase().includes('partner') || data.asIsContext?.toLowerCase().includes('customer')
-            ? ["Business Partner Extension", "Custom Database Mapping", "ERP Outbound Decoupled Sync"]
-            : ["Custom Transaction Logic", "Validation Rule Engine", "Core Schema Enhancements"]),
-        cloudRoiSummary: data.businessValueAnalysis?.cloudRoiSummary || 
-          `Transforming this logic to a modern extensibility model will reduce core upgrade testing costs by ~40%, eliminate code maintenance overhead, and support alignment with S/4HANA Clean Core principles.`,
+        legacyAssetScore: data.businessValueAnalysis?.legacyAssetScore ?? null,
+        technicalDebtLevel: data.businessValueAnalysis?.technicalDebtLevel ??
+          (typeof data.cleanCoreScore === 'number'
+            ? (data.cleanCoreScore < 50 ? 'High' : data.cleanCoreScore < 75 ? 'Medium' : 'Low')
+            : null),
+        estimatedMaintenanceCost: data.businessValueAnalysis?.estimatedMaintenanceCost ?? null,
+        valueDrivers: data.businessValueAnalysis?.valueDrivers ?? null,
+        cloudRoiSummary: data.businessValueAnalysis?.cloudRoiSummary ??
+          'Not produced for this run. A cost or ROI figure requires your own maintenance baseline and rates; this analysis does not estimate one.',
         plainEnglishActionPlan: data.businessValueAnalysis?.plainEnglishActionPlan || [
           "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
           "2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.",
@@ -721,12 +729,12 @@ ${codeToAnalyze}`;
             <div class="card-grid" style="grid-template-cols: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
               <div class="card" style="border-left: 4px solid #00875a; background: #e3fcef10;">
                 <div class="card-title" style="color: #00875a;">Business Asset & ROI Audit</div>
-                <p style="font-size: 13px; margin-bottom: 8px;"><strong>Legacy Asset Score:</strong> ${bizFallback.legacyAssetScore}% (Custom IP Value)</p>
-                <p style="font-size: 13px; margin-bottom: 8px;"><strong>Technical Debt Level:</strong> ${bizFallback.technicalDebtLevel}</p>
-                <p style="font-size: 13px; margin-bottom: 12px;"><strong>Estimated Annual Maintenance Cost:</strong> ${bizFallback.estimatedMaintenanceCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}/yr</p>
+                <p style="font-size: 13px; margin-bottom: 8px;"><strong>Legacy Asset Score:</strong> ${bizFallback.legacyAssetScore !== null ? `${bizFallback.legacyAssetScore}% (Custom IP Value)` : 'not computed'}</p>
+                <p style="font-size: 13px; margin-bottom: 8px;"><strong>Technical Debt Level:</strong> ${bizFallback.technicalDebtLevel ?? 'not computed'}</p>
+                <p style="font-size: 13px; margin-bottom: 12px;"><strong>Estimated Annual Maintenance Cost:</strong> ${bizFallback.estimatedMaintenanceCost !== null ? `${bizFallback.estimatedMaintenanceCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}/yr` : 'not estimated'}</p>
                 <div style="font-size: 12px; margin-bottom: 6px;"><strong>Value Drivers:</strong></div>
                 <ul style="font-size: 12px; padding-left: 20px; margin-bottom: 10px;">
-                  ${bizFallback.valueDrivers.map(d => `<li>${d}</li>`).join('')}
+                  ${(bizFallback.valueDrivers ?? []).map(d => `<li>${d}</li>`).join('') || '<li>not identified for this run</li>'}
                 </ul>
                 <p style="font-size: 12px; font-weight: bold; background: #effcf6; padding: 10px; border-radius: 6px; border: 1px solid #d3f9e8; color: #006644; margin-top: 10px;">
                   <strong>Expected Cloud ROI:</strong> ${bizFallback.cloudRoiSummary}
@@ -1148,19 +1156,22 @@ ${codeToAnalyze}`;
     if (analysisData) {
       // Sync analysisData.cleanCoreScore with the centrally computed live value
       analysisData.cleanCoreScore = liveCleanCoreScore;
+      // Only `plainEnglishActionPlan` is rendered from this object (see
+      // PlainEnglishGuide below), and it is generic guidance rather than a
+      // measurement. The four invented figures that used to sit here alongside it
+      // — asset score, maintenance cost, value drivers, a "~40%" ROI line — were
+      // computed and never displayed, so they were pure liability: the next person
+      // to render this object would have shipped them.
       const bizFallback = {
-        legacyAssetScore: analysisData.businessValueAnalysis?.legacyAssetScore || 
-          (analysisData.standardFit?.potential === 'Low' ? 82 : analysisData.standardFit?.potential === 'Medium' ? 55 : 35),
-        technicalDebtLevel: analysisData.businessValueAnalysis?.technicalDebtLevel || 
-          ((analysisData.cleanCoreScore || 0) < 50 ? 'High' : (analysisData.cleanCoreScore || 0) < 75 ? 'Medium' : 'Low'),
-        estimatedMaintenanceCost: analysisData.businessValueAnalysis?.estimatedMaintenanceCost || 
-          (Math.max(1500, (100 - (analysisData.cleanCoreScore || 0)) * 180 + 1200)),
-        valueDrivers: analysisData.businessValueAnalysis?.valueDrivers || 
-          (analysisData.asIsContext?.toLowerCase().includes('partner') || analysisData.asIsContext?.toLowerCase().includes('customer')
-            ? ["Business Partner Extension", "Custom Database Mapping", "ERP Outbound Decoupled Sync"]
-            : ["Custom Transaction Logic", "Validation Rule Engine", "Core Schema Enhancements"]),
-        cloudRoiSummary: analysisData.businessValueAnalysis?.cloudRoiSummary || 
-          `Transforming this logic to a modern extensibility model will reduce core upgrade testing costs by ~40%, eliminate code maintenance overhead, and support alignment with S/4HANA Clean Core principles.`,
+        legacyAssetScore: analysisData.businessValueAnalysis?.legacyAssetScore ?? null,
+        technicalDebtLevel: analysisData.businessValueAnalysis?.technicalDebtLevel ??
+          (typeof analysisData.cleanCoreScore === 'number'
+            ? (analysisData.cleanCoreScore < 50 ? 'High' : analysisData.cleanCoreScore < 75 ? 'Medium' : 'Low')
+            : null),
+        estimatedMaintenanceCost: analysisData.businessValueAnalysis?.estimatedMaintenanceCost ?? null,
+        valueDrivers: analysisData.businessValueAnalysis?.valueDrivers ?? null,
+        cloudRoiSummary: analysisData.businessValueAnalysis?.cloudRoiSummary ??
+          'Not produced for this run. A cost or ROI figure requires your own maintenance baseline and rates; this analysis does not estimate one.',
         plainEnglishActionPlan: analysisData.businessValueAnalysis?.plainEnglishActionPlan || [
           "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
           "2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.",
