@@ -67,7 +67,25 @@ export interface ReferenceAnalysis {
    * `objectName` for findings that are about a construct rather than an object.
    */
   rollCall: ReferenceObject[];
+  /**
+   * The findings the engine says land on the business rather than on IT.
+   *
+   * The card's business half needs evidence of its own, or it asserts the
+   * differentiator while the effort half proves the commodity — which is the
+   * criticism the whole rewrite started from. These come from
+   * `needsBusinessDecision` on the finding, and the recommendation is rendered
+   * verbatim so a reader can see it was produced by the run rather than written
+   * for the page.
+   */
+  businessDecisions: ReferenceDecision[];
   findings: EvidenceFinding[];
+}
+
+export interface ReferenceDecision {
+  title: string;
+  lineStart: number;
+  /** The engine's own recommendation text, unedited. */
+  recommendation: string;
 }
 
 export interface ReferenceObject {
@@ -134,6 +152,9 @@ export function getReferenceAnalysis(): ReferenceAnalysis {
     },
     handedBackKinds: Array.from(kinds).sort(),
     rollCall: buildRollCall(evidence.findings),
+    businessDecisions: evidence.findings
+      .filter((f) => f.needsBusinessDecision === true)
+      .map((f) => ({ title: f.title, lineStart: f.lineStart, recommendation: f.recommendation })),
     findings: evidence.findings,
   };
 }

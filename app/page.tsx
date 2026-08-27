@@ -402,6 +402,7 @@ export default function Home() {
             handedBack={reference.handedBack.count}
             handedBackKinds={reference.handedBackKinds}
             rollCall={reference.rollCall}
+            businessDecisions={reference.businessDecisions}
             classifiedObjects={catalogStats.classifiedObjects}
             constructsTotal={constructs.length}
             constructsFullyCovered={fullyCovered}

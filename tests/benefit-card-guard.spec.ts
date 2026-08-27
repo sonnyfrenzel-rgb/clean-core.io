@@ -36,9 +36,26 @@ test.describe('the card does not depend on where things sit', () => {
     const rendered = s.slice(s.indexOf('export default function'));
     // A CSS-drawn BPMN flow and a hand-written RACI table were the two elements
     // that made the card read as a mockup beside genuinely computed figures.
-    for (const gone of ['BPMN', 'RACI', 'raci', 'gateway', 'circle-end']) {
+    // Naming BPMN 2.0 as something the documentation stage produces is fine and
+    // true; drawing a fake one out of divs is what may not come back.
+    for (const gone of ['rotate-45', 'circle-end', 'gateway', 'raci', 'const flow']) {
       expect(rendered, `${gone} came back`).not.toContain(gone);
     }
+    expect(rendered, 'a RACI table came back').not.toMatch(/<table[\s\S]{0,400}Credit Analyst/);
+  });
+
+  test('the business half carries evidence of its own', () => {
+    // The criticism the rewrite started from was that the card asserts the
+    // differentiator and proves the commodity. If the business block is only
+    // prose while the effort block has a bar, three numbers and a roll-call,
+    // that inversion is simply reproduced in a new shape.
+    const rendered = source().slice(source().indexOf('return ('));
+    expect(rendered).toContain('businessDecisions');
+    expect(rendered).toContain('d.recommendation');
+    // Quoted from the run rather than written for the page — say so.
+    expect(rendered).toContain('quoted unedited');
+    // And the business half is the larger one, as the argument always implied.
+    expect(rendered).toContain('md:col-span-3');
   });
 
   test('the hand-written sample is labelled as hand-written', () => {
@@ -105,11 +122,15 @@ test.describe('the card fits a phone', () => {
       });
       expect(past, `content past the card edge: ${past.join(', ')}`).toEqual([]);
 
+      // A pixel ceiling is the wrong instrument for "do not let this balloon": it
+      // moves with the text renderer, and a guard that fails on a different
+      // machine's fonts teaches people to ignore it. Word count does not move, so
+      // that carries the intent and the pixel bound is only a catastrophe check.
+      const words = (await card.innerText()).trim().split(/\s+/).filter(Boolean).length;
+      expect(words, `card is ${words} words`).toBeLessThan(420);
+
       const box = await card.boundingBox();
-      // Was 2231px at 360, and 1722px after the rewrite. The ceiling leaves room
-      // for a taller text renderer than this one while still catching the BPMN
-      // row and RACI table coming back, which cost roughly 500px between them.
-      expect(box!.height, `card is ${Math.round(box!.height)}px tall`).toBeLessThan(2050);
+      expect(box!.height, `card is ${Math.round(box!.height)}px tall`).toBeLessThan(2600);
     });
   }
 

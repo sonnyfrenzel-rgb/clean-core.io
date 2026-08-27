@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import type { ReferenceObject } from '@/lib/reference-analysis';
+import type { ReferenceObject, ReferenceDecision } from '@/lib/reference-analysis';
 
 export interface BenefitCardProps {
   linesOfCode: number;
@@ -10,6 +10,7 @@ export interface BenefitCardProps {
   handedBack: number;
   handedBackKinds: string[];
   rollCall: ReferenceObject[];
+  businessDecisions: ReferenceDecision[];
   classifiedObjects: number;
   constructsTotal: number;
   constructsFullyCovered: number;
@@ -65,6 +66,7 @@ export default function BenefitCard({
   handedBack,
   handedBackKinds,
   rollCall,
+  businessDecisions,
   classifiedObjects,
   constructsTotal,
   constructsFullyCovered,
@@ -97,9 +99,8 @@ export default function BenefitCard({
         </h2>
         <p className="mt-4 text-sm sm:text-base text-slate-600 font-medium max-w-2xl leading-relaxed">
           Somewhere in your S/4HANA transformation a Z-object is blocking a keep, adapt or retire
-          decision. The process owner cannot answer &ldquo;do we still need this?&rdquo;, so nobody
-          signs it off &mdash; and the row sits in the spreadsheet until the upgrade date makes it
-          somebody&rsquo;s emergency.
+          decision, because nobody can answer &ldquo;do we still need this?&rdquo; &mdash; so the row
+          sits in the spreadsheet until the upgrade date makes it an emergency.
         </p>
         <p className="mt-4 text-sm sm:text-base font-bold text-gray-900 max-w-2xl leading-relaxed">
           Every custom code tool will size the work. None of them tells the business what the work
@@ -108,9 +109,14 @@ export default function BenefitCard({
         </p>
       </div>
 
-      {/* Two blocks, one question each. Nothing in the copy depends on where they sit. */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-slate-200 border-y border-slate-200">
-        <div className="bg-white p-6 sm:p-8 md:p-10">
+      {/*
+        Two blocks, one question each. The business block is the larger one, as it
+        was in the original design — the market answers the other question and
+        this is the half that has to carry the difference. The asymmetry is now
+        only visual: nothing in the copy depends on it, so stacking costs nothing.
+      */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-px bg-slate-200 border-y border-slate-200">
+        <div className="md:col-span-3 bg-white p-6 sm:p-8 md:p-10">
           <h3 className="text-lg sm:text-xl font-black tracking-tight text-gray-950 leading-tight">
             &ldquo;Do we still need this program?&rdquo;
           </h3>
@@ -118,12 +124,7 @@ export default function BenefitCard({
             &ldquo;Checks open orders against the customer&rsquo;s credit limit and blocks delivery
             when it is exceeded.&rdquo;
           </p>
-          <p className="mt-4 text-sm text-slate-600 leading-relaxed">
-            A sentence a process owner can contradict &mdash; with the process behind it, the
-            operating procedure, who owns each step, and what the code is still worth. No technical
-            terms: the generator is forbidden them.
-          </p>
-          <p className="mt-4 text-xs text-slate-500 leading-relaxed">
+          <p className="mt-3 text-xs text-slate-500 leading-relaxed">
             Written by hand from the reference program we publish; your own upload is where the
             generator writes it.{' '}
             <Link href="/reference-analysis/source" className="font-bold text-emerald-700 hover:underline">
@@ -131,9 +132,38 @@ export default function BenefitCard({
             </Link>
             .
           </p>
+
+          {businessDecisions.length > 0 && (
+            <div className="mt-6">
+              <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                And what lands on the business, not on IT
+              </p>
+              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                {businessDecisions.length === 1
+                  ? 'One finding in this run is nobody else’s call:'
+                  : `${businessDecisions.length} findings in this run are nobody else’s call:`}
+              </p>
+              {businessDecisions.slice(0, 2).map((d) => (
+                <div key={`${d.title}-${d.lineStart}`} className="mt-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs font-black text-gray-900">
+                    {d.title} <span className="font-mono font-normal text-slate-400">&middot; line {d.lineStart}</span>
+                  </p>
+                  <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">{d.recommendation}</p>
+                </div>
+              ))}
+              <p className="mt-2 text-[11px] text-slate-400 leading-relaxed">
+                Produced by the run, quoted unedited &mdash; not written for this page.
+              </p>
+            </div>
+          )}
+
+          <p className="mt-6 text-sm text-slate-600 leading-relaxed">
+            With it come the process as BPMN&nbsp;2.0, the operating procedure, who owns each step,
+            and what the code is still worth. No technical terms: the generator is forbidden them.
+          </p>
         </div>
 
-        <div className="bg-slate-50/60 p-6 sm:p-8 md:p-10">
+        <div className="md:col-span-2 bg-slate-50/60 p-6 sm:p-8 md:p-10">
           <h3 className="text-lg sm:text-xl font-black tracking-tight text-gray-950 leading-tight">
             &ldquo;What will it cost us to move it?&rdquo;
           </h3>
