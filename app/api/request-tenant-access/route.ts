@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApprovalToken } from '@/lib/approval-token';
 import { APP_VERSION } from '@/lib/version';
 import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
-import { APP_BASE_URL } from '@/lib/constants';
+import { APP_BASE_URL, CONTACT_EMAIL } from '@/lib/constants';
 import { escapeHtml } from '@/lib/utils';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { wrapEmailDocument } from '@/lib/email-layout';
@@ -162,6 +162,7 @@ export async function POST(request: NextRequest) {
           from: 'Clean-Core.io <system@clean-core.io>',
           to: 'info@clean-core.io',
           subject: emailSubject,
+          reply_to: CONTACT_EMAIL,
           html: wrapEmailDocument(emailHtml),
         }),
       });
@@ -265,6 +266,7 @@ export async function POST(request: NextRequest) {
             from: 'Clean-Core.io Team <team@clean-core.io>',
             to: email,
             subject: pendingSubject,
+            reply_to: CONTACT_EMAIL,
             html: wrapEmailDocument(pendingHtml),
           }),
         });

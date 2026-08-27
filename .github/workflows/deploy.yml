@@ -181,6 +181,7 @@ jobs:
             NEXT_PUBLIC_APP_URL=${{ steps.env-ctx.outputs.app_url }}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+            RESEND_WEBHOOK_SECRET=${{ secrets.RESEND_WEBHOOK_SECRET }}
             S4_ENCRYPTION_KEY=${{ secrets.S4_ENCRYPTION_KEY }}
             S4_HOST_ALLOWLIST=${{ secrets.S4_HOST_ALLOWLIST }}
             AUDIT_SIGNING_KEY=${{ secrets.AUDIT_SIGNING_KEY }}

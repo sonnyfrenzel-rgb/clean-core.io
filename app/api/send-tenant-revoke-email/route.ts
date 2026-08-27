@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { CONTACT_EMAIL } from '@/lib/constants';
 import { APP_VERSION } from '@/lib/version';
 import { verifyAdminRequest, assertAdminStepUp } from '@/lib/firebase-admin';
 import { escapeHtml } from '@/lib/utils';
@@ -157,6 +158,7 @@ export async function POST(request: NextRequest) {
           from: 'Clean-Core.io <team@clean-core.io>',
           to: email,
           subject: emailSubject,
+          reply_to: CONTACT_EMAIL,
           html: wrapEmailDocument(emailHtml),
         }),
       });

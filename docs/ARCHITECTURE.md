@@ -274,7 +274,42 @@ not perform. `tests/fabricated-verification-guard.spec.ts` additionally forbids
 any `setTimeout` in the transformation view from writing to `signedOffIds` —
 naming the shape, not just the string.
 
-### 5.8 Never substitute a figure for a measurement
+### 5.8 A 200 from the mailer is not a delivered mail
+
+`POST https://api.resend.com/emails` returning 200 means the message was queued.
+The platform logged that as "Sent" and learned nothing afterwards, so a welcome
+mail quarantined by a corporate filter and one that reached an inbox produced
+identical logs. The whole registration flow hangs on that single message, and
+thirty community accounts were onboarded without anyone being able to say
+whether it arrived — which is a plausible explanation for how little the
+platform was used.
+
+`POST /api/webhooks/resend` closes it. Three things about that route are
+deliberate:
+
+- **It is unauthenticated, and the signature is the authentication.** Resend
+  cannot carry a Firebase token. Verification is Svix-style HMAC over
+  `${svix-id}.${svix-timestamp}.${raw body}` with a five-minute replay window,
+  implemented in `lib/email-events.ts` rather than pulled in as a dependency.
+- **Without `RESEND_WEBHOOK_SECRET` it answers 503.** An endpoint that writes to
+  Firestore on anyone's say-so is worse than no endpoint, so the missing-config
+  case refuses rather than degrades.
+- **It answers 2xx for payloads it does not understand.** A webhook that returns
+  an error is retried, and retrying an event nobody will ever handle is noise on
+  both sides. Bounces and complaints additionally get a log line of their own,
+  because those are the cases somebody has to act on.
+
+Two things follow on the sending side. The Resend message id is recorded at send
+time (`recordEmailSent`) — without it a later event cannot be joined to the send.
+And every outgoing mail carries a plain-text alternative and a `reply_to` that
+exists: `team@` and `system@clean-core.io` are sending identities, not mailboxes
+at the provider, so a reply to either bounced while the welcome mail was asking
+the reader to reply.
+
+`email_events` is server-only in `firestore.rules` — the documents carry
+recipient addresses.
+
+### 5.9 Never substitute a figure for a measurement
 
 `|| <number>` on a value the product measured turns "we do not know" into
 something a customer will quote. The delivery handover once read `|| 10` tests

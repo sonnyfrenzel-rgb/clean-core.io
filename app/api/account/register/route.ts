@@ -7,6 +7,7 @@ import { wrapEmailDocument } from '@/lib/email-layout';
 import { buildWelcomeEmail, WELCOME_EMAIL_SUBJECT } from '@/lib/welcome-email';
 import { buildAdminSignupEmail, buildAdminSignupSubject } from '@/lib/admin-signup-email';
 import { CONTACT_EMAIL, TERMS_VERSION } from '@/lib/constants';
+import { recordEmailSent } from '@/lib/email-events';
 
 /**
  * POST /api/account/register
@@ -185,6 +186,12 @@ export async function POST(request: NextRequest) {
 /**
  * A failed mail must not fail the registration — the account is already active
  * and the person is already looking at the dashboard. Log it and move on.
+ *
+ * A 200 here means Resend queued the message and nothing more. That is why the
+ * message id is kept: it is the join key to the delivery events that arrive
+ * later at `/api/webhooks/resend`. Without it a welcome mail sitting in a
+ * corporate quarantine and one in an inbox produce identical logs, which is
+ * exactly the blind spot this pair of changes exists to remove.
  */
 async function sendMail(
   apiKey: string,
@@ -197,14 +204,69 @@ async function sendMail(
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ from: msg.from, to: msg.to, subject: msg.subject, html: msg.html }),
+      body: JSON.stringify({
+        from: msg.from,
+        to: msg.to,
+        subject: msg.subject,
+        // `team@` and `system@` are sending identities, not mailboxes at the
+        // provider — a reply to either bounces, and the welcome mail asks for
+        // one. Replies go to the address that exists.
+        reply_to: CONTACT_EMAIL,
+        html: msg.html,
+        // A message with no plain-text alternative is a long-standing spam
+        // signal, and both of these were HTML-only. The text part is generated
+        // from the same markup, so it cannot drift from what the reader sees.
+        text: htmlToText(msg.html),
+      }),
     });
     if (!res.ok) {
       console.error(`[Email] Failed to send ${msg.label} via Resend:`, await res.text());
-    } else {
-      console.log(`[Email] Sent ${msg.label} to ${msg.to}.`);
+      return;
+    }
+    const body = await res.json().catch(() => ({} as any));
+    const messageId: string | undefined = body?.id;
+    console.log(`[Email] Sent ${msg.label} to ${msg.to}. id=${messageId ?? 'unknown'}`);
+    if (messageId) {
+      // Best-effort: the mail is already away, and a failure to record it must
+      // not surface as a registration error.
+      await recordEmailSent(messageId, msg.to, msg.subject, msg.label).catch((err) =>
+        console.error(`[Email] Could not record sent event for ${msg.label}:`, err),
+      );
     }
   } catch (err) {
     console.error(`[Email] Error sending ${msg.label}:`, err);
   }
+}
+
+/**
+ * A readable plain-text part derived from the HTML body.
+ *
+ * Deliberately crude — it keeps link targets, collapses the table scaffolding
+ * and drops the styling. The point is that a text/plain alternative exists at
+ * all; a hand-written second copy would drift from the HTML within one edit.
+ */
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href, label) =>
+      `${String(label).replace(/<[^>]+>/g, '').trim()} (${href})`)
+    .replace(/<(br|\/p|\/div|\/tr|\/h[1-6]|\/li)[^>]*>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '- ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&rsquo;|&#x27;/g, "'")
+    .replace(/&ldquo;|&rdquo;|&quot;/g, '"')
+    .replace(/&mdash;/g, '—')
+    .replace(/&rarr;/g, '->')
+    .replace(/&bull;/g, '*')
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .split('\n')
+    .map((l) => l.trim())
+    .join('\n')
+    .trim();
 }
