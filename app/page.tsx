@@ -508,6 +508,18 @@ export default function Home() {
             first and larger, because the market answers only the technical one.
             Replaces the unprovable "save days" claim with a reproducible run. */}
         <div id="evidence" className="scroll-mt-14 max-w-6xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
+          <SectionHeader
+            eyebrow="One Reproducible Run"
+            title="Nobody can say what this program does"
+            titleId="benefit-heading"
+            align="left"
+          >
+            Somewhere in your S/4HANA transformation a Z-object is blocking a keep, adapt or retire
+            decision, because nobody can answer &ldquo;do we still need this?&rdquo; &mdash; so the
+            row sits in the spreadsheet until the upgrade date makes it an emergency. Every custom
+            code tool will size the work; none of them tells the business what the work is. This one
+            answers both, with the limits published before you upload anything.
+          </SectionHeader>
           <BenefitCard
             linesOfCode={reference.linesOfCode}
             totalFindings={reference.totalFindings}

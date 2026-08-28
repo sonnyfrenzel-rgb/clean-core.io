@@ -192,10 +192,16 @@ test.describe('the card fits a phone', () => {
   test('both questions are answered before the closing line', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.goto('/');
-    const card = page.locator('section[aria-labelledby="benefit-heading"]');
-    const text = await card.innerText();
-    // The differentiation is a sentence in the header, not an arrangement.
-    expect(text).toContain('None of them tells the business what the work is');
+    // The section, not just the card. The argument used to be an `h2` and two
+    // paragraphs inside the card — the section's case wearing a card's clothes,
+    // which is why this one block announced itself differently from every other
+    // section on the page. It moved out to the shared `SectionHeader` word for
+    // word; the claim is unchanged, so the assertion follows it rather than
+    // being dropped.
+    const section = page.locator('#evidence');
+    const text = await section.innerText();
+    // The differentiation is a sentence, not an arrangement.
+    expect(text).toContain('none of them tells the business what the work is');
     expect(text).toContain('Do we still need this program?');
     expect(text).toContain('What will it cost us to move it?');
   });

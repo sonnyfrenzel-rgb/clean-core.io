@@ -94,25 +94,16 @@ export default function BenefitCard({
       aria-labelledby="benefit-heading"
       className="rounded-[2rem] border border-slate-200 bg-white shadow-xl overflow-hidden"
     >
-      {/* The header carries the whole argument, so that nothing below it has to. */}
-      <div className="px-6 sm:px-10 md:px-12 pt-8 sm:pt-10 pb-7">
-        <h2
-          id="benefit-heading"
-          className="text-2xl sm:text-4xl font-black tracking-tight text-gray-950 leading-[1.1]"
-        >
-          Nobody can say what this program does.
-        </h2>
-        <p className="mt-4 text-sm sm:text-base text-slate-600 font-medium max-w-2xl leading-relaxed">
-          Somewhere in your S/4HANA transformation a Z-object is blocking a keep, adapt or retire
-          decision, because nobody can answer &ldquo;do we still need this?&rdquo; &mdash; so the row
-          sits in the spreadsheet until the upgrade date makes it an emergency.
-        </p>
-        <p className="mt-4 text-sm sm:text-base font-bold text-gray-900 max-w-2xl leading-relaxed">
-          Every custom code tool will size the work. None of them tells the business what the work
-          is. This one answers both &mdash; a free SAP custom code assessment, with the limits
-          published before you upload anything.
-        </p>
-      </div>
+      {/*
+        The header used to live here, inside the card: an `h2` and two paragraphs
+        that were the section's argument wearing a card's clothes. Every other
+        section on the page announces itself above its content with the same
+        eyebrow, heading and lead — this one announced itself from inside, which
+        is why it read as a different kind of thing, and it made the card two
+        paragraphs longer than it needed to be. The argument moved out to
+        `SectionHeader` in app/page.tsx, word for word. What is left here is what
+        a card should hold: the two questions and their answers.
+      */}
 
       {/*
         Two blocks, one question each. The business block is the larger one, as it
@@ -125,38 +116,51 @@ export default function BenefitCard({
           <h3 className="text-lg sm:text-xl font-black tracking-tight text-gray-950 leading-tight">
             &ldquo;Do we still need this program?&rdquo;
           </h3>
-          <p className="mt-4 text-sm text-slate-700 leading-relaxed italic border-l-2 border-emerald-500 pl-4">
-            &ldquo;Checks open orders against the customer&rsquo;s credit limit and blocks delivery
-            when it is exceeded.&rdquo;
-          </p>
-          <p className="mt-3 text-xs text-slate-500 leading-relaxed">
-            Written by hand from the reference program we publish; your own upload is where the
-            generator writes it.{' '}
-            <Link href="/reference-analysis/source" className="font-bold text-emerald-700 hover:underline">
-              Download it and check the sentence
-            </Link>
-            .
-          </p>
+
+          {/*
+            This half was four stacked text blocks and the reader had to work out
+            which one was the answer. The sentence — the whole point of the column
+            — was set in small italics behind a hairline, under a caveat that read
+            like a disclaimer before anyone knew what was being disclaimed.
+
+            Now it mirrors the other half: label, then the produced thing at the
+            size of a result, then its provenance underneath in the small type
+            provenance belongs in. Nothing here is new copy.
+          */}
+          <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5">
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
+              What the run answers
+            </p>
+            <p className="mt-2.5 text-base sm:text-lg text-gray-950 font-semibold leading-snug">
+              &ldquo;Checks open orders against the customer&rsquo;s credit limit and blocks
+              delivery when it is exceeded.&rdquo;
+            </p>
+            <p className="mt-3 text-[11px] text-slate-500 leading-relaxed">
+              Written by hand from the reference program we publish; your own upload is where the
+              generator writes it.{' '}
+              <Link href="/reference-analysis/source" className="font-bold text-emerald-700 hover:underline">
+                Download it and check the sentence
+              </Link>
+              .
+            </p>
+          </div>
 
           {businessDecisions.length > 0 && (
-            <div className="mt-6">
-              <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
-                And what lands on the business, not on IT
-              </p>
-              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
                 {businessDecisions.length === 1
-                  ? 'One finding in this run is nobody else’s call:'
-                  : `${businessDecisions.length} findings in this run are nobody else’s call:`}
+                  ? 'And one call only the business can make'
+                  : `And ${businessDecisions.length} calls only the business can make`}
               </p>
               {businessDecisions.slice(0, 2).map((d) => (
-                <div key={`${d.title}-${d.lineStart}`} className="mt-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-                  <p className="text-xs font-black text-gray-900">
-                    {d.title} <span className="font-mono font-normal text-slate-400">&middot; line {d.lineStart}</span>
+                <div key={`${d.title}-${d.lineStart}`} className="mt-2.5">
+                  <p className="text-sm font-black text-gray-950 leading-snug">
+                    {d.title} <span className="font-mono text-[11px] font-normal text-slate-400">&middot; line {d.lineStart}</span>
                   </p>
                   <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">{d.recommendation}</p>
                 </div>
               ))}
-              <p className="mt-2 text-[11px] text-slate-400 leading-relaxed">
+              <p className="mt-3 text-[11px] text-slate-400 leading-relaxed">
                 Produced by the run, quoted unedited &mdash; not written for this page.
               </p>
             </div>
