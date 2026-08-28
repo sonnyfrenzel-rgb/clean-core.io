@@ -1425,7 +1425,13 @@ export default function TestingSandboxPage() {
                 <button
                   onClick={handleGenerate}
                   disabled={isGenerating}
-                  className="mt-6 flex items-center justify-center gap-2 bg-[#00873a] hover:bg-[#006b2c] text-white px-6 py-3 rounded-xl shadow-lg shadow-green-900/10 hover:shadow-xl hover:shadow-green-900/20 transition-all font-black text-xs uppercase tracking-wider animate-bounce"
+                  /* `animate-bounce` removed. It made the only action on an empty
+                     step bounce for ever — an attention-grab aimed at something the
+                     reader is already looking at, and the loudest element on a page
+                     whose other primaries sit still. It also made the button
+                     impossible to click under test: Playwright waits for an element
+                     to stop moving, and this one never did. */
+                  className="mt-6 flex items-center justify-center gap-2 bg-[#00873a] hover:bg-[#006b2c] text-white px-6 py-3 rounded-xl shadow-lg shadow-green-900/10 hover:shadow-xl hover:shadow-green-900/20 transition-all font-black text-xs uppercase tracking-wider"
                 >
                   {isGenerating ? (
                     <><RefreshCw className="w-4 h-4 animate-spin" /> Generating Suite...</>

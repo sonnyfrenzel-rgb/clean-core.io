@@ -311,13 +311,18 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 4: TESTING SANDBOX ---
     console.log('Navigating to Stage 4: Testing Sandbox...');
     await page.click('button:has-text("Proceed to Testing")');
-    await page.waitForSelector('button:has-text("Run Selected"), button:has-text("Generate Suite")', { timeout: 60000 });
+    // "Generate Test Suite" is the empty state's own button. This used to look for
+    // "Generate Suite" — the card header's — which was the same action offered a
+    // second time on the same screen and is now shown only once a suite exists,
+    // as "Regenerate Suite". The selector followed the duplicate; it follows the
+    // real one now.
+    await page.waitForSelector('button:has-text("Run Selected"), button:has-text("Generate Test Suite")', { timeout: 60000 });
     
     // Check if Run Selected is already visible (preloaded suite), otherwise generate it
     const runButton = page.locator('button:has-text("Run Selected")');
     if (!(await runButton.isVisible())) {
-      console.log('Test suite not preloaded. Clicking Generate Suite...');
-      await page.click('button:has-text("Generate Suite")');
+      console.log('Test suite not preloaded. Clicking Generate Test Suite...');
+      await page.click('button:has-text("Generate Test Suite")');
       await expect(runButton).toBeVisible({ timeout: 60000 });
     } else {
       console.log('Test suite preloaded. Proceeding directly to execution.');
