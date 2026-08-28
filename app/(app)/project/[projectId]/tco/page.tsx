@@ -71,10 +71,15 @@ export default function TcoCalculatorPage() {
         if (!enforceActiveRun(data, projectId as string)) return;
         if (data) {
           setProject(data);
-          // Set initial LoC based on legacy code size if available
+          // The line count that was actually uploaded — not multiplied.
+          //
+          // This used to be `Math.max(1000, Math.min(lineCount * 10, 50000))`,
+          // so a ten-line snippet silently became 1,000 lines and every figure
+          // below was computed from it. The uploaded file is rarely the whole
+          // estate, but the number to model on is the reader's to supply; the
+          // field is editable and now starts from something true.
           if (data.legacyCode) {
-            const lineCount = data.legacyCode.split('\n').length;
-            setLoc(Math.max(1000, Math.min(lineCount * 10, 50000))); // Extrapolate LoC from raw uploaded text
+            setLoc(data.legacyCode.split('\n').length);
           }
         }
       } catch (err) {
@@ -88,8 +93,19 @@ export default function TcoCalculatorPage() {
 
   // Better Practice TCO Mathematical Model
   const calculations = useMemo(() => {
-    const scoreBefore = project?.cleanCoreScore || 30;
-    const scoreAfter = 95; // Upgraded target
+    // No `|| 30`. A project that was never scored has no baseline, and
+    // inventing one produced a full financial case out of a number nobody
+    // measured.
+    const scoreBefore =
+      typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : null;
+    // An assumption, and labelled as one wherever it is shown. Nothing in the
+    // run establishes what the code will score after modernisation.
+    const scoreAfter = 95;
+
+    // Without a baseline there is no model. Returning null here is the whole
+    // point: the page used to substitute 30 and then present exact euro figures,
+    // payback months and an ROI percentage for a project nothing had measured.
+    if (scoreBefore === null) return null;
 
     // 1. Pre-Modernization Maintenance Efforts (Days per year)
     // Legacy custom code is tightly coupled, requiring substantial adaptation effort per upgrade
@@ -155,6 +171,28 @@ export default function TcoCalculatorPage() {
   };
 
   if (loading) return <div className="p-8 text-center">Loading calculations database...</div>;
+
+  if (!calculations) {
+    return (
+      <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8">
+        <div className="print:hidden">
+          <Stepper currentStep={1} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
+        </div>
+        <div className="max-w-2xl mx-auto mt-10 bg-white border border-amber-200 rounded-[2rem] p-8 shadow-sm">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">No baseline to model against</h1>
+          <p className="text-sm text-slate-600 mt-3 leading-relaxed">
+            This project has no Clean Core score from a signed run, and every figure on this
+            page is derived from one. Run the analysis in stage&nbsp;1 first.
+          </p>
+          <p className="text-xs text-slate-400 mt-4 leading-relaxed">
+            The page used to substitute a score of 30 here and present exact annual savings,
+            a payback period and an ROI percentage on the strength of it. A financial case
+            built on a number nobody measured is worse than no page at all.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8 print:bg-white print:p-0">
@@ -313,7 +351,10 @@ export default function TcoCalculatorPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-[2rem] p-6 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[160px]">
             <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-full blur-2xl pointer-events-none"></div>
-            <span className="text-[10px] font-black text-green-400 uppercase tracking-widest block">Annual Net Savings</span>
+            {/* A scenario, and it says so. The inputs below are editable defaults
+                — day rates, upgrade frequency, implementation cost — and the
+                post-modernisation score of 95 is an assumption nothing measured. */}
+            <span className="text-[10px] font-black text-green-400 uppercase tracking-widest block">Annual Net Savings · Scenario</span>
             <div>
               <h3 className="text-4xl font-black tracking-tight mt-2 flex items-baseline">
                 €{calculations.annualSavings.toLocaleString()}

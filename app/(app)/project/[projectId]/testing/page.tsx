@@ -506,6 +506,10 @@ export default function TestingSandboxPage() {
   const getStats = () => {
     if (!testResults) return null;
     const total = testResults.length;
+    // An empty result array is truthy, so `0 / 0` reached the dashboard as
+    // `NaN%` and a broken chart. No tests executed is a state worth reporting;
+    // it is not a pass rate.
+    if (total === 0) return null;
     const passed = testResults.filter((r: any) => r.status === 'Passed').length;
     const failed = total - passed;
     const passRate = Math.round((passed / total) * 100);

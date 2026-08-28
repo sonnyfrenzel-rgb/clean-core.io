@@ -10,6 +10,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [v2.6.0] — 2026-08-28
+
+### Grüne Urteile, die niemand verdient hat
+
+Release 3 von fünf. Es ist die Fehlerklasse, für die in v2.5.0 der gefälschte
+Sandbox-Tester entfernt wurde und für die `docs/ARCHITECTURE.md` §5.7 die Regel
+formuliert — beide Reviews fanden sie an zehn Stellen zurück. Das Muster ist
+immer dasselbe: **ein Wert fehlt, und der Code setzt den bestmöglichen ein.**
+
+**Der angezeigte Clean Core Score war nicht der signierte.** Die Oberfläche
+rechnete ihn im Browser neu: 60 % Konstrukt-Abdeckung + 30 % ein „standardFitBonus",
+per Regex `/high|medium|low/` aus der Gemini-Prosa gelesen und auf **80**
+voreingestellt, wenn nichts passte + 10 % der gespeicherte Wert. Eine
+Modellantwort „High" hob damit die Anzeige über das, was der unveränderliche Run
+und das Audit-Pack belegen können — unter dem Etikett, auf dem die ganze
+Vertrauenskette ruht. Gezeigt wird jetzt, was `/api/runs/create` signiert hat.
+Ohne Lauf steht dort ein Gedankenstrich, keine 80.
+
+**„Malicious Payload Check passed" für Code, den nichts geprüft hat.** Beim
+Upload war der Scan echt und blockierend. Beim **Einfügen** nicht: die Textfläche
+setzte `legacyCode` direkt aus `onChange`, und der Banner hing allein daran, dass
+überhaupt Code da war. Der Scan ist jetzt in `lib/staged-code-scan.ts` und läuft
+auf beiden Wegen; der Banner zeigt das Ergebnis, nicht die Anwesenheit von Text.
+Bei einem Treffer erscheint stattdessen ein roter Block mit dem Grund.
+
+**Die Lieferseite erklärte unfertige Projekte für fertig.** Das Laden der Seite
+schrieb `status: 'completed'` — ohne Code, Tests, Dokumentation oder Freigabe
+anzusehen. Direkt auf `/delivery` zu navigieren genügte. Daneben stand unbedingt
+**„Ready for Deployment"** mit pulsierendem grünen Punkt, und der
+Integritätsbericht vergab grüne Haken für Artefakte, die er nie ansah. Der
+Schreibvorgang ist weg; der Bericht prüft jetzt, worüber er berichtet, und der
+QA-Block benennt, was fehlt.
+
+**„AI Verified" ohne Validator.** Kein Compiler, kein Testlauf, keine
+deterministische Prüfung hat den erzeugten Code angesehen — der Pfad nimmt sogar
+beliebigen Nicht-JSON-Text an. Es heißt jetzt „AI Generated".
+
+**Häkchen hoben die Compliance auf 100.** `signedOffIds.size / signOffFindings.length`
+zog den angezeigten Wert vom signierten 40 in Richtung 100. Die Häkchen sind
+Browserzustand: nicht gespeichert, an keine Person, keine Begründung und kein
+Prüfergebnis gebunden, und es entsteht kein neuer signierter Lauf. Angezeigt wird
+der signierte Wert; der Prüffortschritt bleibt als eigene Zeile.
+
+**Die TCO-Seite erfand einen Geschäftsfall.** `scoreBefore = cleanCoreScore || 30`,
+`scoreAfter = 95` fest verdrahtet, und `setLoc(Math.max(1000, Math.min(lineCount * 10, 50000)))`
+machte aus zehn hochgeladenen Zeilen **tausend**. Daraus wurden „Annual Net
+Savings", Amortisationsmonate und ROI in Euro. Ohne signierten Score rendert die
+Seite jetzt gar kein Modell, sondern sagt, warum. Die Zeilenzahl ist die echte,
+und die Kennzahl heißt „Scenario".
+
+**Vier weitere Substitutionen:** eine fehlende Abdeckungs-Zusammenfassung wurde
+zu „fully supported"; ein fehlendes Deployment-Ziel zu „Private Cloud (RISE)",
+einer konkreten Aussage über die Systemlandschaft des Kunden; null Findings zu
+„Pristine Codebase Detected", einem Urteil über Code, das aus dem Ausbleiben von
+Befunden nicht folgt; und `standardFit` zu **90 % / 50 % / 15 %** mit
+Fortschrittsbalken, wo das Modell eines von drei Wörtern liefert. Dazu `NaN%` als
+Bestehensquote bei leerem Testlauf.
+
+Neu: `tests/unearned-verdicts-guard.spec.ts`, 19 Prüfungen. Sie lesen den
+kommentarfreien Stand, damit die Erklärungen über den Korrekturen nicht ihre
+eigenen Zusicherungen erfüllen.
+
+364 Tests grün.
+
 ## [v2.5.5] — 2026-08-28
 
 ### Die Engine erfindet keine Stilllegungskandidaten mehr

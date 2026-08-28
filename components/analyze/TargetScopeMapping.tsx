@@ -52,13 +52,24 @@ export default function TargetScopeMapping({ showHelpMode, standardFit, recommen
           <div>
             <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase mb-1.5">
               <span>Standardization Fit</span>
-              <span className="text-green-600 font-extrabold">{standardFit?.potential === 'High' ? '90%' : standardFit?.potential === 'Medium' ? '50%' : '15%'}</span>
+              {/* 90 / 50 / 15 % were three numbers picked to look like a
+                  measurement. What the model actually returns is one of three
+                  words, so that is what is shown — with a bar of three steps
+                  rather than a percentage nothing computed. */}
+              <span className="text-green-600 font-extrabold uppercase">
+                {standardFit?.potential || 'Not assessed'}
+              </span>
             </div>
-            <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-green-500 rounded-full" 
-                style={{ width: standardFit?.potential === 'High' ? '90%' : standardFit?.potential === 'Medium' ? '50%' : '15%' }}
-              ></div>
+            <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden flex gap-0.5">
+              {['Low', 'Medium', 'High'].map((step, i) => {
+                const rank = standardFit?.potential === 'High' ? 3 : standardFit?.potential === 'Medium' ? 2 : standardFit?.potential === 'Low' ? 1 : 0;
+                return (
+                  <div
+                    key={step}
+                    className={`h-full flex-1 rounded-full ${i < rank ? 'bg-green-500' : 'bg-transparent'}`}
+                  />
+                );
+              })}
             </div>
           </div>
         </div>

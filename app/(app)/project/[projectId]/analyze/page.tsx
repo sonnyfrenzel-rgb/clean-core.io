@@ -3,11 +3,12 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { scanCodeContent } from '@/lib/staged-code-scan';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType, getAuth } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
-import { UploadCloud, FileCode2, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, Activity, Download, ChevronDown, X, HelpCircle, Info, Sparkles, Trash2, Layers, Shield, BarChart3, Package, Link2, Cpu, Zap } from 'lucide-react';
+import { UploadCloud, FileCode2, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, Activity, Download, ChevronDown, X, HelpCircle, Info, Sparkles, Trash2, Layers, Shield, ShieldAlert, BarChart3, Package, Link2, Cpu, Zap } from 'lucide-react';
 import clsx from 'clsx';
 import nextDynamic from 'next/dynamic';
 import { DocumentSection } from '@/components/DocumentSection';
@@ -175,44 +176,7 @@ export default function AnalyzePage() {
     if (!fileName.endsWith('.abap') && !fileName.endsWith('.txt')) {
       return 'Security Block: Unauthorized file type. Only standard ABAP source (.abap) or plain text (.txt) files are permitted.';
     }
-
-    const lower = content.toLowerCase();
-
-    // Exploit / Script Injection Checks
-    const maliciousPatterns = [
-      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-      /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
-      /javascript:/i,
-      /onerror\s*=/i,
-      /onload\s*=/i,
-      /eval\s*\(/i,
-      /exec\s*\(/i,
-      /system\s*\(/i,
-      /spawn\s*\(/i,
-      /fork\s*\(/i,
-      /sh\s+-c/i,
-      /bash\s+-c/i,
-      /cmd\.exe/i,
-      /powershell/i
-    ];
-
-    for (const pattern of maliciousPatterns) {
-      if (pattern.test(content)) {
-        return 'Security Block: Malicious script or shell injection payload detected in staged code. Raw iframe elements, shell commands, and execution wrappers are blocked.';
-      }
-    }
-
-    // Plaintext SAP Secrets Check
-    const secretKeywords = [
-      "sap_pass", "db_password", "client_secret", "begin private key", "-----begin"
-    ];
-    for (const key of secretKeywords) {
-      if (lower.includes(key)) {
-        return 'Security Block: Plaintext security credential leak detected. Master passwords or private keys are prohibited to prevent corporate security breaches.';
-      }
-    }
-
-    return null;
+    return scanCodeContent(content);
   };
 
   const handleFile = (file: File) => {
@@ -1098,42 +1062,34 @@ ${codeToAnalyze}`;
     return buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap', targetDeployment as 'public' | 'private').findings;
   }, [legacyCode, uploadedFileName, targetDeployment]);
 
-  // ── Live-reconcile Clean Core Score ──
-  // Generic formula: deterministic construct coverage is the primary signal.
-  // Standard Fit (from AI) indicates whether a replacement path exists.
-  // AI-stored score is only a minor correction to avoid wild disagreement.
+  // ── The Clean Core Score, as signed ──
   //
-  // Score semantics: "How ready is this code for Clean Core migration?"
-  //   - All constructs supported + High standard fit = 100%  (clear quick win)
-  //   - All constructs supported + Medium standard fit = 90% (path exists, some effort)
-  //   - Partial constructs + any fit = proportional (gaps need work)
-  //   - Out-of-scope constructs = lower (blocking issues)
-  const liveCleanCoreScore = useMemo(() => {
-    const stored = project?.cleanCoreScore ?? 0;
-    const totalF = findings.length;
-    const fullyCount = findings.filter(f => f.level === 'fully').length;
-    const partialCount = findings.filter(f => f.level === 'partial').length;
-    // 0 findings = trivially clean code → 100% coverage
-    const coveragePct = totalF > 0
-      ? Math.round(((fullyCount + partialCount * 0.5) / totalF) * 100)
-      : 100;
+  // This used to be a second, different number. `liveCleanCoreScore` recomputed
+  // it in the browser as 60 % construct coverage + 30 % a "standard fit bonus"
+  // read out of the Gemini narrative with /high|medium|low/ and defaulted to 80
+  // when nothing matched + 10 % the stored value. A model answering "High" moved
+  // the customer-facing gauge above what the immutable Run and the audit pack can
+  // prove — under the label the whole trust chain rests on.
+  //
+  // What is shown now is what `/api/runs/create` signed: the deterministic
+  // router's score, computed from the evidence before any AI ran. `routeReport`
+  // carries it during the run itself, the project document afterwards. When
+  // neither is there yet, nothing is shown — a score is a measurement, and the
+  // absence of one is not an 80.
+  // The scan verdict for whatever is currently staged, however it got there.
+  // The banner below used to hang on `legacyCode` existing, which is true for
+  // pasted code that nothing ever looked at.
+  const stagedScanBlock = useMemo(
+    () => (legacyCode ? scanCodeContent(legacyCode) : null),
+    [legacyCode],
+  );
 
-    // Extract standard fit from stored analysis (generic — works for any project)
-    let standardFitBonus = 80; // default if not available
-    try {
-      const analysis = typeof project?.analysis === 'object' ? project.analysis : 
-        (typeof project?.analysis === 'string' ? JSON.parse(project.analysis.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim()) : null);
-      const fit = analysis?.standardFit?.potential || '';
-      if (/high/i.test(fit)) standardFitBonus = 100;
-      else if (/medium/i.test(fit)) standardFitBonus = 80;
-      else if (/low/i.test(fit)) standardFitBonus = 60;
-    } catch { /* ignore parse errors */ }
-
-    // Weighted: 60% construct coverage, 30% standard fit, 10% stored AI score
-    const weighted = Math.round(coveragePct * 0.6 + standardFitBonus * 0.3 + stored * 0.1);
-    // Clamp to [0, 100]
-    return Math.min(100, Math.max(0, weighted));
-  }, [findings, project?.cleanCoreScore, project?.analysis]);
+  const signedCleanCoreScore: number | null =
+    typeof routeReport?.cleanCoreScore === 'number'
+      ? routeReport.cleanCoreScore
+      : typeof project?.cleanCoreScore === 'number'
+        ? project.cleanCoreScore
+        : null;
 
   const renderAnalysisContent = () => {
     if (!project?.analysis) return null;
@@ -1154,8 +1110,9 @@ ${codeToAnalyze}`;
     }
 
     if (analysisData) {
-      // Sync analysisData.cleanCoreScore with the centrally computed live value
-      analysisData.cleanCoreScore = liveCleanCoreScore;
+      // Deliberately not overwritten any more. This line used to replace the
+      // stored, signed score with the browser's recomputed one, so even the
+      // object handed to the renderer disagreed with the Run.
       // Only `plainEnglishActionPlan` is rendered from this object (see
       // PlainEnglishGuide below), and it is generic guidance rather than a
       // measurement. The four invented figures that used to sit here alongside it
@@ -1257,12 +1214,16 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                         className="stroke-green-500 fill-none transition-all duration-1000 ease-out" 
                         strokeWidth="8" 
                         strokeDasharray="351.8" 
-                        strokeDashoffset={351.8 - (351.8 * liveCleanCoreScore) / 100}
+                        strokeDashoffset={351.8 - (351.8 * (signedCleanCoreScore ?? 0)) / 100}
                       />
                     </svg>
                     <div className="absolute flex flex-col items-center">
-                      <span className="text-3xl font-extrabold text-white tracking-tight">{liveCleanCoreScore}%</span>
-                      <span className="text-[9px] text-slate-400 font-medium">Compliance</span>
+                      <span className="text-3xl font-extrabold text-white tracking-tight">
+                        {signedCleanCoreScore !== null ? `${signedCleanCoreScore}%` : '—'}
+                      </span>
+                      <span className="text-[9px] text-slate-400 font-medium">
+                        {signedCleanCoreScore !== null ? 'Compliance' : 'Not yet computed'}
+                      </span>
                     </div>
                   </div>
                   
@@ -1776,7 +1737,9 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               {/* Score */}
               <div className="flex items-center gap-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Compliance:</span>
-                <span className="text-xs font-black text-slate-900">{liveCleanCoreScore}%</span>
+                <span className="text-xs font-black text-slate-900">
+                  {signedCleanCoreScore !== null ? `${signedCleanCoreScore}%` : '—'}
+                </span>
               </div>
 
               {/* Target Deployment */}
@@ -1948,12 +1911,21 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 </h4>
                 
                 {/* Visual Security Badge */}
-                <div className="bg-green-50/50 border border-green-200/50 p-4 rounded-2xl text-xs text-green-900 leading-relaxed font-medium flex items-start gap-3">
-                  <CheckCircle2 size={16} className="text-green-600 mt-0.5 shrink-0" />
-                  <div>
-                    <strong>Malicious Payload Check passed:</strong> Staged files are automatically scanned for malicious command injections, unauthorized file extensions, and plaintext secrets. The file <strong>is clean and safe for processing</strong>.
+                {stagedScanBlock ? (
+                  <div className="bg-red-50 border border-red-200 p-4 rounded-2xl text-xs text-red-900 leading-relaxed font-medium flex items-start gap-3">
+                    <ShieldAlert size={16} className="text-red-600 mt-0.5 shrink-0" />
+                    <div>
+                      <strong>Malicious Payload Check failed:</strong> {stagedScanBlock} Remove the flagged content before analysing.
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-green-50/50 border border-green-200/50 p-4 rounded-2xl text-xs text-green-900 leading-relaxed font-medium flex items-start gap-3">
+                    <CheckCircle2 size={16} className="text-green-600 mt-0.5 shrink-0" />
+                    <div>
+                      <strong>Malicious Payload Check passed:</strong> The staged code was scanned for command injections and plaintext secrets, and nothing was found. Uploads are additionally restricted to <code>.abap</code> and <code>.txt</code>.
+                    </div>
+                  </div>
+                )}
 
                 {/* Terms and Conditions Consent Box */}
                 <label className="flex items-start gap-3 p-4 bg-slate-50/50 border border-slate-200/60 rounded-2xl cursor-pointer hover:bg-slate-55 transition-all select-none">

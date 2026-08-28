@@ -25,10 +25,20 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
           </h3>
           <p className="text-sm text-slate-500 mt-1">Deterministic static analysis of ABAP language constructs against target platform support matrix.</p>
         </div>
-        <div className="bg-emerald-50/20 border border-emerald-200/50 p-8 rounded-3xl text-center">
-          <span className="text-3xl">✅</span>
-          <h4 className="text-base font-extrabold text-emerald-800 mt-3">Pristine Codebase Detected</h4>
-          <p className="text-xs text-slate-500 mt-1">Staged legacy assets contain no unreleased database queries, screen flows, or dynamic call targets.</p>
+        {/* "Pristine Codebase Detected" was a verdict on the code. What the run
+            establishes is narrower: these detectors matched nothing. That is the
+            same output an unparseable file, an empty upload, or a construct the
+            matrix does not cover yet produces — and none of those is a clean
+            codebase. The sentence below states the finding; the heading no longer
+            states a conclusion the finding does not carry. */}
+        <div className="bg-slate-50 border border-slate-200 p-8 rounded-3xl text-center">
+          <span className="text-3xl">🔍</span>
+          <h4 className="text-base font-extrabold text-slate-800 mt-3">No findings from these detectors</h4>
+          <p className="text-xs text-slate-500 mt-1">
+            The static analysis matched no unreleased database queries, screen flows or dynamic
+            call targets in the staged code. It does not follow that the code is clean — only
+            that these checks found nothing to report.
+          </p>
         </div>
       </div>
     );

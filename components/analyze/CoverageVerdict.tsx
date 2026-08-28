@@ -17,9 +17,15 @@ export default function CoverageVerdict({ findings, summary }: CoverageVerdictPr
 
   const total = findings.length;
   const counts = summary?.counts || { fully: 0, partial: 0, notSupported: 0 };
-  const overall: SupportLevel = summary?.overall || 'fully';
+  // A missing summary used to become 'fully' — the best verdict available,
+  // awarded for the absence of data. Absent means absent.
+  const overall: SupportLevel | null = summary?.overall ?? null;
 
-  const fullyPercent = total > 0 ? Math.round((counts.fully / total) * 100) : 100;
+  // Zero findings used to render as 100 % fully covered. It is a defensible
+  // reading for genuinely trivial code and an indefensible one for a parse that
+  // returned nothing, and the donut cannot tell them apart. Zero of zero is
+  // shown as zero, and the verdict label above says "not summarised".
+  const fullyPercent = total > 0 ? Math.round((counts.fully / total) * 100) : 0;
   const reviewPercent = total > 0 ? Math.round((counts.partial / total) * 100) : 0;
   const outOfScopePercent = total > 0 ? Math.round((counts.notSupported / total) * 100) : 0;
 
@@ -132,9 +138,9 @@ export default function CoverageVerdict({ findings, summary }: CoverageVerdictPr
             
             {/* Center label */}
             <div className="absolute flex flex-col items-center text-center">
-              <span className="text-2xl leading-none">{LEVEL_EMOJI[overall]}</span>
+              <span className="text-2xl leading-none">{overall ? LEVEL_EMOJI[overall] : '—'}</span>
               <span className="text-[9px] text-slate-400 font-extrabold uppercase mt-1 tracking-wider leading-none">
-                {LEVEL_LABEL[overall]}
+                {overall ? LEVEL_LABEL[overall] : 'Not summarised'}
               </span>
             </div>
           </div>

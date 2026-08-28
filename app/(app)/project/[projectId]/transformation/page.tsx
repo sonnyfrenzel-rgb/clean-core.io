@@ -9,7 +9,7 @@ import { getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import Stepper from '@/components/Stepper';
-import { Code2, ArrowRight, ArrowLeft, RefreshCw, FileCode2, Terminal, AlertCircle, CheckCircle2, Cpu, Zap, Copy, Check, X, Folder, Lock, Unlock, Activity, Shield, Layers } from 'lucide-react';
+import { Code2, ArrowRight, ArrowLeft, RefreshCw, FileCode2, Terminal, AlertCircle, CheckCircle2, Cpu, Zap, Copy, Check, X, Folder, Lock, Unlock, Activity, Shield, Layers, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
 import { DocumentSkeleton } from '@/components/Skeleton';
 import NavigationButtons from '@/components/NavigationButtons';
@@ -160,17 +160,22 @@ export default function TransformationPage() {
   const scoredCleanCore =
     typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : undefined;
   const signOffFindings = findings.filter(f => f.requiresSignOff);
-  const currentScore =
-    scoredCleanCore === undefined
-      ? undefined
-      : signOffFindings.length > 0
-        ? Math.min(
-            100,
-            Math.round(
-              scoredCleanCore + (100 - scoredCleanCore) * (signedOffIds.size / signOffFindings.length),
-            ),
-          )
-        : scoredCleanCore;
+
+  // A third substitution used to live here, and it was the largest: ticking every
+  // local sign-off box raised the displayed compliance figure toward 100 —
+  //
+  //   scoredCleanCore + (100 - scoredCleanCore) * (signedOffIds.size / signOffFindings.length)
+  //
+  // The boxes are browser state. They are not persisted, not attached to a
+  // reviewer, not attached to a justification or any validator output, and no new
+  // Run is signed when they change. So a project the engine scored 40 could be
+  // photographed at 100 % compliance after six clicks, with the signed Run and
+  // the audit pack still saying 40.
+  //
+  // The score shown is the score that was signed. Review progress is real and
+  // worth seeing, so it stays — as its own line, counting findings, under its own
+  // name.
+  const currentScore = scoredCleanCore;
 
 
 
@@ -863,8 +868,12 @@ CMD ["node", "srv/service.js"]`
               <span className="text-xs font-bold uppercase tracking-widest text-green-700">Modernized Target (Node.js/TS)</span>
             </div>
             <div className="flex items-center gap-1">
-              <CheckCircle2 size={12} className="text-green-600" />
-              <span className="text-[10px] font-bold text-green-600 uppercase">AI Verified</span>
+              {/* "AI Verified" was unconditional. No compiler, no test runner and
+                  no validator has looked at this output — the transformation path
+                  parses the model's response, and falls back to accepting
+                  arbitrary non-JSON text. "Generated" is what actually happened. */}
+              <Sparkles size={12} className="text-green-600" />
+              <span className="text-[10px] font-bold text-green-600 uppercase">AI Generated</span>
             </div>
           </div>
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden rounded-b-xl border border-green-100 shadow-lg shadow-green-500/5 bg-[#1e1e1e] h-full relative">

@@ -77,6 +77,11 @@ export default function DeliveryPage() {
   // "10 Automated Tests" and "92% Estimated Coverage" under a green tick — on
   // the one screen a customer photographs for a steering pack.
   const testCaseCount = Array.isArray(project?.testCases) ? project.testCases.length : 0;
+  // What the delivery page can actually attest to, each read from an artefact
+  // rather than assumed. Nothing here is a decision — the page reports what is
+  // present and says plainly what is not.
+  const hasGeneratedCode = typeof project?.generatedCode === 'string' && project.generatedCode.trim().length > 0;
+  const hasDocumentation = typeof project?.documentation === 'string' && project.documentation.trim().length > 0;
   const coveragePercentage =
     typeof project?.coverageEstimate?.percentage === 'number'
       ? project.coverageEstimate.percentage
@@ -103,12 +108,14 @@ export default function DeliveryPage() {
             setDocumentation(projectData.documentation);
           }
           
-          if (projectData.status !== 'completed') {
-            const db = getDb();
-            await updateDoc(doc(db, 'projects', projectId as string), {
-              status: 'completed'
-            });
-          }
+          // Deliberately NOT written here any more.
+          //
+          // Loading this page used to mark the project `completed` — no check on
+          // generated code, tests, documentation or sign-off. Navigating straight
+          // to /delivery after nothing but an analysis run was enough. "Completed"
+          // then meant "somebody opened the last tab", which is not a fact worth
+          // storing and is exactly the kind of claim this stage exists to make
+          // carefully. Readiness is derived below from artefacts that exist.
 
           // Load the signed run history for the board-deck run-over-run trend.
           try {
@@ -546,10 +553,19 @@ jobs:
             <h2 className="text-xl md:text-2xl font-black text-white mb-3 tracking-tight uppercase">Integrity Report</h2>
             <ul className="space-y-4 mb-8 md:mb-10 flex-grow w-full">
               <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
-                <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                {/* Green only when there is generated code to package. The tick
+                    used to be unconditional, so an empty project got the same
+                    report as a finished one. */}
+                {hasGeneratedCode ? (
+                  <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                ) : (
+                  <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
+                )}
                 <div>
                   <span className="text-white block font-bold">
-                    {isAbapCloud ? 'abapGit Repo Layout' : 'Transformed CAP Structure'}
+                    {!hasGeneratedCode
+                      ? 'No transformed code generated'
+                      : isAbapCloud ? 'abapGit Repo Layout' : 'Transformed CAP Structure'}
                   </span>
                   <span className="text-[10px] text-gray-400">
                     {isAbapCloud 
@@ -597,17 +613,46 @@ jobs:
                 </div>
               </li>
               <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
-                <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                {hasDocumentation ? (
+                  <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                ) : (
+                  <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
+                )}
                 <div>
-                  <span className="text-white block font-bold">Enterprise BPMN Blueprint</span>
-                  <span className="text-[10px] text-gray-400">Docs: Mapped Level 1-4 architectural specs</span>
+                  <span className="text-white block font-bold">
+                    {hasDocumentation ? 'Enterprise BPMN Blueprint' : 'No blueprint generated'}
+                  </span>
+                  <span className="text-[10px] text-gray-400">
+                    {hasDocumentation
+                      ? 'Docs: Mapped Level 1-4 architectural specs'
+                      : 'Run stage 4 to produce the documentation this line reports on'}
+                  </span>
                 </div>
               </li>
             </ul>
             <div className="w-full p-4 bg-white/5 rounded-2xl border border-white/10 mt-4">
               <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1">QA Status</span>
-              <span className="text-green-400 font-bold flex items-center gap-2 text-xs md:text-sm uppercase tracking-tighter">
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" /> Ready for Deployment
+              {/* "Ready for Deployment" was unconditional, next to a pulsing green
+                  dot, on a page that had just marked the project completed for
+                  having been opened. It now names what is missing instead of
+                  asserting a readiness nobody established. */}
+              {hasGeneratedCode && testCaseCount > 0 && hasDocumentation ? (
+                <span className="text-green-400 font-bold flex items-center gap-2 text-xs md:text-sm uppercase tracking-tighter">
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" /> All artefacts present
+                </span>
+              ) : (
+                <span className="text-amber-400 font-bold flex items-center gap-2 text-xs md:text-sm uppercase tracking-tighter">
+                  <span className="w-2 h-2 bg-amber-400 rounded-full" /> Incomplete
+                </span>
+              )}
+              <span className="text-[10px] text-gray-400 block mt-1.5 normal-case font-medium leading-relaxed">
+                {hasGeneratedCode && testCaseCount > 0 && hasDocumentation
+                  ? 'Code, tests and documentation are all present. Deployment readiness remains an architect’s decision, not this page’s.'
+                  : `Missing: ${[
+                      !hasGeneratedCode && 'transformed code',
+                      testCaseCount === 0 && 'tests',
+                      !hasDocumentation && 'documentation',
+                    ].filter(Boolean).join(', ')}.`}
               </span>
             </div>
           </div>

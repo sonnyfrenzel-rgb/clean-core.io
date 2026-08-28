@@ -98,7 +98,14 @@ export default function RoutingRationale({
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Target Deployment</span>
             </div>
             <span className="text-sm font-black text-white">
-              {s4Deployment === 'public' ? 'Public Cloud' : 'Private Cloud (RISE)'}
+              {/* An undefined deployment used to render as "Private Cloud (RISE)" —
+                  a specific claim about the customer's landscape, made because a
+                  value was missing. */}
+              {s4Deployment === 'public'
+                ? 'Public Cloud'
+                : s4Deployment === 'private'
+                  ? 'Private Cloud (RISE)'
+                  : 'Not specified'}
             </span>
           </div>
         </div>
