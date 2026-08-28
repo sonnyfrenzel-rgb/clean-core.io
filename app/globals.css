@@ -1,6 +1,36 @@
 @import "tailwindcss";
 
 /* -------------------------------------------------------------
+ * The half-step shades this codebase already uses.
+ *
+ * `text-gray-955`, `bg-gray-150`, `border-green-150`, `text-slate-650` and the
+ * rest are written across 131 places in the app — and until now Tailwind emitted
+ * nothing for any of them, because none is a default shade and there was no
+ * `@theme` block to define them. Every one of those elements silently inherited
+ * its colour instead. It mostly looked close enough, which is why it survived:
+ * a heading meant to be near-black inherited near-black from the body.
+ *
+ * That is what "the cards do not feel like each other" is made of. Two headings
+ * side by side, one `text-gray-950` and one `text-gray-955`, were not two shades
+ * apart — one was styled and the other was not, and the second moved with
+ * whatever it happened to sit inside.
+ *
+ * Each value below is the midpoint of the two default shades it sits between, so
+ * defining them applies the intent that was written rather than introducing a
+ * new one.
+ * ------------------------------------------------------------- */
+@theme {
+  --color-gray-150: #eceef1;   /* between gray-100 and gray-200 */
+  --color-gray-450: #838b99;   /* between gray-400 and gray-500 */
+  --color-gray-650: #414b5c;   /* between gray-600 and gray-700 */
+  --color-gray-955: #01050d;   /* a shade below gray-950 — the darkest heading */
+  --color-green-150: #cdf9db;  /* between green-100 and green-200 */
+  --color-green-750: #157238;  /* between green-700 and green-800 */
+  --color-slate-650: #3b4a62;  /* between slate-600 and slate-700 */
+  --color-slate-850: #172032;  /* between slate-800 and slate-900 */
+}
+
+/* -------------------------------------------------------------
  * Premium Global Dark Mode Theme Adaptation Rules
  * Converts standard layout colors seamlessly when .dark is active
  * ------------------------------------------------------------- */

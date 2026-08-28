@@ -120,7 +120,8 @@ export default function LandingSlideshow() {
         {/* Left Side: Content & Navigation */}
         <div className="w-full lg:w-1/3 bg-gray-50 p-6 sm:p-8 md:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-gray-100">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-100 text-green-800 font-bold text-xs uppercase tracking-wider mb-6 sm:mb-8">
+            {/* The page's own eyebrow pill, not a second variant of it. */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-6 sm:mb-8 border border-emerald-100">
               The Clean-Core Process
             </div>
             

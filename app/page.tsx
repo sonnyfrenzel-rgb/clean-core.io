@@ -23,7 +23,6 @@ import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import LandingModals from '@/components/LandingModals';
 import LandingSlideshow from '@/components/LandingSlideshow';
 import QuickAnswer from '@/components/QuickAnswer';
-import SectionNav from '@/components/SectionNav';
 import SiteFooter from '@/components/SiteFooter';
 import TransformationShowroom from '@/components/TransformationShowroom';
 import TransformationReplay from '@/components/TransformationReplay';
@@ -460,21 +459,25 @@ export default function Home() {
           Nothing in it changed except its place — and the process strip inside,
           which answers the question the two halves left out.
         */}
-        {/* The scan bar. See components/SectionNav.tsx — the page is six
-            screens long and until now the only way through it was to scroll. */}
-        <div className="mt-16 relative z-30">
-          <SectionNav />
-        </div>
-
         {/* Transformation Showroom */}
         <section id="showroom" className="py-24 md:py-32 bg-slate-50/50 border-y border-gray-200/40 relative scroll-mt-14">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="text-center mb-16">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-green-700 bg-green-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-green-100">
-                Real Verified Output
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-100">
+                Three Worked Examples
               </span>
-              <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">Transformation Showroom</h2>
-              <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Representative engine outputs. Every example is a real transformation&mdash;verified, compiled, and tested against Clean-Core Engine {APP_VERSION}.</p>
+              {/* The heading says what the section is before the reader has to
+                  work it out. "Transformation Showroom" is a name; it does not
+                  tell anybody these are examples rather than their own results,
+                  and the section now sits second on the page, where that mistake
+                  is easiest to make. */}
+              <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">See a real ABAP program transformed</h2>
+              <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-3xl mx-auto font-light">
+                Three example programs, end to end: what each one is, what it does as a process, and
+                what the engine turns it into. Every output below is a real transformation &mdash;
+                verified, compiled and tested against Clean-Core Engine {APP_VERSION}. Your own code
+                goes through the same seven steps.
+              </p>
             </div>
             <Suspense fallback={null}>
               <TransformationReplay />
@@ -489,6 +492,21 @@ export default function Home() {
 
         {/* Interactive Slideshow */}
         <div id="process" className="scroll-mt-14 relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
+          {/* This was the only section on the page without a header, so it read as
+              a widget floating between two arguments rather than as the step that
+              follows the examples. Same eyebrow, same heading scale, same lead
+              width as every other section. */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center mb-16">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-100">
+              The Seven Steps
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">How a transformation actually runs</h2>
+            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-3xl mx-auto font-light">
+              Upload, analyze, design, transform, test, document, deliver. Each step produces
+              something you can read and check before the next one starts &mdash; and an architect
+              signs the result, not the tool.
+            </p>
+          </div>
           <LandingSlideshow />
         </div>
 
@@ -745,13 +763,13 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
         
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="text-center mb-16">
-            <span className="text-[10px] md:text-xs font-black bg-green-50 text-[#006b2c] px-3.5 py-1.5 rounded-full border border-green-150 uppercase tracking-widest inline-flex items-center gap-1.5 mb-4 select-none">
-              🛡️ Sovereign & Secured
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-100">
+              Sovereign &amp; Secured
             </span>
-            <h2 className="text-4xl md:text-5xl font-black text-gray-955 tracking-tighter mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">
               Your Data Stays Yours
             </h2>
-            <p className="text-gray-600 font-medium text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-3xl mx-auto font-light">
               European hosting, designed to support GDPR-aligned processing and erasure workflows, with self-service data erasure control. We built the security architecture the way we&apos;d want it for our own SAP systems.
             </p>
           </div>
