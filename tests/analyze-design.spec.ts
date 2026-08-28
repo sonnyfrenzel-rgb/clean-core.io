@@ -30,12 +30,20 @@ test.describe('Stage 1 & 2: Analysis & Solution Design E2E Tests', () => {
   });
 
   test('should verify the global glossary overlays toggle behavior', async ({ page }) => {
-    await page.goto('/');
-    
-    // 1. Check that the glossary floats on layout level
+    // The chatbot and the glossary live in the authenticated shell layout, not on
+    // the public landing page. This test used to load `/`, find nothing, and pass
+    // — for months. /knowledge is inside that shell and reachable signed-out, so
+    // it is where the overlays can actually be exercised.
+    await page.goto('/knowledge');
+    await page.waitForLoadState('domcontentloaded');
+
     const chatbotTrigger = page.locator('button:has-text("Ask AI")').first();
-    if (await chatbotTrigger.count() > 0) {
-      await expect(chatbotTrigger).toBeVisible();
-    }
+    await expect(chatbotTrigger).toBeVisible();
+
+    // The test is named for the toggle, so it has to toggle.
+    await chatbotTrigger.click();
+    await expect(page.locator('button:has-text("Close AI")').first()).toBeVisible();
+    await page.locator('button:has-text("Close AI")').first().click();
+    await expect(chatbotTrigger).toBeVisible();
   });
 });

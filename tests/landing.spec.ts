@@ -30,16 +30,15 @@ test.describe('Clean-Core.io Landing Page E2E Tests', () => {
     await page.waitForTimeout(1000);
     
     // Check if the Legal link is present in the footer
+    // Not conditional. An imprint that is not reachable from the landing page is
+    // a legal defect (§ 5 DDG), so its absence has to fail this test rather than
+    // skip it.
     const legalNoticeLink = page.locator('a[href="/impressum"]').last();
-    if (await legalNoticeLink.count() > 0) {
-      await expect(legalNoticeLink).toBeVisible();
-      // Click the link and verify navigation to /impressum
-      await legalNoticeLink.click();
-      await expect(page).toHaveURL(/\/impressum/, { timeout: 15000 });
-      // Verify the page renders legal content
-      const heading = page.locator('h1');
-      await expect(heading).toContainText(/Legal Notice/i, { timeout: 15000 });
-    }
+    await expect(legalNoticeLink).toBeVisible();
+    await legalNoticeLink.click();
+    await expect(page).toHaveURL(/\/impressum/, { timeout: 15000 });
+    const heading = page.locator('h1');
+    await expect(heading).toContainText(/Legal Notice/i, { timeout: 15000 });
   });
 
 });

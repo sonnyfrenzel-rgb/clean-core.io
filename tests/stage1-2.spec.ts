@@ -14,8 +14,11 @@ test.describe('Clean-Core.io Stage 1 & 2 E2E Tests', () => {
     // 2. Navigate to legal notice page and verify
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
+    // Not conditional: a missing imprint link is a legal defect, not a reason to
+    // skip the rest of the test.
     const legalNoticeLink = page.locator('a[href="/impressum"]').last();
-    if (await legalNoticeLink.count() > 0) {
+    await expect(legalNoticeLink).toBeVisible();
+    {
       await legalNoticeLink.click();
       await expect(page).toHaveURL(/\/impressum/, { timeout: 15000 });
       const heading = page.locator('h1');

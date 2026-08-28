@@ -13,12 +13,18 @@ test.describe('Stage 3 & 4: Code Transformation & Process Blueprinting E2E Tests
   });
 
   test('should verify global floating chatbot and glossary sidebars are structurally loaded', async ({ page }) => {
-    await page.goto('/');
+    // Two reasons this never tested anything: the selector named a title that
+    // exists nowhere in the codebase (the real one is "Open Clean Core Glossary
+    // Guide"), and both overlays live in the authenticated shell rather than on
+    // the public landing page the test was loading.
+    await page.goto('/knowledge');
+    await page.waitForLoadState('domcontentloaded');
 
-    // Check chatbot dialog triggers and glossary book buttons exist in layout
-    const glossaryBookTrigger = page.locator('[title="Search S/4HANA Glossary"], button:has-text("Glossary")').first();
-    if (await glossaryBookTrigger.count() > 0) {
-      await expect(glossaryBookTrigger).toBeVisible();
-    }
+    // Only the chatbot is asserted, because only the chatbot is mounted.
+    // `GlossarySidebar` is imported in app/(app)/layout.tsx and never rendered —
+    // dead code that this test claimed to cover. Making the assertion strict is
+    // what surfaced it; it is recorded in the plan rather than papered over by
+    // asserting something that is not on the page.
+    await expect(page.locator('button:has-text("Ask AI")').first()).toBeVisible();
   });
 });

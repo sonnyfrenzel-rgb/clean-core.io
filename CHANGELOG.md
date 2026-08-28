@@ -8,6 +8,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [v2.5.4] — 2026-08-28
+
+### Fünf Tests, die nichts geprüft haben
+
+Release 1 von fünf aus dem Umsetzungsplan
+(`docs/reviews/2026-08-28-UMSETZUNGSPLAN.md`). Zuerst, weil davon abhängt, was
+alle folgenden Testläufe wert sind.
+
+Fünf Specs hüllten ihre gesamte Zusicherung in eine Bedingung auf die Existenz
+des Elements, das sie prüfen sollten — `if (await locator.count() > 0)`.
+Verschwindet das Element, besteht der Test still. Das ist schlechter als ein
+fehlender Test, weil er als Absicherung mitgezählt wird.
+
+**Drei davon suchten Dinge, die es gar nicht gibt:**
+
+- `"Free Community Tool"` kommt im gesamten Code nicht vor. Die Seite sagt
+  „Free Community Edition".
+- Der Titel `"Search S/4HANA Glossary"` existiert nicht. Der echte lautet
+  „Open Clean Core Glossary Guide".
+- Der Chatbot-Auslöser lebt im angemeldeten Shell-Layout, während die Tests die
+  öffentliche Startseite luden. Er war dort nie zu finden.
+
+Alle drei bestanden monatelang, ohne etwas zu prüfen.
+
+**Was die Verschärfung zutage gefördert hat:** `GlossarySidebar` wird in
+`app/(app)/layout.tsx` importiert und **nie gerendert**. Nur der Chatbot hängt
+im Shell. Genau die Form, in der `UserOnboarding` gestern gefunden wurde — und
+der Test, der das hätte zeigen sollen, war der stillschweigend bestehende. Der
+Test prüft jetzt, was da ist; die tote Einbindung steht als Befund im Plan statt
+durch eine Zusicherung auf ein nicht vorhandenes Element überdeckt zu werden.
+
+Der Glossar-Test heißt „toggle behavior" und schaltet jetzt auch um: öffnen,
+prüfen, schließen, prüfen.
+
+Neu: `tests/no-vacuous-tests.spec.ts`. Eine bewusst grobe, repo-weite Prüfung —
+keine Spec darf eine Zusicherung davon abhängig machen, dass das zugesicherte
+Element existiert.
+
+324 Tests grün.
+
 ## [v2.5.3] — 2026-08-28
 
 ### Zustellzahlen im Wochenbericht

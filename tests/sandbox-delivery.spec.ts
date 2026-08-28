@@ -4,11 +4,11 @@ test.describe('Stage 5 & 6: Sandboxed Testing & Handover Delivery E2E Tests', ()
   test('should verify workspace settings and clean core community configurations', async ({ page }) => {
     await page.goto('/');
 
-    // 1. Verify community badge exists in page header context
-    const communityBadge = page.locator('text=Free Community Tool').first();
-    if (await communityBadge.count() > 0) {
-      await expect(communityBadge).toBeVisible();
-    }
+    // The string this looked for — "Free Community Tool" — appears nowhere in the
+    // codebase. The landing page says "Free Community Edition". So the assertion
+    // never ran, and the wrong wording could never have been caught.
+    const communityBadge = page.getByText('Free Community Edition').first();
+    await expect(communityBadge).toBeVisible();
   });
 
   test('should verify community access tier cards are present on the landing page', async ({ page }) => {
