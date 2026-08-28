@@ -1389,13 +1389,19 @@ export default function TestingSandboxPage() {
               </div>
               <h2 className="text-lg font-bold text-[#0b1c30]">Test Suite</h2>
             </div>
-            <button 
-              onClick={handleGenerate} 
-              disabled={isGenerating}
-              className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 text-xs md:text-sm font-bold"
-            >
-              {isGenerating ? <><RefreshCw className="w-4 h-4 animate-spin" /> Generating...</> : (testCases.length > 0 ? 'Regenerate Suite' : 'Generate Suite')}
-            </button>
+            {/* Only once the suite exists. Before that this button and the one in
+                the empty state below were the same action, offered twice on one
+                screen — "Generate Suite" here, "Generate Test Suite" in the
+                middle of the card. */}
+            {testCases.length > 0 && (
+              <button 
+                onClick={handleGenerate} 
+                disabled={isGenerating}
+                className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 text-xs md:text-sm font-bold"
+              >
+                {isGenerating ? <><RefreshCw className="w-4 h-4 animate-spin" /> Generating...</> : 'Regenerate Suite'}
+              </button>
+            )}
           </div>
           
           <div className="p-4 md:p-6 flex-grow overflow-auto">
@@ -1779,6 +1785,8 @@ export default function TestingSandboxPage() {
         backLabel="Back to Transformation"
         proceedPath={`/project/${projectId}/documentation`}
         proceedLabel="Proceed to Documentation"
+        incomplete={testCases.length === 0}
+        incompleteReason="no test suite has been generated"
       />
     </div>
   );

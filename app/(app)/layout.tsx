@@ -11,6 +11,7 @@ import GlossarySidebar from '@/components/GlossarySidebar';
 import GlossaryChatbot from '@/components/GlossaryChatbot';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import SiteFooter from '@/components/SiteFooter';
+import { APP_VERSION } from '@/lib/version';
 import UserOnboarding from '@/components/UserOnboarding';
 
 export default function AppLayout({children}: {children: React.ReactNode}) {
@@ -151,26 +152,42 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
             </div>
           </Link>
 
+          {/* The way out of a workflow step.
+              It used to be `hidden lg:flex`, so on a phone there was no route
+              back to the workspace from inside a project at all — the header
+              collapsed to a logo and an avatar. The label shortens instead of
+              disappearing. */}
           {isProjectStep && (
-            <div className="hidden lg:flex items-center justify-center flex-1">
-              <Link 
-                href="/dashboard" 
-                className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-gray-100 px-5 py-2.5 rounded-full border border-gray-200 hover:border-green-200 hover:bg-green-50"
+            <div className="flex items-center justify-center lg:flex-1 shrink-0">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1.5 lg:gap-2 text-xs lg:text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-gray-100 px-3 lg:px-5 py-2 lg:py-2.5 rounded-full border border-gray-200 hover:border-green-200 hover:bg-green-50 whitespace-nowrap"
               >
-                <ArrowLeft size={14} /> Back to My Workspace
+                <ArrowLeft size={14} className="shrink-0" />
+                <span className="lg:hidden">Workspace</span>
+                <span className="hidden lg:inline">Back to My Workspace</span>
               </Link>
             </div>
           )}
 
           <div className="flex items-center gap-4 sm:gap-6">
+            {/* The one place the quota is stated.
+                It used to appear three times in three shapes — and with two
+                different numbers: "1 / 5 TRANSFORMATIONS" here, "FREE BALANCE:
+                4 / 5 FREE" on the dashboard, "FREE TRANSFORMATIONS: 4 / 5" on
+                the transformation step. Used-of-total and remaining-of-total,
+                side by side, both true and impossible to reconcile at a glance.
+                One wording now, and it survives on a phone. */}
             {profile && (
-              <div className="hidden md:flex flex-col items-end">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col items-end">
+                <div className="hidden md:flex items-center gap-2">
                   <span className="text-sm font-bold text-gray-900">{profile.firstName} {profile.lastName}</span>
                   {getTierBadge(profile.tier)}
                 </div>
-                <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-0.5">
-                  {profile.transformationsLimit > 900 ? 'Unlimited' : profile.transformationsUsed + ' / ' + profile.transformationsLimit} Transformations
+                <div className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest md:mt-0.5 whitespace-nowrap">
+                  {profile.transformationsLimit > 900
+                    ? 'Unlimited'
+                    : `${Math.max(0, profile.transformationsLimit - profile.transformationsUsed)} of ${profile.transformationsLimit} left`}
                 </div>
               </div>
             )}
@@ -289,14 +306,32 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-32">
         {children}
       </main>
-      <footer className="border-t border-gray-100 bg-white/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <SiteFooter />
-          <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-            <SapTrademarkNotice className="max-w-3xl mx-auto" />
+      {/* Inside a workflow step the marketing footer becomes one line.
+          It used to render in full under every step. On a phone that is roughly
+          700 px of link lists — longer than the step above it — and a full
+          footer reads as "page ends here", which is the wrong signal in the
+          middle of a seven-stage flow. The legally required links stay, and the
+          complete footer keeps its place on every public page. */}
+      {isProjectStep ? (
+        <footer className="border-t border-gray-100 bg-white/60">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] font-bold text-gray-400">
+            <Link href="/impressum" className="hover:text-green-600 transition-colors">Legal Notice</Link>
+            <Link href="/datenschutz" className="hover:text-green-600 transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-green-600 transition-colors">Terms</Link>
+            <span className="text-gray-300">·</span>
+            <span className="font-mono tracking-wider uppercase">Clean-Core.io {APP_VERSION}</span>
           </div>
-        </div>
-      </footer>
+        </footer>
+      ) : (
+        <footer className="border-t border-gray-100 bg-white/60">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <SiteFooter />
+            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+              <SapTrademarkNotice className="max-w-3xl mx-auto" />
+            </div>
+          </div>
+        </footer>
+      )}
       <GlossaryChatbot />
     </div>
   );

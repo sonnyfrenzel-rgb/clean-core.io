@@ -733,7 +733,12 @@ Structure the JSON exactly like this:
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap gap-3">
+        {/* Nothing to export, and nothing to regenerate, until a blueprint exists.
+            The two exports and a green "Regenerate" used to sit above the words
+            "No enterprise specifications yet" — two outputs of nothing, and a
+            "re"-generate for something that had never been generated once. The
+            empty state below carries the single action instead. */}
+        <div className={`flex flex-wrap gap-3 ${documentation ? '' : 'hidden'}`}>
           <button
             onClick={downloadBPMN}
             disabled={!parsedDoc?.l3_flow || isGeneratingDoc}
@@ -1409,6 +1414,8 @@ Structure the JSON exactly like this:
         backLabel="Back to Testing"
         proceedPath={`/project/${projectId}/delivery`}
         proceedLabel="Proceed to Delivery"
+        incomplete={!documentation}
+        incompleteReason="no blueprint has been generated"
       />
     </div>
   );

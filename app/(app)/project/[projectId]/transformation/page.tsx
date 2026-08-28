@@ -715,22 +715,10 @@ CMD ["node", "srv/service.js"]`
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-4xl font-black tracking-tight text-gray-900">Code Transformation</h1>
-            {profile && (
-              <div className={`px-3 py-1 rounded-full border text-[11px] font-black font-mono shadow-sm flex items-center gap-1.5 transition-all select-none uppercase tracking-wider ${
-                profile.tier === 'enterprise' 
-                  ? 'bg-purple-50 text-purple-700 border-purple-200' 
-                  : (profile.transformationsLimit - profile.transformationsUsed <= 1)
-                    ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
-                    : 'bg-green-50 text-green-700 border-green-200'
-              }`}>
-                <Activity size={12} className={profile.tier !== 'enterprise' && (profile.transformationsLimit - profile.transformationsUsed <= 1) ? 'animate-bounce' : 'animate-pulse'} />
-                {profile.tier === 'enterprise' ? (
-                  <span>Enterprise: Unlimited</span>
-                ) : (
-                  <span>Free Transformations: {Math.max(0, profile.transformationsLimit - profile.transformationsUsed)} / {profile.transformationsLimit}</span>
-                )}
-              </div>
-            )}
+            {/* The quota was stated a third time here, as "Free Transformations:
+                4 / 5" — remaining-of-total, while the header said "1 / 5
+                Transformations", used-of-total. Both true, neither reconcilable
+                at a glance. The header carries it now, once. */}
           </div>
           <p className="text-gray-500 font-medium mt-1">Legacy ABAP to Modern Node.js (TypeScript) Conversion</p>
         </div>

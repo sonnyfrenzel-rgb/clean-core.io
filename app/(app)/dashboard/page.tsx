@@ -961,22 +961,11 @@ export default function Dashboard() {
             >
               <HelpCircle size={18} />
             </button>
-            {profile && (
-              <div className={`px-3 py-1 rounded-full border text-[11px] font-black font-mono shadow-sm flex items-center gap-1.5 transition-all select-none uppercase tracking-wider ${
-                profile.tier === 'enterprise' 
-                  ? 'bg-purple-50 text-purple-700 border-purple-200' 
-                  : (profile.transformationsLimit - profile.transformationsUsed <= 1)
-                    ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
-                    : 'bg-green-50 text-green-700 border-green-200'
-              }`}>
-                <Activity size={12} className={profile.tier !== 'enterprise' && (profile.transformationsLimit - profile.transformationsUsed <= 1) ? 'animate-bounce' : 'animate-pulse'} />
-                {profile.tier === 'enterprise' ? (
-                  <span>Enterprise: Unlimited</span>
-                ) : (
-                  <span>Free Balance: {Math.max(0, profile.transformationsLimit - profile.transformationsUsed)} / {profile.transformationsLimit} Free</span>
-                )}
-              </div>
-            )}
+            {/* The quota pill used to sit here as well, saying "Free Balance:
+                4 / 5 Free" while the header said "1 / 5 Transformations" — the
+                same fact counted from both ends, two centimetres apart. It is
+                stated once now, in the header, and that one survives on a phone
+                where this pill never did. */}
           </div>
           <p className="text-[#0b1c30]/70 mt-1 font-medium">Manage your transformation projects and deliverables.</p>
         </div>
