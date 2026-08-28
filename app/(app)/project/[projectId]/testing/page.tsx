@@ -28,6 +28,7 @@ import { ProjectSkeleton } from '@/components/Skeleton';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { saveAs } from '@/lib/fileSaver';
 import VerificationRail from '@/components/VerificationRail';
+import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';
 
 const renderSafeValue = (val: any): string => {
@@ -616,15 +617,11 @@ export default function TestingSandboxPage() {
 
       <Stepper currentStep={5} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
-      <div className="mb-6 md:mb-10 mt-6 md:mt-8">
-        <h1 className="text-3xl md:text-4xl font-black text-[#0b1c30] tracking-tight mb-2">Testing & Sandbox</h1>
-        <p className="text-[#0b1c30]/70 font-medium text-sm md:text-base">
-          {isAbapCloud 
-            ? 'Generate ABAP Unit stubs and run simulated validation in a secure SAP ADT environment.'
-            : 'Generate test cases and run automated validation in an isolated Node.js environment.'
-          }
-        </p>
-      </div>
+      <StageHeader title="Testing &amp; Sandbox">
+        {isAbapCloud
+          ? 'Generate ABAP Unit stubs and run simulated validation in a secure SAP ADT environment.'
+          : 'Generate test cases and run automated validation in an isolated Node.js environment.'}
+      </StageHeader>
 
       {/* Explanation Boxes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-10">

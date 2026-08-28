@@ -9,6 +9,7 @@ import { enforceActiveRun } from '@/lib/run-guard';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { Project } from '@/lib/types';
 import Stepper from '@/components/Stepper';
+import StageHeader from '@/components/StageHeader';
 import { 
   TrendingUp, Calculator, Euro, Calendar, ShieldCheck, 
   FileText, Printer, ArrowRight, RefreshCw, BarChart3, AlertCircle 
@@ -192,8 +193,8 @@ export default function TcoCalculatorPage() {
           <Stepper currentStep={1} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
         </div>
         <div className="max-w-2xl mx-auto mt-10 bg-white border border-amber-200 rounded-[2rem] p-8 shadow-sm">
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">No baseline to model against</h1>
-          <p className="text-sm text-slate-600 mt-3 leading-relaxed">
+          <StageHeader title="No baseline to model against" />
+          <p className="text-sm text-slate-600 -mt-4 leading-relaxed">
             Either this project has no Clean Core score from a signed run &mdash; every figure here
             is derived from one &mdash; or the code is too small for the model to say anything.
             Below a few hundred lines the annual legacy maintenance effort rounds to zero days, and
@@ -224,12 +225,17 @@ export default function TcoCalculatorPage() {
         {/* Header Block */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-250 pb-6">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full uppercase tracking-wider">C-Level Executive View</span>
-              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full uppercase tracking-wider print:hidden">Better Practice Mapped</span>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-black text-[#0b1c30] tracking-tight uppercase mt-2">TCO & Upgrade-ROI Analysis</h1>
-            <p className="text-sm text-gray-500 font-medium mt-1">Upgrade-impact reduction forecast based on Clean Core modernization score.</p>
+            <StageHeader
+              title="TCO &amp; Upgrade-ROI Analysis"
+              eyebrow={
+                <>
+                  <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full uppercase tracking-wider">C-Level Executive View</span>
+                  <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full uppercase tracking-wider print:hidden">Better Practice Mapped</span>
+                </>
+              }
+            >
+              Upgrade-impact reduction forecast based on Clean Core modernization score.
+            </StageHeader>
           </div>
           <div className="flex gap-3 print:hidden w-full sm:w-auto">
             <button

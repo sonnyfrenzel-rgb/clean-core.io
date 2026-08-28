@@ -116,6 +116,27 @@ shades apart but one styled and one not. Inventing a shade is fine; inventing it
 silently is not, and the same spec fails the suite on any colour class naming an
 undeclared shade.
 
+## Workflow stages — one style, enforced
+
+Same rule as the landing page, one layer down. No stage writes its own title;
+they all come from `components/StageHeader.tsx` (`title`, `eyebrow`, `icon`,
+`actions`, `align`, and the lead as children). The ink is `gray-950`, matching
+`SectionHeader`, so both halves of the product agree.
+
+What it replaced, measured: three font weights, four size scales, two inks, two
+letter cases, and two stages with no responsive step at all — the title jumped
+size, weight and colour as the reader moved from one step to the next, which is
+what makes a seven-stage flow feel like seven tools.
+
+`tests/workflow-style-guard.spec.ts` seeds one populated project, walks all six
+project stages signed in, and compares the computed size, weight, family,
+spacing, case and colour of every `[data-stage-title]`. Empty states are avoided
+on purpose: an empty stage has a different header and the comparison would be
+vacuous.
+
+The `h1` overrides inside the markdown renderers (`{...props}`) are for generated
+*content*, not stage titles, and are exempt.
+
 ## Gotchas
 
 - **Node version:** package.json requires `>=22.8`; the local machine currently runs **v20.12.2**. `npm run dev`/`build` may warn or fail on engine checks — bump Node to 22 LTS for parity with CI/Cloud Run.

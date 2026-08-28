@@ -29,6 +29,7 @@ import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { generateAuditPack } from '@/lib/audit-pack';
 import { APP_VERSION } from '@/lib/version';
 import VerificationRail from '@/components/VerificationRail';
+import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';
 
 const generateDeveloperGuidelines = (project: any) => {
@@ -424,15 +425,14 @@ jobs:
     <div className="animate-in fade-in duration-500 max-w-7xl mx-auto px-4 md:px-0">
       <Stepper currentStep={7} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
-      <div className="mb-10 md:mb-12 text-center mt-6 md:mt-10">
-        <div className="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-full bg-green-50 mb-6 md:mb-8 border-4 border-white shadow-xl">
-          <Rocket className="w-10 h-10 md:w-12 md:h-12 text-green-600" />
-        </div>
-        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-gray-900 mb-4 uppercase">Project Handover</h1>
-        <p className="text-base md:text-xl text-gray-500 max-w-3xl mx-auto font-medium px-4">
-          The transformation lifecycle is complete. Your modernized Node.js application and comprehensive process documentation are ready for deployment.
-        </p>
-      </div>
+      <StageHeader
+        title="Project Handover"
+        align="center"
+        icon={<Rocket className="w-8 h-8 md:w-9 md:h-9 text-green-600" />}
+      >
+        The transformation lifecycle is complete. Your modernized Node.js application and
+        comprehensive process documentation are ready for deployment.
+      </StageHeader>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-16 items-stretch">
         {/* Left Side: 2x2 Grid of standard deliverables */}

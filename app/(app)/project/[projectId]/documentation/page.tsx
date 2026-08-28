@@ -18,6 +18,7 @@ import type { Project } from '@/lib/types';
 import { formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
 import { saveAs } from '@/lib/fileSaver';
 import VerificationRail from '@/components/VerificationRail';
+import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';
 
 const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
@@ -716,8 +717,9 @@ Structure the JSON exactly like this:
       
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-10 mt-6 md:mt-8">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-[#0b1c30] tracking-tight uppercase">Process Blueprint & Mapping</h1>
-          <p className="text-[#0b1c30]/70 font-medium">Business Architecture & BPMN Map</p>
+          <StageHeader title="Process Blueprint &amp; Mapping">
+            Business Architecture &amp; BPMN Map
+          </StageHeader>
           
           {/* SAP Compatibility Badges */}
           <div className="flex items-center gap-2 mt-2 flex-wrap">

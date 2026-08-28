@@ -54,6 +54,7 @@ import { detectFindings, summarize } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { SourceFile } from '@/lib/abap/findings-detector';
 import VerificationRail from '@/components/VerificationRail';
+import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';
 
 const cleanAndParseJSON = (str: string) => {
@@ -867,12 +868,9 @@ ${responseText.substring(0, 4000)}`;
     <div className="animate-in fade-in duration-500 min-h-screen">
       <Stepper currentStep={3} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
-      <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-2">Solution Design</h1>
-          <p className="text-gray-500 text-sm sm:text-base">Review the generated target architecture and technical design.</p>
-        </div>
-        {design && (
+      <StageHeader
+        title="Solution Design"
+        actions={design ? (
           <div className="flex flex-wrap gap-2 sm:gap-3">
 
             <button 
@@ -899,8 +897,10 @@ ${responseText.substring(0, 4000)}`;
               <Download size={16} /> Export HTML
             </button>
           </div>
-        )}
-      </div>
+        ) : null}
+      >
+        Review the generated target architecture and technical design.
+      </StageHeader>
 
 
 

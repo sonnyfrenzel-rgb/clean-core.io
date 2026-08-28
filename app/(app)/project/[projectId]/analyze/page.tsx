@@ -58,6 +58,7 @@ import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
 
 import { DocumentSkeleton } from '@/components/Skeleton';
 import VerificationRail from '@/components/VerificationRail';
+import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';
 
 export default function AnalyzePage() {
@@ -1773,10 +1774,9 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
       <Stepper currentStep={project?.analysis ? 2 : 1} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
-      <div className="mb-10 text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 mb-3">Code Analysis</h1>
-        <p className="text-lg text-gray-500 max-w-2xl mx-auto">Extracting business intelligence and technical dependencies from your legacy assets.</p>
-      </div>
+      <StageHeader title="Code Analysis" align="center">
+        Extracting business intelligence and technical dependencies from your legacy assets.
+      </StageHeader>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-2xl mb-8 flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2">

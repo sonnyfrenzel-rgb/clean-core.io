@@ -24,6 +24,7 @@ import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 import { matchCdsView } from '@/lib/abap/cds-catalog';
 import { extractSelects, parseSelect } from '@/lib/abap/select-parser';
 import VerificationRail from '@/components/VerificationRail';
+import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';
 
 interface ProjectFile {
@@ -719,15 +720,13 @@ CMD ["node", "srv/service.js"]`
       <Stepper currentStep={4} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
       <div className="mb-10 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/50 backdrop-blur-sm border border-slate-200/50 rounded-3xl p-6 shadow-sm">
-        <div className="flex-1">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-4xl font-black tracking-tight text-gray-900">Code Transformation</h1>
-            {/* The quota was stated a third time here, as "Free Transformations:
-                4 / 5" — remaining-of-total, while the header said "1 / 5
-                Transformations", used-of-total. Both true, neither reconcilable
-                at a glance. The header carries it now, once. */}
-          </div>
-          <p className="text-gray-500 font-medium mt-1">Legacy ABAP to Modern Node.js (TypeScript) Conversion</p>
+        {/* The quota used to be stated a third time here, as "Free
+            Transformations: 4 / 5" — remaining-of-total, while the header said
+            "1 / 5 Transformations", used-of-total. The header carries it once. */}
+        <div className="flex-1 min-w-0">
+          <StageHeader title="Code Transformation">
+            Legacy ABAP to Modern Node.js (TypeScript) Conversion
+          </StageHeader>
         </div>
 
         {/* Clean Core Compliance Shield HUD */}
