@@ -51,6 +51,18 @@ export async function parseUsage(file: File, hintedSource?: UsageSource): Promis
     warnings.push(`Unmapped columns ignored: ${unmapped.join(', ')}`);
   }
 
+  // An export with no recognised call-count column is still usable — it carries
+  // object names and often last-used dates — but every object in it comes out
+  // with unknown usage, and the person who uploaded it has to be told that
+  // rather than left to read a matrix full of "unknown" and guess why.
+  if (!mapping.callCount) {
+    warnings.push(
+      `No call-count column recognised (looked for: ${COLUMN_SYNONYMS.callCount.join(', ')}). ` +
+      `Usage intensity stays unknown for every object; nothing will be classified as dormant ` +
+      `or as a retirement candidate on the strength of missing data.`,
+    );
+  }
+
   // Validate mandatory column
   if (!mapping.objectName) {
     throw new Error(
@@ -77,7 +89,10 @@ export async function parseUsage(file: File, hintedSource?: UsageSource): Promis
     records.push({
       objectName,
       objectType: objectType || undefined,
-      callCount: callCount ?? 0,
+      // Never `?? 0`. See UsageRecord.callCount — absence of a measurement is
+      // not a measurement of zero, and downstream it is the difference between
+      // "unknown" and "retire this object".
+      callCount: callCount ?? null,
       lastUsed,
       source,
     });
@@ -92,10 +107,10 @@ export async function parseUsage(file: File, hintedSource?: UsageSource): Promis
   }
 
   // Detect measurement period from data
-  const { periodDays, measuredFrom, measuredTo } = detectPeriod(records);
+  const { observedSpanDays, measuredFrom, measuredTo } = detectPeriod(records);
 
   // Apply period to records
-  records = records.map(r => ({ ...r, periodDays }));
+  records = records.map(r => ({ ...r, observedSpanDays }));
 
   // Privacy: sanitize before returning
   const sanitized = sanitizeUsageRecords(records);
@@ -106,7 +121,7 @@ export async function parseUsage(file: File, hintedSource?: UsageSource): Promis
   return {
     records: sanitized,
     source,
-    periodDays,
+    observedSpanDays,
     measuredFrom,
     measuredTo,
     importedAt: new Date().toISOString(),
@@ -360,7 +375,11 @@ function aggregateToObjectLevel(records: UsageRecord[]): UsageRecord[] {
 
     const existing = map.get(objName);
     if (existing) {
-      existing.callCount += r.callCount;
+      // A method with no count contributes nothing; it must not contribute a
+      // zero, which would read as a measurement.
+      if (r.callCount !== null) {
+        existing.callCount = (existing.callCount ?? 0) + r.callCount;
+      }
       if (r.lastUsed && (!existing.lastUsed || r.lastUsed > existing.lastUsed)) {
         existing.lastUsed = r.lastUsed;
       }
@@ -375,7 +394,19 @@ function aggregateToObjectLevel(records: UsageRecord[]): UsageRecord[] {
 /**
  * Detect measurement period from the data (lastUsed dates).
  */
-function detectPeriod(records: UsageRecord[]): { periodDays?: number; measuredFrom?: string; measuredTo?: string } {
+/**
+ * The span the export actually shows, not the window it was taken over.
+ *
+ * `measuredFrom`/`measuredTo` are the first and last execution dates present.
+ * `measuredTo` feeds the dormancy threshold in the join, which is why it is kept
+ * — and it errs in the safe direction there: the last execution seen is never
+ * later than the true export end, so objects come out less dormant, not more.
+ *
+ * What is NOT returned any more is a measurement period. Nothing in an SCMON or
+ * UPL export tells us how long the monitoring ran, and deriving it from the
+ * dates of the executions themselves reports "two days" for a year of data.
+ */
+function detectPeriod(records: UsageRecord[]): { observedSpanDays?: number; measuredFrom?: string; measuredTo?: string } {
   const dates = records
     .map(r => r.lastUsed)
     .filter((d): d is string => !!d)
@@ -386,7 +417,7 @@ function detectPeriod(records: UsageRecord[]): { periodDays?: number; measuredFr
   const from = dates[0];
   const to = dates[dates.length - 1];
   const diffMs = new Date(to).getTime() - new Date(from).getTime();
-  const periodDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  const observedSpanDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
-  return { periodDays, measuredFrom: from, measuredTo: to };
+  return { observedSpanDays, measuredFrom: from, measuredTo: to };
 }

@@ -31,7 +31,12 @@ export function buildClassModel(
   for (const node of allNodes) {
     if (node.superClass) {
       const parent = nodesMap[node.superClass];
-      if (!parent && !node.superClass.startsWith('CL_') && !node.superClass.startsWith('CX_') && !node.superClass.startsWith('ZCL_') && !node.superClass.startsWith('ZCX_')) {
+      // Only SAP's own namespaces get the benefit of the doubt: CL_ and CX_
+      // classes exist in every system, they are simply not in this upload. A
+      // ZCL_/ZCX_ ancestor is a customer object — if it is not in the upload, it
+      // was not parsed, and reporting the hierarchy as fully resolved is a claim
+      // about code nobody read.
+      if (!parent && !node.superClass.startsWith('CL_') && !node.superClass.startsWith('CX_')) {
         missing.push({
           ref: node.superClass,
           kind: 'superclass',
@@ -46,7 +51,8 @@ export function buildClassModel(
 
     for (const iface of node.interfaces) {
       const ifaceNode = nodesMap[iface];
-      if (!ifaceNode && !iface.startsWith('IF_') && !iface.startsWith('ZIF_')) {
+      // Same rule: IF_ is SAP's, ZIF_ is the customer's.
+      if (!ifaceNode && !iface.startsWith('IF_')) {
         missing.push({
           ref: iface,
           kind: 'interface',

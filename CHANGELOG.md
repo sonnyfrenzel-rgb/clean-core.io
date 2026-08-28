@@ -9,6 +9,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [v2.5.5] — 2026-08-28
+
+### Die Engine erfindet keine Stilllegungskandidaten mehr
+
+Release 2 von fünf aus dem Umsetzungsplan.
+
+**Fehlende Nutzungsdaten waren null Aufrufe.** `usage-parser.ts` schrieb
+`callCount: callCount ?? 0`. `parseCallCount()` liefert `undefined`, wenn die
+Spalte fehlt oder unlesbar ist — und daraus wurde eine **0**.
+
+`usage-join.ts` trägt gegen genau diesen Fall einen ausdrücklichen Schutz, mit
+dem Kommentar „Missing data is not evidence of non-use". Der Schutz prüft, ob ein
+Datensatz *existiert*. Über dessen Inhalt sagt er nichts. Ein Datensatz mit einer
+erfundenen Null kam also durch, wurde `dormant`, und `dormant` ergibt bei jeder
+Machbarkeit den Quadranten `retire-candidate`.
+
+Ein SCMON- oder UPL-Export, dessen Aufrufspalte anders heißt als erwartet, machte
+damit **jedes Objekt darin zum Stilllegungskandidaten** — eine Empfehlung,
+produktiven Code zu löschen, hergeleitet aus dem Fehlen von Daten.
+
+`callCount` ist jetzt `number | null`; `null` wird zu `unknown`, vor jeder
+weiteren Prüfung. Ein *gemessenes* Null bleibt `dormant` — der Fix stumpft die
+Funktion nicht ab. Und der Import warnt jetzt, wenn keine Aufrufspalte erkannt
+wurde, statt eine Matrix voller „unknown" ohne Erklärung zu zeigen.
+
+**Ein Fund, den kein Modell gemeldet hat.** Beim Testen der Nachbarkorrektur fiel
+auf: `collectLocalDataObjects` behandelt den Namen nach **jedem** `INTO` als
+lokales Datenobjekt. Richtig für `LOOP AT it INTO wa` und `SELECT … INTO lt_x` —
+falsch für `INSERT INTO <dbtab>`, den normalen Open-SQL-Insert. Die Tabelle wurde
+als Variable registriert, `processTableAccess` brach ab, bevor es sie ansah, und
+**ein direkter Schreibzugriff auf eine SAP-Standardtabelle in der gängigsten
+Syntax erzeugte überhaupt kein Finding.** `INSERT INTO vbak VALUES @ls_order.`
+war unsichtbar. Für Standard- wie Kundentabellen.
+
+**Und die Gegenrichtung:** `INSERT <wa> INTO <itab>` ist internes ABAP, wurde
+aber als Datenbankschreibzugriff gemeldet — ein **Critical**-Finding auf einer
+lokalen Variablen. Die beiden Schutzstufen dahinter (im Quelltext deklariert,
+oder `LS_`/`GS_`-Namenskonvention) greifen bei genau den Ausschnitten nicht, für
+die das Werkzeug benutzt wird. Unterschieden wird jetzt daran, wo `INTO` steht:
+nach einem Namen ist es die interne Form, direkt nach `INSERT` ist es Open SQL.
+
+**Fehlende Vorfahren gelten nicht mehr als aufgelöst.** Fehlte eine Oberklasse im
+Upload, wurde sie nicht als fehlend vermerkt, sofern ihr Name mit `CL_`, `CX_`,
+`ZCL_` oder `ZCX_` begann. Bei SAPs eigenen Namensräumen ist das vertretbar — die
+Klassen existieren im System, nur nicht im Upload. Bei `ZCL_`/`ZCX_`/`ZIF_` nicht:
+das sind Kundenobjekte, und wenn sie fehlen, wurden sie nicht geparst.
+„Inheritance chain fully resolved" war eine Aussage über Code, den niemand
+gelesen hat.
+
+**Der „Messzeitraum" war keiner.** Er wurde aus dem kleinsten und größten
+Ausführungsdatum gebildet: ein Jahresexport, in dem alles am 1. und 2. Juni lief,
+meldete ein **eintägiges** Messfenster — angezeigt als „📅 1-day measurement
+window". Ausführungszeitpunkte sind nicht das Beobachtungsfenster. Das Feld heißt
+jetzt `observedSpanDays` und die Oberfläche sagt „days of observed activity".
+
+Neu: `tests/usage-unknown-guard.spec.ts` (11) und
+`tests/abap-internal-insert-guard.spec.ts` (10). Die Nutzungstests fahren den
+echten Parser über echten CSV-Text, weil der Defekt in der Naht zwischen zwei
+Modulen lag, die einzeln beide richtig aussahen.
+
+345 Tests grün.
+
 ## [v2.5.4] — 2026-08-28
 
 ### Fünf Tests, die nichts geprüft haben

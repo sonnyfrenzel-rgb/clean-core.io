@@ -85,9 +85,13 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
         <h4 className="text-xl font-black text-slate-900">Risk Prioritization Matrix</h4>
         <p className="text-xs text-slate-500 mt-1">
           Objects plotted by production usage intensity × technical feasibility.
-          {usageReport.periodDays && (
+          {/* The span the export shows, not the window it was taken over — the
+              export does not say how long monitoring ran, and calling the gap
+              between the first and last execution a measurement period reported
+              "two days" for a year of data. */}
+          {usageReport.observedSpanDays && (
             <span className="ml-1 font-medium">
-              Based on {usageReport.periodDays} days of {usageReport.source.toUpperCase()} data
+              Covering {usageReport.observedSpanDays} days of observed {usageReport.source.toUpperCase()} activity
               {usageReport.measuredFrom && usageReport.measuredTo && (
                 <> ({usageReport.measuredFrom} – {usageReport.measuredTo})</>
               )}.
@@ -282,7 +286,7 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
         <span>
           Source: {usageReport.source.toUpperCase()} ·
           {usageReport.records.length} objects ·
-          {usageReport.periodDays ? ` ${usageReport.periodDays}-day window` : ' period unknown'} ·
+          {usageReport.observedSpanDays ? ` ${usageReport.observedSpanDays} days observed` : ' activity span unknown'} ·
           Imported {new Date(usageReport.importedAt).toLocaleDateString()}
         </span>
       </div>

@@ -28,8 +28,12 @@ export function joinUsageWithEvidence(
     const key = r.objectName.toUpperCase();
     const existing = usageMap.get(key);
     if (existing) {
-      // Merge: sum call counts, keep latest lastUsed
-      existing.callCount += r.callCount;
+      // Merge: sum call counts, keep latest lastUsed. Two records that both
+      // carry no count stay uncounted — summing them as zeroes would recreate
+      // the very coercion the parser stopped doing.
+      if (r.callCount !== null) {
+        existing.callCount = (existing.callCount ?? 0) + r.callCount;
+      }
       if (r.lastUsed && (!existing.lastUsed || r.lastUsed > existing.lastUsed)) {
         existing.lastUsed = r.lastUsed;
       }
@@ -39,7 +43,10 @@ export function joinUsageWithEvidence(
   }
 
   // Compute percentile thresholds for bucketing
-  const callCounts = usage.records.map(r => r.callCount).filter(c => c > 0).sort((a, b) => a - b);
+  const callCounts = usage.records
+    .map(r => r.callCount)
+    .filter((c): c is number => c !== null && c > 0)
+    .sort((a, b) => a - b);
   const p25 = percentile(callCounts, 25);
   const p75 = percentile(callCounts, 75);
 
@@ -112,7 +119,16 @@ function classifyUsageBucket(
   // §5 SAFEGUARD: no record → unknown, NEVER dormant
   if (!record) return 'unknown';
 
-  // Zero calls → dormant
+  // §5, second half. The guard above tests whether a record exists; it says
+  // nothing about whether that record carries a measurement. An export with an
+  // object-name column and no recognised call-count column produces a record for
+  // every object with no count in it — and until the parser stopped coercing
+  // that to 0, every one of them came out of the line below as 'dormant', and
+  // then as 'retire-candidate'. A recommendation to delete code, derived from
+  // the absence of data.
+  if (record.callCount === null) return 'unknown';
+
+  // Zero calls → dormant. A measured zero, not a missing one.
   if (record.callCount === 0) return 'dormant';
 
   // Last used too long ago → dormant (regardless of call count)

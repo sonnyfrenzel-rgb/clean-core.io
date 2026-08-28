@@ -19,21 +19,38 @@ export interface UsageRecord {
   objectName: string;
   /** ABAP object type: PROG / CLAS / FUGR / FUNC / TRAN ... */
   objectType?: string;
-  /** Execution count within the measured window */
-  callCount: number;
+  /**
+   * Execution count within the measured window, or `null` when the export did
+   * not carry one.
+   *
+   * `null` rather than `0`, and the distinction is the whole point: a zero is a
+   * measurement that the object was never called, and it makes the object a
+   * retirement candidate. An absent column is not that measurement. The parser
+   * used to coerce one into the other, which turned "we have no usage data" into
+   * "delete this code" for every object in the export.
+   */
+  callCount: number | null;
   /** ISO date of last execution (if provided by the source) */
   lastUsed?: string;
   /** Which SAP tool exported this data */
   source: UsageSource;
   /** Measurement window length in days */
-  periodDays?: number;
+  observedSpanDays?: number;
 }
 
 export interface UsageReport {
   records: UsageRecord[];
   source: UsageSource;
-  /** Measurement window length in days — surfaced in every view */
-  periodDays?: number;
+  /**
+   * Span in days between the first and last execution seen in the export.
+   *
+   * Deliberately NOT called a measurement period. Executions are not the
+   * monitoring window: a one-year SCMON export in which everything happened to
+   * run on 1 and 2 June describes a year of monitoring, not two days of it. The
+   * field used to be named for the window and was inferred from exactly this
+   * span, which reported the wrong number with the right label.
+   */
+  observedSpanDays?: number;
   /** ISO date: start of measurement window */
   measuredFrom?: string;
   /** ISO date: end of measurement window */

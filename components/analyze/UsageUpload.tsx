@@ -68,8 +68,10 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
               Usage data imported — {result.records.length} objects from {result.source.toUpperCase()}
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-emerald-700">
-              {result.periodDays && (
-                <span>📅 {result.periodDays}-day measurement window</span>
+              {/* Not a "measurement window": the export never states one. This is
+                  the span between the first and last execution it contains. */}
+              {result.observedSpanDays && (
+                <span>📅 {result.observedSpanDays} days of observed activity</span>
               )}
               {result.measuredFrom && result.measuredTo && (
                 <span>🕐 {result.measuredFrom} – {result.measuredTo}</span>

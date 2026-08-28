@@ -160,8 +160,17 @@ function collectLocalDataObjects(code: string): Set<string> {
   for (const m of code.matchAll(params)) add(m[1]);
 
   // LOOP AT it INTO wa / ASSIGNING <fs> — the target is a data object.
+  //
+  // One form is not: `INSERT INTO <dbtab> VALUES …`, the standard Open SQL
+  // insert. There the name after INTO is a database table, and registering it
+  // here as a local data object made `processTableAccess` return before it ever
+  // looked at it — so a direct write into an SAP standard table, in the most
+  // common syntax there is, produced no finding at all. Neither review pass
+  // found this; it surfaced while testing the neighbouring `INSERT <wa> INTO
+  // <itab>` fix, because the two share the keyword and nothing else.
+  const scanned = code.replace(/\bINSERT\s+INTO\b/gi, 'INSERT');
   const targets = /\b(?:INTO|ASSIGNING)\s+(?:TABLE\s+)?([\w<>\/]+)/gi;
-  for (const m of code.matchAll(targets)) add(m[1]);
+  for (const m of scanned.matchAll(targets)) add(m[1]);
 
   return names;
 }
@@ -329,8 +338,21 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     const isInternalTableOp = INTERNAL_TABLE_CLAUSE.test(text);
 
     // INSERT — database form is `INSERT tab FROM …` / `INSERT INTO tab VALUES …`.
+    //
+    // `INSERT <wa> INTO <itab>` is the internal-table form and carries none of
+    // the clauses above, so it used to fall through to the database branch and
+    // report the *work area* as an SAP standard table — a Critical finding on a
+    // variable. The declared-name guards in processTableAccess catch it only
+    // when the declaration is in the upload and the name follows the `LS_`/`GS_`
+    // convention; neither holds for the partial snippets people actually paste.
+    //
+    // The discriminator is where INTO sits: after a name it is the internal
+    // form, immediately after INSERT it is Open SQL.
+    const insertIntoItab = /^INSERT\s+[\w\/]+(?:-[\w]+)*\s+INTO\b/i.test(text);
     const insertMatch = text.match(/^INSERT\s+(?:INTO\s+)?([\w\/]+)/i);
-    if (insertMatch && !isInternalTableOp) processTableAccess(insertMatch[1], true, stmt.line, text);
+    if (insertMatch && !isInternalTableOp && !insertIntoItab) {
+      processTableAccess(insertMatch[1], true, stmt.line, text);
+    }
 
     // UPDATE — no internal-table form, so no guard needed.
     const updateMatch = text.match(/^UPDATE\s+([\w\/]+)/i);

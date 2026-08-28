@@ -19,7 +19,7 @@ const PII_FIELD_PATTERNS = [
 
 /**
  * Sanitize usage records by stripping any PII fields.
- * Only objectName, objectType, callCount, lastUsed, source, and periodDays
+ * Only objectName, objectType, callCount, lastUsed, source, and observedSpanDays
  * are retained — everything else is dropped.
  *
  * This is a whitelist approach: we explicitly pick only the fields we need,
@@ -32,7 +32,7 @@ export function sanitizeUsageRecords(records: UsageRecord[]): UsageRecord[] {
     callCount: r.callCount,
     lastUsed: r.lastUsed,
     source: r.source,
-    periodDays: r.periodDays,
+    observedSpanDays: r.observedSpanDays,
   }));
 }
 
