@@ -23,6 +23,7 @@ import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import LandingModals from '@/components/LandingModals';
 import LandingSlideshow from '@/components/LandingSlideshow';
 import QuickAnswer from '@/components/QuickAnswer';
+import SectionNav from '@/components/SectionNav';
 import SiteFooter from '@/components/SiteFooter';
 import TransformationShowroom from '@/components/TransformationShowroom';
 import TransformationReplay from '@/components/TransformationReplay';
@@ -423,12 +424,16 @@ export default function Home() {
           </p>
           <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
             <HeroCTA />
-            <div className="flex items-center justify-center mt-3">
-              <Link 
-                href="/how-it-works" 
-                className="text-xs sm:text-sm font-extrabold text-gray-600 hover:text-green-600 hover:border-green-400 hover:bg-green-50/10 transition-all flex items-center gap-2 px-6 py-2.5 rounded-full border border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm"
+            {/* Third in the hierarchy, and now shaped like it. As a bordered
+                pill it was a third button competing with two filled ones; the
+                hero asked the reader to choose between three equals before the
+                product had shown anything. */}
+            <div className="flex items-center justify-center mt-1">
+              <Link
+                href="/how-it-works"
+                className="text-xs sm:text-sm font-bold text-gray-500 hover:text-green-700 transition-colors flex items-center gap-1.5 px-2 py-2"
               >
-                Explore How It Works & Limitations <ArrowRight size={14} className="text-green-600" />
+                Explore How It Works &amp; Limitations <ArrowRight size={13} className="text-green-600" />
               </Link>
             </div>
           </div>
@@ -442,8 +447,48 @@ export default function Home() {
           />
         </div>
         
+        {/*
+          The proof, moved up.
+
+          It used to sit after the process carousel, the business argument and the
+          SAP tool matrix — the one section on this page a reader can check
+          themselves, four screens below the claim it verifies. Grok, GPT-5.6-sol
+          and GLM-5v each proposed moving it independently; GPT put the reason
+          best: the first impression becomes less "AI landing page" and more
+          "checkable architecture tool".
+
+          Nothing in it changed except its place — and the process strip inside,
+          which answers the question the two halves left out.
+        */}
+        {/* The scan bar. See components/SectionNav.tsx — the page is six
+            screens long and until now the only way through it was to scroll. */}
+        <div className="mt-16 relative z-30">
+          <SectionNav />
+        </div>
+
+        {/* Transformation Showroom */}
+        <section id="showroom" className="py-24 md:py-32 bg-slate-50/50 border-y border-gray-200/40 relative scroll-mt-14">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="text-center mb-16">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-green-700 bg-green-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-green-100">
+                Real Verified Output
+              </span>
+              <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">Transformation Showroom</h2>
+              <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Representative engine outputs. Every example is a real transformation&mdash;verified, compiled, and tested against Clean-Core Engine {APP_VERSION}.</p>
+            </div>
+            <Suspense fallback={null}>
+              <TransformationReplay />
+            </Suspense>
+            <TransformationShowroom />
+            <Suspense fallback={null}>
+              <SamplePackageDownload />
+            </Suspense>
+          </div>
+        </section>
+
+
         {/* Interactive Slideshow */}
-        <div className="relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
+        <div id="process" className="scroll-mt-14 relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
           <LandingSlideshow />
         </div>
 
@@ -452,7 +497,7 @@ export default function Home() {
             around the two questions a legacy decision waits on — the business one
             first and larger, because the market answers only the technical one.
             Replaces the unprovable "save days" claim with a reproducible run. */}
-        <div className="max-w-6xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
+        <div id="evidence" className="scroll-mt-14 max-w-6xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
           <BenefitCard
             linesOfCode={reference.linesOfCode}
             totalFindings={reference.totalFindings}
@@ -485,7 +530,7 @@ export default function Home() {
 
 
         {/* Comparison Highlight Table */}
-        <div className="max-w-6xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-28 duration-1000 delay-800">
+        <div id="toolchain" className="scroll-mt-14 max-w-6xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-28 duration-1000 delay-800">
           <div className="bg-white rounded-[2rem] p-6 sm:p-10 md:p-12 border border-slate-200 shadow-xl relative overflow-hidden">
             {/* Glowing Accent */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(16,185,129,0.04),transparent_45%)] pointer-events-none" />
@@ -607,28 +652,8 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
         </div>
       </section>
 
-      {/* Transformation Showroom */}
-      <section className="py-24 md:py-32 bg-slate-50/50 border-y border-gray-200/40 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-16">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-green-700 bg-green-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-green-100">
-              Real Verified Output
-            </span>
-            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">Transformation Showroom</h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Representative engine outputs. Every example is a real transformation&mdash;verified, compiled, and tested against Clean-Core Engine {APP_VERSION}.</p>
-          </div>
-          <Suspense fallback={null}>
-            <TransformationReplay />
-          </Suspense>
-          <TransformationShowroom />
-          <Suspense fallback={null}>
-            <SamplePackageDownload />
-          </Suspense>
-        </div>
-      </section>
-
       {/* Features Section */}
-      <section id="features" className="py-24 md:py-32 bg-white relative scroll-mt-24">
+      <section id="capabilities" className="py-24 md:py-32 bg-white relative scroll-mt-14">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20">
             <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">What You Can Do Today</h2>
@@ -714,7 +739,7 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
       </section>
 
       {/* Trust & Security Section */}
-      <section className="py-24 bg-slate-50/50 border-y border-gray-900/5 relative overflow-hidden">
+      <section id="data" className="py-24 bg-slate-50/50 border-y border-gray-900/5 relative overflow-hidden scroll-mt-14">
         {/* Background ambient lighting */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-green-500/5 rounded-full blur-[120px] pointer-events-none" />
         
@@ -772,7 +797,7 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
       </section>
 
       {/* Community Access & Capabilities Section */}
-      <section className="py-24 md:py-32 bg-white relative overflow-hidden" id="access">
+      <section className="py-24 md:py-32 bg-white relative overflow-hidden scroll-mt-14" id="access">
         <div className="max-w-6xl mx-auto px-6 relative z-10">
           <div className="text-center mb-16">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-100">

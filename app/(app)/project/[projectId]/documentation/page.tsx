@@ -17,6 +17,8 @@ import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
 import { formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
 import { saveAs } from '@/lib/fileSaver';
+import VerificationRail from '@/components/VerificationRail';
+import { workflowSteps } from '@/lib/workflow-steps';
 
 const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
   let files: Array<{ path: string, content: string }> = [];
@@ -695,6 +697,11 @@ Structure the JSON exactly like this:
 
   if (loading) return (
     <div className="animate-in fade-in duration-500">
+      {/* Where am I, what is behind me, what is still open — kept on
+          screen while the stepper scrolls away. Reports artefacts that
+          exist; it decides nothing. */}
+      <VerificationRail steps={workflowSteps(project)} current={6} projectId={projectId as string} />
+
       <Stepper currentStep={6} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       <div className="h-[60vh] flex flex-col items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>

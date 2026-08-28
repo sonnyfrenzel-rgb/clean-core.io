@@ -28,6 +28,8 @@ import { motion } from 'motion/react';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { generateAuditPack } from '@/lib/audit-pack';
 import { APP_VERSION } from '@/lib/version';
+import VerificationRail from '@/components/VerificationRail';
+import { workflowSteps } from '@/lib/workflow-steps';
 
 const generateDeveloperGuidelines = (project: any) => {
   const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
@@ -405,6 +407,11 @@ jobs:
 
   if (loading) return (
     <div className="animate-in fade-in duration-500">
+      {/* Where am I, what is behind me, what is still open — kept on
+          screen while the stepper scrolls away. Reports artefacts that
+          exist; it decides nothing. */}
+      <VerificationRail steps={workflowSteps(project)} current={7} projectId={projectId as string} />
+
       <Stepper currentStep={7} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       <div className="h-[60vh] flex flex-col items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>

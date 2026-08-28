@@ -23,6 +23,8 @@ import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 import { matchCdsView } from '@/lib/abap/cds-catalog';
 import { extractSelects, parseSelect } from '@/lib/abap/select-parser';
+import VerificationRail from '@/components/VerificationRail';
+import { workflowSteps } from '@/lib/workflow-steps';
 
 interface ProjectFile {
   path: string;
@@ -667,6 +669,11 @@ CMD ["node", "srv/service.js"]`
 
   if (loading && !transformedCode) return (
     <div className="animate-in fade-in duration-500">
+      {/* Where am I, what is behind me, what is still open — kept on
+          screen while the stepper scrolls away. Reports artefacts that
+          exist; it decides nothing. */}
+      <VerificationRail steps={workflowSteps(project)} current={4} projectId={projectId as string} />
+
       <Stepper currentStep={4} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       <div className="bg-[#0a0a0a] rounded-[2rem] shadow-2xl border border-white/10 overflow-hidden mt-8">
         <div className="px-10 py-12 text-white flex flex-col md:flex-row items-center justify-between gap-8">

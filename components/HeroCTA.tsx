@@ -33,7 +33,7 @@ export default function HeroCTA() {
     return (
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
         <div className="h-16 w-full sm:w-64 bg-gray-150 animate-pulse rounded-2xl"></div>
-        <div className="h-16 w-full sm:w-64 bg-gray-150 animate-pulse rounded-2xl"></div>
+        <div className="h-16 w-full sm:w-56 bg-gray-100 animate-pulse rounded-2xl"></div>
       </div>
     );
   }
@@ -56,11 +56,17 @@ export default function HeroCTA() {
           Get Free Access or Login <ArrowRight className="w-5 h-5" />
         </Link>
       )}
+      {/* Secondary, and it looks it.
+          This used to be a second filled button — near-black, same height, same
+          radius, same weight as the emerald one beside it. Two filled calls to
+          action next to each other read as neither: the reader has to decide
+          which one the page means before deciding anything about the product.
+          The whitepaper is reassurance for the business side, not the way in. */}
       <Link
         href="/whitepaper"
-        className="w-full sm:w-auto flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-850 text-white px-8 py-5 rounded-2xl font-bold text-base transition-all shadow-md hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+        className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 hover:border-slate-400 px-8 py-5 rounded-2xl font-bold text-base transition-all cursor-pointer"
       >
-        <Download className="w-5 h-5 text-green-400" /> Read Whitepaper
+        <Download className="w-5 h-5 text-green-600" /> Read Whitepaper
       </Link>
     </div>
   );

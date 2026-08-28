@@ -27,6 +27,8 @@ import { ProjectSkeleton } from '@/components/Skeleton';
 
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { saveAs } from '@/lib/fileSaver';
+import VerificationRail from '@/components/VerificationRail';
+import { workflowSteps } from '@/lib/workflow-steps';
 
 const renderSafeValue = (val: any): string => {
   if (val === null || val === undefined) return '';
@@ -607,6 +609,11 @@ export default function TestingSandboxPage() {
 
   return (
     <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8">
+      {/* Where am I, what is behind me, what is still open — kept on
+          screen while the stepper scrolls away. Reports artefacts that
+          exist; it decides nothing. */}
+      <VerificationRail steps={workflowSteps(project)} current={5} projectId={projectId as string} />
+
       <Stepper currentStep={5} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       
       <div className="mb-6 md:mb-10 mt-6 md:mt-8">

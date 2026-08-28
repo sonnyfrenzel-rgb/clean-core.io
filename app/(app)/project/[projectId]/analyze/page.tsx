@@ -57,6 +57,8 @@ import { joinUsageWithEvidence } from '@/lib/abap/usage-join';
 import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
 
 import { DocumentSkeleton } from '@/components/Skeleton';
+import VerificationRail from '@/components/VerificationRail';
+import { workflowSteps } from '@/lib/workflow-steps';
 
 export default function AnalyzePage() {
   const { projectId } = useParams();
@@ -1759,6 +1761,15 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
           </div>
         </div>
       )}
+
+      {/* Where am I, what is behind me, what is still open — kept on
+
+          screen while the stepper scrolls away. Reports artefacts that
+
+          exist; it decides nothing. */}
+
+      <VerificationRail steps={workflowSteps(project)} current={2} projectId={projectId as string} />
+
 
       <Stepper currentStep={project?.analysis ? 2 : 1} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       

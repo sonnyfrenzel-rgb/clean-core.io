@@ -53,6 +53,8 @@ import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 import { detectFindings, summarize } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { SourceFile } from '@/lib/abap/findings-detector';
+import VerificationRail from '@/components/VerificationRail';
+import { workflowSteps } from '@/lib/workflow-steps';
 
 const cleanAndParseJSON = (str: string) => {
   let cleaned = str.trim();
@@ -842,6 +844,11 @@ ${responseText.substring(0, 4000)}`;
 
   if (loading && !design) return (
     <div className="animate-in fade-in duration-500 min-h-screen">
+      {/* Where am I, what is behind me, what is still open — kept on
+          screen while the stepper scrolls away. Reports artefacts that
+          exist; it decides nothing. */}
+      <VerificationRail steps={workflowSteps(project)} current={3} projectId={projectId as string} />
+
       <Stepper currentStep={3} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
       <div className="bg-white rounded-[2rem] shadow-xl border border-gray-100 overflow-hidden mt-8">
         <div className="bg-green-600 px-6 sm:px-10 py-10 sm:py-12 text-white flex items-center justify-between">

@@ -7,6 +7,49 @@
 
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
+import ProcessStrip from './ProcessStrip';
+
+/**
+ * The three flows, in the notation stage 4 emits.
+ *
+ * Each one is read off the ABAP shown in its own tab — the SELECT and its WHERE
+ * clause, the loop, the dispatch — not composed for this page. The `released`
+ * flag marks the single step where the direct table read becomes a released SAP
+ * API, which is the whole transformation in one node.
+ */
+const FLOWS = {
+  salesOrder: {
+    processArea: 'Order-to-Cash · Order Fulfilment',
+    nodes: [
+      { name: 'Dashboard requests open orders', type: 'startEvent' as const, role: 'System' },
+      { name: 'Read sales order headers', type: 'serviceTask' as const, role: 'System', released: true },
+      { name: 'Order type = OR?', type: 'gateway' as const, role: 'System' },
+      { name: 'Collect open orders', type: 'serviceTask' as const, role: 'System' },
+      { name: 'Dashboard populated', type: 'endEvent' as const, role: 'Sales Operations' },
+    ],
+  },
+  journalEntry: {
+    processArea: 'Record-to-Report · Financial Close',
+    nodes: [
+      { name: 'Reporting run starts', type: 'startEvent' as const, role: 'System' },
+      { name: 'Read journal entry items', type: 'serviceTask' as const, role: 'System', released: true },
+      { name: 'Company code = 1000?', type: 'gateway' as const, role: 'System' },
+      { name: 'Hand over to reporting tool', type: 'serviceTask' as const, role: 'System' },
+      { name: 'Extract delivered', type: 'endEvent' as const, role: 'Finance Controlling' },
+    ],
+  },
+  dynamicDispatch: {
+    processArea: 'Logistics Execution · Dispatch Rules',
+    nodes: [
+      { name: 'Processing chain starts', type: 'startEvent' as const, role: 'System' },
+      { name: 'Resolve target at runtime', type: 'serviceTask' as const, role: 'System' },
+      { name: 'Target known statically?', type: 'gateway' as const, role: 'System' },
+      { name: 'Architect reviews dispatch', type: 'userTask' as const, role: 'Architect' },
+      { name: 'Remediation decided', type: 'endEvent' as const, role: 'Architect' },
+    ],
+  },
+};
+
 export default function TransformationShowroom() {
   return (
     <div
@@ -114,6 +157,14 @@ export default function TransformationShowroom() {
                 </div>
               </div>
             </div>
+
+            {/* Between "what is it" and "what does it become": what it does.
+                The strip is read off the ABAP in this very tab, in the BPMN
+                vocabulary stage 4 emits. */}
+            <ProcessStrip
+              processArea={FLOWS.salesOrder.processArea}
+              nodes={FLOWS.salesOrder.nodes}
+            />
 
             {/* Two-column code layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -304,6 +355,14 @@ export default function TransformationShowroom() {
               </div>
             </div>
 
+            {/* Between "what is it" and "what does it become": what it does.
+                The strip is read off the ABAP in this very tab, in the BPMN
+                vocabulary stage 4 emits. */}
+            <ProcessStrip
+              processArea={FLOWS.journalEntry.processArea}
+              nodes={FLOWS.journalEntry.nodes}
+            />
+
             {/* Two-column code layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* ── LEFT: Legacy Input ── */}
@@ -439,6 +498,14 @@ export default function TransformationShowroom() {
                 </div>
               </div>
             </div>
+
+            {/* Between "what is it" and "what does it become": what it does.
+                The strip is read off the ABAP in this very tab, in the BPMN
+                vocabulary stage 4 emits. */}
+            <ProcessStrip
+              processArea={FLOWS.dynamicDispatch.processArea}
+              nodes={FLOWS.dynamicDispatch.nodes}
+            />
 
             {/* Two-column code layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

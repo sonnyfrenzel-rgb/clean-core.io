@@ -189,22 +189,52 @@ export default function BenefitCard({
             {totalFindings} findings, split three ways:
           </p>
 
-          <div className="mt-4 flex h-2 w-full overflow-hidden rounded-full bg-slate-800">
+          {/*
+            The split, as one object rather than two.
+
+            This was a 2 px bar above a stacked list of three numbers: the
+            proportion in one place, the counts in another, and the reader had to
+            hold both. Now each segment is as wide as its share and carries its own
+            number, so 21 / 17 / 4 is read rather than computed. No new value and
+            no new colour — the same three fills the bar already used, with the
+            card's own slate-900 as the type on top of them.
+
+            `flex-grow` rather than percentage widths, with a floor: at 4 of 42 the
+            last segment is under a tenth of the row, which on a phone is narrower
+            than the number it holds. The floor costs a little accuracy at the
+            smallest width and keeps the figure legible, which is the better trade
+            for a number whose whole job is to be read.
+          */}
+          <div className="mt-5 flex h-[4.5rem] sm:h-20 w-full overflow-hidden rounded-2xl" role="img"
+               aria-label={bands.map((x) => `${x.b.count} ${x.short}`).join(', ')}>
             {bands.map((x) => (
-              <div key={x.short} className={x.bar} style={{ width: `${pct(x.b.count)}%` }} title={`${x.b.count} ${x.short}`} />
+              <div
+                key={x.short}
+                className={`${x.bar} flex flex-col items-center justify-center gap-0.5 px-1 min-w-[3.75rem] sm:min-w-[5rem]`}
+                style={{ flexGrow: x.b.count }}
+                title={`${x.b.count} ${x.short}`}
+              >
+                <span className="text-2xl sm:text-4xl font-black tabular-nums text-slate-900 leading-none tracking-tight">
+                  {x.b.count}
+                </span>
+                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-slate-900/70 text-center leading-tight">
+                  {x.short}
+                </span>
+              </div>
             ))}
           </div>
 
-          {/* Each number carries the sentence that says what it means — the three
-              cards from the section that used to sit below this one. */}
-          <dl className="mt-5 space-y-4">
+          {/* What each number means, word for word as before.
+              The name is not repeated here — it is in the segment directly above,
+              and printing it twice made the card five words longer for nothing.
+              The dot carries the tie for a sighted reader; the label is still in
+              the markup for everyone else. */}
+          <dl className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-3">
             {bands.map((x) => (
-              <div key={x.short}>
-                <dt className="flex items-baseline gap-2">
-                  <span className="text-4xl sm:text-5xl font-black tabular-nums text-white leading-none tracking-tight">
-                    {x.b.count}
-                  </span>
-                  <span className={`text-[11px] font-black uppercase tracking-widest ${x.text}`}>{x.short}</span>
+              <div key={x.short} role="group" aria-label={x.short}>
+                <dt className="flex items-center gap-1.5">
+                  <span className={`h-1.5 w-1.5 rounded-full ${x.dot}`} aria-hidden />
+                  <span className={`h-px flex-1 ${x.dot} opacity-25`} aria-hidden />
                 </dt>
                 <dd className="mt-1.5 text-[11px] text-slate-400 leading-relaxed">{x.b.meaning}</dd>
               </div>
