@@ -196,6 +196,8 @@ export async function recordEmailSent(
   await db.runTransaction(async (tx: any) => {
     const snap = await tx.get(ref);
     const existing = snap.exists ? snap.data() || {} : {};
+    const status: string = existing.status || 'email.sent';
+
     tx.set(
       ref,
       {
@@ -204,11 +206,31 @@ export async function recordEmailSent(
         subject,
         kind,
         uid: uid ?? null,
-        status: existing.status || 'email.sent',
+        status,
         sentAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true },
     );
+
+    // The other half of the same race. `recordEmailEvent` mirrors a verdict onto
+    // the user's row by reading `uid` and `kind` off this document — so an event
+    // that arrives before this record exists finds neither, records the verdict
+    // correctly in `email_events`, and silently skips the mirror. The badge would
+    // then never appear for exactly the bounce that arrived fastest.
+    //
+    // This is the only other place that knows both the id and the person. A
+    // status that is no longer `email.sent` means a webhook got here first.
+    if (uid && kind === 'welcome' && status !== 'email.sent') {
+      tx.set(
+        db.collection('registration_requests').doc(uid),
+        {
+          welcomeMailStatus: status,
+          welcomeMailDetail: existing.lastDetail ?? null,
+          welcomeMailAt: existing.lastEventAt ?? new Date().toISOString(),
+        },
+        { merge: true },
+      );
+    }
   });
 }

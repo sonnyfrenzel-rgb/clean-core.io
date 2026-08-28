@@ -20,7 +20,14 @@ npm run sync:catalog # refresh SAP cloudification catalog (latest)
 npm run sync:catalog:all # refresh every registry entry incl. the A-D classification file
 ```
 
-Emulators for tests: `firebase emulators:start --only auth,firestore` (auth :9099, firestore :8080).
+Emulators for tests: `firebase emulators:start --only auth,firestore --project=cleancore-491216`
+(auth :9099, firestore :8080). **The `--project` flag is not optional.** Without it —
+and there is no `.firebaserc` to supply it — the CLI falls back to `demo-no-project`,
+the browser mints tokens for that project, and the Admin SDK rejects every one of
+them with `incorrect "aud" claim`. The symptom is a handful of auth-dependent specs
+failing with "There is no user record" or "Authentication required" while everything
+else passes, which reads like a code regression and is not one. CI passes the flag
+(`.github/workflows/deploy.yml`).
 
 ## Layout
 

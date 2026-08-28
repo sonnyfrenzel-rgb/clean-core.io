@@ -1,5 +1,6 @@
 import { wrapEmailDocument } from './email-layout';
 import { APP_VERSION } from './version';
+import { escapeHtml } from './utils';
 import type { UsageReport } from './usage-report';
 
 /**
@@ -86,6 +87,99 @@ function personList(
       <span style="font-weight: 800; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">${title}</span>
       ${rows}
     </div>`;
+}
+
+/**
+ * Delivery of the platform's own mail.
+ *
+ * The reason this block exists at all: a 200 from Resend means "queued", and the
+ * whole registration flow hangs on one welcome message. A week where mail is
+ * being sent and nothing comes back is a finding, so `awaiting` is shown rather
+ * than quietly folded into the total.
+ *
+ * Layout follows the rest of the report — label above value, never a right
+ * aligned number, because that collides at 320px in exactly the client this gets
+ * read in.
+ */
+function deliveryPanel(d: UsageReport['delivery']): string {
+  if (!d.sent) {
+    return `
+    <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
+      <span style="font-weight: 800; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">Mailzustellung</span>
+      <p style="font-size: 14px; color: #94a3b8; margin: 6px 0 0 0; font-style: italic; line-height: 1.5;">
+        Diese Woche hat die Plattform keine Mail versendet.
+      </p>
+    </div>`;
+  }
+
+  const chip = (label: string, value: number, colour: string, bg: string) =>
+    value === 0 && colour === '#b91c1c'
+      ? ''
+      : `<div style="padding: 9px 0; border-bottom: 1px solid #f1f5f9;">
+           <div style="font-size: 13px; color: #64748b; line-height: 1.4;">${label}</div>
+           <div style="font-size: 17px; font-weight: 800; color: ${colour}; line-height: 1.3;">${value}</div>
+         </div>`;
+
+  // Every message that did not reach its reader, with the provider's own words.
+  // Truncated: a mailbox that is full produces a paragraph, and this is a summary.
+  const failures = d.failures.length
+    ? d.failures
+        .map(
+          (f) => `
+        <div style="padding: 10px 0; border-bottom: 1px solid #fee2e2;">
+          <div style="font-size: 14px; font-weight: 700; color: #7f1d1d; word-break: break-word;">${escapeHtml(f.to)}</div>
+          <div style="font-size: 12px; color: #b91c1c; line-height: 1.5;">
+            ${f.status === 'email.complained' ? 'Als Spam gemeldet' : 'Abgeprallt'} &middot; ${escapeHtml(f.kind)}${
+              f.at ? ` &middot; ${fmtDate(f.at)}` : ''
+            }
+          </div>
+          ${
+            f.detail
+              ? `<div style="font-size: 12px; color: #991b1b; line-height: 1.5; margin-top: 3px;">${escapeHtml(
+                  f.detail.slice(0, 240),
+                )}</div>`
+              : ''
+          }
+        </div>`,
+        )
+        .join('')
+    : '';
+
+  return `
+    <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
+      <span style="font-weight: 800; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">Mailzustellung</span>
+      ${chip('Versendet', d.sent, '#0f172a', '')}
+      ${chip('Zugestellt', d.delivered + d.opened, '#047857', '')}
+      ${chip('Davon geöffnet', d.opened, '#64748b', '')}
+      ${chip('Verzögert', d.delayed, '#b45309', '')}
+      ${chip('Abgeprallt', d.bounced, '#b91c1c', '')}
+      ${chip('Als Spam gemeldet', d.complained, '#b91c1c', '')}
+      ${
+        d.awaiting
+          ? `<div style="padding: 9px 0;">
+               <div style="font-size: 13px; color: #64748b; line-height: 1.4;">Ohne Rückmeldung</div>
+               <div style="font-size: 17px; font-weight: 800; color: #64748b; line-height: 1.3;">${d.awaiting}</div>
+             </div>
+             <p style="font-size: 12px; color: #94a3b8; margin: 4px 0 0 0; line-height: 1.5;">
+               Versendet, aber kein Zustellereignis erhalten. Bleibt diese Zahl hoch, während Mail rausgeht,
+               ist der Resend-Webhook nicht scharf &mdash; nicht die Zustellung kaputt.
+             </p>`
+          : ''
+      }
+    </div>${
+      failures
+        ? `
+    <div class="panel" style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
+      <span style="font-weight: 800; color: #b91c1c; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">Nicht angekommen</span>
+      ${failures}
+      <p style="font-size: 12px; color: #b91c1c; margin: 10px 0 0 0; line-height: 1.5;">
+        Diese Leute haben nichts erhalten. Bei einer Willkommensmail heißt das: ein Konto ohne
+        First-Start-Guide und ohne die Sicherheitsantworten &mdash; der wahrscheinlichste Grund, nie
+        anzufangen.
+      </p>
+    </div>`
+        : ''
+    }`;
 }
 
 export function renderUsageReportSubject(report: UsageReport): string {
@@ -202,6 +296,8 @@ export function renderUsageReportEmail(report: UsageReport): string {
         : ''
     }
 
+    ${deliveryPanel(report.delivery)}
+
     <div class="cta-wrap" style="text-align: center; margin: 26px 0;">
       <a class="cta" href="${BASE_URL}/admin?tab=usage" style="display: inline-block; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
         Im Admin-Panel öffnen
@@ -221,6 +317,35 @@ export function renderUsageReportEmail(report: UsageReport): string {
 </div>`;
 
   return wrapEmailDocument(body, `Wochenbericht KW ${kw}`);
+}
+
+/**
+ * The delivery block for the plain-text part. Same figures, same reason for
+ * showing `awaiting` separately.
+ */
+function deliveryText(d: UsageReport['delivery']): string {
+  if (!d.sent) return 'MAILZUSTELLUNG\nDiese Woche hat die Plattform keine Mail versendet.\n';
+  const lines = [
+    'MAILZUSTELLUNG',
+    `Versendet: ${d.sent}`,
+    `Zugestellt: ${d.delivered + d.opened}${d.opened ? ` (davon geöffnet: ${d.opened})` : ''}`,
+  ];
+  if (d.delayed) lines.push(`Verzögert: ${d.delayed}`);
+  if (d.bounced) lines.push(`Abgeprallt: ${d.bounced}`);
+  if (d.complained) lines.push(`Als Spam gemeldet: ${d.complained}`);
+  if (d.awaiting) {
+    lines.push(`Ohne Rückmeldung: ${d.awaiting}`);
+    lines.push('  Bleibt diese Zahl hoch, während Mail rausgeht, ist der Resend-Webhook nicht scharf.');
+  }
+  if (d.failures.length) {
+    lines.push('');
+    lines.push('NICHT ANGEKOMMEN');
+    for (const f of d.failures) {
+      const what = f.status === 'email.complained' ? 'Als Spam gemeldet' : 'Abgeprallt';
+      lines.push(`- ${f.to} — ${what} (${f.kind})${f.detail ? `: ${f.detail.slice(0, 240)}` : ''}`);
+    }
+  }
+  return lines.join('\n') + '\n';
 }
 
 /** Plain-text alternative — a missing text part costs deliverability points. */
@@ -262,6 +387,7 @@ ERSTMALS AKTIVIERT
 ${report.newlyActivated.length ? report.newlyActivated.map((a) => `  ${a.name} <${a.email}> — ${a.runs} Analysen`).join('\n') : '  (niemand)'}
 
 ${report.reachedLimit.length ? `KONTINGENT AUFGEBRAUCHT\n${report.reachedLimit.map((a) => `  ${a.name} <${a.email}>`).join('\n')}\n` : ''}
+${deliveryText(report.delivery)}
 Im Admin-Panel oeffnen: ${BASE_URL}/admin?tab=usage
 
 Automatisch erstellt am ${fmtDate(report.generatedAt)}. Testkonten aus der CI sind

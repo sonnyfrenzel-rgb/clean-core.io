@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [v2.5.3] — 2026-08-28
+
+### Zustellzahlen im Wochenbericht
+
+Der Webhook aus v2.5.1 schreibt Zustellereignisse nach Firestore und setzt ein
+Abzeichen auf die Nutzerzeile. Was fehlte, war die Zusammenfassung: wie viel Mail
+ist rausgegangen, wie viel davon angekommen, und wenn nicht — bei wem und warum.
+
+Der Freitagsbericht hat jetzt einen Abschnitt **Mailzustellung**: versendet,
+zugestellt (davon geöffnet), verzögert, abgeprallt, als Spam gemeldet. Darunter,
+nur wenn es etwas zu zeigen gibt, ein roter Block **Nicht angekommen** mit
+Empfänger, Art der Mail, Zeitpunkt und dem Grund im Wortlaut des Providers.
+
+Drei Entscheidungen darin:
+
+- **`email.sent` bekommt eine eigene Zeile „Ohne Rückmeldung"**, nicht 0 %
+  zugestellt. Vor dem Webhook stand jeder Datensatz für immer auf `sent`; wird
+  diese Zahl wieder hoch, während Mail rausgeht, sagt der Bericht ausdrücklich,
+  dass der Webhook nicht scharf ist — und nicht, dass die Zustellung kaputt sei.
+- **Nullwerte erzeugen keine Zeile.** Eine Woche ohne Bounces zeigt keinen
+  Bounce-Eintrag; der Abschnitt soll gelesen und nicht überflogen werden.
+- **Testkonten sind ausgenommen**, nach derselben Regel wie überall sonst im
+  Bericht. Die CI verschickt weit mehr Mail als echte Nutzer.
+
+### Die andere Hälfte des Wettrennens
+
+`recordEmailSent` schützte seit v2.5.1 ein bereits eingetroffenes Urteil davor,
+von `email.sent` überschrieben zu werden. Die Spiegelung auf die Nutzerzeile war
+davon nicht gedeckt: `recordEmailEvent` liest `uid` und `kind` vom Dokument, und
+ein Ereignis, das vor dem Sendevermerk ankommt, findet beides nicht — der Bounce
+stand korrekt in `email_events`, das rote Abzeichen erschien nie. Ausgerechnet
+beim schnellsten Bounce. `recordEmailSent` spiegelt jetzt nach, wenn es ein
+Dokument vorfindet, dessen Status kein `sent` mehr ist.
+
+### „Motivation / Use Case" ist wieder im Anmeldeformular
+
+Der Google-Pfad hat nie aufgehört zu fragen. Der E-Mail/Passwort-Pfad schickte
+seit einem Umbau ein hartkodiertes `motivation: ''` — Backend, Firestore-Dokument
+und die Admin-Benachrichtigung konnten das Feld die ganze Zeit, nur gefragt hat
+es niemand mehr. Die Mail druckte eine Überschrift mit nichts darunter.
+
+Optional, 2000 Zeichen, kein `required`. Zwei Sätze zum Anwendungsfall sind der
+Unterschied zwischen einer Zeile in einer Liste und dem Wissen, wer da gekommen
+ist — aber daraus eine Hürde zu machen wäre das Gegenteil dessen, wofür in
+v2.4.2 die Freigabe abgeschafft wurde.
+
+### Betrieb
+
+Der Resend-Webhook ist scharfgeschaltet. Der GitHub-Secret allein genügt nicht:
+er wird beim Deploy als Umgebungsvariable injiziert, und bis dahin antwortete die
+Route jedem 503 — was in den Logs einer Live-Registrierung um 06:03 auch so zu
+sehen war, viermal in acht Sekunden.
+
+`CLAUDE.md` trägt jetzt die lokale Emulator-Falle: ohne `--project=cleancore-491216`
+fällt die CLI auf `demo-no-project` zurück, und das Admin SDK weist jedes Token mit
+`incorrect "aud" claim` ab. Das Symptom sind vier fehlschlagende auth-abhängige
+Specs bei sonst grüner Suite — es liest sich wie ein Regress und ist keiner.
+
+323 Tests grün.
+
 ## [v2.5.2] — 2026-08-27
 
 ### Eine Seite, die aus Nachprüfbarkeit argumentiert, wird daran gemessen

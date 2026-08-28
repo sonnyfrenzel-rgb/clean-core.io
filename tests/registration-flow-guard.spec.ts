@@ -194,3 +194,33 @@ test.describe('the one welcome mail does the whole job', () => {
     }
   });
 });
+
+test.describe('the optional motivation field', () => {
+  const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
+
+  test('both registration paths ask for it', () => {
+    // The Google path never stopped asking. The email/password path sent a
+    // hard-coded empty string, so the admin notification printed a heading with
+    // nothing under it — and the one question that says who arrived was gone.
+    for (const rel of ['components/UserOnboarding.tsx', 'components/LandingModals.tsx']) {
+      const s = read(rel);
+      expect(s, `${rel} has no motivation input`).toMatch(/<textarea[\s\S]{0,400}?motivation/i);
+      // Each path hands it on its own way — one as a named field, the other as a
+      // positional argument to createProfile. What matters is that the value
+      // leaves the component instead of being replaced by an empty string.
+      expect(s, `${rel} does not send it`).toMatch(/motivation:\s*motivation|,\s*motivation\)/);
+      expect(s, `${rel} still sends a hard-coded blank`).not.toMatch(/motivation:\s*''\s*,/);
+    }
+  });
+
+  test('it is never required', () => {
+    const s = read('components/LandingModals.tsx');
+    const field = s.slice(s.indexOf('Motivation / Use Case'));
+    const textarea = field.slice(field.indexOf('<textarea'), field.indexOf('</div>'));
+    // Optional means optional: a `required` here would turn a helpful question
+    // into a registration barrier, which is the opposite of the change that
+    // removed the approval step.
+    expect(textarea).not.toContain('required');
+    expect(textarea).toContain('maxLength');
+  });
+});

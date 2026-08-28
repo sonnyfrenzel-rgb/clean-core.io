@@ -27,6 +27,24 @@ const report: UsageReport = {
   ],
   newlyActivated: [{ name: 'Maria Huber', email: 'maria.huber@example.com', runs: 4 }],
   reachedLimit: [{ name: 'Jonas Roth', email: 'jonas.roth@example.com' }],
+  delivery: {
+    sent: 7, delivered: 4, delayed: 1, bounced: 1, complained: 0, opened: 1, awaiting: 0,
+    failures: [
+      {
+        to: 'felix.frenzel@sehr-lange-firmendomain.example',
+        kind: 'welcome',
+        status: 'email.bounced',
+        detail: 'The recipient server rejected the message: 550 5.7.1 Message blocked by policy',
+        at: new Date('2026-08-20T08:11:00Z'),
+      },
+    ],
+  },
+};
+
+/** A week where mail went out and nothing came back — the webhook is not armed. */
+const silentReport: UsageReport = {
+  ...report,
+  delivery: { sent: 5, delivered: 0, delayed: 0, bounced: 0, complained: 0, opened: 0, awaiting: 5, failures: [] },
 };
 
 test('subject names the adoption figure', () => {
@@ -70,3 +88,54 @@ for (const [name, width] of [['mobile-320', 320], ['mobile-375', 375], ['desktop
     await page.screenshot({ path: `test-results/report-${name}.png`, fullPage: true });
   });
 }
+
+test.describe('mail delivery is in the report', () => {
+  test('the counts are shown, and a bounce is named with its reason', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 1400 });
+    await page.setContent(renderUsageReportEmail(report), { waitUntil: 'load' });
+
+    await expect(page.getByText('Mailzustellung')).toBeVisible();
+    for (const label of ['Versendet', 'Zugestellt', 'Verzögert', 'Abgeprallt']) {
+      await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
+    }
+
+    // The point of the section: who did not get it, and why. A count alone would
+    // not tell the operator what to do next.
+    await expect(page.getByText('Nicht angekommen')).toBeVisible();
+    await expect(page.getByText(/felix\.frenzel@/)).toBeVisible();
+    await expect(page.getByText(/Message blocked by policy/)).toBeVisible();
+  });
+
+  test('a clean week does not invent a failure section', async ({ page }) => {
+    await page.setContent(
+      renderUsageReportEmail({
+        ...report,
+        delivery: { sent: 6, delivered: 6, delayed: 0, bounced: 0, complained: 0, opened: 2, awaiting: 0, failures: [] },
+      }),
+      { waitUntil: 'load' },
+    );
+    await expect(page.getByText('Mailzustellung')).toBeVisible();
+    await expect(page.getByText('Nicht angekommen')).toHaveCount(0);
+    // Zero bounces is not worth a row of its own.
+    await expect(page.getByText('Abgeprallt', { exact: true })).toHaveCount(0);
+  });
+
+  test('silence is reported as silence, not as success', async ({ page }) => {
+    await page.setContent(renderUsageReportEmail(silentReport), { waitUntil: 'load' });
+    // Five sent, nothing back. That is a finding about the webhook, and the mail
+    // has to say so rather than showing 0 delivered as if delivery had failed.
+    await expect(page.getByText('Ohne Rückmeldung')).toBeVisible();
+    await expect(page.getByText(/Webhook nicht scharf/)).toBeVisible();
+  });
+
+  test('a week with no mail says so', async ({ page }) => {
+    await page.setContent(
+      renderUsageReportEmail({
+        ...report,
+        delivery: { sent: 0, delivered: 0, delayed: 0, bounced: 0, complained: 0, opened: 0, awaiting: 0, failures: [] },
+      }),
+      { waitUntil: 'load' },
+    );
+    await expect(page.getByText(/keine Mail versendet/)).toBeVisible();
+  });
+});

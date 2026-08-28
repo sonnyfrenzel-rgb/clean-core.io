@@ -68,6 +68,36 @@ export interface UsageReport {
   newlyActivated: { name: string; email: string; runs: number }[];
   /** Ran out of free units — a conversation, not a problem. */
   reachedLimit: { name: string; email: string }[];
+  /** What became of the mail the platform sent this week. */
+  delivery: DeliveryMetrics;
+}
+
+/**
+ * Mail the platform sent during the week, and what the provider reported back.
+ *
+ * A 200 from Resend only means "queued", so before the webhook existed there was
+ * nothing to count here: every record sat at `email.sent` for ever. `awaiting` is
+ * that state — sent, no verdict yet — and it is reported rather than hidden,
+ * because a week where it stays high means the webhook is not wired up, not that
+ * the mail failed.
+ */
+export interface DeliveryMetrics {
+  sent: number;
+  delivered: number;
+  delayed: number;
+  bounced: number;
+  complained: number;
+  opened: number;
+  /** Sent, but no delivery event has arrived. */
+  awaiting: number;
+  /** Every message that did not reach its reader, with the provider's reason. */
+  failures: {
+    to: string;
+    kind: string;
+    status: string;
+    detail: string | null;
+    at: Date | null;
+  }[];
 }
 
 const toDate = (value: unknown): Date | null => {
@@ -88,10 +118,14 @@ export async function buildUsageReport(db: Firestore, periodEnd: Date = new Date
   const periodStart = new Date(periodEnd.getTime() - WEEK_MS);
   const previousStart = new Date(periodStart.getTime() - WEEK_MS);
 
-  const [usersSnap, projectsSnap, runsSnap] = await Promise.all([
+  const [usersSnap, projectsSnap, runsSnap, mailSnap] = await Promise.all([
     db.collection('users').get(),
     db.collection('projects').get(),
     db.collectionGroup('runs').get(),
+    // Written by the send calls and by /api/webhooks/resend. Read in full: the
+    // collection holds one document per message, and the platform sends a
+    // handful a week.
+    db.collection('email_events').get(),
   ]);
 
   // CI accounts are excluded everywhere: they outnumber real users several times
@@ -155,6 +189,42 @@ export async function buildUsageReport(db: Firestore, periodEnd: Date = new Date
 
   const activatedUids = new Set(firstRunByUser.keys());
 
+  // Mail sent inside the reporting window. Test recipients are excluded on the
+  // same rule as the cohort: CI sends far more mail than real users do, and it
+  // would swamp every count here.
+  const FAILED = new Set(['email.bounced', 'email.complained']);
+  const mail = mailSnap.docs
+    .map((d) => {
+      const m = d.data();
+      const to: string[] = Array.isArray(m.to) ? m.to : m.to ? [m.to] : [];
+      return {
+        to: to[0] || '',
+        kind: (m.kind || 'mail') as string,
+        status: (m.status || 'email.sent') as string,
+        detail: (m.lastDetail ?? null) as string | null,
+        sentAt: toDate(m.sentAt),
+        at: toDate(m.lastEventAt) || toDate(m.sentAt),
+      };
+    })
+    .filter((m) => inWindow(m.sentAt, periodStart, periodEnd) && !isTestAccount(m.to));
+
+  const countBy = (status: string) => mail.filter((m) => m.status === status).length;
+  const delivery: DeliveryMetrics = {
+    sent: mail.length,
+    delivered: countBy('email.delivered'),
+    delayed: countBy('email.delivery_delayed'),
+    bounced: countBy('email.bounced'),
+    complained: countBy('email.complained'),
+    // Opened implies delivered; counted separately rather than folded in, so the
+    // delivered figure stays a count of messages that arrived.
+    opened: mail.filter((m) => m.status === 'email.opened' || m.status === 'email.clicked').length,
+    awaiting: countBy('email.sent'),
+    failures: mail
+      .filter((m) => FAILED.has(m.status))
+      .map((m) => ({ to: m.to, kind: m.kind, status: m.status, detail: m.detail, at: m.at }))
+      .sort((a, b) => (b.at?.getTime() || 0) - (a.at?.getTime() || 0)),
+  };
+
   return {
     generatedAt: new Date(),
     periodStart,
@@ -186,5 +256,6 @@ export async function buildUsageReport(db: Firestore, periodEnd: Date = new Date
     reachedLimit: cohort
       .filter((u) => u.atLimit)
       .map((u) => ({ name: u.name, email: u.email })),
+    delivery,
   };
 }

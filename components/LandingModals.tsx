@@ -27,7 +27,8 @@ import {
   ArrowLeft, 
   Eye, 
   EyeOff, 
-  Check
+  Check,
+  MessageSquare,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import LegalOverlay from '@/app/components/LegalOverlay';
@@ -58,6 +59,7 @@ export default function LandingModals() {
   const [isNavigating, setIsNavigating] = useState(false);
 
   // Legal consent state (for signup)
+  const [motivation, setMotivation] = useState('');
   const [agreedGDPR, setAgreedGDPR] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [showDatenschutz, setShowDatenschutz] = useState(false);
@@ -311,7 +313,7 @@ export default function LandingModals() {
       await setDoc(doc(db, 'registration_requests', signedInUser.uid), {
         email: signedInUser.email,
         name: `${firstName} ${lastName}`,
-        motivation: '',
+        motivation: motivation.trim().slice(0, 2000),
         status: 'pending',
         createdAt: new Date(),
       });
@@ -324,6 +326,7 @@ export default function LandingModals() {
         await finishRegistration(signedInUser, {
           firstName,
           lastName,
+          motivation: motivation.trim().slice(0, 2000),
           acceptedTerms: agreedTerms,
           acceptedPrivacy: agreedGDPR,
         });
@@ -761,6 +764,28 @@ export default function LandingModals() {
                           <Check size={10} /> Passwords match
                         </p>
                       )}
+                    </div>
+
+                    {/*
+                      Optional, and the only free-text field in the form. Nobody
+                      is gated on it, but two sentences about the use case is the
+                      difference between a row in a list and knowing who arrived —
+                      and the admin notification has always had a place to print
+                      it. The Google path kept asking; this one stopped, and sent
+                      an empty string instead.
+                    */}
+                    <div>
+                      <label className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">
+                        <MessageSquare size={12} /> Motivation / Use Case (Optional)
+                      </label>
+                      <textarea
+                        value={motivation}
+                        onChange={(e) => setMotivation(e.target.value)}
+                        placeholder="Which SAP system, and what are you trying to find out?"
+                        rows={2}
+                        maxLength={2000}
+                        className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-medium text-gray-900 text-sm resize-none"
+                      />
                     </div>
 
                     {/* Legal consent checkboxes (required for registration) */}

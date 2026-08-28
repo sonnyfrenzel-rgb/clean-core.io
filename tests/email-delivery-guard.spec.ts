@@ -186,6 +186,17 @@ test('the send record does not overwrite a verdict that already arrived', () => 
   // Resend can report a hard bounce before the send call's own bookkeeping has
   // landed. A blind `status: 'email.sent'` would erase it.
   expect(fn).not.toContain("status: 'email.sent',");
-  expect(fn).toContain("status: existing.status || 'email.sent'");
+  expect(fn).toContain("const status: string = existing.status || 'email.sent'");
   expect(fn).toContain('runTransaction');
+});
+
+test('a verdict that outran the send record still reaches the user row', () => {
+  const s = read('lib/email-events.ts');
+  const fn = s.slice(s.indexOf('export async function recordEmailSent'));
+  // recordEmailEvent mirrors by reading uid and kind off the document. An event
+  // that arrives before the document exists finds neither and skips the mirror,
+  // so the badge would never appear for the fastest bounce of all. This is the
+  // only other place that knows both the message id and the person.
+  expect(fn).toContain("uid && kind === 'welcome' && status !== 'email.sent'");
+  expect(fn).toContain("db.collection('registration_requests').doc(uid)");
 });
