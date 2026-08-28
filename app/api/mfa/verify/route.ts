@@ -26,28 +26,55 @@ export async function POST(request: NextRequest) {
     }
 
     const { db, FieldValue } = await getAdminDb();
+    const mfaRef = db.collection('mfa_secrets').doc(uid);
 
-    // 1. Fetch encrypted secret and hashed backup codes
-    const mfaDoc = await db.collection('mfa_secrets').doc(uid).get();
-    if (!mfaDoc.exists) {
+    // 1-3. Read, verify, and — for a backup code — redeem, in one transaction.
+    //
+    // These were three separate steps: read the document, verify against it,
+    // then write the remaining codes back. Two requests carrying the same backup
+    // code both read the same array before either wrote, both verified, and both
+    // wrote their own remainder — the second overwriting the first. One code,
+    // two twelve-hour MFA sessions. "Single use" is the entire promise of a
+    // backup code, so it is worth a transaction rather than a comment.
+    //
+    // A TOTP code takes the same path and writes nothing; the read stays inside
+    // the transaction so the two cases cannot diverge.
+    let result: Awaited<ReturnType<typeof verifyMfa>>;
+    let notConfigured = false;
+
+    try {
+      result = await db.runTransaction(async (tx: any) => {
+        const snap = await tx.get(mfaRef);
+        if (!snap.exists) {
+          notConfigured = true;
+          return { success: false } as Awaited<ReturnType<typeof verifyMfa>>;
+        }
+
+        const { secretEnc, backupCodes = [] } = snap.data();
+        const verified = await verifyMfa(secretEnc, backupCodes, code, uid);
+
+        if (verified.success && verified.isBackupCode && verified.remainingBackupCodes !== undefined) {
+          tx.update(mfaRef, {
+            backupCodes: verified.remainingBackupCodes,
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+        }
+        return verified;
+      });
+    } catch (txErr) {
+      // A contended transaction is retried by the SDK; reaching here means it
+      // could not commit. Issuing a session on a code that may not have been
+      // redeemed is the one outcome to avoid.
+      console.error('[mfa/verify] redemption transaction failed:', txErr);
+      return NextResponse.json({ error: 'Could not verify the code. Please try again.' }, { status: 503 });
+    }
+
+    if (notConfigured) {
       return NextResponse.json({ error: 'MFA is not configured for this account.' }, { status: 400 });
     }
 
-    const { secretEnc, backupCodes = [] } = mfaDoc.data();
-
-    // 2. Perform server-side MFA verification (TOTP or backup code)
-    const result = await verifyMfa(secretEnc, backupCodes, code, uid);
-
     if (!result.success) {
       return NextResponse.json({ error: 'Invalid 6-digit code or backup recovery code.' }, { status: 400 });
-    }
-
-    // 3. If a backup code was used, remove it from the database
-    if (result.isBackupCode && result.remainingBackupCodes !== undefined) {
-      await db.collection('mfa_secrets').doc(uid).update({
-        backupCodes: result.remainingBackupCodes,
-        updatedAt: FieldValue.serverTimestamp(),
-      });
     }
 
     // 4. Generate and set the short-lived mfa_session cookie for API gating

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { recordEmailSent } from '@/lib/email-events';
 import { CONTACT_EMAIL } from '@/lib/constants';
 import { APP_VERSION } from '@/lib/version';
 import { verifyAdminRequest, assertAdminStepUp } from '@/lib/firebase-admin';
@@ -148,7 +149,7 @@ export async function POST(request: NextRequest) {
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
       console.log(`[Email] Sending Tenant Revoke Email to user ${email}...`);
-      await fetch('https://api.resend.com/emails', {
+      const resendRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${resendApiKey}`,
@@ -162,7 +163,27 @@ export async function POST(request: NextRequest) {
           html: wrapEmailDocument(emailHtml),
         }),
       });
-      console.log('[Email] Success sending Tenant Revoke Email.');
+      // The response was never looked at. Resend answering 400 or 500 produced
+      // this same "Success" line and a `success: true` body, so the admin console
+      // reported that a customer had been told something when no mail had been
+      // accepted at all. The message id is recorded on the way through, which is
+      // what lets a later delivery event from /api/webhooks/resend be joined to
+      // this send.
+      if (!resendRes.ok) {
+        const errText = await resendRes.text();
+        console.error('[Email] Resend rejected the tenant revoke:', errText);
+        return NextResponse.json(
+          { error: 'The notification could not be sent. The change was not applied.' },
+          { status: 502 },
+        );
+      }
+      const sent = await resendRes.json().catch(() => ({} as any));
+      console.log(`[Email] Sent tenant revoke to ${email}. id=${sent?.id ?? 'unknown'}`);
+      if (sent?.id) {
+        await recordEmailSent(sent.id, email, emailSubject, 'tenant revoke').catch((err) =>
+          console.error('[Email] Could not record sent event:', err),
+        );
+      }
     } else {
       // Offline/Local development fallback
       console.log('\n======================================================');

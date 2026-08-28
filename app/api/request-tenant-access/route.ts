@@ -8,6 +8,13 @@ import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { wrapEmailDocument } from '@/lib/email-layout';
 
 export async function POST(request: NextRequest) {
+  // Whether the administrator actually received the approval token. The route
+  // used to answer `success: true` either way: the applicant was told their
+  // request was in, `s4TenantAccessRequested` was set, and nobody held a token
+  // to act on. A request that silently reaches no one is worse than a refused
+  // one, because nobody is waiting for it.
+  let adminNotified = false;
+
   try {
     const decodedToken = await verifyRequestAuth(request);
     if (!decodedToken) {
@@ -171,7 +178,9 @@ export async function POST(request: NextRequest) {
         const errText = await resendRes.text();
         console.error('[Email] Failed to send tenant request via Resend API:', errText);
       } else {
-        console.log('[Email] Success sending tenant integration email.');
+        adminNotified = true;
+        const sent = await resendRes.json().catch(() => ({} as any));
+        console.log(`[Email] Sent tenant request to the administrator. id=${sent?.id ?? 'unknown'}`);
       }
 
       // ALSO send a pending confirmation email to the applicant (professional S/4HANA integration pending email)
@@ -277,6 +286,11 @@ export async function POST(request: NextRequest) {
     } else {
       // Security: Never log approval/reject tokens in production (F-03)
       const isProd = process.env.NODE_ENV === 'production';
+      // Outside production, printing the approval link to the console *is* the
+      // delivery channel — the developer running this has it in front of them.
+      // In production a missing key means nobody was told anything, which is the
+      // same outcome as a rejected send and is reported the same way below.
+      if (!isProd) adminNotified = true;
       if (!isProd) {
         console.log('\n======================================================');
         console.log('📬   [MOCK EMAIL SENT TO info@clean-core.io]   📬');
@@ -303,10 +317,29 @@ export async function POST(request: NextRequest) {
     const { db, FieldValue } = await getAdminDb();
     await db.collection('users').doc(uid).set({
       s4TenantAccessRequested: true,
+      // Recorded either way, so an un-notified request is findable rather than
+      // indistinguishable from one an administrator is sitting on.
+      s4TenantAccessNotified: adminNotified,
+      s4TenantAccessRequestedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
 
-    return NextResponse.json({ success: true });
+    if (!adminNotified) {
+      // The request is stored — it is not lost — but the caller must not be told
+      // an administrator has it. Reached when the provider rejected the message,
+      // or when RESEND_API_KEY is absent in production.
+      return NextResponse.json(
+        {
+          success: false,
+          notificationSent: false,
+          error:
+            'Your request was recorded, but the notification to the administrator could not be delivered. Please write to info@clean-core.io so it is not missed.',
+        },
+        { status: 502 },
+      );
+    }
+
+    return NextResponse.json({ success: true, notificationSent: true });
   } catch (error) {
     console.error('Error in request-tenant-access API:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

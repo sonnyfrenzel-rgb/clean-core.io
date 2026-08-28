@@ -11,6 +11,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [v2.6.1] — 2026-08-28
+
+### Sitzung, Zustellung, zweiter Faktor
+
+Release 4 von fünf. Fünf Befunde mit derselben Form: **etwas meldet einen Erfolg,
+den es nicht festgestellt hat.**
+
+**Der QR-Code war Dekoration.** `MockQrCode` nahm die `value`-Eigenschaft entgegen
+und zeichnete ein handgemaltes, immer gleiches SVG — unter der Überschrift „1.
+Scan Authenticator QR". Das Scannen richtete nichts ein. Der dokumentierte
+Hauptweg in die Zwei-Faktor-Authentifizierung funktionierte also gar nicht; nur
+das manuelle Eintippen des Geheimnisses.
+
+Ein echter QR-Code braucht einen geprüften Encoder, und eine neue Abhängigkeit
+bedeutet hier eine Neuerzeugung der Lockfile — laut `CLAUDE.md` ein eigenes
+Risiko. Bis das eine bewusste Entscheidung ist, stehen dort die beiden Wege, die
+tatsächlich funktionieren: die `otpauth://`-Adresse, die der Server ohnehin
+erzeugt, als Schaltfläche „Open in authenticator app", und der Schlüssel zum
+Abtippen.
+
+**Ein Backup-Code ließ sich zweimal einlösen.** Lesen, Prüfen und Zurückschreiben
+waren drei getrennte Schritte. Zwei gleichzeitige Anfragen mit demselben Code
+lasen dieselbe Liste, bestanden beide, und schrieben beide ihre eigene Restliste
+— die zweite überschrieb die erste. Ein Code, zwei Zwölf-Stunden-Sitzungen.
+Einmaligkeit ist das ganze Versprechen eines Backup-Codes; das ist eine
+Transaktion wert. Scheitert sie, wird keine Sitzung ausgestellt.
+
+**Zwei Mailrouten sahen die Antwort des Anbieters nie an.**
+`send-tenant-approval-email` und `send-tenant-revoke-email` protokollierten
+„Success", was auch immer Resend antwortete. `send-approval-email` protokollierte
+den Fehler und meldete trotzdem `success: true`. Die Admin-Konsole berichtete
+damit, ein Kunde sei benachrichtigt worden, während keine Nachricht angenommen
+worden war. Alle drei prüfen jetzt, antworten bei einer Ablehnung mit 502, und
+halten die Message-ID fest — die Verbindung zu den Zustellereignissen aus v2.5.1.
+
+**Tenant-Anfragen meldeten Erfolg ohne Benachrichtigung.** Der Antragsteller
+bekam „ist eingegangen", `s4TenantAccessRequested` wurde gesetzt, und niemand
+hielt einen Freigabe-Token. Die Anfrage wird weiterhin gespeichert — sie geht
+nicht verloren —, aber der Aufrufer wird nicht mehr belogen, und
+`s4TenantAccessNotified` macht eine unzugestellte Anfrage auffindbar. Fehlt der
+Schlüssel außerhalb der Produktion, ist die Konsolenausgabe der Zustellweg; in
+der Produktion ist ein fehlender Schlüssel derselbe Ausgang wie eine Ablehnung.
+
+**Der Profil-Listener überlebte seinen Nutzer.**
+`return () => unsubscribeProfile();` stand im Rückgabewert des
+`onAuthStateChanged`-Callbacks — den Firebase verwirft. Der Snapshot-Listener des
+vorigen Kontos blieb aktiv und konnte `setProfile` mit fremden Daten aufrufen. Er
+wird jetzt beim Nutzerwechsel und beim Abräumen des Effekts freigegeben.
+
+Neu: `tests/session-delivery-guard.spec.ts`, 12 Prüfungen.
+
+376 Tests, 375 grün. `full-pipeline.spec.ts` fiel einmal durch, weil Gemini im
+Lauf defektes JSON lieferte, und läuft isoliert durch — die beiden Verwender von
+`getStats` sind beide abgesichert, die Änderung aus v2.6.0 kann es nicht
+auslösen.
+
 ## [v2.6.0] — 2026-08-28
 
 ### Grüne Urteile, die niemand verdient hat

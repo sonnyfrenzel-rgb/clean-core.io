@@ -110,8 +110,25 @@ export function useUserProfile() {
       return;
     }
     console.log('[PROFILE HOOK LOG] useEffect auth listener mounted. auth.currentUser:', auth.currentUser ? auth.currentUser.email : 'null');
+    // The profile listener from the previous signed-in user, so it can be torn
+    // down when the user changes.
+    //
+    // It used to be released by `return () => unsubscribeProfile();` *inside* the
+    // auth callback — a value Firebase ignores. So the old listener stayed live
+    // across a sign-out or a user switch and could still call `setProfile` with
+    // the previous account's document. Held here, where the effect's own cleanup
+    // can reach it.
+    let unsubscribeProfile: (() => void) | null = null;
+    const releaseProfile = () => {
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
+    };
+
     const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
       console.log('[PROFILE HOOK LOG] onAuthStateChanged fired. user:', user ? user.email : 'null');
+      releaseProfile();
       if (!user) {
         setProfile(null);
         setLoading(false);
@@ -140,7 +157,7 @@ export function useUserProfile() {
         console.error('Immediate getDoc profile fetch error:', err);
       });
 
-      const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
+      unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data() as UserProfile;
           // Enforce pilot limit for pilot users
@@ -162,10 +179,12 @@ export function useUserProfile() {
         setLoading(false);
       });
 
-      return () => unsubscribeProfile();
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+      releaseProfile();
+      unsubscribeAuth();
+    };
   }, [auth, db]);
 
   /**

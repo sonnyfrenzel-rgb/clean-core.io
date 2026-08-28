@@ -1877,15 +1877,32 @@ export default function SettingsPage() {
                 {mfaSetupStep === 1 ? (
                   /* Step 1: Scan QR Code */
                   <div className="space-y-6">
-                    <h3 className="text-2xl font-black text-gray-950 tracking-tight">1. Scan Authenticator QR</h3>
+                    <h3 className="text-2xl font-black text-gray-950 tracking-tight">1. Add the account to your authenticator</h3>
                     <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                      Open your standard authenticator application (Google Authenticator, Authy, etc.) and scan the secret code below:
+                      Open your authenticator app (Google Authenticator, Authy, 1Password, …). On this
+                      device the button below hands it the account directly; otherwise type the setup
+                      key.
                     </p>
 
-                    {/* Styled Mock QR Code */}
-                    <div className="flex justify-center py-2">
-                      <MockQrCode value={qrCodeUrl} />
-                    </div>
+                    {/*
+                      There used to be a QR code here. It was a hand-drawn SVG named
+                      `MockQrCode` that ignored the `value` prop entirely and always
+                      rendered the same pattern, under a heading that told people to
+                      scan it. Scanning it enrolled nothing, so the documented primary
+                      path into two-factor authentication did not work at all — only
+                      typing the secret did.
+                      A real QR needs a vetted encoder, and adding a dependency here
+                      means regenerating the lockfile, which on this project is its own
+                      hazard (see CLAUDE.md). Until that is a deliberate decision, the
+                      honest options are the ones below: the otpauth:// URI the server
+                      already generates, and the key.
+                    */}
+                    <a
+                      href={qrCodeUrl}
+                      className="flex items-center justify-center gap-2 w-full bg-gray-900 hover:bg-gray-800 text-white rounded-2xl py-3.5 text-xs font-black uppercase tracking-wider transition-colors"
+                    >
+                      <ShieldCheck size={14} /> Open in authenticator app
+                    </a>
 
                     <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-1.5 text-center">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Secret Setup Key</span>
@@ -2093,59 +2110,3 @@ export default function SettingsPage() {
   );
 }
 
-/**
- * Stateless Mock QR Code Pattern SVG Component
- */
-const MockQrCode = ({ value }: { value: string }) => {
-  return (
-    <div className="relative w-44 h-44 bg-white border-2 border-gray-100 rounded-3xl p-3 flex items-center justify-center shadow-inner group overflow-hidden">
-      {/* Decorative scanning animation overlay */}
-      <div className="absolute inset-x-0 h-0.5 bg-green-500 opacity-60 top-0 animate-bounce duration-3000 pointer-events-none" />
-      
-      {/* Visual QR Code Pattern */}
-      <svg className="w-full h-full text-slate-900" viewBox="0 0 100 100" fill="currentColor">
-        {/* Positional Squares */}
-        <rect x="5" y="5" width="25" height="25" rx="4" />
-        <rect x="10" y="10" width="15" height="15" fill="white" rx="2" />
-        <rect x="13" y="13" width="9" height="9" rx="1.5" />
-        
-        <rect x="70" y="5" width="25" height="25" rx="4" />
-        <rect x="75" y="10" width="15" height="15" fill="white" rx="2" />
-        <rect x="78" y="13" width="9" height="9" rx="1.5" />
-        
-        <rect x="5" y="70" width="25" height="25" rx="4" />
-        <rect x="10" y="75" width="15" height="15" fill="white" rx="2" />
-        <rect x="13" y="78" width="9" height="9" rx="1.5" />
-
-        {/* Small Positional Grid in bottom right */}
-        <rect x="75" y="75" width="10" height="10" rx="2" />
-        <rect x="77" y="77" width="6" height="6" fill="white" rx="1" />
-        <rect x="79" y="79" width="2" height="2" />
-
-        {/* Dynamic-looking noise patterns */}
-        <path d="M 35 5 h 5 v 5 h -5 z M 45 5 h 10 v 5 h -10 z M 60 5 h 5 v 5 h -5 z" />
-        <path d="M 35 15 h 10 v 5 h -10 z M 50 15 h 5 v 10 h -5 z M 60 15 h 5 v 5 h -5 z" />
-        <path d="M 35 25 h 5 v 5 h -5 z M 45 25 h 5 v 5 h -5 z M 55 25 h 10 v 5 h -10 z" />
-        
-        <path d="M 5 35 h 5 v 5 h -5 z M 15 35 h 10 v 5 h -10 z M 30 35 h 5 v 10 h -5 z" />
-        <path d="M 5 45 h 10 v 5 h -10 z M 20 45 h 5 v 5 h -5 z M 30 45 h 10 v 5 h -10 z" />
-        
-        <path d="M 70 35 h 5 v 5 h -5 z M 80 35 h 10 v 5 h -10 z M 92 35 h 3 v 10 h -3 z" />
-        <path d="M 70 45 h 10 v 5 h -10 z M 85 45 h 5 v 5 h -5 z M 92 45 h 3 v 5 h -3 z" />
-        
-        {/* Center area block pattern */}
-        <path d="M 45 40 h 10 v 10 h -10 z" fill="white" />
-        <path d="M 48 43 h 4 v 4 h -4 z" fill="#006b2c" />
-
-        <path d="M 35 55 h 15 v 5 h -15 z M 55 55 h 5 v 5 h -5 z M 65 55 h 10 v 5 h -10 z" />
-        <path d="M 35 65 h 5 v 15 h -5 z M 45 65 h 10 v 5 h -10 z M 60 65 h 5 v 5 h -5 z" />
-        
-        <path d="M 5 60 h 5 v 5 h -5 z M 15 60 h 10 v 5 h -10 z" />
-        <path d="M 30 75 h 5 v 10 h -5 z M 40 75 h 10 v 5 h -10 z" />
-        
-        <path d="M 70 60 h 10 v 5 h -10 z M 85 60 h 5 v 5 h -5 z M 92 60 h 3 v 5 h -3 z" />
-        <path d="M 70 70 h 5 v 5 h -5 z M 80 70 h 10 v 5 h -10 z" />
-      </svg>
-    </div>
-  );
-};

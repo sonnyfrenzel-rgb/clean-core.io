@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CONTACT_EMAIL } from '@/lib/constants';
+import { recordEmailSent } from '@/lib/email-events';
 import { verifyAdminRequest, assertAdminStepUp } from '@/lib/firebase-admin';
 import { escapeHtml } from '@/lib/utils';
 import { wrapEmailDocument } from '@/lib/email-layout';
@@ -78,11 +79,23 @@ export async function POST(request: NextRequest) {
         }),
       });
 
+      // The failure used to be logged and then swallowed: the route answered
+      // `success: true` regardless, so the admin console reported a welcome mail
+      // that Resend had rejected.
       if (!resendRes.ok) {
         const errText = await resendRes.text();
-        console.error('[Email] Failed to send Welcome Email via Resend API:', errText);
-      } else {
-        console.log('[Email] Success sending Welcome Email.');
+        console.error('[Email] Resend rejected the welcome mail:', errText);
+        return NextResponse.json(
+          { error: 'The welcome email could not be sent. Nothing was delivered to the user.' },
+          { status: 502 },
+        );
+      }
+      const sent = await resendRes.json().catch(() => ({} as any));
+      console.log(`[Email] Sent welcome to ${email}. id=${sent?.id ?? 'unknown'}`);
+      if (sent?.id) {
+        await recordEmailSent(sent.id, email, WELCOME_EMAIL_SUBJECT, 'welcome').catch((err) =>
+          console.error('[Email] Could not record sent event:', err),
+        );
       }
     } else {
       // Offline/Local development fallback
