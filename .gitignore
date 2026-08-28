@@ -17,3 +17,4 @@ scratch/
 
 # Firestore migration artefacts (baselines, exported rulesets) — evidence, not source
 migration/
+design-capture/

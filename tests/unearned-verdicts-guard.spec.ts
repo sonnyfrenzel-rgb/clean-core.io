@@ -179,3 +179,30 @@ test.describe('the TCO page does not invent a business case', () => {
     expect(rendered(REL)).toMatch(/Annual Net Savings ·  ?Scenario/);
   });
 });
+
+test.describe('the TCO model refuses degenerate inputs', () => {
+  const REL = 'app/(app)/project/[projectId]/tco/page.tsx';
+
+  test('the modernised side is not floored while the legacy side rounds to zero', () => {
+    const src = rendered(REL);
+    // The floors were asymmetric: legacy days round to 0 for a small codebase
+    // while modern days were pinned at 1 each. The model then reported that
+    // modernising *costs* €1,550 a year, pays back in −116 months, and reduces
+    // overhead by −Infinity %. The old `lineCount * 10` extrapolation hid it by
+    // never letting `loc` fall below 1,000.
+    expect(src).not.toMatch(/Math\.max\(1,\s*Math\.round\(legacy/);
+  });
+
+  test('no baseline cost means no model', () => {
+    const src = rendered(REL);
+    expect(src).toContain('if (legacyAnnualTotal <= 0) return null;');
+  });
+
+  test('the overhead figure cannot be an infinity', () => {
+    const src = rendered(REL);
+    // Computed once, behind the zero guard, instead of inline in the markup
+    // where a division by zero reached the screen as "-Infinity%".
+    expect(src).not.toMatch(/1 - calculations\.modernAnnualTotal \/ calculations\.legacyAnnualTotal/);
+    expect(src).toContain('overheadReductionPct');
+  });
+});

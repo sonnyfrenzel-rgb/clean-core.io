@@ -125,8 +125,14 @@ export default function TcoCalculatorPage() {
     // Decoupled, upgrade-safe standard API extensions require minimal maintenance (Clean Core)
     const factor = (100 - scoreAfter) / (100 - scoreBefore); // Adaptation reduction factor (typically ~0.08)
     
-    const modernDevDaysTotal = Math.max(1, Math.round(legacyDevDaysTotal * factor));
-    const modernTestDaysTotal = Math.max(1, Math.round(legacyTestDaysTotal * 0.15)); // 85% automated test coverage in Sandbox
+    // No `Math.max(1, …)`. The floors were asymmetric: the legacy side rounds to
+    // zero days for a small codebase while the modernised side was pinned at one
+    // day each, so the model reported that modernising *costs* €1,550 a year and
+    // pays back in −116 months. The old `lineCount * 10` extrapolation hid it by
+    // never letting `loc` fall below 1,000; removing that extrapolation — the
+    // right change — exposed this one underneath.
+    const modernDevDaysTotal = Math.round(legacyDevDaysTotal * factor);
+    const modernTestDaysTotal = Math.round(legacyTestDaysTotal * 0.15); // 85% automated test coverage in Sandbox
 
     const modernDevCost = modernDevDaysTotal * devRate;
     const modernTestCost = modernTestDaysTotal * userRate;
@@ -147,8 +153,14 @@ export default function TcoCalculatorPage() {
       };
     });
 
+    // Below a few hundred lines the whole model rounds to nothing: there is no
+    // legacy maintenance cost to save against, so every figure downstream is a
+    // division by zero wearing a euro sign. The page says so instead.
+    if (legacyAnnualTotal <= 0) return null;
+
     const paybackMonths = Math.round((oneTimeCost / annualSavings) * 12 * 10) / 10;
     const roiYear1 = Math.round((annualSavings / oneTimeCost) * 100);
+    const overheadReductionPct = Math.round((1 - modernAnnualTotal / legacyAnnualTotal) * 100);
 
     return {
       legacyDevDaysTotal,
@@ -158,6 +170,7 @@ export default function TcoCalculatorPage() {
       modernTestDaysTotal,
       modernAnnualTotal,
       annualSavings,
+      overheadReductionPct,
       cumulativeSavings5Yr,
       paybackMonths,
       roiYear1,
@@ -181,8 +194,11 @@ export default function TcoCalculatorPage() {
         <div className="max-w-2xl mx-auto mt-10 bg-white border border-amber-200 rounded-[2rem] p-8 shadow-sm">
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">No baseline to model against</h1>
           <p className="text-sm text-slate-600 mt-3 leading-relaxed">
-            This project has no Clean Core score from a signed run, and every figure on this
-            page is derived from one. Run the analysis in stage&nbsp;1 first.
+            Either this project has no Clean Core score from a signed run &mdash; every figure here
+            is derived from one &mdash; or the code is too small for the model to say anything.
+            Below a few hundred lines the annual legacy maintenance effort rounds to zero days, and
+            a saving measured against zero is not a number. Run the analysis in stage&nbsp;1, or set
+            the lines-of-code figure to the size of the estate you actually mean to model.
           </p>
           <p className="text-xs text-slate-400 mt-4 leading-relaxed">
             The page used to substitute a score of 30 here and present exact annual savings,
@@ -360,7 +376,7 @@ export default function TcoCalculatorPage() {
                 €{calculations.annualSavings.toLocaleString()}
                 <span className="text-xs text-gray-400 font-semibold ml-1">/ year</span>
               </h3>
-              <p className="text-xs text-gray-400 font-semibold mt-1">Maintenance overhead reduced by {Math.round((1 - calculations.modernAnnualTotal / calculations.legacyAnnualTotal) * 100)}%.</p>
+              <p className="text-xs text-gray-400 font-semibold mt-1">Maintenance overhead reduced by {calculations.overheadReductionPct}%.</p>
             </div>
           </div>
 
