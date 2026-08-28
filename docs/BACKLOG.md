@@ -3,38 +3,107 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
-**Stand 27.08.2026, Feierabend — nach v2.5.2 auf main.** Der Tag hatte drei
-Stränge: die Registrierung vereinfacht (v2.5.0), die Mailzustellung beobachtbar
-gemacht (v2.5.1), die Widersprüche aus dem externen Befund geschlossen (v2.5.2).
-Dazu liegen jetzt vier Reviews vor — Grok 4.6 vom 26., GLM 5.3 und GPT-5.6-sol
-vom 27., und der externe Nutzen/SEO/GEO-Befund v2 vom 27.
+**Stand 28.08.2026, Feierabend — nach v2.7.0 auf main.** Der Tag ging in zwei
+Strängen: vormittags die fünf Releases aus dem Umsetzungsplan (v2.5.4 bis v2.6.2),
+nachmittags die Oberfläche. Dazwischen ein Benchmark, bei dem drei Modelle
+dieselben 22 Screenshots bekamen wie ich — und zwei davon einen Rechenfehler
+fanden, den ich am selben Vormittag verursacht hatte.
 
-**Morgen zuerst, in dieser Reihenfolge:**
+**Morgen zuerst:**
 
 | # | Punkt | Wer | Warum jetzt |
 |---|---|---|---|
-| 1 | **Resend-Webhook anlegen + `RESEND_WEBHOOK_SECRET` setzen** | **Felix** | jeder Tag Wartezeit kostet Daten, die nicht nachholbar sind |
-| 2 | **V9** — veröffentlichter Fallback-Signaturschlüssel | **Entscheidung Felix** | blockiert seit drei Releases |
-| 3 | Zustellstatus der 30 Community-Konten klären | gemeinsam | die Vermutung zur geringen Nutzung steht und ist unbelegt |
-| 4 | ~50 ungeprüfte Findings aus GLM/GPT durchgehen | gemeinsam | darunter mehrere „Blocking"/„High" |
+| 1 | **Resend-Webhook: erste Zustellzahlen ansehen** | **Felix** | seit gestern scharf; der erste Freitagsbericht mit echten Zahlen steht an |
+| 2 | **V9** — veröffentlichter Fallback-Signaturschlüssel | **Entscheidung Felix** | blockiert seit vier Releases |
+| 3 | Vier Tinten vereinheitlichen (siehe unten) | Entwicklung | die Köpfe ziehen an einem Strang, der Fließtext nicht |
+| 4 | Zustellstatus der 30 Community-Konten klären | gemeinsam | Vermutung zur geringen Nutzung steht weiter unbelegt |
 | 5 | Deutschsprachiger Cluster (S-05) | Entscheidung Felix | größte inhaltliche Lücke, DSAG-Zielgruppe |
 
 **Danach:**
 
 | Punkt | Wer | Dringlichkeit |
 |---|---|---|
-| eslint-Gate prüft weder TypeScript noch React-Hooks | Entwicklung | hoch — eigener Change, siehe unten |
-| `llms.txt` anlegen | Entwicklung | mittel — einziger offener Punkt der Befund-Checkliste |
+| eslint-Gate prüft weder TypeScript noch React-Hooks | Entwicklung | hoch — eigener Change |
+| ~30 ungeprüfte Findings aus GLM/GPT (Phase 1.3, 4, 5 des Plans) | gemeinsam | hoch |
+| `llms.txt` anlegen | Entwicklung | mittel |
 | N-02: BPMN- und Sandbox-Zeile auf `~` | **Entscheidung Felix** | mittel — Positionierung, keine Korrektur |
+| Runde-2-Vorschläge, die noch offen sind (siehe unten) | Entscheidung Felix | mittel |
 | `dev.` und `test.clean-core.io` lösen nicht auf | Felix (DNS) | mittel für die Doku |
-| Seiten-Überlauf auf schmalen Displays (`whitespace-nowrap`) | Entwicklung | mittel — eine Zeile |
 | V15, V16, V18 aus dem Grok-Befund | Entwicklung | mittel |
 | Die drei Tenant-Mails auf fluide Tabellen umbauen | Entwicklung | mittel |
-| Benefit-Karte: Proposal 2 (der echte Business-Pyramiden-Fixture) | Entscheidung Felix | mittel |
 | Mitte September: Befund v3 / Reindexierung messen | gemeinsam | Termin |
 | Review-Tooling in den Rechenstand committen | Entwicklung | niedrig |
 
 ---
+
+## Vier Tinten, ein Produkt
+
+**Was ist:** Die Abschnitts- und Stufenköpfe ziehen seit v2.7.0 an einem Strang —
+alle `gray-950`, erzwungen durch `SectionHeader`, `StageHeader` und zwei Guards,
+die den gerenderten Stil vergleichen. Der Fließtext darunter nicht. Gemessen:
+
+```
+text-gray-900    239 Verwendungen
+text-slate-900   102
+[#0b1c30]         97
+text-gray-950     81
+```
+
+519 Fundstellen, vier Tinten, kein erkennbares System dahinter — dieselbe Sorte
+Drift, die bei den Überschriften behoben wurde, nur eine Ebene tiefer und
+zehnmal so breit.
+
+**Was zu tun ist:** eine Tinte wählen (`gray-950` für Überschriften ist gesetzt;
+für Fließtext ist die Frage `gray-900` gegen `slate-900`), die anderen drei
+ersetzen, und die Guard-Prüfung aus `landing-style-guard.spec.ts` um eine
+Tinten-Allowlist erweitern.
+
+**Warum nicht heute:** 519 Ersetzungen sind ein eigener Durchgang mit eigenem
+Sichtprüfungsbedarf. Nebenbei erledigt heißt: unbemerkt etwas verschoben.
+
+**Dringlichkeit:** mittel. Es sieht heute nicht falsch aus — es ist nur nicht
+entschieden.
+
+---
+
+## Offene Vorschläge aus der zweiten Modellrunde
+
+Gebaut wurden: Showroom nach oben, ein Primärknopf im Hero, die 21/17/4-Leiste,
+die Verification Rail. Die Scanleiste wurde gebaut und nach Sichtprüfung wieder
+entfernt. Was aus der Runde übrig ist:
+
+- **Tool-Matrix gruppieren** (Grok, GPT): ein Hairline nach Zeile 3 trennt
+  Scannen/HUD/Mapping von Refactor/Sandbox/Blueprint. Keine neuen Gruppentitel.
+- **Feature-Raster in zwei Gruppen** (Grok, GLM): dieselben sechs Karten,
+  Architektur gegen Governance.
+- **Zwei-Spalten-Ansichten am Telefon nicht stapeln** (GPT, GLM): Transformation
+  wird zu einem Segmented Control `ABAP | TypeScript`. Der Vergleich ist der
+  ganze Punkt der Seite, und gestapelt ist er weg.
+- **Analyze: Nullen nicht heroisieren** (Grok, GLM): sind alle drei
+  Coverage-Werte 0, keine dunkle Hero-Karte, sondern eine Mono-Zeile — und die
+  Evidenztabelle direkt unter die drei oberen Karten.
+
+Rohdaten: `docs/reviews/2026-08-28-ux-round2-*.md`.
+
+---
+
+## Der Testlauf und seine zwei bekannten Wackler
+
+Beide sind gemessen, keiner ist Code:
+
+- **`full-pipeline.spec.ts`** hängt gelegentlich an der Gemini-gestützten
+  Suite-Erzeugung — einmal lieferte das Modell defektes JSON. Isoliert grün.
+- **`unsubscribe.spec.ts`** ist der einzige Test, der `/unsubscribe` besucht. Der
+  Dev-Server kompiliert die Route beim ersten Aufruf; am Ende eines
+  Sechs-Minuten-Laufs reicht das für die 30-Sekunden-Grenze. Im Log als
+  „Compiling /unsubscribe" nachweisbar.
+
+Wenn einer davon rot ist, **erst nachsehen, ob es wirklich der ist** — ich habe
+heute zweimal einen echten Regress als Flake abgetan, und beide Male war es meine
+eigene Änderung.
+
+---
+
 
 ### V9 braucht eine Entscheidung, keine Arbeit
 

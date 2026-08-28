@@ -1,193 +1,98 @@
 # UX-Benchmark — grok-4.6
 
 **Modell:** `grok-4.6` · **Datum:** 2026-08-28 · **Bilder:** 22
-**Verbrauch:** 39421 prompt / 4644 completion · 217s
+**Verbrauch:** 34567 prompt / 3913 completion · 238s
 
 Dieselbe Aufgabe wie an Claude, dieselben Screenshots. Unbearbeitet.
 
 ---
 
-**Blickführung Landing (Ist):** Gelbes Banner → NEW-Chip → Smaragd-„Clean Core“ in der H1 → zwei gleich schwere Buttons → Quick-Answer-Wand → Karussell → Fließtext „Nobody can say…“ (**Abriss**) → 21/17/4 (**zu spät der Halt**) → Tool-Matrix (**zweiter Abriss**) → Showroom-Code (**Halt nur für Survivors**) → sechs gleiche Karten → Pricing.
+**A) LANDINGPAGE**
 
-**Soll:** H1 + Artefakt → Code-Beweis → 21/17/4 → Toolchain nur als Politik-Cover → Pläne. Emerald bleibt der einzige Akzent; nichts Inhaltliches wird erfunden oder gestrichen.
+Blickführung, wie sie jetzt ist: Der Blick trifft zuerst auf die Smaragd-Wörter **Clean Core Accelerator**, rutscht auf die zwei CTAs, und reißt an der **Quick-Answer**-Wand ab — noch bevor ein Architekt ABAP gesehen hat. Hängen bleibt er nirgendwo verbindlich; die VBAK-Transformation kommt zu spät, die Sieben-Schritte-Karussell und die sechs gleichgewichteten Feature-Karten sind weitere Abrisse. Ziel: erster Halt = Headline, zweiter Halt = Code, den er kennt, dritter Halt = ATC-Einwand.
 
----
+**1. Hero-Fold: Labels stapeln sich, Proof fehlt**
+*Siehst du:* Über der Headline drei Signale (`NEW`-Chip, Community-Pille, Mono-Zeile), darunter Absatz, `Open Workspace`, `Read Whitepaper`, Textlink `Explore How It Works & Limitations` — dann sofort die blassgrüne Quick-Answer-Karte. Auf 390 px wird daraus eine Leiter aus Buttons, ohne dass VBAK sichtbar wird.
+*Änderung:* Die drei Vorsignale zu **einer** Mono-Zeile unter der Nav zusammenziehen: `FREE FOR THE SAP COMMUNITY · CLEAN CORE & ABAP TRANSFORMATION` (11 px, tracking 0.08 em, slate-500). Den `NEW`-Satz als Textlink neben `Read Whitepaper` legen. Hero auf Desktop **56/44**: links Headline + Sub + die zwei bestehenden CTAs (Primary weiterhin `Open Workspace`); rechts die bereits vorhandenen Karten `SELECT ABAP INPUT` | `GENERATED RAP OUTPUT`, auf 12 Zeilen beschnitten, `max-height: 280px`, Overflow intern, darunter Textlink `Full transformation below` als Anchor auf die Tabs. Auf 390 px: Headline, ein Primary (`Open Workspace`), Secondary als Text; nur die ABAP-Input-Karte, RAP hinter einem Accordion `See RAP output`.
+*Warum:* Architekten kaufen nicht die Pille „explained without the jargon“. Sie kaufen `SELECT … FROM vbak` → CDS-View. Der zweite Blick muss auf Code fallen, den sie in 2 Sekunden als ihres erkennen.
 
-## A) Landingpage
+**2. Seitenrhythmus: Show → Einwand → Einordnung → Angebot**
+*Siehst du:* Hero → Quick Answer → Worked Example → abapGit-Band → Karussell → Split „Nobody can say…“ → Toolchain-Tabelle → 6 Feature-Karten → 4 Security-Karten → Pricing → Verify. Der Beweis ist Block 3, der CAB-Einwand Block 6.
+*Änderung:* Reihenfolge, Inhalt 1:1: **Hero inkl. Inline-Proof → drei Tabs (VBAK / BSEG / Dynamic Dispatch) vollständig → navy `Download Real abapGit Package` → Split `Do we still need this program?` / `What will it cost to move it?` → Quick Answer (Desktop default offen, 390 px collapsed) → Toolchain-Vergleich → Sieben Schritte → `What you can do today` → `Your data stays yours` → Community → Verify.** Keine Streichung, keine neue Zahl.
+*Warum:* Die Zielgruppe scannt „Ist das echtes ABAP?“ → „Nimmt mir das das Urteil?“ → „Kämpft das gegen ATC?“. Die FAQ beantwortet gerade die Frage, die sie noch nicht gestellt hat.
 
-### 1. Hero: Split statt Zentrum, Artefakt in die erste Blickzone
+**3. Worked Example als ein signiertes Artefakt, nicht als Collage**
+*Siehst du:* Absatz Business Context, fünf Prozess-Chips, zwei Code-Karten, ganzer ABAP-Unit-Test, drei Insight-Chips, darunter klein `Verified against Clean-Core Engine v2.6.2`. `WATCH TRANSFORMATION LIVE` als dunkler Full-Width-Pill. Auf dem Telefon laufen Codezeilen aus der Karte auf die Seite.
+*Änderung:* Alles in **eine** weiße Karte (bestehender Radius). Topbar: bestehende Tabs links, rechts Mono `ENGINE v2.6.2 · 27 AUG 2025`. Darunter drei Bänder mit den vorhandenen Labels: `01 BUSINESS CONTEXT` (Absatz + die fünf Chips in einer Wrap-Zeile, Mono 12/16) · `02 INPUT → OUTPUT` (50/50, Plex Mono 12/18, `max-height: 280px`, `overflow-y: auto`) · `03 GENERATED TEST + VERDICT` (Unit-Test 60 %, die drei grünen Checks rechts 40 % gestapelt). `Watch Transformation Live` wird Textbutton in der Topbar — nicht noch ein Dark-Pill neben dem späteren Download-Band. 390 px: Bänder als Accordions, `02` default offen; Code 11 px, Horizontalscroll **nur innerhalb der Karte** (`overflow-x: auto` auf dem Pre, nicht auf `body`).
+*Warum:* Das ist der CAB-Screenshot. Er muss wirken wie ein reproduzierbarer Lauf, nicht wie ein Blog-Embed.
 
-**Ist:** Zentrierter Stapel (NEW-Chip, Eyebrow, H1, Lead, zwei Pills, Textlink). Das erste Produktbild sitzt erst in „Deep Code Intelligence“ — Desktop eine Viewport-Höhe tiefer, Phone zwei.
+**4. Sieben Schritte: Kette zeigen, nicht eine Folie**
+*Siehst du:* `How a transformation actually runs`, dann ein Karussell, das nur `Deep Code Intelligence` plus Device-Frame des Analyze-Reports zeigt. Auf dem Telefon sitzt der Screenshot als Miniatur in der Karte.
+*Änderung:* Karussell-Chrome ersetzen durch einen **7-Zellen-Strip** (Desktop, `grid-template-columns: repeat(7, 1fr)`, Höhe 72 px): Mono-Labels `UPLOAD … DELIVERY` in der bestehenden Reihenfolge, Zelle mit Nummer + der bereits im Abschnitt stehenden Ergebniszeile („Each step produces something you can read…“). Default: Zelle 2 `ANALYZE` aktiv, darunter der vorhandene Screenshot. Klick tauscht nur das Bild — gleiche Interaktion, anderes Chrome. 390 px: vertikaler Stepper, aktive Stufe offen, andere Stufen 44-px-Zeilen (Nummer + Titel).
+*Warum:* Architekten denken in Stage-Gates. Ein Karussell versteckt den Vertrag. Der Strip ist in 2 Sekunden lesbar.
 
-**Änderung (Desktop 1440):** Content-Grid `grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 48px; align-items: center; padding-top: 32px`. Links: Eyebrow → H1 → Lead → CTAs. Rechts: Slide 1 des bestehenden Karussells (grüner Report-Header „Business Analysis Report“ + Phone-Mock). Karte: bestehender Radius, 1px `slate-200`, kein neuer Schatten-Look. NEW-Chip aus dem Hero nehmen; der Link „SAP Clean Core, explained without the jargon“ wandert als Textzeile unter Quick Answer (gleiche Labels, nur Ort).
+**5. Toolchain-Vergleich: Keep/Add-Scan statt Matrix-Wand**
+*Siehst du:* Intro „ATC remains the authoritative check“, Pille `32,103 classified SAP objects`, dann 7-Zeilen-Tabelle Capability | SAP Native | Clean-Core.io. Auf 390 px wird jede Zeile ein Aufsatz.
+*Änderung:* Alle 7 Zeilen und jeder Statuswortlaut bleiben. Desktop: linke Spalte 220 px sticky (Capability-Name), rechts zwei gestapelte Blöcke pro Zeile — SAP in `slate-50`, Status in Mono-Versalien (`NOT AVAILABLE` / `MANUAL ONLY` / `ATC FLAGS ONLY`); Clean-Core mit 6-px-Emerald-Left-Border und dem bestehenden Grün-Status. Spaltenköpfe in Mono: `YOU KEEP THIS` | `WE ADD THIS` — Wörter aus dem Intro („authoritative check“ / „picks up from there“). 390 px: dieselbe Paarung, nicht die 3-Spalten-Tabelle.
+*Warum:* Das ist das Trust-Argument für den CoE. Tabellen-Chrome liest sich wie Vendor-Matrix; Keep/Add ist die Sprache, in der Architekten briefen.
 
-**Phone 390:** Nach den CTAs ein 200px-hoher Crop desselben Screens (`object-fit: cover; object-position: top`), damit der grüne Report-Kopf in der ersten Scroll-Fläche liegt. Quick Answer darunter, default zugeklappt.
+**6. `What you can do today`: zwei Gewichte, sechs Karten**
+*Siehst du:* 2×3 identische Karten. Extensibility Routing, Cloudification Catalog, Dual RAP & CAP sitzen optisch gleichauf mit Assessment, Compliance Evidence, BPMN.
+*Änderung:* Reihe 1 unverändert (die drei Artefakte, die ein Architekt zeichnet). Reihe 2: gleiches Card-Chrome, aber Icon + Titel + eine Zeile; Rest hinter Disclosure `Details` (Copy bleibt). `NEW` bleibt ausschließlich auf Modernization Assessment. 390 px: Reihe 1 als Karten, Reihe 2 als eine gruppierte Liste (Icon, Titel, Chevron, bestehende Learn-more-Ziele).
+*Warum:* Sechs Equals sagen „Plattform“. Gekauft werden Routing-Entscheidung, Catalog-Match und RAP/CAP-Entwurf. Der Rest sind Folgen.
 
-**Warum:** Architekten scannen nach Artefakt, nicht nach Slogan. Fachbereich sieht sofort „das ist ein Report“, nicht „das ist eine AI-Landing“. Das Smaragd in der H1 bleibt First-Hit; das Report-Grün daneben ist derselbe Akzent, kein zweites System.
+**7. Pricing-Paar: CTA auf eine Linie, Telefon = eine Entscheidung**
+*Siehst du:* Weiß `Free Community Edition` vs. Navy `Free + Your Own Key` — der Kontrast trägt. Navy ist höher, die beiden `Go to Workspace` sitzen nicht auf einer Baseline. Auf 390 px kollidieren `UNLIMITED · FREE` / `BYOK`-Chips, die Checkliste wickelt.
+*Änderung:* Desktop `align-items: stretch`, beide Karten `min-height` der Navy-Karte, CTAs `margin-top: auto`. 390 px: Segmented Control `COMMUNITY | YOUR KEY` schaltet dasselbe Card-Chrome (weiß/navy), eine Entscheidung pro Viewport; die drei Trust-Karten darunter als 3-Zeilen-Liste mit bestehendem `LEARN MORE`. Jeder Bullet bleibt.
+*Warum:* BYOK vs. 5-Lauf-Limit ist eine Achse. CTA-Versatz und Doppelstack machen daraus Arbeitsgedächtnis.
 
----
+**8. Emerald = Start, nicht Tapete**
+*Siehst du:* `Open Workspace` im Hero, `Go to Workspace` auf beiden Pricing-Karten, nochmal im Navy-Band `Verify it yourself`, plus Nav-Button — dazwischen `Watch Transformation Live`, Download, 6× Learn more.
+*Änderung:* Primary-Emerald nur: Hero, Nav (schon da), Navy-Verify. Pricing-CTAs bleiben vom Label, aber die weiße Karte als Outline (wie `Read Whitepaper`), Navy-Karte als Emerald (bestehend). Mid-Page-Aktionen = Textlinks bzw. der schon vorhandene Download-Button. Kein zusätzlicher Sticky-CTA. 390 px: der Header-Button `Go to Workspace` ist der einzige persistente Emerald; In-Body-Wiederholungen nach dem Fold Outline.
+*Warum:* Wenn jede Bahn einen grünen Ziegel hat, signalisiert die Akzentfarbe nichts mehr. Für diese Zielgruppe heißt Grün „ich starte einen Lauf“, nicht „ich scrolle“.
 
-### 2. Eine gefüllte Fläche, nicht zwei Pills gleicher Masse
-
-**Ist:** „Open Workspace“ (Emerald, filled) und „Read Whitepaper“ (Near-black, filled) gleiche Höhe, gleiche Breite, gleiche Rundung. Phone: zwei Full-Width-Blöcke plus „Explore How It Works & Limitations“. Drei Aktionen, keine Hierarchie.
-
-**Änderung:**
-- Primary: `Open Workspace` — filled Emerald, Höhe 48px, Padding `0 24px`, bestehender Radius. Einziger filled Button im Hero.
-- Secondary: `Read Whitepaper` — ghost: `background: transparent; border: 1px solid rgb(203 213 225); color: rgb(15 23 42);` gleiche Höhe.
-- Tertiary: `Explore How It Works & Limitations` bleibt Textlink (`slate-600`, 14px, Chevron), direkt unter das Button-Row, nicht als dritte Pill.
-
-Phone: Primary full-width, Secondary full-width ghost, Tertiary zentrierter Text. Kein dritter filled Block.
-
-**Warum:** SAP-Architekten entscheiden in einer Aktion (Workspace). Whitepaper ist Absicherung für Fachbereich/Compliance — sichtbar, aber nicht rivalisierend. Zwei filled CTAs sind in dieser Zielgruppe „kein CTA“.
-
----
-
-### 3. DOM-Reihenfolge: Beweis vor Politik
-
-**Ist:** Hero → Quick Answer → Process/Karussell → „Nobody can say“ + 21/17/4 → Complement-Tools → Transformation Showroom → abapGit-Band → Features → Data → Community → Verify.
-
-**Änderung (nur `order`, kein Copy-Schnitt):**
-1. Hero (mit Artefakt aus 1)
-2. Quick Answer (zugeklappt)
-3. Transformation Showroom **inklusive** des bestehenden Dark-Bands „Download a Real abapGit Package“ (die beiden Blöcke bleiben verheiratet)
-4. „Nobody can say what this program does“ + 21/17/4 + der Satz „Every tool in this market…“
-5. How we complement your SAP tools
-6. What You Can Do Today
-7. Your Data Stays Yours
-8. Community Access + die drei Security-Profile-Karten + BYOK-Fußnote
-9. Verify It Yourself
-10. Footer + Disclaimer
-
-„Deep Code Intelligence“-Copy bleibt; der Screenshot ist nach oben gewandert, der Text sitzt als erste Zeile über dem Showroom oder als Mono-Eyebrow `THE CLEAN CORE PROCESS` über einer 7er-Schritt-Leiste (Upload…Delivery, Reihenfolge unverändert, nur Labels die das Produkt schon nutzt).
-
-**Warum:** Architekten bleiben am ABAP→CDS→Unit-Test hängen — das ist der Showroom, der heute nach der dichtesten Tabelle kommt. Fachbereich braucht 21/17/4 als Entscheidungsbild, nicht nach einer ATC-Matrix. Die Matrix bleibt, aber als „wir ersetzen ATC nicht“-Cover **nach** dem Beweis.
+Typografie-Einsatz (bau-scharf, nicht „größer“): **ein** Display nur im Hero (bestehende Größe, `Clean Core` weiter emerald). Alle Sektionsköpfe eine Stufe darunter — visuell ~36/40, nicht Hero-Konkurrenz (`See a real ABAP…`, `Nobody can say…`, `Community access` sind heute Display-Peers). Kicker immer Mono 11 / 0.08 em / slate-500 (`THREE WORKED EXAMPLES`, `THE SEVEN STEPS`, `LIVE TODAY`, `SOVEREIGN & SECURED`). Body 16/26 slate-600. Damit bleibt der Blick auf Emerald-Headline und Code hängen, statt an jedem `How we…` neu zu starten.
 
 ---
 
-### 4. 21 / 17 / 4 als proportionale Meterzeile, Quote darunter
+**B) WORKFLOW — 3 über alle sieben Schritte**
 
-**Ist (Desktop):** Zweispaltig — links langer Fließtext „Do we still need this program?“, rechts Dark-Card mit 21 SETTLED / 17 YOUR CALL / 4 HARD WORK. Die Zahlen sind der Halt, stehen aber neben einem Textblock, der den Scan bricht. Phone macht es besser: Dark-Card zuerst.
+**1. Zustände `BLOCKED / RUNNING / PARTIAL / COMPLETE` als ein Chrome**
+*Siehst du:* Design ist nur Skeleton `Designing Solution…`. Documentation zeigt `No enterprise specifications yet`, während `EXPORT BPMN` / `EXPORT CONFLUENCE` schon klickbar sind. Testing: leere Suite, Terminal `Waiting for execution…`, `Proceed to Documentation` Outline plus Orange `Skipping this step`. Delivery: SOP `NOT GENERATED`, Integrity-Report mischt Grün und Gelb (`Coverage not estimated`). Analyze: Coverage 0 % / 0 % / 0 % neben großem Ring `FULLY SUPPORTED`. TCO: ehrlicher Leerstand, aber mit Stepper auf Upload.
+*Änderung (eine Pattern-Spec):*
+- `BLOCKED`: gestrichelte Karte, Mono-Label, **eine** Emerald-Action (bestehende Verben: `Generate Test Suite`, `Start Architectural Mapping`). Exports `disabled` bis ein Artefakt existiert.
+- `RUNNING`: Skeleton behalten, darüber eine Chip-Zeile aus dem **vorherigen** Schritt, nur mit Werten, die schon auf dem Screen stehen (z. B. `ZCREDIT_CHECK · 62% · Side-by-Side`).
+- `PARTIAL`: exakt die gelben Integrity-Chips von Delivery — in Testing (keine Suite) und Documentation (keine Spec) **in** der Leerkarte, nicht als Orange unter dem Weiter-Button.
+- `COMPLETE`: Ist-Zustand.
+- Analyze: bei drei Mal 0 % den Ring `FULLY SUPPORTED` nicht zeigen; die drei Zahlen behalten und visuell die schon vorhandene Construct-Findings-Leerfläche (`No findings from these detectors`) als Verdict nutzen.
+*Warum:* Ein Architekt, der Confluence aus einer Leerkarte exportiert oder `FULLY SUPPORTED` bei 0 % liest, glaubt der Landing-Zeile „architect signs the result“ nicht.
 
-**Änderung:** In der Dark-Card **oben** eine Zeile, drei Segmente, `flex-grow` = 21 / 17 / 4 (die veröffentlichten Zähler, keine neuen Werte). Segmentfarben nur aus dem Setup: `emerald-600`, `emerald-200`, `slate-300`. Zahl + bestehendes Versal-Mono-Label (`SETTLED` / `YOUR CALL` / `HARD WORK`) **in** jedem Segment, `font-variant-numeric: tabular-nums`, IBM-Plex-Mono, 40px Desktop / 28px Phone. Darunter unverändert der Fließtext der Card. Links-Spalte „Do we still need…“ bleibt, rutscht Desktop unter die Meterzeile in dieselbe Card-Gruppe (`grid-template-columns: 1fr 1fr` nur noch für die zwei Fragen, Meter full-bleed darüber). Phone: Meter → Cost-Copy → Need-Copy (Need nicht mehr unter den Fold der Cost-Card schieben).
+**2. Stepper = Vertrag, nicht Dekor**
+*Siehst du:* 7 Dots auf jeder Workflow-Seite; auf dem Telefon nur die aktuelle Stufe beschriftet. TCO trägt denselben Stepper, obwohl TCO keiner der sieben Schritte ist und nur Upload grün ist. Idle-Seiten (Design, Testing, Documentation) nennen das Artefakt nicht.
+*Änderung:* Unter dem Stepper eine 20-px-Mono-Zeile = vorhandener Seiten-Sub + `ARTIFACT:` und dem Dateinamen, der schon sichtbar ist (`zcredit_check`, `service.ts`, abapGit-Package). Telefon: Dots behalten, darunter immer `Stufe + Artefakt`. **Stepper von TCO entfernen** — der TCO-Leertext sagt bereits, dass Zahlen aus einem signierten Analyze-Lauf kommen; TCO wird nicht zum achten Schritt.
+*Warum:* Die Landing verspricht „each step produces something you can read and check“. Das App-Chrome nennt dieses Etwas nicht.
 
-**Warum:** Fachbereich hängt an „was ist schon entschieden“. Architekten hängen an „4 HARD WORK“. Proportionale Breite macht das Verhältnis lesbar, ohne eine neue Behauptung. Reines Gewichten sichtbarer Zahlen.
-
----
-
-### 5. Tool-Matrix: zwei visuelle Gruppen, Phone-vs auf Desktop spiegeln
-
-**Ist:** Sechs Zeilen × drei Spalten (Capability | SAP Native | Clean-Core.io), Chips `NOT AVAILABLE` / `MANUAL ONLY` / `AUTOMATED` / `REFACTORED` / … Phone zerlegt das in sechs VS-Paare — das ist die klarere Lesart.
-
-**Änderung (Desktop):** Tabelle bleibt. Nach Zeile 3 (`SAP Object Successor Mapping`) ein `12px`-Gap plus 1px `slate-200` — Gruppe A = Scannen/HUD/Mapping, Gruppe B = Refactor/Sandbox/Blueprint. **Keine neuen Gruppen-Titel.** Clean-Core-Spalte: `box-shadow: inset 3px 0 0` Emerald (nicht border-color-Wechsel). SAP-Spalte: Hintergrund `slate-50`. Sticky first column bei Overflow.
-
-Chips unverändert in Wort und Farbe (Rot = semantisch abwesend, Emerald = vorhanden). Kein drittes Chromatic.
-
-**Warum:** Architekten suchen die Zeile „Sandbox Verification (BYOT)“ und „Code Refactoring“. Fachbereich skimmt nur Gruppe B. Heute ist die Matrix ein homogener Teppich — dort reißt der Blick ab.
-
----
-
-### 6. „What You Can Do Today“: zwei Zuschauer, sechs Karten, ein Raster
-
-**Ist:** 3×2 gleiche Karten, gleiche Icon-Kreise, gleiches „Learn more →“. „Modernization Assessment“ hat ein `NEW`-Chip, sonst keine Hierarchie. Phone: sechs Vollkarten untereinander — Feature-Friedhof.
-
-**Änderung:** Dieselben sechs Karten, zwei Reihen mit bestehendem Section-Lead als Trenner (kein neuer Claim):
-- Reihe 1 (Architektur): Extensibility Routing, SAP Cloudification Catalog, Dual RAP & CAP Engine — `grid-template-columns: repeat(3, 1fr)`.
-- Reihe 2 (Steuerung): Modernization Assessment, Compliance & Audit Evidence, BPMN 2.0 — gleiches Grid.
-Zwischen den Reihen ein `8px` Hairline, kein extra Headline-Copy. `NEW` bleibt auf Assessment. Icon-Kreis, Radius, Learn-more-Treatment unverändert. Phone: vor Karte 1 und vor Karte 4 ein 11px-Mono-Eyebrow, gezogen aus der bestehenden Section-Linie „Every feature listed here is live…“ — einmal als `LIVE · ARCHITECT`, einmal als `LIVE · GOVERNANCE` wäre neuer Claim, also **nicht**. Stattdessen Phone: die bestehende Section-Subline einmal oben lassen und die sechs Karten auf `padding: 16px` (innen) statt Desktop-Card-Padding, Icon 32px statt 40px, Body 14/20 — Dichte, nicht Vergrößerung.
-
-**Warum:** Ein Architekt sucht RAP/CAP und Cloudification. Ein Fachbereich sucht Audit und BPMN. Sechs gleiche Kacheln bedienen niemanden zuerst.
+**3. Transformation und Testing als eine Evidence-Desk, nicht zwei Marketingseiten**
+*Siehst du:* Transformation hat den starken Split (ABAP | Node/TS), darunter eine Insights-Zeile, die Landing-Features wiederholt (`EVENT-DRIVEN MICROSERVICES`, TypeORM, XSUAA). Testing hängt drei Benefit-Karten davor (eine davon violett `Estimated Coverage` = `GENERATE TESTS TO SEE ESTIMATE`), erst dann Suite + Terminal.
+*Änderung:* Insights unter den Editor als Disclosure `INSIGHTS` (alle drei Texte bleiben). Den schon vorhandenen Compliance-Chip `62%` als persistente Leiste von Transformation **nach** Testing durchziehen. Testing: die drei Benefit-Sätze zur Subzeile unter dem Titel konkatenieren, Primary Surface = Suite + Terminal. Den Coverage-Satz in die **leere** Suite-Karte als gedämpfte Zeile legen (er ist ein Zustand, kein Feature). Mock vs. `CONNECTED S/4HANA` bleibt. Skip-Warnung in die Leerkarte, nicht unter den Button. Violett auf dieser Fläche entfällt — Coverage nutzt Slate/Emerald wie der 62 %-Chip.
+*Warum:* Der Converter ist das Produkt. Benefit-Karten im Tool wiederholen die Landing und machen die Arbeit weicher, als der erste Kontakt sie verkauft hat.
 
 ---
 
-### 7. Community-Block: vier Benefits komprimieren, zwei Pläne als Halt
+**C) EIN MUTIGER VORSCHLAG**
 
-**Ist:** Vier Benefit-Kacheln (Free to use / Open standards / Transparent / Complement) plus zwei Plan-Karten (weiß Free Community, dark Free + Own Key). Sechs konkurrierende Flächen. Der Dark-Plan ist der richtige Close, verliert gegen das Raster darüber.
+**Die Landing-Transformation in derselben Editor-Chrome rendern wie Screen 05 (schwarzer Split, Plex Mono, `LEGACY SOURCE` | `MODERNIZED TARGET`), nicht in den mint-/lavendelfarbenen Marketing-Codekarten.**
 
-**Änderung:** Die vier Benefits in **eine** Karte, 2×2, Icon 20px, Titel 14/20, Body 13/20, Gap 16px — dieselben vier Texte. Darunter die zwei Pläne `grid-template-columns: 1fr 1fr; gap: 16px` (Phone stapeln, Dark-Plan zuerst via `order: -1`). Primary „Go to Workspace“ nur im Dark-Plan filled Emerald; im weißen Plan Outline (heute sind beide schwer). Checklisten und BYOK-Fußnote unverändert.
+Der VBAK-Lauf auf der Landing ist heute ein anderes Produkt als der Converter im Workspace: pastellige Karten, Device-Frame, Karussell. Der Architekt, der `Open Workspace` drückt, landet in einem schwarzen Editor plus `ZCREDIT_CHECK`. Der Bruch ist Glaubwürdigkeit.
 
-**Warum:** Der Close für beide Zielgruppen ist „5 Transformations vs. eigener Key“. Die vier Grundsätze sind Trust, nicht Conversion — sie dürfen nicht dieselbe Fläche fressen.
+Umsetzen: Im Hero-Proof und in Band `02 INPUT → OUTPUT` dieselben Header, dieselbe Hintergrundfläche, dieselbe Mono-Größe wie in der Transformation-Stufe. Tabs VBAK/BSEG/Dynamic Dispatch bleiben. Kein neues Illustrationsthema, keine zweite Akzentfarbe, kein Framework-Wechsel — du **entfernst** die Sonder-Chrome, die es nur auf der Landing gibt. Emerald bleibt der einzige Akzent (Checks, Primary, Score). Navy bleibt das Instrument-Band (Download, Cost-Card, BYOK, Verify), das es schon gibt.
 
----
-
-### 8. Duplicate „Free“ und Sticky-Scanleiste
-
-**Ist:** Gelbes Banner „FREE COMMUNITY EDITION“ + Hero-Eyebrow „FREE FOR THE SAP COMMUNITY“ + später nochmal „Community Access / 100% free“. Drei Freemium-Schreie bevor jemand Code gesehen hat. Keine In-Page-Navigation auf einer sehr langen Seite.
-
-**Änderung:**
-- Banner-Copy nicht löschen, aber auf der Landing den Gelb-Balken auf `height: 32px; font-size: 12px` und nach `Dismiss` `display: none` für die Session. Den Hero-Eyebrow behalten — das ist die typografische Stimme.
-- Unter dem Hero eine Sticky-Leiste `position: sticky; top: 0; height: 44px; background: white; border-bottom: 1px solid rgb(226 232 240); z-index: 20`. Items in bestehendem Versal-Mono 11px / `letter-spacing: 0.12em`: `PROCESS · EVIDENCE · TOOLCHAIN · SHOWROOM · CAPABILITIES · DATA · ACCESS` als Anker auf die **umsortierten** Sections. Active: 2px Emerald underline, `color: rgb(15 23 42)`; idle `slate-500`. Phone: `overflow-x: auto; scroll-snap-type: x mandatory`, Chips `scroll-snap-align: start`, kein Wrap.
-
-**Warum:** Architekten springen zu SHOWROOM/TOOLCHAIN. Fachbereich zu EVIDENCE/DATA/ACCESS. Heute gibt es nur Vertikal-Hoffnung. Die Leiste nutzt vorhandene Section-Logik, keine neue Farbwelt, keine neuen Claims.
+Warum das Setup nicht verwässert: IBM-Plex-Mono auf Slate-900 **ist** das System; die mintgrünen Codekarten sind die Abweichung. Du ziehst die Oberfläche auf die Typografie- und Farbregel zusammen, statt eine Marketingwelt daneben zu pflegen. Die Diskussion („zu hart für Fachbereich“) ist genau richtig: Fachbereich liest Band `01 BUSINESS CONTEXT` und die Keep/You-call-Karte; Architekt liest den Editor. Beide Flächen existieren schon — sie müssen nur dieselbe Grammatik sprechen.
 
 ---
 
-**Typografie-Einsatz (konkret, gilt für A1–A8):** Zwei Rollen, nicht drei. Display = IBM Plex Sans 700, Sentence Case (`Transformation Showroom`, `What You Can Do Today`, `Your Data Stays Yours`) — die schreiende Zeile `HOW WE COMPLEMENT YOUR SAP TOOLS` wird Satzschreibung, weil der Eyebrow `COMPLEMENTS YOUR SAP TOOLCHAIN` die Versalien schon trägt. Labels = IBM Plex Mono 11px, uppercase, `letter-spacing: 0.12em` (so wie `QUICK ANSWER`, `REAL VERIFIED OUTPUT`, `SETTLED`). Body = Plex Sans 16/26 Hero-Lead, 14/22 Cards. Zahlen 21/17/4 = Mono tabular. Kein dritter Display-Schnitt, keine zweite Akzentfarbe im Type.
+**D) WAS DU NICHT ANFASSEN WÜRDEST**
 
----
+**1. Die Headline-Konstruktion.** `The SAP Architect's` + smaragd `Clean Core Accelerator` ist Besitz und Kategorie in einer Zeile. Das ist der erste Blick, und er ist richtig. Kein Rewrite, kein anderes Wortgrün.
 
-## B) Workflow — drei Vorschläge über alle sieben Schritte
-
-### 1. Ein Zustands-Chassis für Design, Testing, Documentation
-
-**Ist:** Analyze ist voll. Design ist ein Green-Header „Designing Solution…“ plus graue Skeleton-Bars und bereits sichtbarer Footer. Testing hat **zwei** Generate-Buttons (`Generate Suite` im Card-Header und `GENERATE TEST SUITE` im Empty-Body) plus idle Terminal. Documentation ist eine gestrichelte Fläche „No enterprise specifications yet“ mit `START ARCHITECTURAL MAPPING`, während `Proceed to Delivery` bereits filled Emerald ist. Drei Sprachen für „noch nichts“.
-
-**Änderung:** Ein Component `StepStage` mit drei States, gleicher Chrome:
-- `loading`: bestehender grüner Header + Spinner rechts (wie Design heute) + 4 Skeleton-Zeilen. Stepper-Dot pulsiert.
-- `empty`: gestricheltes Panel (wie Documentation), **ein** Primary im Panel, nicht zusätzlich im Header. Testing: Header-Button `Generate Suite` entfernen, nur der Body-Button bleibt.
-- `ready`: heutiger Inhalt.
-
-`Proceed to …` unten: `empty`/`loading` = Ghost (1px slate, Text slate-700). `ready` = filled Emerald. Nicht sperren — nur Gewicht. Gilt für 3 Design, 5 Testing, 6 Documentation; Upload/Analyze/Transformation/Delivery bleiben inhaltlich, nutzen denselben Footer-Rhythmus (Ghost zurück links, Primary rechts, Höhe 44px, gleiche Breite-Logik).
-
-**Warum:** Architekten lesen den Stepper als Vertrag. Wenn Step 6 leer ist und Step 7 trotzdem knallt, ist der 7-Schritt-Pfad unglaubwürdig — genau das, was die Landing mühsam aufbaut.
-
----
-
-### 2. Analyze: Nullen nicht heroisieren, Evidence nach oben
-
-**Ist:** Nach dem Score 62% kommt „Coverage Verdict“ mit 0% / 0% / 0% in großen Zahlen plus Badge `FULLY SUPPORTED`. Darunter Empty „No findings from these detectors“. Darunter erst Evidence Findings (2× Medium, VBAK/VBAP). Der Blick bleibt an drei Nullen hängen und reißt vor den echten Funden ab. Phone stapelt das noch länger.
-
-**Änderung (State-Unterscheidung, erlaubtes Gewichten):** Wenn alle drei Coverage-Werte 0 sind, Coverage-Card **nicht** als Dark-Hero. Stattdessen eine Mono-Zeile unter dem Score: `FULLY SUPPORTED 0 · REVIEW REQUIRED 0 · OUT OF SCOPE 0` plus das bestehende Badge. Construct-Findings-Empty bleibt. Evidence-Findings-Tabelle rückt direkt unter Score + Extensibility-Router + Analysis-Summary (die drei Top-Karten). Tabs `DECISION & EVIDENCE | GAPS BACKLOG | …` und der Hinweis „Explore all 4 report sections…“ bleiben. Keine Zahl ändert sich.
-
-**Warum:** Architekten suchen Constructs und Replacements (`API_SALES_ORDER_SRV`). Fachbereich sucht den 62%-Ring und den Plain-English-Guide. Drei Nullen als Hero sind ein falscher Halt.
-
----
-
-### 3. Transformation Phone: Segment statt Doppel-Editor; Desktop-Split bleibt
-
-**Ist:** Desktop-Split ABAP | Node/TS ist der stärkste Produktmoment (Sync Scroll, Dateibaum, Strict-Legacy-Banner). Phone stapelt beide Editoren vollhöhe — Vergleich unmöglich, Insights erst nach zwei Code-Kaminen.
-
-**Änderung:** Phone: Segmented Control direkt unter `Sync Scroll / Copy / Re-Run`, bestehendes Pill-Pattern (wie Analyze-Tabs): `LEGACY ABAP | NODE.JS/TS`. Ein Editor sichtbar, Höhe `max(52vh, 320px)`. Control = IBM Plex Mono 11px Versal. Desktop unverändert Split. Insights-Card: auf Phone die drei Blöcke als Horizontal-Scroll mit Snap (gleiche Copy: Event-Driven / TypeORM / XSUAA), nicht drei Vertikal-Essays vor dem Footer.
-
-Zusätzlich systemweit: den lila Ring an `62% COMPLIANCE HUD` (Transformation) und den lila `VIEW SLIDES` (Delivery) und `Estimated Coverage` (Testing) auf Emerald/Slate ziehen — siehe C. Das ist kein Workflow-Inhalt, aber derselbe Blickabriss in Schritt 4/5/7.
-
-**Warum:** Der Showroom der Landing verspricht Seit-an-Seit. Schritt 4 auf 390px bricht dieses Versprechen. Architekten brauchen Diff, nicht Scroll-Sport.
-
----
-
-## C) Ein mutiger Vorschlag
-
-**Audience-Toggle unter der H1: `Architect` | `Fachbereich`.**
-
-Zwei Chips, exakt das Pill-Pattern, das die Seite schon hat (`NEW`, `FREE BALANCE`, Analyze-Tabs). Selected = Emerald filled, Unselected = ghost slate. Kein neues Label-Vokabular über das hinaus, was die Seite ohnehin unterscheidet (Code vs. Entscheidung vs. Governance).
-
-Wirkung: CSS `order` (oder zwei vordefinierte Grid-Flows) auf **denselben** Sections:
-- Architect: Showroom → Toolchain → 21/17/4 → Capabilities → Access
-- Fachbereich: 21/17/4 → Data Stays Yours → Community Access → Showroom → Capabilities
-
-Default = Architect (Headline spricht ihn an). Toggle schreibt `localStorage`, kein zweites CMS.
-
-**Warum das Setup nicht verwässert:** Eine Akzentfarbe, dieselben Karten, derselbe Radius, dieselbe Mono-Versal-Stimme, dieselben sieben Workflow-Schritte, **null** neue Claims, null gestrichene Sätze. Es ist Gewichten per Zustand — genau das erlaubte Mittel. Mutig, weil Marketing-Landings „eine Story“ wollen; hier sind nachweislich zwei Käufer in einem Scroll, und die aktuelle Reihenfolge verliert den zweiten, bevor der erste fertig gescannt hat.
-
----
-
-## D) Was ich nicht anfassen würde
-
-**1. Die Dark-Card 21 SETTLED / 17 YOUR CALL / 4 HARD WORK** — Copy, Zahlen, Versal-Labels, der Satz zum 507-Zeilen-Referenzprogramm. Das ist die einzige Stelle, an der die Seite wie ein Gutachten klingt statt wie ein Tool. Layout ja (A4), Inhalt und Typo-Stimme nein.
-
-**2. Transformation Showroom + abapGit-Band** — echter VBAK-Report, generierte CDS, ABAP-Unit, Parser-Insight, `1 unit tests passed`, Download ohne Login. Das ist der Beweis, den ein SAP-Architekt einem Kollegen weiterleitet. Nicht glätten, nicht durch Illustration ersetzen, nicht hinter einen Slider sperren.
-
-**Plus, weil es trägt:** Das Mono-Eyebrow-System (`QUICK ANSWER`, `REAL VERIFIED OUTPUT`, `SOVEREIGN & SECURED`). Das Wort „Clean Core“ in Emerald in der H1. Die Haltung „A complement, not a replacement“ inklusive ATC-Mapping. Der große Kartenradius auf Weiß. Der Footer-Disclaimer — in diesem Markt ist das Trust, kein Legal-Noise.
-
----
-
-**Bau-Reihenfolge fürs Team:** A2 (CTA-Hierarchie) und A3 (DOM-Order) zuerst — kein Visual-Rework, sofort andere Blickführung. Dann A1 (Hero-Split) und A4 (Meter). B2 und B1 im Produkt. Audience-Toggle (C) erst, wenn die Anker aus A8 stehen. Lila (Testing/Delivery/Settings-BYOK) in dem Sprint auf Emerald/Slate ziehen, sonst bleibt das „einzige Akzentgrün“ eine Regel, die die App selbst bricht.
+**2. Das Navy/Weiß-Paar Community vs. BYOK** plus die drei Sätze darunter (`SANDBOX ONLY · READ-ONLY`, `ENCRYPTED · STATELESS`, `ADMIN GATED ONBOARDING`) und die Spezifik in `Your data stays yours` (Belgium, Art. 17 DSGVO, stateless APIs). Das ist die einzige klare Entscheidung auf der Seite und der einzige Security-Block, der nicht wie generische Lock-Icons wirkt. Ebenso stehen lassen: die ATC-Zeile („authoritative check — keep using it“) mit der Pille `32,103 classified SAP objects`, der Stamp `Verified against Clean-Core Engine v2.6.2`, und der TCO-Leertext („A financial case built on a number nobody measured is worse than no page at all“). Das ist die Stimme, die diese Zielgruppe als nicht-vendorisch liest — daran wird nicht „aufgehübscht“.

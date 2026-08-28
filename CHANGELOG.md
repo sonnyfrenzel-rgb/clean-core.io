@@ -13,6 +13,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [v2.7.0] — 2026-08-28
+
+### Ein Stil, und er wird gemessen statt behauptet
+
+Die Oberfläche hatte kein Stilproblem im Sinne von „falsche Farben gewählt". Sie
+hatte gar keine gewählten Farben — jede Seite trug ihre eigene Kopie der Klassen,
+und nichts verglich sie miteinander.
+
+**Auf der Landingpage:** drei Eyebrow-Varianten, vier Überschriftengrößen, ein
+Emoji auf einem Abschnitt, ein `h3` wo ein `h2` hingehört, und ein Abschnitt — die
+sieben Schritte — ganz ohne Kopf, sodass ausgerechnet der Schritt, der den Ablauf
+erklärt, wie ein Widget zwischen zwei Argumenten wirkte.
+
+**Im Workflow war es schlimmer.** Sieben Stufen, sieben Titel:
+
+| Stufe | Größe | Stärke | Tinte | Schreibung |
+|---|---|---|---|---|
+| analyze | `text-4xl` fix | extrabold | gray-900 | normal |
+| design | `text-2xl sm:text-3xl` | **bold** | gray-900 | normal |
+| transformation | `text-4xl` fix | black | gray-900 | normal |
+| testing | `text-3xl md:text-4xl` | black | `#0b1c30` | normal |
+| documentation | `text-3xl md:text-4xl` | black | `#0b1c30` | **VERSAL** |
+| delivery | `text-3xl md:text-5xl` | black | gray-900 | **VERSAL** |
+| tco | `text-3xl md:text-4xl` | black | `#0b1c30` | **VERSAL** |
+
+Drei Schriftstärken, vier Größen, zwei Tinten, zwei Schreibungen, und zwei Stufen
+ohne jede Responsive-Stufe. Der Titel sprang bei jedem Schritt in Größe, Gewicht
+und Farbe — genau das lässt einen siebenstufigen Ablauf wie sieben Werkzeuge
+wirken statt wie ein Produkt.
+
+**`components/SectionHeader.tsx`** und **`components/StageHeader.tsx`** besitzen
+das jetzt. `app/page.tsx` schreibt kein `<h2>` mehr, keine Stufe schreibt ihren
+eigenen Titel. Die Tinte ist in beiden `gray-950`, damit die zwei Hälften des
+Produkts übereinstimmen.
+
+**Und der Grund, warum sich nie etwas verwandt anfühlte:** 56 Farbstufen —
+`slate-650`, `gray-955`, `green-150`, `emerald-505`, `blue-105`, `amber-205` und
+fünfzig weitere — waren an 103 Stellen geschrieben, und **Tailwind hat für keine
+davon CSS erzeugt.** Keine ist eine Standardstufe, es gab keinen `@theme`-Block.
+Jedes dieser Elemente erbte seine Farbe stillschweigend.
+
+Es sah meistens nah genug aus, deshalb hat es überlebt. Aber zwei Überschriften
+nebeneinander, eine `text-gray-950` und eine `text-gray-955`, waren nie zwei
+Farbstufen auseinander: die eine war gestylt, die andere nicht, und die zweite
+bewegte sich mit dem, worin sie zufällig saß. Alle 56 sind jetzt deklariert,
+jeweils in oklch zwischen ihren beiden Nachbarn interpoliert.
+
+### Die Absicherung
+
+`tests/landing-style-guard.spec.ts` und `tests/workflow-style-guard.spec.ts`.
+Beide laden die **gerenderte Seite** und vergleichen berechnete Stile — Größe,
+Gewicht, Familie, Laufweite, Schreibung, Farbe. Das ist der Punkt: eine reine
+Quelltextprüfung ließe sich mit einer Komponente aushebeln, die still ein
+`className` durchreicht; berechneter Stil nicht. Dazu eine dritte Prüfung, die
+jede `.tsx` nach Farbklassen durchsucht, deren Stufe nirgends deklariert ist.
+
+### Die Landingpage inhaltlich
+
+Reihenfolge ist jetzt **Showroom → die sieben Schritte → Beweis → Rest.** Der
+Showroom stand vorher hinter Karussell, Fachbereichsargument und Tool-Matrix —
+der einzige nachprüfbare Beleg, vier Bildschirme unter der Behauptung, die er
+belegt. Grok 4.6, GPT-5.6-sol und GLM-5v schlugen unabhängig voneinander dasselbe
+vor.
+
+Er trägt jetzt auch die Frage, die er ausgelassen hatte. `ProcessStrip` setzt den
+Ablauf zwischen „was ist es" und „was wird daraus" — in der BPMN-Sprache, die
+Stufe 4 tatsächlich ausgibt, je Beispiel aus dem ABAP im selben Reiter gelesen.
+Die Überschrift heißt „See a real ABAP program transformed" statt
+„Transformation Showroom": ein Name sagt niemandem, dass es Beispiele sind.
+
+Ein gefüllter Knopf im Hero statt zwei. Die 21/17/4 als proportionale Leiste, in
+der jedes Segment seine eigene Zahl trägt. Die Scanleiste wurde gebaut und wieder
+entfernt — sie stiftete mehr Verwirrung als Orientierung.
+
+### Und die Benefit-Karte
+
+Sie trug ihre Überschrift innen: das Argument des Abschnitts in den Kleidern einer
+Karte. Deshalb las sie sich als etwas anderes als alle anderen Abschnitte. Der
+Text ist wörtlich nach oben gewandert, die Karte wurde 80 Wörter kürzer.
+
+Die linke Hälfte spiegelt jetzt die rechte — Etikett, das Erzeugte in
+Ergebnisgröße, Herkunft klein darunter. Vorher stand der Satz, um den es geht, in
+kleiner Kursive hinter einer Haarlinie, unter einem Vorbehalt, den man las, bevor
+man wusste, worauf er sich bezieht.
+
+### Verification Rail
+
+`components/VerificationRail.tsx` hält „wo bin ich, was liegt hinter mir, was ist
+offen" auf dem Schirm, während der Stepper wegscrollt — dieselben Kreise, als
+Spalte am rechten Rand ab 1536 px, darunter ein Knopf mit derselben Liste als
+Sheet. Sie fügt nichts hinzu: `lib/workflow-steps.ts` leitet jeden Zustand aus
+einem vorhandenen Artefakt ab, meldet und entscheidet nie, und kann keinen
+Schritt als erledigt ausgeben, weil eine Seite geöffnet wurde.
+
+401 Tests, 399 grün, einer übersprungen.
+
 ## [v2.6.2] — 2026-08-28
 
 ### Ignorierte Optionen, unverdiente Zuversicht, vier Sätze zu viel
