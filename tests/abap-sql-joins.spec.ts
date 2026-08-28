@@ -70,7 +70,13 @@ test.describe('ABAP Open SQL Complex Joins & Quirks Tests', () => {
     expect(match1).toBeDefined();
     expect(match1!.view).toBe('I_SalesOrderItem');
     expect(match1!.exact).toBe(true);
-    expect(match1!.confidence).toBe(0.95);
+    // Deliberately not high. An exact table-set match used to score 0.95, which
+    // is a confidence in something nobody checked: join predicates, cardinality,
+    // selected fields and filters are all invisible to `matchCdsView`, and
+    // `SELECT ... FROM vbak CROSS JOIN vbap` has this very table set. The set is
+    // a reason to look at the view, not evidence that the query means the same.
+    expect(match1!.confidence).toBe(0.6);
+    expect(match1!.confidence).toBeLessThan(0.8);
 
     // VBAK + VBAP + KNA1 (superset of VBAK+VBAP) should match as superset (lower confidence)
     const select2 = parseSelect(
@@ -82,7 +88,10 @@ test.describe('ABAP Open SQL Complex Joins & Quirks Tests', () => {
     expect(match2).toBeDefined();
     expect(match2!.view).toBe('I_SalesOrderItem');
     expect(match2!.exact).toBe(false);
-    expect(match2!.confidence).toBe(0.6);
+    // A superset scores below an exact set, and both sit well below anything
+    // that would read as "verified".
+    expect(match2!.confidence).toBe(0.35);
+    expect(match2!.confidence).toBeLessThan(match1!.confidence);
   });
 
   test('should perform result-set diff comparisons with normalization', () => {

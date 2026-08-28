@@ -60,6 +60,9 @@ export default function DatenschutzPage() {
                 <strong className="text-gray-800">Google Authentication (Firebase Auth):</strong> To sign in, we use Google Sign-In. This securely reads your name, email address, and profile picture from your Google account to authenticate your user session and establish access privileges.
               </li>
               <li>
+                <strong className="text-gray-800">Email and password (Firebase Auth):</strong> You can also register with an email address and a password instead of using Google. In that case we process the email address, the first and last name you enter, and — optionally — the motivation you provide. The password itself is handled by Firebase Authentication and is never visible to us. This section previously described only Google Sign-In, although this second path has always existed.
+              </li>
+              <li>
                 <strong className="text-gray-800">Firestore User Profiles:</strong> We store metadata about your platform usage (e.g., number of performed code transformations, system limits, as well as your first and last name) in our secure database.
               </li>
               <li>
@@ -77,7 +80,7 @@ export default function DatenschutzPage() {
             </p>
             <div className="p-4 bg-green-50 border border-green-200 rounded-2xl">
               <p className="text-sm text-green-800">
-                <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Under Google&apos;s applicable API data-use terms, this content is not used to train Google&apos;s foundational AI models. When you use your own key (BYOK), the terms of your own Google account additionally apply.
+                <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Under Google&apos;s applicable API data-use terms, this content is not used to train Google&apos;s foundational AI models. Which terms apply depends on the key: for the paid Gemini API the &ldquo;not used for training&rdquo; terms apply directly, while a free-tier key is governed by Google&apos;s free-tier data-use terms, which differ. When you use your own key (BYOK), the terms of your own Google account apply. We state the applicable terms rather than an absolute promise we cannot control.
               </p>
             </div>
           </section>

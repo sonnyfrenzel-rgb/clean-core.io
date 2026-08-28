@@ -44,6 +44,41 @@ export function diffResultSets(
   opts: DiffOptions = {},
 ): DiffReport {
   const dateFields = opts.dateFields || [];
+
+  // `unordered` was declared in DiffOptions and never read: every comparison was
+  // a multiset comparison, so `[A, B]` against `[B, A]` came back `equal: true`
+  // even when the caller had explicitly asked for ordered semantics. An option
+  // that exists and is ignored is worse than one that does not exist, because
+  // callers write it and believe it.
+  //
+  // The default stays set-based — that is what the docstring above has always
+  // promised, and an ABAP SELECT without ORDER BY has no guaranteed row order to
+  // compare against anyway. What changes is that `unordered: false` now means
+  // what it says.
+  const unordered = opts.unordered ?? true;
+
+  if (!unordered) {
+    let firstMismatch: unknown;
+    let mismatches = 0;
+    const len = Math.max(abapRows.length, targetRows.length);
+    for (let i = 0; i < len; i++) {
+      const ka = i < abapRows.length ? normalizeRow(abapRows[i], dateFields) : null;
+      const kb = i < targetRows.length ? normalizeRow(targetRows[i], dateFields) : null;
+      if (ka !== kb) {
+        mismatches++;
+        if (firstMismatch === undefined) firstMismatch = JSON.parse(ka ?? kb ?? 'null');
+      }
+    }
+    return {
+      equal: mismatches === 0,
+      onlyInAbap: Math.max(0, abapRows.length - targetRows.length),
+      onlyInTarget: Math.max(0, targetRows.length - abapRows.length),
+      rowCountAbap: abapRows.length,
+      rowCountTarget: targetRows.length,
+      sampleMismatch: firstMismatch,
+    };
+  }
+
   const a = new Map<string, number>();
   const b = new Map<string, number>();
 

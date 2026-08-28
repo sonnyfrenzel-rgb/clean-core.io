@@ -286,11 +286,21 @@ export async function POST(request: NextRequest) {
     } else {
       // Security: Never log approval/reject tokens in production (F-03)
       const isProd = process.env.NODE_ENV === 'production';
-      // Outside production, printing the approval link to the console *is* the
-      // delivery channel — the developer running this has it in front of them.
-      // In production a missing key means nobody was told anything, which is the
-      // same outcome as a rejected send and is reported the same way below.
-      if (!isProd) adminNotified = true;
+      // Whether a missing key is a failure depends on whether a mailer was ever
+      // meant to be there.
+      //
+      // `NODE_ENV` alone is the wrong test: CI runs a production build against
+      // the Firebase emulators with no RESEND_API_KEY, which is not a
+      // misconfiguration — printing the approval link to the console *is* the
+      // delivery channel there, and the developer has it in front of them. The
+      // emulator flag is the discriminator the rest of the codebase already uses
+      // for this (see lib/firebase-admin.ts).
+      //
+      // On the real deployment neither holds, and a missing key means nobody was
+      // told anything — the same outcome as a rejected send, reported the same
+      // way below.
+      const isEmulatorMode = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true';
+      if (!isProd || isEmulatorMode) adminNotified = true;
       if (!isProd) {
         console.log('\n======================================================');
         console.log('📬   [MOCK EMAIL SENT TO info@clean-core.io]   📬');

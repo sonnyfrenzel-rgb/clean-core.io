@@ -4,10 +4,19 @@ import { extractSelects, parseSelect } from './select-parser';
 import { matchCdsView } from './cds-catalog';
 import { tableCount } from './sql-model';
 
-export interface ComplexJoinOptions {
-  /** Set true only when a result-set differential test passed for this select. */
-  differentialVerified?: boolean;
-}
+/**
+ * No options.
+ *
+ * There used to be one: `differentialVerified`, a **run-wide** boolean. It was
+ * set by nobody — its only caller would have been the fake Differential Sandbox
+ * Tester, removed earlier — but the shape was the trap. One flag for a whole
+ * run, combined with `cds?.exact`, would have marked *every* exact table-set
+ * match "fully verified" on the strength of a single test, or of no test at all.
+ *
+ * Verification is per query. If it comes back, it comes back keyed to a query,
+ * not to a run.
+ */
+export interface ComplexJoinOptions {}
 
 export function detectComplexJoinFindings(
   sources: { file: string; content: string }[],
@@ -25,8 +34,9 @@ export function detectComplexJoinFindings(
       const cds = matchCdsView(model);
       const quirks = model.quirks.filter((q) => q.affectsResult).map((q) => q.type);
 
-      const verified = opts.differentialVerified && cds?.exact;
-      const level = verified ? 'fully' : 'partial';
+      // Nothing here can establish equivalence: the table set matched, which is
+      // a reason to look, not a proof that the query means the same thing.
+      const level = 'partial';
 
       const detailParts = [
         `${tableCount(model)} tables` + (model.forAllEntries ? ' + FOR ALL ENTRIES' : ''),
@@ -40,10 +50,10 @@ export function detectComplexJoinFindings(
         title: e.title,
         detail: detailParts.join('; ') + '.',
         recommendation: cds
-          ? `Replace the join with released view ${cds.view}; resolve quirks per rules; verify with a result-set differential test.`
+          ? `Check released view ${cds.view} — the table set matches, but join predicates, cardinality and selected fields were not compared. Resolve quirks per rules and verify with a result-set differential test before replacing.`
           : 'Map to a released CDS view if one exists; otherwise verify the generated join with a differential test on the sandbox.',
         howItWorks: howItWorksUrl('complex-sql-join'),
-        requiresSignOff: !verified,
+        requiresSignOff: true,
         location: model.source,
         confidence: cds?.confidence,
       });

@@ -19,7 +19,14 @@ export const CDS_CATALOG: CdsCatalogEntry[] = [
 
 export interface CdsMatch { view: string; confidence: number; exact: boolean; note?: string; }
 
-/** Match a SELECT's table set against the catalog. Exact set ⇒ high confidence; superset of catalog ⇒ partial. */
+/**
+ * Match a SELECT's table set against the catalog.
+ *
+ * Table-set overlap is a *candidate* signal and nothing more: it says these
+ * tables appear together in a released view, not that this query and that view
+ * return the same rows. Confidence is scored accordingly, and the caller's
+ * recommendation text says "check", not "replace".
+ */
 export function matchCdsView(model: SelectModel): CdsMatch | null {
   if (tableCount(model) < 2) return null;
   const set = new Set<string>([model.from.name, ...model.joins.map((j) => j.table.name)]);
@@ -29,7 +36,13 @@ export function matchCdsView(model: SelectModel): CdsMatch | null {
     const covered = [...catalog].every((t) => set.has(t));
     if (!covered) continue;
     const exact = catalog.size === set.size;
-    const confidence = exact ? 0.95 : 0.6;
+    // 0.95 for an exact table-set match was a confidence in something that was
+    // never checked. Join predicates, cardinality, selected fields and filters
+    // are all invisible here — `SELECT ... FROM vbak CROSS JOIN vbap` has the
+    // same table set as the join `I_SalesOrderItem` models, and got the same
+    // 0.95. The set tells us a view is worth looking at; it does not tell us the
+    // query means the same thing.
+    const confidence = exact ? 0.6 : 0.35;
     if (!best || confidence > best.confidence) {
       best = { view: e.view, confidence, exact, note: e.note };
     }

@@ -119,9 +119,10 @@ export default async function CatalogModulePage({
       </h1>
       <p className="text-lg text-slate-600 mb-2">{meta.blurb}</p>
       <p className="text-sm text-slate-500 mb-10">
-        {rows.length} object{rows.length === 1 ? '' : 's'} in this area carry a released S/4HANA
-        successor. Each row shows the clean core level derived from SAP&apos;s own published state
-        for that object.
+        {rows.length} object{rows.length === 1 ? '' : 's'} in this area, {rows.filter((r) => r.successor).length} of
+        them with a released S/4HANA successor. The sentence used to claim all of them did, while
+        the table below marked some &ldquo;no released path&rdquo; two lines further down. Each row
+        shows the clean core level derived from SAP&apos;s own published state for that object.
       </p>
 
       <div className="overflow-x-auto rounded-2xl border border-slate-200 mb-10">

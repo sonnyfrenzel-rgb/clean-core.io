@@ -87,7 +87,13 @@ export default function ReferenceAnalysisPage() {
         {[
           { k: 'Lines of ABAP', v: r.linesOfCode.toLocaleString('en-US') },
           { k: 'Findings', v: String(r.totalFindings) },
-          { k: 'Analysis time', v: `${r.durationMs} ms` },
+          // Not among the reproducible figures. The page invites the reader to
+          // run the file and "see the same numbers", and the other three are
+          // deterministic — this one is a wall-clock measurement taken on
+          // whichever Cloud Run instance served the request, and it differs on
+          // every load. Reported as an order of magnitude, which is the honest
+          // form of the claim it was making.
+          { k: 'Analysis time', v: r.durationMs < 1000 ? 'under 1 s' : `${Math.round(r.durationMs / 1000)} s` },
           { k: 'Clean Core Score', v: String(r.cleanCoreScore) },
         ].map((x) => (
           <div key={x.k} className="rounded-2xl border border-slate-200 bg-white p-5">

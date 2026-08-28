@@ -12,6 +12,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [v2.6.2] — 2026-08-28
+
+### Ignorierte Optionen, unverdiente Zuversicht, vier Sätze zu viel
+
+Release 5 von fünf, der Abschluss des Umsetzungsplans.
+
+**`unordered` stand in der Schnittstelle und wurde nie gelesen.** Jeder Vergleich
+in `result-diff.ts` war ein Mengenvergleich, also kam `[A, B]` gegen `[B, A]` als
+`equal: true` zurück — auch wenn der Aufrufer ausdrücklich `{ unordered: false }`
+übergab. Eine Option, die es gibt und die ignoriert wird, ist schlimmer als keine,
+weil Aufrufer sie schreiben und ihr glauben. Die Voreinstellung bleibt mengenbasiert
+— das verspricht der Docstring seit jeher, und ein ABAP-`SELECT` ohne `ORDER BY`
+hat keine garantierte Zeilenfolge —, aber `unordered: false` bedeutet jetzt, was
+dort steht.
+
+**Eine übereinstimmende Tabellenmenge war 0.95 Zuversicht wert.** In etwas, das
+niemand geprüft hatte: Join-Bedingungen, Kardinalität, ausgewählte Felder und
+Filter sind für `matchCdsView` unsichtbar. `SELECT … FROM vbak CROSS JOIN vbap`
+hat dieselbe Tabellenmenge wie der Join, den `I_SalesOrderItem` modelliert, und
+bekam denselben Wert. Jetzt 0.6 für die exakte Menge, 0.35 für eine Obermenge —
+und die Empfehlung sagt „prüfen", nicht „ersetzen".
+
+**`differentialVerified` ist weg.** Der Schalter wurde von niemandem gesetzt, aber
+seine Form war die Falle: **ein** Boolean für einen ganzen Lauf hätte, kombiniert
+mit `cds?.exact`, *jede* exakte Übereinstimmung als „fully verified" markiert — auf
+Grundlage eines einzigen Tests oder gar keines. Verifikation ist etwas pro Abfrage.
+
+**Vier Sätze, die mehr behaupteten als sie konnten:**
+
+- Die Datenschutzerklärung beschrieb nur Google Sign-In. Der E-Mail/Passwort-Weg
+  existiert seit jeher und verarbeitet Daten; er steht jetzt dort.
+- Sie sagte „applicable terms", während das Whitepaper in seinem Kasten „Honest
+  boundary" ausdrücklich festhält, dass für Free-Tier-Schlüssel andere
+  Google-Bedingungen gelten. Von beiden Dokumenten ist die Datenschutzerklärung
+  das maßgebliche — der Vorbehalt gehört dorthin.
+- Die Katalog-Modulseiten zählten „N objects … carry a released successor",
+  während die Tabelle zwei Zeilen darunter für einzelne Objekte „no released
+  path" rendert. Sie zählt jetzt, was sie behauptet.
+- Die Referenzseite lädt zum Nachrechnen ein („you should see the same numbers")
+  und führte daneben die Analysezeit in Millisekunden — eine Wanduhrmessung auf
+  der Cloud-Run-Instanz, die die Anfrage gerade bediente, bei jedem Aufruf anders.
+  Jetzt als Größenordnung.
+
+### Und die rote Pipeline
+
+Der Tenant-Zugriffstest fiel auf CI durch, nicht lokal: Release 4 unterschied
+„nie versucht" von „abgelehnt" über `NODE_ENV` — aber CI baut produktiv und hat
+keinen `RESEND_API_KEY`, was dort keine Fehlkonfiguration ist. Das Kriterium ist
+jetzt die Emulator-Kennung, die der Rest des Codes für genau diese Unterscheidung
+schon benutzt (`lib/firebase-admin.ts`).
+
+Neu: `tests/engine-honesty-guard.spec.ts`, 12 Prüfungen. Zwei bestehende
+Zusicherungen in `abap-sql-joins.spec.ts` waren auf die alten Zuversichtswerte
+festgenagelt und wurden auf die Aussage umgeschrieben, die tatsächlich zählt:
+eine Obermenge liegt unter einer exakten Menge, und beide deutlich unter allem,
+was sich wie „verifiziert" liest.
+
+388 Tests, 387 grün — der eine Fehlschlag ist ein `ECONNRESET` gegen die Seed-API.
+
 ## [v2.6.1] — 2026-08-28
 
 ### Sitzung, Zustellung, zweiter Faktor
