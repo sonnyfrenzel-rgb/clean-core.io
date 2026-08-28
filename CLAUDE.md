@@ -89,6 +89,33 @@ gcloud builds list --limit=10     # Cloud Build history
 - **Firebase:** `firebase-basics`, `firebase-auth-basics`, `firebase-security-rules-auditor`, `firebase-ai-logic-basics`, `firebase-app-hosting-basics`.
 - Native (no skill needed): Jupyter via the `NotebookEdit` tool; charts via the `dataviz` skill.
 
+## Landing page — one style, enforced
+
+`app/page.tsx` must not write a section header of its own. Every one comes from
+`components/SectionHeader.tsx`, which owns the eyebrow pill, the `h2` scale and
+the lead. Three knobs and no more: `align` (`center` | `left`), `tone` (`light` |
+`dark`), `titleId`.
+
+Why it is a component rather than a convention: the page had drifted to three
+eyebrow variants, four heading scales, an emoji on one section, an `h3` where an
+`h2` belonged, and one section with no header at all. Nobody decided any of that
+— every section carried its own copy of the classes and nothing compared them.
+
+`tests/landing-style-guard.spec.ts` holds the line, and the rendered half is the
+half that matters: it reads the live page and compares the computed font, weight,
+letter-spacing, size and colour of every `[data-section-heading]` against the
+first. A source guard can be satisfied by a component that quietly accepts a
+`className` override; computed style cannot.
+
+**Colour shades must be declared.** `app/globals.css` has an `@theme` block with
+56 half-step shades — `slate-650`, `gray-955`, `green-150`, `emerald-505` and the
+rest — because Tailwind emits *nothing* for a shade it does not know, and the
+element then silently inherits its colour. 131 usages across the app were doing
+exactly that: they looked close enough, and two headings side by side were not two
+shades apart but one styled and one not. Inventing a shade is fine; inventing it
+silently is not, and the same spec fails the suite on any colour class naming an
+undeclared shade.
+
 ## Gotchas
 
 - **Node version:** package.json requires `>=22.8`; the local machine currently runs **v20.12.2**. `npm run dev`/`build` may warn or fail on engine checks — bump Node to 22 LTS for parity with CI/Cloud Run.

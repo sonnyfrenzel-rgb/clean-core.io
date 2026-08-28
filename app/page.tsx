@@ -23,6 +23,7 @@ import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import LandingModals from '@/components/LandingModals';
 import LandingSlideshow from '@/components/LandingSlideshow';
 import QuickAnswer from '@/components/QuickAnswer';
+import SectionHeader from '@/components/SectionHeader';
 import SiteFooter from '@/components/SiteFooter';
 import TransformationShowroom from '@/components/TransformationShowroom';
 import TransformationReplay from '@/components/TransformationReplay';
@@ -462,23 +463,15 @@ export default function Home() {
         {/* Transformation Showroom */}
         <section id="showroom" className="py-24 md:py-32 bg-slate-50/50 border-y border-gray-200/40 relative scroll-mt-14">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="text-center mb-16">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-100">
-                Three Worked Examples
-              </span>
-              {/* The heading says what the section is before the reader has to
-                  work it out. "Transformation Showroom" is a name; it does not
-                  tell anybody these are examples rather than their own results,
-                  and the section now sits second on the page, where that mistake
-                  is easiest to make. */}
-              <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">See a real ABAP program transformed</h2>
-              <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-3xl mx-auto font-light">
-                Three example programs, end to end: what each one is, what it does as a process, and
-                what the engine turns it into. Every output below is a real transformation &mdash;
-                verified, compiled and tested against Clean-Core Engine {APP_VERSION}. Your own code
-                goes through the same seven steps.
-              </p>
-            </div>
+            <SectionHeader
+              eyebrow="Three Worked Examples"
+              title="See a real ABAP program transformed"
+            >
+              Three example programs, end to end: what each one is, what it does as a process, and
+              what the engine turns it into. Every output below is a real transformation &mdash;
+              verified, compiled and tested against Clean-Core Engine {APP_VERSION}. Your own code
+              goes through the same seven steps.
+            </SectionHeader>
             <Suspense fallback={null}>
               <TransformationReplay />
             </Suspense>
@@ -496,16 +489,15 @@ export default function Home() {
               a widget floating between two arguments rather than as the step that
               follows the examples. Same eyebrow, same heading scale, same lead
               width as every other section. */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center mb-16">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-100">
-              The Seven Steps
-            </span>
-            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">How a transformation actually runs</h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-3xl mx-auto font-light">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <SectionHeader
+              eyebrow="The Seven Steps"
+              title="How a transformation actually runs"
+            >
               Upload, analyze, design, transform, test, document, deliver. Each step produces
               something you can read and check before the next one starts &mdash; and an architect
               signs the result, not the tool.
-            </p>
+            </SectionHeader>
           </div>
           <LandingSlideshow />
         </div>
@@ -553,22 +545,26 @@ export default function Home() {
             {/* Glowing Accent */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(16,185,129,0.04),transparent_45%)] pointer-events-none" />
             
-            <div className="relative z-10 text-center md:text-left mb-10">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-100">
-                Complements Your SAP Toolchain
-              </span>
-              <h3 className="text-2xl sm:text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none mb-4 uppercase">
-                How We Complement Your SAP Tools
-              </h3>
-              <p className="text-slate-500 text-sm md:text-base max-w-3xl font-medium leading-relaxed">
-The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violations — keep using it. Clean-Core.io picks up from there: it maps each finding against SAP&apos;s Cloudification Repository and drafts BTP or RAP scaffolding for you to review, then validate back in your ABAP Development Tools (ADT) and ATC.
-              </p>
+            <div className="relative z-10">
+              <SectionHeader
+                eyebrow="Complements Your SAP Toolchain"
+                title="How we complement your SAP tools"
+                align="left"
+              >
+                The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core
+                violations &mdash; keep using it. Clean-Core.io picks up from there: it maps each
+                finding against SAP&apos;s Cloudification Repository and drafts BTP or RAP
+                scaffolding for you to review, then validate back in your ABAP Development Tools
+                (ADT) and ATC.
+              </SectionHeader>
+              <div className="text-center md:text-left -mt-10 mb-10">
               {catalogStats.classifiedObjects > 0 && (
                 <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-xs font-bold">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   {catalogStats.classifiedObjects.toLocaleString('en-US')} classified SAP objects · Auto-synced from SAP&apos;s official repository
                 </div>
               )}
+              </div>
             </div>
 
             {/* Mobile View: Stacked Comparison Cards (hidden on desktop) */}
@@ -673,10 +669,13 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
       {/* Features Section */}
       <section id="capabilities" className="py-24 md:py-32 bg-white relative scroll-mt-14">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
-            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">What You Can Do Today</h2>
-            <p className="text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Every feature listed here is live and free to use&mdash;start with 5 transformations or bring your own API key for unlimited access.</p>
-          </div>
+          <SectionHeader
+            eyebrow="Live Today"
+            title="What you can do today"
+          >
+            Every feature listed here is live and free to use &mdash; start with 5 transformations
+            or bring your own API key for unlimited access.
+          </SectionHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
@@ -762,17 +761,14 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-green-500/5 rounded-full blur-[120px] pointer-events-none" />
         
         <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="text-center mb-16">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-100">
-              Sovereign &amp; Secured
-            </span>
-            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">
-              Your Data Stays Yours
-            </h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-3xl mx-auto font-light">
-              European hosting, designed to support GDPR-aligned processing and erasure workflows, with self-service data erasure control. We built the security architecture the way we&apos;d want it for our own SAP systems.
-            </p>
-          </div>
+          <SectionHeader
+            eyebrow="Sovereign & Secured"
+            title="Your data stays yours"
+          >
+            European hosting, designed to support GDPR-aligned processing and erasure workflows,
+            with self-service data erasure control. We built the security architecture the way
+            we&apos;d want it for our own SAP systems.
+          </SectionHeader>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
@@ -817,13 +813,14 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
       {/* Community Access & Capabilities Section */}
       <section className="py-24 md:py-32 bg-white relative overflow-hidden scroll-mt-14" id="access">
         <div className="max-w-6xl mx-auto px-6 relative z-10">
-          <div className="text-center mb-16">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-emerald-700 bg-emerald-50 text-[10px] font-black uppercase tracking-wider mb-4 border border-emerald-100">
-              100% Free &mdash; No Credit Card Required
-            </span>
-            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 text-gray-950 tracking-tighter">Community Access</h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-2xl mx-auto font-light">Every feature is included for free — no locked exports, no premium tiers. The only limit is 5 transformations; bring your own Gemini API key for unlimited runs. Both are 100% free.</p>
-          </div>
+          <SectionHeader
+            eyebrow="100% Free — No Credit Card Required"
+            title="Community access"
+          >
+            Every feature is included for free &mdash; no locked exports, no premium tiers. The
+            only limit is 5 transformations; bring your own Gemini API key for unlimited runs.
+            Both are 100&nbsp;% free.
+          </SectionHeader>
 
           {/* The Free Community Model — positioning statement */}
           <div className="max-w-4xl mx-auto mb-16">
@@ -952,8 +949,10 @@ The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core violat
       {/* Footer CTA */}
       <footer className="py-24 md:py-32 bg-gray-950 text-white text-center">
         <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-8 tracking-tighter">Verify It Yourself</h2>
-          <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-12 font-light max-w-2xl mx-auto">Import the generated abapGit package into your Eclipse ADT, compile the code, and run the ABAP-Unit tests&mdash;all in your own sandbox.</p>
+          <SectionHeader tone="dark" title="Verify it yourself">
+            Import the generated abapGit package into your Eclipse ADT, compile the code, and run
+            the ABAP-Unit tests &mdash; all in your own sandbox.
+          </SectionHeader>
           <FooterCTA />
 
           <div id="site-footer" className="mt-20 pt-12 border-t border-gray-800 scroll-mt-24">

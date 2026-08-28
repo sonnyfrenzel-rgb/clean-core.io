@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* -------------------------------------------------------------
- * The half-step shades this codebase already uses.
+ * Every half-step shade this codebase uses, declared in one place.
  *
  * `text-gray-955`, `bg-gray-150`, `border-green-150`, `text-slate-650` and the
  * rest are written across 131 places in the app — and until now Tailwind emitted
@@ -15,19 +15,74 @@
  * apart — one was styled and the other was not, and the second moved with
  * whatever it happened to sit inside.
  *
- * Each value below is the midpoint of the two default shades it sits between, so
- * defining them applies the intent that was written rather than introducing a
- * new one.
+ * There are 56 of them — `-55`, `-105`, `-150`, `-205`, `-250`, `-405`, `-455`,
+ * `-505`, `-655`, `-805`, `-905`, `-955` and the rest — and every value below is
+ * interpolated in oklch between the two default shades it sits between. So
+ * declaring them applies the intent that was already written rather than
+ * introducing a new one.
+ *
+ * The rule this establishes, and `tests/landing-style-guard.spec.ts` enforces:
+ * inventing a shade is allowed, inventing it silently is not. A colour class
+ * that names an undeclared shade fails the suite instead of rendering as
+ * whatever it happens to inherit.
  * ------------------------------------------------------------- */
 @theme {
-  --color-gray-150: #eceef1;   /* between gray-100 and gray-200 */
-  --color-gray-450: #838b99;   /* between gray-400 and gray-500 */
-  --color-gray-650: #414b5c;   /* between gray-600 and gray-700 */
-  --color-gray-955: #01050d;   /* a shade below gray-950 — the darkest heading */
-  --color-green-150: #cdf9db;  /* between green-100 and green-200 */
-  --color-green-750: #157238;  /* between green-700 and green-800 */
-  --color-slate-650: #3b4a62;  /* between slate-600 and slate-700 */
-  --color-slate-850: #172032;  /* between slate-800 and slate-900 */
+  --color-amber-150: oklch(94.3% 0.089 95.681);
+  --color-amber-205: oklch(92.175% 0.122 95.539);
+  --color-blue-105: oklch(92.95% 0.033 255.512);
+  --color-blue-150: oklch(90.7% 0.045 254.856);
+  --color-blue-550: oklch(58.45% 0.229 261.348);
+  --color-blue-650: oklch(51.7% 0.244 263.628);
+  --color-emerald-250: oklch(87.5% 0.118 164.564);
+  --color-emerald-350: oklch(80.5% 0.16 164.101);
+  --color-emerald-450: oklch(73.05% 0.173 162.851);
+  --color-emerald-505: oklch(69.1% 0.169 162.517);
+  --color-emerald-750: oklch(47% 0.106 166.262);
+  --color-emerald-805: oklch(42.93% 0.094 167.014);
+  --color-emerald-850: oklch(40.5% 0.086 167.927);
+  --color-emerald-955: oklch(25.04% 0.048 172.913);
+  --color-gray-150: oklch(94.75% 0.005 264.536);
+  --color-gray-250: oklch(90% 0.008 261.435);
+  --color-gray-405: oklch(69.92% 0.022 261.477);
+  --color-gray-450: oklch(62.9% 0.025 262.844);
+  --color-gray-55: oklch(98.32% 0.002 249.509);
+  --color-gray-550: oklch(49.85% 0.028 260.583);
+  --color-gray-650: oklch(40.95% 0.032 258.268);
+  --color-gray-850: oklch(24.4% 0.034 260.757);
+  --color-gray-905: oklch(20.2% 0.033 264.368);
+  --color-gray-955: oklch(12.2% 0.027 261.395);
+  --color-green-150: oklch(94.35% 0.064 156.369);
+  --color-green-250: oklch(89.8% 0.117 155.222);
+  --color-green-450: oklch(75.75% 0.214 150.645);
+  --color-green-55: oklch(98% 0.021 155.918);
+  --color-green-650: oklch(57.7% 0.174 149.642);
+  --color-green-750: oklch(48.75% 0.137 150.698);
+  --color-green-850: oklch(42.05% 0.107 151.931);
+  --color-purple-655: oklch(52.39% 0.275 302.103);
+  --color-red-150: oklch(91.05% 0.047 18.026);
+  --color-red-55: oklch(96.75% 0.015 17.414);
+  --color-red-550: oklch(60.7% 0.241 26.328);
+  --color-red-650: oklch(54.1% 0.229 27.422);
+  --color-red-750: oklch(47.45% 0.195 27.209);
+  --color-red-955: oklch(24.42% 0.087 26.074);
+  --color-rose-250: oklch(85.1% 0.088 10.819);
+  --color-sky-650: oklch(54.4% 0.146 242.358);
+  --color-sky-850: oklch(41.7% 0.1 240.833);
+  --color-slate-105: oklch(96.605% 0.007 248.277);
+  --color-slate-150: oklch(94.85% 0.01 251.702);
+  --color-slate-205: oklch(92.6% 0.013 255.377);
+  --color-slate-250: oklch(89.9% 0.017 254.201);
+  --color-slate-350: oklch(78.65% 0.031 254.841);
+  --color-slate-405: oklch(69.65% 0.04 256.819);
+  --color-slate-450: oklch(62.9% 0.043 257.102);
+  --color-slate-455: oklch(62.15% 0.043 257.134);
+  --color-slate-55: oklch(98.24% 0.003 247.862);
+  --color-slate-650: oklch(40.9% 0.043 257.284);
+  --color-slate-655: oklch(40.53% 0.044 257.284);
+  --color-slate-750: oklch(32.55% 0.042 258.659);
+  --color-slate-805: oklch(27.545% 0.041 260.317);
+  --color-slate-850: oklch(24.35% 0.042 262.893);
+  --color-slate-955: oklch(12.11% 0.042 264.589);
 }
 
 /* -------------------------------------------------------------
