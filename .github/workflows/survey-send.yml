@@ -85,6 +85,10 @@ jobs:
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           PILOT_APPROVAL_SECRET: ${{ secrets.PILOT_APPROVAL_SECRET }}
+          # Without this every link in the mail is built against localhost:3000.
+          # The deploy sets it for the running app; a workflow step does not
+          # inherit that, and the first three test sends went out with dead links.
+          NEXT_PUBLIC_APP_URL: https://clean-core.io
           # Dispatch inputs reach the shell as environment variables and are never
           # interpolated into the script. An address such as `x@y.com; curl …`
           # would otherwise run as extra commands in a job holding id-token: write

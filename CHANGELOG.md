@@ -10,6 +10,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.8.4] — 2026-08-31
+
+### Alle drei Testmails enthielten Links auf `localhost:3000`
+
+Deshalb ließ sich nicht abstimmen. Die Mail sah richtig aus, Resend nahm sie an,
+der Workflow meldete Erfolg — und jede Antwortfläche zeigte auf den Rechner des
+Lesers.
+
+**Warum es niemand sah.** `APP_BASE_URL` in `lib/constants.ts` liest
+`NEXT_PUBLIC_APP_URL` und fällt sonst auf `http://localhost:3000` zurück. Der
+Deploy setzt die Variable für die laufende Anwendung, deshalb sind Willkommens-
+und Admin-Mails aus Cloud Run in Ordnung. Ein Workflow-Schritt erbt davon nichts,
+und `survey-send.yml` setzte sie nicht.
+
+An der Prüfseite lag es nicht: Einfachauswahl, Mehrfachauswahl, Fortschritt und
+Übersicht funktionierten in einem echten Browser gegen Produktion einwandfrei —
+ich hatte die *Seite* geprüft und nie die *Adresse in der Mail*.
+
+**Am Mittwoch hätte es alle 36 Empfänger getroffen**, und zwar lautlos: Der
+Versand meldet in beiden Fällen Erfolg. Eine Umfrage mit toten Links ist schlimmer
+als keine — sie verbraucht die eine Gelegenheit zu fragen.
+
+### Drei Reparaturen, nicht eine
+
+1. **`survey-send.yml` setzt `NEXT_PUBLIC_APP_URL`.** Behebt den Fall.
+2. **`scripts/send-survey.ts` verweigert den Dienst**, wenn die Basis-URL nicht mit
+   `https://` beginnt. Das ist die Absicherung, die zählt: Sie greift, egal welcher
+   Workflow die Variable künftig vergisst und egal, von wo das Skript läuft.
+3. **Zwei Guards** in `tests/survey-guard.spec.ts` — einer prüft, dass der Workflow
+   eine echte Basis-URL durchreicht, einer, dass die Verweigerung im Skript steht.
+
+**Die Lehre, und sie ist unangenehm:** am Code war nichts falsch. Der Fehler lebte
+in der Lücke zwischen dem Vorgabewert eines Moduls und der Umgebung eines
+Workflows — genau dort, wo kein Unit-Test hinsieht. Alle Prüfungen dieser Sitzung
+zielten auf die gerenderte Seite und auf die Arithmetik; keine fragte, ob die
+Adresse in der Nachricht überhaupt irgendwohin führt.
+
 ## [v2.8.3] — 2026-08-31
 
 ### Die erste echte Benutzung hat zwei Fehler gefunden

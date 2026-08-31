@@ -197,6 +197,40 @@ test.describe('the arithmetic reports silence as silence', () => {
   });
 });
 
+test.describe('the links in the mail go somewhere', () => {
+  /**
+   * Three test sends went out with every option pointing at
+   * http://localhost:3000. The message rendered correctly, Resend accepted it,
+   * the workflow reported success, and it was unusable — `APP_BASE_URL` falls
+   * back to localhost when `NEXT_PUBLIC_APP_URL` is unset, the deploy sets that
+   * variable for the running app, and a workflow step does not inherit it.
+   *
+   * Nothing in the code was wrong. That is the point: the failure lived in the
+   * gap between a module's default and a workflow's environment, which is a gap
+   * no unit test looks into. So these two checks look into it.
+   */
+  const fs = require('fs') as typeof import('fs');
+  const path = require('path') as typeof import('path');
+  const ROOT = path.resolve(__dirname, '..');
+
+  test('the send workflow passes a real base URL', () => {
+    const wf = fs.readFileSync(path.join(ROOT, '.github/workflows/survey-send.yml'), 'utf8');
+    expect(
+      wf,
+      'survey-send.yml runs the send script without NEXT_PUBLIC_APP_URL — every link ' +
+        'in the mail would be built against localhost:3000',
+    ).toMatch(/NEXT_PUBLIC_APP_URL:\s*https:\/\//);
+  });
+
+  test('the script refuses to send rather than mail dead links', () => {
+    const src = fs.readFileSync(path.join(ROOT, 'scripts/send-survey.ts'), 'utf8');
+    // The workflow can be edited; the refusal is what makes the mistake loud
+    // wherever the script is run from.
+    expect(src).toContain('APP_BASE_URL.startsWith');
+    expect(src).toMatch(/throw new Error\(/);
+  });
+});
+
 test.describe('the vote offers real, unbuilt work', () => {
   test('every idea on the ballot is documented somewhere in the repo', () => {
     // A survey that offers features nobody has thought about is a survey whose

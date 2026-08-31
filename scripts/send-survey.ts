@@ -28,7 +28,7 @@ import { createSurveyToken } from '../lib/survey/token';
 import { SURVEY_CAMPAIGN, SURVEY_OPEN_DAYS, SURVEY_SUBJECT } from '../lib/survey/definition';
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../lib/survey/invite-email';
 import { wrapEmailDocument } from '../lib/email-layout';
-import { FIRESTORE_DB_ID } from '../lib/constants';
+import { FIRESTORE_DB_ID, APP_BASE_URL } from '../lib/constants';
 
 const PROJECT_ID = 'cleancore-491216';
 const FROM = 'Felix from Clean-Core.io <info@clean-core.io>';
@@ -101,6 +101,24 @@ async function loadRecipients(db: Firestore) {
 }
 
 async function main() {
+  /**
+   * Every link in this mail is built from APP_BASE_URL, and APP_BASE_URL falls
+   * back to http://localhost:3000 when NEXT_PUBLIC_APP_URL is unset — which it is
+   * in any plain `npx tsx` run, and in any workflow step that forgets to pass it.
+   * That is exactly what happened to the first three test sends: the message
+   * looked right, and every option pointed at the reader's own machine.
+   *
+   * A survey with dead links is worse than no survey. It reaches thirty-six
+   * people, they tap, nothing happens, and the one chance to ask them is spent —
+   * quietly, because the send reports success either way. So this refuses.
+   */
+  if (!APP_BASE_URL.startsWith('https://')) {
+    throw new Error(
+      `APP_BASE_URL is "${APP_BASE_URL}" — refusing to send links nobody can open. ` +
+        'Set NEXT_PUBLIC_APP_URL=https://clean-core.io for this step.',
+    );
+  }
+
   const resendKey = APPLY ? readEnv('RESEND_API_KEY') : '';
   process.env.PILOT_APPROVAL_SECRET = readEnv('PILOT_APPROVAL_SECRET');
 
