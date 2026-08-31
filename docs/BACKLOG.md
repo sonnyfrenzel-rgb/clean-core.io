@@ -97,7 +97,7 @@ aber ein eigener Punkt.
 
 ---
 
-## `clean-core-test` läuft seit Juli und niemand hat es gemerkt
+## ~~`clean-core-test`~~ — abgeräumt am 31.08.2026
 
 **Was ist** (gemessen am 31.08.2026):
 
@@ -121,11 +121,22 @@ Juni, mit gesetztem `GEMINI_API_KEY` und den Zugriffsregeln von damals. Dieselbe
 Sorte Angriffsfläche wie die beiden Altlasten in us-west1 und europe-west3 weiter
 unten — nur diese hier hat einen aktuellen Namen und wirkt dadurch gepflegt.
 
-**Zu entscheiden:** `release` nachziehen und neu deployen, oder den Dienst
-abräumen. Solange die Doku ihn als Testumgebung führt, ist der jetzige Zustand die
-schlechteste der drei Möglichkeiten.
+**Entschieden und erledigt am 31.08.:** der Dienst ist gelöscht, samt 45
+Revisionen. Vor dem Löschen geprüft: kein Domain-Mapping (nur `clean-core.io` →
+`clean-core` existiert), und der einzige Verkehr in dreißig Tagen waren die
+Prüfabrufe aus dieser Sitzung.
 
-**Dringlichkeit:** mittel.
+Dazu hätte ein Push auf `release` den Dienst sofort wieder aufgebaut — mit
+`NEXT_PUBLIC_APP_URL=https://test.clean-core.io` (kein A-Eintrag) und der
+us-west1-Datenbank mit der `freeTierLimited`-Deckelung, die am 19.08. den Ausfall
+verursacht hat. Drei bekannt kaputte Dinge, wiederhergestellt durch einen Push.
+`.github/workflows/deploy.yml` bricht auf diesem Branch jetzt mit einer Erklärung
+ab, statt ihn stillschweigend zu deployen.
+
+**Wenn die Testumgebung zurück soll:** eine europe-west1-Datenbank anlegen, das
+Domain-Mapping für `test.clean-core.io` wiederherstellen, und den Dienstnamen im
+`release)`-Block der Pipeline wieder eintragen. Ein Block, dokumentiert an Ort und
+Stelle.
 
 ---
 

@@ -346,21 +346,25 @@ tier's 5 transformations) are configuration and are fine.
 | Branch | Service | URL |
 |--------|---------|-----|
 | `main` | `clean-core` | https://clean-core.io |
-| `release` | `clean-core-test` | https://test.clean-core.io — **no A record**, see below |
+| `release` | **retired 2026-08-31** | the deploy job stops with an error on this branch |
 | `dev` | `clean-core-dev` | https://dev.clean-core.io — **no A record**, see below |
 
-> Both subdomains exist in the zone and point at nothing (NODATA against 8.8.8.8,
-> re-checked 2026-08-31). Until the Cloud Run domain mappings and the CNAMEs at
-> Strato are restored, reach the two environments at their run.app addresses:
-> `https://clean-core-dev-qcevuoi3uq-ew.a.run.app` and
-> `https://clean-core-test-qcevuoi3uq-ew.a.run.app`. A deploy that "isn't visible
-> on dev" is usually this, not the deploy.
+> **There are two environments, not three.** `clean-core-test` was deleted on
+> 2026-08-31. Its serving revision dated from 2026-07-26 and `origin/release` had
+> not moved since 2026-06-09, so it was a publicly reachable copy of the June
+> application, missing six of the seven secrets. Deploying `release` as configured
+> would have recreated it pointing at a hostname with no A record, against a
+> Firestore database still in us-west1 carrying the `freeTierLimited` cap that took
+> the platform down on 19 August — so the pipeline now fails that branch loudly
+> rather than rebuilding three broken things. Restoring the lane means a
+> europe-west1 database, a working domain mapping, and putting the service name
+> back in `.github/workflows/deploy.yml`.
 >
-> **`clean-core-test` is not a current build.** Its serving revision dates from
-> 2026-07-26 and `origin/release` has not moved since 2026-06-09, so the service is
-> a publicly reachable copy of the June application, missing six of the seven
-> secrets. Do not treat it as a staging environment until `release` is caught up —
-> see `docs/BACKLOG.md`.
+> `dev.clean-core.io` exists in the zone and points at nothing (NODATA against
+> 8.8.8.8, re-checked 2026-08-31). Until the Cloud Run domain mapping and the CNAME
+> at Strato are restored, reach it at
+> `https://clean-core-dev-qcevuoi3uq-ew.a.run.app`. A deploy that "isn't visible on
+> dev" is usually this, not the deploy.
 
 Each env has its own `NEXT_PUBLIC_FIRESTORE_DB_ID`. `firebase.json` has **no** hosting deploy; `vercel.json` only sets cache headers. Second workflow `sync-catalog.yml` refreshes the SAP catalog.
 

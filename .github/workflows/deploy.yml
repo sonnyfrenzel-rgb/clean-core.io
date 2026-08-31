@@ -116,9 +116,23 @@ jobs:
               echo "app_url=https://clean-core.io" >> "$GITHUB_OUTPUT"
               ;;
             release)
-              echo "service=clean-core-test" >> "$GITHUB_OUTPUT"
-              echo "db_id=ai-studio-39b46c45-cda0-481e-9847-19682e979043" >> "$GITHUB_OUTPUT"
-              echo "app_url=https://test.clean-core.io" >> "$GITHUB_OUTPUT"
+              # Retired on 2026-08-31. `clean-core-test` was deleted: its serving
+              # revision dated from 26 July, `release` itself had not moved since
+              # 9 June, and it was a publicly reachable copy of the June
+              # application missing six of the seven secrets.
+              #
+              # This stops loudly instead of rebuilding it. Deploying `release`
+              # as it stood would have recreated the service pointing
+              # NEXT_PUBLIC_APP_URL at test.clean-core.io — a hostname with no A
+              # record — against a Firestore database still in us-west1, carrying
+              # the freeTierLimited cap that took the platform down on 19 August.
+              # Three known-broken things, restored silently by one push.
+              #
+              # To bring the lane back: give it a europe-west1 database, restore
+              # the domain mapping, and replace this block with the service name.
+              echo "::error::The release lane was retired on 2026-08-31 and clean-core-test was deleted." >&2
+              echo "::error::Restoring it needs a europe-west1 database and a working test.clean-core.io mapping — see docs/BACKLOG.md." >&2
+              exit 1
               ;;
             dev)
               echo "service=clean-core-dev" >> "$GITHUB_OUTPUT"
