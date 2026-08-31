@@ -89,7 +89,11 @@ function questionBlock(q: QuestionTally, invited: number): string {
             ${
               q.answered === 0
                 ? `no answers yet &middot; ${invited} invited`
-                : `${q.answered} of ${invited} answered`
+                : `${q.answered} of ${invited} answered${
+                    // Said out loud, because bars that add up to 180% look like a
+                    // bug unless the reader is told they are counting people.
+                    q.multi ? ' &middot; several answers allowed, so the shares are of people and do not add to 100%' : ''
+                  }`
             }
           </p>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -214,7 +218,9 @@ export function renderSurveyDigestText(summary: SurveySummary, daysLeft: number)
     lines.push(
       q.answered === 0
         ? `  no answers yet (${summary.invited} invited)`
-        : `  ${q.answered} of ${summary.invited} answered`,
+        : `  ${q.answered} of ${summary.invited} answered${
+            q.multi ? ' — several allowed, shares are of people' : ''
+          }`,
     );
     for (const o of q.options) {
       lines.push(`  ${String(o.count).padStart(3)}  ${q.answered > 0 ? `${o.share}%`.padStart(6) : '     —'}  ${o.label}`);

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Loader2, AlertCircle, Send } from 'lucide-react';
 import { PAGE_QUESTIONS, SURVEY_FREETEXT_PROMPT, SURVEY_FREETEXT_MAX, getOption } from '@/lib/survey/definition';
+import { chosen, type SurveyAnswer } from '@/lib/survey/store';
 
 /**
  * The survey, after the tap.
@@ -34,7 +35,7 @@ export default function SurveyClient({
   token: string;
   initialQuestion: string | null;
   initialOption: string | null;
-  existingAnswers: Record<string, string>;
+  existingAnswers: Record<string, SurveyAnswer>;
   existingComment: string;
   closesOn: string;
 }) {
@@ -48,7 +49,7 @@ export default function SurveyClient({
       ? { question: initialQuestion, option: initialOption }
       : null;
 
-  const [answers, setAnswers] = useState<Record<string, string>>(
+  const [answers, setAnswers] = useState<Record<string, SurveyAnswer>>(
     tapped ? { ...existingAnswers, [tapped.question]: tapped.option } : existingAnswers,
   );
   const [status, setStatus] = useState<Record<string, Status>>(
@@ -58,12 +59,16 @@ export default function SurveyClient({
   const [commentStatus, setCommentStatus] = useState<Status>(existingComment ? 'saved' : 'idle');
   const submittedInitial = useRef(false);
 
-  async function post(questionId: string, optionId: string): Promise<boolean> {
+  async function post(questionId: string, value: SurveyAnswer): Promise<boolean> {
     try {
       const res = await fetch('/api/survey/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, questionId, optionId }),
+        body: JSON.stringify(
+          Array.isArray(value)
+            ? { token, questionId, optionIds: value }
+            : { token, questionId, optionId: value },
+        ),
       });
       return res.ok;
     } catch {
@@ -72,11 +77,25 @@ export default function SurveyClient({
   }
 
   /** A tap on this page. An event handler, so setting state here is the normal path. */
-  async function record(questionId: string, optionId: string) {
+  async function record(questionId: string, value: SurveyAnswer) {
     setStatus((s) => ({ ...s, [questionId]: 'saving' }));
-    setAnswers((a) => ({ ...a, [questionId]: optionId }));
-    const ok = await post(questionId, optionId);
+    setAnswers((a) => ({ ...a, [questionId]: value }));
+    const ok = await post(questionId, value);
     setStatus((s) => ({ ...s, [questionId]: ok ? 'saved' : 'error' }));
+  }
+
+  /**
+   * Toggling one box on a multi-select question sends the whole selection, not the
+   * box. Sending the single change would leave the server guessing what the other
+   * boxes look like, and unticking the last one would be indistinguishable from
+   * never having answered.
+   */
+  function toggle(questionId: string, optionId: string) {
+    const current = chosen(answers[questionId]);
+    const next = current.includes(optionId)
+      ? current.filter((id) => id !== optionId)
+      : [...current, optionId];
+    void record(questionId, next);
   }
 
   // Only the network call is left in the effect, and the state it sets is set
@@ -105,7 +124,7 @@ export default function SurveyClient({
     }
   }
 
-  const answeredCount = PAGE_QUESTIONS.filter((q) => answers[q.id]).length;
+  const answeredCount = PAGE_QUESTIONS.filter((q) => chosen(answers[q.id]).length > 0).length;
   const initialLabel =
     initialQuestion && initialOption ? getOption(initialQuestion, initialOption)?.label : null;
 
@@ -148,12 +167,12 @@ export default function SurveyClient({
 
           <div className="mt-4 space-y-2">
             {q.options.map((o) => {
-              const selected = answers[q.id] === o.id;
+              const selected = chosen(answers[q.id]).includes(o.id);
               return (
                 <button
                   key={o.id}
                   type="button"
-                  onClick={() => record(q.id, o.id)}
+                  onClick={() => (q.multi ? toggle(q.id, o.id) : record(q.id, o.id))}
                   aria-pressed={selected}
                   className={[
                     'w-full text-left rounded-xl border p-4 transition-colors cursor-pointer',
@@ -163,9 +182,13 @@ export default function SurveyClient({
                   ].join(' ')}
                 >
                   <span className="flex items-start gap-3">
+                    {/* A square for "pick as many as you like", a circle for
+                        "pick one". The shape is the only thing that tells a
+                        reader which rules apply before they tap. */}
                     <span
                       className={[
-                        'mt-0.5 shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center',
+                        'mt-0.5 shrink-0 w-5 h-5 border-2 flex items-center justify-center',
+                        q.multi ? 'rounded-md' : 'rounded-full',
                         selected ? 'border-green-600 bg-green-600' : 'border-gray-300',
                       ].join(' ')}
                     >

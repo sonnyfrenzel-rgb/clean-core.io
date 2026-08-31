@@ -91,7 +91,7 @@ export function renderSurveyInviteEmail(input: SurveyInviteInput): string {
                   </table>
 
                   <h1 style="margin: 0 0 12px 0; font-size: 24px; line-height: 1.25; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">
-                    Two weeks on, and I still cannot tell what is in your way
+                    One question &mdash; and then a vote on what gets built next
                   </h1>
 
                   <p style="margin: 0 0 14px 0; font-size: 15px; line-height: 1.6; color: #334155;">
@@ -100,15 +100,14 @@ export function renderSurveyInviteEmail(input: SurveyInviteInput): string {
 
                   <p style="margin: 0 0 14px 0; font-size: 15px; line-height: 1.6; color: #334155;">
                     When the platform opened I said I would come back and ask how it
-                    was going. This is that, and it is one question long.
+                    was going. This is that, and it starts with one question.
                   </p>
 
                   <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #334155;">
-                    Most of the accounts here have never started an analysis. I do not
-                    know whether that is because the tool is confusing, because the
-                    right moment never came, or because the welcome mail landed in a
-                    junk folder and you never saw it. Those are three completely
-                    different problems, and I can only fix the one it actually is.
+                    I would rather build the next thing with you than guess at it. So
+                    the page after this one carries four things that are on the list
+                    and not built yet, and you can vote on them &mdash; a tap each, as
+                    many as you would use.
                   </p>
 
                   <!-- The question -->
@@ -129,10 +128,9 @@ export function renderSurveyInviteEmail(input: SurveyInviteInput): string {
                   </table>
 
                   <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.6; color: #475569;">
-                    That is the whole survey — the tap records it, there is nothing to
-                    fill in and nothing to log into. If you have another thirty
-                    seconds, the page that follows asks ${followUps} more questions,
-                    one tap each.
+                    The tap records it — nothing to fill in, nothing to log into. The
+                    page that follows has ${followUps} more questions, one tap each,
+                    including the vote on what to build. Under a minute for all of it.
                   </p>
 
                   <!-- Why it matters, in one panel -->
@@ -141,9 +139,9 @@ export function renderSurveyInviteEmail(input: SurveyInviteInput): string {
                       <td style="padding: 16px;">
                         <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #14532d;">
                           <strong>What happens with it.</strong> The answers go into one
-                          summary that I read every morning. If enough of you pick the
-                          same thing, that is what gets built next — and I will write
-                          back and tell you which one it was.
+                          summary I read every morning, and the vote sets the order of
+                          the work. When the survey closes I will write back and tell
+                          you what won and when it lands.
                         </p>
                       </td>
                     </tr>
@@ -193,12 +191,11 @@ export function renderSurveyInviteText(input: SurveyInviteInput): string {
   lines.push(name ? `Hi ${name},` : 'Hi,');
   lines.push('');
   lines.push('When the platform opened I said I would come back and ask how it was');
-  lines.push('going. This is that, and it is one question long.');
+  lines.push('going. This is that, and it starts with one question.');
   lines.push('');
-  lines.push('Most of the accounts here have never started an analysis. I do not know');
-  lines.push('whether that is because the tool is confusing, because the right moment');
-  lines.push('never came, or because the welcome mail landed in a junk folder. Those');
-  lines.push('are three different problems and I can only fix the one it actually is.');
+  lines.push('I would rather build the next thing with you than guess at it. The page');
+  lines.push('after this one carries four things that are on the list and not built');
+  lines.push('yet, and you can vote on them — a tap each, as many as you would use.');
   lines.push('');
   lines.push(MAIL_QUESTION.prompt.toUpperCase());
   lines.push('');

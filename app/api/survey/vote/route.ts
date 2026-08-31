@@ -4,7 +4,7 @@ import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { logger, errMessage } from '@/lib/logger';
 import { verifySurveyToken } from '@/lib/survey/token';
 import { docId } from '@/lib/survey/store';
-import { getOption, SURVEY_FREETEXT_MAX } from '@/lib/survey/definition';
+import { getOption, getQuestion, SURVEY_FREETEXT_MAX } from '@/lib/survey/definition';
 
 /**
  * Records one survey answer, or the free-text comment.
@@ -34,10 +34,12 @@ export async function POST(req: NextRequest) {
     await assertRateLimit(`survey-vote:${getClientIp(req)}`, 60, 60_000);
 
     const body = await req.json().catch(() => ({}));
-    const { token, questionId, optionId, comment } = body as {
+    const { token, questionId, optionId, optionIds, comment } = body as {
       token?: string;
       questionId?: string;
       optionId?: string;
+      /** Multi-select questions send the whole selection, so clearing one works. */
+      optionIds?: string[];
       comment?: string;
     };
 
@@ -67,9 +69,30 @@ export async function POST(req: NextRequest) {
     }
 
     const q = String(questionId || '');
-    const a = String(optionId || '');
-    if (!getOption(q, a)) {
+    const question = getQuestion(q);
+    if (!question) {
       return NextResponse.json({ error: 'Unknown question or option.' }, { status: 400 });
+    }
+
+    // A multi-select question sends its whole selection every time, so unticking
+    // the last box stores an empty list rather than leaving the previous answer
+    // standing. Everything else sends one option.
+    let value: string | string[];
+    if (question.multi) {
+      const list = Array.isArray(optionIds) ? optionIds.map(String) : [];
+      if (list.some((id) => !getOption(q, id))) {
+        return NextResponse.json({ error: 'Unknown question or option.' }, { status: 400 });
+      }
+      // De-duplicated and capped at the number of options that exist: without
+      // this, a crafted request could store the same id ten thousand times and
+      // the tally would report a landslide of one.
+      value = [...new Set(list)].slice(0, question.options.length);
+    } else {
+      const a = String(optionId || '');
+      if (!getOption(q, a)) {
+        return NextResponse.json({ error: 'Unknown question or option.' }, { status: 400 });
+      }
+      value = a;
     }
 
     await ref.set(
@@ -77,7 +100,7 @@ export async function POST(req: NextRequest) {
         campaign: identity.campaign,
         uid: identity.uid,
         // Dotted path so one answer never overwrites the others.
-        [`answers.${q}`]: a,
+        [`answers.${q}`]: value,
         [`answeredAt.${q}`]: FieldValue.serverTimestamp(),
         confirmedAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),

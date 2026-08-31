@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { logger, errMessage } from '@/lib/logger';
 import { verifySurveyToken } from '@/lib/survey/token';
-import { docId } from '@/lib/survey/store';
+import { PAGE_QUESTIONS } from '@/lib/survey/definition';
+import { docId, type SurveyAnswer } from '@/lib/survey/store';
 import SurveyClient from './SurveyClient';
 
 /**
@@ -83,7 +84,7 @@ export default async function SurveyPage({
     );
   }
 
-  let existingAnswers: Record<string, string> = {};
+  let existingAnswers: Record<string, SurveyAnswer> = {};
   let existingComment = '';
   let closesOn = formatDate(new Date(identity.expiresAt));
 
@@ -105,7 +106,7 @@ export default async function SurveyPage({
         { merge: true },
       );
     }
-    existingAnswers = (data?.answers as Record<string, string>) || {};
+    existingAnswers = (data?.answers as Record<string, SurveyAnswer>) || {};
     existingComment = (data?.comment as string) || '';
 
     const campaign = await db.collection('survey_campaigns').doc(identity.campaign).get();
@@ -123,8 +124,8 @@ export default async function SurveyPage({
         Thank you — that is recorded
       </h1>
       <p className="text-gray-600 leading-relaxed mb-8">
-        Two more questions, one tap each. Nothing here is submitted at the end and none of it is
-        required.
+        {PAGE_QUESTIONS.length} more questions, one tap each — including the vote on what gets
+        built next. Nothing here is submitted at the end and none of it is required.
       </p>
 
       <SurveyClient

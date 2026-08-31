@@ -10,6 +10,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.8.1] — 2026-08-31
+
+### Der Ton der Einladung, und eine Frage, die etwas zurückgibt
+
+**Was raus ist.** Die Einladung erklärte im zweiten Absatz, dass die meisten Konten
+nie eine Analyse gestartet haben. Das ist eine Tatsache über den Betreiber, nicht
+über den Leser — und sie jemandem vorzulegen, dessen Mitwirkung man erbittet, kauft
+nichts. Die Fragen messen es weiterhin genauso gut. Auch die Begründung unter der
+Zustellfrage („niemand hier weiß es, für jene Mails gibt es keine Ereignisse") ist
+einer Zeile gewichen, die dasselbe erfragt, ohne die eigene Blindstelle
+auszubreiten.
+
+**Was dazugekommen ist:** eine vierte Frage, und sie ist die einzige, bei der die
+Befragten etwas bekommen statt nur zu geben. Vier Dinge, die auf der Liste stehen
+und nicht gebaut sind, als Mehrfachauswahl — der Vote entscheidet die Reihenfolge.
+
+| Idee | Belegt in |
+|---|---|
+| Deutsche Fassung von Oberfläche und Doku | `docs/CONCEPT-DE-LOCALIZATION.md`, Backlog S-05 |
+| ATC-Ergebnisse importieren | `docs/CLEAN_CORE_ENRICHMENT_CONCEPT.md` §3 |
+| Modellwahl: Claude neben Gemini, eigener Schlüssel | `docs/ROADMAP-2.0.md` |
+| Der Vorher-Nachher-Vergleich auf dem Telefon | `docs/BACKLOG.md`, Runde 2 |
+
+**Und ein Guard dafür.** `tests/survey-guard.spec.ts` prüft, dass **jede** Option
+auf dem Stimmzettel in einem der Konzept- oder Backlog-Dokumente belegt ist. Eine
+Umfrage, die Funktionen anbietet, an die niemand gedacht hat, ist eine Umfrage,
+deren Gewinner nicht gebaut werden kann — und ein Versprechen an 36 Leute, das
+stillschweigend nicht gehalten wird.
+
+**Mehrfachauswahl heißt: Menschen zählen, nicht Kreuze.** Wer drei Dinge ankreuzt,
+ist eine Antwort und drei Zählungen. Durch die Kreuze zu teilen ließe jeden Anteil
+schrumpfen, je mehr Leute ankreuzen — und die eine Person, die nur eines wählt,
+erschiene mit 25 % statt mit 50 % der Antwortenden. Die Anteile summieren sich
+folglich auf über 100, und der Bericht **sagt das dazu**, statt den Leser einen
+Balken von 180 % für einen Fehler halten zu lassen.
+
+Das Kästchen ist eckig, wo mehrere Antworten erlaubt sind, und rund, wo genau eine
+gilt. Das ist das einzige Signal, das ein Leser vor dem Tippen hat.
+
 ## [v2.8.0] — 2026-08-31
 
 ### Die Aktivierungsumfrage

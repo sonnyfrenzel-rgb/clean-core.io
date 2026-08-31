@@ -1,18 +1,29 @@
 /**
  * The activation survey — what is asked, and why each question is there.
  *
- * The problem this exists to solve is not sign-ups. Thirty people have accounts
- * and twenty of them had never created a project when the community mail went out
- * on 19 August. Every question below is aimed at one of the two explanations for
- * that, because they are completely different building sites:
+ * The problem this exists to solve is not sign-ups; it is what happens after one.
+ * There are two possible explanations and they are completely different building
+ * sites, so the first job is to tell them apart:
  *
  *   - a usage problem — people arrived, looked, and did not know what to do next;
  *   - a delivery problem — people never saw the mail that told them.
  *
- * Q3 is the cheapest question on the list and answers the most expensive open
- * question about the platform. It costs one line and it has been unanswerable
- * since the community activation, because those thirty mails predate the Resend
- * webhook and no delivery events exist for them.
+ * `welcome_mail` is the cheapest question here and answers the most expensive open
+ * question about the platform. It costs one line, and it has been unanswerable
+ * since the community activation because those mails predate the Resend webhook
+ * and no delivery events exist for them.
+ *
+ * `build_next` is the one that gives something back. Every option on it is a real,
+ * documented, unbuilt item — the German version (docs/CONCEPT-DE-LOCALIZATION.md),
+ * ATC ingestion (docs/CLEAN_CORE_ENRICHMENT_CONCEPT.md §3), provider choice
+ * (docs/ROADMAP-2.0.md), and the stacked before/after on a phone (docs/BACKLOG.md).
+ * Nothing on the list is invented to make the survey look generous, and nothing
+ * already shipped is offered as if it were new.
+ *
+ * WHAT THE READER IS NOT TOLD. The mail does not open by explaining how few people
+ * have used the platform. That is a fact about the operator, not about the reader,
+ * and putting it in front of someone whose engagement you are asking for buys
+ * nothing. The questions still measure it exactly as well.
  *
  * ONE TAP, AND WHAT THAT REALLY MEANS. There is no way to record an answer from
  * inside an email without the reader leaving it — mail clients do not run code,
@@ -20,8 +31,8 @@
  * works in Gmail alone, which is the wrong half of an SAP audience. So each option
  * is a link, and the design goal is that a tap is *all* it is: no form, no login,
  * no typing, and the answer is recorded before the page has finished painting.
- * Q1 is answered from the mail itself; Q2 and Q3 are one tap each on the page that
- * thanks them for Q1, which is where a reader who is already engaged actually is.
+ * The first question is answered from the mail; the rest are one tap each on the
+ * page that thanks them for it, which is where an engaged reader already is.
  */
 
 export const SURVEY_CAMPAIGN = 'activation-2026-09';
@@ -43,6 +54,16 @@ export interface SurveyQuestion {
   prompt: string;
   /** One line under the prompt. Kept short — this is an email, not a form. */
   lead?: string;
+  /**
+   * Several answers allowed. Used for the "what should exist" vote, because
+   * ranking unbuilt features against each other is a question nobody can answer
+   * honestly — wanting two things is the normal case, and forcing a single pick
+   * would throw away the second one.
+   *
+   * The consequence is that its shares are of *people*, not of votes, and they do
+   * not add up to 100. The digest says so rather than letting the reader assume.
+   */
+  multi?: boolean;
   options: SurveyOption[];
 }
 
@@ -80,11 +101,6 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
         hint: 'Something to read at your own pace and forward to a colleague.',
       },
       {
-        id: 'german',
-        label: 'A German-language version',
-        hint: 'Interface and documentation in German.',
-      },
-      {
         id: 'time',
         label: 'Nothing — I know what to do, I just need the time',
         hint: 'A perfectly good answer, and worth knowing.',
@@ -92,10 +108,39 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     ],
   },
   {
+    id: 'build_next',
+    where: 'page',
+    multi: true,
+    prompt: 'And which of these would you actually use?',
+    lead: 'Four things on the list that are not built yet. Pick as many as you would use — this is the vote that decides the order.',
+    options: [
+      {
+        id: 'german',
+        label: 'A German version of the interface and the documentation',
+        hint: 'The concept is written; what is missing is the decision that it is worth it.',
+      },
+      {
+        id: 'atc_import',
+        label: 'Import your ABAP Test Cockpit results',
+        hint: 'Your existing ATC findings merged into the checklist, so the analysis starts from what SAP already told you.',
+      },
+      {
+        id: 'model_choice',
+        label: 'Choose the AI model — Claude alongside Gemini, with your own key',
+        hint: 'Same workflow, your provider, your key. The free tier would stay on Gemini.',
+      },
+      {
+        id: 'mobile_diff',
+        label: 'The before/after comparison usable on a phone',
+        hint: 'Today the ABAP and the TypeScript stack on a narrow screen, which is where the comparison is the whole point.',
+      },
+    ],
+  },
+  {
     id: 'welcome_mail',
     where: 'page',
     prompt: 'Did the welcome email ever reach you?',
-    lead: 'Asked because nobody here knows. Those mails went out before delivery events were recorded.',
+    lead: 'Mail from a young domain sometimes lands in junk. Worth knowing either way.',
     options: [
       { id: 'inbox', label: 'Yes, in my inbox' },
       { id: 'spam', label: 'Yes, but it was in spam or junk' },
@@ -119,8 +164,9 @@ export const MAIL_QUESTION = SURVEY_QUESTIONS.find((q) => q.where === 'mail')!;
 /** Everything asked on the landing page, in order. */
 export const PAGE_QUESTIONS = SURVEY_QUESTIONS.filter((q) => q.where === 'page');
 
-export const SURVEY_SUBJECT = 'Two weeks on: what would actually help you?';
+export const SURVEY_SUBJECT = 'One question — and a vote on what gets built next';
 
 /** Free-text prompt on the landing page. Optional, and never required to submit. */
-export const SURVEY_FREETEXT_PROMPT = 'Anything else? Optional, and it comes straight to me.';
+export const SURVEY_FREETEXT_PROMPT =
+  'Something that is not on the list? Optional, and it comes straight to me.';
 export const SURVEY_FREETEXT_MAX = 2000;

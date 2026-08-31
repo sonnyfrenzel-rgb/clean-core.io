@@ -25,7 +25,7 @@ import { wrapEmailDocument } from '../lib/email-layout';
 
 const HOUR = 60 * 60 * 1000;
 
-function response(uid: string, answers: Record<string, string>, extra: Partial<SurveyResponse> = {}): SurveyResponse {
+function response(uid: string, answers: Record<string, string | string[]>, extra: Partial<SurveyResponse> = {}): SurveyResponse {
   return {
     campaign: SURVEY_CAMPAIGN,
     uid,
@@ -165,6 +165,69 @@ test.describe('the arithmetic reports silence as silence', () => {
     const help = s.questions.find((q) => q.id === 'help')!;
     expect(help.answered).toBe(0);
     expect(help.options.every((o) => o.share === 0)).toBe(true);
+  });
+
+  test('a multi-select question counts people, not ticks', () => {
+    // Two people. One picks three things, the other picks one. Dividing by votes
+    // would report the second person's single pick as 25% when it is 50% of the
+    // people who answered — and every share would shrink as people ticked more.
+    const s = summarise(SURVEY_CAMPAIGN, 30, [
+      response('a', { build_next: ['german', 'atc_import', 'model_choice'] }),
+      response('b', { build_next: ['german'] }),
+    ]);
+    const vote = s.questions.find((q) => q.id === 'build_next')!;
+
+    expect(vote.multi).toBe(true);
+    expect(vote.answered, 'counted ticks instead of people').toBe(2);
+    expect(vote.options.find((o) => o.id === 'german')!.count).toBe(2);
+    expect(vote.options.find((o) => o.id === 'german')!.share).toBe(100);
+    expect(vote.options.find((o) => o.id === 'atc_import')!.share).toBe(50);
+    expect(vote.options.find((o) => o.id === 'mobile_diff')!.count).toBe(0);
+
+    // Shares above 100 in total are correct here, and the digest has to say so
+    // rather than let the reader read them as a split of one whole.
+    const total = vote.options.reduce((a, o) => a + o.share, 0);
+    expect(total).toBeGreaterThan(100);
+    expect(renderSurveyDigestText(s, 3)).toContain('shares are of people');
+  });
+
+  test('an empty selection is not an answer', () => {
+    const s = summarise(SURVEY_CAMPAIGN, 30, [response('a', { build_next: [] })]);
+    expect(s.questions.find((q) => q.id === 'build_next')!.answered).toBe(0);
+  });
+});
+
+test.describe('the vote offers real, unbuilt work', () => {
+  test('every idea on the ballot is documented somewhere in the repo', () => {
+    // A survey that offers features nobody has thought about is a survey whose
+    // winner cannot be built, and a promise made to thirty-six people that will
+    // quietly not be kept. Each option has to be traceable to a written item.
+    const fs = require('fs') as typeof import('fs');
+    const path = require('path') as typeof import('path');
+    const ROOT = path.resolve(__dirname, '..');
+    const corpus = ['docs/BACKLOG.md', 'docs/ROADMAP-2.0.md', 'docs/CONCEPT-DE-LOCALIZATION.md', 'docs/CLEAN_CORE_ENRICHMENT_CONCEPT.md']
+      .filter((f) => fs.existsSync(path.join(ROOT, f)))
+      .map((f) => fs.readFileSync(path.join(ROOT, f), 'utf8'))
+      .join('\n')
+      .toLowerCase();
+
+    // One phrase per option that must appear in the written record.
+    const evidence: Record<string, string> = {
+      german: 'deutsche',
+      atc_import: 'atc',
+      model_choice: 'claude',
+      mobile_diff: 'segmented control',
+    };
+
+    const vote = SURVEY_QUESTIONS.find((q) => q.id === 'build_next')!;
+    for (const o of vote.options) {
+      const phrase = evidence[o.id];
+      expect(phrase, `option ${o.id} has no evidence phrase — add one`).toBeTruthy();
+      expect(
+        corpus.includes(phrase),
+        `the ballot offers "${o.label}" but "${phrase}" appears in none of the backlog or concept documents`,
+      ).toBe(true);
+    }
   });
 });
 

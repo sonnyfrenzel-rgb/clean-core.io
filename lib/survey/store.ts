@@ -1,5 +1,14 @@
 import { SURVEY_QUESTIONS, getOption } from './definition';
 
+/** One answer: a single choice, or several where the question allows it. */
+export type SurveyAnswer = string | string[];
+
+/** Normalises either shape to a list, so the arithmetic has one case to handle. */
+export function chosen(value: SurveyAnswer | undefined): string[] {
+  if (!value) return [];
+  return Array.isArray(value) ? value.filter(Boolean) : [value];
+}
+
 /**
  * The shape a survey answer is stored in, and the arithmetic done on it.
  *
@@ -21,8 +30,11 @@ export interface SurveyResponse {
   uid: string;
   email: string;
   name: string;
-  /** questionId → optionId. A question the person skipped is simply absent. */
-  answers: Record<string, string>;
+  /**
+   * questionId → the chosen option, or options where the question allows several.
+   * A question the person skipped is simply absent.
+   */
+  answers: Record<string, SurveyAnswer>;
   comment?: string | null;
   /** The invitation link was fetched. May be a mail gateway, so it is not a vote. */
   linkFetchedAt?: Date | null;
@@ -42,7 +54,14 @@ export interface OptionTally {
 export interface QuestionTally {
   id: string;
   prompt: string;
+  /** People who answered this question — not votes cast. */
   answered: number;
+  /**
+   * True where several answers were allowed. Then a share is "this many of the
+   * people who answered picked it", the shares can add up to well over 100, and
+   * the digest labels them so nobody reads them as a split of one whole.
+   */
+  multi: boolean;
   options: OptionTally[];
 }
 
@@ -82,17 +101,22 @@ export function summarise(
 
   const questions: QuestionTally[] = SURVEY_QUESTIONS.map((q) => {
     const counts = new Map<string, number>();
+    // Counted per person, not per vote. On a multi-select question someone who
+    // picks three options is one answer and three counts, and dividing by the
+    // votes would quietly shrink every share as people ticked more boxes.
+    let answered = 0;
     for (const r of participants) {
-      const choice = r.answers?.[q.id];
-      if (!choice) continue;
-      counts.set(choice, (counts.get(choice) || 0) + 1);
+      const picks = chosen(r.answers?.[q.id]);
+      if (picks.length === 0) continue;
+      answered++;
+      for (const p of picks) counts.set(p, (counts.get(p) || 0) + 1);
     }
-    const answered = [...counts.values()].reduce((a, b) => a + b, 0);
 
     return {
       id: q.id,
       prompt: q.prompt,
       answered,
+      multi: q.multi === true,
       options: q.options.map((o) => {
         const count = counts.get(o.id) || 0;
         return {
