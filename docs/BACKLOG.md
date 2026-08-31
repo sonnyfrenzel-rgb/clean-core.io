@@ -17,11 +17,10 @@ statt einer.
 
 | # | Punkt | Wer | Warum jetzt |
 |---|---|---|---|
-| 1 | **Zufriedenheitsumfrage** — versprochen zum **02.09.**, also übermorgen | **gemeinsam** | Termin steht, und die Frage „kam die Willkommensmail an?" gehört hinein |
+| 1 | **Umfrage: Testmail freigeben** | **Felix** | sie liegt in deinem Postfach; der geplante Versand steht auf **Mi 09:00** |
 | 2 | **Resend-Webhook: erste Zustellzahlen ansehen** | **Felix** | seit dem 28.08. scharf; jeder Tag ohne Blick kostet Daten |
-| 3 | **N-02** — BPMN- und Sandbox-Zeile auf `~` | **Entscheidung Felix** | Befund v3 stuft es als Priorität 1 ein: die einzige Stelle, an der die Seite gegen sich selbst nachprüfbar falsch ist |
-| 4 | Vier Tinten vereinheitlichen (siehe unten) | Entwicklung | die Köpfe ziehen an einem Strang, der Fließtext nicht |
-| 5 | Deutschsprachiger Cluster (S-05) | Entscheidung Felix | größte inhaltliche Lücke, DSAG-Zielgruppe |
+| 3 | Vier Tinten vereinheitlichen (siehe unten) | Entwicklung | die Köpfe ziehen an einem Strang, der Fließtext nicht |
+| 4 | Deutschsprachiger Cluster (S-05) | Entscheidung Felix | größte inhaltliche Lücke, DSAG-Zielgruppe — und die Umfrage fragt genau danach |
 
 **Danach:**
 
@@ -52,7 +51,43 @@ Befunden, ist damit gebaut; offen ist nur noch die Messung in der Search Console
 alter, öffentlich erreichbarer Build. Siehe direkt unten.
 
 **Neu gefunden am 31.08.:** der Wochenbericht vom 28.08. ist nie verschickt worden.
-Ursache gefunden und behoben — aber der Fix wirkt erst auf `main`, siehe unten.
+Ursache gefunden und behoben; der Fix ist mit v2.8.0 auf `main` und damit scharf.
+
+---
+
+## Die Aktivierungsumfrage — Stand und was Mittwoch passiert
+
+**Gebaut, deployt, getestet** (v2.8.0, 31.08.). Was nachgemessen ist:
+
+| Prüfung | Ergebnis |
+|---|---|
+| Trockenlauf gegen die Produktionsdatenbank | **36 echte Empfänger**; 110 CI-Konten und 1 Unterdrückung gefiltert |
+| Testmail über den echten Workflow | `29c95278-daac-49ee-aa59-b0039a0d0e53`, nur an den Admin |
+| Landeseite auf Produktion | 200, erkennt die getippte Antwort, zeigt beide Folgefragen |
+| Ungültiges Token | Seite sagt „no longer valid", API antwortet 400 |
+
+**36, nicht 30.** Die Zahl in den älteren Abschnitten dieses Backlogs stammt vom
+19.08. und ist gewachsen.
+
+**Der Testversand hat bewusst nichts angefasst:** kein Kampagnendokument, kein
+`email_sends`-Eintrag. Mittwoch beginnt also bei null und niemand ist versehentlich
+schon „abgehakt".
+
+**Was am Mittwoch 09:00 automatisch passiert:** `survey-send.yml` schickt die
+Einladung an alle 36, schreibt das Kampagnendokument mit Öffnungs- und Schlussdatum
+und legt pro Empfänger einen Sendevermerk an. Ab dem Folgetag kommt täglich um 09:00
+das Zwischenergebnis, bis einen Tag nach Schluss (**09.09.**) der Endstand kommt und
+es aufhört.
+
+**Wenn es doch nicht Mittwoch sein soll:** den Workflow `Activation Survey — send`
+deaktivieren, oder ihn vorher von Hand mit `apply` starten. Ein zweiter Lauf
+verschickt nichts doppelt und verschiebt die Fristen nicht.
+
+**Offen und bewusst nicht gebaut:** die Öffnungsrate über Resend. Der Webhook
+zeichnet `email.opened` derzeit nicht auf, weil Scanner die Zahl aufblähen. Die
+Umfrage beantwortet die Frage besser — eine Antwort ist der Beweis, dass ein Mensch
+gelesen hat, und „Link geholt, nie geantwortet" ist der Gegenbeweis. Falls du die
+Rohzahl trotzdem willst, ist es ein Ereignistyp mehr in der Webhook-Route.
 
 ---
 
