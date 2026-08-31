@@ -105,15 +105,23 @@ export default function Home() {
       sap: { badge: "Manual Only", level: "weak", desc: "Developers must rewrite legacy code from scratch." },
       cc: { badge: "Refactored", desc: "Converts legacy statements into BTP CAP Node.js/RAP syntax." }
     },
+    // These two rows read "✕ Not Available" until v2.7.3, and both claims were
+    // wrong in a way an SAP architect spots in under a minute. SAP ships ABAP Unit
+    // and the CDS Test Double Framework, and it ships Signavio and Cloud ALM for
+    // process modelling — this very site says two sentences later that its own
+    // BPMN output is handed to Signavio. A page whose argument is "verifiable, not
+    // asserted" cannot be the one place that is verifiably wrong about a
+    // competitor. `~` is also the stronger claim: it names what the tool actually
+    // adds instead of inventing a gap.
     {
       title: "Sandbox Verification (BYOT)",
-      sap: { badge: "Not Available", level: "none", desc: "Requires separate manual testing frameworks." },
+      sap: { badge: "Frameworks Only", level: "partial", desc: "ABAP Unit and the CDS Test Double Framework are on board; the test environment is assembled by hand." },
       cc: { badge: "Validated", desc: "Runs test suites against your S/4HANA sandbox via encrypted, read-only connection. Never targets production." }
     },
     {
       title: "Business Process Blueprinting",
-      sap: { badge: "Not Available", level: "none", desc: "No process flow visualization available." },
-      cc: { badge: "Visualized", desc: "Generates Business Process Model and Notation (BPMN 2.0) flows directly from custom code analysis." }
+      sap: { badge: "Separate Licence", level: "partial", desc: "Not in the ATC/ADT core scope — covered by SAP Signavio and SAP Cloud ALM under their own licences." },
+      cc: { badge: "Visualized", desc: "Generates BPMN 2.0 flows directly from the code analysis and hands the template to Signavio." }
     }
   ];
 

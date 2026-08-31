@@ -10,6 +10,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.7.3] — 2026-08-31
+
+### N-02: die zwei Zeilen, an denen die Seite gegen sich selbst falsch lag
+
+Die Vergleichstabelle führte zwei Fähigkeiten als **✕ Not Available** bei SAP:
+
+| Zeile | Behauptung bis v2.7.2 |
+|---|---|
+| Sandbox Verification (BYOT) | „Requires separate manual testing frameworks." |
+| Business Process Blueprinting | „No process flow visualization available." |
+
+Beide sind falsch, und zwar nachprüfbar. SAP liefert ABAP Unit und das CDS Test
+Double Framework mit; SAP liefert Signavio und Cloud ALM für Prozessmodellierung.
+Dieselbe Seite schreibt zwei Abschnitte weiter, ihr eigener BPMN-Output werde **an
+Signavio übergeben** — und behauptet daneben, SAP habe keine Prozessvisualisierung.
+
+Die anderen vier Zeilen nutzen die abgestufte Skala (`~`, `–`) längst korrekt. Nur
+diese beiden waren binär geblieben, und sie waren die einzige Stelle, an der eine
+Seite, deren ganzes Argument „belegt, nicht behauptet" lautet, selbst unbelegt
+behauptet hat. Ein SAP-Architekt braucht dafür keine Minute.
+
+Beide stehen jetzt auf `~` und benennen, was das Werkzeug tatsächlich hinzufügt
+statt eine Lücke zu erfinden — was die stärkere Aussage ist:
+
+- **Sandbox Verification:** „ABAP Unit and the CDS Test Double Framework are on
+  board; the test environment is assembled by hand."
+- **Business Process Blueprinting:** „Not in the ATC/ADT core scope — covered by
+  SAP Signavio and SAP Cloud ALM under their own licences." Und daneben, was
+  Clean-Core.io beiträgt: die BPMN-2.0-Vorlage direkt aus der Codeanalyse, an
+  Signavio übergeben.
+
+Damit ist der letzte offene Punkt aus Befund v3 geschlossen, den der Prüfer über
+drei Fassungen als Priorität 1 geführt hat.
+
+### Der Wochenbericht ist am 28.08. nie verschickt worden
+
+GitHub startete den geplanten Lauf **vier Stunden zu spät** (14:01 statt 10:00
+UTC). Der Wächter, der entscheiden soll, welcher der zwei DST-Slots der richtige
+ist, fragte „ist es jetzt 12 Uhr in Berlin?" — und beantwortete damit versehentlich
+auch „hat GitHub pünktlich gestartet?". Beide Läufe verwarfen sich selbst, **beide
+meldeten `success`**, und nichts hat es gesagt.
+
+Am 21.08. lief es nur, weil die Verzögerung acht Minuten betrug. GitHub sichert
+pünktliche Starts ausdrücklich nicht zu; die Prüfung hing also von Anfang an an
+etwas, das nicht zugesichert ist.
+
+Der Slot wird jetzt über `github.event.schedule` bestimmt — den auslösenden
+Cron-Ausdruck, der sich nicht verschiebt — kombiniert mit dem UTC-Offset für die
+Jahreszeit. Egal wie spät GitHub dran ist, genau einer der beiden Läufe geht durch.
+Der Bericht vom 28.08. wurde am 31.08. manuell nachgeholt.
+
+### Die vierte Überlauf-Ursache, und ein Guard, der nur in meiner Zeitzone stimmte
+
+Der Überlauf-Guard aus v2.7.1 fand auf dem Linux-Runner, was auf Windows passte:
+`PilotWarningBanner` setzt drei Links, zwei Trenner, einen Strich und den
+Dismiss-Knopf in **eine Reihe mit `shrink-0` und ohne `flex-wrap`** — 332px
+starrer Inhalt in einem 320px-Fenster. Linux rendert den Text breiter. Das ist die
+vierte Ursache für ein Symptom, von dem das Backlog eine kannte, und der Grund,
+warum der Guard die gerenderte Seite in CI misst statt sich auf einen Screenshot zu
+verlassen.
+
+Und ein Fehler im Sitemap-Guard von heute Vormittag: er verglich Zeitstempel gegen
+`new Date(APP_RELEASE_DATE)`, was **lokale** Mitternacht ergibt, während ein
+Inhaltsdatum als `…T00:00:00Z` gebaut wird. Auf UTC+2 verschiedene Momente, auf dem
+UTC-Runner derselbe — der Guard meldete die Startseite als datumslos, an dem Tag,
+an dem sich ihr Inhalt geändert hat. Er liest jetzt die `on('<route>')`-Aufrufe aus
+`app/sitemap.ts` und prüft die Schlüssel. Routenschlüssel kollidieren mit keiner
+Zeitzone.
+
 ## [v2.7.2] — 2026-08-31
 
 ### V9 — der veröffentlichte Ersatzschlüssel ist weg
