@@ -29,7 +29,13 @@ export default function PilotWarningBanner() {
       <span className="leading-relaxed">
         Free Community SAP Modernization Platform. Powered by Generative AI. Provided without warranty.
       </span>
-      <div className="flex items-center gap-2 font-black shrink-0">
+      {/* Wraps, and is allowed to shrink. With `shrink-0` and no `flex-wrap` this
+          row of three links, two bullets, a pipe and a button was one rigid
+          332px block inside a 320px viewport — it could neither shrink nor break,
+          so it pushed the whole page sideways. It fit on Windows and did not on
+          the Linux runner, which is the entire reason the overflow guard measures
+          in CI rather than on a screenshot. */}
+      <div className="flex flex-wrap items-center justify-center gap-2 font-black">
         <Link href="/datenschutz" className="underline hover:text-green-750 transition-colors outline-none cursor-pointer">
           Privacy Policy
         </Link>
