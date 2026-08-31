@@ -10,6 +10,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.8.0] — 2026-08-31
+
+### Die Aktivierungsumfrage
+
+Versprochen war sie den dreißig Konten aus der Community-Aktivierung „in vierzehn
+Tagen", also zum 02.09. Sie geht am **Mittwoch, 09:00 Berliner Zeit** raus und
+läuft eine Woche.
+
+**Was sie herausfinden soll**, und warum es genau diese drei Fragen sind: die
+meisten Konten hier haben nie eine Analyse gestartet, und dafür gibt es zwei
+völlig verschiedene Erklärungen — ein Nutzungsproblem oder ein Zustellproblem.
+Das sind zwei getrennte Baustellen, und bisher ist unbekannt, welche es ist.
+
+| Frage | Wo | Wofür |
+|---|---|---|
+| Hast du schon eine Analyse gestartet? | in der Mail | die Grundzahl |
+| Was würde dir am meisten helfen? | auf der Seite | die Frage, an der sich etwas ändert |
+| Ist die Willkommensmail je angekommen? | auf der Seite | die teuerste offene Frage über die Plattform |
+
+Frage drei kostet eine Zeile und ist seit der Community-Aktivierung unbeantwortbar,
+weil jene dreißig Mails vor dem Resend-Webhook liegen und es für sie keine
+Zustellereignisse gibt und nie geben wird.
+
+### „Direkt in der Mail abstimmen" — was davon geht und was nicht
+
+**Es gibt keine Möglichkeit, eine Antwort aus einer E-Mail heraus zu erfassen,
+ohne dass der Leser sie verlässt.** Mailprogramme führen keinen Code aus. Die
+einzige Ausnahme, AMP for Email, verlangt eine Absenderregistrierung bei Google
+und funktioniert allein in Gmail — die falsche Hälfte eines SAP-Publikums.
+
+Gebaut ist deshalb das, was dem am nächsten kommt: **ein Tipp, und das ist alles.**
+Kein Formular, kein Login, nichts zum Eintippen. Die Antwort ist erfasst, bevor die
+Seite fertig gezeichnet ist. Die zwei Folgefragen stehen auf ebenjener Seite,
+wieder ein Tipp pro Antwort — dort, wo ein Leser ist, der ohnehin schon mitmacht.
+
+**Und eine Falle, die die Zahlen wertlos gemacht hätte:** Konzern-Mailgateways
+rufen jeden Link in einer Nachricht ab, bevor ein Mensch sie sieht. Wäre ein Tipp
+auf „Noch nicht" ein GET, das eine Stimme schreibt, wäre das Ergebnis eine
+Volkszählung unter Sicherheitsappliances. Erfasst wird deshalb per **POST**, den
+die Seite selbst absetzt — ein Gateway führt keine Skripte aus und kommt nie so
+weit. Der Abruf selbst wird trotzdem vermerkt: „Link geholt, nie geantwortet"
+beschreibt eine Mail, die eine Organisation erreicht hat und an deren Rand
+liegengeblieben ist, und das ist genau eine der zwei Erklärungen, die zu trennen
+sind.
+
+### Das tägliche Zwischenergebnis
+
+Einmal am Tag, 09:00 Berliner Zeit, solange die Umfrage läuft. **Die Diagramme
+sind Tabellen** — jedes Mailprogramm rendert eine `<td>` mit Prozentbreite und
+Hintergrundfarbe, fast keines lädt ein externes Bild ungefragt, und ein Diagramm,
+das niemand sieht, ist schlechter als eine Zahl.
+
+Was der Bericht nicht tut: eine Frage, die niemand beantwortet hat, zeigt eine
+Null und die Zahl der Eingeladenen — keine Prozentsätze über einem Nenner, der so
+lange geschrumpft wurde, bis er gesund aussah. Die Überschrift sagt „3 von 36",
+nie „8 %", solange die Zahlen zu klein sind, um einen Prozentsatz zu tragen. Das
+ist dieselbe Regel, die `no-fabricated-figures.spec.ts` im Produkt erzwingt, und
+eine Umfrage darüber, ob das Produkt benutzt wird, ist der letzte Ort, an dem man
+damit anfängt zu runden.
+
+Er schweigt, bevor die Einladung raus ist, und nach einem letzten Endstand einen
+Tag nach Schluss. Ein Cron, der jeden Morgen „0 von 0" schickt, erzieht seinen
+Leser dazu, ihn ungelesen zu löschen — und der eine Morgen, an dem es darauf
+ankommt, ist der, an dem er ungelesen gelöscht wird.
+
+### Die Absicherung
+
+`tests/survey-guard.spec.ts`, vierzehn Prüfungen, gegen die vier Arten, auf die
+eine Umfrage still ein falsches Ergebnis liefert:
+
+- **Ein fälschbarer Link.** Manipulierte Nutzdaten, abgelaufene und unsinnige Token
+  werden abgewiesen; die Signatur trägt einen eigenen Namensraum und kann nie als
+  Freigabetoken durchgehen.
+- **Eine Frage, die ihre Antwort nahelegt.** Alle Antwortflächen der Mail werden
+  auf identischen Stil geprüft. Eine davon als dunkler Primärknopf wäre eine Art,
+  die Frage zu stellen und die Antwort gleich mitzuliefern.
+- **Arithmetik, die Stille in Zustimmung umrechnet.** Ohne Antworten keine
+  Prozentzeichen; ein Gateway-Abruf ist keine Stimme; eine unbeantwortete Frage
+  borgt sich die Antworten der anderen nicht aus.
+- **Eine Mail, die auf dem Telefon zerfällt.** Beide Nachrichten werden gerendert
+  und bei 320 Pixeln gemessen, und die Balken müssen in ihr Diagramm passen.
+
+Versand und Zwischenbericht laufen über zwei Workflows, deren Slot-Auswahl am
+auslösenden Cron hängt und nicht an der Wanduhr — dieselbe Konstruktion, die den
+Wochenbericht heute Vormittag repariert hat.
+
 ## [v2.7.3] — 2026-08-31
 
 ### N-02: die zwei Zeilen, an denen die Seite gegen sich selbst falsch lag

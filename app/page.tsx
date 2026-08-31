@@ -105,7 +105,7 @@ export default function Home() {
       sap: { badge: "Manual Only", level: "weak", desc: "Developers must rewrite legacy code from scratch." },
       cc: { badge: "Refactored", desc: "Converts legacy statements into BTP CAP Node.js/RAP syntax." }
     },
-    // These two rows read "✕ Not Available" until v2.7.3, and both claims were
+    // These two rows read "✕ Not Available" until 31 August 2026, and both were
     // wrong in a way an SAP architect spots in under a minute. SAP ships ABAP Unit
     // and the CDS Test Double Framework, and it ships Signavio and Cloud ALM for
     // process modelling — this very site says two sentences later that its own

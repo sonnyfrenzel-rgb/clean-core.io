@@ -1,0 +1,87 @@
+name: Activation Survey — daily interim result
+
+# Every day at 09:00 Europe/Berlin, while the survey is open.
+#
+# The script decides whether there is anything to say: it exits quietly before the
+# invitation has gone out and more than a day after the survey closed, sending one
+# final count on the way past. A cron that mails "0 of 0" every morning forever
+# trains its reader to delete it unread, and the one morning it matters is the
+# morning it gets deleted unread.
+#
+# Slot selection is by the firing cron rather than the wall clock, for the reason
+# written out in usage-report.yml.
+on:
+  schedule:
+    - cron: '0 7 * * *' # 09:00 Berlin during CEST (summer)
+    - cron: '0 8 * * *' # 09:00 Berlin during CET (winter)
+  workflow_dispatch:
+    inputs:
+      recipient:
+        description: 'Send to a different address (optional)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write # OIDC for Google Cloud
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pick the slot that matches the season
+        id: clock
+        env:
+          FIRED_BY: ${{ github.event.schedule }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          echo "Berlin local time: $(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "manual run — proceeding"
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          OFFSET=$(TZ=Europe/Berlin date +%z)
+          if [ "$OFFSET" = "+0200" ]; then WANTED='0 7 * * *'; else WANTED='0 8 * * *'; fi
+          echo "offset ${OFFSET} → the 09:00 slot today is '${WANTED}'; this run was fired by '${FIRED_BY}'"
+          if [ "$FIRED_BY" = "$WANTED" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "this is the other DST slot — skipping, the sibling run sends it"
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout Code
+        if: steps.clock.outputs.proceed == 'true'
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup Node.js
+        if: steps.clock.outputs.proceed == 'true'
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        if: steps.clock.outputs.proceed == 'true'
+        run: npm ci --foreground-scripts
+
+      - name: Authenticate with Google Cloud
+        if: steps.clock.outputs.proceed == 'true'
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
+        with:
+          workload_identity_provider: 'projects/819734065839/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: '819734065839-compute@developer.gserviceaccount.com'
+          project_id: 'cleancore-491216'
+
+      - name: Send the interim result
+        if: steps.clock.outputs.proceed == 'true'
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RECIPIENT: ${{ inputs.recipient }}
+        run: |
+          if [ -n "$RECIPIENT" ]; then
+            npx tsx scripts/send-survey-digest.ts --apply --to "$RECIPIENT"
+          else
+            npx tsx scripts/send-survey-digest.ts --apply
+          fi

@@ -1,0 +1,105 @@
+name: Activation Survey — send
+
+# Wednesdays at 09:00 Europe/Berlin.
+#
+# The slot is chosen by the cron that fired the run, not by the clock when it
+# starts. GitHub does not promise punctual scheduled runs and on 2026-08-28 it was
+# four hours late, which silently cancelled the weekly usage report — see the
+# comment in usage-report.yml. Same lesson, same construction.
+#
+# The send itself is idempotent: `scripts/send-survey.ts` skips anyone who already
+# has an `email_sends` record for this campaign, and refuses to move the opening
+# and closing dates once they are set. So a second Wednesday mails nobody twice
+# and does not quietly extend a survey people were told closes on a given day.
+on:
+  schedule:
+    - cron: '0 7 * * 3' # 09:00 Berlin during CEST (summer)
+    - cron: '0 8 * * 3' # 09:00 Berlin during CET (winter)
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Send to this address only (the test send). Leave empty for everyone.'
+        required: false
+        type: string
+      apply:
+        description: 'Actually send. Unchecked is a dry run that prints the recipient list.'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write # OIDC for Google Cloud
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pick the slot that matches the season
+        id: clock
+        env:
+          FIRED_BY: ${{ github.event.schedule }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          echo "Berlin local time: $(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "manual run — proceeding"
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          OFFSET=$(TZ=Europe/Berlin date +%z)
+          if [ "$OFFSET" = "+0200" ]; then WANTED='0 7 * * 3'; else WANTED='0 8 * * 3'; fi
+          echo "offset ${OFFSET} → the 09:00 slot today is '${WANTED}'; this run was fired by '${FIRED_BY}'"
+          if [ "$FIRED_BY" = "$WANTED" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "this is the other DST slot — skipping, the sibling run sends it"
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout Code
+        if: steps.clock.outputs.proceed == 'true'
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup Node.js
+        if: steps.clock.outputs.proceed == 'true'
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        if: steps.clock.outputs.proceed == 'true'
+        run: npm ci --foreground-scripts
+
+      - name: Authenticate with Google Cloud
+        if: steps.clock.outputs.proceed == 'true'
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
+        with:
+          workload_identity_provider: 'projects/819734065839/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: '819734065839-compute@developer.gserviceaccount.com'
+          project_id: 'cleancore-491216'
+
+      - name: Send the invitation
+        if: steps.clock.outputs.proceed == 'true'
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          PILOT_APPROVAL_SECRET: ${{ secrets.PILOT_APPROVAL_SECRET }}
+          # Dispatch inputs reach the shell as environment variables and are never
+          # interpolated into the script. An address such as `x@y.com; curl …`
+          # would otherwise run as extra commands in a job holding id-token: write
+          # and the Resend key.
+          ONLY: ${{ inputs.only }}
+          APPLY: ${{ inputs.apply }}
+        run: |
+          # A scheduled run always sends. A manual run sends only when the box is
+          # ticked, so dispatching it to look at the recipient list is safe.
+          ARGS=""
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "$APPLY" = "true" ]; then
+            ARGS="--apply"
+          fi
+          if [ -n "$ONLY" ]; then
+            npx tsx scripts/send-survey.ts $ARGS --only "$ONLY"
+          else
+            npx tsx scripts/send-survey.ts $ARGS
+          fi
