@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import { ArrowLeft, Cloud, Database, Route, ShieldCheck, Check, GitBranch, Layers } from 'lucide-react';
 import Link from 'next/link';
 import QuickAnswer from '@/components/QuickAnswer';
 import { getCatalogStats } from '@/lib/abap/catalog-service';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'SAP Cloudification Repository: Look Up Any Object’s Released Successor | Clean-Core.io',
   description:
     'Free lookup against SAP’s official Cloudification Repository: enter any SAP standard object and get its released S/4HANA successor, or an honest “no released path” verdict. Plus what cloudifying custom ABAP means for Clean Core — in-app RAP or side-by-side BTP CAP.',
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
     url: 'https://clean-core.io/sap-cloudification',
     type: 'website',
   },
-};
+});
 
 const faqs = [
   {

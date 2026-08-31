@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Check, Info, Layers, Globe, Cpu, Activity, ShieldCheck, Workflow } from 'lucide-react';
 import { FEATURE_SLUGS, getFeature } from '@/lib/features-content';
@@ -25,12 +26,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const f = getFeature(slug);
   if (!f) return { title: 'Feature — Clean-Core.io' };
   const url = `https://clean-core.io/features/${f.slug}`;
-  return {
+  return withTwitterCard({
     title: `${f.title} — Clean-Core.io`,
     description: f.summary,
     alternates: { canonical: url },
     openGraph: { title: `${f.title} — Clean-Core.io`, description: f.summary, url, type: 'article' },
-  };
+  });
 }
 
 export default async function FeaturePage({ params }: { params: Promise<{ slug: string }> }) {

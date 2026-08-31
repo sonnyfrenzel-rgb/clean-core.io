@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
+import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 
 /**
  * POST /api/export/verify
@@ -49,21 +50,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Compute the manifest hash and expected HMAC signature
-    const isProduction =
-      process.env.NODE_ENV === 'production' &&
-      process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true';
-    const signingKey = process.env.AUDIT_SIGNING_KEY;
-
-    if (!signingKey && isProduction) {
-      console.error('CRITICAL: AUDIT_SIGNING_KEY is missing in production.');
+    // Unconditional. This endpoint is the product's trust claim: it is the thing
+    // that tells a reader "this pack is genuine". Verifying against a fallback
+    // constant meant it would say that about a pack anyone could have forged.
+    const signingKey = getAuditSigningKey();
+    if (!signingKey) {
+      console.error(MISSING_SIGNING_KEY_LOG);
       return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 
-    const finalKey = signingKey || 'dev_audit_signing_key_fallback_clean_core';
-
     const manifestHash = crypto.createHash('sha256').update(canonicalManifest).digest('hex');
     const expectedSignature = crypto
-      .createHmac('sha256', finalKey)
+      .createHmac('sha256', signingKey)
       .update(manifestHash)
       .digest('hex');
 

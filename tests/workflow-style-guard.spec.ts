@@ -61,8 +61,15 @@ test.describe('every stage renders its title identically', () => {
   const RUN_ID = `stage-style-run-${Date.now()}`;
 
   test.beforeAll(async () => {
-    if (!getApps().length) initializeApp(firebaseConfig);
-    const auth = getAuth();
+    // Look for the DEFAULT app rather than "any app", and hand it to getAuth
+    // explicitly. `if (!getApps().length) initializeApp(...)` followed by a bare
+    // `getAuth()` fails with "No Firebase App '[DEFAULT]' has been created" when
+    // an earlier spec in the same worker left a *named* app in the registry: the
+    // list is non-empty, so initialisation is skipped, and the default the
+    // argument-less getAuth() looks for was never created. It only shows up when
+    // this file runs late in a full suite, which is the worst way to find out.
+    const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     try {
       connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
     } catch { /* already connected */ }

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { resolveApi, hasNoReleasedApiPath, gradeSapObject } from '@/lib/abap/catalog-service';
@@ -58,14 +59,14 @@ export async function generateMetadata({
     ? `${name} maps to the released S/4HANA successor ${successor}.${levelPhrase} Clean Core readiness reference from the SAP Cloudification Repository.`
     : `${name} has no released API successor in the SAP Cloudification Repository — it requires re-architecture for a Clean Core target.${levelPhrase}`;
 
-  return {
+  return withTwitterCard({
     title,
     description,
     alternates: { canonical: `${BASE}/catalog/${object}` },
     openGraph: { title, description, url: `${BASE}/catalog/${object}`, type: 'article' },
     // No-path pages share near-identical boilerplate → keep accessible but out of the index.
     ...(successor ? {} : { robots: { index: false, follow: true } }),
-  };
+  });
 }
 
 export default async function CatalogObjectPage({

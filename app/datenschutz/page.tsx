@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'Datenschutzerklärung – Privacy Policy | Clean-Core.io',
   description: 'Privacy policy (Datenschutzerklärung) for Clean-Core.io. GDPR-compliant data processing, your rights under Art. 15-20 GDPR, and data erasure (Art. 17).',
   alternates: {
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
     url: 'https://clean-core.io/datenschutz',
     type: 'website',
   },
-};
+});
 
 export default function DatenschutzPage() {
   return (

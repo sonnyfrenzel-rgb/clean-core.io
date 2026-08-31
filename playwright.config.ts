@@ -12,6 +12,15 @@ if (!process.env.PILOT_APPROVAL_SECRET) {
 if (!process.env.MFA_BACKUP_CODE_PEPPER) {
   process.env.MFA_BACKUP_CODE_PEPPER = 'test-mfa-pepper-value-for-ci-test-runner-32';
 }
+// The signing and verification routes now fail closed without a key in every
+// environment, which is the whole point of removing the committed fallback. Set
+// here at module scope rather than in `webServer.env` so the specs sign with the
+// same key the server verifies with — the server inherits it through
+// `...process.env` below. The value is not a secret and does not need to be: it
+// signs test fixtures against a test server.
+if (!process.env.AUDIT_SIGNING_KEY) {
+  process.env.AUDIT_SIGNING_KEY = 'test-audit-signing-key-for-ci-test-runner-32';
+}
 
 export default defineConfig({
   testDir: './tests',

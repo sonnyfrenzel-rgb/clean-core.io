@@ -3,19 +3,23 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
-**Stand 31.08.2026 — nach v2.7.1.** Der Tag ging an das Lint-Gate und an das,
-was es durchgelassen hat. Die Regeln sind an, die Fehler auf null, 677 Warnungen
-sind mit `--max-warnings` festgenagelt. Sechs echte Defekte lagen darunter; einer
-davon war ein Knopf, dessen Wirkung nur behauptet war. Dazu der Seitenüberlauf —
-und der neue Guard fand zwei Ursachen mehr als die eine, die im Backlog stand.
+**Stand 31.08.2026 — nach v2.7.1 und v2.7.2.** Drei Stränge an einem Tag: das
+Lint-Gate, das nie geprüft hat wofür es gebaut war (706 Probleme, Fehler auf null,
+677 Warnungen festgenagelt, sechs echte Defekte darunter); **V9 erledigt**, der
+veröffentlichte Ersatzschlüssel ist aus allen drei Routen raus; und der externe
+SEO-Befund v3, dessen belegte Punkte abgearbeitet sind.
+
+Zweimal fand ein neu gebauter Guard mehr, als der Befund kannte: der
+Überlauf-Guard fand drei Ursachen statt einer, der Twitter-Card-Guard 21 Seiten
+statt einer.
 
 **Als Nächstes:**
 
 | # | Punkt | Wer | Warum jetzt |
 |---|---|---|---|
 | 1 | **Zufriedenheitsumfrage** — versprochen zum **02.09.**, also übermorgen | **gemeinsam** | Termin steht, und die Frage „kam die Willkommensmail an?" gehört hinein |
-| 2 | **V9** — veröffentlichter Fallback-Signaturschlüssel | **Entscheidung Felix** | blockiert seit fünf Releases |
-| 3 | **Resend-Webhook: erste Zustellzahlen ansehen** | **Felix** | seit dem 28.08. scharf; jeder Tag ohne Blick kostet Daten |
+| 2 | **Resend-Webhook: erste Zustellzahlen ansehen** | **Felix** | seit dem 28.08. scharf; jeder Tag ohne Blick kostet Daten |
+| 3 | **N-02** — BPMN- und Sandbox-Zeile auf `~` | **Entscheidung Felix** | Befund v3 stuft es als Priorität 1 ein: die einzige Stelle, an der die Seite gegen sich selbst nachprüfbar falsch ist |
 | 4 | Vier Tinten vereinheitlichen (siehe unten) | Entwicklung | die Köpfe ziehen an einem Strang, der Fließtext nicht |
 | 5 | Deutschsprachiger Cluster (S-05) | Entscheidung Felix | größte inhaltliche Lücke, DSAG-Zielgruppe |
 
@@ -24,19 +28,60 @@ und der neue Guard fand zwei Ursachen mehr als die eine, die im Backlog stand.
 | Punkt | Wer | Dringlichkeit |
 |---|---|---|
 | ~30 ungeprüfte Findings aus GLM/GPT (Phase 1.3, 4, 5 des Plans) | gemeinsam | hoch |
+| G-06: Autorenprofil auf `/about` mit echter Fachhistorie | **Felix schreibt, ich baue** | mittel — `Person`-Schema mit `sameAs` steht schon |
 | 677 geparkte Lint-Warnungen abtragen (siehe unten) | Entwicklung | mittel |
-| N-02: BPMN- und Sandbox-Zeile auf `~` | **Entscheidung Felix** | mittel — Positionierung, keine Korrektur |
 | Runde-2-Vorschläge, die noch offen sind (siehe unten) | Entscheidung Felix | mittel |
+| G-05: BPMN-Textdarstellung auf die Feature-Seiten ausrollen | Entwicklung | mittel |
 | `dev.` und `test.clean-core.io` lösen nicht auf | Felix (DNS/GCP) | niedrig — die Doku nennt jetzt die run.app-Adressen |
 | V15, V16, V18 aus dem Grok-Befund | Entwicklung | mittel |
 | Die drei Tenant-Mails auf fluide Tabellen umbauen | Entwicklung | mittel |
-| Mitte September: Befund v3 / Reindexierung messen | gemeinsam | Termin |
+| Mitte September: Befund v4 / Reindexierung messen | gemeinsam | Termin |
 | Review-Tooling in den Rechenstand committen | Entwicklung | niedrig |
 
-**Erledigt am 31.08.:** eslint-Gate scharf (war: prüft weder TypeScript noch
-React-Hooks), Seitenüberlauf auf dem Telefon, Doku-Korrektur zu `dev.`/`test.`.
+**Erledigt am 31.08.:** eslint-Gate scharf, Seitenüberlauf auf dem Telefon,
+Doku-Korrektur zu `dev.`/`test.`, **V9**, und aus Befund v3 die Punkte S-08
+(Sitemap datiert Inhalte statt Deploys), S-09 (eigene Twitter-Card je Seite),
+K-03, K-05, K-06.
+
 **Schon vorher erledigt und im Backlog übersehen:** `llms.txt` steht seit dem
-26.08. unter `app/llms.txt/route.ts`.
+26.08. unter `app/llms.txt/route.ts`. Und `/catalog/[object]` ist statisch
+vorgerendert mit eigener `catalog-sitemap.xml` — S-07, der „größte Hebel" aus drei
+Befunden, ist damit gebaut; offen ist nur noch die Messung in der Search Console.
+
+**Neu gefunden beim Nachprüfen von V9:** `clean-core-test` ist ein drei Monate
+alter, öffentlich erreichbarer Build. Siehe direkt unten.
+
+---
+
+## `clean-core-test` läuft seit Juli und niemand hat es gemerkt
+
+**Was ist** (gemessen am 31.08.2026):
+
+| | |
+|---|---|
+| Ausgelieferte Revision | `clean-core-test-00045-z6h`, erstellt **26.07.2026** |
+| `origin/release` letzter Commit | **09.06.2026** |
+| Gesetzte Umgebungsvariablen | `NEXT_PUBLIC_FIRESTORE_DB_ID`, `NEXT_PUBLIC_APP_URL`, `GEMINI_API_KEY`, `RESEND_API_KEY`, `NODE_OPTIONS` |
+| Fehlend | `AUDIT_SIGNING_KEY`, `S4_ENCRYPTION_KEY`, `S4_HOST_ALLOWLIST`, `MFA_BACKUP_CODE_PEPPER`, `PILOT_APPROVAL_SECRET`, `RESEND_WEBHOOK_SECRET` |
+| Erreichbar | ja, `/` antwortet mit 200 |
+
+Aufgefallen ist es beim Nachprüfen von V9: der Dienst hat keinen Signaturschlüssel
+und wäre damit genau der Fall gewesen, den der Befund beschreibt. **Ist er nicht** —
+der Build ist so alt, dass er keine der signierenden Routen besitzt.
+`/api/runs/create`, `/api/audit-pack/create`, `/api/export/verify` und
+`/api/health` antworten alle mit 404. Nachgemessen: eine mit der alten Konstante
+gefälschte Signatur wird auf Produktion mit `valid: false` abgewiesen.
+
+**Was daran trotzdem stört:** eine öffentlich erreichbare Kopie der Anwendung vom
+Juni, mit gesetztem `GEMINI_API_KEY` und den Zugriffsregeln von damals. Dieselbe
+Sorte Angriffsfläche wie die beiden Altlasten in us-west1 und europe-west3 weiter
+unten — nur diese hier hat einen aktuellen Namen und wirkt dadurch gepflegt.
+
+**Zu entscheiden:** `release` nachziehen und neu deployen, oder den Dienst
+abräumen. Solange die Doku ihn als Testumgebung führt, ist der jetzige Zustand die
+schlechteste der drei Möglichkeiten.
+
+**Dringlichkeit:** mittel.
 
 ---
 
@@ -138,6 +183,15 @@ Beide sind gemessen, keiner ist Code:
   Dev-Server kompiliert die Route beim ersten Aufruf; am Ende eines
   Sechs-Minuten-Laufs reicht das für die 30-Sekunden-Grenze. Im Log als
   „Compiling /unsubscribe" nachweisbar.
+- **Der Speicherwächter des Dev-Servers** — am 31.08. dazugekommen und vermutlich
+  die eigentliche Ursache hinter dem vorigen Punkt. Nach rund vierzig kompilierten
+  Routen schreibt Next `⚠ Server is approaching the used memory threshold,
+  restarting...` und startet sich neu. Trifft es eine laufende Navigation, wartet
+  `page.goto` auf eine Antwort, die niemand mehr sendet — in drei aufeinander
+  folgenden Läufen traf es `/whitepaper`, mit ~9.900 Modulen der größte
+  Kompiliervorgang der Seite. **Nur lokal:** CI liefert mit `npm start` einen
+  fertigen Build aus, dort kompiliert nichts und der Wächter feuert nie.
+  Erkennungsmerkmal im Log ist die Restart-Zeile unmittelbar vor dem Timeout.
 
 Wenn einer davon rot ist, **erst nachsehen, ob es wirklich der ist** — ich habe
 heute zweimal einen echten Regress als Flake abgetan, und beide Male war es meine
@@ -146,21 +200,26 @@ eigene Änderung.
 ---
 
 
-### V9 braucht eine Entscheidung, keine Arbeit
+### ~~V9~~ — erledigt am 31.08.2026 (v2.7.2)
 
-Der Fallback-Schlüssel `dev_audit_signing_key_fallback_clean_core` steht in drei
-Produktionsrouten. Er kann nicht weg, solange `tests/audit-compliance-v181.spec.ts`
-mit ihm signiert und das Ergebnis als gültig behauptet — CI würde brechen, sobald
-ein echter `AUDIT_SIGNING_KEY` gesetzt wird.
+Der veröffentlichte Ersatzschlüssel stand in drei Produktionsrouten eines
+**öffentlichen** Repos, und der Wächter davor verlangte `NODE_ENV === 'production'`
+*und* ein abgeschaltetes Emulator-Flag. Alles daneben signierte mit einer
+Konstante, die jeder nachschlagen kann — und `/api/export/verify` prüfte gegen
+dieselbe.
 
-Zwei Wege: CI bekommt einen eigenen Schlüssel als GitHub-Secret, oder der Fallback
-fliegt und der Test wird umgeschrieben. **Beides ist eine halbe Stunde Arbeit, aber
-es ist deine Entscheidung**, welcher Weg.
+Gewählt wurde Variante A: kein Fallback, in keiner Umgebung. `lib/audit-signing-key.ts`
+liest den Schlüssel als einzige Stelle, `tests/signing-key-guard.spec.ts` hält es.
 
-GPT hat einen Punkt ergänzt, der die Dringlichkeit erhöht: der Produktions-Guard
-ist `NODE_ENV === 'production' && !emulator`. Ein Preview-Deployment signiert also
-mit der committeten Konstante — und wer die kennt, kann Audit-Packs fälschen, die
-die eigene Verify-Seite als echt ausweist.
+**Die Annahme in dieser Notiz war falsch, und das ist die Lehre:** hier stand, CI
+brauche ein eigenes GitHub-Secret. Brauchte es nicht — der Testschlüssel signiert
+Testdaten gegen einen Testserver und schützt nichts. `playwright.config.ts` setzte
+für zwei andere Secrets längst genau dieses Muster. Fünf Releases blockiert an
+einer Entscheidung, die keine war.
+
+**Nicht rotiert, bewusst:** ein Wechsel des Produktionsschlüssels entwertet jede
+bereits ausgestellte Run-Signatur und jedes ausgelieferte Audit-Pack. `/api/health`
+bestätigt den echten Schlüssel auf Produktion und dev.
 
 ### Die ungeprüften Findings
 

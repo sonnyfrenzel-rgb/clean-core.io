@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import { Globe, ShieldCheck, Server, Users, Linkedin, Github } from 'lucide-react';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'About Clean-Core.io — Built by Felix Frenzel | SAP Modernization',
   description: 'Clean-Core.io is a free community-powered SAP modernization tool built by Felix Frenzel — born from first-hand experience with an S/4HANA transformation, for the SAP community.',
   alternates: {
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
     url: 'https://clean-core.io/about',
     type: 'website',
   }
-};
+});
 
 const trustCards = [
   {

@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'Terms of Service & Community Guidelines | Clean-Core.io',
   description:
     'The consolidated Terms of Service and Community Guidelines for Clean-Core.io — a free, non-commercial community project for the SAP community. Governed by German law.',
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
     url: 'https://clean-core.io/terms',
     type: 'website',
   },
-};
+});
 
 export default function TermsPage() {
   return (

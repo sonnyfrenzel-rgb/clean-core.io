@@ -10,6 +10,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.7.2] — 2026-08-31
+
+### V9 — der veröffentlichte Ersatzschlüssel ist weg
+
+In drei Produktionsrouten stand `process.env.AUDIT_SIGNING_KEY` mit einem `||` und
+einer festen Konstante dahinter. Das Repo ist öffentlich, die Konstante war es
+damit auch.
+
+Der Wächter davor verlangte `NODE_ENV === 'production'` **und** ein
+abgeschaltetes Emulator-Flag, bevor er den Dienst ohne echten Schlüssel
+verweigerte. Alles, was an einer der beiden Hälften vorbeilief — ein
+Preview-Build, ein Container ohne gesetztes `NODE_ENV`, eine Revision außerhalb
+der Pipeline — signierte Runs und Audit-Packs mit einer Zeichenkette, die jeder
+nachschlagen kann. Und `/api/export/verify` prüfte gegen denselben Fallback: die
+Seite, deren einziger Zweck es ist zu sagen „dieses Paket ist echt", hätte das
+über ein gefälschtes gesagt.
+
+**Warum es fünf Releases überlebt hat**, und das ist der lehrreiche Teil: zwei
+Tests in `audit-compliance-v181.spec.ts` signierten ihre Testdaten mit derselben
+Konstante. Sie zu löschen färbte die Suite rot, und die Suite ist Pflichtstufe vor
+jedem Deploy. Die Notiz im Backlog schloss daraus, CI brauche ein eigenes
+GitHub-Secret. Braucht es nicht — der Testschlüssel signiert Testdaten gegen einen
+Testserver und schützt nichts. `playwright.config.ts` setzte für
+`PILOT_APPROVAL_SECRET` und `MFA_BACKUP_CODE_PEPPER` längst genau dieses Muster;
+es fehlte nur die dritte Zeile.
+
+Jetzt:
+
+- `lib/audit-signing-key.ts` ist die einzige Stelle, die den Schlüssel liest.
+- Kein Fallback, in **keiner** Umgebung. Fehlt der Schlüssel, antworten die drei
+  Routen mit 500 — Produktion, Preview, CI und Laptop gleichermaßen.
+- `tests/signing-key-guard.spec.ts` schlägt an, wenn die Konstante zurückkommt,
+  wenn eine Route wieder direkt aus `process.env` liest, wenn ein
+  `isProduction`-Schlupfloch auftaucht — und prüft am laufenden Server, dass ein
+  mit dem alten Schlüssel gefälschtes Paket als ungültig zurückkommt.
+- `.env.example` sagt jetzt, dass der Schlüssel überall gebraucht wird.
+
+**Nicht rotiert, und das mit Absicht.** Der Produktionsschlüssel ist ein echtes
+Secret, `/api/health` bestätigt ihn auf Produktion und dev, und ein Wechsel würde
+jede bereits ausgestellte Run-Signatur und jedes ausgelieferte Audit-Pack
+entwerten. Die Konstante war das Problem, nicht der Schlüssel.
+
+### Befund v3: die belegten Punkte
+
+Externe SEO/GEO-Prüfung vom 28.08. auf v2.7.0. Fünf Befunde nachgeprüft und
+abgearbeitet; zwei ihrer offenen Fragen beantwortet sich von innen.
+
+**S-08 — die Sitemap datierte Deploys, nicht Inhalte.** `app/sitemap.ts` stempelte
+`lastModified: new Date()` auf rund dreißig URLs. Der Kommentar daneben verteidigte
+das als „echtes Frischesignal"; es war das Gegenteil. Bei drei Releases in vier
+Tagen meldeten sämtliche Seiten tägliche Änderung, die Rechtstexte aus dem Juli
+eingeschlossen. Google erkennt das Muster und entwertet `lastmod` dann
+**domainweit** — der Schaden trifft also gerade die neuen Seiten, die das Signal
+brauchen.
+
+`lib/content-dates.ts` hält jetzt pro Route das Datum, an dem ihr Inhalt
+tatsächlich zuletzt geändert wurde, erzeugt aus der Git-Historie der Dateien, die
+die Route rendern (`npm run sync:content-dates`). **Zwölf verschiedene Daten über
+zwei Monate**, jedes davon wahr. `tests/sitemap-guard.spec.ts` verbietet jeden
+Zeitstempel nach dem Release — was ein Build-Stempel immer wäre.
+
+**S-09 — die Twitter-Card fiel auf die Domänenvorgabe zurück.** Der Befund fand es
+auf `/knowledge`; gemessen sind es 21 Seiten. 22 Seiten setzten `openGraph`, genau
+eine setzte `twitter`. Wer die Clean-Core-Erklärung teilte, bekam die Überschrift
+der Startseite. `lib/page-metadata.ts` spiegelt, was die Seite ohnehin schon
+erklärt hat; `tests/social-card-guard.spec.ts` vergleicht die **gerenderten**
+Tags, weil eine Hilfsfunktion eine Bequemlichkeit ist und keine Garantie.
+
+**K-05 — zwei Namen für denselben SAP-Hub.** SAP hat den API Business Hub 2023 in
+Business Accelerator Hub umbenannt. Auf der Startseite stand zweimal der
+abgekündigte Name und einmal der aktuelle — im selben Abschnitt. Vereinheitlicht,
+auch in den ausgelieferten Markdown-Artefakten und in der Produktoberfläche. Die
+zwei verbliebenen Fundstellen in `lib/abap/` sind Quellenangaben und nennen die
+Quelle weiterhin so, wie sie damals hieß.
+
+**K-06 — das Konfidenz-Badge nahm die Prosa zurück.** Der BSEG-Fall im Showroom
+ist im Fließtext deutlich vorsichtiger als der VBAK-Fall — „Kandidat", und
+Währung, Berechtigungen und Mandantenbehandlung ausdrücklich als offen benannt.
+Darunter stand dasselbe grüne Badge wie beim sauberen Fall. Es gibt jetzt drei
+Stufen statt zwei: grün heißt aufgelöst, blau heißt Kandidat, gelb heißt die
+Engine hat sich geweigert zu raten.
+
+**K-03 — die VBAK-Abweichung wird beim Namen genannt.** Der erklärende Satz unter
+der Objektliste war richtig und abstrakt. Er nennt den Fall jetzt: `VBAK` steht
+dort als `I_SALESDOCUMENT`, im Showroom als `I_SalesOrder`, und warum.
+
+**Zwei offene Fragen des Prüfers, von innen beantwortet:** `/catalog/[object]` ist
+statisch vorgerendert (`generateStaticParams`, ISR 24h, eigene
+`catalog-sitemap.xml`) — die Einzel-URLs je Objekt existieren also, was der Prüfer
+von außen nicht sehen konnte. Und `llms.txt` steht seit dem 26.08. unter
+`app/llms.txt/route.ts`.
+
+**Nicht angefasst, weil es Positionierung und keine Korrektur ist:** N-02, die
+beiden ✕-Zeilen der Vergleichstabelle. Und G-06, das Autorenprofil — das
+`Person`-Schema mit `sameAs` steht bereits in `app/page.tsx`, was fehlt, ist die
+Fachhistorie auf `/about`, und die kann nur ihr Autor schreiben.
+
 ## [v2.7.1] — 2026-08-31
 
 ### Das Lint-Gate hat nie geprüft, wofür es gebaut war

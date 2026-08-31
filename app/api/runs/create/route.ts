@@ -9,6 +9,7 @@ import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
 import { AnalysisRun } from '@/lib/types';
 import { canonicalizeJson } from '@/lib/run-signature';
+import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 
 // The canonicaliser moved to lib/run-signature.ts so the route that verifies a
 // run uses the same one that produced it. Two implementations of "canonical"
@@ -21,11 +22,12 @@ export async function POST(req: NextRequest) {
   let chargedHash: string | null = null;
 
   try {
-    // 1. Production Key Check (Finding 3)
-    const isProduction = process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true';
-    const signingKey = process.env.AUDIT_SIGNING_KEY;
-    if (!signingKey && isProduction) {
-      console.error('CRITICAL: AUDIT_SIGNING_KEY environment variable is missing in production!');
+    // 1. Signing key. Unconditional: the check used to run only when NODE_ENV was
+    // 'production' and the emulator flag was off, which meant every other
+    // deployment signed runs with a constant committed to a public repository.
+    const signingKey = getAuditSigningKey();
+    if (!signingKey) {
+      console.error(MISSING_SIGNING_KEY_LOG);
       return NextResponse.json({ error: 'System configuration error: Signing key missing.' }, { status: 500 });
     }
 
@@ -279,12 +281,8 @@ export async function POST(req: NextRequest) {
     const canonicalPayloadStr = canonicalizeJson(unsignedRunPayload);
     const runHash = crypto.createHash('sha256').update(canonicalPayloadStr).digest('hex');
 
-    // Generate HMAC Signature using AUDIT_SIGNING_KEY or dev fallback
-    const finalKey = signingKey || 'dev_audit_signing_key_fallback_clean_core';
-    if (!signingKey) {
-      console.warn('WARNING: AUDIT_SIGNING_KEY is missing. Using development fallback signing key.');
-    }
-    const signature = crypto.createHmac('sha256', finalKey).update(runHash).digest('hex');
+    // Generate HMAC signature. `signingKey` is non-null past the guard above.
+    const signature = crypto.createHmac('sha256', signingKey).update(runHash).digest('hex');
 
     const analysisRun: AnalysisRun = {
       ...unsignedRunPayload,

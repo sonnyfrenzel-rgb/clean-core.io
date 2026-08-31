@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { Download, ArrowLeft } from 'lucide-react';
 import { getReferenceAnalysis, REFERENCE_FILE } from '@/lib/reference-analysis';
@@ -7,7 +8,7 @@ import { jsonLdHtml } from '@/lib/json-ld';
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'Reference Analysis — what one run on real legacy ABAP produces | Clean-Core.io',
   description:
     'A complete, reproducible run: 900+ lines of legacy ABAP, every finding, and the split between what the tool settles, what needs an architect, and what stays hand work. Download the file and check the numbers yourself.',
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
     url: `${BASE}/reference-analysis`,
     type: 'article',
   },
-};
+});
 
 export const revalidate = 300;
 

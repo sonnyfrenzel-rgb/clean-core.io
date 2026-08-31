@@ -476,7 +476,7 @@ ${responseText.substring(0, 4000)}`;
       `).join('') || '';
 
       const apiMappingSection = data.sapStandardApiMapping && data.sapStandardApiMapping.length > 0 ? `
-        <h2>🌐 SAP API Business Hub Mappings</h2>
+        <h2>🌐 SAP Business Accelerator Hub Mappings</h2>
         <p>Decoupled communication mappings dynamically generated to keep the S/4HANA core clean:</p>
         <table>
           <thead>
@@ -739,7 +739,7 @@ ${responseText.substring(0, 4000)}`;
           </SectionBoundary>
 
           {/* Standard API Hub Reference mappings */}
-          <SectionBoundary name="API Business Hub Mapping">
+          <SectionBoundary name="Business Accelerator Hub Mapping">
             <ApiBusinessHubMapping sapStandardApiMapping={sanitizedData.sapStandardApiMapping} />
           </SectionBoundary>
 

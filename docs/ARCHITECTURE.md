@@ -49,6 +49,8 @@ This is the platform's core differentiator — keep it intact when editing.
 - **Hydration** — `lib/project-loader.ts`: `loadProjectAndHydrate` merges project doc + active run subdoc.
 - **Audit pack** — `lib/audit-pack.ts` / `lib/audit-pack-verify.ts`: build/verify signed ZIP (SHA-256 manifest + HMAC). Sign endpoint validates that the requested run is the active run (409) and has a valid `runHash` (422). Three-tier verify status: `authentic` → `integrity-only` → `failed`.
 
+- **The signing key** — `lib/audit-signing-key.ts` is the only place that reads `AUDIT_SIGNING_KEY`, and there is **no fallback**. If the variable is unset, the three routes above return 500 — in every environment, not only when `NODE_ENV === 'production'`. Until v2.7.2 a constant committed to this public repository stood in for it, and `/api/export/verify` honoured that constant too, so any instance running without the variable would certify a forged pack as genuine. `tests/signing-key-guard.spec.ts` keeps it out. Local development needs the variable in `.env.local`; the Playwright run gets a throwaway value from `playwright.config.ts`.
+
 **Invariant:** the client must never be able to forge run binding or supply signed content. When touching runs/audit/sign/verify, preserve server-side validation and re-read `docs/codex-audit-v119.md` + `docs/WEEK2_AUDIT_INTEGRITY_PLAN.md`.
 
 ---
@@ -353,6 +355,12 @@ tier's 5 transformations) are configuration and are fine.
 > `https://clean-core-dev-qcevuoi3uq-ew.a.run.app` and
 > `https://clean-core-test-qcevuoi3uq-ew.a.run.app`. A deploy that "isn't visible
 > on dev" is usually this, not the deploy.
+>
+> **`clean-core-test` is not a current build.** Its serving revision dates from
+> 2026-07-26 and `origin/release` has not moved since 2026-06-09, so the service is
+> a publicly reachable copy of the June application, missing six of the seven
+> secrets. Do not treat it as a staging environment until `release` is caught up —
+> see `docs/BACKLOG.md`.
 
 Each env has its own `NEXT_PUBLIC_FIRESTORE_DB_ID`. `firebase.json` has **no** hosting deploy; `vercel.json` only sets cache headers. Second workflow `sync-catalog.yml` refreshes the SAP catalog.
 

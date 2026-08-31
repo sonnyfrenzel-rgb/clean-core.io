@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import {
   ArrowLeft, ArrowRight, BookOpen, Lightbulb, AlertTriangle, GraduationCap,
@@ -9,7 +10,7 @@ import { GUIDE_PARTS, GUIDE_FAQ, NOTE_LABELS, type NoteKind } from '@/lib/clean-
 import { CAPABILITIES, HONEST_SCOPE } from '@/lib/clean-core-capabilities';
 import { CONTACT_EMAIL } from '@/lib/constants';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Explained — From First Principles to Practice | Clean-Core.io',
   description:
     'What SAP Clean Core actually means, explained without the jargon: why modifications break upgrades, in-app versus side-by-side extensibility, RAP versus CAP, and the A–D grading model for classifying custom ABAP. Written for beginners, useful for architects.',
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
     type: 'article',
     siteName: 'Clean-Core.io',
   },
-};
+});
 
 /**
  * The long-form Clean Core explainer.

@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import { Shield, ShieldCheck, Globe, Lock, Server, Eye, KeyRound, Users, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'Tenant Security — How We Protect Your S/4HANA Connection | Clean-Core.io',
   description: 'Understand how Clean-Core.io secures live S/4HANA tenant connections: read-only scopes, stateless processing, and manual admin onboarding gates.',
   alternates: {
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
     url: 'https://clean-core.io/tenant-security',
     type: 'website',
   }
-};
+});
 
 export default function TenantSecurityPage() {
   return (

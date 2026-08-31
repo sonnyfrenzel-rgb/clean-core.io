@@ -793,7 +793,7 @@ export default function TestingSandboxPage() {
                                   <span className="text-gray-600">Client ID + Secret. Use when your S/4HANA tenant provides OAuth token endpoints via Communication Arrangements.</span>
                                 </div>
                                 <div className={clsx("p-2.5 rounded-xl border text-[10px] font-semibold leading-relaxed transition-all", s4AuthType === 'sap_hub' ? "bg-white border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white/50 border-gray-200/80")}>
-                                  <span className="font-black text-indigo-900 block mb-0.5">SAP API Business Hub Sandbox</span>
+                                  <span className="font-black text-indigo-900 block mb-0.5">SAP Business Accelerator Hub Sandbox</span>
                                   <span className="text-gray-600">Free sandbox API key. No own tenant needed — perfect for testing with SAP{"'"}s public demo APIs.</span>
                                 </div>
                                 <div className={clsx("p-2.5 rounded-xl border text-[10px] font-semibold leading-relaxed transition-all", s4AuthType === 'btp_destination' ? "bg-white border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white/50 border-gray-200/80")}>
@@ -915,7 +915,7 @@ export default function TestingSandboxPage() {
                         <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" />
                         <span className="text-[10px] text-gray-400 font-semibold leading-relaxed">
                           {s4AuthType === 'sap_hub'
-                            ? 'Use the SAP API Business Hub sandbox base URL. Find it at api.sap.com on any S/4HANA Cloud API page.'
+                            ? 'Use the SAP Business Accelerator Hub sandbox base URL. Find it at api.sap.com on any S/4HANA Cloud API page.'
                             : s4AuthType === 'btp_destination'
                             ? 'Auto-filled from your BTP Destination JSON. You can also enter it manually.'
                             : 'Your S/4HANA Cloud API host. Format: https://myXXXXXX-api.s4hana.cloud.sap — found in your S/4HANA Launchpad under Communication Arrangements.'
@@ -934,7 +934,7 @@ export default function TestingSandboxPage() {
                       >
                         <option value="basic">Basic Authentication (Username + Password)</option>
                         <option value="oauth2">OAuth 2.0 Client Credentials (Client ID + Secret)</option>
-                        <option value="sap_hub">SAP API Business Hub Sandbox (API Key only)</option>
+                        <option value="sap_hub">SAP Business Accelerator Hub Sandbox (API Key only)</option>
                         <option value="btp_destination">SAP BTP Destination Service (Paste JSON)</option>
                       </select>
                       <div className="flex items-start gap-1.5">

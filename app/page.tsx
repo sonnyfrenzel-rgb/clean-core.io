@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { 
@@ -34,7 +35,7 @@ import { SUPPORT_MATRIX } from '@/lib/abap/support-matrix';
 import BenefitCard from '@/components/BenefitCard';
 import { getReferenceAnalysis } from '@/lib/reference-analysis';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Accelerator — Free ABAP Analysis | Clean-Core.io',
   description: 'Free SAP Clean Core tool: analyze custom ABAP, get a Clean Core Score, and generate the first Clean-Core-compliant RAP/CAP draft for review — with verifiable abapGit exports and ABAP-Unit tests. Community-built, complementary to SAP ADT/ATC.',
   alternates: {
@@ -52,7 +53,7 @@ export const metadata: Metadata = {
     title: 'The SAP Architect\'s Clean Core Accelerator | Clean-Core.io',
     description: 'Free community tool that generates the first Clean-Core-compliant draft for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
   }
-};
+});
 
 export default function Home() {
   const catalogStats = getCatalogStats();
@@ -873,7 +874,7 @@ export default function Home() {
                   'Full 7-stage modernization workflow — every feature included',
                   'Up to 5 ABAP-to-Cloud transformations (RAP / CAP)',
                   'Deterministic evidence engine + compliance & criticality scoring',
-                  'SAP API Business Hub mapping & Clean Core routing',
+                  'SAP Business Accelerator Hub mapping & Clean Core routing',
                   'abapGit ZIP export, ABAP-Unit tests, BPMN & Confluence exports',
                   'Server-signed audit evidence pack'
                 ].map((f, i) => (

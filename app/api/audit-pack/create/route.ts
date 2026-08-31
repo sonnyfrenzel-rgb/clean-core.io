@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import JSZip from 'jszip';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { verifyRunIntegrity } from '@/lib/run-signature';
+import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { APP_VERSION } from '@/lib/version';
 import type { Project } from '@/lib/types';
@@ -109,7 +110,11 @@ export async function POST(req: NextRequest) {
     // pack attesting to the altered content — the signature laundering the
     // change rather than catching it.
     {
-      const key = process.env.AUDIT_SIGNING_KEY || 'dev_audit_signing_key_fallback_clean_core';
+      const key = getAuditSigningKey();
+      if (!key) {
+        console.error(MISSING_SIGNING_KEY_LOG);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+      }
       const integrity = verifyRunIntegrity(runData, key);
       if (!integrity.valid) {
         logger.error('audit-pack refused: run integrity check failed', {
@@ -179,15 +184,12 @@ export async function POST(req: NextRequest) {
     const canonicalManifest = sortedFiles.map(f => `${f.path}:${f.sha256}`).join(';') + ';' + canonicalSuffix;
     const manifestHash = sha(canonicalManifest);
 
-    const isProduction =
-      process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true';
-    const signingKey = process.env.AUDIT_SIGNING_KEY;
-    if (!signingKey && isProduction) {
-      console.error('CRITICAL: AUDIT_SIGNING_KEY is missing in production.');
+    const signingKey = getAuditSigningKey();
+    if (!signingKey) {
+      console.error(MISSING_SIGNING_KEY_LOG);
       return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
-    const finalKey = signingKey || 'dev_audit_signing_key_fallback_clean_core';
-    const signature = crypto.createHmac('sha256', finalKey).update(manifestHash).digest('hex');
+    const signature = crypto.createHmac('sha256', signingKey).update(manifestHash).digest('hex');
     const generatedAt = new Date().toISOString();
 
     const manifest = {

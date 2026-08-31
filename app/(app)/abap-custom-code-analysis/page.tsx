@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import { getCatalogStats } from '@/lib/abap/catalog-service';
 import { BookOpen, ArrowLeft, Cpu, Activity, ShieldCheck, Link2, Check } from 'lucide-react';
 import Link from 'next/link';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'Free ABAP Static Code Analysis Tool for S/4HANA Clean Core | Clean-Core.io',
   description: 'A free tool for static analysis of custom ABAP: detect risky table access, unreleased calls and modifications, and map them to released SAP APIs for a clean S/4HANA core. No install — review-ready evidence.',
   alternates: {
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
     url: 'https://clean-core.io/abap-custom-code-analysis',
     type: 'website',
   }
-};
+});
 
 const faqs = [
   {

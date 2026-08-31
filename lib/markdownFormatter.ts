@@ -116,9 +116,9 @@ export function formatDesignToMarkdown(rawJson: string): string {
     }
     
     if (Array.isArray(data.sapStandardApiMapping) && data.sapStandardApiMapping.length > 0) {
-      md += `## 🌐 SAP API Business Hub Mappings\n`;
+      md += `## 🌐 SAP Business Accelerator Hub Mappings\n`;
       md += `The side-by-side extension communicates with S/4HANA via released standard interfaces to keep the core clean:\n\n`;
-      md += `| Legacy Object | Target Released SAP Public API | API Business Hub ID | Integration Role / Context | Link |\n`;
+      md += `| Legacy Object | Target Released SAP Public API | Business Accelerator Hub ID | Integration Role / Context | Link |\n`;
       md += `| :--- | :--- | :--- | :--- | :--- |\n`;
       data.sapStandardApiMapping.forEach((map: any) => {
         md += `| \`${map.legacyTableOrFunction}\` | **${map.sapStandardApiName}** | \`${map.apiId}\` | ${map.description} | [API Hub Reference](${map.apiHubUrl}) |\n`;

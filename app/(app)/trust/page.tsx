@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { ShieldCheck, Lock, MapPin, Trash2, FileCheck2, Server, Network } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import { APP_VERSION } from '@/lib/version';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'Trust & Privacy — Clean-Core.io',
   description:
     'How Clean-Core.io handles your data: EU-hosted primary storage and compute, encrypted credentials, server-authoritative evidence, disclosed subprocessors, and your GDPR rights including self-service erasure. Plain and honest — built for the SAP community.',
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
     url: 'https://clean-core.io/trust',
     type: 'website',
   },
-};
+});
 
 const Section = ({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) => (
   <section className="bg-white border border-slate-200 rounded-2xl p-6 mb-6">

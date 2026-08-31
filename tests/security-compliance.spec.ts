@@ -602,7 +602,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       originalRecommendation: 'cap', recommendationConfidence: 80, recommendationJustification: 'x',
     };
     const runHash = computeRunHash(runPayload);
-    const signingKey = process.env.AUDIT_SIGNING_KEY || 'dev_audit_signing_key_fallback_clean_core';
+    const signingKey = process.env.AUDIT_SIGNING_KEY!;
     await adminSetDoc(`projects/${projectId}/runs`, runId, {
       ...runPayload,
       runHash,

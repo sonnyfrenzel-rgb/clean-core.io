@@ -304,7 +304,7 @@ export default function TransformationShowroom() {
                 <p className="text-sm text-slate-700 font-medium leading-relaxed">
                   Table <code className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold font-mono">VBAK</code> → Resolved to released API{' '}
                   <code className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs font-bold font-mono">I_SalesOrder</code>{' '}
-                  <span className="text-slate-400">(SAP API Business Hub)</span>.
+                  <span className="text-slate-400">(SAP Business Accelerator Hub)</span>.
                 </p>
                 <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-full">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
@@ -450,10 +450,15 @@ export default function TransformationShowroom() {
                   <code className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs font-bold font-mono">I_JournalEntryItem</code>{' '}
                   <span className="text-slate-400">(SAP Business Accelerator Hub)</span>. Field/semantic equivalence — currency, authorizations, client handling — still needs architect review.
                 </p>
-                <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-full">
-                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">
-                    Deterministic object match — verify semantics
+                {/* The middle step of three. This paragraph is markedly more careful
+                    than the VBAK one above — "candidate", three named open questions —
+                    and it used to carry the same green badge as the clean case, which
+                    took the caution back out. Green means resolved, sky means candidate,
+                    amber (below) means the engine declined to guess. */}
+                <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-sky-50 border border-sky-200 rounded-full">
+                  <span className="w-1.5 h-1.5 bg-sky-500 rounded-full" />
+                  <span className="text-[10px] font-black text-sky-700 uppercase tracking-wider">
+                    Candidate match — semantics unverified
                   </span>
                 </div>
               </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import {
   ArrowLeft, ArrowRight, MousePointerClick, Clock, Mail, HelpCircle,
@@ -7,7 +8,7 @@ import {
 import { CONTACT_EMAIL } from '@/lib/constants';
 import { STARTER_EXAMPLES } from '@/lib/starter-examples';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'Your First Run — Step by Step | Clean-Core.io',
   description:
     'Click-by-click walkthrough of your first ABAP analysis on Clean-Core.io: pick a starter example, read the Clean Core Score, and take the package with you. No SAP connection and no code of your own required.',
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
     type: 'article',
     siteName: 'Clean-Core.io',
   },
-};
+});
 
 /**
  * The click-by-click first run.

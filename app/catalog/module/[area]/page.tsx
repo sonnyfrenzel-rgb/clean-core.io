@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
@@ -46,12 +47,12 @@ export async function generateMetadata({
   const title = `SAP ${meta.name} (${meta.code}) objects → released S/4HANA APIs | Clean-Core.io`;
   const description = `${count} SAP ${meta.name} objects with their clean core level and released S/4HANA API successor, from SAP's official Cloudification Repository. ${meta.blurb}`;
 
-  return {
+  return withTwitterCard({
     title,
     description,
     alternates: { canonical: `${BASE}/catalog/module/${meta.code.toLowerCase()}` },
     openGraph: { title, description, url: `${BASE}/catalog/module/${meta.code.toLowerCase()}`, type: 'article' },
-  };
+  });
 }
 
 export default async function CatalogModulePage({

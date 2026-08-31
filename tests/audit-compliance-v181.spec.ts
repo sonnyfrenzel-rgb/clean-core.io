@@ -3,6 +3,18 @@ import JSZip from 'jszip';
 import { createHash } from 'crypto';
 import { verifyAuditPack } from '../lib/audit-pack-verify';
 
+/**
+ * The key the server under test signs and verifies with.
+ *
+ * These two tests used to sign with a constant that also lived in three
+ * production route handlers of a public repository, and that is the reason the
+ * constant could not be deleted for five releases: removing it turned this file
+ * red, and lint/test is a required gate before every deploy. `playwright.config.ts`
+ * now supplies `AUDIT_SIGNING_KEY` for the run, so the fixture key is a test
+ * fixture and nothing else.
+ */
+const SIGNING_KEY = process.env.AUDIT_SIGNING_KEY!;
+
 test.describe('Audit & Compliance Hardening v1.18.1 Tests', () => {
 
   test('verifyAuditPack classifies an unsigned pack as integrity-only', async () => {
@@ -76,11 +88,11 @@ test.describe('Audit & Compliance Hardening v1.18.1 Tests', () => {
     expect(res3.status()).toBe(400);
   });
 
-  test('api/export/verify should validate correct signature using dev fallback key', async ({ request }) => {
+  test('api/export/verify should validate a correct signature against the configured signing key', async ({ request }) => {
     const canonicalManifest = '00-executive-summary.md:hash123;';
     const crypto = require('crypto');
     const expectedHash = crypto.createHash('sha256').update(canonicalManifest).digest('hex');
-    const signature = crypto.createHmac('sha256', 'dev_audit_signing_key_fallback_clean_core').update(expectedHash).digest('hex');
+    const signature = crypto.createHmac('sha256', SIGNING_KEY).update(expectedHash).digest('hex');
 
     const res = await request.post('/api/export/verify', {
       data: { canonicalManifest, signature }
@@ -103,7 +115,7 @@ test.describe('Audit & Compliance Hardening v1.18.1 Tests', () => {
     // Correct bound manifest
     const correctManifest = `${filesString}${projectId}:${runId}:${runHash}:${engineVersion}:${sapApiCatalogVersion};`;
     const correctHash = crypto.createHash('sha256').update(correctManifest).digest('hex');
-    const signature = crypto.createHmac('sha256', 'dev_audit_signing_key_fallback_clean_core').update(correctHash).digest('hex');
+    const signature = crypto.createHmac('sha256', SIGNING_KEY).update(correctHash).digest('hex');
 
     // Verify correct signature
     const res1 = await request.post('/api/export/verify', {

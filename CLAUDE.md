@@ -43,7 +43,7 @@ else passes, which reads like a code regression and is not one. CI passes the fl
 - Trust chain: `app/api/runs/create/route.ts` (immutable HMAC-signed runs), `lib/run-guard.ts` (`enforceActiveRun`), `lib/project-loader.ts` (`loadProjectAndHydrate`), `lib/audit-pack.ts` / `lib/audit-pack-verify.ts`.
 - ABAP engine: `lib/abap/evidence-model.ts` (`buildAbapEvidence`), `code-assessment.ts`, `extensibility-router.ts`, catalog layer (`catalog-service.ts`, `sap-api-catalog.ts`).
 - Clean core levels A–D: `lib/abap/abcd-classification.ts` (pure, no imports — the consuming panel is a client component), lookup via `gradeSapObject()` in `catalog-service.ts` (server-only), batch lookup for clients via `/api/abcd-classify`. Two synced SAP artifacts back it; see `docs/ARCHITECTURE.md` §4.1–4.3. The grade is **never** part of the signed audit pack.
-- Crypto/secrets: `lib/s4-credentials.ts` (AES-256-GCM), `lib/mfa.ts`, `lib/approval-token.ts`.
+- Crypto/secrets: `lib/s4-credentials.ts` (AES-256-GCM), `lib/mfa.ts`, `lib/approval-token.ts`, `lib/audit-signing-key.ts` (the only reader of `AUDIT_SIGNING_KEY` — **no fallback**, the signing/verify routes 500 without it in every environment; `.env.local` needs it for `npm run dev`).
 
 ## Conventions
 

@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import { BookOpen, ArrowLeft, Activity, ShieldCheck, Check, Sparkles, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Score & TCO Analysis | Clean-Core.io',
   description: 'Learn how the Clean Core Score is calculated and how decoupling custom code reduces upgrade risk and regression-testing effort.',
   alternates: {
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
     url: 'https://clean-core.io/clean-core-score',
     type: 'website',
   }
-};
+});
 
 const faqs = [
   {

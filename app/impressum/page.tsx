@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'Impressum – Legal Notice | Clean-Core.io',
   description: 'Legal notice (Impressum) for Clean-Core.io according to § 5 DDG. Contact information, responsible person, and disclaimer.',
   alternates: {
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
     url: 'https://clean-core.io/impressum',
     type: 'website',
   },
-};
+});
 
 export default function ImpressumPage() {
   return (

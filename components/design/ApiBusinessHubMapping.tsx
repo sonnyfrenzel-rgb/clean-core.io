@@ -22,7 +22,7 @@ export default function ApiBusinessHubMapping({ sapStandardApiMapping }: ApiBusi
     <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col animate-in fade-in duration-500">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h4 className="font-extrabold text-slate-900 text-lg">SAP API Business Hub Integration</h4>
+          <h4 className="font-extrabold text-slate-900 text-lg">SAP Business Accelerator Hub Integration</h4>
           <p className="text-xs text-slate-405 mt-1">Officially <GlossaryTerm termKey="Released Interface" className="text-xs text-slate-400 border-emerald-500/40 font-medium">Released standard S/4HANA Public APIs</GlossaryTerm> mapped to fully decouple direct legacy database access.</p>
         </div>
         <span className="bg-blue-50 text-blue-700 border border-blue-150 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 shrink-0 self-start sm:self-auto">

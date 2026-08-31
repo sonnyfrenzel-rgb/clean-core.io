@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import { BookOpen, Layers, Check } from 'lucide-react';
 import Link from 'next/link';
 import KnowledgeClient from '@/components/KnowledgeClient';
@@ -6,7 +7,7 @@ import BackButton from '@/components/BackButton';
 import QuickAnswer from '@/components/QuickAnswer';
 
 // Server-side Metadata configuration for SEO & GEO Crawlers
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Guide: RAP vs CAP & Extensibility Patterns',
   description: 'What SAP Clean Core is (its five dimensions), how to assess readiness, and the In-App RAP vs Side-by-Side CAP decision — a plain-language guide to clean-core extensibility patterns and upgrade-safe SAP development.',
   alternates: {
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: 'Clean-Core.io',
   },
-};
+});
 
 const faqs = [
   {

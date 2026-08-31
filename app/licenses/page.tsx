@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'Third-Party Notices & Licenses | Clean-Core.io',
   description:
     'Open-source software and data that Clean-Core.io is built on, with the required attributions — including the SAP Cloudification Repository under Apache-2.0.',
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
     url: 'https://clean-core.io/licenses',
     type: 'website',
   },
-};
+});
 
 /** Direct production dependencies grouped by their SPDX license (verified against installed packages). */
 const COMPONENTS: { license: string; packages: string[] }[] = [

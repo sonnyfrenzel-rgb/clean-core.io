@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import { BookOpen, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import HowToClient from '@/components/HowToClient';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 // Server-side Metadata configuration for SEO & GEO Crawlers
-export const metadata: Metadata = {
+export const metadata: Metadata = withTwitterCard({
   title: 'SAP S/4HANA Clean Core Modernization Guide | Clean-Core.io',
   description: 'Follow our interactive walkthrough to learn how to refactor legacy ABAP structures into modern Node.js and TypeScript BTP applications.',
   alternates: {
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: 'Clean-Core.io',
   },
-};
+});
 
 const steps = [
   {
