@@ -3,24 +3,30 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
-**Stand 31.08.2026 — nach v2.7.1 und v2.7.2.** Drei Stränge an einem Tag: das
-Lint-Gate, das nie geprüft hat wofür es gebaut war (706 Probleme, Fehler auf null,
-677 Warnungen festgenagelt, sechs echte Defekte darunter); **V9 erledigt**, der
-veröffentlichte Ersatzschlüssel ist aus allen drei Routen raus; und der externe
-SEO-Befund v3, dessen belegte Punkte abgearbeitet sind.
+**Stand 31.08.2026, Feierabend — v2.7.0 → v2.8.4, acht Releases, alles auf `main`
+und deployt.** Der Tag lief in vier Strängen:
 
-Zweimal fand ein neu gebauter Guard mehr, als der Befund kannte: der
-Überlauf-Guard fand drei Ursachen statt einer, der Twitter-Card-Guard 21 Seiten
-statt einer.
+1. **Das Lint-Gate**, das nie geprüft hat, wofür es gebaut war. 706 Probleme,
+   Fehler auf null, 677 Warnungen mit `--max-warnings` festgenagelt, sechs echte
+   Defekte darunter.
+2. **V9 erledigt.** Der veröffentlichte Ersatzschlüssel ist aus allen drei Routen
+   raus, ohne Fallback in irgendeiner Umgebung.
+3. **Befund v3** — fünf belegte Punkte abgearbeitet, N-02 als letzter geschlossen.
+   `clean-core-test` abgeräumt und die Pipeline dagegen abgesichert.
+4. **Die Aktivierungsumfrage** gebaut, viermal getestet, dreimal korrigiert.
 
-**Als Nächstes:**
+**Der Tag in einer Zeile:** jeder ernsthafte Fund kam aus einer Messung, die es
+vorher nicht gab — und der teuerste kam von einem Menschen, der die Mail
+tatsächlich benutzt hat.
+
+**Morgen zuerst:**
 
 | # | Punkt | Wer | Warum jetzt |
 |---|---|---|---|
-| 1 | **Umfrage: Testmail freigeben** | **Felix** | sie liegt in deinem Postfach; der geplante Versand steht auf **Mi 09:00** |
+| 1 | **Umfrage fertigstellen und freigeben** | **gemeinsam** | sie feuert **Mi 09:00 automatisch** — siehe den Abschnitt unten |
 | 2 | **Resend-Webhook: erste Zustellzahlen ansehen** | **Felix** | seit dem 28.08. scharf; jeder Tag ohne Blick kostet Daten |
 | 3 | Vier Tinten vereinheitlichen (siehe unten) | Entwicklung | die Köpfe ziehen an einem Strang, der Fließtext nicht |
-| 4 | Deutschsprachiger Cluster (S-05) | Entscheidung Felix | größte inhaltliche Lücke, DSAG-Zielgruppe — und die Umfrage fragt genau danach |
+| 4 | Deutschsprachiger Cluster (S-05) | Entscheidung Felix | größte inhaltliche Lücke — und die Umfrage fragt genau danach |
 
 **Danach:**
 
@@ -37,10 +43,21 @@ statt einer.
 | Mitte September: Befund v4 / Reindexierung messen | gemeinsam | Termin |
 | Review-Tooling in den Rechenstand committen | Entwicklung | niedrig |
 
-**Erledigt am 31.08.:** eslint-Gate scharf, Seitenüberlauf auf dem Telefon,
-Doku-Korrektur zu `dev.`/`test.`, **V9**, und aus Befund v3 die Punkte S-08
-(Sitemap datiert Inhalte statt Deploys), S-09 (eigene Twitter-Card je Seite),
-K-03, K-05, K-06.
+**Erledigt am 31.08., acht Releases:**
+
+| Release | Was |
+|---|---|
+| v2.7.1 | eslint-Gate scharf; sechs Defekte, die es durchgelassen hatte; Seitenüberlauf |
+| v2.7.2 | **V9**; Befund v3: S-08 Sitemap, S-09 Twitter-Cards, K-03, K-05, K-06 |
+| v2.7.3 | **N-02** — die zwei Zeilen, an denen die Seite gegen sich selbst falsch lag; Wochenbericht-Fix; vierte Überlauf-Ursache; Zeitzonenfehler im eigenen Guard |
+| v2.8.0 | Die Aktivierungsumfrage |
+| v2.8.1 | Mehrfachauswahl-Stimmzettel mit vier belegten v3.0-Kandidaten |
+| v2.8.2 | Die v3.0-Rahmung und der Aktivierungsschubs in der Mail |
+| v2.8.3 | Mail halbiert; Fortschritt statt Vollzugsmeldung; „Your answers" |
+| v2.8.4 | Die `localhost`-Links, dreifach behoben |
+
+Dazu ohne Versionssprung: `clean-core-test` gelöscht und die `release`-Spur
+stillgelegt, der Wochenbericht vom 28.08. manuell nachgeholt.
 
 **Schon vorher erledigt und im Backlog übersehen:** `llms.txt` steht seit dem
 26.08. unter `app/llms.txt/route.ts`. Und `/catalog/[object]` ist statisch
@@ -55,39 +72,74 @@ Ursache gefunden und behoben; der Fix ist mit v2.8.0 auf `main` und damit scharf
 
 ---
 
-## Die Aktivierungsumfrage — Stand und was Mittwoch passiert
+## Die Aktivierungsumfrage — Stand, offene Urteile, und die Frist
 
-**Gebaut, deployt, getestet** (v2.8.0, 31.08.). Was nachgemessen ist:
+**Gebaut, deployt, viermal getestet, dreimal korrigiert** (v2.8.0 bis v2.8.4).
+
+### ⚠️ Sie feuert am Mittwoch von selbst
+
+`survey-send.yml` läuft **Mi 09:00 Berliner Zeit** und schickt an alle 36 — ohne
+weitere Freigabe. Dann wird das Kampagnendokument mit Öffnungs- und Schlussdatum
+geschrieben, pro Empfänger ein Sendevermerk angelegt, ab Donnerstag kommt täglich
+um 09:00 das Zwischenergebnis, und einen Tag nach Schluss (**09.09.**) der
+Endstand.
+
+**Wenn sie bis dahin nicht freigegeben ist:** den Workflow *Activation Survey —
+send* in den GitHub Actions deaktivieren. Das ist der Ausschalter. Ein zweiter Lauf
+später verschickt nichts doppelt und verschiebt keine Frist.
+
+### Zwei Urteile, die noch fehlen
+
+1. **Die „zwei Minuten".** Der Betreff sagt `two-minute first run`, der Mailtext
+   sagt inzwischen „a couple of minutes". Ich habe die Zahl aus dem Ablauf
+   hergeleitet, nicht gestoppt. Entweder den Betreff angleichen — oder einmal einen
+   Beispiellauf messen und die echte Zahl an beide Stellen schreiben. Letzteres
+   passt zum Rest der Seite.
+2. **„Version 3.0" als Zusage.** Steht an vier Stellen und verspricht 36 Leuten,
+   dass es eine 3.0 gibt und ihr Kreuz sie beeinflusst. Einlösbar — die vier
+   Kandidaten sind belegt und kostenbar — aber es ist ein Versprechen. Falls zu
+   früh: auf „die nächste größere Fassung" umformulieren, eine Zeile.
+
+### Was nachgemessen ist
 
 | Prüfung | Ergebnis |
 |---|---|
 | Trockenlauf gegen die Produktionsdatenbank | **36 echte Empfänger**; 110 CI-Konten und 1 Unterdrückung gefiltert |
-| Testmail über den echten Workflow | `29c95278-daac-49ee-aa59-b0039a0d0e53`, nur an den Admin |
-| Landeseite auf Produktion | 200, erkennt die getippte Antwort, zeigt beide Folgefragen |
+| Vierte Testmail über den echten Workflow | `75c1f6a8-122d-43c2-a43a-ef4adcfd0718` |
+| Landeseite im echten Browser gegen Produktion | Einfachauswahl, Mehrfachauswahl, Fortschritt, Übersicht — alle POSTs 200, keine Konsolenfehler |
 | Ungültiges Token | Seite sagt „no longer valid", API antwortet 400 |
+| Links unter der Workflow-Umgebung | `https://clean-core.io/survey/…` |
 
-**36, nicht 30.** Die Zahl in den älteren Abschnitten dieses Backlogs stammt vom
-19.08. und ist gewachsen.
+**36, nicht 30.** Die Zahl in den älteren Abschnitten stammt vom 19.08.
 
-**Der Testversand hat bewusst nichts angefasst:** kein Kampagnendokument, kein
-`email_sends`-Eintrag. Mittwoch beginnt also bei null und niemand ist versehentlich
-schon „abgehakt".
+**Kein Testversand hat etwas angefasst:** kein Kampagnendokument, kein
+`email_sends`-Eintrag. Mittwoch beginnt bei null.
 
-**Was am Mittwoch 09:00 automatisch passiert:** `survey-send.yml` schickt die
-Einladung an alle 36, schreibt das Kampagnendokument mit Öffnungs- und Schlussdatum
-und legt pro Empfänger einen Sendevermerk an. Ab dem Folgetag kommt täglich um 09:00
-das Zwischenergebnis, bis einen Tag nach Schluss (**09.09.**) der Endstand kommt und
-es aufhört.
+### Die drei Korrekturen, und was sie über das Prüfen sagen
 
-**Wenn es doch nicht Mittwoch sein soll:** den Workflow `Activation Survey — send`
-deaktivieren, oder ihn vorher von Hand mit `apply` starten. Ein zweiter Lauf
-verschickt nichts doppelt und verschiebt die Fristen nicht.
+**Testmail 1–3 enthielten Links auf `localhost:3000`.** `APP_BASE_URL` fällt ohne
+`NEXT_PUBLIC_APP_URL` auf localhost zurück; der Deploy setzt die Variable für die
+Anwendung, ein Workflow-Schritt erbt sie nicht. Behoben dreifach: Workflow setzt
+sie, **Skript verweigert den Versand ohne `https://`**, zwei Guards halten beides.
+
+Am Code war nichts falsch. Der Fehler lebte zwischen dem Vorgabewert eines Moduls
+und der Umgebung eines Workflows — dorthin sieht kein Unit-Test.
+
+**Und ich hätte ihn selbst finden können.** Ich habe die Seite gründlich gegen
+Produktion getestet — echter Browser, Klicks, Netzwerkmitschnitt — aber jedes Mal
+mit einem Token, den ich erzeugt, in einer URL, die ich gebaut hatte. Die Kette
+Mail → Link → Seite habe ich nie am Stück geprüft, obwohl genau das der Weg des
+Nutzers ist. Gefunden hat es ein Mensch beim ersten echten Antippen.
+
+**Die zweite Korrektur kam aus derselben Quelle:** die Seite meldete Vollzug, bevor
+sie etwas fragte, und niemand sah, was er insgesamt geantwortet hatte. Beides sind
+Gestaltungsfehler, die kein grüner Test je gemeldet hätte.
 
 **Offen und bewusst nicht gebaut:** die Öffnungsrate über Resend. Der Webhook
-zeichnet `email.opened` derzeit nicht auf, weil Scanner die Zahl aufblähen. Die
-Umfrage beantwortet die Frage besser — eine Antwort ist der Beweis, dass ein Mensch
-gelesen hat, und „Link geholt, nie geantwortet" ist der Gegenbeweis. Falls du die
-Rohzahl trotzdem willst, ist es ein Ereignistyp mehr in der Webhook-Route.
+zeichnet `email.opened` nicht auf, weil Scanner die Zahl aufblähen. Die Umfrage
+beantwortet die Frage besser — eine Antwort beweist, dass ein Mensch gelesen hat,
+und „Link geholt, nie geantwortet" ist der Gegenbeweis. Falls du die Rohzahl
+trotzdem willst: ein Ereignistyp mehr in der Webhook-Route.
 
 ---
 
