@@ -120,12 +120,22 @@ export default async function SurveyPage({
 
   return (
     <Shell>
+      {/*
+        This heading used to read "Thank you — that is recorded", above a green
+        confirmation panel, above the questions. That is the visual grammar of an
+        ending: on a phone the fold lands right after the panel, the questions
+        below look like an appendix, and a reader who has just answered concludes
+        they are finished. The first person to try it said exactly that.
+
+        So the page leads with what is left rather than with what is done. The
+        confirmation is a line inside the progress strip, not a panel of its own.
+      */}
       <h1 className="text-3xl sm:text-4xl font-black text-gray-950 tracking-tight leading-tight mb-3">
-        Thank you — that is recorded
+        The ballot for version 3.0
       </h1>
       <p className="text-gray-600 leading-relaxed mb-8">
-        {PAGE_QUESTIONS.length} more questions, one tap each — the middle one is the ballot for
-        version 3.0. Nothing here is submitted at the end and none of it is required.
+        Your answer is saved. {PAGE_QUESTIONS.length} questions left, one tap each — and none of
+        them required. Nothing is submitted at the end; every tap saves as you make it.
       </p>
 
       <SurveyClient

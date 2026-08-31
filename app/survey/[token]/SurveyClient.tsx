@@ -2,7 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Check, Loader2, AlertCircle, Send } from 'lucide-react';
-import { PAGE_QUESTIONS, SURVEY_FREETEXT_PROMPT, SURVEY_FREETEXT_MAX, getOption } from '@/lib/survey/definition';
+import {
+  PAGE_QUESTIONS,
+  SURVEY_QUESTIONS,
+  SURVEY_FREETEXT_PROMPT,
+  SURVEY_FREETEXT_MAX,
+  getOption,
+} from '@/lib/survey/definition';
 import { chosen, type SurveyAnswer } from '@/lib/survey/store';
 
 /**
@@ -128,35 +134,56 @@ export default function SurveyClient({
   const initialLabel =
     initialQuestion && initialOption ? getOption(initialQuestion, initialOption)?.label : null;
 
+  const totalQuestions = PAGE_QUESTIONS.length + (tapped ? 1 : 0);
+  const doneCount = answeredCount + (tapped ? 1 : 0);
+
   return (
     <div className="space-y-8">
-      {/* What the tap did */}
-      {tapped && initialLabel && (
-        <div className="rounded-2xl border border-green-200 bg-green-50 p-5">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 shrink-0">
+      {/*
+        A progress strip instead of a completion panel.
+        The green "Recorded. Thank you." card that used to sit here read as the
+        end of the interaction — which it was not, and the first person to use it
+        stopped there. A count of what is left cannot be mistaken for a finish.
+      */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm font-black text-gray-950">
+            {doneCount} of {totalQuestions} answered
+          </p>
+          {tapped && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-green-700">
               {status[initialQuestion!] === 'saving' ? (
-                <Loader2 className="w-5 h-5 text-green-700 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : status[initialQuestion!] === 'error' ? (
-                <AlertCircle className="w-5 h-5 text-red-600" />
+                <span className="inline-flex items-center gap-1.5 text-red-600">
+                  <AlertCircle className="w-3.5 h-3.5" /> not saved
+                </span>
               ) : (
-                <Check className="w-5 h-5 text-green-700" strokeWidth={3} />
+                <>
+                  <Check className="w-3.5 h-3.5" strokeWidth={3} /> saved
+                </>
               )}
             </span>
-            <div className="min-w-0">
-              <p className="text-sm font-black text-green-900 leading-snug">
-                {status[initialQuestion!] === 'error'
-                  ? 'That did not save — the buttons below still work.'
-                  : 'Recorded. Thank you.'}
-              </p>
-              <p className="text-sm text-green-800/80 mt-1 leading-relaxed">
-                You answered <span className="font-bold">&ldquo;{initialLabel}&rdquo;</span>. Tap a
-                different option below at any time and it replaces this one.
-              </p>
-            </div>
-          </div>
+          )}
         </div>
-      )}
+        <div className="mt-3 flex gap-1.5" aria-hidden>
+          {Array.from({ length: totalQuestions }).map((_, i) => (
+            <span
+              key={i}
+              className={[
+                'h-1.5 flex-1 rounded-full',
+                i < doneCount ? 'bg-green-600' : 'bg-gray-200',
+              ].join(' ')}
+            />
+          ))}
+        </div>
+        {tapped && initialLabel && (
+          <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+            You answered <span className="font-bold text-gray-950">&ldquo;{initialLabel}&rdquo;</span>{' '}
+            in the email. Everything below is still open.
+          </p>
+        )}
+      </div>
 
       {PAGE_QUESTIONS.map((q) => (
         <section key={q.id}>
@@ -260,19 +287,46 @@ export default function SurveyClient({
         </div>
       </section>
 
+      {/*
+        What the reader actually said, read back to them.
+        Without this the only record of a vote is a green border on a button
+        somewhere further up the page, and "did that count?" is a fair question to
+        be left with after tapping something that navigated nowhere.
+      */}
       <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
-        <p className="text-sm text-gray-600 leading-relaxed">
+        <h2 className="text-sm font-black text-gray-950 uppercase tracking-wider">
+          Your answers
+        </h2>
+        <dl className="mt-4 space-y-3">
+          {SURVEY_QUESTIONS.map((q) => {
+            const picks = chosen(answers[q.id]);
+            return (
+              <div key={q.id} className="flex flex-col sm:flex-row sm:gap-4">
+                <dt className="text-xs text-gray-500 leading-relaxed sm:w-1/2 shrink-0">
+                  {q.prompt}
+                </dt>
+                <dd className="text-sm font-bold text-gray-950 leading-relaxed sm:w-1/2">
+                  {picks.length === 0 ? (
+                    <span className="font-medium text-gray-400">not answered</span>
+                  ) : (
+                    picks.map((id) => getOption(q.id, id)?.label ?? id).join(' · ')
+                  )}
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+        <p className="mt-5 text-sm text-gray-600 leading-relaxed border-t border-gray-200 pt-4">
           {answeredCount === PAGE_QUESTIONS.length ? (
             <>
               <span className="font-bold text-gray-950">That is everything.</span> You can close
-              this page — every answer is already saved. Change any of them until{' '}
-              <span className="font-bold text-gray-950">{closesOn}</span> by opening this link
-              again.
+              this page — every answer is already saved. Open the link again any time until{' '}
+              <span className="font-bold text-gray-950">{closesOn}</span> to change one.
             </>
           ) : (
             <>
-              Nothing here is submitted at the end — each tap is saved as you make it. You can
-              leave any question unanswered, and you can come back until{' '}
+              Leave any of them unanswered if you would rather. Each tap saves as you make it,
+              and you can come back until{' '}
               <span className="font-bold text-gray-950">{closesOn}</span>.
             </>
           )}

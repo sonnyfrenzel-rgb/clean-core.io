@@ -10,6 +10,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.8.3] — 2026-08-31
+
+### Die erste echte Benutzung hat zwei Fehler gefunden
+
+Beide sind Gestaltungsfehler, keine Defekte — API und Speicherung antworteten die
+ganze Zeit mit `200`. Genau deshalb wären sie ohne einen Menschen an der Mail
+nicht aufgefallen.
+
+**Die Seite meldete Vollzug, bevor sie irgendetwas fragte.** Überschrift „Thank you
+— that is recorded", darunter ein grünes Bestätigungsfeld, darunter erst die
+Fragen. Das ist die Bildsprache eines Endzustands: auf dem Telefon endet der
+sichtbare Bereich hinter dem Feld, die drei Fragen darunter wirken wie ein Anhang,
+und wer gerade geantwortet hat, schließt daraus, fertig zu sein. Der erste Mensch,
+der es benutzt hat, sagte genau das.
+
+Die Seite führt jetzt mit dem, was aussteht, statt mit dem, was erledigt ist:
+Überschrift **„The ballot for version 3.0"**, und an der Stelle des
+Bestätigungsfelds eine **Fortschrittsleiste** — „1 von 4 beantwortet", vier
+Segmente, und der gespeicherte Zustand als kleine Zeile daneben. Eine Zählung
+dessen, was fehlt, kann man nicht für ein Ende halten.
+
+**Und der Nutzer sah nirgends, was er insgesamt geantwortet hatte.** Die Auswahl
+war zwar markiert, aber der einzige Beleg für eine Stimme war ein grüner Rahmen
+irgendwo weiter oben. „Hat das gezählt?" ist eine berechtigte Frage, wenn man
+etwas antippt, das nirgendwohin navigiert.
+
+Am Seitenende steht jetzt **„Your answers"**: jede Frage mit der eigenen Antwort,
+Mehrfachauswahl mit allen Kreuzen, Unbeantwortetes als „not answered" statt als
+Lücke.
+
+### Die Einladung, halbiert
+
+151 Wörter statt gut dem Doppelten. Raus sind der Absatz über die Grundlagenarbeit
+der letzten Monate, die Erklärung, warum geraten schlecht wäre, und das
+„What happens with it"-Feld. Was bleibt, sagt dasselbe in vier Blöcken: die
+Überschrift, ein Satz zur Lage, die Frage mit drei Flächen, und der Weg zum ersten
+Lauf. Der Rest ist eine Zeile über Frist und Antwortmöglichkeit.
+
+Die Begründung für die Kürze ist dieselbe wie für alles andere hier: eine Mail,
+die eine Minute Aufmerksamkeit erbittet, darf keine drei Minuten lang sein.
+
 ## [v2.8.2] — 2026-08-31
 
 ### Die Einladung sagt jetzt, worauf das hier zuläuft
