@@ -588,6 +588,10 @@ export default function Dashboard() {
     if (!newCommentText.trim() || !activePost) return;
 
     const newComment = {
+      // Called from a submit handler, not from render. The purity rule reads the
+      // whole component body as render because it cannot prove where this
+      // function is invoked; a clock read in an event handler is fine.
+      // eslint-disable-next-line react-hooks/purity
       id: `comment-${Date.now()}`,
       author: profile ? `${profile.firstName} ${profile.lastName}` : 'Community Member',
       message: newCommentText.trim(),
@@ -785,6 +789,8 @@ export default function Dashboard() {
     if (!forumTitle.trim() || !forumMessage.trim()) return;
 
     // 1. Rate Limiting Check (60 seconds)
+    // Same as in handleAddComment: a submit handler, not render.
+    // eslint-disable-next-line react-hooks/purity
     const now = Date.now();
     if (lastPostTime && now - lastPostTime < 60000) {
       const remainingSeconds = Math.ceil((60000 - (now - lastPostTime)) / 1000);

@@ -27,8 +27,11 @@ export default function HeaderAuthButton() {
   };
 
   if (loading) {
+    // Narrower below `sm`, because the skeleton has to fit the same space the
+    // button does. At 176px flat it was 21px wider than a 320px header could
+    // hold, and the whole page scrolled sideways until auth resolved.
     return (
-      <div className="h-10 w-44 bg-gray-100 animate-pulse rounded-lg"></div>
+      <div className="h-10 w-32 sm:w-44 bg-gray-100 animate-pulse rounded-lg"></div>
     );
   }
 
@@ -47,9 +50,13 @@ export default function HeaderAuthButton() {
   return (
     <Link
       href="?auth=signin"
-      className="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-6 py-2 rounded-lg font-medium transition-colors shadow-sm text-sm sm:text-base text-center inline-block"
+      className="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-6 py-2 rounded-lg font-medium transition-colors shadow-sm text-sm sm:text-base text-center inline-block whitespace-nowrap"
     >
-      Get Free Access or Login
+      {/* The full label does not fit a 320px header next to the wordmark, and it
+          could not shrink, so it pushed the page sideways. Everything from `sm`
+          up — every width the page has been reviewed at — is unchanged. */}
+      <span className="sm:hidden">Get Free Access</span>
+      <span className="hidden sm:inline">Get Free Access or Login</span>
     </Link>
   );
 }

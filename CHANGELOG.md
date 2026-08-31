@@ -10,6 +10,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.7.1] — 2026-08-31
+
+### Das Lint-Gate hat nie geprüft, wofür es gebaut war
+
+`eslint.config.mjs` importierte drei Plugins und aktivierte die Regeln von genau
+einem. `@typescript-eslint` und `eslint-plugin-react-hooks` waren registriert und
+für nichts eingeschaltet — der `rules`-Block spreizte ausschließlich die
+Next-Voreinstellungen. `npm run lint` ist eine Pflichtstufe der Deploy-Pipeline.
+Sie hat damit bei jedem Release einen grünen Haken für eine Prüfung gemeldet, die
+nicht stattfand.
+
+Einschalten fördert **706 Probleme** zutage. Sie sind sortiert, nicht
+stummgeschaltet:
+
+| Klasse | Anzahl | Behandlung |
+|---|---|---|
+| `no-explicit-any` | 365 | geparkt als Warnung |
+| `no-unused-vars` | 274 | geparkt als Warnung |
+| `set-state-in-effect` | 25 | geparkt als Warnung |
+| `no-require-imports` | 24 | in `scripts/` und `tests/` abgeschaltet, in `lib/` einzeln begründet |
+| React-Hooks-Korrektheit | 13 | behoben |
+| übriges TypeScript | 5 | behoben |
+
+Fehler stehen jetzt bei **null**. Die 677 verbleibenden Warnungen sind mit
+`eslint . --max-warnings 677` festgenagelt — eine Zahl im Rechenstand, die kleiner
+werden kann und nicht größer.
+
+### Was durch das grüne Gate gegangen war
+
+**Ein Klick ohne Wirkung.** In `testing/page.tsx` stand nach der Zugangsanfrage
+`profile.s4TenantAccessRequested = true`, mit dem Kommentar „Force profile update
+trigger client-side". Eine Mutation am Rückgabewert eines Hooks rendert nichts neu
+— die Zeile tat exakt das Gegenteil dessen, was ihr Kommentar behauptete. Sie war
+zudem überflüssig: die Route schreibt das Flag ins Nutzerdokument, und
+`useUserProfile` hört darauf. Der Knopf schaltet also um, aber wegen des Servers,
+nicht wegen dieser Zeile.
+
+**Ein Ref, in den während des Renderns geschrieben wird.** `EvidenceSweep.tsx`
+hielt seinen Fertig-Callback mit `onCompleteRef.current = onComplete` im
+Render-Körper aktuell. Unter StrictMode läuft der Render zweimal, und der
+verworfene Durchlauf schreibt in dasselbe Ref, das der überlebende liest. Jetzt
+im Effekt.
+
+**Vier Konstanten aus der temporalen Todeszone.** Zwei in `approve-tenant`, eine
+in `LandingModals`: ein Effekt rief Funktionen auf, die erst darunter als `const`
+deklariert wurden. Es funktioniert — aber nur, weil ein Effekt nach dem Render
+läuft, in dem die Konstante entsteht. Das ist ein Zufall, kein Versprechen.
+Deklaration und Aufruf stehen jetzt in der richtigen Reihenfolge.
+
+**Eine Kennzahl, die von der Renderzeit abhing.** `UsageQuotaPanel` berechnete
+„aktiv in 7 Tagen" mit `Date.now()` **innerhalb** zweier `useMemo`. Ein
+Uhrzeit-Aufruf ist ein verborgener Eingang, von dem das Memo nicht abhängt: für
+dieselben Daten kam eine andere Zahl heraus, je nachdem, wann React zuletzt neu
+gerendert hatte. Die Grenze hängt jetzt an `lastSync` — dem Moment, in dem die
+Daten ankamen.
+
+**Und eine ungeprüfte Krypto-Signatur.** `lib/totp.ts` holte Web Crypto über
+`require('crypto').webcrypto`, dreimal inline. Der Rückgabewert war `any`, also
+war der gesamte `subtle.importKey`-Aufruf ungetypt. Eine Funktion mit echtem
+`Crypto`-Rückgabetyp legte sofort frei, dass `base32ToBytes` ein
+`Uint8Array<ArrayBufferLike>` lieferte, wo `importKey` nur `ArrayBuffer`
+akzeptiert. Der Build bricht daran — er hat es nur nie gesehen.
+
+### Die Seite rutschte auf dem Telefon seitwärts
+
+Bekannt war eine Ursache: das Label „S/4HANA Sandbox Connection — Security
+Profile", 340px breit, mit `whitespace-nowrap` zwischen zwei `flex-1`-Linien. Es
+konnte nicht schrumpfen und schob das Dokument breiter als das Fenster.
+
+Der neue Guard fand zwei weitere, beide im Kopf der Seite: der Ladeplatzhalter des
+Anmeldeknopfs war mit `w-44` fest 176px breit, und das aufgelöste Label „Get Free
+Access or Login" passt bei 320px nicht neben den Schriftzug. Der Platzhalter ist
+unterhalb `sm` schmaler, das Label unterhalb `sm` „Get Free Access". **Ab `sm`
+aufwärts — jede Breite, bei der die Seite je begutachtet wurde — ändert sich
+nichts.**
+
+`tests/landing-style-guard.spec.ts` misst das jetzt bei 320, 390 und 768 Pixeln,
+und zwar **zweimal je Breite**: einmal während der Kopf noch lädt, einmal
+danach. Eine Seite, die eine halbe Sekunde seitwärts rutscht und sich dann fängt,
+ist eine Seite, die seitwärts gerutscht ist. Schlägt die Prüfung an, nennt sie die
+Elemente, die über den rechten Rand ragen — und überspringt alles, was in einem
+Scroll-Container sitzt, weil eine Snap-Leiste 700px breit sein *soll* und sonst
+fünf Unschuldige die Schuldige verdecken.
+
 
 
 

@@ -77,6 +77,19 @@ export default function LandingModals() {
     }
   }, [authParam]);
 
+  // Declared above the effect that calls it: an arrow function hoists no value,
+  // so the effect below was reading it out of the temporal dead zone. It works
+  // today only because effects run after the render that initialises the const.
+  const updateQueryParams = (key: string, value: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    router.replace(`/?${params.toString()}`);
+  };
+
   // Handle Google redirect result (fallback from signInWithPopup)
   useEffect(() => {
     if (!auth) return;
@@ -113,16 +126,6 @@ export default function LandingModals() {
         console.error('[getRedirectResult] Error:', err);
       });
   }, [auth, router]);
-
-  const updateQueryParams = (key: string, value: string | null) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
-    router.replace(`/?${params.toString()}`);
-  };
 
   const closeAuthModal = async () => {
     if (authMode === 'mfa' && pendingMfaUser) {

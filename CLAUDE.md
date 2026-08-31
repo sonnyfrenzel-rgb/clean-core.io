@@ -60,8 +60,14 @@ else passes, which reads like a code regression and is not one. CI passes the fl
 | Branch | Cloud Run service | URL |
 |---|---|---|
 | `main` | `clean-core` | https://clean-core.io |
-| `release` | `clean-core-test` | https://test.clean-core.io |
-| `dev` | `clean-core-dev` | https://dev.clean-core.io |
+| `release` | `clean-core-test` | https://test.clean-core.io — no A record |
+| `dev` | `clean-core-dev` | https://dev.clean-core.io — no A record |
+
+**`dev.` and `test.` resolve to nothing** (NODATA against 8.8.8.8, re-checked
+2026-08-31): the names are in the zone, the domain mappings/CNAMEs are not. Use
+`https://clean-core-dev-qcevuoi3uq-ew.a.run.app` and
+`https://clean-core-test-qcevuoi3uq-ew.a.run.app` instead. A change that "isn't
+on dev" is usually this and not the deploy.
 
 There is **no** Firebase Hosting deploy; `firebase.json` is only rules + emulators. `vercel.json` only sets cache headers.
 

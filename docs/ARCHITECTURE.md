@@ -344,8 +344,15 @@ tier's 5 transformations) are configuration and are fine.
 | Branch | Service | URL |
 |--------|---------|-----|
 | `main` | `clean-core` | https://clean-core.io |
-| `release` | `clean-core-test` | https://test.clean-core.io |
-| `dev` | `clean-core-dev` | https://dev.clean-core.io |
+| `release` | `clean-core-test` | https://test.clean-core.io — **no A record**, see below |
+| `dev` | `clean-core-dev` | https://dev.clean-core.io — **no A record**, see below |
+
+> Both subdomains exist in the zone and point at nothing (NODATA against 8.8.8.8,
+> re-checked 2026-08-31). Until the Cloud Run domain mappings and the CNAMEs at
+> Strato are restored, reach the two environments at their run.app addresses:
+> `https://clean-core-dev-qcevuoi3uq-ew.a.run.app` and
+> `https://clean-core-test-qcevuoi3uq-ew.a.run.app`. A deploy that "isn't visible
+> on dev" is usually this, not the deploy.
 
 Each env has its own `NEXT_PUBLIC_FIRESTORE_DB_ID`. `firebase.json` has **no** hosting deploy; `vercel.json` only sets cache headers. Second workflow `sync-catalog.yml` refreshes the SAP catalog.
 

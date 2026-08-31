@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
@@ -155,4 +155,79 @@ test.describe('no colour class that emits nothing', () => {
       'these colour classes generate no CSS — declare them in @theme or use a default shade',
     ).toEqual([]);
   });
+});
+
+
+/**
+ * How wide the document is beyond the viewport, and what is doing it.
+ *
+ * A failure that says only "the page is 21px too wide" costs an afternoon; one
+ * that names the element does not. Elements inside a scroller are skipped —
+ * a snap rail is 700px wide by design and its parent clips it, so listing it
+ * names five innocent elements and buries the guilty one.
+ */
+async function measureOverflow(page: Page, viewportWidth: number) {
+  return page.evaluate((vw) => {
+    const doc = document.documentElement;
+    const overflow = doc.scrollWidth - doc.clientWidth;
+    if (overflow <= 1) return { overflow, culprits: [] as string[] };
+
+    const isContained = (el: Element) => {
+      for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+        if (getComputedStyle(p).overflowX !== 'visible') return true;
+      }
+      return false;
+    };
+
+    const culprits = Array.from(document.querySelectorAll('body *'))
+      .map((el) => ({ el, rect: el.getBoundingClientRect() }))
+      .filter(({ el, rect }) => rect.width > 0 && rect.right > vw + 1 && !isContained(el))
+      .sort((a, b) => b.rect.right - a.rect.right)
+      .slice(0, 5)
+      .map(({ el, rect }) => {
+        const cls = (el.getAttribute('class') || '').split(/\s+/).slice(0, 4).join(' ');
+        const text = (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+        return `<${el.tagName.toLowerCase()} class="${cls}"> right ${Math.round(rect.right)}px, width ${Math.round(rect.width)}px — "${text}"`;
+      });
+
+    return { overflow, culprits };
+  }, viewportWidth);
+}
+
+test.describe('the page does not scroll sideways', () => {
+  /**
+   * What this exists for: a 340px label carrying `whitespace-nowrap`, sitting
+   * between two `flex-1` rules. It could not shrink, so on a narrow viewport it
+   * pushed the document wider than the window and the whole page slid sideways.
+   *
+   * It survived because it fit — on the machine it was looked at on. A 1440px
+   * screenshot says nothing about 320px, and the one width nobody opens is the
+   * width every phone uses.
+   */
+  for (const width of [320, 390, 768]) {
+    test(`no horizontal overflow at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+      await page.waitForLoadState('domcontentloaded');
+
+      // Measured twice: once while the header still shows its auth skeleton, and
+      // once after the real button has replaced it. They are different widths,
+      // and a page that slides sideways for half a second before settling is
+      // still a page that slid sideways.
+      const loading = await measureOverflow(page, width);
+      await page
+        .locator('header')
+        .getByRole('link', { name: /Get Free Access/i })
+        .waitFor({ state: 'visible', timeout: 20_000 });
+      const settled = await measureOverflow(page, width);
+
+      const worst = loading.overflow >= settled.overflow ? loading : settled;
+      const phase = worst === loading ? 'while the header was still loading' : 'once the header had settled';
+
+      expect(
+        worst.overflow,
+        `the page is ${worst.overflow}px wider than the ${width}px viewport ${phase}:\n${worst.culprits.join('\n')}`,
+      ).toBeLessThanOrEqual(1);
+    });
+  }
 });

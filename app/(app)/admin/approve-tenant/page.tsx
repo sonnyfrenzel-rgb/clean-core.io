@@ -99,20 +99,6 @@ function TenantApprovalContent() {
     fetchApplicant();
   }, [profile, profileLoading, uid, db]);
 
-  // Handle Automatic Actions
-  useEffect(() => {
-    if (status !== 'ready') return;
-
-    if (actionParam === 'reject') {
-      handleReject();
-    } else if (autoParam) {
-      const timer = setTimeout(() => {
-        handleApprove();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [status, actionParam, autoParam]);
-
   const handleApprove = async () => {
     if (!uid || !applicant) return;
     setStatus('processing');
@@ -182,6 +168,23 @@ function TenantApprovalContent() {
       setErrorMessage(err.message || 'Failed to decline tenant request.');
     }
   };
+
+  // Handle Automatic Actions — placed after the two handlers on purpose. It used
+  // to sit above them and call consts that were not yet initialised; that only
+  // works because an effect runs after its render, which is a coincidence, not a
+  // guarantee anybody wrote down.
+  useEffect(() => {
+    if (status !== 'ready') return;
+
+    if (actionParam === 'reject') {
+      handleReject();
+    } else if (autoParam) {
+      const timer = setTimeout(() => {
+        handleApprove();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [status, actionParam, autoParam]);
 
   if (profileLoading || status === 'loading') {
     return (

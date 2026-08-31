@@ -28,8 +28,14 @@ export default function EvidenceSweep({
   const [isComplete, setIsComplete] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
+  // The latest-callback ref is kept current in an effect, not during render.
+  // Writing a ref while rendering is the one thing refs are not for: under
+  // StrictMode the render runs twice and a discarded render would still have
+  // written into the ref the surviving one reads.
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   // Sort findings by line position for sequential reveal
   const sortedFindings = useMemo(

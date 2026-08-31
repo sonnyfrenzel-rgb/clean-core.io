@@ -3,36 +3,77 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
-**Stand 28.08.2026, Feierabend — nach v2.7.0 auf main.** Der Tag ging in zwei
-Strängen: vormittags die fünf Releases aus dem Umsetzungsplan (v2.5.4 bis v2.6.2),
-nachmittags die Oberfläche. Dazwischen ein Benchmark, bei dem drei Modelle
-dieselben 22 Screenshots bekamen wie ich — und zwei davon einen Rechenfehler
-fanden, den ich am selben Vormittag verursacht hatte.
+**Stand 31.08.2026 — nach v2.7.1.** Der Tag ging an das Lint-Gate und an das,
+was es durchgelassen hat. Die Regeln sind an, die Fehler auf null, 677 Warnungen
+sind mit `--max-warnings` festgenagelt. Sechs echte Defekte lagen darunter; einer
+davon war ein Knopf, dessen Wirkung nur behauptet war. Dazu der Seitenüberlauf —
+und der neue Guard fand zwei Ursachen mehr als die eine, die im Backlog stand.
 
-**Morgen zuerst:**
+**Als Nächstes:**
 
 | # | Punkt | Wer | Warum jetzt |
 |---|---|---|---|
-| 1 | **Resend-Webhook: erste Zustellzahlen ansehen** | **Felix** | seit gestern scharf; der erste Freitagsbericht mit echten Zahlen steht an |
-| 2 | **V9** — veröffentlichter Fallback-Signaturschlüssel | **Entscheidung Felix** | blockiert seit vier Releases |
-| 3 | Vier Tinten vereinheitlichen (siehe unten) | Entwicklung | die Köpfe ziehen an einem Strang, der Fließtext nicht |
-| 4 | Zustellstatus der 30 Community-Konten klären | gemeinsam | Vermutung zur geringen Nutzung steht weiter unbelegt |
+| 1 | **Zufriedenheitsumfrage** — versprochen zum **02.09.**, also übermorgen | **gemeinsam** | Termin steht, und die Frage „kam die Willkommensmail an?" gehört hinein |
+| 2 | **V9** — veröffentlichter Fallback-Signaturschlüssel | **Entscheidung Felix** | blockiert seit fünf Releases |
+| 3 | **Resend-Webhook: erste Zustellzahlen ansehen** | **Felix** | seit dem 28.08. scharf; jeder Tag ohne Blick kostet Daten |
+| 4 | Vier Tinten vereinheitlichen (siehe unten) | Entwicklung | die Köpfe ziehen an einem Strang, der Fließtext nicht |
 | 5 | Deutschsprachiger Cluster (S-05) | Entscheidung Felix | größte inhaltliche Lücke, DSAG-Zielgruppe |
 
 **Danach:**
 
 | Punkt | Wer | Dringlichkeit |
 |---|---|---|
-| eslint-Gate prüft weder TypeScript noch React-Hooks | Entwicklung | hoch — eigener Change |
 | ~30 ungeprüfte Findings aus GLM/GPT (Phase 1.3, 4, 5 des Plans) | gemeinsam | hoch |
-| `llms.txt` anlegen | Entwicklung | mittel |
+| 677 geparkte Lint-Warnungen abtragen (siehe unten) | Entwicklung | mittel |
 | N-02: BPMN- und Sandbox-Zeile auf `~` | **Entscheidung Felix** | mittel — Positionierung, keine Korrektur |
 | Runde-2-Vorschläge, die noch offen sind (siehe unten) | Entscheidung Felix | mittel |
-| `dev.` und `test.clean-core.io` lösen nicht auf | Felix (DNS) | mittel für die Doku |
+| `dev.` und `test.clean-core.io` lösen nicht auf | Felix (DNS/GCP) | niedrig — die Doku nennt jetzt die run.app-Adressen |
 | V15, V16, V18 aus dem Grok-Befund | Entwicklung | mittel |
 | Die drei Tenant-Mails auf fluide Tabellen umbauen | Entwicklung | mittel |
 | Mitte September: Befund v3 / Reindexierung messen | gemeinsam | Termin |
 | Review-Tooling in den Rechenstand committen | Entwicklung | niedrig |
+
+**Erledigt am 31.08.:** eslint-Gate scharf (war: prüft weder TypeScript noch
+React-Hooks), Seitenüberlauf auf dem Telefon, Doku-Korrektur zu `dev.`/`test.`.
+**Schon vorher erledigt und im Backlog übersehen:** `llms.txt` steht seit dem
+26.08. unter `app/llms.txt/route.ts`.
+
+---
+
+## Die 677 geparkten Lint-Warnungen
+
+**Was ist:** Mit v2.7.1 prüft `npm run lint` erstmals TypeScript und React-Hooks.
+Fehler stehen auf null. Übrig bleiben zwei Hygieneklassen und zwei kleinere, alle
+als Warnung geparkt und mit `eslint . --max-warnings 677` festgenagelt:
+
+```
+@typescript-eslint/no-explicit-any     365
+@typescript-eslint/no-unused-vars      274
+react-hooks/set-state-in-effect         26
+react-hooks/exhaustive-deps             12
+```
+
+**Was zu tun ist:** `no-unused-vars` ist der billigste Anfang — tote Importe und
+Variablen, jede Entfernung für sich prüfbar. `set-state-in-effect` ist die
+inhaltlich interessanteste: 26 Stellen, an denen ein Effekt Zustand setzt und
+damit einen zweiten Render auslöst; ein Teil davon lässt sich beim Rendern
+ableiten statt im Effekt zu setzen.
+
+**Warum nicht sofort:** dieselbe Begründung wie beim Einschalten selbst. 639
+Ersetzungen in einem Release-Commit sind keine Änderung, die jemand liest.
+
+**Wichtig:** Die Zahl in `package.json` gehört mit gesenkt. Sie ist der einzige
+Grund, warum der Rückstau nicht wieder wachsen kann.
+
+**Dringlichkeit:** mittel.
+
+---
+
+**Stand 28.08.2026 — v2.7.0.** Der Tag ging in zwei Strängen: vormittags die
+fünf Releases aus dem Umsetzungsplan (v2.5.4 bis v2.6.2), nachmittags die
+Oberfläche. Dazwischen ein Benchmark, bei dem drei Modelle dieselben 22
+Screenshots bekamen wie ich — und zwei davon einen Rechenfehler fanden, den ich
+am selben Vormittag verursacht hatte.
 
 ---
 
@@ -134,16 +175,18 @@ haben — erfundene Zahlen in Artefakten, die beim Kunden landen. Wenn davon auc
 die Hälfte hält, ist die Liste in `tests/no-fabricated-figures.spec.ts` deutlich zu
 kurz.
 
-### Der eslint-Gate
+### ~~Der eslint-Gate~~ — erledigt am 31.08.2026 (v2.7.1)
 
-`eslint.config.mjs` importiert `@typescript-eslint` und `eslint-plugin-react-hooks`
-und aktiviert **keins von beiden** — der `rules`-Block spreizt nur die Next-Regeln.
-`npm run lint` ist ein Pflichtschritt in der Deploy-Pipeline und prüft damit weder
-Typen noch Hooks. So kamen zwei Rules-of-Hooks-Verstöße durch ein grünes Gate.
+`eslint.config.mjs` importierte `@typescript-eslint` und `eslint-plugin-react-hooks`
+und aktivierte **keins von beiden**. Jetzt beide. 706 Probleme kamen zum Vorschein,
+Fehler stehen auf null, 677 Warnungen sind mit `--max-warnings` festgenagelt —
+siehe „Die 677 geparkten Lint-Warnungen" oben.
 
-Bewusst nicht in v2.5.0 mitgenommen: das Einschalten der Regeln legt einen Rückstau
-frei, den man sehen und sortieren will, statt ihn in einen Release-Commit zu
-quetschen.
+Eine Korrektur zur Notiz vom 28.08.: die beiden Rules-of-Hooks-Verstöße liegen in
+`clean-core-video/`, einem eigenständigen Remotion-Projekt, das nichts ausliefert.
+Sie waren nie in der Anwendung. Was tatsächlich durch das grüne Gate ging, war
+anderes und schlimmer — ein Knopf ohne Wirkung, ein während des Renderns
+beschriebenes Ref, eine Kennzahl, die von der Renderzeit abhing.
 
 ### Was aus den Reviews methodisch zu lernen war
 
@@ -168,9 +211,11 @@ gekennzeichnet und verlinkt die Datei zum Nachprüfen, aber generiert ist er nic
 
 ### Kleinigkeiten mit Ansage
 
-- **Seiten-Überlauf:** `whitespace-nowrap` am Label „S/4HANA Sandbox Connection —
-  Security Profile" in `app/page.tsx`. 340px breit, bricht nicht um, schiebt die
-  Seite. Auf Windows passt es knapp, auf dem Linux-Runner nicht.
+- ~~**Seiten-Überlauf:**~~ **erledigt am 31.08.2026.** Das `whitespace-nowrap`-Label
+  war eine von drei Ursachen. Der Guard, der es prüfen sollte, fand die anderen
+  beiden: der Ladeplatzhalter des Anmeldeknopfs (fest 176px) und das CTA-Label
+  „Get Free Access or Login" passten bei 320px nicht neben den Schriftzug.
+  Beide sind jetzt unterhalb `sm` schmaler; ab `sm` ändert sich nichts.
 - **Tenant-Mails:** die drei verbliebenen Mails nutzen noch das `<div>`-Padding mit
   Media-Query. Mail-Clients strippen den `<style>`-Block; die zwei
   Registrierungsmails sind deshalb bereits auf fluide Tabellen umgebaut.

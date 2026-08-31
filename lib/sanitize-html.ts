@@ -15,11 +15,14 @@ let _purify: any = null;
 
 function getPurify() {
   if (_purify) return _purify;
-  // Lazy import so the bundle stays clean and SSR/CSR both work.
+  // Lazy import so the bundle stays clean and SSR/CSR both work. A static
+  // import would pull jsdom into the client chunk for a branch it never takes.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- deliberate, see above
   const createDOMPurify = require('dompurify');
   if (typeof window !== 'undefined') {
     _purify = createDOMPurify(window);
   } else {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- deliberate, see above
     const { JSDOM } = require('jsdom');
     _purify = createDOMPurify(new JSDOM('').window);
   }

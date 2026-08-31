@@ -294,6 +294,10 @@ CMD ["node", "srv/service.js"]`
     
     if (legacyScrollableHeight > 0 && modernScrollableHeight > 0) {
       const scrollPercentage = legacyEl.scrollTop / legacyScrollableHeight;
+      // Writing `scrollTop` on a DOM node held in a ref, from a scroll handler.
+      // The compiler rule cannot tell a DOM element apart from a value it is
+      // meant to keep immutable, and there is no other way to sync two panes.
+      // eslint-disable-next-line react-hooks/immutability
       modernEl.scrollTop = scrollPercentage * modernScrollableHeight;
     }
   };

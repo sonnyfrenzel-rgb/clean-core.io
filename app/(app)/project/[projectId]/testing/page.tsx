@@ -476,9 +476,11 @@ export default function TestingSandboxPage() {
         })
       });
 
-      // Force profile update trigger client-side
-      profile.s4TenantAccessRequested = true;
-      
+      // No local write here. The route sets `s4TenantAccessRequested` on the user
+      // document and `useUserProfile` is subscribed to it, so the button flips to
+      // "requested" when the write lands. The line that used to stand here mutated
+      // the object the hook had handed out — which re-renders nothing and claimed
+      // in its comment to do exactly that.
     } catch (err) {
       console.error("Failed to request tenant access:", err);
     } finally {

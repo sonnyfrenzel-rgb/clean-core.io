@@ -16,7 +16,7 @@ import { tableCount } from './sql-model';
  * Verification is per query. If it comes back, it comes back keyed to a query,
  * not to a run.
  */
-export interface ComplexJoinOptions {}
+export type ComplexJoinOptions = Record<string, never>;
 
 export function detectComplexJoinFindings(
   sources: { file: string; content: string }[],

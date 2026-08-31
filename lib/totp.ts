@@ -9,10 +9,24 @@
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
 /**
+ * Web Crypto, from whichever side of the wire this runs on.
+ *
+ * The server branch is a runtime `require` on purpose: a static `import` of
+ * node:crypto is followed by the bundler and lands in the client chunk even
+ * though only the else-branch would ever reach it. Three copies of this ternary
+ * used to sit inline; one function is one place to read the reason.
+ */
+function getCryptoObject(): Crypto {
+  if (typeof window !== 'undefined') return window.crypto;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- deliberate, see above
+  return require('crypto').webcrypto;
+}
+
+/**
  * Generates a random Base32 secret for authenticator apps.
  */
 export function generateSecret(length: number = 16): string {
-  const cryptoObj = typeof window !== 'undefined' ? window.crypto : require('crypto').webcrypto;
+  const cryptoObj = getCryptoObject();
   const randomValues = new Uint8Array(length);
   cryptoObj.getRandomValues(randomValues);
   
@@ -25,8 +39,13 @@ export function generateSecret(length: number = 16): string {
 
 /**
  * Converts a Base32 string to Uint8Array bytes.
+ *
+ * The buffer type is pinned to `ArrayBuffer` rather than the default
+ * `ArrayBufferLike`, because `subtle.importKey` will not take a view that might
+ * be backed by a `SharedArrayBuffer`. This never surfaced while `getCryptoObject`
+ * returned `any`: the whole call was unchecked.
  */
-export function base32ToBytes(base32: string): Uint8Array {
+export function base32ToBytes(base32: string): Uint8Array<ArrayBuffer> {
   const clean = base32.toUpperCase().replace(/=+$/, '');
   const bytes = new Uint8Array(Math.floor((clean.length * 5) / 8));
   let bits = 0;
@@ -63,7 +82,7 @@ export async function generateTOTP(secret: string, time: number = Date.now()): P
   view.setUint32(4, counter); // Low 32 bits
   const counterBytes = new Uint8Array(counterBuffer);
 
-  const cryptoObj = typeof window !== 'undefined' ? window.crypto : require('crypto').webcrypto;
+  const cryptoObj = getCryptoObject();
 
   // Import base32 secret bytes as an HMAC-SHA1 key
   const key = await cryptoObj.subtle.importKey(
@@ -121,7 +140,7 @@ export async function verifyTOTP(secret: string, code: string, windowSteps: numb
 export function generateBackupCodes(): string[] {
   const codes: string[] = [];
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Distinguishable characters
-  const cryptoObj = typeof window !== 'undefined' ? window.crypto : require('crypto').webcrypto;
+  const cryptoObj = getCryptoObject();
   
   for (let i = 0; i < 5; i++) {
     const randomVals = new Uint8Array(8);

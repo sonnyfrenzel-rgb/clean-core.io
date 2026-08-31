@@ -924,7 +924,11 @@ export default function Home() {
           <div className="mt-12 max-w-4xl mx-auto border border-dashed border-gray-200 rounded-3xl p-6 pt-4 relative">
             <div className="flex items-center justify-center gap-2 mb-5">
               <div className="h-px flex-1 bg-gray-200" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 whitespace-nowrap px-2">
+              {/* No `whitespace-nowrap`. The label is 340px wide and sat between
+                  two flex-1 rules, so on a narrow viewport it could not shrink and
+                  pushed the whole page sideways instead. It fits on one line
+                  wherever there is room and wraps, centred, where there is not. */}
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-2 text-center">
                 S/4HANA Sandbox Connection — Security Profile
               </span>
               <div className="h-px flex-1 bg-gray-200" />

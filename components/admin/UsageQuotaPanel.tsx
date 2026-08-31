@@ -223,22 +223,30 @@ export default function UsageQuotaPanel() {
     [rows, showTestAccounts],
   );
 
+  /**
+   * The seven-day cut-off is anchored to the moment the data arrived, not to the
+   * moment a render happens to run. `Date.now()` inside a `useMemo` is a hidden
+   * input the memo does not depend on: the same rows would count a different
+   * number of "active" people depending on when React last re-rendered them.
+   */
+  const activeSince = lastSync
+    ? lastSync.getTime() - 7 * 24 * 60 * 60 * 1000
+    : Number.POSITIVE_INFINITY;
+
   const kpis = useMemo(() => {
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     const metered = scope.filter((r) => !r.unmetered);
     return {
       consumed: metered.reduce((sum, r) => sum + r.used, 0),
       granted: metered.reduce((sum, r) => sum + r.limit, 0),
       objects: scope.reduce((sum, r) => sum + r.distinctObjects, 0),
-      active7d: scope.filter((r) => r.updatedAt && r.updatedAt.getTime() >= sevenDaysAgo).length,
+      active7d: scope.filter((r) => r.updatedAt && r.updatedAt.getTime() >= activeSince).length,
       atLimit: scope.filter((r) => r.atLimit).length,
       byok: scope.filter((r) => r.byok).length,
       total: scope.length,
     };
-  }, [scope]);
+  }, [scope, activeSince]);
 
   const visible = useMemo(() => {
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     const term = search.trim().toLowerCase();
 
     const filtered = scope.filter((r) => {
@@ -250,7 +258,7 @@ export default function UsageQuotaPanel() {
         case 'at-limit':
           return r.atLimit;
         case 'active':
-          return !!r.updatedAt && r.updatedAt.getTime() >= sevenDaysAgo;
+          return !!r.updatedAt && r.updatedAt.getTime() >= activeSince;
         case 'unused':
           return r.used === 0 && !r.unmetered;
         case 'byok':
@@ -267,7 +275,7 @@ export default function UsageQuotaPanel() {
       }
       return (b.updatedAt?.getTime() || 0) - (a.updatedAt?.getTime() || 0);
     });
-  }, [scope, search, filter, sortBy]);
+  }, [scope, search, filter, sortBy, activeSince]);
 
   return (
     <div className="space-y-5 w-full">
