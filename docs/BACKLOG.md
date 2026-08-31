@@ -51,6 +51,50 @@ Befunden, ist damit gebaut; offen ist nur noch die Messung in der Search Console
 **Neu gefunden beim Nachprüfen von V9:** `clean-core-test` ist ein drei Monate
 alter, öffentlich erreichbarer Build. Siehe direkt unten.
 
+**Neu gefunden am 31.08.:** der Wochenbericht vom 28.08. ist nie verschickt worden.
+Ursache gefunden und behoben — aber der Fix wirkt erst auf `main`, siehe unten.
+
+---
+
+## Der Wochenbericht vom 28.08. ist nie verschickt worden
+
+**Was war** (nachgelesen in den Logs, nicht vermutet):
+
+| Lauf | geplant | GitHub startete | Berliner Zeit | Entscheidung |
+|---|---|---|---|---|
+| `33178078590` | 10:00 UTC | **14:01 UTC** | 16:01 CEST | „not 12:00 … skipping" |
+| `33182942533` | 11:00 UTC | **14:59 UTC** | 16:59 CEST | „not 12:00 … skipping" |
+
+GitHub hat den Cron **vier Stunden zu spät** gestartet. Der Uhrzeit-Wächter, der
+entscheiden soll, welcher der zwei DST-Slots der richtige ist, fragte „ist es
+jetzt 12 Uhr in Berlin?" — und beantwortete damit versehentlich auch „hat GitHub
+pünktlich gestartet?". Beide Läufe verwarfen sich selbst, **beide meldeten
+`success`**, und nichts hat Alarm geschlagen.
+
+Am 21.08. lief es nur deshalb, weil die Verzögerung acht Minuten betrug. GitHub
+sagt in seiner eigenen Dokumentation zu, geplante Läufe **nicht** pünktlich zu
+starten; die Prüfung hat sich also von Anfang an auf etwas verlassen, das
+ausdrücklich nicht zugesichert ist.
+
+**Behoben am 31.08.:** die Entscheidung hängt jetzt an `github.event.schedule` —
+dem auslösenden Cron-Ausdruck, der sich nicht verschiebt — und die Jahreszeit am
+UTC-Offset, der ebenso stabil ist. Damit wählt der Job den richtigen Slot, egal wie
+spät GitHub dran ist, und der Bericht geht verspätet raus statt gar nicht. Der
+28.08.-Bericht wurde am 31.08. manuell nachgeholt
+(`sent 5e9c4b88-306a-4827-9d93-64a6b25c2310`).
+
+**Noch offen — und das ist der Haken:** geplante Workflows laufen bei GitHub
+**immer vom Default-Branch**. Solange der Fix nur auf `dev` liegt, passiert am
+Freitag wieder dasselbe. Er muss nach `main`.
+
+**Was der Fix nicht abdeckt:** GitHub kann geplante Läufe unter Last auch komplett
+verwerfen. Dann gibt es keinen Lauf, der sich melden könnte. Ein Wächter dafür
+bräuchte Zustand außerhalb von Actions — etwa ein Feld „zuletzt versendet" in
+Firestore, das die Admin-Konsole rot färbt, wenn es älter als acht Tage ist. Klein,
+aber ein eigener Punkt.
+
+**Dringlichkeit:** hoch, bis der Fix auf `main` ist.
+
 ---
 
 ## `clean-core-test` läuft seit Juli und niemand hat es gemerkt

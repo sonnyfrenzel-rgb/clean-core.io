@@ -4,9 +4,20 @@ name: Weekly Usage Report
 #
 # GitHub cron only understands UTC, and Berlin is UTC+2 in summer and UTC+1 in
 # winter — a single UTC time would drift by an hour twice a year. So the job is
-# scheduled at both candidate hours and the first step checks what the actual local
-# time is, exiting quietly on the run that is an hour off. That keeps the report
-# landing at 12:00 local all year without anyone remembering to adjust a cron line.
+# scheduled at both candidate hours and one of the two is discarded.
+#
+# WHICH one is discarded is decided by the cron that fired the run, not by the
+# clock at the moment it starts. The first version asked "is it 12:00 in Berlin
+# right now?", which answers two questions at once: which DST slot am I, and did
+# GitHub start me on time. On 2026-08-28 GitHub ran the schedule **four hours
+# late** — 14:01 and 14:59 UTC instead of 10:00 and 11:00. Both runs read 16:xx
+# Berlin, both concluded they were the wrong slot, both skipped, and both reported
+# success. The weekly report simply never went out and nothing said so.
+#
+# `github.event.schedule` carries the cron expression verbatim and does not move
+# when the run is late; the UTC offset tells us the season. Together they pick the
+# right slot however far behind GitHub is running, and the report goes out late
+# rather than not at all.
 on:
   schedule:
     - cron: '0 10 * * 5' # 12:00 Berlin during CEST (summer)
@@ -26,18 +37,34 @@ jobs:
   report:
     runs-on: ubuntu-latest
     steps:
-      - name: Check this is really 12:00 in Berlin
+      - name: Pick the slot that matches the season
         id: clock
+        env:
+          # The cron that fired this run, verbatim from the schedule above. Not
+          # user input, but passed as an environment variable rather than
+          # interpolated into the script, for the same reason as RECIPIENT below.
+          FIRED_BY: ${{ github.event.schedule }}
+          EVENT: ${{ github.event_name }}
         run: |
-          HOUR=$(TZ=Europe/Berlin date +%H)
           echo "Berlin local time: $(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "manual run — proceeding regardless of the clock"
+
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "manual run — proceeding"
             echo "proceed=true" >> "$GITHUB_OUTPUT"
-          elif [ "$HOUR" = "12" ]; then
+            exit 0
+          fi
+
+          # +0200 in summer (CEST) → 10:00 UTC is noon; +0100 in winter (CET) →
+          # 11:00 UTC is. The offset is a property of the date, so it survives a
+          # late start; the wall-clock hour does not.
+          OFFSET=$(TZ=Europe/Berlin date +%z)
+          if [ "$OFFSET" = "+0200" ]; then WANTED='0 10 * * 5'; else WANTED='0 11 * * 5'; fi
+          echo "offset ${OFFSET} → the noon slot today is '${WANTED}'; this run was fired by '${FIRED_BY}'"
+
+          if [ "$FIRED_BY" = "$WANTED" ]; then
             echo "proceed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "not 12:00 in Berlin (it is ${HOUR}:00) — this is the other DST slot, skipping"
+            echo "this is the other DST slot — skipping, the sibling run sends the report"
             echo "proceed=false" >> "$GITHUB_OUTPUT"
           fi
 
