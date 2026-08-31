@@ -20,10 +20,14 @@
  * Nothing on the list is invented to make the survey look generous, and nothing
  * already shipped is offered as if it were new.
  *
- * WHAT THE READER IS NOT TOLD. The mail does not open by explaining how few people
- * have used the platform. That is a fact about the operator, not about the reader,
- * and putting it in front of someone whose engagement you are asking for buys
- * nothing. The questions still measure it exactly as well.
+ * WHERE THE UNCOMFORTABLE FACT SITS. That a number of accounts have never run an
+ * analysis is in the mail — but two thirds of the way down, next to a link and a
+ * time, not in the opening paragraph as a confession. Opening with "most of you
+ * have never used this" is a fact about the operator dressed as a fact about the
+ * reader, and it asks for engagement while explaining that engagement is rare.
+ * Placed where it is, the same sentence does work: it names the reader's likely
+ * situation, gives the real reason (starting looked like it needed preparation),
+ * and answers it with two minutes and one link rather than an argument.
  *
  * ONE TAP, AND WHAT THAT REALLY MEANS. There is no way to record an answer from
  * inside an email without the reader leaving it — mail clients do not run code,
@@ -111,8 +115,8 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     id: 'build_next',
     where: 'page',
     multi: true,
-    prompt: 'And which of these would you actually use?',
-    lead: 'Four things on the list that are not built yet. Pick as many as you would use — this is the vote that decides the order.',
+    prompt: 'Which of these should version 3.0 bring?',
+    lead: 'The four candidates for version 3.0. Pick as many as you would use — this is the vote that sets the order.',
     options: [
       {
         id: 'german',
@@ -164,7 +168,7 @@ export const MAIL_QUESTION = SURVEY_QUESTIONS.find((q) => q.where === 'mail')!;
 /** Everything asked on the landing page, in order. */
 export const PAGE_QUESTIONS = SURVEY_QUESTIONS.filter((q) => q.where === 'page');
 
-export const SURVEY_SUBJECT = 'One question — and a vote on what gets built next';
+export const SURVEY_SUBJECT = 'On the way to v3.0 — your vote, and a two-minute first run';
 
 /** Free-text prompt on the landing page. Optional, and never required to submit. */
 export const SURVEY_FREETEXT_PROMPT =

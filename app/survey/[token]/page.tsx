@@ -124,8 +124,8 @@ export default async function SurveyPage({
         Thank you — that is recorded
       </h1>
       <p className="text-gray-600 leading-relaxed mb-8">
-        {PAGE_QUESTIONS.length} more questions, one tap each — including the vote on what gets
-        built next. Nothing here is submitted at the end and none of it is required.
+        {PAGE_QUESTIONS.length} more questions, one tap each — the middle one is the ballot for
+        version 3.0. Nothing here is submitted at the end and none of it is required.
       </p>
 
       <SurveyClient

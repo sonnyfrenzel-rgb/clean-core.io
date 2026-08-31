@@ -91,7 +91,7 @@ export function renderSurveyInviteEmail(input: SurveyInviteInput): string {
                   </table>
 
                   <h1 style="margin: 0 0 12px 0; font-size: 24px; line-height: 1.25; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">
-                    One question &mdash; and then a vote on what gets built next
+                    On the way to version 3.0 &mdash; and you get a vote
                   </h1>
 
                   <p style="margin: 0 0 14px 0; font-size: 15px; line-height: 1.6; color: #334155;">
@@ -99,15 +99,18 @@ export function renderSurveyInviteEmail(input: SurveyInviteInput): string {
                   </p>
 
                   <p style="margin: 0 0 14px 0; font-size: 15px; line-height: 1.6; color: #334155;">
-                    When the platform opened I said I would come back and ask how it
-                    was going. This is that, and it starts with one question.
+                    The last months went into the parts nobody asks for by name: the
+                    evidence chain behind every analysis, the object catalogue, GDPR
+                    erasure, and a long list of corrections. That groundwork is done.
+                    The next major version is a question of direction, and four
+                    candidates are on the table for it.
                   </p>
 
                   <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #334155;">
-                    I would rather build the next thing with you than guess at it. So
-                    the page after this one carries four things that are on the list
-                    and not built yet, and you can vote on them &mdash; a tap each, as
-                    many as you would use.
+                    I know what each of them costs to build. I do not know which one you
+                    would actually use &mdash; and guessing at that with you one email
+                    away would be a waste of both of us. So: one question here, and the
+                    ballot on the page after it.
                   </p>
 
                   <!-- The question -->
@@ -130,18 +133,56 @@ export function renderSurveyInviteEmail(input: SurveyInviteInput): string {
                   <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.6; color: #475569;">
                     The tap records it — nothing to fill in, nothing to log into. The
                     page that follows has ${followUps} more questions, one tap each,
-                    including the vote on what to build. Under a minute for all of it.
+                    and the middle one is the v3.0 ballot. Under a minute for all of it.
                   </p>
+
+                  <!-- The activation nudge. A number of accounts have never run an
+                       analysis, and the most common reason for that is not doubt about
+                       the tool — it is that starting looked like it needed preparation.
+                       So the answer to that is a link and a time, not an argument. -->
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; margin-bottom: 16px;">
+                    <tr>
+                      <td style="padding: 18px;">
+                        <p style="margin: 0 0 6px 0; font-size: 15px; font-weight: 800; color: #0f172a; line-height: 1.35;">
+                          If you have not run one yet, it is shorter than it looks
+                        </p>
+                        <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.6; color: #475569;">
+                          A number of accounts here have never started an analysis, and
+                          in the conversations I have had the reason is almost never
+                          doubt about the tool — it is that it looked like it needed
+                          preparation. It does not. There are ready-made ABAP examples
+                          on the dashboard: pick one, and you have a full evidence
+                          report, a RAP or CAP draft and a signed audit pack in about
+                          two minutes. No SAP connection, no code of your own.
+                        </p>
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td align="center" style="background: #0f172a; border-radius: 12px;">
+                              <a href="${APP_BASE_URL}/dashboard"
+                                 style="display: inline-block; padding: 12px 22px; font-family: ${FONT}; font-size: 14px; font-weight: 800; color: #ffffff; text-decoration: none;">
+                                Start with an example
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin: 12px 0 0 0; font-size: 13px; line-height: 1.6; color: #64748b;">
+                          Prefer to read first? The click-by-click walkthrough is at
+                          <a href="${APP_BASE_URL}/first-run" style="color: #047857; font-weight: 700;">clean-core.io/first-run</a>.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
 
                   <!-- Why it matters, in one panel -->
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 14px; margin-bottom: 16px;">
                     <tr>
                       <td style="padding: 16px;">
                         <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #14532d;">
-                          <strong>What happens with it.</strong> The answers go into one
-                          summary I read every morning, and the vote sets the order of
-                          the work. When the survey closes I will write back and tell
-                          you what won and when it lands.
+                          <strong>What happens with it.</strong> The vote sets the order
+                          of the v3.0 work — it is not a wish list I file away. When the
+                          survey closes I will write back with the count, what won, and
+                          when it lands. If something wins that I cannot build, I will
+                          say that too.
                         </p>
                       </td>
                     </tr>
@@ -190,12 +231,24 @@ export function renderSurveyInviteText(input: SurveyInviteInput): string {
   const lines: string[] = [];
   lines.push(name ? `Hi ${name},` : 'Hi,');
   lines.push('');
-  lines.push('When the platform opened I said I would come back and ask how it was');
-  lines.push('going. This is that, and it starts with one question.');
+  lines.push('The last months went into the parts nobody asks for by name: the evidence');
+  lines.push('chain behind every analysis, the object catalogue, GDPR erasure, and a long');
+  lines.push('list of corrections. That groundwork is done. The next major version is a');
+  lines.push('question of direction, and four candidates are on the table for it.');
   lines.push('');
-  lines.push('I would rather build the next thing with you than guess at it. The page');
-  lines.push('after this one carries four things that are on the list and not built');
-  lines.push('yet, and you can vote on them — a tap each, as many as you would use.');
+  lines.push('I know what each of them costs to build. I do not know which one you would');
+  lines.push('actually use. So: one question here, and the ballot on the page after it.');
+  lines.push('');
+  lines.push('AND IF YOU HAVE NOT RUN AN ANALYSIS YET');
+  lines.push('');
+  lines.push('A number of accounts here never have, and the reason is almost never doubt');
+  lines.push('about the tool — it is that starting looked like it needed preparation. It');
+  lines.push('does not. Pick a ready-made example on the dashboard and you have a full');
+  lines.push('evidence report, a RAP or CAP draft and a signed audit pack in about two');
+  lines.push('minutes. No SAP connection, no code of your own.');
+  lines.push('');
+  lines.push(`  Start with an example: ${APP_BASE_URL}/dashboard`);
+  lines.push(`  The click-by-click guide: ${APP_BASE_URL}/first-run`);
   lines.push('');
   lines.push(MAIL_QUESTION.prompt.toUpperCase());
   lines.push('');

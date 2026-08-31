@@ -10,6 +10,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.8.2] — 2026-08-31
+
+### Die Einladung sagt jetzt, worauf das hier zuläuft
+
+Drei Takte statt zwei, und der dritte fehlte:
+
+1. **Auf dem Weg zu 3.0.** Die letzten Monate gingen in die Teile, nach denen
+   niemand namentlich fragt — Beweiskette, Objektkatalog, DSGVO-Löschkaskade, eine
+   lange Liste Korrekturen. Diese Grundlage steht. Die nächste große Fassung ist
+   eine Frage der Richtung, nicht der Reparatur.
+2. **Der Vote entscheidet mit.** Vier Kandidaten, alle belegt und ungebaut. „Ich
+   weiß, was jeder davon kostet. Ich weiß nicht, welchen du benutzen würdest."
+3. **Und ein Schubs, es tatsächlich zu benutzen.** Der Teil, der bisher fehlte.
+
+### Wo die unangenehme Tatsache steht
+
+Dass etliche Konten nie eine Analyse gestartet haben, steht wieder in der Mail —
+aber **zwei Drittel unten, neben einem Link und einer Zeitangabe**, nicht im
+Eröffnungsabsatz als Geständnis.
+
+Der Unterschied ist nicht Kosmetik. „Die meisten von euch haben das nie benutzt"
+ist eine Tatsache über den Betreiber im Kostüm einer Tatsache über den Leser, und
+sie bittet um Mitwirkung, während sie erklärt, dass Mitwirkung selten ist. An der
+Stelle, an der sie jetzt steht, leistet derselbe Satz Arbeit: er benennt die
+wahrscheinliche Lage des Lesers, nennt den echten Grund — Anfangen sah nach
+Vorbereitung aus — und beantwortet ihn mit zwei Minuten und einem Knopf statt mit
+einem Argument.
+
+Konkret: ein Feld „If you have not run one yet, it is shorter than it looks", mit
+dem Weg über die fertigen ABAP-Beispiele auf dem Dashboard — vollständiger
+Evidenzbericht, RAP- oder CAP-Entwurf und signiertes Audit-Paket in rund zwei
+Minuten, ohne SAP-Verbindung und ohne eigenen Code. Dazu der Verweis auf
+`/first-run` für die, die lieber erst lesen.
+
+Der Betreff heißt jetzt **„On the way to v3.0 — your vote, and a two-minute first
+run"**: beide Gründe zu öffnen stehen darin, und keiner davon ist eine Bitte.
+
+Die Stimmzettelfrage heißt nicht mehr „welche davon würdest du nutzen", sondern
+**„Which of these should version 3.0 bring?"** — dieselbe Frage, aber mit der
+Konsequenz sichtbar daneben.
+
 ## [v2.8.1] — 2026-08-31
 
 ### Der Ton der Einladung, und eine Frage, die etwas zurückgibt
