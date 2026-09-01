@@ -316,6 +316,54 @@ created and never used now looks different from one whose first-run guide sat in
 a quarantine. `email.sent` deliberately produces no badge — that is the state
 the platform always had, and it is the one that meant nothing.
 
+**What makes it a delivered mail.** Sending goes through Resend, which is Amazon
+SES underneath in `eu-west-1`. Verified against `8.8.8.8` and against production
+on 2026-09-01; re-check it the same way rather than from memory, because every
+one of these is a DNS record somebody can move:
+
+| | |
+|---|---|
+| SPF `clean-core.io` | `v=spf1 include:amazonses.com ~all` |
+| DKIM | selector `resend._domainkey`, 1024-bit (Resend's default) |
+| DMARC | `p=reject; rua=mailto:dmarc@clean-core.io; fo=1` |
+| Return-Path | `send.clean-core.io`, own SPF + MX `feedback-smtp.eu-west-1.amazonses.com` → SPF alignment under relaxed DMARC |
+| Inbound MX | `smtpin.rzone.de` (Strato) |
+
+The `RESEND_API_KEY` is **send-only**: `GET /domains` answers `401
+restricted_api_key`, so the provider's own domain settings cannot be read from a
+script. DNS and a received message are the only evidence available, which matters
+for one setting in particular — if Resend's click tracking is ever enabled for the
+domain it rewrites every `href` to a tracking host, and nothing in this repository
+would notice. The survey's design depends on the opposite: the URL *is* the vote.
+
+**Bulk mail has rules transactional mail does not**, and `scripts/send-survey.ts`
+plus `lib/survey/invite-email.ts` are where they are met:
+
+- RFC 8058 — `List-Unsubscribe` *and* `List-Unsubscribe-Post`, with
+  `POST /api/unsubscribe` answering `200` even on a bad token. A non-2xx there is
+  read by the provider as a broken unsubscribe and costs more than the failed
+  opt-out.
+- A postal address in **both** parts. `lib/welcome-email.ts` always carried one and
+  the survey template did not, which is the wrong way round: the welcome mail is
+  transactional and the survey is bulk, and bulk is the category the rule is
+  written for.
+- The text part says what the HTML part says. One that quietly drops the
+  unsubscribe link is worse than the HTML part for exactly the reader most likely
+  to be on it, and a filter comparing the two sees a mismatch.
+- **Resend allows two requests a second.** A loop that awaits one send and starts
+  the next runs at four to eight from a CI runner. A `429` that is logged and
+  skipped is a recipient who is never contacted while the run still reports
+  success — so the send paces itself (700 ms), retries `429` and `5xx` three
+  times, and exits non-zero if anyone is left behind.
+
+**A GET must never record anything.** Corporate mail gateways pre-fetch every link
+in a message. `/api/survey/vote` answers `405` to GET for that reason, and the
+answer tapped in the mail is submitted by script from the landing page — a gateway
+does not run scripts, so it never gets past the page. The page does stamp
+`linkFetchedAt` on arrival, which is not a vote and is never counted as one: "the
+link was fetched and nobody ever answered" describes a mail that reached an
+organisation and stopped at its perimeter.
+
 ### 5.9 Never substitute a figure for a measurement
 
 `|| <number>` on a value the product measured turns "we do not know" into

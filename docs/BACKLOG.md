@@ -3,6 +3,47 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+**Stand 01.09.2026, Feierabend — v2.8.5, ein Release, auf `main` und deployt
+(`clean-core-00289-pf4`).** Ein einziger Strang: die Umfrage, die morgen früh um
+09:00 von selbst an 36 Leute geht.
+
+1. **Die Einladung bedankt sich jetzt zuerst** — und zwar so, dass der Dank für
+   alle 36 stimmt, auch für die, die nie eine Analyse gestartet haben.
+2. **Der einzige Knopf auf der Seite sah aus wie „Absenden"** und war ausgegraut.
+   Sekundärer Stil, in der Box, und ein Zustand, der sich erklärt.
+3. **Der Versand überholte Resend** — 429er wurden geloggt und übersprungen.
+   Gepaced, mit Wiederholung, und rot bei verlorenen Empfängern.
+4. **Zustellbarkeit letztmalig geprüft**, gegen `8.8.8.8` und Produktion. Zwei
+   Lücken geschlossen, eine Sache braucht Felix (siehe unten).
+
+**Der Tag in einer Zeile:** drei der vier Punkte sind keine Defekte — die API
+antwortete durchweg mit `200`. Sie sind Gestaltungsfehler und ein Anbieterlimit,
+und beides findet man nur, indem man die Sache benutzt oder nachrechnet, was sie
+unter Last tut.
+
+**Morgen früh, vor 09:00 — die letzten zwei Urteile stehen noch aus:**
+
+| # | Punkt | Wer | Warum jetzt |
+|---|---|---|---|
+| 1 | **Resend-Tracking prüfen** | **Felix** | 30 Sekunden, und es ist das Einzige an der Zustellbarkeit, das ich nicht sehen kann — siehe unten |
+| 2 | **„zwei Minuten" im Betreff** | **Felix** | seit gestern offen; der Betreff geht so raus, wie er ist |
+| 3 | **„Version 3.0" als Zusage** | **Felix** | seit gestern offen; danach ist es 36 Leuten versprochen |
+| 4 | Resend-Webhook: erste Zustellzahlen ansehen | **Felix** | seit 28.08. scharf; morgen kommen 36 Ereignisse dazu |
+
+**Danach, unverändert:** die ~30 ungeprüften GLM/GPT-Findings, G-06, die 677
+geparkten Lint-Warnungen, G-05, V15/V16/V18, die drei Tenant-Mails, Befund v4
+Mitte September. Neu dazu: **DKIM auf 2048 bit drehen**, aber erst *nach* dem
+09.09. — eine Schlüsselrotation am Vorabend eines Versands steht am nächsten
+Morgen womöglich mitten in der DNS-Verbreitung.
+
+**Erledigt am 01.09., ein Release:**
+
+| Release | Was |
+|---|---|
+| v2.8.5 | Dank zuerst; der Knopf, der wie „Absenden" aussah; Pacing gegen Resends Limit; Postanschrift und Abmeldung in beiden Mailteilen; sechs neue Guards |
+
+---
+
 **Stand 31.08.2026, Feierabend — v2.7.0 → v2.8.4, acht Releases, alles auf `main`
 und deployt.** Der Tag lief in vier Strängen:
 
@@ -74,11 +115,12 @@ Ursache gefunden und behoben; der Fix ist mit v2.8.0 auf `main` und damit scharf
 
 ## Die Aktivierungsumfrage — Stand, offene Urteile, und die Frist
 
-**Gebaut, deployt, viermal getestet, dreimal korrigiert** (v2.8.0 bis v2.8.4).
+**Gebaut, deployt, fünfmal getestet, viermal korrigiert** (v2.8.0 bis v2.8.5).
+Der Schlusstermin für die letzten zwei Urteile ist **morgen 09:00**.
 
-### ⚠️ Sie feuert am Mittwoch von selbst
+### ⚠️ Sie feuert morgen früh von selbst
 
-`survey-send.yml` läuft **Mi 09:00 Berliner Zeit** und schickt an alle 36 — ohne
+`survey-send.yml` läuft **Mittwoch, 02.09., 09:00 Berliner Zeit** und schickt an alle 36 — ohne
 weitere Freigabe. Dann wird das Kampagnendokument mit Öffnungs- und Schlussdatum
 geschrieben, pro Empfänger ein Sendevermerk angelegt, ab Donnerstag kommt täglich
 um 09:00 das Zwischenergebnis, und einen Tag nach Schluss (**09.09.**) der
@@ -87,6 +129,100 @@ Endstand.
 **Wenn sie bis dahin nicht freigegeben ist:** den Workflow *Activation Survey —
 send* in den GitHub Actions deaktivieren. Das ist der Ausschalter. Ein zweiter Lauf
 später verschickt nichts doppelt und verschiebt keine Frist.
+
+### Zustellbarkeit — letzter Stand, 01.09.
+
+Gegen `8.8.8.8` und gegen die Produktion nachgesehen, nicht aus dem Gedächtnis:
+
+| Prüfung | Stand |
+|---|---|
+| SPF `clean-core.io` | `v=spf1 include:amazonses.com ~all` |
+| DKIM `resend._domainkey` | veröffentlicht, 1024 bit |
+| DMARC | `p=reject; rua=mailto:dmarc@clean-core.io; fo=1` |
+| Return-Path `send.clean-core.io` | eigener SPF + `feedback-smtp.eu-west-1.amazonses.com` → SPF-Ausrichtung |
+| `List-Unsubscribe` + One-Click | gesetzt; `POST /api/unsubscribe` antwortet live mit `200` |
+| Textteil | vorhanden |
+| Bilder, Anhänge, Zählpixel | keine |
+| Links | ausschließlich `clean-core.io` |
+| `GET /api/survey/vote` | `405` — ein Mail-Gateway kann nicht abstimmen |
+
+Zwei Lücken geschlossen: Die Einladung nannte **keine Postanschrift** (die
+Willkommensmail trägt sie seit dem ersten Versand — herum verkehrt, denn Massenpost
+ist die Kategorie, für die die Regel geschrieben ist), und der **Textteil ließ den
+Abmeldelink weg**, ausgerechnet für den Leser, der ihn am ehesten sieht.
+
+#### ⚠️ Das Einzige, was ich nicht prüfen kann
+
+**Ob Resends Klick-Tracking für die Domain an ist.** Der `RESEND_API_KEY` in
+`.env.local` ist send-only; `GET /domains` antwortet `401 restricted_api_key`. DNS
+und die empfangene Nachricht sind die einzigen Belege, die von hier aus zu haben
+sind.
+
+Ist es an, schreibt Resend **jeden** `href` auf einen Tracking-Host um. Das ist
+eine fremde Weiterleitungsdomain in einer Mail von einer jungen Domain — und es
+bricht das Prinzip, auf dem die Umfrage gebaut ist: die URL *ist* die Stimme.
+
+**Prüfung, 30 Sekunden:** in der Testmail über einen Antwort-Button fahren. Die
+Adresse muss mit `https://clean-core.io/survey/` beginnen. Tut sie es nicht:
+Dashboard → Domains → clean-core.io → Tracking aus.
+
+### Was am 01.09. korrigiert wurde (v2.8.5)
+
+**Die Einladung begann mit „vier Kandidaten stehen zur Wahl".** Sachlich richtig,
+und für eine Mail, die um einen Gefallen bittet, eine kalte erste Zeile. Davor
+steht jetzt ein Dank — mit einer zweiten Hälfte, die keine Höflichkeit ist,
+sondern Genauigkeit: *„and if you have not got round to it yet, thank you for
+signing up anyway."* Ein Teil dieser Liste hat nie eine Analyse gestartet; das ist
+der Grund, aus dem die Umfrage existiert. Ein pauschales „danke, dass du es nutzt"
+wäre für genau diese Leser nachweislich falsch.
+
+**Der einzige Knopf auf der Seite sah aus wie „Absenden".** Jede Frage speichert
+beim Antippen. Nur das Freitextfeld kann das nicht — Getipptes muss absichtlich
+abgeschickt werden —, also hat es einen Knopf. Der trug den dunklen Primärstil des
+Produkts, stand am Fuß eines Fragebogens und war ausgegraut, solange nichts
+getippt war. Wer alles beantwortet hatte, sah einen toten Absendeknopf und schloss
+daraus, dass nichts angekommen ist.
+
+Drei Änderungen, jede mit einer Aufgabe: **sekundärer Stil** statt Primärstil, der
+Knopf sitzt **in der Box** samt Zeile *„Everything above is already saved — this
+box is the only thing on the page with a button"*, und der **ausgegraute Zustand
+schweigt nicht mehr** — daneben steht immer eine von vier Wahrheiten. Die
+Bedingung ist ebenfalls ehrlicher: aktiv, wenn im Feld etwas steht, das der Server
+nicht hat (`comment !== sentComment`), statt bei „Feld nicht leer".
+
+**Die Seite behauptete etwas über Leser, die nichts angetippt hatten.** „Your
+answer is saved" stimmt nur für den, der in der Mail eine Antwortfläche getroffen
+hat. Wer den nackten Link öffnet, bekam einen ersten Satz über sich selbst, der
+nicht stattgefunden hat.
+
+**Der Versand überholte Resend.** Zwei Anfragen pro Sekunde sind erlaubt; die
+Schleife wartete eine Antwort ab und startete sofort die nächste, was von einem
+CI-Runner vier bis acht sind. Ein `429` wurde als `FAILED` geloggt und
+übersprungen — die Person wird nie gefragt, der Lauf bleibt grün, und die Umfrage
+schließt vor dem nächsten geplanten Versand. Jetzt: **700 ms Pause**, **drei
+Versuche** bei `429`/`5xx`, und **`exit 1`**, sobald jemand übrig bleibt. Kosten
+bei 36 Empfängern: 25 Sekunden.
+
+**Derselbe Fehlertyp wie die `localhost`-Links von gestern** — laut in der
+Wirkung, still im Protokoll.
+
+### Was am 01.09. nachgemessen ist
+
+| Prüfung | Ergebnis |
+|---|---|
+| `tests/survey-guard.spec.ts` | 28 grün, davon sechs neu |
+| Produktionsbuild lokal | grün, nur Altwarnungen |
+| Pipeline auf `main` | security / validate / deploy alle grün |
+| Deployte Seite gegen echtes Token | neue Fassung wird ausgeliefert, alte Texte weg |
+| Fünfte Testmail | `99f0fe9f-761a-4551-8128-738054a02530` |
+| Trockenlauf | **36 Empfänger**, `alreadySent: 0` — Mittwoch beginnt bei null |
+
+**In der fünften Testmail steht „Open until 8 September".** Sie wurde am 01.09.
+erzeugt, die Frist ist Versanddatum + 7 Tage. Morgen steht dort der 09.09. Kein
+Fehler.
+
+**Zwei von Felix' eigenen Konten sind unter den 36** (`sonny.frenzel@gmail.com`
+und `@googlemail.com`). Der Nenner im Zwischenergebnis zählt sie mit.
 
 ### Zwei Urteile, die noch fehlen
 
@@ -100,7 +236,7 @@ später verschickt nichts doppelt und verschiebt keine Frist.
    Kandidaten sind belegt und kostenbar — aber es ist ein Versprechen. Falls zu
    früh: auf „die nächste größere Fassung" umformulieren, eine Zeile.
 
-### Was nachgemessen ist
+### Was am 31.08. nachgemessen ist
 
 | Prüfung | Ergebnis |
 |---|---|
