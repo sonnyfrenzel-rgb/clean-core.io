@@ -170,7 +170,16 @@ export const PAGE_QUESTIONS = SURVEY_QUESTIONS.filter((q) => q.where === 'page')
 
 export const SURVEY_SUBJECT = 'On the way to v3.0 — your vote, and a two-minute first run';
 
-/** Free-text prompt on the landing page. Optional, and never required to submit. */
-export const SURVEY_FREETEXT_PROMPT =
-  'Something that is not on the list? Optional, and it comes straight to me.';
+/**
+ * Free-text prompt on the landing page. Optional, and never required to submit.
+ *
+ * The lead is not decoration. This box is the only control on the page with a
+ * button, and a button at the foot of a questionnaire is read as the thing that
+ * submits the questionnaire — so when it sits there greyed out, a reader who
+ * has answered everything concludes their answers went nowhere. The line has to
+ * say what the button is for before the reader reaches it.
+ */
+export const SURVEY_FREETEXT_PROMPT = 'Anything else you want to tell me?';
+export const SURVEY_FREETEXT_LEAD =
+  'Optional, and it comes straight to me. Everything above is already saved — this box is the only thing on the page with a button.';
 export const SURVEY_FREETEXT_MAX = 2000;

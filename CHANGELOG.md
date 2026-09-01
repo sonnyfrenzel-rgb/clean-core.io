@@ -10,6 +10,120 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.8.5] — 2026-09-01
+
+### Die Umfrage, einen Tag vor dem Versand
+
+Vier Änderungen, und keine davon ist ein Defekt. Drei sind Gestaltungsfehler, die
+erst auffallen, wenn ein Mensch die Sache benutzt, und eine ist eine Grenze beim
+Anbieter, die niemand gesehen hätte, weil sie lautlos Empfänger verschluckt.
+
+**Die Einladung bedankt sich jetzt zuerst.** Sie begann mit „vier Kandidaten
+stehen zur Wahl" — sachlich richtig und für eine Mail, die um einen Gefallen
+bittet, eine kalte erste Zeile. Davor steht jetzt ein Dank, und zwar einer, der
+für alle 36 Empfänger stimmt: *„Thank you for using Clean-Core.io — and if you
+have not got round to it yet, thank you for signing up anyway."* Die zweite
+Hälfte ist nicht Höflichkeit, sondern Genauigkeit. Ein Teil dieser Liste hat noch
+nie eine Analyse gestartet — das ist der Grund, aus dem die Umfrage überhaupt
+existiert —, und ein pauschales „danke, dass du es nutzt" wäre für genau diese
+Leser nachweislich falsch.
+
+**Der einzige Knopf auf der Seite sah aus wie „Absenden".** Jede Frage speichert
+beim Antippen, ohne Knopf und ohne Seitenwechsel. Nur das Freitextfeld kann das
+nicht, denn Getipptes muss absichtlich abgeschickt werden — also hat es einen
+Knopf. Der trug den dunklen Primärstil des Produkts, stand am Fuß eines
+Fragebogens und war ausgegraut, solange nichts getippt war. Das ist die
+Bildsprache von „hier wird das Formular abgeschickt", und wer alles beantwortet
+hatte, sah einen toten Absendeknopf und schloss daraus, dass nichts angekommen
+ist.
+
+Drei Änderungen, jede mit einer Aufgabe:
+
+1. **Sekundärer Stil statt Primärstil.** Weiß mit Rahmen. Damit hört er auf, die
+   Schlusshandlung der Seite zu sein.
+2. **Der Knopf sitzt in der Box.** Textfeld und Knopf teilen sich eine Umrandung,
+   damit sichtbar ist, wozu er gehört. Beschriftung „Send this note" statt „Send
+   it", und darüber eine Zeile, die es ausspricht: *„Everything above is already
+   saved — this box is the only thing on the page with a button."*
+3. **Der ausgegraute Zustand schweigt nicht mehr.** Neben dem Knopf steht immer
+   eine der vier Wahrheiten: *nichts getippt, also nichts zu senden — deine
+   Antworten oben sind trotzdem gespeichert* · *noch nicht gesendet* · *gesendet,
+   danke* · *das ging schief*. Ein ausgegrauter Knopf, der sich erklärt, ist
+   nicht dasselbe Ding wie einer, der es nicht tut.
+
+Die Bedingung dahinter ist ebenfalls neu und ehrlicher: Der Knopf ist genau dann
+aktiv, wenn im Feld etwas steht, das noch nicht beim Server ist — `comment !==
+sentComment`. Vorher war er an „Feld nicht leer" gekoppelt, was nach dem
+Speichern weiterhin aktiv blieb und eine Korrektur nicht unterscheiden konnte.
+
+**Die Seite behauptete etwas über Leser, die nichts angetippt hatten.** „Your
+answer is saved" stimmt nur für den, der in der Mail eine Antwortfläche getroffen
+hat. Wer den nackten Link öffnet — eine Weiterleitung, ein zweiter Besuch, der
+Textteil — bekam einen ersten Satz über sich selbst, der nicht stattgefunden hat.
+Die Zeile richtet sich jetzt danach, ob `?q=…&a=…` überhaupt ankam.
+
+### Der Versand überholte Resend
+
+Resend erlaubt zwei Anfragen pro Sekunde. Die Schleife wartete eine Antwort ab und
+startete sofort die nächste, was von einem CI-Runner vier bis acht pro Sekunde
+sind. Ein Teil der 36 Nachrichten wäre mit `429` zurückgekommen — und die alte
+Schleife schrieb `FAILED` und ging weiter.
+
+Was das heißt: Diese Leute werden nie gefragt, der Workflow meldet trotzdem
+Erfolg, und die Umfrage schließt nach sieben Tagen, bevor der nächste geplante
+Lauf sie einsammeln könnte. Derselbe Fehlertyp wie die `localhost`-Links von
+gestern — laut in der Wirkung, still im Protokoll.
+
+- **700 ms Pause** zwischen den Nachrichten. Bei 36 Empfängern kostet das 25
+  Sekunden.
+- **Drei Versuche** mit wachsender Wartezeit bei `429` und `5xx`. Ein anderes
+  `4xx` ist die Nachricht selbst und wird nicht wiederholt.
+- **`process.exitCode = 1`**, sobald jemand übrig bleibt. Ein Lauf, bei dem
+  Empfänger fehlen, darf nicht grün sein.
+
+### Zustellbarkeit, letzte Prüfung
+
+Gegen `8.8.8.8` und gegen die Produktion nachgesehen, nicht aus dem Gedächtnis:
+
+| Prüfung | Stand |
+|---|---|
+| SPF `clean-core.io` | `v=spf1 include:amazonses.com ~all` |
+| DKIM `resend._domainkey` | veröffentlicht, 1024 bit |
+| DMARC | `p=reject; rua=mailto:dmarc@clean-core.io; fo=1` |
+| Return-Path `send.clean-core.io` | eigener SPF + `feedback-smtp.eu-west-1.amazonses.com` → SPF-Ausrichtung |
+| `List-Unsubscribe` + One-Click | gesetzt; `POST /api/unsubscribe` antwortet live mit `200` |
+| Textteil | vorhanden |
+| Bilder, Anhänge, Zählpixel | keine |
+| Links | ausschließlich `clean-core.io` |
+| `GET /api/survey/vote` | `405` — ein Mail-Gateway kann nicht abstimmen |
+
+Zwei Lücken standen noch offen, beide geschlossen:
+
+**Die Einladung nannte keine Postanschrift.** `lib/welcome-email.ts` trägt sie
+seit dem ersten Versand, diese Vorlage nicht — und das ist herum verkehrt: Die
+Willkommensmail ist transaktional, die Umfrage ist Massenpost, und für Massenpost
+ist die Regel geschrieben. Ein benannter Mensch unter einer echten Anschrift ist
+außerdem eines der wenigen Dinge, die ein Filter einer so jungen Domain
+gutschreiben kann.
+
+**Der Textteil ließ die Abmeldung weg.** Er ist damit schlechter gewesen als der
+HTML-Teil, ausgerechnet für den Leser, der ihn am ehesten sieht — und ein Filter,
+der beide Teile vergleicht, hat keinen Grund, die Abweichung freundlich zu lesen.
+Anschrift und Abmeldelink stehen jetzt in beiden Teilen.
+
+**Nicht angefasst, mit Absicht:** Der DKIM-Schlüssel hat 1024 bit; 2048 wäre
+etwas stärker, aber eine Schlüsselrotation am Vorabend eines Versands ist eine
+DNS-Änderung, die morgen um 09:00 mitten in der Verbreitung stehen könnte. Danach,
+nicht davor.
+
+### Sechs neue Guards
+
+`tests/survey-guard.spec.ts` (28 Prüfungen, alle grün): Anschrift in beiden
+Teilen, Abmeldelink in beiden Teilen, RFC-8058-Kopfzeilen im Versandskript, Pause
+zwischen den Nachrichten, Wiederholung statt Verwerfen bei `429`, roter Lauf bei
+verlorenen Empfängern — und für die Seite: Der Notizknopf trägt nicht
+`bg-gray-950`, und für jeden seiner Zustände existiert ein Text.
+
 ## [v2.8.4] — 2026-08-31
 
 ### Alle drei Testmails enthielten Links auf `localhost:3000`

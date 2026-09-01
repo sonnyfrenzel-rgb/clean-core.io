@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { logger, errMessage } from '@/lib/logger';
 import { verifySurveyToken } from '@/lib/survey/token';
-import { PAGE_QUESTIONS } from '@/lib/survey/definition';
+import { PAGE_QUESTIONS, SURVEY_QUESTIONS, getOption } from '@/lib/survey/definition';
 import { docId, type SurveyAnswer } from '@/lib/survey/store';
 import SurveyClient from './SurveyClient';
 
@@ -64,6 +64,8 @@ export default async function SurveyPage({
 }) {
   const { token } = await params;
   const { q, a } = await searchParams;
+
+  const answeredInMail = Boolean(q && a && getOption(q, a));
 
   const identity = verifySurveyToken(decodeURIComponent(token || ''));
   if (!identity) {
@@ -133,9 +135,18 @@ export default async function SurveyPage({
       <h1 className="text-3xl sm:text-4xl font-black text-gray-950 tracking-tight leading-tight mb-3">
         The ballot for version 3.0
       </h1>
+      {/*
+        "Your answer is saved" is only true for a reader who tapped an option in the
+        mail. Someone opening the bare link — a forward, a second visit, the plain-text
+        part — is told something about themselves that did not happen, which is a poor
+        first sentence from a page asking to be trusted with an answer.
+      */}
       <p className="text-gray-600 leading-relaxed mb-8">
-        Your answer is saved. {PAGE_QUESTIONS.length} questions left, one tap each — and none of
-        them required. Nothing is submitted at the end; every tap saves as you make it.
+        {answeredInMail
+          ? `Your answer is saved. ${PAGE_QUESTIONS.length} questions left, one tap each`
+          : `${SURVEY_QUESTIONS.length} questions, one tap each`}{' '}
+        — and none of them required. Nothing is submitted at the end; every tap saves as
+        you make it.
       </p>
 
       <SurveyClient

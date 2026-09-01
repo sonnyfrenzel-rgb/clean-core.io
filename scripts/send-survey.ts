@@ -35,6 +35,52 @@ const FROM = 'Felix from Clean-Core.io <info@clean-core.io>';
 const REPLY_TO = 'info@clean-core.io';
 const BASE_URL = 'https://clean-core.io';
 
+/**
+ * Resend allows two requests a second. This loop awaited one fetch and started
+ * the next, which from a CI runner is four to eight a second — so a share of the
+ * thirty-odd messages would come back 429, and the old loop logged FAILED and
+ * moved on. Those people simply never get asked, the workflow still goes green,
+ * and the survey closes in seven days, so the next scheduled run is too late to
+ * be a fix. A pause and three attempts cost twenty-five seconds.
+ */
+const PAUSE_MS = 700;
+const ATTEMPTS = 3;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** POSTs one message, retrying the failures that are worth retrying. */
+async function sendWithRetry(
+  key: string,
+  payload: unknown,
+): Promise<{ ok: true; id: string } | { ok: false; detail: string }> {
+  let detail = 'no attempt made';
+  for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const { id } = (await res.json()) as { id: string };
+        return { ok: true, id };
+      }
+      detail = `${res.status} ${await res.text()}`;
+      // 4xx other than 429 is the message being wrong, and sending it again
+      // will not make it right.
+      if (res.status !== 429 && res.status < 500) return { ok: false, detail };
+    } catch (error) {
+      detail = error instanceof Error ? error.message : String(error);
+    }
+    if (attempt < ATTEMPTS) {
+      const backoff = PAUSE_MS * 2 ** attempt;
+      console.log(`    attempt ${attempt} failed (${detail}) — retrying in ${backoff}ms`);
+      await sleep(backoff);
+    }
+  }
+  return { ok: false, detail };
+}
+
 const APPLY = process.argv.includes('--apply');
 function argValue(flag: string): string | undefined {
   const i = process.argv.indexOf(flag);
@@ -187,7 +233,12 @@ async function main() {
   }
 
   let sent = 0;
-  for (const r of recipients) {
+  let failed = 0;
+  for (const [index, r] of recipients.entries()) {
+    // Paced under Resend's two-a-second limit. Before the first message too:
+    // nothing is gained by racing to the front of the queue.
+    if (index > 0) await sleep(PAUSE_MS);
+
     const token = createSurveyToken(SURVEY_CAMPAIGN, r.uid, tokenExpiry);
     const unsubscribeUrl = `${BASE_URL}/api/unsubscribe?t=${encodeURIComponent(createUnsubscribeToken(r.email))}`;
 
@@ -199,28 +250,27 @@ async function main() {
       unsubscribeUrl,
     };
 
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: FROM,
-        to: [r.email],
-        reply_to: REPLY_TO,
-        subject: SURVEY_SUBJECT,
-        html: wrapEmailDocument(renderSurveyInviteEmail(input), 'Clean-Core.io survey'),
-        text: renderSurveyInviteText(input),
-        headers: {
-          'List-Unsubscribe': `<${unsubscribeUrl}>, <mailto:${REPLY_TO}?subject=Unsubscribe>`,
-          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-        },
-      }),
+    const result = await sendWithRetry(resendKey, {
+      from: FROM,
+      to: [r.email],
+      reply_to: REPLY_TO,
+      subject: SURVEY_SUBJECT,
+      html: wrapEmailDocument(renderSurveyInviteEmail(input), 'Clean-Core.io survey'),
+      text: renderSurveyInviteText(input),
+      headers: {
+        // RFC 8058. Gmail and Yahoo require both of these from a bulk sender, and
+        // `/api/unsubscribe` answers the POST they make.
+        'List-Unsubscribe': `<${unsubscribeUrl}>, <mailto:${REPLY_TO}?subject=Unsubscribe>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     });
 
-    if (!res.ok) {
-      console.error(`  FAILED ${r.email}: ${res.status} ${await res.text()}`);
+    if (!result.ok) {
+      failed++;
+      console.error(`  FAILED ${r.email}: ${result.detail}`);
       continue;
     }
-    const { id } = (await res.json()) as { id: string };
+    const { id } = result;
 
     // The send record is what makes a re-run resume instead of duplicate.
     if (!ONLY) {
@@ -238,7 +288,10 @@ async function main() {
   }
 
   console.log('');
-  console.log(`${sent} of ${recipients.length} sent.`);
+  console.log(`${sent} of ${recipients.length} sent, ${failed} failed.`);
+  // A red run. Every failure here is a person who does not get asked, and the
+  // survey closes before the next scheduled send would pick them up.
+  if (failed) process.exitCode = 1;
 }
 
 main().catch((error) => {

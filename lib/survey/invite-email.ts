@@ -37,6 +37,17 @@ export { SURVEY_SUBJECT };
 const FONT =
   "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif";
 
+/**
+ * The sender's postal address, in the mail itself.
+ *
+ * `lib/welcome-email.ts` has carried this since the first send and this template
+ * did not, which is the wrong way round: the welcome mail is transactional and
+ * the survey is bulk, and bulk is the category the rule is written for. A named
+ * person at a real address is also one of the few things a filter can weigh in a
+ * young domain's favour, and every serious sender does it.
+ */
+const POSTAL_IMPRINT = 'Felix Frenzel &middot; Hellerstra&szlig;e 9 &middot; 96047 Bamberg &middot; Germany';
+
 function optionUrl(token: string, questionId: string, optionId: string): string {
   const p = new URLSearchParams({ q: questionId, a: optionId });
   return `${APP_BASE_URL}/survey/${encodeURIComponent(token)}?${p.toString()}`;
@@ -91,10 +102,15 @@ export function renderSurveyInviteEmail(input: SurveyInviteInput): string {
                     Version 3.0 &mdash; you get a vote
                   </h1>
 
+                  <p style="margin: 0 0 14px 0; font-size: 15px; line-height: 1.6; color: #334155;">
+                    ${greeting} thank you for using Clean-Core.io &mdash; and if you have not
+                    got round to it yet, thank you for signing up anyway. Both count, and
+                    both are why there is a version 3.0 to plan at all.
+                  </p>
+
                   <p style="margin: 0 0 18px 0; font-size: 15px; line-height: 1.6; color: #334155;">
-                    ${greeting} four candidates are on the table for the next major
-                    version. I know what each of them costs to build. I do not know
-                    which one you would use.
+                    Four candidates are on the table for it. I know what each of them costs
+                    to build. I do not know which one you would use.
                   </p>
 
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; margin-bottom: 14px;">
@@ -160,7 +176,8 @@ export function renderSurveyInviteEmail(input: SurveyInviteInput): string {
                       unsubscribeUrl
                         ? ` &middot; <a href="${unsubscribeUrl}" style="color: #64748b;">Unsubscribe</a>`
                         : ''
-                    }
+                    }<br>
+                    Imprint: ${POSTAL_IMPRINT}
                   </div>
                 </td>
               </tr>
@@ -172,14 +189,25 @@ export function renderSurveyInviteEmail(input: SurveyInviteInput): string {
   return inner;
 }
 
-/** Plain-text alternative. Every option carries its full URL — that is the point. */
+/**
+ * Plain-text alternative. Every option carries its full URL — that is the point.
+ *
+ * It also carries the unsubscribe link and the postal address. A text part that
+ * quietly drops both is worse than the HTML one for exactly the reader most
+ * likely to be reading it, and a filter comparing the two parts against each
+ * other sees a mismatch it has no reason to read charitably.
+ */
 export function renderSurveyInviteText(input: SurveyInviteInput): string {
-  const { name, token, closesOn } = input;
+  const { name, token, closesOn, unsubscribeUrl } = input;
   const lines: string[] = [];
   lines.push(name ? `Hi ${name},` : 'Hi,');
   lines.push('');
-  lines.push('Four candidates are on the table for version 3.0. I know what each of');
-  lines.push('them costs to build. I do not know which one you would use.');
+  lines.push('Thank you for using Clean-Core.io — and if you have not got round to it');
+  lines.push('yet, thank you for signing up anyway. Both count, and both are why there');
+  lines.push('is a version 3.0 to plan at all.');
+  lines.push('');
+  lines.push('Four candidates are on the table for it. I know what each of them costs');
+  lines.push('to build. I do not know which one you would use.');
   lines.push('');
   lines.push(MAIL_QUESTION.prompt.toUpperCase());
   lines.push('');
@@ -200,5 +228,13 @@ export function renderSurveyInviteText(input: SurveyInviteInput): string {
   lines.push('');
   lines.push('Felix');
   lines.push('Clean-Core.io');
+  lines.push('');
+  lines.push('--');
+  lines.push('Felix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany');
+  lines.push(CONTACT_EMAIL);
+  if (unsubscribeUrl) {
+    lines.push('');
+    lines.push(`Unsubscribe: ${unsubscribeUrl}`);
+  }
   return lines.join('\n');
 }

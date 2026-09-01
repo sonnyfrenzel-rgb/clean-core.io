@@ -6,6 +6,7 @@ import {
   MAIL_QUESTION,
   PAGE_QUESTIONS,
   SURVEY_QUESTIONS,
+  SURVEY_FREETEXT_LEAD,
 } from '../lib/survey/definition';
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../lib/survey/invite-email';
 import { renderSurveyDigestEmail, renderSurveyDigestText } from '../lib/survey/digest-email';
@@ -262,6 +263,123 @@ test.describe('the vote offers real, unbuilt work', () => {
         `the ballot offers "${o.label}" but "${phrase}" appears in none of the backlog or concept documents`,
       ).toBe(true);
     }
+  });
+});
+
+test.describe('the invitation identifies its sender', () => {
+  /**
+   * The welcome mail has carried a postal address since its first send and this
+   * one did not, which is the wrong way round: the welcome mail is transactional
+   * and the survey is bulk, and bulk is the category the rule is written for.
+   *
+   * It is also one of the few things a filter can weigh in favour of a domain
+   * this young. A named person at a real address, an unsubscribe link that a
+   * provider can POST to, and a text part that says the same as the HTML part
+   * are cheap; a mail from a young domain that omits them is asking to be judged
+   * on nothing else.
+   */
+  const token = createSurveyToken(SURVEY_CAMPAIGN, 'uid-1', Date.now() + HOUR);
+  const input = {
+    name: 'Test',
+    recipient: 't@example.com',
+    token,
+    closesOn: '9 September 2026',
+    unsubscribeUrl: 'https://clean-core.io/api/unsubscribe?t=abc',
+  };
+
+  test('both parts carry the postal address', () => {
+    const html = renderSurveyInviteEmail(input);
+    const text = renderSurveyInviteText(input);
+    // The HTML escapes the sharp s; the text part does not.
+    expect(html, 'the HTML part has no imprint').toContain('96047 Bamberg');
+    expect(html).toContain('Hellerstra&szlig;e 9');
+    expect(text, 'the text part has no imprint').toContain('96047 Bamberg');
+  });
+
+  test('both parts carry the unsubscribe link', () => {
+    expect(renderSurveyInviteEmail(input)).toContain(input.unsubscribeUrl);
+    expect(
+      renderSurveyInviteText(input),
+      'the text part drops the unsubscribe link, which is worse for exactly the ' +
+        'reader most likely to be reading it',
+    ).toContain(input.unsubscribeUrl);
+  });
+
+  test('the send sets the headers Gmail and Yahoo require of a bulk sender', () => {
+    const fs = require('fs') as typeof import('fs');
+    const path = require('path') as typeof import('path');
+    const src = fs.readFileSync(
+      path.resolve(__dirname, '..', 'scripts/send-survey.ts'),
+      'utf8',
+    );
+    expect(src).toContain("'List-Unsubscribe'");
+    expect(src).toContain("'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'");
+  });
+});
+
+test.describe('the send does not outrun the provider', () => {
+  /**
+   * Resend allows two requests a second. The loop awaited one fetch and started
+   * the next, which from a CI runner is four to eight a second, and a 429 was
+   * logged and skipped: that person is never asked, the workflow still reports
+   * success, and the survey closes before the next scheduled run could catch it.
+   */
+  const fs = require('fs') as typeof import('fs');
+  const path = require('path') as typeof import('path');
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'scripts/send-survey.ts'), 'utf8');
+
+  test('there is a pause between messages', () => {
+    expect(src, 'no pacing between sends').toMatch(/await sleep\(PAUSE_MS\)/);
+  });
+
+  test('a rate-limited message is retried, not dropped', () => {
+    expect(src).toContain('429');
+    expect(src, 'no retry loop around the send').toMatch(/attempt <= ATTEMPTS/);
+  });
+
+  test('a failed recipient turns the run red', () => {
+    expect(
+      src,
+      'the script exits 0 with people unsent, so nobody finds out',
+    ).toMatch(/if \(failed\) process\.exitCode = 1/);
+  });
+});
+
+test.describe('the only button on the page is not mistaken for a submit', () => {
+  /**
+   * Every question on the landing page records on the tap. The free-text box
+   * cannot, so it has a button — and the first reader took that button for the
+   * thing that submits the survey, saw it greyed out because they had typed
+   * nothing, and concluded their answers had gone nowhere.
+   *
+   * Two properties keep that from coming back: the button must not wear the
+   * product's dark primary style, which is the shape of a form submit, and its
+   * disabled state must never be silent.
+   */
+  const fs = require('fs') as typeof import('fs');
+  const path = require('path') as typeof import('path');
+  const src = fs.readFileSync(
+    path.resolve(__dirname, '..', 'app/survey/[token]/SurveyClient.tsx'),
+    'utf8',
+  );
+
+  test('the note button is a secondary style', () => {
+    const button = src.slice(src.indexOf('onClick={saveComment}'));
+    const className = button.slice(button.indexOf('className='), button.indexOf('>'));
+    expect(
+      className,
+      'the note button wears the dark primary style, which reads as "submit the form"',
+    ).not.toContain('bg-gray-950');
+  });
+
+  test('every state of the button says what it is doing', () => {
+    for (const phrase of ['Not sent yet', 'nothing to send', 'Sent ', 'did not send']) {
+      expect(src, `no copy for the "${phrase}" state`).toContain(phrase);
+    }
+  });
+
+  test('the lead says the answers above are already saved', () => {
+    expect(SURVEY_FREETEXT_LEAD).toContain('already saved');
   });
 });
 

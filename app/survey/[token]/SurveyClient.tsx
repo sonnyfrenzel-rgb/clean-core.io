@@ -6,6 +6,7 @@ import {
   PAGE_QUESTIONS,
   SURVEY_QUESTIONS,
   SURVEY_FREETEXT_PROMPT,
+  SURVEY_FREETEXT_LEAD,
   SURVEY_FREETEXT_MAX,
   getOption,
 } from '@/lib/survey/definition';
@@ -62,6 +63,10 @@ export default function SurveyClient({
     tapped ? { [tapped.question]: 'saving' } : {},
   );
   const [comment, setComment] = useState(existingComment);
+  // What is actually on the server. `comment !== sentComment` is the only honest
+  // definition of "there is something here that has not been sent", and it is what
+  // both the button and the line beside it are driven from.
+  const [sentComment, setSentComment] = useState(existingComment);
   const [commentStatus, setCommentStatus] = useState<Status>(existingComment ? 'saved' : 'idle');
   const submittedInitial = useRef(false);
 
@@ -124,12 +129,14 @@ export default function SurveyClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, comment }),
       });
+      if (res.ok) setSentComment(comment);
       setCommentStatus(res.ok ? 'saved' : 'error');
     } catch {
       setCommentStatus('error');
     }
   }
 
+  const commentUnsent = comment.trim() !== sentComment.trim();
   const answeredCount = PAGE_QUESTIONS.filter((q) => chosen(answers[q.id]).length > 0).length;
   const initialLabel =
     initialQuestion && initialOption ? getOption(initialQuestion, initialOption)?.label : null;
@@ -245,45 +252,89 @@ export default function SurveyClient({
         </section>
       ))}
 
-      {/* Free text */}
+      {/*
+        Free text — the only control on this page with a button, and the reason
+        the page confused its first reader.
+
+        Every question above records on the tap. This box cannot: typing has to be
+        committed deliberately, so it needs a button. But a dark primary button at
+        the foot of a questionnaire is the universal shape of "submit the form",
+        and it was greyed out until something was typed — so a reader who had
+        answered everything saw a dead submit button and concluded, reasonably,
+        that nothing had been submitted.
+
+        Three changes, and each is doing one job. The button is a secondary style,
+        not the product's dark primary, so it stops reading as the page's terminal
+        action. It lives inside the box, so it visibly belongs to the box. And its
+        disabled state is never silent: the line beside it always says which of
+        "nothing to send", "not sent yet" or "sent" is true, because a greyed-out
+        control that explains itself is not the same object as one that does not.
+      */}
       <section>
-        <h2 className="text-lg sm:text-xl font-black text-gray-950 tracking-tight leading-snug">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-gray-500">
+            Optional
+          </span>
+        </div>
+        <h2 className="mt-2 text-lg sm:text-xl font-black text-gray-950 tracking-tight leading-snug">
           {SURVEY_FREETEXT_PROMPT}
         </h2>
-        <textarea
-          value={comment}
-          onChange={(e) => {
-            setComment(e.target.value.slice(0, SURVEY_FREETEXT_MAX));
-            setCommentStatus('idle');
-          }}
-          rows={4}
-          maxLength={SURVEY_FREETEXT_MAX}
-          placeholder="What got in the way, what you expected, what you would build instead…"
-          className="mt-3 w-full rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-950 leading-relaxed outline-none focus:border-green-600 resize-y"
-        />
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={saveComment}
-            disabled={commentStatus === 'saving' || comment.trim().length === 0}
-            className="inline-flex items-center gap-2 rounded-xl bg-gray-950 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300 cursor-pointer"
-          >
-            {commentStatus === 'saving' ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-            Send it
-          </button>
-          {commentStatus === 'saved' && (
-            <span className="text-xs font-bold text-green-700">Saved — thank you.</span>
-          )}
-          {commentStatus === 'error' && (
-            <span className="text-xs font-bold text-red-600">That did not save. Try again.</span>
-          )}
-          <span className="text-xs text-gray-400">
-            {comment.length}/{SURVEY_FREETEXT_MAX}
-          </span>
+        <p className="text-sm text-gray-500 mt-1 leading-relaxed">{SURVEY_FREETEXT_LEAD}</p>
+
+        <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
+          <label htmlFor="survey-comment" className="sr-only">
+            {SURVEY_FREETEXT_PROMPT}
+          </label>
+          <textarea
+            id="survey-comment"
+            value={comment}
+            onChange={(e) => {
+              setComment(e.target.value.slice(0, SURVEY_FREETEXT_MAX));
+              setCommentStatus('idle');
+            }}
+            rows={4}
+            maxLength={SURVEY_FREETEXT_MAX}
+            placeholder="What got in the way, what you expected, what you would build instead…"
+            className="w-full rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-950 leading-relaxed outline-none focus:border-green-600 resize-y"
+          />
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <button
+              type="button"
+              onClick={saveComment}
+              disabled={commentStatus === 'saving' || !commentUnsent}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-950 transition-colors hover:border-gray-400 hover:bg-gray-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-white disabled:text-gray-400 cursor-pointer"
+            >
+              {commentStatus === 'saving' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              Send this note
+            </button>
+
+            {/* Never a silent grey button. One of these is always true. */}
+            <span className="text-xs leading-relaxed">
+              {commentStatus === 'error' ? (
+                <span className="font-bold text-red-600">That did not send. Try again.</span>
+              ) : commentStatus === 'saving' ? (
+                <span className="text-gray-500">Sending…</span>
+              ) : commentUnsent ? (
+                <span className="font-bold text-gray-600">
+                  Not sent yet — this button sends the note, nothing else.
+                </span>
+              ) : sentComment ? (
+                <span className="font-bold text-green-700">Sent — thank you.</span>
+              ) : (
+                <span className="text-gray-500">
+                  Nothing typed, so nothing to send. Your answers above are saved either way.
+                </span>
+              )}
+            </span>
+
+            <span className="ml-auto text-xs text-gray-400">
+              {comment.length}/{SURVEY_FREETEXT_MAX}
+            </span>
+          </div>
         </div>
       </section>
 
