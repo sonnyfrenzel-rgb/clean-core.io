@@ -88,6 +88,14 @@ test.describe('catalog-backed A/B/C/D grading (SAP published data)', () => {
     // 22 are classicAPI AND notToBeReleased/deprecated, and 21 of those carry an
     // explicit successor (CL_HTTP_CLIENT -> IF_WEB_HTTP_CLIENT). Checking
     // classicAPI first published level B for all 22.
+    //
+    // Two independent code reviews in September 2026 read this order as a bug and
+    // filed it as a priority-zero defect — "SAP's own file says classicAPI and we
+    // publish D". Both had read the function body without the reasoning above it.
+    // An agent handed either review would have reordered these four lines and
+    // silently regraded the mail and HTTP classes that appear in a large share of
+    // real custom ABAP. If the rule is ever to change, the argument belongs here,
+    // not in a patch that looks like a one-line fix.
     expect(gradeFromSapStates({ releaseState: 'released', classificationState: 'classicAPI' }))
       .toMatchObject({ grade: 'A', state: 'released' });
     expect(gradeFromSapStates({ releaseState: 'notToBeReleased', classificationState: 'classicAPI' }))
@@ -102,6 +110,22 @@ test.describe('catalog-backed A/B/C/D grading (SAP published data)', () => {
   test('real conflicted objects resolve to the release state', () => {
     expect(gradeSapObject('CL_HTTP_CLIENT')).toMatchObject({ grade: 'D', state: 'notToBeReleased' });
     expect(gradeSapObject('IF_AUNIT_CONSTANTS')).toMatchObject({ grade: 'C', state: 'deprecated' });
+  });
+
+  test('both source views travel with the grade', () => {
+    // The letter is a merge of two files that answer different questions, and
+    // with only the letter on screen the merge is unreadable — which is how two
+    // reviews came to opposite conclusions about CL_BCS. The halves are reported
+    // so a reader can check the answer instead of reconstructing it.
+    expect(gradeSapObject('CL_BCS')).toMatchObject({
+      grade: 'D',
+      cloudView: 'not-usable',
+      classicView: 'classic-api',
+    });
+    expect(gradeFromSapStates({ releaseState: 'released' }))
+      .toMatchObject({ grade: 'A', cloudView: 'usable', classicView: 'unlisted' });
+    expect(gradeFromSapStates({ isSapObject: true }))
+      .toMatchObject({ cloudView: 'unlisted', classicView: 'unlisted' });
   });
 
   test('a reserved-namespace object SAP does not list is not claimed as SAP-internal', () => {

@@ -182,6 +182,25 @@ export interface GradedObject {
   provenance: GradeProvenance;
   /** verbatim SAP state behind the grade, when one applied (e.g. 'classicAPI') */
   state?: string;
+  /**
+   * The two questions the single letter above is the answer to, kept apart.
+   *
+   * SAP publishes two files that answer different things: `objectReleaseInfo`
+   * says whether an object may be used in ABAP Cloud at all, and
+   * `objectClassifications_SAP` says what a *classic* extension using it counts
+   * as. The grade merges them, and the merge rule is deliberate — but with only
+   * the letter on screen, the reasoning is invisible.
+   *
+   * That is not theoretical. Two independent reviews of this file in September
+   * 2026 both read `notToBeReleased → D` as a bug and filed it as a priority-zero
+   * defect, because neither view was visible next to the other and the rationale
+   * lived in a comment. Both were wrong. Surfacing the halves is how a reader
+   * checks the answer instead of guessing at it.
+   *
+   * Informational only: nothing derives a grade from these.
+   */
+  cloudView?: 'usable' | 'deprecated' | 'not-usable' | 'unlisted';
+  classicView?: 'classic-api' | 'not-recommended' | 'unlisted';
 }
 
 export interface SapObjectStates {
@@ -218,18 +237,31 @@ export function gradeFromSapStates(s: SapObjectStates): GradedObject {
   const release = (s.releaseState || '').toLowerCase();
   const classification = (s.classificationState || '').toLowerCase();
 
-  if (release === 'released') return { grade: 'A', provenance: 'catalog', state: 'released' };
-  if (release === 'nottobereleased') return { grade: 'D', provenance: 'catalog', state: 'notToBeReleased' };
+  // The two halves, reported alongside the verdict so a reader can see which
+  // file said what. Deriving nothing — the precedence below is unchanged.
+  const cloudView: GradedObject['cloudView'] =
+    release === 'released' ? 'usable'
+    : release === 'deprecated' ? 'deprecated'
+    : release === 'nottobereleased' ? 'not-usable'
+    : 'unlisted';
+  const classicView: GradedObject['classicView'] =
+    classification === 'classicapi' ? 'classic-api'
+    : classification === 'noapi' ? 'not-recommended'
+    : 'unlisted';
+  const views = { cloudView, classicView };
+
+  if (release === 'released') return { grade: 'A', provenance: 'catalog', state: 'released', ...views };
+  if (release === 'nottobereleased') return { grade: 'D', provenance: 'catalog', state: 'notToBeReleased', ...views };
   if (release === 'deprecated') {
-    return { grade: s.hasSuccessor ? 'C' : 'D', provenance: 'catalog', state: 'deprecated' };
+    return { grade: s.hasSuccessor ? 'C' : 'D', provenance: 'catalog', state: 'deprecated', ...views };
   }
-  if (classification === 'classicapi') return { grade: 'B', provenance: 'catalog', state: 'classicAPI' };
-  if (classification === 'noapi') return { grade: 'D', provenance: 'catalog', state: 'noAPI' };
+  if (classification === 'classicapi') return { grade: 'B', provenance: 'catalog', state: 'classicAPI', ...views };
+  if (classification === 'noapi') return { grade: 'D', provenance: 'catalog', state: 'noAPI', ...views };
 
   // Listed nowhere. For an SAP object that is the level C definition itself.
-  if (s.isSapObject) return { grade: 'C', provenance: 'catalog-residual' };
+  if (s.isSapObject) return { grade: 'C', provenance: 'catalog-residual', ...views };
 
-  return { grade: 'Unknown', provenance: 'heuristic' };
+  return { grade: 'Unknown', provenance: 'heuristic', ...views };
 }
 
 /** Customer objects (Z*, Y*) carry no SAP classification — SAP data cannot apply. */
