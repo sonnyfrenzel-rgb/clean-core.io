@@ -123,7 +123,7 @@ export function renderSurveyInviteEmail(input: SurveyInviteInput): string {
                           ${answerRows}
                         </table>
                         <p style="margin: 12px 0 0 0; font-size: 13px; line-height: 1.5; color: #64748b;">
-                          One tap records it. The ballot is on the page it opens.
+                          Opens the ballot with your answer already selected — one tap there records it.
                         </p>
                       </td>
                     </tr>
@@ -216,7 +216,7 @@ export function renderSurveyInviteText(input: SurveyInviteInput): string {
     lines.push(`    ${optionUrl(token, MAIL_QUESTION.id, o.id)}`);
     lines.push('');
   }
-  lines.push('One tap records it. The ballot is on the page it opens.');
+  lines.push('Opens the ballot with your answer already selected — one tap there records it.');
   lines.push('');
   lines.push('Not run one yet? A ready-made example gives you an evidence report, a RAP');
   lines.push('or CAP draft and a signed audit pack in a couple of minutes — no SAP');

@@ -118,6 +118,56 @@ test.describe('the questions do not answer themselves', () => {
   });
 });
 
+test.describe('the page does not answer for the reader', () => {
+  /**
+   * The first real send produced twelve answers inside the eighty-three seconds
+   * the job took to send thirty-seven invitations — four to twelve seconds
+   * between the link being fetched and the answer being written, every one of
+   * them on the question that was a link in the mail, none on the questions that
+   * live on the page.
+   *
+   * They were mail gateways. The page submitted the emailed answer from an effect
+   * on mount, and the defence written into the vote route — "a gateway does not
+   * run scripts, so it never gets past the page" — is not true of Defender Safe
+   * Links, Proofpoint or Mimecast, which open every link in a headless browser.
+   *
+   * The fix is that no answer is written without a real press. These two checks
+   * are what stops it being undone by someone restoring a convenience nobody
+   * remembers was the bug.
+   */
+  const fs = require('fs') as typeof import('fs');
+  const path = require('path') as typeof import('path');
+  const client = fs.readFileSync(
+    path.resolve(__dirname, '..', 'app/survey/[token]/SurveyClient.tsx'),
+    'utf8',
+  );
+
+  test('no effect can write an answer', () => {
+    expect(
+      client,
+      'SurveyClient has a useEffect again. An effect on this component is how the ' +
+        'survey became a census of mail gateways on 2 September — an answer must ' +
+        'come from a press, never from mounting.',
+    ).not.toContain('useEffect');
+  });
+
+  test('every press is checked for being a real one', () => {
+    expect(
+      client,
+      'the isTrusted gate is gone. A script-dispatched event reports isTrusted ' +
+        'false, and it is the only thing separating a reader from the headless ' +
+        'browser a mail gateway opens the link with.',
+    ).toContain('isTrusted');
+  });
+
+  test('the emailed answer is offered, not counted', () => {
+    // The count and the read-back come from the server's copy, so a preselection
+    // can never present itself as something already recorded.
+    expect(client).toContain('const [saved, setSaved]');
+    expect(client).toMatch(/doneCount\s*=\s*SURVEY_QUESTIONS\.filter\(\(q\) => chosen\(saved\[q\.id\]\)/);
+  });
+});
+
 test.describe('the arithmetic reports silence as silence', () => {
   test('no answers means zeroes, not percentages over nothing', () => {
     const s = summarise(SURVEY_CAMPAIGN, 30, []);

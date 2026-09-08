@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Check, Loader2, AlertCircle, Send } from 'lucide-react';
 import {
-  PAGE_QUESTIONS,
   SURVEY_QUESTIONS,
   SURVEY_FREETEXT_PROMPT,
   SURVEY_FREETEXT_LEAD,
@@ -15,21 +14,35 @@ import { chosen, type SurveyAnswer } from '@/lib/survey/store';
 /**
  * The survey, after the tap.
  *
- * The answer chosen in the email arrives as `initialQuestion`/`initialOption` and
- * is submitted from here, on mount, with `fetch`. That is the whole reason the
- * recording endpoint is a POST: a corporate mail gateway pre-fetches every link in
- * a message, and a GET that wrote a vote would have produced a survey of security
- * appliances. A gateway does not run scripts, so it never gets past the page.
+ * **Nothing on this page records itself.** Every answer needs a real press.
  *
- * From the reader's side it is still one tap — the request goes out while the page
- * is still painting, and the confirmation is already there when they look.
+ * It used to submit the emailed answer from an effect, on mount, and the reasoning
+ * was written down here: a POST rather than a GET, because "a gateway does not run
+ * scripts, so it never gets past the page". The first real send disproved that
+ * sentence. Of the thirty-seven invitations sent on 2 September at 07:12, twelve
+ * came back as recorded answers between 07:13:39 and 07:15:01 — inside the
+ * eighty-three seconds the job took to send them — each with four to twelve seconds
+ * between the page being fetched and the answer being written, and each answering
+ * only the question that was a link in the mail. Nobody reads a mail four seconds
+ * after it is sent. Microsoft Defender Safe Links, Proofpoint and Mimecast open
+ * every link in a headless browser and execute its JavaScript to look for phishing.
+ * The POST defended the half that was never under attack.
  *
- * Every following question works the same way: tap, recorded, no submit button and
- * no page change. The free-text box is the one exception, because typing has to be
- * committed deliberately.
+ * So the emailed answer is now carried in as a *preselection*: the option arrives
+ * highlighted, the reader confirms it with one press, and until they do it is not
+ * an answer and is not counted as one. `isTrusted` is checked on every press
+ * because a synthetic event dispatched by a script reports false — a rendered page
+ * is not a reader.
+ *
+ * The cost is one extra tap for someone who answered in the mail. The alternative
+ * is a result set that is a census of security appliances, which is what the first
+ * run produced.
+ *
+ * The free-text box keeps its button, because typing has to be committed
+ * deliberately.
  */
 
-type Status = 'idle' | 'saving' | 'saved' | 'error';
+type Status = 'idle' | 'unconfirmed' | 'saving' | 'saved' | 'error';
 
 export default function SurveyClient({
   token,
@@ -46,21 +59,28 @@ export default function SurveyClient({
   existingComment: string;
   closesOn: string;
 }) {
-  // The answer tapped in the email is known before the first paint, so it is
-  // seeded into state rather than set from an effect. That is not a workaround
-  // for the lint rule — it is what the rule is pointing at: the selection is
-  // already true when the page renders, and setting it afterwards would show the
-  // reader an unselected option for one frame and then move it.
-  const tapped =
-    initialQuestion && initialOption && getOption(initialQuestion, initialOption)
+  // What the reader chose in the email. A proposal, not an answer: it arrives
+  // highlighted so the press that confirms it is a single one, and it is dropped
+  // if the server already holds an answer to that question — a returning reader's
+  // own earlier answer outranks a link they tapped once.
+  const proposed =
+    initialQuestion &&
+    initialOption &&
+    getOption(initialQuestion, initialOption) &&
+    !(initialQuestion in existingAnswers)
       ? { question: initialQuestion, option: initialOption }
       : null;
 
+  // What is on screen, including the unconfirmed proposal.
   const [answers, setAnswers] = useState<Record<string, SurveyAnswer>>(
-    tapped ? { ...existingAnswers, [tapped.question]: tapped.option } : existingAnswers,
+    proposed ? { ...existingAnswers, [proposed.question]: proposed.option } : existingAnswers,
   );
+  // What the server actually holds. Everything counted, and everything read back
+  // at the foot of the page, comes from here — so the page can never tell someone
+  // an answer is recorded before it is.
+  const [saved, setSaved] = useState<Record<string, SurveyAnswer>>(existingAnswers);
   const [status, setStatus] = useState<Record<string, Status>>(
-    tapped ? { [tapped.question]: 'saving' } : {},
+    proposed ? { [proposed.question]: 'unconfirmed' } : {},
   );
   const [comment, setComment] = useState(existingComment);
   // What is actually on the server. `comment !== sentComment` is the only honest
@@ -68,7 +88,6 @@ export default function SurveyClient({
   // both the button and the line beside it are driven from.
   const [sentComment, setSentComment] = useState(existingComment);
   const [commentStatus, setCommentStatus] = useState<Status>(existingComment ? 'saved' : 'idle');
-  const submittedInitial = useRef(false);
 
   async function post(questionId: string, value: SurveyAnswer): Promise<boolean> {
     try {
@@ -87,12 +106,28 @@ export default function SurveyClient({
     }
   }
 
-  /** A tap on this page. An event handler, so setting state here is the normal path. */
+  /** A press on this page. An event handler, so setting state here is the normal path. */
   async function record(questionId: string, value: SurveyAnswer) {
     setStatus((s) => ({ ...s, [questionId]: 'saving' }));
     setAnswers((a) => ({ ...a, [questionId]: value }));
     const ok = await post(questionId, value);
+    if (ok) setSaved((s) => ({ ...s, [questionId]: value }));
     setStatus((s) => ({ ...s, [questionId]: ok ? 'saved' : 'error' }));
+  }
+
+  /**
+   * The gate every answer passes through.
+   *
+   * `isTrusted` is false for an event a script dispatched and true only for one the
+   * browser raised from a real pointer or key. It is the cheapest thing that
+   * separates a person from the headless browser a mail gateway opens the link
+   * with — and after 2 September it is the difference between an answer and a
+   * scan. Keyboard activation of a `<button>` raises a trusted click, so this
+   * costs nothing in accessibility.
+   */
+  function press(e: { isTrusted: boolean }, run: () => void) {
+    if (!e.isTrusted) return;
+    run();
   }
 
   /**
@@ -109,17 +144,8 @@ export default function SurveyClient({
     void record(questionId, next);
   }
 
-  // Only the network call is left in the effect, and the state it sets is set
-  // after an await. The ref guard is for StrictMode, which runs effects twice in
-  // development and this one writes to the database.
-  useEffect(() => {
-    if (submittedInitial.current || !tapped) return;
-    submittedInitial.current = true;
-    post(tapped.question, tapped.option).then((ok) => {
-      setStatus((s) => ({ ...s, [tapped.question]: ok ? 'saved' : 'error' }));
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialQuestion, initialOption]);
+  // There is deliberately no effect here that writes an answer. The one that used
+  // to sit at this spot is what the doc comment above is about.
 
   async function saveComment() {
     setCommentStatus('saving');
@@ -137,12 +163,10 @@ export default function SurveyClient({
   }
 
   const commentUnsent = comment.trim() !== sentComment.trim();
-  const answeredCount = PAGE_QUESTIONS.filter((q) => chosen(answers[q.id]).length > 0).length;
-  const initialLabel =
-    initialQuestion && initialOption ? getOption(initialQuestion, initialOption)?.label : null;
-
-  const totalQuestions = PAGE_QUESTIONS.length + (tapped ? 1 : 0);
-  const doneCount = answeredCount + (tapped ? 1 : 0);
+  // Counted from the server's copy, never from the selection on screen.
+  const doneCount = SURVEY_QUESTIONS.filter((q) => chosen(saved[q.id]).length > 0).length;
+  const totalQuestions = SURVEY_QUESTIONS.length;
+  const proposedLabel = proposed ? getOption(proposed.question, proposed.option)?.label : null;
 
   return (
     <div className="space-y-8">
@@ -157,19 +181,19 @@ export default function SurveyClient({
           <p className="text-sm font-black text-gray-950">
             {doneCount} of {totalQuestions} answered
           </p>
-          {tapped && (
+          {proposed && status[proposed.question] === 'unconfirmed' && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700">
+              <AlertCircle className="w-3.5 h-3.5" /> not recorded yet
+            </span>
+          )}
+          {proposed && status[proposed.question] === 'saving' && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> saving
+            </span>
+          )}
+          {proposed && status[proposed.question] === 'saved' && (
             <span className="inline-flex items-center gap-1.5 text-xs font-bold text-green-700">
-              {status[initialQuestion!] === 'saving' ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : status[initialQuestion!] === 'error' ? (
-                <span className="inline-flex items-center gap-1.5 text-red-600">
-                  <AlertCircle className="w-3.5 h-3.5" /> not saved
-                </span>
-              ) : (
-                <>
-                  <Check className="w-3.5 h-3.5" strokeWidth={3} /> saved
-                </>
-              )}
+              <Check className="w-3.5 h-3.5" strokeWidth={3} /> saved
             </span>
           )}
         </div>
@@ -184,15 +208,23 @@ export default function SurveyClient({
             />
           ))}
         </div>
-        {tapped && initialLabel && (
+        {proposed && proposedLabel && status[proposed.question] === 'unconfirmed' && (
           <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-            You answered <span className="font-bold text-gray-950">&ldquo;{initialLabel}&rdquo;</span>{' '}
-            in the email. Everything below is still open.
+            You picked{' '}
+            <span className="font-bold text-gray-950">&ldquo;{proposedLabel}&rdquo;</span> in the
+            email. It is selected in the first question below — one tap records it, and you can
+            pick a different one instead.
           </p>
         )}
       </div>
 
-      {PAGE_QUESTIONS.map((q) => (
+      {/*
+        Every question is on the page now, the emailed one included. It used to be
+        answered only by the link in the mail and never rendered here, which meant
+        that once the automatic submit was removed there was no way left to answer
+        it at all.
+      */}
+      {SURVEY_QUESTIONS.map((q) => (
         <section key={q.id}>
           <h2 className="text-lg sm:text-xl font-black text-gray-950 tracking-tight leading-snug">
             {q.prompt}
@@ -202,17 +234,23 @@ export default function SurveyClient({
           <div className="mt-4 space-y-2">
             {q.options.map((o) => {
               const selected = chosen(answers[q.id]).includes(o.id);
+              // Selected but not yet on the server. Amber rather than green,
+              // because green here has meant "recorded" everywhere else on this
+              // page and a preselection has not been recorded by anyone.
+              const awaiting = selected && status[q.id] === 'unconfirmed';
               return (
                 <button
                   key={o.id}
                   type="button"
-                  onClick={() => (q.multi ? toggle(q.id, o.id) : record(q.id, o.id))}
+                  onClick={(e) => press(e, () => (q.multi ? toggle(q.id, o.id) : record(q.id, o.id)))}
                   aria-pressed={selected}
                   className={[
                     'w-full text-left rounded-xl border p-4 transition-colors cursor-pointer',
-                    selected
-                      ? 'border-green-600 bg-green-50'
-                      : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50',
+                    awaiting
+                      ? 'border-amber-500 bg-amber-50'
+                      : selected
+                        ? 'border-green-600 bg-green-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50',
                   ].join(' ')}
                 >
                   <span className="flex items-start gap-3">
@@ -223,10 +261,17 @@ export default function SurveyClient({
                       className={[
                         'mt-0.5 shrink-0 w-5 h-5 border-2 flex items-center justify-center',
                         q.multi ? 'rounded-md' : 'rounded-full',
-                        selected ? 'border-green-600 bg-green-600' : 'border-gray-300',
+                        awaiting
+                          ? 'border-amber-500 bg-white'
+                          : selected
+                            ? 'border-green-600 bg-green-600'
+                            : 'border-gray-300',
                       ].join(' ')}
                     >
-                      {selected && <Check className="w-3 h-3 text-white" strokeWidth={4} />}
+                      {selected && !awaiting && (
+                        <Check className="w-3 h-3 text-white" strokeWidth={4} />
+                      )}
+                      {awaiting && <span className="w-2 h-2 rounded-full bg-amber-500" />}
                     </span>
                     <span className="min-w-0">
                       <span className="block text-sm font-bold text-gray-950 leading-snug">
@@ -244,6 +289,11 @@ export default function SurveyClient({
             })}
           </div>
 
+          {status[q.id] === 'unconfirmed' && (
+            <p className="text-xs font-bold text-amber-700 mt-2">
+              Carried over from your email tap — not recorded until you tap it here.
+            </p>
+          )}
           {status[q.id] === 'error' && (
             <p className="text-xs font-bold text-red-600 mt-2">
               That did not save. Please tap it again.
@@ -350,7 +400,9 @@ export default function SurveyClient({
         </h2>
         <dl className="mt-4 space-y-3">
           {SURVEY_QUESTIONS.map((q) => {
-            const picks = chosen(answers[q.id]);
+            // The server's copy, not the screen's. An unconfirmed preselection
+            // reads as what it is rather than as an answer.
+            const picks = chosen(saved[q.id]);
             return (
               <div key={q.id} className="flex flex-col sm:flex-row sm:gap-4">
                 <dt className="text-xs text-gray-500 leading-relaxed sm:w-1/2 shrink-0">
@@ -358,7 +410,13 @@ export default function SurveyClient({
                 </dt>
                 <dd className="text-sm font-bold text-gray-950 leading-relaxed sm:w-1/2">
                   {picks.length === 0 ? (
-                    <span className="font-medium text-gray-400">not answered</span>
+                    status[q.id] === 'unconfirmed' ? (
+                      <span className="font-medium text-amber-700">
+                        picked in the email — not recorded yet
+                      </span>
+                    ) : (
+                      <span className="font-medium text-gray-400">not answered</span>
+                    )
                   ) : (
                     picks.map((id) => getOption(q.id, id)?.label ?? id).join(' · ')
                   )}
@@ -368,7 +426,7 @@ export default function SurveyClient({
           })}
         </dl>
         <p className="mt-5 text-sm text-gray-600 leading-relaxed border-t border-gray-200 pt-4">
-          {answeredCount === PAGE_QUESTIONS.length ? (
+          {doneCount === totalQuestions ? (
             <>
               <span className="font-bold text-gray-950">That is everything.</span> You can close
               this page — every answer is already saved. Open the link again any time until{' '}

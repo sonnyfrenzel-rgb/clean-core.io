@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { logger, errMessage } from '@/lib/logger';
 import { verifySurveyToken } from '@/lib/survey/token';
-import { PAGE_QUESTIONS, SURVEY_QUESTIONS, getOption } from '@/lib/survey/definition';
+import { SURVEY_QUESTIONS, getOption } from '@/lib/survey/definition';
 import { docId, type SurveyAnswer } from '@/lib/survey/store';
 import SurveyClient from './SurveyClient';
 
@@ -136,14 +136,15 @@ export default async function SurveyPage({
         The ballot for version 3.0
       </h1>
       {/*
-        "Your answer is saved" is only true for a reader who tapped an option in the
-        mail. Someone opening the bare link — a forward, a second visit, the plain-text
-        part — is told something about themselves that did not happen, which is a poor
-        first sentence from a page asking to be trusted with an answer.
+        This said "Your answer is saved" to anyone arriving from a tap in the mail,
+        because the page used to record that answer by itself on mount. It no longer
+        does — see SurveyClient — so the sentence would now be false for exactly the
+        reader it was written for. The pick is carried over and highlighted; the tap
+        that records it happens here.
       */}
       <p className="text-gray-600 leading-relaxed mb-8">
         {answeredInMail
-          ? `Your answer is saved. ${PAGE_QUESTIONS.length} questions left, one tap each`
+          ? `Your pick from the email is already selected. ${SURVEY_QUESTIONS.length} questions, one tap each`
           : `${SURVEY_QUESTIONS.length} questions, one tap each`}{' '}
         — and none of them required. Nothing is submitted at the end; every tap saves as
         you make it.
