@@ -20,9 +20,28 @@ export function TestingPieChart({ pieData, stats }: { pieData: any[], stats: any
           </Pie>
         </PieChart>
       </ResponsiveContainer>
+      {/*
+        `passRate` is null when nothing returned a verdict — every test skipped,
+        or the runner reported on none of them. Rendering that gave "null%", and
+        before the denominator was fixed it gave a confident 0% for a run that had
+        simply not measured anything.
+      */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-black text-[#0b1c30]">{stats.passRate}%</span>
-        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pass Rate</span>
+        {stats.passRate === null || stats.passRate === undefined ? (
+          <>
+            <span className="text-xl font-black text-amber-600">No verdict</span>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              Nothing ran
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="text-3xl font-black text-[#0b1c30]">{stats.passRate}%</span>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              Pass Rate
+            </span>
+          </>
+        )}
       </div>
     </div>
   );

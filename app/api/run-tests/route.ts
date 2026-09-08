@@ -115,14 +115,28 @@ function buildStubModule(namedExports: string[]): string {
 interface TestRunResult {
   id: string;
   name: string;
-  status: 'Passed' | 'Failed';
+  status: 'Passed' | 'Failed' | 'Not run';
   message?: string;
 }
 
+/**
+ * Reads TAP, including the half of it that used to be discarded.
+ *
+ * A TAP line is `ok` or `not ok`, and either may carry a *directive* after a
+ * hash: `# SKIP` for a test that was deliberately not executed, `# TODO` for one
+ * that is not expected to work yet. Both are written as `ok` — that is the
+ * protocol, not a quirk — so a parser that decides on the first token alone reads
+ * "this did not run" as "this passed". This one did, and the delivery page then
+ * described the result as verified.
+ *
+ * The directive now produces `Not run`, which is neither a pass nor a failure and
+ * is counted as neither.
+ */
 function parseTapOutput(stdout: string): TestRunResult[] {
   const results: TestRunResult[] = [];
   const lines = stdout.split('\n');
   const testLineRegex = /^(ok|not ok)\s+\d+\s+-\s+([A-Za-z0-9_]+):?\s*(.*)$/;
+  const directiveRegex = /#\s*(skip|todo)\b\s*(.*)$/i;
 
   let currentResult: TestRunResult | null = null;
   let inErrorBlock = false;
@@ -137,16 +151,27 @@ function parseTapOutput(stdout: string): TestRunResult[] {
         currentResult.message = errorMessageLines.join(' ').replace(/\s+/g, ' ').trim();
       }
 
-      const status = match[1] === 'ok' ? 'Passed' : 'Failed';
       const id = match[2];
-      const name = match[3] || id;
+      const rest = match[3] || '';
+      const directive = rest.match(directiveRegex);
+      const name = (directive ? rest.slice(0, directive.index).trim() : rest.trim()) || id;
 
-      currentResult = {
-        id,
-        name,
-        status,
-        message: status === 'Passed' ? 'Verified by Node.js Test Runner' : 'Test assertion failed',
-      };
+      let status: TestRunResult['status'];
+      let message: string;
+      if (directive) {
+        const kind = directive[1].toUpperCase();
+        const reason = directive[2].trim();
+        status = 'Not run';
+        message = `Reported as ${kind} by the runner — not executed${reason ? `: ${reason}` : ''}`;
+      } else if (match[1] === 'ok') {
+        status = 'Passed';
+        message = 'Verified by Node.js Test Runner';
+      } else {
+        status = 'Failed';
+        message = 'Test assertion failed';
+      }
+
+      currentResult = { id, name, status, message };
       results.push(currentResult);
       inErrorBlock = false;
       errorMessageLines = [];

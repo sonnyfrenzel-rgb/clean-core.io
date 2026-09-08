@@ -13,8 +13,13 @@ export const useTestExecution = (projectId: string, project: Project | null, set
   const { profile } = useUserProfile();
 
   const generateQAReport = (results: TestCase[]) => {
+    // "everything that did not pass, failed" stops being true the moment a status
+    // can also mean "no verdict". Each bucket is counted, and the ones that carry
+    // no verdict are named rather than folded into the failures.
     const passed = results.filter(r => r.status === 'Passed').length;
-    const failed = results.length - passed;
+    const failed = results.filter(r => r.status === 'Failed').length;
+    const notRun = results.filter(r => r.status === 'Not run').length;
+    const simulated = results.filter(r => r.status === 'Simulated').length;
     const timestamp = new Date().toLocaleString();
     
     let report = `==================================================\n`;
@@ -23,7 +28,10 @@ export const useTestExecution = (projectId: string, project: Project | null, set
     report += `Summary:\n`;
     report += `- Total Tests: ${results.length}\n`;
     report += `- Passed:      ${passed}\n`;
-    report += `- Failed:      ${failed}\n\n`;
+    report += `- Failed:      ${failed}\n`;
+    if (notRun > 0) report += `- Not run:     ${notRun}  (skipped, or the runner reported no result)\n`;
+    if (simulated > 0) report += `- Simulated:   ${simulated}  (mock context — nothing ran against an SAP system)\n`;
+    report += `\n`;
     report += `Detailed Results:\n`;
     results.forEach((r, i) => {
       report += `${i + 1}. [${(r.status || 'Unknown').toUpperCase()}] ${r.id}: ${r.name}\n`;
@@ -439,11 +447,14 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
           setSandboxOutput(prev => prev + '[SIMULATED] Executing ABAP Unit Test Class ZCL_DEMO_RAP_TEST...\n\n');
           await new Promise(resolve => setTimeout(resolve, 700));
 
+          // A mock run is not a pass. The message said `[SIMULATED]` and the status
+          // said `Passed`, and everything downstream — the report arithmetic, the
+          // delivery page's "tests verified" line — reads the status.
           const results = selectedTestCases.map((tc) => {
             return {
               ...tc,
-              status: 'Passed' as const,
-              message: `[SIMULATED] CL_AUNIT_ASSERT=>ASSERT_EQUALS passed in mock context — connect a Live Tenant for real validation.`
+              status: 'Simulated' as const,
+              message: `[SIMULATED] CL_AUNIT_ASSERT=>ASSERT_EQUALS passed in mock context — nothing was executed against an SAP system. Connect a Live Tenant for a real verdict.`
             };
           });
 
@@ -503,16 +514,25 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         if (match) {
           return {
             ...tc,
-            status: match.status as 'Passed' | 'Failed',
+            status: match.status as TestCase['status'],
             message: match.message || (match.status === 'Passed' ? 'Verified by Node.js Test Runner' : 'Test assertion failed')
           };
         }
-        
-        const passed = result.exitCode === 0;
+
+        // No line in the runner's output mentions this test.
+        //
+        // This used to read `result.exitCode === 0` and, on a green run, label the
+        // case "Verified by Node.js Test Runner" — a verification claim for a test
+        // the runner never mentioned. A whole file failing to load exits 0 in some
+        // configurations, and every case in it was then reported as verified.
+        //
+        // An absent verdict is not a verdict. It says so.
         return {
           ...tc,
-          status: passed ? 'Passed' as const : 'Failed' as const,
-          message: passed ? 'Verified by Node.js Test Runner' : 'Test execution failed'
+          status: 'Not run' as const,
+          message: result.exitCode === 0
+            ? 'The runner finished without reporting on this test — no result to show'
+            : 'The run failed before this test reported a result'
         };
       });
       setTestResults(results);

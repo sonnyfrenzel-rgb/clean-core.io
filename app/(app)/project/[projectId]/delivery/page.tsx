@@ -80,6 +80,23 @@ export default function DeliveryPage() {
   // "10 Automated Tests" and "92% Estimated Coverage" under a green tick — on
   // the one screen a customer photographs for a steering pack.
   const testCaseCount = Array.isArray(project?.testCases) ? project.testCases.length : 0;
+  /**
+   * How many of those tests actually returned a pass.
+   *
+   * This block used to say "Clean AUnit local test doubles verified" beside a
+   * green tick whenever `testCaseCount > 0` — that is, whenever a test suite had
+   * been *generated*. Nothing in that number says anything ran, and after the
+   * runner changes it can also contain cases the runner skipped or never
+   * mentioned. A delivery artefact is the last place a claim should outrun its
+   * evidence, so the line is now driven by verdicts.
+   */
+  const testVerdicts = Array.isArray(project?.testCases)
+    ? (project.testCases as { status?: string }[])
+    : [];
+  const testsPassed = testVerdicts.filter((t) => t.status === 'Passed').length;
+  const testsFailed = testVerdicts.filter((t) => t.status === 'Failed').length;
+  const testsSimulated = testVerdicts.filter((t) => t.status === 'Simulated').length;
+  const testsWithoutVerdict = testCaseCount - testsPassed - testsFailed - testsSimulated;
   // What the delivery page can actually attest to, each read from an artefact
   // rather than assumed. Nothing here is a decision — the page reports what is
   // present and says plainly what is not.
@@ -583,23 +600,31 @@ jobs:
                 </div>
               </li>
               <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
-                {testCaseCount > 0 ? (
+                {testsPassed > 0 && testsFailed === 0 && testsWithoutVerdict === 0 ? (
                   <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
                 ) : (
                   <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
                 )}
                 <div>
                   <span className="text-white block font-bold">
-                    {isAbapCloud 
-                      ? (testCaseCount > 0 ? `${testCaseCount} Automated ABAP Unit Tests` : 'No test suite generated')
-                      : (testCaseCount > 0 ? `${testCaseCount} Automated Sandbox Tests` : 'No test suite generated')
-                    }
+                    {testCaseCount === 0
+                      ? 'No test suite generated'
+                      : testsPassed > 0
+                        ? `${testsPassed} of ${testCaseCount} ${isAbapCloud ? 'ABAP Unit' : 'Sandbox'} tests passed`
+                        : `${testCaseCount} ${isAbapCloud ? 'ABAP Unit' : 'Sandbox'} tests generated, none passed yet`}
                   </span>
                   <span className="text-[10px] text-gray-400">
-                    {isAbapCloud 
-                      ? 'ADT: Clean AUnit local test doubles verified'
-                      : 'Sandbox: TAP-reporter unit tests verified'
-                    }
+                    {testCaseCount === 0
+                      ? 'Nothing to verify'
+                      : testsPassed === testCaseCount
+                        ? (isAbapCloud
+                            ? 'ADT: every generated test returned a pass'
+                            : 'Sandbox: every generated test returned a pass')
+                        : [
+                            testsFailed > 0 ? `${testsFailed} failed` : null,
+                            testsSimulated > 0 ? `${testsSimulated} simulated only` : null,
+                            testsWithoutVerdict > 0 ? `${testsWithoutVerdict} without a result` : null,
+                          ].filter(Boolean).join(' · ') || 'Not run yet'}
                   </span>
                 </div>
               </li>

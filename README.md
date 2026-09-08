@@ -136,5 +136,9 @@ Operations, monitoring, backups and rules deployment: **[docs/OPERATIONS.md](doc
 
 ## 📄 License & Usage
 
-Clean-Core.io is **free to use**, built on **open standards and open data** — its object catalog is grounded in SAP's Apache-2.0-licensed [SAP Cloudification Repository](https://github.com/SAP/abap-atc-cr-cv-s4hc). The platform itself (deterministic engine, curated catalog layer, UI and branding) is **proprietary — all rights reserved** and is *not* open source. You own the output you generate.
+Clean-Core.io is **open source under the [Apache License 2.0](LICENSE)** — engine, catalog layer, UI and all. You may run it, fork it, host it yourself and build on it, provided you keep the licence and the [NOTICE](NOTICE) with it. You own the output you generate.
+
+This section previously described the platform as proprietary, all rights reserved. That was accurate rather than careless: there was no licence file in the repository, and code without one is closed by default, whatever a roadmap promises. The self-hosting and open-core intent needed a licence to become true rather than planned, so here it is.
+
+The object catalog is grounded in SAP's Apache-2.0-licensed [Cloudification Repository](https://github.com/SAP/abap-atc-cr-cv-s4hc); those synced artifacts stay under their own copyright, and [NOTICE](NOTICE) says so. SAP product names are used nominatively — this project is not affiliated with SAP SE.
 

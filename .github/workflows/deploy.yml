@@ -89,10 +89,16 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
-      # F-11: production dependency audit is now a required deploy gate. Blocks the
-      # deploy on CRITICAL advisories (tighten to --audit-level=high once triaged).
+      # F-11: production dependency audit is a required deploy gate.
+      #
+      # It blocked on CRITICAL only, with a note to tighten it "once triaged",
+      # while Security CI blocked the same tree at HIGH. Two gates with two
+      # thresholds means the stricter one is advisory: on 7 September Security CI
+      # was red on six High advisories in fast-uri and browserslist, and a deploy
+      # of that same commit would have gone through. One threshold now, and it is
+      # the stricter one.
       - name: Dependency Audit (production)
-        run: npm audit --omit=dev --audit-level=critical
+        run: npm audit --omit=dev --audit-level=high
 
   # Job 2: Build & Deploy to Google Cloud Run
   deploy:

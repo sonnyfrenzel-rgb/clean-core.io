@@ -61,7 +61,15 @@ test.describe('no fabricated figures on measured values', () => {
     expect(source).toContain('No test suite generated');
     expect(source).toContain('Coverage not estimated');
     // The tick in front of each line has to follow the fact, not the layout.
-    expect(source).toContain('testCaseCount > 0 ? (');
+    //
+    // This used to assert `testCaseCount > 0 ? (` — the tick followed the number
+    // of test cases *generated*, which says nothing about whether any of them
+    // ran, and the line beside it claimed they were verified. The fact the tick
+    // follows is now the verdicts: a pass, and nothing that failed or came back
+    // without a result. Strictly narrower than what it replaced.
+    expect(source).toContain(
+      'testsPassed > 0 && testsFailed === 0 && testsWithoutVerdict === 0 ? (',
+    );
     expect(source).toContain('coveragePercentage !== undefined ? (');
   });
 

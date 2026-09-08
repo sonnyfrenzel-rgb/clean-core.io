@@ -515,29 +515,55 @@ export default function TestingSandboxPage() {
     // `NaN%` and a broken chart. No tests executed is a state worth reporting;
     // it is not a pass rate.
     if (total === 0) return null;
+    // `failed = total - passed` was true only while every test had a verdict.
+    // A skipped test, or one the runner never mentioned, is neither passed nor
+    // failed, and counting it as failed is as wrong as counting it as passed —
+    // it just errs in the flattering direction for a different number.
     const passed = testResults.filter((r: any) => r.status === 'Passed').length;
-    const failed = total - passed;
-    const passRate = Math.round((passed / total) * 100);
+    const failed = testResults.filter((r: any) => r.status === 'Failed').length;
+    const inconclusive = total - passed - failed;
+    // A pass rate over tests that never ran is not a pass rate. The denominator
+    // is the tests that actually returned a verdict, and null when none did.
+    const verdicts = passed + failed;
+    const passRate = verdicts > 0 ? Math.round((passed / verdicts) * 100) : null;
 
     const categories = Array.from(new Set(testResults.map((r: any) => r.category || 'Uncategorized')));
     const categoryStats = categories.map(cat => {
       const catTests = testResults.filter((r: any) => (r.category || 'Uncategorized') === cat);
       const catPassed = catTests.filter((r: any) => r.status === 'Passed').length;
+      const catFailed = catTests.filter((r: any) => r.status === 'Failed').length;
       return {
         name: cat as string,
         passed: catPassed,
-        failed: catTests.length - catPassed,
+        failed: catFailed,
+        inconclusive: catTests.length - catPassed - catFailed,
         total: catTests.length
       };
     });
 
-    return { total, passed, failed, passRate, categoryStats };
+    return { total, passed, failed, inconclusive, verdicts, passRate, categoryStats };
   };
 
   const stats = getStats();
+  /**
+   * Three outcomes, not two.
+   *
+   * Every surface here read `status === 'Passed'` and painted everything else
+   * red. That was safe while the only other value was `Failed`; with `Not run`
+   * and `Simulated` it turns "we do not know" into "it failed", which is a
+   * different lie in the opposite direction.
+   */
+  const verdictTone = (status?: string): 'pass' | 'fail' | 'none' =>
+    status === 'Passed' ? 'pass' : status === 'Failed' ? 'fail' : 'none';
+
+  // Tests without a verdict get their own slice. Leaving them out would make a
+  // chart of four passes and twenty skips look like a clean sweep.
   const pieData = stats ? [
     { name: 'Passed', value: stats.passed, color: '#006b2c' },
-    { name: 'Failed', value: stats.failed, color: '#dc2626' }
+    { name: 'Failed', value: stats.failed, color: '#dc2626' },
+    ...(stats.inconclusive > 0
+      ? [{ name: 'No verdict', value: stats.inconclusive, color: '#d97706' }]
+      : []),
   ] : [];
 
   const toggleTestCase = (index: number) => {
@@ -1622,6 +1648,14 @@ export default function TestingSandboxPage() {
                 <div className="w-2.5 h-2.5 rounded-full bg-red-600"></div>
                 <span className="text-[10px] font-black text-gray-500 uppercase">{stats.failed} Failed</span>
               </div>
+              {stats.inconclusive > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-600"></div>
+                  <span className="text-[10px] font-black text-gray-500 uppercase">
+                    {stats.inconclusive} No verdict
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1638,7 +1672,19 @@ export default function TestingSandboxPage() {
                   <p className="text-2xl font-black text-red-600 tracking-tighter">{stats.failed}</p>
                   <p className="text-[9px] font-black text-gray-400 border-t border-gray-50 pt-1 uppercase tracking-widest">Failed</p>
                 </div>
+                {stats.inconclusive > 0 && (
+                  <div className="text-center">
+                    <p className="text-2xl font-black text-amber-600 tracking-tighter">{stats.inconclusive}</p>
+                    <p className="text-[9px] font-black text-gray-400 border-t border-gray-50 pt-1 uppercase tracking-widest">No verdict</p>
+                  </div>
+                )}
               </div>
+              {stats.inconclusive > 0 && (
+                <p className="mt-4 text-[10px] leading-relaxed text-amber-700 font-bold max-w-[22rem]">
+                  {stats.inconclusive} of {stats.total} produced no result — skipped, or the runner
+                  never reported on them. The rate above is of the {stats.verdicts} that did.
+                </p>
+              )}
             </div>
 
             {/* Category Performance */}
@@ -1662,18 +1708,26 @@ export default function TestingSandboxPage() {
                 transition={{ delay: i * 0.05 }}
                 onClick={() => setSelectedResult(res)} 
                 className={clsx(
-                  "group p-6 rounded-[2rem] border cursor-pointer transition-all hover:shadow-xl active:scale-[0.98]", 
-                  res.status === 'Passed' 
-                    ? 'bg-white border-gray-100 hover:border-green-200' 
-                    : 'bg-red-50 border-red-100 hover:border-red-200'
+                  "group p-6 rounded-[2rem] border cursor-pointer transition-all hover:shadow-xl active:scale-[0.98]",
+                  verdictTone(res.status) === 'pass'
+                    ? 'bg-white border-gray-100 hover:border-green-200'
+                    : verdictTone(res.status) === 'fail'
+                      ? 'bg-red-50 border-red-100 hover:border-red-200'
+                      : 'bg-amber-50 border-amber-100 hover:border-amber-200'
                 )}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className={clsx(
                     "p-2 rounded-xl",
-                    res.status === 'Passed' ? 'bg-green-50 text-green-600' : 'bg-white text-red-600'
+                    verdictTone(res.status) === 'pass'
+                      ? 'bg-green-50 text-green-600'
+                      : verdictTone(res.status) === 'fail'
+                        ? 'bg-white text-red-600'
+                        : 'bg-white text-amber-600'
                   )}>
-                    {res.status === 'Passed' ? <ShieldCheck size={20} /> : <AlertTriangle size={20} />}
+                    {verdictTone(res.status) === 'pass' ? <ShieldCheck size={20} />
+                      : verdictTone(res.status) === 'fail' ? <AlertTriangle size={20} />
+                      : <HelpCircle size={20} />}
                   </div>
                   <span className="font-mono text-[9px] font-black text-gray-400 uppercase tracking-widest">{renderSafeValue(res.id)}</span>
                 </div>
@@ -1684,7 +1738,9 @@ export default function TestingSandboxPage() {
                   </span>
                   <span className={clsx(
                     "text-[9px] font-black uppercase tracking-[0.2em] ml-auto",
-                    res.status === 'Passed' ? 'text-green-600' : 'text-red-600'
+                    verdictTone(res.status) === 'pass' ? 'text-green-600'
+                      : verdictTone(res.status) === 'fail' ? 'text-red-600'
+                      : 'text-amber-600'
                   )}>
                     {renderSafeValue(res.status)}
                   </span>
@@ -1715,7 +1771,9 @@ export default function TestingSandboxPage() {
               </div>
               <div className={clsx(
                 "px-6 py-2 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg self-start sm:self-auto",
-                selectedResult.status === 'Passed' ? 'bg-green-600 text-white shadow-green-900/20' : 'bg-red-600 text-white shadow-red-900/20'
+                verdictTone(selectedResult.status) === 'pass' ? 'bg-green-600 text-white shadow-green-900/20'
+                  : verdictTone(selectedResult.status) === 'fail' ? 'bg-red-600 text-white shadow-red-900/20'
+                  : 'bg-amber-600 text-white shadow-amber-900/20'
               )}>
                 {renderSafeValue(selectedResult.status)}
               </div>
@@ -1764,7 +1822,9 @@ export default function TestingSandboxPage() {
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-3">Validation Logic</h4>
                   <div className={clsx(
                     "p-6 rounded-2xl border font-mono text-[11px] md:text-xs shadow-lg",
-                    selectedResult.status === 'Passed' ? 'bg-green-50 border-green-200 text-green-900 shadow-green-900/5' : 'bg-red-50 border-red-200 text-red-900 shadow-red-900/5'
+                    verdictTone(selectedResult.status) === 'pass' ? 'bg-green-50 border-green-200 text-green-900 shadow-green-900/5'
+                      : verdictTone(selectedResult.status) === 'fail' ? 'bg-red-50 border-red-200 text-red-900 shadow-red-900/5'
+                      : 'bg-amber-50 border-amber-200 text-amber-900 shadow-amber-900/5'
                   )}>
                     <div className="mb-4">
                       <span className="font-black opacity-60 uppercase text-[9px] block mb-1">Execution Message</span>

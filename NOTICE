@@ -1,0 +1,33 @@
+Clean-Core.io
+Copyright 2026 Sonny Frenzel
+
+This product includes software developed by Sonny Frenzel.
+
+Licensed under the Apache License, Version 2.0. See the LICENSE file in the
+root of this repository for the full terms.
+
+--------------------------------------------------------------------------------
+Third-party components
+--------------------------------------------------------------------------------
+
+Runtime and build dependencies keep their own licences. They are listed, with
+those licences, in THIRD-PARTY-NOTICES.md and in the CycloneDX SBOM that the
+"Security CI" workflow produces for every commit.
+
+--------------------------------------------------------------------------------
+SAP data and trademarks
+--------------------------------------------------------------------------------
+
+This project reads two artifacts published by SAP SE in the Cloudification
+Repository (https://github.com/SAP/abap-atc-cr-cv-s4hc, Apache-2.0):
+
+  objectReleaseInfoLatest.json      — object release states
+  objectClassifications_SAP.json    — classification of classic APIs
+
+They are synced into lib/abap/generated/ by scripts/sync-cloudification-repo.ts
+and remain under their own licence and copyright.
+
+SAP, ABAP, S/4HANA, Fiori, SAP BTP and other SAP product names are trademarks or
+registered trademarks of SAP SE in Germany and other countries. They are used
+here nominatively, to describe what this software works with. This project is
+neither affiliated with nor endorsed by SAP SE.

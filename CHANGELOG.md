@@ -10,6 +10,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.8.6] — 2026-09-08
+
+### Stillstellen
+
+Kein neues Feature. Vier Stellen, an denen das Produkt etwas behauptet hat, das
+der Code nicht deckt — und eine Lizenz, ohne die eine fünfte Behauptung
+rechtlich leer war.
+
+**Der Testschritt hat „verified" zu Tests gesagt, die nie gelaufen sind.** Zwei
+Wege führten dorthin. Eine TAP-Zeile mit der Direktive `# SKIP` oder `# TODO`
+beginnt laut Protokoll mit `ok` — das ist die Schreibweise für „wurde nicht
+ausgeführt", nicht für „bestanden" —, und ein Parser, der nur auf das erste Wort
+schaut, hat sie als bestanden gelesen. Und ein Testfall, zu dem der Runner
+überhaupt nichts gemeldet hat, erbte seinen Status aus dem Exitcode des
+Gesamtlaufs, mit der Meldung „Verified by Node.js Test Runner". Beides trug bis
+auf die Delivery-Seite, wo neben einem grünen Haken „Clean AUnit local test
+doubles verified" stand — gesteuert allein von der Zahl *erzeugter* Testfälle.
+
+Es gibt jetzt zwei weitere Zustände, `Not run` und `Simulated`, und nur `Passed`
+zählt als verifiziert. Der ABAP-Mock, der jeden ausgewählten Test auf `Passed`
+gesetzt und `[SIMULATED]` in die Meldung geschrieben hat, setzt jetzt den Status,
+den die Meldung schon sagte. Die Quote im QA-Dashboard rechnet über die Tests mit
+Urteil statt über alle, weil eine Bestehensquote über nie gelaufene Tests keine
+Quote ist, und Tests ohne Urteil bekommen eine eigene Farbe statt der roten für
+Fehlschlag — „wir wissen es nicht" ist keine bestandene und keine gescheiterte
+Prüfung.
+
+**Die TCO-Ansicht konnte `Infinity` anzeigen.** Zwei Divisionen ohne Wächter,
+beide von den Reglern der Seite aus erreichbar: eine Investition von 0 machte den
+ROI unendlich, und Code, der den Zielwert schon erreicht, spart nichts pro Jahr
+und machte die Amortisation unendlich. Beide liefern jetzt „kein Wert" mit einer
+Zeile, die sagt warum.
+
+**Das Deploy-Gate war lockerer als das Security-CI.** Der Deploy blockierte nur
+bei `critical`, die Security-CI bei `high` — zwei Tore mit zwei Schwellen, von
+denen das strengere damit unverbindlich ist. Am 7. September war die Security-CI
+rot wegen sechs High-Advisories in `fast-uri` und `browserslist`, und ein Deploy
+desselben Commits wäre durchgelaufen. Eine Schwelle jetzt, und es ist die
+strengere.
+
+**Und eine `LICENSE`.** Es gab keine. Code ohne Lizenzdatei ist „alle Rechte
+vorbehalten", ganz gleich was eine Roadmap verspricht — das Self-Hosting-
+Versprechen war rechtlich nicht einlösbar. Das Repository steht jetzt unter
+Apache-2.0, mit `NOTICE` für die synchronisierten SAP-Artefakte und die
+nominative Markennutzung. Die README sagte bisher korrekt „proprietary — all
+rights reserved"; sie sagt jetzt, was gilt.
+
+### Die Umfrage hat Mail-Gateways befragt, nicht Menschen
+
+Zwölf der dreizehn Antworten auf die Kampagne vom 2. September entstanden
+zwischen 07:13:39 und 07:15:01 — innerhalb der dreiundachtzig Sekunden, die der
+Versand an siebenunddreißig Empfänger gedauert hat. Vier bis zwölf Sekunden
+zwischen Linkabruf und Antwort, jede nur auf die Frage, die als Link in der Mail
+stand, keine auf die Fragen, die auf der Seite leben.
+
+Die Abwehr war gebaut und zielte auf die falsche Hälfte. Der Vote-Endpunkt ist
+bewusst POST, mit der Begründung, ein Gateway führe keine Skripte aus. Defender
+Safe Links, Proofpoint und Mimecast öffnen jeden Link in einem Headless-Browser
+und führen das JavaScript aus, um Phishing zu erkennen — und die Seite schickte
+die Antwort aus der Mail in einem `useEffect` beim Mounten ab, ohne jede
+Interaktion.
+
+Der Effekt ist weg. Die getippte Antwort kommt als Vorauswahl an, sichtbar als
+solche und nicht mitgezählt, bis ein echter Druck sie bestätigt; jeder Druck wird
+auf `isTrusted` geprüft, was bei einem per Skript ausgelösten Ereignis falsch ist.
+Die Mail-Frage wird jetzt auf der Seite gerendert — vorher war sie ausschließlich
+über den Auto-POST beantwortbar. Zählung und Rückschau lesen aus einer eigenen
+Kopie dessen, was der Server tatsächlich hat, damit die Seite nichts als
+gespeichert ausweisen kann, bevor es das ist. Die Einladung sagte zweimal „One
+tap records it"; das stimmt so nicht mehr und steht auch nicht mehr da.
+
+Zustellung war nie das Problem: alle 55 Ereignisse im Webhook stehen auf
+`email.delivered`, kein Bounce, keine Beschwerde. Was die Umfrage klären sollte —
+Posteingang oder Spam — ist weiterhin offen, denn sie fragt über denselben Kanal,
+den sie misst.
+
+### Abhängigkeiten
+
+Sechs High-Advisories, die die Security-CI seit dem 7. September rot hielten.
+`fast-uri` stand bereits in `overrides`, gepinnt auf `^3.1.5` — und `3.0.0–3.1.5`
+ist genau der verwundbare Bereich, der Override hielt die Lücke fest. Boden jetzt
+auf `^3.1.6`, `browserslist` neu auf `^4.28.7`; beide Elternpakete akzeptierten
+die gepatchten Versionen ohnehin, es brauchte keinen Major-Bump.
+
+Dazu `dompurify` von 3.4.11 auf 3.4.15. Kein High und kein Gate-Blocker, aber es
+ist die XSS-Abwehr hinter `lib/sanitize-html.ts`, und eine der beiden Lücken
+lässt einen abgetrennten Teilbaum ausführbar zurück.
+
 ## [v2.8.5] — 2026-09-01
 
 ### Die Umfrage, einen Tag vor dem Versand

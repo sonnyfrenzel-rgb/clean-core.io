@@ -14,7 +14,20 @@ export interface TestCase {
   priority: 'High' | 'Medium' | 'Low';
   testData?: string;
   validationPoints?: string[];
-  status?: 'Passed' | 'Failed' | 'Pending';
+  /**
+   * A verdict, or the honest absence of one.
+   *
+   * `Not run` and `Simulated` exist because the two-value version of this field
+   * had nowhere to put "the runner never reported on this" or "this was a mock",
+   * and both were therefore recorded as `Passed`. A TAP line carrying `# SKIP`
+   * starts with `ok`, so a skipped test read as a passing one; a test the runner
+   * said nothing about inherited the exit code of the whole run; and the ABAP
+   * mock marked every selected case `Passed` with a `[SIMULATED]` note in the
+   * message, which the delivery page did not read.
+   *
+   * Nothing counts as verified now unless it is `Passed`.
+   */
+  status?: 'Passed' | 'Failed' | 'Pending' | 'Not run' | 'Simulated';
   message?: string;
 }
 

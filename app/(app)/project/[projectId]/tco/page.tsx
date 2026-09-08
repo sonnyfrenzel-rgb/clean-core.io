@@ -159,8 +159,17 @@ export default function TcoCalculatorPage() {
     // division by zero wearing a euro sign. The page says so instead.
     if (legacyAnnualTotal <= 0) return null;
 
-    const paybackMonths = Math.round((oneTimeCost / annualSavings) * 12 * 10) / 10;
-    const roiYear1 = Math.round((annualSavings / oneTimeCost) * 100);
+    // Two divisions with no guard on their divisor, both reachable from the
+    // controls on this page: an investment of 0 made the ROI `Infinity`, and code
+    // that already scores at the target saves nothing per year, which made the
+    // payback period `Infinity` too. Both were rendered straight to the screen.
+    //
+    // Neither is a number, so neither is shown as one. `null` means "this figure
+    // does not exist for these inputs", which is a different statement from zero
+    // and the page makes it separately.
+    const paybackMonths =
+      annualSavings > 0 ? Math.round((oneTimeCost / annualSavings) * 12 * 10) / 10 : null;
+    const roiYear1 = oneTimeCost > 0 ? Math.round((annualSavings / oneTimeCost) * 100) : null;
     const overheadReductionPct = Math.round((1 - modernAnnualTotal / legacyAnnualTotal) * 100);
 
     return {
@@ -389,22 +398,44 @@ export default function TcoCalculatorPage() {
           <div className="bg-white border border-gray-150 rounded-[2rem] p-6 shadow-sm flex flex-col justify-between min-h-[160px]">
             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Payback Period</span>
             <div>
-              <h3 className="text-4xl font-black text-slate-900 tracking-tight mt-2 flex items-baseline">
-                {calculations.paybackMonths}
-                <span className="text-xs text-gray-500 font-semibold ml-1">Months</span>
-              </h3>
-              <p className="text-xs text-gray-500 font-semibold mt-1">Amortization of one-time investment.</p>
+              {calculations.paybackMonths === null ? (
+                <>
+                  <h3 className="text-2xl font-black text-amber-600 tracking-tight mt-2">Never</h3>
+                  <p className="text-xs text-gray-500 font-semibold mt-1">
+                    These inputs save nothing per year, so the investment does not pay back.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-4xl font-black text-slate-900 tracking-tight mt-2 flex items-baseline">
+                    {calculations.paybackMonths}
+                    <span className="text-xs text-gray-500 font-semibold ml-1">Months</span>
+                  </h3>
+                  <p className="text-xs text-gray-500 font-semibold mt-1">Amortization of one-time investment.</p>
+                </>
+              )}
             </div>
           </div>
 
           <div className="bg-white border border-gray-150 rounded-[2rem] p-6 shadow-sm flex flex-col justify-between min-h-[160px]">
             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Year 1 ROI</span>
             <div>
-              <h3 className="text-4xl font-black text-blue-650 tracking-tight mt-2 flex items-baseline">
-                {calculations.roiYear1}%
-                <span className="text-xs text-gray-500 font-semibold ml-1">Return</span>
-              </h3>
-              <p className="text-xs text-gray-500 font-semibold mt-1">Net dividend on modernization spend.</p>
+              {calculations.roiYear1 === null ? (
+                <>
+                  <h3 className="text-2xl font-black text-amber-600 tracking-tight mt-2">Not defined</h3>
+                  <p className="text-xs text-gray-500 font-semibold mt-1">
+                    A return needs something spent to return on. Enter an investment above.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-4xl font-black text-blue-650 tracking-tight mt-2 flex items-baseline">
+                    {calculations.roiYear1}%
+                    <span className="text-xs text-gray-500 font-semibold ml-1">Return</span>
+                  </h3>
+                  <p className="text-xs text-gray-500 font-semibold mt-1">Net dividend on modernization spend.</p>
+                </>
+              )}
             </div>
           </div>
         </div>
