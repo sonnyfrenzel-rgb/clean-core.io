@@ -22,6 +22,8 @@ import GlossaryTerm from '@/components/GlossaryTerm';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
+import { anchorInstruction } from '@/lib/abap/narrative-anchors';
+import AnchoredNarrative from '@/components/analyze/AnchoredNarrative';
 import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
@@ -252,11 +254,13 @@ ${JSON.stringify(evidenceReport, null, 2)}
       
 Analyze the legacy SAP ABAP code and the evidence findings to provide a highly practical, down-to-earth IT and Business assessment. You must return your output strictly in JSON format. Do not include any markdown formatting, HTML, or explanations outside the JSON object. The JSON must exactly match this TypeScript schema, and you MUST populate the fields 'cleanCoreScore' and 'extensibilityRouting' with the exact pre-calculated values provided below:
 
+${anchorInstruction(evidenceReport.findings)}
+
 interface AnalysisData {
-  projectTitle: string; 
+  projectTitle: string;
   cleanCoreScore: number; // YOU MUST USE EXACTLY THIS VALUE: ${computedRouteReport.cleanCoreScore}
-  summary: string; // Plain english business executive summary.
-  asIsContext: string; // Describe what the legacy program does.
+  summary: string; // Plain english business executive summary. Every sentence that states something about THIS program must end with an anchor — [F-id] or [L start-end]. General advice stays uncited.
+  asIsContext: string; // Describe what the legacy program does. Same citation rule: anchor every claim about this code.
   standardFit: {
     potential: 'High' | 'Medium' | 'Low';
     targetStandardProcess: string; 
@@ -1343,7 +1347,17 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                       </span>
                     </div>
                     <h3 className="text-2xl font-black text-slate-900 mt-2 mb-3 break-words">{analysisData.projectTitle || project.name}</h3>
-                    <p className="text-slate-655 text-sm leading-relaxed break-words">{analysisData.summary}</p>
+                    {/*
+                      The summary is the one narrative field a reader treats as
+                      the report's conclusion, and it is outside the signature by
+                      design. It now shows which of its sentences point at a line
+                      of the program and which do not.
+                    */}
+                    <AnchoredNarrative
+                      text={analysisData.summary}
+                      findings={evidenceFindings}
+                      totalLines={legacyCode ? legacyCode.split('\n').length : 0}
+                    />
                   </div>
                   <div className="border-t border-slate-100 pt-4 mt-6 flex flex-wrap items-center gap-6">
                     <div>
