@@ -242,8 +242,11 @@ export default async function CatalogObjectPage({
                   <span className="font-bold">The two files disagree here, and the release state decides.</span>{' '}
                   Level B means &ldquo;acceptable where no level A path exists&rdquo;. SAP names a
                   successor for this object, so a level A path does exist and B would be the wrong
-                  answer — which is why the level is {graded.grade} and not B. Twenty-two objects in
-                  the catalog are in this position.
+                  answer — which is why the level is {graded.grade} and not B.{' '}
+                  <Link href="/method/levels" className="font-bold underline underline-offset-2">
+                    The full rule, and the objects it applies to
+                  </Link>
+                  .
                 </p>
               </div>
             )}

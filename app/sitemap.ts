@@ -37,6 +37,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/abap-custom-code-analysis`, lastModified: on('/abap-custom-code-analysis'), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${baseUrl}/clean-core-score`, lastModified: on('/clean-core-score'), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${baseUrl}/sap-clean-core-object-classification`, lastModified: on('/sap-clean-core-object-classification'), changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${baseUrl}/method/levels`, lastModified: on('/method/levels'), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${baseUrl}/sap-cloudification`, lastModified: on('/sap-cloudification'), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${baseUrl}/how-it-works`, lastModified: on('/how-it-works'), changeFrequency: 'weekly', priority: 0.9 },
     { url: `${baseUrl}/about`, lastModified: on('/about'), changeFrequency: 'monthly', priority: 0.7 },

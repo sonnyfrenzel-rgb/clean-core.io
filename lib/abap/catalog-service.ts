@@ -203,6 +203,89 @@ export function gradeSapObject(objectName: string): GradedObject {
   return gradeFromSapStates(getSapObjectStates(objectName));
 }
 
+export interface LevelDerivationCensus {
+  totalObjects: number;
+  releaseFileOnly: number;
+  classificationFileOnly: number;
+  inBoth: number;
+  /** Every state pairing that occurs, with the level it produces. */
+  combinations: {
+    releaseState: string | null;
+    classificationState: string | null;
+    grade: CloudReadinessGrade;
+    objects: number;
+    /**
+     * How many of them SAP names a replacement for.
+     *
+     * Counted rather than inferred. The rule page needs it to say "21 of the 22
+     * carry a successor", and writing that as `total - 1` would be arithmetic
+     * standing in for a measurement — true today, and silently wrong the first
+     * time a catalog sync changes the shape.
+     */
+    withSuccessor: number;
+  }[];
+}
+
+/**
+ * The derivation, counted rather than described.
+ *
+ * `/method/levels` publishes the precedence rule, and a rule page whose numbers
+ * are typed by hand is a rule page that goes stale silently. Every figure it
+ * prints comes from here, computed over the two artifacts at build time — so a
+ * catalog sync that changes the shape of the data changes the page with it.
+ *
+ * The pairings matter more than the totals: the twenty-two objects where the two
+ * files disagree are the whole reason the page exists, and they are a row here
+ * rather than a sentence someone has to keep true.
+ */
+export function getLevelDerivationCensus(): LevelDerivationCensus {
+  const releaseKeys = Object.keys(CR.entries ?? {});
+  const classificationKeys = Object.keys(CR_CLASS.entries ?? {});
+  const all = new Set<string>([...releaseKeys, ...classificationKeys]);
+
+  let inBoth = 0;
+  const buckets = new Map<string, LevelDerivationCensus['combinations'][number]>();
+
+  for (const key of all) {
+    const release = CR.entries?.[key];
+    const classification = CR_CLASS.entries?.[key];
+    if (release && classification) inBoth += 1;
+
+    const releaseState = release?.state ?? null;
+    const classificationState = classification?.state ?? null;
+    const grade = gradeSapObject(key).grade;
+    const hasSuccessor = Boolean(release?.successors?.length || classification?.successors?.length);
+
+    // A deprecated object grades C or D depending on whether SAP named a
+    // successor, so the successor flag is part of the pairing's identity.
+    const id = `${releaseState}|${classificationState}|${grade}`;
+    const existing = buckets.get(id);
+    if (existing) {
+      existing.objects += 1;
+      if (hasSuccessor) existing.withSuccessor += 1;
+    } else {
+      buckets.set(id, {
+        releaseState,
+        classificationState,
+        grade,
+        objects: 1,
+        withSuccessor: hasSuccessor ? 1 : 0,
+      });
+    }
+  }
+
+  return {
+    totalObjects: all.size,
+    // From the intersection, not from the total: `all.size - otherFile.length`
+    // gives the same answer only while every object is in at least one file,
+    // which is true today and is not a property either artifact guarantees.
+    releaseFileOnly: releaseKeys.length - inBoth,
+    classificationFileOnly: classificationKeys.length - inBoth,
+    inBoth,
+    combinations: [...buckets.values()].sort((a, b) => b.objects - a.objects),
+  };
+}
+
 /**
  * A–D distribution across everything SAP has published, for the public
  * reference page. This is a census of SAP's own data, not of any customer's

@@ -117,6 +117,23 @@ export default function CleanCoreClassificationPage() {
             <p className="text-gray-700 leading-relaxed font-medium">
               The classification flow is simple: <strong>object identification → repository lookup → grade classification → remediation decision → Clean Core alignment.</strong>
             </p>
+            {/*
+              The lookup step is the one that needs its own page: SAP publishes
+              two files answering different questions, and which one wins decides
+              22 objects. Summarising that here would flatten it back into the
+              single letter that made it unreadable in the first place.
+            */}
+            <p className="text-gray-700 leading-relaxed font-medium">
+              The repository lookup merges two SAP files that answer different questions, and the
+              order of that merge is a decision rather than a detail.{' '}
+              <Link
+                href="/method/levels"
+                className="font-bold text-gray-955 underline underline-offset-2 hover:text-gray-600"
+              >
+                The precedence rule is published in full
+              </Link>
+              , with the counts behind each branch and the objects where the two files disagree.
+            </p>
           </section>
 
           {/*
