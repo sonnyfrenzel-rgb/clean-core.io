@@ -3,7 +3,7 @@ import { withTwitterCard } from '@/lib/page-metadata';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { resolveApi, hasNoReleasedApiPath, gradeSapObject } from '@/lib/abap/catalog-service';
-import { ABCD_META } from '@/lib/abap/abcd-classification';
+import { ABCD_META, CLOUD_VIEW_META, CLASSIC_VIEW_META } from '@/lib/abap/abcd-classification';
 import {
   slugToObject,
   objectToSlug,
@@ -188,6 +188,65 @@ export default async function CatalogObjectPage({
               ? `SAP state: ${graded.state}`
               : 'listed in neither SAP file — SAP-internal'}
           </span>
+        </div>
+      )}
+
+      {/*
+        The two files behind the letter, side by side.
+
+        SAP publishes two artifacts that answer different questions, and the level
+        merges them. With only the letter on screen the merge is unreadable: two
+        independent code reviews in September 2026 read this page's derivation as a
+        bug and filed it as a priority-zero defect, because neither half was
+        visible next to the other. Both were wrong. Showing the halves is how a
+        reader checks the answer instead of reconstructing it from the source.
+      */}
+      {graded.cloudView && graded.classicView && (
+        <div className="border border-slate-200 rounded-2xl overflow-hidden mb-8">
+          <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+            <div className="p-4">
+              <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                ABAP Cloud view
+              </p>
+              <p className="text-sm font-bold text-slate-800 mt-1">
+                {CLOUD_VIEW_META[graded.cloudView].label}
+              </p>
+              <p className="text-xs text-slate-500 leading-relaxed mt-1">
+                {CLOUD_VIEW_META[graded.cloudView].detail}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-2 font-mono">objectReleaseInfo</p>
+            </div>
+            <div className="p-4">
+              <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                Classic view
+              </p>
+              <p className="text-sm font-bold text-slate-800 mt-1">
+                {CLASSIC_VIEW_META[graded.classicView].label}
+              </p>
+              <p className="text-xs text-slate-500 leading-relaxed mt-1">
+                {CLASSIC_VIEW_META[graded.classicView].detail}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-2 font-mono">objectClassifications_SAP</p>
+            </div>
+          </div>
+
+          {/*
+            The 22 objects where the two files disagree — CL_BCS, CL_HTTP_CLIENT
+            and the rest. This is the case that reads like a bug, so it explains
+            itself here rather than in a source comment nobody sees.
+          */}
+          {graded.classicView === 'classic-api' &&
+            (graded.cloudView === 'not-usable' || graded.cloudView === 'deprecated') && (
+              <div className="bg-amber-50 border-t border-amber-200 p-4">
+                <p className="text-xs text-amber-900 leading-relaxed">
+                  <span className="font-bold">The two files disagree here, and the release state decides.</span>{' '}
+                  Level B means &ldquo;acceptable where no level A path exists&rdquo;. SAP names a
+                  successor for this object, so a level A path does exist and B would be the wrong
+                  answer — which is why the level is {graded.grade} and not B. Twenty-two objects in
+                  the catalog are in this position.
+                </p>
+              </div>
+            )}
         </div>
       )}
 

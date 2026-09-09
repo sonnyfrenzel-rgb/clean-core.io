@@ -203,6 +203,47 @@ export interface GradedObject {
   classicView?: 'classic-api' | 'not-recommended' | 'unlisted';
 }
 
+/**
+ * What each half of the catalog actually says, in words.
+ *
+ * The letter is a merge of two files answering two different questions, and the
+ * merge is not readable from the letter. These labels are what a surface prints
+ * next to it so a reader can check the answer rather than reconstruct it.
+ */
+export const CLOUD_VIEW_META: Record<NonNullable<GradedObject['cloudView']>, { label: string; detail: string }> = {
+  usable: {
+    label: 'Released',
+    detail: 'SAP lists it as released, so ABAP Cloud may use it directly — the level A path.',
+  },
+  deprecated: {
+    label: 'Deprecated',
+    detail: 'Still listed, but SAP has marked it for removal. Anything built on it has a shelf life.',
+  },
+  'not-usable': {
+    label: 'Not to be released',
+    detail: 'SAP will not release it for ABAP Cloud. There is no level A use of this object.',
+  },
+  unlisted: {
+    label: 'Not listed',
+    detail: 'The release file does not mention it, so it says nothing either way.',
+  },
+};
+
+export const CLASSIC_VIEW_META: Record<NonNullable<GradedObject['classicView']>, { label: string; detail: string }> = {
+  'classic-api': {
+    label: 'Classic API',
+    detail: 'SAP classifies it as an API that classic ABAP may use — level B on its own.',
+  },
+  'not-recommended': {
+    label: 'noAPI',
+    detail: 'SAP classifies it as not intended for customer use.',
+  },
+  unlisted: {
+    label: 'Not listed',
+    detail: 'The classification file does not mention it, so it says nothing either way.',
+  },
+};
+
 export interface SapObjectStates {
   /** state from objectReleaseInfo*.json — 'released' | 'deprecated' | 'notToBeReleased' */
   releaseState?: string;
