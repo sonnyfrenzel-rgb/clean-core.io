@@ -5,6 +5,7 @@ import JSZip from 'jszip';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { verifyRunIntegrity } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
+import { signEd25519 } from '@/lib/audit-signing-keypair';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { APP_VERSION } from '@/lib/version';
 import type { Project } from '@/lib/types';
@@ -192,8 +193,15 @@ export async function POST(req: NextRequest) {
     const signature = crypto.createHmac('sha256', signingKey).update(manifestHash).digest('hex');
     const generatedAt = new Date().toISOString();
 
+    // The asymmetric signature, when a key is configured. It covers exactly the
+    // same string as the HMAC, so a verifier checks one value with either method
+    // and the two can never disagree about what was signed. Absent key means
+    // absent field — never a null or an empty string that a verifier might read
+    // as "signed with nothing".
+    const ed25519 = signEd25519(manifestHash);
+
     const manifest = {
-      version: '2.0',
+      version: ed25519 ? '2.1' : '2.0',
       runId,
       projectId,
       generatedAt,
@@ -203,6 +211,13 @@ export async function POST(req: NextRequest) {
       manifestHash,
       signed: true,
       signature,
+      ...(ed25519
+        ? {
+            signatureEd25519: ed25519.signature,
+            signingKeyId: ed25519.keyId,
+            signingKeyUrl: `${(process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io').replace(/\/$/, '')}/.well-known/clean-core-io-signing.json`,
+          }
+        : {}),
       runHash,
     };
 
