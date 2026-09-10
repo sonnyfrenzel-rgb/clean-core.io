@@ -3,6 +3,73 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+**Stand 10.09.2026, Feierabend — v2.9.0 → v2.9.4, fünf Releases, alles auf `main`
+und deployt.** Der Tag hatte einen Auslöser und einen roten Faden. Der Auslöser:
+fünf Feature-Commits lagen seit dem 08./09.09. unveröffentlicht auf dem Branch,
+und v2.8.6 war nie auf `main` gekommen. Der rote Faden ab v2.9.1: die Roadmap
+(`roadmap_chatgpt.md`, 16 Epics / 64 Features / 128 Stories) statt eigener
+Priorisierung.
+
+**Was rausging:**
+
+| Release | Was | Befund |
+|---|---|---|
+| v2.9.0 | Ed25519 neben HMAC, `/method/levels`, beide SAP-Sichten auf Objektseiten, Narrative-Anker auf Codezeilen | CR-01, CR-26 |
+| — | `fix(deps)`: kritisches Next.js-RCE, das **in Produktion lief** | — |
+| v2.9.1 | Runner-Egress wird gemessen statt behauptet | CR-15 / E08-F01-US02 |
+| v2.9.2 | „Keine Befunde" ≠ „nichts zu finden": Abdeckungsbericht neben den Befunden | CR-06 |
+| v2.9.3 | Eigene Z-Tabelle zwingt nicht mehr vom Stack (Private on-stack, Public → BTP) | CR-04 |
+| v2.9.4 | Keine nicht endliche Zahl erreicht ein Diagramm | E12-F01-US01 |
+
+**Der Tag in einer Zeile:** Vier der fünf Releases haben nichts Neues gebaut,
+sondern eine Behauptung eingeholt, die das Produkt schon gemacht hat — und der
+teuerste Fund kam nicht aus der Roadmap, sondern daraus, dass ein Push die
+Security-Gates rot gemacht hat.
+
+**Drei Dinge, die dabei aufgefallen sind und die bleiben:**
+
+1. **Security CI stand seit dem 07.09. rot, und niemand hat es gesehen.** Der
+   Montags-Cron und die Push-Trigger melden nichts; ohne einen Push nach
+   `main`/`dev` fällt eine rote Abhängigkeitsprüfung niemandem auf. Drei Tage
+   lang lief ein kritisches Next.js-RCE in Produktion. **Offen: eine
+   Benachrichtigung, die einen roten Scheduled-Run sichtbar macht** (Issue
+   öffnen/aktualisieren statt still scheitern).
+2. **Dieselbe Fehlerform zum dritten Mal:** ein `overrides`-Eintrag, dessen
+   Untergrenze exakt auf der Lücke sitzt (`fast-uri` in v2.8.6, jetzt `sharp`
+   `^0.35.3` gegen `<0.35.4` und `js-yaml` `^3.15.1` gegen `<3.15.2`). Ein Caret
+   hebt nichts an, was den Bereich schon erfüllt. Drei Vorkommen sind ein Muster,
+   kein Zufall.
+3. **Der Content-Datums-Generator war seit v2.7.2 kaputt** — jener Release hat
+   `withTwitterCard()` über 18 Seiten gezogen, und „neuester Commit gewinnt" las
+   das als 18 gleichzeitig geänderte Seiten. Behoben; der Generator überspringt
+   jetzt reine Plumbing-Commits.
+
+**Offen für den 2.9-Exit (aus dem Befundregister):**
+
+| # | Punkt | Wer | Warum |
+|---|---|---|---|
+| 1 | **CR-11 — kanonische Phasen** | Entwicklung | Upload/Analyze getrennt, TCO fehlt, Testing zählt *erzeugte* Fälle |
+| 2 | **CR-28 — Sign-off als revidierbare Selbsterklärung** (P1) | Entwicklung | Freigabeattribute sind client-schreibbare Projektfelder |
+| 3 | **E08-F01-US01 — echte Runner-Isolation** | **Felix (GCP)** | eigener Einmal-Runner, minimales Dienstkonto, nachgewiesene Egress-Regeln. Bis dahin hält die Attestierung aus v2.9.1 den Live-Modus zu — korrekt, denn der Container hat offenen Egress |
+| 4 | **CR-23 — TCO-Annahmen empirisch** | Entwicklung | Koeffizienten (2,5/0,8/1,8/0,6 Tage je 1.000 Zeilen), 85-%-Testannahme, Zielscore 95 sind nicht aus beobachteten Aufwänden abgeleitet → E12-F02, Release 2.10 |
+
+**Ebenfalls neu offen:** die sieben verbliebenen Moderate-Advisories (`mermaid`,
+`qs`/`express`, `protobufjs`) liegen unter der Gate-Schwelle und bleiben liegen.
+**DKIM auf 2048 bit** war für „nach dem 09.09." vorgemerkt — ab jetzt möglich.
+
+**Unverändert offen:** die ~30 ungeprüften GLM/GPT-Findings, G-06, die 673
+geparkten Lint-Warnungen (von 677 heruntergezogen), G-05, V15/V16/V18, die drei
+Tenant-Mails, Befund v4 Mitte September.
+
+**Eine Selbstkorrektur fürs Protokoll:** v2.9.4 ging rot nach `dev`, weil ich
+einen grünen Lauf gemeldet habe, der keiner war. `rtk proxy` gab Exit 0 für einen
+fehlgeschlagenen Playwright-Lauf zurück *und* filterte die Zeile `1 failed` aus
+der Ausgabe, die ich gelesen habe. Beide Signale waren einig und beide falsch.
+CI hat es gefangen, der Deploy war blockiert, Produktion war nie betroffen. Lehre:
+Testkommandos unverpackt ausführen und das ganze Log durchsuchen, nicht das Ende.
+
+---
+
 **Stand 01.09.2026, Feierabend — v2.8.5, ein Release, auf `main` und deployt
 (`clean-core-00289-pf4`).** Ein einziger Strang: die Umfrage, die morgen früh um
 09:00 von selbst an 36 Leute geht.
