@@ -9,6 +9,7 @@ import { pathToFileURL } from 'url';
 import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied, assertAccountActive, getAdminDb } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 import { assertRateLimit } from '@/lib/rate-limit';
+import { liveRunnerPermitted } from '@/lib/runner-egress-attestation';
 
 /**
  * POST /api/run-tests
@@ -493,19 +494,80 @@ process.exitCode = failed ? 1 : 0;
     // process singletons, so pure-JS test code cannot obtain an un-patched socket.
     // Every http/https/tls/http2/fetch(undici) egress funnels through
     // net.Socket.prototype.connect, so neutralising it covers TCP comprehensively.
-    // Skipped only when the infra-level egress policy is enforced
-    // (S4_TEST_RUNNER_EGRESS_ENFORCED), where controlled live-tenant egress is
-    // handled at the network layer instead. Defense-in-depth, not a formal
-    // microVM boundary — see docs for the isolated-runner roadmap item.
-    const applyNetGuard = process.env.S4_TEST_RUNNER_EGRESS_ENFORCED !== 'true';
+    // The guard is never removed. It used to be skipped whenever
+    // S4_TEST_RUNNER_EGRESS_ENFORCED was 'true', which meant one variable both
+    // unlocked live tenant credentials and deleted the only defence standing
+    // between generated test code and the metadata endpoint — two effects that
+    // cannot see each other at the call site. A live run that has passed the
+    // egress attestation now narrows the guard to the S/4 host allowlist
+    // instead of dropping it: the tenant call it needs is permitted, everything
+    // else still throws. Defense-in-depth, not a formal microVM boundary — see
+    // docs for the isolated-runner roadmap item.
+    // The live decision is made here, before the guard is written, because the
+    // guard's shape depends on it. Asking for a live run that is not permitted
+    // fails the request outright rather than quietly falling back to the mock —
+    // a caller who asked to talk to a tenant must not be told a sandbox result
+    // is the same thing.
+    const live =
+      s4Environment === 'live'
+        ? await liveRunnerPermitted()
+        : { permitted: false, reason: 'sandbox run', attestation: null };
+
+    if (s4Environment === 'live' && !live.permitted) {
+      return NextResponse.json(
+        { output: '', error: live.reason, exitCode: 1, testResults: [] },
+        { status: 403 },
+      );
+    }
+
     const netGuardPath = path.join(testDir, '__netguard.mjs');
-    if (applyNetGuard) {
+    {
+      // In an attested live run the tenant host has to be reachable or the
+      // feature is pointless, so TCP is narrowed to the S/4 allowlist rather
+      // than closed. The metadata endpoint is an IP literal and matches no host
+      // suffix, so it stays blocked on this path too — which is the property
+      // that actually matters.
+      const allowedSuffixes = live.permitted
+        ? (process.env.S4_HOST_ALLOWLIST || '')
+            .split(',')
+            .map((s) => s.trim().toLowerCase())
+            .filter(Boolean)
+        : [];
+
       await fs.writeFile(netGuardPath, `import net from 'node:net';
 import dgram from 'node:dgram';
 import dns from 'node:dns';
 const BLOCK = () => { throw new Error('Network access is disabled in the Clean-Core.io test sandbox.'); };
-try { net.Socket.prototype.connect = BLOCK; } catch {}
-try { net.connect = BLOCK; net.createConnection = BLOCK; } catch {}
+const ALLOWED_SUFFIXES = ${JSON.stringify(allowedSuffixes)};
+const realConnect = net.Socket.prototype.connect;
+const realNetConnect = net.connect;
+const realCreateConnection = net.createConnection;
+// Reads the destination out of either connect() shape: connect(options) and
+// connect(port, host). An address we cannot read is not an address we allow.
+function targetHost(args) {
+  const first = args[0];
+  if (first && typeof first === 'object') return String(first.host || first.hostname || '');
+  if (typeof args[1] === 'string') return args[1];
+  return '';
+}
+function allowed(host) {
+  const h = String(host || '').toLowerCase();
+  if (!h) return false;
+  return ALLOWED_SUFFIXES.some((s) => h === s || h.endsWith(s));
+}
+function gate(real) {
+  return function (...args) {
+    if (!allowed(targetHost(args))) BLOCK();
+    return real.apply(this, args);
+  };
+}
+if (ALLOWED_SUFFIXES.length > 0) {
+  try { net.Socket.prototype.connect = gate(realConnect); } catch {}
+  try { net.connect = gate(realNetConnect); net.createConnection = gate(realCreateConnection); } catch {}
+} else {
+  try { net.Socket.prototype.connect = BLOCK; } catch {}
+  try { net.connect = BLOCK; net.createConnection = BLOCK; } catch {}
+}
 try { dgram.createSocket = BLOCK; } catch {}
 // The factory is not the only UDP path — the exported Socket constructor and its
 // prototype methods can build and send datagrams directly, so neutralise them too.
@@ -517,14 +579,27 @@ try {
   }
 } catch {}
 try { dgram.Socket = BLOCK; } catch {}
-try { globalThis.fetch = BLOCK; } catch {}
 try { process.binding = BLOCK; } catch {}
+// fetch/undici reaches the network through net.Socket.prototype.connect, so on
+// the allowlisted path it is left in place and the socket gate decides. With no
+// allowlist there is nothing it could legitimately reach, so it is closed here
+// too rather than relying on a single choke point.
+if (ALLOWED_SUFFIXES.length === 0) {
+  try { globalThis.fetch = BLOCK; } catch {}
+}
 // DNS uses the native c-ares/getaddrinfo resolver, which bypasses net.Socket — block
 // every JS entry point so DNS queries (incl. DNS-tunnelling exfil) cannot leave either.
-for (const o of [dns, dns.promises, dns.Resolver && dns.Resolver.prototype]) {
-  if (!o) continue;
-  for (const k of Object.getOwnPropertyNames(o)) {
-    try { if (typeof o[k] === 'function') o[k] = BLOCK; } catch {}
+// An allowlisted live run must be able to resolve the tenant host, so DNS stays
+// available there; the socket gate is what decides where a connection may go.
+// This is the one place the narrowed guard is genuinely weaker than the closed
+// one — DNS tunnelling is possible again — and it is why live mode needs the
+// infrastructure policy underneath it, not just this file.
+if (ALLOWED_SUFFIXES.length === 0) {
+  for (const o of [dns, dns.promises, dns.Resolver && dns.Resolver.prototype]) {
+    if (!o) continue;
+    for (const k of Object.getOwnPropertyNames(o)) {
+      try { if (typeof o[k] === 'function') o[k] = BLOCK; } catch {}
+    }
   }
 }
 `);
@@ -533,17 +608,8 @@ for (const o of [dns, dns.promises, dns.Resolver && dns.Resolver.prototype]) {
     // ── 4) Resolve S/4 credentials server-side (F-03), never from the body ──
     let s4Env: Record<string, string> = {};
     if (s4Environment === 'live') {
-      if (process.env.S4_TEST_RUNNER_EGRESS_ENFORCED !== 'true') {
-        return NextResponse.json(
-          {
-            output: '',
-            error: 'Live S/4HANA test execution is disabled until runner network egress is restricted by infrastructure policy.',
-            exitCode: 1,
-            testResults: [],
-          },
-          { status: 403 },
-        );
-      }
+      // The egress gate already ran above, before the guard was written; getting
+      // here means it passed.
 
       // Audit P1: re-verify tenant access here too. A user whose S/4 access was
       // revoked must not be able to use stored live credentials via the test runner.
@@ -578,10 +644,11 @@ for (const o of [dns, dns.promises, dns.Resolver && dns.Resolver.prototype]) {
         `--allow-fs-write=${testDir}`
       );
     }
-    // F-01: preload the network-egress block before the test runner.
-    if (applyNetGuard) {
-      args.push(`--import=${pathToFileURL(netGuardPath).href}`);
-    }
+    // F-01: preload the network-egress block before the test runner. This is
+    // unconditional. It used to be skipped on the same env var that unlocked
+    // live mode, so the one run holding real tenant credentials was also the
+    // one run with no guard loaded at all.
+    args.push(`--import=${pathToFileURL(netGuardPath).href}`);
     args.push(runnerPath);
 
     const childEnv: Record<string, string> = {

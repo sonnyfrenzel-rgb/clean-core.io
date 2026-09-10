@@ -10,6 +10,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.1] — 2026-09-10
+
+### Eine Variable, die zwei Dinge tat — und keines davon prüfte
+
+Aus der Roadmap, Release 2.9, P0: **E08-F01 — harte Ausführungsgrenze oder
+sichere Abschaltung.** Die Abnahme zu US02 steht dort wörtlich: „Bei
+deaktiviertem oder nicht attestiertem Runner lehnt die API neue Ausführungen
+serverseitig ab. **Ein Frontend-Flag oder das bloße Setzen einer
+Egress-Umgebungsvariable aktiviert ihn nicht.**"
+
+Genau das tat es. `S4_TEST_RUNNER_EGRESS_ENFORCED=true` war das ganze Tor, und
+es öffnete zwei auf einmal:
+
+1. Es erlaubte den Live-Lauf gegen S/4HANA — entschlüsselte Mandanten-Zugangsdaten
+   wandern dabei in den Kindprozess.
+2. Es **löschte `__netguard.mjs`** — die einzige Verteidigung, die generierten
+   Testcode davon abhält, den Metadaten-Endpunkt `169.254.169.254` zu lesen und
+   damit das Laufzeit-Token des Dienstkontos abzuholen.
+
+Die beiden Wirkungen sehen einander an der Aufrufstelle nicht. Wer die Variable
+setzt, weil er „Live-Modus einschalten" will, entfernt still den Netzschutz —
+und zwar für genau den Lauf, der als einziger echte Zugangsdaten trägt. Geprüft
+wurde nie, ob die Egress-Regel, die die Variable behauptet, überhaupt gilt.
+
+**Eine Variable ist eine Behauptung. Jetzt wird gemessen.** Vor jedem Live-Lauf
+versucht die Laufzeit eine TCP-Verbindung zum Metadaten-Endpunkt und zu einer
+öffentlichen Adresse. Antwortet eine davon, ist Egress nicht eingeschränkt — der
+Lauf wird abgelehnt, mit der Angabe, was erreichbar war. Die Variable allein
+gewährt nichts mehr.
+
+Die Details, die das Ergebnis tragen: Die öffentliche Probe nutzt eine
+IP-Literal-Adresse, kein Hostname — sonst prüft man DNS mit und ein Container
+ohne Resolver, aber mit offenem Egress, sähe geschlossen aus. `ECONNREFUSED`
+zählt **nicht** als blockiert: ein RST kommt von etwas, das das Paket bekommen
+hat, der Weg existiert also und nur der Port ist zu. Und jeder unbekannte Fehler
+zählt als erreichbar, damit nicht ausgerechnet eine Überraschung das Tor öffnet.
+
+**Der Netzschutz wird nicht mehr entfernt, sondern verengt.** Er wird jetzt bei
+*jedem* Lauf vorgeladen. Ein attestierter Live-Lauf schaltet ihn nicht ab,
+sondern beschränkt TCP auf die Host-Suffixe aus `S4_HOST_ALLOWLIST`: der
+Mandanten-Aufruf geht durch, alles andere wirft weiter. Der Metadaten-Endpunkt
+ist eine IP-Literal-Adresse und passt auf kein Host-Suffix — er bleibt also auch
+auf diesem Pfad unerreichbar, und das ist die Eigenschaft, auf die es ankommt.
+
+Ehrlich zu den Grenzen, weil sonst dieselbe Art Fehler zurückkommt: Zwei
+Endpunkte sind eine Stichprobe, kein Beweis einer Deny-by-default-Regel — eine
+Politik, die genau diese zwei blockiert und einen dritten erlaubt, käme durch.
+Und auf dem verengten Pfad bleibt DNS verfügbar, weil der Mandanten-Host
+auflösbar sein muss; DNS-Tunneling ist dort also wieder möglich. Beides steht im
+Code an der Stelle, wo es passiert, nicht nur hier.
+
+Was sich für die Produktion heute ändert: nichts. Die Variable ist in
+`deploy.yml` nicht gesetzt, der Live-Modus war und bleibt aus, der Sandbox-Lauf
+blockiert Netz, DNS und `fetch` vollständig wie bisher. Geschlossen wurde eine
+Falle, kein laufender Vorfall — der Weg von „gehärtet" zu „Mandanten-Zugangsdaten
+in einem Prozess mit offenem Egress" war eine einzige Zeile lang.
+
+`tests/runner-egress-guard.spec.ts` hält beide Hälften fest, und die ausgeführte
+ist die, die zählt: drei der dreizehn Tests setzen die Variable auf dieser
+Maschine tatsächlich auf `true` und prüfen, dass der Live-Lauf trotzdem abgelehnt
+wird — weil hier Egress offen ist und die Behauptung damit falsch. Ein Test, der
+nur Quelltext liest, ließe sich von einem Refactor zufriedenstellen, das das
+Verhalten ändert.
+
+E08-F01-US01 — die echte Isolation: eigener Einmal-Runner, minimales Dienstkonto,
+nachgewiesene Egress-Regeln — bleibt offen und ist Infrastrukturarbeit in GCP.
+
 ## [v2.9.0] — 2026-09-10
 
 ### Nachprüfbar durch jemanden, der nicht wir ist

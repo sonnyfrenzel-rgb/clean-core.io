@@ -131,7 +131,7 @@ Full detail in `SECURITY.md`. Key points for day-to-day work:
 - **SSRF** — multi-layer defense on S/4 connectivity (HTTPS-only, DNS re-check, `S4_HOST_ALLOWLIST`, metadata-endpoint block, redirect validation).
 - **CSP / headers** — `middleware.ts` (CSP, documented Firebase Sign-In exceptions) + `next.config.mjs` (HSTS/X-Frame). HTML sanitized via `lib/sanitize-html.ts` (dompurify).
 - **Firestore rules** — `firestore.rules` freezes privileged fields (`isAdmin`, `tier`, quota counters); tested by `tests/firestore-rules.spec.ts`.
-- **Env vars** — template in `.env.example`; runtime secrets injected as Cloud Run env vars per environment. `run-tests` executes generated tests in a hardened sandbox (esbuild + Node Permission Model, temp-dir-scoped FS, minimal env, time/output limits); live S/4 egress stays off unless `S4_TEST_RUNNER_EGRESS_ENFORCED=true`.
+- **Env vars** — template in `.env.example`; runtime secrets injected as Cloud Run env vars per environment. `run-tests` executes generated tests in a hardened sandbox (esbuild + Node Permission Model, temp-dir-scoped FS, minimal env, time/output limits); live S/4 egress stays off unless `S4_TEST_RUNNER_EGRESS_ENFORCED=true` **and** a startup probe confirms the container cannot reach the cloud metadata endpoint or the public internet (`lib/runner-egress-attestation.ts`). The variable alone grants nothing.
 
 Required secrets: `GEMINI_API_KEY`, `RESEND_API_KEY`, `S4_ENCRYPTION_KEY`, `MFA_BACKUP_CODE_PEPPER`, `PILOT_APPROVAL_SECRET`, `AUDIT_SIGNING_KEY`, `S4_HOST_ALLOWLIST`.
 
