@@ -17,7 +17,8 @@ export const CONTENT_LAST_MODIFIED: Record<string, string> = {
   '/knowledge': '2026-08-26',
   '/abap-custom-code-analysis': '2026-08-27',
   '/clean-core-score': '2026-07-16',
-  '/sap-clean-core-object-classification': '2026-08-26',
+  '/sap-clean-core-object-classification': '2026-09-09',
+  '/method/levels': '2026-09-09',
   '/sap-cloudification': '2026-08-26',
   '/how-it-works': '2026-08-27',
   '/about': '2026-07-07',
@@ -31,9 +32,9 @@ export const CONTENT_LAST_MODIFIED: Record<string, string> = {
   '/licenses': '2026-07-10',
   '/catalog': '2026-08-26',
   '/catalog/browse': '2026-08-26',
-  '/catalog/module': '2026-08-28',
-  '/catalog/object': '2026-08-26',
-  '/features': '2026-07-15',
+  '/catalog/module': '2026-08-31',
+  '/catalog/object': '2026-09-09',
+  '/features': '2026-08-31',
 };
 
 /** Falls back to the release date for a route not in the map. */

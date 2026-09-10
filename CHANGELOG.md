@@ -10,6 +10,152 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.0] — 2026-09-10
+
+### Nachprüfbar durch jemanden, der nicht wir ist
+
+Drei Behauptungen, die das Produkt gemacht hat und die bisher nur wir selbst
+prüfen konnten. Keine davon war ein Rechenfehler — die Zahlen stimmten. Was
+jedes Mal fehlte, war die Möglichkeit für jemanden von außen, das nachzuvollziehen.
+
+**„Jeder kann das prüfen" stand auf der Seite, während jede Signatur HMAC-SHA256
+gegen `AUDIT_SIGNING_KEY` war.** HMAC ist symmetrisch: Wer eine Signatur prüfen
+kann, kann sie auch fälschen — die einzige Stelle auf der Welt, die ein
+Audit-Pack verifizieren konnte, war der Server, der es ausgestellt hat. Ein
+Prüfer hätte nichts prüfen können, ohne die Mittel zum Fälschen in die Hand
+gedrückt zu bekommen. Der Satz war über niemanden wahr.
+
+Ed25519 läuft jetzt **neben** dem HMAC, nie an seiner Stelle. Bereits
+ausgestellte Packs verifizieren weiter wie bisher; neue tragen beides, über exakt
+denselben String, damit die zwei nie uneinig darüber werden können, was signiert
+wurde. Der öffentliche Schlüssel liegt unauthentifiziert unter
+`/.well-known/clean-core-io-signing.json`, und `scripts/verify-pack.mjs` prüft
+ein Pack dagegen — ohne Konto, ohne Geheimnis und ohne Aufruf bei uns außer dem
+Abruf dieses Schlüssels. Jeder Hash wird aus dem ZIP neu abgeleitet, statt dem
+Manifest zu glauben, das ihn beschreibt.
+
+Der private Schlüssel ist absichtlich optional. Ohne `AUDIT_SIGNING_PRIVATE_KEY`
+ändert sich nichts: nur HMAC, kein `signatureEd25519`-Feld, und der
+Well-Known-Endpunkt antwortet mit 503 und sagt das — statt ein leeres
+Schlüsselset auszuliefern, das ein Prüfer als „widerrufen" lesen könnte. Das geht
+also aus, bevor irgendein Schlüssel existiert, und an dem Tag, an dem das Secret
+gesetzt wird, tragen Packs die zweite Signatur ohne Codeänderung.
+
+Die Key-ID wird aus dem Schlüssel abgeleitet — sechzehn Hex aus SHA-256 über die
+rohen öffentlichen Bytes — im Aussteller, in der Verify-Route und im CLI
+gleichermaßen. Eine konfigurierte ID kann den falschen Schlüssel benennen, und
+eine ID, die über ihren Schlüssel lügt, ist schlimmer als gar keine. Sie macht
+außerdem Rotation sichtbar: ein neuer Schlüssel taucht als neue ID in jedem Pack
+auf.
+
+Ende zu Ende geprüft statt in Einzelteilen: ein echtes Pack verifiziert (Exit 0);
+dasselbe Pack mit einer geänderten Datei nennt diese Datei und scheitert
+(Exit 1); dasselbe Pack gegen einen fremden Schlüssel scheitert an der Signatur
+und warnt, dass die IDs auseinandergehen. Die erste Fassung des CLI warnte auch
+bei korrekter Prüfung vor einem ID-Konflikt — eine Warnung, die im Erfolgsfall
+feuert, bringt Leuten bei, Warnungen zu ignorieren.
+
+**Zwei unabhängige Code-Reviews haben im September dieselbe Priorität-0-Meldung
+geschrieben, und beide lagen falsch.** SAPs Klassifikationsdatei nennt CL_BCS
+einen `classicAPI`, die Seite vergibt D — also müsse der Release-Status die
+Klassifikation zu Unrecht überstimmen. Die Begründung stand im Doc-Kommentar
+direkt über der Funktion, den keines der beiden Reviews geöffnet hat. Gegen die
+Artefakte nachgerechnet statt dem Kommentar geglaubt: 21 der 22 strittigen
+Objekte tragen einen expliziten Nachfolger, eines nicht — genau wie dort steht.
+Level B heißt „akzeptabel, wo es keinen A-Weg gibt"; wo SAP den A-Weg benennt,
+ist B die falsche Antwort.
+
+An der Bewertung ändert sich also nichts. Was der Vorgang zeigt: die Regel ist
+aus ihrem Ergebnis nicht lesbar. Zwei sorgfältige Leser haben sie aus dem
+Quelltext rekonstruiert und beide falsch herum. Ein Agent, dem man eines der
+Reviews vorlegt, hätte vier Zeilen umsortiert und damit 22 Objekte still neu
+bewertet.
+
+Also ist sie jetzt sichtbar. `GradedObject` trägt `cloudView` und `classicView`
+neben der Note — rein informativ, sie leiten nichts ab. Objektseiten zeigen eine
+zweispaltige Tafel, die jede der beiden SAP-Dateien benennt, was sie sagt und was
+das bedeutet; bei den 22 Objekten, wo sie sich widersprechen, erklärt eine Notiz,
+warum der Release-Status entscheidet. Und `/method/levels` veröffentlicht die
+Vorrangregel in der Reihenfolge, in der der Code sie prüft, jeden Zweig mit
+seinem Grund, den strittigen Fall an CL_BCS durchgerechnet statt behauptet. Die
+Seite sagt ausdrücklich, dass das eine Auslegung von SAPs Level-Definitionen ist
+und kein Zitat, und dass man das anders sehen kann — *versehentlich* anders sehen
+ist das, was hier aufhören soll.
+
+Jede Zahl dort kommt aus `getLevelDerivationCensus()`, zur Build-Zeit über beide
+Artefakte gerechnet. Nichts ist eingetippt, damit ein Katalog-Sync die Seite
+nicht still falsch über ihre eigenen Daten machen kann. Darunter war ein Satz,
+der durch Arithmetik fast gelogen hätte: „21 der 22 tragen einen Nachfolger"
+stand als `total - 1` im Code — heute wahr, und beim ersten Datenstand, der sich
+bewegt, unverändert falsch auf der Seite.
+
+**Die Analyse-Erzählung nennt jetzt Codezeilen — oder sagt, dass sie es nicht
+kann.** Beide Roadmaps dieses Produkts beginnen mit derselben Bedingung: eine
+Business-Narrative ohne Zeilenbezug ist eine LLM-Meinung, und LLM-Meinungen
+verkauft in diesem Markt bereits jede Beratung. Beide terminieren die Umsetzung
+dann auf Januar 2027, hinter zwei vollen Releases, geschätzt auf ein bis drei
+Wochen. Eine Vorbedingung, die man sechzehn Monate schiebt, ist keine.
+
+Die Schätzung war teuer falsch in die billige Richtung: `EvidenceFinding` trägt
+`id`, `lineStart` und `lineEnd`, seit die Engine geschrieben wurde. Alles, worauf
+das Modell zeigen könnte, war längst da — es fehlte der Vertrag. Das Modell wird
+jetzt aufgefordert, jeden Satz über *dieses* Programm mit `[F-017]` oder
+`[L380-412]` zu beenden, und jede Angabe wird geprüft statt geglaubt: eine
+Finding-ID muss im übergebenen Evidenzbericht existieren, ein Zeilenbereich in
+die Datei fallen. Allgemeine Ratschläge bleiben absichtlich unbelegt, und das ist
+ein gültiges Ergebnis.
+
+Der Unterschied, den der Parser hält, ist der zwischen *fehlend* und *erfunden*.
+Ein Satz ohne Beleg ist ehrlich unbelegt; ein Satz mit `[F-999]` trägt einen
+Beleg zur Schau, den er nicht hat. Beides zu „nicht verankert" zusammenzufassen
+würde den ernsten Fall im harmlosen verstecken — sie werden getrennt gezählt,
+verschieden eingefärbt, und die erfundene Angabe wird auf dem Bildschirm benannt.
+
+Gelöscht wird nichts. Ein unbelegter Satz bleibt stehen, grau — ihn zu entfernen
+ließe Prosa zurück, die vollständig belegt aussieht und deren Lücken unsichtbar
+sind, also genau das Versagen, gegen das die Anker existieren. Und die Quote ist
+`null` über null Sätzen, nicht 100 %. Diese Art von Zahl ist die, die aus dieser
+Codebasis immer wieder heraus muss.
+
+Die Prompt-Anweisung steht neben dem Parser, der sie durchsetzt, und ein Test
+schickt jedes Beispiel aus der Anweisung durch den Validator: ein Prompt, dessen
+eigene Beispiele der Validator ablehnt, erzieht jeden Nachfolger dazu, den
+Validator zu lockern.
+
+**Und der Schlüssel wäre in Produktion nie angekommen.** `.env.example`
+dokumentiert `AUDIT_SIGNING_PRIVATE_KEY`, `.github/workflows/deploy.yml` hat ihn
+nicht durchgereicht. Der Satz „an dem Tag, an dem das Secret gesetzt wird, tragen
+Packs die zweite Signatur ohne Codeänderung" wäre also für genau die Umgebung
+falsch gewesen, für die er zählt: Cloud Run hätte die Variable nie gesehen, der
+Well-Known-Endpunkt hätte dauerhaft 503 geantwortet, und niemand hätte etwas
+prüfen können. Er wird jetzt durchgereicht — und bewusst *nicht* in „Assert
+Production Secrets Configured" aufgenommen, weil er optional bleibt. Ein Feature,
+das zum Aktivieren eine Workflow-Änderung braucht, ist nicht optional, sondern
+unerreichbar.
+
+### Drei Dinge, die dieses Release nicht durchgelassen hätte
+
+**Das Lint-Gate stand bei 679 gegen ein Maximum von 677.** Zwei neue Warnungen
+aus v2.8.6, beide `(r: any)` in der Testing-Seite — überflüssig, denn
+`testResults` ist längst `TestCase[]`. Ohne die Annotation prüft TypeScript die
+Statusvergleiche gegen die Union, die v2.8.6 gerade erst eingeführt hat: ein
+`'passed'` mit kleinem p scheitert jetzt am Build, statt still null zu zählen.
+Sechs Warnungen weg, Stand 673, und die Obergrenze auf 673 nachgezogen — eine
+Grenze über dem tatsächlichen Stand erlaubt genau den Rückschritt, gegen den sie
+gesetzt wurde.
+
+**`/method/levels` stand in der Sitemap und fehlte in der Content-Datums-Karte.**
+`contentDate()` fällt für unbekannte Routen auf das Release-Datum zurück — die
+neue Seite hätte ihr `lastmod` also vom Deploy bekommen, was v2.7.2 gerade
+abgestellt hat.
+
+**Und die Karte selbst war seit v2.7.2 nicht neu erzeugt worden.** Beim Neubau
+rücken 22 weitere Routen auf den 31.08.2026: das ist der Tag, an dem v2.7.2
+`withTwitterCard()` über alle Seiten gezogen hat. Die Datei ist generiert und
+sagt das auch, von Hand zu ergänzen war also keine Option — und ein `lastmod`,
+das behauptet, `/about` habe sich zuletzt am 07.07. geändert, war vorher schon
+falsch.
+
 ## [v2.8.6] — 2026-09-08
 
 ### Stillstellen

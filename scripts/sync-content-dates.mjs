@@ -37,6 +37,10 @@ const ROUTE_SOURCES = {
   '/abap-custom-code-analysis': ['app/(app)/abap-custom-code-analysis/page.tsx'],
   '/clean-core-score': ['app/(app)/clean-core-score/page.tsx'],
   '/sap-clean-core-object-classification': ['app/(app)/sap-clean-core-object-classification/page.tsx'],
+  // Every figure on this page is computed by getLevelDerivationCensus() over the
+  // two SAP artifacts, so the page is exactly as fresh as that function and the
+  // rules it reports on — not as fresh as its own JSX.
+  '/method/levels': ['app/method/levels/page.tsx', 'lib/abap/catalog-service.ts', 'lib/abap/abcd-classification.ts'],
   '/sap-cloudification': ['app/(app)/sap-cloudification/page.tsx'],
   '/how-it-works': ['app/(app)/how-it-works/page.tsx'],
   '/about': ['app/(app)/about/page.tsx'],
@@ -55,12 +59,57 @@ const ROUTE_SOURCES = {
   '/features': ['app/features/[slug]/page.tsx', 'lib/features-content.ts'],
 };
 
+/**
+ * Lines whose change says nothing about what a page tells a reader.
+ *
+ * v2.7.2 pulled `export const metadata: Metadata = {…}` into
+ * `withTwitterCard({…})` across 18 page files in a single commit. Under "newest
+ * commit touching these files wins" that dated 18 routes to the same day and
+ * collapsed the whole map to three distinct dates — the flat sitemap this module
+ * exists to prevent, arriving by a different route. `tests/sitemap-guard.spec.ts`
+ * refuses a map that flat, and it is right to: the sweep changed how metadata is
+ * assembled, not what any of it says.
+ *
+ * Deliberately narrow. A change to a `title` or a `description` IS content and
+ * must move the date, so only the wrapper itself is listed here — not the object
+ * it wraps.
+ */
+const PLUMBING_LINES = [
+  /^import .*from '@\/lib\/page-metadata';$/,
+  /^export const metadata: Metadata = (\{|withTwitterCard\(\{)$/,
+  /^\}\)?;$/,
+];
+
+/** True when a commit's diff for one file touches nothing but the lines above. */
+function isPlumbingOnly(sha, relPath) {
+  let diff;
+  try {
+    diff = execFileSync('git', ['diff', '--unified=0', `${sha}~1`, sha, '--', relPath], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    });
+  } catch {
+    return false; // root commit, or no parent to diff against — count it as content.
+  }
+  const changed = diff
+    .split('\n')
+    .filter((l) => /^[+-]/.test(l) && !/^(\+\+\+|---)/.test(l))
+    .map((l) => l.slice(1).trim());
+  return changed.length > 0 && changed.every((l) => PLUMBING_LINES.some((re) => re.test(l)));
+}
+
+/** The newest commit that changed this file's content, skipping plumbing sweeps. */
 function lastCommitDate(relPath) {
-  const out = execFileSync('git', ['log', '-1', '--format=%cs', '--', relPath], {
+  const log = execFileSync('git', ['log', '--format=%H %cs', '--', relPath], {
     cwd: ROOT,
     encoding: 'utf8',
   }).trim();
-  return out || null;
+  if (!log) return null;
+  for (const line of log.split('\n')) {
+    const [sha, date] = line.split(' ');
+    if (!isPlumbingOnly(sha, relPath)) return date;
+  }
+  return null;
 }
 
 const dates = {};

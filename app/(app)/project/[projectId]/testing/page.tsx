@@ -519,21 +519,24 @@ export default function TestingSandboxPage() {
     // A skipped test, or one the runner never mentioned, is neither passed nor
     // failed, and counting it as failed is as wrong as counting it as passed —
     // it just errs in the flattering direction for a different number.
-    const passed = testResults.filter((r: any) => r.status === 'Passed').length;
-    const failed = testResults.filter((r: any) => r.status === 'Failed').length;
+    // Left to inference rather than annotated `any`: testResults is TestCase[],
+    // so these comparisons are checked against the TestStatus union. A verdict
+    // spelled 'passed' would now fail the build instead of counting as zero.
+    const passed = testResults.filter((r) => r.status === 'Passed').length;
+    const failed = testResults.filter((r) => r.status === 'Failed').length;
     const inconclusive = total - passed - failed;
     // A pass rate over tests that never ran is not a pass rate. The denominator
     // is the tests that actually returned a verdict, and null when none did.
     const verdicts = passed + failed;
     const passRate = verdicts > 0 ? Math.round((passed / verdicts) * 100) : null;
 
-    const categories = Array.from(new Set(testResults.map((r: any) => r.category || 'Uncategorized')));
+    const categories = Array.from(new Set(testResults.map((r) => r.category || 'Uncategorized')));
     const categoryStats = categories.map(cat => {
-      const catTests = testResults.filter((r: any) => (r.category || 'Uncategorized') === cat);
-      const catPassed = catTests.filter((r: any) => r.status === 'Passed').length;
-      const catFailed = catTests.filter((r: any) => r.status === 'Failed').length;
+      const catTests = testResults.filter((r) => (r.category || 'Uncategorized') === cat);
+      const catPassed = catTests.filter((r) => r.status === 'Passed').length;
+      const catFailed = catTests.filter((r) => r.status === 'Failed').length;
       return {
-        name: cat as string,
+        name: cat,
         passed: catPassed,
         failed: catFailed,
         inconclusive: catTests.length - catPassed - catFailed,

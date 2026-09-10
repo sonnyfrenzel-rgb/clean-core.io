@@ -182,7 +182,14 @@ jobs:
           service_account: '819734065839-compute@developer.gserviceaccount.com'
           project_id: 'cleancore-491216'
 
-      # Deploy source code directly to Cloud Run
+      # Deploy source code directly to Cloud Run.
+      #
+      # AUDIT_SIGNING_PRIVATE_KEY is passed but is NOT asserted above, unlike the
+      # other secrets: it is optional by design. Absent, the app signs audit packs
+      # with HMAC exactly as it always has and the well-known route answers 503.
+      # It is passed anyway so that creating the secret is all it takes to switch
+      # Ed25519 on — a feature that needs a workflow edit to activate is not
+      # optional, it is unreachable.
       - name: Deploy to Google Cloud Run
         uses: google-github-actions/deploy-cloudrun@251330ba9a8a34bfbc1622895f42e1d53fd14522 # v2
         with:
@@ -205,6 +212,7 @@ jobs:
             S4_ENCRYPTION_KEY=${{ secrets.S4_ENCRYPTION_KEY }}
             S4_HOST_ALLOWLIST=${{ secrets.S4_HOST_ALLOWLIST }}
             AUDIT_SIGNING_KEY=${{ secrets.AUDIT_SIGNING_KEY }}
+            AUDIT_SIGNING_PRIVATE_KEY=${{ secrets.AUDIT_SIGNING_PRIVATE_KEY }}
             MFA_BACKUP_CODE_PEPPER=${{ secrets.MFA_BACKUP_CODE_PEPPER }}
             PILOT_APPROVAL_SECRET=${{ secrets.PILOT_APPROVAL_SECRET }}
             NODE_OPTIONS=--max-old-space-size=4096
