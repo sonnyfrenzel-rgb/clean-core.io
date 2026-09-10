@@ -124,6 +124,24 @@ export default function TcoCalculatorPage() {
 
     // 2. Post-Modernization Maintenance Efforts (Days per year)
     // Decoupled, upgrade-safe standard API extensions require minimal maintenance (Clean Core)
+    //
+    // The divisor is `100 - scoreBefore`, and v2.8.6 guarded the two divisions
+    // downstream of this one without noticing this one. At a score of 100 it is
+    // zero: `factor` becomes Infinity, and from there the ROI reads -Infinity,
+    // the overhead reduction reads -Infinity, and the five-year chart is handed
+    // Infinity for every modernised year.
+    //
+    // At 99 there is no division by zero and the output is worse for it, because
+    // it looks like a number: factor 5, so the model claims modernising costs
+    // 3.35x more, ROI -749%, "overhead reduction" -235%. Both cases have the same
+    // cause — `scoreAfter` is a fixed assumption of 95, and code already at or
+    // above it has nothing this model can offer.
+    //
+    // So the model declines instead of computing. Saying "this does not apply
+    // here" is the honest output; a negative business case derived from an
+    // assumed target is not a finding about the customer's code.
+    if (scoreBefore >= scoreAfter) return null;
+
     const factor = (100 - scoreAfter) / (100 - scoreBefore); // Adaptation reduction factor (typically ~0.08)
     
     // No `Math.max(1, …)`. The floors were asymmetric: the legacy side rounds to
@@ -172,6 +190,15 @@ export default function TcoCalculatorPage() {
     const roiYear1 = oneTimeCost > 0 ? Math.round((annualSavings / oneTimeCost) * 100) : null;
     const overheadReductionPct = Math.round((1 - modernAnnualTotal / legacyAnnualTotal) * 100);
 
+    // Backstop rather than the primary defence. Every known path is guarded
+    // above; this catches the next input nobody thought of, because a chart is
+    // the one place a non-finite number renders without complaining.
+    const everyFigureFinite = [
+      legacyAnnualTotal, modernAnnualTotal, annualSavings, overheadReductionPct,
+      ...cumulativeSavings5Yr.flatMap((r) => Object.values(r).filter((v) => typeof v === 'number') as number[]),
+    ].every(Number.isFinite);
+    if (!everyFigureFinite) return null;
+
     return {
       legacyDevDaysTotal,
       legacyTestDaysTotal,
@@ -204,11 +231,23 @@ export default function TcoCalculatorPage() {
         <div className="max-w-2xl mx-auto mt-10 bg-white border border-amber-200 rounded-[2rem] p-8 shadow-sm">
           <StageHeader title="No baseline to model against" />
           <p className="text-sm text-slate-600 -mt-4 leading-relaxed">
-            Either this project has no Clean Core score from a signed run &mdash; every figure here
-            is derived from one &mdash; or the code is too small for the model to say anything.
-            Below a few hundred lines the annual legacy maintenance effort rounds to zero days, and
-            a saving measured against zero is not a number. Run the analysis in stage&nbsp;1, or set
-            the lines-of-code figure to the size of the estate you actually mean to model.
+            {typeof project?.cleanCoreScore === 'number' && project.cleanCoreScore >= 95 ? (
+              <>
+                This code already scores {project.cleanCoreScore}, at or above the {95} this model
+                assumes modernisation would reach. The model has no improvement to price, so it
+                declines rather than pricing one. It would otherwise report a negative return &mdash;
+                and at a score of exactly 100 it divided by zero and put an infinity on the chart.
+                That is a statement about the assumed target, not a finding about your code.
+              </>
+            ) : (
+              <>
+                Either this project has no Clean Core score from a signed run &mdash; every figure here
+                is derived from one &mdash; or the code is too small for the model to say anything.
+                Below a few hundred lines the annual legacy maintenance effort rounds to zero days, and
+                a saving measured against zero is not a number. Run the analysis in stage&nbsp;1, or set
+                the lines-of-code figure to the size of the estate you actually mean to model.
+              </>
+            )}
           </p>
           <p className="text-xs text-slate-400 mt-4 leading-relaxed">
             The page used to substitute a score of 30 here and present exact annual savings,

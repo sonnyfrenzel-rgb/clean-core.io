@@ -10,6 +10,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.4] — 2026-09-10
+
+### Die Division, die v2.8.6 übersehen hat, weil sie eine Zeile darüber stand
+
+Roadmap E12-F01, Release 2.9, P0, ausgelöst von CR-22 und CR-23. Die Abnahme zu
+US01 nennt die Fälle beim Namen: **„Die Fälle Score 100, Score 99,
+Nullinvestition und fehlender Score liefern valide, klar bezeichnete Ergebnisse
+oder nicht berechenbar. Kein Diagramm erhält nicht endliche Zahlen."**
+
+v2.8.6 hat zwei ungeschützte Divisionen auf dieser Seite geschlossen — ROI bei
+Investition 0, Amortisation bei Einsparung 0. Die dritte stand eine Zeile
+darüber und blieb stehen:
+
+```
+const factor = (100 - scoreAfter) / (100 - scoreBefore);
+```
+
+Bei Score 100 ist der Divisor null. `factor` wird `Infinity`, und von dort
+wandert es weiter: ROI `-Infinity`, „Overhead-Reduktion" `-Infinity`, und das
+Fünfjahresdiagramm bekommt für jedes modernisierte Jahr `Infinity`. Genau das,
+was die Abnahme ausschließt. Die Wächter von v2.8.6 sitzen alle *unterhalb*
+dieser Stelle und greifen deshalb nicht.
+
+**Der Fall Score 99 ist der unangenehmere.** Dort teilt nichts durch null, das
+Ergebnis ist endlich und sieht deswegen vertrauenswürdig aus: `factor` 5, das
+Modell behauptet, Modernisierung koste das 3,35-fache, ROI −749 %,
+„Overhead-Reduktion" −235 %. Eine Zahl, die offensichtlich kaputt ist, richtet
+weniger Schaden an als eine, die falsch ist und wie eine Aussage aussieht.
+
+Beides hat dieselbe Ursache, und sie ist keine Rechenschwäche: `scoreAfter` ist
+eine **feste Annahme von 95**. Code, der bereits bei 95 oder darüber liegt, hat
+in diesem Modell nichts zu verbessern — also rechnet das Modell dort nicht mehr,
+sondern lehnt ab. Ein negativer Business Case, der aus einem angenommenen
+Zielwert entsteht, ist keine Aussage über den Code des Kunden, sondern eine über
+die Annahme.
+
+Die Seite sagt das jetzt auch so, statt „kein Baseline" zu behaupten, was nicht
+stimmen würde: der Score ist ja da. Es steht dort, dass der Code den
+angenommenen Zielwert bereits erreicht, dass das Modell deshalb nichts zu
+bepreisen hat, und dass das eine Aussage über die Annahme ist.
+
+Dazu ein Auffangnetz, ausdrücklich nicht als primäre Verteidigung: bevor
+irgendeine Zahl zurückgegeben wird, prüft `everyFigureFinite` alle Kennzahlen
+und jeden Diagrammwert. Jeder bekannte Weg ist oben abgesichert; das hier fängt
+die nächste Eingabe, an die niemand gedacht hat — denn ein Diagramm ist die eine
+Stelle, an der eine nicht endliche Zahl klaglos gerendert wird.
+
+`tests/tco-finite-guard.spec.ts` prüft alle vier von der Abnahme genannten Fälle
+plus acht Scores von 0 bis 100 auf Endlichkeit, und zusätzlich, dass der Wächter
+im Quelltext *vor* der Division steht, die er schützt. Das Modell liegt inline in
+der Seitenkomponente, deshalb bildet der Test seine Arithmetik nach statt sie zu
+importieren — eine echte Schwäche, die im Test benannt ist: wer das Modell nach
+`lib/` zieht, nimmt diese Spec mit.
+
+**Was damit nicht erledigt ist:** CR-23 im Kern. Die Aufwandskoeffizienten (2,5 /
+0,8 / 1,8 / 0,6 Tage je 1.000 Zeilen), die 85-%-Testautomatisierungsannahme und
+der Zielscore 95 sind weiterhin nicht aus beobachteten Aufwänden abgeleitet. Die
+Alternativenrechnung mit belegten Kosten ist E12-F02 und gehört zu 2.10.
+
 ## [v2.9.3] — 2026-09-10
 
 ### Eine eigene Z-Tabelle war kein Grund, den Stack zu verlassen
