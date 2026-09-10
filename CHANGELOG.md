@@ -133,6 +133,41 @@ Production Secrets Configured" aufgenommen, weil er optional bleibt. Ein Feature
 das zum Aktivieren eine Workflow-Änderung braucht, ist nicht optional, sondern
 unerreichbar.
 
+### Ein kritisches RCE, das seit Tagen in Produktion stand
+
+Der Push nach `dev` hat beide Sicherheits-Gates rot gemacht — und zwar zu Recht.
+Nichts davon kam aus diesem Release: an den Abhängigkeiten hat es nichts
+geändert. Es sind neue Advisories, und Security CI stand deshalb schon seit dem
+07.09. rot, ohne dass ein Push das sichtbar gemacht hätte.
+
+**Next.js selbst, kritisch, zwei unauthentifizierte RCEs**
+(`GHSA-p293-qw3h-jr36`, `GHSA-2xp9-vwfh-vxw4`). Der verwundbare Bereich reicht
+bis 15.5.23, festgenagelt war 15.5.22 — also mitten drin, und damit auch das,
+was auf clean-core.io lief. Eines der beiden betrifft nur Windows-Hosts und geht
+Cloud Run nichts an; das andere sitzt in der Image-Optimization-API und schon.
+Jetzt 15.5.25 aus der Backport-Linie: ein Patch-Schritt innerhalb 15.5, kein
+Sprung auf 16. `npm audit fix --force` hätte auf 15.5.25 „außerhalb des
+angegebenen Bereichs" *herabgestuft* — dieselbe Version, aber als Downgrade
+verkauft, weil die Pin exakt war.
+
+**Und zweimal derselbe Fehler wie bei `fast-uri` in v2.8.6: ein Override, dessen
+Untergrenze genau auf der Lücke sitzt.** `sharp` stand auf `^0.35.3`, verwundbar
+ist `<0.35.4` — die Grenze hielt die Lücke fest, statt sie auszuschließen, und
+`^` allein hebt nichts an, was den Bereich schon erfüllt. Ebenso `js-yaml` unter
+`firebase-tools` auf `^3.15.1` bei einem Advisory für `>=3.0.0 <3.15.2`. Beide
+Böden angehoben, beide lösen jetzt auf die geflickte Version auf. Dass dieselbe
+Form zum dritten Mal auftaucht, ist der eigentliche Befund: ein Caret über einer
+verwundbaren Version liest sich wie Pflege und ist keine.
+
+Das Lockfile wurde mit der passenden Toolchain erzeugt (`node@22` + `npm@11`,
+`--package-lock-only`) und mit `npm ci --dry-run` gegengeprüft, weil npm 10.5
+unter lokalem Node 20 verschachtelte Override-Einträge stillschweigend
+fallenlässt und der Deploy dann erst in Cloud Build stirbt. Beide verschachtelten
+`js-yaml`-Einträge sind nachweislich erhalten. Beide Gates laufen jetzt grün:
+`npm audit --omit=dev --audit-level=high` ohne Befund, `audit-ci` gegen die leere
+Allowlist bestanden. Die sieben verbliebenen Moderates (`mermaid`, `qs`/`express`,
+`protobufjs`) liegen unter der Schwelle und bleiben offen.
+
 ### Drei Dinge, die dieses Release nicht durchgelassen hätte
 
 **Das Lint-Gate stand bei 679 gegen ein Maximum von 677.** Zwei neue Warnungen
