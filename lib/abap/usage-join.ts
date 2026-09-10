@@ -19,7 +19,11 @@ import { hasNoReleasedApiPath } from './catalog-service';
 
 export function joinUsageWithEvidence(
   usage: UsageReport,
-  evidence: AbapEvidenceReport,
+  // Only the findings are read here. Taking the whole report would force every
+  // caller to invent a `coverage` value, and the honest default for an invented
+  // one — "nothing was skipped" — is the false clean bill this type exists to
+  // prevent. Narrower parameter, no fabrication.
+  evidence: Pick<AbapEvidenceReport, 'findings'>,
   _route: ExtensibilityRouteReport,
 ): UsageJoinRow[] {
   // Build usage lookup: objectName → UsageRecord

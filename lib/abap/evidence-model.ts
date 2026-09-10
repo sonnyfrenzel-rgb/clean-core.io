@@ -2,6 +2,8 @@ import { tokenize } from './declaration-parser';
 import { SAP_API_CATALOG_VERSION } from './sap-api-catalog';
 import { MERGED_TABLE_MAP, getMergedCatalogVersion, hasNoReleasedApiPath, getSapObjectStates } from './catalog-service';
 
+import { assessCoverage, type CoverageReport } from './coverage';
+
 export type EvidenceKind =
   | 'table-access'
   | 'custom-table-write'
@@ -56,6 +58,14 @@ export interface EvidenceFinding {
 
 export interface AbapEvidenceReport {
   findings: EvidenceFinding[];
+  /**
+   * What the detectors did not judge. Sits beside `findings` rather than inside
+   * it: an unassessed construct is a limit of the question, not a defect in the
+   * answer. Without it an empty `findings` array is indistinguishable from a
+   * clean program, which is how two starter examples came to be presented as
+   * spotless while calling BAPIs and writing files.
+   */
+  coverage: CoverageReport;
   summary: {
     criticalCount: number;
     highCount: number;
@@ -723,5 +733,5 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     infoCount: findings.filter(f => f.severity === 'Info').length,
   };
 
-  return { findings, summary };
+  return { findings, coverage: assessCoverage(code), summary };
 }

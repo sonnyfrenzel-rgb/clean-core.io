@@ -46,6 +46,7 @@ import ModernizationStrategy from '@/components/analyze/ModernizationStrategy';
 import ArchitecturalNextSteps from '@/components/analyze/ArchitecturalNextSteps';
 import CoverageVerdict from '@/components/analyze/CoverageVerdict';
 import ConstructFindings from '@/components/analyze/ConstructFindings';
+import UnassessedConstructs from '@/components/analyze/UnassessedConstructs';
 import GapsWorklist from '@/components/analyze/GapsWorklist';
 import MissingDependencyPrompt from '@/components/analyze/MissingDependencyPrompt';
 import PreAnalysisPreview from '@/components/analyze/PreAnalysisPreview';
@@ -1064,10 +1065,15 @@ ${codeToAnalyze}`;
   }, [legacyCode, uploadedFileName]);
 
   // Re-derive evidence findings (with snippets, targetOptions, sapReplacement) for the Evidence table
-  const evidenceFindings = useMemo(() => {
-    if (!legacyCode) return [];
-    return buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap', targetDeployment as 'public' | 'private').findings;
+  // The whole report is kept, not just the findings. `coverage` is what the
+  // detectors did not judge, and dropping it here is how an empty finding list
+  // came to look like a clean program.
+  const evidenceReport = useMemo(() => {
+    if (!legacyCode) return null;
+    return buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap', targetDeployment as 'public' | 'private');
   }, [legacyCode, uploadedFileName, targetDeployment]);
+
+  const evidenceFindings = useMemo(() => evidenceReport?.findings ?? [], [evidenceReport]);
 
   // ── The Clean Core Score, as signed ──
   //
@@ -1386,13 +1392,18 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               {/* Construct Findings checklist */}
               <ConstructFindings findings={findings} />
 
+              {/* What the detectors did not judge — CR-06. Rendered next to the
+                  findings rather than inside them: a construct nobody assessed
+                  is a limit of the question, not a defect in the answer. */}
+              {evidenceReport && <UnassessedConstructs coverage={evidenceReport.coverage} />}
+
               {/* v1.22: Usage × Evidence Risk Matrix */}
               {(usageReport || project?.usageReport) && evidenceFindings.length > 0 && routeReport && (
                 <SectionBoundary name="Usage Risk Matrix">
                   <UsageRiskMatrix
                     rows={joinUsageWithEvidence(
                       (usageReport || project!.usageReport)!,
-                      { findings: evidenceFindings, summary: { criticalCount: 0, highCount: 0, mediumCount: 0, lowCount: 0, infoCount: 0 } },
+                      { findings: evidenceFindings },
                       routeReport,
                     )}
                     usageReport={(usageReport || project!.usageReport)!}

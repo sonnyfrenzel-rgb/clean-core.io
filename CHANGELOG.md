@@ -10,6 +10,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.2] — 2026-09-10
+
+### „Keine Befunde" und „nichts zu finden" sind zwei verschiedene Sätze
+
+Aus der Roadmap, CR-06, P0, und aus den Sofortmaßnahmen in Abschnitt 3.4:
+**„Ungedeckte Syntax darf nicht als ‚100% clean' wirken."** Dazu die Abnahme aus
+E03-F04-US02: „Die UI zeigt den begrenzten Prüfumfang; **kein numerischer Score
+darf ihn als vollständig geprüft überdecken.**"
+
+Vor dem ersten Handgriff nachgemessen, gegen die sieben mitgelieferten
+Starterbeispiele:
+
+| Beispiel | Befunde | was tatsächlich drinsteht |
+|---|---|---|
+| `Z_SALES_ORDER_CREATOR` | **0** | drei lokale `CALL FUNCTION` (BAPIs) |
+| `Z_EMPLOYEE_EXPENSE_VAL` | **0** | fünf `WRITE`-Listenausgaben |
+| `Z_INVOICE_EXTRACTOR` | 2 | vier Dateizugriffe (`OPEN DATASET`/`TRANSFER`), keiner davon unter den Befunden |
+
+Der RFC-Detektor greift nur bei `CALL FUNCTION ... DESTINATION`; ein lokaler
+Aufruf — der klassische BAPI — wird von keinem Detektor angesehen. Für
+Dateizugriffe gibt es keinen Detektor. Und die Klassik-UI-Detektoren decken
+Dynpro und klassisches ALV ab, nicht die reine `WRITE`-Liste, die es in ABAP for
+Cloud Development gar nicht gibt.
+
+Wer dieses Produkt zum ersten Mal öffnet, landet also mit hoher
+Wahrscheinlichkeit auf einem Legacy-Beispiel, das die Engine für tadellos hält.
+
+**Der Fehler ist heute nicht der fehlende Detektor, sondern das Schweigen.** Die
+Detektoren selbst sind Release 2.10 (E03-F04, Größe L, mit Parser-Spike). Was
+sich jetzt korrigieren lässt, ist die Aussage: Die Engine sagt, worüber sie
+hinweggegangen ist.
+
+`lib/abap/coverage.ts` führt einen Abdeckungsbericht neben den Befunden —
+ausdrücklich **nicht** darin. Ein nicht bewertetes Konstrukt ist kein Mangel;
+es als Befund zu führen würde einen falschen Freispruch gegen eine falsche
+Anschuldigung tauschen. Erfasst werden Dateizugriffe, lokale Funktionsaufrufe,
+dynamische Aufrufe und Feldzugriffe, klassische Listenausgabe, Makrodefinitionen
+und zur Laufzeit erzeugter Code — jeweils mit Zeilenanker, Statement und dem
+Grund, warum der Detektorsatz darüber nicht urteilen kann.
+
+Jeder Treffer läuft über `tokenize()`, das Kommentare entfernt und String- und
+Backtick-Literale respektiert. Damit gilt, was die Abnahme verlangt: „Kommentare,
+Stringliterale und `INSERT` in interne Tabellen erzeugen weiterhin keine falschen
+Treffer." Ebenso ausgenommen: `WRITE x TO y` ist Formatierung und keine
+Listenausgabe, und ein `CALL FUNCTION` mit `DESTINATION` bleibt beim
+RFC-Detektor, statt doppelt gezählt zu werden.
+
+Auf der Analyse-Seite steht das Ergebnis neben der Befundliste — bewusst grau
+und nicht rot, weil hier niemandem etwas vorgeworfen wird. Bei vollständiger
+Abdeckung erscheint **nichts**: „Wir haben alles geprüft" ist eine Behauptung mit
+eigener Beweislast, die diese Engine nicht tragen kann.
+
+`tests/coverage-honesty.spec.ts` hält den Kern fest, und zwar als Eigenschaft
+statt als Einzelfall: für **jedes** der sieben Beispiele gilt, dass null Befunde
+nur zusammen mit einem ausgewiesenen Prüfumfang zulässig sind. Ein Beispiel, das
+weder etwas findet noch sagt, was es nicht angesehen hat, lässt die Suite
+scheitern.
+
+Nebenbei aufgeräumt: `joinUsageWithEvidence` nahm den ganzen Evidenzbericht,
+obwohl es nur die Befunde liest. Das hätte jeden Aufrufer gezwungen, sich ein
+`coverage` auszudenken — und der plausible Wert für ein erfundenes ist „nichts
+übersprungen", also genau der falsche Freispruch, den dieser Release entfernt.
+Der Parameter ist jetzt so schmal wie das, was gelesen wird.
+
 ## [v2.9.1] — 2026-09-10
 
 ### Eine Variable, die zwei Dinge tat — und keines davon prüfte
