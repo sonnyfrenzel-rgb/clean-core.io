@@ -20,15 +20,20 @@ const architectureOptions: ArchitectureOption[] = [
     value: 'rap',
     label: 'Developer Extensibility (RAP / ABAP Cloud)',
     focus: 'On-Stack extension within the S/4HANA system boundary.',
-    bestFor: 'Transactional screens, released APIs, standard table reads, synchronous validation logic.',
-    notFor: 'Custom Z-table persistence, external SaaS integrations, or independently scaled services.',
+    bestFor: 'Transactional screens, released APIs, standard table reads, synchronous validation logic — and custom persistence in the customer namespace, which is what developer extensibility is for.',
+    // "Custom Z-table persistence" used to sit in notFor, which is backwards for
+    // Private Edition / RISE: a Z-table is a Dictionary object with a RAP business
+    // object on top, on-stack. Only Public Edition's strict SaaS model pushes
+    // custom persistence off the stack, so the caveat names that edition instead
+    // of the construct.
+    notFor: 'External SaaS integrations, independently scaled services, or custom persistence under S/4HANA Cloud Public Edition.',
     motto: 'Extend the core cleanly, on standard foundations.',
   },
   {
     value: 'cap',
     label: 'Side-by-Side Extensibility (CAP / Node.js)',
     focus: 'Decoupled cloud services on SAP BTP, independent of the ERP core.',
-    bestFor: 'Custom data models (Z-tables), third-party API consumers, multi-tenant services.',
+    bestFor: 'Custom data models under Public Edition, third-party API consumers, multi-tenant services, independently scaled workloads.',
     notFor: 'Synchronous ERP posting validations or direct standard table joins.',
     motto: 'Decouple custom logic to keep the core upgrade-safe.',
   },

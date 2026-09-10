@@ -86,13 +86,24 @@ export function routeExtensibility(
   score = Math.max(5, score);
 
   // 2. Determine target route
-  // Side-by-Side (BTP) is required if:
-  // - There are custom table writes (requires external persistence decouple)
-  // - There are RFC calls or BDC calls
-  // - There is Native SQL or GUI file downloads (local client files don't work in cloud)
-  // - Public Cloud is selected and we have standard table writes (no Tier-2 allowed)
+  //
+  // CR-04: a write to the customer's own Z-table used to set this on its own, in
+  // both deployment models, with the rationale "custom tables require decoupled
+  // Side-by-Side architecture". In Private Edition / RISE that is backwards.
+  // Custom persistence in the customer namespace is the textbook developer
+  // extensibility case: the table is an ABAP Dictionary object and a RAP business
+  // object is built on it, on-stack. A Z-table is not a clean core violation —
+  // modifying SAP's tables is. So the most common legacy pattern there is was
+  // routing people off-stack to BTP.
+  //
+  // It stays a Side-by-Side trigger in Public Edition, where the strict SaaS
+  // model does not offer that path for custom persistence. The distinction is
+  // the deployment, not the construct, which is why it is read from
+  // `deploymentModel` and not from the finding.
+  const customPersistenceForcesBtp = deploymentModel === 'public' && customWrites.length > 0;
+
   const needsBtp =
-    customWrites.length > 0 ||
+    customPersistenceForcesBtp ||
     bdcCalls.length > 0 ||
     rfcCalls.length > 0 ||
     nativeSql.length > 0 ||
@@ -104,7 +115,9 @@ export function routeExtensibility(
   // Calculate confidence score based on the weight of findings
   let confidenceScore = 80;
   if (needsBtp) {
-    confidenceScore = Math.min(95, 80 + customWrites.length * 5 + rfcCalls.length * 5);
+    // Custom writes only add confidence where they actually drove the decision.
+    const customWeight = customPersistenceForcesBtp ? customWrites.length * 5 : 0;
+    confidenceScore = Math.min(95, 80 + customWeight + rfcCalls.length * 5);
   } else {
     confidenceScore = Math.min(90, 70 + standardReads.length * 5);
   }
@@ -115,8 +128,10 @@ export function routeExtensibility(
     rationale = `Detected ${modifications.length} core modification(s) to SAP standard code. Modifications are clean core level D: they must be reset to standard via SPAU and the requirement rebuilt on a released extension point before any cloud target is reachable.`;
   } else if (enhancements.length > 0 && customWrites.length === 0 && standardWrites.length === 0) {
     rationale = `Detected ${enhancements.length} enhancement implementation(s) or enhancement point(s). These are not-recommended technologies under the clean core level concept; re-point them to a released BAdI or API, which ABAP Cloud (RAP) supports on-stack.`;
+  } else if (customPersistenceForcesBtp) {
+    rationale = `Detected ${customWrites.length} write(s) to custom database persistence. In S/4HANA Cloud Public Edition the strict SaaS model does not offer on-stack custom persistence, so this data belongs in a decoupled Side-by-Side service (CAP).`;
   } else if (customWrites.length > 0) {
-    rationale = `Detected ${customWrites.length} custom database persistence writes. Custom tables and side-effect logging require decoupled Side-by-Side architecture (CAP).`;
+    rationale = `Detected ${customWrites.length} write(s) to custom database persistence. In Private Edition / RISE this is on-stack developer extensibility, not a reason to leave the stack: the table is a Dictionary object in the customer namespace and a RAP business object is built on it. Writing to your own table is not a clean core violation — writing to SAP's is.`;
   } else if (standardWrites.length > 0 && deploymentModel === 'public') {
     rationale = `Direct writes to standard SAP tables are strictly prohibited in S/4HANA Public Cloud. Side-by-Side integration is required.`;
   } else if (rfcCalls.length > 0) {

@@ -10,6 +10,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.3] — 2026-09-10
+
+### Eine eigene Z-Tabelle war kein Grund, den Stack zu verlassen
+
+Roadmap CR-04, P0, und in den Sofortmaßnahmen als „die automatische CAP-Pflicht
+entschärft" benannt. Die Behandlung dort: **„Keine Technologiewahl aus einem
+einzelnen Legacy-Symptom."**
+
+Ein einziger Schreibzugriff auf eine eigene Z-Tabelle hat die Empfehlung auf
+Side-by-Side (BTP) gesetzt — in *beiden* Betriebsmodellen, mit der Begründung
+„Custom tables and side-effect logging require decoupled Side-by-Side
+architecture (CAP)". Dieselbe Aussage stand ein zweites Mal im Architekturpanel:
+RAP wurde unter `notFor` mit „Custom Z-table persistence" geführt, CAP unter
+`bestFor` mit „Custom data models (Z-tables)".
+
+Für Private Edition / RISE ist das verkehrt herum. Eigene Persistenz im
+Kundennamensraum ist der Lehrbuchfall für Developer Extensibility: die Tabelle
+ist ein Dictionary-Objekt, darauf steht ein RAP-Business-Object, und das läuft
+on-stack. Eine Z-Tabelle ist keine Clean-Core-Verletzung — Schreiben in *SAP-*
+Tabellen ist eine. Das Produkt hat also für das häufigste Legacy-Muster
+überhaupt vom Stack weg auf BTP geschickt, und im selben Atemzug behauptet, RAP
+sei für genau das nicht gedacht, wofür RAP gedacht ist.
+
+**Die Grenze verläuft am Betriebsmodell, nicht am Konstrukt** — und das ist der
+eigentliche Befund. In Public Edition bleibt der Custom-Write ein
+Side-by-Side-Auslöser, weil das strikte SaaS-Modell dort keinen On-Stack-Weg für
+eigene Persistenz anbietet. Also liest die Regel jetzt `deploymentModel` statt
+den Befund, und die beiden Modelle kommen bei derselben Quelle zu verschiedenen
+Ergebnissen. Vorher taten sie das nicht: das Deployment machte für dieses
+Konstrukt gar keinen Unterschied.
+
+Die SAP-Grenze wurde vor der Änderung mit dem Architekten geklärt, nicht aus dem
+Code erschlossen. Das ist bewusst so: v2.9.0 hat gezeigt, was passiert, wenn eine
+Ableitungsregel plausibel aussieht und trotzdem falsch gelesen wird.
+
+Die Begründung sagt jetzt auch, *warum* — „writing to your own table is not a
+clean core violation, writing to SAP's is" steht im Rationale und wird von einem
+Test festgehalten. Ein Satz, der das nächste Review davon abhält, denselben
+Befund noch einmal zu schreiben, ist billiger als die Diskussion, die sonst
+folgt.
+
+Was ausdrücklich unverändert bleibt: RFC, BDC, Native SQL und
+GUI-Dateizugriffe lösen weiterhin Side-by-Side aus, auch in Private Edition —
+eine Regel zu verengen darf die Nachbarregeln nicht stillschweigend mitverengen.
+`tests/extensibility-route-guard.spec.ts` prüft beides, und außerdem, dass Panel
+und Router nicht wieder auseinanderlaufen: zwei Oberflächen für eine Regel, und
+der Leser glaubt der, die er zuerst gesehen hat.
+
+Auch der Konfidenzwert war betroffen — er zählte Custom-Writes als Beleg für eine
+Entscheidung, die sie in Private Edition gar nicht mehr treffen. Er zählt sie nur
+noch dort, wo sie tatsächlich ausschlaggebend waren.
+
 ## [v2.9.2] — 2026-09-10
 
 ### „Keine Befunde" und „nichts zu finden" sind zwei verschiedene Sätze
