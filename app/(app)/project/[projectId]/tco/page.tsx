@@ -125,8 +125,9 @@ export default function TcoCalculatorPage() {
     // 2. Post-Modernization Maintenance Efforts (Days per year)
     // Decoupled, upgrade-safe standard API extensions require minimal maintenance (Clean Core)
     //
-    // The divisor is `100 - scoreBefore`, and v2.8.6 guarded the two divisions
-    // downstream of this one without noticing this one. At a score of 100 it is
+    // v2.8.6: guarded the two divisions downstream of this one, and not this one.
+    //
+    // The divisor is `100 - scoreBefore`. At a score of 100 it is
     // zero: `factor` becomes Infinity, and from there the ROI reads -Infinity,
     // the overhead reduction reads -Infinity, and the five-year chart is handed
     // Infinity for every modernised year.
