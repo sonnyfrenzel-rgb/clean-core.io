@@ -73,10 +73,20 @@ test.describe('an export that does carry counts', () => {
     'ZPROG_TWO,4200,2026-01-20\n' +
     'ZPROG_THREE,3800,2026-01-21\n';
 
-  test('a measured zero still means dormant', async () => {
-    const report = await parseUsage(csvFile(CSV));
+  test('a measured zero still means dormant — over a declared window of 13 months', async () => {
+    // E03-F02: a zero is evidence of disuse only across a window long enough to
+    // contain every periodic run. Declared, not derived from the executions.
+    const report = await parseUsage(csvFile(CSV), { window: { from: '2025-01-01', to: '2026-01-31' } });
     const rows = joinUsageWithEvidence(report, evidence(['ZPROG_ONE']), ROUTE);
     expect(rows.find((r) => r.objectName === 'ZPROG_ONE')?.usage).toBe('dormant');
+  });
+
+  test('without a declared window the same zero is "not seen", never dormant', async () => {
+    const report = await parseUsage(csvFile(CSV));
+    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_ONE']), ROUTE);
+    const one = rows.find((r) => r.objectName === 'ZPROG_ONE');
+    expect(one?.usage).toBe('unobserved');
+    expect(one?.quadrant).not.toBe('retire-candidate');
   });
 
   test('a heavily used object is neither dormant nor unknown', async () => {

@@ -10,7 +10,35 @@
 
 export type UsageSource = 'scmon' | 'upl' | 'st03n' | 'manual';
 
-export type UsageBucket = 'heavy' | 'moderate' | 'low' | 'dormant' | 'unknown';
+/**
+ * `unobserved`: a measured zero inside a monitoring window too short — or not
+ * declared at all — to call it disuse. A year-end program that ran nowhere in a
+ * six-week export is exactly this, and it is not a retirement candidate (E03-F02).
+ */
+export type UsageBucket = 'heavy' | 'moderate' | 'low' | 'dormant' | 'unobserved' | 'unknown';
+
+/**
+ * How to read dates that are neither ISO (`YYYY-MM-DD`) nor SAP internal
+ * (`YYYYMMDD`). Declared by the person importing, never guessed: `05.04.2026`
+ * is 5 April in a German export and would be 4 May if read the American way.
+ * `iso` accepts only the two unambiguous forms.
+ */
+export type UsageDateLocale = 'de-DE' | 'en-GB' | 'en-US' | 'iso';
+
+/**
+ * A zero count is evidence of disuse only over a window that contains every
+ * periodic run — month-end, quarter-end, year-end. Thirteen months, the same
+ * threshold the join uses for "last used too long ago".
+ */
+export const RETIREMENT_WINDOW_DAYS = 394;
+
+/** A row the import did not take over, and why. */
+export interface UsageQuarantineEntry {
+  /** Spreadsheet row number, header = 1. */
+  row: number;
+  objectName: string;
+  reason: string;
+}
 
 // ── Usage Record & Report ──────────────────────────────────────────
 
@@ -51,10 +79,32 @@ export interface UsageReport {
    * span, which reported the wrong number with the right label.
    */
   observedSpanDays?: number;
-  /** ISO date: start of measurement window */
+  /** ISO date of the earliest execution seen in the export. Not a window start. */
+  observedFrom?: string;
+  /** ISO date of the latest execution seen in the export. Not a window end. */
+  observedTo?: string;
+  /**
+   * @deprecated The observed dates under their old names — present only on
+   * reports imported before v2.9.7, where they were derived from the executions
+   * and labelled as the measurement window. Read as observed, never as declared.
+   */
   measuredFrom?: string;
-  /** ISO date: end of measurement window */
+  /** @deprecated See `measuredFrom`. */
   measuredTo?: string;
+  /**
+   * The monitoring window as declared by whoever took the export — the start of
+   * measurement comes from the declared capture, not from the first execution
+   * seen (E03-F02-US01). Absent when nobody declared one.
+   */
+  window?: { from: string; to: string; days: number };
+  /** The date format the import was told to read. */
+  dateLocale?: UsageDateLocale;
+  /**
+   * Rows not taken over: negative counts, dates that do not match the declared
+   * format or cannot exist, dates after the window or in the future, rows with
+   * no object name. Shown before the import is confirmed and kept with it.
+   */
+  quarantined?: UsageQuarantineEntry[];
   /** ISO date: when the import was performed */
   importedAt: string;
   /**

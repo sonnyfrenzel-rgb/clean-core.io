@@ -52,11 +52,10 @@ import MissingDependencyPrompt from '@/components/analyze/MissingDependencyPromp
 import PreAnalysisPreview from '@/components/analyze/PreAnalysisPreview';
 import EvidenceSweep from '@/components/analyze/EvidenceSweep';
 import UsageUpload from '@/components/analyze/UsageUpload';
-import UsageRiskMatrix from '@/components/analyze/UsageRiskMatrix';
+import { UsageRiskMatrixFor } from '@/components/analyze/UsageRiskMatrix';
 import SectionBoundary from '@/components/SectionBoundary';
 import WhyScorePanel from '@/components/analyze/WhyScorePanel';
 import { getRunCapabilities } from '@/lib/run-capabilities';
-import { joinUsageWithEvidence } from '@/lib/abap/usage-join';
 import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
 
 import { DocumentSkeleton } from '@/components/Skeleton';
@@ -1400,13 +1399,10 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               {/* v1.22: Usage × Evidence Risk Matrix */}
               {(usageReport || project?.usageReport) && evidenceFindings.length > 0 && routeReport && (
                 <SectionBoundary name="Usage Risk Matrix">
-                  <UsageRiskMatrix
-                    rows={joinUsageWithEvidence(
-                      (usageReport || project!.usageReport)!,
-                      { findings: evidenceFindings },
-                      routeReport,
-                    )}
+                  <UsageRiskMatrixFor
                     usageReport={(usageReport || project!.usageReport)!}
+                    findings={evidenceFindings}
+                    route={routeReport}
                   />
                 </SectionBoundary>
               )}

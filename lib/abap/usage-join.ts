@@ -10,6 +10,7 @@
  * Missing data is not evidence of non-use.
  */
 
+import { RETIREMENT_WINDOW_DAYS } from './usage-model';
 import type { UsageReport, UsageRecord, UsageBucket, UsageJoinRow, RiskLevel, Quadrant, Feasibility } from './usage-model';
 import type { AbapEvidenceReport, EvidenceFinding } from './evidence-model';
 import type { ExtensibilityRouteReport } from './extensibility-router';
@@ -26,6 +27,17 @@ export function joinUsageWithEvidence(
   evidence: Pick<AbapEvidenceReport, 'findings'>,
   _route: ExtensibilityRouteReport,
 ): UsageJoinRow[] {
+  // ST03N counts transaction steps, SCMON counts procedure calls, UPL counts
+  // procedure executions. Summed into one number they measure nothing (E03-F02).
+  // A report carries one source by construction; if one ever carries two, that
+  // is refused here rather than added up.
+  const sources = new Set(usage.records.map((r) => r.source));
+  if (sources.size > 1) {
+    throw new Error(
+      `Usage records from different sources (${[...sources].join(', ')}) cannot be combined into one count. Import them separately.`,
+    );
+  }
+
   // Build usage lookup: objectName → UsageRecord
   const usageMap = new Map<string, UsageRecord>();
   for (const r of usage.records) {
@@ -54,10 +66,19 @@ export function joinUsageWithEvidence(
   const p25 = percentile(callCounts, 25);
   const p75 = percentile(callCounts, 75);
 
-  // Dormancy threshold: 13 months (394 days) before measurement end
-  const dormancyThreshold = usage.measuredTo
-    ? new Date(new Date(usage.measuredTo).getTime() - 394 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  // Dormancy threshold: 13 months before the end of the declared window — or,
+  // with none declared, before the last execution seen (never later than the
+  // true end, so the error runs towards "less dormant"). `measuredTo` is that
+  // same observed date on reports imported before v2.9.7.
+  const windowEnd = usage.window?.to ?? usage.observedTo ?? usage.measuredTo;
+  const dormancyThreshold = windowEnd
+    ? new Date(new Date(windowEnd).getTime() - RETIREMENT_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     : undefined;
+
+  // A zero is evidence of disuse only across a declared window long enough to
+  // contain every periodic run. Reports without a declared window — every one
+  // imported before v2.9.7 — do not qualify, whatever their dates say.
+  const zeroMeansDormant = (usage.window?.days ?? 0) >= RETIREMENT_WINDOW_DAYS;
 
   // Collect all unique object names from BOTH usage and evidence
   const allObjects = new Set<string>();
@@ -82,7 +103,7 @@ export function joinUsageWithEvidence(
     const usageRecord = usageMap.get(objName);
     const objectFindings = findingsMap.get(objName) || [];
 
-    const bucket = classifyUsageBucket(usageRecord, p25, p75, dormancyThreshold);
+    const bucket = classifyUsageBucket(usageRecord, p25, p75, dormancyThreshold, zeroMeansDormant);
     const riskLevel = deriveRiskLevel(objectFindings);
     const feasibility = deriveFeasibility(objName, objectFindings);
     const quadrant = computeQuadrant(bucket, feasibility);
@@ -119,6 +140,7 @@ function classifyUsageBucket(
   p25: number,
   p75: number,
   dormancyThreshold: string | undefined,
+  zeroMeansDormant: boolean,
 ): UsageBucket {
   // §5 SAFEGUARD: no record → unknown, NEVER dormant
   if (!record) return 'unknown';
@@ -132,8 +154,10 @@ function classifyUsageBucket(
   // the absence of data.
   if (record.callCount === null) return 'unknown';
 
-  // Zero calls → dormant. A measured zero, not a missing one.
-  if (record.callCount === 0) return 'dormant';
+  // Zero calls → dormant, if the window could have seen every periodic run. A
+  // measured zero, not a missing one — but a zero over six weeks says nothing
+  // about a year-end program, and it used to make one a retirement candidate.
+  if (record.callCount === 0) return zeroMeansDormant ? 'dormant' : 'unobserved';
 
   // Last used too long ago → dormant (regardless of call count)
   if (dormancyThreshold && record.lastUsed && record.lastUsed < dormancyThreshold) {
@@ -193,8 +217,9 @@ function deriveFeasibility(objectName: string, findings: EvidenceFinding[]): Fea
  * §6 SAFEGUARD: 'low' usage → NEVER 'retire-candidate'. Low ≠ dormant.
  */
 function computeQuadrant(usage: UsageBucket, feasibility: Feasibility): Quadrant {
-  // §5: Unknown usage = unknown quadrant. Period.
-  if (usage === 'unknown') return 'unknown';
+  // §5: Unknown usage = unknown quadrant. Period. And a zero from a window too
+  // short to mean anything is no better than no data (E03-F02).
+  if (usage === 'unknown' || usage === 'unobserved') return 'unknown';
 
   if (usage === 'heavy') {
     if (feasibility === 'clean-core-ready') return 'prioritize';
@@ -245,7 +270,7 @@ export const QUADRANT_META: Record<Quadrant, { label: string; emoji: string; col
     emoji: '🟡',
     color: 'text-amber-700',
     bgColor: 'bg-amber-50 border-amber-200',
-    description: 'Zero usage or dormant for 13+ months — retire after business owner confirmation.',
+    description: 'Zero calls across a declared window of 13+ months, or last used 13+ months ago — retire after business owner confirmation.',
   },
   'low-priority': {
     label: 'Low Priority',
@@ -259,6 +284,6 @@ export const QUADRANT_META: Record<Quadrant, { label: string; emoji: string; col
     emoji: '❓',
     color: 'text-slate-500',
     bgColor: 'bg-slate-50 border-slate-200',
-    description: 'No usage data in the imported export. Missing data is not evidence of non-use — verify manually before retiring.',
+    description: 'No usage data for the object — or zero calls in a window too short, or undeclared, to call it disuse. Neither is evidence of non-use; verify manually before retiring.',
   },
 };

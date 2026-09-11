@@ -21,7 +21,7 @@ Delivery eröffnete jedes Projekt mit „lifecycle is complete". Alles behoben.
 
 | # | Punkt | Wer | Stand |
 |---|---|---|---|
-| 1 | **CR-24 / E03-F02 — Nutzungsimport** (P1) | Entwicklung | **Fehlte gestern auf der Liste.** Heute reproduziert: `parseDate('05.04.2026')` → `2026-05-03` — der ISO-Zweig greift vor dem deutschen, liest Monat/Tag vertauscht, und die UTC-Umrechnung zieht noch einen Tag ab. Negative Aufrufzahlen werden übernommen; das Messfenster wird aus beobachteten Daten abgeleitet |
+| 1 | ~~CR-24 / E03-F02 — Nutzungsimport~~ (P1) | — | **Erledigt in v2.9.7.** War gestern nicht auf der Liste; reproduziert als `05.04.2026` → `2026-05-03`. Dabei gefunden: der Import wurde nie gespeichert (`undefined` im Bericht, Firestore lehnt ab, nur geloggt) |
 | 2 | **E08-F01-US01 — echte Runner-Isolation** | **Felix (GCP)** | unverändert |
 | 3 | **Security-CI meldet rote Scheduled-Runs nicht** | Entwicklung | unverändert, nicht aus der Roadmap, aber seit gestern Punkt 1 der Betriebsseite |
 | 4 | CR-28 — Sign-off | — | 2.9-Teil erfüllt: widerrufbar, als Selbsterklärung bezeichnet, und seit v2.9.6 an die Quelle gebunden. Rollen/Attestation ist E05/E13 in 3.0 |

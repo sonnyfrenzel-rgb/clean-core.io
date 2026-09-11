@@ -10,6 +10,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.7] — 2026-09-11
+
+### Ein Nutzungsimport, dem man glauben kann — und der überhaupt gespeichert wird
+
+Roadmap E03-F02, Release 2.9, P1, ausgelöst von CR-24. Die Abnahmen:
+**„Bei Locale de-DE wird 05.04.2026 als 5. April gespeichert. Der Messbeginn
+stammt aus deklarierter Erfassung, nicht aus erster beobachteter Ausführung;
+außerhalb liegende Saisonalität erzeugt einen Warnhinweis."** und **„Negative
+Aufrufe werden quarantänisiert. Leere Zähler bleiben unknown und unterscheiden
+sich von gemessenen Nullwerten; ST03N- und SCMON-Werte werden nicht ungeprüft
+addiert."**
+
+Gestern fehlte der Punkt auf der 2.9-Exit-Liste. Heute reproduziert, und
+schlimmer als im Befundregister: `05.04.2026` wurde **3. Mai**. `new Date()` liest
+die Zeichenkette mit dem Monat zuerst (4. Mai), und `toISOString()` rechnet die
+Mitternacht nach UTC um und landet in jeder Zeitzone östlich von Greenwich einen
+Tag früher. Eine negative Aufrufzahl wurde als Messung übernommen. Der
+„Messzeitraum" war die Spanne zwischen erster und letzter Ausführung im Export —
+und ein Export über sechs Wochen machte aus einem Jahresabschluss-Programm mit
+null Aufrufen einen Stilllegungskandidaten.
+
+**Dazu ein Fund, der schwerer wiegt als die Roadmap-Punkte:** der Import wurde
+**nie gespeichert**. Jeder Datensatz aus einem Export ohne Typspalte trug
+`objectType: undefined`; der Firestore-Client lehnt `undefined` ab, solange
+`ignoreUndefinedProperties` nicht gesetzt ist, und `getDb()` setzt es nicht. Die
+Ablehnung landete im `catch` der Analyze-Seite und wurde nur geloggt. Nachgeprüft,
+nicht vermutet: dieselbe Datenform an den Client übergeben ergibt
+`Unsupported field value: undefined`. Der Bericht existierte in einem Browser-Tab.
+
+**Was jetzt gilt:**
+
+- **Datumsformat wird deklariert, nicht erraten.** Auswahl de-DE / en-GB /
+  en-US / ISO. ISO und SAP-intern (`YYYYMMDD`) sind eindeutig und gehen immer.
+  Jedes andere Datum wird nach der deklarierten Reihenfolge gelesen — aus seinen
+  Teilen zusammengesetzt, ohne Datumsparser und ohne Zeitzone — oder mit Grund
+  abgewiesen: nicht deklariert, zweistellige Jahreszahl, 31.02.
+- **Das Überwachungsfenster wird deklariert.** Die beobachtete Spanne heißt
+  jetzt `observedFrom/observedTo` und bleibt davon getrennt; die alten Namen
+  `measuredFrom/To` tragen nur noch Berichte von vor v2.9.7 und werden als
+  beobachtet gelesen. Ein Fenster, das enden würde, bevor es beginnt, oder in der
+  Zukunft, wird vor dem Einlesen abgelehnt.
+- **Eine Null ist nur über 13 Monate ein Beleg.** Ohne deklariertes Fenster oder
+  bei einem kürzeren wird ein gemessener Nullwert zu „Not seen (short window)",
+  Quadrant *unknown*, nie *retire-candidate* — und der Import warnt, bei einem
+  Fenster ohne Jahreswechsel ausdrücklich mit „no year-end". Das betrifft auch
+  bestehende Berichte: Keiner hat ein deklariertes Fenster, also schlägt keiner
+  mehr eine Stilllegung auf eine Null vor.
+- **Quarantäne statt stiller Übernahme:** negative Zähler, Daten, die nicht zum
+  Format passen oder nicht existieren, Daten nach Fensterende oder nach dem
+  Importtag, Zeilen ohne Objektnamen. Jede mit Zeilennummer und Grund. Ein leerer
+  Zähler bleibt `null` (unknown), ein unlesbarer auch — mit Warnung, wie viele.
+- **Vorschau vor Übernahme.** Deklarieren → Datei → Vorschau mit allen
+  abgewiesenen Zeilen → „Import N objects". Eine geänderte Deklaration liest
+  sofort neu. Gespeichert wird erst beim Bestätigen.
+- **Keine Summe über Quellen hinweg.** Ein Bericht hat eine Quelle; der Join
+  verweigert Datensätze aus mehreren, statt ST03N-Transaktionsschritte und
+  SCMON-Aufrufe zu addieren. Der Aufruf liegt jetzt in der Komponente, damit eine
+  solche Weigerung im SectionBoundary landet und nicht die ganze Analyze-Seite
+  mitnimmt.
+- Der Bericht ist frei von `undefined` — er wird gespeichert.
+
+`tests/usage-import-guard.spec.ts`: die Abnahme wörtlich (`05.04.2026` → 5. April),
+alle Formate und Abweisungen, jede Quarantäne-Regel mit Zeile und Grund, Fenster
+gegen beobachtete Spanne, Null über 89 Tage (nicht retire) gegen Null über 426
+Tage (retire), gemischte Quellen, kein `undefined`, und **der ganze Weg im
+Browser**: Datei ohne deklariertes Format → deutsches Datum abgewiesen → de-DE
+wählen → neu gelesen → vor dem Bestätigen nichts in Firestore → bestätigen → im
+Dokument steht 5. April, 1234 Aufrufe, 89 Tage, eine abgewiesene Zeile.
+`tests/usage-unknown-guard.spec.ts` bekommt für „eine gemessene Null heißt
+dormant" das Fenster, das diese Aussage jetzt braucht, und ein Gegenstück ohne.
+
+Lint-Budget 672 → 671.
+
 ## [v2.9.6] — 2026-09-11
 
 ### Nach einer Quellenänderung gilt nichts Altes mehr als aktuell

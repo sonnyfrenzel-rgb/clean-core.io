@@ -11,8 +11,30 @@
  * See §3 of the v1.22 concept.
  */
 
-import type { UsageRecord, UsageReport, UsageSource } from './usage-model';
+import {
+  RETIREMENT_WINDOW_DAYS,
+  type UsageDateLocale,
+  type UsageQuarantineEntry,
+  type UsageRecord,
+  type UsageReport,
+  type UsageSource,
+} from './usage-model';
 import { sanitizeUsageRecords } from './usage-privacy';
+
+/**
+ * What the person importing declares (roadmap E03-F02). None of it is inferred
+ * from the data: the date format decides how `05.04.2026` is read, and the
+ * window decides whether a zero count can mean anything.
+ */
+export interface UsageImportOptions {
+  source?: UsageSource;
+  /** Undeclared: dates other than ISO and SAP-internal are quarantined, not guessed. */
+  dateLocale?: UsageDateLocale;
+  /** The monitoring window, as ISO dates (`YYYY-MM-DD`). */
+  window?: { from: string; to: string };
+  /** The day of the import, ISO. For tests; defaults to today (UTC). */
+  today?: string;
+}
 
 // ── Column synonym map (language/version tolerant) ─────────────────
 
@@ -29,10 +51,16 @@ const COLUMN_SYNONYMS: Record<string, string[]> = {
  * Parse a usage export file (CSV or XLSX) into a UsageReport.
  *
  * @param file - Browser File object from the upload
- * @param hintedSource - Optional: user-selected source (scmon/upl/st03n); auto-detected if omitted
- * @returns Parsed and sanitized UsageReport
+ * @param options - What the importer declared; a bare `UsageSource` is still
+ *   accepted for the old call shape
+ * @returns Parsed and sanitized UsageReport, free of `undefined` so Firestore
+ *   will store it
  */
-export async function parseUsage(file: File, hintedSource?: UsageSource): Promise<UsageReport> {
+export async function parseUsage(file: File, options: UsageImportOptions | UsageSource = {}): Promise<UsageReport> {
+  const opts: UsageImportOptions = typeof options === 'string' ? { source: options } : options;
+  const today = opts.today ?? new Date().toISOString().split('T')[0];
+  const window = opts.window ? validateWindow(opts.window, today) : undefined;
+
   const isXlsx = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
   const rawRows = isXlsx ? await parseXlsx(file) : await parseCsv(file);
 
@@ -72,18 +100,52 @@ export async function parseUsage(file: File, hintedSource?: UsageSource): Promis
   }
 
   // Detect source if not hinted
-  const source = hintedSource || detectSource(headers, rawRows);
+  const source = opts.source || detectSource(headers, rawRows);
 
-  // Parse records
+  // Parse records. A row that cannot be read honestly is quarantined with its
+  // reason, never taken over with a guess (E03-F02-US02).
   let records: UsageRecord[] = [];
+  const quarantined: UsageQuarantineEntry[] = [];
+  let unreadableCounts = 0;
 
-  for (const row of rawRows) {
-    const objectName = normalizeObjectName(String(row[mapping.objectName] || ''));
-    if (!objectName) continue;
+  rawRows.forEach((row, index) => {
+    const rowNumber = index + 2; // header is row 1
+    const objectName = normalizeObjectName(String(row[mapping.objectName!] || ''));
+    const reject = (reason: string) => quarantined.push({ row: rowNumber, objectName: objectName || '—', reason });
+
+    if (!objectName) {
+      reject('no object name');
+      return;
+    }
 
     const callCountRaw = mapping.callCount ? row[mapping.callCount] : undefined;
     const callCount = parseCallCount(callCountRaw);
-    const lastUsed = mapping.lastUsed ? parseDate(row[mapping.lastUsed]) : undefined;
+    if (callCount !== undefined && callCount < 0) {
+      reject(`negative call count (${String(callCountRaw).trim()})`);
+      return;
+    }
+    if (callCount === undefined && callCountRaw !== undefined && String(callCountRaw).trim() !== '') {
+      unreadableCounts++;
+    }
+
+    let lastUsed: string | undefined;
+    if (mapping.lastUsed) {
+      const date = parseUsageDate(row[mapping.lastUsed], opts.dateLocale);
+      if (date && !date.ok) {
+        reject(date.reason);
+        return;
+      }
+      lastUsed = date?.value;
+      if (lastUsed && lastUsed > today) {
+        reject(`last use ${lastUsed} lies after the import date`);
+        return;
+      }
+      if (lastUsed && window && lastUsed > window.to) {
+        reject(`last use ${lastUsed} lies after the declared window end ${window.to}`);
+        return;
+      }
+    }
+
     const objectType = mapping.objectType ? String(row[mapping.objectType] || '').toUpperCase().trim() : undefined;
 
     records.push({
@@ -96,21 +158,48 @@ export async function parseUsage(file: File, hintedSource?: UsageSource): Promis
       lastUsed,
       source,
     });
+  });
+
+  if (quarantined.length > 0) {
+    warnings.push(`${quarantined.length} row${quarantined.length === 1 ? '' : 's'} not taken over — see the list of rejected rows.`);
+  }
+  if (unreadableCounts > 0) {
+    warnings.push(
+      `${unreadableCounts} call count${unreadableCounts === 1 ? '' : 's'} could not be read and ` +
+      `${unreadableCounts === 1 ? 'is' : 'are'} kept as unknown — not as zero.`,
+    );
   }
 
   // UPL: aggregate to object level (class, not method)
   if (source === 'upl') {
+    const procedureRows = records.length;
     records = aggregateToObjectLevel(records);
-    if (records.length < rawRows.length) {
-      warnings.push(`UPL data aggregated from ${rawRows.length} procedure-level rows to ${records.length} object-level records.`);
+    if (records.length < procedureRows) {
+      warnings.push(`UPL data aggregated from ${procedureRows} procedure-level rows to ${records.length} object-level records.`);
     }
   }
 
-  // Detect measurement period from data
-  const { observedSpanDays, measuredFrom, measuredTo } = detectPeriod(records);
+  // The span the executions show — reported as observed, never as the window.
+  const { observedSpanDays, observedFrom, observedTo } = detectPeriod(records);
 
   // Apply period to records
   records = records.map(r => ({ ...r, observedSpanDays }));
+
+  // Whether a zero can mean disuse is a question about the declared window.
+  if (!window) {
+    warnings.push(
+      'No monitoring window was declared. Without one, a count of zero says nothing about how long ' +
+      'nobody called the object — no object is classified as dormant on a zero count.',
+    );
+  } else if (window.days < RETIREMENT_WINDOW_DAYS) {
+    const coversYearEnd = window.from.slice(0, 4) < window.to.slice(0, 4);
+    warnings.push(
+      `The declared monitoring window covers ${window.days} days — less than 13 months` +
+      `${coversYearEnd ? '' : ', and no year-end'}. Month-end, quarter-end and year-end programs may simply ` +
+      'not have run in it: a zero count is not treated as evidence of disuse, and nothing is proposed ' +
+      'for retirement on it.',
+    );
+  }
 
   // Privacy: sanitize before returning
   const sanitized = sanitizeUsageRecords(records);
@@ -118,16 +207,63 @@ export async function parseUsage(file: File, hintedSource?: UsageSource): Promis
   // Compute retention expiry (90 days default)
   const retentionExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
 
-  return {
+  // Firestore refuses `undefined` anywhere in a document unless the client is
+  // configured to drop it, and ours is not. Every record from an export without
+  // a type column carried `objectType: undefined`, so the save on the analyze
+  // page threw — and was only logged. The report existed in one browser tab.
+  return withoutUndefined({
     records: sanitized,
     source,
     observedSpanDays,
-    measuredFrom,
-    measuredTo,
+    observedFrom,
+    observedTo,
+    window,
+    dateLocale: opts.dateLocale,
+    quarantined,
     importedAt: new Date().toISOString(),
     warnings,
     retentionExpiresAt,
-  };
+  });
+}
+
+/** Drop `undefined` at every depth; keep `null`, which is a value. */
+function withoutUndefined<T>(value: T): T {
+  if (Array.isArray(value)) return value.map(withoutUndefined) as unknown as T;
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, withoutUndefined(v)]),
+    ) as T;
+  }
+  return value;
+}
+
+/** Days from `from` to `to`, both included. */
+function inclusiveDays(from: string, to: string): number {
+  const ms = Date.UTC(+to.slice(0, 4), +to.slice(5, 7) - 1, +to.slice(8, 10)) -
+    Date.UTC(+from.slice(0, 4), +from.slice(5, 7) - 1, +from.slice(8, 10));
+  return Math.round(ms / 86_400_000) + 1;
+}
+
+/**
+ * A declared window that cannot be true is refused before anything is read —
+ * "unplausible periods are not taken over" (E03-F02). The importer corrects it;
+ * nothing is silently clipped.
+ */
+function validateWindow(w: { from: string; to: string }, today: string): { from: string; to: string; days: number } {
+  const from = parseUsageDate(w.from, 'iso');
+  const to = parseUsageDate(w.to, 'iso');
+  if (!from?.ok || !to?.ok) {
+    throw new Error('The monitoring window needs a start and an end date (YYYY-MM-DD).');
+  }
+  if (from.value > to.value) {
+    throw new Error(`The monitoring window ends (${to.value}) before it starts (${from.value}).`);
+  }
+  if (to.value > today) {
+    throw new Error(`The monitoring window ends in the future (${to.value}); an export cannot cover days that have not happened.`);
+  }
+  return { from: from.value, to: to.value, days: inclusiveDays(from.value, to.value) };
 }
 
 // ── CSV Parser with delimiter sniffing ─────────────────────────────
@@ -336,29 +472,64 @@ function parseCallCount(raw: unknown): number | undefined {
   return isNaN(num) ? undefined : Math.round(num);
 }
 
-function parseDate(raw: unknown): string | undefined {
-  if (!raw || String(raw).trim() === '') return undefined;
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/** A calendar date that exists, as ISO — or null. Built from its parts: no Date parsing, no time zone. */
+function isoFromParts(y: number, m: number, d: number): string | null {
+  if (y < 1900 || y > 2999 || m < 1 || m > 12 || d < 1) return null;
+  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  if (d > daysInMonth) return null;
+  return `${y}-${pad2(m)}-${pad2(d)}`;
+}
+
+const FORMAT_LABEL: Record<UsageDateLocale, string> = {
+  'de-DE': 'DD.MM.YYYY',
+  'en-GB': 'DD/MM/YYYY',
+  'en-US': 'MM/DD/YYYY',
+  iso: 'YYYY-MM-DD',
+};
+
+export type UsageDateResult = { ok: true; value: string } | { ok: false; reason: string };
+
+/**
+ * Read one date from a usage export, as the importer declared its format.
+ * Returns null for an empty cell.
+ *
+ * This replaces `new Date(text)`, which read `05.04.2026` as 4 May — the
+ * engine's own month-first rule — and then `toISOString()` moved it back a day
+ * in every time zone east of UTC. A German export's 5 April was stored as
+ * 3 May (CR-24). Two forms are unambiguous and always accepted: ISO
+ * (`2026-04-05`, optionally with a time) and SAP internal (`20260405`).
+ * Everything else is read by the declared order or refused with a reason.
+ */
+export function parseUsageDate(raw: unknown, locale?: UsageDateLocale): UsageDateResult | null {
+  if (raw === null || raw === undefined) return null;
   const str = String(raw).trim();
+  if (str === '') return null;
 
-  // Try ISO format first
-  const isoDate = new Date(str);
-  if (!isNaN(isoDate.getTime())) return isoDate.toISOString().split('T')[0];
+  const fail = (reason: string): UsageDateResult => ({ ok: false, reason });
+  const ok = (y: number, m: number, d: number): UsageDateResult => {
+    const iso = isoFromParts(y, m, d);
+    return iso ? { ok: true, value: iso } : fail(`date '${str}' does not exist`);
+  };
 
-  // Try DD.MM.YYYY (German/SAP format)
-  const deMatch = str.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-  if (deMatch) {
-    const d = new Date(`${deMatch[3]}-${deMatch[2].padStart(2, '0')}-${deMatch[1].padStart(2, '0')}`);
-    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ][\d:.]+(?:Z|[+-]\d{2}:?\d{2})?)?$/);
+  if (iso) return ok(+iso[1], +iso[2], +iso[3]);
+
+  const sap = str.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (sap) return ok(+sap[1], +sap[2], +sap[3]);
+
+  const separated = str.match(/^(\d{1,2})([./-])(\d{1,2})\2(\d{2,4})$/);
+  if (separated) {
+    if (separated[4].length !== 4) return fail(`date '${str}' has a two-digit year`);
+    if (!locale) return fail(`date '${str}' is ambiguous — declare the export's date format`);
+    if (locale === 'iso') return fail(`date '${str}' is not ${FORMAT_LABEL.iso}, the declared format`);
+    const [a, b, y] = [+separated[1], +separated[3], +separated[4]];
+    const result = locale === 'en-US' ? ok(y, a, b) : ok(y, b, a);
+    return result.ok ? result : fail(`date '${str}' is not a valid ${FORMAT_LABEL[locale]} date`);
   }
 
-  // Try YYYYMMDD (SAP internal format)
-  const sapMatch = str.match(/^(\d{4})(\d{2})(\d{2})$/);
-  if (sapMatch) {
-    const d = new Date(`${sapMatch[1]}-${sapMatch[2]}-${sapMatch[3]}`);
-    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
-  }
-
-  return undefined;
+  return fail(`date '${str}' is not a recognised date`);
 }
 
 /**
@@ -392,21 +563,19 @@ function aggregateToObjectLevel(records: UsageRecord[]): UsageRecord[] {
 }
 
 /**
- * Detect measurement period from the data (lastUsed dates).
- */
-/**
  * The span the export actually shows, not the window it was taken over.
  *
- * `measuredFrom`/`measuredTo` are the first and last execution dates present.
- * `measuredTo` feeds the dormancy threshold in the join, which is why it is kept
- * — and it errs in the safe direction there: the last execution seen is never
- * later than the true export end, so objects come out less dormant, not more.
+ * `observedFrom`/`observedTo` are the first and last execution dates present.
+ * When no window was declared, `observedTo` stands in for the window end in the
+ * join's "last used 13 months ago" rule — the safe direction: the last execution
+ * seen is never later than the true export end, so objects come out less
+ * dormant, not more.
  *
- * What is NOT returned any more is a measurement period. Nothing in an SCMON or
- * UPL export tells us how long the monitoring ran, and deriving it from the
- * dates of the executions themselves reports "two days" for a year of data.
+ * The window itself is declared by the importer (E03-F02). Nothing in an SCMON
+ * or UPL export says how long the monitoring ran, and deriving it from the
+ * executions reported "two days" for a year of data.
  */
-function detectPeriod(records: UsageRecord[]): { observedSpanDays?: number; measuredFrom?: string; measuredTo?: string } {
+function detectPeriod(records: UsageRecord[]): { observedSpanDays?: number; observedFrom?: string; observedTo?: string } {
   const dates = records
     .map(r => r.lastUsed)
     .filter((d): d is string => !!d)
@@ -416,8 +585,7 @@ function detectPeriod(records: UsageRecord[]): { observedSpanDays?: number; meas
 
   const from = dates[0];
   const to = dates[dates.length - 1];
-  const diffMs = new Date(to).getTime() - new Date(from).getTime();
-  const observedSpanDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  const observedSpanDays = Math.max(1, inclusiveDays(from, to) - 1);
 
-  return { observedSpanDays, measuredFrom: from, measuredTo: to };
+  return { observedSpanDays, observedFrom: from, observedTo: to };
 }

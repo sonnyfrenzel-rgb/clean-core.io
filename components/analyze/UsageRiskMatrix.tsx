@@ -3,13 +3,34 @@
 import { useState, useMemo } from 'react';
 import { AlertTriangle, TrendingUp, Trash2, HelpCircle, BarChart3, Clock, X, ExternalLink, MinusCircle } from 'lucide-react';
 import clsx from 'clsx';
-import type { UsageJoinRow, Quadrant, UsageBucket, Feasibility } from '@/lib/abap/usage-model';
+import { RETIREMENT_WINDOW_DAYS, type UsageJoinRow, type Quadrant, type UsageBucket, type Feasibility } from '@/lib/abap/usage-model';
 import type { UsageReport } from '@/lib/abap/usage-model';
-import { QUADRANT_META } from '@/lib/abap/usage-join';
+import type { EvidenceFinding } from '@/lib/abap/evidence-model';
+import type { ExtensibilityRouteReport } from '@/lib/abap/extensibility-router';
+import { QUADRANT_META, joinUsageWithEvidence } from '@/lib/abap/usage-join';
 
 interface UsageRiskMatrixProps {
   rows: UsageJoinRow[];
   usageReport: UsageReport;
+}
+
+/**
+ * The join, computed inside the component rather than as a prop expression in
+ * the page. The join refuses reports that mix sources; thrown here, that lands
+ * in the surrounding SectionBoundary as one failed section — thrown in the
+ * page's own render, it took the whole analyze page down with it.
+ */
+export function UsageRiskMatrixFor({
+  usageReport,
+  findings,
+  route,
+}: {
+  usageReport: UsageReport;
+  findings: EvidenceFinding[];
+  route: ExtensibilityRouteReport;
+}) {
+  const rows = useMemo(() => joinUsageWithEvidence(usageReport, { findings }, route), [usageReport, findings, route]);
+  return <UsageRiskMatrix rows={rows} usageReport={usageReport} />;
 }
 
 // ── Grid cell definitions (Usage × Feasibility) ───────────────────
@@ -21,6 +42,8 @@ const USAGE_LABELS: { bucket: UsageBucket; label: string; icon: React.ReactNode 
   { bucket: 'moderate', label: 'Moderate',       icon: <BarChart3 className="w-3.5 h-3.5" /> },
   { bucket: 'low',      label: 'Low Usage',      icon: <MinusCircle className="w-3.5 h-3.5" /> },
   { bucket: 'dormant',  label: 'Dormant',        icon: <Clock className="w-3.5 h-3.5" /> },
+  // Zero calls in a window too short, or undeclared, to call it disuse.
+  { bucket: 'unobserved', label: 'Not seen (short window)', icon: <Clock className="w-3.5 h-3.5" /> },
   { bucket: 'unknown',  label: 'Unknown',        icon: <HelpCircle className="w-3.5 h-3.5" /> },
 ];
 
@@ -43,6 +66,9 @@ const CELL_COLORS: Record<string, string> = {
   'dormant-no-released-api-path': 'bg-amber-50 border-amber-200 text-amber-700',
   'dormant-needs-architect':      'bg-amber-50/50 border-amber-100 text-amber-600',
   'dormant-clean-core-ready':     'bg-slate-50/50 border-slate-100 text-slate-500',
+  'unobserved-no-released-api-path': 'bg-slate-50 border-slate-200 text-slate-500',
+  'unobserved-needs-architect':      'bg-slate-50 border-slate-200 text-slate-500',
+  'unobserved-clean-core-ready':     'bg-slate-50 border-slate-200 text-slate-500',
   'unknown-no-released-api-path': 'bg-slate-50 border-slate-200 text-slate-500',
   'unknown-needs-architect':      'bg-slate-50 border-slate-200 text-slate-500',
   'unknown-clean-core-ready':     'bg-slate-50 border-slate-200 text-slate-500',
@@ -92,9 +118,24 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
           {usageReport.observedSpanDays && (
             <span className="ml-1 font-medium">
               Covering {usageReport.observedSpanDays} days of observed {usageReport.source.toUpperCase()} activity
-              {usageReport.measuredFrom && usageReport.measuredTo && (
-                <> ({usageReport.measuredFrom} – {usageReport.measuredTo})</>
+              {(usageReport.observedFrom ?? usageReport.measuredFrom) && (usageReport.observedTo ?? usageReport.measuredTo) && (
+                <> ({usageReport.observedFrom ?? usageReport.measuredFrom} – {usageReport.observedTo ?? usageReport.measuredTo})</>
               )}.
+            </span>
+          )}
+        </p>
+        {/* The window as declared at import (E03-F02). Without one, or with one
+            shorter than 13 months, a zero count is shown as "not seen", never as
+            dormant — a year-end program need not run in a six-week export. */}
+        <p className="text-xs mt-1 font-medium" data-usage-window>
+          {usageReport.window ? (
+            <span className={usageReport.window.days < RETIREMENT_WINDOW_DAYS ? 'text-amber-700' : 'text-slate-600'}>
+              Monitoring window, as declared: {usageReport.window.from} – {usageReport.window.to} ({usageReport.window.days} days)
+              {usageReport.window.days < RETIREMENT_WINDOW_DAYS && ' — shorter than 13 months, so no zero count is read as disuse.'}
+            </span>
+          ) : (
+            <span className="text-amber-700">
+              No monitoring window declared — no zero count is read as disuse.
             </span>
           )}
         </p>
@@ -142,7 +183,15 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
                   <span className="group relative">
                     <HelpCircle className="w-3 h-3 text-amber-400 cursor-help" />
                     <span className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-slate-800 text-white text-[10px] rounded-lg w-56 hidden group-hover:block z-20 leading-relaxed">
-                      Zero executions or last used 13+ months ago. Retire only after business owner confirmation — some dormant objects may be required for periodic processes.
+                      Zero executions across a declared window of 13+ months, or last used 13+ months ago. Retire only after business owner confirmation — some dormant objects may be required for periodic processes.
+                    </span>
+                  </span>
+                )}
+                {u.bucket === 'unobserved' && (
+                  <span className="group relative">
+                    <HelpCircle className="w-3 h-3 text-slate-400 cursor-help" />
+                    <span className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-slate-800 text-white text-[10px] rounded-lg w-56 hidden group-hover:block z-20 leading-relaxed">
+                      Zero calls — but in a window shorter than 13 months, or none declared. A month-end or year-end program need not have run in it. Not a retirement candidate.
                     </span>
                   </span>
                 )}
@@ -277,6 +326,14 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
               </span>
             </div>
           )}
+          {selectedRow.usage === 'unobserved' && (
+            <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 flex items-start gap-2 text-[11px] text-amber-700">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>
+                Zero calls, in a monitoring window shorter than 13 months or not declared at all. Periodic programs may not have run in it — this is not evidence of disuse.
+              </span>
+            </div>
+          )}
         </div>
       )}
 
@@ -287,6 +344,7 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
           Source: {usageReport.source.toUpperCase()} ·
           {usageReport.records.length} objects ·
           {usageReport.observedSpanDays ? ` ${usageReport.observedSpanDays} days observed` : ' activity span unknown'} ·
+          {usageReport.quarantined && usageReport.quarantined.length > 0 && ` ${usageReport.quarantined.length} rows rejected ·`}
           Imported {new Date(usageReport.importedAt).toLocaleDateString()}
         </span>
       </div>
