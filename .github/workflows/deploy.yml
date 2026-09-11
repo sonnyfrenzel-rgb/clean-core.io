@@ -66,6 +66,14 @@ jobs:
           PILOT_APPROVAL_SECRET: ${{ secrets.PILOT_APPROVAL_SECRET }}
           S4_ENCRYPTION_KEY: ${{ secrets.S4_ENCRYPTION_KEY }}
 
+      # E16-F01-US02: the type check is a required gate over everything
+      # tsconfig includes — the tests too. `next build` checks application code
+      # only, and two type errors in a spec sat unseen for two weeks because
+      # nothing else ever ran tsc. After the build, so the route types it
+      # generates under .next/types are checked as well.
+      - name: Type Check (whole project, tests included)
+        run: npm run typecheck
+
       - name: Run End-to-End Tests
         run: npx playwright test
         env:

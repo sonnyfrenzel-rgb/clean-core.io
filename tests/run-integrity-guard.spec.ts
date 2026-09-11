@@ -23,7 +23,11 @@ const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
 const KEY = 'test-signing-key-for-run-integrity';
 
-function signedRun(payload: Record<string, any>) {
+// Generic so the payload keeps its fields: typed as `Record<string, any>` the
+// spread came back as `{ runHash; signature }`, and `run.cleanCoreScore = 95`
+// below was a type error nobody saw — `next build` does not type-check tests,
+// and nothing else ran tsc over them until E16-F01 made it a CI step.
+function signedRun<T extends Record<string, unknown>>(payload: T): T & { runHash: string; signature: string } {
   const runHash = computeRunHash(payload);
   return { ...payload, runHash, signature: signRunHash(runHash, KEY) };
 }

@@ -10,6 +10,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.10] — 2026-09-11
+
+### Der Deploy wartet jetzt auch auf den Typecheck — über die Tests hinweg
+
+Roadmap E16-F01-US02, Release 2.9: **„Typecheck, Tests und erforderliche
+Fachfreigaben sind als Pflichtchecks hinterlegt."**
+
+`next build` prüft die Typen der Anwendung und hört dort auf. Über die Tests lief
+nie `tsc`, und zwei Typfehler in `tests/run-integrity-guard.spec.ts` standen seit
+dem 27. August unbemerkt da — Playwright transpiliert, ohne zu prüfen. Behoben
+(eine generische Signatur für den Test-Helfer, der Test prüft dasselbe wie
+vorher), und `npm run typecheck` — `tsc --noEmit` über die ganze tsconfig — ist
+jetzt ein Schritt im `validate`-Job, von dem der Deploy abhängt: nach dem Build,
+damit auch die dort erzeugten Routentypen geprüft werden, vor den E2E-Tests.
+`tests/quality-gate-guard.spec.ts` hält Skript, Reihenfolge, Abhängigkeit und die
+Abdeckung der Tests in der tsconfig fest.
+
+Der zweite Teil derselben Story — ein High-Befund blockiert den Deploy ohne
+genehmigte, befristete Ausnahme — war schon strenger erfüllt als verlangt: der
+Deploy-Gate blockiert auf jeden High (`--audit-level=high`) und kennt gar keine
+Ausnahme. Das hält der Guard jetzt ebenfalls fest.
+
+**Bewusst nicht in diesem Release:** die Benachrichtigung bei einem roten
+Scheduled-Run von Security CI. Der naheliegende Weg — ein Job, der ein GitHub-Issue
+öffnet — würde im öffentlichen Repository ankündigen, dass gerade eine bekannte
+Lücke offen ist. Das ist eine Abwägung für Sonny (Issue oder Mail an den Admin),
+nicht für den Code.
+
 ## [v2.9.9] — 2026-09-11
 
 ### Passed nur aus einem zugeordneten Ergebnis — und jeder andere Ausgang mit Namen

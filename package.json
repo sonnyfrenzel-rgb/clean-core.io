@@ -1,6 +1,6 @@
 {
   "name": "ai-studio-applet",
-  "version": "2.9.9",
+  "version": "2.9.10",
   "private": true,
   "license": "Apache-2.0",
   "engines": {
@@ -10,7 +10,8 @@
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next dev",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start": "next start",
-    "lint": "eslint . --max-warnings 662",
+    "lint": "eslint . --max-warnings 661",
+    "typecheck": "tsc --noEmit -p .",
     "clean": "next clean",
     "build:guide-pdf": "tsx scripts/generate-guide-pdf.ts",
     "sync:catalog": "tsx scripts/sync-cloudification-repo.ts latest",
