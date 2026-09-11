@@ -8,6 +8,15 @@ on:
     branches: [main, release, dev]
   schedule:
     - cron: '0 6 * * 1' # Mondays 06:00 UTC
+  # Manual run. `test_alert` sends the admin a mail marked TEST, so the alert
+  # path can be checked end to end without waiting for something to break.
+  workflow_dispatch:
+    inputs:
+      test_alert:
+        description: 'Send a TEST alert mail to the admin'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -62,3 +71,38 @@ jobs:
           name: sbom
           path: sbom.json
           if-no-files-found: error
+
+  # A red scheduled run used to notify nobody. On 7 September the Monday run
+  # went red on six High advisories and stayed red for three days while a
+  # critical Next.js advisory ran in production: nobody pushed, so nobody saw.
+  # A failed *scheduled* run now mails the admin. Push and PR runs are left out
+  # on purpose — whoever pushed is looking at them already.
+  #
+  # Mail, not a GitHub issue: this repository is public, and an issue would
+  # announce the open window to everyone before the one person who can close it
+  # had read it.
+  alert-admin:
+    name: Mail the admin about a red scheduled run
+    needs: [secret-scan, dependency-audit, sbom]
+    if: >-
+      ${{ always() && (
+        (github.event_name == 'schedule' && contains(needs.*.result, 'failure')) ||
+        (github.event_name == 'workflow_dispatch' && inputs.test_alert)
+      ) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --ignore-scripts
+      - name: Send the alert
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # Context reaches the script as environment variables, never as text
+          # interpolated into the shell.
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TEST_ALERT: ${{ github.event_name == 'workflow_dispatch' && inputs.test_alert }}
+        run: npx tsx scripts/send-security-alert.ts --apply

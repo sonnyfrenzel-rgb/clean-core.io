@@ -10,6 +10,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.11] — 2026-09-11
+
+### Ein roter Scheduled-Run von Security CI erreicht jetzt den Admin — per Mail
+
+Offen seit dem 10.09., entschieden am 11.09.: **Mail an den Admin.**
+
+Am 7. September ging der Montagslauf von Security CI auf sechs High-Advisories
+rot und blieb es drei Tage lang, während ein kritisches Next.js-Advisory in
+Produktion lief. Ein fehlgeschlagener Scheduled-Run meldet sich bei niemandem,
+und in dieser Woche hat niemand gepusht. Der Deploy-Gate hätte es gefangen — beim
+nächsten Deploy.
+
+Neuer Job `alert-admin` in `security-ci.yml`: läuft, wenn ein **geplanter** Lauf
+fehlschlägt (Push- und PR-Läufe nicht — wer gepusht hat, sieht sie ohnehin), nach
+allen drei Gates und auch dann, wenn einer davon rot ist (`always()`). Er schickt
+über Resend — denselben Schlüssel und Absender wie der Wochenbericht — eine Mail
+an den Admin: welcher Job, was das bedeutet und was zu tun ist, Link zum Lauf.
+Kein Firestore, kein Google Cloud. Scheitert der Versand, wird der Job rot:
+eine Warnung, die nicht zugestellt werden konnte, ist genau die Stille, die das
+hier beenden soll.
+
+**Kein GitHub-Issue, mit Absicht:** das Repository ist öffentlich, und ein Issue
+würde das offene Fenster allen ankündigen, bevor der Admin es gelesen hat. Ein
+Guard hält fest, dass der Workflow keine Issues anlegt.
+
+Für die Prüfung des ganzen Wegs hat Security CI jetzt einen manuellen Auslöser
+mit `test_alert`; er schickt eine als **[TEST]** markierte Mail.
+
+`lib/security-alert-email.ts` (rein, getestet), `scripts/send-security-alert.ts`,
+`tests/security-alert-guard.spec.ts`: Bedingung und Reihenfolge im Workflow, keine
+Issues, Kontext nur über Umgebungsvariablen, Zuordnung der fehlgeschlagenen Jobs,
+Inhalt der Mail, TEST-Kennzeichnung, und dass nichts aus dem Laufkontext als
+Markup gerendert wird.
+
 ## [v2.9.10] — 2026-09-11
 
 ### Der Deploy wartet jetzt auch auf den Typecheck — über die Tests hinweg

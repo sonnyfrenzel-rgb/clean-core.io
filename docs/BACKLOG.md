@@ -14,6 +14,8 @@ sagt `git log origin/main`, nicht dieser Absatz.
 | v2.9.7 | Nutzungsimport: Datumsformat und Fenster deklariert, Quarantäne, Vorschau — und überhaupt gespeichert | E03-F02, CR-24 |
 | v2.9.8 | Economics: keine Einsparprognose ohne eigene Kostenwerte, Modell als Demonstration gekennzeichnet | E12-F01-US02, CR-23 (2.9-Teil) |
 | v2.9.9 | Teststatus: Skipped/Todo/Connectivity/Error, Live-ABAP ohne falsches `Passed`, Stubs benannt | E07-F01, CR-12/13/14 |
+| v2.9.10 | `npm run typecheck` (Tests inklusive) als Pflichtschritt vor dem Deploy | E16-F01-US02 |
+| v2.9.11 | Roter Scheduled-Run von Security CI → Mail an den Admin | Betrieb (10.09.) |
 
 **Unterwegs gefunden:** Das Dashboard hat einen „Quality Engineering Report"
 *erfunden* („All test cases compiled and executed successfully") — für jede
@@ -26,7 +28,7 @@ Delivery eröffnete jedes Projekt mit „lifecycle is complete". Alles behoben.
 |---|---|---|---|
 | 1 | ~~CR-24 / E03-F02 — Nutzungsimport~~ (P1) | — | **Erledigt in v2.9.7.** War gestern nicht auf der Liste; reproduziert als `05.04.2026` → `2026-05-03`. Dabei gefunden: der Import wurde nie gespeichert (`undefined` im Bericht, Firestore lehnt ab, nur geloggt) |
 | 2 | **E08-F01-US01 — echte Runner-Isolation** | **Felix (GCP)** | unverändert |
-| 3 | **Security-CI meldet rote Scheduled-Runs nicht** | Entwicklung | unverändert, nicht aus der Roadmap, aber seit gestern Punkt 1 der Betriebsseite |
+| 3 | ~~Security-CI meldet rote Scheduled-Runs nicht~~ | — | **Erledigt in v2.9.11:** Mail an den Admin (entschieden 11.09.; kein Issue, weil das Repo öffentlich ist) |
 | 4 | CR-28 — Sign-off | — | 2.9-Teil erfüllt: widerrufbar, als Selbsterklärung bezeichnet, und seit v2.9.6 an die Quelle gebunden. Rollen/Attestation ist E05/E13 in 3.0 |
 | 5 | CR-23 — TCO-Koeffizienten empirisch | — | E12-F02, 2.10 |
 
