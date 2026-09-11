@@ -10,6 +10,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.5] — 2026-09-11
+
+### Drei Ansichten, drei Fortschritte — jetzt ein Vertrag
+
+Roadmap E01-F01, Release 2.9, P0, ausgelöst von CR-11 (und CR-16 im selben
+Kasten). Die Abnahme zu US01: **„Gegeben sind generierte, aber nicht ausgeführte
+Tests. Wenn Dashboard, Stepper und Delivery laden, dann zeigen alle
+‚Testentwurf vorhanden', nicht ‚Testing abgeschlossen'; Economics erscheint als
+sechste Phase."**
+
+Gemessen vorher, ein Projekt, drei Ansichten:
+
+- **Stepper:** Upload · Analyze · Design · Transformation · Testing ·
+  Documentation · Delivery. Upload als eigene Phase, kein Economics — die
+  TCO-Seite zeigte sich deshalb als Schritt 1, weil sie keine eigene Nummer
+  hatte. Und abgehakt wurde nach **Position**: Wer Testing öffnete, sah Design und
+  Transformation als erledigt, egal ob etwas existierte.
+- **Rail:** Testing „done", sobald Testfälle *generiert* waren.
+- **Dashboard:** las `status` — ein Feld, das der Client schreibt. Beim
+  Generieren der Tests wird es auf `'testing'` gesetzt, das Dashboard machte
+  daraus „Testing & QA (85%)". Ein Projekt mit `status: 'completed'` war
+  „Completed (100%)", egal was darin lag.
+
+**Und ein Fund, der nicht in der Roadmap stand:** der Projektbaum im Dashboard
+bot einen herunterladbaren „6. Quality Engineering Report" an. Ohne gespeicherten
+Bericht — also bei jedem Projekt, denn nichts speichert einen — wurde er
+*erfunden*: „All test cases compiled and executed successfully", „Database
+Persistency Sync: Verified via isolated PostgreSQL Mocking", eine
+Node-Laufzeitversion. Für eine Suite, die nur generiert worden war. Er zählt jetzt
+Verdikte und sagt, wenn kein Lauf vorliegt.
+
+**Was jetzt gilt:** `lib/workflow-steps.ts` ist der einzige Ort, der Phasen und
+ihren Zustand kennt. Stepper, Rail, Dashboard und Delivery rendern ihn; keine
+Ansicht hat mehr eine eigene Liste oder Zählung. Reihenfolge nach Roadmap §7.0:
+Analyze (mit Upload) · Design · Transformation · Documentation · Testing ·
+**Economics** · Delivery. Jede Phase ist `empty`, `partial` oder `done`:
+
+| Phase | `partial` heißt | `done` heißt |
+|---|---|---|
+| Analyze | Quelle liegt, kein signierter Run | signierter Run |
+| Design | generiert, Zielarchitektur nicht bestätigt | bestätigt (Selbsterklärung) |
+| Testing | **Testentwurf** — generiert, kein Lauf erfasst; oder teilweise/fehlgeschlagen | jeder Fall `Passed` |
+| Economics | Modellschätzung aus angenommenen Koeffizienten | — in 2.9 nicht erreichbar |
+| Delivery | nur Review-Material | Code, Doku und bestandener Testlauf erfasst |
+
+`status` wird nirgends mehr gelesen. Der Stepper zeigt Zustand statt Position,
+„Weiter" im Dashboard geht zur ersten offenen Phase (Economics ausgenommen —
+dort gibt es in diesem Release nichts abzuschließen, und ein Weiter-Knopf, der
+einen dort dauerhaft parkt, ist keiner).
+
+**Nebenbei behoben, weil es derselbe Befund in anderer Form war:**
+
+- Die Rail wurde auf Design, Transformation, Documentation und Delivery **nur im
+  Ladezustand** gerendert — sie stand im frühen `return` und sonst nirgends, und
+  verschwand genau dann, wenn es etwas zu berichten gab.
+- Delivery eröffnete jedes Projekt mit „The transformation lifecycle is complete
+  … ready for deployment". Der QA-Status wurde bei generierten, nie gelaufenen
+  Tests grün („All artefacts present"). Das Häkchen der Testzeile ging auch
+  neben *simulierten* Fällen auf grün — die Bedingung prüfte auf Fehlschläge und
+  fehlende Verdikte, nicht auf Mocks.
+- Zwei Qualitätsunterzeilen behaupteten Compliance ohne Prüfung dahinter
+  („Restricted clean ABAP syntax check compliant", „Strongly-typed model
+  boundaries compliant") — CR-16.
+- Die Navigation folgt jetzt der kanonischen Reihenfolge (Transformation →
+  Documentation → Testing → Economics → Delivery). Die eigenen Texte des
+  Produkts nannten Documentation schon „stage 4"; nur die Knöpfe nicht.
+  First-Run-Guide und Willkommensmail nannten Analyze „stage 2".
+
+**Was das für echte Projekte heißt, ausdrücklich:** Die Testing-Seite zeigt die
+Verdikte eines Laufs am Bildschirm, **speichert sie aber nicht**. Deshalb bleibt
+Testing — und damit Delivery — in der Praxis `partial`. Das ist die ehrliche
+Aussage über das, was erfasst ist; ein Lauf in einem Browser-Tab ist kein
+Nachweis, den die nächste Ansicht lesen kann. Die Lösung ist kein Client-Schreiben
+von `Passed`, sondern ein serverseitiger Test-Receipt (E07-F02).
+
+`tests/workflow-phases-guard.spec.ts`: der Vertrag als Einheit (Reihenfolge,
+Testentwurf, Simulation ≠ Pass, `status` wird ignoriert, Economics nie done),
+Quellwächter (kein positionsgetriebener Stepper, jede Seite rendert Rail und
+Stepper gleich oft, Vorwärtsknöpfe in kanonischer Reihenfolge, kein erfundener
+Bericht) und die Abnahme gerendert: ein Projekt mit Testentwurf und
+`status: 'completed'`, Dashboard, Stepper und Delivery zeigen alle „Test draft",
+Economics ist der sechste Kreis.
+
+**Noch offen aus E01-F01:** US02 — nach einer Quellenänderung Transformation und
+kontrolliertes Handover sperren, ohne dass ein Client-Statuswechsel die Sperre
+umgeht. Kommt als eigener Release.
+
 ## [v2.9.4] — 2026-09-10
 
 ### Die Division, die v2.8.6 übersehen hat, weil sie eine Zeile darüber stand

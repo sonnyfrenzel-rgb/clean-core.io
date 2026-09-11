@@ -672,14 +672,16 @@ CMD ["node", "srv/service.js"]`
     return () => clearInterval(interval);
   }, [loading, progress]);
 
+  const phases = workflowSteps(project);
+
   if (loading && !transformedCode) return (
     <div className="animate-in fade-in duration-500">
       {/* Where am I, what is behind me, what is still open — kept on
-          screen while the stepper scrolls away. Reports artefacts that
-          exist; it decides nothing. */}
-      <VerificationRail steps={workflowSteps(project)} current={4} projectId={projectId as string} />
+          screen while the stepper scrolls away. Both read the same contract;
+          neither decides anything. */}
+      <VerificationRail steps={phases} current="transformation" projectId={projectId as string} />
 
-      <Stepper currentStep={4} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
+      <Stepper steps={phases} current="transformation" projectId={projectId as string} />
       <div className="bg-[#0a0a0a] rounded-[2rem] shadow-2xl border border-white/10 overflow-hidden mt-8">
         <div className="px-10 py-12 text-white flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex-1">
@@ -721,7 +723,11 @@ CMD ["node", "srv/service.js"]`
 
   return (
     <div className="animate-in fade-in duration-500 max-w-7xl mx-auto">
-      <Stepper currentStep={4} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
+      {/* Rendered here as well as in the loading state — it used to exist only
+          there, and disappeared as soon as the page had loaded. */}
+      <VerificationRail steps={phases} current="transformation" projectId={projectId as string} />
+
+      <Stepper steps={phases} current="transformation" projectId={projectId as string} />
       
       <div className="mb-10 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/50 backdrop-blur-sm border border-slate-200/50 rounded-3xl p-6 shadow-sm">
         {/* The quota used to be stated a third time here, as "Free
@@ -1249,8 +1255,8 @@ CMD ["node", "srv/service.js"]`
       <NavigationButtons 
         backPath={`/project/${projectId}/design`}
         backLabel="Back to Design"
-        proceedPath={`/project/${projectId}/testing`}
-        proceedLabel="Proceed to Testing"
+        proceedPath={`/project/${projectId}/documentation`}
+        proceedLabel="Proceed to Documentation"
       />
     </div>
   );

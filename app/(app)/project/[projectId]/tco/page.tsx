@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { doc, setDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
@@ -10,6 +10,9 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import type { Project } from '@/lib/types';
 import Stepper from '@/components/Stepper';
 import StageHeader from '@/components/StageHeader';
+import VerificationRail from '@/components/VerificationRail';
+import NavigationButtons from '@/components/NavigationButtons';
+import { workflowSteps } from '@/lib/workflow-steps';
 import { 
   TrendingUp, Calculator, Euro, Calendar, ShieldCheck, 
   FileText, Printer, ArrowRight, RefreshCw, BarChart3, AlertCircle 
@@ -51,7 +54,6 @@ const RechartsChart = dynamic(() => import('recharts').then(mod => {
 
 export default function TcoCalculatorPage() {
   const { projectId } = useParams();
-  const router = useRouter();
   const { profile } = useUserProfile();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
@@ -221,14 +223,18 @@ export default function TcoCalculatorPage() {
     window.print();
   };
 
+  // Economics is phase 6 of 7. This page used to render the stepper with
+  // `currentStep={1}` — it had no number of its own, so it claimed Upload's —
+  // and had no rail at all.
+  const phases = workflowSteps(project);
+
   if (loading) return <div className="p-8 text-center">Loading calculations database...</div>;
 
   if (!calculations) {
     return (
       <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8">
-        <div className="print:hidden">
-          <Stepper currentStep={1} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
-        </div>
+        <VerificationRail steps={phases} current="tco" projectId={projectId as string} />
+        <Stepper steps={phases} current="tco" projectId={projectId as string} />
         <div className="max-w-2xl mx-auto mt-10 bg-white border border-amber-200 rounded-[2rem] p-8 shadow-sm">
           <StageHeader title="No baseline to model against" />
           <p className="text-sm text-slate-600 -mt-4 leading-relaxed">
@@ -256,6 +262,14 @@ export default function TcoCalculatorPage() {
             built on a number nobody measured is worse than no page at all.
           </p>
         </div>
+        <div className="max-w-2xl mx-auto">
+          <NavigationButtons
+            backPath={`/project/${projectId}/testing`}
+            backLabel="Back to Testing"
+            proceedPath={`/project/${projectId}/delivery`}
+            proceedLabel="Proceed to Delivery"
+          />
+        </div>
       </div>
     );
   }
@@ -263,10 +277,9 @@ export default function TcoCalculatorPage() {
   return (
     <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8 print:bg-white print:p-0">
       
-      {/* Stepper (Hidden when printing) */}
-      <div className="print:hidden">
-        <Stepper currentStep={1} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
-      </div>
+      {/* Navigation, so neither prints. */}
+      <VerificationRail steps={phases} current="tco" projectId={projectId as string} />
+      <Stepper steps={phases} current="tco" projectId={projectId as string} />
 
       {/* Main Container */}
       <div className="max-w-6xl mx-auto mt-8 space-y-8 w-full">
@@ -292,12 +305,6 @@ export default function TcoCalculatorPage() {
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gradient-to-br from-slate-900 to-slate-800 hover:shadow-lg text-white font-bold text-xs uppercase tracking-wider px-6 h-12 rounded-xl transition-all active:scale-95"
             >
               <Printer className="w-4 h-4" /> Print Business Case
-            </button>
-            <button
-              onClick={() => router.push(`/project/${projectId}/analyze`)}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white hover:bg-gray-50 border border-gray-250 text-gray-700 font-bold text-xs uppercase tracking-wider px-6 h-12 rounded-xl transition-all"
-            >
-              Back to Analyze
             </button>
           </div>
         </div>
@@ -581,6 +588,15 @@ export default function TcoCalculatorPage() {
         <div className="hidden print:block border-t border-gray-300 pt-8 mt-12 text-center text-xs text-gray-400">
           <p className="font-bold">Clean-Core.io Business Value Report</p>
           <p>Generated in alignment with SAP Clean Core Extensibility principles — not an official SAP certification. Requires your own review and validation. Data encrypted client-side.</p>
+        </div>
+
+        <div className="print:hidden">
+          <NavigationButtons
+            backPath={`/project/${projectId}/testing`}
+            backLabel="Back to Testing"
+            proceedPath={`/project/${projectId}/delivery`}
+            proceedLabel="Proceed to Delivery"
+          />
         </div>
 
       </div>

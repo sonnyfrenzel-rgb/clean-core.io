@@ -696,14 +696,16 @@ Structure the JSON exactly like this:
     saveAs(blob, `${fileName}_Confluence.html`);
   };
 
+  const phases = workflowSteps(project);
+
   if (loading) return (
     <div className="animate-in fade-in duration-500">
       {/* Where am I, what is behind me, what is still open — kept on
-          screen while the stepper scrolls away. Reports artefacts that
-          exist; it decides nothing. */}
-      <VerificationRail steps={workflowSteps(project)} current={6} projectId={projectId as string} />
+          screen while the stepper scrolls away. Both read the same contract;
+          neither decides anything. */}
+      <VerificationRail steps={phases} current="documentation" projectId={projectId as string} />
 
-      <Stepper currentStep={6} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
+      <Stepper steps={phases} current="documentation" projectId={projectId as string} />
       <div className="h-[60vh] flex flex-col items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
           <p className="text-lg font-medium text-gray-400">Loading documentation...</p>
@@ -713,7 +715,11 @@ Structure the JSON exactly like this:
 
   return (
     <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8">
-      <Stepper currentStep={6} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
+      {/* Rendered here as well as in the loading state — it used to exist only
+          there, and disappeared as soon as the page had loaded. */}
+      <VerificationRail steps={phases} current="documentation" projectId={projectId as string} />
+
+      <Stepper steps={phases} current="documentation" projectId={projectId as string} />
       
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-10 mt-6 md:mt-8">
         <div>
@@ -1419,10 +1425,10 @@ Structure the JSON exactly like this:
       </AnimatePresence>
 
       <NavigationButtons 
-        backPath={`/project/${projectId}/testing`}
-        backLabel="Back to Testing"
-        proceedPath={`/project/${projectId}/delivery`}
-        proceedLabel="Proceed to Delivery"
+        backPath={`/project/${projectId}/transformation`}
+        backLabel="Back to Transformation"
+        proceedPath={`/project/${projectId}/testing`}
+        proceedLabel="Proceed to Testing"
         incomplete={!documentation}
         incompleteReason="no blueprint has been generated"
       />

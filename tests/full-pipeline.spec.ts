@@ -129,7 +129,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     }
   });
 
-  test('should walk through the complete 6 progressive stages using a safe example', async ({ page }) => {
+  test('should walk through all seven phases using a safe example', async ({ page }) => {
     test.setTimeout(300 * 1000); // 5 minutes timeout for all 5 live LLM calls
 
     // Redirect browser console logs to terminal for CI debugging (unbuffered)
@@ -308,8 +308,32 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await expect(page.locator('button:has-text("Sync Scroll:")')).toBeVisible({ timeout: 45000 });
     console.log('Stage 3 Complete: Side-by-Side transformation scroll verification passed.');
 
-    // --- STAGE 4: TESTING SANDBOX ---
-    console.log('Navigating to Stage 4: Testing Sandbox...');
+    // The canonical order (roadmap §7.0, lib/workflow-steps.ts): Documentation is
+    // phase 4, Testing 5, Economics 6. Transformation used to hand over to Testing
+    // and Testing to Documentation, while the product's own copy already called
+    // Documentation "stage 4".
+
+    // --- STAGE 4: PROCESS BLUEPRINTING & DOCUMENTATION ---
+    console.log('Navigating to Stage 4: Documentation...');
+    await page.click('button:has-text("Proceed to Documentation")');
+    await page.waitForSelector('h1:has-text("Process Blueprint & Mapping")', { timeout: 45000 });
+
+    // Click "Start Architectural Mapping" if it is present (new project flow)
+    const startButton = page.locator('button:has-text("Start Architectural Mapping")');
+    try {
+      await expect(startButton).toBeVisible({ timeout: 5000 });
+      await startButton.click();
+      console.log('Triggered architectural blueprint documentation generation...');
+    } catch (e) {
+      console.log('Documentation blueprint already exists or is generating, skipping click.');
+    }
+
+    // Verify BPMN process flows are active
+    await expect(page.locator('text=Interactive BPMN Map')).toBeVisible({ timeout: 60000 });
+    console.log('Stage 4 Complete: Architectural documentation mapped successfully.');
+
+    // --- STAGE 5: TESTING SANDBOX ---
+    console.log('Navigating to Stage 5: Testing Sandbox...');
     await page.click('button:has-text("Proceed to Testing")');
     // "Generate Test Suite" is the empty state's own button. This used to look for
     // "Generate Suite" — the card header's — which was the same action offered a
@@ -333,29 +357,19 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     
     // Verify that test console stubs resolve to visual Green success badges
     await expect(page.locator('text=Passed').first()).toBeVisible({ timeout: 15000 });
-    console.log('Stage 4 Complete: Sandbox test case runs executed successfully.');
+    console.log('Stage 5 Complete: Sandbox test case runs executed.');
 
-    // --- STAGE 5: PROCESS BLUEPRINTING & DOCUMENTATION ---
-    console.log('Navigating to Stage 5: Documentation...');
-    await page.click('button:has-text("Proceed to Documentation")');
-    await page.waitForSelector('h1:has-text("Process Blueprint & Mapping")', { timeout: 45000 });
-    
-    // Click "Start Architectural Mapping" if it is present (new project flow)
-    const startButton = page.locator('button:has-text("Start Architectural Mapping")');
-    try {
-      await expect(startButton).toBeVisible({ timeout: 5000 });
-      await startButton.click();
-      console.log('Triggered architectural blueprint documentation generation...');
-    } catch (e) {
-      console.log('Documentation blueprint already exists or is generating, skipping click.');
-    }
-    
-    // Verify BPMN process flows are active
-    await expect(page.locator('text=Interactive BPMN Map')).toBeVisible({ timeout: 60000 });
-    console.log('Stage 5 Complete: Architectural documentation mapped successfully.');
+    // --- STAGE 6: ECONOMICS ---
+    console.log('Navigating to Stage 6: Economics...');
+    await page.click('button:has-text("Proceed to Economics")');
+    // Wait on the URL, not on a stage title: the testing page has one too, and
+    // a selector wait would resolve against the page being left.
+    await page.waitForURL(/\/tco$/, { timeout: 45000 });
+    await page.waitForSelector('button:has-text("Proceed to Delivery")', { timeout: 45000 });
+    console.log('Stage 6 reached: Economics.');
 
-    // --- STAGE 6: MODULAR HANDOVER DELIVERY ---
-    console.log('Navigating to Stage 6: Delivery...');
+    // --- STAGE 7: MODULAR HANDOVER DELIVERY ---
+    console.log('Navigating to Stage 7: Delivery...');
     await page.click('button:has-text("Proceed to Delivery")');
     await page.waitForSelector('button:has-text("Download Bundle")', { timeout: 45000 });
 
@@ -369,6 +383,6 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // Assert download is successful
     const filename = download.suggestedFilename();
     expect(filename).toContain('.zip');
-    console.log(`Stage 6 Complete: Handover ZIP file successfully downloaded (${filename}).`);
+    console.log(`Stage 7 Complete: Handover ZIP file successfully downloaded (${filename}).`);
   });
 });

@@ -637,16 +637,18 @@ export default function TestingSandboxPage() {
 
   const isAbapCloud = (project?.extensibilityRoute || '').includes('ABAP Cloud');
 
+  const phases = workflowSteps(project);
+
   if (loading) return <div className="p-8">Loading...</div>;
 
   return (
     <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8">
       {/* Where am I, what is behind me, what is still open — kept on
-          screen while the stepper scrolls away. Reports artefacts that
-          exist; it decides nothing. */}
-      <VerificationRail steps={workflowSteps(project)} current={5} projectId={projectId as string} />
+          screen while the stepper scrolls away. Both read the same contract;
+          neither decides anything. */}
+      <VerificationRail steps={phases} current="testing" projectId={projectId as string} />
 
-      <Stepper currentStep={5} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
+      <Stepper steps={phases} current="testing" projectId={projectId as string} />
       
       <StageHeader title="Testing &amp; Sandbox">
         {isAbapCloud
@@ -1856,10 +1858,10 @@ export default function TestingSandboxPage() {
 
 
       <NavigationButtons 
-        backPath={`/project/${projectId}/transformation`}
-        backLabel="Back to Transformation"
-        proceedPath={`/project/${projectId}/documentation`}
-        proceedLabel="Proceed to Documentation"
+        backPath={`/project/${projectId}/documentation`}
+        backLabel="Back to Documentation"
+        proceedPath={`/project/${projectId}/tco`}
+        proceedLabel="Proceed to Economics"
         incomplete={testCases.length === 0}
         incompleteReason="no test suite has been generated"
       />

@@ -383,7 +383,7 @@ ${responseText.substring(0, 4000)}`;
             // The run (which holds the analysis) could not be read — surface it instead
             // of a silent empty state, so the real cause (permissions/network) is visible.
             console.error('[Design] Active run could not be loaded:', data._runLoadError);
-            setDesignError(`Could not load the analysis run: ${data._runLoadError || 'unknown error'}. This is usually a permissions or connectivity issue — reload the page, or re-run the analysis in Step 2.`);
+            setDesignError(`Could not load the analysis run: ${data._runLoadError || 'unknown error'}. This is usually a permissions or connectivity issue — reload the page, or re-run the analysis in stage 1.`);
             setLoading(false);
         } else {
             console.warn('[Design] No analysis data found on project — cannot auto-generate design.');
@@ -843,14 +843,16 @@ ${responseText.substring(0, 4000)}`;
     );
   };
 
+  const phases = workflowSteps(project);
+
   if (loading && !design) return (
     <div className="animate-in fade-in duration-500 min-h-screen">
       {/* Where am I, what is behind me, what is still open — kept on
-          screen while the stepper scrolls away. Reports artefacts that
-          exist; it decides nothing. */}
-      <VerificationRail steps={workflowSteps(project)} current={3} projectId={projectId as string} />
+          screen while the stepper scrolls away. Both read the same contract;
+          neither decides anything. */}
+      <VerificationRail steps={phases} current="design" projectId={projectId as string} />
 
-      <Stepper currentStep={3} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
+      <Stepper steps={phases} current="design" projectId={projectId as string} />
       <div className="bg-white rounded-[2rem] shadow-xl border border-gray-100 overflow-hidden mt-8">
         <div className="bg-green-600 px-6 sm:px-10 py-10 sm:py-12 text-white flex items-center justify-between">
           <div>
@@ -866,8 +868,13 @@ ${responseText.substring(0, 4000)}`;
 
   return (
     <div className="animate-in fade-in duration-500 min-h-screen">
-      <Stepper currentStep={3} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
-      
+      {/* The rail used to render only while the page was loading: it sat in the
+          early return and nowhere else, so it vanished the moment there was
+          something to report on. */}
+      <VerificationRail steps={phases} current="design" projectId={projectId as string} />
+
+      <Stepper steps={phases} current="design" projectId={projectId as string} />
+
       <StageHeader
         title="Solution Design"
         actions={design ? (
@@ -944,7 +951,7 @@ ${responseText.substring(0, 4000)}`;
                     const analysisStr = typeof project.analysis === 'object' ? JSON.stringify(project.analysis) : project.analysis;
                     generateDesign(analysisStr);
                   } else {
-                    setDesignError('Analysis data not found. Please go back to Step 2 (Analyze) and run the analysis first.');
+                    setDesignError('Analysis data not found. Please go back to stage 1 (Analyze) and run the analysis first.');
                   }
                 }}
                 className="mt-6 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all shadow-md active:scale-95"

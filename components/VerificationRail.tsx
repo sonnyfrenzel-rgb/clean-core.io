@@ -3,43 +3,34 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, X, ListChecks } from 'lucide-react';
+import type { PhaseKey, RailStep } from '@/lib/workflow-steps';
 
 /**
  * Where am I, what is behind me, what is still open.
  *
- * A seven-stage flow gives the reader a stepper at the top of each page and then
+ * A seven-phase flow gives the reader a stepper at the top of each page and then
  * lets them scroll two thousand pixels away from it. This rail keeps the answer
- * on screen: the same seven steps, the same emerald-and-slate circles the stepper
- * already uses, in a column down the right edge.
+ * on screen: the same seven phases, the same circles the stepper uses, in a
+ * column down the right edge.
  *
- * It adds no capability. Every state it shows is one the pages already hold — a
- * signed score, generated code, a test suite, a blueprint — so the rail reports
- * rather than decides, and it never claims a step is done on the strength of the
- * page having been opened, which is the mistake stage 7 used to make.
+ * It adds no capability. Every state comes from `workflowSteps` — the contract
+ * the stepper, the dashboard and the delivery page read too — so the rail
+ * reports rather than decides, and it never claims a phase is done on the
+ * strength of the page having been opened, which is the mistake stage 7 used to
+ * make.
  *
  * Desktop only by width, but not hidden on a phone: there it becomes a single
  * button at the bottom-left that opens the same list as a sheet. Both are behind
  * `hidden` at the print breakpoint, because a rail is navigation and navigation
  * does not belong in a printed business case.
  */
-export interface RailStep {
-  /** 1-based, matching the Stepper. */
-  n: number;
-  label: string;
-  path: string;
-  /** True when the artefact this step produces exists. */
-  done: boolean;
-  /** What is on record, in the product's own words. Shown on hover and focus. */
-  detail: string;
-}
-
 export default function VerificationRail({
   steps,
   current,
   projectId,
 }: {
   steps: RailStep[];
-  current: number;
+  current: PhaseKey;
   projectId: string;
 }) {
   const router = useRouter();
@@ -54,11 +45,12 @@ export default function VerificationRail({
   const doneCount = steps.filter((s) => s.done).length;
 
   const dot = (step: RailStep) => {
-    const isCurrent = step.n === current;
+    const isCurrent = step.key === current;
     if (isCurrent) {
       return 'border-green-600 bg-white ring-2 ring-green-600/20 ring-offset-2 ring-offset-[#f8f9ff]';
     }
-    return step.done ? 'border-green-600 bg-green-600' : 'border-gray-300 bg-white';
+    if (step.done) return 'border-green-600 bg-green-600';
+    return step.state === 'partial' ? 'border-amber-400 bg-amber-50' : 'border-gray-300 bg-white';
   };
 
   return (
@@ -69,7 +61,7 @@ export default function VerificationRail({
         className="hidden 2xl:flex fixed right-5 top-1/2 -translate-y-1/2 z-30 flex-col items-center gap-1 print:hidden"
       >
         {steps.map((step, i) => (
-          <div key={step.n} className="flex flex-col items-center">
+          <div key={step.key} className="flex flex-col items-center">
             <button
               type="button"
               onClick={() => go(step)}
@@ -77,18 +69,20 @@ export default function VerificationRail({
               onMouseLeave={() => setHovered(null)}
               onFocus={() => setHovered(step.n)}
               onBlur={() => setHovered(null)}
-              aria-current={step.n === current ? 'step' : undefined}
-              aria-label={`Step ${step.n}, ${step.label}. ${step.detail}`}
+              aria-current={step.key === current ? 'step' : undefined}
+              aria-label={`Phase ${step.n}, ${step.label}: ${step.detail}`}
+              data-rail-phase={step.key}
+              data-phase-state={step.state}
               className={`relative h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${dot(step)}`}
             >
-              {step.done && step.n !== current && <Check size={12} className="text-white" strokeWidth={3.5} />}
-              {step.n === current && <span className="h-2 w-2 rounded-full bg-green-600" />}
+              {step.done && step.key !== current && <Check size={12} className="text-white" strokeWidth={3.5} />}
+              {step.key === current && <span className="h-2 w-2 rounded-full bg-green-600" />}
 
               {/* Left, not right: there is no room on the right. */}
               {hovered === step.n && (
                 <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 w-56 rounded-xl border border-gray-200 bg-white p-3 text-left shadow-xl pointer-events-none">
                   <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400">
-                    Step {step.n}
+                    Phase {step.n} · {step.badge}
                   </span>
                   <span className="block text-sm font-bold text-gray-900 leading-tight mt-0.5">
                     {step.label}
@@ -113,7 +107,7 @@ export default function VerificationRail({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={`Workflow progress: ${doneCount} of ${steps.length} steps have output`}
+        aria-label={`Workflow progress: ${doneCount} of ${steps.length} phases complete`}
         className="2xl:hidden fixed left-4 bottom-4 z-30 flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3.5 py-2.5 shadow-lg print:hidden"
       >
         <ListChecks size={15} className="text-green-600" />
@@ -135,7 +129,7 @@ export default function VerificationRail({
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Workflow progress</p>
                 <p className="text-base font-black text-gray-900 tabular-nums">
-                  {doneCount} of {steps.length} steps have output
+                  {doneCount} of {steps.length} phases complete
                 </p>
               </div>
               <button
@@ -150,24 +144,25 @@ export default function VerificationRail({
 
             <ol className="space-y-1">
               {steps.map((step) => (
-                <li key={step.n}>
+                <li key={step.key}>
                   <button
                     type="button"
                     onClick={() => go(step)}
-                    aria-current={step.n === current ? 'step' : undefined}
+                    aria-current={step.key === current ? 'step' : undefined}
                     className={`flex w-full items-start gap-3 rounded-2xl p-3 text-left transition-colors ${
-                      step.n === current ? 'bg-green-50' : 'hover:bg-gray-50'
+                      step.key === current ? 'bg-green-50' : 'hover:bg-gray-50'
                     }`}
                   >
                     <span
                       className={`mt-0.5 h-6 w-6 shrink-0 rounded-full border-2 flex items-center justify-center ${dot(step)}`}
                     >
-                      {step.done && step.n !== current && <Check size={12} className="text-white" strokeWidth={3.5} />}
-                      {step.n === current && <span className="h-2 w-2 rounded-full bg-green-600" />}
+                      {step.done && step.key !== current && <Check size={12} className="text-white" strokeWidth={3.5} />}
+                      {step.key === current && <span className="h-2 w-2 rounded-full bg-green-600" />}
                     </span>
                     <span className="min-w-0">
                       <span className="block text-sm font-bold text-gray-900 leading-tight">
                         {step.n}. {step.label}
+                        <span className="ml-2 text-[10px] font-black uppercase tracking-widest text-gray-400">{step.badge}</span>
                       </span>
                       <span className="block text-[11px] text-gray-500 leading-relaxed mt-0.5">
                         {step.detail}

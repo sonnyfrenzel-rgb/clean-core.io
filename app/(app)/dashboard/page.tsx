@@ -14,6 +14,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
+import { workflowSteps, workflowSummary, testEvidence } from '@/lib/workflow-steps';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 
@@ -531,16 +532,13 @@ export default function Dashboard() {
     await saveAs(blob, `${project.name.replace(/\s+/g, '_')}_export.json`);
   };
 
+  // "Continue" goes to the first phase that is not done, as the shared contract
+  // reads it. It used to follow `status`, a label the client writes, and sent
+  // any project scoring above 90 straight to Delivery whatever else was missing.
   const handleProceed = (project: any) => {
     setProceedingId(project.id);
-    if (project.cleanCoreScore && project.cleanCoreScore > 90) router.push(`/project/${project.id}/delivery`);
-    else if (project.status === 'uploaded') router.push(`/project/${project.id}/analyze`);
-    else if (project.status === 'analyzed') router.push(`/project/${project.id}/design`);
-    else if (project.status === 'designed') router.push(`/project/${project.id}/transformation`);
-    else if (project.status === 'transformed') router.push(`/project/${project.id}/testing`);
-    else if (project.status === 'testing') router.push(`/project/${project.id}/documentation`);
-    else if (project.status === 'documented') router.push(`/project/${project.id}/delivery`);
-    else router.push(`/project/${project.id}/delivery`);
+    const { next } = workflowSummary(workflowSteps(project));
+    router.push(`/project/${project.id}/${next.path}`);
   };
 
   const [forumTitle, setForumTitle] = useState('');
@@ -2083,6 +2081,30 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
 
   const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
 
+  // The test report is a count of verdicts and nothing else.
+  //
+  // With no stored report — which is every project, because nothing stores one
+  // — this used to fabricate a whole document: "All test cases compiled and
+  // executed successfully", "Database Persistency Sync: Verified via isolated
+  // PostgreSQL Mocking", a runtime version, all printed for a suite that had
+  // only been generated. Downloadable as "Quality Engineering Report".
+  const tests = testEvidence(project);
+  const testReport = tests.total === 0
+    ? null
+    : [
+        '## Test status',
+        '',
+        `- **Test cases generated:** ${tests.total}`,
+        `- **Passed:** ${tests.passed}`,
+        `- **Failed:** ${tests.failed}`,
+        `- **Simulated (mock context, not a test run):** ${tests.simulated}`,
+        `- **No recorded result:** ${tests.withoutVerdict}`,
+        '',
+        tests.passed + tests.failed === 0
+          ? 'No test run is on record for this project. The cases above are a draft: generated, not executed.'
+          : 'Counts are the verdicts stored with the project. A verdict shown on the testing page during a run is not stored, and is not counted here.',
+      ].join('\n');
+
   // Base deliverables formatted into highly professional corporate markdown reports
   const deliverables = [
     { id: 'legacy', title: '1. Original ABAP Source', content: project.legacyCode, type: 'code', ext: '.abap', isExport: false, canPDF: false },
@@ -2099,7 +2121,7 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
     },
     { 
       id: 'tests', 
-      title: isAbapCloud ? '5. Automated ABAP Unit Tests' : '5. Automated Sandbox Tests', 
+      title: isAbapCloud ? '5. Generated ABAP Unit Test Suite' : '5. Generated Test Suite',
       content: project.testSuite?.code || (project.testCases ? JSON.stringify(project.testCases, null, 2) : null), 
       type: project.testSuite?.code ? 'code' : 'json', 
       ext: project.testSuite?.code ? (isAbapCloud ? '.clas.abap' : '.ts') : '.json', 
@@ -2108,8 +2130,8 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
     },
     { 
       id: 'test_report', 
-      title: '6. Quality Engineering Report', 
-      content: project.testReport || (project.testCases ? `## 🧪 Quality Engineering Report\n\n- **Total Test Cases Mapped:** \`${project.testCases.length}\`\n- **Sandbox Environment:** \`${isAbapCloud ? 'Simulated SAP ADT / Test Cockpit' : 'Node.js v22.22.2'}\`\n- **Database Persistency Sync:** \`Verified via ${isAbapCloud ? 'SQL Test Double Framework' : 'isolated PostgreSQL Mocking'}\`\n\nAll test cases compiled and executed successfully in the ${isAbapCloud ? 'secure SAP ADT simulated runner' : 'secure sandbox runtime'}.` : null), 
+      title: '6. Test Status', 
+      content: testReport, 
       type: 'markdown', 
       ext: '.md', 
       isExport: false, 
@@ -2132,28 +2154,13 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
 
   const allItems = [...deliverables, ...dynamicExports];
 
-  const getStatusInfo = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return { label: 'Completed (100%)', style: 'bg-green-100 text-green-800 border-green-200', progress: 100 };
-      case 'uploaded':
-        return { label: 'Initialization (0%)', style: 'bg-gray-100 text-gray-800 border-gray-200', progress: 0 };
-      case 'analyzed':
-        return { label: 'Analysis (25%)', style: 'bg-blue-100 text-blue-800 border-blue-200', progress: 25 };
-      case 'designed':
-        return { label: 'Solution Design (50%)', style: 'bg-purple-100 text-purple-800 border-purple-200', progress: 50 };
-      case 'transformed':
-        return { label: 'Transformation (75%)', style: 'bg-indigo-100 text-indigo-800 border-indigo-200', progress: 75 };
-      case 'testing':
-        return { label: 'Testing & QA (85%)', style: 'bg-cyan-100 text-cyan-800 border-cyan-200', progress: 85 };
-      case 'documented':
-        return { label: 'Documentation (95%)', style: 'bg-teal-100 text-teal-800 border-teal-200', progress: 95 };
-      default:
-        return { label: 'In Progress', style: 'bg-gray-100 text-gray-800 border-gray-200', progress: 0 };
-    }
-  };
-
-  const statusInfo = getStatusInfo(project.status);
+  // Progress from the shared contract, not from `status`. The status string is
+  // written by the client and it was read as a percentage: generating a test
+  // suite set it to 'testing', which this row showed as "Testing & QA (85%)"
+  // for a suite nobody had run.
+  const phases = workflowSteps(project);
+  const { doneCount, total, next } = workflowSummary(phases);
+  const statusLabel = doneCount === total ? 'All phases complete' : `${next.label} · ${next.badge}`;
   const createdDate = project.createdAt?.toDate ? format(project.createdAt.toDate(), 'MMM dd, yyyy') : 'N/A';
 
   return (
@@ -2173,14 +2180,30 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
           <span className="font-bold text-[#0b1c30] truncate" title={project.name}>{project.name}</span>
         </div>
         
-        <div className="md:col-span-3 flex flex-col justify-center w-full md:w-auto px-4 md:px-0">
-          <div className="flex justify-between text-[10px] font-bold text-[#0b1c30]/60 mb-1.5 uppercase tracking-widest">
-            <span>{statusInfo.label}</span>
-            <span>{statusInfo.progress}%</span>
+        <div className="md:col-span-3 flex flex-col justify-center w-full md:w-auto px-4 md:px-0" data-project-progress>
+          <div className="flex justify-between gap-2 text-[10px] font-bold text-[#0b1c30]/60 mb-1.5 uppercase tracking-widest">
+            <span className="truncate" title={next.detail}>{statusLabel}</span>
+            <span className="tabular-nums shrink-0">{doneCount}/{total}</span>
           </div>
-          <div className="w-full bg-[#eff4ff] rounded-full h-1.5">
-            <div className={`h-1.5 rounded-full ${statusInfo.progress === 100 ? 'bg-[#006b2c]' : 'bg-[#00873a]'}`} style={{ width: `${statusInfo.progress}%` }}></div>
-          </div>
+          {/* The seven phases in the stepper's colours, so the row and the
+              stage pages cannot tell two different stories. A single bar filled
+              to a percentage could not show that Testing is a draft while
+              Documentation is done. */}
+          <ol className="flex gap-1" aria-label="Phases">
+            {phases.map((p) => (
+              <li
+                key={p.key}
+                title={`${p.n}. ${p.label} — ${p.badge}: ${p.detail}`}
+                data-phase={p.key}
+                data-phase-state={p.state}
+                className={`h-1.5 flex-1 rounded-full ${
+                  p.done ? 'bg-green-600' : p.state === 'partial' ? 'bg-amber-400' : 'bg-gray-200'
+                }`}
+              >
+                <span className="sr-only">{`${p.label}: ${p.badge}`}</span>
+              </li>
+            ))}
+          </ol>
         </div>
 
         <div className="md:col-span-2 text-center text-sm text-[#0b1c30]/60 font-medium">

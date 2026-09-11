@@ -64,12 +64,15 @@ test.describe('no fabricated figures on measured values', () => {
     //
     // This used to assert `testCaseCount > 0 ? (` — the tick followed the number
     // of test cases *generated*, which says nothing about whether any of them
-    // ran, and the line beside it claimed they were verified. The fact the tick
-    // follows is now the verdicts: a pass, and nothing that failed or came back
-    // without a result. Strictly narrower than what it replaced.
-    expect(source).toContain(
-      'testsPassed > 0 && testsFailed === 0 && testsWithoutVerdict === 0 ? (',
-    );
+    // ran, and the line beside it claimed they were verified. It then followed
+    // `testsPassed > 0 && testsFailed === 0 && testsWithoutVerdict === 0`, which
+    // still went green beside *simulated* cases: it checked for failures and for
+    // missing verdicts, not for mocks.
+    //
+    // It follows the testing phase of the shared contract now — done only when
+    // every case passed — so this page and the dashboard cannot disagree.
+    // Strictly narrower than both.
+    expect(source).toContain('testingPhase.done ? (');
     expect(source).toContain('coveragePercentage !== undefined ? (');
   });
 

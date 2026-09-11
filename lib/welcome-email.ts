@@ -151,7 +151,7 @@ export function buildWelcomeEmail({ name, recipient }: WelcomeEmailInput): strin
                     <tr>
                       <td style="padding: 16px; font-size: 13px; line-height: 1.5; color: #92400e;">
                         <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #b45309; margin-bottom: 5px;">What &ldquo;free&rdquo; means</strong>
-                        <strong>${quota} free transformations.</strong> Only the analysis in stage 2 is metered &mdash; the six stages after it are included, and re-analysing the same source is free. Add your own Gemini key in <a href="${settingsUrl}" style="color: #92400e; font-weight: 700;">Settings</a> for unlimited runs, still at no cost.
+                        <strong>${quota} free transformations.</strong> Only the analysis in stage 1 is metered &mdash; the six stages after it are included, and re-analysing the same source is free. Add your own Gemini key in <a href="${settingsUrl}" style="color: #92400e; font-weight: 700;">Settings</a> for unlimited runs, still at no cost.
                       </td>
                     </tr>
                   </table>

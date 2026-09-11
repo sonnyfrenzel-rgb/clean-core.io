@@ -64,12 +64,12 @@ const STEPS: Step[] = [
     where: 'Dashboard',
     action: 'Click one card — Z_MATERIAL_STOCK_CALC is a good first pick',
     detail:
-      'One click creates the project, stages the source, and takes you straight to stage 2. At 99 lines it is small enough to read in full, and it has the single most common Clean Core problem in it: direct reads on MARA, MARC and MARD where released SAP APIs exist.',
+      'One click creates the project, stages the source, and takes you straight to stage 1, Analyze. At 99 lines it is small enough to read in full, and it has the single most common Clean Core problem in it: direct reads on MARA, MARC and MARD where released SAP APIs exist.',
     see: 'The Analyze stage, with a green "Source Code Ready" panel confirming the source is staged.',
   },
   {
     n: 4,
-    where: 'Stage 2 — Analyze',
+    where: 'Stage 1 — Analyze',
     action: 'Start the analysis',
     detail:
       'The deterministic engine parses the source first — findings, database coupling, code inventory, complexity and criticality — and only then does the AI write the narrative around that evidence. Takes a minute or two.',
@@ -78,7 +78,7 @@ const STEPS: Step[] = [
   },
   {
     n: 5,
-    where: 'Stage 2 — Analyze',
+    where: 'Stage 1 — Analyze',
     action: 'Read the findings before moving on',
     detail:
       'Each finding names the offending construct, where it sits, and what to do instead. This is the part worth judging the platform on — if the findings do not match what you know about the object, tell us.',
@@ -86,11 +86,11 @@ const STEPS: Step[] = [
   },
   {
     n: 6,
-    where: 'Stages 3 to 7',
+    where: 'Stages 2 to 7',
     action: 'Walk the rest of the workflow with the stepper',
     detail:
-      'Design drafts the target architecture against released APIs. Transformation generates the RAP or CAP implementation next to the original. Testing generates and runs ABAP Unit tests. Documentation produces BPMN 2.0 and the business-facing procedures. Delivery hands you the package.',
-    see: 'The numbered stepper at the top of every stage, from Upload through to Delivery.',
+      'Design drafts the target architecture against released APIs. Transformation generates the RAP or CAP implementation next to the original. Documentation produces BPMN 2.0 and the business-facing procedures. Testing generates test cases and runs them where a runner exists — a simulation is labelled as one. Economics models the upgrade cost on assumptions it shows you. Delivery hands you the package.',
+    see: 'The numbered stepper at the top of every stage, from Analyze through to Delivery — a tick where a phase is done, amber where something exists that is not yet its evidence.',
   },
   {
     n: 7,
@@ -98,7 +98,7 @@ const STEPS: Step[] = [
     action: 'Download the package',
     detail:
       'An abapGit-compatible ZIP with the generated sources and tests, plus the audit evidence pack — a signed record of what was analysed, by which engine and catalog version, and what it concluded. That signature is verifiable later, which is the point of it.',
-    see: 'Your download, and a completed project on the dashboard you can return to at any time.',
+    see: 'Your download, and the project on the dashboard with the state of each phase, to return to at any time.',
   },
 ];
 

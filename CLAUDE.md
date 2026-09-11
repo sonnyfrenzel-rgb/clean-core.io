@@ -32,7 +32,7 @@ else passes, which reads like a code regression and is not one. CI passes the fl
 ## Layout
 
 - `app/` — App Router. `app/(app)/` = authenticated product shell; public/legal pages + `api/` at top level.
-- `app/(app)/project/[projectId]/` — the **7-stage workflow**, one page each: `analyze` → `design` → `transformation` → `documentation` → `testing` → `tco` → `delivery`.
+- `app/(app)/project/[projectId]/` — the **7-stage workflow**, one page each: `analyze` → `design` → `transformation` → `documentation` → `testing` → `tco` (Economics) → `delivery`. Order and per-phase state come only from `lib/workflow-steps.ts` — stepper, rail, dashboard and delivery all read it, and none reads `project.status` (see `docs/ARCHITECTURE.md` §2).
 - `app/api/*/route.ts` — ~38 route handlers (gemini proxy, runs/create, mfa, admin, export sign/verify, s4 connectivity, email, abcd-classify).
 - `components/` — shared `.tsx`; feature subfolders `components/analyze/`, `components/design/`.
 - `lib/` — non-UI logic. `lib/abap/` is the deterministic evidence/grounding engine (~24 files).

@@ -30,7 +30,7 @@ import { generateAuditPack } from '@/lib/audit-pack';
 import { APP_VERSION } from '@/lib/version';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps } from '@/lib/workflow-steps';
+import { workflowSteps, testEvidence } from '@/lib/workflow-steps';
 
 const generateDeveloperGuidelines = (project: any) => {
   const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
@@ -79,7 +79,6 @@ export default function DeliveryPage() {
   // `length === 0` is falsy a run that produced nothing at all still showed
   // "10 Automated Tests" and "92% Estimated Coverage" under a green tick — on
   // the one screen a customer photographs for a steering pack.
-  const testCaseCount = Array.isArray(project?.testCases) ? project.testCases.length : 0;
   /**
    * How many of those tests actually returned a pass.
    *
@@ -88,15 +87,20 @@ export default function DeliveryPage() {
    * been *generated*. Nothing in that number says anything ran, and after the
    * runner changes it can also contain cases the runner skipped or never
    * mentioned. A delivery artefact is the last place a claim should outrun its
-   * evidence, so the line is now driven by verdicts.
+   * evidence, so the line is now driven by verdicts — counted by the same
+   * contract the stepper, the rail and the dashboard read, so this page cannot
+   * call something passed that the dashboard calls a draft.
    */
-  const testVerdicts = Array.isArray(project?.testCases)
-    ? (project.testCases as { status?: string }[])
-    : [];
-  const testsPassed = testVerdicts.filter((t) => t.status === 'Passed').length;
-  const testsFailed = testVerdicts.filter((t) => t.status === 'Failed').length;
-  const testsSimulated = testVerdicts.filter((t) => t.status === 'Simulated').length;
-  const testsWithoutVerdict = testCaseCount - testsPassed - testsFailed - testsSimulated;
+  const {
+    total: testCaseCount,
+    passed: testsPassed,
+    failed: testsFailed,
+    simulated: testsSimulated,
+    withoutVerdict: testsWithoutVerdict,
+  } = testEvidence(project);
+  const phases = workflowSteps(project);
+  const testingPhase = phases.find((p) => p.key === 'testing')!;
+  const deliveryPhase = phases.find((p) => p.key === 'delivery')!;
   // What the delivery page can actually attest to, each read from an artefact
   // rather than assumed. Nothing here is a decision — the page reports what is
   // present and says plainly what is not.
@@ -426,11 +430,11 @@ jobs:
   if (loading) return (
     <div className="animate-in fade-in duration-500">
       {/* Where am I, what is behind me, what is still open — kept on
-          screen while the stepper scrolls away. Reports artefacts that
-          exist; it decides nothing. */}
-      <VerificationRail steps={workflowSteps(project)} current={7} projectId={projectId as string} />
+          screen while the stepper scrolls away. Both read the same contract;
+          neither decides anything. */}
+      <VerificationRail steps={phases} current="delivery" projectId={projectId as string} />
 
-      <Stepper currentStep={7} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
+      <Stepper steps={phases} current="delivery" projectId={projectId as string} />
       <div className="h-[60vh] flex flex-col items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
           <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Finalizing delivery package...</p>
@@ -440,15 +444,23 @@ jobs:
 
   return (
     <div className="animate-in fade-in duration-500 max-w-7xl mx-auto px-4 md:px-0">
-      <Stepper currentStep={7} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
-      
+      {/* Rendered here as well as in the loading state — it used to exist only
+          there, and disappeared as soon as the page had loaded. */}
+      <VerificationRail steps={phases} current="delivery" projectId={projectId as string} />
+
+      <Stepper steps={phases} current="delivery" projectId={projectId as string} />
+
+      {/* The lead used to read "The transformation lifecycle is complete … ready
+          for deployment" on every project, including one with nothing but an
+          analysis run behind it. */}
       <StageHeader
         title="Project Handover"
         align="center"
         icon={<Rocket className="w-8 h-8 md:w-9 md:h-9 text-green-600" />}
       >
-        The transformation lifecycle is complete. Your modernized Node.js application and
-        comprehensive process documentation are ready for deployment.
+        {deliveryPhase.done
+          ? 'Code, documentation and a passing test run are on record. Whether to deploy remains an architect’s decision, not this page’s.'
+          : `What is on record for handover, and what is not yet. ${deliveryPhase.detail}`}
       </StageHeader>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-16 items-stretch">
@@ -592,26 +604,30 @@ jobs:
                       : isAbapCloud ? 'abapGit Repo Layout' : 'Transformed CAP Structure'}
                   </span>
                   <span className="text-[10px] text-gray-400">
-                    {isAbapCloud 
-                      ? 'Handover: Modular ABAP Cloud packages generated'
-                      : 'Handover: Modular TypeScript package generated'
-                    }
+                    {!hasGeneratedCode
+                      ? 'Run stage 3 to produce the code this line reports on'
+                      : isAbapCloud
+                        ? 'Handover: ABAP Cloud packages generated — not compiled or tested'
+                        : 'Handover: TypeScript package generated — not compiled or tested'}
                   </span>
                 </div>
               </li>
               <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
-                {testsPassed > 0 && testsFailed === 0 && testsWithoutVerdict === 0 ? (
+                {/* Green only when every case passed. The old condition also
+                    went green beside simulated cases, because it checked for
+                    failures and missing verdicts but not for simulations. */}
+                {testingPhase.done ? (
                   <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
                 ) : (
                   <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
                 )}
                 <div>
-                  <span className="text-white block font-bold">
+                  <span className="text-white block font-bold" data-delivery-testing>
                     {testCaseCount === 0
                       ? 'No test suite generated'
-                      : testsPassed > 0
-                        ? `${testsPassed} of ${testCaseCount} ${isAbapCloud ? 'ABAP Unit' : 'Sandbox'} tests passed`
-                        : `${testCaseCount} ${isAbapCloud ? 'ABAP Unit' : 'Sandbox'} tests generated, none passed yet`}
+                      : testsPassed + testsFailed === 0
+                        ? `Test draft: ${testCaseCount} ${isAbapCloud ? 'ABAP Unit' : 'Sandbox'} tests, no run on record`
+                        : `${testsPassed} of ${testCaseCount} ${isAbapCloud ? 'ABAP Unit' : 'Sandbox'} tests passed`}
                   </span>
                   <span className="text-[10px] text-gray-400">
                     {testCaseCount === 0
@@ -636,11 +652,14 @@ jobs:
                 )}
                 <div>
                   <span className="text-white block font-bold">{coveragePercentage !== undefined ? `${coveragePercentage}% Estimated Coverage` : 'Coverage not estimated'}</span>
+                  {/* "Restricted clean ABAP syntax check compliant" and "Strongly-
+                      typed model boundaries compliant" were printed here with no
+                      check behind either (CR-16). The figure is the generator's
+                      own estimate, and says so. */}
                   <span className="text-[10px] text-gray-400">
-                    {isAbapCloud
-                      ? 'Quality: Restricted clean ABAP syntax check compliant'
-                      : 'Quality: Strongly-typed model boundaries compliant'
-                    }
+                    {coveragePercentage !== undefined
+                      ? 'Estimated by the test generator — not measured'
+                      : 'No estimate was produced with the test suite'}
                   </span>
                 </div>
               </li>
@@ -668,9 +687,12 @@ jobs:
                   dot, on a page that had just marked the project completed for
                   having been opened. It now names what is missing instead of
                   asserting a readiness nobody established. */}
-              {hasGeneratedCode && testCaseCount > 0 && hasDocumentation ? (
+              {/* From the delivery phase of the shared contract. "All artefacts
+                  present" used to go green on a generated test suite nobody had
+                  run — the dashboard's "Testing & QA (85%)" in another form. */}
+              {deliveryPhase.done ? (
                 <span className="text-green-400 font-bold flex items-center gap-2 text-xs md:text-sm uppercase tracking-tighter">
-                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" /> All artefacts present
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" /> Ready to hand over
                 </span>
               ) : (
                 <span className="text-amber-400 font-bold flex items-center gap-2 text-xs md:text-sm uppercase tracking-tighter">
@@ -678,13 +700,7 @@ jobs:
                 </span>
               )}
               <span className="text-[10px] text-gray-400 block mt-1.5 normal-case font-medium leading-relaxed">
-                {hasGeneratedCode && testCaseCount > 0 && hasDocumentation
-                  ? 'Code, tests and documentation are all present. Deployment readiness remains an architect’s decision, not this page’s.'
-                  : `Missing: ${[
-                      !hasGeneratedCode && 'transformed code',
-                      testCaseCount === 0 && 'tests',
-                      !hasDocumentation && 'documentation',
-                    ].filter(Boolean).join(', ')}.`}
+                {deliveryPhase.detail}
               </span>
             </div>
           </div>

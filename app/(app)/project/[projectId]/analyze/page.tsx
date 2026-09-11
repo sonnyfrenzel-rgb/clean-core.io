@@ -1727,6 +1727,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
     );
   };
 
+  const phases = workflowSteps(project);
 
   if (loading && !project) return (
     <div className="h-[60vh] flex flex-col items-center justify-center">
@@ -1789,15 +1790,11 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
       )}
 
       {/* Where am I, what is behind me, what is still open — kept on
+          screen while the stepper scrolls away. Both read the same contract;
+          neither decides anything. */}
+      <VerificationRail steps={phases} current="analyze" projectId={projectId as string} />
 
-          screen while the stepper scrolls away. Reports artefacts that
-
-          exist; it decides nothing. */}
-
-      <VerificationRail steps={workflowSteps(project)} current={2} projectId={projectId as string} />
-
-
-      <Stepper currentStep={project?.analysis ? 2 : 1} projectId={projectId as string} cleanCoreScore={project?.cleanCoreScore} transformationBypass={project?.transformationBypass} />
+      <Stepper steps={phases} current="analyze" projectId={projectId as string} />
       
       <StageHeader title="Code Analysis" align="center">
         Extracting business intelligence and technical dependencies from your legacy assets.

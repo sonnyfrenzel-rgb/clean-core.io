@@ -33,10 +33,17 @@ Under `app/(app)/project/[projectId]/`, each stage is its own `page.tsx` (`'use 
 | 3 | Transformation | `transformation/` | Gemini-generated modern code |
 | 4 | Documentation | `documentation/` | Process docs / BPMN |
 | 5 | Testing | `testing/` | Test generation & execution (ADT cockpit, optional S/4 live bridge) |
-| 6 | TCO | `tco/` | Total cost of ownership |
+| 6 | Economics | `tco/` | Total cost of ownership — a model on assumed coefficients |
 | 7 | Delivery | `delivery/` | Final delivery + audit pack |
 
 Downstream stages call `enforceActiveRun()` — missing Run redirects to Analyze. Legacy runs degrade gracefully via `lib/run-capabilities.ts` (shape detection → `LegacyRunBanner`).
+
+**One phase contract — `lib/workflow-steps.ts`.** The order above, and each phase's state, come from `workflowSteps(project)` and nowhere else. The stepper (`components/Stepper.tsx`), the rail (`components/VerificationRail.tsx`), the dashboard row and the delivery page all render it; none keeps its own list or numbering. Each phase is `empty`, `partial` (something exists that is not yet the phase's evidence — a staged source, an unconfirmed design, generated tests with no run on record, the cost model) or `done`. Rules worth knowing before changing it:
+
+- **`project.status` is not read.** It is a client-writable label; the dashboard used to turn "tests generated" into "Testing & QA (85%)" from it. Every state derives from an artefact or a verdict.
+- **Testing is done only when every case carries `Passed`.** `Simulated`, `Not run`, `Pending` and absent are not passes. The testing page shows a run's verdicts on screen but does not store them, so in practice Testing — and therefore Delivery — stays `partial`; a stored, attributable run is E07-F02's receipt, not a client write.
+- **Economics cannot be `done` in this release** (no observed costs exist; CR-23 / E12-F02). `workflowSummary().next` skips it so "continue" never parks there.
+- The stepper's circles show state, not position: being on Testing says nothing about Design. `tests/workflow-phases-guard.spec.ts` holds this, including a rendered check that dashboard, stepper and delivery agree on a test draft.
 
 ---
 

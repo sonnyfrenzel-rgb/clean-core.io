@@ -181,8 +181,9 @@ test.describe('the one welcome mail does the whole job', () => {
     const s = html();
     expect(s).toContain('5 free transformations');
     // Only the analysis is metered — claiming otherwise reads as a smaller
-    // allowance than the person actually has.
-    expect(s).toContain('Only the analysis in stage 2 is metered');
+    // allowance than the person actually has. Analyze is stage 1 of 7: the
+    // upload is part of it, not a stage of its own (lib/workflow-steps.ts).
+    expect(s).toContain('Only the analysis in stage 1 is metered');
   });
 
   test('it escapes nothing on the caller\'s behalf', () => {
