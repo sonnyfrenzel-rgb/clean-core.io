@@ -10,6 +10,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.9] — 2026-09-11
+
+### Passed nur aus einem zugeordneten Ergebnis — und jeder andere Ausgang mit Namen
+
+Roadmap E07-F01, Release 2.9, P0, aus CR-12, CR-13 und CR-14. Die Abnahmen:
+**„Die Regressionen für TAP-SKIP/TODO liefern skipped bzw. todo."** und **„Der
+Mock-Pfad schreibt simulated, ein Metadatenaufruf connectivity. Delivery
+verwendet diese Typen unverändert und darf daraus kein AUnit-/Compliance-Badge
+erzeugen."** Dazu aus der Feature-Beschreibung: **„Stubs werden sichtbar."**
+
+Das Befundregister war hier zur Hälfte veraltet — `Simulated`, `Not run` und
+die exakte ID-Zuordnung gab es schon. Gemessen, was noch offen war:
+
+- **Der Live-ABAP-Pfad schrieb `Passed` für Dinge, die keine Tests sind.** Ein
+  „Live Tenant Validation Report" mit sechs Arten von Prüfung — Tenant
+  erreichbar, Login angenommen, `$metadata` lesbar, EntitySets im Schema
+  deklariert, ein OData-Read je Set, CSRF — alle als `Passed`. Keine davon führt
+  den generierten Code aus. Die CSRF-Zeile war `Passed`, sobald der Login ging,
+  mit der Meldung „CSRF token can be fetched"; eine x-csrf-token-Anfrage wurde nie
+  gestellt.
+- **SKIP und TODO wurden beide `Not run`** — ehrlich über den Pass, stumm über den
+  Grund. Ein bewusst übersprungener Test und einer, den noch niemand geschrieben
+  hat, verlangen verschiedene Handgriffe.
+- **Die Stubs waren unsichtbar.** Der Runner ersetzt jedes npm-Paket, das der
+  generierte Code importiert, durch einen leeren Proxy, damit das Modul lädt. Ein
+  Pass gegen ein gestubbtes `express` sagt, dass die Logik lief — nicht, dass sie
+  mit express läuft. Nichts sagte, welche Pakete ersetzt waren.
+
+**Was jetzt gilt:** Neue Zustände `Skipped`, `Todo`, `Connectivity`, `Error`.
+Der TAP-Leser liegt in `lib/test-verdicts.ts` und wird von den Tests direkt
+aufgerufen. Die Live-Prüfungen schreiben `Connectivity` oder `Error`, CSRF heißt
+„Not checked", und der Bericht heißt jetzt „Live Tenant *Connectivity* Report"
+und sagt: „No test of the generated code was executed." `/api/run-tests` gibt
+`stubbedPackages` zurück; die Testing-Seite und der QA-Bericht nennen sie. Der
+Phasenvertrag zählt Connectivity getrennt, nie als Pass; Delivery nennt sie als
+„connectivity checks — not tests of the code".
+
+`tests/test-verdicts-guard.spec.ts`: der Leser über echte TAP-Zeilen (Pass,
+Fehler mit Meldung, SKIP mit Grund, TODO), der Live-Zweig ohne ein einziges
+`Passed`, CSRF nicht mehr aus dem Login abgeleitet — und **ein echter Lauf durch
+die Sandbox**: eine Suite, die `express` importiert, mit `test.skip` und
+`test.todo`, gegen `/api/run-tests` → `stubbedPackages: ['express']`, TC_01
+Passed, TC_02 Skipped, TC_03 Todo. `verdict-honesty-guard` prüft den Parser
+jetzt durch Aufruf statt durch Suchen nach den richtigen Wörtern.
+
+**Was bleibt:** Verdikte werden weiter nicht gespeichert (siehe v2.9.5). Ein
+signierter, zuordenbarer Test-Receipt ist E07-F02 (3.0), ein echter ABAP-Unit-
+Lauf im Tenant ebenso.
+
 ## [v2.9.8] — 2026-09-11
 
 ### Keine Einsparprognose aus Zahlen, die niemand eingegeben hat

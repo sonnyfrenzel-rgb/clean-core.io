@@ -101,7 +101,7 @@ export default function TestingSandboxPage() {
   const [odataCatalogSearch, setOdataCatalogSearch] = useState('');
 
   const { isGenerating, testCases, generateTestCases } = useTestGeneration(projectId as string, project, setProject);
-  const { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases } = useTestExecution(projectId as string, project, setProject);
+  const { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases, stubbedPackages } = useTestExecution(projectId as string, project, setProject);
   const [showTestCode, setShowTestCode] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -1589,6 +1589,21 @@ export default function TestingSandboxPage() {
           </div>
         </div>
       </div>
+
+      {/* CR-14: the runner replaces every npm package the generated code
+          imports with an empty proxy so the module can load. A pass against it
+          says the logic ran — not that it works with those libraries — and until
+          now nothing on this page said which ones had been replaced. */}
+      {testResults && stubbedPackages.length > 0 && (
+        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" data-stubbed-packages>
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            <strong>Ran against stubs for: {stubbedPackages.join(', ')}.</strong>{' '}
+            These packages were replaced by an empty proxy so the code could load. A pass here shows the
+            business logic ran — not that it works with them.
+          </p>
+        </div>
+      )}
 
       {testResults && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-8">

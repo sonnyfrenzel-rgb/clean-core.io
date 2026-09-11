@@ -13,6 +13,7 @@ sagt `git log origin/main`, nicht dieser Absatz.
 | v2.9.6 | Quellenänderung macht alles Alte `stale`; Transformation/Doku/Testing/Handover gesperrt; Audit-Pack 409 serverseitig | E01-F01-US02, CR-10 (2.9-Teil) |
 | v2.9.7 | Nutzungsimport: Datumsformat und Fenster deklariert, Quarantäne, Vorschau — und überhaupt gespeichert | E03-F02, CR-24 |
 | v2.9.8 | Economics: keine Einsparprognose ohne eigene Kostenwerte, Modell als Demonstration gekennzeichnet | E12-F01-US02, CR-23 (2.9-Teil) |
+| v2.9.9 | Teststatus: Skipped/Todo/Connectivity/Error, Live-ABAP ohne falsches `Passed`, Stubs benannt | E07-F01, CR-12/13/14 |
 
 **Unterwegs gefunden:** Das Dashboard hat einen „Quality Engineering Report"
 *erfunden* („All test cases compiled and executed successfully") — für jede

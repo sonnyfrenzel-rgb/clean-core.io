@@ -24,14 +24,18 @@ const ROOT = path.resolve(__dirname, '..');
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 test.describe('a verdict is only reported when there is one', () => {
-  test('the TAP parser reads SKIP and TODO directives', () => {
-    const src = read('app/api/run-tests/route.ts');
+  test('the TAP parser reads SKIP and TODO directives', async () => {
+    // The parser moved to lib/test-verdicts.ts (E07-F01), where SKIP and TODO
+    // became their own states instead of `Not run`. Checked by running it, not
+    // by finding the right words in its source.
+    const { parseTapOutput } = await import('../lib/test-verdicts');
+    const r = parseTapOutput('ok 1 - TC_A: x # SKIP\nok 2 - TC_B: y # TODO\n');
     expect(
-      src,
+      r.map((x) => x.status),
       'the TAP parser no longer looks for a directive. `ok 1 - t # SKIP` is a ' +
         'test that did not run, and without this it is recorded as a pass.',
-    ).toMatch(/skip\|todo/i);
-    expect(src).toContain("'Not run'");
+    ).toEqual(['Skipped', 'Todo']);
+    expect(read('app/api/run-tests/route.ts')).toContain("from '@/lib/test-verdicts'");
   });
 
   test('an unreported test does not inherit the exit code', () => {

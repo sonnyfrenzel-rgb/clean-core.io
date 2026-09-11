@@ -75,26 +75,31 @@ export interface TestEvidence {
   passed: number;
   failed: number;
   simulated: number;
-  /** Generated cases that carry no executed verdict: never run, skipped, pending. */
+  /** Live-tenant checks that reached the system — not tests of the code (E07-F01). */
+  connectivity: number;
+  /** Generated cases that carry no executed verdict: never run, skipped, todo, pending, errored. */
   withoutVerdict: number;
 }
 
 /**
  * Verdicts, counted. Only `Passed` and `Failed` are results of an execution;
- * `Simulated` is a mock and `Not run` / `Pending` / absent are the honest
- * absence of a result.
+ * `Simulated` is a mock, `Connectivity` a tenant that answered, and `Not run`,
+ * `Skipped`, `Todo`, `Pending`, `Error` or absent are the honest absence of a
+ * result.
  */
 export function testEvidence(project: Project | null): TestEvidence {
   const cases = Array.isArray(project?.testCases) ? project!.testCases! : [];
   const passed = cases.filter((t) => t?.status === 'Passed').length;
   const failed = cases.filter((t) => t?.status === 'Failed').length;
   const simulated = cases.filter((t) => t?.status === 'Simulated').length;
+  const connectivity = cases.filter((t) => t?.status === 'Connectivity').length;
   return {
     total: cases.length,
     passed,
     failed,
     simulated,
-    withoutVerdict: cases.length - passed - failed - simulated,
+    connectivity,
+    withoutVerdict: cases.length - passed - failed - simulated - connectivity,
   };
 }
 
@@ -296,7 +301,8 @@ export function workflowSteps(project: Project | null): RailStep[] {
       badge: 'Test draft',
       detail:
         `Test draft: ${plural(tests.total, 'case')} generated, no test run on record.` +
-        (tests.simulated > 0 ? ` ${tests.simulated} simulated — a simulation is not a test run.` : ''),
+        (tests.simulated > 0 ? ` ${tests.simulated} simulated — a simulation is not a test run.` : '') +
+        (tests.connectivity > 0 ? ` ${tests.connectivity} connectivity checks reached the tenant — not tests of the code.` : ''),
     });
   } else {
     testing = phase('testing', {

@@ -10,6 +10,7 @@ import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied, assertAcco
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { liveRunnerPermitted } from '@/lib/runner-egress-attestation';
+import { parseTapOutput, packageNameOf } from '@/lib/test-verdicts';
 
 /**
  * POST /api/run-tests
@@ -17,7 +18,7 @@ import { liveRunnerPermitted } from '@/lib/runner-egress-attestation';
  * Runs the generated node:test suite against the generated app code and returns
  * TAP results. Request/response contract is unchanged:
  *   IN : { tests, projectId, code, selectedTestIds, s4Environment }
- *   OUT: { output, error, exitCode, testResults }
+ *   OUT: { output, error, exitCode, testResults, stubbedPackages }
  *
  * SECURITY MODEL (F-02 — replaces the previous tsx + child_process.exec execution):
  *   Untrusted code is no longer executed inside the app's trust boundary.
@@ -113,87 +114,8 @@ function buildStubModule(namedExports: string[]): string {
   return `${UNIVERSAL_STUB}\n${assigns}`;
 }
 
-interface TestRunResult {
-  id: string;
-  name: string;
-  status: 'Passed' | 'Failed' | 'Not run';
-  message?: string;
-}
-
-/**
- * Reads TAP, including the half of it that used to be discarded.
- *
- * A TAP line is `ok` or `not ok`, and either may carry a *directive* after a
- * hash: `# SKIP` for a test that was deliberately not executed, `# TODO` for one
- * that is not expected to work yet. Both are written as `ok` — that is the
- * protocol, not a quirk — so a parser that decides on the first token alone reads
- * "this did not run" as "this passed". This one did, and the delivery page then
- * described the result as verified.
- *
- * The directive now produces `Not run`, which is neither a pass nor a failure and
- * is counted as neither.
- */
-function parseTapOutput(stdout: string): TestRunResult[] {
-  const results: TestRunResult[] = [];
-  const lines = stdout.split('\n');
-  const testLineRegex = /^(ok|not ok)\s+\d+\s+-\s+([A-Za-z0-9_]+):?\s*(.*)$/;
-  const directiveRegex = /#\s*(skip|todo)\b\s*(.*)$/i;
-
-  let currentResult: TestRunResult | null = null;
-  let inErrorBlock = false;
-  let errorMessageLines: string[] = [];
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    const match = trimmed.match(testLineRegex);
-
-    if (match) {
-      if (currentResult && currentResult.status === 'Failed' && errorMessageLines.length > 0) {
-        currentResult.message = errorMessageLines.join(' ').replace(/\s+/g, ' ').trim();
-      }
-
-      const id = match[2];
-      const rest = match[3] || '';
-      const directive = rest.match(directiveRegex);
-      const name = (directive ? rest.slice(0, directive.index).trim() : rest.trim()) || id;
-
-      let status: TestRunResult['status'];
-      let message: string;
-      if (directive) {
-        const kind = directive[1].toUpperCase();
-        const reason = directive[2].trim();
-        status = 'Not run';
-        message = `Reported as ${kind} by the runner — not executed${reason ? `: ${reason}` : ''}`;
-      } else if (match[1] === 'ok') {
-        status = 'Passed';
-        message = 'Verified by Node.js Test Runner';
-      } else {
-        status = 'Failed';
-        message = 'Test assertion failed';
-      }
-
-      currentResult = { id, name, status, message };
-      results.push(currentResult);
-      inErrorBlock = false;
-      errorMessageLines = [];
-    } else if (currentResult && currentResult.status === 'Failed') {
-      if (trimmed.startsWith('error:')) {
-        inErrorBlock = true;
-        errorMessageLines.push(trimmed.replace(/^error:\s*/, ''));
-      } else if (inErrorBlock && (trimmed.startsWith('stack:') || trimmed.startsWith('---') || trimmed.startsWith('...'))) {
-        inErrorBlock = false;
-      } else if (inErrorBlock) {
-        errorMessageLines.push(trimmed);
-      }
-    }
-  }
-
-  if (currentResult && currentResult.status === 'Failed' && errorMessageLines.length > 0) {
-    currentResult.message = errorMessageLines.join(' ').replace(/\s+/g, ' ').trim();
-  }
-
-  return results;
-}
+// The TAP parser lives in lib/test-verdicts.ts (E07-F01): SKIP and TODO are
+// their own states there, and the tests call it directly.
 
 // Node-version dependent permission flag. isolation:'none' needs Node >= 22.8.0;
 // the flag was renamed from --experimental-permission to --permission in 23.5.0.
@@ -416,6 +338,11 @@ export async function POST(req: Request) {
     // module under test loads identically in dev and in the pruned production image,
     // instead of crashing the whole suite with "Cannot find module 'express'".
     // Relative paths use the default resolver; Node built-ins stay external.
+    // Every package the stub stands in for, named in the response (CR-14). The
+    // stub makes a module load; it does not make a library work. A pass against
+    // a stubbed `express` says the logic ran — not that it runs with express —
+    // and until now nothing said which packages had been replaced.
+    const stubbedPackages = new Set<string>();
     const stubMissingPackages = {
       name: 'stub-missing-packages',
       setup(build: any) {
@@ -424,6 +351,7 @@ export async function POST(req: Request) {
           if (args.kind === 'entry-point') return undefined;
           if (p.startsWith('.') || path.isAbsolute(p)) return undefined; // relative → default resolver
           if (p.startsWith('node:') || isBuiltin(p)) return { external: true };
+          stubbedPackages.add(packageNameOf(p));
           return { path: p, namespace: 'cc-stub' }; // any other bare import → universal stub, inlined
         });
         build.onLoad({ filter: /.*/, namespace: 'cc-stub' }, () => ({
@@ -662,7 +590,7 @@ if (ALLOWED_SUFFIXES.length === 0) {
     const { stdout, stderr, exitCode } = await runSandboxed(args, testDir, childEnv);
 
     const testResults = parseTapOutput(stdout);
-    return NextResponse.json({ output: stdout, error: stderr, exitCode, testResults });
+    return NextResponse.json({ output: stdout, error: stderr, exitCode, testResults, stubbedPackages: [...stubbedPackages].sort() });
   } catch (err: any) {
     return NextResponse.json(
       { output: '', error: err?.message || 'Internal Server Error during test execution', exitCode: 1 },

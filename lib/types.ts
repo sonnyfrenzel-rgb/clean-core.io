@@ -26,8 +26,14 @@ export interface TestCase {
    * message, which the delivery page did not read.
    *
    * Nothing counts as verified now unless it is `Passed`.
+   *
+   * E07-F01 gives the rest their own names: `Skipped` and `Todo` from the TAP
+   * directive, `Connectivity` for a live-tenant check that reached the system
+   * (reachable, logged in, metadata read) — which says nothing about the
+   * generated code — and `Error` for a check or run that failed before it could
+   * judge anything.
    */
-  status?: 'Passed' | 'Failed' | 'Pending' | 'Not run' | 'Simulated';
+  status?: 'Passed' | 'Failed' | 'Pending' | 'Not run' | 'Simulated' | 'Skipped' | 'Todo' | 'Connectivity' | 'Error';
   message?: string;
 }
 

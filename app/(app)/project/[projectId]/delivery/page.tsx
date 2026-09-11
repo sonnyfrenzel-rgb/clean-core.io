@@ -97,6 +97,7 @@ export default function DeliveryPage() {
     passed: testsPassed,
     failed: testsFailed,
     simulated: testsSimulated,
+    connectivity: testsConnectivity,
     withoutVerdict: testsWithoutVerdict,
   } = testEvidence(project);
   const phases = workflowSteps(project);
@@ -660,6 +661,7 @@ jobs:
                         : [
                             testsFailed > 0 ? `${testsFailed} failed` : null,
                             testsSimulated > 0 ? `${testsSimulated} simulated only` : null,
+                            testsConnectivity > 0 ? `${testsConnectivity} connectivity checks — not tests of the code` : null,
                             testsWithoutVerdict > 0 ? `${testsWithoutVerdict} without a result` : null,
                           ].filter(Boolean).join(' · ') || 'Not run yet'}
                   </span>

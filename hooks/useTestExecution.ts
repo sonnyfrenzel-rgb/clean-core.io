@@ -10,18 +10,26 @@ export const useTestExecution = (projectId: string, project: Project | null, set
   const [testResults, setTestResults] = useState<TestCase[] | null>(null);
   const [sandboxOutput, setSandboxOutput] = useState<string>('Sandbox initialized. Waiting for execution...');
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
+  /**
+   * npm packages the runner replaced with its universal stub in the last run
+   * (CR-14). A pass against a stubbed `express` or `typeorm` says the business
+   * logic ran, not that it works with those libraries — so they are named.
+   */
+  const [stubbedPackages, setStubbedPackages] = useState<string[]>([]);
   const { profile } = useUserProfile();
 
-  const generateQAReport = (results: TestCase[]) => {
+  const generateQAReport = (results: TestCase[], stubs: string[] = []) => {
     // "everything that did not pass, failed" stops being true the moment a status
     // can also mean "no verdict". Each bucket is counted, and the ones that carry
     // no verdict are named rather than folded into the failures.
     const passed = results.filter(r => r.status === 'Passed').length;
     const failed = results.filter(r => r.status === 'Failed').length;
     const notRun = results.filter(r => r.status === 'Not run').length;
+    const skipped = results.filter(r => r.status === 'Skipped').length;
+    const todo = results.filter(r => r.status === 'Todo').length;
     const simulated = results.filter(r => r.status === 'Simulated').length;
     const timestamp = new Date().toLocaleString();
-    
+
     let report = `==================================================\n`;
     report += `QA ENGINEER TEST REPORT - ${timestamp}\n`;
     report += `==================================================\n\n`;
@@ -29,8 +37,15 @@ export const useTestExecution = (projectId: string, project: Project | null, set
     report += `- Total Tests: ${results.length}\n`;
     report += `- Passed:      ${passed}\n`;
     report += `- Failed:      ${failed}\n`;
-    if (notRun > 0) report += `- Not run:     ${notRun}  (skipped, or the runner reported no result)\n`;
+    if (skipped > 0) report += `- Skipped:     ${skipped}  (skipped by the suite — not executed)\n`;
+    if (todo > 0) report += `- Todo:        ${todo}  (marked TODO — not expected to pass yet)\n`;
+    if (notRun > 0) report += `- Not run:     ${notRun}  (the runner reported no result)\n`;
     if (simulated > 0) report += `- Simulated:   ${simulated}  (mock context — nothing ran against an SAP system)\n`;
+    if (stubs.length > 0) {
+      report += `\nRan against stubs for: ${stubs.join(', ')}\n`;
+      report += `These packages were replaced by an empty proxy. A pass shows the logic ran,\n`;
+      report += `not that it works with them.\n`;
+    }
     report += `\n`;
     report += `Detailed Results:\n`;
     results.forEach((r, i) => {
@@ -96,7 +111,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
     }
   };
 
-  const executeWithHealing = async (payload: { tests: Project['testSuite']; projectId: string; code: string | undefined }, maxRetries = 2): Promise<{ exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean }> => {
+  const executeWithHealing = async (payload: { tests: Project['testSuite']; projectId: string; code: string | undefined }, maxRetries = 2): Promise<{ exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[] }> => {
     let currentPayload = { ...payload };
     
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -124,7 +139,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         throw new Error('Network error. Test Sandbox might be restarting.');
       }
       
-      let result: { exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean };
+      let result: { exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[] };
       try {
         const textResponse = await response.text();
         result = JSON.parse(textResponse);
@@ -179,6 +194,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
     setIsRunning(true);
     setSandboxOutput('Starting test execution environment...\n');
     setTestResults(null);
+    setStubbedPackages([]);
     setAiExplanation(null);
 
     const isAbapCloud = (project?.extensibilityRoute || '').includes('ABAP Cloud');
@@ -220,19 +236,24 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
           const isAuthFailed = httpStatus === 401 || httpStatus === 403;
           const isFullyConnected = tenantReachable && !isAuthFailed;
 
+          // Every check below reaches the tenant; none of them runs the generated
+          // code. They report `Connectivity` or `Error`, never `Passed` (E07-F01-
+          // US02: "a metadata call writes connectivity"). They used to write
+          // `Passed`, and a tenant that answered its login page produced a row of
+          // green verdicts in a "Live Tenant Validation Report".
           liveResults.push({
             id: 'TC_CONN',
             name: 'Endpoint Reachability',
             description: 'Verifies that the S/4HANA tenant URL is reachable via HTTPS',
             category: 'Connectivity',
             priority: 'Critical' as any,
-            status: tenantReachable ? 'Passed' : 'Failed',
+            status: tenantReachable ? 'Connectivity' : 'Error',
             message: tenantReachable
               ? `Endpoint responded (HTTP ${httpStatus})`
               : `Unreachable: ${connectionResult.message}`
           });
 
-          setSandboxOutput(prev => prev + `  → ${tenantReachable ? '✅ PASSED' : '❌ FAILED'}: ${connectionResult.message}\n`);
+          setSandboxOutput(prev => prev + `  → ${tenantReachable ? '🔌 REACHED' : '❌ ERROR'}: ${connectionResult.message}\n`);
 
           // ── TC_AUTH: Authentication Validation ──
           setSandboxOutput(prev => prev + `\n[TC_AUTH] Validating ${project.s4Meta?.authType || project.s4Config?.authType || 'basic'} authentication...\n`);
@@ -242,7 +263,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
             description: 'Validates that the provided credentials are accepted by the tenant',
             category: 'Security',
             priority: 'Critical' as any,
-            status: isFullyConnected ? 'Passed' : 'Failed',
+            status: isFullyConnected ? 'Connectivity' : 'Error',
             message: isAuthFailed
               ? `Credentials rejected (HTTP ${httpStatus}) — verify username/password`
               : !tenantReachable
@@ -250,7 +271,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
                 : `Authenticated successfully (HTTP ${httpStatus})`
           });
 
-          setSandboxOutput(prev => prev + `  → ${isFullyConnected ? '✅ PASSED' : '❌ FAILED'}: ${isAuthFailed ? 'HTTP ' + httpStatus + ' — credentials rejected' : isFullyConnected ? 'HTTP ' + httpStatus : 'Skipped'}\n`);
+          setSandboxOutput(prev => prev + `  → ${isFullyConnected ? '🔌 LOGGED IN' : '❌ ERROR'}: ${isAuthFailed ? 'HTTP ' + httpStatus + ' — credentials rejected' : isFullyConnected ? 'HTTP ' + httpStatus : 'Skipped'}\n`);
 
           // ── TC_META: OData $metadata Accessibility ──
           let metadataServices: { name: string; type: string }[] = [];
@@ -291,13 +312,13 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
               description: 'Fetches the OData $metadata document to discover available EntitySets and types',
               category: 'Functional',
               priority: 'High' as any,
-              status: hasMetadata ? 'Passed' : 'Failed',
+              status: hasMetadata ? 'Connectivity' : 'Error',
               message: hasMetadata
                 ? `${entityTypes.length} EntityTypes, ${entitySets.length} EntitySets discovered`
                 : 'OData $metadata not accessible — the API service path may be incorrect or requires additional permissions'
             });
 
-            setSandboxOutput(prev => prev + `  → ${hasMetadata ? '✅ PASSED' : '❌ FAILED'}: ${hasMetadata ? entitySets.length + ' EntitySets found' : 'Metadata unavailable'}\n`);
+            setSandboxOutput(prev => prev + `  → ${hasMetadata ? '🔌 READ' : '❌ ERROR'}: ${hasMetadata ? entitySets.length + ' EntitySets found' : 'Metadata unavailable'}\n`);
 
             // ── TC_ENTITY_*: Individual EntitySet Schema Availability ──
             if (hasMetadata && entitySets.length > 0) {
@@ -311,10 +332,10 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
                   description: `Verifies that EntitySet ${es.name} is declared in the OData schema`,
                   category: 'Functional',
                   priority: 'Medium' as any,
-                  status: 'Passed',
-                  message: `EntitySet "${es.name}" available in $metadata schema`
+                  status: 'Connectivity',
+                  message: `EntitySet "${es.name}" declared in the $metadata schema`
                 });
-                setSandboxOutput(prev => prev + `  → ✅ ${es.name}\n`);
+                setSandboxOutput(prev => prev + `  → 🔌 ${es.name}\n`);
               }
               if (entitySets.length > maxSchemaEntities) {
                 setSandboxOutput(prev => prev + `  ... and ${entitySets.length - maxSchemaEntities} more EntitySets available\n`);
@@ -348,9 +369,9 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
                     id: `TC_RD_${String(i + 1).padStart(2, '0')}`,
                     name: `OData Read: ${es.name}`,
                     description: `Executes GET ${es.name}?$top=1 to verify data accessibility`,
-                    category: 'Business Logic',
+                    category: 'Connectivity',
                     priority: 'High' as any,
-                    status: readPassed ? 'Passed' : 'Failed',
+                    status: readPassed ? 'Connectivity' : 'Error',
                     message: readPassed
                       ? `${readResult.recordCount} record(s), fields: [${(readResult.sampleFields || []).join(', ')}]`
                       : readResult.message || 'OData read failed'
@@ -361,9 +382,9 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
                     id: `TC_RD_${String(i + 1).padStart(2, '0')}`,
                     name: `OData Read: ${es.name}`,
                     description: `Executes GET ${es.name}?$top=1 to verify data accessibility`,
-                    category: 'Business Logic',
+                    category: 'Connectivity',
                     priority: 'High' as any,
-                    status: 'Failed',
+                    status: 'Error',
                     message: `Network error: ${readErr instanceof Error ? readErr.message : 'Unknown'}`
                   });
                   setSandboxOutput(prev => prev + ` ❌ Network error\n`);
@@ -378,36 +399,38 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
               description: 'Fetches the OData $metadata document to discover available EntitySets and types',
               category: 'Functional',
               priority: 'High' as any,
-              status: 'Failed',
+              status: 'Not run',
               message: isAuthFailed
-                ? 'Skipped — authentication failed, cannot access $metadata'
-                : 'Skipped — endpoint unreachable'
+                ? 'Not run — authentication failed, cannot access $metadata'
+                : 'Not run — endpoint unreachable'
             });
             setSandboxOutput(prev => prev + `\n[TC_META] Skipped — ${isAuthFailed ? 'authentication failed' : 'endpoint unreachable'}\n`);
           }
 
-          // ── TC_CSRF: CSRF Token Availability (informational) ──
+          // ── TC_CSRF ──
+          // This used to be `Passed` whenever the login worked, with the message
+          // "CSRF token can be fetched" — and no x-csrf-token request was ever
+          // made. It is reported as what it is: not checked.
           liveResults.push({
             id: 'TC_CSRF',
             name: 'CSRF Token Handling',
-            description: 'Verifies that the tenant supports x-csrf-token fetch for write operations',
+            description: 'Would verify that the tenant issues an x-csrf-token for write operations',
             category: 'Security',
             priority: 'Medium' as any,
-            status: isFullyConnected ? 'Passed' : 'Failed',
-            message: isFullyConnected
-              ? 'CSRF token can be fetched via x-csrf-token: fetch header (standard SAP pattern)'
-              : 'Skipped — requires authenticated connection'
+            status: 'Not run',
+            message: 'Not checked — no x-csrf-token request is made by this validation.'
           });
 
           setTestResults(liveResults);
 
           // ── Build Report ──
-          const passed = liveResults.filter(r => r.status === 'Passed').length;
-          const failed = liveResults.length - passed;
+          const reached = liveResults.filter(r => r.status === 'Connectivity').length;
+          const errors = liveResults.filter(r => r.status === 'Error').length;
+          const notRun = liveResults.filter(r => r.status === 'Not run').length;
           const timestamp = new Date().toLocaleString();
 
           let finalReport = `==================================================\n`;
-          finalReport += `S/4HANA LIVE TENANT VALIDATION REPORT - ${timestamp}\n`;
+          finalReport += `S/4HANA LIVE TENANT CONNECTIVITY REPORT - ${timestamp}\n`;
           finalReport += `==================================================\n\n`;
           finalReport += `Tenant: ${tenantUrl}\n`;
           finalReport += `Auth Method: ${project.s4Meta?.authType || project.s4Config?.authType || 'basic'}\n`;
@@ -417,22 +440,26 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
           const entitySets = metadataServices.filter(s => s.type === 'EntitySet');
           if (metadataServices.length > 0) {
             const entityTypes = metadataServices.filter(s => s.type === 'EntityType');
-            finalReport += `OData Metadata: VERIFIED (${entityTypes.length} EntityTypes, ${entitySets.length} EntitySets)\n`;
+            finalReport += `OData Metadata: READABLE (${entityTypes.length} EntityTypes, ${entitySets.length} EntitySets)\n`;
           } else if (isFullyConnected) {
             finalReport += `OData Metadata: NOT AVAILABLE\n`;
           }
 
           finalReport += `\nSummary:\n`;
-          finalReport += `- Total Tests: ${liveResults.length}\n`;
-          finalReport += `- Passed:      ${passed}\n`;
-          finalReport += `- Failed:      ${failed}\n\n`;
+          finalReport += `- Connectivity checks: ${liveResults.length}\n`;
+          finalReport += `- Reached:     ${reached}\n`;
+          finalReport += `- Errors:      ${errors}\n`;
+          if (notRun > 0) finalReport += `- Not run:     ${notRun}\n`;
+          finalReport += `\nNo test of the generated code was executed. These checks show that the\n`;
+          finalReport += `tenant can be reached, logged into and read — not that the transformed\n`;
+          finalReport += `code works. An ABAP Unit run in the tenant is what would show that.\n\n`;
           finalReport += `Detailed Results:\n`;
           liveResults.forEach((r, i) => {
             finalReport += `${i + 1}. [${r.status!.toUpperCase()}] ${r.id}: ${r.name}\n`;
             if (r.message) finalReport += `   → ${r.message}\n`;
           });
           finalReport += `\n==================================================\n`;
-          finalReport += `End of Live Tenant Validation Report\n`;
+          finalReport += `End of Live Tenant Connectivity Report\n`;
 
           setSandboxOutput(finalReport);
           return liveResults;
@@ -515,7 +542,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
           return {
             ...tc,
             status: match.status as TestCase['status'],
-            message: match.message || (match.status === 'Passed' ? 'Verified by Node.js Test Runner' : 'Test assertion failed')
+            message: match.message || (match.status === 'Passed' ? 'Passed in the Node.js test runner' : 'Test assertion failed')
           };
         }
 
@@ -536,10 +563,12 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         };
       });
       setTestResults(results);
-      
+      const stubs = Array.isArray(result.stubbedPackages) ? result.stubbedPackages : [];
+      setStubbedPackages(stubs);
+
       const rawOutput = result.output || '';
       const errorOutput = result.error ? `\nErrors:\n${result.error}` : '';
-      setSandboxOutput(generateQAReport(results) + `\n\nRaw Output:\n${rawOutput}${errorOutput}`);
+      setSandboxOutput(generateQAReport(results, stubs) + `\n\nRaw Output:\n${rawOutput}${errorOutput}`);
       
       const overallFailed = result.exitCode !== 0;
       if (overallFailed) {
@@ -558,5 +587,5 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
     }
   };
 
-  return { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases };
+  return { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases, stubbedPackages };
 };
