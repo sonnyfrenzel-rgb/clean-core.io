@@ -3,6 +3,42 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+**Stand 11.09.2026 — v2.9.5 und v2.9.6, E01-F01 komplett (US01 + US02).**
+Beide Releases sind auf dem Branch committet; ob sie auf `dev`/`main` stehen,
+sagt `git log origin/main`, nicht dieser Absatz.
+
+| Release | Was | Befund |
+|---|---|---|
+| v2.9.5 | Ein Phasenvertrag (`lib/workflow-steps.ts`) für Stepper, Rail, Dashboard, Delivery; Economics ist Phase 6; `status` wird nicht mehr gelesen; Testentwurf ≠ getestet | CR-11, E01-F01-US01 (+ CR-16-Reste) |
+| v2.9.6 | Quellenänderung macht alles Alte `stale`; Transformation/Doku/Testing/Handover gesperrt; Audit-Pack 409 serverseitig | E01-F01-US02, CR-10 (2.9-Teil) |
+
+**Unterwegs gefunden:** Das Dashboard hat einen „Quality Engineering Report"
+*erfunden* („All test cases compiled and executed successfully") — für jede
+generierte Suite. Die Rail war auf vier von sechs Seiten nur im Ladezustand da.
+Delivery eröffnete jedes Projekt mit „lifecycle is complete". Alles behoben.
+
+**Offen für den 2.9-Exit, korrigiert gegenüber gestern:**
+
+| # | Punkt | Wer | Stand |
+|---|---|---|---|
+| 1 | **CR-24 / E03-F02 — Nutzungsimport** (P1) | Entwicklung | **Fehlte gestern auf der Liste.** Heute reproduziert: `parseDate('05.04.2026')` → `2026-05-03` — der ISO-Zweig greift vor dem deutschen, liest Monat/Tag vertauscht, und die UTC-Umrechnung zieht noch einen Tag ab. Negative Aufrufzahlen werden übernommen; das Messfenster wird aus beobachteten Daten abgeleitet |
+| 2 | **E08-F01-US01 — echte Runner-Isolation** | **Felix (GCP)** | unverändert |
+| 3 | **Security-CI meldet rote Scheduled-Runs nicht** | Entwicklung | unverändert, nicht aus der Roadmap, aber seit gestern Punkt 1 der Betriebsseite |
+| 4 | CR-28 — Sign-off | — | 2.9-Teil erfüllt: widerrufbar, als Selbsterklärung bezeichnet, und seit v2.9.6 an die Quelle gebunden. Rollen/Attestation ist E05/E13 in 3.0 |
+| 5 | CR-23 — TCO-Koeffizienten empirisch | — | E12-F02, 2.10 |
+
+**Bewusst offen gelassen, mit Namen:**
+- Die Testing-Seite **speichert keine Verdikte**. Testing und Delivery bleiben
+  deshalb in echten Projekten `partial`. Richtig wäre ein serverseitiger
+  Test-Receipt (E07-F02), kein Client-Schreiben von `Passed`.
+- Projekte, deren Quelle sich **vor** v2.9.6 geändert hat, zeigen alte Artefakte
+  in den Ansichten weiter als aktuell; nur die Freigabe prüft der Server für sie
+  nach (aus der Run-Historie).
+- **Kopfzeile auf Projektseiten 22 px zu breit bei 390 px** (Nutzermenü +
+  Avatar) — vorbestehend, beim Screenshot-Check aufgefallen, nicht angefasst.
+
+---
+
 **Stand 10.09.2026, Feierabend — v2.9.0 → v2.9.4, fünf Releases, alles auf `main`
 und deployt.** Der Tag hatte einen Auslöser und einen roten Faden. Der Auslöser:
 fünf Feature-Commits lagen seit dem 08./09.09. unveröffentlicht auf dem Branch,
