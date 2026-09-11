@@ -3,9 +3,12 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
-**Stand 11.09.2026 — v2.9.5 und v2.9.6, E01-F01 komplett (US01 + US02).**
-Beide Releases sind auf dem Branch committet; ob sie auf `dev`/`main` stehen,
-sagt `git log origin/main`, nicht dieser Absatz.
+**Stand 11.09.2026, Feierabend — v2.9.5 → v2.9.11, sieben Releases, alles auf
+`main` und deployt (`clean-core-00298-kvn`, `main` = `dev` = Branch = `c1349b5`).**
+Der Tag hatte einen roten Faden und eine Lehre. Der Faden: die Roadmap
+(`roadmap_chatgpt.md`), Release 2.9 „Truth & Safety", Punkt für Punkt — am Abend
+ist der Entwicklungsumfang von 2.9 erledigt. Die Lehre: die teuersten Funde kamen
+wieder nicht aus der Roadmap, sondern beim Anfassen des Codes daneben.
 
 | Release | Was | Befund |
 |---|---|---|
@@ -17,30 +20,61 @@ sagt `git log origin/main`, nicht dieser Absatz.
 | v2.9.10 | `npm run typecheck` (Tests inklusive) als Pflichtschritt vor dem Deploy | E16-F01-US02 |
 | v2.9.11 | Roter Scheduled-Run von Security CI → Mail an den Admin | Betrieb (10.09.) |
 
-**Unterwegs gefunden:** Das Dashboard hat einen „Quality Engineering Report"
-*erfunden* („All test cases compiled and executed successfully") — für jede
-generierte Suite. Die Rail war auf vier von sechs Seiten nur im Ladezustand da.
-Delivery eröffnete jedes Projekt mit „lifecycle is complete". Alles behoben.
+Tests: von 555 auf **608**, jeder Release lokal CI-gleich (Produktions-Build,
+frische Emulatoren, ganzes Log durchsucht) und danach auf `dev` und in Produktion
+über `/api/health`, Revision und Logs geprüft. Lint-Budget 673 → **661**.
 
-**Offen für den 2.9-Exit, korrigiert gegenüber gestern:**
+**Die Funde außerhalb der Roadmap — die eigentliche Ausbeute:**
+- Der **Nutzungsimport wurde nie gespeichert.** `undefined` im Bericht, der
+  Firestore-Client lehnt das ab, die Analyze-Seite hat es nur geloggt. Direkt am
+  SDK nachgeprüft. Wer Nutzungsdaten hochgeladen hat, hatte sie nur im Tab.
+- Das Dashboard **erfand einen „Quality Engineering Report"** („All test cases
+  compiled and executed successfully") für jede generierte Suite.
+- Der Live-ABAP-Pfad meldete Erreichbarkeit und Login als **`Passed`**, die
+  CSRF-Zeile ohne dass je eine CSRF-Anfrage gestellt wurde.
+- Die Rail existierte auf vier von sechs Seiten nur im Ladezustand; Delivery
+  eröffnete jedes Projekt mit „lifecycle is complete"; Economics rechnete mit
+  900/650/15.000 €, die niemand eingegeben hatte.
+- Zwei Typfehler in einem Test standen seit dem 27.08. da, weil nie `tsc` über
+  die Tests lief.
 
-| # | Punkt | Wer | Stand |
-|---|---|---|---|
-| 1 | ~~CR-24 / E03-F02 — Nutzungsimport~~ (P1) | — | **Erledigt in v2.9.7.** War gestern nicht auf der Liste; reproduziert als `05.04.2026` → `2026-05-03`. Dabei gefunden: der Import wurde nie gespeichert (`undefined` im Bericht, Firestore lehnt ab, nur geloggt) |
-| 2 | **E08-F01-US01 — echte Runner-Isolation** | **Felix (GCP)** | unverändert |
-| 3 | ~~Security-CI meldet rote Scheduled-Runs nicht~~ | — | **Erledigt in v2.9.11:** Mail an den Admin (entschieden 11.09.; kein Issue, weil das Repo öffentlich ist) |
-| 4 | CR-28 — Sign-off | — | 2.9-Teil erfüllt: widerrufbar, als Selbsterklärung bezeichnet, und seit v2.9.6 an die Quelle gebunden. Rollen/Attestation ist E05/E13 in 3.0 |
-| 5 | CR-23 — TCO-Koeffizienten empirisch | — | E12-F02, 2.10 |
+**Entscheidungen von Sonny heute:** Security-CI-Alarm **per Mail, nicht als
+Issue** (Repo ist öffentlich) — umgesetzt, TEST-Mail von Resend angenommen
+(`549c4fe9-…`), Zustellung nur im Posteingang prüfbar. **E08-F01-US01 später.**
+**Release 2.10 wird vor Beginn im Umfang abgestimmt** — nicht von selbst anfangen.
+
+**Offen für den 2.9-Exit:** nur noch **E08-F01-US01 — echte Runner-Isolation**
+(Felix, GCP). Bis dahin hält die Attestierung aus v2.9.1 den Live-Modus zu.
+CR-28 ist im 2.9-Teil erfüllt (widerrufbar, als Selbsterklärung bezeichnet, seit
+v2.9.6 an die Quelle gebunden); Rollen/Attestation sind E05/E13 in 3.0. CR-23 im
+Kern ist E12-F02.
 
 **Bewusst offen gelassen, mit Namen:**
 - Die Testing-Seite **speichert keine Verdikte**. Testing und Delivery bleiben
-  deshalb in echten Projekten `partial`. Richtig wäre ein serverseitiger
+  deshalb in echten Projekten `partial`. Richtig ist ein serverseitiger
   Test-Receipt (E07-F02), kein Client-Schreiben von `Passed`.
 - Projekte, deren Quelle sich **vor** v2.9.6 geändert hat, zeigen alte Artefakte
   in den Ansichten weiter als aktuell; nur die Freigabe prüft der Server für sie
   nach (aus der Run-Historie).
 - **Kopfzeile auf Projektseiten 22 px zu breit bei 390 px** (Nutzermenü +
   Avatar) — vorbestehend, beim Screenshot-Check aufgefallen, nicht angefasst.
+- Bestehende Nutzungsberichte haben kein deklariertes Fenster; seit v2.9.7
+  schlagen sie deshalb keine Stilllegung mehr auf eine Null vor. Gewollt.
+
+**Für den nächsten, der hier arbeitet:**
+- `firestore.rules` wird **nicht von CI deployt**. Braucht ein Feature ein neues
+  Client-Feld, ist das ein manueller Produktions-Deploy vor der App. v2.9.6 hat
+  den Umweg über serverseitig geschriebene Felder genommen und brauchte keinen.
+- Versionsnummern in Kommentaren nur als `pre-vX.Y.Z` oder `// vX.Y.Z:` — alles
+  andere macht `version-drift-guard` rot, sobald die Version weiterzieht (zweimal
+  passiert, 10.09. und 11.09., beide Male lokal gefangen).
+- Die Befundliste in dieser Datei war gestern unvollständig (CR-24 fehlte). Eine
+  Exit-Liste ist eine Behauptung; aus `Release 2.9` in §12 der Roadmap und dem
+  Code neu ableiten.
+
+**Unverändert offen:** die ~30 ungeprüften GLM/GPT-Findings, G-05/G-06,
+V15/V16/V18, die drei Tenant-Mails, Befund v4 Mitte September, die sieben
+Moderate-Advisories unter der Gate-Schwelle, DKIM auf 2048 bit.
 
 ---
 
