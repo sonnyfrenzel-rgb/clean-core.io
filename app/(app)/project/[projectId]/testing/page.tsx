@@ -29,7 +29,8 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { saveAs } from '@/lib/fileSaver';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
+import StaleNotice from '@/components/StaleNotice';
 
 const renderSafeValue = (val: any): string => {
   if (val === null || val === undefined) return '';
@@ -489,6 +490,9 @@ export default function TestingSandboxPage() {
   };
 
   const handleGenerate = async () => {
+    // Not against code generated from a previous source (E01-F01-US02). The
+    // notice at the top of the page says which stage to regenerate first.
+    if (generationBlockers(project, 'testing').length > 0) return;
     try {
       const result = await generateTestCases();
       if (result && result.testCases) {
@@ -649,7 +653,17 @@ export default function TestingSandboxPage() {
       <VerificationRail steps={phases} current="testing" projectId={projectId as string} />
 
       <Stepper steps={phases} current="testing" projectId={projectId as string} />
-      
+
+      <StaleNotice
+        title="Built for a previous source"
+        reasons={[
+          ...generationBlockers(project, 'testing'),
+          ...(phases.find((p) => p.key === 'testing')?.state === 'stale'
+            ? ['The test cases shown here were written for a previous source. Running them tests nothing about the current one.']
+            : []),
+        ]}
+      />
+
       <StageHeader title="Testing &amp; Sandbox">
         {isAbapCloud
           ? 'Generate ABAP Unit stubs and run simulated validation in a secure SAP ADT environment.'

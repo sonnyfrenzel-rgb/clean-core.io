@@ -548,7 +548,14 @@ export async function generateAuditPack(project: Project, idToken: string): Prom
 
   if (!res.ok) {
     const errText = await res.text().catch(() => 'Unknown error');
-    throw new Error(`Audit pack generation failed (${res.status}): ${errText}`);
+    // The route answers in JSON; a refusal (409) carries a sentence meant for
+    // the reader, which used to arrive wrapped in its own braces and quotes.
+    let message = errText;
+    try {
+      const parsed = JSON.parse(errText);
+      if (parsed && typeof parsed.error === 'string') message = parsed.error;
+    } catch { /* not JSON — show it as it came */ }
+    throw new Error(`Audit pack generation failed (${res.status}): ${message}`);
   }
 
   return await res.blob();

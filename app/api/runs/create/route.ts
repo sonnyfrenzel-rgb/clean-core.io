@@ -10,6 +10,7 @@ import { extractCodeInventory, extractDataCoupling, computeComplexityScore, comp
 import { AnalysisRun } from '@/lib/types';
 import { canonicalizeJson } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
+import { buildSourceChangeRecord } from '@/lib/artefact-digest';
 
 // The canonicaliser moved to lib/run-signature.ts so the route that verifies a
 // run uses the same one that produced it. Two implementations of "canonical"
@@ -292,11 +293,40 @@ export async function POST(req: NextRequest) {
       signature,
     };
 
+    // 6a. Did the source change? (roadmap E01-F01-US02)
+    //
+    // A new run used to leave the design, the code, the tests, the documentation
+    // and the architect's sign-off in place, all reading as current, although
+    // every one of them was built for the previous source. Nothing is deleted
+    // here — it is the reader's work — but the digests of what stood at the
+    // moment of change are recorded where only the server writes. Anything that
+    // still carries one of them afterwards was not regenerated, and the phase
+    // contract, the delivery page and the audit-pack route treat it as stale.
+    //
+    // Same digest, nothing recorded: re-analysing unchanged code changes no
+    // artefact's basis, and whatever was stale before stays stale.
+    let previousSha256: string | undefined = projectData?.auditMetadata?.inputFingerprint?.sha256;
+    if (!previousSha256 && projectData?.activeRunId) {
+      // Projects older than auditMetadata: the previous run carries the digest.
+      const prevRun = await db.collection('projects').doc(projectId).collection('runs').doc(projectData.activeRunId).get();
+      previousSha256 = prevRun.exists ? prevRun.data()?.inputFingerprint?.sha256 : undefined;
+    }
+    const sourceChange =
+      previousSha256 && previousSha256 !== hashHex
+        ? buildSourceChangeRecord(projectData as Record<string, unknown>, previousSha256, runId, new Date().toISOString())
+        : null;
+
     // 6. Save the run document (runs/{runId} is client-write-blocked)
     await newRunDoc.set(analysisRun);
 
     // 7. Update parent project (Only metadata! Finding 6)
-    await db.collection('projects').doc(projectId).set({
+    //
+    // One batch, so the new run cannot become the active one without its source
+    // change being recorded alongside — a run switched in without the record
+    // would make every artefact of the old source read as current again.
+    const projectRef = db.collection('projects').doc(projectId);
+    const projectWrite = db.batch();
+    projectWrite.set(projectRef, {
       activeRunId: runId,
       status: 'analyzed',
       charged: true,
@@ -329,6 +359,12 @@ export async function POST(req: NextRequest) {
         }
       }
     }, { merge: true });
+    // An `update` with a field path rather than part of the merge above: a merge
+    // would keep keys from an earlier record that this one no longer has.
+    if (sourceChange) {
+      projectWrite.update(projectRef, { 'auditMetadata.sourceChange': sourceChange });
+    }
+    await projectWrite.commit();
 
     // Clean up old denormalized results fields from parent project (Finding 6)
     await db.collection('projects').doc(projectId).update({

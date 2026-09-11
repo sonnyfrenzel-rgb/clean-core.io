@@ -150,6 +150,12 @@ export interface AuditMetadata {
     catalogVersion?: string;
   };
   auditPackExportedAt?: string;
+  /**
+   * Written by `/api/runs/create` when the analysed source changes: digests of
+   * the artefacts and the sign-off built for the previous source. Anything still
+   * matching is stale (E01-F01-US02). See `lib/artefact-digest.ts`.
+   */
+  sourceChange?: import('./artefact-digest').SourceChangeRecord;
 }
 
 /** Single ABAP artifact extracted from uploaded code */

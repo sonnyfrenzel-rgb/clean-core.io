@@ -14,8 +14,9 @@ import type { PhaseKey, RailStep } from '@/lib/workflow-steps';
  *
  * Each circle now shows what `workflowSteps` found on record — the same answer
  * the rail, the dashboard and the delivery page give. A tick means done, amber
- * means something exists that is not yet the phase's evidence, grey means
- * nothing. The ring marks where the reader is, and says nothing about progress.
+ * means something exists that is not yet the phase's evidence, red means it was
+ * built for a previous source, grey means nothing. The ring marks where the
+ * reader is, and says nothing about progress.
  */
 export default function Stepper({
   steps,
@@ -52,9 +53,11 @@ export default function Stepper({
                   'w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 text-xs sm:text-sm font-semibold transition-all duration-300 shadow-sm hover:scale-105 outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2',
                   step.state === 'done'
                     ? 'border-green-600 bg-white text-green-600'
-                    : step.state === 'partial'
-                      ? 'border-amber-400 bg-amber-50 text-amber-700'
-                      : 'border-gray-300 bg-white text-gray-400',
+                    : step.state === 'stale'
+                      ? 'border-rose-400 bg-rose-50 text-rose-700'
+                      : step.state === 'partial'
+                        ? 'border-amber-400 bg-amber-50 text-amber-700'
+                        : 'border-gray-300 bg-white text-gray-400',
                   isCurrent && 'ring-2 ring-green-600/30 ring-offset-2 ring-offset-gray-50 scale-110',
                 )}
               >

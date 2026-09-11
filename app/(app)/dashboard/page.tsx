@@ -2197,7 +2197,13 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
                 data-phase={p.key}
                 data-phase-state={p.state}
                 className={`h-1.5 flex-1 rounded-full ${
-                  p.done ? 'bg-green-600' : p.state === 'partial' ? 'bg-amber-400' : 'bg-gray-200'
+                  p.done
+                    ? 'bg-green-600'
+                    : p.state === 'stale'
+                      ? 'bg-rose-400'
+                      : p.state === 'partial'
+                        ? 'bg-amber-400'
+                        : 'bg-gray-200'
                 }`}
               >
                 <span className="sr-only">{`${p.label}: ${p.badge}`}</span>

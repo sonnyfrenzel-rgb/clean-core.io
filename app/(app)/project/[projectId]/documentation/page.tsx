@@ -19,7 +19,8 @@ import { formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdo
 import { saveAs } from '@/lib/fileSaver';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
+import StaleNotice from '@/components/StaleNotice';
 
 const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
   let files: Array<{ path: string, content: string }> = [];
@@ -314,9 +315,16 @@ export default function DocumentationPage() {
 
   const generateDocumentation = useCallback(async () => {
     if (!project || !projectId) return;
-    
+    // Not from code or a design written for a previous source (E01-F01-US02):
+    // the blueprint would describe something other than the code under review.
+    const blocked = generationBlockers(project, 'documentation');
+    if (blocked.length > 0) {
+      setDocError(blocked.join(' '));
+      return;
+    }
+
     const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
-    
+
     setIsGeneratingDoc(true);
     setDocError('');
     
@@ -431,7 +439,12 @@ ${context}`;
 
   const generateBusinessDocumentation = useCallback(async () => {
     if (!project || !projectId || !documentation) return;
-    
+    const blocked = generationBlockers(project, 'documentation');
+    if (blocked.length > 0) {
+      setBusinessDocError(blocked.join(' '));
+      return;
+    }
+
     const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
     
     setIsGeneratingBusinessDoc(true);
@@ -720,7 +733,17 @@ Structure the JSON exactly like this:
       <VerificationRail steps={phases} current="documentation" projectId={projectId as string} />
 
       <Stepper steps={phases} current="documentation" projectId={projectId as string} />
-      
+
+      <StaleNotice
+        title="Built for a previous source"
+        reasons={[
+          ...generationBlockers(project, 'documentation'),
+          ...(phases.find((p) => p.key === 'documentation')?.state === 'stale'
+            ? ['The blueprint shown here was written for a previous source.']
+            : []),
+        ]}
+      />
+
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-10 mt-6 md:mt-8">
         <div>
           <StageHeader title="Process Blueprint &amp; Mapping">

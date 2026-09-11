@@ -25,7 +25,8 @@ import { matchCdsView } from '@/lib/abap/cds-catalog';
 import { extractSelects, parseSelect } from '@/lib/abap/select-parser';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
+import StaleNotice from '@/components/StaleNotice';
 
 interface ProjectFile {
   path: string;
@@ -644,7 +645,9 @@ CMD ["node", "srv/service.js"]`
             const hasServiceTs = parsedFiles.some(f => f.path === 'srv/service.ts');
             setSelectedFilePath(hasServiceTs ? 'srv/service.ts' : (parsedFiles[0]?.path || ''));
             setLoading(false);
-          } else if (data.legacyCode && data.solutionDesign && data.analysis) {
+          } else if (data.legacyCode && data.solutionDesign && data.analysis && generationBlockers(data, 'transformation').length === 0) {
+            // Not from a design written for a previous source (E01-F01-US02).
+            // The page used to generate from whatever design was there.
             generateTransformation(data.legacyCode, data.solutionDesign, data.analysis);
           } else {
             setLoading(false);
@@ -673,6 +676,13 @@ CMD ["node", "srv/service.js"]`
   }, [loading, progress]);
 
   const phases = workflowSteps(project);
+  const blockers = generationBlockers(project, 'transformation');
+  const staleNotes = [
+    ...blockers,
+    ...(phases.find((p) => p.key === 'transformation')?.state === 'stale'
+      ? ['The code shown here was generated from a previous source — it is not a transformation of the current one.']
+      : []),
+  ];
 
   if (loading && !transformedCode) return (
     <div className="animate-in fade-in duration-500">
@@ -815,18 +825,22 @@ CMD ["node", "srv/service.js"]`
           >
             <Code2 size={16} /> Copy Code
           </button>
-          <button 
+          <button
             onClick={() => {
-              if (project?.legacyCode && project?.solutionDesign && project?.analysis) {
+              if (blockers.length === 0 && project?.legacyCode && project?.solutionDesign && project?.analysis) {
                 generateTransformation(project.legacyCode, project.solutionDesign, project.analysis);
               }
             }}
-            className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all font-bold text-sm shadow-sm"
+            disabled={blockers.length > 0}
+            title={blockers.length > 0 ? blockers.join(' ') : undefined}
+            className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all font-bold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw size={16} /> Re-Run Engine
           </button>
         </div>
       </div>
+
+      <StaleNotice title="Built for a previous source" reasons={staleNotes} />
 
       {showCopyDialog && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl z-[100] flex items-center gap-3 animate-in slide-in-from-top-4">

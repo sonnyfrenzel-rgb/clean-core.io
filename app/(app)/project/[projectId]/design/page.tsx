@@ -55,7 +55,8 @@ import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { SourceFile } from '@/lib/abap/findings-detector';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps } from '@/lib/workflow-steps';
+import { workflowSteps, staleness } from '@/lib/workflow-steps';
+import StaleNotice from '@/components/StaleNotice';
 
 const cleanAndParseJSON = (str: string) => {
   let cleaned = str.trim();
@@ -844,6 +845,17 @@ ${responseText.substring(0, 4000)}`;
   };
 
   const phases = workflowSteps(project);
+  // E01-F01-US02: a design or a sign-off left over from a previous source.
+  const stale = staleness(project);
+  const designStale = Boolean(design) && stale.design;
+  const staleNotes = [
+    ...(stale.sourceChanged ? ['The source changed after the signed run. Re-run the analysis in stage 1.'] : []),
+    ...(designStale && !stale.sourceChanged
+      ? ['This design was generated for a previous source. Regenerate it — the analysis it was written from no longer describes the code under review.']
+      : []),
+    ...(stale.signOff ? ['The sign-off below was given for a previous source. Unlock it and confirm the target architecture again.'] : []),
+  ];
+  const signOffCurrent = project?.approvedByArchitect === true && !stale.signOff && !designStale;
 
   if (loading && !design) return (
     <div className="animate-in fade-in duration-500 min-h-screen">
@@ -874,6 +886,8 @@ ${responseText.substring(0, 4000)}`;
       <VerificationRail steps={phases} current="design" projectId={projectId as string} />
 
       <Stepper steps={phases} current="design" projectId={projectId as string} />
+
+      <StaleNotice title="Built for a previous source" reasons={staleNotes} />
 
       <StageHeader
         title="Solution Design"
@@ -969,8 +983,14 @@ ${responseText.substring(0, 4000)}`;
       <NavigationButtons 
         backPath={`/project/${projectId}/analyze`}
         backLabel="Back to Analysis"
-        proceedPath={project?.approvedByArchitect ? `/project/${projectId}/transformation` : undefined}
-        proceedLabel={project?.approvedByArchitect ? 'Continue to Transformation' : 'Confirm architecture to proceed'}
+        proceedPath={signOffCurrent ? `/project/${projectId}/transformation` : undefined}
+        proceedLabel={
+          signOffCurrent
+            ? 'Continue to Transformation'
+            : project?.approvedByArchitect
+              ? 'Regenerate and re-confirm to proceed'
+              : 'Confirm architecture to proceed'
+        }
       />
 
 

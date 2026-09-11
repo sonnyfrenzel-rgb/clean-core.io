@@ -1,4 +1,5 @@
 import type { Project } from '@/lib/types';
+import { artefactDigest, sha256Hex, signOffKey, type TrackedArtefact } from './artefact-digest';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -38,8 +39,10 @@ export type PhaseKey =
  *             that were generated and never run, a cost model built on assumed
  *             coefficients.
  * - `done`    the phase's own evidence is on record.
+ * - `stale`   it exists, but was built for a source that is no longer the one
+ *             under analysis (E01-F01-US02). Never done, whatever it contains.
  */
-export type PhaseState = 'empty' | 'partial' | 'done';
+export type PhaseState = 'empty' | 'partial' | 'done' | 'stale';
 
 export interface RailStep {
   /** 1-based position in the canonical order. */
@@ -96,6 +99,116 @@ export function testEvidence(project: Project | null): TestEvidence {
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+export interface Staleness {
+  /** The source on the project is not the one the active signed run analysed. */
+  sourceChanged: boolean;
+  design: boolean;
+  code: boolean;
+  tests: boolean;
+  docs: boolean;
+  /** The standing architect sign-off was given for a previous source. */
+  signOff: boolean;
+}
+
+/**
+ * What was built for a source that is no longer the one under analysis.
+ *
+ * Two independent checks, both from server-written values, neither from
+ * `status`:
+ *
+ *   - the source itself: SHA-256 of `legacyCode` against the digest the active
+ *     run signed. They can only differ if something wrote the source without a
+ *     new run — the analyze page never does, a direct write could.
+ *   - everything built on it: `/api/runs/create` records the digests of the
+ *     design, code, tests, documentation and the sign-off as they stood when the
+ *     source changed (`auditMetadata.sourceChange`). An artefact still carrying
+ *     its recorded digest has not been touched since, so it was built for the
+ *     previous source. Regenerating it is what clears it — there is no flag to
+ *     flip, and `auditMetadata` is not client-writable.
+ *
+ * When the source itself changed, everything downstream is stale with it: every
+ * artefact was produced against an analysis of different code.
+ */
+export function staleness(project: Project | null): Staleness {
+  const none: Staleness = { sourceChanged: false, design: false, code: false, tests: false, docs: false, signOff: false };
+  if (!project) return none;
+
+  const analysed =
+    project.auditMetadata?.inputFingerprint?.sha256 ??
+    (project as { inputFingerprint?: { sha256?: string } }).inputFingerprint?.sha256;
+  const source = typeof project.legacyCode === 'string' && project.legacyCode.trim() ? project.legacyCode : null;
+  const sourceChanged = Boolean(project.activeRunId && analysed && source && sha256Hex(source) !== analysed);
+
+  const record = project.auditMetadata?.sourceChange;
+  const unchangedSince = (key: TrackedArtefact) => {
+    const was = record?.artefacts?.[key];
+    return Boolean(was) && artefactDigest(key, (project as unknown as Record<string, unknown>)[key]) === was;
+  };
+  const signOffUnchanged = Boolean(
+    project.approvedByArchitect === true && record?.signOff && signOffKey(project.architectSignOffAt) === record.signOff,
+  );
+
+  return {
+    sourceChanged,
+    design: sourceChanged || unchangedSince('solutionDesign'),
+    code: sourceChanged || unchangedSince('generatedCode'),
+    tests: sourceChanged || unchangedSince('testCases'),
+    docs: sourceChanged || unchangedSince('documentation'),
+    signOff: (sourceChanged && project.approvedByArchitect === true) || signOffUnchanged,
+  };
+}
+
+const present = (project: Project | null) => {
+  const has = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
+  return {
+    design: has(project?.solutionDesign),
+    code: has(project?.generatedCode),
+    tests: Array.isArray(project?.testCases) && project!.testCases!.length > 0,
+    docs: has(project?.documentation),
+  };
+};
+
+/**
+ * Why a controlled handover has to wait — each entry names what was built for a
+ * previous source. Empty when nothing blocks it. The delivery page disables its
+ * downloads on a non-empty list; `/api/audit-pack/create` enforces its own part
+ * server-side.
+ */
+export function handoverBlockers(project: Project | null): string[] {
+  const s = staleness(project);
+  const p = present(project);
+  const out: string[] = [];
+  if (s.sourceChanged) out.push('the analysis (the source changed after the signed run)');
+  if (s.design && p.design) out.push('the solution design');
+  if (s.signOff) out.push('the architecture sign-off');
+  if (s.code && p.code) out.push('the generated code');
+  if (s.tests && p.tests) out.push('the test suite');
+  if (s.docs && p.docs) out.push('the documentation');
+  return out;
+}
+
+/**
+ * Why generating `target` now would build on a previous source. Transformation
+ * needs a current design and sign-off; documentation and testing also need
+ * current code. The pages refuse to generate on a non-empty list, so a stale
+ * state cannot be laundered into a fresh-looking artefact built on top of it.
+ */
+export function generationBlockers(
+  project: Project | null,
+  target: 'transformation' | 'documentation' | 'testing',
+): string[] {
+  const s = staleness(project);
+  const p = present(project);
+  const out: string[] = [];
+  if (s.sourceChanged) return ['The source changed after the signed run. Re-run the analysis in stage 1 first.'];
+  if (s.design && p.design) out.push('The solution design was generated for a previous source. Regenerate it in stage 2 first.');
+  if (s.signOff) out.push('The architecture sign-off was given for a previous source. Confirm it again in stage 2.');
+  if (target !== 'transformation' && s.code && p.code) {
+    out.push('The code was generated from a previous source. Regenerate it in stage 3 first.');
+  }
+  return out;
+}
 
 export function workflowSteps(project: Project | null): RailStep[] {
   const has = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
@@ -239,7 +352,41 @@ export function workflowSteps(project: Project | null): RailStep[] {
           detail: `Review material only: ${gaps.join(', ')}.`,
         });
 
-  return [analyze, design, transformation, documentation, testing, economics, delivery];
+  // Staleness overrides whatever the artefact would otherwise count as. A design
+  // that is complete and signed off, for code that is no longer the code under
+  // review, is not a finished design — it is the thing US02 exists to stop
+  // someone approving.
+  const s = staleness(project);
+  const blockers = handoverBlockers(project);
+  const stale = (base: RailStep, detail: string, badge = 'Stale'): RailStep => ({
+    ...base,
+    state: 'stale',
+    done: false,
+    badge,
+    detail,
+  });
+
+  return [
+    hasRun && s.sourceChanged
+      ? stale(analyze, 'The source on this project is not the one the signed run analysed — re-run the analysis.', 'Source changed')
+      : analyze,
+    hasDesign && s.design
+      ? stale(design, 'Designed for a previous source — regenerate it against the current analysis.')
+      : hasDesign && s.signOff
+        ? { ...design, state: 'partial', done: false, badge: 'Re-confirm', detail: 'The sign-off was given for a previous source — confirm the target architecture again.' }
+        : design,
+    hasGenerated && s.code
+      ? stale(transformation, 'Generated from a previous source — regenerate it once the design is current.')
+      : transformation,
+    hasDocs && s.docs ? stale(documentation, 'Written for a previous source — regenerate it.') : documentation,
+    tests.total > 0 && s.tests ? stale(testing, 'Test cases written for a previous source — regenerate the suite.') : testing,
+    hasRun && s.sourceChanged
+      ? stale(economics, 'Modelled on the score of a different source — re-run the analysis.')
+      : economics,
+    blockers.length > 0
+      ? stale(delivery, `Handover blocked — built for a previous source: ${blockers.join(', ')}.`, 'Blocked')
+      : delivery,
+  ];
 }
 
 /**

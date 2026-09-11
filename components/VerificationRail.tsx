@@ -50,6 +50,7 @@ export default function VerificationRail({
       return 'border-green-600 bg-white ring-2 ring-green-600/20 ring-offset-2 ring-offset-[#f8f9ff]';
     }
     if (step.done) return 'border-green-600 bg-green-600';
+    if (step.state === 'stale') return 'border-rose-400 bg-rose-50';
     return step.state === 'partial' ? 'border-amber-400 bg-amber-50' : 'border-gray-300 bg-white';
   };
 

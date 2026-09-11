@@ -10,6 +10,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.6] — 2026-09-11
+
+### Nach einer Quellenänderung gilt nichts Altes mehr als aktuell
+
+Roadmap E01-F01-US02, Release 2.9, P0, der offene Rest von CR-11 und der
+2.9-Teil von CR-10. Die Abnahme: **„Wenn der Quell-Digest gegenüber dem
+verwendeten Analyseinput abweicht, werden Transformation und kontrolliertes
+Handover bis zur Neubewertung blockiert. Ein Client-Statuswechsel umgeht die
+Sperre nicht."**
+
+**Der Befund:** Ein neuer Analyse-Run mit anderem Quelltext ließ Design, Code,
+Tests, Dokumentation und die Architekten-Freigabe stehen — alles las sich weiter
+als aktuell. Die Transformation erzeugte aus dem alten Design neuen Code, und das
+signierte Audit-Pack trug eine Freigabe, die für einen Code gegeben worden war,
+der nicht mehr der geprüfte Code war. Genau das, was die User Story „keine fremde
+Revision freigeben" nennt.
+
+**Wie die Sperre entsteht — ohne ein Feld, das der Client setzen kann:**
+
+- `/api/runs/create` erkennt, dass sich der Quell-Digest ändert, und schreibt
+  **im selben Batch** wie den Wechsel des aktiven Runs die Digests von Design,
+  Code, Tests, Dokumentation und Freigabe, wie sie in diesem Moment standen
+  (`auditMetadata.sourceChange`). Nichts wird gelöscht; es ist die Arbeit des
+  Nutzers.
+- Alles, was danach noch denselben Digest trägt, wurde seitdem nicht neu erzeugt
+  und ist damit für die vorige Quelle gebaut: **stale**. Aufgehoben wird das nur,
+  indem man es neu erzeugt bzw. die Freigabe neu erteilt — es gibt keine Flagge
+  zum Umlegen, und `auditMetadata` steht nicht in der Client-Allowlist. `status`
+  spielt nirgends eine Rolle.
+- Tests werden **ohne ihre Verdikte** gehasht: eine veraltete Suite laufen zu
+  lassen, macht sie nicht aktuell.
+- Unabhängig davon vergleicht jede Ansicht SHA-256 des Quelltexts mit dem Digest,
+  den der Run signiert hat. Die Analyze-Seite schreibt nie das eine ohne das
+  andere; ein direkter Schreibzugriff könnte es, und dann ist die Analyse selbst
+  veraltet.
+
+**Wo gesperrt wird:** Transformation erzeugt nicht aus einem veralteten Design
+oder unter einer veralteten Freigabe (auch nicht der automatische Erstlauf beim
+Öffnen der Seite). Documentation und Testing erzeugen zusätzlich nicht aus
+veraltetem Code — sonst ließe sich ein veralteter Zustand in ein frisch
+aussehendes Artefakt waschen. Delivery sperrt Bundle und Audit-Pack-Knopf.
+Design lässt „Continue to Transformation" erst mit einer Freigabe für die
+aktuelle Quelle zu. Stepper, Rail und Dashboard zeigen `stale` rot, jede
+betroffene Seite sagt, was zuerst neu zu erzeugen ist.
+
+**Serverseitig, weil ein Knopf keine Sperre ist:** `/api/audit-pack/create`
+antwortet mit **409** und einer maschinenlesbaren `blockers`-Liste, wenn
+
+- der Quelltext des Projekts nicht der ist, den der Run analysiert hat
+  (`source-changed`), oder
+- die Freigabe, die das Pack in seinem Decision Record trägt, für eine vorige
+  Quelle gegeben wurde (`sign-off-stale`). Für Projekte, deren Quelle sich
+  *vor* diesem Release geändert hat und die deshalb keinen Eintrag haben, wird
+  aus der Run-Historie bestimmt, seit wann die aktuelle Quelle analysiert wird,
+  und die Freigabe muss danach liegen.
+
+Das Delivery-Bundle entsteht im Browser; dort ist die Seite die Sperre, und das
+ist hier ausdrücklich gesagt.
+
+**Keine Änderung an `firestore.rules`.** Die Regeln werden nicht von CI deployt;
+eine Lösung, die neue Client-Felder bräuchte, hätte einen manuellen
+Produktions-Deploy vorausgesetzt und das Speichern von Designs gebrochen, falls
+die App zuerst live gegangen wäre. Der Datensatz wird mit dem Admin SDK
+geschrieben.
+
+`lib/artefact-digest.ts` ist ein synchrones SHA-256 ohne Imports — der
+Phasenvertrag läuft während des Renderns, `crypto.subtle` kann nur Promises.
+Dieselbe Funktion importiert die Server-Route, die den Datensatz schreibt;
+Erzeuger und Leser können nicht verschieden hashen.
+`tests/source-change-guard.spec.ts` prüft sie gegen Node-crypto (Padding-Grenzen,
+Umlaute, Emoji, 3.000 Zeilen), den Vertrag in allen Übergängen und Ende-zu-Ende
+gegen den Emulator: gleicher Quelltext → kein Eintrag; neuer Quelltext → Eintrag
+mit den richtigen Digests; das Pack verweigert die alte Freigabe, **auch nachdem
+der Client `status: 'completed'` schreibt** (mit dem Token des Owners, unter den
+echten Regeln); die Seiten zeigen die Sperre, die Knöpfe sind aus;
+Neu-Erzeugen und Neu-Freigeben heben sie auf; ein am Run vorbei geschriebener
+Quelltext wird mit `source-changed` abgewiesen.
+
+**Was das nicht ist:** keine manipulationssichere Revisionskette. Wer ein Feld
+schreiben darf, kann seinen Digest ändern — geschützt wird gegen das
+Weiterverwenden von etwas, das seit der Quellenänderung niemand angefasst hat,
+nicht gegen Absicht. Abhängigkeiten über Stufen hinweg (Doku, die nach einem
+Code-Neulauf aus dem alten Code stammt) werden hier verhindert, indem die
+Erzeugung auf veraltetem Stand gesperrt ist, nicht nachträglich erkannt. Die
+unveränderliche, eltern-verkettete Revisionsablage ist E01-F02 in 2.10.
+Projekte, deren Quelle sich vor diesem Release geändert hat, zeigen ihre alten
+Artefakte in den Ansichten weiter als aktuell — nur die Freigabe prüft der
+Server für sie nach.
+
 ## [v2.9.5] — 2026-09-11
 
 ### Drei Ansichten, drei Fortschritte — jetzt ein Vertrag

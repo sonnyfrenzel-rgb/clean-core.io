@@ -30,7 +30,8 @@ import { generateAuditPack } from '@/lib/audit-pack';
 import { APP_VERSION } from '@/lib/version';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps, testEvidence } from '@/lib/workflow-steps';
+import { workflowSteps, testEvidence, handoverBlockers } from '@/lib/workflow-steps';
+import StaleNotice from '@/components/StaleNotice';
 
 const generateDeveloperGuidelines = (project: any) => {
   const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
@@ -101,6 +102,13 @@ export default function DeliveryPage() {
   const phases = workflowSteps(project);
   const testingPhase = phases.find((p) => p.key === 'testing')!;
   const deliveryPhase = phases.find((p) => p.key === 'delivery')!;
+  // E01-F01-US02: nothing built for a previous source leaves through this page.
+  // The audit-pack route enforces its own part server-side; the bundle is built
+  // in the browser, so this is where it is stopped.
+  const blockers = handoverBlockers(project);
+  const handoverBlocked = blockers.length > 0;
+  const codeStale = phases.find((p) => p.key === 'transformation')?.state === 'stale';
+  const docsStale = phases.find((p) => p.key === 'documentation')?.state === 'stale';
   // What the delivery page can actually attest to, each read from an artefact
   // rather than assumed. Nothing here is a decision — the page reports what is
   // present and says plainly what is not.
@@ -200,7 +208,7 @@ export default function DeliveryPage() {
   }, [project, findings, runHistory]);
 
   const downloadZip = async () => {
-    if (!project) return;
+    if (!project || handoverBlocked) return;
     try {
       const zip = new JSZip();
       const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
@@ -460,8 +468,15 @@ jobs:
       >
         {deliveryPhase.done
           ? 'Code, documentation and a passing test run are on record. Whether to deploy remains an architect’s decision, not this page’s.'
-          : `What is on record for handover, and what is not yet. ${deliveryPhase.detail}`}
+          : handoverBlocked
+            ? 'What is on record for handover, and what is not yet.'
+            : `What is on record for handover, and what is not yet. ${deliveryPhase.detail}`}
       </StageHeader>
+
+      <StaleNotice
+        title="Handover blocked — built for a previous source"
+        reasons={blockers.map((b) => `${b.charAt(0).toUpperCase()}${b.slice(1)} — regenerate it for the current source before handing over.`)}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-16 items-stretch">
         {/* Left Side: 2x2 Grid of standard deliverables */}
@@ -478,9 +493,11 @@ jobs:
             <div className="w-full relative group/tooltip">
               <button
                 onClick={downloadZip}
-                className="w-full flex items-center justify-center gap-2 px-8 py-4 rounded-2xl transition-all font-bold shadow-lg uppercase tracking-widest text-xs md:text-sm bg-[#006b2c] text-white hover:bg-[#00873a] shadow-green-600/20"
+                disabled={handoverBlocked}
+                data-handover-bundle
+                className="w-full flex items-center justify-center gap-2 px-8 py-4 rounded-2xl transition-all font-bold shadow-lg uppercase tracking-widest text-xs md:text-sm bg-[#006b2c] text-white hover:bg-[#00873a] shadow-green-600/20 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
               >
-                <Download size={20} /> Download Bundle
+                <Download size={20} /> {handoverBlocked ? 'Blocked — see above' : 'Download Bundle'}
               </button>
             </div>
           </div>
@@ -592,7 +609,7 @@ jobs:
                 {/* Green only when there is generated code to package. The tick
                     used to be unconditional, so an empty project got the same
                     report as a finished one. */}
-                {hasGeneratedCode ? (
+                {hasGeneratedCode && !codeStale ? (
                   <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
                 ) : (
                   <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
@@ -606,7 +623,9 @@ jobs:
                   <span className="text-[10px] text-gray-400">
                     {!hasGeneratedCode
                       ? 'Run stage 3 to produce the code this line reports on'
-                      : isAbapCloud
+                      : codeStale
+                        ? 'Generated from a previous source — regenerate in stage 3'
+                        : isAbapCloud
                         ? 'Handover: ABAP Cloud packages generated — not compiled or tested'
                         : 'Handover: TypeScript package generated — not compiled or tested'}
                   </span>
@@ -632,7 +651,9 @@ jobs:
                   <span className="text-[10px] text-gray-400">
                     {testCaseCount === 0
                       ? 'Nothing to verify'
-                      : testsPassed === testCaseCount
+                      : testingPhase.state === 'stale'
+                        ? 'Written for a previous source — regenerate in stage 5'
+                        : testsPassed === testCaseCount
                         ? (isAbapCloud
                             ? 'ADT: every generated test returned a pass'
                             : 'Sandbox: every generated test returned a pass')
@@ -664,7 +685,7 @@ jobs:
                 </div>
               </li>
               <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
-                {hasDocumentation ? (
+                {hasDocumentation && !docsStale ? (
                   <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
                 ) : (
                   <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
@@ -674,9 +695,11 @@ jobs:
                     {hasDocumentation ? 'Enterprise BPMN Blueprint' : 'No blueprint generated'}
                   </span>
                   <span className="text-[10px] text-gray-400">
-                    {hasDocumentation
-                      ? 'Docs: Mapped Level 1-4 architectural specs'
-                      : 'Run stage 4 to produce the documentation this line reports on'}
+                    {!hasDocumentation
+                      ? 'Run stage 4 to produce the documentation this line reports on'
+                      : docsStale
+                        ? 'Written for a previous source — regenerate in stage 4'
+                        : 'Docs: Mapped Level 1-4 architectural specs'}
                   </span>
                 </div>
               </li>
@@ -766,8 +789,10 @@ jobs:
               {/* Export Button */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <button
+                  disabled={handoverBlocked}
+                  data-handover-audit-pack
                   onClick={async () => {
-                    if (!project) return;
+                    if (!project || handoverBlocked) return;
                     try {
                       const idToken = await getAuth().currentUser?.getIdToken();
                       if (!idToken) throw new Error('Not authenticated');
@@ -779,9 +804,9 @@ jobs:
                       alert(err?.message || 'Audit pack generation failed. Please try again.');
                     }
                   }}
-                  className="flex items-center justify-center gap-2 bg-[#006b2c] text-white px-6 py-3 rounded-xl hover:bg-[#00873a] transition-all font-bold shadow-md shadow-green-600/10 uppercase tracking-widest text-[10px] sm:text-xs"
+                  className="flex items-center justify-center gap-2 bg-[#006b2c] text-white px-6 py-3 rounded-xl hover:bg-[#00873a] transition-all font-bold shadow-md shadow-green-600/10 uppercase tracking-widest text-[10px] sm:text-xs disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
                 >
-                  <Download size={16} /> Download Audit Pack
+                  <Download size={16} /> {handoverBlocked ? 'Audit Pack blocked' : 'Download Audit Pack'}
                 </button>
                 <span className="text-[10px] text-gray-400 font-medium leading-relaxed">
                   ZIP contains: executive summary, input fingerprint, decision record, findings, model card, known limitations, and signed manifest.

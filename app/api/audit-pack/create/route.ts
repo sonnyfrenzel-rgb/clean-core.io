@@ -9,6 +9,7 @@ import { signEd25519 } from '@/lib/audit-signing-keypair';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { APP_VERSION } from '@/lib/version';
 import type { Project } from '@/lib/types';
+import { signOffKey } from '@/lib/artefact-digest';
 import {
   generateExecutiveSummary,
   generateExecutiveSummaryDoc,
@@ -129,6 +130,85 @@ export async function POST(req: NextRequest) {
             error:
               'This run no longer matches its own signature and cannot be exported. Re-run the analysis to produce a fresh, verifiable run.',
           },
+          { status: 409 },
+        );
+      }
+    }
+
+    // A controlled handover of the current source only (roadmap E01-F01-US02).
+    //
+    // Decided here, from the run, the project's source and the server-written
+    // source-change record — not from `status` or anything else the client can
+    // set. The page disables its button on the same conditions; this is the
+    // part a direct API call cannot step around.
+    {
+      const blockers: { code: string; message: string }[] = [];
+
+      // 1. The source on the project must be the source the run analysed. The
+      // analyze page never writes one without the other; a direct write could.
+      const analysed: string | undefined = runData.inputFingerprint?.sha256;
+      if (analysed && typeof projectData.legacyCode === 'string') {
+        const current = crypto.createHash('sha256').update(projectData.legacyCode, 'utf8').digest('hex');
+        if (current !== analysed) {
+          blockers.push({
+            code: 'source-changed',
+            message: 'The source on this project is not the one the signed run analysed. Re-run the analysis.',
+          });
+        }
+      }
+
+      // 2. The pack carries the architect's sign-off in its decision record. A
+      // sign-off given for a previous source is an approval of different code.
+      if (projectData.approvedByArchitect === true) {
+        const given = signOffKey(projectData.architectSignOffAt);
+        const record = projectData.auditMetadata?.sourceChange;
+        let stale = Boolean(record?.signOff && given === record.signOff);
+
+        // Projects whose source changed before the record existed: find when the
+        // current source was first analysed — the start of the latest unbroken
+        // run of it — and ask whether the sign-off came after that.
+        if (!record && !stale) {
+          type RunRow = { createdAt?: unknown; inputFingerprint?: { sha256?: unknown } };
+          type DatedRun = { createdAt: string; inputFingerprint: { sha256: string } };
+          const runsSnap = await db.collection('projects').doc(projectId).collection('runs').get();
+          const runs = (runsSnap.docs as { data: () => RunRow }[])
+            .map((d) => d.data())
+            .filter((r): r is DatedRun => typeof r.createdAt === 'string' && typeof r.inputFingerprint?.sha256 === 'string')
+            .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+          if (new Set(runs.map((r) => r.inputFingerprint.sha256)).size > 1 && analysed) {
+            let since: string | undefined;
+            for (let i = runs.length - 1; i >= 0 && runs[i].inputFingerprint.sha256 === analysed; i--) {
+              since = runs[i].createdAt;
+            }
+            const givenMs =
+              typeof projectData.architectSignOffAt === 'string'
+                ? Date.parse(projectData.architectSignOffAt)
+                : typeof projectData.architectSignOffAt?.toMillis === 'function'
+                  ? projectData.architectSignOffAt.toMillis()
+                  : NaN;
+            // Unreadable counts as stale: the guard is conservative by design,
+            // and re-confirming writes a readable timestamp.
+            stale = !since || !Number.isFinite(givenMs) || givenMs < Date.parse(since);
+          }
+        }
+
+        if (stale) {
+          blockers.push({
+            code: 'sign-off-stale',
+            message: 'The architecture sign-off was given for a previous source. Confirm the target architecture again in stage 2.',
+          });
+        }
+      }
+
+      if (blockers.length > 0) {
+        logger.warn('audit-pack refused: built for a previous source', {
+          route: 'api/audit-pack/create',
+          projectId,
+          runId,
+          blockers: blockers.map((b) => b.code),
+        });
+        return NextResponse.json(
+          { error: blockers.map((b) => b.message).join(' '), blockers: blockers.map((b) => b.code) },
           { status: 409 },
         );
       }
