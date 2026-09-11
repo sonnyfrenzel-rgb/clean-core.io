@@ -85,7 +85,7 @@ export interface UsageReport {
   observedTo?: string;
   /**
    * @deprecated The observed dates under their old names — present only on
-   * reports imported before v2.9.7, where they were derived from the executions
+   * pre-v2.9.7 reports, where they were derived from the executions
    * and labelled as the measurement window. Read as observed, never as declared.
    */
   measuredFrom?: string;

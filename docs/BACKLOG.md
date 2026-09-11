@@ -11,6 +11,8 @@ sagt `git log origin/main`, nicht dieser Absatz.
 |---|---|---|
 | v2.9.5 | Ein Phasenvertrag (`lib/workflow-steps.ts`) für Stepper, Rail, Dashboard, Delivery; Economics ist Phase 6; `status` wird nicht mehr gelesen; Testentwurf ≠ getestet | CR-11, E01-F01-US01 (+ CR-16-Reste) |
 | v2.9.6 | Quellenänderung macht alles Alte `stale`; Transformation/Doku/Testing/Handover gesperrt; Audit-Pack 409 serverseitig | E01-F01-US02, CR-10 (2.9-Teil) |
+| v2.9.7 | Nutzungsimport: Datumsformat und Fenster deklariert, Quarantäne, Vorschau — und überhaupt gespeichert | E03-F02, CR-24 |
+| v2.9.8 | Economics: keine Einsparprognose ohne eigene Kostenwerte, Modell als Demonstration gekennzeichnet | E12-F01-US02, CR-23 (2.9-Teil) |
 
 **Unterwegs gefunden:** Das Dashboard hat einen „Quality Engineering Report"
 *erfunden* („All test cases compiled and executed successfully") — für jede

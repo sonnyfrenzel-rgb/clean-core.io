@@ -69,15 +69,15 @@ export function joinUsageWithEvidence(
   // Dormancy threshold: 13 months before the end of the declared window — or,
   // with none declared, before the last execution seen (never later than the
   // true end, so the error runs towards "less dormant"). `measuredTo` is that
-  // same observed date on reports imported before v2.9.7.
+  // same observed date on pre-v2.9.7 reports.
   const windowEnd = usage.window?.to ?? usage.observedTo ?? usage.measuredTo;
   const dormancyThreshold = windowEnd
     ? new Date(new Date(windowEnd).getTime() - RETIREMENT_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     : undefined;
 
   // A zero is evidence of disuse only across a declared window long enough to
-  // contain every periodic run. Reports without a declared window — every one
-  // imported before v2.9.7 — do not qualify, whatever their dates say.
+  // contain every periodic run. Reports without a declared window — including
+  // every pre-v2.9.7 report — do not qualify, whatever their dates say.
   const zeroMeansDormant = (usage.window?.days ?? 0) >= RETIREMENT_WINDOW_DAYS;
 
   // Collect all unique object names from BOTH usage and evidence

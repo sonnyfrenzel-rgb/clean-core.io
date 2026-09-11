@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { doc, setDoc } from 'firebase/firestore';
-import { getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -13,10 +11,7 @@ import StageHeader from '@/components/StageHeader';
 import VerificationRail from '@/components/VerificationRail';
 import NavigationButtons from '@/components/NavigationButtons';
 import { workflowSteps } from '@/lib/workflow-steps';
-import { 
-  TrendingUp, Calculator, Euro, Calendar, ShieldCheck, 
-  FileText, Printer, ArrowRight, RefreshCw, BarChart3, AlertCircle 
-} from 'lucide-react';
+import { Calculator, ShieldCheck, Printer, BarChart3, AlertCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 // Lazy-load recharts to reduce initial bundle size (~312KB)
@@ -58,13 +53,26 @@ export default function TcoCalculatorPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Dynamic TCO Model Inputs (Defaulting to standard enterprise SAP guidelines)
+  // Model inputs.
+  //
+  // The three cost figures start empty (E12-F01-US02: "without suitable cost
+  // inputs, no savings forecast is shown"). They used to start at €900, €650 and
+  // €15,000 — "standard enterprise SAP guidelines" that nobody here supplied —
+  // and the page presented annual savings, a payback period and an ROI on them
+  // the moment it opened. Figures a reader never entered cannot become their
+  // business case by default.
   const [loc, setLoc] = useState(8500); // Lines of custom code
-  const [devRate, setDevRate] = useState(900); // Developer daily rate (€)
-  const [userRate, setUserRate] = useState(650); // Key-user daily rate (€)
+  const [devRate, setDevRate] = useState<number | null>(null); // Developer daily rate (€)
+  const [userRate, setUserRate] = useState<number | null>(null); // Key-user daily rate (€)
   const [upgradeFreq, setUpgradeFreq] = useState(1); // Major release upgrades per year
   const [fpFreq, setFpFreq] = useState(2); // Feature Pack updates per year
-  const [oneTimeCost, setOneTimeCost] = useState(15000); // Refactoring Implementation investment
+  const [oneTimeCost, setOneTimeCost] = useState<number | null>(null); // Refactoring Implementation investment
+
+  const missingCosts = [
+    devRate === null && 'developer day rate',
+    userRate === null && 'key-user day rate',
+    oneTimeCost === null && 'modernisation investment',
+  ].filter(Boolean) as string[];
 
   // Load project settings
   useEffect(() => {
@@ -94,8 +102,12 @@ export default function TcoCalculatorPage() {
     fetchProject();
   }, [projectId]);
 
-  // Better Practice TCO Mathematical Model
+  // The model. A demonstration, not a business case: the effort coefficients,
+  // the 85% test effect and the target score are assumptions (CR-23).
   const calculations = useMemo(() => {
+    // No forecast from figures nobody entered.
+    if (devRate === null || userRate === null || oneTimeCost === null) return null;
+
     // No `|| 30`. A project that was never scored has no baseline, and
     // inventing one produced a full financial case out of a number nobody
     // measured.
@@ -215,7 +227,10 @@ export default function TcoCalculatorPage() {
       paybackMonths,
       roiYear1,
       scoreBefore,
-      scoreAfter
+      scoreAfter,
+      // The rates the figures were priced with — non-null here by the gate above.
+      devRate,
+      userRate,
     };
   }, [project, loc, devRate, userRate, upgradeFreq, fpFreq, oneTimeCost]);
 
@@ -230,7 +245,11 @@ export default function TcoCalculatorPage() {
 
   if (loading) return <div className="p-8 text-center">Loading calculations database...</div>;
 
-  if (!calculations) {
+  // Nothing any input could fix: no signed score, or one at or above the
+  // assumed target. Everything else — missing cost figures, an estate too small
+  // to price — is shown next to the inputs that would change it.
+  const baselineScore = typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : null;
+  if (baselineScore === null || baselineScore >= 95) {
     return (
       <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8">
         <VerificationRail steps={phases} current="tco" projectId={projectId as string} />
@@ -248,11 +267,8 @@ export default function TcoCalculatorPage() {
               </>
             ) : (
               <>
-                Either this project has no Clean Core score from a signed run &mdash; every figure here
-                is derived from one &mdash; or the code is too small for the model to say anything.
-                Below a few hundred lines the annual legacy maintenance effort rounds to zero days, and
-                a saving measured against zero is not a number. Run the analysis in stage&nbsp;1, or set
-                the lines-of-code figure to the size of the estate you actually mean to model.
+                This project has no Clean Core score from a signed run, and every figure here is
+                derived from one. Run the analysis in stage&nbsp;1.
               </>
             )}
           </p>
@@ -287,16 +303,14 @@ export default function TcoCalculatorPage() {
         {/* Header Block */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-gray-250 pb-6">
           <div>
+            {/* "Better Practice Mapped" was a badge with nothing mapped behind it. */}
             <StageHeader
               title="TCO &amp; Upgrade-ROI Analysis"
               eyebrow={
-                <>
-                  <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full uppercase tracking-wider">C-Level Executive View</span>
-                  <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full uppercase tracking-wider print:hidden">Better Practice Mapped</span>
-                </>
+                <span className="text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full uppercase tracking-wider">Demonstration model</span>
               }
             >
-              Upgrade-impact reduction forecast based on Clean Core modernization score.
+              Upgrade-effort model on assumed coefficients, priced with your own cost figures. Not a business case.
             </StageHeader>
           </div>
           <div className="flex gap-3 print:hidden w-full sm:w-auto">
@@ -304,7 +318,7 @@ export default function TcoCalculatorPage() {
               onClick={handlePrint}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gradient-to-br from-slate-900 to-slate-800 hover:shadow-lg text-white font-bold text-xs uppercase tracking-wider px-6 h-12 rounded-xl transition-all active:scale-95"
             >
-              <Printer className="w-4 h-4" /> Print Business Case
+              <Printer className="w-4 h-4" /> Print Model Estimate
             </button>
           </div>
         </div>
@@ -335,41 +349,25 @@ export default function TcoCalculatorPage() {
               <span className="text-[10px] text-gray-400 font-medium block">Total lines of custom legacy ABAP.</span>
             </div>
 
-            {/* Input 2 */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-bold text-gray-700 uppercase">
-                <span>Developer Day Rate</span>
-                <span className="text-blue-650">€{devRate} / day</span>
-              </div>
-              <input 
-                type="range" 
-                min="500" 
-                max="1500" 
-                step="50"
-                value={devRate}
-                onChange={e => setDevRate(Number(e.target.value))}
-                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
-              />
-              <span className="text-[10px] text-gray-400 font-medium block">Average rate for SAP ABAP/BTP architects.</span>
-            </div>
+            {/* Inputs 2, 3 and 6 are yours to state. Sliders cannot be empty,
+                which is how €900, €15,000 and €650 came to be "your" figures. */}
+            <CostField
+              field="dev-rate"
+              label="Developer Day Rate"
+              unit=" / day"
+              hint="Your rate for SAP ABAP/BTP developers."
+              value={devRate}
+              onChange={setDevRate}
+            />
 
-            {/* Input 3 */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-bold text-gray-700 uppercase">
-                <span>Modernization Investment</span>
-                <span className="text-blue-650">€{oneTimeCost.toLocaleString()}</span>
-              </div>
-              <input 
-                type="range" 
-                min="5000" 
-                max="100000" 
-                step="2500"
-                value={oneTimeCost}
-                onChange={e => setOneTimeCost(Number(e.target.value))}
-                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
-              />
-              <span className="text-[10px] text-gray-400 font-medium block">One-time refactoring & deployment budget.</span>
-            </div>
+            <CostField
+              field="investment"
+              label="Modernization Investment"
+              unit=""
+              hint="Your one-time refactoring & deployment budget."
+              value={oneTimeCost}
+              onChange={setOneTimeCost}
+            />
 
             {/* Input 4 */}
             <div className="space-y-2">
@@ -405,33 +403,61 @@ export default function TcoCalculatorPage() {
               />
             </div>
 
-            {/* Input 6 */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-bold text-gray-700 uppercase">
-                <span>Key-User Day Rate</span>
-                <span className="text-blue-650">€{userRate} / day</span>
-              </div>
-              <input 
-                type="range" 
-                min="400" 
-                max="1000" 
-                step="50"
-                value={userRate}
-                onChange={e => setUserRate(Number(e.target.value))}
-                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
-              />
-            </div>
+            <CostField
+              field="user-rate"
+              label="Key-User Day Rate"
+              unit=" / day"
+              hint="Your rate for the key users who run regression tests."
+              value={userRate}
+              onChange={setUserRate}
+            />
 
           </div>
         </div>
+
+        {/* A demonstration model, and it says so before it says anything else. */}
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 text-sm text-amber-900 leading-relaxed" data-tco-model-notice>
+          <strong>A demonstration model, not a business case.</strong> Your cost figures go in; the rest
+          stays assumption: effort per 1,000 lines (2.5 / 0.8 days development, 1.8 / 0.6 days testing
+          per upgrade / feature pack), an 85&nbsp;% reduction in regression-test effort, and a target score
+          of 95. None of these is derived from observed effort. Do not carry the figures below into a
+          business case without replacing them with your own measurements.
+        </div>
+
+        {/* No forecast from figures nobody entered (E12-F01-US02). */}
+        {!calculations && (
+          <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm" data-tco-no-forecast>
+            <h3 className="text-lg font-black text-[#0b1c30]">No savings forecast yet</h3>
+            <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+              {missingCosts.length > 0 ? (
+                <>
+                  The model needs your own cost figures and has no defaults for them. Missing:{' '}
+                  <strong>{missingCosts.join(', ')}</strong>.
+                </>
+              ) : (
+                <>
+                  For these inputs the model has nothing to price: below a few hundred lines the annual
+                  legacy maintenance effort rounds to zero days, and a saving measured against zero is not
+                  a number. Set the lines of code to the size of the estate you mean to model.
+                </>
+              )}
+            </p>
+            <p className="text-xs text-slate-400 mt-3 leading-relaxed">
+              The page used to fill in €900, €650 and €15,000 and show annual savings, a payback period
+              and an ROI on them as soon as it opened.
+            </p>
+          </div>
+        )}
+
+        {calculations && (<>
 
         {/* C-Level Executive ROI KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-[2rem] p-6 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[160px]">
             <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-full blur-2xl pointer-events-none"></div>
-            {/* A scenario, and it says so. The inputs below are editable defaults
-                — day rates, upgrade frequency, implementation cost — and the
-                post-modernisation score of 95 is an assumption nothing measured. */}
+            {/* A scenario, and it says so. The cost figures are the reader's own;
+                the effort coefficients and the post-modernisation score of 95 are
+                assumptions nothing measured. */}
             <span className="text-[10px] font-black text-green-400 uppercase tracking-widest block">Annual Net Savings · Scenario</span>
             <div>
               <h3 className="text-4xl font-black tracking-tight mt-2 flex items-baseline">
@@ -447,9 +473,11 @@ export default function TcoCalculatorPage() {
             <div>
               {calculations.paybackMonths === null ? (
                 <>
-                  <h3 className="text-2xl font-black text-amber-600 tracking-tight mt-2">Never</h3>
+                  {/* The acceptance's own words (E12-F01-US02): no negative
+                      payback period, but "no payback in the model". */}
+                  <h3 className="text-2xl font-black text-amber-600 tracking-tight mt-2" data-tco-payback>No payback in the model</h3>
                   <p className="text-xs text-gray-500 font-semibold mt-1">
-                    These inputs save nothing per year, so the investment does not pay back.
+                    For these inputs the model shows no annual benefit, so there is nothing to pay the investment back with.
                   </p>
                 </>
               ) : (
@@ -505,7 +533,7 @@ export default function TcoCalculatorPage() {
                   <span className="text-[10px] text-gray-500 font-semibold">Tightly-coupled code modifications</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-extrabold text-gray-900 block">€{(calculations.legacyDevDaysTotal * devRate).toLocaleString()}</span>
+                  <span className="font-extrabold text-gray-900 block">€{(calculations.legacyDevDaysTotal * calculations.devRate).toLocaleString()}</span>
                   <span className="text-[10px] text-gray-500 font-semibold">{calculations.legacyDevDaysTotal} Dev-Days / yr</span>
                 </div>
               </div>
@@ -516,7 +544,7 @@ export default function TcoCalculatorPage() {
                   <span className="text-[10px] text-gray-500 font-semibold">Business Key-User manual execution</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-extrabold text-gray-900 block">€{(calculations.legacyTestDaysTotal * userRate).toLocaleString()}</span>
+                  <span className="font-extrabold text-gray-900 block">€{(calculations.legacyTestDaysTotal * calculations.userRate).toLocaleString()}</span>
                   <span className="text-[10px] text-gray-500 font-semibold">{calculations.legacyTestDaysTotal} Tester-Days / yr</span>
                 </div>
               </div>
@@ -543,7 +571,7 @@ export default function TcoCalculatorPage() {
                   <span className="text-[10px] text-gray-500 font-semibold">Decoupled standard API routing</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-extrabold text-gray-900 block">€{(calculations.modernDevDaysTotal * devRate).toLocaleString()}</span>
+                  <span className="font-extrabold text-gray-900 block">€{(calculations.modernDevDaysTotal * calculations.devRate).toLocaleString()}</span>
                   <span className="text-[10px] text-gray-500 font-semibold">{calculations.modernDevDaysTotal} Dev-Days / yr</span>
                 </div>
               </div>
@@ -554,7 +582,7 @@ export default function TcoCalculatorPage() {
                   <span className="text-[10px] text-gray-500 font-semibold">Sandboxed unit test suite validations</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-extrabold text-gray-900 block">€{(calculations.modernTestDaysTotal * userRate).toLocaleString()}</span>
+                  <span className="font-extrabold text-gray-900 block">€{(calculations.modernTestDaysTotal * calculations.userRate).toLocaleString()}</span>
                   <span className="text-[10px] text-gray-500 font-semibold">{calculations.modernTestDaysTotal} Tester-Days / yr</span>
                 </div>
               </div>
@@ -583,11 +611,13 @@ export default function TcoCalculatorPage() {
             Cumulative financial dividend (annual savings minus one-time investment). 5-year net return: <span className="text-green-600 font-bold">€{calculations.cumulativeSavings5Yr[5]?.['Net Financial Benefit']?.toLocaleString() || '0'}</span>.
           </span>
         </div>
+        </>)}
 
-        {/* Corporate Certification Footer (Visible when printing) */}
+        {/* Printed with the estimate, so a copy cannot leave without it. It
+            used to read "Business Value Report" under figures from defaults. */}
         <div className="hidden print:block border-t border-gray-300 pt-8 mt-12 text-center text-xs text-gray-400">
-          <p className="font-bold">Clean-Core.io Business Value Report</p>
-          <p>Generated in alignment with SAP Clean Core Extensibility principles — not an official SAP certification. Requires your own review and validation. Data encrypted client-side.</p>
+          <p className="font-bold">Clean-Core.io — model estimate, not a business case</p>
+          <p>Priced with the cost figures entered above; effort coefficients, the 85&nbsp;% test effect and the target score of 95 are assumptions, not observed effort. Not an official SAP certification. Requires your own review and validation.</p>
         </div>
 
         <div className="print:hidden">
@@ -601,5 +631,55 @@ export default function TcoCalculatorPage() {
 
       </div>
     </div>
+  );
+}
+
+/**
+ * A euro figure the reader states. Empty until they do — there is no default to
+ * fall back on, which is the point: an empty field keeps the forecast away.
+ */
+function CostField({
+  field,
+  label,
+  unit,
+  hint,
+  value,
+  onChange,
+}: {
+  field: string;
+  label: string;
+  unit: string;
+  hint: string;
+  value: number | null;
+  onChange: (v: number | null) => void;
+}) {
+  return (
+    <label className="space-y-2 block">
+      <span className="flex justify-between text-xs font-bold text-gray-700 uppercase">
+        <span>{label}</span>
+        <span className={value === null ? 'text-amber-600' : 'text-blue-650'}>
+          {value === null ? 'Your figure' : `€${value.toLocaleString()}${unit}`}
+        </span>
+      </span>
+      <input
+        type="number"
+        inputMode="decimal"
+        min={0}
+        step="any"
+        value={value ?? ''}
+        placeholder="€ — enter your figure"
+        data-tco-cost={field}
+        onChange={(e) => {
+          const raw = e.target.value;
+          if (raw === '') return onChange(null);
+          const n = Number(raw);
+          onChange(Number.isFinite(n) && n >= 0 ? n : null);
+        }}
+        className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
+          value === null ? 'border-amber-300' : 'border-gray-200'
+        }`}
+      />
+      <span className="text-[10px] text-gray-400 font-medium block">{hint}</span>
+    </label>
   );
 }

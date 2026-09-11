@@ -10,6 +10,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.8] — 2026-09-11
+
+### Keine Einsparprognose aus Zahlen, die niemand eingegeben hat
+
+Roadmap E12-F01-US02, Release 2.9, P0, ausgelöst von CR-23. Die Abnahme:
+**„Ohne geeignete Kosteneingaben wird keine Einsparprognose angezeigt. Bei
+negativen jährlichen Vorteilen steht keine negative Amortisationszeit, sondern
+‚keine Amortisation im Modell'."** Und aus der Feature-Beschreibung: Score→Euro und
+feste 85-%-Verbesserung werden entfernt **oder klar als nicht belastbares
+Demonstrationsmodell gesperrt**.
+
+**Der Befund:** Die Economics-Seite öffnete mit einem Entwicklertagessatz von
+900 €, einem Key-User-Satz von 650 € und einer Investition von 15.000 € — laut
+Kommentar „standard enterprise SAP guidelines", geliefert hat sie niemand — und
+zeigte darauf sofort Jahreseinsparung, Amortisation, ROI und ein
+Fünfjahresdiagramm. Der Druckknopf hieß „Print Business Case", die Fußzeile
+„Business Value Report", ein Abzeichen behauptete „Better Practice Mapped". Die
+Eingaben waren Schieberegler — und ein Schieberegler kann nicht leer sein.
+
+**Was jetzt gilt:**
+
+- Die drei Kostenwerte sind **leere Zahlenfelder**. Solange einer fehlt, gibt es
+  keine Einsparung, keine Amortisation, kein ROI, kein Diagramm, sondern „No
+  savings forecast yet — Missing: …". Einen Wert zu löschen nimmt die Prognose
+  wieder weg.
+- Über der Prognose steht, **was davon Annahme bleibt**: Aufwand je 1.000 Zeilen
+  (2,5 / 0,8 / 1,8 / 0,6 Tage), 85 % weniger Regressionstest-Aufwand, Zielscore
+  95 — nichts davon aus beobachtetem Aufwand. „A demonstration model, not a
+  business case." Der Druckknopf heißt „Print Model Estimate", die gedruckte
+  Fußzeile sagt dasselbe, das Abzeichen heißt „Demonstration model".
+- Keine Amortisation: **„No payback in the model"**, nicht „Never" und nie eine
+  negative Zahl.
+- „Kein Baseline" bleibt eine eigene Seite nur noch für das, was keine Eingabe
+  ändern kann (kein signierter Score, Score ≥ 95). Ein zu kleiner Bestand wird
+  neben den Eingaben erklärt, die ihn ändern würden.
+
+Die Schutzmechanismen aus v2.8.6/v2.9.4 (Wächter vor der Division, endliche
+Werte, ROI bei Investition 0) sind unverändert und weiter an ihrer Stelle
+festgehalten. Neun ungenutzte Imports der Seite sind entfernt; Lint-Budget
+671 → 662.
+
+`tests/tco-cost-inputs-guard.spec.ts`: die Kostenwerte starten leer, der Wächter
+steht vor dem Modell, die Formulierungen, und gerendert: keine Prognose ohne
+Werte, keine mit zwei von dreien, Prognose mit allen dreien, weg nach dem
+Löschen eines Werts.
+
+**Was bleibt:** CR-23 im Kern. Die Koeffizienten sind jetzt als Annahme
+gekennzeichnet und gesperrt, nicht ersetzt. Eine Optionenrechnung auf belegten
+Kosten ist E12-F02 (2.10/2.11).
+
 ## [v2.9.7] — 2026-09-11
 
 ### Ein Nutzungsimport, dem man glauben kann — und der überhaupt gespeichert wird
