@@ -488,6 +488,19 @@ test.describe('the audit pipeline', () => {
     expect(src).toMatch(/coerce: coerceReport \}/);
   });
 
+  test('a rate limit on the last call cannot lose the report: both calls wait up to about 12 minutes', async () => {
+    const { AUDIT } = await lib('team.mjs');
+    // The CI self-tests of e3a7853 and 5a284ee lost their report to HTTP 429 on the CISO call after ~100 s of retries.
+    expect(AUDIT.rateLimitRetries).toBe(8);
+    const pauses = Array.from({ length: AUDIT.rateLimitRetries }, (_, i) => AUDIT.rateLimitDelayMs(i));
+    expect(pauses).toEqual([15_000, 30_000, 60_000, 120_000, 120_000, 120_000, 120_000, 120_000]);
+    expect(pauses.reduce((a: number, b: number) => a + b, 0)).toBe(705_000);
+    const src = read('scripts/security/audit.mjs');
+    expect(src.match(/retries: AUDIT\.rateLimitRetries, retryDelayMs: AUDIT\.rateLimitDelayMs, coerce: coerce(?:Consultant|Report) \}/g)).toHaveLength(2);
+    // Longer waits, not a looser policy: the request still allows no fallback and no provider that keeps prompts.
+    expect(read('scripts/qa/lib/openrouter.mjs')).toContain("provider: { allow_fallbacks: false, data_collection: 'deny' }");
+  });
+
   test('consultants run a few at a time, the cap counts every call still running, and a failure stops nobody else', async () => {
     const { runConsultants } = await lib('pipeline.mjs');
     const batch = (p: string, consultant: string) => ({ consultant, files: [{ path: p }] });

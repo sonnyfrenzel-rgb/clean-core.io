@@ -183,7 +183,7 @@ Alte Berichte bleiben nur mit dem alten Schlüssel lesbar.
 | `audit` rot, „CISO call: OpenRouter answered HTTP 401/402" | Schlüssel oder Guthaben | OpenRouter-Konto prüfen; das Log enthält keine Inhalte |
 | `audit` rot, „HTTP 404 … no provider matches the data policy" | kein Anbieter des Modells erfüllt `data_collection: deny` | Anbieterliste des Modells bei OpenRouter prüfen; Modellwechsel nur als eigener Schritt |
 | Bericht nennt Dateien „outside the … cost cap" oder „model call failed" | Budget oder ein einzelner Aufruf | der Rest des Audits gilt; die Dateien stehen unter Umfang und Grenzen |
-| „model call failed: OpenRouter answered HTTP 429" | Ratenlimit des Anbieters trotz sechs Wiederholungen mit dessen Wartezeit | nächstes Audit abwarten oder `concurrency` in `team.mjs` als eigener Schritt senken |
+| „model call failed: OpenRouter answered HTTP 429" oder „the audit did not produce a report (CISO call: … HTTP 429)" | Ratenlimit des Anbieters trotz acht Wiederholungen — mit dessen Wartezeit oder 15 s, 30 s, 60 s, dann 120 s, zusammen rund 12 Minuten (seit 15.09.2026; vorher sechs mit rund 100 s, woran die Selbsttests von e3a7853 und 5a284ee scheiterten) | Lauf neu starten (`gh run rerun <id>`); hält es an, `concurrency` in `team.mjs` als eigener Schritt senken. Anbieter-Fallback für dasselbe Modell (`allow_fallbacks`) ist bewusst aus und nur mit Sonnys Entscheidung zu ändern |
 | `deliver` rot, „Resend rejected … HTTP 4xx" | Mailschlüssel oder Absenderdomain | Resend-Konto prüfen; der Bericht liegt 90 Tage als Artefakt |
 | Keine Mail nach einem `dev`-Push | `scope` hat „skip" entschieden — der Agent wurde nicht geändert | erwartet |
 | Mail mit `[SELBSTTEST]` | der Agent wurde auf `dev` geändert | Kette funktioniert; kein Audit-Ergebnis |

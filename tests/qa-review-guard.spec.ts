@@ -192,6 +192,17 @@ test.describe('the reviewer', () => {
     expect(Date.now() - started).toBeGreaterThanOrEqual(1_900);
     calls = 0;
     await expect(callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'low', retries: 1, fetchImpl: limited })).rejects.toThrow(/^OpenRouter answered HTTP 429$/);
+
+    // Without a sane wait from the provider, the caller's pause applies — and a named wait still wins over it.
+    const asked: number[] = [];
+    let n = 0;
+    const silent = async () => (++n < 3 ? new Response('{}', { status: 429 }) : new Response(JSON.stringify({ choices: [{ message: { content: '{"verdict":"go"}' } }] }), { status: 200 }));
+    await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'low', retries: 2, fetchImpl: silent, retryDelayMs: (attempt: number) => (asked.push(attempt), 10) });
+    expect(asked).toEqual([0, 1]);
+    calls = 0;
+    const unused: number[] = [];
+    await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'low', retries: 2, fetchImpl: limited, retryDelayMs: (attempt: number) => (unused.push(attempt), 10) });
+    expect(unused).toEqual([]);
   });
 
   test('another agent can pin its own model and send screenshots through the same transport', async () => {

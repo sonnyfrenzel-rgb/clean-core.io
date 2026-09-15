@@ -79,7 +79,7 @@ async function main() {
     fits: (committed, chars) => committed + estimate(chars, consultantTokens) + cisoReserve <= cap,
     worstCase: (chars) => estimate(chars, consultantTokens),
     call: ({ system, user }) =>
-      callReviewer({ apiKey, system, user, schema: CONSULTANT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.consultantEffort, model: AUDIT.model, maxTokens: consultantTokens, name: 'security_consultant', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, coerce: coerceConsultant }),
+      callReviewer({ apiKey, system, user, schema: CONSULTANT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.consultantEffort, model: AUDIT.model, maxTokens: consultantTokens, name: 'security_consultant', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: coerceConsultant }),
   });
   const { results } = run;
   const notRead = [...plan.notRead, ...run.notReviewed];
@@ -98,7 +98,7 @@ async function main() {
   const cisoUser = clean('outgoing message', `${CISO_TASK}\n\n${cisoMessage({ surface, results, coverage, notRead, failed: run.failedCalls, readLines })}`);
   let ciso;
   try {
-    ciso = await callReviewer({ apiKey, system: clean('outgoing message', brief), user: cisoUser, schema: REPORT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, maxTokens: cisoTokens, name: 'security_audit_report', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, coerce: coerceReport });
+    ciso = await callReviewer({ apiKey, system: clean('outgoing message', brief), user: cisoUser, schema: REPORT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, maxTokens: cisoTokens, name: 'security_audit_report', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: coerceReport });
   } catch (err) {
     throw new Error(`the audit did not produce a report (CISO call: ${String(err?.message || err).split('\n')[0]}; consultant calls ${results.length}, failed ${run.failedCalls}).`);
   }

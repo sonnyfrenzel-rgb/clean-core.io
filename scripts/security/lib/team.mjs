@@ -42,8 +42,14 @@ export const AUDIT = {
   requestTimeoutMs: 20 * 60_000,
   /** Consultant calls running at once; the cap reserves the worst case of each (lib/pipeline.mjs runConsultants). */
   concurrency: 4,
-  /** A rate limit is retried with the provider's own wait; the first local self-test met HTTP 429 twice in a row (15.09.2026). */
-  rateLimitRetries: 6,
+  /**
+   * A rate limit is retried with the provider's own wait, or with these pauses: 15 s, 30 s, 60 s, then 120 s. The first
+   * local self-test met HTTP 429 twice in a row; the CI self-tests of e3a7853 and 5a284ee (15.09.2026) lost the report
+   * when the CISO call was still limited after six retries of 5–30 s (about 100 s). Eight retries wait up to about
+   * 12 minutes — a rate limit is rejected before generation, so waiting costs time, not money.
+   */
+  rateLimitRetries: 8,
+  rateLimitDelayMs: (attempt) => Math.min(120_000, 15_000 * 2 ** attempt),
   /** Lines around each cited location that the CISO receives to verify a finding against. */
   contextLines: 15,
   briefPath: 'docs/security/ciso-brief.md',
