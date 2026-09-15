@@ -1,6 +1,6 @@
 # DESIGN.md — Clean-Core.io
 
-**Version 1.4.1 · 15.09.2026 · abgenommen von Sonny · verbindlich für alles, was zur Oberfläche von 3.0 gehört** (Roadmap-Schritte 1.4–1.7,
+**Version 1.4.2 · 15.09.2026 · abgenommen von Sonny · verbindlich für alles, was zur Oberfläche von 3.0 gehört** (Roadmap-Schritte 1.4–1.7,
 Phasen 2–8, 3.0). Das Zielbild zeigen die Mockups
 [`docs/roadmap/clean-core-mockups-v2_8.html`](docs/roadmap/clean-core-mockups-v2_8.html). Entscheidungen mit Datum
 und Begründung stehen im Entscheidungslog [`docs/design/decisions.md`](docs/design/decisions.md); diese Datei sagt
@@ -889,7 +889,8 @@ Sonny 15.09.2026):
 1. **Drei Coach Marks beim ersten Arbeitsraum** — „Select the decision", „This is what we could not determine", „Your
    next step". Abweisbar, gemerkt **nur im Browser** — nie im Konto, nie in der Datenbank, kein Nutzungsprotokoll
    (ADR-036). „Show tips again" im Hilfe-Menü holt sie zurück.
-2. **„Ask this case"** — das vorhandene Ask AI, beschränkt auf die Evidenz des Projekts, antwortet mit Ankern; die erste,
+2. **„Ask this case"** — immer die eingebettete Hilfe-KI, für 3.0 ausgebaut (ADR-043): im Projekt beschränkt auf die
+   Evidenz des Projekts, antwortet mit Ankern; außerhalb Produkt- und SAP-Hilfe; ein Assistent, kein zweiter Chat; die erste,
    vorab beantwortete Frage kommt ohne Modellaufruf aus dem Code (§5.3).
 3. **Checkliste bis zur Entscheidung** — aus dem nächsten Schritt abgeleitet, ohne Modellaufruf. Die Muss-Form davon
    ist die Karte „Next step" (§2.3).
@@ -942,6 +943,7 @@ Sonny 15.09.2026):
 
 | Version | Datum | Was |
 |---|---|---|
+| 1.4.2 | 15.09.2026 | „Ask this case" läuft immer über die eingebettete Hilfe-KI, die für 3.0 ausgebaut wird (ADR-043, §6.2) |
 | 1.4.1 | 15.09.2026 | Klarstellungen aus dem letzten Mockup-Abgleich, keine neue Entscheidung: Projektstatus-Zeile ohne *Not determined* (steht in der Enthüllung); Werkzeuge als Menü in Business und Management, leere Ebenen unter „More" auch in §2.3; Pfad-Hervorhebung über Farbe statt Transparenz (Kontrast); die IT-Sicht der Sichten-Bühne ohne Level-Buchstaben für eine Kundentabelle; Evidenz-Fluss nebeneinander oder untereinander; kein leerer Arbeitsbereich neben der Demo; Demo-Titel „Demo ·"; eine Einladung je Bildschirm auch am Stationsende; Tour-Beispiel „3 of 12"; „derselbe eigene Quellstand" in §2.8 |
 | 1.4 | 15.09.2026 | Entscheidungen von Sonny zu den offenen Fragen der Design-Reviews (ADR-031 bis ADR-042): BPMN-Palette über das Minimum, gemessen am 1.000-Zeilen-Beispiel, mit User-Task, Datenspeicher, Business-Rule-Task, Aufruf-Aktivität, Teilprozessen, Rand- und Nachrichtenereignissen; nicht erreichter Code, Klone und technische Helfer werden gesagt statt gezeichnet (§5.8); Navigation großer Prozesse mit Ebenen, Pfad, Gliederungsbaum, Minikarte, Pfad-Hervorhebung, Laufvarianten, Overlays als Filter und Adressen (§5.9); vier Töpfe als Regeln je Objekt, abhängig von der Zielplattform, Retire aus Nutzung erst ab 13 Monaten und durchsichtig (§5.6); Glossar zum Start mit SAP- und Produktbegriffen, auch in „Ask this case" (§6.1); Coach Marks nur im Browser (§6.2). Lücken aus dem Mockup-Abgleich geschlossen: Ort von „Next step" je Sicht, schrumpfender Business-Kopf, Kartentitel `h3`, Objektstatus „handed over" und „done", Herkunft der Readiness, Quellspalte ohne Umbruch der Seite, „Why?" auf S. Bestätigt: alles Englisch (ADR-009), kein Dark Mode (ADR-003). Entschlackung für Erstnutzer ohne Verlust an Tiefe (ADR-037, §2.11). „New project" erklärt Kern und Unterschied und zeigt die drei Sichten in Bewegung, bevor man Beispiel oder eigenen Code wählt (ADR-038, §6.1.1); Beispiele einmal frei, Wiederholung vorher angekündigt (ADR-039); Clean Core, die vier Level und die Herkunft der Evidenz in drei Blicken beim ersten Ausprobieren (ADR-040); ein vollständig durchgespieltes Demo-Projekt für alle Konten mit Tour und wiederkehrender Einladung (ADR-041, §6.1.2); vor dem Hochladen Zusage und belegte Vertrauensaussagen, „free community project" (ADR-042, §6.1.3) |
 | 1.3 | 15.09.2026 | Zweites Design-Review des UX-Agenten, diesmal mit den Mockups 2.8 (ADR-026 bis ADR-030): Business-Kopf mit eingeklappter Projektstatus-Zeile in Klarsprache, „About this view" als Satz unter dem Umschalter, Überschriftenfolge (§2.3); weitere feste Listen mit eigener Form — Objektstatus, Evidenzstufe, Level, Regel-Eigenschaft (§4.1); Message Box modal, dunkel nur für Code-Fläche und Überlagerung (§1.1, §2.6); „ein Bereich" für die Primäraktion definiert (§1.5); Management antwortet vor der Zahl, IT-Kette je gewähltem Befund mit Abdeckung (§5.6); allererster Start, Import-Erklärung und „About this view" als Muss (§6.1); Live-Ansagen nur je Etappe (§2.8); Kontrast-Paare eindeutig beschriftet. Kontingent-Texte an `COMMUNITY_QUOTA` angeglichen: fünf Analyse-Läufe, Modellaufruf als eigene Angabe (§2.8) |

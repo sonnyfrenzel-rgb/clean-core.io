@@ -170,7 +170,8 @@ den alles Weitere gebaut wird.
 | 1.2 | **Zero-LLM-Sperrpfad:** Run ohne API-Key bis zum signierten Evidenzstand; Modellstufen einzeln zuschaltbar; „nicht erzeugt" statt leer (V25-A12) | S |
 | 1.3 | **Anker-Fix:** Parser und Prompt verwenden die `CC-`IDs der Engine; Test mit echten Engine-IDs. **Vorgezogen, gebaut in v2.10.1** | S |
 | 1.4 | **Arbeitsraum-Schale hinter dem Schalter:** Kopfzeile wie im Mockup (Pfad, Projekttitel, Metazeile mit Manifest, Revision, Quellstand, Engine, Regeln aus 0.5), sieben Status-Chips — jeder ehrlich, „nicht begonnen", solange nichts da ist —, Ebenenleiste, Werkzeugleiste mit den sieben Stufen unter dem Kopf. **Öffnet in der Business-Sicht** und hat einen Bereich „Nicht bestimmt" (`DESIGN.md` §2.3, §4) | M |
-| 1.5 | **Gestaltung nach `DESIGN.md` als Komponenten** (Karte, Tag, Status-Chip, Herkunfts-Chip in drei Formen, Anker, Artefaktzeile, Message Strip, Empty State, „Why?"-Popover, Segmented Control, Icon-Button): semantische Tokens statt Hex-Literale, vier Button-Stile, Schrift ≥ 11 px, **eine Herkunftsliste `lib/provenance.ts`** mit Guard gegen frei formulierte Badges; Style-Guard nach dem Muster von `tests/workflow-style-guard.spec.ts` | S |
+| 1.5 | **Gestaltung nach `DESIGN.md` als Komponenten** (Karte, Tag, Status-Chip, Herkunfts-Chip in drei Formen, Anker, Artefaktzeile, Message Strip, Empty State, „Why?"-Popover, Segmented Control, Icon-Button): semantische Tokens statt Hex-Literale, vier Button-Stile, Schrift ≥ 11 px, **eine Herkunftsliste `lib/provenance.ts`** mit Guard gegen frei formulierte Badges; Style-Guard nach dem Muster von `tests/workflow-style-guard.spec.ts`. Dazu aus den Mockups: die weiteren festen Listen mit eigener Form (Objektstatus, Evidenzstufe, Level, Regel-Eigenschaft, `DESIGN.md` §4.1), Formular mit Value States, Filterleiste leer vs. „No findings match these filters", modale Message Box, Toast, Code-Fläche, Kontrast-Guard; **Laufanzeige** für lange Läufe (Kosten vor dem Klick, Abbrechen, Verlassen, Fehler-Strip mit Aktion, §2.8); **`lib/model-text.ts`** gegen KI-Spuren in Oberfläche, Exporten und Mails (§3.1) | M |
+| 1.8 | **„My workspace" als List Report** (`DESIGN.md` §2.2, Mockup s7): Live-Filter, Tabelle mit Objektstatus, laufende Analyse mit Abbrechen, gescheiterter Lauf mit „Retry" und „Run without model", *Stale*; die Demo als erste Zeile und die Karte „Your turn", solange kein eigenes Projekt existiert (0.10) | M |
 | 1.6 | **Kein Dark Mode:** Theme-Schalter in den Einstellungen und die `.dark`-Überschreibungen in `app/globals.css` entfallen, mit Guard (Entscheidung 15.09.2026; erledigt UX-023, UX-044, UX-061, UX-062) | S |
 | 1.7 | **Ehrliche Kodierung bis zur Schale:** Stepper und Verification Rail zeigen „done" gleich, Grün nur für belegt; der Tenant-Tab heißt „Tenant-Verbindung prüfen", der Sperrhinweis steht einmal, mit dem BYOT-Freischaltweg (`DESIGN.md` §5.3, Entscheidung 15.09.2026) | S |
 
@@ -264,13 +265,14 @@ Mockup Screens 1–4: Umschalter, Ebenen, Status-Chips, nächster Schritt, Suche
 
 | # | Schritt | Größe |
 |---|---|---|
-| 6.1 | **Umschalter Business · Management · IT** (Business vorn und beim Öffnen gewählt), in IT mit Fokus Application · Solution · Enterprise. Gehalten in URL und Browser — nicht im Konto, nicht im Projekt, nicht in Run oder Audit-Pack. Dazu **die drei Sichten in Bewegung** in „New project" (`DESIGN.md` §6.1.1): eine Tatsache mit festem Anker wandert einmal durch die drei Sichten, aus dem echten Lauf des Beispiels, überspringbar, bei reduzierter Bewegung still | M |
+| 6.1 | **Umschalter Business · Management · IT** (Business vorn und beim Öffnen gewählt), in IT mit Fokus Application · Solution · Enterprise. Gehalten in URL und Browser — nicht im Konto, nicht im Projekt, nicht in Run oder Audit-Pack. Dazu **die drei Sichten in Bewegung** in „New project" (`DESIGN.md` §6.1.1): eine Tatsache mit festem Anker wandert einmal durch die drei Sichten, aus dem echten Lauf des Beispiels, überspringbar, bei reduzierter Bewegung still. Unter dem Umschalter je Sicht ein Satz, welche Frage sie beantwortet, mit „About this view" (`DESIGN.md` §2.3) | M |
 | 6.2 | **Ebenen:** Bedarf & Prozess · Standard-Fit · Kosten & Annahmen · Architektur & Abhängigkeiten · Nachweise & Kontrollen · Änderungen & Zusagen. Eine Ebene ohne Inhalt sagt das, statt etwas zu erfinden (W22-A03) | M |
 | 6.3 | **Overlays auf dem Prozessmodell:** Clean-Core-Level des Codes hinter einem Task, Findings, Nutzung (wenn importiert) — Darstellung, kein Inhalt; das Level bleibt außerhalb des signierten Audit-Packs | M |
 | 6.4 | **Management-Sicht auf dasselbe Projekt:** was bestätigt ist, was fehlt, was eine Entscheidung binden würde; **Clean-Core-Readiness mit Regelversion und Verlauf** — ein Verlauf vergleicht nur Runs derselben Regelversion — kein Portfolio | M |
 | 6.5 | **Nächster Schritt:** regelbasiert der nächste offene Punkt mit Grund, ohne Modellaufruf | S |
 | 6.6 | **Suche im Projekt** (⌘K) über Elemente, Regeln, Findings, Zeilen und Glossar; **Glossar zum Start** nach `DESIGN.md` §6.1 (SAP- und Produktbegriffe, Quelle je SAP-Begriff), auch in „Ask this case": Fachwörter mit Popover, „What is …?" aus dem Eintrag ohne Modellaufruf (Entscheidung 15.09.2026) | M |
 | 6.7 | **Public-Cloud-Fit und vier Töpfe:** welche Objekte des Projekts in Public Cloud keinen Weg haben (nur Tier 3) und damit die Deployment-Entscheidung blockieren; Einordnung jedes Objekts in Retire · Keep · Rebuild · **Blocked by SAP** (kein freigegebenes API, kein Nachfolger) — der vierte Topf trennt eigene Hausaufgaben von SAPs Roadmap. Abgeleitet aus Katalog und Level, jede Zuordnung mit Beleg (Feedback 15.09.2026). Regeln nach `DESIGN.md` §5.6 (Entscheidung 15.09.2026): abhängig von der Zielplattform; Retire nur aus bestätigtem Drop oder null Nutzung über ≥ 13 Monate, mit Quelle, Zeitraum und Jahresabschluss sichtbar; Blocked nur für Katalogobjekte ohne freigegebenen Nachfolger, Modifikationen sind Rebuild | M |
+| 6.8 | **„Ask this case" über die eingebettete Hilfe-KI** (Entscheidung Sonny 15.09.2026): kein zweiter Chat — der vorhandene Assistent (`components/GlossaryChatbot.tsx`, `lib/chatbot-knowledge.ts`) wird für 3.0 ausgebaut. Im Projekt antwortet er nur aus der Evidenz des Projekts, jede Aussage mit Anker, Herkunft *Model proposal*; außerhalb eines Projekts bleibt er Produkt- und SAP-Hilfe. Die vorab beantwortete Frage aus den Verzweigungen des Codes (2.7) und Glossar-Antworten ohne Modellaufruf (6.6) laufen durch denselben Assistenten. Zählt nicht aufs Kontingent; Modelltext durch `lib/model-text.ts` (1.5) | M |
 
 **Fertig, wenn** W22-A01/A02 (ein Wechsel erhält Element, Revision und Auswahl und
 erzeugt keine neue Hypothese), ein Wechsel keinen Modellaufruf auslöst und ein Guard
@@ -319,10 +321,10 @@ QA24-A17 (ein Fingerprint ohne Bestätigung ist kein grüner Status).
 | 3.0.1 | **Schalter für alle:** jedes Projekt öffnet im Arbeitsraum; die sieben Stufen bleiben als Werkzeuge | S |
 | 3.0.2 | **Bestandsprojekte** öffnen ohne Verlust von IDs, Runs und Signaturen (C23-A02) | M |
 | 3.0.3 | **Erhaltungsregister im neuen Arbeitsraum:** jeder Referenzfall aus 1.1 besteht | S |
-| 3.0.4 | **Accessibility-Basis:** Tastatur, Screenreader, `forced-colors`, Telefon in Breakpoint S mit der Reihenfolge aus `DESIGN.md` §2.9, Druckbild nach §7.1 | M |
+| 3.0.4 | **Accessibility-Basis:** Tastatur, Screenreader, `forced-colors`, Telefon in Breakpoint S mit der Reihenfolge aus `DESIGN.md` §2.9, Druckbild nach §7.1; „Keyboard shortcuts" im Hilfe-Menü; Überschriftenfolge und Live-Regionen im gerenderten Test (§8) | M |
 | 3.0.5 | **Aufräumen:** der alte 1.000-Zeichen-Generator und das ungenutzte `components/ProcessDocumentation.tsx` gehen | S |
 | 3.0.6 | **Öffentliche Texte auf 3.0:** Startseite, README, How-to, Whitepaper, `llms.txt`, Facts; Screenshots aus dem echten Produkt, keine Mockup-Bilder | M |
-| 3.0.7 | **Demo-Projekt und Tour im Arbeitsraum** (`DESIGN.md` §6.1.2): die Demo aus 0.10 in allen Sichten und Ebenen, neu erzeugt mit jedem Release, das Engine oder Regelversion ändert; Tour mit rund zwölf Stationen (Enthüllung bis Übergabe), eine Station je Ort, Fortschritt nur im Browser, Einladung nach jeder dritten Station und am Ende | M |
+| 3.0.7 | **Demo-Projekt und Tour im Arbeitsraum** (`DESIGN.md` §6.1.2): die Demo aus 0.10 in allen Sichten und Ebenen, neu erzeugt mit jedem Release, das Engine oder Regelversion ändert; Tour mit rund zwölf Stationen (Enthüllung bis Übergabe), eine Station je Ort, Fortschritt nur im Browser, Einladung nach jeder dritten Station und am Ende; „Show tips again" im Hilfe-Menü | M |
 
 **Fertig, wenn** alle Phasenabnahmen auf `main` gelaufen sind, ein Korpusfall den
 ganzen Fluss durchläuft und die Copy-CI grün ist.
@@ -331,35 +333,105 @@ ganzen Fluss durchläuft und die Copy-CI grün ist.
 
 ## 5. Abgleich mit den Mockups
 
-Zielbild sind seit 15.09.2026 die Mockups **2.8** (`docs/roadmap/clean-core-mockups-v2_8.html`), gebaut nach `DESIGN.md` — an SAP-Fiori-Mustern orientiert, im Look von Clean-Core.io, Business-Sicht beim Öffnen, feste Herkunftsliste, kein Dark Mode. Die Tabelle nennt die Elemente aus 2.7, auf denen 2.8 aufbaut. Die Mockups sind das Zielbild. Diese Tabelle sagt, wo jedes Element entsteht und wo
-3.0 bewusst abweicht. **Die Abweichungen folgen alle aus §2** — Konto unverändert,
-Rollen nur als Sichten, Teilen nur als Einsicht.
+Zielbild von 3.0 sind die **Mockups 2.8** (`docs/roadmap/clean-core-mockups-v2_8.html`, 16 Screens), gebaut nach
+`DESIGN.md` und **von Sonny am 15.09.2026 abgenommen**. Sie finden sich **1:1** in dieser Roadmap wieder: jedes
+Element jedes Screens steht unten mit dem Schritt, der es baut und mit echtem Inhalt füllt. Ein Element im Mockup
+ohne Schritt ist ein Fehler dieser Roadmap, nicht des Mockups; `tests/mockup-roadmap-guard.spec.ts` hält das fest
+(jeder Screen hat hier eine Zeile, jeder genannte Schritt existiert, jede Schritt-Markierung im Mockup auch).
 
-| Mockup | Entsteht in | In 3.0 |
+Die Zahlen in den Mockups sind Platzhalter, bis ein echter Lauf sie liefert — Ausnahme sind die Zeilenanker des
+Beispiels `Z_MM_PO_APPROVAL` (L87, L108, L231, L412, L470, L502, L512), die echte Zeilen sind. Die Landingpage für
+3.0 hat ein eigenes Mockup (`docs/roadmap/clean-core-landing-v3_0.html`, Schritt 3.0.6).
+
+| Screen | Element | Schritt |
 |---|---|---|
-| Kopfzeile: Titel, Case · Manifest · Revision · Source snapshot · Engine · Rules | 1.4 (Daten aus 0.5) | wie Mockup; „Case" ist das Projekt |
-| Status-Chips Provenance · Need · Standard · Costs · Mandate · Execution · Handover | 1.4, gefüllt in 2–8 | „Mandate" heißt „Confirmed" und nennt das Konto |
-| Umschalter Management · Business · IT, IT-Fokus | 6.1 | wie Mockup |
-| „Intent: Understand / Decide / Assure" | — | **entfällt** — eine Achse (Sicht) statt zwei |
-| „Playing as ▾" | — | **entfällt** — Rollen sind Sichten |
-| „Search this case ⌘K" | 6.6 | wie Mockup |
-| Ebenenleiste mit sechs Ebenen | 1.4 Leiste, 6.2 Inhalte | wie Mockup |
-| S1 Prozesskarte „reconstructed from code" mit Legende | 2.5, bearbeitbar ab 3.1 | wie Mockup, als echtes BPMN |
-| S1 Regelkarte BR-004 mit Ankern, Quote und Zuständen | 3.4, 3.5 | „skeller playing as Process owner" → „bestätigt von ‹Name› · Datum" |
-| S1 Code-Karte mit markierter Zeile | 2.5 | wie Mockup |
-| S1 „Evidence at BR-004" | Anforderung/Anker 3.4–3.5, CA 7.2, TST 7.3, DEC 8.4 | ohne Rollenangaben |
-| S1 „Discussion" | offen (§9) | — |
-| S1 Share-Dialog | 5.2–5.4 | Einladung per E-Mail, Recht „Einsicht", Quellcode sichtbar. Kein Handle, kein „no name stored", kein eingefrorener „Evidence link" — ein eingefrorener Stand ist der Export |
-| Avatare in der Kopfzeile | 5.5 | Personen mit Einsicht |
-| Untere Leiste: „Next contribution" und Tools | Tools 1.4, nächster Schritt 6.5 | ohne Zuweisung an Rollen oder Personen |
-| S2 Standard fit, Scenario workbench, Options | 7.2, 7.3, 7.4 | wie Mockup |
-| S3 Findings, Level distribution, Imports | 8.1, 7.1 | wie Mockup |
-| S3 Trace, ArchitectureContract | 8.1, 8.2 | „Roles: …" → „bestätigt von ‹Name›" |
-| S4 Decision, Options at a glance, Conditions, Timeline | 8.4, 6.4 | „Sign as Management (virtual role)" → „Confirm decision"; Bedingungen ohne „played by" |
-| S4 „Members on this case" | 5.5 | Name und „Einsicht seit"; keine Rechtestufen, kein „played so far" |
-| S5 Evidence chain, Handover package, Conditions | 8.5 | Rollenangaben → Konto |
-| S5 „Expected vs. observed" | 3.5 (nach 3.0) | — |
-| S6 MCP-Zugang | 3.1 (nach 3.0) | ohne virtuelle Rollen und Signer-IDs |
+| s0 Erster Blick | Aufbau in vier Momenten, ≤ 3 s, „Skip", Endzustand bei reduzierter Bewegung, Zähler nur mit echten Zeilen | 2.7 |
+| s0 | Code-Fläche mit leuchtenden Zeilen, Knoten wachsen aus ihrer Zeile | 2.3, 2.7, 1.5 |
+| s0 | fachliche Namen einmal nachgereicht, Chip *Model proposal*; Modell hält den Aufbau nicht auf | 2.4, 2.7 |
+| s0 | Klarsprache-Satz mit Anker; Enthüllung „hard-coded in the program" mit „Why?"; *Not determined* daneben | 2.4, 2.8, 7.5, 1.5 |
+| s1 Business · Prozess & Regeln | Kopf mit Titel, „Details" (Metazeile), Zeile „Project status" | 1.4, 0.5 |
+| s1 | Sichten-Umschalter mit Frage-Satz und „About this view" | 6.1 |
+| s1 | Menü „Tools", Anchor Bar mit Ebenen und „More" für leere | 1.4, 6.2 |
+| s1 | Karte „Next step" | 6.5 |
+| s1 | Prozesskarte „Map \| Steps", Zoom, Fokus, Quellspalte mit Reitern, „Legend" | 2.5 |
+| s1 | Export PNG und PDF mit Chips und Ankern | 2.6 |
+| s1 | Geschäftsregeln eingeklappt, Tag *hard-coded in program*, Entscheidung je Regel | 3.4, 3.5, 2.8 |
+| s1 | „What this process does" mit Ankern, unbelegte Sätze grau | 2.4 |
+| s1 | *Not determined* mit Grund und nächstem Weg | 7.5 |
+| s1 | Standard-Kandidaten mit Evidenzstufe E1 | 7.2 |
+| s1 | „Ask this case" mit vorab beantworteter Frage | 6.8, 2.7 |
+| s1 | Coach Mark 1 von 3 | 2.7 |
+| s1 | „Invite to view", Initialen mit Einsicht | 5.2, 5.5 |
+| s2 Regeln bearbeiten | Entscheidungsformular mit Value States, fokussierter Fehler-Strip | 3.5, 1.5 |
+| s2 | Fußleiste „Unsaved changes", Popover „Checks (3)", „Save as revision 2" | 3.2, 3.3 |
+| s3 Standard-Fit | Fähigkeiten mit Evidenzstufen E0–E4 als Kennung, Scope Item als zu prüfende ID | 7.2 |
+| s3 | „What changes for users" | 7.6 |
+| s3 | Given/When/Then-Szenarien | 7.3 |
+| s3 | Prüfaufträge | 7.5 |
+| s3 | Compliance-Hinweise | 7.7 |
+| s4 IT · Findings & Kette | IT-Fokus Application · Solution · Enterprise | 6.1 |
+| s4 | Kette je gewähltem Befund mit Abdeckung „Chain complete for 31 of 42" | 8.1 |
+| s4 | Findings mit beiden Katalogsichten, fünf Zeilen und „Show all", Live-Filter | 8.1, 1.5 |
+| s4 | Level-Facette, Overlays | 6.3 |
+| s4 | Architekturvertrag AC-1 mit verworfenen Alternativen, Generierung folgt ihm | 8.2, 8.3 |
+| s4 | Importe: ATC und Nutzung | 7.1 |
+| s5 Management · Entscheiden | Antwortsatz über allen Karten, Antwort-Titel je Karte | 6.4 |
+| s5 | Readiness mit Regelversion und Verlauf, *Imported* | 6.4, 0.3 |
+| s5 | Public-Cloud-Fit und vier Töpfe je Zielplattform, Retire mit 13-Monats-Nachweis | 6.7 |
+| s5 | Entscheidung DEC-1 mit Bedingungen, Umkehrbarkeit, modaler Bestätigung | 8.4, 1.5 |
+| s5 | Kosten nur als *Simulation*, „Do nothing", Pflichtfelder „What the comparison still needs" | 7.4, 0.4 |
+| s5 | Steering-Einseiter | 8.6 |
+| s5 | Zeitleiste eingeklappt | 8.4 |
+| s6 Übergabe & Nachweiskette | Kette Anforderung → Entscheidung → Beleg → Artefakt, Übergabepaket | 8.5 |
+| s6 | Belege *Imported* oder *Demonstrated · mock*; gesperrter Live-Testmodus | 8.5, 0.1 |
+| s6 | Toast „Handover package downloaded" | 1.5 |
+| s7 Mein Arbeitsbereich | List Report mit Live-Filter, Objektstatus, *Stale* | 1.8, 0.6 |
+| s7 | laufende Analyse mit Abbrechen, gescheiterter Lauf mit „Retry" | 1.8, 1.5 |
+| s7 | Demo als erste Zeile, Karte „Your turn" | 0.10, 1.8 |
+| s7 | Kontingent-Zeile | 0.9 |
+| s8 Tenant-Verbindung prüfen | Sperrhinweis einmal mit BYOT-Weg, Mock-Tab führt Tests aus, kein Stepper | 1.7, 0.1 |
+| s9 Zustände | neun Herkunfts-Chips in drei Formen, Druck und `forced-colors` | 1.5, 3.0.4 |
+| s9 | vier Buttons, `dark` allein in der modalen Message Box | 1.5 |
+| s9 | Formular mit Value States, Pflichtfelder | 1.5 |
+| s9 | Filter leer vs. „No findings match these filters", Empty State | 1.5 |
+| s9 | drei Sichten mit erster Antwort und Abdeckung | 6.1 |
+| s9 | „Why?"-Popover, Glossar im Text, Beispiel-Strip | 1.5, 6.6 |
+| s9 | drei Coach Marks, Hilfe-Menü mit „Show tips again" | 2.7, 3.0.7 |
+| s9 | „Ask this case" mit Glossarbegriff und „What is a released API?" ohne Modellaufruf | 6.8, 6.6 |
+| s9 | Suche ⌘K, Initialen-Popover | 6.6, 5.5 |
+| s10 Telefon & Druck | Breakpoint S: Reihenfolge, Schrittliste statt Karte, „Why?" als 44-px-Ziel | 3.0.4 |
+| s10 | Druckbild ohne Leisten, Chips mit Wort und Icon | 3.0.4 |
+| s11 Neues Projekt — Hochladen | Formular mit Drop-Zone und Value States | 2.7, 1.5 |
+| s11 | „What it counts": fünf Analyse-Läufe, eigener Schlüssel, Beispiel einmal frei | 0.9 |
+| s11 | „Where a model is called" und was ohne Modellaufruf entsteht | 2.4 |
+| s11 | Karte „Your code and your trust" mit Links, Zusage-Zeile ohne Häkchen | 0.11 |
+| s12 Großer Prozess · Übersicht | Phasen als eingeklappte Teilprozesse mit Problemzeile, Gliederungsbaum, Pfadzeile | 2.9 |
+| s12 | Palette: Fehler-Enden, bedingter Fluss, Fremdsystem als Pool mit Nachrichtenfluss, Fehler-Randereignis | 2.3, 2.6 |
+| s12 | Laufvarianten aus den Selektionsschaltern, Overlays als Filter | 2.9, 6.3 |
+| s12 | nicht erreichter Code, Klone, technische Helfer | 2.3 |
+| s13 Großer Prozess · eine Ebene tiefer | Brotkrumen, „Show paths to here", Gliederungsbaum aufgeklappt, Quellspalte | 2.9 |
+| s13 | Mehrfach-Instanz, Aufruf-Aktivität VA02 mit Level D, Datenspeicher, Textanmerkung | 2.3, 6.3 |
+| s13 | Overlay „Technical" (Commit alle 50 Aufträge) | 6.3 |
+| s13 | Tastenkürzel-Hinweis, Legende der Palette | 3.0.4, 2.5 |
+| s14 Neues Projekt — Einstieg | Kern-Satz, drei Unterschiede, Clean Core in drei Blicken mit Stand des Katalogabgleichs | 2.7 |
+| s14 | die drei Sichten in Bewegung, reduzierte Bewegung als drei Spalten | 6.1 |
+| s14 | acht Beispiele, `Z_MM_PO_APPROVAL` zuerst; Warnung beim erneuten Start | 0.9, 2.7 |
+| s14 | wiederkehrender Besuch: eine Zeile „What is Clean-Core.io?" | 2.7 |
+| s15 Demo-Projekt mit Tour | Demo-Strip mit „Reset demo", Titel „Demo ·" | 0.10, 3.0.7 |
+| s15 | Tour mit zwölf Stationen, „3 of 12", Einladung am Stationsende | 3.0.7 |
+
+**Aus den Mockups 2.7 bewusst nicht übernommen** — die Abweichungen folgen alle aus §2 (Konto unverändert, Rollen
+nur als Sichten, Teilen nur als Einsicht):
+
+| Mockup 2.7 | Warum nicht |
+|---|---|
+| „Intent: Understand / Decide / Assure" | eine Achse (Sicht) statt zwei |
+| „Playing as ▾", Rollen an Regeln, Bedingungen und Signaturen | Rollen sind Sichten; bestätigt wird vom Konto („bestätigt von ‹Name› · Datum") |
+| „Members on this case" mit Rechtestufen | Einsicht per Einladung, Übersicht und Widerruf (5.5), keine Rechtestufen |
+| Share-Dialog mit Handle und eingefrorenem „Evidence link" | Einladung an eine bestätigte E-Mail-Adresse (5.2–5.4); ein eingefrorener Stand ist der Export |
+| „Discussion" | offen (§9) |
+| „Expected vs. observed" | nach 3.0 (§7) |
+| MCP-Zugang | nach 3.0 (§7), ohne virtuelle Rollen |
 
 ---
 
