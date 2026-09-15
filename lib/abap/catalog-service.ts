@@ -33,7 +33,7 @@ import {
 // The stub shipped with this patch keeps the build green until the first sync runs.
 import crLatest from './generated/cloudification-repo.latest.json';
 // formatVersion 2 companion file: classicAPI / noAPI. Near-disjoint from the
-// release file (196 of 8,587 keys overlap), so it is additional coverage.
+// release file (190 of 8,587 keys overlap at the 2026-09-15 sync), so it is additional coverage.
 import crClassifications from './generated/cloudification-repo.classifications-sap.json';
 
 const CR: CloudificationArtifact = crLatest as unknown as CloudificationArtifact;

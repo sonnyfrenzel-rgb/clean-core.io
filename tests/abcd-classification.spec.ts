@@ -159,10 +159,12 @@ test.describe('catalog-backed A/B/C/D grading (SAP published data)', () => {
     const { distribution, totalObjects } = getPublishedGradeDistribution();
     // Every key in either artifact carries a state, so none may fall through.
     expect(distribution.Unknown).toBe(0);
-    expect(distribution.A).toBe(23139);
-    expect(distribution.B).toBe(7936);
-    expect(distribution.C).toBe(69);
-    expect(distribution.D).toBe(959);
+    // Pinned to the synced artifacts (release file of 2026-09-15, classifications of 2026-08-26): a sync that moves
+    // these numbers has to be looked at, not absorbed.
+    expect(distribution.A).toBe(24893);
+    expect(distribution.B).toBe(7926);
+    expect(distribution.C).toBe(76);
+    expect(distribution.D).toBe(969);
     expect(totalObjects).toBe(
       distribution.A + distribution.B + distribution.C + distribution.D + distribution.Unknown,
     );
