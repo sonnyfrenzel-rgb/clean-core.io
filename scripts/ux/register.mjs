@@ -4,7 +4,7 @@
  * commit it together with the roadmap change it causes.
  *
  *   node scripts/ux/register.mjs list
- *   node scripts/ux/register.mjs accept <fingerprint> --step "1.5"
+ *   node scripts/ux/register.mjs accept <fingerprint> --step "1.5" [--severity medium]   verified severity, when it differs
  *   node scripts/ux/register.mjs refute <fingerprint> "<why it does not hold, with file:line or screenshot>"
  *   node scripts/ux/register.mjs defer  <fingerprint> "<why not now>"
  *   node scripts/ux/register.mjs fixed  <fingerprint> <commit>
@@ -53,12 +53,17 @@ if (!finding && !existing) fail(`No finding ${fp} in the opened reports or the r
 
 const now = new Date().toISOString();
 const entry = existing || { id: nextId(register), fingerprint: fp, title: finding.title, severity: finding.severity, area: finding.area, firstSeenHead: finding.head, createdAt: now };
-const note = rest.filter((r) => !r.startsWith('--') && r !== flag('step')).join(' ').trim();
+const note = rest.filter((r) => !r.startsWith('--') && r !== flag('step') && r !== flag('severity')).join(' ').trim();
 
 switch (cmd) {
   case 'accept':
     if (!flag('step')) fail('accept needs --step "<roadmap step, e.g. 1.5 or 3.0>".');
     Object.assign(entry, { status: STATUSES.accepted, step: flag('step') });
+    // Verification may rate it differently; the roadmap schedules by the verified severity, and the reported one is kept.
+    if (flag('severity')) {
+      if (!['critical', 'high', 'medium', 'low'].includes(flag('severity'))) fail('--severity must be critical, high, medium or low.');
+      if (flag('severity') !== entry.severity) Object.assign(entry, { reportedSeverity: entry.reportedSeverity || entry.severity, severity: flag('severity') });
+    }
     break;
   case 'refute':
     if (note.length < 20) fail('refute needs a reason of at least 20 characters, with evidence.');

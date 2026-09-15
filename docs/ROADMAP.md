@@ -147,6 +147,7 @@ vom 15.09. (**fett**).
 | 0.5 | Manifest- und Inputvertrag: `inputs[]` mit Revision und Hash | M |
 | 0.6 | Konservative Ungültigkeit statt Frischeheuristik | S |
 | 0.7 | Freigabefelder nur über servervalidierte Commands, manueller Regel-Deploy vor der App. **Konzeptteil nur noch: Einsicht per Einladung** (Rechtestufen, Rohcode-Schalter, virtuelle Rollen entfallen). **Datensparsamkeit gestrichen** | M |
+| 0.8 | **Deckungsurteil ohne Befunde ist kein Vollurteil** (UX-002, critical): leere Befundliste ergibt nicht mehr „Fully Supported" und kein „Unconditional Go-Live Approved / LOW RISK" im Board-Deck; eigener Schritt vor der übrigen Arbeit | S |
 | daneben | Referenzkorpus v1 mit externem Review. **Dazu: je Fall das erwartete Prozessskelett** als Ground Truth für Phase 2 | M, extern |
 
 **Fertig, wenn** V25-A09/A10 (harte Zahl bricht den Build; Seiten nennen identische
@@ -503,6 +504,78 @@ Konsistenz und Komponenten nach **1.5**, Rahmen und Navigation nach **1.4** · *
 nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**. Was der
 3.0-Umbau ohnehin ersetzt, wird zurückgestellt, nicht doppelt gebaut.
 
+**Vollprüfung von 7bdac5e (15.09.2026, 9 Modellaufrufe, 1,36 $):** 86 Befunde, davon 69 bestätigt (1 critical, 14 high, 28 medium, 26 low — Schwere nach Prüfung), 15 widerlegt, 2 zurückgestellt. Die widerlegten betrafen vor allem Komponenten, die nirgends gerendert werden, und Artefakte der Capture-Umgebung.
+
 | ID | Schwere | Befund | Roadmap-Schritt | Status |
 |---|---|---|---|---|
-| — | — | — | — | noch keine Review gelaufen |
+| UX-002 | critical | Null Befunde als Fully Supported besiegelt | 0.8 | eingeplant |
+| UX-001 | high | Er fundene 95%- und 80%-Balken ohne Messung | 0.2 | eingeplant |
+| UX-003 | high | Verify-Pack-Upload ist per Tastatur nicht bedienbar | 1.5 | eingeplant |
+| UX-004 | high | Confluence-Export erfindet fehlende Bewertungen | 1.2 | eingeplant |
+| UX-007 | high | Zielwahl und Dialoge nicht tastaturbedienbar | 1.5 | eingeplant |
+| UX-019 | high | Zustände stärker gezeigt als belegt – Balken, Haken, Exporte | 0.2 | eingeplant |
+| UX-020 | high | Kernpfade per Tastatur und Screenreader blockiert | 1.5 | eingeplant |
+| UX-023 | high | Dark Mode bricht an zentralen Flächen | 1.5 | eingeplant |
+| UX-024 | high | Orientierung bricht zwischen den Bereichen | — | zurückgestellt |
+| UX-037 | high | Transformation verspricht Node.js auch im RAP-Track | 0.2 | eingeplant |
+| UX-038 | high | Remediation-Modus schaltet nur Text, nicht Code | 0.2 | eingeplant |
+| UX-040 | high | Transformation Insights sind statisch und track-falsch | 0.2 | eingeplant |
+| UX-044 | high | Dark Mode bricht an Projektzeile und Stepper | 1.5 | eingeplant |
+| UX-059 | high | Forum täuscht öffentlichen Post vor, speichert nur lokal | 0.2 | eingeplant |
+| UX-061 | high | Dashboard ohne Dark-Parität, Projektzeile kaum lesbar | 1.5 | eingeplant |
+| UX-062 | high | Dashboard-Tabelle bleibt im Dark Mode weiß | 1.5 | eingeplant |
+| UX-005 | medium | Routenwechsel ohne Bestätigung und Undo | 0.7 | eingeplant |
+| UX-006 | medium | Von Befund kein Weg in den Code | 1.5 | eingeplant |
+| UX-012 | medium | Sticky-Header und Tabs verdecken Inhalt auf Phone | 1.4 | eingeplant |
+| UX-017 | medium | Sehr kleine Schrift erschwert das Lesen | 1.5 | eingeplant |
+| UX-022 | medium | 78 Button-Stile statt einer gemeinsamen Sprache | 1.5 | eingeplant |
+| UX-025 | medium | Generierung und Fehler ohne Ausweg und Undo | 1.5 | eingeplant |
+| UX-027 | medium | Grüner Haken für ungeprüften Code | 0.2 | eingeplant |
+| UX-029 | medium | Kompatibilität behauptet, aber nicht belegt | 0.2 | eingeplant |
+| UX-030 | medium | Phone verdeckt Inhalt und schluckt Aktionen | 1.4 | eingeplant |
+| UX-032 | medium | Ausdruck ohne eigene Kostenfiguren | 0.3 | eingeplant |
+| UX-034 | medium | Task-Drawer fängt Tastatur nicht ein | 3.0.4 | eingeplant |
+| UX-036 | medium | Systematische Kleinschrift unter 12px | 1.5 | eingeplant |
+| UX-039 | medium | Audit-Abhaken geht bei Reload verloren | 0.7 | eingeplant |
+| UX-041 | medium | Karten und Minimap nicht tastaturbedienbar | 1.5 | eingeplant |
+| UX-042 | medium | Buttons haben 78 Stile statt einer gemeinsamen Sprache | 1.5 | eingeplant |
+| UX-043 | medium | Massig Text unter 12px schwächt Lesbarkeit und Kontrast | 1.5 | eingeplant |
+| UX-045 | medium | Glossar und Overlays nicht tastatur- und screenreaderfähig | 3.0.4 | eingeplant |
+| UX-049 | medium | Fehlende Design-Sektionen verschwinden still | 1.2 | eingeplant |
+| UX-056 | medium | Stepper und Rail kodieren Fertig unterschiedlich | — | zurückgestellt |
+| UX-063 | medium | Zwei Beispiel-Bibliotheken konkurrieren auf dem Dashboard | 3.0.5 | eingeplant |
+| UX-064 | medium | Jede Sektion erfindet eigenen Primär-Button | 1.5 | eingeplant |
+| UX-065 | medium | Toggles ohne Switch-Semantik für Screenreader | 3.0.4 | eingeplant |
+| UX-067 | medium | Kritische Aktionen in nativen Browser-Dialogen | 1.5 | eingeplant |
+| UX-068 | medium | Slideshow-Steuerung ohne Fokus und zu kleine Trefferfläche | 3.0.4 | eingeplant |
+| UX-069 | medium | Modal-Icon-Buttons ohne Namen für Screenreader | 3.0.4 | eingeplant |
+| UX-070 | medium | Kleinstschrift an tragenden Stellen kaum lesbar | 1.5 | eingeplant |
+| UX-073 | medium | Kleinstschrift 9-10px für Badges und Banner | 1.5 | eingeplant |
+| UX-075 | medium | Auge-Buttons ohne zugänglichen Namen | 3.0.4 | eingeplant |
+| UX-076 | medium | Onboarding-Abbruch mit Schuld-Formulierung | 0.2 | eingeplant |
+| UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | eingeplant |
+| UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
+| UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |
+| UX-015 | low | Zurück-Navigation verhält sich je Seite anders | 1.4 | eingeplant |
+| UX-016 | low | Katalog verliert den Workspace-Kontext | 1.4 | eingeplant |
+| UX-026 | low | Begriffe und Versprechen wechseln je Stufe | 0.2 | eingeplant |
+| UX-028 | low | LoC-Regler kann echten Wert nicht abbilden | 0.3 | eingeplant |
+| UX-031 | low | SOP-Weiterweg nur im Hover-Tooltip | 1.2 | eingeplant |
+| UX-033 | low | Folienschalter ohne Namen | 3.0.4 | eingeplant |
+| UX-035 | low | Lange Generierung ohne Abbruch | 1.5 | eingeplant |
+| UX-050 | low | Winzige Labels und Status nur über Farbe | 1.5 | eingeplant |
+| UX-053 | low | Fehler- und 404-Seiten sprechen drei Sprachen | 3.0 | eingeplant |
+| UX-057 | low | Grounded Grounding Audit doppelt und uneinheitlich | 0.3 | eingeplant |
+| UX-058 | low | QuickAnswer meldet offen, obwohl zugeklappt | 3.0.4 | eingeplant |
+| UX-060 | low | Projektzeile und Icon-Aktionen nicht tastaturbedienbar | 3.0.4 | eingeplant |
+| UX-066 | low | 2FA-Button behauptet Scan ohne QR-Code | 3.0 | eingeplant |
+| UX-072 | low | Admin nutzt native confirm/alert statt Produktmustern | 3.0 | eingeplant |
+| UX-074 | low | Settings-Karten mit beliebigem Farbstreifen | 1.5 | eingeplant |
+| UX-078 | low | Admin-Zeilen ohne erweiterten Zustand | 3.0.4 | eingeplant |
+| UX-079 | low | Deaktivierter Register-Button erklärt sich nicht | 5.1 | eingeplant |
+| UX-080 | low | Showroom-Tabs ohne sichtbaren Tastaturfokus | 3.0.4 | eingeplant |
+| UX-081 | low | Autoplay ignoriert reduzierte Bewegung | 3.0.4 | eingeplant |
+| UX-082 | low | Zwei Header-Muster auf öffentlichen Seiten | 3.0.6 | eingeplant |
+| UX-083 | low | Download-Fehler bleibt unsichtbar | 3.0 | eingeplant |
+| UX-084 | low | First-Run nennt Quote anders als der Header | 0.2 | eingeplant |
+| UX-085 | low | Kleinstlabels in 10px Kapitälchen | 1.5 | eingeplant |
