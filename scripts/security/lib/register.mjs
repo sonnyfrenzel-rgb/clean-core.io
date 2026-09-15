@@ -22,10 +22,24 @@ export function saveRegister(register, path = REGISTER_PATH) {
   writeFileSync(path, `${JSON.stringify(sealFor(register, readFileSync(PUBLIC_KEY_PATH, 'utf8')))}\n`);
 }
 
-/** Findings of a report the register has not decided on yet. */
-export function untriaged(findings, register) {
-  const known = new Set(register.entries.map((e) => e.fingerprint));
-  return findings.filter((f) => !known.has(f.fingerprint));
+/**
+ * Findings of a report the register has not decided on yet — and findings marked
+ * fixed that an audit of a commit containing the fix reports again. Without that,
+ * a reintroduced defect stays silent behind its old decision (QA review of
+ * 52b34aba4cb8, finding cf4293a0d91a). An audit of a commit that does not contain
+ * the fix yet is expected to still report it.
+ *
+ * @param head          the audited commit
+ * @param isAncestorOf  (fixCommit, head) => boolean
+ */
+export function untriaged(findings, register, { head, isAncestorOf } = {}) {
+  const byFingerprint = new Map(register.entries.map((e) => [e.fingerprint, e]));
+  return findings.flatMap((f) => {
+    const entry = byFingerprint.get(f.fingerprint);
+    if (!entry) return [f];
+    const reported = entry.status === 'behoben' && (!entry.fixedIn || !head || !isAncestorOf || isAncestorOf(entry.fixedIn, head));
+    return reported ? [{ ...f, reopened: true }] : [];
+  });
 }
 
 export function nextId(register, year = new Date().getFullYear()) {

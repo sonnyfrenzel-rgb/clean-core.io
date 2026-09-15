@@ -26,7 +26,7 @@ function gitSucceeds(args) {
   }
 }
 
-function isCommit(sha) {
+export function isCommit(sha) {
   return Boolean(sha) && !ZERO_SHA.test(sha) && gitSucceeds(['cat-file', '-e', `${sha}^{commit}`]);
 }
 

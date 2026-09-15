@@ -18,7 +18,7 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** The newest run of `workflow` for exactly this commit, or null while none has been created yet. */
 export function runFor(workflow, sha) {
-  const runs = ghJson(['run', 'list', '--workflow', workflow, '--commit', sha, '--limit', '5', '--json', 'databaseId,status,conclusion,createdAt,event']) || [];
+  const runs = ghJson(['run', 'list', '--workflow', workflow, '--commit', sha, '--limit', '5', '--json', 'databaseId,headSha,status,conclusion,createdAt,event']) || [];
   return runs.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0] || null;
 }
 

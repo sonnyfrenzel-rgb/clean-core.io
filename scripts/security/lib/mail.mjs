@@ -112,7 +112,7 @@ function renderHtmlBody({ payload, r, findings, c, version, runUrl, sealedSha256
   const finding = (f) => {
     const s = SEVERITY_STYLE[f.severity] || SEVERITY_STYLE.info;
     return `
-    <div class="panel" style="background-color: #ffffff; border: 1px solid ${s.border}; border-left: 4px solid ${s.fg}; border-radius: 16px; padding: 18px; margin-bottom: 14px;">
+    <div class="panel" style="background-color: #ffffff; border: 1px solid ${s.border}; border-left: 4px solid ${s.fg}; border-radius: 16px; padding: 18px; margin-bottom: 14px; overflow-wrap: anywhere; word-break: break-word;">
       <div style="margin-bottom: 8px;">${chip(esc(f.severity), s)} <span style="font-family: ${MONO}; font-size: 12px; color: #64748b; margin-left: 6px;">${esc(f.id)}</span></div>
       <div style="font-size: 16px; font-weight: 800; color: #0f172a; line-height: 1.35;">${esc(f.title)}</div>
       <div style="font-family: ${MONO}; font-size: 12px; color: #475569; margin-top: 4px; word-break: break-word;">${esc(where(f))}</div>
@@ -128,7 +128,7 @@ function renderHtmlBody({ payload, r, findings, c, version, runUrl, sealedSha256
   };
 
   return `
-<div class="wrap" style="font-family: ${FONT}; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a;">
+<div class="wrap" style="font-family: ${FONT}; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a; overflow-wrap: anywhere; word-break: break-word;">
 
   <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: transparent; height: 0; width: 0;">
     Risiko ${esc(r.risk_rating)}: ${c.kritisch} kritisch, ${c.hoch} hoch, ${c.mittel} mittel, ${c.niedrig} niedrig — ${esc(version)}.

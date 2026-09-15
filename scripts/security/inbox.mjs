@@ -11,12 +11,12 @@
  * Plaintext stays under .security-audit/ (git-ignored).
  */
 import { createHash } from 'node:crypto';
-import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { gh, ghJson, jobsOf, waitForRun } from '../qa/lib/gh.mjs';
-import { git } from '../qa/lib/git-delta.mjs';
+import { git, isAncestor, isCommit } from '../qa/lib/git-delta.mjs';
 import { loadDotEnv } from '../qa/lib/store.mjs';
-import { openWith, privateKeyFrom } from './lib/envelope.mjs';
+import { auditArtifact, openWith, privateKeyFrom } from './lib/envelope.mjs';
 import { renderAuditMail } from './lib/mail.mjs';
 import { loadRegister, untriaged } from './lib/register.mjs';
 
@@ -33,33 +33,23 @@ function revoked() {
   }
 }
 
-function findSealed(dir) {
-  const out = [];
-  const walk = (d) => {
-    for (const e of readdirSync(d, { withFileTypes: true })) {
-      const p = join(d, e.name);
-      if (e.isDirectory()) walk(p);
-      else if (e.name === 'security-audit.enc.json') out.push(p);
-    }
-  };
-  walk(dir);
-  return out.sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0] || null;
-}
-
 async function fetchReport(run, privateKey) {
-  const attempt = String(ghJson(['run', 'view', String(run.databaseId), '--json', 'attempt'])?.attempt ?? '');
-  const dir = join(DIR, `${run.databaseId}-${attempt}`);
-  rmSync(dir, { recursive: true, force: true });
-  mkdirSync(dir, { recursive: true });
   const audited = jobsOf(run.databaseId).some((j) => j.name.startsWith('Audit') && j.conclusion === 'success');
   if (!audited) return null;
+  // Exactly one artifact, chosen by name — never by which of several downloads landed last (finding 4fb3804a2d49).
+  const names = ghJson(['api', `repos/{owner}/{repo}/actions/runs/${run.databaseId}/artifacts`, '--jq', '[.artifacts[] | select(.expired == false) | .name]']) || [];
+  const artifact = auditArtifact(names, run.headSha);
+  if (!artifact) return null;
+  const dir = join(DIR, artifact);
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
   try {
-    gh(['run', 'download', String(run.databaseId), '--pattern', 'security-audit-*', '-D', dir]);
+    gh(['run', 'download', String(run.databaseId), '--name', artifact, '-D', dir]);
   } catch {
     return null;
   }
-  const sealedPath = findSealed(dir);
-  if (!sealedPath) return null;
+  const sealedPath = join(dir, 'security-audit.enc.json');
+  if (!existsSync(sealedPath)) return null;
   const raw = readFileSync(sealedPath, 'utf8');
   return { payload: openWith(JSON.parse(raw), privateKey), sealedSha256: createHash('sha256').update(raw).digest('hex') };
 }
@@ -102,7 +92,8 @@ async function main() {
     }
   })();
   const mail = renderAuditMail(payload, { version, runUrl: `run ${run.databaseId}`, sealedSha256 });
-  const open = untriaged(mail.findings, loadRegister(privateKey));
+  // A fix commit this clone does not know counts as contained: the finding is shown again rather than hidden.
+  const open = untriaged(mail.findings, loadRegister(privateKey), { head: payload.head, isAncestorOf: (fix, head) => !isCommit(fix) || isAncestor(fix, head) });
 
   if (BRIEF) {
     if (!open.length || payload.selfTest) return 0;
@@ -117,7 +108,7 @@ async function main() {
     return 0;
   }
 
-  console.log(`\n${mail.text}\n\nUntriaged: ${open.length ? open.map((f) => `${f.id} [${f.fingerprint}]`).join(', ') : 'none'}`);
+  console.log(`\n${mail.text}\n\nUntriaged: ${open.length ? open.map((f) => `${f.id} [${f.fingerprint}]${f.reopened ? ' (marked fixed, reported again)' : ''}`).join(', ') : 'none'}`);
   return open.length ? 3 : 0;
 }
 

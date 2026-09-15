@@ -21,10 +21,10 @@ permissions:
   contents: read
   actions: read
 
-# Every release gets its own report: runs queue, none is cancelled.
-concurrency:
-  group: security-audit-${{ github.ref_name }}
-  cancel-in-progress: false
+# No concurrency group, on purpose. A group holds one running and ONE pending run:
+# a third push replaces the pending one, and that release would never get its
+# audit (QA review of 52b34aba4cb8, finding 0ea9860d60be). Runs are independent —
+# own checkout, own artifact, nothing shared — so every release simply gets its own.
 
 jobs:
   scope:
@@ -68,7 +68,18 @@ jobs:
     runs-on: ubuntu-latest
     # A full ultracode audit takes long; the budget cap ends it before this does.
     timeout-minutes: 180
+    # The artifact's name travels as an output: "Re-run failed jobs" on delivery
+    # raises run_attempt without re-running this job, so a name rebuilt there would
+    # point at an artifact that does not exist (finding 566a50b8581a).
+    outputs:
+      artifact: ${{ steps.artifact.outputs.name }}
     steps:
+      - name: Name the artifact of this attempt
+        id: artifact
+        env:
+          NAME: security-audit-${{ github.sha }}-${{ github.run_attempt }}
+        run: echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
@@ -88,7 +99,7 @@ jobs:
       - name: Upload sealed report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: security-audit-${{ github.sha }}-${{ github.run_attempt }}
+          name: ${{ steps.artifact.outputs.name }}
           path: .security-audit/out/security-audit.enc.json
           retention-days: 90
           if-no-files-found: error
@@ -113,7 +124,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.run_id }}
-          ARTIFACT: security-audit-${{ github.sha }}-${{ github.run_attempt }}
+          ARTIFACT: ${{ needs.audit.outputs.artifact }}
         run: gh run download "$RUN_ID" --name "$ARTIFACT" -D .security-audit/out
 
       - name: Mail the report

@@ -12,7 +12,7 @@
  *
  * Finding details come from the newest opened report under .security-audit/inbox/.
  */
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadDotEnv } from '../qa/lib/store.mjs';
 import { privateKeyFrom } from './lib/envelope.mjs';
@@ -45,9 +45,11 @@ if (cmd === 'public') {
 
 if (!/^[0-9a-f]{12}$/.test(fp || '')) fail('A 12-character fingerprint is required (shown by scripts/security/inbox.mjs).');
 
-const reports = readdirSync('.security-audit/inbox')
+// A fresh clone has no inbox yet; an existing entry can still be updated (finding def5abdae94c).
+const INBOX = '.security-audit/inbox';
+const reports = (existsSync(INBOX) ? readdirSync(INBOX) : [])
   .filter((f) => f.endsWith('.json'))
-  .map((f) => join('.security-audit/inbox', f))
+  .map((f) => join(INBOX, f))
   .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)
   .map((p) => JSON.parse(readFileSync(p, 'utf8')));
 const finding = reports.flatMap((p) => numbered(p).map((f) => ({ ...f, head: p.head }))).find((f) => f.fingerprint === fp);

@@ -54,7 +54,7 @@ test.describe('the agent can only read', () => {
 
   test('no value ever becomes command text: the CLI reads every input from environment variables', () => {
     const src = read('scripts/security/audit.mjs');
-    expect(src).toMatch(/spawn\('bash', \['-c', CLI_COMMAND\]/);
+    expect(src).toMatch(/runToFiles\(\{ command: 'bash', args: \['-c', CLI_COMMAND\]/);
     // Every $VAR in the command is quoted, and nothing is interpolated into it.
     const cmdBlock = src.slice(src.indexOf('export const CLI_COMMAND'), src.indexOf("].join(' ');"));
     expect(cmdBlock).not.toMatch(/\$\{/);
@@ -72,11 +72,26 @@ test.describe('the agent can only read', () => {
 test.describe('three jobs, three trust levels', () => {
   test('triggers on main (full) and dev (self-test only when the agent changed), revocable, read-only token', () => {
     expect(wf()).toMatch(/push:\s*\n\s*branches: \[main, dev\]/);
-    const perms = wf().slice(wf().indexOf('\npermissions:'), wf().indexOf('\nconcurrency:'));
+    const perms = wf().slice(wf().indexOf('\npermissions:'), wf().indexOf('\njobs:'));
     expect(perms).not.toMatch(/write/);
     expect(job('scope')).toContain("if: vars.SECURITY_AUDIT_ENABLED != 'false'");
     expect(job('scope')).toContain("scripts/security/|docs/security/|\\.github/workflows/security-audit\\.yml$");
-    expect(wf()).not.toMatch(/pull_request_target|cancel-in-progress: true/);
+    expect(wf()).not.toMatch(/pull_request_target/);
+    // A concurrency group keeps one pending run and cancels the one before it: a release would go unaudited.
+    expect(wf()).not.toMatch(/^\s*concurrency:/m);
+  });
+
+  test('delivery reads the artifact the audit job named, so re-running only delivery still finds it', async () => {
+    expect(job('audit')).toContain('artifact: ${{ steps.artifact.outputs.name }}');
+    expect(job('audit')).toContain('name: ${{ steps.artifact.outputs.name }}');
+    expect(job('deliver')).toContain('ARTIFACT: ${{ needs.audit.outputs.artifact }}');
+    expect(job('deliver')).not.toMatch(/github\.run_attempt/);
+    // The inbox picks by name too: the newest attempt that has an artifact, never a download timestamp.
+    const { auditArtifact } = await lib('envelope.mjs');
+    const sha = 'c1f86075617b9757a45cad10c0ab2d900fa83f7f';
+    expect(auditArtifact([`security-audit-${sha}-1`, `security-audit-${sha}-3`, `security-audit-${sha}-2`, 'qa-review-x-9'], sha)).toBe(`security-audit-${sha}-3`);
+    expect(auditArtifact([`security-audit-${'0'.repeat(40)}-5`], sha)).toBeNull();
+    expect(read('scripts/security/inbox.mjs')).not.toMatch(/mtimeMs|--pattern/);
   });
 
   test('the audit job holds the model key only; the deliver job holds the private key and runs no model', () => {
@@ -112,12 +127,49 @@ test.describe('nothing the audit finds leaks', () => {
 
   test('the CLI transcript goes to files, and the log carries status fields and numbers only', () => {
     const src = read('scripts/security/audit.mjs');
-    expect(src).toMatch(/child\.stdout\.pipe\(stdout\)/);
-    expect(src).toMatch(/child\.stderr\.pipe\(stderr\)/);
-    expect(src).not.toMatch(/stdio: \['ignore', 'inherit'|stdio: 'inherit'/);
+    const cli = read('scripts/security/lib/cli.mjs');
+    expect(cli).toMatch(/child\.stdout\.pipe\(stdout\)/);
+    expect(cli).toMatch(/child\.stderr\.pipe\(stderr\)/);
+    expect(src + cli).not.toMatch(/stdio: \['ignore', 'inherit'|stdio: 'inherit'/);
     expect(src).toMatch(/console\.error\(`Security audit failed: \$\{String\(err\?\.message \|\| err\)\.split\('\\n'\)\[0\]\}`\)/);
     expect(read('scripts/security/deliver.mjs')).toMatch(/Resend rejected the audit mail: HTTP \$\{res\.status\}`/);
     expect(read('.gitignore')).toMatch(/^\.security-audit\/$/m);
+  });
+
+  test('the report file is read only after the CLI output is fully written', async () => {
+    const { runToFiles } = await lib('cli.mjs');
+    const os = require('os') as typeof import('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sec-cli-'));
+    try {
+      const size = 16 * 1024 * 1024;
+      const code = await runToFiles({
+        command: process.execPath,
+        args: ['-e', `process.stdout.write('x'.repeat(${size})); process.stderr.write('e'.repeat(${size}))`],
+        env: process.env,
+        stdoutPath: path.join(dir, 'out'),
+        stderrPath: path.join(dir, 'err'),
+      });
+      expect(code).toBe(0);
+      // Read synchronously at once, as audit.mjs does.
+      expect(fs.statSync(path.join(dir, 'out')).size).toBe(size);
+      expect(fs.statSync(path.join(dir, 'err')).size).toBe(size);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+    // The race is timing-dependent and does not reproduce on demand, so the waiting itself is pinned too.
+    expect(read('scripts/security/lib/cli.mjs')).toMatch(/Promise\.all\(\[exited, finished\(stdout\), finished\(stderr\)\]\)/);
+  });
+
+  test('a failed API call is named by a label from a fixed list, never by its text', async () => {
+    const { apiErrorHint } = await lib('cli.mjs');
+    const err = (result: unknown) => ({ is_error: true, result });
+    expect(apiErrorHint(err('API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}'))).toBe('credit balance too low');
+    expect(apiErrorHint(err('API Error: 401 {"error":{"type":"authentication_error","message":"invalid x-api-key"}}'))).toBe('authentication failed');
+    expect(apiErrorHint(err('API Error: 400 {"error":{"type":"invalid_request_error","message":"thinking: this model does not support adaptive thinking"}}'))).toBe('a request parameter is not supported');
+    expect(apiErrorHint(err('something with sk-ant-secret and a file path'))).toBe('unrecognised');
+    expect(apiErrorHint(err(null))).toBe('unrecognised');
+    expect(apiErrorHint({ is_error: false, result: 'credit balance is too low' })).toBe('none');
+    expect(read('scripts/security/audit.mjs')).toMatch(/hint=\$\{apiErrorHint\(record\)\}/);
   });
 
   test('the register is committed sealed, and the roadmap may only show ID, severity, priority, step and status', async () => {
@@ -125,6 +177,38 @@ test.describe('nothing the audit finds leaks', () => {
     expect(REGISTER_PATH).toMatch(/\.enc\.json$/);
     const rows = publicRows({ entries: [{ id: 'SEC-2026-001', severity: 'hoch', priority: 'P1', step: 'Phase 0 · 0.7', status: 'eingeplant', title: 'SSRF in route X', fingerprint: 'abc', reason: 'secret reason' }, { id: 'SEC-2026-002', severity: 'mittel', status: 'widerlegt', title: 'y' }] });
     expect(rows).toEqual(['| SEC-2026-001 | hoch | P1 | Phase 0 · 0.7 | eingeplant |']);
+  });
+
+  test('a finding marked fixed comes back when an audit of a commit containing the fix reports it again', async () => {
+    const { untriaged } = await lib('register.mjs');
+    const register = { entries: [{ fingerprint: 'fixed1', status: 'behoben', fixedIn: 'fix' }, { fingerprint: 'plan1', status: 'eingeplant' }, { fingerprint: 'ref1', status: 'widerlegt' }] };
+    const findings = [{ fingerprint: 'fixed1' }, { fingerprint: 'plan1' }, { fingerprint: 'ref1' }, { fingerprint: 'new1' }];
+    const contains = new Set(['fix>after']);
+    const isAncestorOf = (a: string, b: string) => contains.has(`${a}>${b}`);
+    expect(untriaged(findings, register, { head: 'after', isAncestorOf })).toEqual([{ fingerprint: 'fixed1', reopened: true }, { fingerprint: 'new1' }]);
+    // An audit of a commit from before the fix is expected to still report it.
+    expect(untriaged(findings, register, { head: 'before', isAncestorOf })).toEqual([{ fingerprint: 'new1' }]);
+  });
+
+  test('an existing register entry can be updated from a fresh clone without an inbox', async () => {
+    const { execFileSync } = require('child_process') as typeof import('child_process');
+    const os = require('os') as typeof import('os');
+    const { sealFor, openWith, privateKeyFrom } = await lib('envelope.mjs');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sec-register-'));
+    try {
+      const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048, publicKeyEncoding: { type: 'spki', format: 'pem' }, privateKeyEncoding: { type: 'pkcs8', format: 'pem' } });
+      fs.mkdirSync(path.join(dir, 'docs/security'), { recursive: true });
+      fs.writeFileSync(path.join(dir, 'docs/security/audit-public-key.pem'), publicKey);
+      const entry = { id: 'SEC-2026-001', fingerprint: 'abcdefabcdef', title: 't', severity: 'hoch', status: 'eingeplant' };
+      fs.writeFileSync(path.join(dir, 'docs/security/register.enc.json'), JSON.stringify(sealFor({ version: 1, entries: [entry] }, publicKey)));
+      const key = Buffer.from(privateKey).toString('base64');
+      const out = execFileSync(process.execPath, [path.resolve(ROOT, 'scripts/security/register.mjs'), 'fixed', 'abcdefabcdef', 'abc1234'], { cwd: dir, encoding: 'utf8', env: { ...process.env, SECURITY_AUDIT_PRIVATE_KEY: key } });
+      expect(out).toContain('SEC-2026-001 [abcdefabcdef] → behoben');
+      const saved = openWith(JSON.parse(fs.readFileSync(path.join(dir, 'docs/security/register.enc.json'), 'utf8')), privateKeyFrom(key));
+      expect(saved.entries[0]).toMatchObject({ status: 'behoben', fixedIn: 'abc1234' });
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 
@@ -192,6 +276,23 @@ test.describe('the report the owner reads', () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
+  test('long unbroken text in any field wraps inside its card instead of being clipped', async ({ page }) => {
+    const { renderAuditMail } = await lib('mail.mjs');
+    const unbroken = 'https://clean-core.io/' + 'averyveryverylongsegmentwithoutanybreakopportunity'.repeat(4);
+    const long = payload();
+    Object.assign(long.report.findings[1], { title: unbroken, description: unbroken, preconditions: unbroken, impact: unbroken, recommendation: unbroken, verification: unbroken });
+    const m = renderAuditMail(long, { version: 'v2.9.15', runUrl: 'u', sealedSha256: 's' });
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.setContent(m.html);
+    // Every text element ends inside the card that clips it: nothing hidden by overflow:hidden.
+    const clipped = await page.evaluate(() => {
+      const card = document.querySelector('.card') as HTMLElement;
+      const right = card.getBoundingClientRect().right;
+      return [...card.querySelectorAll('div, span, pre')].filter((el) => el.getBoundingClientRect().right > right + 1 || el.scrollWidth > el.clientWidth + 1).length;
+    });
+    expect(clipped).toBe(0);
+  });
+
   test('a self-test says so in the subject and cannot be mistaken for an audit', async () => {
     const { renderAuditMail } = await lib('mail.mjs');
     const m = renderAuditMail(payload({ selfTest: true }), { version: 'v1', runUrl: 'u', sealedSha256: 's' });
@@ -209,8 +310,28 @@ test.describe('the report the owner reads', () => {
 
 test.describe('the attack-surface map', () => {
   test('is first-party code only — nothing third-party runs next to the model key', () => {
-    const src = read('scripts/security/lib/surface.mjs');
-    for (const imp of src.match(/^import .* from '([^']+)';$/gm) || []) expect(imp).toMatch(/from 'node:/);
+    for (const file of ['scripts/security/lib/surface.mjs', 'scripts/security/lib/cli.mjs']) {
+      for (const imp of read(file).match(/^import .* from '([^']+)';$/gm) || []) expect(imp).toMatch(/from 'node:/);
+    }
+  });
+
+  test('leaves nothing out that runs, and names every group it leaves out', async () => {
+    const { inventory, exclusions } = await lib('surface.mjs');
+    const paths = ['public/worker.js', 'public/page.html', 'public/logo.svg', 'public/photo.jpg', 'public/sample.abap', 'docs/ROADMAP.md', 'docs/tool.mjs', 'README.md', 'clean-core-video/src/Video.tsx', 'lib/abap/generated/catalog.json', 'package-lock.json', 'scripts/linkedin-banner.html', 'app/page.tsx'];
+    expect(inventory(paths).map((f: { path: string }) => f.path)).toEqual(['public/worker.js', 'public/page.html', 'public/logo.svg', 'docs/tool.mjs', 'scripts/linkedin-banner.html', 'app/page.tsx']);
+    const groups = exclusions(paths);
+    expect(groups.reduce((n: number, g: { count: number }) => n + g.count, 0)).toBe(7);
+    for (const g of groups) expect(g.reason.length).toBeGreaterThan(20);
+  });
+
+  test('an npm audit that did not run is reported as unavailable, never as a clean scan', async () => {
+    const { readDependencyAudit } = await lib('surface.mjs');
+    expect(readDependencyAudit('{"error":{"code":"ENOTFOUND","summary":"request to registry failed"}}')).toEqual({ error: expect.stringMatching(/no audit result/) });
+    expect(readDependencyAudit('{}')).toEqual({ error: expect.stringMatching(/no audit result/) });
+    expect(readDependencyAudit('not json')).toEqual({ error: expect.any(String) });
+    expect(readDependencyAudit(undefined)).toEqual({ error: expect.any(String) });
+    const clean = readDependencyAudit('{"vulnerabilities":{},"metadata":{"vulnerabilities":{"low":0,"moderate":0,"high":0,"critical":0,"total":0}}}');
+    expect(clean).toEqual({ vulnerabilities: { low: 0, moderate: 0, high: 0, critical: 0, total: 0 }, advisories: [] });
   });
 
   test('lists every API route with its auth markers, and assigns every file a domain', async () => {

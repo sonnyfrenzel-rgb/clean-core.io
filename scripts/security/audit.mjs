@@ -13,9 +13,9 @@
  * This job holds the model key and the public key only — it can seal a report
  * but not open one, and it never sees the mail key.
  */
-import { spawn } from 'node:child_process';
-import { createWriteStream, mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { apiErrorHint, resultRecord, runToFiles } from './lib/cli.mjs';
 import { PUBLIC_KEY_PATH, sealFor } from './lib/envelope.mjs';
 import { surfaceMap } from './lib/surface.mjs';
 import { AUDIT, CONSULTANTS, REPORT_SCHEMA } from './lib/team.mjs';
@@ -40,35 +40,6 @@ export const CLI_COMMAND = [
   '--agents "$AUDIT_AGENTS" --json-schema "$AUDIT_SCHEMA" --settings "$AUDIT_SETTINGS_FILE"',
   '--append-system-prompt-file "$AUDIT_BRIEF_FILE" --max-budget-usd "$AUDIT_BUDGET"',
 ].join(' ');
-
-function runCli(env) {
-  return new Promise((resolve) => {
-    const stdout = createWriteStream(join(WORK, 'result.json'));
-    const stderr = createWriteStream(join(WORK, 'cli.stderr.log'));
-    // stdout and stderr go to files in the work directory and never to this
-    // process's own output: the public Actions log must not carry transcript text.
-    const child = spawn('bash', ['-c', CLI_COMMAND], { env, stdio: ['ignore', 'pipe', 'pipe'] });
-    child.stdout.pipe(stdout);
-    child.stderr.pipe(stderr);
-    child.on('close', (code) => {
-      stdout.end();
-      stderr.end();
-      resolve(code);
-    });
-  });
-}
-
-/** The final result record of a --output-format json run, or null. */
-export function resultRecord(raw) {
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-  const records = Array.isArray(parsed) ? parsed : [parsed];
-  return records.filter((r) => r?.type === 'result').at(-1) || null;
-}
 
 async function main() {
   mkdirSync(WORK, { recursive: true });
@@ -102,12 +73,13 @@ async function main() {
   };
 
   const started = Date.now();
-  const code = await runCli(env);
+  // The transcript goes to files in the work directory: the public Actions log must not carry its text.
+  const code = await runToFiles({ command: 'bash', args: ['-c', CLI_COMMAND], env, stdoutPath: join(WORK, 'result.json'), stderrPath: join(WORK, 'cli.stderr.log') });
   const record = resultRecord(readFileSync(join(WORK, 'result.json'), 'utf8'));
 
-  // Only metadata ever reaches the log: status fields and numbers, no text.
+  // Only metadata ever reaches the log: status fields, numbers and a label from a fixed list — no text.
   const status = record
-    ? `subtype=${String(record.subtype).slice(0, 40)} is_error=${Boolean(record.is_error)} api_error_status=${Number(record.api_error_status) || 'none'} turns=${Number(record.num_turns) || 0} cost=$${Number(record.total_cost_usd || 0).toFixed(2)}`
+    ? `subtype=${String(record.subtype).slice(0, 40)} is_error=${Boolean(record.is_error)} api_error_status=${Number(record.api_error_status) || 'none'} hint=${apiErrorHint(record)} turns=${Number(record.num_turns) || 0} cost=$${Number(record.total_cost_usd || 0).toFixed(2)}`
     : 'no result record';
   if (code !== 0 || !record || record.is_error || !record.structured_output) {
     throw new Error(`the audit did not produce a report (exit ${code}; ${status}).`);

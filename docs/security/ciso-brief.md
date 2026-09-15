@@ -35,7 +35,10 @@ without marketing and without alarmism.
 3. **Full coverage, stated honestly.** Every file in `files.list` must be covered
    by at least one method: deep read by a consultant, or pattern scan through the
    map plus targeted Grep. Report the counts in `coverage`. A file nobody looked at
-   is a limitation, named.
+   is a limitation, named. `files.excluded` lists what the map leaves out on
+   purpose, with reason and count; name those groups in `limitations` so the
+   coverage is never read as larger than it is. If `dependencies.error` is set,
+   the dependency scan did not run — say so; it is not a clean result.
 4. **Verify.** For each consultant finding, read the cited lines yourself. Check
    the precondition is reachable from outside (unauthenticated user, authenticated
    user, another user's data, CI trigger, uploaded content). Drop what does not

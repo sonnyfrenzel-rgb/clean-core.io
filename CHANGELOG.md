@@ -35,6 +35,33 @@ Bucket in den Aufräumlisten. Umbenennen lässt sich eine Datenbank nicht, nur m
 wie Produktion am 20.08. nach `clean-core-eu`. Das ist ein Infrastrukturschritt mit
 Sonnys Freigabe, kein Umbenennen.
 
+### QA-Runde 1 zum Security-Agenten — neun Befunde behoben, einer widerlegt
+
+- **Kein Release ohne Audit:** Die Concurrency-Gruppe hielt nur einen wartenden Lauf; ein
+  dritter Push hätte den zweiten abgebrochen. Die Gruppe ist entfernt, jeder Lauf ist ohnehin
+  für sich (`0ea9860d60be`).
+- **Zustellung nach „Re-run failed jobs":** Der Artefaktname kommt jetzt als Ausgabe aus dem
+  Audit-Job, statt im Zustell-Job mit dessen neuer Versuchsnummer neu gebildet zu werden
+  (`566a50b8581a`). Die Inbox wählt das Artefakt ebenfalls nach Namen, nicht nach
+  Entpackzeit (`4fb3804a2d49`).
+- **Bericht erst lesen, wenn er geschrieben ist:** Das Ergebnis wird erst nach dem Flush beider
+  Ausgabedateien gelesen (`9755c9d18aa8`; lokal nicht reproduzierbar, das Warten ist mit Test
+  festgehalten).
+- **Wieder aufgetretene Befunde:** Ein als behoben markierter Befund, den ein Audit eines
+  Commits *mit* dem Fix erneut meldet, gilt wieder als offen (`cf4293a0d91a`).
+  `register.mjs` funktioniert in einem frischen Klon ohne Inbox (`def5abdae94c`).
+- **Ehrliche Abdeckung:** Ausgeschlossene Dateien stehen mit Grund und Anzahl in der Karte;
+  was ausgeliefert wird oder läuft (HTML in `public/`, SVG, Skripte), ist immer drin
+  (`b9dfa00d5649`). Ein `npm audit` ohne Ergebnis heißt „nicht gelaufen", nicht „sauber"
+  (`5be8e955fc64`).
+- **Mail am Telefon:** Lange Wörter und URLs brechen in jeder Karte um, statt abgeschnitten
+  zu werden; der Test prüft jetzt jedes Element, nicht nur das Seiten-Scrollen (`73eba29aa463`).
+- **Widerlegt:** der „kritische" Fund in `envelope.mjs` ist der Pfad zum *öffentlichen*
+  Schlüssel, den das Namensmuster `…_KEY…` des Redaktors für einen Schlüssel hielt (`8e1761103200`).
+
+Der erste Selbsttest scheiterte mit API-Fehler 400 im ersten Zug, 0 $. Das Log nennt jetzt
+eine Fehlerklasse aus einer festen Liste (z. B. „credit balance too low"), nie den Text.
+
 ## [v2.9.15] — 2026-09-15
 
 ### Der Security-Agent: jede Version auf main bekommt ein Vollaudit — der Bericht kommt per Mail

@@ -13,6 +13,21 @@ import { constants, createCipheriv, createDecipheriv, createPrivateKey, privateD
 
 export const PUBLIC_KEY_PATH = 'docs/security/audit-public-key.pem';
 
+/**
+ * The artifact holding a run's report: `security-audit-<sha>-<attempt>`, from the
+ * latest attempt that produced one. A re-run of only the delivery job adds an
+ * attempt without a new artifact, so the newest attempt is not always the one.
+ */
+export function auditArtifact(names, sha) {
+  const re = new RegExp(`^security-audit-${String(sha).replace(/[^0-9a-f]/g, '')}-(\\d+)$`);
+  return (
+    names
+      .map((name) => ({ name, attempt: Number(re.exec(name)?.[1]) }))
+      .filter((a) => a.attempt > 0)
+      .sort((a, b) => b.attempt - a.attempt)[0]?.name || null
+  );
+}
+
 export function sealFor(payload, publicKeyPem) {
   const key = randomBytes(32);
   const iv = randomBytes(12);

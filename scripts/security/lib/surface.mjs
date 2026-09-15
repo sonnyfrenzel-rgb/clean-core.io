@@ -15,7 +15,22 @@ import { readFileSync } from 'node:fs';
 
 const git = (args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).trim();
 
-const SKIP = /^(docs|public|abap-test-files|clean-core-video|scratch|tmp|dist)\/|package-lock\.json$|^lib\/abap\/generated\/|\.(png|jpe?g|gif|svg|ico|webp|pdf|mp4|woff2?|ttf|zip|md|html)$/;
+/**
+ * What the map leaves out, each with its reason — and nothing that runs. Served
+ * or executable files (HTML under public/, scripts, anything .js/.ts) are always
+ * in, wherever they sit; the exclusions are named in the map with their counts,
+ * so the report can state them instead of implying a coverage it does not have
+ * (QA review of 52b34aba4cb8, finding b9dfa00d5649).
+ */
+export const EXCLUSIONS = [
+  { reason: 'binary media, fonts and archives — no executable content', test: (p) => /\.(png|jpe?g|gif|ico|webp|pdf|mp3|mp4|woff2?|ttf|zip)$/.test(p) },
+  { reason: 'documentation and prose (Markdown, docs/) — not built, not served', test: (p) => /\.md$/.test(p) || (/^docs\//.test(p) && !/\.(js|mjs|cjs|ts|tsx)$/.test(p)) },
+  { reason: 'separate video project, not part of the app build or deployment', test: (p) => /^clean-core-video\//.test(p) },
+  { reason: 'sample ABAP and static text assets — data, not code', test: (p) => /^abap-test-files\//.test(p) || /^public\/.*\.(abap|txt|vtt|sha256)$/.test(p) },
+  { reason: 'generated SAP catalog data (synced JSON) and the lockfile — covered by the dependency audit', test: (p) => /^lib\/abap\/generated\/.*\.json$/.test(p) || /(^|\/)package-lock\.json$/.test(p) },
+];
+
+const excludedBy = (path) => EXCLUSIONS.find((e) => e.test(path)) || null;
 
 /** Domains the consultants are split by. The first match wins. */
 export const DOMAINS = [
@@ -27,11 +42,16 @@ export const DOMAINS = [
   { domain: 'tests-and-config', test: () => true },
 ];
 
-export function inventory() {
-  return git(['ls-files'])
-    .split('\n')
-    .filter((p) => p && !SKIP.test(p))
-    .map((path) => ({ path, domain: DOMAINS.find((d) => d.test(path)).domain }));
+export function inventory(paths = git(['ls-files']).split('\n').filter(Boolean)) {
+  return paths.filter((p) => !excludedBy(p)).map((path) => ({ path, domain: DOMAINS.find((d) => d.test(path)).domain }));
+}
+
+/** The files left out, grouped by reason, with a few examples each. */
+export function exclusions(paths = git(['ls-files']).split('\n').filter(Boolean)) {
+  return EXCLUSIONS.map(({ reason, test }) => {
+    const hit = paths.filter((p) => excludedBy(p)?.test === test);
+    return { reason, count: hit.length, examples: hit.slice(0, 3) };
+  }).filter((e) => e.count);
 }
 
 const read = (p) => {
@@ -121,34 +141,48 @@ export function firestoreRules() {
   };
 }
 
+/**
+ * `npm audit --json` output read strictly. Only a result with vulnerability
+ * metadata counts as a scan; an error object (registry down, no network) or
+ * anything else is reported as unavailable — never as zero findings (finding
+ * 5be8e955fc64).
+ */
+export function readDependencyAudit(stdout) {
+  let j;
+  try {
+    j = JSON.parse(stdout || '');
+  } catch {
+    return { error: 'npm audit output could not be read' };
+  }
+  if (j?.error || typeof j?.metadata?.vulnerabilities !== 'object' || j.metadata.vulnerabilities === null) {
+    return { error: 'npm audit returned no audit result (registry or network error)' };
+  }
+  return {
+    vulnerabilities: j.metadata.vulnerabilities,
+    advisories: Object.values(j.vulnerabilities || {})
+      .filter((v) => ['high', 'critical', 'moderate'].includes(v.severity))
+      .map((v) => ({ package: v.name, severity: v.severity, direct: v.isDirect, fixAvailable: Boolean(v.fixAvailable) })),
+  };
+}
+
 export function dependencyAudit() {
   try {
-    execFileSync('npm', ['audit', '--package-lock-only', '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], shell: process.platform === 'win32' });
-    return { vulnerabilities: {}, advisories: [] };
+    return readDependencyAudit(execFileSync('npm', ['audit', '--package-lock-only', '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], shell: process.platform === 'win32' }));
   } catch (err) {
     // npm audit exits non-zero when it finds something; the JSON is still on stdout.
-    try {
-      const j = JSON.parse(err.stdout || '{}');
-      return {
-        vulnerabilities: j.metadata?.vulnerabilities || {},
-        advisories: Object.values(j.vulnerabilities || {})
-          .filter((v) => ['high', 'critical', 'moderate'].includes(v.severity))
-          .map((v) => ({ package: v.name, severity: v.severity, direct: v.isDirect, fixAvailable: Boolean(v.fixAvailable) })),
-      };
-    } catch {
-      return { error: 'npm audit output could not be read' };
-    }
+    return readDependencyAudit(err.stdout);
   }
 }
 
 export function surfaceMap() {
-  const files = inventory();
+  const tracked = git(['ls-files']).split('\n').filter(Boolean);
+  const files = inventory(tracked);
   const byDomain = {};
   for (const f of files) byDomain[f.domain] = (byDomain[f.domain] || 0) + 1;
   return {
     version: 1,
     head: git(['rev-parse', 'HEAD']),
-    files: { total: files.length, byDomain, list: files },
+    files: { total: files.length, byDomain, list: files, excluded: exclusions(tracked) },
     apiRoutes: apiRoutes(files),
     sinks: sinks(files),
     workflows: workflows(files),
