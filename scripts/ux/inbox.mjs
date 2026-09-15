@@ -16,7 +16,7 @@ import { open } from '../qa/lib/crypto.mjs';
 import { artifactNames, gh, ghJson, jobsOf, latestArtifact, waitForRun } from '../qa/lib/gh.mjs';
 import { containsOrUnknown, git } from '../qa/lib/git-delta.mjs';
 import { loadDotEnv } from '../qa/lib/store.mjs';
-import { newestRealReview, reviewRuns } from './lib/history.mjs';
+import { collectArtifacts, newestRealReview, reviewRuns } from './lib/history.mjs';
 import { loadRegister, untriaged } from './lib/register.mjs';
 import { renderText } from './lib/report.mjs';
 
@@ -80,14 +80,15 @@ async function main() {
   let fetched;
   if (BRIEF) {
     // Indexed by review artifacts, not runs: skipped runs have none and cannot hide a review; self-tests are passed over.
-    const artifacts = [];
-    for (let page = 1; page <= 5; page++) {
-      const batch = ghJson(['api', `repos/{owner}/{repo}/actions/artifacts?per_page=100&page=${page}`, '--jq', '[.artifacts[] | select(.expired == false) | {name, runId: .workflow_run.id, headSha: .workflow_run.head_sha}]']) || [];
-      artifacts.push(...batch);
-      if (batch.length < 100) break;
-    }
+    const { artifacts, complete } = collectArtifacts((page) =>
+      ghJson(['api', `repos/{owner}/{repo}/actions/artifacts?per_page=100&page=${page}`, '--jq', '{raw: (.artifacts | length), items: [.artifacts[] | {name, expired, runId: .workflow_run.id, headSha: .workflow_run.head_sha}]}']) || { raw: 0, items: [] },
+    );
     const found = newestRealReview(reviewRuns(artifacts), (candidate) => fetchReport(candidate, secret));
-    if (!found) return 0;
+    if (!found) {
+      // A search that stopped at its safety limit says so instead of reporting "nothing undecided".
+      if (!complete) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: 'UX agent: the artifact history is longer than the lookup limit and no real review was found in it — run node scripts/ux/inbox.mjs <sha> for a specific release.' } }));
+      return 0;
+    }
     run = found.run;
     fetched = found;
   } else {

@@ -31,7 +31,7 @@ const benefitsEvidence = [
   { title: 'Evidence, Not Opinions', desc: 'A deterministic evidence scanner with token- and rule-based ABAP analysis maps custom-table access, RFC calls and dynpro patterns to concrete findings — before any AI runs. A defensible baseline you can take into an audit, not a black-box guess.' },
   { title: 'The Documentation Nobody Wrote', desc: 'For most legacy programs the documentation was never written or is long gone, the process behind it was never described, and the person who built it has left. The source is the one document that still says what the thing does. A run reads it back in both directions — down into released SAP APIs for the developer, up into process, roles and procedure for the business — and hands both sides a draft to correct rather than a blank page.' },
   { title: 'Upgrade Resilience', desc: 'Replacing unreleased database dependencies with officially released SAP APIs (e.g. I_Customer, API_PRODUCT_SRV) helps keep your ERP core upgrade-stable — reducing coupling between custom code and the core update cycle.' },
-  { title: 'Automated Test Stubs', desc: 'Matching unit tests are generated with the code — ABAP Unit doubles for RAP, or Express/Node suites for CAP — and executed in a sandboxed Node process (filesystem-scoped and time-limited). QA starts covered, not empty.' },
+  { title: 'Automated Test Stubs', desc: 'Matching unit tests are generated with the code — Express/Node suites for CAP run against mocks in a restricted Node process (filesystem-scoped and time-limited); ABAP Unit doubles for RAP are generated, and their run is simulated, never counted as passed. QA starts covered, not empty.' },
 ];
 
 const benefitsGovernance = [

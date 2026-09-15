@@ -254,7 +254,7 @@ ${JSON.stringify(evidenceReport, null, 2)}
       
 Analyze the legacy SAP ABAP code and the evidence findings to provide a highly practical, down-to-earth IT and Business assessment. You must return your output strictly in JSON format. Do not include any markdown formatting, HTML, or explanations outside the JSON object. The JSON must exactly match this TypeScript schema, and you MUST populate the fields 'cleanCoreScore' and 'extensibilityRouting' with the exact pre-calculated values provided below:
 
-${anchorInstruction(evidenceReport.findings)}
+${anchorInstruction(evidenceReport.findings, codeToAnalyze.split(/\r?\n/).length)}
 
 interface AnalysisData {
   projectTitle: string;

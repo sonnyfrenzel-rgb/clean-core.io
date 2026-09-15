@@ -89,14 +89,14 @@ export async function POST(request: NextRequest) {
           </p>
 
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            This is typically due to the conclusion of the evaluation period, an administrative update, or security hygiene protocols. Your custom sandbox projects remain fully intact, but live connectivity tunnels will be bypassed using safe mock database engines until access is re-granted.
+            This is typically due to the conclusion of the evaluation period, an administrative update, or security hygiene protocols. Your projects remain fully intact; connection checks against your tenant are unavailable until access is re-granted.
           </p>
 
           <!-- Security Trust Indicator -->
           <div style="background-color: #fcf8f3; border: 1px solid #fef3c7; border-radius: 16px; padding: 18px; margin-bottom: 24px;">
-            <span style="font-weight: 800; color: #92400e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">🛡️ Safe Mock Mode Active</span>
+            <span style="font-weight: 800; color: #92400e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">🛡️ Mock Environment Unchanged</span>
             <span style="color: #b45309; font-size: 13px; line-height: 1.5; display: block;">
-              To prevent test suite failures, your Sandbox environment has automatically fallback-routed to localized mock engines. Your connection credentials in the Project Vault remain securely encrypted.
+              Generated tests always run against mocks, so they keep working exactly as before. Your connection credentials remain stored encrypted.
             </span>
           </div>
 

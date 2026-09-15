@@ -120,7 +120,7 @@ export default function Home() {
       // Not "Validated", not "runs test suites against your S/4HANA sandbox": running
       // tests against a tenant is locked (lib/locked-paths.ts, G0:R0). What ships is
       // the sandbox run and a read-only connection check.
-      cc: { badge: "Sandbox + Connection Check", desc: "Runs the generated tests in an isolated sandbox against mocks and checks your S/4HANA sandbox connection read-only. Running tests against the tenant itself is locked until the test runner has its own isolated service." }
+      cc: { badge: "Sandbox + Connection Check", desc: "Runs the generated tests against mocks in a restricted Node.js process and checks your S/4HANA sandbox connection read-only. Running tests against the tenant itself is locked until the test runner has its own isolated service." }
     },
     {
       title: "Business Process Blueprinting",

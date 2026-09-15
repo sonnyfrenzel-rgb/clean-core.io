@@ -187,5 +187,19 @@ test.describe('with ids the engine really assigns (roadmap step 1.3)', () => {
     const legacy = anchorNarrative('It posts to the ledger [F-017].', report.findings, lines);
     expect(legacy.sentences[0].status).toBe('invalid-anchor');
     expect(legacy.invalidCount).toBe(1);
+    // Non-numeric invented ids too — the old parser caught them, the fix must not start ignoring them.
+    expect(anchorNarrative('It checks the limit [F-credit-limit].', report.findings, lines).sentences[0].status).toBe('invalid-anchor');
+  });
+
+  test('a report without findings offers no finding id, and its line example fits the file', () => {
+    const lines = 2;
+    const instruction = anchorInstruction([], lines);
+    expect(instruction).not.toMatch(/\[[A-Z]{1,4}-[A-Za-z0-9_-]+\]/);
+    expect(instruction).toMatch(/no finding id to cite/);
+    // Every anchor the instruction shows resolves against an empty report of that length.
+    for (const example of instruction.match(/\[L\d+(?:-\d+)?\]/g) || []) {
+      expect(anchorNarrative(`Example ${example}.`, [], lines).sentences[0].status, example).toBe('anchored');
+    }
+    expect((instruction.match(/\[L\d+(?:-\d+)?\]/g) || []).length).toBeGreaterThan(0);
   });
 });

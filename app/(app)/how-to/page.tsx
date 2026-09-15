@@ -36,7 +36,7 @@ const steps = [
   },
   {
     title: "Phase 4: Testing & Sandbox",
-    text: "Execute tests in a secure sandbox against mocks. A connected S/4HANA tenant can be checked read-only; running tests against it is locked."
+    text: "Execute tests against mocks in a restricted test runner. A connected S/4HANA tenant can be checked read-only; running tests against it is locked."
   },
   {
     title: "Phase 5: Process Blueprint",

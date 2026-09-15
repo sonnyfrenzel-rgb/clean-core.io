@@ -43,10 +43,10 @@ const slides = [
   {
     id: 'test',
     title: 'Testing & Sandbox',
-    description: 'ABAP Unit test stubs, SQL Test Double mocking, and sandboxed validation — in a mock environment or against your connected S/4HANA tenant.',
+    description: 'ABAP Unit test stubs, SQL Test Double mocking, and test runs against mocks; a connected S/4HANA tenant can be checked read-only, while running tests against it is locked.',
     icon: <ShieldCheck className="w-6 h-6" />,
     image: '/screenshots/step-4.jpg',
-    alt: 'Clean-Core.io Testing & Sandbox page showing ABAP Unit Compiler, SQL Test Double Mock, and validation environment options for mock or connected S/4HANA tenants.',
+    alt: 'Clean-Core.io Testing & Sandbox page showing ABAP Unit Compiler, SQL Test Double Mock, and the mock environment and the read-only tenant connection check.',
     color: 'text-amber-600',
     bgColor: 'bg-amber-50',
     borderColor: 'border-amber-200'

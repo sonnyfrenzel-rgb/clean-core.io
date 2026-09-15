@@ -75,10 +75,11 @@ export interface AnchoredNarrative {
  * against the report. The pattern used to accept only `F-…`, while the engine
  * has always numbered findings `CC-001`: a correct citation matched nothing and
  * counted as unevidenced, and the prompt's own example `[F-017]` could only ever
- * be an invention (roadmap step 1.3). Reading every id shape and validating it
- * keeps both failures visible — a real id anchors, an invented one is rejected.
+ * be an invention (roadmap step 1.3). Reading every id shape — numeric or not,
+ * `[CC-003]` as much as `[F-credit-limit]` — and validating it keeps both failures
+ * visible: a real id anchors, an invented one is rejected, never ignored.
  */
-const ANCHOR_PATTERN = /\[\s*(?:([A-Z]{1,4}-\d{1,6})|L\s*(\d+)\s*(?:[-–]\s*(\d+))?)\s*\]/gi;
+const ANCHOR_PATTERN = /\[\s*(?:([A-Z]{1,4}-[A-Za-z0-9_-]+)|L\s*(\d+)\s*(?:[-–]\s*(\d+))?)\s*\]/gi;
 
 /**
  * Split prose into sentences.
@@ -211,21 +212,30 @@ export function anchorNarrative(
  * has drifted from its prompt rejects correct output — which trains whoever is
  * left to loosen the validator.
  */
-export function anchorInstruction(findings: EvidenceFinding[]): string {
+export function anchorInstruction(findings: EvidenceFinding[], totalLines?: number): string {
   const ids = findings.slice(0, 40).map((f) => `${f.id} (lines ${f.lineStart}${f.lineEnd && f.lineEnd !== f.lineStart ? `–${f.lineEnd}` : ''}: ${f.title})`);
-  // The example is a real id from this report when there is one, so the model copies a citation that resolves.
-  const exampleId = findings[0]?.id ?? 'CC-001';
+  // Every example is one this report can resolve, so the model never copies a citation the parser rejects:
+  // the first real finding id, and a line range inside the file. With no findings there is no id to show.
+  const first = findings[0];
+  const lineExample = first
+    ? `L${first.lineStart}${first.lineEnd && first.lineEnd !== first.lineStart ? `-${first.lineEnd}` : ''}`
+    : `L1-${Math.max(1, Math.min(3, totalLines ?? 3))}`;
+  const pad = (s: string) => `[${s}]`.padEnd(12);
   return [
     'CITATIONS — every prose field below must be traceable to the code.',
     '',
     'End each sentence that makes a claim about this program with an anchor:',
-    `  [${exampleId}]${' '.repeat(Math.max(1, 12 - exampleId.length - 2))}cite a finding id from the evidence report above, or`,
-    '  [L380-412]  cite a line range in the file.',
+    ...(first ? [`  ${pad(first.id)}cite a finding id from the evidence report above, or`] : []),
+    `  ${pad(lineExample)}cite a line range in the file.`,
     '',
     'Rules:',
-    '- Only cite finding ids that appear in the evidence report. An id that is not',
-    '  there is treated as a fabrication and is reported as one — an uncited',
-    '  sentence is accepted, an invented citation is not.',
+    ...(first
+      ? [
+          '- Only cite finding ids that appear in the evidence report. An id that is not',
+          '  there is treated as a fabrication and is reported as one — an uncited',
+          '  sentence is accepted, an invented citation is not.',
+        ]
+      : ['- This report has no findings, so there is no finding id to cite. Any id you', '  write is treated as a fabrication; cite line ranges only.']),
     '- Only cite line numbers that exist in the file.',
     '- If a sentence is general advice rather than a statement about this code,',
     '  leave it uncited. That is a valid outcome and is labelled as such.',

@@ -174,6 +174,15 @@ export async function POST(req: Request) {
 
   const { tests, projectId, code, selectedTestIds, s4Environment } = await req.json();
 
+  // The documented lock (lib/locked-paths.ts, G0:R0) refuses a live run before any work:
+  // nothing is written, bundled, probed or loaded for a path that is closed.
+  if (s4Environment === 'live' && LIVE_TEST_EXECUTION.locked) {
+    return NextResponse.json(
+      { output: '', error: LIVE_TEST_EXECUTION.userNotice, exitCode: 1, testResults: [], locked: LIVE_TEST_EXECUTION.id },
+      { status: 403 },
+    );
+  }
+
   // ── Input validation ────────────────────────────────────────────────────
   const sanitizedProjectId = (projectId || '').replace(/[^a-zA-Z0-9_-]/g, '');
   if (!sanitizedProjectId) {

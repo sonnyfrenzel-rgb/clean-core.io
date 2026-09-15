@@ -9,6 +9,24 @@
  */
 
 /**
+ * Every retained artifact, page by page, until the API has no more — judged by
+ * the raw page size, never by what a filter left of it: a full page with one
+ * expired artifact would otherwise look like the last page (finding 21fde4c339d8).
+ *
+ * @param fetchPage (page) => { raw: number, items: [{ name, runId, headSha, expired }] }
+ * @param maxPages  a safety stop; hitting it is reported, not taken for the end
+ */
+export function collectArtifacts(fetchPage, maxPages = 50) {
+  const items = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const { raw, items: batch } = fetchPage(page);
+    items.push(...batch.filter((a) => !a.expired));
+    if (raw < 100) return { artifacts: items, complete: true };
+  }
+  return { artifacts: items, complete: false };
+}
+
+/**
  * @param artifacts [{ name, runId, headSha }] newest first, from the artifacts API
  * @returns the runs with a UX review artifact, newest first, each once
  */

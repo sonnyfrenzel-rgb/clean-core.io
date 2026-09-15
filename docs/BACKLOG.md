@@ -3,6 +3,13 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+**15.09.2026 — Testing-Seite verliert die gespeicherte Suite beim Neuladen (offen, v2.10.4 gefunden).**
+`hooks/useTestGeneration.ts:10` setzt `useState(project?.testCases || [])` einmal beim ersten
+Rendern; da ist `project` noch `null`, und nichts gleicht später ab. Wer die Seite neu lädt, sieht
+„Generate Your Test Suite" statt seiner Tests und erzeugt sie womöglich kostenpflichtig neu.
+Gehört in den Schritt, der die Testing-Stufe anfasst; mit einem Emulator-Test, der eine gespeicherte
+Suite nach dem Laden sieht.
+
 **15.09.2026 — Schritt 0.1 (`G0:R0`) gebaut, v2.10.0 auf `dev`.** Die Sperre der Live-Tests steht in
 `lib/locked-paths.ts` und `SECURITY.md` §7.1; die Route prüft sie vor jeder Messung, rund 30 Texte
 sind korrigiert. **Offen bleibt `E08-F01-US01`** (Runner-Isolation) als eigener Auftrag nach 2.10 —

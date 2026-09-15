@@ -444,6 +444,34 @@ test.describe('the register Claude decides in', () => {
     expect(read('scripts/ux/inbox.mjs')).toMatch(/newestRealReview\(reviewRuns\(artifacts\)/);
   });
 
+  test('the artifact lookup pages on the raw page size, and says so when it stops at its limit', async () => {
+    const { collectArtifacts } = await lib('history.mjs');
+    const item = (page: number, i: number, expired = false) => ({ name: `a-${page}-${i}`, runId: page * 1000 + i, headSha: 'x', expired });
+    // Page 1 is full but one artifact on it has expired: filtered, it holds 99 — it is still not the last page.
+    const pages: Record<number, ReturnType<typeof item>[]> = {
+      1: Array.from({ length: 100 }, (_, i) => item(1, i, i === 7)),
+      2: [item(2, 0), item(2, 1)],
+    };
+    const asked: number[] = [];
+    const fetchPage = (page: number) => {
+      asked.push(page);
+      const raw = pages[page] || [];
+      return { raw: raw.length, items: raw };
+    };
+    const got = collectArtifacts(fetchPage);
+    expect(asked).toEqual([1, 2]);
+    expect(got.complete).toBe(true);
+    expect(got.artifacts).toHaveLength(101);
+    expect(got.artifacts.some((a: { expired: boolean }) => a.expired)).toBe(false);
+
+    // Every page full: the lookup stops at its limit and reports itself incomplete rather than finished.
+    const endless = (page: number) => ({ raw: 100, items: Array.from({ length: 100 }, (_, i) => item(page, i)) });
+    const capped = collectArtifacts(endless, 3);
+    expect(capped.complete).toBe(false);
+    expect(capped.artifacts).toHaveLength(300);
+    expect(read('scripts/ux/inbox.mjs')).toMatch(/raw: \(\.artifacts \| length\)/);
+  });
+
   test('an existing entry can be updated from a fresh clone without an inbox', () => {
     const { execFileSync } = require('child_process') as typeof import('child_process');
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ux-register-'));

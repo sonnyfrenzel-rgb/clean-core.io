@@ -10,6 +10,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.10.4] — 2026-09-15
+
+### QA-Review von 7bdac5e: Klassen statt Einzelstellen
+
+Das Review fand Stellen, die die Fixes von 0.1 und 1.3 übersehen hatten. Sie hatten nur
+einzelne Fundstellen repariert und die Tests nur die reparierten Dateien geprüft. Diese
+Runde behebt jeweils die ganze Klasse und prüft das Verhalten statt des Quelltexts.
+
+- **Gesperrter Live-Pfad (`G0:R0`).** `tests/locked-paths-guard.spec.ts` liest nicht mehr
+  vierzehn feste Dateien, sondern jede Datei unter `app/`, `components/`, `hooks/` und
+  `lib/` (Kommentare ausgenommen) plus README und die Whitepaper-Vorlage. Dazu kommen
+  Muster für Isolation, die der Runner nicht hat: „isolated sandbox", „secure sandbox",
+  „containerized", „code directly against your". Korrigiert wurden:
+  - das Knowledge-Panel und die Landing-Slideshow
+  - die Freigabe-Mail („Execute dynamic SAP Cloud SDK code directly against your … sandbox")
+  - die Entzugs-Mail („fallback-routed to localized mock engines")
+  - Chatbot, How-to und die Glossar-Box
+
+  Überall steht jetzt: Die Tests laufen gegen Mocks in einem eingeschränkten
+  Node.js-Prozess.
+- **Die Sperre, beobachtet.** `/api/run-tests` lehnt einen Live-Lauf direkt nach dem Lesen
+  des Bodys ab, noch vor Projekt-Lookup, Temp-Verzeichnis, Probe und Zugangsdaten. Neue
+  Emulator-Tests:
+  - Ein Live-Lauf erhält 403 mit dem Sperrhinweis und `locked: "G0:R0"`.
+  - Derselbe Aufruf auf Mocks erhält 200.
+  - Die Testing-Seite zeigt im Tenant-Tab Hinweis und „Check only" und sendet keinen Lauf.
+- **Anker (1.3).** Nicht-numerische erfundene IDs wie `[F-credit-limit]` gelten weiter als
+  erfunden. Die Anweisung für einen Bericht ohne Befunde zeigt keine Befund-ID. Ihr
+  Zeilenbeispiel liegt innerhalb der Datei.
+- **UX-Agent, Sitzungsstart.** Die Artefakt-Suche blättert nach der rohen Seitengröße.
+  Eine volle Seite mit einem abgelaufenen Artefakt galt vorher als letzte Seite. Endet die
+  Suche an ihrem Limit, sagt sie das, statt „nichts offen" zu melden.
+- Whitepaper- und Guide-PDF neu erzeugt.
+
+Mitgefunden, nicht in dieser Runde: Die Testing-Seite zeigt eine gespeicherte Testsuite nach
+dem Neuladen nicht an (`hooks/useTestGeneration.ts:10` übernimmt `project.testCases` nur beim
+ersten Rendern, und da lädt das Projekt noch) — steht im BACKLOG.
+
 ## [v2.10.3] — 2026-09-15
 
 ### Roadmap-Schritt 0.4: keine Geldwerte ohne freigegebene Annahmen

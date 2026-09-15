@@ -668,7 +668,7 @@ export default function TestingSandboxPage() {
       <StageHeader title="Testing &amp; Sandbox">
         {isAbapCloud
           ? 'Generate ABAP Unit stubs and run simulated validation in a secure SAP ADT environment.'
-          : 'Generate test cases and run automated validation in an isolated Node.js environment.'}
+          : 'Generate test cases and run them against mocks in a restricted Node.js process.'}
       </StageHeader>
 
       {/* Explanation Boxes */}
@@ -677,12 +677,12 @@ export default function TestingSandboxPage() {
           <ShieldCheck className="w-8 h-8 md:w-10 md:h-10 text-blue-600 flex-shrink-0" />
           <div>
             <h3 className="font-bold text-blue-900 mb-1 text-sm md:text-base">
-              {isAbapCloud ? 'ABAP Unit Compiler' : 'Real Sandbox Execution'}
+              {isAbapCloud ? 'ABAP Unit Compiler' : 'Real Execution, Against Mocks'}
             </h3>
             <p className="text-xs md:text-sm text-blue-700">
               {isAbapCloud 
                 ? 'Generates standardized ABAP Unit local test classes verifying RAP custom behavioral entities.'
-                : 'We execute actual Node.js code in an isolated environment. No simulation, just real results.'
+                : 'The generated Node.js code really runs — in a restricted child process, against mocks. Real results for the code, not for a tenant.'
               }
             </p>
           </div>
@@ -910,7 +910,7 @@ export default function TestingSandboxPage() {
                             <span className="bg-indigo-600 text-white text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">4</span>
                             <div>
                               <p className="text-xs font-bold text-indigo-950">Save the Connection</p>
-                              <p className="text-[11px] text-indigo-800/80 font-medium">Click <strong>"Save Connection"</strong> to persist the config. Running the generated tests against the tenant is locked until the test runner has its own isolated service; the Mock Environment runs them in the sandbox.</p>
+                              <p className="text-[11px] text-indigo-800/80 font-medium">Click <strong>"Save Connection"</strong> to persist the config. Running the generated tests against the tenant is locked until the test runner has its own isolated service; the Mock Environment runs them against mocks.</p>
                             </div>
                           </div>
 

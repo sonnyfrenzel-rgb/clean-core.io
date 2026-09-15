@@ -116,7 +116,7 @@ Review the side-by-side conversion in detail. The scroll-sync code comparison vi
 - **Features**: Dual-pane scroll-sync viewer, ABAP-to-TypeScript/ABAP Cloud transformation, code quality annotations, refactoring suggestions.
 
 ### Phase 4: Testing & Sandbox (Verify Compliance)
-The platform mounts the new code inside an isolated testing sandbox and runs selective, granular unit tests against mocks.
+The platform mounts the new code inside a restricted test runner and runs selective, granular unit tests against mocks.
 - **Locked: tests against a live tenant.** ${LIVE_TEST_EXECUTION.userNotice}
 - **TAP Format**: Test Anything Protocol — a standardized text output format for logging unit test assertions, passes, and fails.
 - **Test Coverage**: Generated test cases assert data models, validation rules, security checks, and service endpoint response values.
@@ -201,7 +201,7 @@ Side-by-side code conversion from legacy ABAP to modern cloud-native code.
 ### Testing Stage (/project/[id]/testing)
 Execute automated tests and validate your modernized code.
 - **Test Case Generation**: AI generates comprehensive test cases covering data models, validation rules, and API endpoints
-- **Mock Environment**: Run tests without an S/4HANA tenant using containerized Express sandbox
+- **Mock Environment**: Run tests without an S/4HANA tenant, against mocks in a restricted Node process
 - **Tenant Environment**: Connect a real S/4HANA sandbox to check the connection and read OData metadata (requires BYOT setup). Running tests against it is locked.
 - **S/4HANA Live Tenant Bridge**: Configure connection to your S/4HANA system with Basic Auth, OAuth 2.0, SAP API Hub Key, or BTP Destination JSON
 - **Test Results Dashboard**: TAP-formatted logs with pass/fail status, execution time, and AI-powered explanations
@@ -371,7 +371,7 @@ export const SECURITY_AND_PRIVACY = `
 - **AI keys never client-side**: all Gemini calls proxy through the server. BYOK keys are AES-256-GCM encrypted in a server-only store and never returned to the client.
 - **Auth**: mutating API routes require a verified Firebase ID token; admin routes add an email-allowlist check. Sensitive MFA/credential collections are server-only (clients cannot read them).
 - **S/4HANA SSRF defense**: HTTPS-only, DNS/IP re-checks, host allowlist, private/metadata-IP blocking, redirect validation, IP pinning. Production endpoints are blocked — sandbox only.
-- **Sandboxed test runner**: generated tests run in an isolated Node process (esbuild bundle + Node Permission Model — filesystem scoped to a temp dir, no child-process/worker/native access, no platform secrets). Test execution against a live S/4HANA tenant is locked (gate ${LIVE_TEST_EXECUTION.id}): the runner is defense in depth, not an isolation boundary, and it reopens only with its own isolated service.
+- **Sandboxed test runner**: generated tests run in a restricted Node process (esbuild bundle + Node Permission Model — filesystem scoped to a temp dir, no child-process/worker/native access, no platform secrets). Test execution against a live S/4HANA tenant is locked (gate ${LIVE_TEST_EXECUTION.id}): the runner is defense in depth, not an isolation boundary, and it reopens only with its own isolated service.
 - **GDPR Art. 17 erasure**: account deletion recursively purges projects (incl. immutable runs), encrypted BYOK keys, and MFA data; completeness is covered by an automated test. Data is stored in Firestore in the EU (europe-west1).
 - **Transparency**: a public /trust page documents the security posture.
 `;

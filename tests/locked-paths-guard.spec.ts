@@ -1,7 +1,12 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { initializeApp, getApps } from 'firebase/app';
+import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
+import { adminSetDoc } from './helpers/admin-seed';
+import firebaseConfig from '../firebase-config.json';
 import { LIVE_TEST_EXECUTION } from '../lib/locked-paths';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * Roadmap step 0.1 (`G0:R0`): live test execution against a connected tenant is
@@ -40,15 +45,15 @@ test.describe('the lock is named', () => {
 test.describe('the lock holds in code', () => {
   test('the route refuses a live run before it measures anything', () => {
     const src = read('app/api/run-tests/route.ts');
-    const lock = src.indexOf('LIVE_TEST_EXECUTION.locked');
-    const probe = src.indexOf('await liveRunnerPermitted()');
-    expect(lock).toBeGreaterThan(0);
-    expect(probe).toBeGreaterThan(lock);
-    expect(src).toMatch(/reason: LIVE_TEST_EXECUTION\.userNotice/);
-    // The refusal is a 403 — and credentials are loaded only after it.
+    const body = src.indexOf('await req.json()');
+    const lock = src.indexOf("s4Environment === 'live' && LIVE_TEST_EXECUTION.locked");
     const refusal = src.indexOf('{ status: 403 }', lock);
-    expect(refusal).toBeGreaterThan(probe);
-    expect(src.indexOf('loadS4ConfigForUser(', lock)).toBeGreaterThan(refusal);
+    // Refused straight after the body is read: before the project lookup, the temp dir, the probe and the credentials.
+    expect(body).toBeGreaterThan(0);
+    expect(lock).toBeGreaterThan(body);
+    for (const later of ["collection('projects')", 'await liveRunnerPermitted()', 'loadS4ConfigForUser(']) {
+      expect(src.indexOf(later, body), later).toBeGreaterThan(refusal);
+    }
   });
 
   test('the test hook does not send a locked run and does not ask a model to explain a decision', () => {
@@ -69,24 +74,113 @@ test.describe('the lock holds in code', () => {
   });
 });
 
+// ── The lock, observed rather than read (needs the emulators and the dev server) ──────────────────────────
+test.describe('the lock holds when used', () => {
+  const EMAIL = `lock-${Date.now()}@cleancore-test.io`;
+  const PASSWORD = 'LockGuard123!';
+  const PROJECT_ID = `lock-${Date.now()}`;
+  const RUN_ID = `lock-run-${Date.now()}`;
+  let token = '';
+
+  test.beforeAll(async () => {
+    const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    try {
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+    } catch { /* already connected */ }
+    const cred = await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD);
+    token = await cred.user.getIdToken();
+    await adminSetDoc('users', cred.user.uid, {
+      firstName: 'Lock', lastName: 'Guard', email: EMAIL, tier: 'pilot', status: 'approved',
+      transformationsUsed: 1, transformationsLimit: 5, termsVersionAccepted: TERMS_VERSION,
+      mfaEnabled: false, createdAt: new Date(),
+    });
+    // A CAP project on the tenant tab, with tests to run — the state in which the path would be offered.
+    await adminSetDoc('projects', PROJECT_ID, {
+      name: 'Lock fixture', userId: cred.user.uid, createdAt: new Date(), status: 'documented',
+      extensibilityRoute: 'Side-by-Side Extension (CAP on SAP BTP)', s4Environment: 'live',
+      legacyCode: 'REPORT z_lock.\nSELECT * FROM vbak INTO TABLE @DATA(lt).\n',
+      analysis: JSON.stringify({ cleanCoreScore: 62, standardFit: { potential: 'Medium' } }), cleanCoreScore: 62,
+      solutionDesign: '# Target architecture\n\nSide-by-side on BTP.\n', generatedCode: 'export const ok = true;\n',
+      testCases: [{ id: 'TC_01', name: 'Case', category: 'Unit', status: 'Pending' }],
+      documentation: '# Blueprint\n\nLevel 1.\n',
+      activeRunId: RUN_ID,
+    });
+    // Without an active run the stages send the reader back to Analyze.
+    await adminSetDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, {
+      runId: RUN_ID, projectId: PROJECT_ID, userId: cred.user.uid,
+      createdAt: new Date().toISOString(), status: 'completed', cleanCoreScore: 62,
+    });
+  });
+
+  const suite = ["import { test } from 'node:test';", "import assert from 'node:assert';", "test('TC_01: runs', () => { assert.ok(true); });"].join('\n');
+
+  test('POST /api/run-tests with a live environment is refused with the notice; the same request on mocks is not', async ({ request }) => {
+    test.setTimeout(90 * 1000);
+    const data = { projectId: PROJECT_ID, tests: { code: suite }, code: '', selectedTestIds: ['TC_01'] };
+    const live = await request.post('/api/run-tests', { headers: { Authorization: `Bearer ${token}` }, data: { ...data, s4Environment: 'live' } });
+    expect(live.status()).toBe(403);
+    const refused = await live.json();
+    expect(refused).toMatchObject({ error: LIVE_TEST_EXECUTION.userNotice, locked: LIVE_TEST_EXECUTION.id, exitCode: 1, testResults: [] });
+    expect(refused.output).toBe('');
+
+    // The refusal belongs to the lock, not to the account or the project: on mocks the same caller runs.
+    const mock = await request.post('/api/run-tests', { headers: { Authorization: `Bearer ${token}` }, data: { ...data, s4Environment: 'mock' } });
+    expect(mock.status(), await mock.text()).toBe(200);
+    expect((await mock.json()).locked).toBeUndefined();
+  });
+
+  test('the testing page on the tenant tab shows the lock and sends no run', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+    const runRequests: string[] = [];
+    page.on('request', (r) => { if (r.url().includes('/api/run-tests')) runRequests.push(r.method()); });
+
+    await page.goto('/');
+    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+    await page.waitForSelector('input[type="email"]');
+    await page.fill('input[type="email"]', EMAIL);
+    await page.fill('input[type="password"]', PASSWORD);
+    await page.click('button[type="submit"]:has-text("Sign In")');
+    await page.waitForTimeout(4000);
+
+    await page.goto(`/project/${PROJECT_ID}/testing`, { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText(LIVE_TEST_EXECUTION.userNotice).first()).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText('Tests against a tenant are locked')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Connected S\/4HANA Tenant/ })).toContainText('Check only');
+    // The saved suite is not listed after a reload (useTestGeneration seeds its state once, from a project that is
+    // still loading — BACKLOG), so the disabled run button is held by the source test above, not here.
+    await page.waitForTimeout(1500);
+    expect(runRequests, 'the tenant tab must not reach the runner').toEqual([]);
+  });
+});
+
 test.describe('no text offers the locked path', () => {
-  /** Everything a user or a mail recipient reads about testing against a tenant. */
-  const SURFACES = [
-    'app/page.tsx',
-    'app/(app)/project/[projectId]/testing/page.tsx',
-    'app/(app)/settings/page.tsx',
-    'app/(app)/tenant-security/page.tsx',
-    'app/(app)/knowledge/page.tsx',
-    'app/(app)/how-to/page.tsx',
-    'app/whitepaper/page.tsx',
-    'app/api/send-tenant-approval-email/route.ts',
-    'components/HowToClient.tsx',
-    'hooks/useTestExecution.ts',
-    'lib/chatbot-knowledge.ts',
-    'lib/clean-core-capabilities.ts',
-    'public/linkedin-whitepaper-template.html',
-    'README.md',
-  ];
+  /**
+   * Every file a user, a mail recipient or a model-written answer can draw text from — not a list of the files
+   * that happened to be fixed. A fixed list passed while the knowledge panel, the landing slideshow and the
+   * tenant mails still offered the path (findings 1ba774db5f81, 544cc34084cd).
+   */
+  const walk = (dir: string): string[] =>
+    fs.readdirSync(path.resolve(ROOT, dir), { withFileTypes: true }).flatMap((e) => {
+      const rel = `${dir}/${e.name}`;
+      if (e.isDirectory()) return ['node_modules', 'generated', '.next'].includes(e.name) ? [] : walk(rel);
+      return /\.(tsx?|mjs|js|md|html)$/.test(e.name) ? [rel] : [];
+    });
+  // lib/locked-paths.ts is the definition of the closed path and has to name it; the spec above checks it word for word.
+  const SURFACES = [...['app', 'components', 'hooks', 'lib'].flatMap(walk), 'public/linkedin-whitepaper-template.html', 'README.md'].filter((f) => f !== 'lib/locked-paths.ts');
+
+  /** Comments are for maintainers and may quote a removed claim; `://` in a URL is not a comment. */
+  const visibleText = (file: string) =>
+    read(file)
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
+
+  test('the scan reaches the surfaces the claims were found on', () => {
+    for (const file of ['components/KnowledgeClient.tsx', 'components/LandingSlideshow.tsx', 'app/api/send-tenant-revoke-email/route.ts', 'lib/chatbot-knowledge.ts']) {
+      expect(SURFACES).toContain(file);
+    }
+    expect(SURFACES.length).toBeGreaterThan(200);
+  });
 
   /** The claims that were there on 15.09.2026, each one presenting the path as available. */
   const CLAIMS = [
@@ -107,11 +201,22 @@ test.describe('no text offers the locked path', () => {
     // Security claims found in the same panels: credentials are encrypted on the server, not in the browser.
     /encrypted (?:locally )?in(?:-| the )browser/i,
     /Browser-side Encryption/,
+    // Isolation the runner does not have: it is a restricted Node.js child process, not an isolation boundary.
+    /isolated (?:testing |test )?sandbox/i,
+    /isolated Node(?:\.js)? (?:process|environment|sandbox)/i,
+    /in an isolated environment/i,
+    /secure (?:Node(?:\.js)? )?sandbox/i,
+    /containeri[sz]ed/i,
+    /stays disabled unless/i,
+    /tests can run against a real/i,
+    /code directly against your/i,
+    /fallback-routed/i,
+    /connectivity tunnels/i,
   ];
 
   for (const file of SURFACES) {
     test(`${file}`, () => {
-      const text = read(file);
+      const text = visibleText(file);
       for (const claim of CLAIMS) expect(text, `${file} still says ${claim}`).not.toMatch(claim);
       // Any sentence about running or executing tests against a tenant has to say it is locked.
       for (const sentence of text.split(/(?<=[.!?])\s+|\n/)) {

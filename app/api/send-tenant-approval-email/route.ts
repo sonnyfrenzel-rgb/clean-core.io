@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
           </p>
           
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            Great news! Your request to integrate a <strong>Live S/4HANA Public Cloud Custom Tenant</strong> has been reviewed and approved by our engineering team. You can now connect your non-productive SAP environment in Stage 5 to check the connection and read OData metadata. Running the generated tests against the tenant is locked until the test runner has its own isolated service — they run in the sandbox against mocks.
+            Great news! Your request to integrate a <strong>Live S/4HANA Public Cloud Custom Tenant</strong> has been reviewed and approved by our engineering team. You can now connect your non-productive SAP environment in Stage 5 to check the connection and read OData metadata. Running the generated tests against the tenant is locked until the test runner has its own isolated service — they run against mocks.
           </p>
 
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
                 <strong>Secure Cloud Connector:</strong> For On-Premise development tenants, route all traffic through a secure SAP Cloud Connector tunnel (Location ID routing) to keep your firewall closed.
               </li>
               <li>
-                <strong>Stateless Sandbox Proxy:</strong> The sandbox executes all queries client-side or via stateless transit proxies. No data is stored, persisted, or used for LLM training.
+                <strong>Read-Only, Server-Side:</strong> Connection checks and metadata reads are sent from the Clean-Core.io server as read-only requests. Generated tests are not run against your tenant — that path is locked.
               </li>
             </ul>
           </div>
@@ -124,8 +124,8 @@ export async function POST(request: NextRequest) {
             <h3 style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin: 0 0 16px 0; letter-spacing: 0.05em;">Unlocked S/4HANA Capabilities:</h3>
             
             <div style="margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
-              <span style="font-weight: 700; color: #0f172a; font-size: 14px; display: block;">✨ Live OData Queries</span>
-              <span style="color: #64748b; font-size: 13px; display: block; margin-top: 4px; line-height: 1.4;">Execute dynamic SAP Cloud SDK code directly against your non-productive development sandbox and view raw JSON results.</span>
+              <span style="font-weight: 700; color: #0f172a; font-size: 14px; display: block;">✨ Connection Check &amp; OData Metadata</span>
+              <span style="color: #64748b; font-size: 13px; display: block; margin-top: 4px; line-height: 1.4;">Check the connection, read OData metadata and make one read-only call against your non-productive tenant.</span>
             </div>
 
             <div style="margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
 
             <div>
               <span style="font-weight: 700; color: #0f172a; font-size: 14px; display: block;">🖥️ Live Console Output Logs</span>
-              <span style="color: #64748b; font-size: 13px; display: block; margin-top: 4px; line-height: 1.4;">View beautiful, swipeable, color-coded execution logs of requests routed to your S/4HANA tenant.</span>
+              <span style="color: #64748b; font-size: 13px; display: block; margin-top: 4px; line-height: 1.4;">Colour-coded logs of the read-only connection-check requests sent to your S/4HANA tenant.</span>
             </div>
           </div>
 

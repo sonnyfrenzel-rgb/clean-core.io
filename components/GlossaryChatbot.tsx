@@ -191,7 +191,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
           <div className="flex-grow p-4 overflow-y-auto space-y-4 bg-slate-50/30">
             <div className="bg-slate-100/60 p-3 rounded-2xl border border-slate-200/50 flex gap-2 text-[10px] text-slate-600 leading-normal">
               <ShieldCheck size={14} className="text-slate-500 shrink-0 mt-0.5" />
-              <p className="font-semibold">Context-restricted secure sandbox. Focused exclusively on SAP S/4HANA Clean Core architectures.</p>
+              <p className="font-semibold">Context-restricted assistant. Focused exclusively on SAP S/4HANA Clean Core architectures.</p>
             </div>
 
             {messages.map((msg, idx) => {

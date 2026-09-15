@@ -35,7 +35,7 @@ export const LIVE_TEST_EXECUTION: LockedPath = {
     closed:
       'Executing generated tests against a connected S/4HANA tenant: POST /api/run-tests with s4Environment "live", which would put decrypted tenant credentials into the test child process.',
     open:
-      'Running generated tests in the isolated sandbox against mocks; checking a tenant connection, reading its OData metadata and one read-only OData call (/api/test-s4-connection, /api/fetch-s4-metadata, /api/test-s4-odata-read) — none of these executes generated code.',
+      'Running generated tests against mocks in the restricted test runner (a Node.js child process with guards, not an isolation boundary); checking a tenant connection, reading its OData metadata and one read-only OData call (/api/test-s4-connection, /api/fetch-s4-metadata, /api/test-s4-odata-read) — none of these executes generated code.',
   },
   reason:
     'Generated test code is untrusted and runs as a child process inside the API service. The guards around it (Node permission model, a preloaded network guard, an egress probe) are defense in depth, not an isolation boundary, and the service itself has open network egress. With tenant credentials inside that process, a generated test could send them anywhere the guard misses (review finding CR-15, story E08-F01-US01).',
@@ -46,5 +46,5 @@ export const LIVE_TEST_EXECUTION: LockedPath = {
     'Sonny decides to reopen, and this entry, SECURITY.md §7.1 and the guard spec change in the same release.',
   ],
   userNotice:
-    'Running generated tests against a connected tenant is locked until the test runner has its own isolated service. The tenant connection check, the metadata read and the read-only OData call still work; tests run in the sandbox against mocks.',
+    'Running generated tests against a connected tenant is locked until the test runner has its own isolated service. The tenant connection check, the metadata read and the read-only OData call still work; tests run against mocks in the restricted test runner.',
 };

@@ -66,12 +66,12 @@ const steps = [
   {
     time: "01:25 - 02:30",
     title: "Phase 4: Testing & Sandbox",
-    desc: "Automatic test execution in a secure sandbox against mocks. A connected S/4HANA tenant (BYOT) can be checked read-only; running tests against it is locked.",
-    narration: "For verification, the platform mounts the new TypeScript code inside an isolated testing sandbox and runs selective, granular unit tests against mocks, showing TAP-formatted execution logs. A connected S/4HANA tenant can be checked read-only; running the tests against it is locked until the test runner has its own isolated service.",
+    desc: "Automatic test execution against mocks in a restricted test runner. A connected S/4HANA tenant (BYOT) can be checked read-only; running tests against it is locked.",
+    narration: "For verification, the platform mounts the new TypeScript code inside a restricted test runner and runs selective, granular unit tests against mocks, showing TAP-formatted execution logs. A connected S/4HANA tenant can be checked read-only; running the tests against it is locked until the test runner has its own isolated service.",
     icon: FileText,
     color: "from-cyan-500/10 to-blue-500/10 text-cyan-600 border-cyan-200/50",
     hotspots: [
-      { x: 30, y: 35, question: "What is the testing sandbox?", answer: "An isolated Node.js environment that runs the generated tests against mocks. A connected S/4HANA tenant can be checked read-only, but running tests against it is locked until the test runner has its own isolated service." },
+      { x: 30, y: 35, question: "What is the testing sandbox?", answer: "A restricted Node.js process that runs the generated tests against mocks — guarded, but not an isolation boundary. A connected S/4HANA tenant can be checked read-only, but running tests against it is locked until the test runner has its own isolated service." },
       { x: 70, y: 40, question: "What is TAP format?", answer: "Test Anything Protocol is a simple, standardized text output format used to log unit test assertions, passes, and fails clearly." },
       { x: 50, y: 80, question: "What are the test cases testing?", answer: "The generated test cases assert data models, validation rules, security checks, and service endpoint response values." }
     ]
@@ -408,7 +408,7 @@ export default function HowToClient() {
               <span className="w-6 h-6 rounded-full bg-green-100 border border-green-200 text-green-700 flex items-center justify-center text-xs font-black shrink-0 mt-0.5">3</span>
               <div className="space-y-1">
                 <h4 className="font-bold text-sm text-gray-900 font-black">Execute Tests</h4>
-                <p className="text-xs text-gray-500 leading-relaxed">Verify API endpoints in the secure Node sandbox.</p>
+                <p className="text-xs text-gray-500 leading-relaxed">Run the generated tests against mocks in the restricted Node process.</p>
               </div>
             </div>
             <div className="flex gap-3">
