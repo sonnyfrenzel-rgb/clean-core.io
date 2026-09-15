@@ -112,6 +112,12 @@ test.describe('three jobs, three trust levels', () => {
     expect(job('review')).toContain('CAPTURE: ${{ needs.capture.outputs.artifact }}');
     expect(job('review')).toMatch(/if: \$\{\{ !cancelled\(\) && needs\.scope\.result == 'success'/);
   });
+
+  test('no step can fail on its own loop control', () => {
+    // `[ … ] && break` as the last command of a loop body hands a false test to the step as its
+    // exit status; the report fetch failed that way on its second run (run 34952723977).
+    expect(wf()).not.toMatch(/\]\s*&&\s*(break|continue)\s*$/m);
+  });
 });
 
 test.describe('spend stays within an estimated budget per mode', () => {
