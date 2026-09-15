@@ -36,8 +36,8 @@ diese Datei** — das betrifft vor allem Konto, Rollen, Teilen und die Reihenfol
    BPMN rekonstruiert, jedes Element mit Zeilenanker, bearbeitbar wie in einem
    Prozessmodellierer und über BPMN 2.0 XML mit SAP Signavio austauschbar — für
    alle, die Signavio selbst lizenziert haben.
-4. **Die Verantwortung bleibt beim angemeldeten Nutzer.** Management-, Business-
-   und IT-Sicht ordnen nur die Darstellung. Sie werden nirgends gespeichert und
+4. **Die Verantwortung bleibt beim angemeldeten Nutzer.** Business-, IT- und
+   Management-Sicht ordnen nur die Darstellung. Sie werden nirgends gespeichert und
    berühren weder Ergebnis, Signatur noch Audit-Pack.
 5. **Anmeldung und Konto bleiben, wie sie sind.** Geteilt wird per Einladung an
    eine E-Mail-Adresse: Die eingeladene Person meldet sich wie gewohnt an,
@@ -84,7 +84,7 @@ Was die Phasen voraussetzen oder ersetzen. Gelesen, nicht gelaufen.
   (`lib/abap/narrative-anchors.ts:71`), der Prompt nennt dem Modell aber die
   `CC-`IDs (`:205-221`). Richtig zitierte Sätze zählen als unbelegt; der Test
   verdeckt es mit `F-`Fixtures.
-- **Keine Sicht, kein Teilen.** Kein Management/Business/IT-Umschalter;
+- **Keine Sicht, kein Teilen.** Kein Business/IT/Management-Umschalter;
   `projects` liest nur Besitzer oder Admin.
 - **Für Einladungslinks fehlen zwei Bausteine.** Die Anmeldung kehrt nicht zu
   einer Ausgangsseite zurück, und E-Mail-Adressen werden nicht verifiziert
@@ -116,7 +116,7 @@ Phase 2  v2.12  Prozess aus dem Code ......... Kontrollfluss, BPMN-Rekonstruktio
 Phase 3  v2.13  Modellieren .................. Editor, Regeln, Beibehalten/Ändern/Entfallen, Ist/Soll
 Phase 4  v2.14  Austauschen .................. BPMN-Import und -Export, Signavio-Rundlauf, Kurzbrief
 Phase 5  v2.15  Teilen ....................... Einladung per E-Mail-Link, Einsicht
-Phase 6  v2.16  Sichten ...................... Management · Business · IT, Ebenen, Overlays
+Phase 6  v2.16  Sichten ...................... Business · IT · Management, Ebenen, Overlays
 Phase 7  v2.17  Standard und Kosten .......... Standardabdeckung, Gegenprobe, Optionen
 Phase 8  v2.18  Entscheiden und Übergeben .... Architekturvertrag, Entscheidung, Nachweiskette
 3.0             Umstellung ................... neuer Arbeitsraum für alle, öffentliche Texte
@@ -265,7 +265,7 @@ Mockup Screens 1–4: Umschalter, Ebenen, Status-Chips, nächster Schritt, Suche
 
 | # | Schritt | Größe |
 |---|---|---|
-| 6.1 | **Umschalter Business · Management · IT** (Business vorn und beim Öffnen gewählt), in IT mit Fokus Application · Solution · Enterprise. Gehalten in URL und Browser — nicht im Konto, nicht im Projekt, nicht in Run oder Audit-Pack. Dazu **die drei Sichten in Bewegung** in „New project" (`DESIGN.md` §6.1.1): eine Tatsache mit festem Anker wandert einmal durch die drei Sichten, aus dem echten Lauf des Beispiels, überspringbar, bei reduzierter Bewegung still. Unter dem Umschalter je Sicht ein Satz, welche Frage sie beantwortet, mit „About this view" (`DESIGN.md` §2.3) | M |
+| 6.1 | **Umschalter Business · IT · Management** (immer in dieser Reihenfolge, Business vorn und beim Öffnen gewählt; Entscheidung Sonny 15.09.2026), in IT mit Fokus Application · Solution · Enterprise. Gehalten in URL und Browser — nicht im Konto, nicht im Projekt, nicht in Run oder Audit-Pack. Dazu **die drei Sichten in Bewegung** in „New project" (`DESIGN.md` §6.1.1): eine Tatsache mit festem Anker wandert einmal durch die drei Sichten, aus dem echten Lauf des Beispiels, überspringbar, bei reduzierter Bewegung still. Unter dem Umschalter je Sicht ein Satz, welche Frage sie beantwortet, mit „About this view" (`DESIGN.md` §2.3) | M |
 | 6.2 | **Ebenen:** Bedarf & Prozess · Standard-Fit · Kosten & Annahmen · Architektur & Abhängigkeiten · Nachweise & Kontrollen · Änderungen & Zusagen. Eine Ebene ohne Inhalt sagt das, statt etwas zu erfinden (W22-A03) | M |
 | 6.3 | **Overlays auf dem Prozessmodell:** Clean-Core-Level des Codes hinter einem Task, Findings, Nutzung (wenn importiert) — Darstellung, kein Inhalt; das Level bleibt außerhalb des signierten Audit-Packs | M |
 | 6.4 | **Management-Sicht auf dasselbe Projekt:** was bestätigt ist, was fehlt, was eine Entscheidung binden würde; **Clean-Core-Readiness mit Regelversion und Verlauf** — ein Verlauf vergleicht nur Runs derselben Regelversion — kein Portfolio | M |

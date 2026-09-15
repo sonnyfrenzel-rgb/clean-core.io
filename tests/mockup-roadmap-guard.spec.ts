@@ -61,6 +61,19 @@ test.describe('the mockups are found 1:1 in the roadmap', () => {
     }
   });
 
+  test('the views always read Business · IT · Management, never with Management in the middle (ADR-044)', () => {
+    // The three labels that follow each switcher's opening tag, in document order.
+    const switchers = [...mockups.matchAll(/class="(?:views|minisegs|seg14)"[^>]*>/g)].map((m) =>
+      [...mockups.slice(m.index! + m[0].length, m.index! + m[0].length + 600).matchAll(/>(Business|IT|Management)</g)]
+        .slice(0, 3)
+        .map((x) => x[1])
+        .join(' · '),
+    );
+    expect(switchers.length).toBeGreaterThanOrEqual(15);
+    for (const order of switchers) expect(order).toBe('Business · IT · Management');
+    for (const file of ['DESIGN.md', 'docs/ROADMAP.md']) expect(read(file), file).not.toMatch(/Business (?:·|\||→|,) ?Management (?:·|\||→|and|und) ?IT/);
+  });
+
   test('every roadmap marker drawn in the mockups points at a step that exists', () => {
     const pins = [...mockups.matchAll(/<span class="pin"[^>]*>([^<]*)<\/span>/g)].map((m) => m[1]);
     expect(pins.length).toBeGreaterThan(0);

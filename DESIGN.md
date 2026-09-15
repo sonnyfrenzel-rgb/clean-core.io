@@ -207,7 +207,7 @@ Von oben nach unten:
 
 1. **Kopf:** Projekttitel; Metazeile in Mono (Projekt-ID, Manifest, Revision, Quellstand, Engine, Regelversion);
    **Kennzahl-Facetten** — Traceability, Rules confirmed, Level distribution, **Not determined** (Anzahl). Rechts im
-   Kopf: der **Sichten-Umschalter** als Segmented Control „Business | Management | IT" (ADR-008) und die Initialen
+   Kopf: der **Sichten-Umschalter** als Segmented Control „Business | IT | Management" (ADR-008, Reihenfolge ADR-044) und die Initialen
    der Konten mit Einsicht (Roadmap 5.5 — keine weiteren Personendaten).
 2. **Statuszeile** (Roadmap-Schritt 1.4): Provenance · Need · Standard · Costs · Confirmed · Execution · Handover —
    je ein **Objektstatus**, Text mit Zustandspunkt („not started", „partial", „draft", „mock only"), solange nichts da
@@ -558,8 +558,8 @@ nichts zeigt, senkt die Glaubwürdigkeit, die der Moment braucht.
 | Sicht | Die Frage | Die erste Antwort auf dem Schirm |
 |---|---|---|
 | **Business** | Do I still need this, and what changes for me? | Prozess, Geschäftsregeln (auch versteckte), Standard-Fit mit Scope-Item-ID, Not determined |
-| **Management** | What do I risk, what do I decide? | Clean-Core readiness mit Regelversion und Verlauf, Public-Cloud fit, vier Töpfe (Retire · Keep · Rebuild · Blocked by SAP), offene Entscheidung, Kosten nur als *Simulation* |
 | **IT** | What exactly, where to, and is it right? | Findings mit Zeile und beiden Katalogsichten, Nachfolger-API, Kette Objekt → Bedeutung → Entscheidung → Ziel, Architekturvertrag |
+| **Management** | What do I risk, what do I decide? | Clean-Core readiness mit Regelversion und Verlauf, Public-Cloud fit, vier Töpfe (Retire · Keep · Rebuild · Blocked by SAP), offene Entscheidung, Kosten nur als *Simulation* |
 
 Die Kette **Objekt → Bedeutung → Entscheidung → Ziel → Status** ist in jeder Sicht durchklickbar, und jede Zahl nennt
 ihre Abdeckung („42 findings in 907 of 907 lines · 2 includes not read"). Auf S steht die Kette als Liste
@@ -761,7 +761,7 @@ Browser):
 - **Drei Zeilen, was anders ist**, je mit Icon, keine Wörter aus der Stilliste (§3.1):
   1. *„Reads your code before any model does. Every finding points to a line."*
   2. *„Says what it could not determine — and never passes an assumption off as a fact."*
-  3. *„One case, three views: Business, Management and IT see the same facts, each answering its own question."*
+  3. *„One case, three views: Business, IT and Management see the same facts, each answering its own question."*
 - **Clean Core in drei Blicken** — beim ersten Mal sichtbar, ohne Klick; eine Zeile hoch, wo es geht (ADR-040,
   Sonny 15.09.2026). Sachlich, in der Sprache der SAP-Community, jede Angabe mit Quelle:
   1. **What clean core means.** Ein Satz — *„Keep the SAP core standard: extensions use only released, upgrade-stable
@@ -792,13 +792,13 @@ Browser):
     Tatsache ist —, nur der Inhalt um ihn wechselt:
     - **Business** — *„Do I still need this?"* · „Rejects requisitions for vendors on the block list" · Tag *hard-coded
       in program* · Keep · Change · Drop
-    - **Management** — *„What do I risk, what do I decide?"* · „Rebuild — part of decision DEC-1" · Kosten nur mit
-      *Simulation*
     - **IT** — *„What exactly, where to?"* · `Z_MM_PO_APPROVAL` `L225–234` · liest die eigene Tabelle
       `ZMM_VEND_BLOCK` direkt · *„estimated from the code, no SAP catalog entry"* — kein Level-Buchstabe, weil ein
       Kundenobjekt keinen Katalogeintrag hat
+    - **Management** — *„What do I risk, what do I decide?"* · „Rebuild — part of decision DEC-1" · Kosten nur mit
+      *Simulation*
   - **Ablauf:** Umschalter-Markierung gleitet, Inhalt blendet über (je 200 ms), jede Sicht steht 3,5 s. **Ein
-    Durchlauf** Business → Management → IT, dann bleibt die Bühne auf Business stehen, mit „Replay". Keine
+    Durchlauf** Business → IT → Management, dann bleibt die Bühne auf Business stehen, mit „Replay". Keine
     Endlosschleife.
   - **Bedienung:** Hover oder Fokus hält an; ein Klick auf eine Sicht übernimmt und beendet das automatische Wechseln.
     „Skip intro" ist immer sichtbar.
