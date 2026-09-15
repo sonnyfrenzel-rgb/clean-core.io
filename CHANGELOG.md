@@ -37,8 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Sitemaps und robots.txt, damit der Umbau zu 3.0 keine davon verliert.
 - **Das Sicherheitsaudit verliert seinen Bericht nicht mehr an ein Ratenlimit.** Zwei Selbsttests
   scheiterten am letzten Aufruf mit HTTP 429 nach rund 100 Sekunden Wiederholungen. Der
-  Security-Agent wartet jetzt bis zu rund 12 Minuten; die Anbieter-Regel (kein Fallback, kein
-  Anbieter, der Prompts speichert) bleibt unverändert.
+  Security-Agent wartet jetzt mit eigenen Pausen bis zu rund 12 Minuten je Aufruf; nennt der Anbieter
+  seine Wartezeit (bis 120 Sekunden je Versuch), können es bis zu 16 Minuten werden. Die Anbieter-Regel
+  (kein Fallback, kein Anbieter, der Prompts speichert) bleibt unverändert.
 
 ## [v2.10.6] — 2026-09-15
 

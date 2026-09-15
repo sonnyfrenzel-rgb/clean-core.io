@@ -95,7 +95,9 @@ test.describe('the mockups are found 1:1 in the roadmap', () => {
     // The desktop frame is the page; the phone frame repeats it.
     const desktop = landing.slice(landing.indexOf('id="L0"'), landing.indexOf('id="L1"') > 0 ? landing.indexOf('id="L1"') : undefined);
     const sections = [...new Set([...desktop.matchAll(/<section[^>]*\sid="([a-z][a-z-]*)"/g)].map((m) => m[1]))];
-    expect(sections.length).toBeGreaterThanOrEqual(10);
+    // The accepted page, exactly: a section removed or added is a change to an accepted design, not a detail.
+    const ACCEPTED = ['hero', 'what', 'views', 'clean-core', 'catalog', 'process', 'verify', 'honest', 'toolchain', 'demo', 'start', 'trust', 'faq'];
+    expect(sections).toEqual(ACCEPTED);
     const rows = section5()
       .replace(/\\\|/g, '¦')
       .split('\n')
