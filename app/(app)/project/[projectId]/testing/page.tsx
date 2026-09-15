@@ -490,8 +490,8 @@ export default function TestingSandboxPage() {
     }
   };
 
-  // A saved suite opens fully selected, as a freshly generated one does. Since the suite shows after a reload
-  // (v2.10.5), an empty selection left "Run Selected" disabled with nothing saying a tick was needed. Only the
+  // A saved suite opens fully selected, as a freshly generated one does. Once the suite showed after a reload,
+  // an empty selection left "Run Selected" disabled with nothing saying a tick was needed. Only the
   // first time the suite appears: a selection the reader changes afterwards stays theirs.
   const selectionSeeded = useRef(false);
   useEffect(() => {
