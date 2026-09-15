@@ -29,9 +29,9 @@ export function healthOf(findings, stated) {
  * @param results    area or delta calls: [{ review, batch: { area, title, part, files }, shots: [names] }]
  * @param synthesis  the end-to-end call of a full audit, or null
  * @param previous   the report this one continues from (delta only)
- * @param closed     fingerprints refuted or fixed in the register — never carried
+ * @param closed     (finding) => boolean — closed by a register decision made after it was raised (register.closedBy)
  */
-export function buildReport({ mode, range, results, synthesis = null, previous = null, closed = new Set(), notReviewed = [], meta = {} }) {
+export function buildReport({ mode, range, results, synthesis = null, previous = null, closed = () => false, notReviewed = [], meta = {} }) {
   const createdAt = new Date().toISOString();
   const byFp = new Map();
   const add = (raw, area) => {
@@ -53,7 +53,7 @@ export function buildReport({ mode, range, results, synthesis = null, previous =
       }
     }
     for (const old of previous.findings || []) {
-      if (closed.has(old.fingerprint) || byFp.has(old.fingerprint)) continue;
+      if (closed(old) || byFp.has(old.fingerprint)) continue;
       const s = statuses.get(old.fingerprint);
       if (s?.status === 'resolved') resolved.push({ ...old, resolution: s.reason });
       else byFp.set(old.fingerprint, { ...old, carried: true, carriedReason: s?.reason || 'in dieser Review nicht erwähnt' });

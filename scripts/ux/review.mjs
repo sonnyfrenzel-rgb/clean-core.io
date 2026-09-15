@@ -2,7 +2,7 @@
 /**
  * UX review — the CI entry point (.github/workflows/ux-review.yml, job `review`).
  *
- *   node scripts/ux/review.mjs                      CI: mode from UX_MODE — full | delta | self-test
+ *   node scripts/ux/review.mjs                      CI: mode from UX_MODE — auto | full | delta | self-test (auto: see resolveMode)
  *   node scripts/ux/review.mjs --local --mode=full  maintainer: reads .env.local, also writes and prints the plaintext
  *   node scripts/ux/review.mjs --dry --mode=full    maintainer: batches, screenshots and estimated cost — no model call
  *
@@ -18,10 +18,10 @@ import { callReviewer } from '../qa/lib/openrouter.mjs';
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { loadDotEnv, sealedReports } from '../qa/lib/store.mjs';
 import { assignAreas, numbered, packAreas } from './lib/areas.mjs';
-import { AREAS, BUDGETS, DIFF_CONTEXT_LINES, estimateCostUsd, isUxRelevant, MAX_IMAGE_BYTES_PER_CALL, REFERENCE_SCREENS, REQUEST_TIMEOUT_MS, UX_MODEL, WHOLE_FILE_CHARS, withinBudget } from './lib/config.mjs';
+import { AREAS, BUDGETS, DIFF_CONTEXT_LINES, estimateCostUsd, isUxRelevant, MAX_IMAGE_BYTES_PER_CALL, MOCKUP_SCREENS, REFERENCE_SCREENS, REQUEST_TIMEOUT_MS, resolveMode, UX_MODEL, WHOLE_FILE_CHARS, withinBudget } from './lib/config.mjs';
 import { buildText, loadBrief, UX_SCHEMA } from './lib/prompt.mjs';
 import { chooseDeltaBase } from './lib/range.mjs';
-import { closedFingerprints, loadRegister, refutedEntries } from './lib/register.mjs';
+import { closedBy, loadRegister, refutedEntries } from './lib/register.mjs';
 import { actualCost, buildReport, fingerprint, publicSummary, renderText } from './lib/report.mjs';
 import { designScan, introducedTokens, renderScan } from './lib/scan.mjs';
 import { imageParts, loadShots, pickShots } from './lib/shots.mjs';
@@ -34,7 +34,6 @@ const OUT_DIR = process.env.UX_OUT_DIR || join(WORK, 'out');
 const PREV_DIR = process.env.UX_PREV_DIR || join(WORK, 'prev');
 const SHOTS_DIR = process.env.UX_SHOTS_DIR || join(WORK, 'shots');
 const SCHEMA_CHARS = JSON.stringify(UX_SCHEMA).length;
-const MOCKUPS = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];
 
 const show = (commit, path) => git(['show', `${commit}:${path}`]);
 
@@ -46,9 +45,21 @@ function uxFilesAt(commit) {
     .map((path) => ({ path, text: show(commit, path) }));
 }
 
-/** The newest real review (not a self-test) whose head this commit contains. */
-function previousReport(secret, head) {
-  return sealedReports(PREV_DIR, secret, 'ux-review.enc.json').find((r) => r.mode !== 'self-test' && r.range?.head && (r.range.head === head || (isCommit(r.range.head) && isAncestor(r.range.head, head)))) || null;
+/** Earlier real reviews (not self-tests) whose head this commit contains, newest first. */
+function earlierReports(secret, head) {
+  if (!secret) return [];
+  return sealedReports(PREV_DIR, secret, 'ux-review.enc.json').filter((r) => r.mode !== 'self-test' && r.range?.head && (r.range.head === head || (isCommit(r.range.head) && isAncestor(r.range.head, head))));
+}
+
+/**
+ * A removed file is a change users meet too — a route that now 404s, a component
+ * a screen no longer shows. It goes to the reviewer as what was there, not as
+ * nothing (finding 25c4ed925224).
+ */
+function deletionBlock(base, path) {
+  const text = show(base, path);
+  const shown = text.length <= WHOLE_FILE_CHARS ? text : `${text.slice(0, WHOLE_FILE_CHARS)}\n… [cut: the removed file had ${text.split('\n').length} lines]`;
+  return `=== REMOVED ${path} in this release — its last content follows ===\n${numbered(path, shown)}`;
 }
 
 /** A changed file for the reviewer: whole when small, otherwise its diff with generous context. */
@@ -61,20 +72,22 @@ function deltaBlock(base, head, path) {
 
 async function main() {
   const env = LOCAL ? { ...loadDotEnv(), ...process.env } : process.env;
-  const mode = arg('mode') || env.UX_MODE || 'delta';
-  const budget = BUDGETS[mode];
-  if (!budget) throw new Error('UX_MODE must be full, delta or self-test.');
   const secret = env.UX_REVIEW_KEY;
   if (!secret && !DRY) throw new Error('UX_REVIEW_KEY is not set. The report is never written unsealed.');
-
   const head = git(['rev-parse', commitIdOrNull(env.UX_HEAD) || 'HEAD']);
+  const reports = earlierReports(secret, head);
+  const trigger = env.UX_TRIGGER === 'agent' ? 'agent' : 'release';
+  const mode = resolveMode(arg('mode') || env.UX_MODE || 'delta', trigger, reports);
+  const budget = BUDGETS[mode];
+  if (!budget) throw new Error('UX_MODE must be auto, full, delta or self-test.');
+
   const files = uxFilesAt(head);
   const scan = designScan(files);
   const shots = loadShots(SHOTS_DIR);
   const register = loadRegister();
-  const closed = closedFingerprints(register);
+  const closed = closedBy(register);
   const refuted = refutedEntries(register);
-  const previous = secret ? previousReport(secret, head) : null;
+  const previous = reports[0] || null;
   const assignment = assignAreas(files);
 
   const secretHits = [];
@@ -94,8 +107,8 @@ async function main() {
   if (mode === 'full') {
     const scanText = renderScan(scan);
     for (const batch of packAreas(files, assignment, budget.maxBatchChars)) {
-      const screens = batch.area === 'system' ? [...REFERENCE_SCREENS, ...MOCKUPS] : batch.screens;
-      calls.push({ kind: 'area', batch, picked: pickShots(shots, screens, { limit: budget.maxImagesPerCall, maxBytes: MAX_IMAGE_BYTES_PER_CALL }), scanText, effort: budget.effort });
+      const screens = batch.area === 'system' ? [...REFERENCE_SCREENS, ...MOCKUP_SCREENS] : batch.screens;
+      calls.push({ kind: 'area', batch, screens, picked: pickShots(shots, screens, { limit: budget.maxImagesPerCall, maxBytes: MAX_IMAGE_BYTES_PER_CALL }), scanText, effort: budget.effort });
     }
   } else {
     const chosen =
@@ -107,7 +120,10 @@ async function main() {
 
     const changed = chosen.base && chosen.base !== head ? changedFiles(range).filter((f) => isUxRelevant(f.path)) : [];
     const present = changed.filter((f) => f.status !== 'D');
-    let blocks = present.map((f) => ({ path: f.path, block: deltaBlock(range.base, head, f.path) }));
+    let blocks = [
+      ...present.map((f) => ({ path: f.path, block: deltaBlock(range.base, head, f.path) })),
+      ...changed.filter((f) => f.status === 'D').map((f) => ({ path: f.path, block: deletionBlock(range.base, f.path) })),
+    ];
     for (const b of blocks) {
       if (b.block.length <= budget.maxBatchChars || mode === 'self-test') continue;
       b.block = `${b.block.slice(0, budget.maxBatchChars)}\n… [cut at ${budget.maxBatchChars} characters]\n`;
@@ -122,11 +138,13 @@ async function main() {
     if (!blocks.length) {
       skipped = chosen.base === head ? 'dieser Stand ist bereits geprüft' : 'keine für Nutzer sichtbare Änderung in diesem Release';
     } else {
-      const added = chosen.base ? git(['diff', '-U0', range.base, head, '--', ...present.map((f) => f.path)]).split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++')).join('\n') : '';
+      const added = chosen.base && present.length ? git(['diff', '-U0', range.base, head, '--', ...present.map((f) => f.path)]).split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++')).join('\n') : '';
       const scanText = renderScan(scan, { introduced: introducedTokens(added, scan) });
-      const areas = [...new Set(blocks.map((b) => assignment.get(b.path) || 'system'))];
+      // A removed file is not in today's assignment; its area comes from its path, or the design system.
+      const areaOf = (path) => assignment.get(path) || AREAS.find((a) => a.pages.some((re) => re.test(path)))?.id || 'system';
+      const areas = [...new Set(blocks.map((b) => areaOf(b.path)))];
       const screens = [...new Set([...areas.flatMap((a) => AREAS.find((x) => x.id === a)?.screens || []), ...REFERENCE_SCREENS.slice(0, 2)])];
-      const notes = changed.filter((f) => f.status === 'D').map((f) => `Removed in this release: ${f.path}`);
+      const notes = changed.filter((f) => f.status === 'D').map((f) => `Removed in this release: ${f.path} (its last content is in the source below)`);
 
       let current = null;
       for (const b of blocks) {
@@ -136,7 +154,7 @@ async function main() {
             continue;
           }
           current = { area: 'release', title: null, part: null, files: [], blocks: [], chars: 0 };
-          calls.push({ kind: 'delta', batch: current, picked: pickShots(shots, screens, { limit: budget.maxImagesPerCall, maxBytes: MAX_IMAGE_BYTES_PER_CALL }), scanText, notes, effort: budget.effort });
+          calls.push({ kind: 'delta', batch: current, screens, picked: pickShots(shots, screens, { limit: budget.maxImagesPerCall, maxBytes: MAX_IMAGE_BYTES_PER_CALL }), scanText, notes, effort: budget.effort });
         }
         current.files.push(b.path);
         current.blocks.push(b.block);
@@ -145,9 +163,20 @@ async function main() {
     }
   }
 
-  if (!shots.length && calls.length) notReviewed.push({ path: '(Screenshots)', reason: 'die Erfassung hat keine Screenshots geliefert — nur Code gesehen' });
+  // Pictures are checked per screen a call asks for, not by whether any file arrived: one surviving
+  // screenshot of the access dialog is no visual evidence for a changed Analyse screen (finding
+  // a553413f50d9). The mockups are the target picture — wanted, not required.
+  if (mode !== 'self-test') {
+    const missing = new Set();
+    for (const c of calls) {
+      for (const screen of c.screens || []) {
+        if (!MOCKUP_SCREENS.includes(screen) && !shots.some((s) => s.screen === screen && s.viewport === 'desktop')) missing.add(screen);
+      }
+    }
+    for (const screen of missing) notReviewed.push({ path: `(Screenshot ${screen})`, reason: 'nicht erfasst — dieser Screen wurde nur im Code gesehen' });
+  }
 
-  const previousOpen = mode === 'delta' ? (previous?.findings || []).filter((f) => !closed.has(f.fingerprint)).slice(0, 60) : [];
+  const previousOpen = mode === 'delta' ? (previous?.findings || []).filter((f) => !closed(f)).slice(0, 60) : [];
   const textFor = (c, extra = {}) => clean(buildText({ mode: c.kind === 'synthesis' ? 'synthesis' : mode, batch: c.batch, scanText: c.scanText, range, shots: c.picked, previousOpen, refuted, notes: c.notes, ...extra }));
 
   if (DRY) {
@@ -159,7 +188,7 @@ async function main() {
           skipped,
           previous: previous ? { head: previous.range.head, mode: previous.mode } : null,
           screenshots: shots.length,
-          calls: calls.map((c) => ({ area: c.batch.area, part: c.batch.part, files: c.batch.files.length, chars: textFor(c).length, images: c.picked.map((s) => s.name) })),
+          calls: calls.map((c) => ({ area: c.batch.area, part: c.batch.part, files: c.batch.files, chars: textFor(c).length, images: c.picked.map((s) => s.name) })),
           synthesis: mode === 'full',
           estimatedCostUsd: Number((calls.reduce((n, c) => n + estimateCostUsd({ chars: brief.length + textFor(c).length + SCHEMA_CHARS, images: c.picked.length, maxOutputTokens: budget.maxOutputTokens }), 0) + (mode === 'full' ? estimateCostUsd({ chars: 60_000, images: 20, maxOutputTokens: budget.maxOutputTokens }) : 0)).toFixed(2)),
           notReviewed,
@@ -205,7 +234,7 @@ async function main() {
   let synthesis = null;
   if (mode === 'full' && results.length) {
     const areaFindings = results.flatMap(({ review, batch }) => review.findings.map((f) => ({ ...f, area: batch.area, fingerprint: fingerprint({ ...f, area: batch.area }) })));
-    const screens = [...new Set([...AREAS.flatMap((a) => a.screens), 'm1', 'm3', 'm4'])];
+    const screens = [...new Set([...AREAS.flatMap((a) => a.screens), MOCKUP_SCREENS[0], MOCKUP_SCREENS[2], MOCKUP_SCREENS[3]])];
     // A contact sheet: the first screen height of every screen, desktop — the view that shows drift between areas.
     const firstViews = shots.filter((s) => s.viewport === 'desktop' && s.segment === 1);
     const c = { kind: 'synthesis', batch: null, picked: pickShots(firstViews, screens, { limit: budget.maxImagesPerCall + 8, maxBytes: MAX_IMAGE_BYTES_PER_CALL * 1.5 }), scanText: renderScan(scan) };

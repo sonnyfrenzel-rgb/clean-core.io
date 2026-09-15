@@ -3,11 +3,12 @@ name: UX Review
 # The UX agent (docs/UX-REVIEW-AGENT.md): every release on `main` gets a UX delta
 # review by one pinned multimodal model — Muse Spark 1.3 via OpenRouter — from the
 # source it changed, a design scan of the whole product and screenshots of the
-# screens it touches. The very first run reviews the whole product once. When the
-# agent itself changes on `dev`, the chain runs once as a small self-test.
+# screens it touches. Until a complete full review of the whole product exists,
+# every automatic run is that full review. After it, a change to the agent on `dev`
+# runs the chain once as a small self-test.
 #
 # Three jobs, three trust levels:
-#   scope    no secrets          decides: full, delta, self-test or nothing
+#   scope    no secrets          decides whether a run happens and why — the mode itself needs the sealed reports
 #   capture  no secrets          installs and builds the app with throwaway keys, seeds a demo project, photographs it
 #   review   model + sealing key no `npm ci`, no third-party code: reads the repository and the pictures, calls the model, seals
 # This repository and its logs are public: the report leaves the runner only sealed.
@@ -44,6 +45,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       mode: ${{ steps.decide.outputs.mode }}
+      trigger: ${{ steps.decide.outputs.trigger }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -51,10 +53,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # `auto` is resolved by review.mjs, which can open the earlier reports: until a complete
+      # full review exists, an automatic run is that full review — on main as on dev.
       - name: Decide
         id: decide
         env:
-          GH_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
           INPUT_MODE: ${{ inputs.mode }}
           REF_NAME: ${{ github.ref_name }}
@@ -63,10 +66,12 @@ jobs:
         run: |
           if [ "$EVENT" = "workflow_dispatch" ]; then
             case "$INPUT_MODE" in full|delta) echo "mode=$INPUT_MODE" >> "$GITHUB_OUTPUT" ;; *) echo "mode=skip" >> "$GITHUB_OUTPUT" ;; esac
+            echo "trigger=manual" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           if [ "$REF_NAME" = "main" ]; then
-            echo "mode=delta" >> "$GITHUB_OUTPUT"
+            echo "mode=auto" >> "$GITHUB_OUTPUT"
+            echo "trigger=release" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           # dev: only when the agent itself changed. An unknown previous tip counts as changed.
@@ -80,9 +85,8 @@ jobs:
             echo "mode=skip" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          # The first report ever is the full review of the whole product; after that, a change to the agent is a self-test.
-          existing=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" --jq '[.artifacts[] | select(.expired == false and (.name | startswith("ux-review-")))] | length')
-          if [ "${existing:-0}" -gt 0 ]; then echo "mode=self-test" >> "$GITHUB_OUTPUT"; else echo "mode=full" >> "$GITHUB_OUTPUT"; fi
+          echo "mode=auto" >> "$GITHUB_OUTPUT"
+          echo "trigger=agent" >> "$GITHUB_OUTPUT"
 
   capture:
     name: Capture screens
@@ -212,6 +216,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           UX_REVIEW_KEY: ${{ secrets.UX_REVIEW_KEY }}
           UX_MODE: ${{ needs.scope.outputs.mode }}
+          UX_TRIGGER: ${{ needs.scope.outputs.trigger }}
           UX_BASE_OVERRIDE: ${{ inputs.base }}
           UX_BEFORE: ${{ github.event.before }}
           UX_HEAD: ${{ github.sha }}

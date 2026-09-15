@@ -18,8 +18,9 @@ Befunde in die Roadmap ein. Der Agent selbst ändert nichts.
 ```
  git push main ── ux-review.yml
                    │
-                   ├─ scope    (keine Secrets)   main → delta · dev → nur wenn der Agent selbst geändert wurde:
-                   │                             erster Lauf überhaupt → full, danach → self-test
+                   ├─ scope    (keine Secrets)   main → auto · dev → auto, nur wenn der Agent selbst geändert wurde
+                   │                             (auto löst review.mjs auf, das die Berichte öffnen kann: solange es keine
+                   │                             vollständige Vollreview gibt → full; danach main → delta, dev → self-test)
                    │
                    ├─ capture  (keine Secrets)   npm ci · Emulator · Build mit Wegwerf-Schlüsseln ·
                    │                             Demo-Projekt seeden · tests/capture-screens.spec.ts:
@@ -40,10 +41,10 @@ Befunde in die Roadmap ein. Der Agent selbst ändert nichts.
 
 **Modi**
 
-| Modus | Wann | Was das Modell bekommt | Grenze |
+| Modus | Wann | Was das Modell bekommt | Budget (geschätzt) |
 |---|---|---|---|
-| `full` | erster Lauf; danach nur per `workflow_dispatch` | 7 Bereiche (≈ 8 Aufrufe), je Bereich alle Dateien mit Zeilennummern und seine Screens; dann eine Synthese mit Kontaktabzug aller Screens, den Befunden aller Bereiche und Top-10-Prioritäten | 6 $ |
-| `delta` | jeder Push auf `main` | geänderte UX-Dateien (klein: ganz; groß: Diff mit 30 Zeilen Kontext), der Scan mit den Tokens, die das Release neu und selten einführt, Screens der betroffenen Bereiche plus Referenzscreens, offene Befunde zum Abgleich | 1,50 $ |
+| `full` | jeder automatische Lauf, solange keine vollständige Vollreview existiert; danach nur per `workflow_dispatch` | 7 Bereiche (≈ 8 Aufrufe), je Bereich alle Dateien mit Zeilennummern und seine Screens; dann eine Synthese mit Kontaktabzug aller Screens, den Befunden aller Bereiche und Top-10-Prioritäten | 6 $ |
+| `delta` | jeder Push auf `main` nach der Vollreview | geänderte UX-Dateien (klein: ganz; groß: Diff mit 30 Zeilen Kontext; gelöschte mit ihrem letzten Inhalt), der Scan mit den Tokens, die das Release neu und selten einführt, Screens der betroffenen Bereiche plus Referenzscreens, offene Befunde zum Abgleich | 1,50 $ |
 | `self-test` | Agent auf `dev` geändert, nach dem ersten Lauf | eine Datei, zwei Bilder | 0,30 $ |
 
 Die Bereiche sind Journeys, keine Ordner: **Zugang** (Landing, Zugangsdialog, Features,
@@ -55,7 +56,7 @@ einen Bereich, dessen Seiten sie rendern, sonst zum System.
 
 | Baustein | Datei | Aufgabe |
 |---|---|---|
-| Modell, Budgets, Bereiche | `scripts/ux/lib/config.mjs` | die einzige Stelle für Modell-ID, Preise, Grenzen je Modus, Bereiche und Screen-Namen |
+| Modell, Budgets, Bereiche | `scripts/ux/lib/config.mjs` | die einzige Stelle für Modell-ID, Preise, Budgets je Modus, Bereiche, Screen-Namen und die Auflösung von `auto` |
 | UX-Anweisung | `docs/ux/ux-brief.md` | Rolle, Nutzer, Produktregeln, Richtung 3.0, zehn Prüfperspektiven, Schweregrade, die drei Modi |
 | Design-Scan | `scripts/ux/lib/scan.mjs` | Zählungen über alle UX-Dateien; für ein Release die neu eingeführten seltenen Tokens |
 | Bereiche | `scripts/ux/lib/areas.mjs` | Import-Graph, Zuordnung, Pakete ohne geschnittene Dateien |
@@ -95,7 +96,7 @@ Text läuft durch die Redaktion des QA-Agenten.
 **Keine geratene Basis.** Ein Release wird ab dem letzten geprüften Stand geprüft, ohne ihn
 ab dem vorherigen `main`-Stand des Push. Gibt es beides nicht, bricht der Lauf ab und
 verlangt `mode=full` oder eine Basis. Ungelesener Code, fehlende Screenshots oder eine
-fehlende Synthese machen einen Bericht **unvollständig**: Der Prüfstand bleibt stehen.
+fehlende Synthese machen einen Bericht **unvollständig**: Der Prüfstand bleibt stehen. Screenshots zählen je Screen, den ein Aufruf braucht — ein einzelnes Bild eines anderen Screens reicht nicht. Nur die Mockups sind erwünscht, aber nicht Pflicht.
 Ein Selbsttest ist nie ein Prüfstand.
 
 **Keine Warteschlange, die Läufe verwirft.** Keine Concurrency-Gruppe: jedes Release
@@ -107,7 +108,7 @@ bekommt seine Review.
 
 Muse Spark 1.3 kostet 1,25 $ je Million Eingabe- und 4,25 $ je Million Ausgabe-Token
 (OpenRouter, 15.09.2026). Vor jedem Aufruf wird geprüft: bisher tatsächlich ausgegeben plus
-Schätzung für diesen Aufruf — Zeichen ÷ 3,5, jedes Bild mit 1.600 Token, die volle
+Schätzung für diesen Aufruf — Zeichen ÷ 2,5 (Code mit Zeilennummern ist tokendicht), jedes Bild mit 1.600 Token, die volle
 Ausgabemenge. Was nicht passt, wird nicht gesendet und im Bericht als nicht gelesen
 genannt. Die harte Obergrenze ist das Kreditlimit des OpenRouter-Schlüssels.
 

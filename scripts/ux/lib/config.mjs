@@ -10,16 +10,23 @@ export const UX_MODEL = 'meta/muse-spark-1.3';
 /** OpenRouter list price, 15.09.2026, USD per million tokens. */
 export const PRICE_PER_MTOK = { input: 1.25, output: 4.25 };
 
-export const CHARS_PER_TOKEN = 3.5;
+/**
+ * Characters per input token, deliberately low. Source with line-number prefixes
+ * tokenises denser than prose; at 3.5 a token-dense batch could pass the check
+ * and still cross the budget (QA review of 586e0ac1c218, finding 504b555454c1).
+ */
+export const CHARS_PER_TOKEN = 2.5;
 
-/** What a screenshot is assumed to cost as input. Deliberately high: an underestimate would let a call past the cap. */
+/** What a screenshot is assumed to cost as input. Deliberately high: an underestimate would let a call past the budget. */
 export const TOKENS_PER_IMAGE = 1_600;
 
 /**
- * Spend per review, checked before every call against what has actually been
- * spent plus a worst-case estimate for the call (full output allowance). What
- * does not fit is named in the report as not reviewed. The hard ceiling is the
- * credit limit of the OpenRouter key.
+ * Estimated budget per review — not a hard ceiling. Before every call: what has
+ * actually been spent (OpenRouter's usage record) plus a conservative estimate for
+ * the call, the full output allowance included. A call that could cross the
+ * budget by that estimate is not made, and its files are named as not reviewed.
+ * Estimates can still be wrong; the hard ceiling is the credit limit on the
+ * OpenRouter key itself.
  */
 export const BUDGETS = {
   /** The whole product, area by area, then one end-to-end synthesis. */
@@ -108,6 +115,27 @@ export const AREAS = [
 
 /** Screens that stand for the product as a whole — the reference set for consistency when a change is local. */
 export const REFERENCE_SCREENS = ['01-landing', '02-dashboard', '03-analyze', '08-delivery'];
+
+/**
+ * The six views of the 3.0 mockups, as the capture names them (`m3-mockup-desktop.jpg`
+ * parses to screen `m3-mockup`). The target picture: wanted, but its absence does
+ * not make a review of the product incomplete.
+ */
+export const MOCKUP_SCREENS = ['m1-mockup', 'm2-mockup', 'm3-mockup', 'm4-mockup', 'm5-mockup', 'm6-mockup'];
+
+/**
+ * Which mode an automatic run becomes. Until a complete full review exists, every
+ * automatic run is that full review — a release delta or a self-test must not
+ * stand in for a baseline that never happened (finding e4b1d7916a95).
+ *
+ * @param trigger 'release' (push to main) or 'agent' (the agent changed on dev)
+ */
+export function resolveMode(requested, trigger, reports) {
+  if (requested !== 'auto') return requested;
+  const baseline = reports.some((r) => r.mode === 'full' && !r.incomplete);
+  if (!baseline) return 'full';
+  return trigger === 'agent' ? 'self-test' : 'delta';
+}
 
 /** Capture file names: `03-analyze-desktop-s1.jpg`, `m2-mockup-desktop.jpg`. Anything else in the artifact is ignored. */
 export const SHOT_NAME = /^((?:\d{2}|m\d)-[a-z0-9-]+?)-(desktop|phone|dark)(?:-s(\d))?\.jpg$/;

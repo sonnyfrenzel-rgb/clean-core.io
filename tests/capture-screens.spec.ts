@@ -230,8 +230,8 @@ test.describe('capture', () => {
           for (const file of await shoot(page, path.join(OUT, `${screen.name}-${label}`))) {
             notes.push(`${path.basename(file)}  ${Math.round(fs.statSync(file).size / 1024)} KB  ${page.url()}`);
           }
-        } catch (err: any) {
-          notes.push(`${screen.name}-${label}  FAILED  ${err.message?.slice(0, 120)}`);
+        } catch (err) {
+          notes.push(`${screen.name}-${label}  FAILED  ${String(err instanceof Error ? err.message : err).slice(0, 120)}`);
         }
       }
     };
@@ -260,8 +260,8 @@ test.describe('capture', () => {
           const file = path.join(OUT, `m${view}-mockup-desktop.jpg`);
           await page.screenshot({ path: file, type: 'jpeg', quality: 72 });
           notes.push(`${path.basename(file)}  ${Math.round(fs.statSync(file).size / 1024)} KB  mockup view ${view}`);
-        } catch (err: any) {
-          notes.push(`m${view}-mockup-desktop  FAILED  ${err.message?.slice(0, 120)}`);
+        } catch (err) {
+          notes.push(`m${view}-mockup-desktop  FAILED  ${String(err instanceof Error ? err.message : err).slice(0, 120)}`);
         }
       }
     }

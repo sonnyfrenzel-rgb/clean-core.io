@@ -125,7 +125,7 @@ Runbook: `docs/SECURITY-AUDIT-AGENT.md`. Revoke: `gh variable set SECURITY_AUDIT
 `.github/workflows/ux-review.yml`: `meta/muse-spark-1.3` (OpenRouter, multimodal) reviews
 what a release changed for users — source, a deterministic design scan of the whole
 product, and screenshots from `tests/capture-screens.spec.ts` (seeded demo project,
-desktop/phone/dark, plus the 3.0 mockups). The first run reviewed the whole product,
+desktop/phone/dark, plus the 3.0 mockups). Until a complete full review exists, every automatic run reviews the whole product,
 area by area, with an end-to-end synthesis. UX only; read-only; the job with the model key
 runs no `npm ci`; the report is sealed with `UX_REVIEW_KEY`. After a push to `main`, or when
 the session start reports undecided UX findings, use the `ux-review-intake` skill:

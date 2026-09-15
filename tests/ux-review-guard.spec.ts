@@ -9,7 +9,7 @@ import os from 'os';
  * run reviews the whole product.
  *
  * What these tests hold: the agent only reads and reports; the job with the model
- * key runs no third-party code; spend is capped per mode; nothing it finds reaches
+ * key runs no third-party code; spend stays within an estimated budget per mode; nothing it finds reaches
  * a public log; a release is never reviewed from a guessed base; the screenshots
  * it gets are the ones it expects and nothing else.
  */
@@ -73,6 +73,21 @@ test.describe('three jobs, three trust levels', () => {
     expect(wf()).not.toMatch(/pull_request_target/);
     expect(job('scope')).toContain("if: vars.UX_REVIEW_ENABLED != 'false'");
     expect(job('scope')).toContain('scripts/ux/|docs/ux/ux-brief\\.md$|tests/capture-screens\\.spec\\.ts$|\\.github/workflows/ux-review\\.yml$');
+    // Scope cannot open reports, so it never picks full, delta or self-test for an automatic run: review.mjs does.
+    expect(job('scope')).toContain('echo "mode=auto"');
+    expect(job('scope')).not.toMatch(/mode=delta"|mode=self-test|mode=full"/);
+    expect(job('review')).toContain('UX_TRIGGER: ${{ needs.scope.outputs.trigger }}');
+  });
+
+  test('until a complete full review exists, every automatic run is that full review', async () => {
+    const { resolveMode } = await lib('config.mjs');
+    const full = (incomplete: boolean) => ({ mode: 'full', incomplete });
+    expect(resolveMode('auto', 'release', [])).toBe('full');
+    expect(resolveMode('auto', 'agent', [])).toBe('full');
+    expect(resolveMode('auto', 'release', [full(true), { mode: 'delta', incomplete: false }])).toBe('full');
+    expect(resolveMode('auto', 'release', [full(false)])).toBe('delta');
+    expect(resolveMode('auto', 'agent', [full(false)])).toBe('self-test');
+    expect(resolveMode('full', 'release', [full(false)])).toBe('full'); // a manual choice stands
   });
 
   test('the capture job holds no secret; the review job holds the model and sealing keys and runs no third-party code', () => {
@@ -99,9 +114,12 @@ test.describe('three jobs, three trust levels', () => {
   });
 });
 
-test.describe('spend is capped per mode', () => {
-  test('full ≤ $6, a release ≤ $1.50, a self-test ≤ $0.30 — screenshots and the whole output allowance counted', async () => {
-    const { BUDGETS, estimateCostUsd, withinBudget, PRICE_PER_MTOK, TOKENS_PER_IMAGE } = await lib('config.mjs');
+test.describe('spend stays within an estimated budget per mode', () => {
+  test('full ≤ $6, a release ≤ $1.50, a self-test ≤ $0.30 — conservative token estimate, screenshots and the whole output allowance counted', async () => {
+    const { BUDGETS, estimateCostUsd, withinBudget, PRICE_PER_MTOK, TOKENS_PER_IMAGE, CHARS_PER_TOKEN } = await lib('config.mjs');
+    // Numbered source tokenises denser than prose; the admission estimate assumes it does.
+    expect(CHARS_PER_TOKEN).toBeLessThanOrEqual(2.5);
+    expect(read('scripts/ux/lib/config.mjs')).toMatch(/Estimated budget per review — not a hard ceiling/);
     expect(BUDGETS.full.maxCostUsd).toBeLessThanOrEqual(6);
     expect(BUDGETS.delta.maxCostUsd).toBeLessThanOrEqual(1.5);
     expect(BUDGETS['self-test'].maxCostUsd).toBeLessThanOrEqual(0.3);
@@ -202,6 +220,21 @@ test.describe('what a review covers', () => {
     const captured = new Set([...spec.matchAll(/name: '(\d{2}-[a-z0-9-]+)'/g)].map((m) => m[1]).concat('00-access'));
     for (const screen of [...AREAS.flatMap((a: { screens: string[] }) => a.screens), ...REFERENCE_SCREENS]) expect(captured, screen).toContain(screen);
     for (const name of ['00-access-desktop.jpg', '03-analyze-desktop-s1.jpg', '11-settings-phone-s3.jpg', '02-dashboard-dark-s1.jpg', 'm6-mockup-desktop.jpg']) expect(name).toMatch(SHOT_NAME);
+    // The mockups: the names the capture writes, through the real loader, reach the real selection (finding b255c3fc77a5).
+    const { MOCKUP_SCREENS } = await lib('config.mjs');
+    const { loadShots, pickShots } = await lib('shots.mjs');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ux-mockups-'));
+    try {
+      const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64)]);
+      const written = [...spec.matchAll(/`m\$\{view\}-mockup-desktop\.jpg`/g)].length;
+      expect(written).toBe(1);
+      for (let view = 1; view <= 6; view++) fs.writeFileSync(path.join(dir, `m${view}-mockup-desktop.jpg`), jpeg);
+      const picked = pickShots(loadShots(dir), MOCKUP_SCREENS, { limit: 16, maxBytes: 1e6 });
+      expect(picked.map((p: { name: string }) => p.name)).toEqual([1, 2, 3, 4, 5, 6].map((v) => `m${v}-mockup-desktop`));
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+    expect(read('scripts/ux/review.mjs')).not.toMatch(/'m1'|'m3'|'m4'/);
     for (const env of ['CAPTURE_OUT', 'CAPTURE_SEGMENTS', 'CAPTURE_DARK', 'CAPTURE_MOCKUPS']) expect(spec).toContain(`process.env.${env}`);
   });
 
@@ -257,11 +290,11 @@ test.describe('the report Claude verifies', () => {
     const [open, fixed, refuted] = [old('Still open'), old('Fixed now'), old('Refuted before')];
     const previous = { findings: [open, fixed, refuted] };
     const statuses = [{ fingerprint: fixed.fingerprint, status: 'resolved', reason: 'green unified' }];
-    const r = buildReport({ mode: 'delta', range, results: [{ review: review([], { previous_findings: statuses }), batch: { area: 'release', files: [] } }], previous, closed: new Set([refuted.fingerprint]) });
+    const r = buildReport({ mode: 'delta', range, results: [{ review: review([], { previous_findings: statuses }), batch: { area: 'release', files: [] } }], previous, closed: (f: { fingerprint: string }) => f.fingerprint === refuted.fingerprint });
     expect(r.findings.map((f: { fingerprint: string }) => f.fingerprint)).toEqual([open.fingerprint]);
     expect(r.findings[0].carried).toBe(true);
     expect(r.resolved.map((f: { fingerprint: string }) => f.fingerprint)).toEqual([fixed.fingerprint]);
-    const full = buildReport({ mode: 'full', range: { ...range, base: null }, results: [{ review: review([]), batch: { area: 'analyse', files: [] } }], synthesis: { review: review([]) }, previous, closed: new Set() });
+    const full = buildReport({ mode: 'full', range: { ...range, base: null }, results: [{ review: review([]), batch: { area: 'analyse', files: [] } }], synthesis: { review: review([]) }, previous });
     expect(full.findings).toEqual([]);
   });
 
@@ -288,6 +321,40 @@ test.describe('Claude hears about it', () => {
   });
 });
 
+test.describe('a release review runs end to end on a real repository (dry run, no model call)', () => {
+  test('a release that only removes a screen is reviewed, and a screen without pictures keeps the review incomplete', () => {
+    const { execFileSync } = require('child_process') as typeof import('child_process');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ux-delta-'));
+    const g = (...args: string[]) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.invalid', ...args], { cwd: dir, encoding: 'utf8' }).trim();
+    try {
+      g('init', '-q');
+      fs.mkdirSync(path.join(dir, 'docs/ux'), { recursive: true });
+      fs.copyFileSync(path.resolve(ROOT, 'docs/ux/ux-brief.md'), path.join(dir, 'docs/ux/ux-brief.md'));
+      const page = 'app/(app)/project/[projectId]/analyze/page.tsx';
+      fs.mkdirSync(path.join(dir, path.dirname(page)), { recursive: true });
+      fs.writeFileSync(path.join(dir, page), 'export default function Analyze() { return <h1>Analyze</h1>; }\n');
+      fs.writeFileSync(path.join(dir, 'app/(app)/layout.tsx'), 'export default function Layout({ children }) { return children; }\n');
+      g('add', '.');
+      g('commit', '-q', '-m', 'base');
+      const base = g('rev-parse', 'HEAD');
+      g('rm', '-q', page);
+      g('commit', '-q', '-m', 'remove the analyze screen');
+      const out = execFileSync(process.execPath, [path.resolve(ROOT, 'scripts/ux/review.mjs'), '--dry', '--mode=delta'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: { ...process.env, UX_BASE_OVERRIDE: base, UX_REVIEW_KEY: '', UX_SHOTS_DIR: path.join(dir, 'no-shots') },
+      });
+      const plan = JSON.parse(out);
+      expect(plan.skipped).toBeNull();
+      expect(plan.calls.flatMap((c: { files: string[] }) => c.files)).toEqual([page]);
+      // No picture of the screens this release concerns: named, so the checkpoint stays.
+      expect(plan.notReviewed.map((n: { path: string }) => n.path)).toContain('(Screenshot 03-analyze)');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 test.describe('the register Claude decides in', () => {
   test('a finding marked fixed comes back when a review of a commit containing the fix reports it again; refuted ones leave the roadmap table', async () => {
     const { untriaged, roadmapRows } = await lib('register.mjs');
@@ -301,6 +368,22 @@ test.describe('the register Claude decides in', () => {
     expect(untriaged(findings, register, { head: 'after', isAncestorOf })).toEqual([{ fingerprint: 'fixed1', reopened: true }, { fingerprint: 'new1' }]);
     expect(untriaged(findings, register, { head: 'before', isAncestorOf })).toEqual([{ fingerprint: 'new1' }]);
     expect(roadmapRows(register)).toEqual(['| UX-001 | high | A | — | behoben |', '| UX-002 | medium | B / C | 1.5 | eingeplant |']);
+  });
+
+  test('a decision closes what it was made about, not a regression raised after it — even across an unrelated release', async () => {
+    const { closedBy } = await lib('register.mjs');
+    const closed = closedBy({ entries: [{ fingerprint: 'fp', status: 'behoben', updatedAt: '2026-09-20T10:00:00Z' }, { fingerprint: 'planned', status: 'eingeplant', updatedAt: '2026-09-20T10:00:00Z' }] });
+    expect(closed({ fingerprint: 'fp', raisedAt: '2026-09-19T08:00:00Z' })).toBe(true); // the occurrence the fix was about
+    expect(closed({ fingerprint: 'fp', raisedAt: '2026-09-22T08:00:00Z' })).toBe(false); // raised again after the fix
+    expect(closed({ fingerprint: 'planned', raisedAt: '2026-09-19T08:00:00Z' })).toBe(false); // accepted is still open
+    const src = read('scripts/ux/review.mjs');
+    expect(src).toMatch(/filter\(\(f\) => !closed\(f\)\)/);
+  });
+
+  test('the session start finds the newest real review behind skipped runs and self-tests', () => {
+    const src = read('scripts/ux/inbox.mjs');
+    expect(src).toMatch(/'--status', 'success', '--limit', '20'/);
+    expect(src).toMatch(/if \(got && got\.report\.mode !== 'self-test'\)/);
   });
 
   test('an existing entry can be updated from a fresh clone without an inbox', () => {

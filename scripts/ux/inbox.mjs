@@ -76,8 +76,19 @@ async function main() {
   if (!secret) throw new Error('UX_REVIEW_KEY is not in the environment or .env.local.');
 
   let run;
+  let fetched;
   if (BRIEF) {
-    run = (ghJson(['run', 'list', '--workflow', 'ux-review.yml', '--status', 'success', '--limit', '1', '--json', 'databaseId,headSha,createdAt']) || [])[0];
+    // The newest run with a readable real review. Skipped runs (no Review job) and
+    // self-tests pass by — neither may hide the review before them (finding c3109a9fdfb1).
+    const runs = ghJson(['run', 'list', '--workflow', 'ux-review.yml', '--status', 'success', '--limit', '20', '--json', 'databaseId,headSha,createdAt']) || [];
+    for (const candidate of runs) {
+      const got = fetchReport(candidate, secret);
+      if (got && got.report.mode !== 'self-test') {
+        run = candidate;
+        fetched = got;
+        break;
+      }
+    }
     if (!run) return 0;
   } else {
     const sha = git(['rev-parse', arg || 'origin/main']);
@@ -89,7 +100,7 @@ async function main() {
     }
   }
 
-  const fetched = fetchReport(run, secret);
+  fetched ??= fetchReport(run, secret);
   if (!fetched) {
     if (BRIEF) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: `UX agent: review run ${run.databaseId} produced no readable report — see gh run view ${run.databaseId} --log-failed.` } }));
     else console.log(`UX review run ${run.databaseId} produced no readable report: gh run view ${run.databaseId} --log-failed`);

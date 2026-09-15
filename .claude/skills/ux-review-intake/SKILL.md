@@ -12,7 +12,7 @@ metadata:
 
 # UX review intake
 
-Standing instruction from Sonny (15.09.2026): every release on `main` gets a UX review; the first run reviewed the
+Standing instruction from Sonny (15.09.2026): every release on `main` gets a UX review; until a complete full review exists, the automatic run reviews the
 whole product. The agent's only goal is a UX as close to perfect as possible. You verify, decide and schedule — you
 do not redesign on your own initiative, and you never implement a finding outside a roadmap step.
 

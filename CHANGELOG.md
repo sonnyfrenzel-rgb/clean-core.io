@@ -44,9 +44,9 @@ Secret, mit Wegwerf-Schlüsseln; `review` hält Modell- und Siegelschlüssel und
 `npm ci` aus. Screenshots werden nur als Bytes mit erwartetem Namen und JPEG-Signatur
 angenommen. Der Bericht ist versiegelt; das Log nennt Modus, Aufrufe und Kosten.
 
-**Kosten.** Grenzen je Modus, vor jedem Aufruf gegen tatsächliche Ausgaben plus
-Worst-Case-Schätzung geprüft: Vollreview 6 $, Release 1,50 $, Selbsttest 0,30 $. Keine
-geratene Basis — ohne Prüfstand und ohne vorherigen `main`-Stand bricht der Lauf ab.
+**Kosten.** Geschätzte Budgets je Modus, vor jedem Aufruf gegen tatsächliche Ausgaben plus
+eine konservative Schätzung geprüft: Vollreview 6 $, Release 1,50 $, Selbsttest 0,30 $; die harte
+Grenze ist das Kreditlimit des OpenRouter-Schlüssels. Keine geratene Basis — ohne Prüfstand und ohne vorherigen `main`-Stand bricht der Lauf ab.
 
 **Claudes Seite:** Skill `ux-review-intake`. Er holt den Bericht und die Screenshots
 (`scripts/ux/inbox.mjs`), prüft jeden Befund an Zeile und Bild, entscheidet
@@ -60,6 +60,31 @@ verlangt eine 18+-Bestätigung in den OpenRouter-Einstellungen, die nur Sonny ge
 
 Widerruf: `UX_REVIEW_ENABLED=false`. Runbook: `docs/UX-REVIEW-AGENT.md`.
 `tests/ux-review-guard.spec.ts`, 23 Tests.
+
+### QA-Runde 1 zum UX-Agenten — sieben Befunde behoben, und `dev` wieder grün
+
+- **Die Pipeline auf `dev` war rot.** `npm run lint` erlaubt 661 Warnungen, der UX-Push
+  brachte 662: ein `catch (err: any)` im Capture-Test. Die Warnung ist entfernt, nicht das
+  Budget angehoben. Stand jetzt 660.
+- **Keine Release-Delta vor der Vollreview** (`e4b1d7916a95`): Scope entscheidet nur noch *ob*
+  ein Lauf stattfindet (`auto`); `review.mjs` öffnet die Berichte und macht jeden automatischen
+  Lauf zur Vollreview, solange keine vollständige existiert — auf `main` wie auf `dev`.
+- **Gelöschte Screens zählen** (`25c4ed925224`): Eine entfernte Datei geht mit ihrem letzten
+  Inhalt an den Reviewer; ein Release, das nur löscht, gilt nicht mehr als unsichtbar.
+- **Sitzungsstart** (`c3109a9fdfb1`): sucht die neueste echte Review hinter übersprungenen Läufen
+  und Selbsttests.
+- **Budget ehrlich benannt** (`504b555454c1`): geschätztes Budget, keine harte Grenze; die
+  Schätzung rechnet mit 2,5 statt 3,5 Zeichen je Token.
+- **Wieder aufgetretene Befunde bleiben offen** (`4875aa3e7409`): Eine Entscheidung schließt, was
+  vor ihr gemeldet wurde — nicht eine spätere Regression, auch über ein fremdes Release hinweg.
+- **Mockups** (`b255c3fc77a5`): Die Auswahl fragte nach `m3`, die Erfassung schreibt `m3-mockup`;
+  eine gemeinsame Konstante, getestet mit den echten Dateinamen.
+- **Screenshots je Screen** (`a553413f50d9`): Fehlt das Bild eines Screens, den ein Aufruf braucht,
+  ist die Review unvollständig — ein einzelnes anderes Bild genügt nicht mehr.
+
+Und die dritte Runde zum Security-Agenten: flache Klone und git-Fehler verstecken keinen
+wieder aufgetretenen Befund mehr (`9068756162e7`); Ausschlüsse der Angriffsflächen-Karte nennen
+nur noch Dateitypen, nie ganze Verzeichnisse (`ffcb81ab61a8`).
 
 ### Security-Selbsttest: die Ursache des HTTP 400 eingegrenzt
 

@@ -28,8 +28,21 @@ export function nextId(register) {
 /** Fingerprints the reviewer must not raise again: refuted with a reason. */
 export const refutedEntries = (register) => register.entries.filter((e) => e.status === STATUSES.refuted);
 
-/** Decided findings that stop being carried from report to report. */
-export const closedFingerprints = (register) => new Set(register.entries.filter((e) => e.status === STATUSES.refuted || e.status === STATUSES.fixed).map((e) => e.fingerprint));
+/**
+ * Is this occurrence closed by a decision — refuted or fixed — made after it was
+ * raised? A decision covers what it was made about, not what comes later: a
+ * regression raised after the fix stays open until someone decides on it again,
+ * even if an unrelated release runs first (finding 4875aa3e7409). An occurrence
+ * without a raise date is covered.
+ */
+export function closedBy(register) {
+  const decided = new Map(register.entries.filter((e) => e.status === STATUSES.refuted || e.status === STATUSES.fixed).map((e) => [e.fingerprint, e]));
+  return (finding) => {
+    const entry = decided.get(finding.fingerprint);
+    if (!entry) return false;
+    return !finding.raisedAt || String(finding.raisedAt) <= String(entry.updatedAt || entry.createdAt || '');
+  };
+}
 
 /**
  * Findings not decided yet — plus those marked fixed that a review of a commit
