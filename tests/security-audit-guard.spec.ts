@@ -196,11 +196,38 @@ test.describe('nothing the audit finds leaks', () => {
     // What this clone cannot tell — fix or audited commit not fetched — is shown again, never hidden.
     const { containsOrUnknown } = await import(path.resolve(ROOT, 'scripts/qa/lib/git-delta.mjs'));
     const known = new Set(['fix', 'before']);
-    const opts = { exists: (c: string) => known.has(c), ancestor: () => false };
+    const opts = { exists: (c: string) => known.has(c), ancestor: () => 'no', shallow: () => false };
     expect(containsOrUnknown('fix', 'not-fetched', opts)).toBe(true);
     expect(containsOrUnknown('not-fetched', 'before', opts)).toBe(true);
     expect(containsOrUnknown('fix', 'before', opts)).toBe(false);
+    // A git error, or a "no" from a shallow clone, is not proof the fix is absent.
+    expect(containsOrUnknown('fix', 'before', { ...opts, ancestor: () => 'unknown' })).toBe(true);
+    expect(containsOrUnknown('fix', 'before', { ...opts, shallow: () => true })).toBe(true);
     expect(read('scripts/security/inbox.mjs')).toMatch(/isAncestorOf: containsOrUnknown/);
+    expect(read('scripts/ux/inbox.mjs')).toMatch(/isAncestorOf: containsOrUnknown/);
+  });
+
+  test('git answers yes, no or unknown — only exit 1 is a no', async () => {
+    const { execFileSync } = require('child_process') as typeof import('child_process');
+    const os = require('os') as typeof import('os');
+    const { pathToFileURL } = require('url') as typeof import('url');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sec-ancestry-'));
+    const g = (...args: string[]) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.invalid', ...args], { cwd: dir, encoding: 'utf8' }).trim();
+    try {
+      g('init', '-q');
+      fs.writeFileSync(path.join(dir, 'a'), '1');
+      g('add', '.');
+      g('commit', '-q', '-m', 'fix');
+      const fix = g('rev-parse', 'HEAD');
+      fs.writeFileSync(path.join(dir, 'a'), '2');
+      g('commit', '-q', '-am', 'later');
+      const later = g('rev-parse', 'HEAD');
+      const moduleUrl = pathToFileURL(path.resolve(ROOT, 'scripts/qa/lib/git-delta.mjs')).href;
+      const script = `import { ancestry, containsOrUnknown } from ${JSON.stringify(moduleUrl)}; console.log([ancestry('${fix}','${later}'), ancestry('${later}','${fix}'), ancestry('${'d'.repeat(40)}','${later}'), containsOrUnknown('${later}','${fix}')].join(','))`;
+      expect(execFileSync('node', ['--input-type=module', '-e', script], { cwd: dir, encoding: 'utf8' }).trim()).toBe('yes,no,unknown,false');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   test('an existing register entry can be updated from a fresh clone without an inbox', async () => {
@@ -330,11 +357,11 @@ test.describe('the attack-surface map', () => {
 
   test('leaves nothing out that runs, and names every group it leaves out', async () => {
     const { inventory, exclusions } = await lib('surface.mjs');
-    const paths = ['public/worker.js', 'public/page.html', 'public/logo.svg', 'public/photo.jpg', 'public/sample.abap', 'docs/ROADMAP.md', 'docs/tool.mjs', 'docs/check.sh', 'abap-test-files/check.jsx', 'abap-test-files/Z_TEST.abap', 'README.md', 'clean-core-video/src/Video.tsx', 'clean-core-video/audio.mp3', 'lib/abap/generated/catalog.json', 'package-lock.json', 'scripts/linkedin-banner.html', 'app/page.tsx'];
-    // Whatever can run is in, whichever directory it sits in.
-    expect(inventory(paths).map((f: { path: string }) => f.path)).toEqual(['public/worker.js', 'public/page.html', 'public/logo.svg', 'docs/tool.mjs', 'docs/check.sh', 'abap-test-files/check.jsx', 'clean-core-video/src/Video.tsx', 'scripts/linkedin-banner.html', 'app/page.tsx']);
+    const paths = ['public/worker.js', 'public/page.html', 'public/logo.svg', 'public/photo.jpg', 'public/sample.abap', 'docs/ROADMAP.md', 'docs/tool.mjs', 'docs/check.sh', 'docs/check', 'docs/guide.mdx', 'docs/data.json', 'abap-test-files/check.jsx', 'abap-test-files/run-all', 'abap-test-files/Z_TEST.abap', 'README.md', 'clean-core-video/src/Video.tsx', 'clean-core-video/audio.mp3', 'lib/abap/generated/catalog.json', 'package-lock.json', 'scripts/linkedin-banner.html', 'app/page.tsx'];
+    // Whatever can run is in, whichever directory it sits in — and so is anything of a type no rule names.
+    expect(inventory(paths).map((f: { path: string }) => f.path)).toEqual(['public/worker.js', 'public/page.html', 'public/logo.svg', 'docs/tool.mjs', 'docs/check.sh', 'docs/check', 'docs/guide.mdx', 'abap-test-files/check.jsx', 'abap-test-files/run-all', 'clean-core-video/src/Video.tsx', 'scripts/linkedin-banner.html', 'app/page.tsx']);
     const groups = exclusions(paths);
-    expect(groups.reduce((n: number, g: { count: number }) => n + g.count, 0)).toBe(8);
+    expect(groups.reduce((n: number, g: { count: number }) => n + g.count, 0)).toBe(9);
     for (const g of groups) expect(g.reason.length).toBeGreaterThan(20);
     // Only the lockfile is described as covered by the dependency audit.
     expect(groups.filter((g: { reason: string }) => /dependency audit/.test(g.reason)).map((g: { examples: string[] }) => g.examples)).toEqual([['package-lock.json']]);

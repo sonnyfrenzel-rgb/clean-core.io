@@ -22,11 +22,17 @@ const git = (args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 6
  * so the report can state them instead of implying a coverage it does not have
  * (QA review of 52b34aba4cb8, finding b9dfa00d5649).
  */
+/*
+ * Every rule names file types, never a whole directory: an extensionless helper
+ * or a format nobody listed stays in the map (QA review of b5e277c2e263, finding
+ * ffcb81ab61a8). Unknown means included.
+ */
 export const EXCLUSIONS = [
   { reason: 'binary media, fonts and archives — no executable content', test: (p) => /\.(png|jpe?g|gif|ico|webp|pdf|mp3|mp4|woff2?|ttf|zip)$/.test(p) },
-  { reason: 'documentation and prose (Markdown, and non-code files under docs/) — not built, not served', test: (p) => /\.md$/.test(p) || /^docs\//.test(p) },
-  { reason: 'non-code files of the separate video project — not part of the app build or deployment', test: (p) => /^clean-core-video\//.test(p) },
-  { reason: 'sample ABAP and static text assets — data, not code', test: (p) => /^abap-test-files\//.test(p) || /^public\/.*\.(abap|txt|vtt|sha256)$/.test(p) },
+  { reason: 'Markdown prose — not built, not served', test: (p) => /\.md$/.test(p) },
+  { reason: 'data files under docs/ (JSON, text, the public key) — not built, not served', test: (p) => /^docs\/.*\.(json|txt|pem|csv)$/.test(p) },
+  { reason: 'data files of the separate video project — not part of the app build or deployment', test: (p) => /^clean-core-video\/.*\.(json|txt)$/.test(p) },
+  { reason: 'sample ABAP and static text assets — data, not code', test: (p) => /^abap-test-files\/.*\.(abap|txt)$/.test(p) || /^public\/.*\.(abap|txt|vtt|sha256)$/.test(p) },
   { reason: 'generated SAP catalog data (synced JSON) — excluded, not reviewed', test: (p) => /^lib\/abap\/generated\/.*\.json$/.test(p) },
   { reason: 'the npm lockfile — its advisories come from the dependency audit', test: (p) => /(^|\/)package-lock\.json$/.test(p) },
 ];
@@ -36,7 +42,7 @@ export const EXCLUSIONS = [
  * sits in — a directory rule must not decide coverage for a script (QA review of
  * 2a8a69f791de, finding f9942b308569).
  */
-const EXECUTABLE = /\.(js|mjs|cjs|jsx|ts|tsx|mts|cts|sh|bash|zsh|ps1|psm1|cmd|bat|py|rb|pl|php|html?|svg|yml|yaml|toml|rules)$/i;
+const EXECUTABLE = /\.(js|mjs|cjs|jsx|ts|tsx|mts|cts|sh|bash|zsh|ps1|psm1|cmd|bat|py|rb|pl|php|html?|mdx|svg|yml|yaml|toml|rules)$/i;
 
 const excludedBy = (path) => (EXECUTABLE.test(path) ? null : EXCLUSIONS.find((e) => e.test(path)) || null);
 

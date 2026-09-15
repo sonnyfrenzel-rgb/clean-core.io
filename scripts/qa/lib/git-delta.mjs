@@ -34,14 +34,34 @@ export function isAncestor(a, b) {
   return gitSucceeds(['merge-base', '--is-ancestor', a, b]);
 }
 
+/** 'yes', 'no' or 'unknown': exit 1 is git's definite no; any other failure answers nothing. */
+export function ancestry(a, b) {
+  try {
+    execFileSync('git', ['merge-base', '--is-ancestor', a, b], { stdio: 'ignore' });
+    return 'yes';
+  } catch (err) {
+    return err?.status === 1 ? 'no' : 'unknown';
+  }
+}
+
+function isShallow() {
+  try {
+    return git(['rev-parse', '--is-shallow-repository']) === 'true';
+  } catch {
+    return true;
+  }
+}
+
 /**
  * Does `head` contain `commit` — for deciding that a fixed finding has come back.
- * When this clone cannot tell (either commit not fetched), the answer is yes: a
- * failed git command is not proof that the fix is absent, and "shown again" is
- * the safe side (QA review of 2a8a69f791de, finding 71baa4a01baa).
+ * When this clone cannot tell, the answer is yes: a commit not fetched, a git
+ * error, or a "no" from a shallow clone whose cut hides the history in between
+ * (QA reviews of 2a8a69f791de and b5e277c2e263). "Shown again" is the safe side.
  */
-export function containsOrUnknown(commit, head, { exists = isCommit, ancestor = isAncestor } = {}) {
-  return !exists(commit) || !exists(head) || ancestor(commit, head);
+export function containsOrUnknown(commit, head, { exists = isCommit, ancestor = ancestry, shallow = isShallow } = {}) {
+  if (!exists(commit) || !exists(head)) return true;
+  const answer = ancestor(commit, head);
+  return answer !== 'no' || shallow();
 }
 
 /**
