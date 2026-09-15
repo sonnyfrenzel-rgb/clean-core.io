@@ -2,6 +2,17 @@
 
 **Version 2.0.0 · 2026-07-02**
 
+> **Historisch — abgelöst durch [`docs/ROADMAP.md`](../ROADMAP.md) (seit 15.09.2026 Fassung 2.8).**
+> Das Dokument bleibt stehen, weil es begründet, *warum* die Enterprise-Positionierung
+> damals zurückgestellt wurde — diese Begründung trägt die heutige Ausrichtung.
+> Was sich geändert hat: SSO, Multi-Rollen-RBAC, Organisationshierarchie und
+> Self-Hosting sind nicht mehr „zurückgestellt", sondern **zurückgezogen**. An ihre
+> Stelle treten Sichten ohne Wirkung auf das Audit (die Verantwortung bleibt beim
+> angemeldeten Konto), Einsicht per E-Mail-gebundener Einladung und nach 3.0
+> lesender MCP-Zugang für Unternehmen. Das Konto bleibt unverändert.
+> Multi-Provider-BYOK bleibt geplant (v3.5). Die Phasen- und Releaseplanung steht
+> ausschließlich in `ROADMAP.md`.
+
 This document records what "v2.0" means for Clean-Core.io, and — importantly — **why several classic "enterprise 2.0" items are deliberately in the backlog rather than shipped.** The short answer is *audience*.
 
 ## Who Clean-Core.io is for

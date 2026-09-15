@@ -342,7 +342,7 @@ The platform's core assurance is that an analysis result cannot be silently alte
 - Verification is reported in **three honest tiers**: `authentic` → `integrity-only` (unsigned but hash-consistent) → `failed`. A green "authentic" state is never shown without a valid signature.
 - The AI narrative is **not** part of the signed run payload — it is referenced by a separate `responseHash` and stored unsigned, so deterministic evidence and free-text narrative are cleanly separated. Architect sign-off recorded in the pack is **self-attested** (from the signed-in user's own session), not a formally governed organizational approval.
 
-> **Known residual (roadmap):** architect sign-off is recorded client-side (self-attestation) rather than through a server-side sign-off route with an immutable event log. Owner-writes to sign-off fields are constrained by `firestore.rules`, and the audit pack labels the attestation as self-attested. A server-authoritative sign-off endpoint + org/role model is deferred (see `docs/ROADMAP-2.0.md`) — it adds cost without matching the current single-user community audience.
+> **Known residual (roadmap):** architect sign-off is recorded client-side (self-attestation) rather than through a server-side sign-off route with an immutable event log. Owner-writes to sign-off fields are constrained by `firestore.rules`, and the audit pack labels the attestation as self-attested. Moving the sign-off fields behind a server-validated command is planned (`docs/ROADMAP.md`, step 0.7); an org/role model is not — the sign-off stays a self-declaration of the signed-in account, and the rationale for leaving enterprise governance out is in `docs/archiv/ROADMAP-2.0.md`.
 
 ---
 

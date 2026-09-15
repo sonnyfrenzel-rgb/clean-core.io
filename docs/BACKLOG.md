@@ -3,6 +3,61 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+**15.09.2026 — Roadmap auf Fassung 2.8 umgestellt und vereinfacht.** `docs/ROADMAP.md`
+ist jetzt kurz und allein verbindlich; Gates und die 76 Teilschnitte sind durch
+**Phasen 0–8 mit Schritten der Größe S/M** ersetzt. Entscheidungen von Sonny:
+
+1. **Nach außen zählt 3.0** — der große UX-Umbau entlang der Mockups 2.7. Die
+   Arbeitsstände v2.11–v2.18 bauen die neue Oberfläche hinter einem Admin-Schalter.
+2. **Anmeldung und Konto bleiben unverändert.** Die Datensparsamkeit aus 2.7
+   (Handle, Namensfelder entfernen, Migration) ist gestrichen.
+3. **Rollen sind nur Sichten** (Management · Business · IT), ohne Einfluss auf die
+   Auditierbarkeit; kein „Playing as", kein `self_play`. Die Verantwortung bleibt
+   beim angemeldeten Nutzer.
+4. **Teilen = Einsicht per Einladung**: Link an eine E-Mail-Adresse, öffnet nur für
+   ein Konto mit genau dieser, bestätigten Adresse; inklusive Quellcode, der Dialog
+   sagt es.
+5. **Die Business-Sicht legt deutlich zu:** BPMN-Rekonstruktion aus dem Code mit
+   Zeilenankern, Editor nah an Signavio (keine Kopie), Import/Export als BPMN 2.0
+   XML für Signavio-Lizenznehmer — Phasen 2–4, direkt nach dem Gerüst.
+
+Befunde beim Umbau, noch nicht behoben: **der Anker-Check erkennt die Engine-IDs
+nicht** (`CC-001` gegen Parser-Muster `[F-…]`, `lib/abap/narrative-anchors.ts:71`
+vs. `lib/abap/evidence-model.ts:209`) — Schritt 1.3, als Patch vorziehbar; die
+Oberfläche verspricht einen **Signavio-Import, der nie geprüft wurde** — Schritt 0.2.
+
+**Aufgeräumt am selben Tag:** jede frühere Roadmap liegt jetzt in `docs/archiv/`
+(Index `docs/archiv/README.md`) — `ROADMAP-2.0.md` und das Bündel der Fassung 2.7
+unter `docs/archiv/roadmap-2.7/`, darin auch die Fassung 2.7 selbst als
+`ROADMAP-2.7.md` und der Review vom 08.09., den ältere Einträge hier
+`roadmap_chatgpt.md` nennen. Aktiv in `docs/roadmap/` bleiben nur die Mockups und
+`SCHNITT-0-UMFANG.md`.
+
+**Die Roadmap liegt seit dem 12.09.2026 im Repo:** `docs/ROADMAP.md` (damals
+Fassung 2.7 — Gates R0/R1/R2/3.0, 76 Teilschnitte).
+
+**Der Umfang von Release 2.10 ist am 12.09. abgestimmt** — der Punkt vom 11.09.
+(„wird vor Beginn im Umfang abgestimmt") ist damit geschlossen. Vier
+Entscheidungen von Sonny:
+
+1. **Stufe „Kern + Fundament"** — sieben Teilschnitte: `G0:R0`, Facts-Service und
+   Copy-CI, Level-Regelseite und Score-Umbau, keine Geldwerte ohne
+   Annahmenrevision, Manifestvertrag, konservative Invalidierung, Freigabefelder
+   nur über servervalidierte Commands. Der Referenzkorpus läuft daneben, weil er
+   an einem externen Prüfer hängt. **Erhaltungsregister und Zero-LLM-Sperrpfad
+   rutschen auf v2.11.**
+2. **`G0:R0` wird über die dokumentierte Sperre geschlossen**, nicht über die
+   Runner-Isolation: Grenze, Grund und Wiedereröffnungsbedingung nach `SECURITY.md`,
+   Live-Modus bleibt zu. `E08-F01-US01` bleibt als eigener Auftrag nach 2.10 offen.
+3. **Datensparsamkeit vertagt auf Schnitt A.** Am Profil ändert sich in 2.10
+   nichts (14 Dateien, ~62 Fundstellen, drei Mail-Skripte mit Vornamensanrede).
+   Bedingung: keine Oberfläche behauptet vorher, es würden nur Handles gespeichert.
+4. **Öffentliche Texte nur dort, wo sie falsch sind** — Audit-Korrekturen plus
+   Score-Umbenennung und TCO-Versprechen. Die Spielwiesen-Positionierung auf
+   Startseite und README bleibt ein eigener, späterer Auftrag.
+
+Details je Teilschnitt mit Dateien und Abnahmefall: `docs/roadmap/SCHNITT-0-UMFANG.md`.
+
 **Stand 11.09.2026, Feierabend — v2.9.5 → v2.9.11, sieben Releases, alles auf
 `main` und deployt (`clean-core-00298-kvn`, `main` = `dev` = Branch = `c1349b5`).**
 Der Tag hatte einen roten Faden und eine Lehre. Der Faden: die Roadmap

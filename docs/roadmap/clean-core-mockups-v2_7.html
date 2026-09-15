@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clean-Core.io — Mockups 2.7 (concept, not implemented)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#f8f9ff;--ink:#0b1c30;
+  --g950:#030712;--g900:#111827;--g800:#1f2937;--g700:#374151;--g600:#4b5563;--g500:#6b7280;--g400:#9ca3af;--g300:#d1d5db;--g200:#e5e7eb;--g100:#f3f4f6;--g50:#f9fafb;
+  --green600:#16a34a;--green700:#15803d;--green50:#f0fdf4;--green200:#bbf7d0;--green400:#4ade80;
+  --em50:#ecfdf5;--em100:#d1fae5;--em200:#a7f3d0;--em300:#6ee7b7;--em500:#10b981;--em600:#059669;--em700:#047857;--em800:#065f46;
+  --amber50:#fffbeb;--amber100:#fef3c7;--amber200:#fde68a;--amber800:#92400e;--amber950:#451a03;
+  --red50:#fef2f2;--red100:#fee2e2;--red200:#fecaca;--red700:#b91c1c;
+  --blue50:#eff6ff;--blue100:#dbeafe;--blue200:#bfdbfe;--blue700:#1d4ed8;
+  --purple100:#f3e8ff;--purple700:#7e22ce;
+  --slate50:#f8fafc;--slate100:#f1f5f9;--slate200:#e2e8f0;--slate400:#94a3b8;--slate500:#64748b;--slate600:#475569;--slate700:#334155;
+  --indigo300:#a5b4fc;--teal200:#99f6e4;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#e8ebf3;font-family:var(--sans);color:var(--ink)}
+/* ---------- mockup chrome (not part of the product) ---------- */
+.chrome{position:sticky;top:0;z-index:100;background:var(--g950);color:#fff;display:flex;align-items:center;gap:14px;padding:10px 16px;flex-wrap:wrap;border-bottom:1px solid var(--g800)}
+.chrome .t{font-weight:900;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#9ca3af}
+.chrome .tabs{display:flex;gap:6px;flex-wrap:wrap}
+.chrome button{font:inherit;font-weight:800;font-size:12px;border:1px solid var(--g700);background:var(--g900);color:#e5e7eb;padding:6px 12px;border-radius:999px;cursor:pointer}
+.chrome button.on{background:var(--green600);border-color:var(--green600);color:#fff}
+.chrome .zoom{margin-left:auto;display:flex;gap:6px;align-items:center}
+.stage{padding:18px;overflow:auto}
+.frame-wrap{transform-origin:top left;width:1440px}
+.screen{display:none}.screen.on{display:block}
+/* ---------- product frame ---------- */
+.frame{width:1440px;min-height:980px;background:var(--page);border:1px solid var(--g200);border-radius:24px;overflow:hidden;position:relative;box-shadow:0 20px 60px rgba(11,28,48,.12)}
+.mesh{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.mesh i{position:absolute;border-radius:999px;filter:blur(120px);opacity:.18}
+.mesh i:nth-child(1){width:380px;height:380px;background:var(--indigo300);top:-80px;left:120px}
+.mesh i:nth-child(2){width:420px;height:420px;background:var(--em300);top:160px;right:-60px}
+.mesh i:nth-child(3){width:420px;height:420px;background:var(--teal200);bottom:-120px;left:500px}
+.gridbg{position:absolute;inset:0;background-image:linear-gradient(to right,#80808006 1px,transparent 1px),linear-gradient(to bottom,#80808006 1px,transparent 1px);background-size:40px 40px;pointer-events:none}
+.notice{position:relative;z-index:2;background:rgba(255,251,235,.95);color:var(--amber950);border-bottom:1px solid var(--amber200);font-size:11px;font-weight:600;padding:7px 16px;display:flex;gap:10px;align-items:center;justify-content:center}
+.notice .k{background:var(--amber100);color:var(--amber950);font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border-radius:4px}
+.hdr{position:relative;z-index:2;background:rgba(255,255,255,.8);backdrop-filter:blur(10px);border-bottom:1px solid var(--g200);height:72px;display:flex;align-items:center;gap:20px;padding:0 28px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.logo{display:flex;align-items:center;gap:10px;color:var(--green600)}
+.logo .ic{background:rgba(22,163,74,.1);padding:7px;border-radius:12px;display:flex}
+.logo .n{font-weight:800;font-size:20px;letter-spacing:-.02em;color:var(--g900);line-height:1}
+.logo .n b{color:var(--green600);font-weight:800}
+.logo .s{font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--g500);margin-top:4px}
+.crumb{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--g500)}
+.crumb .back{display:inline-flex;align-items:center;gap:6px;background:var(--g100);border:1px solid var(--g200);border-radius:999px;padding:7px 14px;font-size:12px;font-weight:800;color:var(--g500)}
+.crumb .sep{color:var(--g300)}
+.crumb .cur{color:var(--g900)}
+.hdr .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.avatars{display:flex}
+.avatars span{width:30px;height:30px;border-radius:10px;background:var(--g900);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #fff;margin-left:-8px}
+.avatars span.more{background:var(--g100);color:var(--g600)}
+.me{width:40px;height:40px;border-radius:14px;background:var(--g900);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.btn{display:inline-flex;align-items:center;gap:7px;font:inherit;font-weight:900;font-size:12px;border-radius:999px;padding:9px 16px;border:1px solid var(--green200);background:var(--green50);color:var(--green700);cursor:pointer;white-space:nowrap}
+.btn.dark{background:var(--g950);border-color:var(--g900);color:#fff}
+.btn.ghost{background:#fff;border-color:var(--g200);color:var(--g600)}
+.btn.sm{padding:6px 11px;font-size:11px}
+.body{position:relative;z-index:1;padding:20px 28px 96px}
+.case{background:rgba(255,255,255,.85);backdrop-filter:blur(8px);border:1px solid rgba(229,231,235,.8);border-radius:28px;padding:18px 24px 14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.case .top{display:flex;align-items:flex-start;gap:20px}
+.case h1{margin:0;font-size:22px;font-weight:900;letter-spacing:-.02em}
+.meta{font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--g500);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap}
+.meta code{font-family:var(--mono);font-weight:700;letter-spacing:0;text-transform:none;color:var(--g600);font-size:11px}
+.dims{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.dim{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:6px 11px 6px 9px;font-size:11px;font-weight:700;border:1px solid var(--g200);background:#fff;color:var(--g700)}
+.dim .l{font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--g500)}
+.dim i{width:8px;height:8px;border-radius:999px;background:var(--g300);display:inline-block}
+.dim.ok{border-color:var(--em200);background:var(--em50);color:var(--em800)}.dim.ok i{background:var(--em500)}
+.dim.part{border-color:var(--amber200);background:var(--amber50);color:var(--amber800)}.dim.part i{background:#f59e0b}
+.dim.open{border-color:var(--g200);background:var(--g50);color:var(--g600)}.dim.open i{background:var(--g400)}
+.dim.none{border-style:dashed;color:var(--g400)}.dim.none i{background:transparent;border:1px solid var(--g300)}
+.dim.info{border-color:var(--blue200);background:var(--blue50);color:var(--blue700)}.dim.info i{background:#3b82f6}
+.controls{display:flex;align-items:center;gap:16px;margin-top:14px;padding-top:12px;border-top:1px solid var(--g100)}
+.seg{display:inline-flex;background:var(--g100);border:1px solid var(--g200);border-radius:999px;padding:3px}
+.seg span{padding:7px 18px;border-radius:999px;font-size:12px;font-weight:800;color:var(--g500)}
+.seg span.on{background:#fff;color:var(--g900);box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid var(--g200)}
+.focus{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:var(--g500)}
+.focus b{font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.focus span{border:1px solid var(--g200);background:#fff;border-radius:999px;padding:4px 10px;font-weight:800;color:var(--g700)}
+.search{margin-left:auto;display:flex;align-items:center;gap:8px;border:1px solid var(--g200);background:#fff;border-radius:999px;padding:8px 14px;font-size:12px;color:var(--g400);width:300px}
+.search kbd{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--g400);border:1px solid var(--g200);border-radius:6px;padding:1px 6px}
+.layers{display:flex;gap:6px;margin:16px 0 14px;flex-wrap:wrap}
+.layers span{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--g500);padding:9px 14px;border-radius:999px;border:1px solid transparent}
+.layers span.on{background:var(--g950);color:#fff;border-color:var(--g950)}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:18px;align-items:start}
+.stack{display:grid;gap:18px;min-width:0}
+.card{min-width:0}
+.card{background:#fff;border:1px solid rgba(229,231,235,.9);border-radius:22px;padding:18px 20px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.card.tint{background:rgba(255,255,255,.6);backdrop-filter:blur(6px)}
+.card.obs{background:var(--g950);border-color:var(--g900);color:#fff}
+.ch{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ch h2{margin:0;font-size:15px;font-weight:900;letter-spacing:-.01em}
+.ch .sub{font-size:11px;color:var(--g500);font-weight:600}
+.ch .r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.k{font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--g500)}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;border:1px solid var(--g200);background:var(--g100);color:var(--g600);white-space:nowrap}
+.tag.em{background:var(--em50);border-color:var(--em200);color:var(--em700)}
+.tag.gr{background:var(--green600);border-color:var(--green600);color:#fff}
+.tag.am{background:var(--amber100);border-color:var(--amber200);color:var(--amber950)}
+.tag.rd{background:var(--red100);border-color:var(--red200);color:var(--red700)}
+.tag.bl{background:var(--blue100);border-color:var(--blue200);color:var(--blue700)}
+.tag.pu{background:var(--purple100);border-color:#e9d5ff;color:var(--purple700)}
+.tag.dk{background:var(--g950);border-color:var(--g950);color:#fff}
+.tag.mono{font-family:var(--mono);text-transform:none;letter-spacing:0;font-weight:700}
+.anc{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--em700);background:var(--em50);border:1px solid var(--em200);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+.anc.no{color:var(--g500);background:var(--g100);border-color:var(--g200)}
+.rule p{margin:0 0 8px;font-size:14px;line-height:1.55;font-weight:500}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:6px 12px;font-size:12px;margin-top:12px}
+.kv .k{align-self:center}
+.kv div{font-weight:600;color:var(--g700)}
+.kv code{font-family:var(--mono);font-size:11.5px;color:var(--g900)}
+.states{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.states span{font-size:11px;font-weight:800;padding:6px 11px;border-radius:999px;border:1px solid var(--g200);color:var(--g500);background:#fff}
+.states span.on{background:var(--em50);border-color:var(--em200);color:var(--em800)}
+.states span.on2{background:var(--amber50);border-color:var(--amber200);color:var(--amber800)}
+.legend{display:flex;gap:14px;font-size:11px;font-weight:700;color:var(--g500);margin-left:auto}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.code{font-family:var(--mono);font-size:12px;line-height:1.65;margin:0;white-space:pre;overflow:hidden}
+.code .ln{color:#6b7280;display:inline-block;width:38px;text-align:right;margin-right:16px;user-select:none}
+.code .hl{background:rgba(22,163,74,.18);display:block;margin:0 -20px;padding:0 20px;border-left:3px solid var(--green400)}
+.code .kw{color:#c4b5fd}.code .st{color:#fcd34d}.code .cm{color:#6b7280}.code .fn{color:#6ee7b7}
+.list{display:grid;gap:8px}
+.art{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:9px 10px;border:1px solid var(--g100);border-radius:14px;background:var(--g50)}
+.art .ico{width:34px;height:34px;border-radius:10px;background:#fff;border:1px solid var(--g200);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:var(--g600)}
+.art .t{font-size:12.5px;font-weight:800;color:var(--g900)}
+.art .d{font-size:11px;color:var(--g500);font-weight:600;margin-top:2px}
+.art .v{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--g500);border:1px solid var(--g200);background:#fff;border-radius:6px;padding:2px 6px}
+.art.sel{border-color:var(--em200);background:var(--em50)}
+.thread{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--g100)}
+.thread:first-of-type{border-top:0}
+.thread .av{width:34px;height:34px;border-radius:12px;background:var(--g900);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.thread .who{font-size:12px;font-weight:800;color:var(--g900)}
+.thread .who small{font-weight:600;color:var(--g400);margin-left:6px}
+.thread p{margin:4px 0 6px;font-size:12.5px;line-height:1.5;color:var(--g700);font-weight:500}
+.thread .chips{display:flex;gap:6px;flex-wrap:wrap}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--g500);padding:8px 10px;border-bottom:1px solid var(--g200)}
+.tbl td{padding:10px;border-bottom:1px solid var(--g100);vertical-align:top;font-weight:600;color:var(--g700)}
+.tbl td:first-child{font-weight:800;color:var(--g900)}
+.tbl tr.sel td{background:var(--em50)}
+.share{background:#fff;border:1px solid var(--g100);border-radius:28px;padding:22px 24px;box-shadow:0 30px 80px rgba(11,28,48,.22);position:relative}
+.share .k.open{position:absolute;right:20px;top:20px;color:var(--em700)}
+.share h3{margin:0 0 4px;font-size:16px;font-weight:900;letter-spacing:-.01em}
+.share .row{display:grid;grid-template-columns:120px 1fr;gap:8px 12px;font-size:12px;margin-top:12px;align-items:start}
+.share .row div{font-weight:600;color:var(--g700)}
+.radio{display:flex;gap:6px;flex-direction:column;align-items:flex-start}
+.radio span{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--g200);border-radius:999px;padding:5px 10px;font-size:11px;font-weight:800;color:var(--g500)}
+.radio span.on{border-color:var(--em200);background:var(--em50);color:var(--em800)}
+.radio span i{width:8px;height:8px;border-radius:999px;border:2px solid currentColor;display:inline-block}
+.radio span.on i{background:currentColor}
+.share .warn{margin-top:12px;font-size:11px;font-weight:700;color:var(--red700);background:var(--red50);border:1px solid var(--red200);border-radius:12px;padding:8px 10px}
+.share .acts{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
+.nextbar{position:absolute;left:0;right:0;bottom:0;z-index:4;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border-top:1px solid var(--g200);padding:14px 28px;display:flex;align-items:center;gap:16px}
+.nextbar .n{display:flex;flex-direction:column;gap:3px}
+.nextbar .n .k{color:var(--em700)}
+.nextbar .n .t{font-size:13px;font-weight:800;color:var(--g900)}
+.nextbar .n .t small{font-weight:600;color:var(--g500)}
+.tools{margin-left:auto;display:flex;gap:6px;align-items:center}
+.tools .k{margin-right:6px}
+.tools span{font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--g200);background:#fff;border-radius:999px;padding:6px 10px;color:var(--g600)}
+.mini{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.mini .m{border:1px solid var(--g100);border-radius:16px;padding:12px 14px;background:var(--g50)}
+.mini .m .v{font-size:22px;font-weight:900;letter-spacing:-.02em;color:var(--g900)}
+.mini .m .d{font-size:11px;font-weight:600;color:var(--g500);margin-top:2px}
+.bar{height:8px;border-radius:999px;background:var(--g100);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--em500)}
+.opt{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--g100);border-radius:16px;background:var(--g50);margin-top:8px}
+.opt .t{font-size:13px;font-weight:800;color:var(--g900)}
+.opt .d{font-size:11px;color:var(--g500);font-weight:600;margin-top:2px}
+.opt .n{font-size:18px;font-weight:900;letter-spacing:-.02em;text-align:right}
+.opt .n small{display:block;font-size:10px;font-weight:700;color:var(--g500)}
+.scen{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--g100);border-radius:16px;background:var(--g50);margin-top:8px}
+.scen .id{width:44px;height:44px;border-radius:12px;background:#fff;border:1px solid var(--g200);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px}
+.scen.pri{border-color:var(--em200);background:var(--em50)}
+.finding{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:12px 14px;border:1px solid var(--g100);border-radius:16px;background:var(--g50)}
+.finding .t{font-size:13px;font-weight:800;color:var(--g900);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.finding .views{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.finding .views span{font-size:10.5px;font-weight:700;color:var(--g600);border:1px solid var(--g200);background:#fff;border-radius:8px;padding:3px 8px}
+.finding .views span b{color:var(--g900)}
+.finding.sel{border-color:var(--em200);background:var(--em50)}
+.trace{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.trace .st{border:1px solid var(--g100);border-radius:16px;padding:12px;background:var(--g50);position:relative}
+.trace .st .t{font-size:12.5px;font-weight:800;color:var(--g900);margin:6px 0 3px}
+.trace .st .d{font-size:11px;color:var(--g500);font-weight:600;line-height:1.45}
+.trace .st:after{content:"→";position:absolute;right:-13px;top:44%;color:var(--g300);font-weight:900}
+.trace .st:last-child:after{content:none}
+.lvls{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.lvls .l{border-radius:14px;padding:10px;text-align:center;border:1px solid var(--g100);background:var(--g50)}
+.lvls .l b{display:block;font-size:20px;font-weight:900;letter-spacing:-.02em}
+.lvls .l span{font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--g500)}
+.lvls .A{border-color:var(--em200);background:var(--em50)}.lvls .A b{color:var(--em700)}
+.lvls .B b{color:var(--g700)}.lvls .C{background:var(--amber50);border-color:var(--amber200)}.lvls .C b{color:var(--amber800)}
+.lvls .D{background:var(--red50);border-color:var(--red200)}.lvls .D b{color:var(--red700)}
+.chain{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.chain .st{border:1px solid var(--em200);border-radius:16px;padding:12px;background:#fff;position:relative}
+.chain .st .t{font-size:12.5px;font-weight:800;color:var(--g900);margin:6px 0 3px}
+.chain .st .d{font-size:11px;color:var(--g500);font-weight:600;line-height:1.45}
+.chain .st:after{content:"→";position:absolute;right:-12px;top:44%;color:var(--em300);font-weight:900}
+.chain .st:last-child:after{content:none}
+.tl{display:grid;gap:0}
+.tl .e{display:grid;grid-template-columns:22px 92px minmax(0,1fr) auto;gap:10px;align-items:start;padding:9px 0;border-top:1px solid var(--g100)}
+.tl .e:first-child{border-top:0}
+.tl .e i{width:14px;height:14px;border-radius:999px;background:var(--em500);border:3px solid var(--em100);display:inline-block;margin-top:2px}
+.tl .e i.open{background:#fff;border:2px dashed var(--g300)}
+.tl .e .d{font-size:11px;font-weight:700;color:var(--g500)}
+.tl .e .t{font-size:12.5px;font-weight:800;color:var(--g900)}
+.tl .e .s{font-size:11px;font-weight:600;color:var(--g500);margin-top:2px}
+.check{display:grid;gap:6px}
+.check div{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:700;color:var(--g700)}
+.check div i{width:18px;height:18px;border-radius:999px;background:var(--em100);color:var(--em700);border:1px solid var(--em200);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;font-style:normal}
+.check div a{margin-left:auto;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--em700);text-decoration:none}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.two .m{border:1px solid var(--g100);border-radius:16px;padding:14px;background:var(--g50)}
+.two .m .k{margin-bottom:6px}
+.two .m .v{font-size:24px;font-weight:900;letter-spacing:-.02em;color:var(--g900)}
+.two .m .d{font-size:11px;font-weight:600;color:var(--g500);margin-top:4px;line-height:1.45}
+svg text{font-family:var(--sans)}
+@media (max-width:1500px){}
+</style>
+</head>
+<body>
+
+<div class="chrome">
+  <span class="t">Clean-Core.io · Mockups 2.7 · Konzept, nicht implementiert</span>
+  <div class="tabs">
+    <button class="on" data-s="s1">1 · Business · Need &amp; process (R1)</button>
+    <button data-s="s2">2 · Business · Standard fit (R2)</button>
+    <button data-s="s3">3 · IT · Architecture (R1/3.0)</button>
+    <button data-s="s4">4 · Management · Same case (R1)</button>
+    <button data-s="s5">5 · Delivery &amp; handover (3.0/3.5)</button>
+    <button data-s="s6">6 · Corporate access via MCP (3.1)</button>
+  </div>
+  <div class="zoom"><span class="t">Zoom</span><button data-z="0.5">50%</button><button data-z="0.75">75%</button><button class="on" data-z="1">100%</button></div>
+</div>
+
+<div class="stage"><div class="frame-wrap" id="wrap">
+
+<!-- ======================================================= SCREEN 1 -->
+<section class="screen on" id="s1">
+<div class="frame">
+  <div class="mesh"><i></i><i></i><i></i></div><div class="gridbg"></div>
+  <div class="notice"><span class="k">Concept 2.7</span> Target picture for slice A (R1 = v2.11). Not implemented, no measured performance, no product claim.</div>
+  <div class="hdr">
+    <div class="logo"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></div><div><div class="n">Clean-Core<b>.io</b></div><div class="s">Free Community Edition</div></div></div>
+    <div class="crumb"><span class="back">‹ My workspace</span><span class="sep">/</span><span>Procurement · ECC 6.0 EHP8</span><span class="sep">/</span><span class="cur">Emergency purchase approval</span></div>
+    <div class="right">
+      <button class="btn">Share with members</button>
+      <div class="avatars"><span>MW</span><span>AN</span><span>SK</span><span class="more">+2</span></div>
+      <div class="me">FF</div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="case">
+      <div class="top">
+        <div>
+          <h1>Emergency purchase approval</h1>
+          <div class="meta"><span>Case <code>C-0412</code></span><span>Manifest <code>M-12</code></span><span>Revision <code>7</code></span><span>Source snapshot <code>SS-31 · sha256 9f3a…c1</code></span><span>Engine <code>2.11.0</code> · Rules <code>levels/1.0</code></span></div>
+        </div>
+      </div>
+      <div class="dims">
+        <span class="dim ok"><i></i><span class="l">Provenance</span> 42 findings engine · 3 imports (ATC)</span>
+        <span class="dim ok"><i></i><span class="l">Need</span> confirmed · REQ-017 v6</span>
+        <span class="dim part"><i></i><span class="l">Standard</span> E2 · partial</span>
+        <span class="dim part"><i></i><span class="l">Costs</span> simulation · 2 positions open</span>
+        <span class="dim part"><i></i><span class="l">Mandate</span> business ✓ · architecture open</span>
+        <span class="dim info"><i></i><span class="l">Execution</span> demonstrated · mock</span>
+        <span class="dim none"><i></i><span class="l">Handover</span> not started</span>
+      </div>
+      <div class="controls">
+        <div class="seg"><span>Management</span><span class="on">Business</span><span>IT</span></div>
+        <div class="focus"><b>Intent</b><span>Understand</span></div>
+        <div class="focus"><b>Playing as</b><span style="background:var(--em50);border-color:var(--em200);color:var(--em800)">Process owner ▾</span></div>
+        <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Search this case<kbd>⌘K</kbd></div>
+      </div>
+    </div>
+
+    <div class="layers">
+      <span class="on">Need &amp; process</span><span>Standard fit</span><span>Costs &amp; assumptions</span><span>Architecture &amp; dependencies</span><span>Evidence &amp; controls</span><span>Changes &amp; commitments</span>
+    </div>
+
+    <div class="cols">
+      <div class="stack">
+        <div class="card">
+          <div class="ch"><h2>Purchase approval — reconstructed from code</h2><span class="sub">Same artifacts, different views · selected: Emergency approval</span>
+            <div class="legend"><span><i style="background:#fff;border:2px solid var(--slate400)"></i>Reconstructed</span><span><i style="background:var(--em500)"></i>Confirmed target</span><span><i style="background:var(--g900)"></i>Proven</span></div></div>
+          <svg viewBox="0 0 900 250" width="100%" height="250">
+            <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#94a3b8"/></marker></defs>
+            <g stroke="#94a3b8" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+              <path d="M62 125 H120"/><path d="M230 125 H285"/><path d="M355 85 H430"/><path d="M355 165 H430"/><path d="M400 125 H470 V60"/><path d="M560 85 H640"/><path d="M560 165 H640"/><path d="M560 60 H640"/>
+              <path d="M760 125 H800"/>
+            </g>
+            <circle cx="40" cy="125" r="18" fill="#10b981"/>
+            <text x="40" y="160" font-size="10" font-weight="700" text-anchor="middle" fill="#64748b">Purchase request</text>
+            <rect x="120" y="100" width="110" height="50" rx="12" fill="#fff" stroke="#94a3b8" stroke-width="1.6"/><text x="175" y="130" font-size="11" font-weight="700" text-anchor="middle" fill="#0b1c30">Check amount</text>
+            <path d="M320 90 L355 125 L320 160 L285 125 Z" fill="#fff" stroke="#94a3b8" stroke-width="1.6"/><text x="320" y="129" font-size="9" font-weight="800" text-anchor="middle" fill="#0b1c30">&gt; 10.000?</text>
+            <text x="392" y="80" font-size="9" font-weight="700" fill="#64748b">yes</text><text x="404" y="102" font-size="9" font-weight="700" fill="#047857">emergency</text><text x="392" y="160" font-size="9" font-weight="700" fill="#64748b">no</text>
+            <rect x="430" y="60" width="130" height="50" rx="12" fill="#fff" stroke="#94a3b8" stroke-width="1.6"/><text x="495" y="90" font-size="11" font-weight="700" text-anchor="middle" fill="#0b1c30">Manager approval</text>
+            <rect x="430" y="140" width="130" height="50" rx="12" fill="#fff" stroke="#94a3b8" stroke-width="1.6"/><text x="495" y="170" font-size="11" font-weight="700" text-anchor="middle" fill="#0b1c30">Auto approve</text>
+            <rect x="430" y="10" width="130" height="36" rx="12" fill="#ecfdf5" stroke="#16a34a" stroke-width="2.4"/><text x="495" y="33" font-size="11" font-weight="800" text-anchor="middle" fill="#065f46">Emergency approval</text>
+            <text x="495" y="-2" font-size="9" fill="#047857"></text>
+            <rect x="640" y="100" width="120" height="50" rx="12" fill="#fff" stroke="#94a3b8" stroke-width="1.6"/><text x="700" y="130" font-size="11" font-weight="700" text-anchor="middle" fill="#0b1c30">Create PO</text>
+            <circle cx="822" cy="125" r="18" fill="#fff" stroke="#111827" stroke-width="3"/>
+            <text x="495" y="205" font-size="10" font-weight="700" text-anchor="middle" fill="#047857">BR-004 · confirmed target · anchor L243</text>
+            <text x="450" y="238" font-size="10" font-weight="600" text-anchor="middle" fill="#94a3b8">Roles are reconstructed from AUTHORITY-CHECK and naming; organisational confirmation is a separate state.</text>
+          </svg>
+        </div>
+
+        <div class="card rule">
+          <div class="ch"><h2>Business rule BR-004</h2><span class="tag em">Revision 7</span><span class="tag">Business view</span>
+            <div class="r"><span class="tag em">Traceability 3 / 3 sentences anchored</span></div></div>
+          <p>Emergency purchases up to 50,000 EUR can be approved by a department head without standard tendering.<span class="anc">L238–241</span></p>
+          <p>A justified business need must be recorded before the approval is granted.<span class="anc">L243</span></p>
+          <p>Amounts above 50,000 EUR fall back to manager approval; below the approval limit the request is auto-approved.<span class="anc">L244–248</span></p>
+          <div class="kv">
+            <span class="k">Type</span><div>Business rule · control (preventive)</div>
+            <span class="k">Source</span><div><code>ZMM_PO_APPROVAL_F01</code> · ABAP include · form <code>check_emergency_approval</code></div>
+            <span class="k">Applies to</span><div>Purchase order · Purchasing (MM)</div>
+            <span class="k">State</span><div>Reconstructed → <b>confirmed future need</b> (skeller playing as Process owner · 14 Mar 2026)</div>
+            <span class="k">Confirmation</span><div>"Keep the control. Any department head may approve, not only the one coded today." — new requirement revision, not a code preservation</div>
+          </div>
+          <div class="states"><span class="on">Keep — control</span><span class="on2">Change deliberately — approver role</span><span>Drop</span><span>Clarify</span></div>
+        </div>
+
+        <div class="card obs">
+          <div class="ch"><h2 style="color:#fff">ZMM_PO_APPROVAL_F01</h2><span class="tag" style="background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.25);color:#6ee7b7">Read-only · lines 238–250</span><div class="r"><span class="tag" style="background:#111827;border-color:#1f2937;color:#9ca3af">Source snapshot SS-31</span></div></div>
+<pre class="code"><span class="ln">238</span><span class="kw">IF</span> lv_emergency = abap_true <span class="kw">AND</span> lv_amount &lt;= <span class="st">50000</span>.
+<span class="ln">239</span>  <span class="cm">" emergency path: department head, no tendering</span>
+<span class="ln">240</span>  <span class="kw">AUTHORITY-CHECK OBJECT</span> <span class="st">'M_BEST_EKO'</span> <span class="kw">ID</span> <span class="st">'ACTVT'</span> <span class="kw">FIELD</span> <span class="st">'01'</span>.
+<span class="ln">241</span>  <span class="kw">PERFORM</span> <span class="fn">check_emergency_approval</span> <span class="kw">USING</span> lv_amount lv_waers.
+<span class="ln">242</span><span class="kw">ELSEIF</span> lv_amount &gt; gv_approval_limit.
+<span class="hl"><span class="ln">243</span>  <span class="kw">PERFORM</span> <span class="fn">get_manager_approval</span> <span class="kw">USING</span> lv_amount lv_waers lv_reason.</span><span class="ln">244</span><span class="kw">ELSE</span>.
+<span class="ln">245</span>  <span class="kw">PERFORM</span> <span class="fn">auto_approve</span> <span class="kw">USING</span> lv_amount.
+<span class="ln">246</span><span class="kw">ENDIF</span>.
+<span class="ln">247</span>
+<span class="ln">248</span><span class="cm">" set approval flag</span>
+<span class="ln">249</span>lv_approved = abap_true.
+<span class="ln">250</span><span class="kw">UPDATE</span> zmm_po_appr <span class="kw">SET</span> approved = lv_approved <span class="kw">WHERE</span> ebeln = lv_ebeln.</pre>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <div class="ch"><h2>Evidence at BR-004</h2><div class="r"><span class="tag">5 artifacts</span></div></div>
+          <div class="list">
+            <div class="art"><div class="ico">REQ</div><div><div class="t">REQ-017 · Emergency purchase capability</div><div class="d">Confirmed future need · owner skeller</div></div><span class="v">v6</span></div>
+            <div class="art sel"><div class="ico">L</div><div><div class="t">Source anchor · ZMM_PO_APPROVAL_F01 L243</div><div class="d">Bound to snapshot SS-31 · re-anchoring open if source changes</div></div><span class="v">v7</span></div>
+            <div class="art"><div class="ico">DEC</div><div><div class="t">DEC-021 · Keep rule, add logging</div><div class="d">Business: skeller playing as Process owner · signed · self-play: no · architecture: open · costs: CS-012 simulation</div></div><span class="v">draft</span></div>
+            <div class="art"><div class="ico">CA</div><div><div class="t">Coverage CA-08 · standard approval workflow</div><div class="d">E2 documented suitability · partial · target: Private Cloud 2025</div></div><span class="v">v2</span></div>
+            <div class="art"><div class="ico">TST</div><div><div class="t">TEST-104 · Emergency approval scenario</div><div class="d">Demonstrated · mock (2 dependencies replaced) · not an execution receipt</div></div><span class="v">v5</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><h2>Discussion</h2><span class="tag em">Open 2</span><span class="tag">Resolved 1</span><div class="r"><span class="sub">Resolved is not a sign-off</span></div></div>
+          <div class="thread"><div class="av">MW</div><div><div class="who">mweber <small>2 h ago</small></div><p>@akeller — does the 50,000 EUR threshold apply to all subsidiaries or only EU entities?</p><div class="chips"><span class="tag em mono">BR-004 v7</span><span class="tag am">Open</span></div></div></div>
+          <div class="thread"><div class="av">AN</div><div><div class="who">anovak <small>4 h ago</small></div><p>The legacy check also applies currency rules — see line 243, the amount is compared in document currency.</p><div class="chips"><span class="tag em mono">L243</span><span class="tag am">Open</span></div></div></div>
+          <div class="thread"><div class="av">SK</div><div><div class="who">skeller <small>1 d ago</small></div><p>Updated in revision 7 after legal review. Control stays; approver role widened.</p><div class="chips"><span class="tag em mono">REQ-017 v6</span><span class="tag">Resolved</span></div></div></div>
+        </div>
+  <div class="share">
+    <span class="k open">Dialog · open</span><h3>Share BR-004 · revision 7</h3>
+    <div class="k">Place · person · right · content scope</div>
+    <div class="row">
+      <span class="k">Link type</span><div class="radio"><span><i></i>Working link · current state</span><span class="on"><i></i>Evidence link · manifest M-12, frozen</span></div>
+      <span class="k">Recipient</span><div>handle akeller · registered member · <span class="tag bl">Read</span> · delegation: no · no name, no organisation stored</div>
+      <span class="k">Content</span><div>Rule text, process step, comments · <span class="tag rd">Raw code: NO</span> anchors visible, source locked</div>
+      <span class="k">Expires</span><div>30 days · revocation blocks new requests immediately</div>
+    </div>
+    <div class="warn">Copying the link changes no rights. Granting access is a separate, logged action.</div>
+    <div class="acts"><button class="btn ghost">Copy link</button><button class="btn dark">Grant access</button></div>
+  </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nextbar">
+    <div class="n"><span class="k">Next contribution · rule-based</span><span class="t">Standard evidence for "vendor block list" is missing (E1) → Application consulting <small>· reason: blocks DEC-021</small></span></div>
+    <div class="tools"><span class="k">Tools</span><span>Analyze</span><span>Design</span><span>Transformation</span><span>Documentation</span><span>Testing</span><span>Economics</span><span>Delivery</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ======================================================= SCREEN 2 -->
+<section class="screen" id="s2">
+<div class="frame">
+  <div class="mesh"><i></i><i></i><i></i></div><div class="gridbg"></div>
+  <div class="notice"><span class="k">Concept 2.7</span> Target picture for slice B (R2 = v2.12). Coverage levels E0–E4 are evidence maturity, not probabilities. Money only from an assumptions revision.</div>
+  <div class="hdr">
+    <div class="logo"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></div><div><div class="n">Clean-Core<b>.io</b></div><div class="s">Free Community Edition</div></div></div>
+    <div class="crumb"><span class="back">‹ My workspace</span><span class="sep">/</span><span>Procurement · ECC 6.0 EHP8</span><span class="sep">/</span><span class="cur">Emergency purchase approval</span></div>
+    <div class="right"><button class="btn">Share with members</button><div class="avatars"><span>MW</span><span>AN</span><span>SK</span><span class="more">+2</span></div><div class="me">FF</div></div>
+  </div>
+
+  <div class="body">
+    <div class="case">
+      <div class="top"><div><h1>Emergency purchase approval</h1>
+        <div class="meta"><span>Case <code>C-0412</code></span><span>Manifest <code>M-14</code></span><span>Revision <code>9</code></span><span>Target context <code>S/4HANA Private Cloud 2025 · MM · DE/EU</code></span></div></div></div>
+      <div class="dims">
+        <span class="dim ok"><i></i><span class="l">Provenance</span> 42 engine · 3 ATC · 1 SCMON</span>
+        <span class="dim ok"><i></i><span class="l">Need</span> confirmed · REQ-017 v6</span>
+        <span class="dim part"><i></i><span class="l">Standard</span> E2 · partial · 1 counter-check open</span>
+        <span class="dim part"><i></i><span class="l">Costs</span> CS-012 · simulation · 2 open</span>
+        <span class="dim part"><i></i><span class="l">Mandate</span> business ✓ · architecture open</span>
+        <span class="dim info"><i></i><span class="l">Execution</span> demonstrated · mock</span>
+        <span class="dim none"><i></i><span class="l">Handover</span> not started</span>
+      </div>
+      <div class="controls">
+        <div class="seg"><span>Management</span><span class="on">Business</span><span>IT</span></div>
+        <div class="focus"><b>Intent</b><span>Decide</span></div>
+        <div class="focus"><b>Playing as</b><span style="background:var(--em50);border-color:var(--em200);color:var(--em800)">Process owner ▾</span></div>
+        <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Search this case<kbd>⌘K</kbd></div>
+      </div>
+    </div>
+
+    <div class="layers"><span>Need &amp; process</span><span class="on">Standard fit</span><span>Costs &amp; assumptions</span><span>Architecture &amp; dependencies</span><span>Evidence &amp; controls</span><span>Changes &amp; commitments</span></div>
+
+    <div class="cols">
+      <div class="stack">
+        <div class="card">
+          <div class="ch"><h2>Standard fit by capability</h2><span class="sub">3 of 5 capabilities with evidence ≥ E2 · a missing catalog hit does not prove a gap</span><div class="r"><span class="tag">Target: Private Cloud 2025</span><span class="tag em">Rules levels/1.0</span></div></div>
+          <table class="tbl">
+            <tr><th>Capability</th><th>Result</th><th>Evidence</th><th>Source / candidate</th><th>Counter-check</th></tr>
+            <tr><td>Purchase requisition approval</td><td><span class="tag em">Fulfilled</span></td><td><span class="tag gr">E2</span></td><td>Flexible workflow for PR · scope item BD… (ID to verify in Process Navigator)</td><td>S1 · planned</td></tr>
+            <tr class="sel"><td>Vendor block list validation</td><td><span class="tag am">Partial</span></td><td><span class="tag bl">E1</span></td><td>Candidate: supplier block in standard + key-user custom logic · Fiori app F… (verify)</td><td>S1 · <b>open</b> → Application consulting</td></tr>
+            <tr><td>Category-based approval</td><td><span class="tag am">Partial</span></td><td><span class="tag gr">E2</span></td><td>Release strategy by material group · documented</td><td>S1 · planned</td></tr>
+            <tr><td>Three-way match (PO–GR–IV)</td><td><span class="tag em">Fulfilled</span></td><td><span class="tag gr">E3</span></td><td>Demonstrated 04 Sep 2026 · demo receipt DR-11 · sandbox client 100</td><td>done</td></tr>
+            <tr><td>Automatic payment block above tolerance</td><td><span class="tag">Unknown</span></td><td><span class="tag">E0</span></td><td>No catalog hit — this proves nothing either way</td><td>question to Finance (AP)</td></tr>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="ch"><h2>Scenario workbench</h2><span class="sub">smallest relevant scope, chosen from the confirmed need</span><div class="r"><button class="btn sm ghost">New scenario</button><button class="btn sm">Run counter-check</button></div></div>
+          <div class="scen pri"><div class="id">S1</div><div><div class="t" style="font-size:13px;font-weight:800">Non-catalog purchase above threshold</div><div class="d" style="font-size:11px;color:var(--g500);font-weight:600">Employee raises a non-catalog request > 50,000 EUR for consulting. Expected: category approval + vendor validation. Why decisive: it is the case where the custom rule differs from standard.</div><div class="chips" style="display:flex;gap:6px;margin-top:6px"><span class="tag em mono">REQ-017</span><span class="tag em mono">REQ-021</span><span class="tag am">Priority</span></div></div><span class="tag">Receipt: none</span></div>
+          <div class="scen"><div class="id">S2</div><div><div class="t" style="font-size:13px;font-weight:800">Emergency purchase, unplanned, at night</div><div class="d" style="font-size:11px;color:var(--g500);font-weight:600">Plant needs an urgent spare part; bypass tendering, keep the control. Expected: department head approves, justification recorded.</div><div class="chips" style="display:flex;gap:6px;margin-top:6px"><span class="tag em mono">REQ-034</span><span class="tag">Edge case</span></div></div><span class="tag em">Receipt DR-11 · demo</span></div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><h2>Options — same need, same horizon</h2><span class="tag am">CS-012 · Simulation</span><span class="tag">Horizon 5 y · price base 03/2026</span><div class="r"><button class="btn sm ghost">Assumptions</button><button class="btn sm dark">Move to decision</button></div></div>
+          <div class="opt"><div><div class="t">A · Adopt standard with accepted process change</div><div class="d">Release strategy + key-user custom logic for vendor block · process change accepted by Business (pending S1)</div></div><span class="tag bl">E1 / E2</span><div class="n">1.9 M €<small>Cash-TCO · 2 of 9 positions unknown</small></div></div>
+          <div class="opt"><div><div class="t">B · Keep, time-boxed (24 months)</div><div class="d">Level C extension kept until 2028 upgrade · cannot be extended for free</div></div><span class="tag">—</span><div class="n">not determinable<small>maintenance baseline missing</small></div></div>
+          <div class="opt"><div><div class="t">C · Side-by-side rebuild (CAP on BTP)</div><div class="d">Only if external creditworthiness data is integrated · 0 positions open</div></div><span class="tag gr">E2</span><div class="n">2.4 M €<small>Cash-TCO · complete</small></div></div>
+          <div style="margin-top:10px;font-size:11px;font-weight:700;color:var(--amber800);background:var(--amber50);border:1px solid var(--amber200);border-radius:12px;padding:8px 10px">No overall cost winner while option B is incomplete. A cheap option never neutralises an open mandatory control (REQ-021).</div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <div class="ch"><h2>Evidence at "Vendor block list validation"</h2><div class="r"><span class="tag bl">E1 · candidate</span></div></div>
+          <div class="list">
+            <div class="art"><div class="ico">CAT</div><div><div class="t">Standard candidate · supplier block + custom logic</div><div class="d">Catalog reference only (no content copied) · edition/release to confirm</div></div><span class="v">E1</span></div>
+            <div class="art"><div class="ico">CA</div><div><div class="t">CoverageAssertion CA-09</div><div class="d">Requirement REQ-021 · option A · target Private Cloud 2025 · result: partial</div></div><span class="v">v1</span></div>
+            <div class="art"><div class="ico">S1</div><div><div class="t">Counter-check S1 · not yet run</div><div class="d">Owner: Application consulting · what it can change: E1 → E3 or a documented gap</div></div><span class="v">open</span></div>
+            <div class="art"><div class="ico">USE</div><div><div class="t">Usage · SCMON import</div><div class="d">Window 12 Jun – 10 Sep 2026 · 3 systems · 34 calls · 3 users</div></div><span class="v">90 d</span></div>
+          </div>
+          <div style="margin-top:12px;font-size:11px;font-weight:600;color:var(--g500);line-height:1.5">A catalog hit creates at most E1. Edition, release and configuration are part of the claim; a demo in another scope never becomes E4 by copying.</div>
+        </div>
+        <div class="card">
+          <div class="ch"><h2>Discussion</h2><span class="tag em">Open 2</span><span class="tag">Resolved 1</span></div>
+          <div class="thread"><div class="av">MW</div><div><div class="who">mweber <small>2 h ago</small></div><p>Does the standard supplier block cover our vendor block list, or do we still need the custom check for material groups?</p><div class="chips"><span class="tag em mono">CA-09</span><span class="tag am">Open</span></div></div></div>
+          <div class="thread"><div class="av">AN</div><div><div class="who">anovak <small>4 h ago</small></div><p>In the emergency scenario — can we use the standard urgent-PO path and keep the justification field?</p><div class="chips"><span class="tag em mono">S2</span><span class="tag am">Open</span></div></div></div>
+          <div class="thread"><div class="av">SK</div><div><div class="who">skeller <small>1 d ago</small></div><p>From a compliance view we keep the additional approval for high-risk categories. Recorded as REQ-021 (mandatory).</p><div class="chips"><span class="tag em mono">REQ-021</span><span class="tag">Resolved</span></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nextbar">
+    <div class="n"><span class="k">Next contribution · rule-based</span><span class="t">Run counter-check S1 for "vendor block list" → Application consulting <small>· reason: only open item between E1 and a documented result; blocks option A</small></span></div>
+    <div class="tools"><span class="k">Tools</span><span>Analyze</span><span>Design</span><span>Transformation</span><span>Documentation</span><span>Testing</span><span>Economics</span><span>Delivery</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ======================================================= SCREEN 3 -->
+<section class="screen" id="s3">
+<div class="frame">
+  <div class="mesh"><i></i><i></i><i></i></div><div class="gridbg"></div>
+  <div class="notice"><span class="k">Concept 2.7</span> IT view (focus: Solution). Both catalog views per finding; the target design is a draft with no contract effect until 3.0. ATC remains the authority.</div>
+  <div class="hdr">
+    <div class="logo"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></div><div><div class="n">Clean-Core<b>.io</b></div><div class="s">Free Community Edition</div></div></div>
+    <div class="crumb"><span class="back">‹ My workspace</span><span class="sep">/</span><span>Procurement · ECC 6.0 EHP8</span><span class="sep">/</span><span class="cur">Emergency purchase approval</span></div>
+    <div class="right"><button class="btn">Share with members</button><div class="avatars"><span>MW</span><span>AN</span><span>SK</span><span class="more">+2</span></div><div class="me">FF</div></div>
+  </div>
+
+  <div class="body">
+    <div class="case">
+      <div class="top"><div><h1>Emergency purchase approval</h1>
+        <div class="meta"><span>Case <code>C-0412</code></span><span>Manifest <code>M-14</code></span><span>Revision <code>9</code></span><span>Catalog <code>releaseInfo fb0df9f2 · classifications 0081fb9c</code></span><span>Rules <code>levels/1.0</code></span></div></div></div>
+      <div class="dims">
+        <span class="dim ok"><i></i><span class="l">Provenance</span> 42 engine · 3 ATC · 1 SCMON</span>
+        <span class="dim ok"><i></i><span class="l">Need</span> confirmed · REQ-017 v6</span>
+        <span class="dim part"><i></i><span class="l">Standard</span> E2 · partial</span>
+        <span class="dim part"><i></i><span class="l">Costs</span> CS-012 · simulation</span>
+        <span class="dim part"><i></i><span class="l">Mandate</span> business ✓ · architecture open</span>
+        <span class="dim info"><i></i><span class="l">Execution</span> demonstrated · mock</span>
+        <span class="dim none"><i></i><span class="l">Handover</span> not started</span>
+      </div>
+      <div class="controls">
+        <div class="seg"><span>Management</span><span>Business</span><span class="on">IT</span></div>
+        <div class="focus"><b>Focus</b><span>Application</span><span style="background:var(--g950);color:#fff;border-color:var(--g950)">Solution</span><span>Enterprise</span></div>
+        <div class="focus"><b>Playing as</b><span style="background:var(--em50);border-color:var(--em200);color:var(--em800)">Solution architect ▾</span></div>
+        <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Search this case<kbd>⌘K</kbd></div>
+      </div>
+    </div>
+
+    <div class="layers"><span>Need &amp; process</span><span>Standard fit</span><span>Costs &amp; assumptions</span><span class="on">Architecture &amp; dependencies</span><span>Evidence &amp; controls</span><span>Changes &amp; commitments</span></div>
+
+    <div class="cols">
+      <div class="stack">
+        <div class="card">
+          <div class="ch"><h2>Findings</h2><span class="sub">31 · sorted by level, then line</span><div class="r"><span class="tag dk">D 5</span><span class="tag am">C 14</span><span class="tag">B 9</span><span class="tag em">A 12</span><span class="tag">Unknown 3</span></div></div>
+          <div class="list">
+            <div class="finding sel">
+              <div><div class="t"><code style="font-family:var(--mono)">ZMM_PO_APPROVAL_F01 · L27</code> <span>CALL METHOD cl_mm_internal-&gt;check_limit</span><span class="tag rd">Level D</span></div>
+                <div class="views"><span>Release <b>notToBeReleased</b> (ABAP Cloud: not usable)</span><span>Classification <b>unlisted</b> (classic: internal)</span><span>Rule <b>levels/1.0 · release wins</b></span><span>Successor <b>—</b> (none published)</span><span>Route <b>your call</b></span></div></div>
+              <span class="tag em">Engine · F-017</span>
+            </div>
+            <div class="finding">
+              <div><div class="t"><code style="font-family:var(--mono)">ZMM_PO_APPROVAL_F01 · L250</code> <span>UPDATE zmm_po_appr (custom table write)</span><span class="tag em">Level A path</span></div>
+                <div class="views"><span>Customer namespace table · <b>on-stack persistence is allowed in Private Edition</b></span><span>Public Edition: <b>side-by-side trigger</b></span><span>Route <b>settle</b></span></div></div>
+              <span class="tag em">Engine · F-021</span>
+            </div>
+            <div class="finding">
+              <div><div class="t"><code style="font-family:var(--mono)">ZMM_PO_APPROVAL_F01 · L112</code> <span>SELECT … FROM ekko INTO @DATA(ls_ekko)</span><span class="tag am">Level C</span></div>
+                <div class="views"><span>Release <b>notToBeReleased</b></span><span>Classification <b>unlisted</b></span><span>Successor <b>I_PurchaseOrder</b> (SAP release data · CDS view entity)</span><span>Route <b>settle</b></span></div></div>
+              <span class="tag dk">ATC · authoritative</span>
+            </div>
+            <div class="finding">
+              <div><div class="t"><code style="font-family:var(--mono)">ZMM_PO_APPROVAL_F01 · L163</code> <span>CALL FUNCTION 'BAPI_PO_CREATE1'</span><span class="tag">Level B</span></div>
+                <div class="views"><span>Release <b>unlisted</b></span><span>Classification <b>classicAPI</b> (usable in classic extensions)</span><span>Successor <b>API_PURCHASEORDER_SRV</b> (OData V2 · SAP) · <b>I_PurchaseOrderTP</b> (curated)</span><span>Route <b>your call</b></span></div></div>
+              <span class="tag em">Engine · F-030</span>
+            </div>
+            <div class="finding">
+              <div><div class="t"><code style="font-family:var(--mono)">ZMM_PO_APPROVAL_F01 · L58</code> <span>CALL FUNCTION 'GUI_UPLOAD'</span><span class="tag rd">Level D</span></div>
+                <div class="views"><span>Frontend file service · <b>not available in ABAP Cloud</b></span><span>Successor <b>—</b> · hand work: decoupled upload</span><span>Route <b>hand work</b></span></div></div>
+              <span class="tag em">Engine · F-004</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><h2>Trace — from requirement to target design</h2><span class="sub">one direction, every step referenced</span></div>
+          <div class="trace">
+            <div class="st"><span class="tag em mono">REQ-017 v6</span><div class="t">Requirement</div><div class="d">Emergency purchase capability · confirmed · owner skeller</div></div>
+            <div class="st"><span class="tag mono">ZMM_PO_APPROVAL_F01 · L243</span><div class="t">Source anchor</div><div class="d">Form get_manager_approval · snapshot SS-31</div></div>
+            <div class="st"><span class="tag rd mono">F-017</span><div class="t">Finding</div><div class="d">CL_MM_INTERNAL not usable in ABAP Cloud · Level D · rule 1.0</div></div>
+            <div class="st"><span class="tag am">Draft · not effective</span><div class="t">Target design</div><div class="d">Released API instead of internal class · RAP BO on Z-table · <b>no contract effect until 3.0</b></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><h2>ArchitectureContract AC-004</h2><span class="tag am">Draft · documented, not effective for generation</span><div class="r"><span class="sub">Until 3.0 the generator follows the recommended route; an override here is recorded, not applied.</span></div></div>
+          <div class="kv" style="grid-template-columns:150px 1fr">
+            <span class="k">Target context</span><div>S/4HANA Private Cloud 2025 · MM · three-system landscape</div>
+            <span class="k">Runtime</span><div>On-stack developer extensibility (ABAP Cloud, RAP) — <b>override</b> of recommended route "Side-by-Side (SAP BTP)"</div>
+            <span class="k">Persistence</span><div><code>ZMM_PO_APPR</code> customer namespace · RAP business object on top</div>
+            <span class="k">APIs</span><div><code>I_PurchaseOrder</code> (read) · <code>I_PurchaseOrderTP</code> (transactional, curated) · released BAdI for release strategy</div>
+            <span class="k">Bound inputs</span><div>REQ-017 v6 · REQ-021 v2 · CA-08 v2 · CS-012 (simulation) · SS-31</div>
+            <span class="k">Roles</span><div>Business ✓ skeller playing as Process owner (signed) · Architecture <b>open</b> · Costs: not reviewed · role play — no organisational mandate</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <div class="ch"><h2>Level distribution</h2><div class="r"><span class="tag">Clean-Core.io Score 92</span></div></div>
+          <div class="lvls"><div class="l A"><b>12</b><span>A</span></div><div class="l B"><b>9</b><span>B</span></div><div class="l C"><b>14</b><span>C</span></div><div class="l D"><b>5</b><span>D</span></div></div>
+          <div style="margin-top:10px;font-size:11px;font-weight:600;color:var(--g500);line-height:1.5">ABAP-Cloud view: 12 usable · 19 not usable · 9 unlisted. The score is a formula (<b>/method/levels</b>), not a compliance percentage. ATC is the authority.</div>
+        </div>
+        <div class="card">
+          <div class="ch"><h2>Imports</h2></div>
+          <div class="list">
+            <div class="art"><div class="ico">ATC</div><div><div class="t">ATC · S4HANA_READINESS_CLOUD</div><div class="d">DEV client 100 · 14 Mar 2026 · 3 findings imported · 3 match engine, 0 differ</div></div><span class="v">SAP</span></div>
+            <div class="art"><div class="ico">KS</div><div><div class="t">Kernseife rating</div><div class="d">Not imported — export pending</div></div><span class="v">—</span></div>
+            <div class="art"><div class="ico">USE</div><div><div class="t">SCMON / SUSG</div><div class="d">Window 12 Jun – 10 Sep 2026 · 34 calls · 3 users</div></div><span class="v">90 d</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><h2>Discussion</h2><span class="tag em">Open 2</span></div>
+          <div class="thread"><div class="av">TS</div><div><div class="who">tsharma <small>2 h ago</small></div><p>We should refactor the approval into a RAP BO before the next release cycle — the Z-table stays on-stack in Private Edition.</p><div class="chips"><span class="tag em mono">AC-004</span><span class="tag am">Open</span></div></div></div>
+          <div class="thread"><div class="av">MW</div><div><div class="who">mweber <small>1 d ago</small></div><p>Agree. I'll build a BTP PoC only if the external credit data is confirmed — otherwise on-stack.</p><div class="chips"><span class="tag em mono">F-017</span><span class="tag am">Open</span></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nextbar">
+    <div class="n"><span class="k">Next contribution · rule-based</span><span class="t">Architecture mandate for AC-004 is open → Solution architect <small>· reason: DEC-021 cannot bind a target context without it</small></span></div>
+    <div class="tools"><span class="k">Tools</span><span>Analyze</span><span>Design</span><span>Transformation</span><span>Documentation</span><span>Testing</span><span>Economics</span><span>Delivery</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ======================================================= SCREEN 4 -->
+<section class="screen" id="s4">
+<div class="frame">
+  <div class="mesh"><i></i><i></i><i></i></div><div class="gridbg"></div>
+  <div class="notice"><span class="k">Concept 2.7</span> Management view — the same case, a different look: what is decided, what is missing, who must act, what the decision binds. No portfolio, no program figures. Roles are virtual hats of the logged-in member — role play with real evidence; no role or organisation data is stored on an account.</div>
+  <div class="hdr">
+    <div class="logo"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></div><div><div class="n">Clean-Core<b>.io</b></div><div class="s">Free Community Edition</div></div></div>
+    <div class="crumb"><span class="back">‹ My workspace</span><span class="sep">/</span><span>Procurement · ECC 6.0 EHP8</span><span class="sep">/</span><span class="cur">Emergency purchase approval</span></div>
+    <div class="right"><button class="btn">Share with members</button><div class="avatars"><span>MW</span><span>AN</span><span>SK</span><span class="more">+1</span></div><div class="me">FF</div></div>
+  </div>
+
+  <div class="body">
+    <div class="case">
+      <div class="top"><div><h1>Emergency purchase approval</h1>
+        <div class="meta"><span>Case <code>C-0412</code></span><span>Manifest <code>M-14</code></span><span>Revision <code>9</code></span><span>Owner <code>mweber</code> · 4 members</span><span>Target context <code>S/4HANA Private Cloud 2025 · MM</code></span></div></div></div>
+      <div class="dims">
+        <span class="dim ok"><i></i><span class="l">Provenance</span> 42 engine · 3 ATC · 1 SCMON</span>
+        <span class="dim ok"><i></i><span class="l">Need</span> confirmed · REQ-017 v6</span>
+        <span class="dim part"><i></i><span class="l">Standard</span> E2 · partial · S1 open</span>
+        <span class="dim part"><i></i><span class="l">Costs</span> CS-012 · simulation · 2 open</span>
+        <span class="dim part"><i></i><span class="l">Mandate</span> business (virtual role) ✓ · architecture open</span>
+        <span class="dim info"><i></i><span class="l">Execution</span> demonstrated · mock</span>
+        <span class="dim none"><i></i><span class="l">Handover</span> not started</span>
+      </div>
+      <div class="controls">
+        <div class="seg"><span class="on">Management</span><span>Business</span><span>IT</span></div>
+        <div class="focus"><b>Intent</b><span>Decide</span></div>
+        <div class="focus"><b>Playing as</b><span style="background:var(--em50);border-color:var(--em200);color:var(--em800)">Management ▾</span></div>
+        <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Search this case<kbd>⌘K</kbd></div>
+      </div>
+    </div>
+
+    <div class="layers"><span>Need &amp; process</span><span>Standard fit</span><span>Costs &amp; assumptions</span><span>Architecture &amp; dependencies</span><span>Evidence &amp; controls</span><span class="on">Changes &amp; commitments</span></div>
+
+    <div class="cols">
+      <div class="stack">
+        <div class="card">
+          <div class="ch"><h2>Decision DEC-021</h2><span class="tag am">Draft · 2 mandatory conditions open</span><div class="r"><button class="btn sm ghost">Request contributions</button><button class="btn sm dark" style="opacity:.45">Sign as Management (virtual role)</button></div></div>
+          <div class="opt" style="border-color:var(--em200);background:var(--em50)"><div><div class="t">Option candidate A · Adopt standard with accepted process change</div><div class="d">Release strategy + key-user custom logic for the vendor block list · process change accepted by skeller playing as Process owner</div></div><span class="tag bl">E1 / E2</span><div class="n">1.9 M €<small>CS-012 · simulation · 2 of 9 open</small></div></div>
+          <div class="kv" style="grid-template-columns:150px 1fr;margin-top:14px">
+            <span class="k">Settled</span><div>Need confirmed (REQ-017 v6) · mandatory control REQ-021 stays · emergency scenario S2 demonstrated (DR-11)</div>
+            <span class="k">Open</span><div>Counter-check S1 for the vendor block list (E1 → E2/E3) · architecture role for AC-004 · 2 cost positions (manual rework, support)</div>
+            <span class="k">Binds</span><div><code>REQ-017 v6</code> · <code>REQ-021 v2</code> · <code>CA-08 v2</code> · <code>CS-012</code> · <code>SS-31</code> · <code>AC-004 draft</code></div>
+            <span class="k">Roles</span><div>Business: skeller playing as Process owner — signed · Architecture: — · Costs: — · self-play: no · <span class="tag">role play — no organisational mandate</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><h2>Options at a glance</h2><span class="sub">same need, same horizon · a cheap option never neutralises REQ-021</span></div>
+          <table class="tbl">
+            <tr><th>Option</th><th>Counter-check</th><th>Costs (state)</th><th>Open positions</th><th>REQ-021 (mandatory)</th></tr>
+            <tr class="sel"><td>A · Standard with process change</td><td><span class="tag bl">E1</span> S1 open</td><td><span class="tag am">simulation</span> 1.9 M €</td><td>2 of 9</td><td><span class="tag em">kept</span></td></tr>
+            <tr><td>B · Keep, time-boxed 24 months</td><td>—</td><td><span class="tag">not determinable</span></td><td>baseline missing</td><td><span class="tag em">kept</span></td></tr>
+            <tr><td>C · Side-by-side rebuild (CAP)</td><td><span class="tag gr">E2</span></td><td><span class="tag am">simulation</span> 2.4 M €</td><td>0</td><td><span class="tag em">kept</span></td></tr>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="ch"><h2>Conditions</h2><span class="tag am">3 open</span><span class="tag em">2 met</span><span class="sub">what changes when each is resolved · roles are virtual</span></div>
+          <div class="list">
+            <div class="art"><div class="ico">S1</div><div><div class="t">Run counter-check S1 · vendor block list</div><div class="d">Role: Application consultant · played by anovak · resolves E1 → E2/E3 or documents a gap · blocks option A</div></div><span class="tag am">open</span></div>
+            <div class="art"><div class="ico">AC</div><div><div class="t">Declare architecture role and confirm AC-004</div><div class="d">Role: Solution architect · played by mweber · binds target context; until then the override stays "documented, not effective"</div></div><span class="tag am">open</span></div>
+            <div class="art"><div class="ico">CS</div><div><div class="t">Estimate 2 cost positions in CS-012</div><div class="d">Role: Controlling · played by ffrenzel · turns "no winner" into a comparable simulation</div></div><span class="tag am">open</span></div>
+            <div class="art"><div class="ico">REQ</div><div><div class="t">Confirm future need</div><div class="d">skeller · REQ-017 v6 · 03 Sep 2026</div></div><span class="tag em">met</span></div>
+            <div class="art"><div class="ico">S2</div><div><div class="t">Demonstrate emergency scenario</div><div class="d">anovak · demo receipt DR-11 · 04 Sep 2026 · mock</div></div><span class="tag em">met</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <div class="ch"><h2>Members on this case</h2><span class="sub">handles and rights only</span><div class="r"><button class="btn sm">Invite member</button></div></div>
+          <div class="list">
+            <div class="art"><div class="ico">MW</div><div><div class="t">mweber · owner</div><div class="d">edit · raw code: yes · played so far: Solution architect, Management</div></div><span class="v">owner</span></div>
+            <div class="art"><div class="ico">SK</div><div><div class="t">skeller</div><div class="d">edit · raw code: no · played so far: Process owner</div></div><span class="v">edit</span></div>
+            <div class="art"><div class="ico">AN</div><div><div class="t">anovak</div><div class="d">comment · raw code: yes · played so far: Application consultant</div></div><span class="v">comment</span></div>
+            <div class="art"><div class="ico">FF</div><div><div class="t">ffrenzel</div><div class="d">read · raw code: no · played so far: Controlling</div></div><span class="v">read</span></div>
+          </div>
+          <div style="margin-top:10px;font-size:11px;font-weight:600;color:var(--g500);line-height:1.5">Registered community members only, shown by handle. Roles are virtual hats chosen per contribution ("Playing as") — nothing about a person's real role or organisation is stored. One member may play every role; the decision then carries self-play: yes.</div>
+        </div>
+        <div class="card">
+          <div class="ch"><h2>Case timeline</h2></div>
+          <div class="tl">
+            <div class="e"><i></i><span class="d">02 Sep 2026</span><div><div class="t">Question raised</div><div class="s">mweber · from the IT view · L243</div></div><span class="tag mono">C-0412</span></div>
+            <div class="e"><i></i><span class="d">03 Sep 2026</span><div><div class="t">Need confirmed</div><div class="s">skeller · new requirement revision, not a code preservation</div></div><span class="tag mono">REQ-017 v6</span></div>
+            <div class="e"><i></i><span class="d">04 Sep 2026</span><div><div class="t">Counter-check S2 demonstrated</div><div class="s">anovak · mock · receipt persisted</div></div><span class="tag mono">DR-11</span></div>
+            <div class="e"><i></i><span class="d">08 Sep 2026</span><div><div class="t">Options built</div><div class="s">CS-012 opened as simulation</div></div><span class="tag mono">CS-012</span></div>
+            <div class="e"><i class="open"></i><span class="d">next</span><div><div class="t">Counter-check S1</div><div class="s">anovak · unblocks option A</div></div><span class="tag mono">S1</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><h2>Discussion</h2><span class="tag em">Open 2</span></div>
+          <div class="thread"><div class="av">SK</div><div><div class="who">skeller <small>1 h ago</small></div><p>I can sign for the business side once S1 is done — not before.</p><div class="chips"><span class="tag em mono">DEC-021</span><span class="tag am">Open</span></div></div></div>
+          <div class="thread"><div class="av">FF</div><div><div class="who">ffrenzel <small>3 h ago</small></div><p>Manual rework hours: I'll add a range with source, not a point estimate.</p><div class="chips"><span class="tag em mono">CS-012</span><span class="tag am">Open</span></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nextbar">
+    <div class="n"><span class="k">Next contribution · rule-based</span><span class="t">Run counter-check S1 → anovak <small>· reason: the only open item between E1 and a documented result; blocks option A and the business signature</small></span></div>
+    <div class="tools"><span class="k">Tools</span><span>Analyze</span><span>Design</span><span>Transformation</span><span>Documentation</span><span>Testing</span><span>Economics</span><span>Delivery</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ======================================================= SCREEN 5 -->
+<section class="screen" id="s5">
+<div class="frame">
+  <div class="mesh"><i></i><i></i><i></i></div><div class="gridbg"></div>
+  <div class="notice"><span class="k">Concept 2.7</span> Delivery layer for a handed-over case (3.0 = v3.0; observed values 3.5 = v3.5). Export, delivery, acceptance and outcome are separate events. No causality claimed.</div>
+  <div class="hdr">
+    <div class="logo"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></div><div><div class="n">Clean-Core<b>.io</b></div><div class="s">Free Community Edition</div></div></div>
+    <div class="crumb"><span class="back">‹ My workspace</span><span class="sep">/</span><span>Finance · S/4HANA Private Cloud 2025</span><span class="sep">/</span><span class="cur">Period close batch chain</span></div>
+    <div class="right"><button class="btn">Share with members</button><div class="avatars"><span>AN</span><span>SK</span><span>FR</span><span class="more">+1</span></div><div class="me">FF</div></div>
+  </div>
+
+  <div class="body">
+    <div class="case">
+      <div class="top"><div><h1>Period close batch chain</h1>
+        <div class="meta"><span>Case <code>C-0201</code></span><span>Manifest <code>M-19 · frozen 14 Mar 2027</code></span><span>Revision <code>12</code></span><span>Evidence pack <code>EP-0201 · Ed25519 · key cc-io-2026-1</code></span></div></div></div>
+      <div class="dims">
+        <span class="dim ok"><i></i><span class="l">Provenance</span> engine · ATC · Readiness Check</span>
+        <span class="dim ok"><i></i><span class="l">Need</span> confirmed · REQ-0176 v3</span>
+        <span class="dim ok"><i></i><span class="l">Standard</span> E4 · fulfilled · customer acceptance</span>
+        <span class="dim ok"><i></i><span class="l">Costs</span> CS-041 · reviewed · frozen</span>
+        <span class="dim ok"><i></i><span class="l">Mandate</span> virtual roles: business ✓ · architecture ✓ · costs ✓</span>
+        <span class="dim ok"><i></i><span class="l">Execution</span> executed · receipt RC-0298</span>
+        <span class="dim ok"><i></i><span class="l">Handover</span> accepted (virtual role Operations) · 15 Mar 2027</span>
+      </div>
+      <div class="controls">
+        <div class="seg"><span class="on">Management</span><span>Business</span><span>IT</span></div>
+        <div class="focus"><b>Intent</b><span>Assure</span></div>
+        <div class="focus"><b>Playing as</b><span style="background:var(--em50);border-color:var(--em200);color:var(--em800)">Operations ▾</span></div>
+        <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Search this case<kbd>⌘K</kbd></div>
+      </div>
+    </div>
+
+    <div class="layers"><span>Need &amp; process</span><span>Standard fit</span><span>Costs &amp; assumptions</span><span>Architecture &amp; dependencies</span><span>Evidence &amp; controls</span><span class="on">Changes &amp; commitments</span></div>
+
+    <div class="cols">
+      <div class="stack">
+        <div class="card">
+          <div class="ch"><h2>Evidence chain — requirement to observed outcome</h2><span class="sub">each step names its revision, scope and limit</span><div class="r"><button class="btn sm ghost">Verify offline</button><button class="btn sm">Open evidence pack</button></div></div>
+          <div class="chain">
+            <div class="st"><span class="tag em mono">REQ-0176 v3</span><div class="t">Requirement</div><div class="d">Close faster with standard process · confirmed · owner frossi</div></div>
+            <div class="st"><span class="tag em mono">DEC-0041 v2</span><div class="t">Decision</div><div class="d">Standard configuration, retire chain · virtual roles: Process owner (frossi) · Solution architect (anovak) · costs CS-041 reviewed · self-play: no</div></div>
+            <div class="st"><span class="tag em mono">RC-0298</span><div class="t">Execution receipt</div><div class="d">Executed · config hash 7c1e… · env: QAS client 200 · 2 stubs none · 14 scenarios passed, 0 skipped</div></div>
+            <div class="st"><span class="tag em mono">TRAN-1182</span><div class="t">Delivery artifact</div><div class="d">Transport to PRD · completed 14 Mar 2027 · delivery ≠ acceptance</div></div>
+            <div class="st"><span class="tag bl mono">OBS-0045</span><div class="t">Observed outcome</div><div class="d">Window Apr–Jun 2027 · source: time records + SCMON · no causality claimed</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><h2>Handover package HP-018</h2><span class="tag em">Handed over</span><span class="tag">Acceptance: separate event ✓ 15 Mar 2027</span><div class="r"><button class="btn sm ghost">Download (ZIP)</button><button class="btn sm ghost">Share evidence link</button></div></div>
+          <div class="kv" style="grid-template-columns:150px 1fr">
+            <span class="k">Route</span><div>Standard configuration · retire <code>ZFI_CLOSE_CHAIN</code> · <b>no target code generated</b> (not applicable, documented)</div>
+            <span class="k">Contents</span><div>12 artifacts — configuration 3 · execution receipts 4 · operations guide 2 · training 2 · attestation records 1</div>
+            <span class="k">Signature</span><div><code>covers[]</code> = findings, successors, levels, usage, routes, decisions, receipts · narrative excluded · key <code>cc-io-2026-1</code></div>
+            <span class="k">Recipient</span><div>Finance operations · accepted by skeller playing as Operations · signed · residual risks: 2 documented</div>
+            <span class="k">Retention</span><div>Decided by the case owner · export any time · evidence link keeps manifest M-19 · later knowledge is added beside, never backdated</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><h2>Conditions — 7 of 7 evidenced</h2><span class="sub">each line links its own evidence; the summary is a count, not a status</span></div>
+          <div class="check">
+            <div><i>✓</i>Functional build complete <a href="#">RC-0298</a></div>
+            <div><i>✓</i>Scenarios executed on the named configuration hash <a href="#">RC-0298</a></div>
+            <div><i>✓</i>Business verification — frossi playing as Process owner, revision 12 <a href="#">DEC-0041</a></div>
+            <div><i>✓</i>Operations readiness — job schedule, monitoring <a href="#">OPS-14</a></div>
+            <div><i>✓</i>Training material reviewed <a href="#">TRN-0092</a></div>
+            <div><i>✓</i>Security and access roles applied <a href="#">SEC-0144</a></div>
+            <div><i>✓</i>Change approval — CAB 10 Mar 2027 <a href="#">CAB-0311</a></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <div class="ch"><h2>Expected vs. observed</h2><span class="tag em">CS-041 frozen</span><span class="tag bl">OBS window Apr–Jun 2027</span></div>
+          <div class="two">
+            <div class="m"><div class="k">Expected · CS-041 (14 Mar 2027)</div><div class="v">−120 h</div><div class="d">manual effort per quarter · assumption A-7 · source: workshop estimate</div></div>
+            <div class="m"><div class="k">Observed · Apr–Jun 2027</div><div class="v">−95 h</div><div class="d">per quarter · source: time records (Finance) · 2 closes observed</div></div>
+          </div>
+          <div style="margin-top:10px;font-size:11px;font-weight:700;color:var(--amber800);background:var(--amber50);border:1px solid var(--amber200);border-radius:12px;padding:8px 10px">Deviation −25 h → learning task L-09 (assumption A-7). No euro value: no hourly rate was provided in CS-041. The original snapshot is unchanged.</div>
+        </div>
+        <div class="card">
+          <div class="ch"><h2>Timeline</h2></div>
+          <div class="tl">
+            <div class="e"><i></i><span class="d">01 Mar 2027</span><div><div class="t">Build complete</div><div class="s">configuration transport built · hash 7c1e…</div></div><span class="tag mono">TRAN-1182</span></div>
+            <div class="e"><i></i><span class="d">06 Mar 2027</span><div><div class="t">Scenarios executed</div><div class="s">14 passed · QAS client 200 · receipt persisted</div></div><span class="tag mono">RC-0298</span></div>
+            <div class="e"><i></i><span class="d">10 Mar 2027</span><div><div class="t">Change approval</div><div class="s">CAB · anovak · separate from business mandate</div></div><span class="tag mono">CAB-0311</span></div>
+            <div class="e"><i></i><span class="d">14 Mar 2027</span><div><div class="t">Deployed to production</div><div class="s">transport completed · delivery, not acceptance</div></div><span class="tag mono">TRAN-1182</span></div>
+            <div class="e"><i></i><span class="d">15 Mar 2027</span><div><div class="t">Accepted by operations</div><div class="s">skeller playing as Operations · signed · residual risks 2</div></div><span class="tag mono">DEC-0041</span></div>
+            <div class="e"><i class="open"></i><span class="d">Jul 2027</span><div><div class="t">Outcome review</div><div class="s">third close · window extends · reopen path available</div></div><span class="tag mono">OBS-0045</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><h2>Discussion</h2><span class="tag em">Open 1</span><span class="tag">Resolved 2</span></div>
+          <div class="thread"><div class="av">AN</div><div><div class="who">anovak <small>2 h ago</small></div><p>Can we add the updated job schedule to the operations guide before the July review?</p><div class="chips"><span class="tag em mono">OPS-14</span><span class="tag am">Open</span></div></div></div>
+          <div class="thread"><div class="av">FR</div><div><div class="who">frossi <small>1 d ago</small></div><p>Two closes observed — the team adopts the standard process; the time records are attached.</p><div class="chips"><span class="tag em mono">OBS-0045</span><span class="tag">Resolved</span></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nextbar">
+    <div class="n"><span class="k">Next contribution · rule-based</span><span class="t">Add job schedule to OPS-14 → Operations <small>· reason: open condition of the July outcome review</small></span></div>
+    <div class="tools"><span class="k">Tools</span><span>Analyze</span><span>Design</span><span>Transformation</span><span>Documentation</span><span>Testing</span><span>Economics</span><span>Delivery</span></div>
+  </div>
+</div>
+</section>
+
+
+<!-- ======================================================= SCREEN 6 -->
+<section class="screen" id="s6">
+<div class="frame">
+  <div class="mesh"><i></i><i></i><i></i></div><div class="gridbg"></div>
+  <div class="notice"><span class="k">Concept 2.7</span> Corporate path (3.1 = v3.1): read-only MCP access to one case with a scoped token. Your company's tools stay the leading system; Clean-Core.io runs no integration.</div>
+  <div class="hdr">
+    <div class="logo"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></div><div><div class="n">Clean-Core<b>.io</b></div><div class="s">Free Community Edition</div></div></div>
+    <div class="crumb"><span class="back">‹ My workspace</span><span class="sep">/</span><span>Procurement · ECC 6.0 EHP8</span><span class="sep">/</span><span class="cur">Emergency purchase approval</span><span class="sep">/</span><span class="cur">Read access via MCP</span></div>
+    <div class="right"><button class="btn">Share with members</button><div class="avatars"><span>MW</span><span>AN</span><span>SK</span><span class="more">+1</span></div><div class="me">FF</div></div>
+  </div>
+
+  <div class="body">
+    <div class="case">
+      <div class="top"><div><h1>Emergency purchase approval</h1>
+        <div class="meta"><span>Case <code>C-0412</code></span><span>Manifest <code>M-14</code></span><span>Revision <code>9</code></span><span>Owner <code>mweber</code></span><span>Evidence pack <code>EP-0412 · draft — decision open</code></span></div></div></div>
+      <div class="dims">
+        <span class="dim ok"><i></i><span class="l">Provenance</span> 42 engine · 3 ATC · 1 SCMON</span>
+        <span class="dim ok"><i></i><span class="l">Need</span> confirmed · REQ-017 v6</span>
+        <span class="dim part"><i></i><span class="l">Standard</span> E2 · partial · S1 open</span>
+        <span class="dim part"><i></i><span class="l">Costs</span> CS-012 · simulation · 2 open</span>
+        <span class="dim part"><i></i><span class="l">Mandate</span> business (virtual role) ✓ · architecture open</span>
+        <span class="dim info"><i></i><span class="l">Execution</span> demonstrated · mock</span>
+        <span class="dim none"><i></i><span class="l">Handover</span> not started</span>
+      </div>
+      <div class="controls">
+        <div class="seg"><span class="on">Management</span><span>Business</span><span>IT</span></div>
+        <div class="focus"><b>Tool</b><span style="background:var(--g950);color:#fff;border-color:var(--g950)">Delivery · MCP access</span></div>
+        <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Search this case<kbd>⌘K</kbd></div>
+      </div>
+    </div>
+
+    <div class="layers"><span>Need &amp; process</span><span>Standard fit</span><span>Costs &amp; assumptions</span><span>Architecture &amp; dependencies</span><span>Evidence &amp; controls</span><span class="on">Changes &amp; commitments</span></div>
+
+    <div class="cols">
+      <div class="stack">
+        <div class="card">
+          <div class="ch"><h2>Scoped token for this case</h2><span class="tag em">read-only</span><span class="tag">expires 10 Oct 2026</span><div class="r"><button class="btn sm ghost">Revoke</button><button class="btn sm dark">Create token</button></div></div>
+          <div class="kv" style="grid-template-columns:150px 1fr">
+            <span class="k">Token</span><div><code>cc_case_C0412_••••••••••••</code> · shown once at creation · name <code>corp-client-01</code></div>
+            <span class="k">Scopes</span><div><span class="tag em">Findings &amp; levels</span> <span class="tag em">Requirements &amp; decisions</span> <span class="tag em">Coverage assertions</span> <span class="tag em">Receipts</span> <span class="tag">Cost scenarios · off</span> <span class="tag">Comments · off</span> <span class="tag rd">Raw code · off</span></div>
+            <span class="k">Bound to</span><div>Exactly this case · manifest and revision of each response are included · no second case, no workspace listing</div>
+            <span class="k">Journal</span><div>Every read is written to the case journal with client name, tool, scope and server time; members see it</div>
+            <span class="k">Created by</span><div>mweber (owner) · 11 Sep 2026 · revocation takes effect immediately</div>
+          </div>
+        </div>
+
+        <div class="card obs">
+          <div class="ch"><h2 style="color:#fff">Client configuration</h2><span class="tag" style="background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.25);color:#6ee7b7">Claude Code · ADT-MCP · Copilot</span><div class="r"><span class="tag" style="background:#111827;border-color:#1f2937;color:#9ca3af">Streamable HTTP</span></div></div>
+<pre class="code">{
+  <span class="st">"mcpServers"</span>: {
+    <span class="st">"clean-core-catalog"</span>: { <span class="st">"url"</span>: <span class="st">"https://mcp.clean-core.io/catalog"</span> },
+    <span class="st">"clean-core-case-C0412"</span>: {
+      <span class="st">"url"</span>: <span class="st">"https://mcp.clean-core.io/case/C-0412"</span>,
+      <span class="st">"headers"</span>: { <span class="st">"Authorization"</span>: <span class="st">"Bearer cc_case_C0412_…"</span> }
+    }
+  }
+}
+<span class="cm">// catalog server: public, no token, rate-limited · case server: scoped token, read-only</span></pre>
+        </div>
+
+        <div class="card">
+          <div class="ch"><h2>Tools &amp; resources exposed</h2><span class="sub">every answer carries manifest, revision, rule version and signature scope</span></div>
+          <table class="tbl">
+            <tr><th>Tool</th><th>Scope</th><th>Returns</th></tr>
+            <tr><td><code style="font-family:var(--mono)">case_manifest</code></td><td>always</td><td>M-14 · revisions of REQ, CA, CS, SS, AC · engine 2.11 · rules levels/1.0 · catalog hashes</td></tr>
+            <tr><td><code style="font-family:var(--mono)">case_findings</code> · <code style="font-family:var(--mono)">case_levels</code></td><td>Findings &amp; levels</td><td>31 findings with line, construct, both catalog views, level, successor + provenance, route</td></tr>
+            <tr><td><code style="font-family:var(--mono)">case_requirements</code> · <code style="font-family:var(--mono)">case_decisions</code></td><td>Requirements &amp; decisions</td><td>REQ-017 v6, REQ-021 v2, DEC-021 draft — virtual roles + pseudonymous signer IDs, self-play flag; no handles</td></tr>
+            <tr><td><code style="font-family:var(--mono)">case_coverage</code> · <code style="font-family:var(--mono)">case_receipts</code></td><td>Coverage · Receipts</td><td>CA-08/CA-09 with E-level and target context · DR-11 demo receipt with scope and stubs</td></tr>
+            <tr><td><code style="font-family:var(--mono)">case_evidence_pack</code></td><td>as scoped</td><td>Open Evidence Format 1.0 · signed once the decision is bound (Ed25519, key cc-io-2026-1)</td></tr>
+            <tr><td><code style="font-family:var(--mono)">lookup_object</code> · <code style="font-family:var(--mono)">successors_for</code> · <code style="font-family:var(--mono)">level_for</code> · <code style="font-family:var(--mono)">cr_changes_since</code></td><td>public catalog</td><td>32,103 objects · both views · rule version · weekly changes with repository hashes</td></tr>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="ch"><h2>Access journal</h2><span class="sub">visible to all members of the case</span></div>
+          <div class="tl">
+            <div class="e"><i></i><span class="d">11 Sep 09:12</span><div><div class="t">corp-client-01 · case_findings</div><div class="s">31 items · scope Findings &amp; levels · manifest M-14</div></div><span class="tag mono">read</span></div>
+            <div class="e"><i></i><span class="d">11 Sep 09:12</span><div><div class="t">corp-client-01 · case_manifest</div><div class="s">M-14 · revision 9</div></div><span class="tag mono">read</span></div>
+            <div class="e"><i></i><span class="d">10 Sep 16:40</span><div><div class="t">corp-client-01 · case_evidence_pack</div><div class="s">returned as draft — unsigned, decision open · client warned</div></div><span class="tag mono">read</span></div>
+            <div class="e"><i class="open"></i><span class="d">—</span><div><div class="t">case_comments</div><div class="s">denied · scope not granted</div></div><span class="tag rd">denied</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <div class="ch"><h2>What leaves Clean-Core.io</h2></div>
+          <div class="check">
+            <div><i>✓</i>Findings, both catalog views, levels, successors</div>
+            <div><i>✓</i>Requirements, coverage assertions, decisions with virtual roles and self-play flag</div>
+            <div><i>✓</i>Receipts with scope, environment and stubs</div>
+            <div><i>✓</i>Signed evidence pack in Open Evidence Format</div>
+          </div>
+          <div class="ch" style="margin-top:14px"><h2>What does not</h2></div>
+          <div class="check">
+            <div><i style="background:var(--red100);color:var(--red700);border-color:var(--red200)">–</i>Raw code (unless the scope is granted explicitly)</div>
+            <div><i style="background:var(--red100);color:var(--red700);border-color:var(--red200)">–</i>Comments, handles, e-mails — only virtual roles and pseudonymous signer IDs leave</div>
+            <div><i style="background:var(--red100);color:var(--red700);border-color:var(--red200)">–</i>Cost scenarios (scope off by default)</div>
+            <div><i style="background:var(--red100);color:var(--red700);border-color:var(--red200)">–</i>Other cases, workspace listings, catalog write access</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><h2>Open Evidence Format export</h2><div class="r"><button class="btn sm ghost">Verify offline</button><button class="btn sm">Download JSON</button></div></div>
+          <div style="font-size:12px;font-weight:600;color:var(--g700);line-height:1.5">Same content as the MCP pack, as a file: schema <code style="font-family:var(--mono)">clean-core-io/evidence/1.0</code>, signed once the decision is bound. Import it into Jira, Cloud ALM or LeanIX with your own scripts — the leading system stays yours.</div>
+        </div>
+        <div class="card">
+          <div class="ch"><h2>Not offered — by design</h2></div>
+          <div style="font-size:12px;font-weight:600;color:var(--g700);line-height:1.6">No write tools · no agent-triggered decisions or transformations · no organisation accounts, tenants or SSO · no push integration into your ALM · no support contract. Clean-Core.io is a free community project; corporates read, verify and integrate on their side.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nextbar">
+    <div class="n"><span class="k">Corporate reads do not change the case</span><span class="t">Next contribution stays: run counter-check S1 → anovak <small>· the token reads a draft until the decision is bound</small></span></div>
+    <div class="tools"><span class="k">Tools</span><span>Analyze</span><span>Design</span><span>Transformation</span><span>Documentation</span><span>Testing</span><span>Economics</span><span>Delivery</span></div>
+  </div>
+</div>
+</section>
+
+</div></div>
+
+<script>
+(function(){
+  var tabs=document.querySelectorAll('.chrome [data-s]'),zooms=document.querySelectorAll('.chrome [data-z]'),wrap=document.getElementById('wrap');
+  tabs.forEach(function(b){b.addEventListener('click',function(){
+    tabs.forEach(function(x){x.classList.remove('on')});b.classList.add('on');
+    document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('on',s.id===b.getAttribute('data-s'))});
+    window.scrollTo(0,0);
+  })});
+  function setZoom(z){wrap.style.transform='scale('+z+')';wrap.style.height=(z<1?(1000*z)+'px':'auto');zooms.forEach(function(x){x.classList.toggle('on',x.getAttribute('data-z')==String(z))});}
+  zooms.forEach(function(b){b.addEventListener('click',function(){setZoom(parseFloat(b.getAttribute('data-z')))})});
+  // fit to small viewports by default
+  var w=Math.min(window.innerWidth-36,1440);if(w<1440){setZoom(w<760?0.5:0.75);}
+})();
+</script>
+</body>
+</html>

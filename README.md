@@ -128,7 +128,7 @@ Full release notes: [CHANGELOG.md](CHANGELOG.md) (kept internal; the public /cha
 
 ### Deliberately in the backlog
 
-Classic enterprise identity/governance items — **SSO (SAML/OIDC), multi-role RBAC, org/project sharing, formal DPA/TOMs, run-over-run diffing, CSP nonce migration, and a commissioned external penetration test** — are intentionally deferred. Clean-Core.io targets **individual** SAP architects, developers and decision-makers (a free community tool), not multi-user enterprise procurement, so these add cost and complexity without matching current need. Full rationale: **[docs/ROADMAP-2.0.md](docs/ROADMAP-2.0.md)**.
+Classic enterprise identity/governance items — **SSO (SAML/OIDC), multi-role RBAC, org/project sharing, formal DPA/TOMs, run-over-run diffing, CSP nonce migration, and a commissioned external penetration test** — are intentionally deferred. Clean-Core.io targets **individual** SAP architects, developers and decision-makers (a free community tool), not multi-user enterprise procurement, so these add cost and complexity without matching current need. Full rationale: **[docs/archiv/ROADMAP-2.0.md](docs/archiv/ROADMAP-2.0.md)**; current plan: **[docs/ROADMAP.md](docs/ROADMAP.md)**.
 
 Operations, monitoring, backups and rules deployment: **[docs/OPERATIONS.md](docs/OPERATIONS.md)** · Security architecture: **[SECURITY.md](SECURITY.md)** · Data handling: **[docs/DATA-RETENTION.md](docs/DATA-RETENTION.md)**.
 

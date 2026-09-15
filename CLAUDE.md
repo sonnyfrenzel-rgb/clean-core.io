@@ -4,7 +4,27 @@ Guide for working in this repo. Deeper reference: `docs/ARCHITECTURE.md` (archit
 
 ## What this is
 
-**Clean-Core.io** (package name `ai-studio-applet`) — an enterprise platform that modernizes SAP ABAP legacy code to TypeScript/Node.js, aligned with SAP's Clean Core Extensibility paradigm. A deterministic ABAP evidence engine runs first, then Google Gemini transforms code; every analysis is captured as an immutable, HMAC-signed "Run" that anchors a server-authoritative trust/audit chain.
+**Clean-Core.io** (package name `ai-studio-applet`) — a **free community web app** that takes a piece of custom SAP ABAP from "not understood" to an evidence-backed decision, aligned with SAP's Clean Core Extensibility paradigm. A deterministic ABAP evidence engine runs first, then Google Gemini transforms code; every analysis is captured as an immutable, signed "Run" (HMAC, plus Ed25519 since v2.9.0) that anchors a server-authoritative trust/audit chain.
+
+**Direction (Fassung 2.8, since 2026-09-15): `docs/ROADMAP.md`** — the only binding
+roadmap. Publicly there is one jump: **3.0 is the UX rebuild along
+`docs/roadmap/clean-core-mockups-v2_7.html`**, reached in phases of small steps
+(v2.10–v2.18); new UI grows behind an admin-only switch until 3.0. The Business view
+leads: the process is reconstructed from the ABAP code as BPMN (line anchors on
+every element), editable, exchanged with SAP Signavio via BPMN 2.0 XML files — no
+Signavio API connection. Rules that hold everywhere:
+- **Sign-up and account stay unchanged.** No handle, no field removal, no migration.
+- **Management/Business/IT are views only** — never stored on an artefact, run,
+  signature or audit pack. Accountability is the signed-in account (a
+  self-declaration, not an organisational mandate).
+- **Sharing = read access by invitation**: a link bound to one confirmed e-mail
+  address, including source code, with expiry and revocation.
+Deliberately not built: tenants, SSO, guests, role mandates, a self-hosted edition,
+ALM adapters, portfolio steering. Besides `ROADMAP.md`, only `docs/roadmap/` is
+active (the mockups and the Phase 0 work packages); every earlier roadmap — 2.0, the
+2.7 bundle with the acceptance catalogs and the 08.09 finding register — is in
+`docs/archiv/` (index: `docs/archiv/README.md`) and loses wherever it contradicts
+`ROADMAP.md`. `docs/BACKLOG.md` is the work log of what actually shipped.
 
 Stack: **Next.js 15 (App Router) · React 19 · TypeScript (strict) · Tailwind v4 · Firebase (client + Admin SDK) · Gemini**. Node **>= 22.8** (see gotcha below).
 
