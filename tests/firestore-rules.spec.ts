@@ -3,7 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, connectAuthEmulator } from 'firebase/auth';
 import { initializeFirestore, doc, setDoc, getDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from '../firebase-config.json';
 
 // Initialize Firebase SDK in Node context for seeding and validation
 const firebaseApp = initializeApp(firebaseConfig);

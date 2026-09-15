@@ -5,7 +5,7 @@ import { adminSetDoc } from './helpers/admin-seed';
 
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
 
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from '../firebase-config.json';
 
 const firebaseApp = initializeApp(firebaseConfig, 'starter-examples');
 const firebaseAuth = getAuth(firebaseApp);

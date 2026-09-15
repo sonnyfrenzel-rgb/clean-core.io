@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from '../firebase-config.json';
 import { parseUsage, parseUsageDate } from '../lib/abap/usage-parser';
 import { joinUsageWithEvidence } from '../lib/abap/usage-join';
 import type { UsageReport } from '../lib/abap/usage-model';

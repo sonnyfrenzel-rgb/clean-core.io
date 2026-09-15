@@ -12,7 +12,7 @@ process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-a
 import { createApprovalToken } from '../lib/approval-token';
 import { generateTOTP } from '../lib/totp';
 import { computeRunHash, signRunHash } from '../lib/run-signature';
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from '../firebase-config.json';
 
 // Initialize Firebase SDK in Node context for seeding and validation
 const firebaseApp = initializeApp(firebaseConfig);

@@ -24,7 +24,7 @@ export default function JiraIntegrationModal({ isOpen, onClose, solutionDesign, 
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // Validate origin is from AI Studio preview or localhost
+      // Accept messages only from a Cloud Run origin or localhost
       const origin = event.origin;
       if (!origin.endsWith('.run.app') && !origin.includes('localhost')) {
         return;

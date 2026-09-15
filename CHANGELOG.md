@@ -10,6 +10,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.16] — 2026-09-15
+
+### Kein „AI Studio" mehr im Repo — wo es ohne Wirkung auf den Code geht
+
+Sonnys Auftrag vom 15.09.: Das Projekt hat in Firebase AI Studio angefangen, das ist lange
+her, und „AI Studio" klingt nach Hobby. Entfernt wird alles, was sich ohne Verhaltensänderung
+umbenennen oder löschen lässt.
+
+- **Paketname** `ai-studio-applet` → `clean-core-io` (`package.json`, beide Stellen in
+  `package-lock.json`; `npm ci --dry-run` mit Node 22/npm 11 geprüft).
+- **`firebase-applet-config.json` → `firebase-config.json`**, mit allen 14 Importen, dem
+  Quellexport, SECURITY.md und der Testdoku. Die gitleaks-Freigabe für den öffentlichen
+  Firebase-Web-Schlüssel gilt für den neuen Namen; der alte bleibt für den Scan der Historie.
+- **Gelöscht, weil nichts sie liest:** `metadata.json` (Applet-Beschreibung „Project
+  Platform"), `firebase-blueprint.json` (Entwurfsschema aus der Anlage), `.eslintrc.json.bak`.
+- **Kommentare und Doku** ohne AI-Studio-Bezug: `.env.example`, `next.config.mjs`,
+  `JiraIntegrationModal.tsx`, `firestore-oversized-fields.ts`, DATA-RETENTION, BACKLOG, der
+  Migrationsplan; `docs/SCREENING-AISTUDIO-ALTLASTEN.md` heißt jetzt `SCREENING-GCP-ALTLASTEN.md`.
+
+**Bleibt, weil es echte Ressourcennamen sind:** die Firestore-Datenbank von `dev`
+(`ai-studio-030e1ee1…`, us-west1), die ausgemusterten `ai-studio-*`-Datenbanken und der
+Bucket in den Aufräumlisten. Umbenennen lässt sich eine Datenbank nicht, nur migrieren — so
+wie Produktion am 20.08. nach `clean-core-eu`. Das ist ein Infrastrukturschritt mit
+Sonnys Freigabe, kein Umbenennen.
+
 ## [v2.9.15] — 2026-09-15
 
 ### Der Security-Agent: jede Version auf main bekommt ein Vollaudit — der Bericht kommt per Mail

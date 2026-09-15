@@ -1,7 +1,7 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth as firebaseGetAuth, Auth, connectAuthEmulator } from 'firebase/auth';
 import { initializeFirestore, Firestore, doc, getDocFromServer, setLogLevel, connectFirestoreEmulator } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from '../firebase-config.json';
 
 // F-09: Firestore SDK noise is silenced via the SDK's own logger below.
 // Transient stream errors ("CANCELLED", "Disconnecting idle stream", ...) are

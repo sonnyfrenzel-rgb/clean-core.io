@@ -92,8 +92,8 @@ const nextConfig = {
     ],
   },
   webpack: (config, {dev}) => {
-    // HMR is disabled in AI Studio via DISABLE_HMR env var.
-    // Do not modify—file watching is disabled to prevent flickering during agent edits.
+    // DISABLE_HMR=true switches off file watching in `npm run dev`, so a coding
+    // agent editing many files does not make the dev server reload on every write.
     if (dev && process.env.DISABLE_HMR === 'true') {
       config.watchOptions = {
         ignored: /.*/,

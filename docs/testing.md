@@ -124,7 +124,7 @@ Any test file that uses the Firebase SDK directly in the Node.js context to set 
 ```typescript
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from '../firebase-config.json';
 
 const app = initializeApp(firebaseConfig);
 const db = initializeFirestore(app, {}, firebaseConfig.firestoreDatabaseId);

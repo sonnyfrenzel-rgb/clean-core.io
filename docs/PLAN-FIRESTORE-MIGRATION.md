@@ -45,7 +45,7 @@ schlimmer wird, nicht besser.
 
 ### 1.2 Ein Tageslimit, das Billing nicht aufhebt
 
-Der heutige Ausfall. Die `ai-studio-*`-Datenbanken werden von Firebase AI Studio angelegt und
+Der heutige Ausfall. Die `ai-studio-*`-Datenbanken stammen aus der Prototyp-Phase und
 behalten eine harte Tagesdeckelung. Mit wachsender Nutzerzahl trifft sie irgendwann ohne
 Fremdverschulden zu — und dann ohne Vorwarnung mitten am Tag.
 
@@ -76,7 +76,7 @@ Migration ist dadurch reines Export/Import ohne Index-Nachbau.
 
 Vier Stellen, alle müssen mit:
 
-1. `firebase-applet-config.json` → `firestoreDatabaseId` (Client-SDK, auch von den Tests gelesen)
+1. `firebase-config.json` → `firestoreDatabaseId` (Client-SDK, auch von den Tests gelesen)
 2. `lib/constants.ts` → `FIRESTORE_DB_ID` (Fallback, wenn die Env-Variable fehlt)
 3. `.github/workflows/deploy.yml` → `db_id` im `case "$REF_NAME"` (pro Branch je einmal)
 4. Cloud Run Env `NEXT_PUBLIC_FIRESTORE_DB_ID` — wird aus (3) gesetzt, also automatisch
@@ -145,7 +145,7 @@ Zusage wahr, statt nur ungefähr wahr.
 
 **Warum ein sprechender Name:** `clean-core-prod` statt einer weiteren `ai-studio-*`-UUID. Die
 Datenbank ist dann in der Konsole als das erkennbar, was sie ist, und sie erbt die
-AI-Studio-Deckelung nicht.
+Deckelung der Prototyp-Datenbanken nicht.
 
 ### Phase 3 — Import
 
@@ -173,7 +173,7 @@ npx firebase deploy --only firestore:rules --project=cleancore-491216
 Ab hier gilt: **Schreibvorgänge zwischen Export und Umschalten gehen verloren.** Firestore
 repliziert nicht zwischen Datenbanken. Deshalb kurz halten und in eine ruhige Stunde legen.
 
-1. `firebase-applet-config.json` → `firestoreDatabaseId: "clean-core-prod"`
+1. `firebase-config.json` → `firestoreDatabaseId: "clean-core-prod"`
 2. `lib/constants.ts` → Fallback auf `clean-core-prod`
 3. `.github/workflows/deploy.yml` → im `main)`-Zweig `db_id=clean-core-prod`
 4. Commit, Push, Deploy abwarten

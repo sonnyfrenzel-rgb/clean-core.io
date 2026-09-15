@@ -4,7 +4,7 @@ import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from '../firebase-config.json';
 import { PHASES, workflowSteps, workflowSummary } from '../lib/workflow-steps';
 import type { Project, TestCase } from '../lib/types';
 

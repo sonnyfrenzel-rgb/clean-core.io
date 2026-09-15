@@ -889,11 +889,11 @@ antworten — das ist bei dieser Reichweite der gesamte Verteilmechanismus.
 ## Alte Cloud-Run-Dienste und Buckets abräumen
 
 > Vollständige Bestandsaufnahme inklusive fertiger Befehle:
-> **[docs/SCREENING-AISTUDIO-ALTLASTEN.md](./SCREENING-AISTUDIO-ALTLASTEN.md)**.
+> **[docs/SCREENING-GCP-ALTLASTEN.md](./SCREENING-GCP-ALTLASTEN.md)**.
 > Grösster Posten dort: 676 Container-Images in europe-west1, aufgelaufen aus
 > 252 nie aufgeräumten Cloud-Run-Revisionen.
 
-**Warum:** Aus der Firebase-AI-Studio-Herkunft laufen zwei veraltete Deployments weiter,
+**Warum:** Aus der Prototyp-Phase laufen zwei veraltete Deployments weiter,
 beide öffentlich erreichbar (HTTP 200) und beide mit altem Code — sie liefern auf
 `/api/health` noch HTML statt JSON, stammen also von vor der Health-Route.
 

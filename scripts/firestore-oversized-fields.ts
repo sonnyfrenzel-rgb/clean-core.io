@@ -2,7 +2,7 @@
  * Finds every field that Firestore cannot index.
  *
  * An indexed value may be at most 1500 bytes. The source database sidesteps this
- * with a database-wide "index nothing" setting that AI Studio applied at creation
+ * with a database-wide "index nothing" setting applied when it was provisioned
  * and that a normal Firestore database cannot reproduce — `gcloud` answers
  * "Configuring database-level settings is not supported".
  *

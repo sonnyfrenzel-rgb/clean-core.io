@@ -11,6 +11,8 @@ useDefault = true
 [allowlist]
 description = "Public-by-design values (Firebase Web app config apiKey is a public client identifier, not a secret) and deterministic CI test placeholders."
 paths = [
+  '''firebase-config\.json''',
+  # The same file under its first name, kept so the full-history scan still reads old commits correctly.
   '''firebase-applet-config\.json''',
   '''\.env\.example''',
   '''playwright\.config\.ts''',

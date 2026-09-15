@@ -3,7 +3,7 @@ import { createHash } from 'crypto';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc, adminMergeDoc } from './helpers/admin-seed';
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from '../firebase-config.json';
 import { sha256Hex, artefactDigest, buildSourceChangeRecord } from '../lib/artefact-digest';
 import { staleness, handoverBlockers, generationBlockers, workflowSteps } from '../lib/workflow-steps';
 import { TERMS_VERSION } from '../lib/constants';

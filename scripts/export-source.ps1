@@ -178,7 +178,7 @@ try {
     # verschwiegen, sondern bei jedem Lauf mit Begruendung ausgegeben.
     $allowlist = @(
         @{
-            Path    = 'firebase-applet-config.json'
+            Path    = 'firebase-config.json'
             Pattern = 'GoogleApiKey'
             Reason  = 'Firebase Web-API-Key — kein Geheimnis. Oeffentliche Projektkennung, wird in jedes Client-Bundle kompiliert und an jeden Browser ausgeliefert; die Absicherung leisten Firestore-Rules und App Check. lib/firebase.ts importiert die Datei, ein Entfernen braeche den Build.'
         }

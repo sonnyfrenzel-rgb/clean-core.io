@@ -1,8 +1,8 @@
-# Screening — Firebase-AI-Studio-Altlasten
+# Screening — GCP-Altlasten aus der Prototyp-Phase
 
 **Erstellt:** 2026-08-20 · **Projekt:** `cleancore-491216` · **Stand:** nach der Firestore-Migration
 
-Vollständige Bestandsaufnahme aller Ressourcen, die aus der Firebase-AI-Studio-Herkunft
+Vollständige Bestandsaufnahme aller Ressourcen, die aus der Prototyp-Phase
 stammen oder nicht mehr gebraucht werden. **Es wurde noch nichts gelöscht** — die
 destruktiven Schritte hat der Sicherheits-Classifier blockiert, die Befehle stehen unten
 zum Selbstausführen.

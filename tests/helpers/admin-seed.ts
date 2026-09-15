@@ -3,7 +3,7 @@
  * bypassing security rules and avoiding Node ESM import issues inside Playwright.
  */
 
-import firebaseConfig from '../../firebase-applet-config.json';
+import firebaseConfig from '../../firebase-config.json';
 
 const BASE_URL = 'http://localhost:3000';
 

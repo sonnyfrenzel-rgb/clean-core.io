@@ -9,7 +9,7 @@ import { adminSetDoc, adminApproveUser, adminSetCustomClaim } from './helpers/ad
 // Set test secret first so that imports initializing getSecret don't throw
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
 
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from '../firebase-config.json';
 
 // Initialize Firebase SDK in Node context to register and approve the test user
 const firebaseApp = initializeApp(firebaseConfig);

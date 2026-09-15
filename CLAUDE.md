@@ -4,7 +4,7 @@ Guide for working in this repo. Deeper reference: `docs/ARCHITECTURE.md` (archit
 
 ## What this is
 
-**Clean-Core.io** (package name `ai-studio-applet`) — a **free community web app** that takes a piece of custom SAP ABAP from "not understood" to an evidence-backed decision, aligned with SAP's Clean Core Extensibility paradigm. A deterministic ABAP evidence engine runs first, then Google Gemini transforms code; every analysis is captured as an immutable, signed "Run" (HMAC, plus Ed25519 since v2.9.0) that anchors a server-authoritative trust/audit chain.
+**Clean-Core.io** (package name `clean-core-io`) — a **free community web app** that takes a piece of custom SAP ABAP from "not understood" to an evidence-backed decision, aligned with SAP's Clean Core Extensibility paradigm. A deterministic ABAP evidence engine runs first, then Google Gemini transforms code; every analysis is captured as an immutable, signed "Run" (HMAC, plus Ed25519 since v2.9.0) that anchors a server-authoritative trust/audit chain.
 
 **Direction (Fassung 2.8, since 2026-09-15): `docs/ROADMAP.md`** — the only binding
 roadmap. Publicly there is one jump: **3.0 is the UX rebuild along
