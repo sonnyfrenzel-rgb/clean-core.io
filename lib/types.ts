@@ -247,9 +247,9 @@ export interface AnalysisData {
   businessValueAnalysis?: {
     legacyAssetScore: number;
     technicalDebtLevel: 'Low' | 'Medium' | 'High';
-    estimatedMaintenanceCost: number;
     valueDrivers: string[];
-    cloudRoiSummary: string;
+    // No cost, savings or ROI field (roadmap step 0.4): nothing in an analysis rests on approved cost
+    // assumptions, so it carries no money. Older stored analyses may still contain such fields; they are not read.
     plainEnglishActionPlan: string[];
   };
 }

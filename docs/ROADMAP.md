@@ -143,7 +143,7 @@ vom 15.09. (**fett**).
 | 0.1 | `G0:R0` — Sperre des Live-Testmodus mit Grund und Wiedereröffnungsbedingung in `SECURITY.md` — **gebaut in v2.10.0** (`lib/locked-paths.ts`, `SECURITY.md` §7.1, `tests/locked-paths-guard.spec.ts`) | S |
 | 0.2 | Facts-Service, Copy-CI, Audit-Korrekturen. **Dazu: die Signavio-Aussagen** („validated for SAP Signavio", „Signavio-importable", „importable into SAP Signavio") auf „BPMN 2.0 XML" zurücknehmen, bis Schritt 4.3 den Import belegt — **Signavio-Teil gebaut in v2.10.2** | M |
 | 0.3 | Level-Regelseite mit Regelversion; Score umbenannt, TCO-Versprechen entfernt | M |
-| 0.4 | Keine Geldwerte ohne Annahmenrevision | S |
+| 0.4 | Keine Geldwerte ohne Annahmenrevision — **gebaut in v2.10.3** | S |
 | 0.5 | Manifest- und Inputvertrag: `inputs[]` mit Revision und Hash | M |
 | 0.6 | Konservative Ungültigkeit statt Frischeheuristik | S |
 | 0.7 | Freigabefelder nur über servervalidierte Commands, manueller Regel-Deploy vor der App. **Konzeptteil nur noch: Einsicht per Einladung** (Rechtestufen, Rohcode-Schalter, virtuelle Rollen entfallen). **Datensparsamkeit gestrichen** | M |

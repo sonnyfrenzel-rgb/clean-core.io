@@ -223,11 +223,11 @@ Prepare for go-live with sprint planning, deployment checklists, and handover pa
 - **Deployment Guide**: Step-by-step instructions for BTP Cloud Foundry or Kyma deployment
 
 ### TCO Analysis (/project/[id]/tco)
-Total Cost of Ownership estimation for your modernization project.
-- **Cost Breakdown**: Cloud hosting costs, development effort, migration costs, training, maintenance
-- **AI-Powered Estimation**: Gemini analyzes your project complexity to estimate costs
-- **Comparison View**: Side-by-side comparison of current vs. modernized operational costs
-- **ROI Calculator**: Return on investment projection over 1-5 year timeframes
+A cost model for your modernization project — priced only with figures you enter.
+- **Your figures first**: developer rate, key-user rate and one-time investment start empty; nothing is computed until all three are entered
+- **Assumptions named**: effort coefficients, the test effect and the target score are assumptions, not observed effort
+- **Comparison View**: legacy vs. modernized annual effort cost, from your figures
+- **No money elsewhere**: the analysis itself puts no cost, savings or ROI figure on the code
 
 ### Settings (/settings)
 Global platform configuration.

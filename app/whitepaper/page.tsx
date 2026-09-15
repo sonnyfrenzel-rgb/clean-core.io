@@ -212,7 +212,7 @@ export default function WhitepaperPage() {
             {[
               { v: '3 Scores', l: 'Clean Core · Complexity · Criticality' },
               { v: 'BPMN 2.0', l: '+ RACI & Level-5 SOP blueprints' },
-              { v: 'TCO & ROI', l: 'Upgrade-impact calculator' },
+              { v: 'TCO model', l: 'Priced with your own figures' },
             ].map((s) => (
               <div key={s.v} className="bg-slate-50 border border-gray-200 rounded-2xl p-5 text-center">
                 <div className="text-lg font-black text-gray-900">{s.v}</div>

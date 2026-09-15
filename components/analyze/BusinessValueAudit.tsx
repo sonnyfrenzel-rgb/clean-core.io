@@ -14,10 +14,7 @@ interface BusinessValueAuditProps {
   bizFallback: {
     legacyAssetScore: number | null;
     technicalDebtLevel: string | null;
-    estimatedMaintenanceCost?: number | null;
-    estimatedMaintenanceCostRange?: { low: number; high: number } | null;
     valueDrivers: string[] | null;
-    cloudRoiSummary: string;
   };
 }
 
@@ -28,7 +25,7 @@ export default function BusinessValueAudit({ projectId, bizFallback }: BusinessV
         <div>
           <span className="text-[10px] font-bold tracking-widest text-emerald-600 uppercase bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100/50">Business Value Audit</span>
           <h3 className="text-xl font-black text-slate-900 mt-3">Legacy Asset Valuation</h3>
-          <p className="text-xs text-slate-500 leading-relaxed mt-1">Financial and quality audit of the legacy custom codebase.</p>
+          <p className="text-xs text-slate-500 leading-relaxed mt-1">Quality audit of the legacy custom codebase. It puts no money on it.</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -64,14 +61,9 @@ export default function BusinessValueAudit({ projectId, bizFallback }: BusinessV
                 {bizFallback.technicalDebtLevel ? `${bizFallback.technicalDebtLevel} Debt` : 'Debt not computed'}
               </span>
             </div>
-            <div className="mt-2 text-[10px] text-slate-500 font-bold leading-none">
-              Est. Maint. Cost: <span className="text-slate-900 font-black font-mono">
-                {bizFallback.estimatedMaintenanceCostRange
-                  ? `${bizFallback.estimatedMaintenanceCostRange.low.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}–${bizFallback.estimatedMaintenanceCostRange.high.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}/yr`
-                  : bizFallback.estimatedMaintenanceCost
-                    ? `~${bizFallback.estimatedMaintenanceCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}/yr`
-                    : '— requires calibration'}
-              </span>
+            {/* Roadmap step 0.4: no amount without approved cost assumptions — and an analysis has none. */}
+            <div className="mt-2 text-[10px] text-slate-500 font-bold leading-none" data-money-not-determined>
+              Maintenance cost: <span className="text-slate-700 font-black">not determined</span>
             </div>
           </div>
         </div>
@@ -92,27 +84,27 @@ export default function BusinessValueAudit({ projectId, bizFallback }: BusinessV
           </div>
         </div>
 
-        {/* Better Practice TCO & ROI Calculator CTA */}
+        {/* Economics CTA: the only place that prices anything, from the user's own figures */}
         <div className="border-t border-slate-100 pt-4 mt-2">
           <a
             href={`/project/${projectId}/tco`}
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-br from-[#0b1c30] to-slate-800 hover:shadow-lg text-white font-bold text-xs uppercase tracking-wider h-11 rounded-xl transition-all cursor-pointer shadow-md active:scale-95 text-center no-underline"
           >
-            <BarChart3 className="w-4 h-4 text-green-400" /> C-Level TCO & ROI Calculator 📊
+            <BarChart3 className="w-4 h-4 text-green-400" /> Economics: model with your own figures
           </a>
         </div>
       </div>
 
-      {/* expected ROI box */}
+      {/* cost and ROI: stated as not determined */}
       <div className="border-t border-slate-100 pt-4 mt-6 bg-slate-50 -mx-8 -mb-8 p-6 rounded-b-3xl">
         <div className="flex gap-2.5">
           <div className="bg-emerald-100 text-emerald-700 p-2 rounded-xl shrink-0 h-fit">
             <Sparkles size={16} />
           </div>
           <div>
-            <span className="block text-[8px] font-black text-emerald-700 uppercase tracking-widest font-mono">Estimated Cloud ROI</span>
-            <p className="text-[11px] text-slate-700 leading-relaxed font-bold mt-1">
-              {bizFallback.cloudRoiSummary}
+            <span className="block text-[8px] font-black text-emerald-700 uppercase tracking-widest font-mono">Cost and ROI</span>
+            <p className="text-[11px] text-slate-700 leading-relaxed font-bold mt-1" data-money-not-determined>
+              Not determined. A cost or ROI figure needs approved cost assumptions, and this analysis has none — the Economics stage models costs only from figures you enter.
             </p>
           </div>
         </div>

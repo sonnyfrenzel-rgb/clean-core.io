@@ -81,7 +81,7 @@ export default function UserOnboarding() {
                 <li className="flex items-start gap-2.5">
                   <span className="text-green-600 font-bold">✓</span>
                   <div>
-                    <strong className="text-gray-900">Stakeholder Presentations</strong>: Generate management-ready executive briefs with strategic ROI metrics.
+                    <strong className="text-gray-900">Stakeholder Presentations</strong>: Generate management-ready executive briefs from the measured findings — no ROI is estimated.
                   </div>
                 </li>
                 <li className="flex items-start gap-2.5">

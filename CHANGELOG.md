@@ -10,6 +10,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.10.3] — 2026-09-15
+
+### Roadmap-Schritt 0.4: keine Geldwerte ohne freigegebene Annahmen
+
+Die Analyse bat das Modell um `estimatedMaintenanceCostRange` und eine `cloudRoiSummary`
+mit „projected savings of approximately $Y–$Z per year". Die Analyse-Stufe zeigte das als
+„Est. Maint. Cost: 3.000 €–8.000 €/yr" und „Estimated Cloud ROI". Der Confluence-Export
+trug es als „Estimated Annual Maintenance Cost" und „Expected Cloud ROI" zum Kunden. Hinter
+keiner dieser Zahlen stand eine Annahme, die jemand freigegeben hatte. Die Bitte um eine
+Spanne und einen Kalibrierungshinweis machte aus einer erfundenen Zahl nur eine
+vorsichtig formulierte.
+
+**Jetzt:**
+- Der Prompt fragt nach keinem Geldwert mehr, und der Typ kennt keinen.
+- Die Analyse-Stufe und der Export sagen „not determined": Ein Kosten- oder ROI-Wert braucht
+  freigegebene Kostenannahmen, und die Analyse hat keine. Gerechnet wird nur in der
+  Economics-Stufe, mit den Zahlen, die der Nutzer selbst einträgt (seit v2.9.8).
+- Der Button heißt „Economics: model with your own figures" statt „C-Level TCO & ROI
+  Calculator 📊".
+- Mitkorrigiert:
+  - „executive briefs with strategic ROI metrics" im Onboarding,
+  - „summarizing the transformation, ROI" auf der Übergabeseite (das Deck enthält keine
+    Einsparung),
+  - „TCO & ROI · Upgrade-impact calculator" im Whitepaper,
+  - der Chatbot, der noch eine „AI-Powered Estimation" der Kosten beschrieb.
+
+**Abnahme** (V25-A06: „Analyze, Brief und Export ohne Annahmenrevision zeigen keinen
+Geldwert; der Prompt enthält keine monetären Felder"): `tests/money-honesty-guard.spec.ts`
+prüft:
+- den Prompt-Block,
+- den Typ,
+- „not determined" in Stufe und Export,
+- und dass außer der Economics-Seite keine Datei unter `app/`, `components/` und `lib/` einen
+  Geldbetrag formatiert.
+
+Ohne die Änderung scheitern alle vier Tests.
+
 ## [v2.10.2] — 2026-09-15
 
 ### Roadmap-Schritt 0.2, erster Teil: kein Signavio-Import mehr versprochen, der nie geprüft wurde

@@ -291,10 +291,8 @@ interface AnalysisData {
   businessValueAnalysis: {
     legacyAssetScore: number; 
     technicalDebtLevel: 'Low' | 'Medium' | 'High';
-    estimatedMaintenanceCostRange: { low: number; high: number }; // Provide a RANGE, e.g. { low: 3000, high: 8000 }. Never a single precise number. Add the disclaimer in cloudRoiSummary: 'Estimate requires calibration against actual maintenance baseline data.'
     valueDrivers: string[]; 
-    cloudRoiSummary: string; // Use hedged language: "estimated ~X% reduction", "projected savings of approximately $Y–$Z per year". Always present costs as a range. Never claim "100% elimination" or "guaranteed" outcomes. Always add: "Estimate requires calibration against actual maintenance baseline data."
-    plainEnglishActionPlan: string[]; 
+    plainEnglishActionPlan: string[]; // No money: no costs, savings, ROI or currency amounts anywhere in this object — nothing here rests on approved cost assumptions.
   };
 }
 
@@ -541,10 +539,7 @@ ${codeToAnalyze}`;
           (typeof data.cleanCoreScore === 'number'
             ? (data.cleanCoreScore < 50 ? 'High' : data.cleanCoreScore < 75 ? 'Medium' : 'Low')
             : null),
-        estimatedMaintenanceCost: data.businessValueAnalysis?.estimatedMaintenanceCost ?? null,
         valueDrivers: data.businessValueAnalysis?.valueDrivers ?? null,
-        cloudRoiSummary: data.businessValueAnalysis?.cloudRoiSummary ??
-          'Not produced for this run. A cost or ROI figure requires your own maintenance baseline and rates; this analysis does not estimate one.',
         plainEnglishActionPlan: data.businessValueAnalysis?.plainEnglishActionPlan || [
           "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
           "2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.",
@@ -699,16 +694,16 @@ ${codeToAnalyze}`;
             <h2>Business Value & Executive Action Center</h2>
             <div class="card-grid" style="grid-template-cols: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
               <div class="card" style="border-left: 4px solid #00875a; background: #e3fcef10;">
-                <div class="card-title" style="color: #00875a;">Business Asset & ROI Audit</div>
+                <div class="card-title" style="color: #00875a;">Business Asset Audit</div>
                 <p style="font-size: 13px; margin-bottom: 8px;"><strong>Legacy Asset Score:</strong> ${bizFallback.legacyAssetScore !== null ? `${bizFallback.legacyAssetScore}% (Custom IP Value)` : 'not computed'}</p>
                 <p style="font-size: 13px; margin-bottom: 8px;"><strong>Technical Debt Level:</strong> ${bizFallback.technicalDebtLevel ?? 'not computed'}</p>
-                <p style="font-size: 13px; margin-bottom: 12px;"><strong>Estimated Annual Maintenance Cost:</strong> ${bizFallback.estimatedMaintenanceCost !== null ? `${bizFallback.estimatedMaintenanceCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}/yr` : 'not estimated'}</p>
+                <p style="font-size: 13px; margin-bottom: 12px;"><strong>Annual maintenance cost:</strong> not determined</p>
                 <div style="font-size: 12px; margin-bottom: 6px;"><strong>Value Drivers:</strong></div>
                 <ul style="font-size: 12px; padding-left: 20px; margin-bottom: 10px;">
                   ${(bizFallback.valueDrivers ?? []).map(d => `<li>${d}</li>`).join('') || '<li>not identified for this run</li>'}
                 </ul>
                 <p style="font-size: 12px; font-weight: bold; background: #effcf6; padding: 10px; border-radius: 6px; border: 1px solid #d3f9e8; color: #006644; margin-top: 10px;">
-                  <strong>Expected Cloud ROI:</strong> ${bizFallback.cloudRoiSummary}
+                  <strong>Cost and ROI:</strong> Not determined. A cost or ROI figure needs approved cost assumptions, and this analysis has none — the Economics stage models costs only from figures you enter.
                 </p>
               </div>
               <div class="card" style="border-left: 4px solid #0747a6; background: #deebff10;">
@@ -1137,10 +1132,7 @@ ${codeToAnalyze}`;
           (typeof analysisData.cleanCoreScore === 'number'
             ? (analysisData.cleanCoreScore < 50 ? 'High' : analysisData.cleanCoreScore < 75 ? 'Medium' : 'Low')
             : null),
-        estimatedMaintenanceCost: analysisData.businessValueAnalysis?.estimatedMaintenanceCost ?? null,
         valueDrivers: analysisData.businessValueAnalysis?.valueDrivers ?? null,
-        cloudRoiSummary: analysisData.businessValueAnalysis?.cloudRoiSummary ??
-          'Not produced for this run. A cost or ROI figure requires your own maintenance baseline and rates; this analysis does not estimate one.',
         plainEnglishActionPlan: analysisData.businessValueAnalysis?.plainEnglishActionPlan || [
           "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
           "2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.",

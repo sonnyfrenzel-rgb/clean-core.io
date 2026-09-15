@@ -510,7 +510,7 @@ jobs:
             </div>
             <h2 className="text-xl md:text-2xl font-black text-gray-900 mb-3 tracking-tight uppercase">Stakeholder briefing</h2>
             <p className="text-gray-500 mb-8 md:mb-10 flex-grow text-xs md:text-sm leading-relaxed">
-              Management-ready presentation summarizing the transformation, ROI, and architecture.
+              Management-ready presentation summarizing the transformation, the measured findings and the architecture — no savings figure.
             </p>
             
             <div className="w-full relative group/tooltip">
