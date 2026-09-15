@@ -62,25 +62,54 @@ test.describe('the mockups are found 1:1 in the roadmap', () => {
   });
 
   test('the views always read Business · IT · Management, never with Management in the middle (ADR-044)', () => {
-    // The three labels that follow each switcher's opening tag, in document order.
-    const switchers = [...mockups.matchAll(/class="(?:views|minisegs|seg14)"[^>]*>/g)].map((m) =>
+    // Every element whose class list contains a switcher class, whatever else it carries; the three labels that follow
+    // its opening tag, in document order. The count is exact: a new switcher has to be looked at, not waved through.
+    const switchers = [...mockups.matchAll(/class="(?:[^"]*\s)?(?:views|minisegs|seg14)(?:\s[^"]*)?"[^>]*>/g)].map((m) =>
       [...mockups.slice(m.index! + m[0].length, m.index! + m[0].length + 600).matchAll(/>(Business|IT|Management)</g)]
         .slice(0, 3)
         .map((x) => x[1])
         .join(' · '),
     );
-    expect(switchers.length).toBeGreaterThanOrEqual(15);
+    expect(switchers.length).toBe(18);
     for (const order of switchers) expect(order).toBe('Business · IT · Management');
-    for (const file of ['DESIGN.md', 'docs/ROADMAP.md']) expect(read(file), file).not.toMatch(/Business (?:·|\||→|,) ?Management (?:·|\||→|and|und) ?IT/);
+
+    // In prose and tables, every place that names all three views names them in this order — any permutation fails.
+    const W = '(Business|IT|Management)';
+    // A list may wrap onto the next line ("Business-, IT- und\n   Management-Sicht").
+    const GAP = '[^A-Za-z]{1,8}(?:(?:and|und)[^A-Za-z]{1,6})?';
+    const listed = (text: string) =>
+      [...text.matchAll(new RegExp(`\\b${W}\\b${GAP}\\b${W}\\b${GAP}\\b${W}\\b`, 'g'))]
+        .map((m) => [m[1], m[2], m[3]])
+        .filter((words) => new Set(words).size === 3)
+        .map((words) => words.join(' · '));
+    for (const [file, atLeast] of [['DESIGN.md', 3], ['docs/ROADMAP.md', 4]] as const) {
+      const found = listed(read(file));
+      expect(found.length, `${file} should name the three views in order at least ${atLeast} times`).toBeGreaterThanOrEqual(atLeast);
+      for (const order of found) expect(order, file).toBe('Business · IT · Management');
+    }
+    expect(listed('Management · IT · Business and IT, Business and Management')).toEqual(['Management · IT · Business', 'IT · Business · Management']);
   });
 
   test('every roadmap marker drawn in the mockups points at a step that exists', () => {
     const pins = [...mockups.matchAll(/<span class="pin"[^>]*>([^<]*)<\/span>/g)].map((m) => m[1]);
     expect(pins.length).toBeGreaterThan(0);
+    // A marker is made of steps, step ranges, DESIGN.md sections and decision numbers — nothing else. A marker
+    // without a single step, or with a token that is none of these ("TBD", "1.8x"), fails instead of passing empty.
+    const SECTION = /^§\d+(?:\.\d+)*$/;
+    const ADR = /^ADR-\d{3}$/;
+    const RANGE = /^(\d+\.\d+(?:\.\d+)?)–(\d+\.\d+(?:\.\d+)?)$/;
     for (const pin of pins) {
-      for (const token of pin.split(/[·,/ –-]+/).map((s) => s.trim()).filter((s) => STEP.test(s))) {
-        expect(steps.has(token), `mockup marker "${pin}" names step ${token}, which the roadmap does not have`).toBe(true);
+      const tokens = pin.split(/\s*[·,/]\s*|\s+/).map((s) => s.trim()).filter(Boolean);
+      expect(tokens.length, `empty marker "${pin}"`).toBeGreaterThan(0);
+      const named: string[] = [];
+      for (const token of tokens) {
+        const range = token.match(RANGE);
+        if (STEP.test(token)) named.push(token);
+        else if (range) named.push(range[1], range[2]);
+        else expect(SECTION.test(token) || ADR.test(token), `mockup marker "${pin}" has an unknown token "${token}"`).toBe(true);
       }
+      expect(named.length + tokens.filter((t) => SECTION.test(t) || ADR.test(t)).length, `marker "${pin}" names nothing`).toBeGreaterThan(0);
+      for (const step of named) expect(steps.has(step), `mockup marker "${pin}" names step ${step}, which the roadmap does not have`).toBe(true);
     }
   });
 });

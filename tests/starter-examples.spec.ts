@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, connectAuthEmulator } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
+import { STARTER_EXAMPLES } from '../lib/starter-examples';
 
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
 
@@ -77,8 +78,15 @@ test.describe('Dashboard — starter examples', () => {
     // Every shipped example is offered, including the large one.
     const names = panel.getByTestId('starter-example-name');
     await expect(names).toHaveCount(8);
+    expect(STARTER_EXAMPLES).toHaveLength(8);
     await expect(names.filter({ hasText: /^Z_MATERIAL_STOCK_CALC$/ })).toBeVisible();
     await expect(names.filter({ hasText: /^Z_MM_PO_APPROVAL$/ })).toBeVisible();
+    // Every card's source is served on the path the click fetches from (lib/starter-examples.ts loadStarterExample).
+    for (const ex of STARTER_EXAMPLES) {
+      const res = await page.request.get(`/starter-examples/${ex.file}`);
+      expect(res.status(), ex.file).toBe(200);
+      expect((await res.text()).toLowerCase(), ex.file).toContain(ex.name.toLowerCase());
+    }
     await expect(names.filter({ hasText: /^ZLEGACY_ORDER_FULFILLMENT_AUDIT$/ })).toBeVisible();
     await expect(panel.getByText('1,000 lines').first()).toBeVisible();
 
