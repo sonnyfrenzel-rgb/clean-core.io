@@ -132,9 +132,24 @@ export const MOCKUP_SCREENS = ['m1-mockup', 'm2-mockup', 'm3-mockup', 'm4-mockup
  */
 export function resolveMode(requested, trigger, reports) {
   if (requested !== 'auto') return requested;
-  const baseline = reports.some((r) => r.mode === 'full' && !r.incomplete);
-  if (!baseline) return 'full';
+  if (!baselineOf(reports)) return 'full';
   return trigger === 'agent' ? 'self-test' : 'delta';
+}
+
+/**
+ * The complete full review a history builds on — the report itself, or the
+ * reference every later report carries forward. The workflow fetches only the
+ * newest reports, and the original full review must not fall out of that window
+ * and trigger another one (finding 27096ea7fdbc).
+ *
+ * @param reports newest first, self-tests included
+ */
+export function baselineOf(reports) {
+  for (const r of reports) {
+    if (r.mode === 'full' && !r.incomplete) return { head: r.range?.head || null, createdAt: r.createdAt || null };
+    if (r.baseline?.head) return r.baseline;
+  }
+  return null;
 }
 
 /** Capture file names: `03-analyze-desktop-s1.jpg`, `m2-mockup-desktop.jpg`. Anything else in the artifact is ignored. */

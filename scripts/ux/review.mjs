@@ -18,7 +18,7 @@ import { callReviewer } from '../qa/lib/openrouter.mjs';
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { loadDotEnv, sealedReports } from '../qa/lib/store.mjs';
 import { assignAreas, numbered, packAreas } from './lib/areas.mjs';
-import { AREAS, BUDGETS, DIFF_CONTEXT_LINES, estimateCostUsd, isUxRelevant, MAX_IMAGE_BYTES_PER_CALL, MOCKUP_SCREENS, REFERENCE_SCREENS, REQUEST_TIMEOUT_MS, resolveMode, UX_MODEL, WHOLE_FILE_CHARS, withinBudget } from './lib/config.mjs';
+import { AREAS, BUDGETS, DIFF_CONTEXT_LINES, estimateCostUsd, isUxRelevant, MAX_IMAGE_BYTES_PER_CALL, MOCKUP_SCREENS, REFERENCE_SCREENS, REQUEST_TIMEOUT_MS, baselineOf, resolveMode, UX_MODEL, WHOLE_FILE_CHARS, withinBudget } from './lib/config.mjs';
 import { buildText, loadBrief, UX_SCHEMA } from './lib/prompt.mjs';
 import { chooseDeltaBase } from './lib/range.mjs';
 import { closedBy, loadRegister, refutedEntries } from './lib/register.mjs';
@@ -45,10 +45,10 @@ function uxFilesAt(commit) {
     .map((path) => ({ path, text: show(commit, path) }));
 }
 
-/** Earlier real reviews (not self-tests) whose head this commit contains, newest first. */
+/** Earlier reviews whose head this commit contains, newest first — self-tests included, for the baseline they carry. */
 function earlierReports(secret, head) {
   if (!secret) return [];
-  return sealedReports(PREV_DIR, secret, 'ux-review.enc.json').filter((r) => r.mode !== 'self-test' && r.range?.head && (r.range.head === head || (isCommit(r.range.head) && isAncestor(r.range.head, head))));
+  return sealedReports(PREV_DIR, secret, 'ux-review.enc.json').filter((r) => r.range?.head && (r.range.head === head || (isCommit(r.range.head) && isAncestor(r.range.head, head))));
 }
 
 /**
@@ -57,9 +57,8 @@ function earlierReports(secret, head) {
  * nothing (finding 25c4ed925224).
  */
 function deletionBlock(base, path) {
-  const text = show(base, path);
-  const shown = text.length <= WHOLE_FILE_CHARS ? text : `${text.slice(0, WHOLE_FILE_CHARS)}\n… [cut: the removed file had ${text.split('\n').length} lines]`;
-  return `=== REMOVED ${path} in this release — its last content follows ===\n${numbered(path, shown)}`;
+  // Whole: a cut here would pass as read. Size is the batch limit's job, and it records a cut (finding a064a718fbb9).
+  return `=== REMOVED ${path} in this release — its last content follows ===\n${numbered(path, show(base, path))}`;
 }
 
 /** A changed file for the reviewer: whole when small, otherwise its diff with generous context. */
@@ -78,6 +77,7 @@ async function main() {
   const reports = earlierReports(secret, head);
   const trigger = env.UX_TRIGGER === 'agent' ? 'agent' : 'release';
   const mode = resolveMode(arg('mode') || env.UX_MODE || 'delta', trigger, reports);
+  const baseline = baselineOf(reports);
   const budget = BUDGETS[mode];
   if (!budget) throw new Error('UX_MODE must be auto, full, delta or self-test.');
 
@@ -87,7 +87,7 @@ async function main() {
   const register = loadRegister();
   const closed = closedBy(register);
   const refuted = refutedEntries(register);
-  const previous = reports[0] || null;
+  const previous = reports.find((r) => r.mode !== 'self-test') || null;
   const assignment = assignAreas(files);
 
   const secretHits = [];
@@ -163,18 +163,17 @@ async function main() {
     }
   }
 
-  // Pictures are checked per screen a call asks for, not by whether any file arrived: one surviving
-  // screenshot of the access dialog is no visual evidence for a changed Analyse screen (finding
-  // a553413f50d9). The mockups are the target picture — wanted, not required.
-  if (mode !== 'self-test') {
-    const missing = new Set();
-    for (const c of calls) {
-      for (const screen of c.screens || []) {
-        if (!MOCKUP_SCREENS.includes(screen) && !shots.some((s) => s.screen === screen && s.viewport === 'desktop')) missing.add(screen);
-      }
+  // Pictures count per screen a call asks for, and only if they are in the call itself — not whether a
+  // file arrived: one surviving screenshot of the access dialog is no visual evidence for Analyse, and
+  // an image the byte limit left out was never seen (findings a553413f50d9, 115d8f705a0d). The
+  // mockups are the target picture — wanted, not required.
+  const missingPictures = new Set();
+  const notePictures = (c) => {
+    for (const screen of c.screens || []) {
+      if (!MOCKUP_SCREENS.includes(screen) && !c.picked.some((s) => s.screen === screen && s.viewport === 'desktop')) missingPictures.add(screen);
     }
-    for (const screen of missing) notReviewed.push({ path: `(Screenshot ${screen})`, reason: 'nicht erfasst — dieser Screen wurde nur im Code gesehen' });
-  }
+  };
+  if (mode !== 'self-test') for (const c of calls) notePictures(c);
 
   const previousOpen = mode === 'delta' ? (previous?.findings || []).filter((f) => !closed(f)).slice(0, 60) : [];
   const textFor = (c, extra = {}) => clean(buildText({ mode: c.kind === 'synthesis' ? 'synthesis' : mode, batch: c.batch, scanText: c.scanText, range, shots: c.picked, previousOpen, refuted, notes: c.notes, ...extra }));
@@ -191,7 +190,8 @@ async function main() {
           calls: calls.map((c) => ({ area: c.batch.area, part: c.batch.part, files: c.batch.files, chars: textFor(c).length, images: c.picked.map((s) => s.name) })),
           synthesis: mode === 'full',
           estimatedCostUsd: Number((calls.reduce((n, c) => n + estimateCostUsd({ chars: brief.length + textFor(c).length + SCHEMA_CHARS, images: c.picked.length, maxOutputTokens: budget.maxOutputTokens }), 0) + (mode === 'full' ? estimateCostUsd({ chars: 60_000, images: 20, maxOutputTokens: budget.maxOutputTokens }) : 0)).toFixed(2)),
-          notReviewed,
+          notReviewed: [...notReviewed, ...[...missingPictures].map((screen) => ({ path: `(Screenshot ${screen})`, reason: 'nicht im Aufruf' }))],
+          baseline,
         },
         null,
         2,
@@ -237,10 +237,14 @@ async function main() {
     const screens = [...new Set([...AREAS.flatMap((a) => a.screens), MOCKUP_SCREENS[0], MOCKUP_SCREENS[2], MOCKUP_SCREENS[3]])];
     // A contact sheet: the first screen height of every screen, desktop — the view that shows drift between areas.
     const firstViews = shots.filter((s) => s.viewport === 'desktop' && s.segment === 1);
-    const c = { kind: 'synthesis', batch: null, picked: pickShots(firstViews, screens, { limit: budget.maxImagesPerCall + 8, maxBytes: MAX_IMAGE_BYTES_PER_CALL * 1.5 }), scanText: renderScan(scan) };
+    const c = { kind: 'synthesis', batch: null, screens, picked: pickShots(firstViews, screens, { limit: budget.maxImagesPerCall + 8, maxBytes: MAX_IMAGE_BYTES_PER_CALL * 1.5 }), scanText: renderScan(scan) };
     const r = await run(c, textFor(c, { areaFindings }), budget.synthesisEffort);
-    if (r) synthesis = { review: r.review, shots: c.picked.map((s) => s.name) };
+    if (r) {
+      synthesis = { review: r.review, shots: c.picked.map((s) => s.name) };
+      notePictures(c);
+    }
   }
+  for (const screen of missingPictures) notReviewed.push({ path: `(Screenshot ${screen})`, reason: 'nicht im Aufruf — dieser Screen wurde nur im Code gesehen' });
 
   const report = buildReport({
     mode,
@@ -250,6 +254,7 @@ async function main() {
     previous,
     closed,
     notReviewed,
+    baseline,
     meta: {
       run: { id: env.GITHUB_RUN_ID || null, attempt: env.GITHUB_RUN_ATTEMPT || null },
       model: UX_MODEL,

@@ -16,6 +16,7 @@ import { open } from '../qa/lib/crypto.mjs';
 import { artifactNames, gh, ghJson, jobsOf, latestArtifact, waitForRun } from '../qa/lib/gh.mjs';
 import { containsOrUnknown, git } from '../qa/lib/git-delta.mjs';
 import { loadDotEnv } from '../qa/lib/store.mjs';
+import { newestRealReview, reviewRuns } from './lib/history.mjs';
 import { loadRegister, untriaged } from './lib/register.mjs';
 import { renderText } from './lib/report.mjs';
 
@@ -78,18 +79,17 @@ async function main() {
   let run;
   let fetched;
   if (BRIEF) {
-    // The newest run with a readable real review. Skipped runs (no Review job) and
-    // self-tests pass by — neither may hide the review before them (finding c3109a9fdfb1).
-    const runs = ghJson(['run', 'list', '--workflow', 'ux-review.yml', '--status', 'success', '--limit', '20', '--json', 'databaseId,headSha,createdAt']) || [];
-    for (const candidate of runs) {
-      const got = fetchReport(candidate, secret);
-      if (got && got.report.mode !== 'self-test') {
-        run = candidate;
-        fetched = got;
-        break;
-      }
+    // Indexed by review artifacts, not runs: skipped runs have none and cannot hide a review; self-tests are passed over.
+    const artifacts = [];
+    for (let page = 1; page <= 5; page++) {
+      const batch = ghJson(['api', `repos/{owner}/{repo}/actions/artifacts?per_page=100&page=${page}`, '--jq', '[.artifacts[] | select(.expired == false) | {name, runId: .workflow_run.id, headSha: .workflow_run.head_sha}]']) || [];
+      artifacts.push(...batch);
+      if (batch.length < 100) break;
     }
-    if (!run) return 0;
+    const found = newestRealReview(reviewRuns(artifacts), (candidate) => fetchReport(candidate, secret));
+    if (!found) return 0;
+    run = found.run;
+    fetched = found;
   } else {
     const sha = git(['rev-parse', arg || 'origin/main']);
     console.log(`Waiting for the UX review of ${sha.slice(0, 12)} (up to ${timeoutMin} min)…`);

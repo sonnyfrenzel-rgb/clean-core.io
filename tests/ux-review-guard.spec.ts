@@ -88,6 +88,21 @@ test.describe('three jobs, three trust levels', () => {
     expect(resolveMode('auto', 'release', [full(false)])).toBe('delta');
     expect(resolveMode('auto', 'agent', [full(false)])).toBe('self-test');
     expect(resolveMode('full', 'release', [full(false)])).toBe('full'); // a manual choice stands
+    // Ten newer reports later, the baseline is still known: every report carries it forward (finding 27096ea7fdbc).
+    const newer = Array.from({ length: 12 }, () => ({ mode: 'self-test', incomplete: false, baseline: { head: 'b'.repeat(40), createdAt: '2026-09-15' } }));
+    expect(resolveMode('auto', 'agent', newer)).toBe('self-test');
+    expect(resolveMode('auto', 'release', newer.map((r) => ({ ...r, baseline: null })))).toBe('full');
+  });
+
+  test('a report names the baseline it builds on — itself when it is a complete full review', async () => {
+    const { buildReport } = await lib('report.mjs');
+    const review = { ux_health: 'good', summary: '', findings: [], consistency: [], design_decisions: [], new_features: [], strengths: [], priorities: [], previous_findings: [], coverage_notes: '' };
+    const range = { base: null, head: 'h'.repeat(40), commits: [] };
+    const full = buildReport({ mode: 'full', range, results: [{ review, batch: { area: 'analyse', files: [] } }], synthesis: { review } });
+    expect(full.baseline).toMatchObject({ head: 'h'.repeat(40) });
+    const carried = { head: 'b'.repeat(40), createdAt: '2026-09-15' };
+    expect(buildReport({ mode: 'delta', range: { ...range, base: 'b'.repeat(40) }, results: [{ review, batch: { area: 'release', files: [] } }], baseline: carried }).baseline).toEqual(carried);
+    expect(buildReport({ mode: 'full', range, results: [{ review, batch: { area: 'analyse', files: [] } }], synthesis: null, baseline: null }).baseline).toBeNull();
   });
 
   test('the capture job holds no secret; the review job holds the model and sealing keys and runs no third-party code', () => {
@@ -328,6 +343,12 @@ test.describe('Claude hears about it', () => {
 });
 
 test.describe('a release review runs end to end on a real repository (dry run, no model call)', () => {
+  test('a removed file reaches the reviewer whole, however long it was', () => {
+    const src = read('scripts/ux/review.mjs');
+    const block = src.slice(src.indexOf('function deletionBlock'), src.indexOf('\n}', src.indexOf('function deletionBlock')));
+    expect(block).not.toMatch(/WHOLE_FILE_CHARS|slice\(/);
+  });
+
   test('a release that only removes a screen is reviewed, and a screen without pictures keeps the review incomplete', () => {
     const { execFileSync } = require('child_process') as typeof import('child_process');
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ux-delta-'));
@@ -355,6 +376,23 @@ test.describe('a release review runs end to end on a real repository (dry run, n
       expect(plan.calls.flatMap((c: { files: string[] }) => c.files)).toEqual([page]);
       // No picture of the screens this release concerns: named, so the checkpoint stays.
       expect(plan.notReviewed.map((n: { path: string }) => n.path)).toContain('(Screenshot 03-analyze)');
+
+      // A picture that exists but does not fit into the call is not evidence either (finding 115d8f705a0d).
+      const shots = path.join(dir, 'shots');
+      fs.mkdirSync(shots);
+      const big = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(2_900_000)]);
+      for (const name of ['03-analyze-desktop-s1', '01-landing-desktop-s1', '02-dashboard-desktop-s1']) fs.writeFileSync(path.join(shots, `${name}.jpg`), big);
+      const second = JSON.parse(execFileSync(process.execPath, [path.resolve(ROOT, 'scripts/ux/review.mjs'), '--dry', '--mode=delta'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: { ...process.env, UX_BASE_OVERRIDE: base, UX_REVIEW_KEY: '', UX_SHOTS_DIR: shots },
+      }));
+      const sent = second.calls.flatMap((c: { images: string[] }) => c.images);
+      const missing = second.notReviewed.map((n: { path: string }) => n.path);
+      for (const screen of ['03-analyze', '01-landing', '02-dashboard']) {
+        expect(sent.some((n: string) => n.startsWith(screen)) || missing.includes(`(Screenshot ${screen})`), screen).toBe(true);
+      }
+      expect(missing.length).toBeGreaterThan(0);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -386,10 +424,24 @@ test.describe('the register Claude decides in', () => {
     expect(src).toMatch(/filter\(\(f\) => !closed\(f\)\)/);
   });
 
-  test('the session start finds the newest real review behind skipped runs and self-tests', () => {
-    const src = read('scripts/ux/inbox.mjs');
-    expect(src).toMatch(/'--status', 'success', '--limit', '20'/);
-    expect(src).toMatch(/if \(got && got\.report\.mode !== 'self-test'\)/);
+  test('the session start finds the newest real review behind any number of skipped runs and self-tests', async () => {
+    const { reviewRuns, newestRealReview } = await lib('history.mjs');
+    const sha = (n: number) => String(n).padStart(40, 'a');
+    // Skipped runs produce no review artifact at all; 30 self-tests and other artifacts sit in front of the real review.
+    const artifacts = [
+      ...Array.from({ length: 30 }, (_, i) => ({ name: `ux-review-${sha(i)}-1`, runId: 1000 - i, headSha: sha(i) })),
+      { name: `ux-capture-${sha(99)}-1`, runId: 900, headSha: sha(99) },
+      { name: `qa-review-${sha(98)}-1`, runId: 899, headSha: sha(98) },
+      { name: `ux-review-${sha(50)}-2`, runId: 800, headSha: sha(50) },
+      { name: `ux-review-${sha(50)}-1`, runId: 800, headSha: sha(50) },
+    ];
+    const runs = reviewRuns(artifacts);
+    expect(runs.map((r: { databaseId: number }) => r.databaseId).slice(-1)).toEqual([800]);
+    expect(runs.filter((r: { databaseId: number }) => r.databaseId === 800)).toHaveLength(1);
+    const open = (run: { databaseId: number }) => ({ report: { mode: run.databaseId === 800 ? 'delta' : 'self-test' } });
+    expect(newestRealReview(runs, open)?.run.databaseId).toBe(800);
+    expect(newestRealReview(runs.slice(0, 30), open)).toBeNull();
+    expect(read('scripts/ux/inbox.mjs')).toMatch(/newestRealReview\(reviewRuns\(artifacts\)/);
   });
 
   test('an existing entry can be updated from a fresh clone without an inbox', () => {

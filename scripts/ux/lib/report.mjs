@@ -31,7 +31,7 @@ export function healthOf(findings, stated) {
  * @param previous   the report this one continues from (delta only)
  * @param closed     (finding) => boolean — closed by a register decision made after it was raised (register.closedBy)
  */
-export function buildReport({ mode, range, results, synthesis = null, previous = null, closed = () => false, notReviewed = [], meta = {} }) {
+export function buildReport({ mode, range, results, synthesis = null, previous = null, closed = () => false, notReviewed = [], baseline = null, meta = {} }) {
   const createdAt = new Date().toISOString();
   const byFp = new Map();
   const add = (raw, area) => {
@@ -73,6 +73,8 @@ export function buildReport({ mode, range, results, synthesis = null, previous =
     createdAt,
     meta,
     incomplete,
+    // The complete full review this one builds on, carried forward so it never falls out of the fetched window.
+    baseline: mode === 'full' && !incomplete ? { head: range.head, createdAt } : baseline,
     ux_health: healthOf(findings, synthesis ? [synthesis.review.ux_health] : reviews.map((r) => r.ux_health)),
     summary: synthesis ? synthesis.review.summary : results.map((r) => r.review.summary).filter(Boolean).join('\n\n'),
     findings,
