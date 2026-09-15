@@ -224,3 +224,4 @@ jobs:
             MFA_BACKUP_CODE_PEPPER=${{ secrets.MFA_BACKUP_CODE_PEPPER }}
             PILOT_APPROVAL_SECRET=${{ secrets.PILOT_APPROVAL_SECRET }}
             NODE_OPTIONS=--max-old-space-size=4096
+            COMMIT_SHA=${{ github.sha }}

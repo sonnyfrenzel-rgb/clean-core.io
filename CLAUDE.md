@@ -96,6 +96,17 @@ usually this and not the deploy.
 
 There is **no** Firebase Hosting deploy; `firebase.json` is only rules + emulators. `vercel.json` only sets cache headers.
 
+## QA agent — always on for `dev` (since 2026-09-15, until Sonny revokes it)
+
+Every push to `dev` triggers `.github/workflows/qa-review.yml`: a sealed delta review by
+`openai/gpt-6-astra` (OpenRouter) plus a sealed smoke check of the deployed revision.
+After **every** push to `dev`, use the `qa-review-loop` skill (the post-push hook in
+`.claude/settings.json` reminds you): `node scripts/qa/await.mjs <sha>` in the background,
+verify each finding, fix confirmed ones, refute wrong ones with evidence, push again — at
+most three rounds — and ask for `main` only after a clean round. The agent only reads;
+reports never appear in public logs. Runbook: `docs/QA-REVIEW-LOOP.md`. Revoke:
+`gh variable set QA_REVIEW_ENABLED --body false`.
+
 ## Diagnostics / logs (both CLIs are installed & authenticated)
 
 GitHub Actions — repo `sonnyfrenzel-rgb/clean-core.io`:

@@ -1,0 +1,116 @@
+name: QA Review
+
+# The QA agent: every push to `dev` gets a delta review by one pinned model and a
+# smoke check of the revision it deployed. Runbook and guardrails:
+# docs/QA-REVIEW-LOOP.md.
+#
+# Read-only by construction — the token below can read code and workflow runs and
+# nothing else; the model has no tools. This repository and its logs are public,
+# so both results leave the runner only sealed (AES-256-GCM, QA_REVIEW_KEY) and
+# the log says that a review ran and what it cost, never what it found.
+#
+# Revocation: `gh variable set QA_REVIEW_ENABLED --body false` stops both jobs and
+# the local loop (scripts/qa/await.mjs checks the same variable).
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+    inputs:
+      base:
+        description: 'Base commit id (optional — default: last reviewed commit)'
+        required: false
+        type: string
+      head:
+        description: 'Head commit id (optional — default: tip of the dispatched ref)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+# A newer push supersedes a running review. Nothing is lost: the next review
+# starts from the last *reviewed* commit, so it covers the cancelled delta too.
+concurrency:
+  group: qa-review-dev
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Delta review (sealed)
+    if: vars.QA_REVIEW_ENABLED != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0 # the delta needs the previous tip and the last reviewed commit
+          persist-credentials: false # nothing in this job pushes; do not leave a token in .git/config
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      # The previous sealed report carries open findings forward and marks the
+      # last reviewed commit. A run without an artifact (failed or cancelled) is
+      # skipped; the loop stops at the first one that has it.
+      - name: Fetch the previous sealed report
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          mkdir -p .qa-review/prev
+          for id in $(gh run list --workflow qa-review.yml --branch dev --limit 15 --json databaseId,status --jq '.[] | select(.status == "completed") | .databaseId'); do
+            [ "$id" = "$RUN_ID" ] && continue
+            if gh run download "$id" --pattern 'qa-review-*' -D .qa-review/prev > /dev/null 2>&1; then break; fi
+          done
+
+      - name: Review the delta
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          QA_REVIEW_KEY: ${{ secrets.QA_REVIEW_KEY }}
+          QA_BASE: ${{ inputs.base || github.event.before }}
+          QA_HEAD: ${{ inputs.head || github.sha }}
+        run: node scripts/qa/review.mjs
+
+      - name: Upload sealed report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: qa-review-${{ github.sha }}
+          path: .qa-review/out/qa-review.enc.json
+          retention-days: 14
+          if-no-files-found: error
+
+  smoke:
+    name: Smoke check of the deployed revision (sealed)
+    if: vars.QA_REVIEW_ENABLED != 'false' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    # Waits for the deploy pipeline of the same commit (~15–25 min) before checking.
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Smoke check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QA_REVIEW_KEY: ${{ secrets.QA_REVIEW_KEY }}
+          QA_HEAD: ${{ github.sha }}
+        run: node scripts/qa/smoke.mjs
+
+      - name: Upload sealed smoke result
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: qa-smoke-${{ github.sha }}
+          path: .qa-review/out/qa-smoke.enc.json
+          retention-days: 14
+          if-no-files-found: error

@@ -10,6 +10,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.12] — 2026-09-15
+
+### Der QA-Agent: jeder Push auf dev wird geprüft — versiegelt, gedeckelt, nur das Delta
+
+Entschieden von Sonny am 15.09.: ab sofort und bis zum Widerruf prüft ein QA-Agent
+jeden neuen Stand auf `dev`, selbstständig und in festen Leitplanken. Modell: GPT-6
+Astra über OpenRouter, fest eingestellt.
+
+Zwei Jobs in `.github/workflows/qa-review.yml`:
+
+- **Delta-Review.** Nur die Commits seit dem letzten *geprüften* Stand — ein
+  abgebrochener Lauf verliert also nichts. Vor dem Modell läuft eine Vorprüfung ohne
+  Token: Risiko-Tags je Datei, Signale für abgeschwächte Tests, zitierte
+  Abnahmekriterien aus dem CHANGELOG, Code ohne Test im selben Delta, und die
+  Aufrufer geänderter Funktionen außerhalb des Deltas. Das Modell prüft wie ein
+  QA-Engineer — Absicht und Abnahme, Korrektheit, Sicherheit, Trust-Chain,
+  Regression, Tests, Ehrlichkeit der Aussagen — und sucht **Vereinfachungen, aber nur
+  solche mit nachweislich gleichem Verhalten**. Offene Befunde werden in die nächste
+  Runde übernommen, bis ein Review sie als behoben meldet.
+- **Smoke-Check.** Wartet auf den Deploy desselben Commits, prüft, dass
+  `/api/health` genau diesen Commit meldet, dass die Kernseiten antworten und die
+  Security-Header gesetzt sind. Kein Modell, keine Kosten.
+
+**Nichts Sicherheitsrelevantes wird öffentlich.** Das Repository und seine Logs sind
+öffentlich, die dev-Revision ist erreichbar. Beide Ergebnisse verlassen den Runner
+nur versiegelt (AES-256-GCM); das Log sagt, dass geprüft wurde und was es kostete —
+**kein Verdikt, keine Zahl je Schweregrad**. Schlüsselmuster im Delta werden vor dem
+Versand geschwärzt und als kritischer Befund gemeldet, ohne den Wert.
+Credential-Dateien werden nie gelesen. OpenRouter bekommt `data_collection: deny` und
+keine Fallback-Modelle.
+
+**Der Agent kann nur lesen.** Token mit `contents: read` und `actions: read`, kein
+gespeichertes Checkout-Token, ein Modell ohne Tools. Er kommentiert nicht, legt keine
+Issues an, pusht nicht und deployt nicht. Widerruf mit einer Variablen:
+`QA_REVIEW_ENABLED=false`.
+
+**Kosten gedeckelt.** Höchstens 2,50 $ je Review, geschätzt vor dem ersten Aufruf;
+Reasoning nur bei Sicherheit, Trust-Chain und CI auf `high`; reine Doku-Pushes
+kosten nichts. Was nicht ins Budget passt, steht im Bericht als „nicht geprüft".
+Im Trockenlauf: ein üblicher Schritt 0,65–0,70 $ geschätzt, 16 Commits auf einmal
+2,33 $ mit 26 benannten, nicht geprüften Dateien.
+
+**Die Schleife.** `scripts/qa/await.mjs` holt beide Ergebnisse lokal ab und entsiegelt
+sie; ein Hook erinnert nach jedem Push auf `dev` daran. Jeder Befund wird geprüft,
+bevor Code geändert wird; bestätigte werden behoben, widerlegte mit Beleg abgelegt
+(`scripts/qa/refute.mjs`, ebenfalls versiegelt). Höchstens drei Runden je Schritt,
+`main` erst nach einer sauberen Runde und nur auf Sonnys Go. Arbeitsanweisung im
+Skill `qa-review-loop`, Runbook in `docs/QA-REVIEW-LOOP.md`.
+
+Nebenbei: `/api/health` meldet jetzt auch den Commit der Revision (`COMMIT_SHA` aus
+`deploy.yml`). Das Repository ist öffentlich, der Wert verrät nichts Neues — aber nur
+so erkennt der Smoke-Check eine neue Revision, wenn ein Fix ohne Versionssprung
+ausgeliefert wird.
+
+Der Trockenlauf hat vor dem ersten echten Einsatz einen Fehler im Agenten selbst
+gefunden: Die Prüfung „ist dieser Commit ein Vorgänger?" warf intern und wurde als
+„nein" gewertet — jedes Delta wäre auf einen einzigen Commit geschrumpft.
+
+`tests/qa-review-guard.spec.ts`, 24 Tests: Workflow-Rechte und gepinnte Actions,
+Secrets nur als Umgebung, Siegel mit Manipulationserkennung, öffentliche Zeile ohne
+Inhalt, Schwärzung, gesperrte Credential-Dateien, ein Modell ohne Tools und Fallbacks,
+Retry nur bei Rate-Limit, Kostendeckel und Risiko-Reihenfolge, Validierung der
+Workflow-Eingaben, Übertrag und Widerlegung von Befunden, der Post-Push-Hook, der
+Commit in `/api/health`.
+
 ## [v2.9.11] — 2026-09-11
 
 ### Ein roter Scheduled-Run von Security CI erreicht jetzt den Admin — per Mail

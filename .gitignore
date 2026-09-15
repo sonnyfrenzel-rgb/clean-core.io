@@ -13,8 +13,15 @@ test-results/
 scratch/
 .agents/
 .antigravity/
-.claude/
+# Claude Code: local settings and state stay local; the QA/security loop's skills and
+# hook scripts are versioned so the agents' working rules are reviewable.
+.claude/*
+!.claude/skills/
+!.claude/hooks/
 
 # Firestore migration artefacts (baselines, exported rulesets) — evidence, not source
 migration/
 design-capture/
+
+# QA agent: downloaded and decrypted review reports (scripts/qa). Never commit.
+.qa-review/
