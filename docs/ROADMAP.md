@@ -467,3 +467,22 @@ ersetzt.
 - Bekannte fachliche Fehler werden korrigiert, nicht als Parität konserviert.
 - Neue Oberfläche nur hinter dem Schalter; was für Nutzer sichtbar wird, entscheidet
   3.0.
+- **Jeder Push auf `dev`** durchläuft die QA-Schleife (`docs/QA-REVIEW-LOOP.md`);
+  **jede Version auf `main`** das Sicherheitsaudit (`docs/SECURITY-AUDIT-AGENT.md`).
+
+---
+
+## 12. Sicherheitsbefunde aus dem Security-Agenten
+
+Bestätigte Befunde des Audits jeder `main`-Version werden hier nach Priorität
+eingeplant. **Öffentlich stehen nur ID, Schwere, Priorität, Roadmap-Schritt und
+Status** — Titel, Fundstellen und Beschreibungen liegen im versiegelten Register
+(`docs/security/register.enc.json`), bis ein Befund behoben und ausgeliefert ist.
+
+Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbeit ·
+**hoch** in die laufende Phase · **mittel** in den nächsten passenden Schritt ·
+**niedrig** neben verwandter Arbeit.
+
+| ID | Schwere | Priorität | Roadmap-Schritt | Status |
+|---|---|---|---|---|
+| — | — | — | — | noch kein Audit gelaufen |

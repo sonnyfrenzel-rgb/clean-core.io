@@ -1,0 +1,159 @@
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+
+/**
+ * The attack-surface map — what a security team writes on the whiteboard
+ * before anyone reads code in depth. Deterministic, first-party code only, no
+ * dependencies: this runs in the job that holds the model key, so nothing here
+ * may pull in a third-party package.
+ *
+ * It does not judge. It lists every entry point, trust boundary and dangerous
+ * sink with its location, so the consultants read with intent instead of
+ * reading everything — and it lists every file, so the report can state what was
+ * covered by which method.
+ */
+
+const git = (args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).trim();
+
+const SKIP = /^(docs|public|abap-test-files|clean-core-video|scratch|tmp|dist)\/|package-lock\.json$|^lib\/abap\/generated\/|\.(png|jpe?g|gif|svg|ico|webp|pdf|mp4|woff2?|ttf|zip|md|html)$/;
+
+/** Domains the consultants are split by. The first match wins. */
+export const DOMAINS = [
+  { domain: 'ci-cloud', test: (p) => /^\.github\/|^(Dockerfile|cloudbuild|firebase\.json|firebase\.rules-all-dbs\.json|vercel\.json)|^scripts\//.test(p) },
+  { domain: 'data-rules', test: (p) => /^firestore\.rules$|^hooks\/|^lib\/(firebase|consent|usage|survey)/.test(p) },
+  { domain: 'identity-crypto', test: (p) => /(mfa|approval-token|audit-|signing|signature|run-guard|s4-credentials|verify-pack|\.well-known|account\/|auth)/.test(p) },
+  { domain: 'appsec-api', test: (p) => /^app\/api\/|^middleware\.ts$|^lib\/(gemini|rate-limit|safe-fetch|sanitize|runner|test-verdicts|abap\/)/.test(p) },
+  { domain: 'frontend', test: (p) => /^(app|components)\//.test(p) },
+  { domain: 'tests-and-config', test: () => true },
+];
+
+export function inventory() {
+  return git(['ls-files'])
+    .split('\n')
+    .filter((p) => p && !SKIP.test(p))
+    .map((path) => ({ path, domain: DOMAINS.find((d) => d.test(path)).domain }));
+}
+
+const read = (p) => {
+  try {
+    return readFileSync(p, 'utf8');
+  } catch {
+    return '';
+  }
+};
+
+/** Line numbers of every match — locations, never the matched text beyond a short excerpt. */
+function locate(path, text, re) {
+  const out = [];
+  text.split('\n').forEach((line, i) => {
+    if (re.test(line)) out.push({ path, line: i + 1, excerpt: line.trim().slice(0, 140) });
+  });
+  return out;
+}
+
+const AUTH_MARKERS = /verifyRequestAuth|verifyAdminRequest|assert[A-Z]\w*\(|requireAdmin|verifyIdToken|getAuth\(\)\.verify/;
+
+export function apiRoutes(files) {
+  return files
+    .filter((f) => /^app\/api\/.*\/route\.ts$/.test(f.path))
+    .map(({ path }) => {
+      const src = read(path);
+      return {
+        path,
+        methods: [...src.matchAll(/export\s+(?:async\s+)?function\s+(GET|POST|PUT|PATCH|DELETE)/g)].map((m) => m[1]),
+        authMarkers: [...new Set([...src.matchAll(new RegExp(AUTH_MARKERS, 'g'))].map((m) => m[0].replace(/\($/, '')))],
+        readsBody: /req(uest)?\.(json|formData|text)\(\)/.test(src),
+        outboundFetch: /\b(fetch|safeFetch)\(/.test(src),
+        childProcess: /child_process|spawn\(|exec(File)?(Sync)?\(/.test(src),
+        envVars: [...new Set([...src.matchAll(/process\.env\.([A-Z0-9_]+)/g)].map((m) => m[1]))],
+      };
+    });
+}
+
+const SINKS = [
+  { sink: 'dangerouslySetInnerHTML', re: /dangerouslySetInnerHTML/ },
+  { sink: 'innerHTML assignment', re: /\.innerHTML\s*=/ },
+  { sink: 'eval / Function constructor', re: /\beval\(|new Function\(/ },
+  { sink: 'child process', re: /child_process|\bspawn\(|\bexecSync\(|\bexecFile\(/ },
+  { sink: 'dynamic redirect / window.open', re: /window\.location\s*=|location\.href\s*=|window\.open\(|router\.push\(\s*[a-zA-Z_$]/ },
+  { sink: 'postMessage', re: /postMessage\(/ },
+  { sink: 'token in web storage', re: /(localStorage|sessionStorage)\.setItem\([^)]*(token|key|secret)/i },
+  { sink: 'raw SQL / query string build', re: /\$\{[^}]+\}.*\b(WHERE|SELECT)\b/ },
+  { sink: 'client write to Firestore', re: /\b(setDoc|updateDoc|addDoc|deleteDoc|writeBatch)\(/ },
+  { sink: 'server env read in client file', re: /process\.env\.(?!NEXT_PUBLIC_)[A-Z]/ },
+];
+
+export function sinks(files) {
+  const out = [];
+  for (const { path } of files) {
+    if (!/\.(ts|tsx|js|mjs)$/.test(path)) continue;
+    const src = read(path);
+    const isClient = /^['"]use client['"]/m.test(src);
+    for (const s of SINKS) {
+      if (s.sink === 'server env read in client file' && !isClient) continue;
+      for (const hit of locate(path, src, s.re)) out.push({ sink: s.sink, ...hit });
+    }
+  }
+  return out;
+}
+
+export function workflows(files) {
+  return files
+    .filter((f) => /^\.github\/workflows\/.*\.ya?ml$/.test(f.path))
+    .map(({ path }) => {
+      const src = read(path);
+      return {
+        path,
+        triggers: [...src.matchAll(/^\s{2}(push|pull_request_target|pull_request|schedule|workflow_dispatch|workflow_run|issue_comment):/gm)].map((m) => m[1]),
+        writePermissions: [...new Set([...src.matchAll(/^\s+([a-z-]+):\s*write/gm)].map((m) => m[1]))],
+        unpinnedActions: locate(path, src, /uses:\s*[^@\s]+@(?![0-9a-f]{40}\b)/),
+        expressionsInRun: locate(path, src, /^\s*run:.*\$\{\{\s*(github\.event|inputs)\./),
+        secretsUsed: [...new Set([...src.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((m) => m[1]))],
+      };
+    });
+}
+
+export function firestoreRules() {
+  const src = read('firestore.rules');
+  return {
+    matches: locate('firestore.rules', src, /^\s*match\s+\//).map((m) => ({ line: m.line, match: m.excerpt })),
+    openRules: locate('firestore.rules', src, /allow\s+[a-z, ]+:\s*if\s+true/),
+  };
+}
+
+export function dependencyAudit() {
+  try {
+    execFileSync('npm', ['audit', '--package-lock-only', '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], shell: process.platform === 'win32' });
+    return { vulnerabilities: {}, advisories: [] };
+  } catch (err) {
+    // npm audit exits non-zero when it finds something; the JSON is still on stdout.
+    try {
+      const j = JSON.parse(err.stdout || '{}');
+      return {
+        vulnerabilities: j.metadata?.vulnerabilities || {},
+        advisories: Object.values(j.vulnerabilities || {})
+          .filter((v) => ['high', 'critical', 'moderate'].includes(v.severity))
+          .map((v) => ({ package: v.name, severity: v.severity, direct: v.isDirect, fixAvailable: Boolean(v.fixAvailable) })),
+      };
+    } catch {
+      return { error: 'npm audit output could not be read' };
+    }
+  }
+}
+
+export function surfaceMap() {
+  const files = inventory();
+  const byDomain = {};
+  for (const f of files) byDomain[f.domain] = (byDomain[f.domain] || 0) + 1;
+  return {
+    version: 1,
+    head: git(['rev-parse', 'HEAD']),
+    files: { total: files.length, byDomain, list: files },
+    apiRoutes: apiRoutes(files),
+    sinks: sinks(files),
+    workflows: workflows(files),
+    firestoreRules: firestoreRules(),
+    middleware: { csp: locate('middleware.ts', read('middleware.ts'), /(script|style|connect|frame|img)-src/) },
+    dependencies: dependencyAudit(),
+  };
+}

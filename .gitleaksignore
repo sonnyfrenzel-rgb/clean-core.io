@@ -1,0 +1,8 @@
+# Exact gitleaks findings that are verified false positives — one commit, file, rule
+# and line each, never a path or a pattern. Anything else in these files is still scanned.
+#
+# c1f8607 (v2.9.14): a code comment in the QA agent's redaction module listing the
+# *names* of the project's key variables. No value. The comment was reworded in
+# v2.9.15; this entry keeps the full-history scheduled scan from re-reporting the
+# old commit.
+c1f86075617b9757a45cad10c0ab2d900fa83f7f:scripts/qa/lib/redact.mjs:generic-api-key:25

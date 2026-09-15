@@ -15,7 +15,9 @@ export function firstViolation(schema, value, path = '$') {
       if (value === null || typeof value !== 'object' || Array.isArray(value)) return path;
       for (const key of schema.required || []) if (!(key in value)) return `${path}.${key}`;
       for (const key of Object.keys(value)) {
-        const sub = schema.properties?.[key];
+        // Own properties only: `constructor` or `__proto__` would otherwise find
+        // Object.prototype's and pass as a declared, unconstrained field (finding 8cc6caa6085a).
+        const sub = schema.properties && Object.hasOwn(schema.properties, key) ? schema.properties[key] : undefined;
         if (!sub) {
           if (schema.additionalProperties === false) return `${path}.<unexpected>`;
           continue;

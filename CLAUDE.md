@@ -109,6 +109,17 @@ branch (`qa-weekly-health.yml`; at session start `scripts/qa/health.mjs --brief`
 handle what it reports per the skill, section 7. Runbook: `docs/QA-REVIEW-LOOP.md`.
 Revoke: `gh variable set QA_REVIEW_ENABLED --body false`.
 
+## Security agent — full audit of every release on `main` (since 2026-09-15)
+
+`.github/workflows/security-audit.yml`: a CISO and five consultants (Claude Fable 5.1 in
+Claude Code, ultracode, read-only, `--max-budget-usd 25`) audit the whole codebase; the
+German report is mailed to Sonny, sealed with `docs/security/audit-public-key.pem`. After a
+push to `main`, or when the session start reports untriaged findings, use the
+`security-audit-intake` skill: `node scripts/security/inbox.mjs <sha>`, verify each finding,
+decide with `scripts/security/register.mjs` (sealed register), schedule confirmed ones into
+`docs/ROADMAP.md` §12 — **IDs only, never details of an unfixed finding in a public file**.
+Runbook: `docs/SECURITY-AUDIT-AGENT.md`. Revoke: `gh variable set SECURITY_AUDIT_ENABLED --body false`.
+
 ## Diagnostics / logs (both CLIs are installed & authenticated)
 
 GitHub Actions — repo `sonnyfrenzel-rgb/clean-core.io`:

@@ -44,12 +44,18 @@ export function isAncestor(a, b) {
  *    not yet on main. The push event's own `before` is never used as a fallback:
  *    after a cancelled, failed or rewritten history it silently narrows the
  *    review (QA reviews of 221f2d11768c and 2f9b128bafd4).
+ *
+ * No merge base at all (an orphan history, or main missing from the clone) is
+ * not "head is on main": it stops the run, because any single commit chosen
+ * instead would pass as a complete review of a delta it never read (QA review
+ * of c1f86075617b, finding 1b9c06bebe30).
  */
 export function chooseBase({ head, overrideBase, checkpoint, isAncestorOf, mainBase }) {
   if (overrideBase) return { base: overrideBase, reason: 'base given for this run' };
   if (checkpoint && checkpoint !== head && isAncestorOf(checkpoint, head)) return { base: checkpoint, reason: 'last reviewed checkpoint' };
   const mb = mainBase(head);
-  if (mb && mb !== head) return { base: mb, reason: checkpoint ? 'checkpoint unusable (rewritten history) — everything not yet on main' : 'no reviewed checkpoint — everything not yet on main' };
+  if (!mb) throw new Error('No usable review base: the checkpoint is not an ancestor of head and head shares no history with main. Re-run with a base given.');
+  if (mb !== head) return { base: mb, reason: checkpoint ? 'checkpoint unusable (rewritten history) — everything not yet on main' : 'no reviewed checkpoint — everything not yet on main' };
   return { base: null, reason: 'head is on main — reviewing the head commit only' };
 }
 

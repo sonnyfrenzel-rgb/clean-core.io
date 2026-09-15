@@ -10,6 +10,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.15] — 2026-09-15
+
+### Der Security-Agent: jede Version auf main bekommt ein Vollaudit — der Bericht kommt per Mail
+
+Sonnys Auftrag vom 15.09.: ein zweiter Agent, der wie ein CISO mit seinen Security
+Consultants arbeitet, aktuelle Angriffsmuster kennt, nach jedem neuen `main`-Stand den
+gesamten Code prüft und einen belegten, verständlichen Bericht auf Deutsch liefert —
+ohne selbst etwas zu ändern.
+
+**Wer prüft.** Claude Fable 5.1 in Claude Code, headless, mit Ultracode: ein CISO und
+fünf Consultants — API-Sicherheit, Identität und Kryptografie, Daten und Firestore-Regeln,
+Frontend und Lieferkette, CI/Cloud/LLM. Die CISO-Anweisung (`docs/security/ciso-brief.md`)
+nennt Methode, aktuelle Angriffsmuster (Next.js-Middleware-Bypass, Firebase-Regeln, OWASP
+API und LLM Top 10, Actions-Injection, Cloud-Metadaten), Schweregrade und Berichtsaufbau.
+Kein Befund ohne gelesene Zeile; Hypothesen stehen unter „Grenzen".
+
+**Vollanalyse, sparsam.** Vor dem Modell entsteht eine Karte der Angriffsfläche — jede
+Datei mit ihrer Domäne, jede API-Route mit Auth-Markern, jede gefährliche Senke,
+Workflow-Rechte, Regelblöcke, CSP, `npm audit` — in zwei Sekunden und ohne Token. Die
+Consultants lesen von dort gezielt; jede Datei wird von mindestens einer Methode
+abgedeckt, und der Bericht nennt die Abdeckung. Harte Grenze: `--max-budget-usd 25`.
+
+**Nur lesend, technisch erzwungen.** Für den Agenten existieren genau Read, Grep, Glob,
+Agent und Workflow; Bash, PowerShell, Edit, Write, WebFetch und WebSearch sind zusätzlich
+verboten; `--restricted` und `--strict-mcp-config`. Die Consultants haben Read, Grep, Glob.
+
+**Drei Jobs, drei Vertrauensstufen.** `scope` ohne Secrets; `audit` mit dem
+Anthropic-Schlüssel und dem **öffentlichen** Schlüssel — er kann versiegeln, aber keinen
+Bericht öffnen; `deliver` mit privatem Schlüssel und Resend — öffnet, rendert, mailt und
+führt kein Modell aus. Kein Fremdcode neben einem Schlüssel: die Karte ist eigener Code
+nur mit `node:`-Modulen, der Mail-Job läuft ohne `npm ci`.
+
+**Nichts wird öffentlich.** Das CLI-Transkript geht in Dateien, nie ins Log; das Log trägt
+Statusfelder und Zahlen. Bericht und Register sind versiegelt (RSA-OAEP + AES-256-GCM). Die
+Roadmap bekommt §12 mit einer Tabelle, die nur ID, Schwere, Priorität, Schritt und Status
+zeigen darf.
+
+**Die Mail** ist im Clean-Core.io-Look — dieselbe responsive Shell wie alle anderen Mails,
+ein Test hält sie zeichengleich —, liest sich bei 320 px ohne seitliches Scrollen (Test im
+Browser) und escaped jeden Modelltext. Sie enthält Gesamtrisiko, Kurzfazit, jeden Befund mit
+Fundstelle, Voraussetzung, Auswirkung, Beleg, Empfehlung und **Prüfen vor dem Fix**,
+Härtung, was gut ist, Umfang und Grenzen, und einen **Nachweis**: Version, Commit, Modell,
+Dauer, Kosten und der SHA-256 des versiegelten Berichts.
+
+**Selbsttest.** Ändert sich der Agent selbst auf `dev`, läuft die ganze Kette einmal mit
+Haiku 4.5 und 1 $ Budget — bis zur echten Mail mit `[SELBSTTEST]` im Betreff. Ein
+lokaler Probelauf unter Windows war an der 8.191-Zeichen-Grenze von `cmd` gescheitert;
+geprüft wird deshalb der Weg, der tatsächlich läuft.
+
+**Claude Codes Seite:** Skill `security-audit-intake` — abholen (`scripts/security/inbox.mjs`),
+jeden Befund an der Fundstelle prüfen, im Register entscheiden (`register.mjs accept |
+refute | risk | fixed`), nach Priorität einplanen: kritisch sofort als eigener Schritt, hoch
+in die laufende Phase, mittel in den nächsten passenden Schritt. Beim Sitzungsstart meldet
+ein Hook unbewertete Befunde des letzten Audits.
+
+Widerruf: `SECURITY_AUDIT_ENABLED=false`. Runbook: `docs/SECURITY-AUDIT-AGENT.md`.
+`tests/security-audit-guard.spec.ts`, 18 Tests.
+
+### QA-Runde 3 zu v2.9.14 — zwei Befunde behoben, vier mit Beleg widerlegt
+
+Sieben Befunde, 0,91 $. **Behoben:** Ohne jede gemeinsame Historie mit `main` (verwaiste
+Historie, fehlender `main` im Klon) prüfte der Agent nur den letzten Commit und hielt das
+für vollständig — jetzt bricht der Lauf ab und verlangt eine Basis (`1b9c06bebe30`, damit
+auch der Restfall von `80cae7cd7d5a`). Der Schema-Validator ließ `constructor` und
+`__proto__` als erlaubte Felder durch, weil er die Prototyp-Kette mitlas (`8cc6caa6085a`).
+**Widerlegt:** vier Befunde zu Berichten im Format vor v2.9.14 — geprüft an allen
+gespeicherten Berichten: es gibt keine Widerlegung vor dieser Runde, keinen erneut erhobenen
+Befund und keinen Altbericht mit ungelesenem Code; die Fälle können nicht eintreten.
+
+Und ein Fehlalarm in Security CI: gitleaks las einen Kommentar in `redact.mjs`, der die
+*Namen* der Schlüsselvariablen aufzählte, als Zuweisung. Kommentar umformuliert; der alte
+Commit steht mit Commit, Datei, Regel und Zeile in `.gitleaksignore` — kein Pfad, kein Muster.
+
 ## [v2.9.14] — 2026-09-15
 
 ### QA-Runde 2: zehn Befunde des Agenten zu sich selbst — und ein Test, der nur hier grün war

@@ -21,9 +21,10 @@ const PATTERNS = [
   // Assignment of a long literal to a name that says it is secret. Placeholders and env lookups do not match.
   {
     kind: 'secret-named literal',
-    // `[A-Z0-9]_KEY` covers the project's own key names — QA_REVIEW_KEY,
-    // AUDIT_SIGNING_KEY, S4_ENCRYPTION_KEY — which carry no provider prefix to
-    // recognise them by (QA review of 2f9b128bafd4, finding a87199ab8c9e).
+    // `[A-Z0-9]_KEY` covers the project's own names for its review, signing and
+    // encryption keys, which carry no provider prefix to recognise them by (QA
+    // review of 2f9b128bafd4, finding a87199ab8c9e). Written without the literal
+    // names: gitleaks read the list as an assignment (Security CI, 15.09.2026).
     re: /\b([A-Za-z0-9_]*(?:SECRET|PASSWORD|PASSWD|TOKEN|API_?KEY|PRIVATE_?KEY|PEPPER|[A-Z0-9]_KEY)[A-Za-z0-9_]*)\s*[:=]\s*(['"`])(?!test-|dummy|example|placeholder|your-|<)[^'"`\s]{24,}\2/gi,
   },
 ];

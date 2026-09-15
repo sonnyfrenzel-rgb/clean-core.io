@@ -189,6 +189,12 @@ test.describe('the reviewer', () => {
     expect(String((await call({ ...good, verdict: 'ship it' }) as Error).message)).toMatch(/at \$\.verdict\.$/);
     const badFinding = { ...good, findings: [{ severity: 'catastrophic', category: 'correctness', file: 'a', line: 1, title: 't', failure_scenario: 'f', evidence: 'e', suggested_fix: 's', confidence: 1 }] };
     expect(String((await call(badFinding) as Error).message)).toMatch(/at \$\.findings\[0\]\.severity\.$/);
+    // Prototype names are undeclared keys like any other — parsed from JSON, where they are own properties.
+    const { firstViolation } = await lib('validate.mjs');
+    const withKey = (key: string) => JSON.parse(JSON.stringify(good).replace(/^\{/, `{"${key}":{"x":1},`));
+    expect(firstViolation(REVIEW_SCHEMA, withKey('constructor'))).toBe('$.<unexpected>');
+    expect(firstViolation(REVIEW_SCHEMA, withKey('__proto__'))).toBe('$.<unexpected>');
+    expect(firstViolation(REVIEW_SCHEMA, JSON.parse(JSON.stringify(badFinding).replace('"severity"', '"toString":1,"severity"')))).toBe('$.findings[0].<unexpected>');
   });
 
   test('every outgoing message passes a final redaction, commit subjects included', () => {
@@ -247,6 +253,9 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     expect(base({ checkpoint: 'rewritten' }).base).toBe('main-base'); // force push made it unusable
     expect(base({ checkpoint: 'cp', overrideBase: 'manual' }).base).toBe('manual');
     expect(base({ mainBase: () => 'head' }).base).toBeNull(); // head is on main
+    // No shared history with main is not "on main": the run stops instead of reviewing one commit.
+    expect(() => base({ checkpoint: 'rewritten', mainBase: () => null })).toThrow(/No usable review base/);
+    expect(() => base({ mainBase: () => null })).toThrow(/No usable review base/);
     const wf = read('.github/workflows/qa-review.yml');
     expect(wf).not.toMatch(/github\.event\.before/);
     expect(wf).toContain('QA_BASE_OVERRIDE: ${{ inputs.base }}');
