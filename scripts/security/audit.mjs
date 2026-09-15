@@ -78,12 +78,13 @@ async function main() {
     fits: (committed, chars) => committed + estimate(chars, consultantTokens) + cisoReserve <= cap,
     worstCase: (chars) => estimate(chars, consultantTokens),
     call: ({ system, user }) =>
-      callReviewer({ apiKey, system, user, schema: CONSULTANT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.effort, model: AUDIT.model, maxTokens: consultantTokens, name: 'security_consultant', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, coerce: coerceConsultant }),
+      callReviewer({ apiKey, system, user, schema: CONSULTANT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.consultantEffort, model: AUDIT.model, maxTokens: consultantTokens, name: 'security_consultant', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, coerce: coerceConsultant }),
   });
   const { results } = run;
   const notRead = [...plan.notRead, ...run.notReviewed];
   const unread = new Set(notRead.map((n) => n.path));
-  const deepRead = plan.batches.flatMap((b) => b.files.map((f) => f.path)).filter((p) => !unread.has(p));
+  // A file in parts counts once, and only if none of its parts failed.
+  const deepRead = [...new Set(plan.batches.flatMap((b) => b.files.map((f) => f.path)))].filter((p) => !unread.has(p));
 
   const filesInScope = SELF_TEST ? AUDIT.selfTestFiles.length : surface.files.total;
   const coverage = {
@@ -96,7 +97,7 @@ async function main() {
   const cisoUser = clean('outgoing message', `${CISO_TASK}\n\n${cisoMessage({ surface, results, coverage, notRead, failed: run.failedCalls, readLines })}`);
   let ciso;
   try {
-    ciso = await callReviewer({ apiKey, system: brief, user: cisoUser, schema: REPORT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.effort, model: AUDIT.model, maxTokens: cisoTokens, name: 'security_audit_report', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, coerce: coerceReport });
+    ciso = await callReviewer({ apiKey, system: brief, user: cisoUser, schema: REPORT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, maxTokens: cisoTokens, name: 'security_audit_report', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, coerce: coerceReport });
   } catch (err) {
     throw new Error(`the audit did not produce a report (CISO call: ${String(err?.message || err).split('\n')[0]}; consultant calls ${results.length}, failed ${run.failedCalls}).`);
   }

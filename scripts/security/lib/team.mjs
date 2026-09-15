@@ -16,21 +16,27 @@ export const AUDIT = {
   price: { input: 0.15, output: 0.6 },
   /**
    * Estimated budget per main release, checked before every call against what was actually spent (as in the QA
-   * agent). The whole repository is about 1.5 million input tokens — some $0.25 — so the cap catches outliers,
+   * agent). The whole repository is about 1.2 million input tokens in some fifty calls — under $1 at worst — so the cap catches outliers,
    * it does not ration coverage. The hard ceiling is the credit limit on the OpenRouter key.
    */
   maxCostUsd: 3,
   /** The self-test on dev proves the chain, not the judgement: two files, one consultant call, the CISO, the mail. */
   selfTestCostUsd: 0.2,
   selfTestFiles: ['app/api/health/route.ts', 'middleware.ts'],
-  /** Numbered source per consultant call, in characters. DeepSeek V4.1 Flash reads a million tokens; smaller batches keep attention. */
-  batchChars: 300_000,
+  /**
+   * Numbered source per consultant call, in characters. Measured 15.09.2026: one call on 284,000 characters at
+   * effort high ran 16.6 minutes and ended without a readable answer; 100,000 characters at effort medium answered
+   * in 177 s for 0.007 USD. Small calls, several at once.
+   */
+  batchChars: 100_000,
   /** Calls for all consultants together; what does not fit is named in the report as not read in depth. */
-  maxConsultantCalls: 20,
+  maxConsultantCalls: 60,
   /** Includes reasoning tokens. */
   consultantOutputTokens: 24_000,
   cisoOutputTokens: 40_000,
-  effort: 'high',
+  /** The consultants read much code and answer compactly; the CISO weighs every finding against its code. */
+  consultantEffort: 'medium',
+  cisoEffort: 'high',
   requestTimeoutMs: 20 * 60_000,
   /** Consultant calls running at once; the cap reserves the worst case of each (lib/pipeline.mjs runConsultants). */
   concurrency: 4,

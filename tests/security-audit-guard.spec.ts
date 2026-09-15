@@ -355,20 +355,35 @@ test.describe('the audit pipeline', () => {
   test('every file goes to exactly one consultant or to the pattern scan, in calls that fit, and what does not fit is named', async () => {
     const { planBatches } = await lib('pipeline.mjs');
     const files = [file('app/api/a/route.ts', 'appsec-api'), file('app/api/b/route.ts', 'appsec-api'), file('components/X.tsx', 'frontend'), file('package.json', 'tests-and-config'), file('tests/a.spec.ts', 'tests-and-config'), file('.github/workflows/x.yml', 'ci-cloud'), file('lib/huge.ts', 'appsec-api')];
-    const size: Record<string, number> = { 'lib/huge.ts': 5_000 };
-    const plan = planBatches(files, (p: string) => 'x'.repeat(size[p] ?? 400), { batchChars: 800, maxCalls: 3 });
-    expect(plan.patternOnly).toEqual(['tests/a.spec.ts']);
+    // lib/huge.ts: 50 numbered lines of 100 characters — far larger than one 800-character call.
+    const huge = Array.from({ length: 50 }, (_, i) => `${String(i + 1).padStart(2, '0')}|${'y'.repeat(96)}`).join('\n');
+    const prepare = (p: string) => (p === 'lib/huge.ts' ? huge : 'x'.repeat(400));
+    const full = planBatches(files, prepare, { batchChars: 800, maxCalls: 20 });
+    expect(full.patternOnly).toEqual(['tests/a.spec.ts']);
+    expect(full.notRead).toEqual([]);
+    // The large file is read in consecutive parts, labelled, and together they are the whole file with its own line numbers.
+    const hugeParts = full.batches.flatMap((b: { files: { path: string; text: string; part: string | null }[] }) => b.files.filter((f) => f.path === 'lib/huge.ts'));
+    expect(hugeParts.length).toBeGreaterThan(1);
+    expect(hugeParts.map((f: { part: string }) => f.part)).toEqual(hugeParts.map((_: unknown, k: number) => `${k + 1}/${hugeParts.length}`));
+    expect(hugeParts.map((f: { text: string }) => f.text).join('\n')).toBe(huge);
+    for (const b of full.batches as { chars: number }[]) expect(b.chars).toBeLessThanOrEqual(800);
+
+    // With a call limit, what does not fit is named — never dropped.
+    const plan = planBatches(files, prepare, { batchChars: 800, maxCalls: hugeParts.length + 3 });
     const read = plan.batches.flatMap((b: { consultant: string; files: { path: string }[] }) => b.files.map((f) => `${b.consultant}:${f.path}`));
-    // Each file needs its own call (400 characters plus path and header, 800 per call): two routes, then the component — and the limit is reached.
-    expect(read).toEqual(['appsec-api:app/api/a/route.ts', 'appsec-api:app/api/b/route.ts', 'frontend-supply-chain:components/X.tsx']);
+    // Each small file needs its own call (400 characters plus path and header, 800 per call): the routes, every part of the large file, the component — then the limit.
+    expect([...new Set(read)]).toEqual(['appsec-api:app/api/a/route.ts', 'appsec-api:app/api/b/route.ts', 'appsec-api:lib/huge.ts', 'frontend-supply-chain:components/X.tsx']);
     expect(plan.notRead).toEqual([
-      { path: 'lib/huge.ts', reason: expect.stringMatching(/larger than one call/) },
-      { path: 'package.json', reason: 'outside the 3-call limit' },
-      { path: '.github/workflows/x.yml', reason: 'outside the 3-call limit' },
+      { path: 'package.json', reason: `outside the ${hugeParts.length + 3}-call limit` },
+      { path: '.github/workflows/x.yml', reason: `outside the ${hugeParts.length + 3}-call limit` },
     ]);
     // Every in-scope file is accounted for exactly once.
-    const accounted = [...read.map((r: string) => r.split(':')[1]), ...plan.patternOnly, ...plan.notRead.map((n: { path: string }) => n.path)];
+    const accounted = [...new Set(read.map((r: string) => r.split(':')[1]))].concat(plan.patternOnly, plan.notRead.map((n: { path: string }) => n.path));
     expect(accounted.sort()).toEqual(files.map((f) => f.path).sort());
+    // A single line longer than a call is cut where it must be, not dropped.
+    const { splitText } = await lib('pipeline.mjs');
+    expect(splitText('a'.repeat(25), 10)).toEqual(['aaaaaaaaaa', 'aaaaaaaaaa', 'aaaaa']);
+    expect(splitText('one\ntwo\nthree', 8)).toEqual(['one\ntwo', 'three']);
     // A self-test reads only its files.
     expect(planBatches(files, () => 'x', { only: ['app/api/a/route.ts'] }).batches.map((b: { files: unknown[] }) => b.files.length)).toEqual([1]);
   });

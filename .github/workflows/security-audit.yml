@@ -66,7 +66,7 @@ jobs:
     needs: scope
     if: needs.scope.outputs.mode == 'full' || needs.scope.outputs.mode == 'self-test'
     runs-on: ubuntu-latest
-    # Sixteen consultant calls and the CISO, one after the other.
+    # About fifty small consultant calls, four at a time, then the CISO — roughly half an hour.
     timeout-minutes: 120
     # The artifact's name travels as an output: "Re-run failed jobs" on delivery
     # raises run_attempt without re-running this job, so a name rebuilt there would

@@ -11,7 +11,7 @@ in die Roadmap ein. Der Agent selbst ändert nichts.
 
 Bis 15.09.2026 lief das Audit mit Claude Fable 5.1 in Claude Code (Ultracode, Budget
 25 $). Sonny hat auf DeepSeek V4.1 Flash umgestellt, der Kosten wegen: Ein Vollaudit
-schätzt sich jetzt auf höchstens rund 0,45 $.
+schätzt sich jetzt auf höchstens rund 0,95 $.
 
 ---
 
@@ -27,7 +27,7 @@ schätzt sich jetzt auf höchstens rund 0,45 $.
                    │       Dateien mit Domäne, API-Routen mit Auth-Markern, gefährliche Senken,
                    │       Workflow-Rechte, Firestore-Regelblöcke, CSP, npm audit
                    │    2. fünf Consultants: jede Datei ihrer Domäne vollständig, mit Zeilennummern und
-                   │       geschwärzt, dazu ihre Karteneinträge — am 15.09.2026 460 Dateien in 16 Aufrufen
+                   │       geschwärzt, dazu ihre Karteneinträge — am 15.09.2026 461 Dateien in 51 Aufrufen, vier gleichzeitig; eine große Datei in Teilen
                    │    3. CISO: Zusammenfassung der Karte, gezählte Abdeckung, jeder Consultant-Befund
                    │       mit dem Code an seinen Fundstellen, aus dem Repository gelesen → Bericht (Schema)
                    │    4. versiegelt mit dem ÖFFENTLICHEN Schlüssel
@@ -111,7 +111,7 @@ DeepSeek V4.1 Flash: **0,15 $ je Mio. Eingabe-Token, 0,60 $ je Mio. Ausgabe-Toke
 |---|---|
 | **Budget 3 $ je Audit — geschätzt, vor jedem Aufruf gegen das tatsächlich Ausgegebene geprüft** | ein Aufruf, der es nach der Schätzung reißen würde, findet nicht statt; seine Dateien stehen als nicht gründlich gelesen im Bericht. Der CISO-Aufruf ist vorab reserviert, ein Bericht entsteht immer. Harte Grenze: das Kreditlimit am OpenRouter-Schlüssel |
 | Aufteilung nach Domänen | jede Datei wird von genau einem Consultant gelesen oder, bei Testdateien, nur über die Karte geprüft |
-| 300.000 Zeichen je Consultant-Aufruf, höchstens 20 Aufrufe, vier gleichzeitig | am 15.09.2026: 460 Dateien, 16 Aufrufe, Schätzung im ungünstigsten Fall 0,44 $. Ein voller Aufruf dauert bei DeepSeek Minuten; das Budget rechnet jeden laufenden Aufruf mit seinem ungünstigsten Fall, bis er abgerechnet ist |
+| 100.000 Zeichen je Consultant-Aufruf, höchstens 60 Aufrufe, vier gleichzeitig; eine größere Datei wird in Teilen gelesen | gemessen am 15.09.2026: ein Aufruf mit 284.000 Zeichen lief 16,6 min und endete ohne lesbare Antwort, einer mit 100.000 Zeichen antwortete in 177 s für 0,007 $. Heute 461 Dateien in 51 Aufrufen, Schätzung im ungünstigsten Fall 0,94 $, rund eine halbe Stunde. Das Budget rechnet jeden laufenden Aufruf mit seinem ungünstigsten Fall, bis er abgerechnet ist |
 | Audit nur bei `main`-Releases | kein Audit je Push auf `dev` |
 | Selbsttest an zwei Dateien mit 0,20 $ | nur wenn der Agent selbst auf `dev` geändert wurde |
 

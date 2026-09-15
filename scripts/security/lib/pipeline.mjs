@@ -41,25 +41,51 @@ export function planBatches(files, prepare, { batchChars = AUDIT.batchChars, max
   for (const [consultant, list] of assigned) {
     let current = null;
     for (const f of [...list].sort((a, b) => a.path.localeCompare(b.path))) {
-      const text = prepare(f.path);
-      const size = text.length + f.path.length + 32;
-      if (size > batchChars) {
-        notRead.push({ path: f.path, reason: `larger than one call (${size} characters)` });
-        continue;
-      }
-      if (!current || current.chars + size > batchChars) {
-        if (batches.length >= maxCalls) {
-          notRead.push({ path: f.path, reason: `outside the ${maxCalls}-call limit` });
-          continue;
+      // A file larger than one call is read in consecutive parts; its line numbers are the file's own.
+      const parts = splitText(prepare(f.path), batchChars - f.path.length - 64);
+      const skipped = [];
+      parts.forEach((text, k) => {
+        const size = text.length + f.path.length + 64;
+        if (!current || current.chars + size > batchChars) {
+          if (batches.length >= maxCalls) {
+            skipped.push(k);
+            return;
+          }
+          current = { consultant, files: [], chars: 0 };
+          batches.push(current);
         }
-        current = { consultant, files: [], chars: 0 };
-        batches.push(current);
-      }
-      current.files.push({ path: f.path, text });
-      current.chars += size;
+        current.files.push({ path: f.path, text, part: parts.length > 1 ? `${k + 1}/${parts.length}` : null });
+        current.chars += size;
+      });
+      if (skipped.length) notRead.push({ path: f.path, reason: `outside the ${maxCalls}-call limit${parts.length > 1 ? ` (${skipped.length} of ${parts.length} parts)` : ''}` });
     }
   }
   return { batches, patternOnly, notRead };
+}
+
+/** Split at line ends into pieces of at most `limit` characters; a single longer line is cut where it must be. */
+export function splitText(text, limit) {
+  if (text.length <= limit) return [text];
+  const parts = [];
+  let current = '';
+  for (const line of text.split('\n')) {
+    let rest = line;
+    while (rest.length > limit) {
+      if (current) {
+        parts.push(current);
+        current = '';
+      }
+      parts.push(rest.slice(0, limit));
+      rest = rest.slice(limit);
+    }
+    const candidate = current ? `${current}\n${rest}` : rest;
+    if (candidate.length > limit) {
+      parts.push(current);
+      current = rest;
+    } else current = candidate;
+  }
+  if (current) parts.push(current);
+  return parts;
 }
 
 /**
@@ -146,7 +172,7 @@ export function surfaceSlice(surface, batch) {
 }
 
 export function consultantMessage({ surface, batch, index, count }) {
-  const files = batch.files.map((f) => `### ${f.path}\n\n\`\`\`\n${f.text}\n\`\`\``).join('\n\n');
+  const files = batch.files.map((f) => `### ${f.path}${f.part ? ` (part ${f.part} — line numbers are the file's own)` : ''}\n\n\`\`\`\n${f.text}\n\`\`\``).join('\n\n');
   return [
     `## Call ${index + 1} of ${count} for ${batch.consultant} — release ${surface.head}`,
     '## Attack-surface entries for these files',
