@@ -10,6 +10,7 @@ import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied, assertAcco
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { liveRunnerPermitted } from '@/lib/runner-egress-attestation';
+import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import { parseTapOutput, packageNameOf } from '@/lib/test-verdicts';
 
 /**
@@ -436,10 +437,16 @@ process.exitCode = failed ? 1 : 0;
     // fails the request outright rather than quietly falling back to the mock —
     // a caller who asked to talk to a tenant must not be told a sandbox result
     // is the same thing.
+    //
+    // Before any measurement: the documented lock (lib/locked-paths.ts, G0:R0).
+    // The attestation below can only ever say "not restricted"; reopening is a
+    // decision with conditions, and a probe passing is not one of them.
     const live =
-      s4Environment === 'live'
-        ? await liveRunnerPermitted()
-        : { permitted: false, reason: 'sandbox run', attestation: null };
+      s4Environment !== 'live'
+        ? { permitted: false, reason: 'sandbox run', attestation: null }
+        : LIVE_TEST_EXECUTION.locked
+          ? { permitted: false, reason: LIVE_TEST_EXECUTION.userNotice, attestation: null }
+          : await liveRunnerPermitted();
 
     if (s4Environment === 'live' && !live.permitted) {
       return NextResponse.json(

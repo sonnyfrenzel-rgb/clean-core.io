@@ -116,7 +116,10 @@ export default function Home() {
     {
       title: "Sandbox Verification (BYOT)",
       sap: { badge: "Frameworks Only", level: "partial", desc: "ABAP Unit and the CDS Test Double Framework are on board; the test environment is assembled by hand." },
-      cc: { badge: "Validated", desc: "Runs test suites against your S/4HANA sandbox via encrypted, read-only connection. Never targets production." }
+      // Not "Validated", not "runs test suites against your S/4HANA sandbox": running
+      // tests against a tenant is locked (lib/locked-paths.ts, G0:R0). What ships is
+      // the sandbox run and a read-only connection check.
+      cc: { badge: "Sandbox + Connection Check", desc: "Runs the generated tests in an isolated sandbox against mocks and checks your S/4HANA sandbox connection read-only. Running tests against the tenant itself is locked until the test runner has its own isolated service." }
     },
     {
       title: "Business Process Blueprinting",
@@ -944,7 +947,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
-                { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Sandbox Only · Read-Only', desc: 'Connections are restricted to non-production sandbox systems. Only OData metadata reads and test execution — no write operations, no production access.', link: '/tenant-security#read-only-scope' },
+                { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Sandbox Only · Read-Only', desc: 'Connections are restricted to non-production sandbox systems. Only a connection check, OData metadata reads and one read-only call — no test execution against the tenant, no write operations, no production access.', link: '/tenant-security#read-only-scope' },
                 { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Encrypted · Stateless', desc: 'Credentials are AES-256-GCM encrypted. SAP transaction data is processed statelessly in memory — no customer ERP data is persisted on our infrastructure.', link: '/tenant-security#stateless-processing' },
                 { icon: <Globe className="w-5 h-5 text-green-600" />, title: 'Admin-Gated Onboarding', desc: 'Every sandbox connection request is manually reviewed and approved by an administrator before activation.', link: '/tenant-security#admin-onboarding-gate' }
               ].map((item, idx) => (

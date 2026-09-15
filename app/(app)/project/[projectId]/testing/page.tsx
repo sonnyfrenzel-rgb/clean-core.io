@@ -30,6 +30,7 @@ import { saveAs } from '@/lib/fileSaver';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
+import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import StaleNotice from '@/components/StaleNotice';
 
 const renderSafeValue = (val: any): string => {
@@ -718,7 +719,7 @@ export default function TestingSandboxPage() {
             <Globe className="w-5 h-5 text-blue-600" />
             Validation Environment
           </h2>
-          <p className="text-xs text-[#0b1c30]/60 mt-1 font-medium">Select where to execute your sandboxed integration tests.</p>
+          <p className="text-xs text-[#0b1c30]/60 mt-1 font-medium">Mock runs the tests in the sandbox. The tenant tab checks a connection — running tests against a tenant is locked.</p>
         </div>
         <div className="flex bg-gray-100 p-1.5 rounded-2xl w-full sm:w-auto self-start sm:self-auto">
           <button
@@ -742,7 +743,7 @@ export default function TestingSandboxPage() {
             )}
           >
             Connected S/4HANA Tenant
-            <span className="bg-blue-500/20 text-blue-200 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-normal">Admin-Gated</span>
+            <span className="bg-amber-100 text-amber-800 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-normal" data-live-test-lock>Check only</span>
           </button>
         </div>
       </div>
@@ -756,6 +757,16 @@ export default function TestingSandboxPage() {
             exit={{ opacity: 0, height: 0, marginBottom: 0 }}
             className="overflow-hidden animate-in fade-in"
           >
+            {LIVE_TEST_EXECUTION.locked && (
+              // The documented lock (lib/locked-paths.ts, G0:R0), said where the path would otherwise be offered.
+              <div data-live-test-lock className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
+                <LockIcon className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <div className="text-xs text-amber-900 font-medium leading-relaxed">
+                  <p className="font-bold mb-0.5">Tests against a tenant are locked</p>
+                  <p>{LIVE_TEST_EXECUTION.userNotice}</p>
+                </div>
+              </div>
+            )}
             {profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
               // Unlocked Active Connection Card
               <div className="bg-white border border-gray-100 rounded-[2rem] p-6 md:p-8 shadow-sm">
@@ -773,7 +784,7 @@ export default function TestingSandboxPage() {
                         Profile Settings ↗
                       </Link>
                     </div>
-                    <p className="text-xs text-gray-500 font-medium mt-1">Configure your non-productive S/4HANA Public Cloud endpoint to fetch live ERP data.</p>
+                    <p className="text-xs text-gray-500 font-medium mt-1">Configure your non-productive S/4HANA Public Cloud endpoint to check the connection and read OData metadata.</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={clsx(
@@ -898,8 +909,8 @@ export default function TestingSandboxPage() {
                           <div className="flex gap-3 items-start">
                             <span className="bg-indigo-600 text-white text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">4</span>
                             <div>
-                              <p className="text-xs font-bold text-indigo-950">Save and Run Tests</p>
-                              <p className="text-[11px] text-indigo-800/80 font-medium">Click <strong>"Save Connection"</strong> to persist the config. Then generate and execute test cases — they will run against your live tenant data.</p>
+                              <p className="text-xs font-bold text-indigo-950">Save the Connection</p>
+                              <p className="text-[11px] text-indigo-800/80 font-medium">Click <strong>"Save Connection"</strong> to persist the config. Running the generated tests against the tenant is locked until the test runner has its own isolated service; the Mock Environment runs them in the sandbox.</p>
                             </div>
                           </div>
 
@@ -907,7 +918,7 @@ export default function TestingSandboxPage() {
                           <div className="bg-green-50/70 border border-green-200/60 p-3 rounded-xl flex items-start gap-2 mt-2">
                             <ShieldCheck className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
                             <p className="text-[10px] text-green-800 font-semibold leading-relaxed">
-                              <strong>Security:</strong> Credentials are encrypted in-browser before transmission. Production domains (<code className="bg-green-100 px-1 rounded font-mono">*-api.s4hana.ondemand.com</code>) are automatically blocked. Only non-productive sandbox/test systems are allowed.
+                              <strong>Security:</strong> Credentials travel over HTTPS and are encrypted at rest on the server (AES-256-GCM). Production domains (<code className="bg-green-100 px-1 rounded font-mono">*-api.s4hana.ondemand.com</code>) are automatically blocked. Only non-productive sandbox/test systems are allowed.
                             </p>
                           </div>
 
@@ -1366,7 +1377,7 @@ export default function TestingSandboxPage() {
                       <li><strong>Request access:</strong> Use the form below to request access for your organization.</li>
                       <li><strong>Provide HTTPS endpoint:</strong> Set up a secure HTTPS connection to your S/4HANA sandbox or test system.</li>
                       <li><strong>Configure credentials:</strong> Once approved, you can configure your credentials (Basic Auth or OAuth 2.0).</li>
-                      <li><strong>Test & use connection:</strong> Run live test cases against OData interfaces directly from the Stage 5 testing environment.</li>
+                      <li><strong>Check the connection:</strong> Test the handshake, read OData metadata and make one read-only call from the Stage 5 testing environment. Running the generated tests against the tenant is locked until the test runner has its own isolated service.</li>
                     </ol>
                   </div>
 
@@ -1374,9 +1385,9 @@ export default function TestingSandboxPage() {
                   <div className="bg-green-50/50 border border-green-100 p-5 rounded-2xl">
                     <h3 className="text-xs font-black text-green-950 uppercase tracking-widest mb-3">🛡️ Security Measures & Explanations</h3>
                     <ul className="list-disc pl-4 text-xs text-green-850 space-y-2 font-medium">
-                      <li><strong>Browser-side Encryption:</strong> All passwords and tokens are encrypted locally in the browser before being transmitted to the proxy tunnel.</li>
+                      <li><strong>Encrypted at rest:</strong> Passwords and tokens travel over HTTPS to the server, which encrypts them with AES-256-GCM in a server-only store. They are never returned to the browser.</li>
                       <li><strong>Production Block:</strong> Access to production interfaces (<code className="bg-green-100 px-1 py-0.5 rounded font-mono text-[10px]">*-api.s4hana.ondemand.com</code>) is blocked by the system.</li>
-                      <li><strong>Sandboxed Execution:</strong> Data connections are routed through an isolated BTP proxy channel to comply with CORS policies and protect your IP address.</li>
+                      <li><strong>Server-side calls only:</strong> Your browser never talks to the tenant. The Clean-Core.io server makes each call through an SSRF-checked fetch that allows HTTPS to non-production hosts only.</li>
                     </ul>
                   </div>
 
@@ -1486,10 +1497,17 @@ export default function TestingSandboxPage() {
               </div>
             ) : (
               <div className="space-y-3">
+                {activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION.locked && (
+                  <div data-live-test-lock className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl text-xs font-semibold flex items-center gap-2">
+                    <LockIcon className="w-4 h-4 text-amber-700 shrink-0" />
+                    <span>Running these tests against the tenant is locked. Switch to the Mock Environment to run them in the sandbox.</span>
+                  </div>
+                )}
+
                 {activeEnvTab === 'live' && !s4Url && (
                   <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-2xl text-xs font-semibold flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-red-650 shrink-0" />
-                    <span>Please configure the S/4HANA connection (URL & credentials) to execute live tests.</span>
+                    <span>Please configure the S/4HANA connection (URL & credentials) to run the connection checks.</span>
                   </div>
                 )}
 
@@ -1514,7 +1532,7 @@ export default function TestingSandboxPage() {
                   </div>
                   <button 
                     onClick={handleRun} 
-                    disabled={isRunning || selectedTestCases.length === 0 || (activeEnvTab === 'live' && !s4Url)}
+                    disabled={isRunning || selectedTestCases.length === 0 || (activeEnvTab === 'live' && !s4Url) || (activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION.locked)}
                     className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 text-xs md:text-sm font-bold w-full sm:w-auto"
                   >
                     {isRunning ? <><RefreshCw className="w-4 h-4 animate-spin" /> Running...</> : <><Play className="w-4 h-4" /> Run Selected</>}

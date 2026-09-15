@@ -12,6 +12,8 @@
  * - Settings — BYOK, S/4HANA tenant configuration
  */
 
+import { LIVE_TEST_EXECUTION } from './locked-paths';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // KNOWLEDGE HUB CONTENT
 // ─────────────────────────────────────────────────────────────────────────────
@@ -29,7 +31,7 @@ A: In-App RAP (ABAP RESTful Application Programming Model) runs directly within 
 A: Clean-Core.io configures secure tunnels and authentication pathways on SAP BTP. It implements JSON Web Tokens (JWT) validated by the SAP XSUAA (Extended Services for User Account and Authentication) service. This allows stateless, secure API communication and enforces role-based access control (RBAC). For S/4HANA core connections, it uses SAP BTP Connectivity and Destination services, routing RFC and OData traffic securely via SAP Cloud Connector without exposing internal endpoints.
 
 ### Q: What is the BYOT (Bring Your Own Tenant) connectivity model?
-A: BYOT lets a developer connect their own NON-PRODUCTION S/4HANA sandbox so generated tests can run against a real OData service. It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier.
+A: BYOT lets a developer connect their own NON-PRODUCTION S/4HANA sandbox to check the connection, read OData metadata and make one read-only call against a real service. ${LIVE_TEST_EXECUTION.userNotice} It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier.
 
 ### Q: How does Clean-Core.io help modernize legacy ABAP?
 A: A deterministic ABAP evidence engine parses the custom code FIRST (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. Google Gemini then narrates and drafts modern TypeScript/Node.js (CAP) or ABAP Cloud (RAP) on top of that evidence, and can generate draft test suites and BPMN 2.0 blueprints for Signavio. All AI output is a DRAFT for architect review — it accelerates the assessment; it does not replace human judgment or SAP's own upgrade tooling.
@@ -114,12 +116,12 @@ Review the side-by-side conversion in detail. The scroll-sync code comparison vi
 - **Features**: Dual-pane scroll-sync viewer, ABAP-to-TypeScript/ABAP Cloud transformation, code quality annotations, refactoring suggestions.
 
 ### Phase 4: Testing & Sandbox (Verify Compliance)
-The platform automatically mounts the new code inside an Isolated Testing Sandbox. The system runs selective, granular unit tests and safe sandbox simulations against live connected S/4HANA tenants using BYOT access keys.
-- **S/4HANA Live Sandbox**: A containerized environment simulating BTP runtimes, enabling safe read-only sandbox simulations against live connected S/4HANA tenants.
+The platform mounts the new code inside an isolated testing sandbox and runs selective, granular unit tests against mocks.
+- **Locked: tests against a live tenant.** ${LIVE_TEST_EXECUTION.userNotice}
 - **TAP Format**: Test Anything Protocol — a standardized text output format for logging unit test assertions, passes, and fails.
 - **Test Coverage**: Generated test cases assert data models, validation rules, security checks, and service endpoint response values.
-- **Mock vs Live Environment**: Users can switch between mock testing (no tenant required) and live testing (requires S/4HANA tenant connection).
-- **Features**: Automated test case generation, mock sandbox execution, live S/4HANA tenant testing, TAP-formatted execution logs, real-time test results.
+- **Mock vs Tenant tab**: the Mock Environment runs the tests; the Connected S/4HANA Tenant tab checks the connection, reads OData metadata and makes one read-only call — it does not run the tests.
+- **Features**: Automated test case generation, sandbox execution against mocks, tenant connection check, TAP-formatted execution logs.
 
 ### Phase 5: Process Blueprint & Documentation
 Automatically document both the technical and business logic with a dual-track layout.
@@ -200,7 +202,7 @@ Side-by-side code conversion from legacy ABAP to modern cloud-native code.
 Execute automated tests and validate your modernized code.
 - **Test Case Generation**: AI generates comprehensive test cases covering data models, validation rules, and API endpoints
 - **Mock Environment**: Run tests without an S/4HANA tenant using containerized Express sandbox
-- **Live Environment**: Connect to a real S/4HANA tenant for live OData testing (requires BYOT setup)
+- **Tenant Environment**: Connect a real S/4HANA sandbox to check the connection and read OData metadata (requires BYOT setup). Running tests against it is locked.
 - **S/4HANA Live Tenant Bridge**: Configure connection to your S/4HANA system with Basic Auth, OAuth 2.0, SAP API Hub Key, or BTP Destination JSON
 - **Test Results Dashboard**: TAP-formatted logs with pass/fail status, execution time, and AI-powered explanations
 
@@ -231,7 +233,7 @@ Total Cost of Ownership estimation for your modernization project.
 Global platform configuration.
 - **Profile**: User profile management (name, email, company)
 - **Gemini API Key (BYOK)**: Bring Your Own Key — enter your personal Google Gemini API key (encrypted server-side with AES-256-GCM, used only via the backend proxy) for unlimited transformations. Without a key you get 5 free transformations on the shared platform key.
-- **S/4HANA Live Tenant Integration**: Configure your S/4HANA sandbox connection for live testing (same as the Testing page configuration, but global). Read-only, non-production only, admin-gated.
+- **S/4HANA Live Tenant Integration**: Configure your S/4HANA sandbox connection for connection checks and metadata reads (same as the Testing page configuration, but global). Read-only, non-production only, admin-gated. Running tests against the tenant is locked.
 - **Access & Usage**: Clean-Core.io is 100% free. Every user has the Free Community Edition with full feature access and 5 transformations; add your own Gemini key for unlimited runs. There are no paid, premium, or purchasable tiers.
 
 ### Knowledge Hub (/knowledge)
@@ -256,7 +258,7 @@ Interactive walkthrough guiding users through the platform's stages (Analyze →
 export const S4HANA_BRIDGE_GUIDE = `
 ## S/4HANA LIVE TENANT BRIDGE — COMPLETE SETUP GUIDE
 
-Clean-Core.io supports connecting non-productive S/4HANA Cloud or On-Premise tenants directly for live OData connection tests and schema validation.
+Clean-Core.io supports connecting non-productive S/4HANA Cloud or On-Premise tenants for OData connection checks and metadata reads. ${LIVE_TEST_EXECUTION.userNotice}
 
 ### Prerequisites
 - Admin-approved S/4HANA sandbox access. The live-connection feature is admin-gated — request it from the Testing page; an administrator reviews and grants it. It is free (there is no paid tier).
@@ -326,7 +328,7 @@ Individual SAP architects, developers, and modernization decision-makers. It is 
 - Add your own Google Gemini API key in Settings for UNLIMITED transformations. Your key is encrypted at rest (AES-256-GCM) in a server-only store and used exclusively via the secure backend proxy — it is never returned to the client. Usage is billed by Google to your key; Clean-Core.io charges no platform fee.
 
 ### Live S/4HANA sandbox (developer, admin-gated)
-- Connecting a real, NON-PRODUCTION S/4HANA sandbox for live OData tests is opt-in, read-only, encrypted, and admin-gated (manually approved). It is free — approval is granted by an administrator, not purchased.
+- Connecting a real, NON-PRODUCTION S/4HANA sandbox for OData connection checks is opt-in, read-only, encrypted, and admin-gated (manually approved). Running tests against it is locked. It is free — approval is granted by an administrator, not purchased.
 
 ### Positioning (state honestly)
 - COMPLEMENTARY to SAP's own tools (ADT, ATC, Readiness Check, Signavio) — it does not replace them.
@@ -369,7 +371,7 @@ export const SECURITY_AND_PRIVACY = `
 - **AI keys never client-side**: all Gemini calls proxy through the server. BYOK keys are AES-256-GCM encrypted in a server-only store and never returned to the client.
 - **Auth**: mutating API routes require a verified Firebase ID token; admin routes add an email-allowlist check. Sensitive MFA/credential collections are server-only (clients cannot read them).
 - **S/4HANA SSRF defense**: HTTPS-only, DNS/IP re-checks, host allowlist, private/metadata-IP blocking, redirect validation, IP pinning. Production endpoints are blocked — sandbox only.
-- **Sandboxed test runner**: generated tests run in an isolated Node process (esbuild bundle + Node Permission Model — filesystem scoped to a temp dir, no child-process/worker/native access, no platform secrets). Live S/4 egress stays off unless explicitly enforced at the infra level.
+- **Sandboxed test runner**: generated tests run in an isolated Node process (esbuild bundle + Node Permission Model — filesystem scoped to a temp dir, no child-process/worker/native access, no platform secrets). Test execution against a live S/4HANA tenant is locked (gate ${LIVE_TEST_EXECUTION.id}): the runner is defense in depth, not an isolation boundary, and it reopens only with its own isolated service.
 - **GDPR Art. 17 erasure**: account deletion recursively purges projects (incl. immutable runs), encrypted BYOK keys, and MFA data; completeness is covered by an automated test. Data is stored in Firestore in the EU (europe-west1).
 - **Transparency**: a public /trust page documents the security posture.
 `;

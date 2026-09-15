@@ -1404,7 +1404,7 @@ export default function SettingsPage() {
               </div>
               
               <p className="text-gray-650 font-medium mb-4 text-sm md:text-base leading-relaxed">
-                Connect your custom, non-productive S/4HANA Cloud or On-Premise systems (BYOT) directly inside the Stage 5 testing sandbox to run integrations, OData connection tests, and live schema validation.
+                Connect your custom, non-productive S/4HANA Cloud or On-Premise systems (BYOT) to the Stage 5 testing environment for connection checks and OData metadata reads. Running the generated tests against the tenant is locked until the test runner has its own isolated service.
               </p>
 
               <div className="bg-sky-50/60 border border-sky-200 p-4 rounded-2xl mb-8 flex items-start gap-3">
@@ -1612,7 +1612,7 @@ export default function SettingsPage() {
                       <li><strong>Request access:</strong> Use the form below to request access for your organization.</li>
                       <li><strong>Provide HTTPS endpoint:</strong> Set up a secure HTTPS connection to your S/4HANA sandbox or test system.</li>
                       <li><strong>Configure credentials:</strong> Once approved, you can configure your credentials (Basic Auth or OAuth 2.0).</li>
-                      <li><strong>Test & use connection:</strong> Run live test cases against OData interfaces directly from the Stage 5 testing environment.</li>
+                      <li><strong>Check the connection:</strong> Test the handshake, read OData metadata and make one read-only call from the Stage 5 testing environment. Running the generated tests against the tenant is locked until the test runner has its own isolated service.</li>
                     </ol>
                   </div>
 
@@ -1620,9 +1620,9 @@ export default function SettingsPage() {
                   <div className="bg-green-50/50 border border-green-100 p-5 rounded-2xl">
                     <h3 className="text-xs font-black text-green-950 uppercase tracking-widest mb-3">🛡️ Security Measures & Explanations</h3>
                     <ul className="list-disc pl-4 text-xs text-green-850 space-y-2 font-medium">
-                      <li><strong>Browser-side Encryption:</strong> All passwords and tokens are encrypted locally in the browser before being transmitted to the proxy tunnel.</li>
+                      <li><strong>Encrypted at rest:</strong> Passwords and tokens travel over HTTPS to the server, which encrypts them with AES-256-GCM in a server-only store. They are never returned to the browser.</li>
                       <li><strong>Production Block:</strong> Access to production interfaces (<code className="bg-green-100 px-1 py-0.5 rounded font-mono text-[10px]">*-api.s4hana.ondemand.com</code>) is blocked by the system.</li>
-                      <li><strong>Sandboxed Execution:</strong> Data connections are routed through an isolated BTP proxy channel to comply with CORS policies and protect your IP address.</li>
+                      <li><strong>Server-side calls only:</strong> Your browser never talks to the tenant. The Clean-Core.io server makes each call through an SSRF-checked fetch that allows HTTPS to non-production hosts only.</li>
                     </ul>
                   </div>
 

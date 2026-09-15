@@ -66,12 +66,12 @@ const steps = [
   {
     time: "01:25 - 02:30",
     title: "Phase 4: Testing & Sandbox",
-    desc: "Automatic test execution in a secure sandbox. Runs safe sandbox simulations against live connected S/4HANA tenants via BYOT secure connectivity.",
-    narration: "For verification, the platform automatically mounts the new TypeScript code inside an Isolated Testing Sandbox. The system runs selective, granular unit tests and safe sandbox simulations against live connected S/4HANA tenants using BYOT access keys, showing real-time TAP-formatted execution logs and passing assertions.",
+    desc: "Automatic test execution in a secure sandbox against mocks. A connected S/4HANA tenant (BYOT) can be checked read-only; running tests against it is locked.",
+    narration: "For verification, the platform mounts the new TypeScript code inside an isolated testing sandbox and runs selective, granular unit tests against mocks, showing TAP-formatted execution logs. A connected S/4HANA tenant can be checked read-only; running the tests against it is locked until the test runner has its own isolated service.",
     icon: FileText,
     color: "from-cyan-500/10 to-blue-500/10 text-cyan-600 border-cyan-200/50",
     hotspots: [
-      { x: 30, y: 35, question: "What is the S/4HANA Live Sandbox?", answer: "A containerized environment simulating BTP runtimes. It enables safe read-only sandbox simulations against live connected S/4HANA tenants using BYOT access keys, preventing write side-effects." },
+      { x: 30, y: 35, question: "What is the testing sandbox?", answer: "An isolated Node.js environment that runs the generated tests against mocks. A connected S/4HANA tenant can be checked read-only, but running tests against it is locked until the test runner has its own isolated service." },
       { x: 70, y: 40, question: "What is TAP format?", answer: "Test Anything Protocol is a simple, standardized text output format used to log unit test assertions, passes, and fails clearly." },
       { x: 50, y: 80, question: "What are the test cases testing?", answer: "The generated test cases assert data models, validation rules, security checks, and service endpoint response values." }
     ]

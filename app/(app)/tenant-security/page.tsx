@@ -57,7 +57,7 @@ export default function TenantSecurityPage() {
 
         <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 sm:p-8 space-y-5">
           <p className="text-gray-700 leading-relaxed font-medium">
-            Every tenant connection is strictly limited to <strong>read-only OData metadata requests</strong> and test executions. Clean-Core.io never writes, modifies, or deletes any data on your S/4HANA system.
+            Every tenant connection is strictly limited to a <strong>connection check, read-only OData metadata requests</strong> and one read-only OData call. Running generated tests against the tenant is locked until the test runner has its own isolated service. Clean-Core.io never writes, modifies, or deletes any data on your S/4HANA system.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -68,7 +68,7 @@ export default function TenantSecurityPage() {
               </div>
               <ul className="space-y-2 text-sm text-gray-600 font-medium">
                 <li className="flex items-start gap-2"><span className="text-green-600 font-bold mt-0.5">✓</span> OData service metadata ($metadata endpoints)</li>
-                <li className="flex items-start gap-2"><span className="text-green-600 font-bold mt-0.5">✓</span> ABAP Unit test results from test execution</li>
+                <li className="flex items-start gap-2"><span className="text-green-600 font-bold mt-0.5">✓</span> One read-only OData response, to confirm the service answers</li>
                 <li className="flex items-start gap-2"><span className="text-green-600 font-bold mt-0.5">✓</span> Custom code analysis reports (ATC/SCI)</li>
               </ul>
             </div>

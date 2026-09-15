@@ -4,6 +4,7 @@ import { getDb, getAuth } from '@/lib/firebase';
 import { callGemini } from '@/lib/gemini';
 import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase } from '@/lib/types';
+import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 
 export const useTestExecution = (projectId: string, project: Project | null, setProject?: React.Dispatch<React.SetStateAction<Project | null>>) => {
   const [isRunning, setIsRunning] = useState(false);
@@ -481,7 +482,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
             return {
               ...tc,
               status: 'Simulated' as const,
-              message: `[SIMULATED] CL_AUNIT_ASSERT=>ASSERT_EQUALS passed in mock context — nothing was executed against an SAP system. Connect a Live Tenant for a real verdict.`
+              message: `[SIMULATED] CL_AUNIT_ASSERT=>ASSERT_EQUALS passed in mock context — nothing was executed against an SAP system. A connected tenant can check the connection, but running tests against it is locked.`
             };
           });
 
@@ -492,7 +493,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
           finalReport += `SIMULATED ABAP UNIT TEST REPORT - ${timestamp}\n`;
           finalReport += `==================================================\n`;
           finalReport += `⚠️  These results are SIMULATED. No S/4HANA tenant was contacted.\n`;
-          finalReport += `    Connect a Live Tenant in the panel above for real validation.\n\n`;
+          finalReport += `    Running tests against a connected tenant is locked (${LIVE_TEST_EXECUTION.id}); the tenant tab only checks the connection.\n\n`;
           finalReport += `Summary:\n`;
           finalReport += `- Total Tests: ${results.length}\n`;
           finalReport += `- Simulated Passed: ${results.length}\n\n`;
@@ -501,7 +502,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
             finalReport += `${i + 1}. [SIMULATED PASS] ${r.id}: ${r.name}\n`;
           });
           finalReport += `\n==================================================\n`;
-          finalReport += `End of Simulated Report — Connect a tenant for real results.\n`;
+          finalReport += `End of Simulated Report — no real ABAP Unit verdict exists for this code yet.\n`;
 
           setSandboxOutput(finalReport);
           return results;
@@ -515,8 +516,17 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
       }
     }
     
+    // A locked path is not attempted and not explained by a model: the server would
+    // refuse it (403), and the refusal used to reach the terminal as an "Execution
+    // Error" and go to Gemini for an explanation of a failure that was a decision.
+    if (project?.s4Environment === 'live' && LIVE_TEST_EXECUTION.locked) {
+      setSandboxOutput(`Live test execution is locked (${LIVE_TEST_EXECUTION.id}).\n\n${LIVE_TEST_EXECUTION.userNotice}\n\nSwitch to the Mock Environment to run the tests in the sandbox.`);
+      setIsRunning(false);
+      return null;
+    }
+
     const smokeTests = selectedTestCases.filter(tc => tc.category === 'Smoke Test' || tc.priority === 'High');
-    
+
     try {
       const payload = { 
         tests: project?.testSuite, 

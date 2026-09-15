@@ -3,6 +3,12 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+**15.09.2026 — Schritt 0.1 (`G0:R0`) gebaut, v2.10.0 auf `dev`.** Die Sperre der Live-Tests steht in
+`lib/locked-paths.ts` und `SECURITY.md` §7.1; die Route prüft sie vor jeder Messung, rund 30 Texte
+sind korrigiert. **Offen bleibt `E08-F01-US01`** (Runner-Isolation) als eigener Auftrag nach 2.10 —
+er ist der einzige Weg, den Live-Modus zurückzugeben. Mitgefunden und korrigiert: „Browser-side
+Encryption" und ein „isolated BTP proxy channel", die es beide nicht gibt.
+
 **15.09.2026 — Roadmap auf Fassung 2.8 umgestellt und vereinfacht.** `docs/ROADMAP.md`
 ist jetzt kurz und allein verbindlich; Gates und die 76 Teilschnitte sind durch
 **Phasen 0–8 mit Schritten der Größe S/M** ersetzt. Entscheidungen von Sonny:

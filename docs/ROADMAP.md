@@ -140,7 +140,7 @@ vom 15.09. (**fett**).
 
 | # | Schritt | Größe |
 |---|---|---|
-| 0.1 | `G0:R0` — Sperre des Live-Testmodus mit Grund und Wiedereröffnungsbedingung in `SECURITY.md` | S |
+| 0.1 | `G0:R0` — Sperre des Live-Testmodus mit Grund und Wiedereröffnungsbedingung in `SECURITY.md` — **gebaut in v2.10.0** (`lib/locked-paths.ts`, `SECURITY.md` §7.1, `tests/locked-paths-guard.spec.ts`) | S |
 | 0.2 | Facts-Service, Copy-CI, Audit-Korrekturen. **Dazu: die Signavio-Aussagen** („validated for SAP Signavio", „Signavio-importable", „importable into SAP Signavio") auf „BPMN 2.0 XML" zurücknehmen, bis Schritt 4.3 den Import belegt | M |
 | 0.3 | Level-Regelseite mit Regelversion; Score umbenannt, TCO-Versprechen entfernt | M |
 | 0.4 | Keine Geldwerte ohne Annahmenrevision | S |

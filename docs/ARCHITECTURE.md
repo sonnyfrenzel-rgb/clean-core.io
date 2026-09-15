@@ -32,7 +32,7 @@ Under `app/(app)/project/[projectId]/`, each stage is its own `page.tsx` (`'use 
 | 2 | Design | `design/` | Target architecture (RAP/CAP/…), topology, roadmap |
 | 3 | Transformation | `transformation/` | Gemini-generated modern code |
 | 4 | Documentation | `documentation/` | Process docs / BPMN |
-| 5 | Testing | `testing/` | Test generation & execution (ADT cockpit, optional S/4 live bridge) |
+| 5 | Testing | `testing/` | Test generation & sandbox execution against mocks; optional S/4 connection check — **tests against a tenant are locked** (`lib/locked-paths.ts`, SECURITY.md §7.1) |
 | 6 | Economics | `tco/` | Total cost of ownership — a model on assumed coefficients |
 | 7 | Delivery | `delivery/` | Final delivery + audit pack |
 
@@ -140,7 +140,7 @@ Full detail in `SECURITY.md`. Key points for day-to-day work:
 - **SSRF** — multi-layer defense on S/4 connectivity (HTTPS-only, DNS re-check, `S4_HOST_ALLOWLIST`, metadata-endpoint block, redirect validation).
 - **CSP / headers** — `middleware.ts` (CSP, documented Firebase Sign-In exceptions) + `next.config.mjs` (HSTS/X-Frame). HTML sanitized via `lib/sanitize-html.ts` (dompurify).
 - **Firestore rules** — `firestore.rules` freezes privileged fields (`isAdmin`, `tier`, quota counters); tested by `tests/firestore-rules.spec.ts`.
-- **Env vars** — template in `.env.example`; runtime secrets injected as Cloud Run env vars per environment. `run-tests` executes generated tests in a hardened sandbox (esbuild + Node Permission Model, temp-dir-scoped FS, minimal env, time/output limits); live S/4 egress stays off unless `S4_TEST_RUNNER_EGRESS_ENFORCED=true` **and** a startup probe confirms the container cannot reach the cloud metadata endpoint or the public internet (`lib/runner-egress-attestation.ts`). The variable alone grants nothing.
+- **Env vars** — template in `.env.example`; runtime secrets injected as Cloud Run env vars per environment. `run-tests` executes generated tests in a hardened sandbox (esbuild + Node Permission Model, temp-dir-scoped FS, minimal env, time/output limits); live test execution against a tenant is **locked** (`LIVE_TEST_EXECUTION` in `lib/locked-paths.ts`, gate G0:R0, SECURITY.md §7.1) and refused before any measurement; underneath the lock, live egress would still need `S4_TEST_RUNNER_EGRESS_ENFORCED=true` **and** a startup probe confirms the container cannot reach the cloud metadata endpoint or the public internet (`lib/runner-egress-attestation.ts`). The variable alone grants nothing.
 
 Required secrets: `GEMINI_API_KEY`, `RESEND_API_KEY`, `S4_ENCRYPTION_KEY`, `MFA_BACKUP_CODE_PEPPER`, `PILOT_APPROVAL_SECRET`, `AUDIT_SIGNING_KEY`, `S4_HOST_ALLOWLIST`.
 

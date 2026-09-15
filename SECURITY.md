@@ -1,6 +1,8 @@
 # Security Architecture — Clean-Core.io Platform
 
-> **Version:** 4.0 · **Date:** 2026-07-02 · **Classification:** Internal
+> **Version:** 4.1 · **Date:** 2026-09-15 · **Classification:** Internal
+
+> **v4.1 changes:** live test execution against a connected tenant is a documented, locked path (§7.1, roadmap gate `G0:R0`): boundary, reason and the conditions for reopening, read from the same definition the route and the interface use.
 
 > **v4.0 changes:** documented the Evidence Trust Chain (run immutability, `runHash` + HMAC signature, audit-pack cryptography — §14) and operational readiness (§15: health probe, complete GDPR Art. 17 cascade, data-retention & incident-response policies, supply-chain CI gates). Corrected the admin-gating description (§3.2) to match the custom-claim implementation.
 
@@ -8,7 +10,7 @@
 
 ## 1. Executive Summary
 
-This document describes the security architecture and hardening measures implemented in the Clean-Core.io platform following a comprehensive security audit (Code Review 2026-06). Most critical and high-severity findings (P0/P1) have been remediated; the ones that remain **mitigated rather than closed** are called out below and in the code. Most importantly, the `/api/run-tests` runner is **defense-in-depth, not a complete isolation boundary** (see F-02), and the audit-pack signature still covers some client-editable fields. Live runner egress stays disabled unless enforced at the infrastructure level, and the environment variable alone does not enable it — the runtime measures whether egress is actually restricted before permitting a live run (E08-F01-US02).
+This document describes the security architecture and hardening measures implemented in the Clean-Core.io platform following a comprehensive security audit (Code Review 2026-06). Most critical and high-severity findings (P0/P1) have been remediated; the ones that remain **mitigated rather than closed** are called out below and in the code. Most importantly, the `/api/run-tests` runner is **defense-in-depth, not a complete isolation boundary** (see F-02), and the audit-pack signature still covers some client-editable fields. **Live test execution against a connected S/4HANA tenant is locked** (§7.1, gate `G0:R0`): the route refuses it before any measurement, and the interface says so wherever the path would otherwise be offered. It reopens only under the conditions listed there — a measurement passing is not one of them.
 
 ---
 
@@ -17,7 +19,7 @@ This document describes the security architecture and hardening measures impleme
 | ID | Finding | Severity | Status | Remediation |
 |----|---------|----------|--------|-------------|
 | F-01 | Live API keys in repository | **P0** | ✅ Resolved | Keys rotated; `.env.example` contains only placeholders. `.gitignore` enforces exclusion of `.env*` files. |
-| F-02 | Remote Code Execution via `/api/run-tests` | **P0** | ⚠️ Mitigated (not closed) | esbuild in-process bundling + Node Permission Model (`--permission`; no child-process/worker/native-addon escape) + a **network-egress guard** preloaded into the child (`__netguard.mjs`) that blocks the common JS egress paths (TCP, the `dgram` factory + `dgram.Socket` constructor, DNS, `fetch`, `process.binding`). This is **defense-in-depth, not a complete isolation boundary** — a code-level monkey-patch is not a kernel/infra guarantee, and Node's permission model does not restrict the network on the current runtime. Live egress stays disabled unless enforced at the infrastructure level. `S4_TEST_RUNNER_EGRESS_ENFORCED` declares that intent but does not grant it: the runtime probes the metadata endpoint and a public address first and refuses the run if either answers. The guard is preloaded on **every** run — it previously was not, because the same variable that unlocked live credentials also removed it. A fully isolated runner service is the roadmap gold standard (E08-F01-US01). |
+| F-02 | Remote Code Execution via `/api/run-tests` | **P0** | ⚠️ Mitigated (not closed) | esbuild in-process bundling + Node Permission Model (`--permission`; no child-process/worker/native-addon escape) + a **network-egress guard** preloaded into the child (`__netguard.mjs`) that blocks the common JS egress paths (TCP, the `dgram` factory + `dgram.Socket` constructor, DNS, `fetch`, `process.binding`). This is **defense-in-depth, not a complete isolation boundary** — a code-level monkey-patch is not a kernel/infra guarantee, and Node's permission model does not restrict the network on the current runtime. Live test execution against a tenant is **locked** (§7.1, `G0:R0`). Underneath the lock, `S4_TEST_RUNNER_EGRESS_ENFORCED` declares an intent but does not grant it: the runtime probes the metadata endpoint and a public address first and refuses the run if either answers. The guard is preloaded on **every** run — it previously was not, because the same variable that unlocked live credentials also removed it. A fully isolated runner service is the roadmap gold standard (E08-F01-US01). |
 | F-03 | SAP credentials stored in cleartext | **P0** | ✅ Resolved | AES-256-GCM encryption via `S4_ENCRYPTION_KEY`. Credentials in server-only `s4_credentials` collection. |
 | F-04 | Missing admin check on email routes | **P1** | ✅ Resolved | `verifyAdminRequest()` + email format validation on all 3 mail routes. |
 | F-05 | SSRF filter bypass | **P1** | ✅ Resolved | Async DNS resolution, full IPv4/v6 CIDR blocking, `safeFetch()` with IP pinning and redirect re-validation. |
@@ -177,7 +179,8 @@ Server (API Route)
   │  2. Load esbuild (fail-closed if unavailable)
   │  3. Resolve Node Permission Model flag (fail-closed if Node < 22.8)
   │  4. Bundle user code via esbuild (in-process, no shell)
-  │  5. Load S4 credentials server-side via loadS4ConfigForUser(uid)  ← F-03
+  │  4a. s4Environment = "live"?  → LIVE_TEST_EXECUTION.locked → HTTP 403   ← §7.1, before any probe
+  │  5. (live only, never while locked) egress attestation, then S4 credentials via loadS4ConfigForUser(uid)
   │  6. Spawn child process with --permission flag:
   │     --allow-fs-read={sandboxDir,node_modules}
   │     --allow-fs-write={sandboxDir}
@@ -193,7 +196,7 @@ Server (API Route)
 - **No shell execution**: `spawn()` with explicit args array, never `exec()` or shell strings.
 - **Common network-egress paths blocked**: a preloaded guard (`__netguard.mjs`, via `--import`) neutralises `net.Socket.prototype.connect`, `net.connect`/`createConnection`, the `dgram` factory and the `dgram.Socket` constructor (incl. `prototype.send`/`bind`/`connect`), global `fetch`, `process.binding`, and every `dns` entry point (c-ares `resolve*` + getaddrinfo `lookup` + `dns.promises` + `Resolver`, which bypass `net.Socket`) before the test bundle loads. This blocks the usual JS egress routes to the GCP metadata endpoint (`169.254.169.254`) and the network, but it is a **code-level guard, not a kernel/infra boundary** — Node's permission model is explicitly not a security guarantee against malicious code, so treat the runner as defense-in-depth, not a sandbox for untrusted code. The guard is loaded on every run. On a live run that has passed the egress attestation it narrows to the `S4_HOST_ALLOWLIST` host suffixes instead of being removed — the tenant call is permitted, everything else still throws, and the metadata endpoint stays unreachable because an IP literal matches no host suffix. DNS is available on that narrowed path (the tenant host has to resolve), which is a real reduction and is why live mode requires the infrastructure policy underneath it. A fully isolated runner service remains the roadmap gold standard.
 - **Fail-closed**: Without esbuild or Node >= 22.8, route returns HTTP 500 (no silent unsafe fallback).
-- **Minimal environment**: Child process receives only `PATH`, `SYSTEMROOT`, `NODE_ENV=test`, and S4 env vars.
+- **Minimal environment**: Child process receives only `PATH`, `SYSTEMROOT` and `NODE_ENV=test`. S4 env vars would be added only on a permitted live run, which the lock (§7.1) rules out.
 - **S4 credentials**: Never from request body — always loaded server-side from encrypted store (F-03 closure).
 - **Output cap**: Stdout/stderr limited to prevent memory exhaustion.
 - **Timeout**: Child process killed after timeout.
@@ -201,6 +204,41 @@ Server (API Route)
 ### Requirements
 - Node.js >= 22.8 (for `--experimental-permission` / `--permission` flag)
 - `esbuild` in devDependencies
+
+### 7.1 Locked path: live test execution (`G0:R0`)
+
+Decided 12.09.2026 (roadmap step 0.1, `docs/roadmap/SCHNITT-0-UMFANG.md` §1, "Weg 2"): a known blocker is
+either fixed or locked with its reason named. This one is locked. The definition lives in
+`lib/locked-paths.ts` (`LIVE_TEST_EXECUTION`); `tests/locked-paths-guard.spec.ts` fails when this section and
+that definition say different things.
+
+**Closed.** Executing generated tests against a connected S/4HANA tenant: POST /api/run-tests with s4Environment "live", which would put decrypted tenant credentials into the test child process.
+
+**Open.** Running generated tests in the isolated sandbox against mocks; checking a tenant connection, reading its OData metadata and one read-only OData call (/api/test-s4-connection, /api/fetch-s4-metadata, /api/test-s4-odata-read) — none of these executes generated code.
+
+**Why.** Generated test code is untrusted and runs as a child process inside the API service. The guards around it (Node permission model, a preloaded network guard, an egress probe) are defense in depth, not an isolation boundary, and the service itself has open network egress. With tenant credentials inside that process, a generated test could send them anywhere the guard misses (review finding CR-15, story E08-F01-US01).
+
+**What the attestation is.** `lib/runner-egress-attestation.ts` probes the cloud metadata endpoint and a
+public address from the running container. It is a measurement that keeps a function closed, not a
+substitute for isolation: two endpoints are a sample, not a boundary. That is why a passing probe does not
+reopen the path, and why the route checks the lock before it measures anything.
+
+**Reopens only when all of these hold:**
+- The test runner runs as its own short-lived service, separate from the API service, with a service account that holds nothing but what one run needs.
+- Its network egress is deny-by-default at the infrastructure level, with the tenant host as the only destination — and a CI check proves it on every deploy, not a probe of two addresses.
+- An external review of that runner is done and its findings are closed.
+- Sonny decides to reopen, and this entry, SECURITY.md §7.1 and the guard spec change in the same release.
+
+**How it shows.** The route answers a live run with HTTP 403 and the user notice. The testing page marks the
+tenant tab as a connection check, states the lock in the tenant panel, disables running tests against the
+tenant and does not send the request; the chatbot, the landing page, the knowledge and tenant-security pages,
+the whitepaper, the capability guide and the tenant-approval mail describe the connection check and name the
+lock. User notice, verbatim:
+
+> Running generated tests against a connected tenant is locked until the test runner has its own isolated service. The tenant connection check, the metadata read and the read-only OData call still work; tests run in the sandbox against mocks.
+
+**Tracked.** The isolation that would reopen it is its own roadmap item after 2.10 (`docs/ROADMAP.md`,
+`E08-F01-US01`). The preservation register (roadmap step 1.1) inherits this entry.
 
 ---
 
@@ -213,6 +251,7 @@ Server (API Route)
 | `NEXT_PUBLIC_APP_URL` | Yes | Self-referential URLs (prevents Host header injection) |
 | `S4_ENCRYPTION_KEY` | Yes (if S4 features used) | AES-256-GCM key for credential encryption |
 | `S4_HOST_ALLOWLIST` | Recommended | Comma-separated SAP host suffixes for SSRF allowlist |
+| `S4_TEST_RUNNER_EGRESS_ENFORCED` | No — not set in any deployment | States that runner egress is restricted by infrastructure. Grants nothing on its own, and while live test execution is locked (§7.1) it is not consulted at all |
 | `FIREBASE_SERVICE_ACCOUNT_KEY` | For Admin SDK | JSON service account key |
 | `NEXT_PUBLIC_FIRESTORE_DB_ID` | Yes | Named Firestore database ID |
 

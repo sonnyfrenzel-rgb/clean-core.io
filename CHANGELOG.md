@@ -10,6 +10,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.10.0] — 2026-09-15
+
+### Roadmap-Schritt 0.1 (`G0:R0`): Live-Tests gegen einen Tenant sind gesperrt — und jetzt steht das überall, wo es angeboten wurde
+
+Der erste Schritt von Phase 0 „Belegt". Entschieden am 12.09. („Weg 2"): Ein bekannter
+Blocker wird behoben oder mit Grund gesperrt. Die Sperre bestand technisch schon, denn
+`deploy.yml` setzt `S4_TEST_RUNNER_EGRESS_ENFORCED` nie. Gesagt hat es aber niemand:
+`SECURITY.md` beschrieb den Live-Modus als „aus, solange nicht erzwungen", und rund 30
+sichtbare Texte boten Tests gegen den eigenen Tenant als Funktion an. Ein Live-Lauf aus
+der Testing-Seite endete in einem rohen HTTP 403, das als „Execution Error" im Terminal
+stand und an Gemini ging, um einen Fehler zu erklären, der eine Entscheidung war.
+
+**Eine Definition.** `lib/locked-paths.ts` (`LIVE_TEST_EXECUTION`) hält die Sperre an
+einer Stelle fest:
+- **Grenze:** gesperrt ist `POST /api/run-tests` mit `s4Environment: "live"`. Offen
+  bleiben die Sandbox gegen Mocks, der Verbindungstest, das Lesen der Metadaten und ein
+  lesender OData-Aufruf.
+- **Grund:** generierter Code läuft als Kindprozess im API-Dienst. Die Schutzschichten
+  sind Defense in Depth, keine Isolationsgrenze, und der Dienst hat offenen Egress (CR-15).
+- **Wiedereröffnung, alle vier Bedingungen:**
+  1. ein eigener kurzlebiger Runner-Dienst mit minimalem Dienstkonto,
+  2. deny-by-default-Egress mit dem Tenant als einzigem Ziel, in CI bewiesen,
+  3. externer Review mit geschlossenen Befunden,
+  4. Sonnys Entscheidung.
+- **Hinweistext** für die Nutzer.
+
+**Die Route prüft zuerst die Sperre, dann erst misst sie.** Eine bestandene Egress-Probe
+öffnet nichts mehr, denn zwei Adressen sind eine Stichprobe, keine Grenze.
+
+**`SECURITY.md` v4.1, neuer §7.1.** Er enthält Grenze, Grund, Bedingungen und
+Hinweistext wortgleich aus der Definition. Die Kurzfassung, die Befundtabelle (F-02), das
+Ablaufdiagramm und die Variablentabelle sagen jetzt „gesperrt".
+
+**Die Oberfläche sagt es.**
+- Der Tenant-Tab heißt „Check only", das Panel nennt die Sperre.
+- „Run Selected" ist für CAP-Projekte im Tenant-Modus gesperrt, und der Hook schickt die
+  Anfrage gar nicht erst.
+- Der simulierte ABAP-Bericht verspricht kein „echtes Urteil" mehr durch einen Tenant.
+
+**Texte korrigiert:**
+- Landing-Page: aus „Validated · Runs test suites against your S/4HANA sandbox" wird
+  „Sandbox + Connection Check".
+- Seiten Tenant Security, Knowledge, How-to (samt Hotspots), Whitepaper und die
+  Wissensbasis des Chatbots.
+- Freigabe-Mail für Tenant-Zugang, Fähigkeiten-Guide und README.
+- `ARCHITECTURE.md` und die Bridge-Doku. Deren Kopf markiert jetzt, dass die Abschnitte
+  zur Testausführung den gesperrten Pfad beschreiben.
+- Whitepaper-PDF und Guide-PDF sind neu erzeugt.
+
+**Mitgefunden, gleiche Panels:** Zwei Sicherheitsaussagen stimmten nicht.
+- „Browser-side Encryption: … encrypted locally in the browser" ist falsch. Verschlüsselt
+  wird auf dem Server mit AES-256-GCM.
+- Einen „isolated BTP proxy channel" gibt es nicht. Die Aufrufe laufen serverseitig über
+  den SSRF-geprüften Fetch.
+
+**Abnahme** (`docs/roadmap/SCHNITT-0-UMFANG.md` §1): „Die Grenze steht in `SECURITY.md`",
+„Kein View, kein Text und kein Export stellt den gesperrten Pfad als verfügbar dar".
+`tests/locked-paths-guard.spec.ts`, 19 Tests:
+- `SECURITY.md` §7.1 gegen die Definition.
+- Route: Sperre vor Messung, 403 vor dem Laden der Zugangsdaten.
+- Hook: kein Request, kein Modellaufruf.
+- Seite: Hinweis und gesperrter Button.
+- 14 Oberflächen gegen die 16 Aussagen vom 15.09. Dazu die Regel: Jeder Satz über Tests
+  gegen einen Tenant muss „locked" enthalten.
+
 ## [v2.9.17] — 2026-09-15
 
 ### Der UX-Agent: jede Version auf main bekommt eine UX-Review — die erste nimmt sich das ganze Produkt vor

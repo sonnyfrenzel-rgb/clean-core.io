@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
           </p>
           
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            Great news! Your request to integrate a <strong>Live S/4HANA Public Cloud Custom Tenant</strong> has been reviewed and approved by our engineering team. You now have full access to test transformations directly against your non-productive SAP environments.
+            Great news! Your request to integrate a <strong>Live S/4HANA Public Cloud Custom Tenant</strong> has been reviewed and approved by our engineering team. You can now connect your non-productive SAP environment in Stage 5 to check the connection and read OData metadata. Running the generated tests against the tenant is locked until the test runner has its own isolated service — they run in the sandbox against mocks.
           </p>
 
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
@@ -94,9 +94,9 @@ export async function POST(request: NextRequest) {
 
           <!-- Security Trust Indicator -->
           <div style="background-color: #f0fdf4; border: 1px solid #d1fae5; border-radius: 16px; padding: 18px; margin-bottom: 24px;">
-            <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">🛡️ Secure & Compliant Sandbox Execution</span>
+            <span style="font-weight: 800; color: #065f46; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">🛡️ Credentials stay on the server</span>
             <span style="color: #047857; font-size: 13px; line-height: 1.5; display: block;">
-              Credentials are stored securely in your project document with restricted write access and decrypted dynamically only within server-side execution runtime proxy requests. They are never exposed directly on public client APIs.
+              Credentials are encrypted with AES-256-GCM in a server-only store, decrypted only for the server-side calls to your tenant, and never returned to the browser.
             </span>
           </div>
 

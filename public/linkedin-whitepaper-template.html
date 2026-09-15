@@ -532,7 +532,7 @@
       <div class="card" style="margin-top: 12px; background-color: #eff6ff; border-color: #bfdbfe;">
         <div class="card-title" style="color: #1e40af;">Tenant Security Architecture</div>
         <p style="color: #1e40af; font-size: 11.5px; margin-bottom: 6px;">
-          Optional S/4HANA connections are strictly <strong>read-only</strong> (OData metadata reads and test execution) — no write operations. Credentials are encrypted at rest (AES-256-GCM), stored server-side only and never returned to the browser; live connections are restricted to an administrator-managed allowlist, and productive use is contractually and operationally prohibited.
+          Optional S/4HANA connections are strictly <strong>read-only</strong> (a connection check, OData metadata reads and one read-only call; running tests against the tenant is locked) — no write operations. Credentials are encrypted at rest (AES-256-GCM), stored server-side only and never returned to the browser; live connections are restricted to an administrator-managed allowlist, and productive use is contractually and operationally prohibited.
         </p>
         <p style="color: #1e40af; font-size: 11.5px;">
           Every live-tenant request is <strong>manually reviewed and approved</strong> by the platform administrator before activation — no unauthorized system access.

@@ -67,7 +67,7 @@ export const CAPABILITIES: Capability[] = [
   {
     stage: 'Stage 5',
     title: 'Test generation and execution',
-    output: 'ABAP Unit test classes against the transformed logic, executed in an isolated sandbox with per-case results.',
+    output: 'Test cases against the transformed logic: for CAP, run in a restricted Node.js sandbox against mocks with per-case results; for ABAP Cloud, ABAP Unit classes whose run is simulated and never counted as passed. Tests against a connected tenant are locked.',
     benefit:
       'Modernised code arrives with tests attached, so the review has something to run rather than only something to read.',
     effort: 'Two minutes. Included.',
