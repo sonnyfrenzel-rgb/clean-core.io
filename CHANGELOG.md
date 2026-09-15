@@ -10,6 +10,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.17] — 2026-09-15
+
+### Der UX-Agent: jede Version auf main bekommt eine UX-Review — die erste nimmt sich das ganze Produkt vor
+
+Sonnys Auftrag vom 15.09.: ein Agent, der jeden `main`-Stand auf UX-Probleme prüft,
+Design-Entscheidungen hinterfragt, Verbesserungen liefert, neue Features aus Nutzersicht
+ansieht und Ende zu Ende prüft, ob Farben, Formen und Schriften stimmig sind — mit Muse
+Spark 1.3 über OpenRouter, selbständig, kostenoptimal, in Leitplanken. Und: Beim ersten Mal
+den ganzen Code in Richtung UX prüfen, mit einem möglichst präzisen Prompt.
+
+**Der Prompt** (`docs/ux/ux-brief.md`): ein Principal Product Designer mit einem einzigen
+Ziel. Er kennt die Nutzer (ABAP-Entwickler, Architekt, Prozessverantwortliche, Management,
+Erstbesucher) und die Produktregeln als UX-Anforderung: fehlend bleibt fehlend,
+rekonstruiert ist nie bestätigt, und die Oberfläche muss das *sichtbar* unterscheiden. Die
+Mockups 2.7 sind das Zielbild. Er prüft in zehn Perspektiven, in dieser Reihenfolge:
+Journey, Orientierung, Rückmeldung, visuelle Konsistenz über alle Screens, Texte, WCAG 2.2
+AA, Telefon, Vertrauen, Design-Entscheidungen, neue Features. Schwere wird in Nutzerfolgen
+bemessen. Kein Befund ohne Zeile, Screenshot oder Scan-Zahl. Eigene Abschnitte gibt es für
+die Vollreview je Bereich, die End-to-End-Synthese und die Release-Review.
+
+**Was er sieht.** Einen deterministischen Design-Scan des ganzen Produkts, ohne Token. Schon
+der erste Probelauf zählt 207 Farbtöne, 78 verschiedene Button-Stile bei 84 Buttons,
+883 Stellen mit Schrift unter 12 px, grau und slate sowie green und emerald nebeneinander und
+22 `dark:`-Varianten. Dazu Screenshots aus `tests/capture-screens.spec.ts`: ein geseedetes
+Demo-Projekt, 16 Screens auf Desktop und Telefon in Bildschirmhöhen statt unlesbarer
+Ganzseitenbilder, drei Screens im Dark Mode und die sechs Ansichten der Mockups. Den Code
+bekommt er je Journey gebündelt, aus dem Import-Graphen: Zugang, Wissen, Rahmen, Analyse,
+Entwurf, Nachweis, System.
+
+**Drei Jobs.** `scope` ohne Secrets; `capture` baut und fotografiert die App ohne jedes
+Secret, mit Wegwerf-Schlüsseln; `review` hält Modell- und Siegelschlüssel und führt kein
+`npm ci` aus. Screenshots werden nur als Bytes mit erwartetem Namen und JPEG-Signatur
+angenommen. Der Bericht ist versiegelt; das Log nennt Modus, Aufrufe und Kosten.
+
+**Kosten.** Grenzen je Modus, vor jedem Aufruf gegen tatsächliche Ausgaben plus
+Worst-Case-Schätzung geprüft: Vollreview 6 $, Release 1,50 $, Selbsttest 0,30 $. Keine
+geratene Basis — ohne Prüfstand und ohne vorherigen `main`-Stand bricht der Lauf ab.
+
+**Claudes Seite:** Skill `ux-review-intake`. Er holt den Bericht und die Screenshots
+(`scripts/ux/inbox.mjs`), prüft jeden Befund an Zeile und Bild, entscheidet
+(`scripts/ux/register.mjs`) und plant in die neue **Roadmap §13** ein. Beim Sitzungsstart
+meldet ein Hook unentschiedene Befunde; nach einem Push auf `main` erinnert der Post-Push-Hook.
+
+**Mitgenommen:** Der OpenRouter-Transport des QA-Agenten nimmt jetzt Modell, Bildteile und
+Titel je Agent. Abgelehnte Aufrufe nennen eine feste Deutung des Statuscodes, etwa 403 =
+Modell für Konto oder Schlüssel nicht freigegeben. Genau das ist der Stand: **Muse Spark 1.3
+verlangt eine 18+-Bestätigung in den OpenRouter-Einstellungen, die nur Sonny geben kann.**
+
+Widerruf: `UX_REVIEW_ENABLED=false`. Runbook: `docs/UX-REVIEW-AGENT.md`.
+`tests/ux-review-guard.spec.ts`, 23 Tests.
+
+### Security-Selbsttest: die Ursache des HTTP 400 eingegrenzt
+
+Auch der dritte Selbsttest scheiterte im ersten Zug (0 $). Aus der festen Wortliste kam
+diesmal nur `workspace`. Das passt zur Anthropic-Meldung für ein erreichtes Nutzungs- oder
+Ausgabenlimit des Workspace. Diese Meldung ist jetzt eine eigene Klasse, und die Wortliste
+kennt die Wörter dazu (`limit`, `usage`, `spend`, `access` …). Der nächste Lauf bestätigt
+oder widerlegt die Vermutung. Zu prüfen ist das in der Anthropic Console beim Workspace des
+Schlüssels `SECURITY_AGENT`.
+
 ## [v2.9.16] — 2026-09-15
 
 ### Kein „AI Studio" mehr im Repo — wo es ohne Wirkung auf den Code geht

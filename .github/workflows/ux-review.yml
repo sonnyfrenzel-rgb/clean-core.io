@@ -1,0 +1,226 @@
+name: UX Review
+
+# The UX agent (docs/UX-REVIEW-AGENT.md): every release on `main` gets a UX delta
+# review by one pinned multimodal model — Muse Spark 1.3 via OpenRouter — from the
+# source it changed, a design scan of the whole product and screenshots of the
+# screens it touches. The very first run reviews the whole product once. When the
+# agent itself changes on `dev`, the chain runs once as a small self-test.
+#
+# Three jobs, three trust levels:
+#   scope    no secrets          decides: full, delta, self-test or nothing
+#   capture  no secrets          installs and builds the app with throwaway keys, seeds a demo project, photographs it
+#   review   model + sealing key no `npm ci`, no third-party code: reads the repository and the pictures, calls the model, seals
+# This repository and its logs are public: the report leaves the runner only sealed.
+#
+# Revocation: `gh variable set UX_REVIEW_ENABLED --body false`.
+on:
+  push:
+    branches: [main, dev]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'full = the whole product; delta = since the last reviewed release'
+        required: true
+        default: delta
+        type: choice
+        options: [delta, full]
+      base:
+        description: 'Base commit id for a delta (optional — default: last reviewed release)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+# No concurrency group: a group keeps one pending run and cancels the one before
+# it, and a release would go unreviewed. Runs share nothing.
+
+jobs:
+  scope:
+    name: Scope
+    if: vars.UX_REVIEW_ENABLED != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mode: ${{ steps.decide.outputs.mode }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Decide
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          INPUT_MODE: ${{ inputs.mode }}
+          REF_NAME: ${{ github.ref_name }}
+          BEFORE: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            case "$INPUT_MODE" in full|delta) echo "mode=$INPUT_MODE" >> "$GITHUB_OUTPUT" ;; *) echo "mode=skip" >> "$GITHUB_OUTPUT" ;; esac
+            exit 0
+          fi
+          if [ "$REF_NAME" = "main" ]; then
+            echo "mode=delta" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # dev: only when the agent itself changed. An unknown previous tip counts as changed.
+          changed=no
+          if ! printf '%s' "$BEFORE" | grep -Eq '^[0-9a-f]{40}$' || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            changed=yes
+          elif git diff --name-only "$BEFORE" "$HEAD_SHA" | grep -Eq '^(scripts/ux/|docs/ux/ux-brief\.md$|tests/capture-screens\.spec\.ts$|\.github/workflows/ux-review\.yml$)'; then
+            changed=yes
+          fi
+          if [ "$changed" = "no" ]; then
+            echo "mode=skip" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # The first report ever is the full review of the whole product; after that, a change to the agent is a self-test.
+          existing=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" --jq '[.artifacts[] | select(.expired == false and (.name | startswith("ux-review-")))] | length')
+          if [ "${existing:-0}" -gt 0 ]; then echo "mode=self-test" >> "$GITHUB_OUTPUT"; else echo "mode=full" >> "$GITHUB_OUTPUT"; fi
+
+  capture:
+    name: Capture screens
+    needs: scope
+    if: needs.scope.outputs.mode != 'skip'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      artifact: ${{ steps.artifact.outputs.name }}
+    steps:
+      - name: Name the artifact of this attempt
+        id: artifact
+        env:
+          NAME: ux-capture-${{ github.sha }}-${{ github.run_attempt }}
+        run: echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --foreground-scripts
+
+      - name: Install Playwright Browsers
+        run: npx playwright install chromium
+        timeout-minutes: 10
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # Throwaway values for a demo build against the emulator. This job holds no
+      # secret: nothing here may be worth stealing to the dependencies it runs.
+      - name: Generate throwaway keys
+        run: |
+          for name in S4_ENCRYPTION_KEY MFA_BACKUP_CODE_PEPPER PILOT_APPROVAL_SECRET AUDIT_SIGNING_KEY; do
+            value=$(openssl rand -base64 32)
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+
+      - name: Start Firebase Emulator
+        run: |
+          npx firebase emulators:start --only auth,firestore --project=cleancore-491216 &
+          sleep 10
+
+      - name: Build Next.js Application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true'
+          FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099'
+          FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080'
+
+      # Partial pictures are still pictures: the review states what is missing.
+      - name: Capture
+        continue-on-error: true
+        run: npx playwright test tests/capture-screens.spec.ts --retries=0
+        env:
+          CAPTURE_SCREENS: '1'
+          CAPTURE_OUT: .ux-review/shots
+          CAPTURE_SEGMENTS: '3'
+          CAPTURE_DARK: '1'
+          CAPTURE_MOCKUPS: '1'
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true'
+          FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099'
+          FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080'
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: .ux-review/shots/
+          retention-days: 30
+          if-no-files-found: warn
+
+  review:
+    name: Review (sealed)
+    needs: [scope, capture]
+    # Runs when the capture failed too: a review without pictures says so and stays incomplete.
+    if: ${{ !cancelled() && needs.scope.result == 'success' && needs.scope.outputs.mode != 'skip' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0 # the delta needs the last reviewed release
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Fetch the screenshots of this run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+          CAPTURE: ${{ needs.capture.outputs.artifact }}
+        run: gh run download "$RUN_ID" --name "$CAPTURE" -D .ux-review/shots || echo "No screenshots from the capture job."
+
+      # Earlier sealed reports carry open findings and mark the last reviewed release.
+      - name: Fetch earlier sealed reports
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          mkdir -p .ux-review/prev
+          found=0
+          for id in $(gh run list --workflow ux-review.yml --limit 40 --json databaseId,status --jq '.[] | select(.status == "completed") | .databaseId'); do
+            [ "$id" = "$RUN_ID" ] && continue
+            if gh run download "$id" --pattern 'ux-review-*' -D ".ux-review/prev/$id" > /dev/null 2>&1; then found=$((found + 1)); fi
+            [ "$found" -ge 10 ] && break
+          done
+
+      - name: Review
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          UX_REVIEW_KEY: ${{ secrets.UX_REVIEW_KEY }}
+          UX_MODE: ${{ needs.scope.outputs.mode }}
+          UX_BASE_OVERRIDE: ${{ inputs.base }}
+          UX_BEFORE: ${{ github.event.before }}
+          UX_HEAD: ${{ github.sha }}
+        run: node scripts/ux/review.mjs
+
+      - name: Upload sealed report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ux-review-${{ github.sha }}-${{ github.run_attempt }}
+          path: .ux-review/out/ux-review.enc.json
+          retention-days: 90
+          if-no-files-found: error

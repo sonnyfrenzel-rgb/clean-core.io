@@ -21,16 +21,21 @@ const RETRYABLE = new Set([429]);
 const FINISH_REASONS = new Set(['stop', 'length', 'content_filter', 'tool_calls', 'function_call', 'error']);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export function buildRequest({ system, user, schema, effort }) {
+/**
+ * @param user   the user message: a string, or an array of content parts (text and
+ *               image_url) for a reviewer that also looks at screenshots
+ * @param model  pinned per agent; defaults to the QA reviewer
+ */
+export function buildRequest({ system, user, schema, effort, model = QA_MODEL, maxTokens = BUDGET.maxOutputTokens, name = 'qa_review' }) {
   return {
-    model: QA_MODEL,
+    model,
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: user },
     ],
-    response_format: { type: 'json_schema', json_schema: { name: 'qa_review', strict: true, schema } },
+    response_format: { type: 'json_schema', json_schema: { name, strict: true, schema } },
     reasoning: { effort },
-    max_tokens: BUDGET.maxOutputTokens,
+    max_tokens: maxTokens,
     temperature: 0,
     usage: { include: true },
     // No fallback models: a review from a different model than the one pinned is
@@ -40,9 +45,23 @@ export function buildRequest({ system, user, schema, effort }) {
   };
 }
 
-export async function callReviewer({ apiKey, system, user, schema, effort, fetchImpl = fetch, timeoutMs = BUDGET.requestTimeoutMs }) {
-  if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set — the QA review cannot run.');
-  const body = JSON.stringify(buildRequest({ system, user, schema, effort }));
+/**
+ * What a rejection usually means, as fixed text. The response body is never
+ * read for this: the status alone selects the hint. 403 is how OpenRouter
+ * answers a model gated behind an account setting (Muse Spark 1.3 requires an
+ * 18+ confirmation, 15.09.2026) — without the hint that reads like a bad key.
+ */
+const STATUS_HINTS = {
+  401: 'key rejected',
+  402: 'credit limit of the key reached',
+  403: 'key or account not permitted for this model — check the model requirements in the OpenRouter settings',
+  404: 'model or endpoint not found — or no provider matches the data policy',
+  413: 'request too large',
+};
+
+export async function callReviewer({ apiKey, system, user, schema, effort, model, maxTokens, name, title = 'Clean-Core.io QA Review', fetchImpl = fetch, timeoutMs = BUDGET.requestTimeoutMs }) {
+  if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set — the review cannot run.');
+  const body = JSON.stringify(buildRequest({ system, user, schema, effort, model, maxTokens, name }));
 
   for (let attempt = 0; ; attempt++) {
     const controller = new AbortController();
@@ -55,7 +74,7 @@ export async function callReviewer({ apiKey, system, user, schema, effort, fetch
           Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': 'https://clean-core.io',
-          'X-Title': 'Clean-Core.io QA Review',
+          'X-Title': title,
         },
         body,
         signal: controller.signal,
@@ -72,7 +91,7 @@ export async function callReviewer({ apiKey, system, user, schema, effort, fetch
           await sleep(5_000 * (attempt + 1));
           continue;
         }
-        throw new Error(`OpenRouter answered HTTP ${res.status}`);
+        throw new Error(`OpenRouter answered HTTP ${res.status}${STATUS_HINTS[res.status] ? ` (${STATUS_HINTS[res.status]})` : ''}`);
       }
 
       let json;
@@ -93,7 +112,7 @@ export async function callReviewer({ apiKey, system, user, schema, effort, fetch
         // Only known finish reasons are echoed; anything else, however harmless it looks, is not.
         const finish = FINISH_REASONS.has(choice?.finish_reason) ? choice.finish_reason : 'unrecognised';
         throw new Error(
-          `OpenRouter returned no review content (finish_reason=${finish}, completion_tokens=${Number(u.completion_tokens) || '?'}, reasoning_tokens=${Number(reasoning) || '?'}, max_tokens=${BUDGET.maxOutputTokens}).`,
+          `OpenRouter returned no review content (finish_reason=${finish}, completion_tokens=${Number(u.completion_tokens) || '?'}, reasoning_tokens=${Number(reasoning) || '?'}, max_tokens=${maxTokens ?? BUDGET.maxOutputTokens}).`,
         );
       }
 
@@ -105,7 +124,7 @@ export async function callReviewer({ apiKey, system, user, schema, effort, fetch
       }
       const violation = firstViolation(schema, review);
       if (violation) throw new Error(`The review did not match the schema at ${violation}.`);
-      return { review, usage: json.usage || null, model: json.model || QA_MODEL };
+      return { review, usage: json.usage || null, model: json.model || model || QA_MODEL };
     } finally {
       clearTimeout(timer);
     }

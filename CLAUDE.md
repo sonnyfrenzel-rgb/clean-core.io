@@ -120,6 +120,20 @@ decide with `scripts/security/register.mjs` (sealed register), schedule confirme
 `docs/ROADMAP.md` §12 — **IDs only, never details of an unfixed finding in a public file**.
 Runbook: `docs/SECURITY-AUDIT-AGENT.md`. Revoke: `gh variable set SECURITY_AUDIT_ENABLED --body false`.
 
+## UX agent — UX review of every release on `main` (since 2026-09-15)
+
+`.github/workflows/ux-review.yml`: `meta/muse-spark-1.3` (OpenRouter, multimodal) reviews
+what a release changed for users — source, a deterministic design scan of the whole
+product, and screenshots from `tests/capture-screens.spec.ts` (seeded demo project,
+desktop/phone/dark, plus the 3.0 mockups). The first run reviewed the whole product,
+area by area, with an end-to-end synthesis. UX only; read-only; the job with the model key
+runs no `npm ci`; the report is sealed with `UX_REVIEW_KEY`. After a push to `main`, or when
+the session start reports undecided UX findings, use the `ux-review-intake` skill:
+`node scripts/ux/inbox.mjs <sha>`, verify each finding against the cited line and
+screenshot, decide with `scripts/ux/register.mjs`, schedule accepted ones into
+`docs/ROADMAP.md` §13. Runbook: `docs/UX-REVIEW-AGENT.md`. Revoke:
+`gh variable set UX_REVIEW_ENABLED --body false`.
+
 ## Diagnostics / logs (both CLIs are installed & authenticated)
 
 GitHub Actions — repo `sonnyfrenzel-rgb/clean-core.io`:

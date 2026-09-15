@@ -468,7 +468,8 @@ ersetzt.
 - Neue Oberfläche nur hinter dem Schalter; was für Nutzer sichtbar wird, entscheidet
   3.0.
 - **Jeder Push auf `dev`** durchläuft die QA-Schleife (`docs/QA-REVIEW-LOOP.md`);
-  **jede Version auf `main`** das Sicherheitsaudit (`docs/SECURITY-AUDIT-AGENT.md`).
+  **jede Version auf `main`** das Sicherheitsaudit (`docs/SECURITY-AUDIT-AGENT.md`) und die
+  UX-Review (`docs/UX-REVIEW-AGENT.md`).
 
 ---
 
@@ -486,3 +487,22 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | ID | Schwere | Priorität | Roadmap-Schritt | Status |
 |---|---|---|---|---|
 | — | — | — | — | noch kein Audit gelaufen |
+
+---
+
+## 13. UX-Befunde aus dem UX-Agenten
+
+Die erste Review des UX-Agenten nimmt sich das ganze Produkt vor; danach bekommt jede
+`main`-Version eine Review ihres Deltas (`docs/UX-REVIEW-AGENT.md`). Claude prüft jeden
+Befund an Code und Screenshot und plant bestätigte hier ein. UX-Befunde beschreiben
+Screens, keine Schwachstellen — sie stehen mit Titel in der Tabelle; das Register ist
+`docs/ux/register.json`.
+
+Einplanung: **critical** sofort als eigener Schritt · **high** in die laufende Phase —
+Konsistenz und Komponenten nach **1.5**, Rahmen und Navigation nach **1.4** · **medium** in den
+nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**. Was der
+3.0-Umbau ohnehin ersetzt, wird zurückgestellt, nicht doppelt gebaut.
+
+| ID | Schwere | Befund | Roadmap-Schritt | Status |
+|---|---|---|---|---|
+| — | — | — | — | noch keine Review gelaufen |

@@ -48,6 +48,7 @@ export function resultRecord(raw) {
  */
 const API_ERROR_HINTS = [
   [/credit balance is too low/i, 'credit balance too low'],
+  [/usage limits?|spend limit|regain access/i, 'workspace usage or spend limit reached'],
   [/authentication_error|invalid x-api-key/i, 'authentication failed'],
   [/permission_error/i, 'key lacks permission'],
   [/not_found_error/i, 'model or resource not found'],
@@ -63,7 +64,7 @@ const API_ERROR_HINTS = [
  * words occur, never the text around them. The first self-test's 400 matched no
  * class above, and without this the cause stays invisible.
  */
-const API_ERROR_WORDS = ['credit', 'billing', 'thinking', 'budget_tokens', 'effort', 'json_schema', 'output_format', 'structured', 'tool_choice', 'tools', 'max_tokens', 'temperature', 'context', 'model', 'system', 'beta', 'cache_control', 'agents', 'subagent', 'mcp', 'settings', 'deprecated', 'invalid', 'unsupported', 'permission', 'organization', 'workspace', 'region'];
+const API_ERROR_WORDS = ['credit', 'billing', 'thinking', 'budget_tokens', 'effort', 'json_schema', 'output_format', 'structured', 'tool_choice', 'tools', 'max_tokens', 'temperature', 'context', 'model', 'system', 'beta', 'cache_control', 'agents', 'subagent', 'mcp', 'settings', 'deprecated', 'invalid', 'unsupported', 'permission', 'organization', 'workspace', 'region', 'limit', 'limits', 'usage', 'spend', 'access', 'regain', 'disabled', 'enabled', 'available', 'allowed', 'exceeded', 'retention', 'quota'];
 
 /** @param record the CLI's result record; @param stderr the CLI's stderr log, read only for these words */
 export function apiErrorHint(record, stderr = '') {

@@ -4,8 +4,8 @@
  * agents' next step into Claude's context. Silent for every other command.
  *
  * - dev  → the QA agent reviews the delta; run the qa-review-loop skill.
- * - main → the security agent audits the release; its report arrives by mail
- *          and through scripts/security/inbox.mjs.
+ * - main → the security agent audits the release (report by mail and through
+ *          scripts/security/inbox.mjs) and the UX agent reviews it (scripts/ux/inbox.mjs).
  *
  * Never blocks, never fails the tool call: any error here exits 0 without output.
  */
@@ -44,7 +44,8 @@ process.stdin.on('end', () => {
       emit(
         `Security agent: a push to main (${sha.slice(0, 12)}) starts the full sealed security audit. ` +
           `Its German report goes to Sonny by mail; fetch it with \`node scripts/security/inbox.mjs ${sha}\` (run_in_background), ` +
-          'verify the findings and schedule confirmed ones into the roadmap by priority — IDs and priority only in public files, details stay sealed.',
+          'verify the findings and schedule confirmed ones into the roadmap by priority — IDs and priority only in public files, details stay sealed. ' +
+          `UX agent: the same push starts the UX review of the release; use the ux-review-intake skill with \`node scripts/ux/inbox.mjs ${sha}\` (run_in_background).`,
       );
     }
   } catch {

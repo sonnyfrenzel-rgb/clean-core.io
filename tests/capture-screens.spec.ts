@@ -1,9 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+import { pathToFileURL } from 'url';
 import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { adminSetDoc } from './helpers/admin-seed';
+import { adminMergeDoc, adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 
 /**
@@ -17,10 +18,22 @@ import firebaseConfig from '../firebase-config.json';
  * Skipped by default: it writes files and costs a couple of minutes. Run it with
  *   CAPTURE_SCREENS=1 npx playwright test tests/capture-screens.spec.ts
  * Output lands in `design-capture/`, which is gitignored.
+ *
+ * The UX review agent (docs/UX-REVIEW-AGENT.md) runs the same capture with
+ *   CAPTURE_OUT=<dir>        where the pictures go
+ *   CAPTURE_SEGMENTS=3       screen-height pictures from the top instead of one full-page picture —
+ *                            a 12,000-pixel page scaled down for a model is unreadable
+ *   CAPTURE_DARK=1           the signed-in overview screens once more in the dark theme
+ *   CAPTURE_MOCKUPS=1        the six views of the 3.0 target mockups (docs/roadmap)
+ * File names are the contract with scripts/ux/lib/config.mjs (SHOT_NAME).
  */
 const ENABLED = process.env.CAPTURE_SCREENS === '1';
 
-const OUT = path.resolve(__dirname, '..', 'design-capture');
+const OUT = process.env.CAPTURE_OUT ? path.resolve(process.env.CAPTURE_OUT) : path.resolve(__dirname, '..', 'design-capture');
+const SEGMENTS = Math.max(0, Math.min(3, Number(process.env.CAPTURE_SEGMENTS || 0)));
+const DARK = process.env.CAPTURE_DARK === '1';
+const MOCKUPS = process.env.CAPTURE_MOCKUPS === '1';
+const DARK_SCREENS = ['02-dashboard', '03-analyze', '08-delivery'];
 const EMAIL = `capture-${Date.now()}@cleancore-test.io`;
 const PASSWORD = 'CapturePassword123!';
 const PROJECT_ID = `capture-project-${Date.now()}`;
@@ -78,7 +91,47 @@ const SCREENS: { name: string; url: string; wait?: string }[] = [
   { name: '09-tco', url: `/project/${PROJECT_ID}/tco` },
   { name: '10-knowledge', url: '/knowledge' },
   { name: '11-settings', url: '/settings' },
+  { name: '12-catalog', url: '/catalog' },
+  { name: '13-whitepaper', url: '/whitepaper' },
+  { name: '14-how-to', url: '/how-to' },
+  { name: '15-trust', url: '/trust' },
 ];
+
+/**
+ * One full-page picture, or up to SEGMENTS screen-height pictures from the top.
+ * App pages scroll inside a container rather than the document, so the largest
+ * scrollable element is what gets scrolled.
+ */
+async function shoot(page: Page, base: string): Promise<string[]> {
+  if (!SEGMENTS) {
+    await page.screenshot({ path: `${base}.jpg`, fullPage: true, type: 'jpeg', quality: 72 });
+    return [`${base}.jpg`];
+  }
+  const scrollTo = (y: number) =>
+    page.evaluate((top) => {
+      const root = document.scrollingElement as HTMLElement;
+      const scrollables = [root, ...Array.from(document.querySelectorAll<HTMLElement>('main, div, section'))].filter(
+        (el) => el && el.scrollHeight > el.clientHeight + 20 && (el === root || /(auto|scroll)/.test(getComputedStyle(el).overflowY)),
+      );
+      const target = scrollables.sort((a, b) => b.clientHeight - a.clientHeight)[0];
+      if (!target) return { height: 0, view: window.innerHeight };
+      target.scrollTop = top;
+      return { height: target.scrollHeight, view: target.clientHeight };
+    }, y);
+  const files: string[] = [];
+  const { height, view } = await scrollTo(0);
+  for (let i = 0; i < SEGMENTS && (i === 0 || i * view < height); i++) {
+    if (i) {
+      await scrollTo(i * view);
+      await page.waitForTimeout(500);
+    }
+    const file = `${base}-s${i + 1}.jpg`;
+    await page.screenshot({ path: file, type: 'jpeg', quality: 72 });
+    files.push(file);
+  }
+  await scrollTo(0);
+  return files;
+}
 
 test.describe('capture', () => {
   test.skip(!ENABLED, 'set CAPTURE_SCREENS=1 to run');
@@ -151,32 +204,64 @@ test.describe('capture', () => {
     });
 
     // ── sign in ───────────────────────────────────────────────────────────
+    const notes: string[] = [];
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto('/');
     await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
     await page.waitForSelector('input[type="email"]');
+    // The access dialog is the first thing a new user fills in.
+    await page.waitForTimeout(800);
+    // One picture only: scrolling would move the page behind the dialog, not the dialog.
+    const access = path.join(OUT, '00-access-desktop.jpg');
+    await page.screenshot({ path: access, type: 'jpeg', quality: 72 });
+    notes.push(`00-access-desktop.jpg  ${Math.round(fs.statSync(access).size / 1024)} KB  access dialog`);
     await page.fill('input[type="email"]', EMAIL);
     await page.fill('input[type="password"]', PASSWORD);
     await page.click('button[type="submit"]:has-text("Sign In")');
     await page.waitForTimeout(4000);
 
     // ── capture ───────────────────────────────────────────────────────────
-    const notes: string[] = [];
+    const capture = async (screens: typeof SCREENS, label: string) => {
+      for (const screen of screens) {
+        try {
+          await page.goto(screen.url, { waitUntil: 'domcontentloaded', timeout: 40000 });
+          // Let motion/react settle and any client fetch land.
+          await page.waitForTimeout(3500);
+          for (const file of await shoot(page, path.join(OUT, `${screen.name}-${label}`))) {
+            notes.push(`${path.basename(file)}  ${Math.round(fs.statSync(file).size / 1024)} KB  ${page.url()}`);
+          }
+        } catch (err: any) {
+          notes.push(`${screen.name}-${label}  FAILED  ${err.message?.slice(0, 120)}`);
+        }
+      }
+    };
     for (const viewport of [
       { label: 'desktop', width: 1440, height: 1000 },
       { label: 'phone', width: 390, height: 844 },
     ]) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      for (const screen of SCREENS) {
+      await capture(SCREENS, viewport.label);
+    }
+
+    if (DARK) {
+      // The theme comes from the profile, so the profile is what changes.
+      await adminMergeDoc('users', uid, { theme: 'dark' });
+      await page.setViewportSize({ width: 1440, height: 1000 });
+      await capture(SCREENS.filter((s) => DARK_SCREENS.includes(s.name)), 'dark');
+    }
+
+    if (MOCKUPS) {
+      await page.setViewportSize({ width: 1440, height: 1000 });
+      await page.goto(pathToFileURL(path.resolve(__dirname, '..', 'docs', 'roadmap', 'clean-core-mockups-v2_7.html')).href);
+      for (let view = 1; view <= 6; view++) {
         try {
-          await page.goto(screen.url, { waitUntil: 'domcontentloaded', timeout: 40000 });
-          // Let motion/react settle and any client fetch land.
-          await page.waitForTimeout(3500);
-          const file = path.join(OUT, `${screen.name}-${viewport.label}.jpg`);
-          await page.screenshot({ path: file, fullPage: true, type: 'jpeg', quality: 72 });
-          const kb = Math.round(fs.statSync(file).size / 1024);
-          notes.push(`${screen.name}-${viewport.label}  ${kb} KB  ${page.url()}`);
+          await page.click(`button[data-s="s${view}"]`);
+          await page.waitForTimeout(600);
+          const file = path.join(OUT, `m${view}-mockup-desktop.jpg`);
+          await page.screenshot({ path: file, type: 'jpeg', quality: 72 });
+          notes.push(`${path.basename(file)}  ${Math.round(fs.statSync(file).size / 1024)} KB  mockup view ${view}`);
         } catch (err: any) {
-          notes.push(`${screen.name}-${viewport.label}  FAILED  ${err.message?.slice(0, 120)}`);
+          notes.push(`m${view}-mockup-desktop  FAILED  ${err.message?.slice(0, 120)}`);
         }
       }
     }

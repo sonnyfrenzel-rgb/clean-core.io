@@ -163,7 +163,7 @@ test.describe('nothing the audit finds leaks', () => {
   test('a failed API call is named by a label from a fixed list, never by its text', async () => {
     const { apiErrorHint } = await lib('cli.mjs');
     const err = (result: unknown) => ({ is_error: true, result });
-    expect(apiErrorHint(err('API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}'))).toBe('credit balance too low [credit]');
+    expect(apiErrorHint(err('API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}'))).toBe('credit balance too low [credit,access]');
     expect(apiErrorHint(err('API Error: 401 {"error":{"type":"authentication_error","message":"invalid x-api-key"}}'))).toBe('authentication failed [invalid]');
     expect(apiErrorHint(err('API Error: 400 {"error":{"type":"invalid_request_error","message":"thinking: this model does not support adaptive thinking"}}'))).toBe('a request parameter is not supported [thinking,model]');
     expect(apiErrorHint(err('something with sk-ant-secret and a file path'))).toBe('unrecognised');
@@ -172,6 +172,8 @@ test.describe('nothing the audit finds leaks', () => {
     // Which request feature the API objected to — words from a fixed list, from the result or the stderr log, nothing around them.
     expect(apiErrorHint(err('API Error: 400 something odd'), 'Error: output_format with json_schema is not supported for this model, secret-looking-text-xyz')).toBe('a request parameter is not supported [json_schema,output_format,model]');
     expect(apiErrorHint(err('API Error: 400 weird'), 'nothing we know')).toBe('unrecognised');
+    // The second self-test (15.09.2026) showed only [workspace]: the Anthropic wording for a workspace spend limit.
+    expect(apiErrorHint(err('API Error: 400 You have reached your specified workspace API usage limits. You will regain access on 2026-10-01 at 00:00 UTC.'))).toBe('workspace usage or spend limit reached [workspace,limits,usage,access,regain]');
     expect(read('scripts/security/audit.mjs')).toMatch(/hint=\$\{apiErrorHint\(record, stderr\)\}/);
   });
 

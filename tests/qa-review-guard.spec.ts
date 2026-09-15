@@ -145,7 +145,31 @@ test.describe('the reviewer', () => {
     expect(calls).toBe(2);
 
     const denied = async () => new Response('{"error":"echo of the prompt"}', { status: 401 });
-    await expect(callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: denied })).rejects.toThrow(/^OpenRouter answered HTTP 401$/);
+    await expect(callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: denied })).rejects.toThrow(/^OpenRouter answered HTTP 401 \(key rejected\)$/);
+    // The hint comes from the status, never from the body.
+    const gated = async () => new Response('{"error":{"message":"echo of the prompt"}}', { status: 403 });
+    const e403 = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: gated }).catch((e: Error) => e);
+    expect(String((e403 as Error).message)).toMatch(/^OpenRouter answered HTTP 403 \(key or account not permitted for this model/);
+    expect(String((e403 as Error).message)).not.toContain('echo');
+    const teapot = async () => new Response('echo of the prompt', { status: 418 });
+    await expect(callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: teapot })).rejects.toThrow(/^OpenRouter answered HTTP 418$/);
+  });
+
+  test('another agent can pin its own model and send screenshots through the same transport', async () => {
+    const { buildRequest, callReviewer } = await lib('openrouter.mjs');
+    const parts = [{ type: 'text', text: 'Screenshot 03-analyze-desktop-s1' }, { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,AAAA' } }];
+    const req = buildRequest({ system: 's', user: parts, schema: { type: 'object' }, effort: 'low', model: 'meta/muse-spark-1.3', maxTokens: 8000, name: 'ux_review' });
+    expect(req).toMatchObject({ model: 'meta/muse-spark-1.3', max_tokens: 8000, provider: { allow_fallbacks: false, data_collection: 'deny' } });
+    expect(req.messages[1].content).toEqual(parts);
+    expect(req.response_format.json_schema.name).toBe('ux_review');
+    let headers: Record<string, string> = {};
+    const capture = async (_url: string, init: { headers: Record<string, string> }) => {
+      headers = init.headers;
+      return new Response(JSON.stringify({ choices: [{ message: { content: '{}' } }], usage: { cost: 0.01 } }), { status: 200 });
+    };
+    const r = await callReviewer({ apiKey: 'k', system: 's', user: parts, schema: { type: 'object' }, effort: 'low', model: 'meta/muse-spark-1.3', title: 'Clean-Core.io UX Review', fetchImpl: capture });
+    expect(headers['X-Title']).toBe('Clean-Core.io UX Review');
+    expect(r.model).toBe('meta/muse-spark-1.3');
   });
 
   test('never retries what may already have been generated and billed', async () => {

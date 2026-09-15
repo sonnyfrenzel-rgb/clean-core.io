@@ -8,7 +8,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
  */
 
 const keyFrom = (secret) => {
-  if (!secret || String(secret).length < 32) throw new Error('QA_REVIEW_KEY is missing or shorter than 32 characters.');
+  if (!secret || String(secret).length < 32) throw new Error('The sealing key (QA_REVIEW_KEY or UX_REVIEW_KEY) is missing or shorter than 32 characters.');
   return createHash('sha256').update(String(secret)).digest();
 };
 
@@ -20,7 +20,7 @@ export function seal(payload, secret) {
 }
 
 export function open(envelope, secret) {
-  if (envelope?.v !== 1 || envelope?.alg !== 'aes-256-gcm') throw new Error('Unknown QA review envelope.');
+  if (envelope?.v !== 1 || envelope?.alg !== 'aes-256-gcm') throw new Error('Unknown sealed envelope.');
   const decipher = createDecipheriv('aes-256-gcm', keyFrom(secret), Buffer.from(envelope.iv, 'base64'));
   decipher.setAuthTag(Buffer.from(envelope.tag, 'base64'));
   const plain = Buffer.concat([decipher.update(Buffer.from(envelope.data, 'base64')), decipher.final()]);
