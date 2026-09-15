@@ -31,6 +31,7 @@ const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false }
 
 import { DocumentSkeleton } from '@/components/Skeleton';
 import NavigationButtons from '@/components/NavigationButtons';
+import { withoutUnapprovedMoney, withoutUnapprovedMoneyDeep } from '@/lib/money-honesty';
 
 // Extracted Subcomponents
 import ArchitectureOverview from '@/components/design/ArchitectureOverview';
@@ -104,7 +105,8 @@ const prepareAnalysisContext = (analysis: string | object): string => {
       extensibilityRouting: parsed.extensibilityRouting,
       businessValueAnalysis: parsed.businessValueAnalysis,
     };
-    const condensed = JSON.stringify(designContext);
+    // An amount of money in the analysis prose would reach the design prompt as if it were a figure (lib/money-honesty.ts).
+    const condensed = JSON.stringify(withoutUnapprovedMoneyDeep(designContext));
     console.log('[Design] prepareAnalysisContext: condensed length =', condensed.length, 'chars');
     if (condensed.length > DESIGN_CONTEXT_LIMIT) {
       return condensed.substring(0, DESIGN_CONTEXT_LIMIT) + '\n... [analysis truncated for design prompt]';
@@ -113,7 +115,7 @@ const prepareAnalysisContext = (analysis: string | object): string => {
   } catch (e) {
     console.warn('[Design] prepareAnalysisContext: JSON parse failed, using raw string fallback', e);
     // Fallback: raw string truncation
-    const raw = typeof analysis === 'string' ? analysis : JSON.stringify(analysis);
+    const raw = withoutUnapprovedMoney(typeof analysis === 'string' ? analysis : JSON.stringify(analysis));
     if (raw.length > DESIGN_CONTEXT_LIMIT) {
       return raw.substring(0, DESIGN_CONTEXT_LIMIT) + '\n... [analysis truncated for design prompt]';
     }

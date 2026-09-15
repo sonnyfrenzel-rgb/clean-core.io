@@ -10,6 +10,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.10.5] — 2026-09-15
+
+### QA-Review von a0c1085: der ganze Prompt, Geld in Prosa, die gespeicherte Testsuite
+
+- **Der Analyse-Prompt als Ganzes.** Er steht jetzt in `lib/analysis-prompt.ts` statt inline
+  in der Seite. Ein Feldkommentar verlangte weiter `[F-id]`, obwohl der CITATIONS-Block
+  daneben richtig war; die Tests hatten nur den Block geprüft. Der Kommentar verweist jetzt
+  auf den Block. Ein Test prüft den zusammengesetzten Prompt, mit Befunden und ohne: Jedes
+  Zitierbeispiel darin muss der Parser annehmen.
+- **Kein Geldbetrag in Prosa (Schritt 0.4, zu Ende gebracht).** Ein Modell kann
+  „Projected annual savings: €5,000" in einen Value Driver schreiben. Eine vor 0.4
+  gespeicherte Analyse enthält solche Sätze bereits. Jeder Leser einer gespeicherten Analyse
+  geht jetzt durch `readStoredAnalysis` (`lib/money-honesty.ts`), der jeden Betrag durch
+  „(amount removed: no approved cost assumptions)" ersetzt:
+  - die Analyze-Stufe
+  - der Confluence-Export
+  - der Markdown-Bericht in Dashboard und Delivery-Bundle
+  - der Design-Prompt
+
+  Der Prompt sagt es auch selbst. Ein Emulator-Test öffnet eine solche Analyse und lädt
+  ihren Export herunter: Die Beträge sind weg, der Ersatztext steht da.
+- **Die gespeicherte Testsuite nach dem Neuladen.** `useTestGeneration` las
+  `project.testCases` einmal beim ersten Rendern, als das Projekt noch lud. Wer die
+  Testing-Seite neu lud, sah „Generate Your Test Suite" statt seiner Tests. Jetzt kommen
+  die Tests aus dem Projekt. Damit prüft der Sperr-Test auch die Ausführung:
+  - Im Tenant-Tab mit ausgewähltem Test ist „Run Selected" gesperrt, und ein Klick
+    erreicht den Runner nicht.
+  - Im Mock-Tab ist dieselbe Auswahl ausführbar.
+- **UX-Agent, frühere Berichte.** Der Workflow suchte sie in einem Fenster von 40 Läufen.
+  Übersprungene dev-Pushes hinterlassen kein Artefakt, und 40 davon machten jeden früheren
+  Bericht unauffindbar. `scripts/ux/fetch-reports.mjs` sucht über die Artefakt-Liste, wie
+  der Sitzungsstart.
+
 ## [v2.10.4] — 2026-09-15
 
 ### QA-Review von 7bdac5e: Klassen statt Einzelstellen

@@ -133,6 +133,17 @@ test.describe('three jobs, three trust levels', () => {
     // exit status; the report fetch failed that way on its second run (run 34952723977).
     expect(wf()).not.toMatch(/\]\s*&&\s*(break|continue)\s*$/m);
   });
+
+  test('earlier reports are found through review artifacts, not a window of runs that skipped pushes can fill', () => {
+    // Forty dev pushes the agent skips leave no artifact; a run window of forty then held no report at all (finding c903686aa3de).
+    expect(wf()).not.toMatch(/gh run list --workflow ux-review\.yml --limit/);
+    expect(wf()).toContain('run: node scripts/ux/fetch-reports.mjs .ux-review/prev --exclude-run="$RUN_ID"');
+    const src = read('scripts/ux/fetch-reports.mjs');
+    // The same paging and the same selection the session start uses, both tested behaviourally below.
+    expect(src).toMatch(/collectArtifacts\(\(page\) =>/);
+    expect(src).toMatch(/reviewRuns\(artifacts\)\.filter\(\(r\) => r\.databaseId !== exclude\)\.slice\(0, max\)/);
+    expect(src).not.toMatch(/UX_REVIEW_KEY|OPENROUTER/);
+  });
 });
 
 test.describe('spend stays within an estimated budget per mode', () => {

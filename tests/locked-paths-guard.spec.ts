@@ -147,10 +147,20 @@ test.describe('the lock holds when used', () => {
     await expect(page.getByText(LIVE_TEST_EXECUTION.userNotice).first()).toBeVisible({ timeout: 30000 });
     await expect(page.getByText('Tests against a tenant are locked')).toBeVisible();
     await expect(page.getByRole('button', { name: /Connected S\/4HANA Tenant/ })).toContainText('Check only');
-    // The saved suite is not listed after a reload (useTestGeneration seeds its state once, from a project that is
-    // still loading — BACKLOG), so the disabled run button is held by the source test above, not here.
+
+    // The saved suite is listed after a reload (it was not until the QA review of a0c108513165), so the run itself
+    // can be tried: on the tenant tab the list says it is locked, the button is disabled, and a click reaches nothing.
+    await expect(page.getByText('Running these tests against the tenant is locked.')).toBeVisible({ timeout: 30000 });
+    await page.getByText('TC_01', { exact: true }).click();
+    const run = page.getByRole('button', { name: /Run Selected/ });
+    await expect(run).toBeDisabled();
+    await run.dispatchEvent('click');
     await page.waitForTimeout(1500);
     expect(runRequests, 'the tenant tab must not reach the runner').toEqual([]);
+
+    // The same selection on the mock tab can run — the button is disabled by the tab, not by an empty selection.
+    await page.getByRole('button', { name: /^Mock Environment$/ }).click();
+    await expect(run).toBeEnabled({ timeout: 10000 });
   });
 });
 

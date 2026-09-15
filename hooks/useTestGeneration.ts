@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import { callGemini } from '@/lib/gemini';
@@ -7,7 +7,11 @@ import type { Project, TestCase, TestSuite, CoverageEstimate, ManualTestRequirem
 
 export const useTestGeneration = (projectId: string, project: Project | null, setProject: React.Dispatch<React.SetStateAction<Project | null>>) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [testCases, setTestCases] = useState<TestCase[]>(project?.testCases || []);
+  const [generated, setGenerated] = useState<TestCase[] | null>(null);
+  // The saved suite, until this session generates a new one. Seeding useState from `project` read it once, on the
+  // first render, while the project was still loading: a saved suite never appeared after a reload, and the page
+  // offered to generate it again (QA review of a0c108513165).
+  const testCases = useMemo(() => generated ?? project?.testCases ?? [], [generated, project?.testCases]);
   const { profile } = useUserProfile();
 
   const generateTestCases = async (previousError?: string) => {
@@ -91,7 +95,7 @@ export const useTestGeneration = (projectId: string, project: Project | null, se
       const coverageEstimate: CoverageEstimate = result.coverageEstimate || { percentage: 0, explanation: 'No coverage estimate available', missingCoverage: 'N/A' };
       const manualTestingRequirements: ManualTestRequirement[] = result.manualTestingRequirements || [];
       
-      setTestCases(generatedTestCases);
+      setGenerated(generatedTestCases);
       
       const db = getDb();
       await updateDoc(doc(db, 'projects', projectId), {

@@ -202,16 +202,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.run_id }}
-        run: |
-          mkdir -p .ux-review/prev
-          found=0
-          for id in $(gh run list --workflow ux-review.yml --limit 40 --json databaseId,status --jq '.[] | select(.status == "completed") | .databaseId'); do
-            # if-statements, not `[ … ] && break`: as the last command of the loop body a false test
-            # would become the exit status of the step and fail it (run 34952723977).
-            if [ "$id" = "$RUN_ID" ]; then continue; fi
-            if gh run download "$id" --pattern 'ux-review-*' -D ".ux-review/prev/$id" > /dev/null 2>&1; then found=$((found + 1)); fi
-            if [ "$found" -ge 10 ]; then break; fi
-          done
+        # Indexed by review artifacts, not by a window of runs: skipped dev pushes leave no artifact
+        # and must not push earlier reports out of reach (scripts/ux/fetch-reports.mjs).
+        run: node scripts/ux/fetch-reports.mjs .ux-review/prev --exclude-run="$RUN_ID"
 
       - name: Review
         env:

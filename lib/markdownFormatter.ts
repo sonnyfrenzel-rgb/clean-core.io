@@ -1,3 +1,5 @@
+import { readStoredAnalysis, withoutUnapprovedMoney } from './money-honesty';
+
 /**
  * Professional Markdown Formatting Engine
  * Synthesizes raw structured JSON data fields from GCP Gemini AI 
@@ -7,10 +9,10 @@
 export function formatAnalysisToMarkdown(rawJson: string): string {
   if (!rawJson) return '';
   try {
-    // Strip markdown wrappers if present
-    const cleanedJson = rawJson.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
-    const data = JSON.parse(cleanedJson);
-    if (!data || typeof data !== 'object') return rawJson;
+    // The shared reader of a stored analysis: code fences stripped, amounts of money masked (lib/money-honesty.ts).
+    // Typed like JSON.parse, which it replaces: the fields below are read defensively one by one.
+    const data: ReturnType<typeof JSON.parse> = readStoredAnalysis(rawJson);
+    if (!data) return withoutUnapprovedMoney(rawJson);
 
     let md = `# 📊 Business Analysis Report: ${data.projectTitle || 'ABAP Modernization'}\n\n`;
     md += `## 🛡️ Clean Core Compliance Baseline\n`;
@@ -55,7 +57,7 @@ export function formatAnalysisToMarkdown(rawJson: string): string {
     
     return md;
   } catch (e) {
-    return rawJson;
+    return withoutUnapprovedMoney(rawJson);
   }
 }
 

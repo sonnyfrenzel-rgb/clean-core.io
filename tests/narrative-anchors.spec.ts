@@ -5,6 +5,10 @@ import {
   anchorInstruction,
 } from '../lib/abap/narrative-anchors';
 import { buildAbapEvidence, type EvidenceFinding } from '../lib/abap/evidence-model';
+import { routeExtensibility } from '../lib/abap/extensibility-router';
+import { buildAnalysisPrompt } from '../lib/analysis-prompt';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * A narrative sentence either points at code or admits it does not.
@@ -189,6 +193,30 @@ test.describe('with ids the engine really assigns (roadmap step 1.3)', () => {
     expect(legacy.invalidCount).toBe(1);
     // Non-numeric invented ids too — the old parser caught them, the fix must not start ignoring them.
     expect(anchorNarrative('It checks the limit [F-credit-limit].', report.findings, lines).sentences[0].status).toBe('invalid-anchor');
+  });
+
+  test('the assembled Analyze prompt offers only citations the parser accepts — with findings and without', () => {
+    // The whole prompt, not the CITATIONS block alone: a field comment asking for `[F-id]` sat next to a correct
+    // block and was never tested (QA review of a0c108513165).
+    const anchorShaped = /\[\s*(?:[A-Z]{1,4}-[A-Za-z0-9_-]+|L\s*\d+(?:\s*[-–]\s*\d+)?)\s*\]/g;
+    const report = buildAbapEvidence(PROGRAM, 'ZCREDIT_CHECK', 'private');
+    const lines = PROGRAM.split('\n').length;
+    const prompt = buildAnalysisPrompt({ targetDeployment: 'private', evidenceReport: report, routeReport: routeExtensibility(report, 'private'), code: PROGRAM });
+    expect(prompt).not.toMatch(/\[F-id\]|F-\d{3}/);
+    const offered = prompt.match(anchorShaped) || [];
+    expect(offered.length, 'the prompt must show at least one citation example').toBeGreaterThan(0);
+    for (const example of offered) {
+      expect(anchorNarrative(`Example ${example}.`, report.findings, lines).sentences[0].status, `the prompt offers ${example}`).toBe('anchored');
+    }
+
+    const empty = { ...report, findings: [] };
+    const emptyPrompt = buildAnalysisPrompt({ targetDeployment: 'public', evidenceReport: empty, routeReport: routeExtensibility(empty, 'public'), code: PROGRAM });
+    for (const example of emptyPrompt.match(anchorShaped) || []) {
+      expect(example, 'a report without findings has no finding id to offer').toMatch(/^\[\s*L/);
+      expect(anchorNarrative(`Example ${example}.`, [], lines).sentences[0].status, example).toBe('anchored');
+    }
+    // The page builds its prompt here and nowhere else.
+    expect(fs.readFileSync(path.resolve(__dirname, '../app/(app)/project/[projectId]/analyze/page.tsx'), 'utf8')).toMatch(/const prompt = buildAnalysisPrompt\(\{ targetDeployment, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze \}\);/);
   });
 
   test('a report without findings offers no finding id, and its line example fits the file', () => {
