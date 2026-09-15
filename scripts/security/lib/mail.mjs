@@ -43,7 +43,7 @@ export function renderAuditMail(payload, { version, runUrl, sealedSha256 }) {
   const text = [
     subject,
     '',
-    payload.selfTest ? 'SELBSTTEST der Audit-Kette mit kleinem Modell und 1 $ Budget. Kein Audit-Ergebnis — geprüft wird, dass Analyse, Siegel und Zustellung funktionieren.\n' : '',
+    payload.selfTest ? 'SELBSTTEST der Audit-Kette an zwei Dateien mit kleinem Budget. Kein Audit-Ergebnis — geprüft wird, dass Analyse, Siegel und Zustellung funktionieren.\n' : '',
     'KURZFAZIT',
     r.executive_summary,
     '',
@@ -73,12 +73,12 @@ export function renderAuditMail(payload, { version, runUrl, sealedSha256 }) {
     `  ${r.coverage.files_in_scope} Dateien im Umfang · ${r.coverage.deep_read} gründlich gelesen · ${r.coverage.pattern_scanned_only} nur über Muster geprüft`,
     `  ${r.coverage.notes}`,
     ...(r.limitations || []).map((l) => `  – ${l}`),
-    payload.permissionDenials?.length ? `  Verweigerte Werkzeugaufrufe: ${payload.permissionDenials.length} (${[...new Set(payload.permissionDenials)].join(', ')}) — der Agent hat nur Lesezugriff.` : '  Verweigerte Werkzeugaufrufe: keine.',
+    `  Modellaufrufe: ${payload.calls ?? '—'}${payload.failedCalls ? `, davon ${payload.failedCalls} fehlgeschlagen — ihre Dateien stehen oben als nicht gründlich gelesen` : ''}. Der Agent hat keine Werkzeuge: Er sieht nur, was die Pipeline ihm gibt.`,
     '',
     'NACHWEIS',
     `  Version ${version} · Commit ${payload.head}`,
     `  Lauf ${runUrl}`,
-    `  Modell ${payload.model} · ${payload.cli} · ${minutes} min · ${cost}`,
+    `  Modell ${payload.model} · ${payload.calls ?? '—'} Aufrufe · ${minutes} min · ${cost}`,
     `  SHA-256 des versiegelten Berichts: ${sealedSha256}`,
     `  Nachprüfen: node scripts/security/inbox.mjs ${payload.head.slice(0, 12)} — öffnet dasselbe Artefakt mit dem privaten Schlüssel.`,
   ].join('\n');
@@ -148,7 +148,7 @@ function renderHtmlBody({ payload, r, findings, c, version, runUrl, sealedSha256
       </tr>
     </table>
 
-    ${payload.selfTest ? `<div class="panel" style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 16px; padding: 16px; margin-bottom: 20px; font-size: 14px; color: #92400e; line-height: 1.5;"><strong>Selbsttest</strong> der Audit-Kette mit kleinem Modell und 1&nbsp;$ Budget. Kein Audit-Ergebnis &mdash; geprüft wird, dass Analyse, Siegel und Zustellung funktionieren.</div>` : ''}
+    ${payload.selfTest ? `<div class="panel" style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 16px; padding: 16px; margin-bottom: 20px; font-size: 14px; color: #92400e; line-height: 1.5;"><strong>Selbsttest</strong> der Audit-Kette an zwei Dateien mit kleinem Budget. Kein Audit-Ergebnis &mdash; geprüft wird, dass Analyse, Siegel und Zustellung funktionieren.</div>` : ''}
 
     <div class="panel" style="background-color: ${risk.bg}; border: 1px solid ${risk.border}; border-radius: 16px; padding: 22px; margin-bottom: 24px;">
       ${label('Gesamtrisiko', risk.fg)}
@@ -182,7 +182,7 @@ function renderHtmlBody({ payload, r, findings, c, version, runUrl, sealedSha256
       <div style="font-size: 14px; color: #0f172a; line-height: 1.6;"><strong>${esc(r.coverage.files_in_scope)}</strong> Dateien im Umfang &middot; <strong>${esc(r.coverage.deep_read)}</strong> gründlich gelesen &middot; <strong>${esc(r.coverage.pattern_scanned_only)}</strong> nur über Muster geprüft</div>
       <div style="font-size: 13px; color: #475569; line-height: 1.5; margin-top: 6px;">${esc(r.coverage.notes)}</div>
       ${(r.limitations || []).map((l) => `<div style="font-size: 13px; color: #475569; line-height: 1.5; padding-top: 4px;">&ndash;&nbsp;${esc(l)}</div>`).join('')}
-      <div style="font-size: 13px; color: #475569; line-height: 1.5; padding-top: 6px;">Verweigerte Werkzeugaufrufe: ${payload.permissionDenials?.length || 0} &mdash; der Agent hat nur Lesezugriff.</div>
+      <div style="font-size: 13px; color: #475569; line-height: 1.5; padding-top: 6px;">Modellaufrufe: ${esc(payload.calls ?? '—')}${payload.failedCalls ? `, davon ${esc(payload.failedCalls)} fehlgeschlagen` : ''} &mdash; der Agent hat keine Werkzeuge und sieht nur, was die Pipeline ihm gibt.</div>
     </div>
 
     <div class="cta-wrap" style="text-align: center; margin: 26px 0;">
@@ -192,7 +192,7 @@ function renderHtmlBody({ payload, r, findings, c, version, runUrl, sealedSha256
     <div style="border-top: 1px solid #f1f5f9; padding-top: 18px;">
       ${label('Nachweis', '#94a3b8')}
       <div style="font-family: ${MONO}; font-size: 11px; color: #64748b; line-height: 1.7; word-break: break-all;">
-        Version ${esc(version)}<br>Commit ${esc(payload.head)}<br>Modell ${esc(payload.model)} &middot; ${esc(payload.cli)}<br>Dauer ${minutes}&nbsp;min &middot; Kosten ${esc(cost)}<br>SHA-256 versiegelter Bericht ${esc(sealedSha256)}
+        Version ${esc(version)}<br>Commit ${esc(payload.head)}<br>Modell ${esc(payload.model)} &middot; ${esc(payload.calls ?? '—')} Aufrufe<br>Dauer ${minutes}&nbsp;min &middot; Kosten ${esc(cost)}<br>SHA-256 versiegelter Bericht ${esc(sealedSha256)}
       </div>
       <div style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin-top: 8px;">Nachprüfen: <span style="font-family: ${MONO};">node scripts/security/inbox.mjs ${esc(payload.head.slice(0, 12))}</span> öffnet dasselbe Artefakt mit dem privaten Schlüssel.</div>
     </div>

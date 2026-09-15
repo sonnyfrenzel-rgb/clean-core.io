@@ -59,7 +59,13 @@ const STATUS_HINTS = {
   413: 'request too large',
 };
 
-export async function callReviewer({ apiKey, system, user, schema, effort, model, maxTokens, name, title = 'Clean-Core.io QA Review', fetchImpl = fetch, timeoutMs = BUDGET.requestTimeoutMs }) {
+/**
+ * @param retries  rate-limit retries; a pipeline of many calls to one provider (the security audit) needs more
+ * @param coerce   (answer) => answer, applied before validation — for a pipeline whose report must not be lost to a
+ *                 severity written in English or a number sent as text. The result is still validated; coercion
+ *                 fixes types and empties an absent field, it never writes a statement.
+ */
+export async function callReviewer({ apiKey, system, user, schema, effort, model, maxTokens, name, title = 'Clean-Core.io QA Review', fetchImpl = fetch, timeoutMs = BUDGET.requestTimeoutMs, retries = BUDGET.retries, coerce = null }) {
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set — the review cannot run.');
   const body = JSON.stringify(buildRequest({ system, user, schema, effort, model, maxTokens, name }));
 
@@ -87,8 +93,10 @@ export async function callReviewer({ apiKey, system, user, schema, effort, model
     try {
       if (!res.ok) {
         // The body of an error response can echo the request; only the status leaves this function.
-        if (RETRYABLE.has(res.status) && attempt < BUDGET.retries) {
-          await sleep(5_000 * (attempt + 1));
+        if (RETRYABLE.has(res.status) && attempt < retries) {
+          // The provider's own wait, when it names one in seconds and it is sane; otherwise a growing pause.
+          const after = Number(res.headers?.get?.('retry-after'));
+          await sleep(Number.isFinite(after) && after > 0 && after <= 120 ? after * 1_000 : 5_000 * (attempt + 1));
           continue;
         }
         throw new Error(`OpenRouter answered HTTP ${res.status}${STATUS_HINTS[res.status] ? ` (${STATUS_HINTS[res.status]})` : ''}`);
@@ -118,10 +126,12 @@ export async function callReviewer({ apiKey, system, user, schema, effort, model
 
       let review;
       try {
-        review = JSON.parse(content);
+        // A model that wraps its JSON in a code fence despite the schema is still answering in JSON.
+        review = JSON.parse(content.trim().replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/, ''));
       } catch {
         throw new Error('The review was not valid JSON despite the schema.');
       }
+      if (coerce) review = coerce(review);
       const violation = firstViolation(schema, review);
       if (violation) throw new Error(`The review did not match the schema at ${violation}.`);
       return { review, usage: json.usage || null, model: json.model || model || QA_MODEL };

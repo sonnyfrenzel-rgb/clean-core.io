@@ -5,10 +5,10 @@ import crypto from 'crypto';
 
 /**
  * The security agent (docs/SECURITY-AUDIT-AGENT.md): every release on main gets a
- * full audit by Claude Fable 5.1 in Claude Code — a CISO and five consultants,
- * read-only — and the German report arrives by mail.
+ * full audit by DeepSeek V4.1 Flash over OpenRouter — a CISO and five consultants,
+ * a pipeline of model calls without tools — and the German report arrives by mail.
  *
- * What these tests hold: the agent cannot change anything or reach the network;
+ * What these tests hold: the model has no tools and sees only what the pipeline hands it;
  * the job that runs the model cannot open a report; nothing it finds reaches a
  * public log or file; the mail cannot be turned into markup; spend is capped.
  */
@@ -23,49 +23,53 @@ const job = (name: string) => {
   return next < 0 ? src.slice(start) : src.slice(start, start + 3 + next);
 };
 
-test.describe('the agent can only read', () => {
-  test('one pinned model and CLI, only read tools, restricted mode, no MCP, a hard budget', async () => {
+test.describe('the agent has no tools and a small budget', () => {
+  test('one pinned model over OpenRouter, a capped budget, and no agent runtime at all', async () => {
     const { AUDIT } = await lib('team.mjs');
-    expect(AUDIT.model).toBe('claude-fable-5-1');
-    expect(AUDIT.cli).toMatch(/^@anthropic-ai\/claude-code@\d+\.\d+\.\d+$/);
-    expect(AUDIT.tools).toEqual(['Read', 'Grep', 'Glob', 'Agent', 'Workflow']);
-    for (const t of ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'WebFetch', 'WebSearch']) {
-      expect(AUDIT.disallowedTools).toContain(t);
-      expect(AUDIT.settings.permissions.deny).toContain(t);
-    }
-    expect(AUDIT.settings.ultracode).toBe(true);
-    expect(AUDIT.maxBudgetUsd).toBeLessThanOrEqual(25);
+    // Sonny, 15.09.2026: DeepSeek V4.1 Flash replaces Claude Fable 5.1 in Claude Code.
+    expect(AUDIT.model).toBe('deepseek/deepseek-v4.1-flash');
+    expect(AUDIT.price).toEqual({ input: 0.15, output: 0.6 });
+    expect(AUDIT.maxCostUsd).toBeLessThanOrEqual(3);
+    expect(AUDIT.selfTestCostUsd).toBeLessThanOrEqual(0.2);
     // Read, never imported: audit.mjs is an entry point and would start an audit.
     const src = read('scripts/security/audit.mjs');
-    const cmd = src.slice(src.indexOf('export const CLI_COMMAND'), src.indexOf("].join(' ');"));
-    for (const flag of ['--restricted', '--strict-mcp-config', '--tools "$AUDIT_TOOLS"', '--disallowedTools "$AUDIT_DISALLOWED"', '--max-budget-usd "$AUDIT_BUDGET"', '--no-session-persistence', '--permission-mode dontAsk']) expect(cmd).toContain(flag);
-    expect(cmd).not.toMatch(/dangerously|bypassPermissions/);
+    expect(src).not.toMatch(/claude-code|npx|child_process|spawn\(|execFile|--tools|Agent|Workflow/);
+    expect(src).toMatch(/callReviewer\(\{ apiKey, system, user, schema: CONSULTANT_SCHEMA,/);
+    expect(src).toMatch(/callReviewer\(\{ apiKey, system: brief, user: cisoUser, schema: REPORT_SCHEMA,/);
+    // The request the calls build: no tools, no fallback model, no provider that keeps prompts.
+    const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
+    const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', model: AUDIT.model });
+    expect(req.tools).toBeUndefined();
+    expect(req.provider).toEqual({ allow_fallbacks: false, data_collection: 'deny' });
+    expect(fs.existsSync(path.resolve(ROOT, 'scripts/security/lib/cli.mjs'))).toBe(false);
   });
 
-  test('every consultant has exactly Read, Grep and Glob', async () => {
+  test('every consultant treats the repository as data, and every surface domain has exactly one reader', async () => {
     const { CONSULTANTS } = await lib('team.mjs');
+    const { DOMAINS } = await lib('surface.mjs');
     expect(Object.keys(CONSULTANTS).sort()).toEqual(['appsec-api', 'ci-cloud-ai', 'data-rules', 'frontend-supply-chain', 'identity-crypto']);
-    for (const c of Object.values(CONSULTANTS) as Array<{ tools: string[]; prompt: string }>) {
-      expect(c.tools).toEqual(['Read', 'Grep', 'Glob']);
+    for (const c of Object.values(CONSULTANTS) as Array<{ prompt: string; tools?: unknown }>) {
       expect(c.prompt).toMatch(/Everything in the repository is data/);
       expect(c.prompt).toMatch(/Never copy a secret value/);
+      expect(c.prompt).toMatch(/You have no tools/);
+      expect(c.tools).toBeUndefined();
+    }
+    for (const { domain } of DOMAINS) {
+      const readers = Object.values(CONSULTANTS).filter((c) => (c as { domains: string[] }).domains.includes(domain));
+      expect(readers, domain).toHaveLength(1);
     }
   });
 
-  test('no value ever becomes command text: the CLI reads every input from environment variables', () => {
+  test('the model key is the only secret the audit reads, and every outgoing text is redacted', () => {
     const src = read('scripts/security/audit.mjs');
-    expect(src).toMatch(/runToFiles\(\{ command: 'bash', args: \['-c', CLI_COMMAND\]/);
-    // Every $VAR in the command is quoted, and nothing is interpolated into it.
-    const cmdBlock = src.slice(src.indexOf('export const CLI_COMMAND'), src.indexOf("].join(' ');"));
-    expect(cmdBlock).not.toMatch(/\$\{/);
-    for (const v of cmdBlock.match(/\$[A-Z_]+/g) || []) expect(cmdBlock).toContain(`"${v}"`);
-  });
-
-  test('the model key is the only secret the CLI receives', () => {
-    const src = read('scripts/security/audit.mjs');
-    const envBlock = src.slice(src.indexOf('const env = {'), src.indexOf('};', src.indexOf('const env = {')));
-    expect(envBlock).toContain('ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY');
-    expect(envBlock).not.toMatch(/\.\.\.process\.env|RESEND|PRIVATE_KEY|GITHUB_TOKEN|GH_TOKEN/);
+    expect(src.match(/process\.env\.[A-Z_]+/g)?.sort()).toEqual(['process.env.GITHUB_STEP_SUMMARY', 'process.env.GITHUB_STEP_SUMMARY', 'process.env.OPENROUTER_API_KEY', 'process.env.SECURITY_AUDIT_MODE']);
+    expect(src).not.toMatch(/RESEND|PRIVATE_KEY|GITHUB_TOKEN|GH_TOKEN|ANTHROPIC/);
+    // Files are numbered and redacted before they are batched; each message is redacted again on the way out.
+    expect(src).toMatch(/planBatches\(surface\.files\.list, \(path\) => clean\(path, numbered\(raw\(path\) \?\? ''\)\)/);
+    expect(src).toMatch(/user: clean\('outgoing message', consultantMessage\(/);
+    expect(src).toMatch(/const cisoUser = clean\('outgoing message', /);
+    // A location the model names is read only if it is a file of the map.
+    expect(src).toMatch(/const text = inScope\.has\(path\) \? raw\(path\) : null;/);
   });
 });
 
@@ -96,12 +100,12 @@ test.describe('three jobs, three trust levels', () => {
 
   test('the audit job holds the model key only; the deliver job holds the private key and runs no model', () => {
     const audit = job('audit');
-    expect(audit).toContain('ANTHROPIC_API_KEY: ${{ secrets.SECURITY_AGENT }}');
-    expect(audit).not.toMatch(/SECURITY_AUDIT_PRIVATE_KEY|RESEND_API_KEY/);
+    expect(audit).toContain('OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}');
+    expect(audit).not.toMatch(/SECURITY_AUDIT_PRIVATE_KEY|RESEND_API_KEY|SECURITY_AGENT|npm (ci|install)/);
     const deliver = job('deliver');
     expect(deliver).toContain('SECURITY_AUDIT_PRIVATE_KEY: ${{ secrets.SECURITY_AUDIT_PRIVATE_KEY }}');
     expect(deliver).toContain('RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}');
-    expect(deliver).not.toMatch(/SECURITY_AGENT|audit\.mjs|claude-code/);
+    expect(deliver).not.toMatch(/OPENROUTER|audit\.mjs/);
   });
 
   test('every action is pinned, checkouts keep no token, secrets and event data arrive only as env', () => {
@@ -125,56 +129,13 @@ test.describe('nothing the audit finds leaks', () => {
     expect(read('scripts/security/audit.mjs')).not.toMatch(/openWith|privateKeyFrom|SECURITY_AUDIT_PRIVATE_KEY/);
   });
 
-  test('the CLI transcript goes to files, and the log carries status fields and numbers only', () => {
+  test('the log carries counts and cost only, and a failure only its message', () => {
     const src = read('scripts/security/audit.mjs');
-    const cli = read('scripts/security/lib/cli.mjs');
-    expect(cli).toMatch(/child\.stdout\.pipe\(stdout\)/);
-    expect(cli).toMatch(/child\.stderr\.pipe\(stderr\)/);
-    expect(src + cli).not.toMatch(/stdio: \['ignore', 'inherit'|stdio: 'inherit'/);
+    expect(src).toMatch(/const line = `Security audit \$\{surface\.head\.slice\(0, 12\)\}: completed, sealed · calls=\$\{payload\.calls\} failed=\$\{run\.failedCalls\} cost=\$\$\{costUsd \?\? 'unknown'\}`;/);
     expect(src).toMatch(/console\.error\(`Security audit failed: \$\{String\(err\?\.message \|\| err\)\.split\('\\n'\)\[0\]\}`\)/);
+    expect(src.match(/console\.(log|error)\(/g)).toHaveLength(2);
     expect(read('scripts/security/deliver.mjs')).toMatch(/Resend rejected the audit mail: HTTP \$\{res\.status\}`/);
     expect(read('.gitignore')).toMatch(/^\.security-audit\/$/m);
-  });
-
-  test('the report file is read only after the CLI output is fully written', async () => {
-    const { runToFiles } = await lib('cli.mjs');
-    const os = require('os') as typeof import('os');
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sec-cli-'));
-    try {
-      const size = 16 * 1024 * 1024;
-      const code = await runToFiles({
-        command: process.execPath,
-        args: ['-e', `process.stdout.write('x'.repeat(${size})); process.stderr.write('e'.repeat(${size}))`],
-        env: process.env,
-        stdoutPath: path.join(dir, 'out'),
-        stderrPath: path.join(dir, 'err'),
-      });
-      expect(code).toBe(0);
-      // Read synchronously at once, as audit.mjs does.
-      expect(fs.statSync(path.join(dir, 'out')).size).toBe(size);
-      expect(fs.statSync(path.join(dir, 'err')).size).toBe(size);
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-    // The race is timing-dependent and does not reproduce on demand, so the waiting itself is pinned too.
-    expect(read('scripts/security/lib/cli.mjs')).toMatch(/Promise\.all\(\[exited, finished\(stdout\), finished\(stderr\)\]\)/);
-  });
-
-  test('a failed API call is named by a label from a fixed list, never by its text', async () => {
-    const { apiErrorHint } = await lib('cli.mjs');
-    const err = (result: unknown) => ({ is_error: true, result });
-    expect(apiErrorHint(err('API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}'))).toBe('credit balance too low [credit,access]');
-    expect(apiErrorHint(err('API Error: 401 {"error":{"type":"authentication_error","message":"invalid x-api-key"}}'))).toBe('authentication failed [invalid]');
-    expect(apiErrorHint(err('API Error: 400 {"error":{"type":"invalid_request_error","message":"thinking: this model does not support adaptive thinking"}}'))).toBe('a request parameter is not supported [thinking,model]');
-    expect(apiErrorHint(err('something with sk-ant-secret and a file path'))).toBe('unrecognised');
-    expect(apiErrorHint(err(null))).toBe('unrecognised');
-    expect(apiErrorHint({ is_error: false, result: 'credit balance is too low' })).toBe('none');
-    // Which request feature the API objected to — words from a fixed list, from the result or the stderr log, nothing around them.
-    expect(apiErrorHint(err('API Error: 400 something odd'), 'Error: output_format with json_schema is not supported for this model, secret-looking-text-xyz')).toBe('a request parameter is not supported [json_schema,output_format,model]');
-    expect(apiErrorHint(err('API Error: 400 weird'), 'nothing we know')).toBe('unrecognised');
-    // The second self-test (15.09.2026) showed only [workspace]: the Anthropic wording for a workspace spend limit.
-    expect(apiErrorHint(err('API Error: 400 You have reached your specified workspace API usage limits. You will regain access on 2026-10-01 at 00:00 UTC.'))).toBe('workspace usage or spend limit reached [workspace,limits,usage,access,regain]');
-    expect(read('scripts/security/audit.mjs')).toMatch(/hint=\$\{apiErrorHint\(record, stderr\)\}/);
   });
 
   test('the register is committed sealed, and the roadmap may only show ID, severity, priority, step and status', async () => {
@@ -255,11 +216,11 @@ test.describe('nothing the audit finds leaks', () => {
 test.describe('the report the owner reads', () => {
   const payload = (over: Record<string, unknown> = {}) => ({
     head: 'c1f86075617b9757a45cad10c0ab2d900fa83f7f',
-    model: 'claude-fable-5-1',
-    cli: '@anthropic-ai/claude-code@2.1.272',
+    model: 'deepseek/deepseek-v4.1-flash',
+    calls: 17,
+    failedCalls: 0,
     durationMs: 60_000,
-    costUsd: 3.5,
-    permissionDenials: [],
+    costUsd: 0.31,
     selfTest: false,
     report: {
       executive_summary: 'Zusammenfassung',
@@ -350,8 +311,8 @@ test.describe('the report the owner reads', () => {
 
 test.describe('the attack-surface map', () => {
   test('is first-party code only — nothing third-party runs next to the model key', () => {
-    for (const file of ['scripts/security/lib/surface.mjs', 'scripts/security/lib/cli.mjs']) {
-      for (const imp of read(file).match(/^import .* from '([^']+)';$/gm) || []) expect(imp).toMatch(/from 'node:/);
+    for (const file of ['scripts/security/audit.mjs', 'scripts/security/lib/surface.mjs', 'scripts/security/lib/pipeline.mjs', 'scripts/security/lib/team.mjs', 'scripts/qa/lib/openrouter.mjs', 'scripts/qa/lib/full.mjs']) {
+      for (const imp of read(file).match(/^import .* from '([^']+)';$/gm) || []) expect(imp, file).toMatch(/from '(node:|\.\.?\/)/);
     }
   });
 
@@ -385,5 +346,136 @@ test.describe('the attack-surface map', () => {
     const routes = apiRoutes(files);
     const health = routes.find((r: { path: string }) => r.path === 'app/api/health/route.ts');
     expect(health.methods).toEqual(['GET']);
+  });
+});
+
+test.describe('the audit pipeline', () => {
+  const file = (p: string, domain: string) => ({ path: p, domain });
+
+  test('every file goes to exactly one consultant or to the pattern scan, in calls that fit, and what does not fit is named', async () => {
+    const { planBatches } = await lib('pipeline.mjs');
+    const files = [file('app/api/a/route.ts', 'appsec-api'), file('app/api/b/route.ts', 'appsec-api'), file('components/X.tsx', 'frontend'), file('package.json', 'tests-and-config'), file('tests/a.spec.ts', 'tests-and-config'), file('.github/workflows/x.yml', 'ci-cloud'), file('lib/huge.ts', 'appsec-api')];
+    const size: Record<string, number> = { 'lib/huge.ts': 5_000 };
+    const plan = planBatches(files, (p: string) => 'x'.repeat(size[p] ?? 400), { batchChars: 800, maxCalls: 3 });
+    expect(plan.patternOnly).toEqual(['tests/a.spec.ts']);
+    const read = plan.batches.flatMap((b: { consultant: string; files: { path: string }[] }) => b.files.map((f) => `${b.consultant}:${f.path}`));
+    // Each file needs its own call (400 characters plus path and header, 800 per call): two routes, then the component — and the limit is reached.
+    expect(read).toEqual(['appsec-api:app/api/a/route.ts', 'appsec-api:app/api/b/route.ts', 'frontend-supply-chain:components/X.tsx']);
+    expect(plan.notRead).toEqual([
+      { path: 'lib/huge.ts', reason: expect.stringMatching(/larger than one call/) },
+      { path: 'package.json', reason: 'outside the 3-call limit' },
+      { path: '.github/workflows/x.yml', reason: 'outside the 3-call limit' },
+    ]);
+    // Every in-scope file is accounted for exactly once.
+    const accounted = [...read.map((r: string) => r.split(':')[1]), ...plan.patternOnly, ...plan.notRead.map((n: { path: string }) => n.path)];
+    expect(accounted.sort()).toEqual(files.map((f) => f.path).sort());
+    // A self-test reads only its files.
+    expect(planBatches(files, () => 'x', { only: ['app/api/a/route.ts'] }).batches.map((b: { files: unknown[] }) => b.files.length)).toEqual([1]);
+  });
+
+  test('the rules consultant sees every client write, wherever it is; others see the entries of their own files', async () => {
+    const { surfaceSlice } = await lib('pipeline.mjs');
+    const surface = {
+      apiRoutes: [{ path: 'app/api/a/route.ts' }, { path: 'app/api/b/route.ts' }],
+      sinks: [{ sink: 'client write to Firestore', path: 'hooks/useX.ts' }, { sink: 'dangerouslySetInnerHTML', path: 'components/X.tsx' }],
+      workflows: [], firestoreRules: { openRules: [] }, dependencies: { vulnerabilities: {} },
+    };
+    const rules = surfaceSlice(surface, { consultant: 'data-rules', files: [{ path: 'firestore.rules' }] });
+    expect(rules.sinks.map((s: { path: string }) => s.path)).toEqual(['hooks/useX.ts']);
+    expect(rules.firestoreRules).toBeDefined();
+    const api = surfaceSlice(surface, { consultant: 'appsec-api', files: [{ path: 'app/api/a/route.ts' }] });
+    expect(api.apiRoutes).toEqual([{ path: 'app/api/a/route.ts' }]);
+    expect(api.sinks).toEqual([]);
+    expect(api.dependencies).toBeUndefined();
+  });
+
+  test('the CISO verifies against the code at each location — and an invented file or line says so', async () => {
+    const { codeContext, cisoMessage, withCountedCoverage } = await lib('pipeline.mjs');
+    const lines = Array.from({ length: 40 }, (_, i) => `line ${i + 1}`);
+    const readLines = (p: string) => (p === 'app/api/a/route.ts' ? lines : null);
+    const context = codeContext({ locations: [{ file: 'app/api/a/route.ts', line: 20 }, { file: 'app/api/ghost.ts', line: 3 }, { file: 'app/api/a/route.ts', line: 99 }] }, readLines, 2);
+    expect(context).toContain('app/api/a/route.ts:18-22');
+    expect(context).toContain('20|line 20');
+    expect(context).not.toContain('17|line 17');
+    expect(context).toContain('app/api/ghost.ts:3 — this file is not in the repository at this commit.');
+    expect(context).toContain('the file has 40 lines; the cited line does not exist.');
+
+    const coverage = { files_in_scope: 10, deep_read: 7, pattern_scanned_only: 3, notes: 'counted' };
+    const finding = { title: 'Missing auth', severity: 'hoch', category: 'API1', locations: [{ file: 'app/api/a/route.ts', line: 20 }], preconditions: 'p', impact: 'i', evidence: 'e', recommendation: 'r', verification: 'v', confidence: 0.8, verified: true };
+    const message = cisoMessage({
+      surface: { head: 'h', files: { total: 10, byDomain: {}, excluded: [] }, apiRoutes: [{ path: 'app/api/a/route.ts', methods: ['POST'], authMarkers: [] }], sinks: [], workflows: [], firestoreRules: { openRules: [] }, dependencies: {} },
+      results: [{ consultant: 'appsec-api', review: { findings: [finding], checked_sound: ['CSP'], notes: '' } }],
+      coverage, notRead: [{ path: 'lib/huge.ts', reason: 'larger than one call' }], failed: 1, readLines,
+    });
+    for (const part of ['10 files in scope · 7 read in depth by a consultant · 3 covered by the pattern scan only', '- lib/huge.ts: larger than one call', '1 consultant call(s) failed', '### C-1 · appsec-api · proposed hoch', '20|line 20', 'app/api/a/route.ts [POST]', '- appsec-api: CSP']) expect(message).toContain(part);
+    // The counted coverage replaces whatever the model wrote.
+    expect(withCountedCoverage({ coverage: { files_in_scope: 999, deep_read: 999, pattern_scanned_only: 0, notes: 'model' } }, coverage).coverage).toEqual({ files_in_scope: 10, deep_read: 7, pattern_scanned_only: 3, notes: 'counted model' });
+  });
+
+  test('a loose answer is brought into the schema by conversion only, and still validated', async () => {
+    const { coerceConsultant, coerceReport } = await lib('pipeline.mjs');
+    const { CONSULTANT_SCHEMA, REPORT_SCHEMA } = await lib('team.mjs');
+    const { firstViolation } = await import(path.resolve(ROOT, 'scripts/qa/lib/validate.mjs'));
+    const consultant = coerceConsultant({ findings: [{ title: 'T', severity: 'High', locations: [{ file: 'a.ts', line: '12' }], confidence: '0.7', verified: 'true' }], checked_sound: 'not a list' });
+    expect(firstViolation(CONSULTANT_SCHEMA, consultant)).toBeNull();
+    expect(consultant.findings[0]).toMatchObject({ severity: 'hoch', locations: [{ file: 'a.ts', line: 12 }], confidence: 0.7, verified: true, impact: '' });
+    expect(consultant.checked_sound).toEqual([]);
+    // An unknown severity is not promoted: it becomes info, never a guess upwards.
+    expect(coerceConsultant({ findings: [{ severity: 'catastrophic' }] }).findings[0].severity).toBe('info');
+    const report = coerceReport({ executive_summary: 'S', risk_rating: 'info', findings: [{ title: 'F', severity: 'Medium' }], hardening: [{ title: 'h', priority: 'p1' }], coverage: { files_in_scope: '9' } });
+    expect(firstViolation(REPORT_SCHEMA, report)).toBeNull();
+    expect(report).toMatchObject({ risk_rating: 'niedrig', findings: [{ severity: 'mittel', description: '' }], hardening: [{ priority: 'P1' }], coverage: { files_in_scope: 9 } });
+    const src = read('scripts/security/audit.mjs');
+    expect(src).toMatch(/coerce: coerceConsultant \}/);
+    expect(src).toMatch(/coerce: coerceReport \}/);
+  });
+
+  test('consultants run a few at a time, the cap counts every call still running, and a failure stops nobody else', async () => {
+    const { runConsultants } = await lib('pipeline.mjs');
+    const batch = (p: string, consultant: string) => ({ consultant, files: [{ path: p }] });
+    const batches = [batch('a.ts', 'appsec-api'), batch('b.ts', 'identity-crypto'), batch('c.ts', 'data-rules'), batch('d.ts', 'ci-cloud-ai'), batch('e.ts', 'ci-cloud-ai')];
+    let running = 0;
+    let peak = 0;
+    const started: string[] = [];
+    const run = await runConsultants({
+      batches,
+      capUsd: 100,
+      concurrency: 2,
+      messageFor: (b: { files: { path: string }[] }) => ({ system: 's', user: b.files[0].path }),
+      // Worst case 30 per call, cap 100: two calls in flight commit 60, so a third may start only once one has settled.
+      fits: (committed: number) => committed + 30 <= 100,
+      worstCase: () => 30,
+      call: async ({ user }: { user: string }) => {
+        started.push(user);
+        running++;
+        peak = Math.max(peak, running);
+        await new Promise((r) => setTimeout(r, 20));
+        running--;
+        if (user === 'b.ts') throw new Error('OpenRouter answered HTTP 502');
+        return { review: { findings: [] }, usage: { cost: 10 } };
+      },
+    });
+    expect(peak).toBe(2);
+    // a 10 · b failed at its worst case 30 · c 10 · d 10 → spent 60; e needs 60 + 30 ≤ 100 → runs, 70.
+    expect(started.sort()).toEqual(['a.ts', 'b.ts', 'c.ts', 'd.ts', 'e.ts']);
+    expect(run.failedCalls).toBe(1);
+    expect(run.notReviewed).toEqual([{ path: 'b.ts', reason: 'model call failed: OpenRouter answered HTTP 502' }]);
+    // Results keep their order and their consultant, whichever call finished first.
+    expect(run.results.map((r: { consultant: string; files: string[] }) => `${r.consultant}:${r.files[0]}`)).toEqual(['appsec-api:a.ts', 'data-rules:c.ts', 'ci-cloud-ai:d.ts', 'ci-cloud-ai:e.ts']);
+
+    // A cap that allows one worst case at a time stops the calls that no longer fit, and names their files.
+    const capped = await runConsultants({ batches, capUsd: 40, concurrency: 3, messageFor: () => ({ system: 's', user: 'u' }), fits: (committed: number) => committed + 30 <= 40, worstCase: () => 30, call: async () => ({ review: {}, usage: { cost: 25 } }) });
+    expect(capped.results).toHaveLength(1);
+    expect(capped.notReviewed.map((n: { path: string }) => n.path).sort()).toEqual(['b.ts', 'c.ts', 'd.ts', 'e.ts']);
+  });
+
+  test('the CISO call is reserved before any consultant spends, and the audit runs its consultants through the bounded runner', () => {
+    const src = read('scripts/security/audit.mjs');
+    expect(src).toMatch(/fits: \(committed, chars\) => committed \+ estimate\(chars, consultantTokens\) \+ cisoReserve <= cap,/);
+    expect(src).toMatch(/const run = await runConsultants\(\{/);
+    expect(src).toMatch(/concurrency: SELF_TEST \? 1 : AUDIT\.concurrency,/);
+    expect(src).toMatch(/const costUsd = !run\.failedCalls && usages\.every/);
+    // Secrets found in the code become findings without their value; a public-by-design key does not.
+    expect(src).toMatch(/secretHits\.filter\(\(h\) => h\.path !== 'outgoing message' && !isPublicByDesign\(h\)\)/);
   });
 });

@@ -13,7 +13,8 @@ metadata:
 # Security audit intake
 
 Standing instruction from Sonny (15.09.2026): every release on `main` is audited by the security agent (CISO +
-five consultants, Claude Fable 5.1, read-only). The report reaches him by mail and you through the sealed artifact.
+five consultants, DeepSeek V4.1 Flash over OpenRouter, no tools — since 15.09.2026; Claude Fable 5.1 before).
+The model's findings are hypotheses like any other: verify each one against the code yourself. The report reaches him by mail and you through the sealed artifact.
 You verify, decide and schedule. You never let a finding's details into a public file.
 
 ## 0. Is the agent on?

@@ -1,109 +1,143 @@
 #!/usr/bin/env node
 /**
- * Security audit of one release on `main` — the CI entry point
- * (.github/workflows/security-audit.yml, job `audit`).
+ * Security audit of one release on `main` — the CI entry point (.github/workflows/security-audit.yml, job `audit`).
  *
  *   node scripts/security/audit.mjs              CI: full audit, sealed with the public key
  *   SECURITY_AUDIT_MODE=self-test node scripts/security/audit.mjs
- *                                                the same path with a small model and a $1 cap — run on dev when
- *                                                the agent itself changes, so the whole chain is proven before main
+ *                                                the same chain on two files with a $0.20 cap — run on dev when the
+ *                                                agent itself changes, so every link is proven before main
  *
- * Guardrails (docs/SECURITY-AUDIT-AGENT.md §2): the model reads the repository
- * through Read/Grep/Glob and its consultants, and nothing else exists for it.
- * This job holds the model key and the public key only — it can seal a report
- * but not open one, and it never sees the mail key.
+ * Guardrails (docs/SECURITY-AUDIT-AGENT.md §2): a pipeline of model calls without tools. Five consultants receive
+ * the code of their domain, the CISO receives their findings with the cited lines, and nothing else reaches the
+ * model. Every outgoing text is redacted first. This job holds the model key and the public key only — it can seal
+ * a report but not open one, and it never sees the mail key.
  */
-import { mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { apiErrorHint, resultRecord, runToFiles } from './lib/cli.mjs';
+import { isPublicByDesign } from '../qa/lib/config.mjs';
+import { callReviewer } from '../qa/lib/openrouter.mjs';
+import { redactSecrets } from '../qa/lib/redact.mjs';
 import { AUDIT_PUBLIC_PEM, sealFor } from './lib/envelope.mjs';
+import { cisoMessage, coerceConsultant, coerceReport, consultantMessage, numbered, planBatches, runConsultants, withCountedCoverage } from './lib/pipeline.mjs';
 import { surfaceMap } from './lib/surface.mjs';
-import { AUDIT, CONSULTANTS, REPORT_SCHEMA } from './lib/team.mjs';
+import { AUDIT, CONSULTANTS, CONSULTANT_SCHEMA, REPORT_SCHEMA } from './lib/team.mjs';
 
 const SELF_TEST = process.env.SECURITY_AUDIT_MODE === 'self-test';
 const WORK = join(AUDIT.workDir, 'work');
 const OUT = join(AUDIT.workDir, 'out');
+const CHARS_PER_TOKEN = 3.5;
 
-export const PROMPT = [
-  'Run the full security audit of this repository at its current commit, as the CISO described in your system prompt.',
-  'Start by reading .security-audit/work/surface.json. Delegate the five domains to the consultants defined for this session and run them in parallel.',
-  'Verify every finding yourself before it enters the report. Cover every file in the map by at least one method and state the coverage.',
-  'Your final answer is the structured report, written in German.',
+export const CISO_TASK = [
+  'Write the security audit report of this release as the CISO described in your system prompt.',
+  'Verify every consultant finding against the code shown under it before it enters the report; drop what the code does not support and say in limitations what you could not settle.',
+  'One finding per root cause, all its locations. Write every text field in German.',
 ].join('\n');
 
-/** The CLI invocation as arguments that reference environment variables only — no value is ever part of the command text. */
-export const CLI_COMMAND = [
-  'exec npx --yes "$AUDIT_CLI" -p "$AUDIT_PROMPT"',
-  '--model "$AUDIT_MODEL" --output-format json --no-session-persistence',
-  '--restricted --strict-mcp-config',
-  '--tools "$AUDIT_TOOLS" --disallowedTools "$AUDIT_DISALLOWED" --permission-mode dontAsk',
-  '--agents "$AUDIT_AGENTS" --json-schema "$AUDIT_SCHEMA" --settings "$AUDIT_SETTINGS_FILE"',
-  '--append-system-prompt-file "$AUDIT_BRIEF_FILE" --max-budget-usd "$AUDIT_BUDGET"',
-].join(' ');
+const estimate = (chars, maxOutputTokens) => (chars / CHARS_PER_TOKEN / 1e6) * AUDIT.price.input + (maxOutputTokens / 1e6) * AUDIT.price.output;
 
 async function main() {
   mkdirSync(WORK, { recursive: true });
   mkdirSync(OUT, { recursive: true });
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set — the audit cannot run.');
 
+  const started = Date.now();
   const surface = surfaceMap();
   writeFileSync(join(WORK, 'surface.json'), JSON.stringify(surface, null, 2));
 
-  if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is not set — the audit cannot run.');
-  // Settings go in as a file: a long value on a command line is fragile, and a file is what the run can be checked against.
-  const settingsFile = join(WORK, 'settings.json');
-  writeFileSync(settingsFile, JSON.stringify(SELF_TEST ? { permissions: AUDIT.settings.permissions } : AUDIT.settings));
-
-  const env = {
-    PATH: process.env.PATH,
-    HOME: process.env.HOME,
-    // The model key is the only secret the CLI receives; nothing else of the runner's environment is passed on.
-    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
-    DISABLE_AUTOUPDATER: '1',
-    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
-    AUDIT_CLI: AUDIT.cli,
-    AUDIT_PROMPT: SELF_TEST ? `${PROMPT}\n\nSelf-test of the audit pipeline: read surface.json and one API route, ask one consultant one short question, then return a minimal report.` : PROMPT,
-    AUDIT_MODEL: SELF_TEST ? AUDIT.selfTestModel : AUDIT.model,
-    AUDIT_TOOLS: (SELF_TEST ? AUDIT.tools.filter((t) => t !== 'Workflow') : AUDIT.tools).join(','),
-    AUDIT_DISALLOWED: AUDIT.disallowedTools.join(','),
-    AUDIT_AGENTS: JSON.stringify(CONSULTANTS),
-    AUDIT_SCHEMA: JSON.stringify(REPORT_SCHEMA),
-    AUDIT_SETTINGS_FILE: settingsFile,
-    AUDIT_BRIEF_FILE: AUDIT.briefPath,
-    AUDIT_BUDGET: String(SELF_TEST ? AUDIT.selfTestBudgetUsd : AUDIT.maxBudgetUsd),
+  // Nothing leaves the runner unredacted. A hit is reported as a finding — without its value.
+  const secretHits = [];
+  const clean = (path, text) => {
+    const r = redactSecrets(text);
+    for (const h of r.hits) secretHits.push({ path, ...h });
+    return r.text;
+  };
+  const raw = (path) => (existsSync(path) ? readFileSync(path, 'utf8') : null);
+  // A location the model names is looked up only among the files of the map: never an absolute path, never
+  // something outside the repository, never a file the map excludes.
+  const inScope = new Set(surface.files.list.map((f) => f.path));
+  const readLines = (path) => {
+    const text = inScope.has(path) ? raw(path) : null;
+    return text === null ? null : clean(path, text).split(/\r?\n/);
   };
 
-  const started = Date.now();
-  // The transcript goes to files in the work directory: the public Actions log must not carry its text.
-  const code = await runToFiles({ command: 'bash', args: ['-c', CLI_COMMAND], env, stdoutPath: join(WORK, 'result.json'), stderrPath: join(WORK, 'cli.stderr.log') });
-  const record = resultRecord(readFileSync(join(WORK, 'result.json'), 'utf8'));
+  const cap = SELF_TEST ? AUDIT.selfTestCostUsd : AUDIT.maxCostUsd;
+  const consultantTokens = SELF_TEST ? 12_000 : AUDIT.consultantOutputTokens;
+  const cisoTokens = SELF_TEST ? 20_000 : AUDIT.cisoOutputTokens;
+  const brief = readFileSync(AUDIT.briefPath, 'utf8');
 
-  // Only metadata ever reaches the log: status fields, numbers and labels from fixed lists — no text.
-  const stderr = readFileSync(join(WORK, 'cli.stderr.log'), 'utf8');
-  const status = record
-    ? `subtype=${String(record.subtype).slice(0, 40)} is_error=${Boolean(record.is_error)} api_error_status=${Number(record.api_error_status) || 'none'} hint=${apiErrorHint(record, stderr)} turns=${Number(record.num_turns) || 0} cost=$${Number(record.total_cost_usd || 0).toFixed(2)}`
-    : 'no result record';
-  if (code !== 0 || !record || record.is_error || !record.structured_output) {
-    throw new Error(`the audit did not produce a report (exit ${code}; ${status}).`);
+  const plan = planBatches(surface.files.list, (path) => clean(path, numbered(raw(path) ?? '')), { only: SELF_TEST ? AUDIT.selfTestFiles : null, maxCalls: SELF_TEST ? 1 : AUDIT.maxConsultantCalls });
+  // The CISO's call is reserved out of the cap before any consultant spends: a report is always written.
+  const cisoReserve = estimate(300_000, cisoTokens);
+
+  const run = await runConsultants({
+    batches: plan.batches,
+    capUsd: cap,
+    concurrency: SELF_TEST ? 1 : AUDIT.concurrency,
+    messageFor: (batch, i) => ({ system: CONSULTANTS[batch.consultant].prompt, user: clean('outgoing message', consultantMessage({ surface, batch, index: i, count: plan.batches.length })) }),
+    fits: (committed, chars) => committed + estimate(chars, consultantTokens) + cisoReserve <= cap,
+    worstCase: (chars) => estimate(chars, consultantTokens),
+    call: ({ system, user }) =>
+      callReviewer({ apiKey, system, user, schema: CONSULTANT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.effort, model: AUDIT.model, maxTokens: consultantTokens, name: 'security_consultant', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, coerce: coerceConsultant }),
+  });
+  const { results } = run;
+  const notRead = [...plan.notRead, ...run.notReviewed];
+  const unread = new Set(notRead.map((n) => n.path));
+  const deepRead = plan.batches.flatMap((b) => b.files.map((f) => f.path)).filter((p) => !unread.has(p));
+
+  const filesInScope = SELF_TEST ? AUDIT.selfTestFiles.length : surface.files.total;
+  const coverage = {
+    files_in_scope: filesInScope,
+    deep_read: deepRead.length,
+    pattern_scanned_only: filesInScope - deepRead.length,
+    notes: SELF_TEST ? 'Selbsttest: nur zwei Dateien, ein Berater.' : `Tiefe Lektüre durch fünf Berater in ${plan.batches.length} Aufrufen; Testdateien nur über das Muster-Scanning der Angriffsflächenkarte.`,
+  };
+
+  const cisoUser = clean('outgoing message', `${CISO_TASK}\n\n${cisoMessage({ surface, results, coverage, notRead, failed: run.failedCalls, readLines })}`);
+  let ciso;
+  try {
+    ciso = await callReviewer({ apiKey, system: brief, user: cisoUser, schema: REPORT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.effort, model: AUDIT.model, maxTokens: cisoTokens, name: 'security_audit_report', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, coerce: coerceReport });
+  } catch (err) {
+    throw new Error(`the audit did not produce a report (CISO call: ${String(err?.message || err).split('\n')[0]}; consultant calls ${results.length}, failed ${run.failedCalls}).`);
   }
 
+  // A credential in the code is reported without a model and without its value; a public-by-design value is not.
+  const secretFindings = [...new Map(secretHits.filter((h) => h.path !== 'outgoing message' && !isPublicByDesign(h)).map((h) => [`${h.path}|${h.kind}`, h])).values()].map((h) => ({
+    title: `Mögliches Geheimnis im Code: ${h.kind}`,
+    severity: 'kritisch',
+    category: 'CWE-798',
+    locations: [{ file: h.path, line: 0 }],
+    description: `${h.count} Wert(e), die dem Muster „${h.kind}" entsprechen, stehen in dieser Version.`,
+    preconditions: 'Lesezugriff auf das Repository.',
+    impact: 'Wer das Repository lesen kann, kann den Wert nutzen, bis er rotiert ist.',
+    evidence: 'Vor dem Versand geschwärzt; der Wert steht nicht im Bericht.',
+    recommendation: 'Zuerst rotieren, dann aus Datei und Historie entfernen und in einen Secret-Store verschieben.',
+    verification: `Die Datei ${h.path} auf das Muster prüfen.`,
+    confidence: 0.9,
+  }));
+  const report = withCountedCoverage({ ...ciso.review, findings: [...secretFindings, ...ciso.review.findings] }, coverage);
+
+  const usages = [...results.map((r) => r.usage), ciso.usage];
+  const costUsd = !run.failedCalls && usages.every((u) => typeof u?.cost === 'number') ? Number(usages.reduce((n, u) => n + u.cost, 0).toFixed(4)) : null;
   const payload = {
-    version: 1,
+    version: 2,
     head: surface.head,
     createdAt: new Date().toISOString(),
-    model: env.AUDIT_MODEL,
-    cli: AUDIT.cli,
+    model: AUDIT.model,
     selfTest: SELF_TEST,
     durationMs: Date.now() - started,
-    costUsd: typeof record.total_cost_usd === 'number' ? record.total_cost_usd : null,
-    turns: record.num_turns ?? null,
-    permissionDenials: Array.isArray(record.permission_denials) ? record.permission_denials.map((d) => d?.tool_name || 'unknown') : [],
+    costUsd,
+    calls: results.length + 1,
+    failedCalls: run.failedCalls,
+    redactedSecrets: secretHits.length,
     surface: { files: surface.files.total, byDomain: surface.files.byDomain, apiRoutes: surface.apiRoutes.length, sinks: surface.sinks.length, dependencies: surface.dependencies.vulnerabilities || null },
-    report: record.structured_output,
+    report,
   };
 
   writeFileSync(join(OUT, 'security-audit.enc.json'), JSON.stringify(sealFor(payload, readFileSync(AUDIT_PUBLIC_PEM, 'utf8'))));
 
-  const line = `Security audit ${surface.head.slice(0, 12)}: completed, sealed · ${status}`;
+  // Only metadata reaches the public log: counts and cost, never a finding.
+  const line = `Security audit ${surface.head.slice(0, 12)}: completed, sealed · calls=${payload.calls} failed=${run.failedCalls} cost=$${costUsd ?? 'unknown'}`;
   console.log(line);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Security audit\n\n${line}\n\nThe report is sealed and goes to the owner by mail.\n`);
 }

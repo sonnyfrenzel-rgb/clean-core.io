@@ -161,6 +161,39 @@ test.describe('the reviewer', () => {
     await expect(callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: teapot })).rejects.toThrow(/^OpenRouter answered HTTP 418$/);
   });
 
+  test('a boolean is a type the validator knows, a fenced answer is still JSON, and coercion is validated after it runs', async () => {
+    const { firstViolation } = await lib('validate.mjs');
+    const schema = { type: 'object', additionalProperties: false, required: ['ok', 'n'], properties: { ok: { type: 'boolean' }, n: { type: 'integer' } } };
+    // Every boolean used to be a violation: the security consultants' first answer was rejected for a correct `verified: true`.
+    expect(firstViolation(schema, { ok: true, n: 1 })).toBeNull();
+    expect(firstViolation(schema, { ok: 'true', n: 1 })).toBe('$.ok');
+
+    const { callReviewer } = await lib('openrouter.mjs');
+    const answer = (content: string) => async () => new Response(JSON.stringify({ choices: [{ message: { content } }], usage: { cost: 0.01 } }), { status: 200 });
+    const fenced = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema, effort: 'low', fetchImpl: answer('```json\n{"ok":true,"n":2}\n```') });
+    expect(fenced.review).toEqual({ ok: true, n: 2 });
+    // Coercion converts types; what it cannot make valid is still rejected, by path and never by value.
+    const coerce = (a: { ok: unknown; n: unknown }) => ({ ok: a.ok === true || a.ok === 'true', n: Number.parseInt(String(a.n), 10) });
+    expect((await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema, effort: 'low', coerce, fetchImpl: answer('{"ok":"true","n":"7"}') })).review).toEqual({ ok: true, n: 7 });
+    await expect(callReviewer({ apiKey: 'k', system: 's', user: 'u', schema, effort: 'low', coerce, fetchImpl: answer('{"ok":"true","n":"seven secret"}') })).rejects.toThrow(/^The review did not match the schema at \$\.n\.$/);
+  });
+
+  test('a rate limit waits as long as the provider asks, within reason, and only as often as the caller allows', async () => {
+    const { callReviewer } = await lib('openrouter.mjs');
+    test.setTimeout(30_000);
+    let calls = 0;
+    const limited = async () => {
+      calls++;
+      return calls < 3 ? new Response('{}', { status: 429, headers: { 'retry-after': '1' } }) : new Response(JSON.stringify({ choices: [{ message: { content: '{"verdict":"go"}' } }] }), { status: 200 });
+    };
+    const started = Date.now();
+    await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'low', retries: 2, fetchImpl: limited });
+    expect(calls).toBe(3);
+    expect(Date.now() - started).toBeGreaterThanOrEqual(1_900);
+    calls = 0;
+    await expect(callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'low', retries: 1, fetchImpl: limited })).rejects.toThrow(/^OpenRouter answered HTTP 429$/);
+  });
+
   test('another agent can pin its own model and send screenshots through the same transport', async () => {
     const { buildRequest, callReviewer } = await lib('openrouter.mjs');
     const parts = [{ type: 'text', text: 'Screenshot 03-analyze-desktop-s1' }, { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,AAAA' } }];

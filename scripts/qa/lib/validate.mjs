@@ -6,7 +6,7 @@
  *
  * Supports exactly the subset REVIEW_SCHEMA uses: object with required and
  * additionalProperties:false, array with items, string (with enum), integer,
- * number. Returns the path of the first violation — a location in the schema,
+ * number, boolean. Returns the path of the first violation — a location in the schema,
  * never a value from the response — or null.
  */
 export function firstViolation(schema, value, path = '$') {
@@ -41,6 +41,10 @@ export function firstViolation(schema, value, path = '$') {
       return Number.isInteger(value) ? null : path;
     case 'number':
       return typeof value === 'number' && Number.isFinite(value) ? null : path;
+    // The security consultants' schema is the first with a boolean. Without this case every boolean was a
+    // violation, and the first self-test on DeepSeek rejected a correct answer (15.09.2026).
+    case 'boolean':
+      return typeof value === 'boolean' ? null : path;
     case undefined:
       return null; // a schema without a type constrains nothing
     default:
