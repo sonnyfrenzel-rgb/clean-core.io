@@ -34,6 +34,18 @@ export function isAncestor(a, b) {
   return gitSucceeds(['merge-base', '--is-ancestor', a, b]);
 }
 
+/** Where `head` left main — the base for a review that has no reviewed checkpoint. Null when main is not available. */
+export function mergeBaseWithMain(head) {
+  for (const ref of ['origin/main', 'main']) {
+    try {
+      return git(['merge-base', head, ref]);
+    } catch {
+      /* ref not present in this clone */
+    }
+  }
+  return null;
+}
+
 /** Workflow inputs reach git as arguments. A value starting with `-` would be read as an option, so only commit ids pass. */
 export function commitIdOrNull(value) {
   if (!value) return null;
@@ -120,15 +132,17 @@ export function addedLines(range, path) {
 }
 
 const SYMBOL_PATTERNS = [
-  /^\+\s*export\s+(?:default\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/,
-  /^\+\s*export\s+(?:const|let|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)/,
-  /^\+\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/,
+  /^[+-]\s*export\s+(?:default\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/,
+  /^[+-]\s*export\s+(?:const|let|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)/,
+  /^[+-]\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/,
 ];
 
 /**
- * Names the delta defines or redefines. Hunk headers count too: git prints the
- * enclosing function after `@@`, so a change inside an existing function names
- * that function even when its signature line did not change.
+ * Names the delta defines, redefines or removes. Removed lines count: a deleted
+ * export whose callers remain is the regression a deleted-file label hides (QA
+ * review of 221f2d11768c). Hunk headers count too: git prints the enclosing
+ * function after `@@`, so a change inside an existing function names that
+ * function even when its signature line did not change.
  */
 export function touchedSymbols(diffText) {
   const names = new Set();

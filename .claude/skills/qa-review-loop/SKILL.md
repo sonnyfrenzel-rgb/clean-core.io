@@ -75,6 +75,20 @@ Stop when **either**:
 - three rounds for the same roadmap step are done — then list what is still open, with your verification
   verdict, in the report to Sonny.
 
+## 7. Weekly duty — pipeline health
+
+Every Monday `qa-weekly-health.yml` records the state of every workflow and bot branch; at session start the
+`SessionStart` hook runs the same check (`node scripts/qa/health.mjs --brief`) and puts anything RED, STALE or
+PENDING into your context. When it does:
+
+- **RED / STALE:** read the failing step (`gh run view <id> --log-failed`) and find the root cause. Fix it when it
+  is ours (a workflow, a script, a test) as its own patch step through `dev`. When it needs a setting, a secret or
+  infrastructure, do not change it — describe exactly what is needed and ask Sonny.
+- **PENDING bot branch** (e.g. `chore/sync-cloudification-repo`): review the diff in size and shape, run the catalog
+  and landing guards against it, and bring it in through `dev` as its own step — it is SAP data the engine grades
+  with, so a large or surprising change is reported to Sonny before it ships.
+- A workflow that is `unknown` is usually not on `main` yet; that is not a finding.
+
 ## 6. Report
 
 In the step report (German, outcome first): QA rounds, findings confirmed/fixed, refuted (with the one-line

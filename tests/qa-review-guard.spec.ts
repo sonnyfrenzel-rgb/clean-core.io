@@ -138,6 +138,42 @@ test.describe('the reviewer', () => {
     await expect(callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: denied })).rejects.toThrow(/^OpenRouter answered HTTP 401$/);
   });
 
+  test('never retries what may already have been generated and billed', async () => {
+    const { callReviewer } = await lib('openrouter.mjs');
+    for (const outcome of [() => new Response('upstream', { status: 503 }), () => Promise.reject(Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' }))]) {
+      let calls = 0;
+      const fetchImpl = async () => {
+        calls++;
+        return outcome();
+      };
+      await expect(callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl })).rejects.toThrow();
+      expect(calls).toBe(1);
+    }
+  });
+
+  test('a malformed answer never quotes itself into the error a public log prints', async () => {
+    const { callReviewer } = await lib('openrouter.mjs');
+    const sentinel = 'PRIVATE-REVIEW-SENTINEL';
+    const notJson = async () => new Response(`${sentinel} this is not json`, { status: 200 });
+    const error = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: notJson }).catch((e: Error) => e);
+    expect(String(error.message)).toBe('OpenRouter returned a response that is not JSON.');
+    const emptyContent = async () => new Response(JSON.stringify({ choices: [{ finish_reason: sentinel, message: { content: '' } }], usage: { completion_tokens: sentinel } }), { status: 200 });
+    const error2 = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: emptyContent }).catch((e: Error) => e);
+    expect(String(error2.message)).toMatch(/^OpenRouter returned no review content/);
+    // finish_reason is echoed only when it has the shape of the enum; a count that is not a number is dropped.
+    expect(String(error2.message)).not.toContain('PRIVATE');
+    expect(String(error2.message)).toContain('finish_reason=unrecognised');
+  });
+
+  test('every outgoing message passes a final redaction, commit subjects included', () => {
+    const src = read('scripts/qa/review.mjs');
+    expect(src).toMatch(/range\.commits = range\.commits\.map\(\(c\) => clean\('commit subjects', c\)\)/);
+    const beforeCall = src.slice(0, src.indexOf('await callReviewer('));
+    expect(beforeCall).toMatch(/const outgoingSystem = clean\('outgoing message', system\)/);
+    expect(beforeCall).toMatch(/const user = clean\('outgoing message', buildUserMessage\(/);
+    expect(src).toMatch(/callReviewer\(\{ apiKey: env\.OPENROUTER_API_KEY, system: outgoingSystem, user,/);
+  });
+
   test('refuses to run without a key', async () => {
     const { callReviewer } = await lib('openrouter.mjs');
     await expect(callReviewer({ apiKey: '', system: 's', user: 'u', schema: {}, effort: 'medium' })).rejects.toThrow(/OPENROUTER_API_KEY/);
@@ -151,11 +187,56 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     const { packBatches } = await lib('pack.mjs');
     const { BUDGET } = await lib('config.mjs');
     const files = [file('app/page.tsx', ['ui'], 150_000), file('firestore.rules', ['security'], 150_000), file('tests/a.spec.ts', ['tests'], 150_000)];
-    const { batches, notReviewed, estimatedCostUsd } = packBatches(files, 10_000);
+    const { batches, notReviewed } = packBatches(files, 10_000);
     expect(batches[0].files[0].path).toBe('firestore.rules');
     expect(batches.length).toBeLessThanOrEqual(BUDGET.maxBatches);
     expect(notReviewed.map((n: { path: string }) => n.path)).toEqual(['tests/a.spec.ts']);
-    expect(estimatedCostUsd).toBeLessThanOrEqual(BUDGET.maxCostUsd);
+  });
+
+  test('the cost cap is checked before every call against what was actually spent', async () => {
+    const { withinBudget, BUDGET, estimateCostUsd } = await lib('config.mjs');
+    // A first call of normal size fits; the same call after most of the budget is spent does not.
+    expect(withinBudget(0, 120_000)).toBe(true);
+    expect(withinBudget(BUDGET.maxCostUsd - 0.1, 120_000)).toBe(false);
+    // The per-call estimate assumes the whole output allowance, so it can never undercount a call.
+    expect(estimateCostUsd(0, 1)).toBeCloseTo((BUDGET.maxOutputTokens / 1e6) * 50, 5);
+    expect(read('scripts/qa/review.mjs')).toMatch(/if \(!withinBudget\(spentForCap, outgoingSystem\.length \+ user\.length\)\)/);
+  });
+
+  test('an unreported cost is unknown, never zero', async () => {
+    const { actualCost } = await lib('report.mjs');
+    expect(actualCost([{ cost: 0.4 }, { cost: 0.41 }])).toBe(0.81);
+    expect(actualCost([{ cost: 0.4 }, {}])).toBeNull();
+    expect(actualCost([{ cost: 0.4 }, null])).toBeNull();
+    expect(read('scripts/qa/review.mjs')).toMatch(/spentForCap \+= typeof r\.usage\?\.cost === 'number' \? r\.usage\.cost : estimateCostUsd\(/);
+  });
+
+  test('without a reviewed checkpoint the review covers everything not yet on main', async () => {
+    const { mergeBaseWithMain, isAncestor, git } = await lib('git-delta.mjs');
+    const head = git(['rev-parse', 'HEAD']);
+    const base = mergeBaseWithMain(head);
+    expect(base).toMatch(/^[0-9a-f]{40}$/);
+    expect(isAncestor(base, head)).toBe(true);
+    const src = read('scripts/qa/review.mjs');
+    expect(src).toMatch(/\} else if \(!previous\) \{\s*const mainBase = mergeBaseWithMain\(head\);/);
+    expect(read('.github/workflows/qa-review.yml')).toMatch(/--limit 50/);
+  });
+
+  test('a deleted file keeps its diff, and its removed exports are looked up', async () => {
+    const { touchedSymbols } = await lib('git-delta.mjs');
+    const deletion = ['@@ -1,3 +0,0 @@', '-export function signRunEnvelope(x) {', '-  return x;', '-}', "-export const REVIEW_LIMIT = 3;"].join('\n');
+    expect(touchedSymbols(deletion).sort()).toEqual(['REVIEW_LIMIT', 'signRunEnvelope']);
+    const src = read('scripts/qa/review.mjs');
+    expect(src).not.toMatch(/file deleted:/);
+    expect(src).not.toMatch(/f\.status === 'D' \? \[\]/);
+  });
+
+  test('a local wait reads only the artifacts of the run it selected, for the commit it expects', () => {
+    const src = read('scripts/qa/await.mjs');
+    expect(src).toMatch(/join\(LOCAL_DIR, 'runs', `\$\{short\}-\$\{run\.databaseId\}`\)/);
+    expect(src).toMatch(/rmSync\(dir, \{ recursive: true, force: true \}\)/);
+    expect(src).toMatch(/\.find\(\(r\) => r\.range\?\.head === sha\)/);
+    expect(src).toMatch(/\.find\(\(s\) => s\.head === sha\)/);
   });
 
   test('a file larger than one call is reported, not silently cut from view', async () => {
@@ -214,10 +295,34 @@ test.describe('the report a maintainer acts on', () => {
     expect(report.resolved.map((f: { title: string }) => f.title)).toEqual(['Fixed bug']);
   });
 
-  test('a refuted finding stays out even when the model raises it again', async () => {
+  test('a refuted finding is not carried, but one the reviewer raises again is kept and marked', async () => {
     const { buildReport, fingerprint } = await lib('report.mjs');
-    const report = buildReport({ range, results: [review([finding()])], previous: null, refuted: [{ fingerprint: fingerprint(finding()) }], notReviewed: [], triage, meta: {} });
-    expect(report.findings).toEqual([]);
+    const refutedOne = { ...finding(), fingerprint: fingerprint(finding()) };
+    const carriedOnly = buildReport({ range, results: [review([])], previous: { findings: [refutedOne] }, refuted: [{ fingerprint: refutedOne.fingerprint }], notReviewed: [], triage, meta: {} });
+    expect(carriedOnly.findings).toEqual([]);
+    const reRaised = buildReport({ range, results: [review([finding()])], previous: null, refuted: [{ fingerprint: refutedOne.fingerprint }], notReviewed: [], triage, meta: {} });
+    expect(reRaised.findings).toHaveLength(1);
+    expect(reRaised.findings[0].reRaisedAfterRefutation).toBe(true);
+  });
+
+  test('one batch not touching a finding does not undo another batch resolving it', async () => {
+    const { buildReport, fingerprint } = await lib('report.mjs');
+    const fixed = { ...finding({ title: 'Fixed in batch one' }), fingerprint: fingerprint(finding({ title: 'Fixed in batch one' })) };
+    const disputed = { ...finding({ title: 'Disputed' }), fingerprint: fingerprint(finding({ title: 'Disputed' })) };
+    const report = buildReport({
+      range,
+      results: [
+        review([], [{ fingerprint: fixed.fingerprint, status: 'resolved', reason: 'guard added' }, { fingerprint: disputed.fingerprint, status: 'resolved', reason: 'looks fixed' }]),
+        review([], [{ fingerprint: fixed.fingerprint, status: 'not_touched', reason: 'not in this batch' }, { fingerprint: disputed.fingerprint, status: 'still_open', reason: 'caller still unguarded' }]),
+      ],
+      previous: { findings: [fixed, disputed] },
+      refuted: [],
+      notReviewed: [],
+      triage,
+      meta: {},
+    });
+    expect(report.resolved.map((f: { title: string }) => f.title)).toEqual(['Fixed in batch one']);
+    expect(report.findings.map((f: { title: string }) => f.title)).toEqual(['Disputed']);
   });
 
   test('fingerprints survive a moved line but not a different file', async () => {
@@ -247,6 +352,47 @@ test.describe('the loop starts itself', () => {
     for (const c of ['git push origin dev', 'git push origin HEAD:dev', 'git push origin fix/x:dev']) expect(run(c)).toContain('qa-review-loop');
     for (const c of ['git push origin main', 'git push origin HEAD:main && echo ok']) expect(run(c)).toContain('scripts/security/inbox.mjs');
     for (const c of ['git push origin devtools', 'git push --dry-run origin dev', 'git status', 'npm run dev']) expect(run(c)).toBe('');
+  });
+});
+
+test.describe('weekly pipeline health', () => {
+  const day = 86_400_000;
+  const now = Date.parse('2026-09-15T08:00:00Z');
+  const run = (conclusion: string, daysAgo: number, event = 'schedule') => ({ databaseId: daysAgo, status: 'completed', conclusion, createdAt: new Date(now - daysAgo * day).toISOString(), event });
+
+  test('a red newest result is failing, and says since when', async () => {
+    const { assess } = await lib('health.mjs');
+    const v = assess({ file: 'sync-catalog.yml', name: 'Sync', scheduled: true }, [run('failure', 1), run('failure', 8), run('success', 15)], now);
+    expect(v.state).toBe('failing');
+    expect(v.failingSince).toBe(new Date(now - 8 * day).toISOString());
+  });
+
+  test('a scheduled workflow that stopped running is stale; cancelled runs do not count as results', async () => {
+    const { assess } = await lib('health.mjs');
+    expect(assess({ file: 'a.yml', name: 'A', scheduled: true }, [run('success', 12)], now).state).toBe('stale');
+    expect(assess({ file: 'b.yml', name: 'B', scheduled: false }, [run('cancelled', 0, 'push'), run('success', 3, 'push')], now).state).toBe('ok');
+    expect(assess({ file: 'c.yml', name: 'C', scheduled: false }, [], now).state).toBe('never-run');
+  });
+
+  test('the weekly workflow only reads and seals its record', () => {
+    const wf = read('.github/workflows/qa-weekly-health.yml');
+    expect(wf).toMatch(/cron: '30 7 \* \* 1'/);
+    expect(wf.slice(wf.indexOf('permissions:'), wf.indexOf('jobs:'))).not.toMatch(/write/);
+    expect(wf).toContain("if: vars.QA_REVIEW_ENABLED != 'false'");
+    expect(wf).toContain('node scripts/qa/health.mjs --seal');
+    expect(wf).toContain('path: .qa-review/out/qa-health.enc.json');
+  });
+
+  test('the catalog sync pushes its branch instead of asking Actions for a pull request', () => {
+    const wf = read('.github/workflows/sync-catalog.yml');
+    expect(wf).not.toMatch(/uses:\s*peter-evans\/create-pull-request/);
+    expect(wf.slice(wf.indexOf('\npermissions:'), wf.indexOf('\njobs:'))).not.toMatch(/pull-requests/);
+    expect(wf).toMatch(/git push --force origin chore\/sync-cloudification-repo/);
+  });
+
+  test('the health check watches that branch', async () => {
+    const { BOT_BRANCHES } = await lib('health.mjs');
+    expect(BOT_BRANCHES).toContain('chore/sync-cloudification-repo');
   });
 });
 

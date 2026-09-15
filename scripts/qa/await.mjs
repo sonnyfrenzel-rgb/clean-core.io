@@ -12,7 +12,7 @@
  *
  * Plaintext reports are written under .qa-review/ (git-ignored) and nowhere else.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { gh, jobsOf, waitForRun } from './lib/gh.mjs';
 import { git } from './lib/git-delta.mjs';
@@ -65,7 +65,11 @@ async function main() {
   }
 
   const jobs = jobsOf(run.databaseId);
-  const dir = join(LOCAL_DIR, 'runs', short);
+  // A fresh directory for exactly this run: artifacts left from an earlier run of
+  // the same commit must never stand in for a newer run that produced none (QA
+  // review of 221f2d11768c, finding 59546a3291c2).
+  const dir = join(LOCAL_DIR, 'runs', `${short}-${run.databaseId}`);
+  rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   try {
     gh(['run', 'download', String(run.databaseId), '-D', dir]);
@@ -73,8 +77,9 @@ async function main() {
     /* an artifact may be missing when its job failed; reported below */
   }
 
-  const review = sealedReports(dir, secret)[0] || null;
-  const smoke = sealedReports(dir, secret, 'qa-smoke.enc.json')[0] || null;
+  // And a report only counts for the commit it was made for.
+  const review = sealedReports(dir, secret).find((r) => r.range?.head === sha) || null;
+  const smoke = sealedReports(dir, secret, 'qa-smoke.enc.json').find((s) => s.head === sha) || null;
   if (!review) {
     console.log(`QA run ${run.databaseId} produced no readable report. Jobs: ${jobs.map((j) => `${j.name}=${j.conclusion}`).join(', ')}`);
     console.log(`Log (failed steps only): gh run view ${run.databaseId} --log-failed`);

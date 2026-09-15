@@ -104,8 +104,10 @@ After **every** push to `dev`, use the `qa-review-loop` skill (the post-push hoo
 `.claude/settings.json` reminds you): `node scripts/qa/await.mjs <sha>` in the background,
 verify each finding, fix confirmed ones, refute wrong ones with evidence, push again — at
 most three rounds — and ask for `main` only after a clean round. The agent only reads;
-reports never appear in public logs. Runbook: `docs/QA-REVIEW-LOOP.md`. Revoke:
-`gh variable set QA_REVIEW_ENABLED --body false`.
+reports never appear in public logs. Weekly it also checks every workflow and bot
+branch (`qa-weekly-health.yml`; at session start `scripts/qa/health.mjs --brief`) —
+handle what it reports per the skill, section 7. Runbook: `docs/QA-REVIEW-LOOP.md`.
+Revoke: `gh variable set QA_REVIEW_ENABLED --body false`.
 
 ## Diagnostics / logs (both CLIs are installed & authenticated)
 

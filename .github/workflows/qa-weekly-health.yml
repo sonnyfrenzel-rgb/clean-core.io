@@ -1,0 +1,50 @@
+name: QA Weekly Pipeline Health
+
+# The QA agent's weekly duty (docs/QA-REVIEW-LOOP.md §9): every workflow's most
+# recent result, scheduled workflows that stopped running, and bot branches
+# holding an update nobody brought in. No model, no tokens — only reads.
+#
+# Runs after the Monday scheduled jobs (catalog sync and Security CI at 06:00 UTC).
+# The record is sealed like every QA result; the maintainer's session sees the
+# same check at start-up through scripts/qa/health.mjs --brief.
+#
+# Revocation: the same variable as the QA review (QA_REVIEW_ENABLED=false).
+on:
+  schedule:
+    - cron: '30 7 * * 1' # Mondays 07:30 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  health:
+    name: Pipeline health (sealed)
+    if: vars.QA_REVIEW_ENABLED != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Check every workflow and bot branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QA_REVIEW_KEY: ${{ secrets.QA_REVIEW_KEY }}
+        run: node scripts/qa/health.mjs --seal
+
+      - name: Upload sealed record
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: qa-health-${{ github.run_id }}
+          path: .qa-review/out/qa-health.enc.json
+          retention-days: 30
+          if-no-files-found: error

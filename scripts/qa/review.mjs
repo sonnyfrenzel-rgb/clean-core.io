@@ -12,14 +12,14 @@
  */
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BUDGET, EFFORT, QA_MODEL } from './lib/config.mjs';
+import { BUDGET, EFFORT, estimateCostUsd, QA_MODEL, withinBudget } from './lib/config.mjs';
 import { seal } from './lib/crypto.mjs';
-import { addedLines, callersOf, changedFiles, commitIdOrNull, commitMessages, fileDiff, git, isAncestor, isClaimSource, isReviewable, resolveRange, touchedSymbols } from './lib/git-delta.mjs';
+import { addedLines, callersOf, changedFiles, commitIdOrNull, commitMessages, fileDiff, git, isAncestor, isClaimSource, isReviewable, mergeBaseWithMain, resolveRange, touchedSymbols } from './lib/git-delta.mjs';
 import { callReviewer } from './lib/openrouter.mjs';
 import { packBatches } from './lib/pack.mjs';
 import { buildUserMessage, loadBrief, REVIEW_SCHEMA } from './lib/prompt.mjs';
 import { redactSecrets } from './lib/redact.mjs';
-import { buildReport, publicSummary, renderText } from './lib/report.mjs';
+import { actualCost, buildReport, publicSummary, renderText } from './lib/report.mjs';
 import { LOCAL_DIR, loadDotEnv, loadRefuted, sealedReports } from './lib/store.mjs';
 import { triage as runTriage } from './lib/triage.mjs';
 
@@ -37,12 +37,27 @@ async function main() {
   const refuted = loadRefuted(secret);
 
   // Delta since the last *reviewed* commit, not the last push: a push that
-  // cancelled a running review must not leave its changes unreviewed.
+  // cancelled a running review must not leave its changes unreviewed. With no
+  // reviewed checkpoint at all — the first run, or every earlier run failed or
+  // was cancelled — the push's own `before` would silently drop those deltas,
+  // so the review covers everything that is not on main yet instead (QA review
+  // of 221f2d11768c, finding 398ae237c062).
   const head = git(['rev-parse', commitIdOrNull(env.QA_HEAD) || 'HEAD']);
   const prevHead = previous?.range?.head;
-  const base = prevHead && prevHead !== head && isAncestor(prevHead, head) ? prevHead : commitIdOrNull(env.QA_BASE);
+  let base = commitIdOrNull(env.QA_BASE);
+  let baseReason = null;
+  if (prevHead && prevHead !== head && isAncestor(prevHead, head)) {
+    base = prevHead;
+    baseReason = 'last reviewed commit';
+  } else if (!previous) {
+    const mainBase = mergeBaseWithMain(head);
+    if (mainBase && mainBase !== head) {
+      base = mainBase;
+      baseReason = 'no reviewed checkpoint found — everything not yet on main';
+    }
+  }
   const range = resolveRange({ base, head });
-  if (prevHead && range.base === prevHead) range.baseReason = 'last reviewed commit';
+  if (baseReason && range.base === base) range.baseReason = baseReason;
 
   const secretHits = [];
   const clean = (path, text) => {
@@ -50,6 +65,7 @@ async function main() {
     for (const h of r.hits) secretHits.push({ path, ...h });
     return r.text;
   };
+  range.commits = range.commits.map((c) => clean('commit subjects', c));
 
   const all = changedFiles(range);
   const claimText = clean(
@@ -62,7 +78,8 @@ async function main() {
   const files = all
     .filter((f) => isReviewable(f.path))
     .map((f) => {
-      const d = f.status === 'D' ? { text: `(file deleted: ${f.path})`, truncated: false } : fileDiff(range, f.path);
+      // Deletions get their diff too: the removed assertions and exports are the evidence.
+      const d = fileDiff(range, f.path);
       const diff = clean(f.path, d.text);
       diffs.set(f.path, diff);
       return { ...f, diff, truncated: d.truncated };
@@ -72,7 +89,7 @@ async function main() {
   const tags = new Map(triage.files.map((f) => [f.path, f.tags]));
   for (const f of files) {
     f.tags = tags.get(f.path) || [];
-    f.callers = f.status === 'D' ? [] : callersOf(range, touchedSymbols(f.diff), changedPaths).map((c) => ({ ...c, callers: c.callers.map((x) => ({ ...x, text: clean(x.file, x.text) })) }));
+    f.callers = callersOf(range, touchedSymbols(f.diff), changedPaths).map((c) => ({ ...c, callers: c.callers.map((x) => ({ ...x, text: clean(x.file, x.text) })) }));
   }
 
   const system = loadBrief();
@@ -106,13 +123,24 @@ async function main() {
   }
 
   const results = [];
-  let costUsd = 0;
+  // What counts against the cap: reported cost where there is one, the
+  // worst-case estimate where there is not — an unreported cost is never a zero.
+  let spentForCap = 0;
   for (let i = 0; i < batches.length; i++) {
-    const user = buildUserMessage({ ...shared, batch: batches[i], batchIndex: i, batchCount: batches.length });
-    const r = await callReviewer({ apiKey: env.OPENROUTER_API_KEY, system, user, schema: REVIEW_SCHEMA, effort });
-    costUsd += Number(r.usage?.cost || 0);
+    // Last line of defence before anything leaves the runner: whatever part of
+    // the message the per-source redaction missed is caught here and reported.
+    const outgoingSystem = clean('outgoing message', system);
+    const user = clean('outgoing message', buildUserMessage({ ...shared, batch: batches[i], batchIndex: i, batchCount: batches.length }));
+    if (!withinBudget(spentForCap, outgoingSystem.length + user.length)) {
+      for (const b of batches.slice(i)) for (const f of b.files) notReviewed.push({ path: f.path, reason: `outside the $${BUDGET.maxCostUsd} cost cap` });
+      break;
+    }
+    const r = await callReviewer({ apiKey: env.OPENROUTER_API_KEY, system: outgoingSystem, user, schema: REVIEW_SCHEMA, effort });
+    spentForCap += typeof r.usage?.cost === 'number' ? r.usage.cost : estimateCostUsd(outgoingSystem.length + user.length, 1);
     results.push({ ...r, files: batches[i].files.map((f) => f.path) });
   }
+  const modelCalls = results.length;
+  const costUsd = actualCost(results.map((r) => r.usage));
 
   // A credential in the delta is reported without a model and without its value.
   const secretFindings = secretHits.map((h) => ({
@@ -132,16 +160,16 @@ async function main() {
     range,
     results,
     // Without a model call nothing can be marked resolved, so every open finding is carried as it was.
-    previous: batches.length ? previous : { findings: previousOpen },
+    previous: modelCalls ? previous : { findings: previousOpen },
     refuted,
     notReviewed,
     triage,
     meta: {
       model: QA_MODEL,
       effort,
-      modelCalls: batches.length,
+      modelCalls,
       estimatedCostUsd,
-      costUsd: Number(costUsd.toFixed(4)),
+      costUsd, // null when OpenRouter did not report the cost of every call
       budget: { maxCostUsd: BUDGET.maxCostUsd, maxBatches: BUDGET.maxBatches },
       skipped: files.length ? null : 'no reviewable code in the delta — prose, assets or generated files only',
       changedFiles: all.length,

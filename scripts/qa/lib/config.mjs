@@ -25,13 +25,22 @@ export const DEV_URL = 'https://clean-core-dev-qcevuoi3uq-ew.a.run.app';
 export const PRICE_PER_MTOK = { input: 10, output: 50 };
 
 export const BUDGET = {
-  /** Hard ceiling for one review, estimated before the first call: input at 3.5 chars/token plus every call's full output allowance. */
+  /**
+   * Hard ceiling for one review. Before every call: what has actually been spent
+   * so far (OpenRouter's usage record) plus a worst-case estimate for this call —
+   * input at 3.5 chars/token and the full output allowance. A call that could
+   * cross the ceiling is not made; its files are reported as not reviewed.
+   */
   maxCostUsd: 2.5,
   /** Delta context per model call, in characters. */
   maxBatchChars: 200_000,
   /** Calls per review. What does not fit is named in the report as not reviewed, never silently dropped. */
   maxBatches: 2,
-  maxOutputTokens: 12_000,
+  /**
+   * Includes reasoning tokens. The first live run (15.09.2026) spent a 12,000
+   * allowance entirely on reasoning at effort `high` and returned no review.
+   */
+  maxOutputTokens: 32_000,
   /** Lines of unchanged code around each hunk — enough to see the enclosing branch, not the whole file. */
   hunkContextLines: 12,
   /** Symbols whose callers are looked up outside the delta (impact analysis). */
@@ -49,6 +58,11 @@ export function estimateCostUsd(inputChars, calls) {
   const input = (inputChars / CHARS_PER_TOKEN / 1e6) * PRICE_PER_MTOK.input;
   const output = ((calls * BUDGET.maxOutputTokens) / 1e6) * PRICE_PER_MTOK.output;
   return input + output;
+}
+
+/** May a call with this much input still be made, given what has actually been spent? */
+export function withinBudget(spentUsd, inputChars) {
+  return spentUsd + estimateCostUsd(inputChars, 1) <= BUDGET.maxCostUsd;
 }
 
 /**

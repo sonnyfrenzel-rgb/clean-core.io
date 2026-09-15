@@ -20,6 +20,7 @@ erst gefragt, wenn die Schleife sauber ist.
    qa-review.yml ── job review ─────────────────────────┐                 │
                 │   1. vorherigen versiegelten Bericht holen              │
                 │   2. Delta seit dem letzten geprüften Commit            │
+                │      (ohne Checkpoint: alles, was nicht auf main ist)   │
                 │   3. Vorprüfung ohne Token (Risiko, Test-Signale,       │
                 │      Abnahmekriterien, Geheimnis-Schwärzung)            │
                 │   4. Batches nach Risiko, Kostendeckel                  │
@@ -42,14 +43,14 @@ erst gefragt, wenn die Schleife sauber ist.
 | Delta | `scripts/qa/lib/git-delta.mjs` | Bereich, geänderte Dateien, Hunks mit 12 Zeilen Kontext, Aufrufer geänderter Symbole außerhalb des Deltas |
 | Vorprüfung | `scripts/qa/lib/triage.mjs` | Risiko-Tags, Test-Schwächungssignale, zitierte Abnahmekriterien, „Code ohne Test" |
 | Schwärzung | `scripts/qa/lib/redact.mjs` | Schlüsselmuster vor dem Versand ersetzen, Treffer als kritischen Befund melden |
-| Packen | `scripts/qa/lib/pack.mjs` | riskanteste Dateien zuerst, Kostendeckel vor dem ersten Aufruf, Rest als „nicht geprüft" benannt |
+| Packen | `scripts/qa/lib/pack.mjs` | riskanteste Dateien zuerst, höchstens 2 Aufrufe, Rest als „nicht geprüft" benannt; der Kostendeckel greift vor jedem Aufruf in `review.mjs` |
 | Prompt | `scripts/qa/lib/prompt.mjs` + `docs/qa/reviewer-brief.md` | Antwortschema; Rolle, Prüfliste und Projektregeln als lesbares Dokument |
-| Modellaufruf | `scripts/qa/lib/openrouter.mjs` | ein Endpunkt, keine Tools, keine Fallback-Modelle, `data_collection: deny`, Retry nur bei 408/429/5xx |
-| Bericht | `scripts/qa/lib/report.mjs` | Fingerabdrücke, Übertrag offener Befunde, widerlegte ausblenden, öffentliche Zeile ohne Inhalt |
+| Modellaufruf | `scripts/qa/lib/openrouter.mjs` | ein Endpunkt, keine Tools, keine Fallback-Modelle, `data_collection: deny`, Retry nur bei 429 — was schon generiert worden sein könnte, wird nie ein zweites Mal bezahlt |
+| Bericht | `scripts/qa/lib/report.mjs` | Fingerabdrücke, Übertrag offener Befunde, widerlegte nicht übertragen (erneut erhobene bleiben, markiert), öffentliche Zeile ohne Inhalt |
 | Siegel | `scripts/qa/lib/crypto.mjs`, `lib/store.mjs` | AES-256-GCM unter `QA_REVIEW_KEY` |
 | Einstiege | `scripts/qa/review.mjs`, `smoke.mjs`, `await.mjs`, `refute.mjs` | CI-Review, CI-Smoke, lokales Abholen, Widerlegen |
 | Workflow | `.github/workflows/qa-review.yml` | Auslöser, Rechte, Widerruf, Artefakte |
-| Leitplanken im Test | `tests/qa-review-guard.spec.ts` | 23 Tests: Siegel, keine Leaks, nur Lesen, Kostendeckel, Delta, Bericht |
+| Leitplanken im Test | `tests/qa-review-guard.spec.ts` | Siegel, keine Leaks, nur Lesen, Kostendeckel, Delta, Bericht, Wochencheck |
 | Arbeitsweise von Claude | `.claude/skills/qa-review-loop/SKILL.md` | wird erst geladen, wenn die Schleife dran ist — kostet sonst keinen Kontext |
 
 ---
@@ -70,7 +71,7 @@ eingestelltes Modell senden, einen versiegelten Bericht als Artefakt hochladen, 
 | Befunde öffentlich machen | Bericht und Smoke-Ergebnis versiegelt; das Log sagt nur „completed, sealed", Modellaufrufe und Kosten — **kein Verdikt, keine Zahlen je Schweregrad** |
 | Geheimnisse weitergeben | Schwärzung vor dem Versand; Dateien wie `.env*`, `*.pem`, Service-Account-JSON werden nie gelesen; Fehlerausgaben nur als Meldung, nie Stack oder Antwortkörper |
 | Ein anderes Modell nutzen | Modell-ID an genau einer Stelle, `allow_fallbacks: false`; Guard prüft beides |
-| Unbegrenzt Geld ausgeben | Kostendeckel je Review, geprüft vor dem ersten Aufruf |
+| Unbegrenzt Geld ausgeben | Kostendeckel je Review, geprüft vor jedem Aufruf gegen das tatsächlich Ausgegebene; nur ein 429 wird wiederholt |
 
 **Warum keine Zahlen im Log:** Das Repository und seine Actions-Logs sind
 öffentlich, und die dev-Revision ist öffentlich erreichbar. „1 critical auf dev" in
@@ -89,17 +90,18 @@ Eingabe-Token, 50 $ je Mio. Ausgabe-Token.**
 
 | Maßnahme | Wirkung |
 |---|---|
-| Nur das Delta seit dem letzten *geprüften* Commit | kein Vollreview; ein abgebrochener Lauf verliert nichts |
+| Nur das Delta seit dem letzten *geprüften* Commit — ohne Checkpoint alles, was noch nicht auf `main` ist | kein Vollreview; ein abgebrochener oder gescheiterter Lauf verliert nichts |
 | Kein Modellaufruf ohne Code im Delta | reine Doku-/Asset-Pushes kosten 0 $ |
 | 12 Zeilen Kontext je Hunk, höchstens 15 Symbole × 3 Aufrufer | Kontext statt ganzer Dateien |
 | Reasoning `medium`, nur bei Sicherheit/Trust-Chain/CI `high` | teures Denken dort, wo ein Fehler teuer ist |
-| Höchstens 2 Aufrufe, 200.000 Zeichen und 12.000 Ausgabe-Token je Aufruf | harte Obergrenze |
-| **Kostendeckel 2,50 $ je Review**, vor dem ersten Aufruf geschätzt | darüber wird der risikoärmste Batch gestrichen und als „nicht geprüft" benannt |
-| Tatsächliche Kosten aus OpenRouters Usage-Datensatz | stehen in jedem Bericht und im Log |
+| Höchstens 2 Aufrufe, 200.000 Zeichen und 32.000 Ausgabe-Token (Reasoning eingeschlossen) je Aufruf | harte Obergrenze |
+| **Kostendeckel 2,50 $ je Review**, vor jedem Aufruf geprüft: tatsächlich Ausgegebenes + ungünstigste Schätzung dieses Aufrufs | ein Aufruf, der den Deckel reißen könnte, findet nicht statt; seine Dateien stehen als „nicht geprüft" im Bericht |
+| Tatsächliche Kosten aus OpenRouters Usage-Datensatz | stehen in jedem Bericht und im Log — fehlt eine Angabe, steht dort „unknown", nie 0 $ |
 
-Gemessen im Trockenlauf (`--dry`): ein typischer Roadmap-Schritt 0,65–0,70 $
-geschätzt; 16 Commits auf einmal 2,33 $ mit 26 benannten, nicht geprüften Dateien.
-Die Schätzung rechnet jede Ausgabe voll — die tatsächlichen Kosten liegen darunter.
+Gemessen am 15.09.2026: Der Review von v2.9.12 (24 Dateien, ein Aufruf, Reasoning
+`high`) kostete **0,81 $** tatsächlich; die Vorab-Schätzung rechnet die volle
+Ausgabe von 32.000 Token und lag bei 1,92 $. Die Schätzung ist eine Obergrenze, keine
+Prognose.
 Empfehlung zusätzlich: ein Monatslimit direkt am OpenRouter-Schlüssel.
 
 ---
@@ -185,8 +187,29 @@ gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>   # Review e
 | Symptom | Ursache | Vorgehen |
 |---|---|---|
 | `await.mjs` Exit 2, „superseded" | ein neuerer Push hat den Lauf abgebrochen | den neueren Commit abwarten — sein Review deckt dieses Delta mit ab |
-| Job `review` rot, „OpenRouter answered HTTP 402/401" | Guthaben oder Schlüssel | OpenRouter-Konto prüfen; der Retry greift nur bei 408/429/5xx |
+| Job `review` rot, „OpenRouter answered HTTP 402/401" | Guthaben oder Schlüssel | OpenRouter-Konto prüfen; wiederholt wird nur ein 429 |
 | Job `review` rot, „QA_REVIEW_KEY is missing" | Secret fehlt | Secret setzen; ohne Schlüssel wird nie unversiegelt geschrieben |
 | Smoke „new revision serving: no" | Deploy lief, aber `/api/health` meldet einen anderen Commit | Cloud-Run-Revision prüfen (`gcloud run services describe clean-core-dev --region=europe-west1 --project=cleancore-491216`) |
 | Bericht nennt „NOT REVIEWED" | Delta über dem Budget | kleiner schneiden oder den Bereich gezielt per `workflow_dispatch` nachprüfen |
 | Ein Befund kommt nach Widerlegung wieder | Titel geändert → neuer Fingerabdruck | erneut widerlegen; die Begründung verweist auf den früheren |
+| „no review content (finish_reason=length …)" | Reasoning hat das Ausgabebudget aufgebraucht | am 15.09. beim ersten Lauf passiert (12.000 Token bei `high`); seitdem 32.000 — tritt es wieder auf, `maxOutputTokens` in `config.mjs` als eigener Schritt anheben |
+
+---
+
+## 9. Wöchentliche Pflicht: Pipeline-Gesundheit
+
+Was niemand pusht, prüft auch kein Delta-Review: ein geplanter Workflow, der am
+Montag rot wird, oder ein Bot-Branch mit einem Update, das niemand übernimmt. Genau
+das ist am 7. und 14.09. passiert — der Katalog-Sync hatte die SAP-Daten geholt,
+durfte aber keinen Pull Request anlegen, und der rote Lauf meldete sich bei niemandem.
+
+| Baustein | Aufgabe |
+|---|---|
+| `.github/workflows/qa-weekly-health.yml` | montags 07:30 UTC, nach den geplanten Jobs um 06:00; nur lesend; Ergebnis versiegelt als `qa-health-<run>` |
+| `scripts/qa/lib/health.mjs` | je Workflow das jüngste Ergebnis (rot, eingeschlafen, ok), bei Rot Job, Schritt und erste Fehlerzeile (geschwärzt); Bot-Branches, die vor `main` liegen |
+| `scripts/qa/health.mjs` | `--seal` in CI, `--brief` beim Sitzungsstart, ohne Schalter für den Maintainer |
+| `SessionStart`-Hook (lokale `.claude/settings.json`) | bringt Rotes und Offenes in Claudes Kontext, auch wenn niemand gepusht hat |
+
+Kein Modell, keine Kosten. Der Katalog-Sync legt seit dem 15.09. keinen Pull Request
+mehr an, sondern pusht `chore/sync-cloudification-repo` und endet grün; der
+Wochencheck meldet den Branch, bis er über `dev` übernommen ist.

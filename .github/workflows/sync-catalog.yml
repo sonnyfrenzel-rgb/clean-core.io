@@ -1,13 +1,21 @@
 name: Sync SAP Cloudification Repository
 
+# Weekly pull of github.com/SAP/abap-atc-cr-cv-s4hc into lib/abap/generated/.
+#
+# No pull request. Until 2026-09-14 this job ended in peter-evans/create-pull-request,
+# and the repository does not let Actions open pull requests — so the sync
+# succeeded, the update landed on the branch, and the run went red on the last
+# step two Mondays running while nobody saw the data. Decided 2026-09-15: keep
+# that setting off, push the branch, end green. The QA agent's weekly pipeline
+# check (qa-weekly-health.yml) reports the branch while it is ahead of main, and
+# the update reaches production through dev like every other change.
 on:
   schedule:
     - cron: '0 6 * * 1'   # Mondays 06:00 UTC
   workflow_dispatch: {}
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: write # push the bot branch; nothing else
 
 jobs:
   sync:
@@ -36,16 +44,22 @@ jobs:
           elif [ "$code" = "0" ]; then echo "changed=false" >> "$GITHUB_OUTPUT";
           else exit "$code"; fi
 
-      - name: Open PR with catalog update
+      - name: Push the update to its branch
         if: steps.sync.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6.1.0
-        with:
-          branch: chore/sync-cloudification-repo
-          title: "chore(catalog): sync SAP Cloudification Repository"
-          commit-message: "chore(catalog): sync SAP Cloudification Repository"
-          body: |
-            Automated weekly sync of the SAP Cloudification Repository
-            (github.com/SAP/abap-atc-cr-cv-s4hc).
-            Review the diff — new/changed successors update the merged catalog,
-            evidence findings and the Audit Pack traceability string.
-          labels: catalog, automated
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B chore/sync-cloudification-repo
+          git add lib/abap/generated/
+          git commit -m "chore(catalog): sync SAP Cloudification Repository"
+          git push --force origin chore/sync-cloudification-repo
+          {
+            echo "### Catalog update ready"
+            echo
+            echo "Branch \`chore/sync-cloudification-repo\` holds this week's sync. It is reviewed and brought in through \`dev\`;"
+            echo "the weekly QA pipeline check reports it until then."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: No change
+        if: steps.sync.outputs.changed == 'false'
+        run: echo "### Catalog unchanged" >> "$GITHUB_STEP_SUMMARY"

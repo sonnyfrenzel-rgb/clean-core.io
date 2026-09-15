@@ -62,7 +62,8 @@ jobs:
           RUN_ID: ${{ github.run_id }}
         run: |
           mkdir -p .qa-review/prev
-          for id in $(gh run list --workflow qa-review.yml --branch dev --limit 15 --json databaseId,status --jq '.[] | select(.status == "completed") | .databaseId'); do
+          # Fifty runs back; when none of them has a report, review.mjs falls back to everything not yet on main.
+          for id in $(gh run list --workflow qa-review.yml --branch dev --limit 50 --json databaseId,status --jq '.[] | select(.status == "completed") | .databaseId'); do
             [ "$id" = "$RUN_ID" ] && continue
             if gh run download "$id" --pattern 'qa-review-*' -D .qa-review/prev > /dev/null 2>&1; then break; fi
           done

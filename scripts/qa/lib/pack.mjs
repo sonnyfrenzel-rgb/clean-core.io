@@ -46,13 +46,8 @@ export function packBatches(files, baseChars) {
   }
   if (current.files.length) batches.push(current);
 
-  // The cost cap is checked on the packed result. If it would be exceeded, the
-  // last batch goes — its files are the least risky ones by construction.
-  const totalChars = () => batches.reduce((n, b) => n + b.chars, 0);
-  while (batches.length && estimateCostUsd(totalChars(), batches.length) > BUDGET.maxCostUsd) {
-    const dropped = batches.pop();
-    for (const f of dropped.files) notReviewed.push({ path: f.path, reason: `outside the $${BUDGET.maxCostUsd} cost cap` });
-  }
-
-  return { batches, notReviewed, estimatedCostUsd: Number(estimateCostUsd(totalChars(), batches.length).toFixed(2)) };
+  // Worst case for the dry run. The cap itself is enforced call by call against
+  // actual spend (review.mjs), because the full output allowance is rarely used.
+  const totalChars = batches.reduce((n, b) => n + b.chars, 0);
+  return { batches, notReviewed, estimatedCostUsd: Number(estimateCostUsd(totalChars, batches.length).toFixed(2)) };
 }

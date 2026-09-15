@@ -10,6 +10,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.13] — 2026-09-15
+
+### Der QA-Agent hat sich selbst geprüft — neun Befunde, alle bestätigt, alle behoben
+
+Der erste echte Lauf auf `dev` kam ohne Bericht zurück: **„OpenRouter returned no
+review content"**. Bei Reasoning-Modellen zählen die Denk-Token zu `max_tokens`, und
+bei `effort: high` hatte GPT-6 Astra die 12.000 Token vollständig fürs Denken
+verbraucht. Das Budget liegt jetzt bei 32.000; die Fehlermeldung nennt künftig
+`finish_reason` und die Token-Zahlen — nur Zahlen, kein Inhalt. Nachgewiesen lokal an
+genau dem gescheiterten Bereich: ein Aufruf, **0,81 $** tatsächlich.
+
+Dieser Review galt v2.9.12, also dem Agenten selbst. Jeder Befund wurde vor dem Fix
+gegen den Code geprüft; keiner war falsch:
+
+| Befund | Schwere | Was geändert ist |
+|---|---|---|
+| Commit-Betreffzeilen umgingen die Schwärzung auf dem Weg zu OpenRouter | kritisch | Betreffzeilen werden geschwärzt, und vor jedem Versand läuft ein letzter Schwärzungsdurchgang über die ganze Nachricht |
+| Ohne früheren Bericht ging ein abgebrochenes Delta verloren — beim nächsten Push wäre genau das passiert | hoch | ohne geprüften Stand deckt der Review alles ab, was noch nicht auf `main` ist; die Suche reicht 50 statt 15 Läufe zurück |
+| Eine Widerlegung unterdrückte denselben Befund für immer, auch nach einer echten Regression | hoch | ein erneut erhobener Befund bleibt stehen und ist markiert; nur der *Übertrag* widerlegter Befunde entfällt |
+| Ein veraltetes Artefakt konnte einen gescheiterten Neulauf grün aussehen lassen | mittel | frischer Ordner je Lauf; ein Bericht zählt nur für den Commit, für den er gemacht wurde |
+| Retries nach Timeout, Verbindungsabbruch oder 5xx konnten doppelt abrechnen — außerhalb des Deckels | mittel | wiederholt wird nur ein 429, eine Ablehnung vor jeder Generierung |
+| Eine kaputte 200-Antwort konnte über die `SyntaxError`-Meldung Text ins öffentliche Log bringen | mittel | alle Fehlermeldungen des Modellaufrufs sind fester Text plus Zahlen |
+| Ein späterer Batch überschrieb „behoben" mit „nicht berührt" | mittel | ein Urteil schlägt „nicht berührt"; zwischen „behoben" und „offen" gewinnt „offen" |
+| Gelöschte Dateien verloren ihren Diff und die Aufrufer-Analyse | mittel | Löschungen kommen mit Diff; entfernte Exporte werden bei ihren verbliebenen Aufrufern gesucht |
+| Fehlende Kostenangabe wurde als 0 $ berichtet | mittel | fehlt sie, steht dort „unknown"; für den Deckel zählt dann die Schätzung |
+
+**Der Kostendeckel rechnet jetzt ehrlich.** Er wurde vorher auf die volle
+Ausgabe-Obergrenze jedes Aufrufs geschätzt — mit 32.000 Token wäre ein zweiter Batch
+praktisch immer gestrichen worden. Jetzt wird vor jedem Aufruf geprüft:
+tatsächlich Ausgegebenes plus ungünstigste Schätzung für genau diesen Aufruf.
+
+### Wöchentlich: Pipeline-Gesundheit — und der Katalog-Sync ist nicht mehr rot
+
+Sonnys Auftrag vom 15.09.: Der QA-Agent schaut sich die Pipelines auch einmal pro
+Woche an. Anlass: **„Sync SAP Cloudification Repository" war am 7. und 14.09. rot.**
+Der Sync selbst hatte funktioniert — SAP hat neue Katalogdaten veröffentlicht, sie
+lagen auf `chore/sync-cloudification-repo` —, nur der letzte Schritt scheiterte:
+*„GitHub Actions is not permitted to create or approve pull requests."* Ein roter
+geplanter Lauf meldet sich bei niemandem; das Update lag eine Woche unbemerkt.
+
+- **Der Sync legt keinen Pull Request mehr an** (entschieden: Repo-Einstellung bleibt
+  aus). Er pusht den Branch, endet grün und schreibt in die Zusammenfassung, dass ein
+  Update bereitliegt; die PR-Befugnis ist aus dem Workflow entfernt.
+- **`qa-weekly-health.yml`**, montags 07:30 UTC nach den geplanten Jobs: je Workflow
+  das jüngste Ergebnis — rot (mit Job, Schritt und erster Fehlerzeile, geschwärzt),
+  eingeschlafen, ok — und Bot-Branches, die vor `main` liegen. Kein Modell, keine
+  Kosten, nur lesend, Ergebnis versiegelt.
+- **Beim Sitzungsstart** läuft derselbe Check (`scripts/qa/health.mjs --brief`) und
+  bringt Rotes und Offenes in Claudes Kontext, auch ohne Push. Scheitert er, sagt er
+  das — ein stiller Hook hätte beim ersten Test genau seinen eigenen Fehler verdeckt:
+  ein Workflow, der noch nicht auf `main` liegt, ließ den ganzen Check abbrechen. Das
+  ist behoben; ein nicht abfragbarer Workflow gilt als „unbekannt".
+
+Das liegende Katalog-Update (18.708 Zeilen dazu, 9.751 weg, eine Datei) wird als
+eigener Schritt über `dev` geprüft und übernommen. Rot bleibt der Sync im Wochencheck,
+bis diese Workflow-Änderung auf `main` ist und er einmal gelaufen ist.
+
+`tests/qa-review-guard.spec.ts`, jetzt 38 Tests — neu: kein Retry nach möglicher
+Generierung, keine Antwortausschnitte in Fehlern, finaler Schwärzungsdurchgang,
+unbekannte Kosten, Checkpoint-Fallback, gelöschte Exporte, Artefakte je Lauf,
+Status-Zusammenführung über Batches, erneut erhobene Befunde, Wochen-Bewertung,
+Sync ohne PR.
+
 ## [v2.9.12] — 2026-09-15
 
 ### Der QA-Agent: jeder Push auf dev wird geprüft — versiegelt, gedeckelt, nur das Delta

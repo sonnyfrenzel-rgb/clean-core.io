@@ -17,8 +17,9 @@ const worst = (a, b) => (SEVERITIES.indexOf(a) <= SEVERITIES.indexOf(b) ? a : b)
 const VERDICT_ORDER = ['no_go', 'go_with_notes', 'go'];
 
 /**
- * Merge the batches of one review, drop what was refuted before, and carry the
- * previous review's open findings forward unless this delta resolved them.
+ * Merge the batches of one review, drop carried findings that were refuted, and
+ * carry the previous review's other open findings forward unless this delta
+ * resolved them.
  *
  * A finding the model does not mention again is carried, not forgotten: an open
  * bug in a file nobody touched is still open.
@@ -29,15 +30,27 @@ export function buildReport({ range, results, previous, refuted, notReviewed, tr
 
   for (const { review } of results) {
     for (const raw of review.findings || []) {
-      const f = { ...raw, fingerprint: fingerprint(raw), origin: range.head };
-      if (refutedSet.has(f.fingerprint)) continue;
+      // The reviewer is told not to raise a refuted finding again unless the
+      // delta invalidates the refutation. One it raises anyway is kept and
+      // marked — silently dropping it would let a regression that removed the
+      // very guard behind the refutation pass unseen (QA review of 221f2d11768c).
+      const f = { ...raw, fingerprint: fingerprint(raw), origin: range.head, ...(refutedSet.has(fingerprint(raw)) ? { reRaisedAfterRefutation: true } : {}) };
       const seen = byFp.get(f.fingerprint);
       byFp.set(f.fingerprint, seen ? { ...seen, severity: worst(seen.severity, f.severity) } : f);
     }
   }
 
+  // Every batch sees the whole list of open findings but only its own files, so
+  // "not_touched" from one batch must not overwrite what another batch judged.
+  // Between two judgements, "still_open" wins: a fix is confirmed, never assumed.
+  const RANK = { not_touched: 0, resolved: 1, still_open: 2 };
   const statuses = new Map();
-  for (const { review } of results) for (const s of review.previous_findings || []) statuses.set(s.fingerprint, s);
+  for (const { review } of results) {
+    for (const s of review.previous_findings || []) {
+      const seen = statuses.get(s.fingerprint);
+      if (!seen || (RANK[s.status] ?? 0) > (RANK[seen.status] ?? 0)) statuses.set(s.fingerprint, s);
+    }
+  }
 
   const resolved = [];
   for (const old of previous?.findings || []) {
@@ -82,8 +95,14 @@ export function publicSummary(report) {
     head: report.range.head.slice(0, 12),
     status: 'completed, sealed',
     modelCalls: report.meta?.modelCalls ?? 0,
-    costUsd: report.meta?.costUsd ?? 0,
+    costUsd: report.meta?.costUsd ?? 'unknown',
   };
+}
+
+/** The sum of what OpenRouter reported, or null when any call did not report its cost — an unknown is never a zero. */
+export function actualCost(usages) {
+  if (!usages.every((u) => typeof u?.cost === 'number')) return null;
+  return Number(usages.reduce((n, u) => n + u.cost, 0).toFixed(4));
 }
 
 export function severityCounts(report) {
@@ -97,13 +116,13 @@ export function renderText(report) {
   const lines = [];
   const counts = severityCounts(report);
   lines.push(
-    `QA review ${report.range.head.slice(0, 12)} — verdict ${report.verdict} — ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(', ')} — resolved ${report.resolved.length} — cost $${report.meta?.costUsd ?? '?'} (${report.meta?.modelCalls ?? 0} calls, effort ${report.meta?.effort ?? '—'})`,
+    `QA review ${report.range.head.slice(0, 12)} — verdict ${report.verdict} — ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(', ')} — resolved ${report.resolved.length} — cost $${report.meta?.costUsd ?? 'unknown'} (${report.meta?.modelCalls ?? 0} calls, effort ${report.meta?.effort ?? '—'})`,
   );
   if (report.meta?.skipped) lines.push(`No model call: ${report.meta.skipped}`);
   if (report.coverage.notReviewed.length) lines.push(`NOT REVIEWED: ${report.coverage.notReviewed.map((n) => `${n.path} (${n.reason})`).join('; ')}`);
   for (const f of report.findings) {
     lines.push('');
-    lines.push(`[${f.fingerprint}] ${f.severity.toUpperCase()} ${f.category} · ${f.file}:${f.line}${f.carried ? ' · carried' : ''} · confidence ${f.confidence}`);
+    lines.push(`[${f.fingerprint}] ${f.severity.toUpperCase()} ${f.category} · ${f.file}:${f.line}${f.carried ? ' · carried' : ''}${f.reRaisedAfterRefutation ? ' · RE-RAISED after refutation' : ''} · confidence ${f.confidence}`);
     lines.push(`  ${f.title}`);
     lines.push(`  breaks: ${f.failure_scenario}`);
     lines.push(`  evidence: ${f.evidence}`);
