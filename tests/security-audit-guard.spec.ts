@@ -454,7 +454,15 @@ test.describe('the audit pipeline', () => {
     expect(fitted.split('app/api/a/route.ts:5-35').length - 1).toBe(5);
     expect(fitted).toContain('1 location(s) without code in this input — the CISO input limit is reached; not verifiable here: app/api/a/route.ts:20');
     expect(fitted.indexOf('Finding 6 (API1)')).toBeGreaterThan(fitted.indexOf('app/api/a/route.ts:5-35'));
-    expect(cisoMessage({ ...args, maxChars: 0 })).not.toContain('20|line 20');
+    // The accounting is exact: at the full size every finding keeps its code, one character less costs one block.
+    expect(cisoMessage({ ...args, maxChars: full.length })).toBe(full);
+    expect(cisoMessage({ ...args, maxChars: full.length - 1 }).split('app/api/a/route.ts:5-35').length - 1).toBe(5);
+    // Below what the findings' own text needs, no finding is dropped from the CISO's view: the message is longer than
+    // the reserve, and audit.mjs records the size in the sealed report.
+    const tiny = cisoMessage({ ...args, maxChars: 0 });
+    expect(tiny).not.toContain('20|line 20');
+    for (let i = 1; i <= 6; i++) expect(tiny).toContain(`Finding ${i} (API1)`);
+    expect(read('scripts/security/audit.mjs')).toContain('cisoInput: { chars: cisoUser.length, reservedChars: AUDIT.cisoInputChars }');
     const { AUDIT } = await lib('team.mjs');
     expect(read('scripts/security/audit.mjs')).toContain('estimate(brief.length + CISO_TASK.length + 2 + AUDIT.cisoInputChars, cisoTokens)');
     expect(AUDIT.cisoInputChars).toBe(300_000);

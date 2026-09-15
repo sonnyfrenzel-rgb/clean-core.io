@@ -222,9 +222,12 @@ export const MAX_CONTEXT_LOCATIONS = 8;
 
 /**
  * What the CISO is shown: the map in numbers, the deterministic coverage, every consultant finding with its cited code.
- * The cited code is the part without a natural bound, so it is fitted into `maxChars` — the input the cost cap
- * reserves for the CISO. A finding whose code no longer fits keeps its text and names its locations as not
- * verifiable here, like a location beyond MAX_CONTEXT_LOCATIONS.
+ * The cited code is fitted into what remains of `maxChars` — the input the cost cap reserves for the CISO — after
+ * everything else; a finding whose code no longer fits keeps its text and names its locations as not verifiable
+ * here, like a location beyond MAX_CONTEXT_LOCATIONS. The findings' own text is never dropped to stay inside the
+ * reserve: a consultant finding the CISO never saw would be a hole in the audit, and the overrun costs cents at
+ * DeepSeek's input price. When the text alone outgrows the reserve the message is longer than `maxChars`, and
+ * audit.mjs records the size next to the reserve in the sealed report.
  */
 export function cisoMessage({ surface, results, coverage, notRead, failed, readLines, maxChars = AUDIT.cisoInputChars }) {
   const findings = results.flatMap((r) => (r.review.findings || []).map((f) => ({ ...f, consultant: r.consultant })));

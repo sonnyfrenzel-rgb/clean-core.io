@@ -141,14 +141,16 @@ jobs:
           node-version: 22
 
       # The previous full review carries its open findings into this one. Only full
-      # reviews count: a delta report from dev is a different ledger.
+      # reviews count: a delta report from dev is a different ledger. Only push runs are
+      # searched — a manual dispatch on main never has a full review, so any number of them
+      # between two releases cannot push the last one out of the window.
       - name: Fetch the previous sealed full review
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.run_id }}
         run: |
           mkdir -p .qa-review/prev
-          for id in $(gh run list --workflow qa-review.yml --branch main --limit 30 --json databaseId,status --jq '.[] | select(.status == "completed") | .databaseId'); do
+          for id in $(gh run list --workflow qa-review.yml --branch main --event push --limit 30 --json databaseId,status --jq '.[] | select(.status == "completed") | .databaseId'); do
             if [ "$id" = "$RUN_ID" ]; then continue; fi
             if gh run download "$id" --pattern 'qa-full-*' -D .qa-review/prev > /dev/null 2>&1; then break; fi
           done

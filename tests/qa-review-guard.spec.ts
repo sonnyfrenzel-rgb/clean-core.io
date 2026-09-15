@@ -657,6 +657,8 @@ test.describe('the full review of a release on main', () => {
     expect([...full.matchAll(/secrets\.([A-Z_]+)/g)].map((m) => m[1]).sort()).toEqual(['OPENROUTER_API_KEY', 'QA_REVIEW_KEY']);
     expect(full).toContain('run: node scripts/qa/full-review.mjs');
     expect(full).toContain("--pattern 'qa-full-*'");
+    // Manual dispatches never carry a full review; they must not use up the search window (finding e93db01ee770).
+    expect(full).toContain('gh run list --workflow qa-review.yml --branch main --event push --limit 30');
     expect(full).toContain('name: qa-full-${{ github.sha }}-${{ github.run_attempt }}');
   });
 
