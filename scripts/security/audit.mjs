@@ -16,7 +16,7 @@
 import { mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { apiErrorHint, resultRecord, runToFiles } from './lib/cli.mjs';
-import { PUBLIC_KEY_PATH, sealFor } from './lib/envelope.mjs';
+import { AUDIT_PUBLIC_PEM, sealFor } from './lib/envelope.mjs';
 import { surfaceMap } from './lib/surface.mjs';
 import { AUDIT, CONSULTANTS, REPORT_SCHEMA } from './lib/team.mjs';
 
@@ -77,9 +77,10 @@ async function main() {
   const code = await runToFiles({ command: 'bash', args: ['-c', CLI_COMMAND], env, stdoutPath: join(WORK, 'result.json'), stderrPath: join(WORK, 'cli.stderr.log') });
   const record = resultRecord(readFileSync(join(WORK, 'result.json'), 'utf8'));
 
-  // Only metadata ever reaches the log: status fields, numbers and a label from a fixed list — no text.
+  // Only metadata ever reaches the log: status fields, numbers and labels from fixed lists — no text.
+  const stderr = readFileSync(join(WORK, 'cli.stderr.log'), 'utf8');
   const status = record
-    ? `subtype=${String(record.subtype).slice(0, 40)} is_error=${Boolean(record.is_error)} api_error_status=${Number(record.api_error_status) || 'none'} hint=${apiErrorHint(record)} turns=${Number(record.num_turns) || 0} cost=$${Number(record.total_cost_usd || 0).toFixed(2)}`
+    ? `subtype=${String(record.subtype).slice(0, 40)} is_error=${Boolean(record.is_error)} api_error_status=${Number(record.api_error_status) || 'none'} hint=${apiErrorHint(record, stderr)} turns=${Number(record.num_turns) || 0} cost=$${Number(record.total_cost_usd || 0).toFixed(2)}`
     : 'no result record';
   if (code !== 0 || !record || record.is_error || !record.structured_output) {
     throw new Error(`the audit did not produce a report (exit ${code}; ${status}).`);
@@ -100,7 +101,7 @@ async function main() {
     report: record.structured_output,
   };
 
-  writeFileSync(join(OUT, 'security-audit.enc.json'), JSON.stringify(sealFor(payload, readFileSync(PUBLIC_KEY_PATH, 'utf8'))));
+  writeFileSync(join(OUT, 'security-audit.enc.json'), JSON.stringify(sealFor(payload, readFileSync(AUDIT_PUBLIC_PEM, 'utf8'))));
 
   const line = `Security audit ${surface.head.slice(0, 12)}: completed, sealed · ${status}`;
   console.log(line);

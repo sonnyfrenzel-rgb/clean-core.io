@@ -24,13 +24,21 @@ const git = (args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 6
  */
 export const EXCLUSIONS = [
   { reason: 'binary media, fonts and archives — no executable content', test: (p) => /\.(png|jpe?g|gif|ico|webp|pdf|mp3|mp4|woff2?|ttf|zip)$/.test(p) },
-  { reason: 'documentation and prose (Markdown, docs/) — not built, not served', test: (p) => /\.md$/.test(p) || (/^docs\//.test(p) && !/\.(js|mjs|cjs|ts|tsx)$/.test(p)) },
-  { reason: 'separate video project, not part of the app build or deployment', test: (p) => /^clean-core-video\//.test(p) },
+  { reason: 'documentation and prose (Markdown, and non-code files under docs/) — not built, not served', test: (p) => /\.md$/.test(p) || /^docs\//.test(p) },
+  { reason: 'non-code files of the separate video project — not part of the app build or deployment', test: (p) => /^clean-core-video\//.test(p) },
   { reason: 'sample ABAP and static text assets — data, not code', test: (p) => /^abap-test-files\//.test(p) || /^public\/.*\.(abap|txt|vtt|sha256)$/.test(p) },
-  { reason: 'generated SAP catalog data (synced JSON) and the lockfile — covered by the dependency audit', test: (p) => /^lib\/abap\/generated\/.*\.json$/.test(p) || /(^|\/)package-lock\.json$/.test(p) },
+  { reason: 'generated SAP catalog data (synced JSON) — excluded, not reviewed', test: (p) => /^lib\/abap\/generated\/.*\.json$/.test(p) },
+  { reason: 'the npm lockfile — its advisories come from the dependency audit', test: (p) => /(^|\/)package-lock\.json$/.test(p) },
 ];
 
-const excludedBy = (path) => EXCLUSIONS.find((e) => e.test(path)) || null;
+/**
+ * Anything that can run or be rendered is never excluded, whichever directory it
+ * sits in — a directory rule must not decide coverage for a script (QA review of
+ * 2a8a69f791de, finding f9942b308569).
+ */
+const EXECUTABLE = /\.(js|mjs|cjs|jsx|ts|tsx|mts|cts|sh|bash|zsh|ps1|psm1|cmd|bat|py|rb|pl|php|html?|svg|yml|yaml|toml|rules)$/i;
+
+const excludedBy = (path) => (EXECUTABLE.test(path) ? null : EXCLUSIONS.find((e) => e.test(path)) || null);
 
 /** Domains the consultants are split by. The first match wins. */
 export const DOMAINS = [

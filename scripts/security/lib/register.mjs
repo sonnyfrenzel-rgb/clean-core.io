@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { openWith, PUBLIC_KEY_PATH, sealFor } from './envelope.mjs';
+import { openWith, AUDIT_PUBLIC_PEM, sealFor } from './envelope.mjs';
 
 /**
  * The security register: every audit finding the maintainer has triaged, with
@@ -19,7 +19,7 @@ export function loadRegister(privateKey, path = REGISTER_PATH) {
 }
 
 export function saveRegister(register, path = REGISTER_PATH) {
-  writeFileSync(path, `${JSON.stringify(sealFor(register, readFileSync(PUBLIC_KEY_PATH, 'utf8')))}\n`);
+  writeFileSync(path, `${JSON.stringify(sealFor(register, readFileSync(AUDIT_PUBLIC_PEM, 'utf8')))}\n`);
 }
 
 /**

@@ -163,13 +163,16 @@ test.describe('nothing the audit finds leaks', () => {
   test('a failed API call is named by a label from a fixed list, never by its text', async () => {
     const { apiErrorHint } = await lib('cli.mjs');
     const err = (result: unknown) => ({ is_error: true, result });
-    expect(apiErrorHint(err('API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}'))).toBe('credit balance too low');
-    expect(apiErrorHint(err('API Error: 401 {"error":{"type":"authentication_error","message":"invalid x-api-key"}}'))).toBe('authentication failed');
-    expect(apiErrorHint(err('API Error: 400 {"error":{"type":"invalid_request_error","message":"thinking: this model does not support adaptive thinking"}}'))).toBe('a request parameter is not supported');
+    expect(apiErrorHint(err('API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}'))).toBe('credit balance too low [credit]');
+    expect(apiErrorHint(err('API Error: 401 {"error":{"type":"authentication_error","message":"invalid x-api-key"}}'))).toBe('authentication failed [invalid]');
+    expect(apiErrorHint(err('API Error: 400 {"error":{"type":"invalid_request_error","message":"thinking: this model does not support adaptive thinking"}}'))).toBe('a request parameter is not supported [thinking,model]');
     expect(apiErrorHint(err('something with sk-ant-secret and a file path'))).toBe('unrecognised');
     expect(apiErrorHint(err(null))).toBe('unrecognised');
     expect(apiErrorHint({ is_error: false, result: 'credit balance is too low' })).toBe('none');
-    expect(read('scripts/security/audit.mjs')).toMatch(/hint=\$\{apiErrorHint\(record\)\}/);
+    // Which request feature the API objected to — words from a fixed list, from the result or the stderr log, nothing around them.
+    expect(apiErrorHint(err('API Error: 400 something odd'), 'Error: output_format with json_schema is not supported for this model, secret-looking-text-xyz')).toBe('a request parameter is not supported [json_schema,output_format,model]');
+    expect(apiErrorHint(err('API Error: 400 weird'), 'nothing we know')).toBe('unrecognised');
+    expect(read('scripts/security/audit.mjs')).toMatch(/hint=\$\{apiErrorHint\(record, stderr\)\}/);
   });
 
   test('the register is committed sealed, and the roadmap may only show ID, severity, priority, step and status', async () => {
@@ -188,6 +191,14 @@ test.describe('nothing the audit finds leaks', () => {
     expect(untriaged(findings, register, { head: 'after', isAncestorOf })).toEqual([{ fingerprint: 'fixed1', reopened: true }, { fingerprint: 'new1' }]);
     // An audit of a commit from before the fix is expected to still report it.
     expect(untriaged(findings, register, { head: 'before', isAncestorOf })).toEqual([{ fingerprint: 'new1' }]);
+    // What this clone cannot tell — fix or audited commit not fetched — is shown again, never hidden.
+    const { containsOrUnknown } = await import(path.resolve(ROOT, 'scripts/qa/lib/git-delta.mjs'));
+    const known = new Set(['fix', 'before']);
+    const opts = { exists: (c: string) => known.has(c), ancestor: () => false };
+    expect(containsOrUnknown('fix', 'not-fetched', opts)).toBe(true);
+    expect(containsOrUnknown('not-fetched', 'before', opts)).toBe(true);
+    expect(containsOrUnknown('fix', 'before', opts)).toBe(false);
+    expect(read('scripts/security/inbox.mjs')).toMatch(/isAncestorOf: containsOrUnknown/);
   });
 
   test('an existing register entry can be updated from a fresh clone without an inbox', async () => {
@@ -317,11 +328,14 @@ test.describe('the attack-surface map', () => {
 
   test('leaves nothing out that runs, and names every group it leaves out', async () => {
     const { inventory, exclusions } = await lib('surface.mjs');
-    const paths = ['public/worker.js', 'public/page.html', 'public/logo.svg', 'public/photo.jpg', 'public/sample.abap', 'docs/ROADMAP.md', 'docs/tool.mjs', 'README.md', 'clean-core-video/src/Video.tsx', 'lib/abap/generated/catalog.json', 'package-lock.json', 'scripts/linkedin-banner.html', 'app/page.tsx'];
-    expect(inventory(paths).map((f: { path: string }) => f.path)).toEqual(['public/worker.js', 'public/page.html', 'public/logo.svg', 'docs/tool.mjs', 'scripts/linkedin-banner.html', 'app/page.tsx']);
+    const paths = ['public/worker.js', 'public/page.html', 'public/logo.svg', 'public/photo.jpg', 'public/sample.abap', 'docs/ROADMAP.md', 'docs/tool.mjs', 'docs/check.sh', 'abap-test-files/check.jsx', 'abap-test-files/Z_TEST.abap', 'README.md', 'clean-core-video/src/Video.tsx', 'clean-core-video/audio.mp3', 'lib/abap/generated/catalog.json', 'package-lock.json', 'scripts/linkedin-banner.html', 'app/page.tsx'];
+    // Whatever can run is in, whichever directory it sits in.
+    expect(inventory(paths).map((f: { path: string }) => f.path)).toEqual(['public/worker.js', 'public/page.html', 'public/logo.svg', 'docs/tool.mjs', 'docs/check.sh', 'abap-test-files/check.jsx', 'clean-core-video/src/Video.tsx', 'scripts/linkedin-banner.html', 'app/page.tsx']);
     const groups = exclusions(paths);
-    expect(groups.reduce((n: number, g: { count: number }) => n + g.count, 0)).toBe(7);
+    expect(groups.reduce((n: number, g: { count: number }) => n + g.count, 0)).toBe(8);
     for (const g of groups) expect(g.reason.length).toBeGreaterThan(20);
+    // Only the lockfile is described as covered by the dependency audit.
+    expect(groups.filter((g: { reason: string }) => /dependency audit/.test(g.reason)).map((g: { examples: string[] }) => g.examples)).toEqual([['package-lock.json']]);
   });
 
   test('an npm audit that did not run is reported as unavailable, never as a clean scan', async () => {

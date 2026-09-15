@@ -57,8 +57,19 @@ const API_ERROR_HINTS = [
   [/invalid_request_error/i, 'invalid request (other)'],
 ];
 
-export function apiErrorHint(record) {
+/**
+ * Words from a fixed list that appear in the error — which request feature the
+ * API objected to. Generic API vocabulary only; the log shows which of these
+ * words occur, never the text around them. The first self-test's 400 matched no
+ * class above, and without this the cause stays invisible.
+ */
+const API_ERROR_WORDS = ['credit', 'billing', 'thinking', 'budget_tokens', 'effort', 'json_schema', 'output_format', 'structured', 'tool_choice', 'tools', 'max_tokens', 'temperature', 'context', 'model', 'system', 'beta', 'cache_control', 'agents', 'subagent', 'mcp', 'settings', 'deprecated', 'invalid', 'unsupported', 'permission', 'organization', 'workspace', 'region'];
+
+/** @param record the CLI's result record; @param stderr the CLI's stderr log, read only for these words */
+export function apiErrorHint(record, stderr = '') {
   if (!record?.is_error) return 'none';
-  const text = typeof record.result === 'string' ? record.result : '';
-  return API_ERROR_HINTS.find(([re]) => re.test(text))?.[1] || 'unrecognised';
+  const text = [typeof record.result === 'string' ? record.result : '', JSON.stringify(record.errors ?? ''), String(stderr).slice(-20_000)].join('\n');
+  const label = API_ERROR_HINTS.find(([re]) => re.test(text))?.[1] || 'unrecognised';
+  const words = API_ERROR_WORDS.filter((w) => new RegExp(`\\b${w}\\b`, 'i').test(text));
+  return words.length ? `${label} [${words.join(',')}]` : label;
 }

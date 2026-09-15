@@ -13,8 +13,8 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { gh, ghJson, jobsOf, waitForRun } from '../qa/lib/gh.mjs';
-import { git, isAncestor, isCommit } from '../qa/lib/git-delta.mjs';
+import { artifactNames, gh, ghJson, jobsOf, waitForRun } from '../qa/lib/gh.mjs';
+import { containsOrUnknown, git } from '../qa/lib/git-delta.mjs';
 import { loadDotEnv } from '../qa/lib/store.mjs';
 import { auditArtifact, openWith, privateKeyFrom } from './lib/envelope.mjs';
 import { renderAuditMail } from './lib/mail.mjs';
@@ -37,8 +37,7 @@ async function fetchReport(run, privateKey) {
   const audited = jobsOf(run.databaseId).some((j) => j.name.startsWith('Audit') && j.conclusion === 'success');
   if (!audited) return null;
   // Exactly one artifact, chosen by name — never by which of several downloads landed last (finding 4fb3804a2d49).
-  const names = ghJson(['api', `repos/{owner}/{repo}/actions/runs/${run.databaseId}/artifacts`, '--jq', '[.artifacts[] | select(.expired == false) | .name]']) || [];
-  const artifact = auditArtifact(names, run.headSha);
+  const artifact = auditArtifact(artifactNames(run.databaseId), run.headSha);
   if (!artifact) return null;
   const dir = join(DIR, artifact);
   rmSync(dir, { recursive: true, force: true });
@@ -92,8 +91,7 @@ async function main() {
     }
   })();
   const mail = renderAuditMail(payload, { version, runUrl: `run ${run.databaseId}`, sealedSha256 });
-  // A fix commit this clone does not know counts as contained: the finding is shown again rather than hidden.
-  const open = untriaged(mail.findings, loadRegister(privateKey), { head: payload.head, isAncestorOf: (fix, head) => !isCommit(fix) || isAncestor(fix, head) });
+  const open = untriaged(mail.findings, loadRegister(privateKey), { head: payload.head, isAncestorOf: containsOrUnknown });
 
   if (BRIEF) {
     if (!open.length || payload.selfTest) return 0;

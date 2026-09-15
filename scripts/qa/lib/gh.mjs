@@ -16,6 +16,24 @@ export function ghJson(args) {
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * The artifact `<prefix>-<sha>-<attempt>` of the latest attempt that produced
+ * one. A re-run of only a later job adds an attempt without a new artifact, so
+ * the newest attempt is not always the one — and a download timestamp never is.
+ */
+export function latestArtifact(names, prefix, sha) {
+  const re = new RegExp(`^${prefix}-${String(sha).replace(/[^0-9a-f]/g, '')}-(\\d+)$`);
+  return (
+    names
+      .map((name) => ({ name, attempt: Number(re.exec(name)?.[1]) }))
+      .filter((a) => a.attempt > 0)
+      .sort((a, b) => b.attempt - a.attempt)[0]?.name || null
+  );
+}
+
+/** Names of the unexpired artifacts of a run. */
+export const artifactNames = (runId) => ghJson(['api', `repos/{owner}/{repo}/actions/runs/${runId}/artifacts`, '--jq', '[.artifacts[] | select(.expired == false) | .name]']) || [];
+
 /** The newest run of `workflow` for exactly this commit, or null while none has been created yet. */
 export function runFor(workflow, sha) {
   const runs = ghJson(['run', 'list', '--workflow', workflow, '--commit', sha, '--limit', '5', '--json', 'databaseId,headSha,status,conclusion,createdAt,event']) || [];

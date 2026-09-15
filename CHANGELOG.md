@@ -62,6 +62,21 @@ Sonnys Freigabe, kein Umbenennen.
 Der erste Selbsttest scheiterte mit API-Fehler 400 im ersten Zug, 0 $. Das Log nennt jetzt
 eine Fehlerklasse aus einer festen Liste (z. B. „credit balance too low"), nie den Text.
 
+### QA-Runde 2 zum Security-Agenten — drei Restfälle behoben, drei Fehlalarme widerlegt
+
+- **Wieder aufgetretene Befunde, auch ohne vollständige Historie:** Fehlt dem Klon der Fix- oder
+  der geprüfte Commit, wird der Befund wieder gezeigt statt versteckt — ein gescheiterter
+  git-Befehl ist kein Beweis (`71baa4a01baa`). Eine gemeinsame Prüfung für beide Inboxen.
+- **Abdeckung:** Was laufen oder rendern kann (Skripte, JSX, Shell, HTML, SVG, YAML), ist nie
+  ausgeschlossen, egal in welchem Verzeichnis (`f9942b308569`). Der SAP-Katalog steht nicht mehr
+  als „vom Dependency-Audit abgedeckt" in der Karte — das gilt nur für die Lockfile (`bdd2bd0a760c`).
+- **Selbsttest-Diagnose:** Der zweite Lauf zeigte `hint=unrecognised`. Das Log nennt jetzt
+  zusätzlich, welche Wörter einer festen API-Vokabelliste im Fehler oder im stderr-Log vorkommen.
+- **Widerlegt:** der öffentliche Firebase-Web-Key nach der Umbenennung der Datei; der Pfad zum
+  öffentlichen Schlüssel (die Konstante heißt jetzt `AUDIT_PUBLIC_PEM`, damit das Namensmuster
+  nicht mehr greift); und ein Treffer im ausgehenden Prompt, den meine eigene
+  Widerlegungsbegründung ausgelöst hatte, weil sie die Zeile zitierte.
+
 ## [v2.9.15] — 2026-09-15
 
 ### Der Security-Agent: jede Version auf main bekommt ein Vollaudit — der Bericht kommt per Mail

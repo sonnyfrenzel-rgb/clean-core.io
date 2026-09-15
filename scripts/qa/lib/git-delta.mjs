@@ -35,6 +35,16 @@ export function isAncestor(a, b) {
 }
 
 /**
+ * Does `head` contain `commit` — for deciding that a fixed finding has come back.
+ * When this clone cannot tell (either commit not fetched), the answer is yes: a
+ * failed git command is not proof that the fix is absent, and "shown again" is
+ * the safe side (QA review of 2a8a69f791de, finding 71baa4a01baa).
+ */
+export function containsOrUnknown(commit, head, { exists = isCommit, ancestor = isAncestor } = {}) {
+  return !exists(commit) || !exists(head) || ancestor(commit, head);
+}
+
+/**
  * Which commit a review starts from. Pure, so every case is testable without a
  * repository:
  *
