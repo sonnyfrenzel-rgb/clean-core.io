@@ -8,7 +8,8 @@ Guide for working in this repo. Deeper reference: `docs/ARCHITECTURE.md` (archit
 
 **Direction (Fassung 2.8, since 2026-09-15): `docs/ROADMAP.md`** — the only binding
 roadmap. Publicly there is one jump: **3.0 is the UX rebuild along
-`docs/roadmap/clean-core-mockups-v2_7.html`**, reached in phases of small steps
+`docs/roadmap/clean-core-mockups-v2_8.html`**, built to `DESIGN.md` (look, structure and
+behaviour; decisions in `docs/design/decisions.md`), reached in phases of small steps
 (v2.10–v2.18); new UI grows behind an admin-only switch until 3.0. The Business view
 leads: the process is reconstructed from the ABAP code as BPMN (line anchors on
 every element), editable, exchanged with SAP Signavio via BPMN 2.0 XML files — no

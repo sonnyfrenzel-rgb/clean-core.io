@@ -14,7 +14,8 @@ diese Datei** — das betrifft vor allem Konto, Rollen, Teilen und die Reihenfol
 
 | Dokument | Rolle |
 |---|---|
-| [`roadmap/clean-core-mockups-v2_7.html`](roadmap/clean-core-mockups-v2_7.html) | **Zielbild von 3.0.** Die bewussten Abweichungen stehen in §5 |
+| [`roadmap/clean-core-mockups-v2_8.html`](roadmap/clean-core-mockups-v2_8.html) | **Zielbild von 3.0**, gebaut nach [`DESIGN.md`](../DESIGN.md); §5 sagt, wo jedes Element entsteht. Die Vorgänger-Mockups 2.7 bleiben in `roadmap/` als Herkunft |
+| [`../DESIGN.md`](../DESIGN.md) · [`design/decisions.md`](design/decisions.md) | **Aussehen, Struktur und Verhalten** der Oberfläche von 3.0 und das Entscheidungslog dazu |
 | [`roadmap/SCHNITT-0-UMFANG.md`](roadmap/SCHNITT-0-UMFANG.md) | Arbeitspakete von Phase 0 (v2.10), mit den Änderungen aus §4 |
 | [`archiv/roadmap-2.7/`](archiv/README.md) | Fassung 2.7, Backlog-Langfassung mit den Abnahmekatalogen, Review vom 08.09. mit dem Befundregister, ID-Brücke, Schnitte A–C, Teilschnittgraph |
 | [`archiv/ROADMAP-2.0.md`](archiv/ROADMAP-2.0.md) | Begründung von v2.0, warum Enterprise-Funktionen zurückgestellt wurden |
@@ -148,6 +149,9 @@ vom 15.09. (**fett**).
 | 0.6 | Konservative Ungültigkeit statt Frischeheuristik | S |
 | 0.7 | Freigabefelder nur über servervalidierte Commands, manueller Regel-Deploy vor der App. **Konzeptteil nur noch: Einsicht per Einladung** (Rechtestufen, Rohcode-Schalter, virtuelle Rollen entfallen). **Datensparsamkeit gestrichen** | M |
 | 0.8 | **Deckungsurteil ohne Befunde ist kein Vollurteil** (UX-002, critical): leere Befundliste ergibt nicht mehr „Fully Supported" und kein „Unconditional Go-Live Approved / LOW RISK" im Board-Deck; eigener Schritt vor der übrigen Arbeit | S |
+| 0.9 | **Beispiele kosten kein Kontingent** (Entscheidung Sonny 15.09.2026): nur die bestehenden Starter-Beispiele aus `lib/starter-examples.ts`, serverseitig am Fingerabdruck des unveränderten Quelltexts erkannt (ein verändertes Beispiel ist eigener Code); **jedes einmal frei** je Konto; **jeder weitere Start** desselben Beispiels zählt wie eine Analyse, auch gegen die Regel „dieselbe Quelle erneut ist frei"; nach den fünf Analysen geht es nur noch mit eigenem Gemini-Schlüssel (BYOK) weiter (Präzisierung Sonny 15.09.2026). Wer dasselbe Beispiel erneut startet, wird vorher gewarnt — *„You ran this example before. Running it again uses 1 of your 5 free analysis runs once the analysis completes."* — und das Kontingent wird erst **nach abgeschlossener Analyse** abgezogen, nie bei Abbruch oder Fehler. Buchführung nur serverseitig (Admin SDK, wie `chargedInputs`), kein Client-Feld. Mit: Nutzungsbedingungen §6, Welcome-Mail, `lib/clean-core-capabilities.ts` und Admin-Nutzungsansicht, die heute „re-analysing the same source is free" sagen | S |
+| 0.10 | **Demo-Projekt für jedes Konto** (Entscheidung Sonny 15.09.2026, `DESIGN.md` §6.1.2): ein vollständig durchgespieltes, deutlich markiertes Projekt aus einem echten Lauf des achten Starter-Beispiels `Z_MM_PO_APPROVAL` (Emergency purchase approval — derselbe Fall wie in den Mockups), **eine** Demo für alle Konten (keine Kopie je Konto, Anmeldung unverändert), bedienbar ohne Folgen — Zustand nur im Browser, „Reset demo", zählt nicht aufs Kontingent. Im heutigen Produkt mit den sieben Stufen; mit wiederkehrender Einladung zu Beispiel oder eigenem Code (höchstens eine je Bildschirm, nie blockierend). Die Tour mit rund zwölf Stationen wächst mit dem Arbeitsraum (3.0.7) | M |
+| 0.11 | **Vertrauen vor dem Hochladen** (Entscheidung Sonny 15.09.2026, `DESIGN.md` §6.1.3): im heutigen Upload eine Zeile zu Terms §5 und §8 ohne Häkchen und die Karte „Your code and your trust" — EU-Speicherung, Zugriff nur für das Konto, Server-Proxy und verschlüsselter Schlüssel, signierte Läufe, kein Tracking, Löschen, öffentliches Sicherheitsmodell, Training: mit dem Community-Schlüssel gilt der bezahlte Gemini-API-Tarif — kein Training durch Google; mit eigenem Schlüssel die Bedingungen des eigenen Google-Kontos (Sonny 15.09.2026; die Datenschutzerklärung nennt den bezahlten Tarif des Community-Schlüssels ausdrücklich, bevor die Karte es sagt); „free community project"; „Our security model is public" verlinkt auf `SECURITY.md` im öffentlichen Repository. Jede Aussage mit Link auf ihre Quelle; ein Guard prüft, dass die Karte nur Aussagen enthält, die in Terms, Datenschutzerklärung oder `SECURITY.md` stehen | S |
 | daneben | Referenzkorpus v1 mit externem Review. **Dazu: je Fall das erwartete Prozessskelett** als Ground Truth für Phase 2 | M, extern |
 
 **Fertig, wenn** V25-A09/A10 (harte Zahl bricht den Build; Seiten nennen identische
@@ -165,8 +169,10 @@ den alles Weitere gebaut wird.
 | 1.1 | **Erhaltungsregister:** die sieben Stufen mit Eingaben, Ausgaben, Voraussetzungen, Fehlern und je einem Referenzfall; Commit, Build und Rules fixiert. Nichts geht im Umbau unbemerkt verloren (QA24-A04, W22-A04) | M |
 | 1.2 | **Zero-LLM-Sperrpfad:** Run ohne API-Key bis zum signierten Evidenzstand; Modellstufen einzeln zuschaltbar; „nicht erzeugt" statt leer (V25-A12) | S |
 | 1.3 | **Anker-Fix:** Parser und Prompt verwenden die `CC-`IDs der Engine; Test mit echten Engine-IDs. **Vorgezogen, gebaut in v2.10.1** | S |
-| 1.4 | **Arbeitsraum-Schale hinter dem Schalter:** Kopfzeile wie im Mockup (Pfad, Projekttitel, Metazeile mit Manifest, Revision, Quellstand, Engine, Regeln aus 0.5), sieben Status-Chips — jeder ehrlich, „nicht begonnen", solange nichts da ist —, Ebenenleiste, untere Leiste mit den sieben Stufen als Werkzeuge | M |
-| 1.5 | **Gestaltung aus den Mockups als Komponenten** (Karte, Tag, Status-Chip, Anker, Artefaktzeile) und ein Style-Guard nach dem Muster von `tests/workflow-style-guard.spec.ts` | S |
+| 1.4 | **Arbeitsraum-Schale hinter dem Schalter:** Kopfzeile wie im Mockup (Pfad, Projekttitel, Metazeile mit Manifest, Revision, Quellstand, Engine, Regeln aus 0.5), sieben Status-Chips — jeder ehrlich, „nicht begonnen", solange nichts da ist —, Ebenenleiste, Werkzeugleiste mit den sieben Stufen unter dem Kopf. **Öffnet in der Business-Sicht** und hat einen Bereich „Nicht bestimmt" (`DESIGN.md` §2.3, §4) | M |
+| 1.5 | **Gestaltung nach `DESIGN.md` als Komponenten** (Karte, Tag, Status-Chip, Herkunfts-Chip in drei Formen, Anker, Artefaktzeile, Message Strip, Empty State, „Why?"-Popover, Segmented Control, Icon-Button): semantische Tokens statt Hex-Literale, vier Button-Stile, Schrift ≥ 11 px, **eine Herkunftsliste `lib/provenance.ts`** mit Guard gegen frei formulierte Badges; Style-Guard nach dem Muster von `tests/workflow-style-guard.spec.ts` | S |
+| 1.6 | **Kein Dark Mode:** Theme-Schalter in den Einstellungen und die `.dark`-Überschreibungen in `app/globals.css` entfallen, mit Guard (Entscheidung 15.09.2026; erledigt UX-023, UX-044, UX-061, UX-062) | S |
+| 1.7 | **Ehrliche Kodierung bis zur Schale:** Stepper und Verification Rail zeigen „done" gleich, Grün nur für belegt; der Tenant-Tab heißt „Tenant-Verbindung prüfen", der Sperrhinweis steht einmal, mit dem BYOT-Freischaltweg (`DESIGN.md` §5.3, Entscheidung 15.09.2026) | S |
 
 **Fertig, wenn** jede Stufe ihren Referenzfall im Register besteht, ein Run ohne Key
 ein signiertes Pack liefert, die Schale für ein echtes Projekt mit ehrlichen Chips
@@ -181,10 +187,13 @@ Code-Karte darunter.
 |---|---|---|
 | 2.1 | **Verzweigungen:** IF/ELSEIF/ELSE und CASE/WHEN mit Bedingungstext und Zeilenbereich — deterministisch in `lib/abap/` | M |
 | 2.2 | **Aufrufe:** FORM/PERFORM-Graph, Funktionsbausteinnamen (BAPIs eingeschlossen), CALL TRANSACTION, SUBMIT-Programm, AUTHORITY-CHECK mit Objekt und Feldern, Schreibzugriffe | M |
-| 2.3 | **Prozessskelett:** Schritte, Entscheidungen, Start und Ende aus 2.1/2.2 — jeder Knoten mit Zeilenbereich, ohne Modellaufruf | M |
+| 2.3 | **Prozessskelett:** Schritte, Entscheidungen, Start und Ende aus 2.1/2.2 — jeder Knoten mit Zeilenbereich, ohne Modellaufruf. Mit der Palette aus `DESIGN.md` §5.8: Fehler-Ende, Teilprozesse aus FORMs mit Wirkung, Aufruf-Aktivität, Service-, Send-, User- und Business-Rule-Task, Mehrfach-Instanz aus `LOOP AT`, Fehler-Randereignis, Fremdsystem als Pool, Datenspeicher; **nicht erreichter Code, Klone und technische Helfer** werden erkannt und benannt statt gezeichnet. Referenzfall: `ZLEGACY_ORDER_FULFILLMENT_AUDIT` (1.000 Zeilen, 341 davon nicht erreicht) | L |
 | 2.4 | **Fachliche Benennung:** das Modell benennt nur Skelettknoten und schlägt Lanes vor. Ein Element ohne Anker heißt „unbelegt". Lanes tragen den Mockup-Satz: rekonstruiert aus AUTHORITY-CHECK und Benennung, keine organisatorische Aussage | M |
-| 2.5 | **BPMN-Ansicht im Arbeitsraum** (bpmn-js, lesend): Legende Rekonstruiert · Bestätigt · Nachgewiesen; Klick auf ein Element öffnet die Code-Karte mit markierten Zeilen; Traceability-Quote je Modell gespeichert | M |
-| 2.6 | **BPMN-Export richtig:** gültiges XML (Escaping, CR-21), stabile IDs, Bedingungen an den Kanten, automatisches Layout, Anker und Status in einem eigenen Namensraum unter `extensionElements`; Schemaprüfung im Test; `.bpmn` auch im Delivery-ZIP | M |
+| 2.5 | **BPMN-Ansicht im Arbeitsraum** (bpmn-js, lesend): Legende Rekonstruiert · Bestätigt · Nachgewiesen; Klick auf ein Element öffnet die Code-Karte mit markierten Zeilen; Traceability-Quote je Modell gespeichert. Ohne Maus nach DESIGN.md §5.7: gleichwertige Schrittliste „Map | Steps", ein Tab-Halt mit Pfeiltasten, benannte Knoten, gerenderter Tastatur-Test | M |
+| 2.6 | **BPMN-Export richtig:** gültiges XML (Escaping, CR-21), stabile IDs, Bedingungen an den Kanten, automatisches Layout, Anker und Status in einem eigenen Namensraum unter `extensionElements`; eingeklappte Teilprozesse als echte BPMN-Teilprozesse, Fremdsysteme als Pool mit Nachrichtenfluss, Datenspeicher; Schemaprüfung im Test; `.bpmn` auch im Delivery-ZIP. Dazu Export PNG und PDF der Prozesskarte mit Herkunfts-Chips und Ankern — kein öffentlicher Link (`DESIGN.md` §5.3, §5.7) | M |
+| 2.7 | **Erster Blick:** nach Import oder Beispiel baut sich der Arbeitsraum in vier Etappen auf — Code gelesen · Prozess erkannt · in Fachsprache · „Das ist Ihr Prozess" mit Prozessname, Traceability, Entscheidungen, Regeln und „nicht bestimmt". Jede Zahl aus dem Run, überspringbar, `prefers-reduced-motion` zeigt den Endzustand. Dazu die drei Coach Marks und die vorab beantwortete Frage in „Ask this case" aus den Verzweigungen des Codes, ohne Modellaufruf (`DESIGN.md` §5, §6.2). **Davor „New project"** nach `DESIGN.md` §6.1.1: ein Satz Kern, drei Zeilen, was anders ist, Clean Core in drei Blicken (Bedeutung, Level A–D, Herkunft der Evidenz mit Stand des Katalogabgleichs), dann Beispiel oder eigener Code mit der Kontingent-Zeile aus 0.9 | M |
+| 2.8 | **Versteckte Geschäftsregeln:** Literale in Bedingungen — Toleranzen, Werke, Buchungskreise, Kunden- und Lieferantennummern, Datumsgrenzen, Ausnahmelisten — deterministisch als Regelkandidaten mit Anker; jeder wird in 3.5 beibehalten, geändert, entfällt oder ins Customizing verschoben (Feedback 15.09.2026). Einstufende FORMs (`IF/ELSEIF`-Ketten auf Literalen) öffnen als Entscheidungstabelle am Business-Rule-Task | M |
+| 2.9 | **Große Prozesse navigieren** (`DESIGN.md` §5.9): Übersicht der Phasen als eingeklappte Teilprozesse, Ebenen mit Pfadzeile, Gliederungsbaum statt flacher Schrittliste, Problemzeile je Teilprozess, Minikarte, „Show paths to here" und „Main path", Laufvarianten aus den Selektionsschaltern, Overlays als Filter, Suche öffnet die Ebene des Treffers, stabile Anordnung, Ebene und Auswahl in der URL. Abnahme am 1.000-Zeilen-Beispiel: jeder Schritt in höchstens drei Aktionen erreichbar, per Tastatur wie per Maus | L |
 
 **Fertig, wenn**
 - jeder Task, jedes Gateway und jede Lane einen Zeilenanker trägt oder sichtbar
@@ -255,12 +264,13 @@ Mockup Screens 1–4: Umschalter, Ebenen, Status-Chips, nächster Schritt, Suche
 
 | # | Schritt | Größe |
 |---|---|---|
-| 6.1 | **Umschalter Management · Business · IT**, in IT mit Fokus Application · Solution · Enterprise. Gehalten in URL und Browser — nicht im Konto, nicht im Projekt, nicht in Run oder Audit-Pack | S |
+| 6.1 | **Umschalter Business · Management · IT** (Business vorn und beim Öffnen gewählt), in IT mit Fokus Application · Solution · Enterprise. Gehalten in URL und Browser — nicht im Konto, nicht im Projekt, nicht in Run oder Audit-Pack. Dazu **die drei Sichten in Bewegung** in „New project" (`DESIGN.md` §6.1.1): eine Tatsache mit festem Anker wandert einmal durch die drei Sichten, aus dem echten Lauf des Beispiels, überspringbar, bei reduzierter Bewegung still | M |
 | 6.2 | **Ebenen:** Bedarf & Prozess · Standard-Fit · Kosten & Annahmen · Architektur & Abhängigkeiten · Nachweise & Kontrollen · Änderungen & Zusagen. Eine Ebene ohne Inhalt sagt das, statt etwas zu erfinden (W22-A03) | M |
 | 6.3 | **Overlays auf dem Prozessmodell:** Clean-Core-Level des Codes hinter einem Task, Findings, Nutzung (wenn importiert) — Darstellung, kein Inhalt; das Level bleibt außerhalb des signierten Audit-Packs | M |
-| 6.4 | **Management-Sicht auf dasselbe Projekt:** was bestätigt ist, was fehlt, was eine Entscheidung binden würde — kein Portfolio | M |
+| 6.4 | **Management-Sicht auf dasselbe Projekt:** was bestätigt ist, was fehlt, was eine Entscheidung binden würde; **Clean-Core-Readiness mit Regelversion und Verlauf** — ein Verlauf vergleicht nur Runs derselben Regelversion — kein Portfolio | M |
 | 6.5 | **Nächster Schritt:** regelbasiert der nächste offene Punkt mit Grund, ohne Modellaufruf | S |
-| 6.6 | **Suche im Projekt** (⌘K) über Elemente, Regeln, Findings und Zeilen | S |
+| 6.6 | **Suche im Projekt** (⌘K) über Elemente, Regeln, Findings, Zeilen und Glossar; **Glossar zum Start** nach `DESIGN.md` §6.1 (SAP- und Produktbegriffe, Quelle je SAP-Begriff), auch in „Ask this case": Fachwörter mit Popover, „What is …?" aus dem Eintrag ohne Modellaufruf (Entscheidung 15.09.2026) | M |
+| 6.7 | **Public-Cloud-Fit und vier Töpfe:** welche Objekte des Projekts in Public Cloud keinen Weg haben (nur Tier 3) und damit die Deployment-Entscheidung blockieren; Einordnung jedes Objekts in Retire · Keep · Rebuild · **Blocked by SAP** (kein freigegebenes API, kein Nachfolger) — der vierte Topf trennt eigene Hausaufgaben von SAPs Roadmap. Abgeleitet aus Katalog und Level, jede Zuordnung mit Beleg (Feedback 15.09.2026). Regeln nach `DESIGN.md` §5.6 (Entscheidung 15.09.2026): abhängig von der Zielplattform; Retire nur aus bestätigtem Drop oder null Nutzung über ≥ 13 Monate, mit Quelle, Zeitraum und Jahresabschluss sichtbar; Blocked nur für Katalogobjekte ohne freigegebenen Nachfolger, Modifikationen sind Rebuild | M |
 
 **Fertig, wenn** W22-A01/A02 (ein Wechsel erhält Element, Revision und Auswahl und
 erzeugt keine neue Hypothese), ein Wechsel keinen Modellaufruf auslöst und ein Guard
@@ -275,9 +285,11 @@ Mockup Screen 2.
 |---|---|---|
 | 7.1 | **ATC-Import** neben dem vorhandenen Nutzungsimport; importierte Findings mit der Engine abgeglichen | M |
 | 7.2 | **Standardabdeckung je Fähigkeit** mit Evidenzstufe E0–E4: ein Kataloglink ergibt höchstens E1, ein Scope Item ist eine zu prüfende ID, ein fehlender Katalogtreffer beweist nichts | M |
-| 7.3 | **Gegenprobe-Szenarien** aus dem bestätigten Bedarf; Testing speichert Verdikte als Receipt mit Umfang, Umgebung und Stubs | M |
-| 7.4 | **Optionen mit Kosten** nur aus einer Annahmenrevision; kein Kostensieger, solange eine Option unvollständig ist | M |
+| 7.3 | **Gegenprobe-Szenarien** aus dem bestätigten Bedarf, **als Given/When/Then mit Testdatenbedarf**, damit Fachbereiche sie ohne ABAP prüfen; Testing speichert Verdikte als Receipt mit Umfang, Umgebung und Stubs | M |
+| 7.4 | **Optionen mit Kosten** nur aus einer Annahmenrevision; **„Nichts tun" als Vergleichsoption** (Regressionstest je Release, Upgrade-Verzug) und die Empfindlichkeit der Annahmen; kein Kostensieger, solange eine Option unvollständig ist. **Pflichtfelder** (Entscheidung 15.09.2026, ADR-035): Währung ohne Vorgabe, zwei Tagessätze (Entwicklung, Test/Key User), Betrachtungszeitraum ohne Vorgabe, Release-Takt nur bestätigt, je Option einmaliger Aufwand als Spanne und laufender Aufwand je Release, Wartungs-Baseline für Keep und Nichts tun; kein Feld aus einem Modell, die festen Aufwandsfaktoren je 1.000 Zeilen nur als bestätigungspflichtiger Vorschlag | M |
 | 7.5 | **Prüfaufträge statt Scheinwissen:** zu kurzes Nutzungsfenster, fehlendes Include, dynamischer Aufruf werden Aufgaben, keine Urteile | S |
+| 7.6 | **Was sich für Nutzer ändert:** welche Transaktion oder App den Schritt heute trägt und künftig, was anders aussieht, wo Schulung nötig ist — als Evidenzstufe wie 7.2, nie als Behauptung (Feedback 15.09.2026) | M |
+| 7.7 | **Prüfhinweise Compliance:** deterministische Hinweise auf personenbezogene, steuer- oder revisionsrelevante Daten aus den gelesenen Tabellen — sie bestimmen Prüftiefe und Testpflicht, sind aber Hinweise, keine Einstufung (Feedback 15.09.2026) | S |
 
 **Fertig, wenn** V25-A02 (beide Katalogsichten mit Vorrangregel und Regelversion),
 V25-A05 (zu kurzes Fenster erzeugt einen Prüfauftrag), V25-A06 und W22-A15/A16
@@ -290,10 +302,11 @@ Mockup Screens 3, 4 und 5 (linke Spalte).
 | # | Schritt | Größe |
 |---|---|---|
 | 8.1 | **IT-Sicht:** Findings mit beiden Katalogsichten, Level-Verteilung, Spur Anforderung → Anker → Finding → Zielentwurf | M |
-| 8.2 | **Architekturvertrag als Dokument:** Zielkontext, Laufzeit, Persistenz, APIs, gebundene Eingaben | M |
+| 8.2 | **Architekturvertrag als Dokument:** Zielkontext, Laufzeit, Persistenz, APIs, gebundene Eingaben — **und warum die Alternativen verworfen wurden** | M |
 | 8.3 | **Generierung folgt dem Vertrag;** eine Abweichung von der Empfehlung wird festgehalten und angewendet | M |
-| 8.4 | **Entscheidung:** bindet Bedarf, Option, Kostenrevision und Vertrag; Bedingungen mit Status; Zeitleiste. Bestätigt vom Konto — „Selbstauskunft, kein organisatorisches Mandat" | M |
+| 8.4 | **Entscheidung:** bindet Bedarf, Option, Kostenrevision und Vertrag; Bedingungen mit Status; Zeitleiste; **umkehrbar ja/nein**. Bestätigt vom Konto — „Selbstauskunft, kein organisatorisches Mandat" | M |
 | 8.5 | **Nachweiskette und Übergabepaket:** Anforderung → Entscheidung → Receipt → Lieferartefakt; das Signaturmanifest nennt `covers[]`; der vorhandene Offline-Verifier prüft es | M |
+| 8.6 | **Steering-Einseiter:** eine Seite (PDF) mit ausschließlich Zahlen, die per Link zur Evidenz führen, jede mit ihrer Abdeckung, und der Spalte „nicht bestimmt" (Feedback 15.09.2026) | M |
 
 **Fertig, wenn** C23-A29 (manipulierte Evidenz wird erkannt), V25-A11
 (Offline-Verifikation mit `covers[]`), W22-A17 (Export ist keine Übernahme) und
@@ -306,18 +319,19 @@ QA24-A17 (ein Fingerprint ohne Bestätigung ist kein grüner Status).
 | 3.0.1 | **Schalter für alle:** jedes Projekt öffnet im Arbeitsraum; die sieben Stufen bleiben als Werkzeuge | S |
 | 3.0.2 | **Bestandsprojekte** öffnen ohne Verlust von IDs, Runs und Signaturen (C23-A02) | M |
 | 3.0.3 | **Erhaltungsregister im neuen Arbeitsraum:** jeder Referenzfall aus 1.1 besteht | S |
-| 3.0.4 | **Accessibility-Basis:** Tastatur, Screenreader, Lesen auf dem Telefon | M |
+| 3.0.4 | **Accessibility-Basis:** Tastatur, Screenreader, `forced-colors`, Telefon in Breakpoint S mit der Reihenfolge aus `DESIGN.md` §2.9, Druckbild nach §7.1 | M |
 | 3.0.5 | **Aufräumen:** der alte 1.000-Zeichen-Generator und das ungenutzte `components/ProcessDocumentation.tsx` gehen | S |
 | 3.0.6 | **Öffentliche Texte auf 3.0:** Startseite, README, How-to, Whitepaper, `llms.txt`, Facts; Screenshots aus dem echten Produkt, keine Mockup-Bilder | M |
+| 3.0.7 | **Demo-Projekt und Tour im Arbeitsraum** (`DESIGN.md` §6.1.2): die Demo aus 0.10 in allen Sichten und Ebenen, neu erzeugt mit jedem Release, das Engine oder Regelversion ändert; Tour mit rund zwölf Stationen (Enthüllung bis Übergabe), eine Station je Ort, Fortschritt nur im Browser, Einladung nach jeder dritten Station und am Ende | M |
 
 **Fertig, wenn** alle Phasenabnahmen auf `main` gelaufen sind, ein Korpusfall den
 ganzen Fluss durchläuft und die Copy-CI grün ist.
 
 ---
 
-## 5. Abgleich mit den Mockups 2.7
+## 5. Abgleich mit den Mockups
 
-Die Mockups sind das Zielbild. Diese Tabelle sagt, wo jedes Element entsteht und wo
+Zielbild sind seit 15.09.2026 die Mockups **2.8** (`docs/roadmap/clean-core-mockups-v2_8.html`), gebaut nach `DESIGN.md` — an SAP-Fiori-Mustern orientiert, im Look von Clean-Core.io, Business-Sicht beim Öffnen, feste Herkunftsliste, kein Dark Mode. Die Tabelle nennt die Elemente aus 2.7, auf denen 2.8 aufbaut. Die Mockups sind das Zielbild. Diese Tabelle sagt, wo jedes Element entsteht und wo
 3.0 bewusst abweicht. **Die Abweichungen folgen alle aus §2** — Konto unverändert,
 Rollen nur als Sichten, Teilen nur als Einsicht.
 
@@ -389,6 +403,7 @@ ist, wie Signavio mit fremden `extensionElements` umgeht** — genau das klärt 
 | **3.3** | Auswirkungsanalyse: eine Katalogänderung erzeugt Prüfaufträge nur für betroffene Projekte |
 | **3.4** | Musterbibliothek (CC-BY, nur nach Veröffentlichungsreview) |
 | **3.5** | Beobachtete Wirkung gegen die eingefrorene Kostenrevision (Screen 5 rechts) · Multi-Provider-BYOK |
+| **Kandidaten (Feedback 15.09.2026)** | Code-Anonymisierung vor dem Modellaufruf · CLI/API, die Pull Requests gegen Clean-Core-Regeln prüft (Shift-Left) · Aufwandsschätzung aus Metriken, erst mit Kalibrierung aus der Bench |
 | ohne Version | Bench veröffentlichen, fairer Vergleich, Teamabnahme — brauchen Termine mit Dritten, keine Entwicklungszeit · Runner-Isolation (`E08-F01-US01`) als eigener Auftrag, der den gesperrten Live-Testmodus zurückgibt |
 
 ---
@@ -405,6 +420,7 @@ ist, wie Signavio mit fremden `extensionElements` umgeht** — genau das klärt 
 | Tenants, SSO, Organisationskonten, Self-Hosted Edition, ALM-Adapter, Portfolio-Steuerung | Export, nach 3.0 lesendes MCP |
 | Signavio-API-Anbindung, Prozess-Repository, Simulation, Process Mining | BPMN-Dateiaustausch (§6) |
 | Schreibende MCP-Tools, agentisch ausgelöste Entscheidungen | alles lesend |
+| Wellenplanung über mehrere Projekte, Kapazitätsplanung, verpflichtende Owner je Objekt als Rolle (Feedback 15.09.2026) | Projekt = Fall; bestätigt wird vom Konto; Priorisierung innerhalb eines Projekts über den nächsten Schritt (6.5) |
 
 `tier: 'enterprise'`, `orgId`, `maxTeamMembers` und die Okta-/Azure-Felder im Profil
 beschreiben eine Ausbaustufe, die nicht kommt. Sie bleiben trotzdem stehen, weil
@@ -424,6 +440,9 @@ diese Roadmap das Konto nicht anfasst.
 | **Business-Sicht** | BPMN-Modellierung nah an Signavio, keine Kopie; Import und Export für Signavio-Lizenznehmer |
 | **Versionen** | Nach außen zählt 3.0 = der UX-Umbau entlang der Mockups 2.7; bis dahin kleine Schritte in Phasen |
 | **Form** | Diese Datei kurz und allein verbindlich; frühere Roadmaps im Archiv `docs/archiv/` |
+| **Gestaltung** | `DESIGN.md`: SAP-Fiori-Muster übernehmen, das Fiori-Theme nicht; Look von Clean-Core.io bleibt; Arbeitsraum öffnet in der Business-Sicht; Herkunft als feste Liste im Code |
+| **Dark Mode** | entfällt (1.6) |
+| **Tenant-Tab und Stepper** | Tab bleibt sichtbar als „Tenant-Verbindung prüfen" mit BYOT-Weg; Stepper nicht umbauen, nur die Kodierung vereinheitlichen (1.7) |
 
 Die Entscheidungen vom 12.09. zu Phase 0 (Umfang „Kern + Fundament", Sperre statt
 Runner-Isolation, öffentliche Texte nur wo falsch) gelten weiter; ihre Punkte
@@ -515,15 +534,15 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-007 | high | Zielwahl und Dialoge nicht tastaturbedienbar | 1.5 | eingeplant |
 | UX-019 | high | Zustände stärker gezeigt als belegt – Balken, Haken, Exporte | 0.2 | eingeplant |
 | UX-020 | high | Kernpfade per Tastatur und Screenreader blockiert | 1.5 | eingeplant |
-| UX-023 | high | Dark Mode bricht an zentralen Flächen | 1.5 | eingeplant |
+| UX-023 | high | Dark Mode bricht an zentralen Flächen | 1.6 | eingeplant |
 | UX-024 | high | Orientierung bricht zwischen den Bereichen | — | zurückgestellt |
 | UX-037 | high | Transformation verspricht Node.js auch im RAP-Track | 0.2 | eingeplant |
 | UX-038 | high | Remediation-Modus schaltet nur Text, nicht Code | 0.2 | eingeplant |
 | UX-040 | high | Transformation Insights sind statisch und track-falsch | 0.2 | eingeplant |
-| UX-044 | high | Dark Mode bricht an Projektzeile und Stepper | 1.5 | eingeplant |
+| UX-044 | high | Dark Mode bricht an Projektzeile und Stepper | 1.6 | eingeplant |
 | UX-059 | high | Forum täuscht öffentlichen Post vor, speichert nur lokal | 0.2 | eingeplant |
-| UX-061 | high | Dashboard ohne Dark-Parität, Projektzeile kaum lesbar | 1.5 | eingeplant |
-| UX-062 | high | Dashboard-Tabelle bleibt im Dark Mode weiß | 1.5 | eingeplant |
+| UX-061 | high | Dashboard ohne Dark-Parität, Projektzeile kaum lesbar | 1.6 | eingeplant |
+| UX-062 | high | Dashboard-Tabelle bleibt im Dark Mode weiß | 1.6 | eingeplant |
 | UX-005 | medium | Routenwechsel ohne Bestätigung und Undo | 0.7 | eingeplant |
 | UX-006 | medium | Von Befund kein Weg in den Code | 1.5 | eingeplant |
 | UX-012 | medium | Sticky-Header und Tabs verdecken Inhalt auf Phone | 1.4 | eingeplant |

@@ -76,6 +76,16 @@ export const STARTER_EXAMPLES: StarterExample[] = [
     size: 'small',
   },
   {
+    file: 'Z_MM_PO_APPROVAL.abap',
+    name: 'Z_MM_PO_APPROVAL',
+    summary:
+      'Approves emergency purchase requisitions: vendor block list, price tolerance against the info record, approval by department head or manager, and a purchase order via BAPI with a batch-input fallback.',
+    demonstrates:
+      'Business rules hard-coded in the program — and what cannot be determined from the code alone: a dynamic function call and two includes that are not part of the upload.',
+    lines: 668,
+    size: 'large',
+  },
+  {
     file: 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap',
     name: 'ZLEGACY_ORDER_FULFILLMENT_AUDIT',
     summary:

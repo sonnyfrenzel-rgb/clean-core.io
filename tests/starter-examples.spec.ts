@@ -76,8 +76,9 @@ test.describe('Dashboard — starter examples', () => {
 
     // Every shipped example is offered, including the large one.
     const names = panel.getByTestId('starter-example-name');
-    await expect(names).toHaveCount(7);
+    await expect(names).toHaveCount(8);
     await expect(names.filter({ hasText: /^Z_MATERIAL_STOCK_CALC$/ })).toBeVisible();
+    await expect(names.filter({ hasText: /^Z_MM_PO_APPROVAL$/ })).toBeVisible();
     await expect(names.filter({ hasText: /^ZLEGACY_ORDER_FULFILLMENT_AUDIT$/ })).toBeVisible();
     await expect(panel.getByText('1,000 lines').first()).toBeVisible();
 
