@@ -27,10 +27,9 @@ ist jetzt kurz und allein verbindlich; Gates und die 76 Teilschnitte sind durch
    Zeilenankern, Editor nah an Signavio (keine Kopie), Import/Export als BPMN 2.0
    XML für Signavio-Lizenznehmer — Phasen 2–4, direkt nach dem Gerüst.
 
-Befunde beim Umbau, noch nicht behoben: **der Anker-Check erkennt die Engine-IDs
-nicht** (`CC-001` gegen Parser-Muster `[F-…]`, `lib/abap/narrative-anchors.ts:71`
-vs. `lib/abap/evidence-model.ts:209`) — Schritt 1.3, als Patch vorziehbar; die
-Oberfläche verspricht einen **Signavio-Import, der nie geprüft wurde** — Schritt 0.2.
+Befunde beim Umbau: **der Anker-Check erkannte die Engine-IDs nicht** (`CC-001` gegen
+Parser-Muster `[F-…]`) — Schritt 1.3, **behoben in v2.10.1**; die Oberfläche verspricht
+einen **Signavio-Import, der nie geprüft wurde** — Schritt 0.2, offen.
 
 **Aufgeräumt am selben Tag:** jede frühere Roadmap liegt jetzt in `docs/archiv/`
 (Index `docs/archiv/README.md`) — `ROADMAP-2.0.md` und das Bündel der Fassung 2.7

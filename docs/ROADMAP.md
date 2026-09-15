@@ -163,7 +163,7 @@ den alles Weitere gebaut wird.
 |---|---|---|
 | 1.1 | **Erhaltungsregister:** die sieben Stufen mit Eingaben, Ausgaben, Voraussetzungen, Fehlern und je einem Referenzfall; Commit, Build und Rules fixiert. Nichts geht im Umbau unbemerkt verloren (QA24-A04, W22-A04) | M |
 | 1.2 | **Zero-LLM-Sperrpfad:** Run ohne API-Key bis zum signierten Evidenzstand; Modellstufen einzeln zuschaltbar; „nicht erzeugt" statt leer (V25-A12) | S |
-| 1.3 | **Anker-Fix:** Parser und Prompt verwenden die `CC-`IDs der Engine; Test mit echten Engine-IDs. *Kann sofort als Patch vorgezogen werden* | S |
+| 1.3 | **Anker-Fix:** Parser und Prompt verwenden die `CC-`IDs der Engine; Test mit echten Engine-IDs. **Vorgezogen, gebaut in v2.10.1** | S |
 | 1.4 | **Arbeitsraum-Schale hinter dem Schalter:** Kopfzeile wie im Mockup (Pfad, Projekttitel, Metazeile mit Manifest, Revision, Quellstand, Engine, Regeln aus 0.5), sieben Status-Chips — jeder ehrlich, „nicht begonnen", solange nichts da ist —, Ebenenleiste, untere Leiste mit den sieben Stufen als Werkzeuge | M |
 | 1.5 | **Gestaltung aus den Mockups als Komponenten** (Karte, Tag, Status-Chip, Anker, Artefaktzeile) und ein Style-Guard nach dem Muster von `tests/workflow-style-guard.spec.ts` | S |
 

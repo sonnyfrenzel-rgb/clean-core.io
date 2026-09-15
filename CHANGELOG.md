@@ -10,6 +10,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.10.1] — 2026-09-15
+
+### Roadmap-Schritt 1.3, vorgezogen: Zitate der Engine-IDs zählen endlich als belegt
+
+Die Analyse bittet das Modell, jeden Satz mit einem Anker zu belegen, und misst daraus
+die Traceability-Quote. Die Engine nummeriert ihre Befunde seit jeher `CC-001`; der Parser
+(`lib/abap/narrative-anchors.ts`) erkannte aber nur `[F-…]`. Die Folgen:
+- Ein korrektes Zitat `[CC-003]` passte auf nichts und zählte als „unbelegt".
+- Das Beispiel im Prompt, `[F-017]`, konnte nur eine Erfindung sein.
+- Der Test verwendete dieselben erfundenen `F-`-IDs und lief deshalb grün.
+- Die angezeigte Quote war kleiner, als das Modell tatsächlich belegt hatte.
+
+**Behoben.**
+- Der Parser liest jede ID der Form `XX-017` als Befundzitat und prüft sie gegen den
+  Bericht: Eine echte ID ist verankert, eine erfundene (auch `[F-017]`) wird als
+  erfunden gezählt, nicht ignoriert.
+- Das Prompt-Beispiel ist die erste echte ID des Berichts.
+
+**Abnahme:** „Test mit echten Engine-IDs". `tests/narrative-anchors.spec.ts` baut den
+Evidenzbericht mit `buildAbapEvidence` aus einem kleinen ABAP-Programm:
+- Die echte ID wird verankert.
+- Das Beispiel im erzeugten Prompt löst auf.
+- `[F-017]` gilt als erfunden.
+
+Die Fixtures nutzen jetzt die Form der Engine. Ohne den Fix scheitern 6 der 14 Tests.
+
 ## [v2.10.0] — 2026-09-15
 
 ### Roadmap-Schritt 0.1 (`G0:R0`): Live-Tests gegen einen Tenant sind gesperrt — und jetzt steht das überall, wo es angeboten wurde

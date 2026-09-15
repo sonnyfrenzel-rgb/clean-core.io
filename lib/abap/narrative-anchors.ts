@@ -18,8 +18,9 @@ import type { EvidenceFinding } from './evidence-model';
  *
  * Two anchor forms, and the difference between them matters:
  *
- *   [F-017]     a finding id. Verifiable: the id is either in the evidence
- *               report the model was given, or it was invented.
+ *   [CC-017]    a finding id, as the engine assigns it (evidence-model.ts).
+ *               Verifiable: the id is either in the evidence report the model
+ *               was given, or it was invented.
  *   [L380-412]  a raw line range. Checkable only against the file's length,
  *               so it can be plausible and still wrong.
  *
@@ -67,8 +68,17 @@ export interface AnchoredNarrative {
   traceabilityRate: number | null;
 }
 
-/** `[F-017]`, `[L380]`, `[L380-412]` — case-insensitive, tolerant of spaces. */
-const ANCHOR_PATTERN = /\[\s*(?:(F-[A-Za-z0-9_-]+)|L\s*(\d+)\s*(?:[-–]\s*(\d+))?)\s*\]/gi;
+/**
+ * `[CC-017]`, `[L380]`, `[L380-412]` — case-insensitive, tolerant of spaces.
+ *
+ * Any id of the shape `XX-017` is read as a finding citation and then checked
+ * against the report. The pattern used to accept only `F-…`, while the engine
+ * has always numbered findings `CC-001`: a correct citation matched nothing and
+ * counted as unevidenced, and the prompt's own example `[F-017]` could only ever
+ * be an invention (roadmap step 1.3). Reading every id shape and validating it
+ * keeps both failures visible — a real id anchors, an invented one is rejected.
+ */
+const ANCHOR_PATTERN = /\[\s*(?:([A-Z]{1,4}-\d{1,6})|L\s*(\d+)\s*(?:[-–]\s*(\d+))?)\s*\]/gi;
 
 /**
  * Split prose into sentences.
@@ -203,11 +213,13 @@ export function anchorNarrative(
  */
 export function anchorInstruction(findings: EvidenceFinding[]): string {
   const ids = findings.slice(0, 40).map((f) => `${f.id} (lines ${f.lineStart}${f.lineEnd && f.lineEnd !== f.lineStart ? `–${f.lineEnd}` : ''}: ${f.title})`);
+  // The example is a real id from this report when there is one, so the model copies a citation that resolves.
+  const exampleId = findings[0]?.id ?? 'CC-001';
   return [
     'CITATIONS — every prose field below must be traceable to the code.',
     '',
     'End each sentence that makes a claim about this program with an anchor:',
-    '  [F-017]     cite a finding id from the evidence report above, or',
+    `  [${exampleId}]${' '.repeat(Math.max(1, 12 - exampleId.length - 2))}cite a finding id from the evidence report above, or`,
     '  [L380-412]  cite a line range in the file.',
     '',
     'Rules:',
