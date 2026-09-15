@@ -354,10 +354,44 @@ test.describe('Claude hears about it', () => {
 });
 
 test.describe('a release review runs end to end on a real repository (dry run, no model call)', () => {
-  test('a removed file reaches the reviewer whole, however long it was', () => {
+  test('a removed file reaches the reviewer whole, however long it was', async () => {
     const src = read('scripts/ux/review.mjs');
     const block = src.slice(src.indexOf('function deletionBlock'), src.indexOf('\n}', src.indexOf('function deletionBlock')));
     expect(block).not.toMatch(/WHOLE_FILE_CHARS|slice\(/);
+
+    // Behaviour, not only source: a removed screen longer than WHOLE_FILE_CHARS goes into the call complete and is not
+    // named as cut (finding 01a0e3e1d11a).
+    const { execFileSync } = require('child_process') as typeof import('child_process');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ux-deleted-long-'));
+    const g = (...args: string[]) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.invalid', ...args], { cwd: dir, encoding: 'utf8' }).trim();
+    try {
+      g('init', '-q');
+      fs.mkdirSync(path.join(dir, 'docs/ux'), { recursive: true });
+      fs.copyFileSync(path.resolve(ROOT, 'docs/ux/ux-brief.md'), path.join(dir, 'docs/ux/ux-brief.md'));
+      const page = 'app/(app)/project/[projectId]/design/page.tsx';
+      fs.mkdirSync(path.join(dir, path.dirname(page)), { recursive: true });
+      const long = `export default function Design() { return <h1>Design</h1>; }\n${Array.from({ length: 1_500 }, (_, i) => `// design note ${i + 1} of the removed screen, kept long on purpose\n`).join('')}`;
+      const { WHOLE_FILE_CHARS, BUDGETS } = await lib('config.mjs');
+      expect(long.length).toBeGreaterThan(2 * WHOLE_FILE_CHARS);
+      expect(long.length).toBeLessThan(BUDGETS.delta.maxBatchChars / 2);
+      fs.writeFileSync(path.join(dir, page), long);
+      g('add', '.');
+      g('commit', '-q', '-m', 'base');
+      const base = g('rev-parse', 'HEAD');
+      g('rm', '-q', page);
+      g('commit', '-q', '-m', 'remove the design screen');
+      const plan = JSON.parse(execFileSync(process.execPath, [path.resolve(ROOT, 'scripts/ux/review.mjs'), '--dry', '--mode=delta'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: { ...process.env, UX_BASE_OVERRIDE: base, UX_REVIEW_KEY: '', UX_SHOTS_DIR: path.join(dir, 'no-shots') },
+      }));
+      const call = plan.calls.find((c: { files: string[] }) => c.files.includes(page));
+      expect(call).toBeDefined();
+      expect(call.chars).toBeGreaterThan(long.length);
+      expect(plan.notReviewed.map((n: { path: string }) => n.path)).not.toContain(page);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   test('a release that only removes a screen is reviewed, and a screen without pictures keeps the review incomplete', () => {

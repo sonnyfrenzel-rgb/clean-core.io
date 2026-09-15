@@ -35,7 +35,7 @@ test.describe('the agent has no tools and a small budget', () => {
     const src = read('scripts/security/audit.mjs');
     expect(src).not.toMatch(/claude-code|npx|child_process|spawn\(|execFile|--tools|Agent|Workflow/);
     expect(src).toMatch(/callReviewer\(\{ apiKey, system, user, schema: CONSULTANT_SCHEMA,/);
-    expect(src).toMatch(/callReviewer\(\{ apiKey, system: brief, user: cisoUser, schema: REPORT_SCHEMA,/);
+    expect(src).toMatch(/callReviewer\(\{ apiKey, system: clean\('outgoing message', brief\), user: cisoUser, schema: REPORT_SCHEMA,/);
     // The request the calls build: no tools, no fallback model, no provider that keeps prompts.
     const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
     const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', model: AUDIT.model });
@@ -70,6 +70,9 @@ test.describe('the agent has no tools and a small budget', () => {
     expect(src).toMatch(/const cisoUser = clean\('outgoing message', /);
     // A location the model names is read only if it is a file of the map.
     expect(src).toMatch(/const text = inScope\.has\(path\) \? raw\(path\) : null;/);
+    // The CISO brief is a repository file like any other: it leaves the runner through the same redaction.
+    expect(src).toMatch(/system: clean\('outgoing message', brief\)/);
+    expect(src).not.toMatch(/system: brief[,\s]/);
   });
 });
 
@@ -372,18 +375,25 @@ test.describe('the audit pipeline', () => {
     const plan = planBatches(files, prepare, { batchChars: 800, maxCalls: hugeParts.length + 3 });
     const read = plan.batches.flatMap((b: { consultant: string; files: { path: string }[] }) => b.files.map((f) => `${b.consultant}:${f.path}`));
     // Each small file needs its own call (400 characters plus path and header, 800 per call): the routes, every part of the large file, the component — then the limit.
-    expect([...new Set(read)]).toEqual(['appsec-api:app/api/a/route.ts', 'appsec-api:app/api/b/route.ts', 'appsec-api:lib/huge.ts', 'frontend-supply-chain:components/X.tsx']);
+    // Exact multiplicity, in order: every small file once, the large file once per part — a file sent twice would pass a set.
+    expect(read).toEqual(['appsec-api:app/api/a/route.ts', 'appsec-api:app/api/b/route.ts', ...Array(hugeParts.length).fill('appsec-api:lib/huge.ts'), 'frontend-supply-chain:components/X.tsx']);
     expect(plan.notRead).toEqual([
       { path: 'package.json', reason: `outside the ${hugeParts.length + 3}-call limit` },
       { path: '.github/workflows/x.yml', reason: `outside the ${hugeParts.length + 3}-call limit` },
     ]);
-    // Every in-scope file is accounted for exactly once.
-    const accounted = [...new Set(read.map((r: string) => r.split(':')[1]))].concat(plan.patternOnly, plan.notRead.map((n: { path: string }) => n.path));
+    // Every in-scope file is accounted for exactly once: read (its parts counted as one file), pattern scan, or named as not read.
+    const readFiles = read.map((r: string) => r.split(':')[1]).filter((p: string, i: number, all: string[]) => p !== all[i - 1]);
+    const accounted = [...readFiles, ...plan.patternOnly, ...plan.notRead.map((n: { path: string }) => n.path)];
     expect(accounted.sort()).toEqual(files.map((f) => f.path).sort());
-    // A single line longer than a call is cut where it must be, not dropped.
+    // A single line longer than a call is cut where it must be, not dropped — and a numbered line keeps its number in every piece.
     const { splitText } = await lib('pipeline.mjs');
     expect(splitText('a'.repeat(25), 10)).toEqual(['aaaaaaaaaa', 'aaaaaaaaaa', 'aaaaa']);
     expect(splitText('one\ntwo\nthree', 8)).toEqual(['one\ntwo', 'three']);
+    const oversized = splitText(`412|${'a'.repeat(30)}\n413|b`, 12);
+    expect(oversized.every((p: string) => p.length <= 12)).toBe(true);
+    expect(oversized.slice(1, -1).every((p: string) => p.startsWith('412|… '))).toBe(true);
+    expect(oversized.at(-1)).toBe('413|b');
+    expect(oversized.map((p: string, i: number) => (i === 0 ? p : p.replace(/^41[23]\|… /, ''))).join('').startsWith(`412|${'a'.repeat(30)}`)).toBe(true);
     // A self-test reads only its files.
     expect(planBatches(files, () => 'x', { only: ['app/api/a/route.ts'] }).batches.map((b: { files: unknown[] }) => b.files.length)).toEqual([1]);
   });
@@ -414,6 +424,10 @@ test.describe('the audit pipeline', () => {
     expect(context).not.toContain('17|line 17');
     expect(context).toContain('app/api/ghost.ts:3 — this file is not in the repository at this commit.');
     expect(context).toContain('the file has 40 lines; the cited line does not exist.');
+    // Beyond the context limit a location is named as not verifiable — never silently carried into the report.
+    const many = codeContext({ locations: Array.from({ length: 10 }, (_, i) => ({ file: 'app/api/a/route.ts', line: i + 1 })) }, readLines, 0);
+    expect((many.match(/:\d+-\d+\n```/g) || []).length).toBe(8);
+    expect(many).toContain('2 further location(s) without code in this input — not verifiable here: app/api/a/route.ts:9, app/api/a/route.ts:10');
 
     const coverage = { files_in_scope: 10, deep_read: 7, pattern_scanned_only: 3, notes: 'counted' };
     const finding = { title: 'Missing auth', severity: 'hoch', category: 'API1', locations: [{ file: 'app/api/a/route.ts', line: 20 }], preconditions: 'p', impact: 'i', evidence: 'e', recommendation: 'r', verification: 'v', confidence: 0.8, verified: true };
@@ -423,6 +437,27 @@ test.describe('the audit pipeline', () => {
       coverage, notRead: [{ path: 'lib/huge.ts', reason: 'larger than one call' }], failed: 1, readLines,
     });
     for (const part of ['10 files in scope · 7 read in depth by a consultant · 3 covered by the pattern scan only', '- lib/huge.ts: larger than one call', '1 consultant call(s) failed', '### C-1 · appsec-api · proposed hoch', '20|line 20', 'app/api/a/route.ts [POST]', '- appsec-api: CSP']) expect(message).toContain(part);
+
+    // The CISO's input is fitted into what the cost cap reserved: code goes in while it fits, every finding keeps its
+    // text, and a finding whose code no longer fits says its locations are not verifiable here.
+    const args = {
+      surface: { head: 'h', files: { total: 10, byDomain: {}, excluded: [] }, apiRoutes: [], sinks: [], workflows: [], firestoreRules: { openRules: [] }, dependencies: {} },
+      results: [{ consultant: 'appsec-api', review: { findings: Array.from({ length: 6 }, (_, i) => ({ ...finding, title: `Finding ${i + 1}` })), checked_sound: [], notes: '' } }],
+      coverage, notRead: [], failed: 0, readLines,
+    };
+    const full = cisoMessage(args);
+    const limit = full.length - 200;
+    const fitted = cisoMessage({ ...args, maxChars: limit });
+    expect(fitted.length).toBeLessThanOrEqual(limit);
+    for (let i = 1; i <= 6; i++) expect(fitted).toContain(`Finding ${i} (API1)`);
+    expect(fitted).toContain('### C-1 ·');
+    expect(fitted.split('app/api/a/route.ts:5-35').length - 1).toBe(5);
+    expect(fitted).toContain('1 location(s) without code in this input — the CISO input limit is reached; not verifiable here: app/api/a/route.ts:20');
+    expect(fitted.indexOf('Finding 6 (API1)')).toBeGreaterThan(fitted.indexOf('app/api/a/route.ts:5-35'));
+    expect(cisoMessage({ ...args, maxChars: 0 })).not.toContain('20|line 20');
+    const { AUDIT } = await lib('team.mjs');
+    expect(read('scripts/security/audit.mjs')).toContain('estimate(brief.length + CISO_TASK.length + 2 + AUDIT.cisoInputChars, cisoTokens)');
+    expect(AUDIT.cisoInputChars).toBe(300_000);
     // The counted coverage replaces whatever the model wrote.
     expect(withCountedCoverage({ coverage: { files_in_scope: 999, deep_read: 999, pattern_scanned_only: 0, notes: 'model' } }, coverage).coverage).toEqual({ files_in_scope: 10, deep_read: 7, pattern_scanned_only: 3, notes: 'counted model' });
   });

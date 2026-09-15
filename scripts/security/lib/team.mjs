@@ -34,6 +34,8 @@ export const AUDIT = {
   /** Includes reasoning tokens. */
   consultantOutputTokens: 24_000,
   cisoOutputTokens: 40_000,
+  /** The CISO's user message, in characters: reserved out of the cap before any consultant spends, and enforced when it is built (lib/pipeline.mjs cisoMessage). */
+  cisoInputChars: 300_000,
   /** The consultants read much code and answer compactly; the CISO weighs every finding against its code. */
   consultantEffort: 'medium',
   cisoEffort: 'high',

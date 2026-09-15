@@ -67,8 +67,9 @@ async function main() {
   const brief = readFileSync(AUDIT.briefPath, 'utf8');
 
   const plan = planBatches(surface.files.list, (path) => clean(path, numbered(raw(path) ?? '')), { only: SELF_TEST ? AUDIT.selfTestFiles : null, maxCalls: SELF_TEST ? 1 : AUDIT.maxConsultantCalls });
-  // The CISO's call is reserved out of the cap before any consultant spends: a report is always written.
-  const cisoReserve = estimate(300_000, cisoTokens);
+  // The CISO's call is reserved out of the cap before any consultant spends: a report is always written. The reserve
+  // is the size cisoMessage enforces, plus the brief and the task around it.
+  const cisoReserve = estimate(brief.length + CISO_TASK.length + 2 + AUDIT.cisoInputChars, cisoTokens);
 
   const run = await runConsultants({
     batches: plan.batches,
@@ -97,7 +98,7 @@ async function main() {
   const cisoUser = clean('outgoing message', `${CISO_TASK}\n\n${cisoMessage({ surface, results, coverage, notRead, failed: run.failedCalls, readLines })}`);
   let ciso;
   try {
-    ciso = await callReviewer({ apiKey, system: brief, user: cisoUser, schema: REPORT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, maxTokens: cisoTokens, name: 'security_audit_report', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, coerce: coerceReport });
+    ciso = await callReviewer({ apiKey, system: clean('outgoing message', brief), user: cisoUser, schema: REPORT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, maxTokens: cisoTokens, name: 'security_audit_report', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, coerce: coerceReport });
   } catch (err) {
     throw new Error(`the audit did not produce a report (CISO call: ${String(err?.message || err).split('\n')[0]}; consultant calls ${results.length}, failed ${run.failedCalls}).`);
   }
@@ -130,6 +131,9 @@ async function main() {
     costUsd,
     calls: results.length + 1,
     failedCalls: run.failedCalls,
+    // Above the reserve only when the findings' text alone outgrows it — the code was then left out, and the cost
+    // estimate for the CISO was exceeded. Recorded in the sealed report, next to the actual cost.
+    cisoInput: { chars: cisoUser.length, reservedChars: AUDIT.cisoInputChars },
     redactedSecrets: secretHits.length,
     surface: { files: surface.files.total, byDomain: surface.files.byDomain, apiRoutes: surface.apiRoutes.length, sinks: surface.sinks.length, dependencies: surface.dependencies.vulnerabilities || null },
     report,

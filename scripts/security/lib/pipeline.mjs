@@ -63,24 +63,33 @@ export function planBatches(files, prepare, { batchChars = AUDIT.batchChars, max
   return { batches, patternOnly, notRead };
 }
 
-/** Split at line ends into pieces of at most `limit` characters; a single longer line is cut where it must be. */
+/**
+ * Split at line ends into pieces of at most `limit` characters. A single longer line is cut where it must be, and
+ * every continuation keeps the line's number (`412|… `), so a finding in the second half still cites the right line.
+ */
 export function splitText(text, limit) {
   if (text.length <= limit) return [text];
   const parts = [];
   let current = '';
   for (const line of text.split('\n')) {
     let rest = line;
-    while (rest.length > limit) {
+    const number = /^(\d+)\|/.exec(line)?.[1];
+    const continuation = number ? `${number}|… ` : '';
+    let first = true;
+    while ((first ? 0 : continuation.length) + rest.length > limit) {
       if (current) {
         parts.push(current);
         current = '';
       }
-      parts.push(rest.slice(0, limit));
-      rest = rest.slice(limit);
+      const room = first ? limit : Math.max(1, limit - continuation.length);
+      parts.push(`${first ? '' : continuation}${rest.slice(0, room)}`);
+      rest = rest.slice(room);
+      first = false;
     }
+    if (!first) rest = `${continuation}${rest}`;
     const candidate = current ? `${current}\n${rest}` : rest;
     if (candidate.length > limit) {
-      parts.push(current);
+      if (current) parts.push(current);
       current = rest;
     } else current = candidate;
   }
@@ -90,8 +99,10 @@ export function splitText(text, limit) {
 
 /**
  * The consultant calls, a few at a time. One DeepSeek call on a full batch takes minutes; sixteen in a row would
- * not finish inside a CI job. The cap still holds: before a call starts, what was spent plus the worst case of
- * every call still running plus this call's worst case must fit. A failed call names its files and does not stop
+ * not finish inside a CI job. The estimated cap still holds: before a call starts, what was spent plus the worst case
+ * of every call still running plus this call's worst case must fit. The worst case is an estimate from characters
+ * and the output limit, and a settled call counts at its reported cost — the hard ceiling is the credit limit on the
+ * key (lib/team.mjs). A failed call names its files and does not stop
  * the others; the first call that no longer fits stops every call not yet started.
  *
  * @param messageFor (batch, index) => { system, user }
@@ -190,22 +201,32 @@ export function consultantMessage({ surface, batch, index, count }) {
  *
  * @param readLines (path) => string[] | null
  */
-export function codeContext(finding, readLines, contextLines = AUDIT.contextLines) {
-  return (finding.locations || [])
-    .slice(0, 3)
-    .map(({ file, line }) => {
-      const lines = readLines(file);
-      if (!lines) return `${file}:${line} — this file is not in the repository at this commit.`;
-      if (!Number.isInteger(line) || line < 1 || line > lines.length) return `${file}:${line} — the file has ${lines.length} lines; the cited line does not exist.`;
-      const from = Math.max(1, line - contextLines);
-      const to = Math.min(lines.length, line + contextLines);
-      return `${file}:${from}-${to}\n\`\`\`\n${lines.slice(from - 1, to).map((l, i) => `${from + i}|${l}`).join('\n')}\n\`\`\``;
-    })
-    .join('\n');
+export function codeContext(finding, readLines, contextLines = AUDIT.contextLines, maxLocations = MAX_CONTEXT_LOCATIONS) {
+  const locations = finding.locations || [];
+  const shown = locations.slice(0, maxLocations).map(({ file, line }) => {
+    const lines = readLines(file);
+    if (!lines) return `${file}:${line} — this file is not in the repository at this commit.`;
+    if (!Number.isInteger(line) || line < 1 || line > lines.length) return `${file}:${line} — the file has ${lines.length} lines; the cited line does not exist.`;
+    const from = Math.max(1, line - contextLines);
+    const to = Math.min(lines.length, line + contextLines);
+    return `${file}:${from}-${to}\n\`\`\`\n${lines.slice(from - 1, to).map((l, i) => `${from + i}|${l}`).join('\n')}\n\`\`\``;
+  });
+  // A location without its code cannot be verified here — said, so it cannot enter the report as if it had been.
+  const rest = locations.slice(maxLocations);
+  if (rest.length) shown.push(`${rest.length} further location(s) without code in this input — not verifiable here: ${rest.map((l) => `${l.file}:${l.line}`).join(', ')}`);
+  return shown.join('\n');
 }
 
-/** What the CISO is shown: the map in numbers, the deterministic coverage, every consultant finding with its cited code. */
-export function cisoMessage({ surface, results, coverage, notRead, failed, readLines }) {
+/** Code context for this many locations of one finding; the rest is named as not verifiable. */
+export const MAX_CONTEXT_LOCATIONS = 8;
+
+/**
+ * What the CISO is shown: the map in numbers, the deterministic coverage, every consultant finding with its cited code.
+ * The cited code is the part without a natural bound, so it is fitted into `maxChars` — the input the cost cap
+ * reserves for the CISO. A finding whose code no longer fits keeps its text and names its locations as not
+ * verifiable here, like a location beyond MAX_CONTEXT_LOCATIONS.
+ */
+export function cisoMessage({ surface, results, coverage, notRead, failed, readLines, maxChars = AUDIT.cisoInputChars }) {
   const findings = results.flatMap((r) => (r.review.findings || []).map((f) => ({ ...f, consultant: r.consultant })));
   const unauthenticatedRoutes = (surface.apiRoutes || []).filter((r) => !r.authMarkers.length).map((r) => `${r.path} [${r.methods.join(',')}]`);
   const summary = {
@@ -218,7 +239,7 @@ export function cisoMessage({ surface, results, coverage, notRead, failed, readL
     openFirestoreRules: surface.firestoreRules?.openRules || [],
     dependencies: surface.dependencies,
   };
-  return [
+  const head = [
     '## Attack-surface summary',
     '```json',
     JSON.stringify(summary, null, 1),
@@ -228,26 +249,43 @@ export function cisoMessage({ surface, results, coverage, notRead, failed, readL
     notRead.length ? `Not read in depth, with reason:\n${notRead.map((n) => `- ${n.path}: ${n.reason}`).join('\n')}` : 'Every file assigned to a consultant was read.',
     failed ? `${failed} consultant call(s) failed; their files are in the list above.` : '',
     `## Consultant findings (${findings.length}) — verify each against its code before it enters the report`,
-    ...findings.map((f, i) =>
-      [
-        `### C-${i + 1} · ${f.consultant} · proposed ${f.severity} · consultant verified: ${f.verified ? 'yes' : 'no'} · confidence ${f.confidence}`,
-        `${f.title} (${f.category})`,
-        `Preconditions: ${f.preconditions}`,
-        `Impact: ${f.impact}`,
-        `Evidence quoted: ${f.evidence}`,
-        `Recommendation: ${f.recommendation}`,
-        `How to verify: ${f.verification}`,
-        'Code at the cited locations:',
-        codeContext(f, readLines),
-      ].join('\n'),
-    ),
+  ].filter(Boolean);
+  const tail = [
     '## Checked and found sound by the consultants',
     results.flatMap((r) => (r.review.checked_sound || []).map((s) => `- ${r.consultant}: ${s}`)).join('\n') || '(nothing listed)',
     '## Consultant notes',
     results.map((r) => (r.review.notes ? `- ${r.consultant}: ${r.review.notes}` : '')).filter(Boolean).join('\n') || '(none)',
-  ]
-    .filter(Boolean)
-    .join('\n\n');
+  ];
+  const SEPARATOR = '\n\n';
+  const texts = findings.map((f, i) =>
+    [
+      `### C-${i + 1} · ${f.consultant} · proposed ${f.severity} · consultant verified: ${f.verified ? 'yes' : 'no'} · confidence ${f.confidence}`,
+      `${f.title} (${f.category})`,
+      `Preconditions: ${f.preconditions}`,
+      `Impact: ${f.impact}`,
+      `Evidence quoted: ${f.evidence}`,
+      `Recommendation: ${f.recommendation}`,
+      `How to verify: ${f.verification}`,
+      'Code at the cited locations:',
+    ].join('\n'),
+  );
+  const withoutCode = (f) => {
+    const locations = f.locations || [];
+    return `${locations.length} location(s) without code in this input — the CISO input limit is reached; not verifiable here: ${locations.map((l) => `${l.file}:${l.line}`).join(', ') || '(none named)'}`;
+  };
+  // Every finding's text and its short note are counted first, so the code of an early finding never pushes a later
+  // finding out; the code then goes in order while it fits.
+  let room = maxChars - [...head, ...tail].join(SEPARATOR).length - texts.reduce((n, t, i) => n + SEPARATOR.length + t.length + 1 + withoutCode(findings[i]).length, 0);
+  const entries = findings.map((f, i) => {
+    const note = withoutCode(f);
+    const code = codeContext(f, readLines);
+    if (code.length - note.length <= room) {
+      room -= code.length - note.length;
+      return `${texts[i]}\n${code}`;
+    }
+    return `${texts[i]}\n${note}`;
+  });
+  return [...head, ...entries, ...tail].join(SEPARATOR);
 }
 
 /*
