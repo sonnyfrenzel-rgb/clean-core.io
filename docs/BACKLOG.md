@@ -3,12 +3,55 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
-**15.09.2026 — Testing-Seite verliert die gespeicherte Suite beim Neuladen (offen, v2.10.4 gefunden).**
-`hooks/useTestGeneration.ts:10` setzt `useState(project?.testCases || [])` einmal beim ersten
-Rendern; da ist `project` noch `null`, und nichts gleicht später ab. Wer die Seite neu lädt, sieht
-„Generate Your Test Suite" statt seiner Tests und erzeugt sie womöglich kostenpflichtig neu.
-Gehört in den Schritt, der die Testing-Stufe anfasst; mit einem Emulator-Test, der eine gespeicherte
-Suite nach dem Laden sieht.
+**Stand 15.09.2026, Feierabend — v2.9.12 → v2.10.7, alles auf `main`.** Der Tag hatte zwei Hälften:
+morgens die drei Agenten und die ersten Roadmap-Schritte von Phase 0, nachmittags das Zielbild von 3.0.
+Die Lehre: jede Vorlage, die ein Modell oder ein Agent lieferte, trug mindestens einen Fehler, der
+erst beim Gegenlesen gegen den Code auffiel — „4 free runs" statt fünf Analyse-Läufen, ein Level-C für
+eine Kundentabelle, Transparenz, die Text unter 4,5 : 1 drückt.
+
+| Version | Was |
+|---|---|
+| v2.9.12–v2.9.16 | QA-Agent prüft jeden Push auf `dev` (versiegelt, mit Smoke) und zwei Runden an sich selbst; Security-Agent auditiert jede `main`-Version; kein „AI Studio" mehr im Repo |
+| v2.9.17 | UX-Agent reviewt jede `main`-Version mit Screenshots |
+| v2.10.0 | Roadmap 0.1: Live-Tests gegen einen Tenant gesperrt, mit Grund und Wiedereröffnung (`G0:R0`) |
+| v2.10.1 | Roadmap 1.3: Anker-Check erkennt die Engine-IDs |
+| v2.10.2 | Roadmap 0.2: kein Signavio-Import-Versprechen mehr |
+| v2.10.3 | Roadmap 0.4: kein Geldbetrag ohne Annahmen-Revision |
+| v2.10.4–v2.10.6 | QA-Runden als Klassen-Fixes; die gespeicherte Testsuite erscheint nach dem Neuladen und startet ausgewählt |
+| v2.10.7 | DESIGN.md 1.4.2 und Mockups 2.8 abgenommen, SAP-Katalog aktuell, achtes Beispiel, SEO-Guard, Audit übersteht Ratenlimits |
+
+Ohne Versionsnummer, aber mit Wirkung: QA auf GPT-5.6 Luna (`dev`) und Sol (Vollprüfung auf `main`),
+Security-Agent auf DeepSeek V4.1 Flash als Pipeline ohne Werkzeuge, die UX-Vollprüfung von 7bdac5e
+triagiert (69 bestätigt, 15 widerlegt, 2 zurückgestellt).
+
+**Sonnys Entscheidungen heute (alle in `docs/design/decisions.md` bzw. `docs/ROADMAP.md`):**
+- Fiori-Muster, nicht Fiori-Theme; kein Dark Mode; vorerst alles Englisch; Sichten immer
+  Business · IT · Management.
+- BPMN über das Minimum hinaus (mit User-Task und Datenspeicher), Navigation großer Prozesse über Ebenen.
+- Vier Töpfe je Zielplattform, Retire aus Nutzung erst ab 13 Monaten und transparent, „Blocked by SAP"
+  nur für Katalogobjekte ohne Nachfolger.
+- Kosten: sieben Pflichtfelder, zwei Tagessätze. Glossar mit SAP- und Produktbegriffen, auch in
+  „Ask this case", das immer über die eingebettete Hilfe-KI läuft.
+- Coach Marks nur im Browser. Jedes Beispiel einmal frei, danach zählt jeder Start; nach fünf Analysen
+  nur mit eigenem Schlüssel.
+- Eine Demo für alle Konten auf Basis von `Z_MM_PO_APPROVAL`. Vor dem Hochladen Terms-Hinweis und
+  belegte Vertrauensaussagen; der Community-Schlüssel ist ein bezahlter Gemini-Schlüssel.
+- Die neue Landingpage mit echten Produktansichten gehört zu 3.0; Seiten mit Suchreichweite (Katalog
+  u. a.) bleiben mit URL und Inhalt.
+- Anbieter-Regel der Agenten bleibt (kein Fallback).
+
+**Offen und warum:**
+- **Roadmap 0.8** (UX-002, critical): leere Befundliste ergibt noch „Fully Supported" — der nächste Schritt.
+- **Terms §6** muss für Roadmap 0.9 neu gefasst werden (Beispiele: Wiederholung zählt) — Formulierung
+  braucht Sonnys Freigabe, vermutlich neue Terms-Version mit erneuter Zustimmung.
+- **Datenschutzerklärung** soll den bezahlten Tarif des Community-Schlüssels ausdrücklich nennen, bevor
+  die Vertrauenskarte (0.11) es sagt.
+- **UX-Agent fotografiert noch die Mockups 2.7** als Zielbild — Umstellung auf 2.8 als eigener kleiner Schritt.
+- **Landingpage 3.0 abgenommen** (`docs/roadmap/clean-core-landing-v3_0.html`), in der Roadmap 1:1 (§5).
+  Vor dem Livegang offen: Datenschutzerklärung nennt den Admin-Lesezugriff auf Projekte und den bezahlten
+  Community-Schlüssel; ob `/catalog` einen Suchparameter liest; ob der Showroom nach `/how-it-works` zieht;
+  Terms §6 spricht noch von „5 transformations".
+- `E08-F01-US01` (Runner-Isolation) bleibt eigener Auftrag nach 2.10.
 
 **15.09.2026 — Schritt 0.1 (`G0:R0`) gebaut, v2.10.0 auf `dev`.** Die Sperre der Live-Tests steht in
 `lib/locked-paths.ts` und `SECURITY.md` §7.1; die Route prüft sie vor jeder Messung, rund 30 Texte

@@ -10,6 +10,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.10.7] — 2026-09-15
+
+### Zielbild 3.0 abgenommen, aktueller SAP-Katalog, ein achtes Beispiel
+
+- **DESIGN.md und die Mockups 2.8 sind abgenommen.** `DESIGN.md` (Fassung 1.4.2) legt Aussehen,
+  Struktur und Verhalten der Oberfläche von 3.0 fest: SAP-Fiori-Muster im Look von
+  Clean-Core.io, Grün nur für Belegtes, feste Listen für Herkunft und Status, Business · IT ·
+  Management als Sichten, BPMN aus ABAP mit Navigation für große Prozesse, „New project" mit
+  Clean Core in drei Blicken, ein Demo-Projekt mit Tour und Vertrauen vor dem Hochladen. Die
+  44 Entscheidungen stehen mit Anlass in `docs/design/decisions.md`. Die 16 Screens der Mockups
+  und die ebenfalls abgenommene neue Landingpage (`docs/roadmap/clean-core-landing-v3_0.html`)
+  finden sich 1:1 in `docs/ROADMAP.md` §5 wieder; `tests/mockup-roadmap-guard.spec.ts` hält das.
+  Die neue Startseite gehört zu 3.0, mit echten Produktansichten statt Mockup-Bildern.
+- **Der SAP-Katalog ist aktuell.** Die Release-Datei des Cloudification Repository stammte vom
+  01.07.2026. Jetzt: 25.467 statt 23.696 Einträge, zusammen mit SAPs Objektklassifikation
+  33.864 klassifizierte Objekte statt 32.103, 404 mit Nachfolger statt 387. Die Katalogseiten und
+  die Katalog-Sitemap zeigen damit mehr Objekte.
+- **Ein achtes Starter-Beispiel: `Z_MM_PO_APPROVAL`** (Emergency purchase approval, 668 Zeilen,
+  fiktiv). Derselbe Fall wie in den Mockups und die Grundlage des künftigen Demo-Projekts; die
+  Zeilenanker, die `DESIGN.md` zitiert, sind seine echten Zeilen. Jedes Beispiel wird jetzt mit
+  Datei, Test-Zwilling, Zeilenzahl und Ladeweg geprüft.
+- **Seiten mit Suchreichweite bleiben.** Nach Google Search Console haben Katalog, Klassifikation,
+  Cloudification, Knowledge, Code-Analyse, Score, Feature-Seiten, How-to, Whitepaper, Lizenzen,
+  About und Trust Impressionen. `tests/seo-surface-guard.spec.ts` hält Routen, Canonicals,
+  Sitemaps und robots.txt, damit der Umbau zu 3.0 keine davon verliert.
+- **Das Sicherheitsaudit verliert seinen Bericht nicht mehr an ein Ratenlimit.** Zwei Selbsttests
+  scheiterten am letzten Aufruf mit HTTP 429 nach rund 100 Sekunden Wiederholungen. Der
+  Security-Agent wartet jetzt bis zu rund 12 Minuten; die Anbieter-Regel (kein Fallback, kein
+  Anbieter, der Prompts speichert) bleibt unverändert.
+
 ## [v2.10.6] — 2026-09-15
 
 ### QA-Review von bd0f380: die gespeicherte Suite läuft, Geld in Worten, keine KI-Kostenschätzung

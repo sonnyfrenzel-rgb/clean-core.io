@@ -90,6 +90,24 @@ test.describe('the mockups are found 1:1 in the roadmap', () => {
     expect(listed('Management · IT · Business and IT, Business and Management')).toEqual(['Management · IT · Business', 'IT · Business · Management']);
   });
 
+  test('every section of the accepted landing page has a row in §5, naming steps that exist', () => {
+    const landing = read('docs/roadmap/clean-core-landing-v3_0.html');
+    // The desktop frame is the page; the phone frame repeats it.
+    const desktop = landing.slice(landing.indexOf('id="L0"'), landing.indexOf('id="L1"') > 0 ? landing.indexOf('id="L1"') : undefined);
+    const sections = [...new Set([...desktop.matchAll(/<section[^>]*\sid="([a-z][a-z-]*)"/g)].map((m) => m[1]))];
+    expect(sections.length).toBeGreaterThanOrEqual(10);
+    const rows = section5()
+      .replace(/\\\|/g, '¦')
+      .split('\n')
+      .map((line) => line.match(/^\| Landing · ([a-z-]+) \|[^|]*\|([^|]+)\|\s*$/))
+      .filter(Boolean)
+      .map((m) => ({ id: m![1], steps: m![2].split(',').map((s) => s.trim()) }));
+    const mapped = new Set(rows.map((r) => r.id));
+    for (const id of sections) expect(mapped.has(id), `landing section "${id}" has no row in ROADMAP.md §5`).toBe(true);
+    for (const id of ['header', 'hero', 'site-footer']) expect(mapped.has(id), `landing ${id} row`).toBe(true);
+    for (const row of rows) for (const step of row.steps) expect(steps.has(step), `Landing · ${row.id} names step ${step}, which does not exist`).toBe(true);
+  });
+
   test('every roadmap marker drawn in the mockups points at a step that exists', () => {
     const pins = [...mockups.matchAll(/<span class="pin"[^>]*>([^<]*)<\/span>/g)].map((m) => m[1]);
     expect(pins.length).toBeGreaterThan(0);

@@ -1,6 +1,6 @@
 # DESIGN.md — Clean-Core.io
 
-**Version 1.4.2 · 15.09.2026 · abgenommen von Sonny · verbindlich für alles, was zur Oberfläche von 3.0 gehört** (Roadmap-Schritte 1.4–1.7,
+**Version 1.4.3 · 15.09.2026 · abgenommen von Sonny · verbindlich für alles, was zur Oberfläche von 3.0 gehört** (Roadmap-Schritte 1.4–1.7,
 Phasen 2–8, 3.0). Das Zielbild zeigen die Mockups
 [`docs/roadmap/clean-core-mockups-v2_8.html`](docs/roadmap/clean-core-mockups-v2_8.html). Entscheidungen mit Datum
 und Begründung stehen im Entscheidungslog [`docs/design/decisions.md`](docs/design/decisions.md); diese Datei sagt
@@ -169,7 +169,13 @@ Radius wie das Element. Nie `outline: none` ohne diesen Ersatz. Die Fokusreihenf
 - **Bewegung nur, wo sie einen Zustandswechsel erklärt**, 150–250 ms, mit `prefers-reduced-motion` abschaltbar. Keine
   Dauerbewegung, kein Blinken, keine pulsierenden Punkte ohne Text. Zwei Inszenierungen sind erlaubt, weil sie etwas
   erklären: der Aufbau — Knoten wachsen aus ihrer Zeile (§5.1) — und die drei Sichten in „New project" (§6.1.1). Beide
-  laufen einmal, sind überspringbar und stehen bei reduzierter Bewegung still.
+  laufen einmal, sind überspringbar und stehen bei reduzierter Bewegung still. **Auf der öffentlichen Startseite**
+  (Mockup `docs/roadmap/clean-core-landing-v3_0.html`, abgenommen) gelten dieselben Regeln für ihre Interaktionen:
+  die Sichten-Bühne läuft einmal, alles andere bewegt sich nur auf Handlung des Besuchers.
+- **Fokus auf dunkler Code-Fläche:** der Ring nimmt `--cc-code-name` `#93c5fd` (11,2 : 1 auf `#030712`) statt
+  `--cc-focus`, der dort unsichtbar wäre.
+- **Öffentliche Seiten:** `SectionHeader` behält Pille, Größe und Lead; die Gewichte folgen mit 3.0 der Skala aus §1.2
+  (höchstens 800) — Roadmap 3.0.6 passt `tests/landing-style-guard.spec.ts` dazu an.
 
 ### 1.8 Diagramme
 
@@ -841,8 +847,8 @@ Ziel: die Schwelle zur ersten eigenen Nutzung immer weiter senken.
   die Demo ist immer auf dem Stand des Produkts — auch für Konten, die es schon gibt.
 - **Die Tour** — mehr Coach Marks als im eigenen Projekt, weil hier gelernt wird: rund zwölf Stationen entlang des
   Wegs — Enthüllung · Not determined · Prozesskarte und Quellspalte · Ebenen eines großen Prozesses · eine Regel
-  bestätigen · Standard-Fit · Management-Sicht · vier Töpfe · Kosten als Simulation · Entscheidung · IT-Kette ·
-  Übergabe. Eine Station erscheint erst, wenn man an ihrem Ort ankommt; immer nur eine; *„3 of 12"* als Text; „Next",
+  bestätigen · Standard-Fit · IT-Kette · Management-Sicht · vier Töpfe · Kosten als Simulation · Entscheidung ·
+  Übergabe (Sichten in der Reihenfolge Business · IT · Management, ADR-044). Eine Station erscheint erst, wenn man an ihrem Ort ankommt; immer nur eine; *„3 of 12"* als Text; „Next",
   „Pause tour", „End tour". Fortschritt nur im Browser (ADR-036).
 - **Immer wieder die Einladung — ohne zu drängen:**
   - im Demo-Strip dauerhaft: *„Try an example or your own code"* als Link zu „New project";
@@ -865,9 +871,11 @@ Sonny 15.09.2026):
   (Terms §5 and §8)."*
 - **Was wir tun, damit du uns vertrauen kannst:**
   - *„Stored in the EU — Google Cloud, Belgium (europe-west1)."* (Privacy Policy)
-  - *„Only your account can open this project. Others see it only if you invite them."*
+  - *„Only your account and the platform's administrator account can open this project. Others see it only if you
+    invite them."* (`firestore.rules`: Besitzer oder Admin — nie ohne den Admin nennen, solange die Regel ihn zulässt;
+    die Datenschutzerklärung soll den Admin-Zugriff nennen, bevor die Karte live geht)
   - *„Model calls go through our server; keys never reach the browser. Your own key is stored encrypted."* (Terms §5,
-    `SECURITY.md` §4)
+    „How we handle your data" `/trust`)
   - *„Every analysis is sealed as a signed, unchangeable run."* (`SECURITY.md` §14)
   - *„No analytics, advertising or tracking cookies."* (Privacy Policy §7)
   - *„Delete your account and projects at any time; backup copies age out within 30 days."* (Privacy Policy §5, §6)
@@ -943,6 +951,7 @@ Sonny 15.09.2026):
 
 | Version | Datum | Was |
 |---|---|---|
+| 1.4.3 | 15.09.2026 | Abgleich mit der abgenommenen Landingpage 3.0: Vertrauenssatz nennt den Admin-Zugriff, den `firestore.rules` zulässt; Quelle für den verschlüsselten Schlüssel ist Terms §5 und `/trust`, nicht `SECURITY.md` §4 (das sind S/4-Zugangsdaten); Tour-Stationen in der Sichten-Reihenfolge Business · IT · Management; Bewegung auf der Startseite, Fokusring auf Code-Fläche, Gewichte des `SectionHeader` |
 | 1.4.2 | 15.09.2026 | „Ask this case" läuft immer über die eingebettete Hilfe-KI, die für 3.0 ausgebaut wird (ADR-043, §6.2) |
 | 1.4.1 | 15.09.2026 | Klarstellungen aus dem letzten Mockup-Abgleich, keine neue Entscheidung: Projektstatus-Zeile ohne *Not determined* (steht in der Enthüllung); Werkzeuge als Menü in Business und Management, leere Ebenen unter „More" auch in §2.3; Pfad-Hervorhebung über Farbe statt Transparenz (Kontrast); die IT-Sicht der Sichten-Bühne ohne Level-Buchstaben für eine Kundentabelle; Evidenz-Fluss nebeneinander oder untereinander; kein leerer Arbeitsbereich neben der Demo; Demo-Titel „Demo ·"; eine Einladung je Bildschirm auch am Stationsende; Tour-Beispiel „3 of 12"; „derselbe eigene Quellstand" in §2.8 |
 | 1.4 | 15.09.2026 | Entscheidungen von Sonny zu den offenen Fragen der Design-Reviews (ADR-031 bis ADR-042): BPMN-Palette über das Minimum, gemessen am 1.000-Zeilen-Beispiel, mit User-Task, Datenspeicher, Business-Rule-Task, Aufruf-Aktivität, Teilprozessen, Rand- und Nachrichtenereignissen; nicht erreichter Code, Klone und technische Helfer werden gesagt statt gezeichnet (§5.8); Navigation großer Prozesse mit Ebenen, Pfad, Gliederungsbaum, Minikarte, Pfad-Hervorhebung, Laufvarianten, Overlays als Filter und Adressen (§5.9); vier Töpfe als Regeln je Objekt, abhängig von der Zielplattform, Retire aus Nutzung erst ab 13 Monaten und durchsichtig (§5.6); Glossar zum Start mit SAP- und Produktbegriffen, auch in „Ask this case" (§6.1); Coach Marks nur im Browser (§6.2). Lücken aus dem Mockup-Abgleich geschlossen: Ort von „Next step" je Sicht, schrumpfender Business-Kopf, Kartentitel `h3`, Objektstatus „handed over" und „done", Herkunft der Readiness, Quellspalte ohne Umbruch der Seite, „Why?" auf S. Bestätigt: alles Englisch (ADR-009), kein Dark Mode (ADR-003). Entschlackung für Erstnutzer ohne Verlust an Tiefe (ADR-037, §2.11). „New project" erklärt Kern und Unterschied und zeigt die drei Sichten in Bewegung, bevor man Beispiel oder eigenen Code wählt (ADR-038, §6.1.1); Beispiele einmal frei, Wiederholung vorher angekündigt (ADR-039); Clean Core, die vier Level und die Herkunft der Evidenz in drei Blicken beim ersten Ausprobieren (ADR-040); ein vollständig durchgespieltes Demo-Projekt für alle Konten mit Tour und wiederkehrender Einladung (ADR-041, §6.1.2); vor dem Hochladen Zusage und belegte Vertrauensaussagen, „free community project" (ADR-042, §6.1.3) |
