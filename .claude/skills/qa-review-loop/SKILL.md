@@ -75,9 +75,22 @@ even without findings: split the change into smaller pushes, or re-run the revie
 `gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>` — never treat it as a go.
 
 Stop when **either**:
-- `await.mjs` exits `0` (no open critical/high/medium, review complete, smoke OK), **or**
+- `await.mjs` exits `0` (no open critical/high, no open medium outside the agents' own machinery, review
+  complete, smoke OK), **or**
 - three rounds for the same roadmap step are done — then list what is still open, with your verification
   verdict, in the report to Sonny.
+
+A `medium` finding marked `non-blocking (agent infrastructure)` still gets verified; a confirmed one is fixed in
+its own step, not necessarily in this round.
+
+## 5a. The full review of a release on `main`
+
+Every push to `main` also runs a review of the whole code base (`openai/gpt-5.6-sol`, job `full`). After the
+push, alongside the security and UX intake: `node scripts/qa/await.mjs <sha> --full` (run_in_background, up to
+two hours). It gates nothing — `main` is already out. Verify each finding exactly as in §3; refute wrong ones
+with `refute.mjs` (the refuted list is shared); schedule confirmed ones into `docs/ROADMAP.md` like any other
+finding — `critical` as its own step before other work, `high` into the running phase, the rest into the next
+fitting step. Security-relevant ones follow the security register's rule: IDs only in public files.
 
 ## 7. Weekly duty — pipeline health
 

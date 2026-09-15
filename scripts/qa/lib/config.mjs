@@ -7,8 +7,15 @@
  * Architecture and runbook: docs/QA-REVIEW-LOOP.md.
  */
 
-/** Pinned on purpose: an alias such as `~openai/gpt-astra-latest` would change the reviewer without a commit. */
-export const QA_MODEL = 'openai/gpt-6-astra';
+/**
+ * Pinned on purpose: an alias such as `~openai/gpt-luna-latest` would change the reviewer without a commit.
+ *
+ * Two reviewers, chosen by Sonny on 15.09.2026: every push to `dev` gets a delta review by the cost-efficient
+ * tier; every release on `main` gets a review of the whole code base by the flagship of the same series.
+ * GPT-6 Astra reviewed the deltas until then; GPT-6 Astra Pro was considered for `main` and dropped on cost.
+ */
+export const QA_MODEL = 'openai/gpt-5.6-luna';
+export const QA_FULL_MODEL = 'openai/gpt-5.6-sol';
 
 export const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
@@ -16,13 +23,15 @@ export const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completion
 export const DEV_URL = 'https://clean-core-dev-qcevuoi3uq-ew.a.run.app';
 
 /**
- * Spend is capped per review, not hoped for. GPT-6 Astra lists at $10 per
- * million input tokens and $50 per million output tokens (OpenRouter,
- * 15.09.2026); the cap below is checked against a conservative estimate before
- * any call is made, and the actual cost from OpenRouter's usage record is
- * written into every report.
+ * Spend is capped per review, not hoped for. OpenRouter list prices per million tokens (15.09.2026); the cap
+ * is checked against a conservative estimate before any call is made, and the actual cost from OpenRouter's
+ * usage record is written into every report. A model without a price here cannot be costed.
  */
-export const PRICE_PER_MTOK = { input: 10, output: 50 };
+export const PRICES = {
+  [QA_MODEL]: { input: 0.2, output: 1.2 },
+  [QA_FULL_MODEL]: { input: 2, output: 10 },
+};
+export const PRICE_PER_MTOK = PRICES[QA_MODEL];
 
 export const BUDGET = {
   /**
@@ -35,12 +44,16 @@ export const BUDGET = {
    * Characters per token is an assumption: token-dense text can tokenise worse,
    * so a single call can overrun by the difference (QA review of 2f9b128bafd4).
    * The hard ceiling is the credit limit on the OpenRouter key itself.
+   *
+   * On Luna one full call estimates at about $0.05, so the cap no longer decides coverage — the call count
+   * does. It was $2.50 and two calls on GPT-6 Astra, and a delta that did not fit came back incomplete and
+   * cost another round.
    */
-  maxCostUsd: 2.5,
+  maxCostUsd: 0.5,
   /** Delta context per model call, in characters. */
   maxBatchChars: 200_000,
   /** Calls per review. What does not fit is named in the report as not reviewed, never silently dropped. */
-  maxBatches: 2,
+  maxBatches: 4,
   /**
    * Includes reasoning tokens. The first live run (15.09.2026) spent a 12,000
    * allowance entirely on reasoning at effort `high` and returned no review.
@@ -57,17 +70,32 @@ export const BUDGET = {
   retries: 2,
 };
 
+/**
+ * The review of a release on `main`: the whole code base, area by area, by QA_FULL_MODEL. About 4 MB of
+ * reviewable code on 15.09.2026 — some 1.3 million input tokens with line numbers and the file map, so roughly
+ * $3 of input and at most $6 of output across its calls; high reasoning effort needs the larger output
+ * allowance. It never gates a release; its findings are fixed on `dev` like any other (docs/QA-REVIEW-LOOP.md §10).
+ */
+export const FULL_BUDGET = {
+  maxCostUsd: 10,
+  maxBatchChars: 400_000,
+  maxBatches: 14,
+  maxOutputTokens: 48_000,
+  requestTimeoutMs: 20 * 60_000,
+  effort: 'high',
+};
+
 export const CHARS_PER_TOKEN = 3.5;
 
-export function estimateCostUsd(inputChars, calls) {
-  const input = (inputChars / CHARS_PER_TOKEN / 1e6) * PRICE_PER_MTOK.input;
-  const output = ((calls * BUDGET.maxOutputTokens) / 1e6) * PRICE_PER_MTOK.output;
+export function estimateCostUsd(inputChars, calls, { price = PRICE_PER_MTOK, maxOutputTokens = BUDGET.maxOutputTokens } = {}) {
+  const input = (inputChars / CHARS_PER_TOKEN / 1e6) * price.input;
+  const output = ((calls * maxOutputTokens) / 1e6) * price.output;
   return input + output;
 }
 
 /** May a call with this much input still be made, given what has actually been spent? */
-export function withinBudget(spentUsd, inputChars) {
-  return spentUsd + estimateCostUsd(inputChars, 1) <= BUDGET.maxCostUsd;
+export function withinBudget(spentUsd, inputChars, { budget = BUDGET, price = PRICE_PER_MTOK } = {}) {
+  return spentUsd + estimateCostUsd(inputChars, 1, { price, maxOutputTokens: budget.maxOutputTokens }) <= budget.maxCostUsd;
 }
 
 /**
@@ -141,3 +169,34 @@ export const SEVERITIES = ['critical', 'high', 'medium', 'low'];
 
 /** Findings at or above this severity keep the loop open. `low` is reported, fixed when cheap, and never blocks. */
 export const BLOCKING_SEVERITIES = new Set(['critical', 'high', 'medium']);
+
+/**
+ * The review agents' own machinery. A `medium` finding here is reported and fixed in its own step, but it does
+ * not hold a product release on `dev` (Sonny, 15.09.2026): most QA rounds before that date were spent on
+ * medium findings in the agents themselves, not in the product. `critical` and `high` still block everywhere.
+ */
+export const AGENT_INFRASTRUCTURE = [
+  /^scripts\/(qa|security|ux)\//,
+  /^\.github\/workflows\/(qa-review|qa-weekly-health|security-audit|ux-review)\.yml$/,
+  /^\.claude\/(hooks|skills)\//,
+  /^docs\/(qa|security|ux)\//,
+  /^tests\/(qa-review|security-audit|ux-review)-guard\.spec\.ts$/,
+  /^tests\/capture-screens\.spec\.ts$/,
+];
+
+/**
+ * Values that match a credential pattern and are public by design. They are still redacted before anything is
+ * sent; they are not reported as committed credentials. Only the full review needs this: it reads these files on
+ * every release, and a finding refuted once is raised again by the next review (report.mjs isSuppressed).
+ */
+export const PUBLIC_BY_DESIGN = [
+  {
+    path: 'firebase-config.json',
+    kind: 'Google API key',
+    why: 'the Firebase web API key identifies the project to the client SDK and ships in every page; access is enforced by Firebase Auth and the Firestore rules, not by keeping it secret',
+  },
+];
+
+export const isPublicByDesign = (hit) => PUBLIC_BY_DESIGN.some((p) => p.path === hit.path && p.kind === hit.kind);
+
+export const isAgentInfrastructure = (path) => AGENT_INFRASTRUCTURE.some((re) => re.test(String(path || '')));

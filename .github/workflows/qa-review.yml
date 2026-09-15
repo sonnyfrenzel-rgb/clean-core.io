@@ -1,7 +1,8 @@
 name: QA Review
 
 # The QA agent: every push to `dev` gets a delta review by one pinned model and a
-# smoke check of the revision it deployed. Runbook and guardrails:
+# smoke check of the revision it deployed; every release on `main` gets a review of
+# the whole code base by the flagship model. Runbook and guardrails:
 # docs/QA-REVIEW-LOOP.md.
 #
 # Read-only by construction — the token below can read code and workflow runs and
@@ -13,7 +14,7 @@ name: QA Review
 # the local loop (scripts/qa/await.mjs checks the same variable).
 on:
   push:
-    branches: [dev]
+    branches: [dev, main]
   workflow_dispatch:
     inputs:
       base:
@@ -29,16 +30,18 @@ permissions:
   contents: read
   actions: read
 
-# A newer push supersedes a running review. Nothing is lost: the next review
-# starts from the last *reviewed* commit, so it covers the cancelled delta too.
+# On dev a newer push supersedes a running review. Nothing is lost: the next review
+# starts from the last *reviewed* commit, so it covers the cancelled delta too. On
+# main a release is never cancelled — each one is reviewed in full, one after the
+# other — and a main run never shares a group with a dev run.
 concurrency:
-  group: qa-review-dev
-  cancel-in-progress: true
+  group: qa-review-${{ github.ref_name }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
 
 jobs:
   review:
     name: Delta review (sealed)
-    if: vars.QA_REVIEW_ENABLED != 'false'
+    if: vars.QA_REVIEW_ENABLED != 'false' && (github.event_name == 'workflow_dispatch' || github.ref_name == 'dev')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -87,7 +90,7 @@ jobs:
 
   smoke:
     name: Smoke check of the deployed revision (sealed)
-    if: vars.QA_REVIEW_ENABLED != 'false' && github.event_name == 'push'
+    if: vars.QA_REVIEW_ENABLED != 'false' && github.event_name == 'push' && github.ref_name == 'dev'
     runs-on: ubuntu-latest
     # Waits for the deploy pipeline of the same commit (~15–25 min) before checking.
     timeout-minutes: 60
@@ -115,4 +118,53 @@ jobs:
           name: qa-smoke-${{ github.sha }}-${{ github.run_attempt }}
           path: .qa-review/out/qa-smoke.enc.json
           retention-days: 14
+          if-no-files-found: error
+
+  # Every release on main: the whole code base, batch by batch, by the flagship model
+  # (scripts/qa/full-review.mjs). Same guardrails as the delta review — read-only token,
+  # no npm ci, no tools for the model, sealed result — and it gates nothing: its findings
+  # are verified and fixed on dev (docs/QA-REVIEW-LOOP.md §10).
+  full:
+    name: Full review of the release (sealed)
+    if: vars.QA_REVIEW_ENABLED != 'false' && github.event_name == 'push' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false # nothing in this job pushes; do not leave a token in .git/config
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      # The previous full review carries its open findings into this one. Only full
+      # reviews count: a delta report from dev is a different ledger.
+      - name: Fetch the previous sealed full review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          mkdir -p .qa-review/prev
+          for id in $(gh run list --workflow qa-review.yml --branch main --limit 30 --json databaseId,status --jq '.[] | select(.status == "completed") | .databaseId'); do
+            if [ "$id" = "$RUN_ID" ]; then continue; fi
+            if gh run download "$id" --pattern 'qa-full-*' -D .qa-review/prev > /dev/null 2>&1; then break; fi
+          done
+
+      - name: Review the whole code base
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          QA_REVIEW_KEY: ${{ secrets.QA_REVIEW_KEY }}
+          QA_HEAD: ${{ github.sha }}
+        run: node scripts/qa/full-review.mjs
+
+      - name: Upload sealed full review
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: qa-full-${{ github.sha }}-${{ github.run_attempt }}
+          path: .qa-review/out/qa-full.enc.json
+          # Releases can be weeks apart; the next full review needs this one to carry its findings.
+          retention-days: 90
           if-no-files-found: error

@@ -5,7 +5,8 @@
  *
  * - dev  → the QA agent reviews the delta; run the qa-review-loop skill.
  * - main → the security agent audits the release (report by mail and through
- *          scripts/security/inbox.mjs) and the UX agent reviews it (scripts/ux/inbox.mjs).
+ *          scripts/security/inbox.mjs), the UX agent reviews it (scripts/ux/inbox.mjs)
+ *          and the QA agent reviews its whole code base (scripts/qa/await.mjs --full).
  *
  * Never blocks, never fails the tool call: any error here exits 0 without output.
  */
@@ -45,7 +46,8 @@ process.stdin.on('end', () => {
         `Security agent: a push to main (${sha.slice(0, 12)}) starts the full sealed security audit. ` +
           `Its German report goes to Sonny by mail; fetch it with \`node scripts/security/inbox.mjs ${sha}\` (run_in_background), ` +
           'verify the findings and schedule confirmed ones into the roadmap by priority — IDs and priority only in public files, details stay sealed. ' +
-          `UX agent: the same push starts the UX review of the release; use the ux-review-intake skill with \`node scripts/ux/inbox.mjs ${sha}\` (run_in_background).`,
+          `UX agent: the same push starts the UX review of the release; use the ux-review-intake skill with \`node scripts/ux/inbox.mjs ${sha}\` (run_in_background). ` +
+          `QA agent: the same push starts the full code review of the release; run \`node scripts/qa/await.mjs ${sha} --full\` (run_in_background), verify each finding like a delta finding and fix confirmed ones on dev as a roadmap step — it gates nothing.`,
       );
     }
   } catch {

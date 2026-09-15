@@ -184,7 +184,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       },
       data: {
         uid: normalUserUid,
-        token: 'incorrect-hmac-token-12345',
+        token: 'test-incorrect-hmac-token-12345', // test- prefix: a fixture, not a credential (scripts/qa/lib/redact.mjs)
         action: 'approve',
       },
     });

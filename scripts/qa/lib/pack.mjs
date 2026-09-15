@@ -1,4 +1,4 @@
-import { BUDGET, estimateCostUsd } from './config.mjs';
+import { BUDGET, estimateCostUsd, PRICE_PER_MTOK } from './config.mjs';
 
 /**
  * Fit the delta into the budget, riskiest files first.
@@ -20,8 +20,9 @@ export const fileChars = (f) => f.diff.length + (f.callers || []).reduce((n, c) 
 /**
  * @param files     [{ path, status, tags, diff, callers?, truncated? }]
  * @param baseChars characters every batch repeats (brief, triage, claims, previous findings)
+ * @param options   the delta review's budget and price by default; the full review passes its own
  */
-export function packBatches(files, baseChars) {
+export function packBatches(files, baseChars, { budget = BUDGET, price = PRICE_PER_MTOK } = {}) {
   const sorted = [...files].sort((a, b) => rank(a) - rank(b) || a.path.localeCompare(b.path));
   const batches = [];
   const notReviewed = [];
@@ -29,13 +30,13 @@ export function packBatches(files, baseChars) {
 
   for (const f of sorted) {
     const size = fileChars(f);
-    if (baseChars + size > BUDGET.maxBatchChars) {
+    if (baseChars + size > budget.maxBatchChars) {
       notReviewed.push({ path: f.path, reason: `diff alone exceeds one call's budget (${size} characters)` });
       continue;
     }
-    if (current.chars + size > BUDGET.maxBatchChars) {
-      if (batches.length + 1 >= BUDGET.maxBatches) {
-        notReviewed.push({ path: f.path, reason: `outside the ${BUDGET.maxBatches}-call budget` });
+    if (current.chars + size > budget.maxBatchChars) {
+      if (batches.length + 1 >= budget.maxBatches) {
+        notReviewed.push({ path: f.path, reason: `outside the ${budget.maxBatches}-call budget` });
         continue;
       }
       batches.push(current);
@@ -49,5 +50,5 @@ export function packBatches(files, baseChars) {
   // Worst case for the dry run. The cap itself is enforced call by call against
   // actual spend (review.mjs), because the full output allowance is rarely used.
   const totalChars = batches.reduce((n, b) => n + b.chars, 0);
-  return { batches, notReviewed, estimatedCostUsd: Number(estimateCostUsd(totalChars, batches.length).toFixed(2)) };
+  return { batches, notReviewed, estimatedCostUsd: Number(estimateCostUsd(totalChars, batches.length, { price, maxOutputTokens: budget.maxOutputTokens }).toFixed(2)) };
 }

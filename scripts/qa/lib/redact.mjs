@@ -35,6 +35,10 @@ export function redactSecrets(text) {
   for (const { kind, re } of PATTERNS) {
     let count = 0;
     out = out.replace(re, (match, name) => {
+      // A name that says it holds a path or a file name holds a location, not a secret: `AUDIT_PUBLIC_KEY_PATH`
+      // was redacted and reported as a committed credential (Sonny, 15.09.2026). A real key assigned to such a
+      // name is still caught by the provider patterns above, which do not look at names.
+      if (kind === 'secret-named literal' && /_(?:PATH|FILE)$/i.test(name)) return match;
       count++;
       return kind === 'secret-named literal' ? `${name}=[REDACTED:${kind}]` : `[REDACTED:${kind}]`;
     });

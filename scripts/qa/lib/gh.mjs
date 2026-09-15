@@ -34,9 +34,16 @@ export function latestArtifact(names, prefix, sha) {
 /** Names of the unexpired artifacts of a run. */
 export const artifactNames = (runId) => ghJson(['api', `repos/{owner}/{repo}/actions/runs/${runId}/artifacts`, '--jq', '[.artifacts[] | select(.expired == false) | .name]']) || [];
 
-/** The newest run of `workflow` for exactly this commit, or null while none has been created yet. */
-export function runFor(workflow, sha) {
-  const runs = ghJson(['run', 'list', '--workflow', workflow, '--commit', sha, '--limit', '5', '--json', 'databaseId,headSha,status,conclusion,createdAt,event']) || [];
+/**
+ * The newest run of `workflow` for exactly this commit, or null while none has been created yet.
+ *
+ * `branch` matters once a commit reaches `main`: it then has a run on `dev` and one on `main`, and the newest
+ * of the two is not the one a caller waiting for the other asked about.
+ */
+export function runFor(workflow, sha, branch = null) {
+  const args = ['run', 'list', '--workflow', workflow, '--commit', sha, '--limit', '5', '--json', 'databaseId,headSha,status,conclusion,createdAt,event'];
+  if (branch) args.push('--branch', branch);
+  const runs = ghJson(args) || [];
   return runs.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0] || null;
 }
 
@@ -45,10 +52,10 @@ export function jobsOf(runId) {
 }
 
 /** Poll until the run for `sha` has completed or the deadline passes. */
-export async function waitForRun(workflow, sha, { timeoutMs, intervalMs = 30_000, onTick } = {}) {
+export async function waitForRun(workflow, sha, { timeoutMs, intervalMs = 30_000, onTick, branch = null } = {}) {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
-    const run = runFor(workflow, sha);
+    const run = runFor(workflow, sha, branch);
     if (run?.status === 'completed') return run;
     if (Date.now() > deadline) return run ? { ...run, timedOut: true } : null;
     onTick?.(run);

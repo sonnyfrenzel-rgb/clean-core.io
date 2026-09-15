@@ -18,9 +18,9 @@ const lib = (name: string) => import(path.resolve(ROOT, 'scripts/qa/lib', name))
 test.describe('the workflow', () => {
   const wf = () => read('.github/workflows/qa-review.yml');
 
-  test('runs on pushes to dev and can be revoked by one variable', () => {
-    expect(wf()).toMatch(/on:\s*\n\s*push:\s*\n\s*branches:\s*\[dev\]/);
-    expect(wf().match(/if: vars\.QA_REVIEW_ENABLED != 'false'/g)?.length).toBe(2);
+  test('runs on pushes to dev and main and can be revoked by one variable', () => {
+    expect(wf()).toMatch(/on:\s*\n\s*push:\s*\n\s*branches:\s*\[dev, main\]/);
+    expect(wf().match(/if: vars\.QA_REVIEW_ENABLED != 'false'/g)?.length).toBe(3);
     expect(wf()).not.toMatch(/pull_request_target/);
   });
 
@@ -30,7 +30,7 @@ test.describe('the workflow', () => {
     expect(perms).toMatch(/actions:\s*read/);
     expect(perms).not.toMatch(/write/);
     expect(wf()).not.toMatch(/gh (issue|pr) (create|comment)|gh api .*-X (POST|PATCH|PUT)|git push/);
-    expect(wf().match(/persist-credentials: false/g)?.length).toBe(2);
+    expect(wf().match(/persist-credentials: false/g)?.length).toBe(3);
   });
 
   test('passes secrets and inputs as environment, never as shell text', () => {
@@ -43,6 +43,7 @@ test.describe('the workflow', () => {
   test('uploads only sealed files, and every action is pinned to a commit', () => {
     expect(wf()).toContain('path: .qa-review/out/qa-review.enc.json');
     expect(wf()).toContain('path: .qa-review/out/qa-smoke.enc.json');
+    expect(wf()).toContain('path: .qa-review/out/qa-full.enc.json');
     for (const uses of wf().match(/uses: [^\s]+/g) || []) expect(uses).toMatch(/@[0-9a-f]{40}$/);
   });
 });
@@ -117,17 +118,22 @@ test.describe('nothing security-relevant is exposed', () => {
 });
 
 test.describe('the reviewer', () => {
-  test('is one pinned model, with no tools, no fallbacks and no data collection', async () => {
-    const { QA_MODEL } = await lib('config.mjs');
+  test('is one pinned model per review, with no tools, no fallbacks and no data collection', async () => {
+    const { QA_MODEL, QA_FULL_MODEL, PRICES } = await lib('config.mjs');
     const { buildRequest } = await lib('openrouter.mjs');
-    expect(QA_MODEL).toBe('openai/gpt-6-astra');
+    // Sonny, 15.09.2026: Luna reviews every delta on dev, Sol — the flagship of the series — every release on main.
+    expect(QA_MODEL).toBe('openai/gpt-5.6-luna');
+    expect(QA_FULL_MODEL).toBe('openai/gpt-5.6-sol');
+    expect(PRICES[QA_MODEL]).toEqual({ input: 0.2, output: 1.2 });
+    expect(PRICES[QA_FULL_MODEL]).toEqual({ input: 2, output: 10 });
+    expect(buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', model: QA_FULL_MODEL }).provider).toEqual({ allow_fallbacks: false, data_collection: 'deny' });
     const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'medium' });
     expect(req.model).toBe(QA_MODEL);
     expect(req.tools).toBeUndefined();
     expect(req.provider).toEqual({ allow_fallbacks: false, data_collection: 'deny' });
     expect(req.response_format.json_schema.strict).toBe(true);
-    // The model id lives in exactly one file.
-    const hits = fs.readdirSync(path.resolve(ROOT, 'scripts/qa'), { recursive: true }).filter((f) => String(f).endsWith('.mjs') && read(`scripts/qa/${String(f).replace(/\\/g, '/')}`).includes('gpt-6-astra'));
+    // Model ids live in exactly one file.
+    const hits = fs.readdirSync(path.resolve(ROOT, 'scripts/qa'), { recursive: true }).filter((f) => String(f).endsWith('.mjs') && /gpt-\d/.test(read(`scripts/qa/${String(f).replace(/\\/g, '/')}`)));
     expect(hits.map(String)).toEqual([path.join('lib', 'config.mjs')]);
   });
 
@@ -242,7 +248,7 @@ test.describe('spend is capped and only the delta is reviewed', () => {
   test('the riskiest files go first, and what does not fit is named', async () => {
     const { packBatches } = await lib('pack.mjs');
     const { BUDGET } = await lib('config.mjs');
-    const files = [file('app/page.tsx', ['ui'], 150_000), file('firestore.rules', ['security'], 150_000), file('tests/a.spec.ts', ['tests'], 150_000)];
+    const files = [file('app/page.tsx', ['ui'], 150_000), file('firestore.rules', ['security'], 150_000), file('tests/a.spec.ts', ['tests'], 150_000), file('lib/abap/a.ts', ['engine'], 150_000), file('lib/audit-pack-x.ts', ['trust-chain'], 150_000)];
     const { batches, notReviewed } = packBatches(files, 10_000);
     expect(batches[0].files[0].path).toBe('firestore.rules');
     expect(batches.length).toBeLessThanOrEqual(BUDGET.maxBatches);
@@ -250,12 +256,19 @@ test.describe('spend is capped and only the delta is reviewed', () => {
   });
 
   test('the cost cap is checked before every call against what was actually spent', async () => {
-    const { withinBudget, BUDGET, estimateCostUsd } = await lib('config.mjs');
+    const { withinBudget, BUDGET, FULL_BUDGET, estimateCostUsd, PRICES, QA_FULL_MODEL } = await lib('config.mjs');
     // A first call of normal size fits; the same call after most of the budget is spent does not.
     expect(withinBudget(0, 120_000)).toBe(true);
-    expect(withinBudget(BUDGET.maxCostUsd - 0.1, 120_000)).toBe(false);
+    expect(withinBudget(BUDGET.maxCostUsd - 0.01, 120_000)).toBe(false);
     // The per-call estimate assumes the whole output allowance, so it can never undercount a call.
-    expect(estimateCostUsd(0, 1)).toBeCloseTo((BUDGET.maxOutputTokens / 1e6) * 50, 5);
+    expect(estimateCostUsd(0, 1)).toBeCloseTo((BUDGET.maxOutputTokens / 1e6) * 1.2, 5);
+    const full = { budget: FULL_BUDGET, price: PRICES[QA_FULL_MODEL] };
+    expect(estimateCostUsd(0, 1, { price: full.price, maxOutputTokens: FULL_BUDGET.maxOutputTokens })).toBeCloseTo((FULL_BUDGET.maxOutputTokens / 1e6) * 10, 5);
+    expect(withinBudget(0, 400_000, full)).toBe(true);
+    expect(withinBudget(FULL_BUDGET.maxCostUsd - 0.5, 400_000, full)).toBe(false);
+    // The caps agreed on 15.09.2026: cents per delta, a few dollars per release.
+    expect(BUDGET.maxCostUsd).toBeLessThanOrEqual(0.5);
+    expect(FULL_BUDGET.maxCostUsd).toBeLessThanOrEqual(10);
     expect(read('scripts/qa/review.mjs')).toMatch(/if \(!withinBudget\(spentForCap, outgoingSystem\.length \+ user\.length \+ SCHEMA_CHARS\)\)/);
   });
 
@@ -460,6 +473,19 @@ test.describe('the report a maintainer acts on', () => {
     expect(isBlocking({ findings: [finding({ severity: 'medium' })] })).toBe(true);
   });
 
+  test("a medium finding in the agents' own machinery is reported but does not hold the release; high still does", async () => {
+    const { isBlocking, renderText } = await lib('report.mjs');
+    const { isAgentInfrastructure } = await lib('config.mjs');
+    for (const p of ['scripts/qa/lib/report.mjs', 'scripts/security/audit.mjs', 'scripts/ux/review.mjs', '.github/workflows/security-audit.yml', '.claude/skills/qa-review-loop/SKILL.md', 'tests/ux-review-guard.spec.ts']) expect(isAgentInfrastructure(p), p).toBe(true);
+    // The product, its deploy pipeline and its other tests are not agent machinery.
+    for (const p of ['app/api/run-tests/route.ts', '.github/workflows/deploy.yml', 'scripts/generate-guide-pdf.ts', 'tests/locked-paths-guard.spec.ts', 'lib/qa/x.ts']) expect(isAgentInfrastructure(p), p).toBe(false);
+    expect(isBlocking({ findings: [finding({ severity: 'medium', file: 'scripts/qa/lib/report.mjs' })] })).toBe(false);
+    expect(isBlocking({ findings: [finding({ severity: 'high', file: 'scripts/qa/lib/report.mjs' })] })).toBe(true);
+    expect(isBlocking({ findings: [finding({ severity: 'medium', file: 'app/api/run-tests/route.ts' })] })).toBe(true);
+    const text = renderText({ range: { head: 'h'.repeat(40) }, verdict: 'go_with_notes', findings: [{ ...finding({ file: 'scripts/ux/review.mjs' }), fingerprint: 'f'.repeat(12) }], resolved: [], acceptance: [], testGaps: [], coverage: { notReviewed: [] }, meta: {} });
+    expect(text).toContain('non-blocking (agent infrastructure)');
+  });
+
   test('triage names test-weakening and quoted acceptance criteria', async () => {
     const { testSignals, acceptanceCriteria } = await lib('triage.mjs');
     const diff = ['-    expect(result).toBe(true);', '+  test.skip(\'flaky\', () => {});', '+  // eslint-disable-next-line'].join('\n');
@@ -473,7 +499,10 @@ test.describe('the loop starts itself', () => {
     const { execFileSync } = require('child_process') as typeof import('child_process');
     const run = (command: string) => execFileSync('node', [path.resolve(ROOT, '.claude/hooks/after-push.mjs')], { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command } }), encoding: 'utf8' });
     for (const c of ['git push origin dev', 'git push origin HEAD:dev', 'git push origin fix/x:dev']) expect(run(c)).toContain('qa-review-loop');
-    for (const c of ['git push origin main', 'git push origin HEAD:main && echo ok']) expect(run(c)).toContain('scripts/security/inbox.mjs');
+    for (const c of ['git push origin main', 'git push origin HEAD:main && echo ok']) {
+      expect(run(c)).toContain('scripts/security/inbox.mjs');
+      expect(run(c)).toMatch(/scripts\/qa\/await\.mjs \S+ --full/);
+    }
     for (const c of ['git push origin devtools', 'git push --dry-run origin dev', 'git status', 'npm run dev']) expect(run(c)).toBe('');
   });
 });
@@ -544,5 +573,122 @@ test.describe('the deployed revision can be told apart', () => {
   test('health reports the commit it was built from, and deploy sets it', () => {
     expect(read('app/api/health/route.ts')).toMatch(/commit,\s*time:/);
     expect(read('.github/workflows/deploy.yml')).toContain('COMMIT_SHA=${{ github.sha }}');
+  });
+});
+
+test.describe('fewer rounds for the same quality (Sonny, 15.09.2026)', () => {
+  test('hypothetical legacy data is rated low unless a writer that produces it is named', () => {
+    const brief = read('docs/qa/reviewer-brief.md');
+    const severity = brief.slice(brief.indexOf('## Severity'), brief.indexOf('## How to write a finding'));
+    expect(severity).toMatch(/no current code path produces/);
+    expect(severity).toMatch(/is at most `low`,\s*unless you name the writer, migration or import that produces it today/);
+  });
+
+  test('a name for a path or a file is not a secret; a real key under such a name still is', async () => {
+    const { redactSecrets } = await lib('redact.mjs');
+    const location = redactSecrets("export const AUDIT_PUBLIC_KEY_PATH = 'docs/security/audit-public-key.pem';\nconst SIGNING_KEY_FILE = '/var/run/secrets/signing/key-material.bin';");
+    expect(location.hits).toEqual([]);
+    expect(location.text).toContain('docs/security/audit-public-key.pem');
+    // The name exemption covers only the name rule: a provider key is recognised by its shape, whatever it is called.
+    const key = `sk-or-v1-${'b'.repeat(64)}`;
+    const disguised = redactSecrets(`const OPENROUTER_KEY_PATH = '${key}';`);
+    expect(disguised.text).not.toContain(key);
+    expect(disguised.hits.map((h: { kind: string }) => h.kind)).toContain('OpenRouter key');
+    // A secret-named literal without the suffix is redacted as before.
+    const value = require('crypto').randomBytes(32).toString('hex');
+    expect(redactSecrets(`const SIGNING_KEY = '${value}';`).text).not.toContain(value);
+  });
+});
+
+test.describe('the full review of a release on main', () => {
+  const wf = () => read('.github/workflows/qa-review.yml');
+  const job = (name: string) => {
+    const text = wf();
+    const start = text.indexOf(`\n  ${name}:\n`);
+    const next = text.slice(start + 1).search(/\n  [a-z]+:\n/);
+    return next < 0 ? text.slice(start) : text.slice(start, start + 1 + next);
+  };
+
+  test('each job runs where it belongs: delta and smoke on dev, the full review on a push to main only', () => {
+    expect(job('review')).toContain("if: vars.QA_REVIEW_ENABLED != 'false' && (github.event_name == 'workflow_dispatch' || github.ref_name == 'dev')");
+    expect(job('smoke')).toContain("github.event_name == 'push' && github.ref_name == 'dev'");
+    expect(job('full')).toContain("if: vars.QA_REVIEW_ENABLED != 'false' && github.event_name == 'push' && github.ref_name == 'main'");
+    // A release is never cancelled by the next one, and a main run never shares a group with a dev run.
+    expect(wf()).toContain('group: qa-review-${{ github.ref_name }}');
+    expect(wf()).toContain("cancel-in-progress: ${{ github.ref_name != 'main' }}");
+  });
+
+  test('the full review job holds the same guardrails: no install, two secrets, a sealed upload', () => {
+    const full = job('full');
+    expect(full).not.toMatch(/npm (ci|install)/);
+    expect([...full.matchAll(/secrets\.([A-Z_]+)/g)].map((m) => m[1]).sort()).toEqual(['OPENROUTER_API_KEY', 'QA_REVIEW_KEY']);
+    expect(full).toContain('run: node scripts/qa/full-review.mjs');
+    expect(full).toContain("--pattern 'qa-full-*'");
+    expect(full).toContain('name: qa-full-${{ github.sha }}-${{ github.run_attempt }}');
+  });
+
+  test('the brief keeps its checklist and severities and swaps only the scope', async () => {
+    const { fullBrief, FULL_SCOPE } = await lib('full.mjs');
+    const delta = read('docs/qa/reviewer-brief.md');
+    const full = fullBrief(delta);
+    expect(full).toContain(FULL_SCOPE);
+    expect(full).not.toContain('You review **one delta**');
+    for (const kept of ['## Guardrails', '## What a professional QA pass covers', '## Project invariants', '## Severity', 'no current code path produces']) expect(full).toContain(kept);
+    expect(() => fullBrief('# a brief without its scope paragraph')).toThrow(/delta scope/);
+  });
+
+  test('files come from the commit, numbered, and only reviewable ones', async () => {
+    const { filesAt, numbered } = await lib('full.mjs');
+    const tree: Record<string, string> = { 'app/api/x/route.ts': 'a\nb', 'docs/ROADMAP.md': '# prose', '.env.local': 'SECRET=1', 'public/logo.png': '' };
+    const files = filesAt('abc', { list: () => Object.keys(tree), show: (_h: string, p: string) => tree[p] });
+    expect(files.map((f: { path: string }) => f.path)).toEqual(['app/api/x/route.ts']);
+    expect(files[0]).toMatchObject({ lines: 2, tags: ['security'] });
+    expect(numbered('first\r\nsecond')).toBe('1|first\n2|second');
+  });
+
+  test('a failed batch is named as not reviewed, the others still count, and the cap sees its worst case', async () => {
+    const { reviewBatches } = await lib('full.mjs');
+    const batch = (p: string) => ({ files: [{ path: p }] });
+    const calls: string[] = [];
+    const run = await reviewBatches({
+      batches: [batch('a.ts'), batch('b.ts'), batch('c.ts'), batch('d.ts')],
+      capUsd: 100,
+      messageFor: (b: { files: { path: string }[] }) => ({ system: 's', user: b.files[0].path }),
+      call: async ({ user }: { user: string }) => {
+        calls.push(user);
+        if (user === 'b.ts') throw new Error('OpenRouter answered HTTP 502');
+        return { review: { findings: [] }, usage: { cost: 10 } };
+      },
+      fits: (spent: number) => spent + 45 <= 100,
+      worstCase: () => 45,
+    });
+    // a: 10 spent · b fails, counted at its worst case 45 → 55 · c: 10 → 65 · d would need 45 more → 110, over the cap.
+    expect(calls).toEqual(['a.ts', 'b.ts', 'c.ts']);
+    expect(run.results.map((r: { files: string[] }) => r.files[0])).toEqual(['a.ts', 'c.ts']);
+    expect(run.failedCalls).toBe(1);
+    expect(run.notReviewed).toEqual([
+      { path: 'b.ts', reason: 'model call failed: OpenRouter answered HTTP 502' },
+      { path: 'd.ts', reason: 'outside the $100 cost cap' },
+    ]);
+    // With a failed call the total cost is unknown, never the sum of the calls that answered.
+    expect(read('scripts/qa/full-review.mjs')).toMatch(/const costUsd = failedCalls \? null : actualCost\(/);
+  });
+
+  test('a public-by-design value is redacted but not reported; any other credential is', async () => {
+    const { isPublicByDesign } = await lib('config.mjs');
+    expect(isPublicByDesign({ path: 'firebase-config.json', kind: 'Google API key' })).toBe(true);
+    expect(isPublicByDesign({ path: 'lib/other.ts', kind: 'Google API key' })).toBe(false);
+    expect(isPublicByDesign({ path: 'firebase-config.json', kind: 'private key block' })).toBe(false);
+    const src = read('scripts/qa/full-review.mjs');
+    expect(src).toMatch(/secretHits\.filter\(\(h\) => !isPublicByDesign\(h\)\)/);
+    // Redaction itself is not skipped: every file passes through clean() before it is batched.
+    expect(src).toMatch(/diff: clean\(f\.path, numbered\(f\.content\)\)/);
+  });
+
+  test('the local wait reads the full review of main, never a dev run of the same commit', () => {
+    const src = read('scripts/qa/await.mjs');
+    expect(src).toMatch(/branch: FULL \? 'main' : 'dev'/);
+    expect(src).toMatch(/succeeded\('Full review'\) \? sealedReports\(dir, secret, 'qa-full\.enc\.json'\)\.find\(\(r\) => r\.range\?\.head === sha && current\(r\.meta\?\.run\)\)/);
+    expect(read('scripts/qa/lib/gh.mjs')).toMatch(/if \(branch\) args\.push\('--branch', branch\)/);
   });
 });

@@ -81,6 +81,11 @@ delta makes them reachable.
   claim stronger than the code, a regression in a secondary path.
 - **low** — minor robustness, clarity or a behaviour-preserving simplification.
 
+A failure that needs data or state **no current code path produces** — a document an older
+version wrote, a hand-edited artefact, a field no writer sets any more — is at most `low`,
+unless you name the writer, migration or import that produces it today. Hypothetical legacy
+data is not a reachable path.
+
 ## How to write a finding
 
 - `file` and `line` refer to the **new** file; take line numbers from the hunk

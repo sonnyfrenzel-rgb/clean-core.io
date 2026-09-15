@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { BLOCKING_SEVERITIES, SEVERITIES } from './config.mjs';
+import { BLOCKING_SEVERITIES, isAgentInfrastructure, SEVERITIES } from './config.mjs';
 
 /**
  * Turning model output into a report a maintainer can act on — and that the
@@ -127,7 +127,10 @@ export function severityCounts(report) {
   return Object.fromEntries(SEVERITIES.map((s) => [s, report.findings.filter((f) => f.severity === s).length]));
 }
 
-export const isBlocking = (report) => report.findings.some((f) => BLOCKING_SEVERITIES.has(f.severity));
+/** Critical and high block everywhere; medium blocks except on the agents' own machinery (config.mjs AGENT_INFRASTRUCTURE). */
+export const blocks = (f) => BLOCKING_SEVERITIES.has(f.severity) && !(f.severity === 'medium' && isAgentInfrastructure(f.file));
+
+export const isBlocking = (report) => report.findings.some(blocks);
 
 /** The loop stays open for blocking findings and for a review that did not read all of its delta. */
 export const needsAnotherRound = (report) => isBlocking(report) || Boolean(report.incomplete);
@@ -143,7 +146,7 @@ export function renderText(report) {
   if (report.coverage.notReviewed.length) lines.push(`INCOMPLETE — checkpoint stays at ${String(report.range.checkpoint || 'main').slice(0, 12)}. NOT REVIEWED: ${report.coverage.notReviewed.map((n) => `${n.path} (${n.reason})`).join('; ')}`);
   for (const f of report.findings) {
     lines.push('');
-    lines.push(`[${f.fingerprint}] ${f.severity.toUpperCase()} ${f.category} · ${f.file}:${f.line}${f.carried ? ' · carried' : ''}${f.reRaisedAfterRefutation ? ' · RE-RAISED after refutation' : ''} · confidence ${f.confidence}`);
+    lines.push(`[${f.fingerprint}] ${f.severity.toUpperCase()} ${f.category} · ${f.file}:${f.line}${f.carried ? ' · carried' : ''}${f.reRaisedAfterRefutation ? ' · RE-RAISED after refutation' : ''}${BLOCKING_SEVERITIES.has(f.severity) && !blocks(f) ? ' · non-blocking (agent infrastructure)' : ''} · confidence ${f.confidence}`);
     lines.push(`  ${f.title}`);
     lines.push(`  breaks: ${f.failure_scenario}`);
     lines.push(`  evidence: ${f.evidence}`);
