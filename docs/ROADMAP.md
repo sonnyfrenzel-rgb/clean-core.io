@@ -119,7 +119,7 @@ Phase 5  v2.15  Teilen ....................... Einladung per E-Mail-Link, Einsic
 Phase 6  v2.16  Sichten ...................... Business · IT · Management, Ebenen, Overlays
 Phase 7  v2.17  Standard und Kosten .......... Standardabdeckung, Gegenprobe, Optionen
 Phase 8  v2.18  Entscheiden und Übergeben .... Architekturvertrag, Entscheidung, Nachweiskette
-3.0             Umstellung ................... neuer Arbeitsraum für alle, öffentliche Texte
+3.0             Umstellung ................... neuer Arbeitsraum für alle, Demo mit Tour, neue Landingpage mit echten Produktansichten
 ```
 
 **Warum diese Reihenfolge.** Erst die Wahrheit der heutigen Aussagen und der Schutz
@@ -322,12 +322,16 @@ QA24-A17 (ein Fingerprint ohne Bestätigung ist kein grüner Status).
 | 3.0.2 | **Bestandsprojekte** öffnen ohne Verlust von IDs, Runs und Signaturen (C23-A02) | M |
 | 3.0.3 | **Erhaltungsregister im neuen Arbeitsraum:** jeder Referenzfall aus 1.1 besteht | S |
 | 3.0.4 | **Accessibility-Basis:** Tastatur, Screenreader, `forced-colors`, Telefon in Breakpoint S mit der Reihenfolge aus `DESIGN.md` §2.9, Druckbild nach §7.1; „Keyboard shortcuts" im Hilfe-Menü; Überschriftenfolge und Live-Regionen im gerenderten Test (§8) | M |
-| 3.0.5 | **Aufräumen:** der alte 1.000-Zeichen-Generator und das ungenutzte `components/ProcessDocumentation.tsx` gehen | S |
-| 3.0.6 | **Öffentliche Texte auf 3.0:** Startseite, README, How-to, Whitepaper, `llms.txt`, Facts; Screenshots aus dem echten Produkt, keine Mockup-Bilder | M |
+| 3.0.5 | **Aufräumen:** der alte 1.000-Zeichen-Generator und das ungenutzte `components/ProcessDocumentation.tsx` gehen — nie eine öffentliche Seite mit Suchreichweite (3.0.6) | S |
+| 3.0.6 | **Neue Landingpage und öffentliche Texte — Teil des Releases 3.0, nicht danach** (Entscheidung Sonny 15.09.2026): die Startseite nach `docs/roadmap/clean-core-landing-v3_0.html`; **jede Produktansicht darauf aus dem echten Arbeitsraum** — Screenshots oder eingebettete Vorschau des Demo-Projekts `Z_MM_PO_APPROVAL`, bei jedem Release mit `tests/capture-screens.spec.ts` neu erzeugt, sodass Bild und Produkt nie auseinanderlaufen; keine Mockup-Bilder. Erhalten bleiben Anmeldebutton an gleicher Stelle, Navigation zu den Wissensseiten, Metadaten und Canonical, JSON-LD (Organization, SoftwareApplication, FAQPage deckungsgleich mit dem sichtbaren FAQ, BreadcrumbList), Sitemap, Robots und Live-Zahlen aus dem Katalog. **Die Katalog- und Wissensseiten bleiben mit URL, Canonical und Inhalt unverändert erreichbar** (Entscheidung Sonny 15.09.2026, viele Impressionen): `/catalog`, `/catalog/[object]`, `/catalog/browse/[letter]`, `/catalog/module/[area]`, `/catalog-sitemap.xml`, `/sap-clean-core-object-classification`, `/method/levels`, `/sap-cloudification`, `/clean-core-explained`, `/how-it-works`, `/knowledge`, `/abap-custom-code-analysis`, `/clean-core-score`, `/features/[slug]`, `/how-to`, `/whitepaper`, `/licenses`, `/about`, `/trust` — sie bekommen nur den 3.0-Look; die neue Startseite verlinkt aktiv hinein (Objektsuche, Beispielobjekte, A–Z). Grundlage ist Google Search Console (letzte 6 Monate bis 15.09.2026: 9.115 Impressionen, davon 3.706 in den letzten 30 Tagen; Startseite 1.509, `/catalog` 1.491, `/knowledge` 1.417, `/sap-cloudification` 1.371, `/abap-custom-code-analysis` 1.150, rund 70 Objektseiten). Titel und sichtbare Überschriften folgen den Suchanfragen, die schon Reichweite haben, aber kaum Klicks — „SAP Cloudification Repository viewer" (403 Impressionen, Position 8, 0 Klicks), „cloudify SAP", „ABAP (static) code analysis", „Clean Core Score". Gehalten von `tests/seo-surface-guard.spec.ts`. Dazu README, How-to, Whitepaper, `llms.txt`, Facts | L |
 | 3.0.7 | **Demo-Projekt und Tour im Arbeitsraum** (`DESIGN.md` §6.1.2): die Demo aus 0.10 in allen Sichten und Ebenen, neu erzeugt mit jedem Release, das Engine oder Regelversion ändert; Tour mit rund zwölf Stationen (Enthüllung bis Übergabe), eine Station je Ort, Fortschritt nur im Browser, Einladung nach jeder dritten Station und am Ende; „Show tips again" im Hilfe-Menü | M |
 
 **Fertig, wenn** alle Phasenabnahmen auf `main` gelaufen sind, ein Korpusfall den
-ganzen Fluss durchläuft und die Copy-CI grün ist.
+ganzen Fluss durchläuft und die Copy-CI grün ist — **und die neue Landingpage mit
+echten Produktansichten live ist**: kein Mockup-Bild auf einer öffentlichen Seite,
+Anmeldung wie heute erreichbar, Landing-Guards und Signavio-/Geld-Guards grün,
+JSON-LD und sichtbares FAQ deckungsgleich. 3.0 wird nicht ohne die neue Startseite
+veröffentlicht.
 
 ---
 
