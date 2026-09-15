@@ -13,12 +13,13 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { FEATURE_SLUGS } from '../lib/features-content';
-import { getAllCatalogObjectNames, getMappedCatalogObjectNames, objectToSlug } from '../lib/abap/catalog-index';
+import { getAllCatalogObjectNames, getMappedCatalogObjectNames, getModuleAreas, objectToSlug } from '../lib/abap/catalog-index';
 import sitemap from '../app/sitemap';
 import robots from '../app/robots';
 import { GET as catalogSitemap } from '../app/catalog-sitemap.xml/route';
 import { generateMetadata as objectMetadata } from '../app/catalog/[object]/page';
 import { generateMetadata as letterMetadata } from '../app/catalog/browse/[letter]/page';
+import { generateMetadata as moduleMetadata } from '../app/catalog/module/[area]/page';
 import { generateMetadata as featureMetadata } from '../app/features/[slug]/page';
 
 const ROOT = path.resolve(__dirname, '..');
@@ -106,6 +107,12 @@ test.describe('pages with search reach stay reachable', () => {
     expect(noPath.alternates?.canonical).toBe(`${BASE}/catalog/${slug}`);
     expect(noPath.robots).toMatchObject({ index: false, follow: true });
     expect((await letterMetadata({ params: Promise.resolve({ letter: 'a' }) } as never)).alternates?.canonical).toBe(`${BASE}/catalog/browse/a`);
+    // Every module page, each with its own canonical (the module with impressions today is /catalog/module/pp).
+    const areas = getModuleAreas().map((a) => a.code.toLowerCase());
+    expect(areas).toContain('pp');
+    for (const area of areas) {
+      expect((await moduleMetadata({ params: Promise.resolve({ area }) })).alternates?.canonical, `/catalog/module/${area}`).toBe(`${BASE}/catalog/module/${area}`);
+    }
     for (const slug of FEATURES_WITH_IMPRESSIONS) {
       expect((await featureMetadata({ params: Promise.resolve({ slug }) })).alternates?.canonical).toBe(`${BASE}/features/${slug}`);
     }
@@ -117,6 +124,8 @@ test.describe('pages with search reach stay reachable', () => {
     const html: Array<[string, string]> = [
       ['/', BASE],
       ['/catalog', `${BASE}/catalog`],
+      ['/catalog/module/pp', `${BASE}/catalog/module/pp`],
+      ['/catalog/browse/a', `${BASE}/catalog/browse/a`],
       [`/catalog/${indexed}`, `${BASE}/catalog/${indexed}`],
       ['/sap-cloudification', `${BASE}/sap-cloudification`],
       ['/knowledge', `${BASE}/knowledge`],
