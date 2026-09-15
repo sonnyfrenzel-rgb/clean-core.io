@@ -10,6 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.10.6] — 2026-09-15
+
+### QA-Review von bd0f380: die gespeicherte Suite läuft, Geld in Worten, keine KI-Kostenschätzung
+
+- **Eine gespeicherte Testsuite startet ausgewählt.** Seit v2.10.5 erscheint die Suite nach
+  dem Neuladen. Ausgewählt war aber nichts, und „Run Selected" blieb gesperrt, ohne dass
+  etwas sagte, dass ein Haken fehlt. Die Deploy-Pipeline fiel genau daran:
+  `tests/full-pipeline.spec.ts` rechnete schon immer mit einer vorgeladenen Suite, die es
+  bis dahin nie gab. Jetzt ist eine gespeicherte Suite beim ersten Erscheinen ganz
+  ausgewählt, wie eine frisch erzeugte. Eine spätere Auswahl des Nutzers bleibt stehen.
+- **Beträge in Worten.** Die Maskierung aus v2.10.5 kannte Zeichen und Codes („€5,000",
+  „USD 40,000"), aber keine Wörter. „5,000 dollars" und „3 million euros" werden jetzt
+  ebenfalls ersetzt.
+- **Keine KI-Kostenschätzung.** Das Chatbot-Glossar versprach „AI-powered TCO estimation".
+  Economics ist ein Demonstrationsmodell auf den eigenen Zahlen des Nutzers, kein Modell
+  schätzt Kosten. Glossar und Grenzen-Abschnitt sind korrigiert. Ein Guard prüft alle
+  Seiten, Komponenten und Bibliotheken auf solche Behauptungen.
+- Acht Befunde des Reviews waren falsch und sind mit Beleg widerlegt:
+  - der ungültige Test-Token als „Geheimnis"
+  - die angeblich fehlenden Aufrufer von Vollreview und UX-Abruf, die im selben Delta stehen
+  - die angeblich gelöschten Guard-Assertions, die ersetzt und nicht gelöscht wurden
+  - die Batch-Grenze, die exakt stimmt
+
 ## [v2.10.5] — 2026-09-15
 
 ### QA-Review von a0c1085: der ganze Prompt, Geld in Prosa, die gespeicherte Testsuite

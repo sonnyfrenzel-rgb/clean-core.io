@@ -15,13 +15,15 @@ const SCALE = String.raw`(?:\s?(?:k|m|bn|mn|million|millions|thousand|mio\.?|mrd
 const NUMBER = String.raw`\d[\d.,' ]*\d|\d`;
 const SIGN = String.raw`[$€£¥]`;
 const CODE = String.raw`(?:EUR|USD|GBP|CHF|JPY)`;
+/** Currency written out: "5,000 dollars", "3 million euros" (QA review of bd0f38078c40). */
+const WORD = String.raw`(?:dollars?|euros?|pounds?(?:\s+sterling)?|francs?|yen)`;
 
-/** A currency sign or code on either side of a number, with an optional scale word: "€5,000", "3.2k $", "USD 40,000", "1,5 Mio. €". */
+/** A currency sign, code or word on either side of a number, with an optional scale word: "€5,000", "3.2k $", "USD 40,000", "1,5 Mio. €", "3 million euros". */
 const AMOUNT = new RegExp(
   [
     String.raw`${SIGN}\s?(?:${NUMBER})${SCALE}`,
     String.raw`\b${CODE}\s?(?:${NUMBER})${SCALE}`,
-    String.raw`(?<![\w.])(?:${NUMBER})${SCALE}\s?(?:${SIGN}|${CODE}\b)`,
+    String.raw`(?<![\w.])(?:${NUMBER})${SCALE}\s?(?:${SIGN}|${CODE}\b|${WORD}\b)`,
   ].join('|'),
   'gi',
 );

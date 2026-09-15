@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, setDoc } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
@@ -489,6 +489,16 @@ export default function TestingSandboxPage() {
       setIsRequestingAccess(false);
     }
   };
+
+  // A saved suite opens fully selected, as a freshly generated one does. Since the suite shows after a reload
+  // (v2.10.5), an empty selection left "Run Selected" disabled with nothing saying a tick was needed. Only the
+  // first time the suite appears: a selection the reader changes afterwards stays theirs.
+  const selectionSeeded = useRef(false);
+  useEffect(() => {
+    if (selectionSeeded.current || testCases.length === 0) return;
+    selectionSeeded.current = true;
+    setSelectedTestCases((prev) => (prev.length ? prev : testCases.map((_, i) => i)));
+  }, [testCases]);
 
   const handleGenerate = async () => {
     // Not against code generated from a previous source (E01-F01-US02). The

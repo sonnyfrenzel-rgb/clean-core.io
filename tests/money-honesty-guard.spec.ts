@@ -50,12 +50,12 @@ test('the analysis prompt asks for no money', () => {
 });
 
 test('an amount of money in prose is removed, and nothing that only looks like a number is', () => {
-  for (const money of ['Projected annual savings: €5,000', 'about $3.2k per year', '15.000 EUR maintenance', 'USD 40,000 saved', '1,5 Mio. € budget', 'costs 3 000 € yearly', '€3,000–€8,000/yr', '12€ per user']) {
+  for (const money of ['Projected annual savings: €5,000', 'about $3.2k per year', '15.000 EUR maintenance', 'USD 40,000 saved', '1,5 Mio. € budget', 'costs 3 000 € yearly', '€3,000–€8,000/yr', '12€ per user', 'saves 5,000 dollars', 'about 3 million euros a year', '$ 5,000 once', '40 pounds sterling']) {
     const out = withoutUnapprovedMoney(money);
     expect(containsAmount(out), `${money} → ${out}`).toBe(false);
     expect(out).toContain(NO_AMOUNT);
   }
-  for (const plain of ['CC-001 at line 907', 'Release 2023, 95% coverage', 'S/4HANA 2023 FPS01', 'price field NETWR', 'v2.10.4', 'wrote 2 000 000 records', 'It checks the limit [L12-40].']) {
+  for (const plain of ['CC-001 at line 907', 'Release 2023, 95% coverage', 'S/4HANA 2023 FPS01', 'price field NETWR', 'v2.10.4', 'wrote 2 000 000 records', 'It checks the limit [L12-40].', 'the euro field WAERS']) {
     expect(withoutUnapprovedMoney(plain)).toBe(plain);
   }
 });
@@ -145,6 +145,23 @@ test.describe('a stored analysis with amounts in its prose', () => {
     for (const amount of AMOUNTS) expect(html, `the export carries ${amount}`).not.toContain(amount);
     expect(html).toContain(NO_AMOUNT);
   });
+});
+
+test('no text claims that a model estimates costs', () => {
+  // The chatbot glossary still said "Clean-Core.io provides AI-powered TCO estimation" (QA review of bd0f38078c40):
+  // Economics prices only the user's own figures, and no model puts a cost on anything.
+  const CLAIMS = [/(AI|model|Gemini|LLM)[- ]?(powered|driven|based|generated)?\s+(TCO|cost|ROI|savings?)\s+(estimat|forecast|calculat|predict)/i, /provides\s+[\w-]*\s*TCO estimation/i, /(estimates|forecasts|predicts)\s+(your\s+)?(TCO|ROI|savings|maintenance costs?)/i];
+  const offenders: string[] = [];
+  const walk = (dir: string) => {
+    for (const e of fs.readdirSync(path.resolve(ROOT, dir), { withFileTypes: true })) {
+      const rel = path.posix.join(dir, e.name);
+      if (e.isDirectory()) { if (e.name !== 'generated') walk(rel); }
+      else if (/\.(ts|tsx|html|md)$/.test(e.name)) for (const re of CLAIMS) if (re.test(read(rel))) offenders.push(`${rel} ${re}`);
+    }
+  };
+  for (const dir of ['app', 'components', 'lib', 'hooks']) walk(dir);
+  for (const f of ['README.md', 'public/linkedin-whitepaper-template.html']) for (const re of CLAIMS) if (re.test(read(f))) offenders.push(`${f} ${re}`);
+  expect(offenders).toEqual([]);
 });
 
 test('an analysis type carries no money field', () => {

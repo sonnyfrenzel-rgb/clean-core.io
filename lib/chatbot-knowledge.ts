@@ -51,7 +51,7 @@ export const EXTENDED_GLOSSARY = `
 - **SAP Signavio**: SAP's business process management and mining suite. Clean-Core.io exports BPMN 2.0 XML diagrams for process documentation; import into SAP Signavio has not been verified yet.
 - **BPMN 2.0**: Business Process Model and Notation — an industry-standard graphical notation for specifying business processes. Clean-Core.io generates BPMN 2.0 XML for automated process documentation.
 - **RACI Matrix**: Responsible, Accountable, Consulted, Informed — a framework for assigning roles in a process. Clean-Core.io auto-generates dynamic RACI matrices during documentation.
-- **TCO (Total Cost of Ownership)**: The complete cost analysis of an SAP modernization project, including cloud hosting, development effort, maintenance, and migration costs. Clean-Core.io provides AI-powered TCO estimation.
+- **TCO (Total Cost of Ownership)**: The complete cost analysis of an SAP modernization project, including cloud hosting, development effort, maintenance, and migration costs. Clean-Core.io offers a TCO demonstration model priced only with the figures you enter — no model estimates a cost.
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -383,10 +383,10 @@ export const SECURITY_AND_PRIVACY = `
 export const HONEST_LIMITATIONS = `
 ## HONEST LIMITATIONS & DISCLAIMERS (always be candid about these)
 
-- **AI output is a draft**: transformed code, narratives, TCO and effort estimates are drafts for review by qualified architects — never production-ready deliverables and never formal SAP, legal, or security advice.
+- **AI output is a draft**: transformed code, narratives and effort estimates are drafts for review by qualified architects — never production-ready deliverables and never formal SAP, legal, or security advice.
 - **Static analysis has limits**: dynamic ABAP (e.g. CALL FUNCTION with variable names), Dynpro/screen flows, and batch-input scenarios cannot be fully resolved automatically and need manual redesign. Unreleased APIs must be confirmed with SAP before production use.
 - **Not a certification**: Clean-Core.io does not issue SAP certification and is not an SAP acceptance test or a formal security/data-protection audit.
-- **Estimates, not measurements**: test coverage and TCO figures are estimates; ABAP-Unit / Node.js tests must be executed in a real sandbox to be authoritative.
+- **Estimates, not measurements**: test coverage is an estimate, and TCO figures are a demonstration model on your own figures; ABAP-Unit / Node.js tests must be executed in a real sandbox to be authoritative.
 - **Sandbox only**: live S/4HANA connections are restricted to non-production systems and are admin-gated.
 - If you are unsure or the knowledge base does not cover something, say so plainly rather than inventing an answer.
 `;

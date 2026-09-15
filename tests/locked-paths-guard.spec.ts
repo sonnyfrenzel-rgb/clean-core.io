@@ -151,14 +151,15 @@ test.describe('the lock holds when used', () => {
     // The saved suite is listed after a reload (it was not until the QA review of a0c108513165), so the run itself
     // can be tried: on the tenant tab the list says it is locked, the button is disabled, and a click reaches nothing.
     await expect(page.getByText('Running these tests against the tenant is locked.')).toBeVisible({ timeout: 30000 });
-    await page.getByText('TC_01', { exact: true }).click();
+    // A saved suite opens selected, as a generated one does — so the button is disabled by the tab, not by an empty selection.
+    await expect(page.getByRole('checkbox').first()).toBeChecked();
     const run = page.getByRole('button', { name: /Run Selected/ });
     await expect(run).toBeDisabled();
     await run.dispatchEvent('click');
     await page.waitForTimeout(1500);
     expect(runRequests, 'the tenant tab must not reach the runner').toEqual([]);
 
-    // The same selection on the mock tab can run — the button is disabled by the tab, not by an empty selection.
+    // The same selection on the mock tab can run.
     await page.getByRole('button', { name: /^Mock Environment$/ }).click();
     await expect(run).toBeEnabled({ timeout: 10000 });
   });
