@@ -1,6 +1,6 @@
 # DESIGN.md — Clean-Core.io
 
-**Version 1.4 · 15.09.2026 · verbindlich für alles, was zur Oberfläche von 3.0 gehört** (Roadmap-Schritte 1.4–1.7,
+**Version 1.4.1 · 15.09.2026 · abgenommen von Sonny · verbindlich für alles, was zur Oberfläche von 3.0 gehört** (Roadmap-Schritte 1.4–1.7,
 Phasen 2–8, 3.0). Das Zielbild zeigen die Mockups
 [`docs/roadmap/clean-core-mockups-v2_8.html`](docs/roadmap/clean-core-mockups-v2_8.html). Entscheidungen mit Datum
 und Begründung stehen im Entscheidungslog [`docs/design/decisions.md`](docs/design/decisions.md); diese Datei sagt
@@ -215,9 +215,10 @@ Von oben nach unten:
    Aussage kommt. Beide sehen verschieden aus und werden nie vermischt (ADR-023): ein Objektstatus ist nie ein Chip mit
    Icon, ein Herkunfts-Chip trägt nur die neun Werte aus `lib/provenance.ts`.
 3. **Werkzeugleiste:** die sieben Stufen als Werkzeuge (Analyze … Delivery), links ausgerichtet; rechts Export und
-   Teilen.
+   Teilen. In IT offen, in Business und Management als Menü „Tools" (§2.11).
 4. **Anchor Bar:** allein für die Ebenen — Need & process · Standard fit · Costs & assumptions · Architecture &
-   dependencies · Evidence & controls · Changes & commitments. Eine leere Ebene sagt, was fehlt.
+   dependencies · Evidence & controls · Changes & commitments. Leere Ebenen stehen unter „More" und sagen dort, was
+   fehlt (§2.11).
 5. **Inhalt:** Abschnitte der gewählten Ebene. **„Next step"** ist eine Karte (regelbasiert, Roadmap-Schritt 6.5),
    keine Leiste — in Business im Kopf unter Enthüllung und *Not determined*, in Management und IT oben im Inhalt.
 6. **Fußleiste nur im Bearbeitungsmodus** (Prozessmodell, Regeln): `Save` (primary), `Discard` (ghost), der Hinweis
@@ -226,9 +227,10 @@ Von oben nach unten:
 
 **Der Kopf je Sicht** (ADR-026). In **Business** führt der Inhalt, nicht der Projektstand: unter dem Titel stehen
 Klarsprache-Satz, Enthüllungszeile mit *Not determined* und die Karte „Next step"; Facetten und Statuszeile sind zu
-**einer** Zeile „Project status" eingeklappt, in Klarsprache („Steps linked to code 92 % · Rules confirmed 0 of 7 · Not
-determined 3 · Show project status"), ohne Level-Verteilung. In **Management** und **IT** sind Facetten und Statuszeile
-offen. Werkzeugleiste und Anchor Bar stehen in jeder Sicht — sie sind Navigation, kein Inhalt. Unter dem
+**einer** Zeile „Project status" eingeklappt, in Klarsprache („Steps linked to code 92 % · Rules confirmed 0 of 7 · Show
+project status"), ohne Level-Verteilung und ohne *Not determined* — das steht schon in der Enthüllungszeile. In
+**Management** und **IT** sind Facetten und Statuszeile offen. Anchor Bar und Werkzeuge gibt es in jeder Sicht — die
+Werkzeuge in IT als offene Leiste, in Business und Management als Menü „Tools" (§2.11). Unter dem
 Sichten-Umschalter steht ein Satz, welche Frage die Sicht beantwortet; „About this view" öffnet den Absatz dazu (§6.1).
 
 Überschriften: der Projekttitel ist `h1`, jeder Abschnitt `h2`, jede Karte `h3`; keine Ebene wird übersprungen.
@@ -300,7 +302,7 @@ Das meistgenutzte Muster — für Regeln bestätigen, Einladen, Annahmen erfasse
 
 - **Vor dem Klick** sagt die Aktion, was sie kostet — nach den Regeln des Kontingents (`COMMUNITY_QUOTA` in
   `lib/constants.ts`: fünf Analyse-Läufe je Konto, einmalig; gezählt wird ein neuer ABAP-Quellstand in der Analyse,
-  derselbe Stand erneut ist frei, die Stufen danach und der Chat zählen nicht; ein eigener Gemini-Schlüssel hebt die
+  derselbe eigene Quellstand erneut ist frei, die Stufen danach und der Chat zählen nicht; ein eigener Gemini-Schlüssel hebt die
   Grenze auf; ab Roadmap 0.9 ist jedes Starter-Beispiel einmal frei, jeder weitere Lauf desselben Beispiels zählt nach
   Abschluss und wird vorher angekündigt): „Uses 1 of your 5 free analysis runs (4 left)", „Free — this source was already analysed", „Not
   counted" oder „Uses your own Gemini key". Ob ein Modell aufgerufen wird, ist eine zweite, eigene Angabe („No model
@@ -690,7 +692,8 @@ Navigation. Deshalb gilt (ADR-032):
 5. **Minikarte** unten rechts ab L: der sichtbare Ausschnitt als Rahmen, Ziehen verschiebt; Suchtreffer und Auswahl
    als Marken. `M` blendet sie aus. Nie auf S.
 6. **Pfad hervorheben.** An einem Endereignis oder Knoten: *„Show paths to here"* — alle Wege vom Start dorthin bleiben,
-   alles andere tritt auf 30 % Deckkraft zurück; *„Main path"* zeigt den Weg zum normalen Ende über die
+   alles andere tritt zurück: Linien und Flächen in `--cc-line`, Beschriftungen in `--cc-ink-muted` (7,6 : 1) — nie
+   Transparenz, die Text unter 4,5 : 1 drückt; *„Main path"* zeigt den Weg zum normalen Ende über die
    Standardzweige. Die Hervorhebung steht als Filterzeile über der Karte und ist mit einem Klick weg.
 7. **Laufvarianten.** Die Schalter des Selektionsbilds stehen als Umschalter über der Karte — *Update mode · Batch input
    · Remote credit check · Mail · Download · Result list* — mit dem Wert aus dem Code als Vorgabe. Ein Schalter auf
@@ -725,7 +728,7 @@ Karte.
 | **Glossar im Text** (ADR-034) | unterstrichenes Fachwort (§2.10), Erklärung per Tastatur erreichbar: höchstens zwei Sätze, „What it means for your decision", bei SAP-Begriffen die Quelle | `lib/glossary.ts` mit Quelle je Eintrag, zugängliches Popover |
 | **Glossar in „Ask this case"** | Fachwörter in Antworten tragen dieselbe Unterstreichung und dasselbe Popover; eine Frage „What is …?" zu einem Glossarbegriff beantwortet der Eintrag selbst, mit Quelle und „No model call" | dieselbe Quelle wie im Text; die Antwort nennt, wenn sie aus dem Glossar kommt |
 | **Beispiel-Hinweis** | Message Strip „Example project — fictitious code" | Projektfeld der Beispiele |
-| **Der allererste Start** (ADR-030) | leerer Arbeitsbereich: „No projects yet", ein Satz, was ein Projekt ist, `primary` „New project", `secondary` „Try an example" | List Report mit Empty State |
+| **Der allererste Start** (ADR-030, ADR-041) | weil jeder Arbeitsbereich die Demo enthält, gibt es kein leeres „No projects yet": über der Liste steht die Karte „Your turn — start with an example (free) or your own code" mit `primary` „New project", solange neben der Demo kein eigenes Projekt existiert. Nur wenn die Demo nicht geladen werden kann, erscheint der Empty State „No projects yet" mit „New project" und „Try an example" | List Report |
 | **Import, bevor er passiert** | „New project" sagt vor dem Hochladen: welche Dateien (ABAP-Quelltext, Includes, ZIP), was gelesen und gespeichert wird, was die Analyse kostet („Uses 1 of your 5 free analysis runs" oder eigener Gemini-Schlüssel, nach §2.8; getrennt davon, wo ein Modell aufgerufen wird), was ohne Modellaufruf entsteht, wer den Code sehen kann (nur das Konto, Einsicht nur per Einladung) | Import-Dialog; Kontingent aus dem Konto |
 | **About this view** | ein Satz unter dem Sichten-Umschalter, welche Frage die Sicht beantwortet; der Link öffnet einen Absatz mit dem, was die Sicht zeigt und was nicht | Textschlüssel je Sicht |
 | **Tastatur, Screenreader, Telefon** | §1.6, §2.9, §5.7 | Schritt 3.0.4 |
@@ -771,7 +774,8 @@ Browser):
      **D** not recommended — modifications, implicit enhancements, writes to SAP tables. Darunter: *„Levels follow
      SAP's clean core level concept. The level shown for an object is our reading of SAP's published data — an
      orientation, never part of a signed audit pack. Confirm with ABAP Test Cockpit."*
-  3. **Where the evidence comes from.** Ein Fluss von links nach rechts, jede Station mit Herkunfts-Chip (§4):
+  3. **Where the evidence comes from.** Ein Fluss in Leserichtung — nebeneinander, wo die Breite reicht, sonst von
+     oben nach unten —, jede Station mit Herkunfts-Chip (§4):
      *Your ABAP source* (jede Aussage mit Zeilenanker) → *deterministic engine* (Regelversion) → *SAP's published
      data*: Cloudification Repository — release states and successors — und die Klassifikationsdatei von SAP, mit
      Anzahl und **Stand des letzten Abgleichs** aus dem Katalog, nie fest im Text (*Imported*) → *your imports*,
@@ -790,8 +794,9 @@ Browser):
       in program* · Keep · Change · Drop
     - **Management** — *„What do I risk, what do I decide?"* · „Rebuild — part of decision DEC-1" · Kosten nur mit
       *Simulation*
-    - **IT** — *„What exactly, where to?"* · `Z_MM_PO_F01` `L224–232` · liest `ZMM_VEND_BLOCK` direkt · Level C ·
-      Nachfolger zu prüfen
+    - **IT** — *„What exactly, where to?"* · `Z_MM_PO_APPROVAL` `L225–234` · liest die eigene Tabelle
+      `ZMM_VEND_BLOCK` direkt · *„estimated from the code, no SAP catalog entry"* — kein Level-Buchstabe, weil ein
+      Kundenobjekt keinen Katalogeintrag hat
   - **Ablauf:** Umschalter-Markierung gleitet, Inhalt blendet über (je 200 ms), jede Sicht steht 3,5 s. **Ein
     Durchlauf** Business → Management → IT, dann bleibt die Bühne auf Business stehen, mit „Replay". Keine
     Endlosschleife.
@@ -823,7 +828,9 @@ Ziel: die Schwelle zur ersten eigenen Nutzung immer weiter senken.
 
 - **Deutlich markiert.** In der Liste die erste Zeile mit Tag *Demo* und *„Fully worked example · fictitious code"*;
   im Projekt oben ein Message Strip `information`: *„Demo project — fully worked, fictitious code. Nothing you do here
-  is saved."* mit „Reset demo". Das Demo-Projekt ist nie mit einem eigenen Projekt zu verwechseln.
+  is saved."* mit „Reset demo". Das Demo-Projekt ist nie mit einem eigenen Projekt zu verwechseln: sein Titel beginnt
+  mit „Demo ·"; startet das Konto dasselbe Beispiel selbst, trägt das eigene Projekt den Namen des Beispiels ohne
+  diesen Vorsatz.
 - **Vollständig durchgespielt.** Jede Stufe und jede Sicht hat Inhalt: Analyse mit signiertem Lauf, bestätigte Regeln,
   Standard-Fit mit Evidenzstufen, Kosten als *Simulation* mit Annahmen-Revision, eine bestätigte Entscheidung,
   Übergabepaket. **Alles aus einem echten Lauf** eines Beispiels — keine erfundenen Zahlen; ändert sich Engine oder
@@ -835,7 +842,7 @@ Ziel: die Schwelle zur ersten eigenen Nutzung immer weiter senken.
 - **Die Tour** — mehr Coach Marks als im eigenen Projekt, weil hier gelernt wird: rund zwölf Stationen entlang des
   Wegs — Enthüllung · Not determined · Prozesskarte und Quellspalte · Ebenen eines großen Prozesses · eine Regel
   bestätigen · Standard-Fit · Management-Sicht · vier Töpfe · Kosten als Simulation · Entscheidung · IT-Kette ·
-  Übergabe. Eine Station erscheint erst, wenn man an ihrem Ort ankommt; immer nur eine; *„4 of 12"* als Text; „Next",
+  Übergabe. Eine Station erscheint erst, wenn man an ihrem Ort ankommt; immer nur eine; *„3 of 12"* als Text; „Next",
   „Pause tour", „End tour". Fortschritt nur im Browser (ADR-036).
 - **Immer wieder die Einladung — ohne zu drängen:**
   - im Demo-Strip dauerhaft: *„Try an example or your own code"* als Link zu „New project";
@@ -843,8 +850,9 @@ Ziel: die Schwelle zur ersten eigenen Nutzung immer weiter senken.
     your own code"* mit `primary` „New project";
   - in „My workspace", solange neben der Demo kein eigenes Projekt existiert, eine Karte über der Liste mit derselben
     Einladung.
-  - Höchstens **eine** Einladung je Bildschirm, nie als Dialog, nie blockierend. Sobald das Konto ein Beispiel oder
-    eigenen Code gestartet hat, bleibt nur der Link im Demo-Strip.
+  - Höchstens **eine** Einladung je Bildschirm, nie als Dialog, nie blockierend — steht die Karte am Ende einer
+    Station, tritt der Link im Demo-Strip so lange zurück. Sobald das Konto ein Beispiel oder eigenen Code gestartet
+    hat, bleibt nur der Link im Demo-Strip.
 
 ### 6.1.3 Eigener Code — Vertrauen, bevor hochgeladen wird
 
@@ -934,6 +942,7 @@ Sonny 15.09.2026):
 
 | Version | Datum | Was |
 |---|---|---|
+| 1.4.1 | 15.09.2026 | Klarstellungen aus dem letzten Mockup-Abgleich, keine neue Entscheidung: Projektstatus-Zeile ohne *Not determined* (steht in der Enthüllung); Werkzeuge als Menü in Business und Management, leere Ebenen unter „More" auch in §2.3; Pfad-Hervorhebung über Farbe statt Transparenz (Kontrast); die IT-Sicht der Sichten-Bühne ohne Level-Buchstaben für eine Kundentabelle; Evidenz-Fluss nebeneinander oder untereinander; kein leerer Arbeitsbereich neben der Demo; Demo-Titel „Demo ·"; eine Einladung je Bildschirm auch am Stationsende; Tour-Beispiel „3 of 12"; „derselbe eigene Quellstand" in §2.8 |
 | 1.4 | 15.09.2026 | Entscheidungen von Sonny zu den offenen Fragen der Design-Reviews (ADR-031 bis ADR-042): BPMN-Palette über das Minimum, gemessen am 1.000-Zeilen-Beispiel, mit User-Task, Datenspeicher, Business-Rule-Task, Aufruf-Aktivität, Teilprozessen, Rand- und Nachrichtenereignissen; nicht erreichter Code, Klone und technische Helfer werden gesagt statt gezeichnet (§5.8); Navigation großer Prozesse mit Ebenen, Pfad, Gliederungsbaum, Minikarte, Pfad-Hervorhebung, Laufvarianten, Overlays als Filter und Adressen (§5.9); vier Töpfe als Regeln je Objekt, abhängig von der Zielplattform, Retire aus Nutzung erst ab 13 Monaten und durchsichtig (§5.6); Glossar zum Start mit SAP- und Produktbegriffen, auch in „Ask this case" (§6.1); Coach Marks nur im Browser (§6.2). Lücken aus dem Mockup-Abgleich geschlossen: Ort von „Next step" je Sicht, schrumpfender Business-Kopf, Kartentitel `h3`, Objektstatus „handed over" und „done", Herkunft der Readiness, Quellspalte ohne Umbruch der Seite, „Why?" auf S. Bestätigt: alles Englisch (ADR-009), kein Dark Mode (ADR-003). Entschlackung für Erstnutzer ohne Verlust an Tiefe (ADR-037, §2.11). „New project" erklärt Kern und Unterschied und zeigt die drei Sichten in Bewegung, bevor man Beispiel oder eigenen Code wählt (ADR-038, §6.1.1); Beispiele einmal frei, Wiederholung vorher angekündigt (ADR-039); Clean Core, die vier Level und die Herkunft der Evidenz in drei Blicken beim ersten Ausprobieren (ADR-040); ein vollständig durchgespieltes Demo-Projekt für alle Konten mit Tour und wiederkehrender Einladung (ADR-041, §6.1.2); vor dem Hochladen Zusage und belegte Vertrauensaussagen, „free community project" (ADR-042, §6.1.3) |
 | 1.3 | 15.09.2026 | Zweites Design-Review des UX-Agenten, diesmal mit den Mockups 2.8 (ADR-026 bis ADR-030): Business-Kopf mit eingeklappter Projektstatus-Zeile in Klarsprache, „About this view" als Satz unter dem Umschalter, Überschriftenfolge (§2.3); weitere feste Listen mit eigener Form — Objektstatus, Evidenzstufe, Level, Regel-Eigenschaft (§4.1); Message Box modal, dunkel nur für Code-Fläche und Überlagerung (§1.1, §2.6); „ein Bereich" für die Primäraktion definiert (§1.5); Management antwortet vor der Zahl, IT-Kette je gewähltem Befund mit Abdeckung (§5.6); allererster Start, Import-Erklärung und „About this view" als Muss (§6.1); Live-Ansagen nur je Etappe (§2.8); Kontrast-Paare eindeutig beschriftet. Kontingent-Texte an `COMMUNITY_QUOTA` angeglichen: fünf Analyse-Läufe, Modellaufruf als eigene Angabe (§2.8) |
 | 1.2 | 15.09.2026 | Design-Review des UX-Agenten eingearbeitet (ADR-015 bis ADR-021): nach dem Aufbau führt das Geschäft, der Code wird zweite Ebene (§5.1); Enthüllung sagt „hard-coded in the program" statt „nobody documented" — nur, was der Code belegt; Prozesskarte ohne Maus mit Schrittliste, Pfeiltasten, benannten Knoten und Druckregel (§5.7); Chips mit Form als zweitem Merkmal — gefüllt, Umriss, gestrichelt (§4); Zusammenspiel von Sicht, Ebene und Werkzeug mit Start und URL, Sicht in der URL ist keine Freigabe (§2.3); lange Läufe mit Kontingent vor dem Klick, Abbrechen, Verlassen, Fehler-Strip (§2.8); sichtbare Grenzen ≥ 3 : 1 — Feld, Ghost, Secondary, Value States (§1.1); `forced-colors` als Ersatz für Dark Mode; Live-Regionen für Filter und Etappen, fokussierbarer Strip, Toast mit `role="status"`; Zielgrößen und Reihenfolge auf S (§2.9); Suche, „Why?"-Popover, Glossar und Initialen (§2.10); Floskelliste geteilt in Blockliste (Guard) und Stilliste (Hinweis); Verweise auf Roadmap-Schritte eindeutig. Abgleich mit den Mockups 2.8 (ADR-022 bis ADR-025): Kostenbeträge entstehen nur in Economics und erscheinen anderswo nur mit *Simulation*, Annahmen-Revision und „Open in Economics", Beträge im Code sind Codefakten (§3); Statuszeile als Objektstatus getrennt von Herkunfts-Chips (§2.3); Level A–D und Catalog Match als *Imported*, Level A blau statt grün (§1.8, §4); Etappe 3 hält den Aufbau nicht auf (§5.2); Facetten im Aufbau wie im Kopf; Breite der Karte bei offener Quellspalte (§5.7); Code-Fläche mit Tokens und Kontrasten (§1.1); Segmented Control, Icon-Button und „Why?"-Ziel (§1.5) |
