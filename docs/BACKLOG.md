@@ -3,7 +3,8 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
-**Stand 15.09.2026, Feierabend — v2.9.12 → v2.10.7, alles auf `main`.** Der Tag hatte zwei Hälften:
+**Stand 15.09.2026, Feierabend — v2.9.12 → v2.10.7 auf `main` (3347122); dieser Abschluss-Eintrag liegt auf `dev`
+und geht mit dem nächsten Release nach `main`, damit kein reiner Doku-Push das volle Audit erneut auslöst.** Der Tag hatte zwei Hälften:
 morgens die drei Agenten und die ersten Roadmap-Schritte von Phase 0, nachmittags das Zielbild von 3.0.
 Die Lehre: jede Vorlage, die ein Modell oder ein Agent lieferte, trug mindestens einen Fehler, der
 erst beim Gegenlesen gegen den Code auffiel — „4 free runs" statt fünf Analyse-Läufen, ein Level-C für
@@ -40,8 +41,23 @@ triagiert (69 bestätigt, 15 widerlegt, 2 zurückgestellt).
   u. a.) bleiben mit URL und Inhalt.
 - Anbieter-Regel der Agenten bleibt (kein Fallback).
 
+**Nach dem Push auf `main` (3347122, abends):**
+- **UX-Review** (Delta, $0,26): 73 Befunde, fast alle aus der Vollprüfung übernommen; drei neue bestätigt und
+  eingeplant — UX-087 (fehlender Debt-Wert in Grün) → 0.8, UX-088 („Clean Core Score" ohne Abgrenzung zu SAPs
+  gegenläufigem Score) → 0.3, UX-089 (vier Begriffe für einen Wert) → 1.5.
+- **QA-Vollprüfung** (GPT-5.6 Sol): `no_go`, 11 critical, 36 high, 95 medium, 2 low — sie sperrt nichts, wird aber
+  **morgen als erster Schritt vor 0.8 verifiziert** (Entscheidung Sonny); sicherheitsrelevante Funde gehen ins
+  versiegelte Register, öffentlich nur IDs.
+- **Sofort eingedämmt (Entscheidung Sonny):** die beiden Survey-Workflows sind deaktiviert
+  (`gh workflow enable` macht es rückgängig) und die Logs aller 38 Survey-Läufe auf GitHub gelöscht; die lokale
+  Log-Ablage der GitHub-CLI ist geleert. Befunde d2006fdbfa95 und 4a593e8bd77b — die Skripte werden morgen zuerst
+  korrigiert, bevor die Workflows wieder laufen. **Sonny prüft, ob eine Meldung nach DSGVO Art. 33/34 nötig ist.**
+- **Security-Audit** auf `main` ohne Bericht: 57 Consultant-Aufrufe fehlerfrei, der CISO-Aufruf lieferte kein
+  lesbares JSON. Ursache morgen klären (Größe der CISO-Eingabe, Antwortformat), dann neu starten.
+
 **Offen und warum:**
-- **Roadmap 0.8** (UX-002, critical): leere Befundliste ergibt noch „Fully Supported" — der nächste Schritt.
+- **Roadmap 0.8** (UX-002, critical): leere Befundliste ergibt noch „Fully Supported" — nach der Verifikation der
+  kritischen QA-Befunde der nächste Schritt.
 - **Terms §6** muss für Roadmap 0.9 neu gefasst werden (Beispiele: Wiederholung zählt) — Formulierung
   braucht Sonnys Freigabe, vermutlich neue Terms-Version mit erneuter Zustimmung.
 - **Datenschutzerklärung** soll den bezahlten Tarif des Community-Schlüssels ausdrücklich nennen, bevor

@@ -1076,6 +1076,42 @@
       "status": "widerlegt",
       "reason": "01-landing-phone-s3 shows the third process node visibly cut off at the right edge ('Order f...'), which is itself the scroll cue. The strip snaps to whole nodes (components/ProcessStrip.tsx:127-130), so readers do not get stuck at two steps without any hint.",
       "updatedAt": "2026-09-15T10:32:48.991Z"
+    },
+    {
+      "id": "UX-087",
+      "fingerprint": "176c1d07d349",
+      "title": "Fehlender Debt-Status erscheint in Erfolgsgrün statt neutral",
+      "severity": "high",
+      "area": "release",
+      "firstSeenHead": "33471220d6e9acd45e6e02bda4168352c5a93c56",
+      "createdAt": "2026-09-15T17:19:09.663Z",
+      "status": "eingeplant",
+      "step": "0.8",
+      "updatedAt": "2026-09-15T17:19:09.663Z"
+    },
+    {
+      "id": "UX-088",
+      "fingerprint": "d60ea92cb3ad",
+      "title": "Clean Core Score ohne Abgrenzung zu SAPs gegenläufigem Score",
+      "severity": "high",
+      "area": "release",
+      "firstSeenHead": "33471220d6e9acd45e6e02bda4168352c5a93c56",
+      "createdAt": "2026-09-15T17:19:09.741Z",
+      "status": "eingeplant",
+      "step": "0.3",
+      "updatedAt": "2026-09-15T17:19:09.741Z"
+    },
+    {
+      "id": "UX-089",
+      "fingerprint": "d321cfa64fd4",
+      "title": "Vier Begriffe für einen Wert: Audit, Valuation, Asset Value, IP Score",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "33471220d6e9acd45e6e02bda4168352c5a93c56",
+      "createdAt": "2026-09-15T17:19:09.814Z",
+      "status": "eingeplant",
+      "step": "1.5",
+      "updatedAt": "2026-09-15T17:19:09.814Z"
     }
   ]
 }

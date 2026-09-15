@@ -640,6 +640,8 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-059 | high | Forum täuscht öffentlichen Post vor, speichert nur lokal | 0.2 | eingeplant |
 | UX-061 | high | Dashboard ohne Dark-Parität, Projektzeile kaum lesbar | 1.6 | eingeplant |
 | UX-062 | high | Dashboard-Tabelle bleibt im Dark Mode weiß | 1.6 | eingeplant |
+| UX-087 | high | Fehlender Debt-Status erscheint in Erfolgsgrün statt neutral | 0.8 | eingeplant |
+| UX-088 | high | Clean Core Score ohne Abgrenzung zu SAPs gegenläufigem Score | 0.3 | eingeplant |
 | UX-005 | medium | Routenwechsel ohne Bestätigung und Undo | 0.7 | eingeplant |
 | UX-006 | medium | Von Befund kein Weg in den Code | 1.5 | eingeplant |
 | UX-012 | medium | Sticky-Header und Tabs verdecken Inhalt auf Phone | 1.4 | eingeplant |
@@ -669,6 +671,7 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-073 | medium | Kleinstschrift 9-10px für Badges und Banner | 1.5 | eingeplant |
 | UX-075 | medium | Auge-Buttons ohne zugänglichen Namen | 3.0.4 | eingeplant |
 | UX-076 | medium | Onboarding-Abbruch mit Schuld-Formulierung | 0.2 | eingeplant |
+| UX-089 | medium | Vier Begriffe für einen Wert: Audit, Valuation, Asset Value, IP Score | 1.5 | eingeplant |
 | UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | eingeplant |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |
