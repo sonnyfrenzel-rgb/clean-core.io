@@ -10,6 +10,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.10.2] — 2026-09-15
+
+### Roadmap-Schritt 0.2, erster Teil: kein Signavio-Import mehr versprochen, der nie geprüft wurde
+
+Die Roadmap-Fassung 2.8 hat Schritt 0.2 einen Punkt hinzugefügt: Die Signavio-Aussagen
+gehen auf „BPMN 2.0 XML" zurück, bis Schritt 4.3 den Import mit einem echten Signavio
+belegt. Gefunden haben sich zwölf Stellen, darunter:
+- das Badge „Signavio-Importable" auf der Dokumentationsseite („designed for seamless
+  import into SAP Signavio Process Manager"),
+- die Vergleichszeile der Startseite („hands the template to Signavio"),
+- der Alt-Text der Slideshow („validated for SAP Signavio and SAP Build"),
+- die Feature-Seite („SAP Signavio / SAP Build compatible"),
+- How-to („designed for direct import"), Whitepaper samt PDF („importable into SAP
+  Signavio"), Knowledge, Fähigkeiten-Guide samt PDF und die Wissensbasis des Chatbots.
+
+Sie sagen jetzt „BPMN 2.0 XML". Wo Signavio genannt wird, steht dabei, dass der Import
+noch nicht geprüft ist. Signavio als eigenständiges SAP-Werkzeug zu nennen bleibt richtig.
+Ebenso bleibt der Hinweis, dass Clean-Core.io keine Signavio-Zertifizierung hat.
+
+Und ehrlicherweise: Selbst „BPMN 2.0 XML" hält noch nicht jeder Eingabe stand. Das
+Escaping der Exportdatei ist fehlerhaft (CR-21) und wird in Schritt 2.6 behoben.
+
+**Abnahme** (Phase 0: „keine Seite und kein Badge mehr einen Signavio-Import verspricht"):
+`tests/signavio-claims-guard.spec.ts` liest jede Datei unter `app/` und `components/`
+sowie Features, Fähigkeiten, Chatbot, Whitepaper-Vorlage und README:
+- Keine der zehn Versprechensformen darf mehr vorkommen.
+- Jeder sichtbare Satz, der Signavio und „import" zusammen nennt, muss „nicht geprüft"
+  sagen.
+
+Auf den alten Texten schlägt der Guard 12-mal an.
+
+### QA-Runde 2 zum UX-Agenten, und ein Fehler, den der zweite Lauf zeigte
+
+- **Der Berichtsabruf scheiterte an sich selbst.** In der Schleife stand `[ "$found" -ge 10 ] &&
+  break` als letzter Befehl. Solange weniger als zehn Berichte gefunden waren, wurde der
+  falsche Test zum Exit-Status des ganzen Schritts (Lauf 34952723977). Jetzt stehen dort
+  if-Anweisungen, und ein Guard verbietet das Muster.
+- **Die Baseline wandert mit** (`27096ea7fdbc`): Jeder Bericht nennt die vollständige
+  Vollreview, auf der er aufbaut. So fällt sie nicht aus dem Fenster der zehn zuletzt
+  geladenen Berichte, und es gibt keine zweite Vollreview aus Versehen.
+- **Sitzungsstart** (`006ed32a72cc`): Die Suche geht über die Review-Artefakte, nicht über
+  Läufe. Übersprungene Läufe haben keins, Selbsttests werden übergangen, egal wie viele es sind.
+- **Bilder zählen nur, wenn sie im Aufruf sind** (`115d8f705a0d`): Ein Screenshot, den das
+  Byte-Limit aussortiert, macht die Review unvollständig. Das gilt auch für die Synthese.
+- **Gelöschte Dateien ganz** (`a064a718fbb9`): kein stilles Kürzen mehr bei 40.000 Zeichen.
+  Übergröße erfasst das Batch-Limit und vermerkt sie.
+
 ## [v2.10.1] — 2026-09-15
 
 ### Roadmap-Schritt 1.3, vorgezogen: Zitate der Engine-IDs zählen endlich als belegt

@@ -29,7 +29,8 @@ ist jetzt kurz und allein verbindlich; Gates und die 76 Teilschnitte sind durch
 
 Befunde beim Umbau: **der Anker-Check erkannte die Engine-IDs nicht** (`CC-001` gegen
 Parser-Muster `[F-…]`) — Schritt 1.3, **behoben in v2.10.1**; die Oberfläche verspricht
-einen **Signavio-Import, der nie geprüft wurde** — Schritt 0.2, offen.
+einen **Signavio-Import, der nie geprüft wurde** — Schritt 0.2, **zurückgenommen in v2.10.2**
+(Facts-Service, Copy-CI und Audit-Korrekturen aus 0.2 sind noch offen).
 
 **Aufgeräumt am selben Tag:** jede frühere Roadmap liegt jetzt in `docs/archiv/`
 (Index `docs/archiv/README.md`) — `ROADMAP-2.0.md` und das Bündel der Fassung 2.7

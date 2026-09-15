@@ -78,7 +78,7 @@ export const CAPABILITIES: Capability[] = [
     stage: 'Stage 6',
     title: 'Documentation',
     output:
-      'BPMN 2.0 process diagrams for import into SAP Signavio or SAP Build, plus business-facing procedures and control points, exportable to Confluence.',
+      'BPMN 2.0 process diagrams as XML (import into SAP Signavio or SAP Build not yet verified), plus business-facing procedures and control points, exportable to Confluence.',
     benefit:
       'The documentation that normally never gets written, produced as a by-product of the analysis rather than as a separate project.',
     effort: 'Two minutes. Included.',

@@ -108,11 +108,12 @@ export default function Home() {
     // These two rows read "✕ Not Available" until 31 August 2026, and both were
     // wrong in a way an SAP architect spots in under a minute. SAP ships ABAP Unit
     // and the CDS Test Double Framework, and it ships Signavio and Cloud ALM for
-    // process modelling — this very site says two sentences later that its own
-    // BPMN output is handed to Signavio. A page whose argument is "verifiable, not
-    // asserted" cannot be the one place that is verifiably wrong about a
-    // competitor. `~` is also the stronger claim: it names what the tool actually
-    // adds instead of inventing a gap.
+    // process modelling. A page whose argument is "verifiable, not asserted" cannot
+    // be the one place that is verifiably wrong about a competitor. `~` is also the
+    // stronger claim: it names what the tool actually adds instead of inventing a gap.
+    // The same rule cuts the other way: the last row no longer says the BPMN output
+    // is handed to Signavio, because that import was never tested (roadmap step 0.2;
+    // the round trip is proven in step 4.3).
     {
       title: "Sandbox Verification (BYOT)",
       sap: { badge: "Frameworks Only", level: "partial", desc: "ABAP Unit and the CDS Test Double Framework are on board; the test environment is assembled by hand." },
@@ -124,7 +125,7 @@ export default function Home() {
     {
       title: "Business Process Blueprinting",
       sap: { badge: "Separate Licence", level: "partial", desc: "Not in the ATC/ADT core scope — covered by SAP Signavio and SAP Cloud ALM under their own licences." },
-      cc: { badge: "Visualized", desc: "Generates BPMN 2.0 flows directly from the code analysis and hands the template to Signavio." }
+      cc: { badge: "Visualized", desc: "Generates BPMN 2.0 XML flows directly from the code analysis; import into SAP Signavio has not been verified yet." }
     }
   ];
 

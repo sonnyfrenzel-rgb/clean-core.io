@@ -757,8 +757,8 @@ Structure the JSON exactly like this:
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>BPMN-Compatible</span>
               <div className="absolute top-full left-0 mt-1 w-64 p-3 bg-slate-900 border border-slate-800 text-[10px] rounded-xl shadow-xl opacity-0 pointer-events-none group-hover/signavio:opacity-100 transition-opacity duration-200 text-left leading-relaxed text-slate-300 z-50 normal-case">
-                <div className="font-extrabold text-emerald-400 mb-1 uppercase tracking-wider text-[9px]">Signavio-Importable</div>
-                The generated BPMN 2.0 XML is designed for seamless import into SAP Signavio Process Manager and other BPMN 2.0 compliant tools.
+                <div className="font-extrabold text-emerald-400 mb-1 uppercase tracking-wider text-[9px]">BPMN 2.0 XML</div>
+                Standard BPMN 2.0 XML. Import into SAP Signavio has not been verified yet — that round trip is a roadmap step of its own.
               </div>
             </div>
             <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 rounded text-[9px] font-black uppercase tracking-tight shadow-sm cursor-help group/sapbuild relative">

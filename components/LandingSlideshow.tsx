@@ -54,10 +54,10 @@ const slides = [
   {
     id: 'document',
     title: 'Process Blueprint & Mapping',
-    description: 'Technical and Business blueprints with BPMN export, Confluence integration, and process documentation compatible with SAP Signavio and SAP Build.',
+    description: 'Technical and Business blueprints with BPMN export, Confluence integration, and process documentation as BPMN 2.0 XML.',
     icon: <FileText className="w-6 h-6" />,
     image: '/screenshots/step-5.jpg',
-    alt: 'Clean-Core.io Process Blueprint & Mapping page with BPMN export, Confluence integration, and multi-level business domain blueprints validated for SAP Signavio and SAP Build.',
+    alt: 'Clean-Core.io Process Blueprint & Mapping page with BPMN export, Confluence integration, and multi-level business domain blueprints.',
     color: 'text-purple-600',
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-200'

@@ -221,7 +221,7 @@ export default function WhitepaperPage() {
             ))}
           </div>
           <div className="bg-emerald-50/70 border border-emerald-200 border-l-4 border-l-green-600 rounded-xl p-6 mt-4">
-            <p className="text-sm text-gray-700 leading-relaxed"><strong>Portable by design:</strong> outputs are standard — abapGit ZIP, ABAP-Unit / Express tests, BPMN 2.0 XML (importable into SAP Signavio or SAP Build) and a signed audit pack. You own what you generate. No lock-in.</p>
+            <p className="text-sm text-gray-700 leading-relaxed"><strong>Portable by design:</strong> outputs are standard — abapGit ZIP, ABAP-Unit / Express tests, BPMN 2.0 XML (import into SAP Signavio or SAP Build not yet verified) and a signed audit pack. You own what you generate. No lock-in.</p>
           </div>
         </section>
 

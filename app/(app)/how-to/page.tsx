@@ -40,7 +40,7 @@ const steps = [
   },
   {
     title: "Phase 5: Process Blueprint",
-    text: "Document business processes. Export BPMN 2.0 XML diagrams designed for direct import into SAP Signavio or SAP Build."
+    text: "Document business processes. Export BPMN 2.0 XML diagrams (import into SAP Signavio or SAP Build not yet verified)."
   },
   {
     title: "Phase 6: Project Delivery",

@@ -150,17 +150,17 @@ export const FEATURES: FeatureContent[] = [
       'Turn modernized processes into standard BPMN 2.0 with swimlanes, plus RACI matrices and Level 5 Standard Operating Procedure narratives.',
     stage: 'Stage 4 — Documentation',
     what: [
-      'From the modernized logic, Clean-Core.io generates Business Process Model and Notation (BPMN 2.0) XML with swimlanes, importable into SAP Signavio and other BPMN-2.0 tools.',
+      'From the modernized logic, Clean-Core.io generates Business Process Model and Notation (BPMN 2.0) XML with swimlanes, the standard format of BPMN 2.0 tools; import into SAP Signavio has not been verified yet.',
       'A two-stage blueprint layer adds Responsible-Accountable-Consulted-Informed (RACI) matrices, Level 5 Standard Operating Procedure (SOP) narratives and internal compliance controls, exportable as a Confluence-compatible document.',
     ],
     capabilities: [
-      'BPMN 2.0 XML export with swimlanes (SAP Signavio / SAP Build compatible)',
+      'BPMN 2.0 XML export with swimlanes',
       'RACI matrices + Level 5 SOP narratives',
       'Confluence-compatible export for governance handover',
     ],
     limitations: [
       'Generated blueprints are drafts for review — business semantics need a domain expert to validate.',
-      'Compatibility is designed for BPMN 2.0 tools; it is not an official SAP Signavio certification.',
+      'Import into SAP Signavio has not been tested yet, and nothing here is an official SAP Signavio certification.',
     ],
     related: [
       { href: '/knowledge', label: 'Knowledge base' },

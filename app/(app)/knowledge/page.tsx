@@ -41,7 +41,7 @@ const faqs = [
   },
   {
     question: "How does Clean-Core.io help modernize legacy ABAP?",
-    answer: "A deterministic ABAP evidence engine parses the custom code first (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. Google Gemini then narrates and drafts modern TypeScript/Node.js (CAP) or ABAP Cloud (RAP) on top of that evidence, and can generate draft test suites and BPMN 2.0 blueprints for Signavio. All AI output is a draft for architect review — it accelerates the assessment; it complements SAP's own tooling and does not replace human judgment."
+    answer: "A deterministic ABAP evidence engine parses the custom code first (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. Google Gemini then narrates and drafts modern TypeScript/Node.js (CAP) or ABAP Cloud (RAP) on top of that evidence, and can generate draft test suites and BPMN 2.0 XML blueprints. All AI output is a draft for architect review — it accelerates the assessment; it complements SAP's own tooling and does not replace human judgment."
   },
   {
     question: "What are the five dimensions of SAP Clean Core?",

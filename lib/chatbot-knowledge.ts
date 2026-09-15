@@ -34,7 +34,7 @@ A: Clean-Core.io configures secure tunnels and authentication pathways on SAP BT
 A: BYOT lets a developer connect their own NON-PRODUCTION S/4HANA sandbox to check the connection, read OData metadata and make one read-only call against a real service. ${LIVE_TEST_EXECUTION.userNotice} It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier.
 
 ### Q: How does Clean-Core.io help modernize legacy ABAP?
-A: A deterministic ABAP evidence engine parses the custom code FIRST (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. Google Gemini then narrates and drafts modern TypeScript/Node.js (CAP) or ABAP Cloud (RAP) on top of that evidence, and can generate draft test suites and BPMN 2.0 blueprints for Signavio. All AI output is a DRAFT for architect review — it accelerates the assessment; it does not replace human judgment or SAP's own upgrade tooling.
+A: A deterministic ABAP evidence engine parses the custom code FIRST (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. Google Gemini then narrates and drafts modern TypeScript/Node.js (CAP) or ABAP Cloud (RAP) on top of that evidence, and can generate draft test suites and BPMN 2.0 XML blueprints. All AI output is a DRAFT for architect review — it accelerates the assessment; it does not replace human judgment or SAP's own upgrade tooling.
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ export const EXTENDED_GLOSSARY = `
 - **SAP Cloud Connector**: A secure software link that runs inside the customer's on-premise or private cloud network, establishing an encrypted TLS connection to SAP BTP without requiring complex inbound firewall configurations.
 - **CDS (Core Data Services)**: The data modeling infrastructure used by SAP. CDS views define database tables, relationships, and service projections declaratively inside both the ABAP environment (RAP) and the Node.js/Java environment (CAP).
 - **XSUAA (Extended Services for User Account and Authentication)**: SAP BTP's identity and access management service. It issues and validates OAuth 2.0 tokens (JWTs) for securing microservice-to-microservice communication and enforcing user-level authorization scopes.
-- **SAP Signavio**: SAP's business process management and mining suite. Clean-Core.io exports BPMN 2.0 XML diagrams compatible with Signavio for process documentation and compliance.
+- **SAP Signavio**: SAP's business process management and mining suite. Clean-Core.io exports BPMN 2.0 XML diagrams for process documentation; import into SAP Signavio has not been verified yet.
 - **BPMN 2.0**: Business Process Model and Notation — an industry-standard graphical notation for specifying business processes. Clean-Core.io generates BPMN 2.0 XML for automated process documentation.
 - **RACI Matrix**: Responsible, Accountable, Consulted, Informed — a framework for assigning roles in a process. Clean-Core.io auto-generates dynamic RACI matrices during documentation.
 - **TCO (Total Cost of Ownership)**: The complete cost analysis of an SAP modernization project, including cloud hosting, development effort, maintenance, and migration costs. Clean-Core.io provides AI-powered TCO estimation.
@@ -125,7 +125,7 @@ The platform mounts the new code inside an isolated testing sandbox and runs sel
 
 ### Phase 5: Process Blueprint & Documentation
 Automatically document both the technical and business logic with a dual-track layout.
-- **Technical Blueprint**: Generates standard BPMN 2.0 exports ready for SAP Signavio and SAP Build.
+- **Technical Blueprint**: Generates standard BPMN 2.0 XML exports; import into SAP Signavio has not been verified yet.
 - **Business SOP & Compliance**: Builds audit-ready RACI matrices, step-by-step operating procedures, and risk control checkpoints.
 - **Confluence Export**: Compiles all technical specifications, RACI tables, and audit control objectives into an ISO 9001-compliant Confluence HTML document for direct import.
 - **Features**: BPMN 2.0 XML export, RACI matrix generation, SOP generation, risk control tables, Confluence-compatible export.
@@ -209,7 +209,7 @@ Execute automated tests and validate your modernized code.
 ### Documentation Stage (/project/[id]/documentation)
 Auto-generate comprehensive migration documentation.
 - **Technical Documentation**: API specifications, data models, integration patterns
-- **Business Process Documentation**: BPMN 2.0 process diagrams for SAP Signavio
+- **Business Process Documentation**: BPMN 2.0 process diagrams as XML (import into SAP Signavio has not been verified yet)
 - **RACI Matrix**: Dynamic responsibility assignment matrix
 - **Standard Operating Procedures (SOPs)**: Step-by-step procedures with exception handling
 - **Risk & Control Framework**: Audit-ready control objectives and risk assessments

@@ -80,7 +80,7 @@ const steps = [
     time: "02:30 - 02:55",
     title: "Phase 5: Process Blueprint",
     desc: "Dual-track process blueprint & compliance. Maps technical flows to BPMN 2.0, generates dynamic RACI matrices, standard operating procedures (SOPs), and audit-ready controls.",
-    narration: "In the Process Blueprint workspace, we automatically document both the technical and business logic. The platform features a dual-track layout: the Technical Blueprint generates standard BPMN 2.0 exports ready for SAP Signavio and SAP Build, while the Business SOP & Compliance layer builds audit-ready RACI matrices, step-by-step operating procedures, and risk control checkpoints. You can export this entire quality-engineered package directly to Confluence.",
+    narration: "In the Process Blueprint workspace, we automatically document both the technical and business logic. The platform features a dual-track layout: the Technical Blueprint generates standard BPMN 2.0 XML exports, while the Business SOP & Compliance layer builds audit-ready RACI matrices, step-by-step operating procedures, and risk control checkpoints. You can export this entire quality-engineered package directly to Confluence.",
     icon: CheckCircle2,
     color: "from-teal-500/10 to-emerald-500/10 text-teal-600 border-teal-200/50",
     hotspots: [
