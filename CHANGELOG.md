@@ -10,6 +10,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.9.14] — 2026-09-15
+
+### QA-Runde 2: zehn Befunde des Agenten zu sich selbst — und ein Test, der nur hier grün war
+
+**v2.9.13 kam nicht auf dev.** Der `validate`-Job scheiterte an einem neuen Test:
+„ohne Checkpoint alles, was nicht auf `main` ist" wurde gegen den lokalen Git-Stand
+geprüft. Die Pipeline checkt flach aus, dort gibt es kein `origin/main` — `null`
+statt eines Commits. Den roten Lauf hat der Smoke-Check des QA-Agenten gemeldet
+(„pipeline failure; new revision serving: no"), der Wochencheck ebenso. Die
+Bereichswahl ist jetzt eine reine Funktion mit eigenen Tests, und `mergeBaseWithMain`
+wird in einem eigens angelegten Git-Repository geprüft — unabhängig davon, wie der
+Test ausgecheckt ist.
+
+Der Review von v2.9.13 (1,28 $) brachte drei hohe und sieben mittlere Befunde; jeder
+wurde gegen den Code geprüft, keiner war falsch:
+
+| Befund | Schwere | Was geändert ist |
+|---|---|---|
+| Gültiges JSON ohne Review-Felder (`{}`) wurde über Standardwerte zu „go" | hoch | die Antwort wird lokal gegen das Schema geprüft; die Fehlermeldung nennt nur den Pfad im Schema |
+| Eine alte Widerlegung ließ einen erneut erhobenen Befund beim übernächsten Push verschwinden | hoch | eine Widerlegung gilt nur für Erhebungen *vor* ihr; alles Spätere bleibt offen, bis es behoben oder neu widerlegt ist |
+| Ein Teil-Review bekam „go", und der Checkpoint sprang über ungelesenen Code | hoch | ungelesener oder abgeschnittener Code macht den Bericht **unvollständig**: kein sauberes „go", die Schleife bleibt offen, der Checkpoint bleibt stehen |
+| Ein GitHub-„Re-run" behält die Run-ID — Artefakte früherer Versuche konnten gelten | mittel | Artefaktnamen und Berichte tragen den Versuch; gelesen wird nur, was ein erfolgreicher Job genau dieses Versuchs erzeugt hat |
+| Das Kostenbudget wurde als harte Grenze beschrieben, ist aber eine Schätzung | mittel | Aussage korrigiert, Antwortschema eingerechnet; **die harte Grenze ist das Kreditlimit am OpenRouter-Schlüssel** |
+| Nicht lesbarer Pipeline-Zustand erschien als „alles grün" | mittel | abgelaufene Anmeldung, Rate-Limit, Netzfehler heißen `UNKNOWN` und halten den Check offen; nur ein bestätigtes „nicht vorhanden" ist ein Befund über das Repository |
+| Zehn Pushes konnten einen geplanten Workflow „eingeschlafen" aussehen lassen | mittel | der letzte geplante Lauf wird eigens abgefragt |
+| `finish_reason` ließ beliebige Kleinbuchstaben ins öffentliche Log | mittel | nur bekannte Werte werden genannt |
+| Die Schwärzung kannte `QA_REVIEW_KEY`, `AUDIT_SIGNING_KEY`, `S4_ENCRYPTION_KEY` nicht | mittel | Namen auf `…_KEY` werden erkannt |
+| Nach einem Force-Push mit unbrauchbarem Checkpoint wurde nur der letzte Commit geprüft | mittel | ohne brauchbaren Checkpoint gilt immer: alles, was nicht auf `main` ist; das `before` des Pushs wird nie genommen, nur ein manueller Lauf gibt eine Basis vor |
+
+`tests/qa-review-guard.spec.ts`, jetzt 45 Tests.
+
 ## [v2.9.13] — 2026-09-15
 
 ### Der QA-Agent hat sich selbst geprüft — neun Befunde, alle bestätigt, alle behoben

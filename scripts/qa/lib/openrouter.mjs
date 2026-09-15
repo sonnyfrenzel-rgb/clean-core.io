@@ -1,4 +1,5 @@
 import { BUDGET, OPENROUTER_ENDPOINT, QA_MODEL } from './config.mjs';
+import { firstViolation } from './validate.mjs';
 
 /**
  * The only network call the reviewer makes. It sends a delta and gets JSON back;
@@ -17,6 +18,7 @@ import { BUDGET, OPENROUTER_ENDPOINT, QA_MODEL } from './config.mjs';
  * 221f2d11768c, finding 3b4fedd019e8).
  */
 const RETRYABLE = new Set([429]);
+const FINISH_REASONS = new Set(['stop', 'length', 'content_filter', 'tool_calls', 'function_call', 'error']);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export function buildRequest({ system, user, schema, effort }) {
@@ -88,8 +90,8 @@ export async function callReviewer({ apiKey, system, user, schema, effort, fetch
         // that ran out ("length") from a refusal, without any content.
         const u = json?.usage || {};
         const reasoning = u.completion_tokens_details?.reasoning_tokens;
-        // finish_reason is an enum ("stop", "length", …); anything else is not echoed.
-        const finish = /^[a-z_]{1,20}$/.test(String(choice?.finish_reason)) ? choice.finish_reason : 'unrecognised';
+        // Only known finish reasons are echoed; anything else, however harmless it looks, is not.
+        const finish = FINISH_REASONS.has(choice?.finish_reason) ? choice.finish_reason : 'unrecognised';
         throw new Error(
           `OpenRouter returned no review content (finish_reason=${finish}, completion_tokens=${Number(u.completion_tokens) || '?'}, reasoning_tokens=${Number(reasoning) || '?'}, max_tokens=${BUDGET.maxOutputTokens}).`,
         );
@@ -101,6 +103,8 @@ export async function callReviewer({ apiKey, system, user, schema, effort, fetch
       } catch {
         throw new Error('The review was not valid JSON despite the schema.');
       }
+      const violation = firstViolation(schema, review);
+      if (violation) throw new Error(`The review did not match the schema at ${violation}.`);
       return { review, usage: json.usage || null, model: json.model || QA_MODEL };
     } finally {
       clearTimeout(timer);

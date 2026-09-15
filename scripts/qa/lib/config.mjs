@@ -26,10 +26,15 @@ export const PRICE_PER_MTOK = { input: 10, output: 50 };
 
 export const BUDGET = {
   /**
-   * Hard ceiling for one review. Before every call: what has actually been spent
-   * so far (OpenRouter's usage record) plus a worst-case estimate for this call —
-   * input at 3.5 chars/token and the full output allowance. A call that could
-   * cross the ceiling is not made; its files are reported as not reviewed.
+   * Estimated budget for one review — not a hard ceiling. Before every call:
+   * what has actually been spent (OpenRouter's usage record) plus an estimate
+   * for this call — request characters at 3.5 per token, the response schema
+   * included, and the full output allowance. A call that could cross the budget
+   * by that estimate is not made; its files are reported as not reviewed.
+   *
+   * Characters per token is an assumption: token-dense text can tokenise worse,
+   * so a single call can overrun by the difference (QA review of 2f9b128bafd4).
+   * The hard ceiling is the credit limit on the OpenRouter key itself.
    */
   maxCostUsd: 2.5,
   /** Delta context per model call, in characters. */

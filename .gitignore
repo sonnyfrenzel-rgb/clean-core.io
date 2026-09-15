@@ -25,3 +25,6 @@ design-capture/
 
 # QA agent: downloaded and decrypted review reports (scripts/qa). Never commit.
 .qa-review/
+
+# Security agent: work files and plaintext audit reports (scripts/security). Never commit.
+.security-audit/

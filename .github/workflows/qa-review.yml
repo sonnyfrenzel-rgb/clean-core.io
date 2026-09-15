@@ -72,14 +72,15 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           QA_REVIEW_KEY: ${{ secrets.QA_REVIEW_KEY }}
-          QA_BASE: ${{ inputs.base || github.event.before }}
+          # Only a manual run passes a base. A push starts from the last reviewed checkpoint, or everything not yet on main.
+          QA_BASE_OVERRIDE: ${{ inputs.base }}
           QA_HEAD: ${{ inputs.head || github.sha }}
         run: node scripts/qa/review.mjs
 
       - name: Upload sealed report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: qa-review-${{ github.sha }}
+          name: qa-review-${{ github.sha }}-${{ github.run_attempt }}
           path: .qa-review/out/qa-review.enc.json
           retention-days: 14
           if-no-files-found: error
@@ -111,7 +112,7 @@ jobs:
       - name: Upload sealed smoke result
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: qa-smoke-${{ github.sha }}
+          name: qa-smoke-${{ github.sha }}-${{ github.run_attempt }}
           path: .qa-review/out/qa-smoke.enc.json
           retention-days: 14
           if-no-files-found: error

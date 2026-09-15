@@ -14,9 +14,9 @@
  */
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { gh, jobsOf, waitForRun } from './lib/gh.mjs';
+import { gh, ghJson, jobsOf, waitForRun } from './lib/gh.mjs';
 import { git } from './lib/git-delta.mjs';
-import { isBlocking, renderText } from './lib/report.mjs';
+import { needsAnotherRound, renderText } from './lib/report.mjs';
 import { LOCAL_DIR, loadDotEnv, sealedReports } from './lib/store.mjs';
 
 const arg = process.argv.slice(2).find((a) => !a.startsWith('--'));
@@ -65,10 +65,10 @@ async function main() {
   }
 
   const jobs = jobsOf(run.databaseId);
+  const attempt = String(ghJson(['run', 'view', String(run.databaseId), '--json', 'attempt'])?.attempt ?? '');
   // A fresh directory for exactly this run: artifacts left from an earlier run of
-  // the same commit must never stand in for a newer run that produced none (QA
-  // review of 221f2d11768c, finding 59546a3291c2).
-  const dir = join(LOCAL_DIR, 'runs', `${short}-${run.databaseId}`);
+  // the same commit must never stand in for a newer run that produced none.
+  const dir = join(LOCAL_DIR, 'runs', `${short}-${run.databaseId}-${attempt}`);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   try {
@@ -77,9 +77,13 @@ async function main() {
     /* an artifact may be missing when its job failed; reported below */
   }
 
-  // And a report only counts for the commit it was made for.
-  const review = sealedReports(dir, secret).find((r) => r.range?.head === sha) || null;
-  const smoke = sealedReports(dir, secret, 'qa-smoke.enc.json').find((s) => s.head === sha) || null;
+  // A result counts only when it belongs to this commit and this attempt, and its
+  // job in this attempt succeeded. A re-run keeps the run id and the artifacts of
+  // earlier attempts (QA reviews of 221f2d11768c and 2f9b128bafd4).
+  const succeeded = (prefix) => jobs.some((j) => j.name.startsWith(prefix) && j.conclusion === 'success');
+  const current = (meta) => !attempt || String(meta?.attempt ?? '') === attempt;
+  const review = succeeded('Delta review') ? sealedReports(dir, secret).find((r) => r.range?.head === sha && current(r.meta?.run)) || null : null;
+  const smoke = succeeded('Smoke check') ? sealedReports(dir, secret, 'qa-smoke.enc.json').find((s) => s.head === sha && current(s.run)) || null : null;
   if (!review) {
     console.log(`QA run ${run.databaseId} produced no readable report. Jobs: ${jobs.map((j) => `${j.name}=${j.conclusion}`).join(', ')}`);
     console.log(`Log (failed steps only): gh run view ${run.databaseId} --log-failed`);
@@ -90,7 +94,7 @@ async function main() {
   if (smoke) writeFileSync(join(LOCAL_DIR, `${short}.smoke.json`), JSON.stringify(smoke, null, 2));
 
   console.log(`\n${renderText(review)}\n\n${renderSmoke(smoke)}`);
-  return isBlocking(review) || !smoke?.ok ? 3 : 0;
+  return needsAnotherRound(review) || !smoke?.ok ? 3 : 0;
 }
 
 main()

@@ -83,6 +83,7 @@ async function main() {
   const result = {
     version: 1,
     head: sha,
+    run: { id: process.env.GITHUB_RUN_ID || null, attempt: process.env.GITHUB_RUN_ATTEMPT || null },
     createdAt: new Date().toISOString(),
     target: DEV_URL,
     pipeline,

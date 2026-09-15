@@ -85,6 +85,16 @@ test.describe('nothing security-relevant is exposed', () => {
     expect(hits.map((h: { kind: string }) => h.kind)).toEqual(expect.arrayContaining(['Google API key', 'OpenRouter key']));
   });
 
+  test("the project's own key names are redacted too", async () => {
+    const { redactSecrets } = await lib('redact.mjs');
+    const value = require('crypto').randomBytes(32).toString('hex');
+    for (const name of ['QA_REVIEW_KEY', 'AUDIT_SIGNING_KEY', 'S4_ENCRYPTION_KEY', 'SECURITY_AUDIT_PRIVATE_KEY']) {
+      const { text, hits } = redactSecrets(`const ${name} = '${value}';`);
+      expect(text).not.toContain(value);
+      expect(hits.length).toBeGreaterThan(0);
+    }
+  });
+
   test('credential-shaped files are never read', async () => {
     const { isReviewable } = await lib('git-delta.mjs');
     for (const p of ['.env.local', '.env', 'certs/server.pem', 'firebase-adminsdk-abc.json', 'config/service-account.json']) expect(isReviewable(p)).toBe(false);
@@ -160,9 +170,25 @@ test.describe('the reviewer', () => {
     const emptyContent = async () => new Response(JSON.stringify({ choices: [{ finish_reason: sentinel, message: { content: '' } }], usage: { completion_tokens: sentinel } }), { status: 200 });
     const error2 = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: emptyContent }).catch((e: Error) => e);
     expect(String(error2.message)).toMatch(/^OpenRouter returned no review content/);
-    // finish_reason is echoed only when it has the shape of the enum; a count that is not a number is dropped.
+    // finish_reason is echoed only when it is a known value; a count that is not a number is dropped.
     expect(String(error2.message)).not.toContain('PRIVATE');
     expect(String(error2.message)).toContain('finish_reason=unrecognised');
+    const lowercase = async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'private_verdict', message: { content: '' } }] }), { status: 200 });
+    const error3 = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: lowercase }).catch((e: Error) => e);
+    expect(String(error3.message)).not.toContain('private_verdict');
+  });
+
+  test('valid JSON that is not a review is rejected, not approved', async () => {
+    const { callReviewer } = await lib('openrouter.mjs');
+    const { REVIEW_SCHEMA } = await lib('prompt.mjs');
+    const answer = (content: unknown) => async () => new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) } }], usage: { cost: 0.1 } }), { status: 200 });
+    const call = (content: unknown) => callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: REVIEW_SCHEMA, effort: 'medium', fetchImpl: answer(content) }).catch((e: Error) => e);
+    const good = { verdict: 'go', summary: '', findings: [], acceptance: [], test_gaps: [], previous_findings: [], coverage_notes: '' };
+    expect((await call(good) as { review?: unknown }).review).toEqual(good);
+    expect(String((await call({}) as Error).message)).toBe('The review did not match the schema at $.verdict.');
+    expect(String((await call({ ...good, verdict: 'ship it' }) as Error).message)).toMatch(/at \$\.verdict\.$/);
+    const badFinding = { ...good, findings: [{ severity: 'catastrophic', category: 'correctness', file: 'a', line: 1, title: 't', failure_scenario: 'f', evidence: 'e', suggested_fix: 's', confidence: 1 }] };
+    expect(String((await call(badFinding) as Error).message)).toMatch(/at \$\.findings\[0\]\.severity\.$/);
   });
 
   test('every outgoing message passes a final redaction, commit subjects included', () => {
@@ -200,7 +226,7 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     expect(withinBudget(BUDGET.maxCostUsd - 0.1, 120_000)).toBe(false);
     // The per-call estimate assumes the whole output allowance, so it can never undercount a call.
     expect(estimateCostUsd(0, 1)).toBeCloseTo((BUDGET.maxOutputTokens / 1e6) * 50, 5);
-    expect(read('scripts/qa/review.mjs')).toMatch(/if \(!withinBudget\(spentForCap, outgoingSystem\.length \+ user\.length\)\)/);
+    expect(read('scripts/qa/review.mjs')).toMatch(/if \(!withinBudget\(spentForCap, outgoingSystem\.length \+ user\.length \+ SCHEMA_CHARS\)\)/);
   });
 
   test('an unreported cost is unknown, never zero', async () => {
@@ -211,15 +237,58 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     expect(read('scripts/qa/review.mjs')).toMatch(/spentForCap \+= typeof r\.usage\?\.cost === 'number' \? r\.usage\.cost : estimateCostUsd\(/);
   });
 
-  test('without a reviewed checkpoint the review covers everything not yet on main', async () => {
-    const { mergeBaseWithMain, isAncestor, git } = await lib('git-delta.mjs');
-    const head = git(['rev-parse', 'HEAD']);
-    const base = mergeBaseWithMain(head);
-    expect(base).toMatch(/^[0-9a-f]{40}$/);
-    expect(isAncestor(base, head)).toBe(true);
-    const src = read('scripts/qa/review.mjs');
-    expect(src).toMatch(/\} else if \(!previous\) \{\s*const mainBase = mergeBaseWithMain\(head\);/);
-    expect(read('.github/workflows/qa-review.yml')).toMatch(/--limit 50/);
+  test('the review base: checkpoint when usable, otherwise everything not yet on main — never the push event', async () => {
+    const { chooseBase } = await lib('git-delta.mjs');
+    const ancestors = new Set(['cp>head']);
+    const base = (over: Record<string, unknown>) =>
+      chooseBase({ head: 'head', overrideBase: null, checkpoint: null, isAncestorOf: (a: string, b: string) => ancestors.has(`${a}>${b}`), mainBase: () => 'main-base', ...over });
+    expect(base({ checkpoint: 'cp' }).base).toBe('cp');
+    expect(base({}).base).toBe('main-base'); // no checkpoint: first run, or every earlier run failed
+    expect(base({ checkpoint: 'rewritten' }).base).toBe('main-base'); // force push made it unusable
+    expect(base({ checkpoint: 'cp', overrideBase: 'manual' }).base).toBe('manual');
+    expect(base({ mainBase: () => 'head' }).base).toBeNull(); // head is on main
+    const wf = read('.github/workflows/qa-review.yml');
+    expect(wf).not.toMatch(/github\.event\.before/);
+    expect(wf).toContain('QA_BASE_OVERRIDE: ${{ inputs.base }}');
+    expect(wf).toMatch(/--limit 50/);
+  });
+
+  test('the merge base with main is found in a real repository, independent of how it was cloned', async () => {
+    const { execFileSync } = require('child_process') as typeof import('child_process');
+    const os = require('os') as typeof import('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qa-base-'));
+    const g = (...args: string[]) => execFileSync('git', ['-c', 'user.name=qa', '-c', 'user.email=qa@example.invalid', ...args], { cwd: dir, encoding: 'utf8' }).trim();
+    try {
+      g('init', '-q', '-b', 'main');
+      fs.writeFileSync(path.join(dir, 'a.txt'), '1');
+      g('add', '.');
+      g('commit', '-q', '-m', 'on main');
+      const onMain = g('rev-parse', 'HEAD');
+      g('checkout', '-q', '-b', 'dev');
+      fs.writeFileSync(path.join(dir, 'a.txt'), '2');
+      g('commit', '-q', '-am', 'on dev');
+      const { pathToFileURL } = require('url') as typeof import('url');
+      const moduleUrl = pathToFileURL(path.resolve(ROOT, 'scripts/qa/lib/git-delta.mjs')).href;
+      const out = execFileSync('node', ['--input-type=module', '-e', `import { mergeBaseWithMain } from ${JSON.stringify(moduleUrl)}; console.log(mergeBaseWithMain('HEAD'))`], { cwd: dir, encoding: 'utf8' }).trim();
+      expect(out).toBe(onMain);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('a review that could not read all of its delta is incomplete: no clean go, checkpoint stays', async () => {
+    const { buildReport, needsAnotherRound } = await lib('report.mjs');
+    const clean = { review: { verdict: 'go', summary: '', findings: [], acceptance: [], test_gaps: [], previous_findings: [], coverage_notes: '' }, files: ['a.ts'] };
+    const range = { base: 'b'.repeat(40), head: 'h'.repeat(40) };
+    const partial = buildReport({ range, results: [clean], previous: null, refuted: [], notReviewed: [{ path: 'b.ts', reason: 'outside the $2.5 cost cap' }], triage: { tags: [], signals: [], codeWithoutTests: false }, meta: {} });
+    expect(partial.incomplete).toBe(true);
+    expect(partial.verdict).toBe('go_with_notes');
+    expect(partial.range.checkpoint).toBe(range.base);
+    expect(needsAnotherRound(partial)).toBe(true);
+    const complete = buildReport({ range, results: [clean], previous: null, refuted: [], notReviewed: [], triage: { tags: [], signals: [], codeWithoutTests: false }, meta: {} });
+    expect(complete.range.checkpoint).toBe(range.head);
+    expect(needsAnotherRound(complete)).toBe(false);
+    expect(read('scripts/qa/review.mjs')).toMatch(/checkpoint: previous\?\.range\?\.checkpoint \?\? previous\?\.range\?\.head/);
   });
 
   test('a deleted file keeps its diff, and its removed exports are looked up', async () => {
@@ -231,12 +300,16 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     expect(src).not.toMatch(/f\.status === 'D' \? \[\]/);
   });
 
-  test('a local wait reads only the artifacts of the run it selected, for the commit it expects', () => {
+  test('a local wait reads only the results of the attempt it selected, for the commit it expects, from jobs that succeeded', () => {
     const src = read('scripts/qa/await.mjs');
-    expect(src).toMatch(/join\(LOCAL_DIR, 'runs', `\$\{short\}-\$\{run\.databaseId\}`\)/);
+    expect(src).toMatch(/join\(LOCAL_DIR, 'runs', `\$\{short\}-\$\{run\.databaseId\}-\$\{attempt\}`\)/);
     expect(src).toMatch(/rmSync\(dir, \{ recursive: true, force: true \}\)/);
-    expect(src).toMatch(/\.find\(\(r\) => r\.range\?\.head === sha\)/);
-    expect(src).toMatch(/\.find\(\(s\) => s\.head === sha\)/);
+    expect(src).toMatch(/succeeded\('Delta review'\) \? sealedReports\(dir, secret\)\.find\(\(r\) => r\.range\?\.head === sha && current\(r\.meta\?\.run\)\)/);
+    expect(src).toMatch(/succeeded\('Smoke check'\) \? sealedReports\(dir, secret, 'qa-smoke\.enc\.json'\)\.find\(\(s\) => s\.head === sha && current\(s\.run\)\)/);
+    const wf = read('.github/workflows/qa-review.yml');
+    expect(wf).toContain('name: qa-review-${{ github.sha }}-${{ github.run_attempt }}');
+    expect(wf).toContain('name: qa-smoke-${{ github.sha }}-${{ github.run_attempt }}');
+    expect(read('scripts/qa/review.mjs')).toMatch(/run: \{ id: env\.GITHUB_RUN_ID \|\| null, attempt: env\.GITHUB_RUN_ATTEMPT \|\| null \}/);
   });
 
   test('a file larger than one call is reported, not silently cut from view', async () => {
@@ -303,6 +376,23 @@ test.describe('the report a maintainer acts on', () => {
     const reRaised = buildReport({ range, results: [review([finding()])], previous: null, refuted: [{ fingerprint: refutedOne.fingerprint }], notReviewed: [], triage, meta: {} });
     expect(reRaised.findings).toHaveLength(1);
     expect(reRaised.findings[0].reRaisedAfterRefutation).toBe(true);
+  });
+
+  test('a re-raised regression survives the next unrelated push until it is resolved or refuted again', async () => {
+    const { buildReport, fingerprint, isSuppressed } = await lib('report.mjs');
+    const fp = fingerprint(finding());
+    const firstRefutation = [{ fingerprint: fp, refutedAt: '2026-01-01T00:00:00.000Z' }];
+    // Review B re-raises it after the refutation.
+    const b = buildReport({ range, results: [review([finding()])], previous: null, refuted: firstRefutation, notReviewed: [], triage, meta: {} });
+    expect(b.findings[0].reRaisedAfterRefutation).toBe(true);
+    // Review C of an unrelated push mentions nothing — the regression is carried, not swallowed by the old refutation.
+    expect(isSuppressed(b.findings[0], firstRefutation)).toBe(false);
+    const c = buildReport({ range, results: [review([])], previous: b, refuted: firstRefutation, notReviewed: [], triage, meta: {} });
+    expect(c.findings.map((f: { fingerprint: string }) => f.fingerprint)).toEqual([fp]);
+    // A new refutation written after the re-raise suppresses it again.
+    const secondRefutation = [{ fingerprint: fp, refutedAt: new Date(Date.parse(b.findings[0].raisedAt) + 1000).toISOString() }];
+    const d = buildReport({ range, results: [review([])], previous: c, refuted: secondRefutation, notReviewed: [], triage, meta: {} });
+    expect(d.findings).toEqual([]);
   });
 
   test('one batch not touching a finding does not undo another batch resolving it', async () => {
@@ -372,6 +462,27 @@ test.describe('weekly pipeline health', () => {
     expect(assess({ file: 'a.yml', name: 'A', scheduled: true }, [run('success', 12)], now).state).toBe('stale');
     expect(assess({ file: 'b.yml', name: 'B', scheduled: false }, [run('cancelled', 0, 'push'), run('success', 3, 'push')], now).state).toBe('ok');
     expect(assess({ file: 'c.yml', name: 'C', scheduled: false }, [], now).state).toBe('never-run');
+  });
+
+  test('the last scheduled run is looked up on its own, so pushes cannot fake a stale schedule', async () => {
+    const { assess } = await lib('health.mjs');
+    const pushes = Array.from({ length: 10 }, (_, i) => run('success', i / 10, 'push'));
+    expect(assess({ file: 'a.yml', name: 'A', scheduled: true }, pushes, now, [run('success', 2)]).state).toBe('ok');
+    expect(assess({ file: 'a.yml', name: 'A', scheduled: true }, pushes, now, []).state).toBe('stale');
+  });
+
+  test('what could not be read is never reported as green', async () => {
+    const { classifyGhError, renderHealth } = await lib('health.mjs');
+    expect(classifyGhError({ stderr: 'HTTP 404: workflow x.yml not found on the default branch' })).toBe('not-on-main');
+    expect(classifyGhError({ stderr: 'gh: Not Found (HTTP 404)' })).toBe('absent');
+    expect(classifyGhError({ stderr: 'HTTP 401: Bad credentials' })).toBe('unreadable');
+    expect(classifyGhError(new Error('connect ETIMEDOUT'))).toBe('unreadable');
+    const h = { createdAt: '2026-09-15T08:00:00Z', ok: false, workflows: [{ name: 'Deploy', file: 'deploy.yml', state: 'unknown' }], pending: [{ branch: 'chore/x', unknown: true }] };
+    const text = renderHealth(h);
+    expect(text).toContain('needs attention');
+    expect(text).toContain('UNKNOWN Deploy (deploy.yml)');
+    expect(text).toContain('UNKNOWN chore/x');
+    expect(read('scripts/qa/lib/health.mjs')).toMatch(/ok: workflows\.every\(\(w\) => \['ok', 'never-run', 'not-on-main'\]\.includes\(w\.state\)\)/);
   });
 
   test('the weekly workflow only reads and seals its record', () => {

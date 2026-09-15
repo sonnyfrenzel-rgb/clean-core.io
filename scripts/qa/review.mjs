@@ -14,12 +14,12 @@ import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BUDGET, EFFORT, estimateCostUsd, QA_MODEL, withinBudget } from './lib/config.mjs';
 import { seal } from './lib/crypto.mjs';
-import { addedLines, callersOf, changedFiles, commitIdOrNull, commitMessages, fileDiff, git, isAncestor, isClaimSource, isReviewable, mergeBaseWithMain, resolveRange, touchedSymbols } from './lib/git-delta.mjs';
+import { addedLines, callersOf, changedFiles, chooseBase, commitIdOrNull, commitMessages, fileDiff, git, isAncestor, isClaimSource, isReviewable, mergeBaseWithMain, resolveRange, touchedSymbols } from './lib/git-delta.mjs';
 import { callReviewer } from './lib/openrouter.mjs';
 import { packBatches } from './lib/pack.mjs';
 import { buildUserMessage, loadBrief, REVIEW_SCHEMA } from './lib/prompt.mjs';
 import { redactSecrets } from './lib/redact.mjs';
-import { actualCost, buildReport, publicSummary, renderText } from './lib/report.mjs';
+import { actualCost, buildReport, isSuppressed, publicSummary, renderText } from './lib/report.mjs';
 import { LOCAL_DIR, loadDotEnv, loadRefuted, sealedReports } from './lib/store.mjs';
 import { triage as runTriage } from './lib/triage.mjs';
 
@@ -27,6 +27,8 @@ const LOCAL = process.argv.includes('--local') || process.argv.includes('--dry')
 const DRY = process.argv.includes('--dry');
 const OUT_DIR = process.env.QA_OUT_DIR || join(LOCAL_DIR, 'out');
 const PREV_DIR = process.env.QA_PREV_DIR || join(LOCAL_DIR, 'prev');
+/** The response schema travels with every request and is billed as input. */
+const SCHEMA_CHARS = JSON.stringify(REVIEW_SCHEMA).length;
 
 async function main() {
   const env = LOCAL ? { ...loadDotEnv(), ...process.env } : process.env;
@@ -36,28 +38,18 @@ async function main() {
   const previous = sealedReports(PREV_DIR, secret)[0] || null;
   const refuted = loadRefuted(secret);
 
-  // Delta since the last *reviewed* commit, not the last push: a push that
-  // cancelled a running review must not leave its changes unreviewed. With no
-  // reviewed checkpoint at all — the first run, or every earlier run failed or
-  // was cancelled — the push's own `before` would silently drop those deltas,
-  // so the review covers everything that is not on main yet instead (QA review
-  // of 221f2d11768c, finding 398ae237c062).
+  // Delta since the last reviewed checkpoint; without a usable one, everything not yet on main (chooseBase).
   const head = git(['rev-parse', commitIdOrNull(env.QA_HEAD) || 'HEAD']);
-  const prevHead = previous?.range?.head;
-  let base = commitIdOrNull(env.QA_BASE);
-  let baseReason = null;
-  if (prevHead && prevHead !== head && isAncestor(prevHead, head)) {
-    base = prevHead;
-    baseReason = 'last reviewed commit';
-  } else if (!previous) {
-    const mainBase = mergeBaseWithMain(head);
-    if (mainBase && mainBase !== head) {
-      base = mainBase;
-      baseReason = 'no reviewed checkpoint found — everything not yet on main';
-    }
-  }
-  const range = resolveRange({ base, head });
-  if (baseReason && range.base === base) range.baseReason = baseReason;
+  const chosen = chooseBase({
+    head,
+    overrideBase: commitIdOrNull(env.QA_BASE_OVERRIDE),
+    // An incomplete review keeps the checkpoint where it was, so unread code comes round again.
+    checkpoint: previous?.range?.checkpoint ?? previous?.range?.head,
+    isAncestorOf: isAncestor,
+    mainBase: mergeBaseWithMain,
+  });
+  const range = resolveRange({ base: chosen.base, head });
+  if (range.base === chosen.base) range.baseReason = chosen.reason;
 
   const secretHits = [];
   const clean = (path, text) => {
@@ -84,6 +76,8 @@ async function main() {
       diffs.set(f.path, diff);
       return { ...f, diff, truncated: d.truncated };
     });
+  // A cut diff was only partly read: it counts as not reviewed, so the review is incomplete and the checkpoint stays.
+  const truncated = files.filter((f) => f.truncated).map((f) => ({ path: f.path, reason: 'diff cut at the per-file limit — only its beginning was reviewed' }));
 
   const triage = runTriage(files, diffs, claimText);
   const tags = new Map(triage.files.map((f) => [f.path, f.tags]));
@@ -93,11 +87,11 @@ async function main() {
   }
 
   const system = loadBrief();
-  const refutedFps = new Set(refuted.map((r) => r.fingerprint));
-  const previousOpen = (previous?.findings || []).filter((f) => !refutedFps.has(f.fingerprint));
+  const previousOpen = (previous?.findings || []).filter((f) => !isSuppressed(f, refuted));
   const shared = { range, triage, claims: claimText, previousOpen, refuted };
   const baseChars = system.length + buildUserMessage({ ...shared, batch: { files: [] }, batchIndex: 0, batchCount: 1 }).length;
   const { batches, notReviewed, estimatedCostUsd } = packBatches(files, baseChars);
+  notReviewed.push(...truncated);
   const effort = triage.elevated ? EFFORT.elevated : EFFORT.normal;
 
   if (DRY) {
@@ -131,7 +125,7 @@ async function main() {
     // the message the per-source redaction missed is caught here and reported.
     const outgoingSystem = clean('outgoing message', system);
     const user = clean('outgoing message', buildUserMessage({ ...shared, batch: batches[i], batchIndex: i, batchCount: batches.length }));
-    if (!withinBudget(spentForCap, outgoingSystem.length + user.length)) {
+    if (!withinBudget(spentForCap, outgoingSystem.length + user.length + SCHEMA_CHARS)) {
       for (const b of batches.slice(i)) for (const f of b.files) notReviewed.push({ path: f.path, reason: `outside the $${BUDGET.maxCostUsd} cost cap` });
       break;
     }
@@ -165,6 +159,8 @@ async function main() {
     notReviewed,
     triage,
     meta: {
+      // A re-run keeps the run id; the attempt tells its results apart from an earlier attempt's.
+      run: { id: env.GITHUB_RUN_ID || null, attempt: env.GITHUB_RUN_ATTEMPT || null },
       model: QA_MODEL,
       effort,
       modelCalls,

@@ -34,7 +34,26 @@ export function isAncestor(a, b) {
   return gitSucceeds(['merge-base', '--is-ancestor', a, b]);
 }
 
-/** Where `head` left main — the base for a review that has no reviewed checkpoint. Null when main is not available. */
+/**
+ * Which commit a review starts from. Pure, so every case is testable without a
+ * repository:
+ *
+ * 1. an explicit base from a manual run wins;
+ * 2. otherwise the last reviewed checkpoint, when it is an ancestor of head;
+ * 3. otherwise — no checkpoint, or one a force push made unusable — everything
+ *    not yet on main. The push event's own `before` is never used as a fallback:
+ *    after a cancelled, failed or rewritten history it silently narrows the
+ *    review (QA reviews of 221f2d11768c and 2f9b128bafd4).
+ */
+export function chooseBase({ head, overrideBase, checkpoint, isAncestorOf, mainBase }) {
+  if (overrideBase) return { base: overrideBase, reason: 'base given for this run' };
+  if (checkpoint && checkpoint !== head && isAncestorOf(checkpoint, head)) return { base: checkpoint, reason: 'last reviewed checkpoint' };
+  const mb = mainBase(head);
+  if (mb && mb !== head) return { base: mb, reason: checkpoint ? 'checkpoint unusable (rewritten history) — everything not yet on main' : 'no reviewed checkpoint — everything not yet on main' };
+  return { base: null, reason: 'head is on main — reviewing the head commit only' };
+}
+
+/** Where `head` left main — the base for a review that has no usable checkpoint. Null when main is not available. */
 export function mergeBaseWithMain(head) {
   for (const ref of ['origin/main', 'main']) {
     try {

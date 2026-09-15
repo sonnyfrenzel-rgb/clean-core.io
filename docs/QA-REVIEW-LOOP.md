@@ -23,7 +23,7 @@ erst gefragt, wenn die Schleife sauber ist.
                 │      (ohne Checkpoint: alles, was nicht auf main ist)   │
                 │   3. Vorprüfung ohne Token (Risiko, Test-Signale,       │
                 │      Abnahmekriterien, Geheimnis-Schwärzung)            │
-                │   4. Batches nach Risiko, Kostendeckel                  │
+                │   4. Batches nach Risiko, geschätztes Kostenbudget      │
                 │   5. GPT-6 Astra, strukturierte Antwort, keine Tools    │
                 │   6. Bericht versiegeln → Artefakt qa-review-<sha>      │
                 │                                                         ▼
@@ -43,14 +43,14 @@ erst gefragt, wenn die Schleife sauber ist.
 | Delta | `scripts/qa/lib/git-delta.mjs` | Bereich, geänderte Dateien, Hunks mit 12 Zeilen Kontext, Aufrufer geänderter Symbole außerhalb des Deltas |
 | Vorprüfung | `scripts/qa/lib/triage.mjs` | Risiko-Tags, Test-Schwächungssignale, zitierte Abnahmekriterien, „Code ohne Test" |
 | Schwärzung | `scripts/qa/lib/redact.mjs` | Schlüsselmuster vor dem Versand ersetzen, Treffer als kritischen Befund melden |
-| Packen | `scripts/qa/lib/pack.mjs` | riskanteste Dateien zuerst, höchstens 2 Aufrufe, Rest als „nicht geprüft" benannt; der Kostendeckel greift vor jedem Aufruf in `review.mjs` |
+| Packen | `scripts/qa/lib/pack.mjs` | riskanteste Dateien zuerst, höchstens 2 Aufrufe, Rest als „nicht geprüft" benannt; das Kostenbudget greift vor jedem Aufruf in `review.mjs` |
 | Prompt | `scripts/qa/lib/prompt.mjs` + `docs/qa/reviewer-brief.md` | Antwortschema; Rolle, Prüfliste und Projektregeln als lesbares Dokument |
 | Modellaufruf | `scripts/qa/lib/openrouter.mjs` | ein Endpunkt, keine Tools, keine Fallback-Modelle, `data_collection: deny`, Retry nur bei 429 — was schon generiert worden sein könnte, wird nie ein zweites Mal bezahlt |
 | Bericht | `scripts/qa/lib/report.mjs` | Fingerabdrücke, Übertrag offener Befunde, widerlegte nicht übertragen (erneut erhobene bleiben, markiert), öffentliche Zeile ohne Inhalt |
 | Siegel | `scripts/qa/lib/crypto.mjs`, `lib/store.mjs` | AES-256-GCM unter `QA_REVIEW_KEY` |
 | Einstiege | `scripts/qa/review.mjs`, `smoke.mjs`, `await.mjs`, `refute.mjs` | CI-Review, CI-Smoke, lokales Abholen, Widerlegen |
 | Workflow | `.github/workflows/qa-review.yml` | Auslöser, Rechte, Widerruf, Artefakte |
-| Leitplanken im Test | `tests/qa-review-guard.spec.ts` | Siegel, keine Leaks, nur Lesen, Kostendeckel, Delta, Bericht, Wochencheck |
+| Leitplanken im Test | `tests/qa-review-guard.spec.ts` | Siegel, keine Leaks, nur Lesen, Kostenbudget, Delta, Bericht, Wochencheck |
 | Arbeitsweise von Claude | `.claude/skills/qa-review-loop/SKILL.md` | wird erst geladen, wenn die Schleife dran ist — kostet sonst keinen Kontext |
 
 ---
@@ -71,7 +71,7 @@ eingestelltes Modell senden, einen versiegelten Bericht als Artefakt hochladen, 
 | Befunde öffentlich machen | Bericht und Smoke-Ergebnis versiegelt; das Log sagt nur „completed, sealed", Modellaufrufe und Kosten — **kein Verdikt, keine Zahlen je Schweregrad** |
 | Geheimnisse weitergeben | Schwärzung vor dem Versand; Dateien wie `.env*`, `*.pem`, Service-Account-JSON werden nie gelesen; Fehlerausgaben nur als Meldung, nie Stack oder Antwortkörper |
 | Ein anderes Modell nutzen | Modell-ID an genau einer Stelle, `allow_fallbacks: false`; Guard prüft beides |
-| Unbegrenzt Geld ausgeben | Kostendeckel je Review, geprüft vor jedem Aufruf gegen das tatsächlich Ausgegebene; nur ein 429 wird wiederholt |
+| Unbegrenzt Geld ausgeben | geschätztes Budget je Review, geprüft vor jedem Aufruf gegen das tatsächlich Ausgegebene; nur ein 429 wird wiederholt; harte Grenze ist das Kreditlimit am OpenRouter-Schlüssel |
 
 **Warum keine Zahlen im Log:** Das Repository und seine Actions-Logs sind
 öffentlich, und die dev-Revision ist öffentlich erreichbar. „1 critical auf dev" in
@@ -94,15 +94,15 @@ Eingabe-Token, 50 $ je Mio. Ausgabe-Token.**
 | Kein Modellaufruf ohne Code im Delta | reine Doku-/Asset-Pushes kosten 0 $ |
 | 12 Zeilen Kontext je Hunk, höchstens 15 Symbole × 3 Aufrufer | Kontext statt ganzer Dateien |
 | Reasoning `medium`, nur bei Sicherheit/Trust-Chain/CI `high` | teures Denken dort, wo ein Fehler teuer ist |
-| Höchstens 2 Aufrufe, 200.000 Zeichen und 32.000 Ausgabe-Token (Reasoning eingeschlossen) je Aufruf | harte Obergrenze |
-| **Kostendeckel 2,50 $ je Review**, vor jedem Aufruf geprüft: tatsächlich Ausgegebenes + ungünstigste Schätzung dieses Aufrufs | ein Aufruf, der den Deckel reißen könnte, findet nicht statt; seine Dateien stehen als „nicht geprüft" im Bericht |
+| Höchstens 2 Aufrufe, 200.000 Zeichen und 32.000 Ausgabe-Token (Reasoning eingeschlossen) je Aufruf | Obergrenze der Anfrage |
+| **Budget 2,50 $ je Review — geschätzt, keine harte Grenze.** Vor jedem Aufruf: tatsächlich Ausgegebenes + Schätzung dieses Aufrufs (3,5 Zeichen je Token, Antwortschema eingerechnet, volle Ausgabe) | ein Aufruf, der das Budget nach dieser Schätzung reißen würde, findet nicht statt; seine Dateien stehen als „nicht geprüft" im Bericht. Sehr token-dichter Text kann einen einzelnen Aufruf darüber hinaus treiben — **die harte Grenze ist das Kreditlimit am OpenRouter-Schlüssel** |
 | Tatsächliche Kosten aus OpenRouters Usage-Datensatz | stehen in jedem Bericht und im Log — fehlt eine Angabe, steht dort „unknown", nie 0 $ |
 
-Gemessen am 15.09.2026: Der Review von v2.9.12 (24 Dateien, ein Aufruf, Reasoning
-`high`) kostete **0,81 $** tatsächlich; die Vorab-Schätzung rechnet die volle
-Ausgabe von 32.000 Token und lag bei 1,92 $. Die Schätzung ist eine Obergrenze, keine
-Prognose.
-Empfehlung zusätzlich: ein Monatslimit direkt am OpenRouter-Schlüssel.
+Gemessen am 15.09.2026: der Review von v2.9.12 (24 Dateien, ein Aufruf, Reasoning
+`high`) **0,81 $**, der von v2.9.13 **1,28 $** tatsächlich; die Vorab-Schätzung rechnet
+die volle Ausgabe von 32.000 Token und lag bei 1,92 $. Sie ist vorsichtig, aber keine
+garantierte Obergrenze. **Empfehlung: ein Monatslimit direkt am OpenRouter-Schlüssel**
+— das ist die einzige harte Grenze.
 
 ---
 
@@ -130,6 +130,19 @@ an denen sie gemessen wird.
 
 `low` hält die Schleife nicht auf. Günstige `low`-Befunde werden mitgenommen, der
 Rest steht im Schrittbericht.
+
+**Drei Regeln, die der Agent aus seinen eigenen Reviews gelernt hat (15.09.2026):**
+
+- **Ein unvollständiger Review ist kein „go".** Blieb Code ungelesen — Kostenbudget,
+  Batch-Grenze, abgeschnittener Diff —, heißt der Bericht `INCOMPLETE`, die Schleife
+  bleibt offen, und der Checkpoint bleibt stehen: Der nächste Review liest den
+  ausgelassenen Code erneut, statt hinter ihm anzufangen.
+- **Eine Widerlegung gilt für den Befund, über den sie geschrieben wurde** — für die
+  Erhebung davor, nicht für eine spätere. Hebt der Reviewer ihn nach einer Regression
+  erneut an, bleibt er offen und markiert, bis er behoben oder neu widerlegt ist.
+- **Der Startpunkt eines Reviews** ist der letzte geprüfte Checkpoint, wenn er ein
+  Vorfahr des Kopfes ist — sonst alles, was noch nicht auf `main` ist. Das `before`
+  des Pushs wird nie genommen; nur ein manueller Lauf darf eine Basis vorgeben.
 
 ---
 

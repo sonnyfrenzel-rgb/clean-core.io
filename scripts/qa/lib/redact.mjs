@@ -21,7 +21,10 @@ const PATTERNS = [
   // Assignment of a long literal to a name that says it is secret. Placeholders and env lookups do not match.
   {
     kind: 'secret-named literal',
-    re: /\b([A-Za-z0-9_]*(?:SECRET|PASSWORD|PASSWD|TOKEN|API_?KEY|PRIVATE_?KEY|PEPPER)[A-Za-z0-9_]*)\s*[:=]\s*(['"`])(?!test-|dummy|example|placeholder|your-|<)[^'"`\s]{24,}\2/gi,
+    // `[A-Z0-9]_KEY` covers the project's own key names — QA_REVIEW_KEY,
+    // AUDIT_SIGNING_KEY, S4_ENCRYPTION_KEY — which carry no provider prefix to
+    // recognise them by (QA review of 2f9b128bafd4, finding a87199ab8c9e).
+    re: /\b([A-Za-z0-9_]*(?:SECRET|PASSWORD|PASSWD|TOKEN|API_?KEY|PRIVATE_?KEY|PEPPER|[A-Z0-9]_KEY)[A-Za-z0-9_]*)\s*[:=]\s*(['"`])(?!test-|dummy|example|placeholder|your-|<)[^'"`\s]{24,}\2/gi,
   },
 ];
 

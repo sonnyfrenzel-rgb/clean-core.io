@@ -70,8 +70,12 @@ tests cover that behaviour; otherwise leave the code and note it.
 Push the fixes to `dev` → back to step 1. The next review covers exactly the fix delta and marks carried
 findings resolved or still open.
 
+A report marked `INCOMPLETE` means code was not read (budget, batch limit, cut diff). It keeps the loop open
+even without findings: split the change into smaller pushes, or re-run the review for the named files with
+`gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>` — never treat it as a go.
+
 Stop when **either**:
-- `await.mjs` exits `0` (no open critical/high/medium, smoke OK), **or**
+- `await.mjs` exits `0` (no open critical/high/medium, review complete, smoke OK), **or**
 - three rounds for the same roadmap step are done — then list what is still open, with your verification
   verdict, in the report to Sonny.
 
