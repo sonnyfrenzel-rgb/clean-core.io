@@ -3,6 +3,29 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+**Stand 16.09.2026, Abend — v2.11.0 steht auf `dev` und wartet auf Sonnys Go.** Vier Schnitt-0-Schritte
+gebaut und integriert: 0.13 (Firebase-nativer zweiter Faktor), 0.14 (Konto, Schlüssel, Rechte),
+0.15 (Dashboard, Admin, die sieben Stufen), 0.16 (Skripte und Workflows). Letzte Delta-Prüfung
+`00f19f7d32a8`: 0 kritisch, 0 hoch, Smoke OK, neue Revision serviert. Offen und in 0.17 eingeplant:
+vier Befunde derselben Art — Guards, die Quelltext lesen, wo nur ein Laufzeitnachweis zählt
+(6a1e32c0b973, 1738da3d6e64, cca300dfb572, 6f7a14516006).
+
+Was nur Sonny entscheiden oder tun kann:
+- **Security-Agent auf `main` fällt seit drei Läufen aus** (zuletzt 35069919896): 52 Consultant-Calls
+  laufen durch, dann antwortet der CISO-Call zweimal nicht mit JSON und die ganze Prüfung ist verloren.
+  Vorschlag: Ergebnis auch ohne CISO-Zusammenfassung ausliefern **und** die Synthese in zwei kleinere
+  Calls teilen. Beides ist Agenten-Maschinerie, also sein Go.
+- **Der QA-Secret-Scanner meldet gelöschte Zeilen** (`scripts/qa/lib/redact.mjs` liest das Delta, also
+  auch `-`-Zeilen): eine entfernte Test-Konstante wurde zweimal als kritischer Fund gemeldet. Einzeiler,
+  aber ebenfalls Agenten-Maschinerie.
+- **Bot-Branch `chore/sync-cloudification-repo` kann gelöscht werden**: gleicher `sourceSha256`, gleiche
+  25.467 Einträge, 0 hinzugefügt/entfernt/geändert, und sein `fetchedAt` ist älter als der Stand auf
+  `main`. Die 28.000 Diff-Zeilen sind Formatierung aus einer älteren Skriptversion. `push --delete` ist
+  mir verweigert.
+- **Identity Platform**: nach dem Upgrade in der Firebase-Console `npx tsx scripts/mfa-enable-totp.ts
+  --apply`, dann Faktor-Login auf `dev` gegen das echte Auth prüfen, dann `scripts/mfa-reset.ts <mail>
+  --apply` vor seiner ersten Anmeldung — danach richtet er den Faktor in den Einstellungen neu ein.
+
 **Stand 16.09.2026 — die Vollprüfung von v2.10.7 abgearbeitet, auf `dev`.** 144 Befunde von GPT-5.6 Sol
 (4,91 $), jeder am Code geprüft, Ergebnis in `docs/ROADMAP.md` §14: 130 bestätigt, 11 widerlegt mit Beleg
 (`docs/qa/refuted-findings.enc.json`, jetzt 29 Einträge), 2 unklar, 1 nebenbei erledigt. Die Lehre wie gestern:

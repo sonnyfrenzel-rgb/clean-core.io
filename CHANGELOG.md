@@ -10,6 +10,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.11.0] — 2026-09-16
+
+### Der zweite Faktor ist Firebases eigener, und vier Schnitt-0-Schritte arbeiten die Vollprüfung ab
+
+- **Roadmap 0.13 — der zweite Faktor gilt vor der Sitzung.** Der eigene TOTP-Apparat prüfte den Code
+  erst, als die Firebase-Sitzung längst stand: Passwort eingeben hieß angemeldet sein, die Abfrage war
+  ein React-Zustand davor. Jetzt ist der Faktor Firebases eigener (Identity Platform): Firebase gibt
+  vor dem Code kein ID-Token heraus, und das Token nennt den Faktor in
+  `firebase.sign_in_second_factor`, den die Server-Gates lesen (`lib/mfa-gate.ts`). Enrolment
+  passiert im Browser gegen Firebase Auth, `POST /api/mfa/enrolled` liest den Faktor zurück und setzt
+  das Flag, `POST /api/mfa/disable` entfernt ihn per Admin-SDK — den Faktor zuerst, das Flag danach,
+  damit jeder Fehlerzustand zu streng ist statt zu lasch; ein Flag ohne Faktor räumt dieselbe Route
+  ohne Step-up auf. Der alte Apparat (eigene Routen, `mfa_session`-Cookie, verschlüsselte
+  `mfa_secrets`, Backup-Codes) ist weg; Wiederherstellung läuft über den Admin
+  (`scripts/mfa-reset.ts`). **Nicht in CI prüfbar:** der Auth-Emulator kann kein TOTP — Gate-Logik und
+  Negativpfade sind getestet, Enrolment und Faktor-Login werden auf `dev` gegen das echte Auth geprüft.
+- **Roadmap 0.14 — Konto, Schlüssel und Rechte melden nur, was geschah.** Ein entzogener
+  Admin-Anspruch wirkte bis zum Ablauf des Tokens weiter, und der Anzeige-Spiegel `users.isAdmin` war
+  ein zweiter Weg zu Adminrechten. Jetzt gewährt nur der Anspruch, ein Entzug widerruft die
+  Refresh-Token, ein Token mit Anspruch wird gegen den Widerruf geprüft — und der Spiegel verweigert,
+  auch wenn der Widerruf der Token fehlschlug. Das Löschen eines gespeicherten Geheimnisses
+  verschluckte seinen eigenen Fehler und meldete `ok`; die Kontolöschung entfernte das Konto zuerst
+  und konnte den Rest stehen lassen. Dazu: Ratenlimit-Schlüssel aus dem letzten
+  `X-Forwarded-For`-Eintrag, Größen- und Zeitgrenze für S/4-Antworten, und ein Profil-Abruf einer
+  alten Sitzung überschreibt die neue nicht mehr.
+- **Roadmap 0.15 — Dashboard, Admin und die sieben Stufen sagen, was sie wissen.** Das Kontingent
+  sperrte genau die Konten, denen dieselbe Seite riet, einen eigenen Gemini-Schlüssel zu hinterlegen
+  — die Regel steht jetzt einmal in `lib/run-quota-rule.ts` und stimmt mit der des Servers überein.
+  „Ist das ABAP?" wurde mit „ist das Feld nicht leer?" beantwortet: eine eingefügte E-Mail ging ans
+  Modell, kostete eine Analyse und wurde als Legacy-Code signiert. Der Sicherheitsscan läuft jetzt im
+  Analyse-Start selbst, auf genau dem Text, der den Browser verlässt. Modellkopien der signierten
+  Kennzahlen werden vor dem Speichern verworfen, der Confluence-Export druckt den signierten Score
+  oder „not computed". Eine leere Modellantwort wird nicht mehr als fertige Transformation gespeichert,
+  und keine zweite Generierung startet neben der ersten. Der Jahr-1-ROI rechnet die Investition mit
+  (vorher stand „20 %" neben dem eigenen Jahr-1-Ergebnis von −80.000 €). Beide Confluence-Exporte
+  escapen jedes Modellwort, die Design-Vorschau öffnet nicht mehr im eigenen Origin. Dazu: 1 MB gilt,
+  „Suspended" heißt „Suspended", nicht zugestellte Admin-Mails sind Fehler, und das abapGit-Paket auf
+  der Landingpage lässt sich wirklich aktivieren.
+- **Roadmap 0.16 — Skripte und Workflows.** Der Review-Workflow lud ein unversioniertes Installer-Skript
+  aus dem Netz und führte es mit Modellschlüssel und PR-Schreibrecht daneben aus; er läuft jetzt auf
+  einem an SHA-256 gepinnten Artefakt, ohne diese Rechte im Schritt, der PR-Inhalt liest. Die
+  Migrationsprüfung erklärte Dokumente nach dem Vergleich von drei Metadatenfeldern für unversehrt —
+  sie vergleicht jetzt einen kanonischen Hash jedes Dokuments und rechnet jeden signierten Lauf nach.
+  Der Security-Agent prüft die Briefs mit, die er selbst als Prompt lädt; der UX-Agent sieht die
+  Textmodule und alle Mail-Renderer. Mail: die Community-Kampagne verschickte vor dem Protokollieren
+  (Outbox plus Idempotency-Key), fehlende Mail-Konfiguration in Produktion meldete Erfolg, ein
+  fehlgeschlagenes One-Click-Opt-out antwortete 200, und ein späterer Scanner-Event überschrieb den
+  Bounce-Grund.
+- **QA-Runden zu jedem Schritt.** Die Befunde der Delta-Prüfungen sind in denselben Schritten
+  behoben, widerlegte mit Beleg in `docs/qa/refuted-findings.enc.json` festgehalten (37 Einträge).
+  Offen und in 0.17 eingeplant: drei Guards, die Quelltext lesen, wo nur ein Laufzeitnachweis zählt.
+
 ## [v2.10.8] — 2026-09-16
 
 ### Signierte Exporte lesen nur aus dem Run, das Board-Deck besiegelt nichts mehr, die Vollprüfung ist abgearbeitet
