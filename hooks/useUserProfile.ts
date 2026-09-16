@@ -31,6 +31,14 @@ export interface UserProfile {
   activatedAt?: any;
   updatedAt?: any;
   isAdmin?: boolean;
+  /**
+   * Dead since roadmap 1.6 (decision 15.09.2026): there is no dark mode, no
+   * switch writes this, and nothing reads it. Accounts created before that day
+   * still carry whatever they last chose, and it stays there — removing it would
+   * be a migration of account data, and sign-up and account stay unchanged. The
+   * field is declared so those documents keep type-checking, not because it does
+   * anything. `tests/dark-mode-guard.spec.ts` fails if anything starts reading it.
+   */
   theme?: 'light' | 'dark' | 'system';
   backupEnabled?: boolean;
   landingPageDefault?: 'dashboard' | 'analytics' | 'transformation';
