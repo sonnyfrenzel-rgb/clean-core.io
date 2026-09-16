@@ -138,7 +138,17 @@ async function main() {
   const findings = verified ? verified.review.findings : consultantFindings;
   const synthesis = { findings: verified ? 'ciso' : 'consultants-unverified', narrative: 'ciso' };
 
-  const narrativeUser = clean('outgoing message', `${CISO_NARRATIVE_TASK}\n\n${narrativeMessage({ surface, coverage, findings, notRead, failed: run.failedCalls, droppedNote: verifiedNote, verified: Boolean(verified) })}`);
+  // Redaction runs after the message is built and replaces a secret-shaped
+  // value with a longer marker, so the cleaned message can be larger than the
+  // reserve it was costed with (QA review of 0bf8637953a3, a05856ec23f4). It
+  // is built once, cleaned, and — if redaction pushed it over — built once
+  // more with the room that redaction took away.
+  const buildNarrative = (maxChars) => clean('outgoing message', `${CISO_NARRATIVE_TASK}\n\n${narrativeMessage({ surface, coverage, findings, notRead, failed: run.failedCalls, droppedNote: verifiedNote, verified: Boolean(verified), maxChars })}`);
+  let narrativeUser = buildNarrative(AUDIT.narrativeInputChars);
+  if (narrativeUser.length > AUDIT.narrativeInputChars) {
+    const overflow = narrativeUser.length - AUDIT.narrativeInputChars;
+    narrativeUser = buildNarrative(Math.max(2_000, AUDIT.narrativeInputChars - overflow));
+  }
   let narrative = null;
   try {
     narrative = await askAgainIfTruncated(

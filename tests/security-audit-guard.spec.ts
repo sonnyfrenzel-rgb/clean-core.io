@@ -531,6 +531,11 @@ test.describe('the audit pipeline', () => {
     expect(bounded, 'and says how many findings it left out').toMatch(/further finding\(s\) of the lowest severities/);
     expect(bounded, 'the severest are the ones it keeps').toContain('kritisch');
     expect(read('scripts/security/audit.mjs')).toContain('narrativeInput: { chars: narrativeUser.length, reservedChars: AUDIT.narrativeInputChars }');
+    // Redaction runs after the message is built and can make it longer; the
+    // bound is applied to what is actually sent (QA a05856ec23f4).
+    const auditSource = read('scripts/security/audit.mjs');
+    expect(auditSource).toContain('let narrativeUser = buildNarrative(AUDIT.narrativeInputChars);');
+    expect(auditSource).toContain('if (narrativeUser.length > AUDIT.narrativeInputChars)');
     // The counted coverage replaces whatever the model wrote.
     expect(withCountedCoverage({ coverage: { files_in_scope: 999, deep_read: 999, pattern_scanned_only: 0, notes: 'model' } }, coverage).coverage).toEqual({ files_in_scope: 10, deep_read: 7, pattern_scanned_only: 3, notes: 'counted model' });
   });
