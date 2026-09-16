@@ -3,7 +3,7 @@ import { verifyApprovalToken } from '@/lib/approval-token';
 import { encrypt, decrypt } from './s4-credentials';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp } from './mfa-gate';
 // Types only — erased at compile time, so the modules themselves still load
-// lazily through `ensureInitialized` below.
+// lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
 import type { Firestore } from 'firebase-admin/firestore';
 
@@ -14,7 +14,6 @@ let adminFirestoreModule: any = null;
 async function ensureInitialized() {
   if (!adminAppModule) {
     adminAppModule = await import('firebase-admin/app');
-    adminAuthModule = await import('firebase-admin/auth');
   }
 
   // Connect Admin SDK to Auth emulator in test/dev mode
@@ -54,10 +53,30 @@ async function ensureInitialized() {
   adminAppModule.initializeApp({ projectId: 'cleancore-491216' });
 }
 
+/**
+ * The Admin Auth module, loaded where authentication is actually used rather
+ * than beside the app module.
+ *
+ * `firebase-admin/auth` pulls in `jwks-rsa`, which reaches ESM-only `jose`.
+ * Next and webpack handle that; a Playwright spec, transpiled to CommonJS and
+ * run on the Node this project pins, cannot `require` it. Loading it from
+ * `ensureInitialized` therefore made every Firestore-only entry point here —
+ * `getAdminDb`, the quota transactions, the secret deletions — unreachable
+ * from a spec, which is why the erasure and BYOK fixes had no runnable proof.
+ * The production paths are unchanged: every caller that needs Auth still loads
+ * the same module on first use, after the same app initialisation.
+ */
+async function ensureAuthModule() {
+  await ensureInitialized();
+  if (!adminAuthModule) {
+    adminAuthModule = await import('firebase-admin/auth');
+  }
+  return adminAuthModule;
+}
+
 /** The Admin Auth client, initialised like everything else here. */
 export async function getAdminAuth() {
-  await ensureInitialized();
-  return adminAuthModule.getAuth();
+  return (await ensureAuthModule()).getAuth();
 }
 
 /**
@@ -77,8 +96,7 @@ export async function getAdminAuth() {
  * request from a handful of accounts.
  */
 export async function verifyIdToken(idToken: string) {
-  await ensureInitialized();
-  const auth = adminAuthModule.getAuth();
+  const auth = (await ensureAuthModule()).getAuth();
   const decoded = await auth.verifyIdToken(idToken);
   if (decoded.admin === true) {
     return auth.verifyIdToken(idToken, true);
@@ -407,8 +425,7 @@ export async function activateAccount(uid: string): Promise<{ activated: boolean
  * next sign-in mints one without the claim.
  */
 export async function setAdminClaim(uid: string, isAdmin: boolean): Promise<void> {
-  await ensureInitialized();
-  const auth = adminAuthModule.getAuth();
+  const auth = (await ensureAuthModule()).getAuth();
   const { db, FieldValue } = await getAdminDb();
 
   const writeClaim = async () => {
@@ -485,7 +502,6 @@ export async function deleteUserDataAndAccount(
 ): Promise<void> {
   await ensureInitialized();
   const db = deps.db ?? (await getAdminDb()).db;
-  const auth = deps.auth ?? adminAuthModule.getAuth();
 
   // Helper for batch deletion of documents owned by the account (limit 400 per
   // batch). `ownerField` is `userId` almost everywhere; survey_responses keys
@@ -583,7 +599,10 @@ export async function deleteUserDataAndAccount(
 
   // 6. The Firebase Auth user, last (idempotent — tolerate an already-deleted
   //    account). If this fails the data is gone and the sign-in remains, which
-  //    is the one partial state a retry can still finish from.
+  //    is the one partial state a retry can still finish from. The Auth client
+  //    is resolved here rather than at the top, so an erasure that stops at
+  //    step 4 never needs the module at all.
+  const auth = deps.auth ?? (await ensureAuthModule()).getAuth();
   try {
     await auth.deleteUser(uid);
   } catch (e: any) {
