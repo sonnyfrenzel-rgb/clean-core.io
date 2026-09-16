@@ -290,13 +290,22 @@ export function computeComplexityScore(code: string): number {
   const loc = lines.length;
   const upper = code.toUpperCase();
 
-  // Nesting depth approximation (IF/LOOP/DO/CASE/TRY blocks)
+  // Nesting depth approximation (IF/LOOP/DO/CASE/TRY blocks).
+  //
+  // The two sides have to read the same way round. The opener matched on a word
+  // boundary, so `IF lv_x > 5. " check` counted; the closer had to be the whole
+  // line, so `ENDIF. " done` did not — and the counter never came back down.
+  // On the 1000-line starter example, with an inline comment on every line, the
+  // deepest nesting then read 99 instead of 3 and the complexity score 10
+  // instead of 9: a program scored more complex for being commented. Found by
+  // the comment property in `tests/abap-metamorphic.spec.ts`, which adds an
+  // inline comment to every line and asserts that nothing moves.
   let maxNesting = 0;
   let currentNesting = 0;
   for (const line of lines) {
     const trimmed = line.trim().toUpperCase();
     if (/^(IF|LOOP|DO|CASE|TRY|WHILE)\b/.test(trimmed)) currentNesting++;
-    if (/^(ENDIF|ENDLOOP|ENDDO|ENDCASE|ENDTRY|ENDWHILE)\.?\s*$/.test(trimmed)) currentNesting = Math.max(0, currentNesting - 1);
+    if (/^(ENDIF|ENDLOOP|ENDDO|ENDCASE|ENDTRY|ENDWHILE)\b/.test(trimmed)) currentNesting = Math.max(0, currentNesting - 1);
     maxNesting = Math.max(maxNesting, currentNesting);
   }
 
