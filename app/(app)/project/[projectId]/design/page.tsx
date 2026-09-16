@@ -58,6 +58,8 @@ import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, staleness } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
+import { escapeHtml } from '@/lib/utils';
+import { sapApiHubLink } from '@/lib/export-safety';
 
 const cleanAndParseJSON = (str: string) => {
   let cleaned = str.trim();
@@ -400,6 +402,15 @@ ${responseText.substring(0, 4000)}`;
   }, [projectId]);
 
 
+  /**
+   * Everything the model wrote is text, and this document is opened as HTML in
+   * the application's own origin (QA review of 33471220d6e9, 024ec609bc86). A
+   * comment in the uploaded ABAP is enough to steer the model into returning
+   * markup, so no model value reaches the template unescaped.
+   */
+  const esc = escapeHtml;
+
+
   const exportToConfluence = async (viewOnly = false) => {
     const currentProject = projectRef.current;
     if (!currentProject?.solutionDesign) {
@@ -427,54 +438,54 @@ ${responseText.substring(0, 4000)}`;
         const purposeStr = typeof item === 'string' ? '' : item.purpose || '';
         return `
           <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold;">${pathStr}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${purposeStr}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold;">${esc(pathStr)}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${esc(purposeStr)}</td>
           </tr>
         `;
       }).join('') || '';
 
       const endpointsRows = data.nodeAppBlueprint?.apiEndpoints?.map(route => `
         <tr>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0;"><span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; background: ${route.method === 'GET' ? '#e6fcff' : route.method === 'POST' ? '#eae6ff' : route.method === 'PUT' ? '#fffae6' : '#ffebe6'}; color: ${route.method === 'GET' ? '#007a87' : route.method === 'POST' ? '#403294' : route.method === 'PUT' ? '#974f0c' : '#de350b'}; border: 1px solid ${route.method === 'GET' ? '#b3f0ff' : route.method === 'POST' ? '#c5bdf3' : route.method === 'PUT' ? '#ffe380' : '#ffbdad'};">${route.method}</span></td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold; color: #0747a6;">${route.path}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${route.description}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0;"><span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; background: ${route.method === 'GET' ? '#e6fcff' : route.method === 'POST' ? '#eae6ff' : route.method === 'PUT' ? '#fffae6' : '#ffebe6'}; color: ${route.method === 'GET' ? '#007a87' : route.method === 'POST' ? '#403294' : route.method === 'PUT' ? '#974f0c' : '#de350b'}; border: 1px solid ${route.method === 'GET' ? '#b3f0ff' : route.method === 'POST' ? '#c5bdf3' : route.method === 'PUT' ? '#ffe380' : '#ffbdad'};">${esc(route.method)}</span></td>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold; color: #0747a6;">${esc(route.path)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${esc(route.description)}</td>
         </tr>
       `).join('') || '';
 
       const servicesCards = data.cloudServices?.map(svc => `
         <div style="border: 1px solid #ebecf0; border-radius: 8px; padding: 15px; background: #fff;">
-          <div style="font-weight: bold; color: #0747a6; font-size: 15px; margin-bottom: 5px;">${svc.serviceName}</div>
-          <p style="font-size: 13px; margin: 0 0 10px 0; color: #5e6c84;">${svc.purpose}</p>
+          <div style="font-weight: bold; color: #0747a6; font-size: 15px; margin-bottom: 5px;">${esc(svc.serviceName)}</div>
+          <p style="font-size: 13px; margin: 0 0 10px 0; color: #5e6c84;">${esc(svc.purpose)}</p>
           <div style="font-size: 11px; color: #6b778c; border-top: 1px solid #f4f5f7; padding-top: 8px;">
-            <strong>Packages:</strong> ${svc.npmPackages?.map(pkg => `<code style="background: #f4f5f7; padding: 2px 4px; border-radius: 3px; font-family: monospace;">${pkg}</code>`).join(', ') || 'None'}
+            <strong>Packages:</strong> ${svc.npmPackages?.map(pkg => `<code style="background: #f4f5f7; padding: 2px 4px; border-radius: 3px; font-family: monospace;">${esc(pkg)}</code>`).join(', ') || 'None'}
           </div>
         </div>
       `).join('') || '';
 
       const securityRows = data.securityHardening?.map(item => `
         <tr>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: bold;">${item.category}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${item.requirement}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold; color: #de350b;">${item.packageOrConfig}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: bold;">${esc(item.category)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${esc(item.requirement)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold; color: #de350b;">${esc(item.packageOrConfig)}</td>
         </tr>
       `).join('') || '';
 
       const roadmapPhases = data.roadmap?.map(phase => `
         <div style="margin-bottom: 20px; border-left: 3px solid #00875a; padding-left: 15px;">
-          <h4 style="margin: 0 0 5px 0; color: #172b4d; font-size: 16px;"><strong>${phase.phase}: ${phase.title}</strong></h4>
+          <h4 style="margin: 0 0 5px 0; color: #172b4d; font-size: 16px;"><strong>${esc(phase.phase)}: ${esc(phase.title)}</strong></h4>
           <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #5e6c84;">
-            ${phase.deliverables?.map(del => `<li>${del}</li>`).join('') || ''}
+            ${phase.deliverables?.map(del => `<li>${esc(del)}</li>`).join('') || ''}
           </ul>
         </div>
       `).join('') || '';
 
             const apiMappingRows = data.sapStandardApiMapping?.map(map => `
         <tr>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold;">${map.legacyTableOrFunction}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-weight: bold; color: #00875a;">${map.sapStandardApiName}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-size: 12px;">${map.apiId}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${map.description}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 12px;"><a href="${map.apiHubUrl}" target="_blank" style="color: #0747a6; font-weight: bold; text-decoration: none;">api.sap.com ➔</a></td>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-weight: bold;">${esc(map.legacyTableOrFunction)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-weight: bold; color: #00875a;">${esc(map.sapStandardApiName)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-size: 12px;">${esc(map.apiId)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${esc(map.description)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 12px;">${sapApiHubLink(map.apiHubUrl, 'api.sap.com ➔')}</td>
         </tr>
       `).join('') || '';
 
@@ -502,7 +513,7 @@ ${responseText.substring(0, 4000)}`;
         <html>
         <head>
           <meta charset="utf-8">
-          <title>Solution Design: ${data.projectName || currentProject.name}</title>
+          <title>Solution Design: ${esc(data.projectName || currentProject.name)}</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif; color: #172b4d; line-height: 1.6; padding: 40px; max-width: 900px; margin: 0 auto; background: #fff; }
             .header { border-bottom: 2px solid #ebecf0; padding-bottom: 20px; margin-bottom: 30px; }
@@ -522,13 +533,13 @@ ${responseText.substring(0, 4000)}`;
         </head>
         <body>
           <div class="header">
-            <h1>Solution Design Document: ${data.projectName || currentProject.name}</h1>
-            <div class="meta">Target Framework: <strong>${data.architectureOverview?.nodeFramework}</strong> | Platform: <strong>${data.architectureOverview?.runtimePlatform}</strong> | Generated by Clean-Core.io | ${new Date().toLocaleDateString()}</div>
+            <h1>Solution Design Document: ${esc(data.projectName || currentProject.name)}</h1>
+            <div class="meta">Target Framework: <strong>${esc(data.architectureOverview?.nodeFramework)}</strong> | Platform: <strong>${esc(data.architectureOverview?.runtimePlatform)}</strong> | Generated by Clean-Core.io | ${new Date().toLocaleDateString()}</div>
           </div>
           <div class="content">
             <div class="summary-box">
               <h3 style="margin-top: 0; color: #00875a;">Architectural Approach</h3>
-              <p>${data.architectureOverview?.approachDescription}</p>
+              <p>${esc(data.architectureOverview?.approachDescription)}</p>
             </div>
 
             <h2>Side-by-Side Node.js Project Blueprint</h2>
@@ -565,8 +576,8 @@ ${responseText.substring(0, 4000)}`;
             </div>
 
             <h2>Data Synchronization Pattern</h2>
-            <p><strong>Pattern:</strong> <strong>${data.dataSync?.patternName}</strong></p>
-            <p>${data.dataSync?.description}</p>
+            <p><strong>Pattern:</strong> <strong>${esc(data.dataSync?.patternName)}</strong></p>
+            <p>${esc(data.dataSync?.description)}</p>
 
             ${apiMappingSection}
 
@@ -599,7 +610,7 @@ ${responseText.substring(0, 4000)}`;
         <html>
         <head>
           <meta charset="utf-8">
-          <title>Solution Design: ${currentProject.name}</title>
+          <title>Solution Design: ${esc(currentProject.name)}</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif; color: #172b4d; line-height: 1.6; padding: 40px; max-width: 900px; margin: 0 auto; background: #fff; }
             .header { border-bottom: 2px solid #ebecf0; padding-bottom: 20px; margin-bottom: 30px; }
@@ -622,7 +633,7 @@ ${responseText.substring(0, 4000)}`;
         </head>
         <body>
           <div class="header">
-            <h1>Solution Design Document: ${currentProject.name}</h1>
+            <h1>Solution Design Document: ${esc(currentProject.name)}</h1>
             <div class="meta">Generated by Clean-Core.io | ${new Date().toLocaleDateString()}</div>
           </div>
           <div class="content">
@@ -634,11 +645,12 @@ ${responseText.substring(0, 4000)}`;
     }
 
     if (viewOnly) {
-      const win = window.open('', '_blank');
-      if (win) {
-        win.document.write(htmlContent);
-        win.document.close();
-      }
+      // Not `document.write` into a blank window that inherits this origin: the
+      // preview opens as its own document, with no handle back to the opener.
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
       return;
     }
 

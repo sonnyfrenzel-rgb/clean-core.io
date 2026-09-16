@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   CheckCircle2, 
   AlertCircle, 
@@ -108,21 +108,33 @@ export default function GapsWorklist({
     return { total, signedOff, inReview, open, signedOffPct, inReviewPct, openPct };
   }, [worklistItems]);
 
-  // Handle status updates
+  // Every status change sends the complete list, and every handler used to
+  // build that list from the snapshot it had captured when it started. Change
+  // item A, change item B while A is still saving, and B's write restored A to
+  // its old status — a sign-off silently undone, with the clearance totals
+  // agreeing with the wrong list (QA review of 33471220d6e9, 883625214774).
+  // The writes are serialised and each one starts from what the one before it
+  // actually wrote.
+  const pendingWrite = useRef<Promise<void>>(Promise.resolve());
+  const latestList = useRef(worklistItems);
+  useEffect(() => { latestList.current = worklistItems; }, [worklistItems]);
+
   const handleStatusChange = async (itemId: string, newStatus: 'open' | 'in_review' | 'signed_off') => {
     setUpdatingItemId(itemId);
-    try {
-      const updatedList = worklistItems.map(item => {
-        if (item.id === itemId) {
-          return { ...item, status: newStatus };
-        }
-        return item;
-      });
+    const run = pendingWrite.current.then(async () => {
+      const updatedList = latestList.current.map((item: WorklistItem) =>
+        item.id === itemId ? { ...item, status: newStatus } : item,
+      );
+      latestList.current = updatedList;
       await onUpdateWorklist(updatedList);
-    } catch (err) {
+    }).catch((err: unknown) => {
       console.error('Failed to update backlog item status:', err);
+    });
+    pendingWrite.current = run;
+    try {
+      await run;
     } finally {
-      setUpdatingItemId(null);
+      setUpdatingItemId((current) => (current === itemId ? null : current));
     }
   };
 

@@ -191,12 +191,23 @@ export default function AnalyzePage() {
     return scanCodeContent(content);
   };
 
+  /** The limit the upload area has always advertised (QA 8d9184e6f94f). */
+  const MAX_UPLOAD_BYTES = 1024 * 1024;
+
   const handleFile = (file: File) => {
     setError('');
     
     // Scan file metadata first
     if (!file.name.endsWith('.abap') && !file.name.endsWith('.txt')) {
         setError('Security Block: Unauthorized file type. Only standard ABAP source (.abap) or plain text (.txt) files are permitted.');
+        return;
+    }
+
+    // "Max 1MB" was written on the screen and checked nowhere: the browser read
+    // the whole file into memory, rendered it into the textarea and the scanner,
+    // and tried to put it in a model request (QA 8d9184e6f94f).
+    if (file.size > MAX_UPLOAD_BYTES) {
+        setError(`That file is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is 1 MB — analyse one object at a time, or paste the part you want assessed.`);
         return;
     }
 
@@ -1059,6 +1070,17 @@ export default function AnalyzePage() {
     [legacyCode],
   );
 
+  /**
+   * The stored route differs from the one that was recommended — an architect
+   * pressed "Switch Track". The recommendation's confidence and rationale
+   * describe the other route and are labelled as such from here on.
+   */
+  const routeIsOverridden = (() => {
+    const recommended = (project?.analysis ? readStoredAnalysis<AnalysisData>(project.analysis) : null)?.extensibilityRouting?.recommendedRoute;
+    const stored = project?.extensibilityRoute;
+    return typeof recommended === 'string' && typeof stored === 'string' && recommended !== stored;
+  })();
+
   const signedCleanCoreScore: number | null =
     typeof routeReport?.cleanCoreScore === 'number'
       ? routeReport.cleanCoreScore
@@ -1207,9 +1229,11 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                           : <GlossaryTerm termKey="RAP" className="border-b-0 hover:text-emerald-700 text-emerald-700">⚙️ ABAP Cloud (RAP)</GlossaryTerm>}
                       </span>
                       <span className="text-[10px] font-bold text-slate-400">
-                        {typeof analysisData.extensibilityRouting?.confidenceScore === 'number'
-                          ? `${analysisData.extensibilityRouting.confidenceScore}% Conf.`
-                          : 'Confidence not computed'}
+                        {routeIsOverridden
+                          ? 'Chosen by you'
+                          : typeof analysisData.extensibilityRouting?.confidenceScore === 'number'
+                            ? `${analysisData.extensibilityRouting.confidenceScore}% Conf.`
+                            : 'Confidence not computed'}
                       </span>
                     </div>
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight mb-1">
@@ -1217,9 +1241,24 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                         ? <GlossaryTerm termKey="CAP" className="text-xs font-black text-slate-800 border-b-0 uppercase">SAP BTP Node.js App (CAP)</GlossaryTerm> 
                         : <GlossaryTerm termKey="RAP" className="text-xs font-black text-slate-800 border-b-0 uppercase">RAP Business Object</GlossaryTerm>)}
                     </h4>
-                    <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-4">
-                      {analysisData.extensibilityRouting?.rationale || 'AI analyzed legacy database joins and determined the optimal decoupled BTP modernization strategy.'}
-                    </p>
+                    {routeIsOverridden ? (
+                      // The confidence and the reasoning belong to the route
+                      // that was recommended. Printed beside a route the user
+                      // switched to, they read as support for the opposite
+                      // decision (QA review of 33471220d6e9, 210bafeb4c8b).
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        You changed this route. The recommendation was{' '}
+                        <span className="font-bold text-slate-700">{analysisData.extensibilityRouting?.recommendedRoute}</span>
+                        {typeof analysisData.extensibilityRouting?.confidenceScore === 'number'
+                          ? ` at ${analysisData.extensibilityRouting.confidenceScore}% confidence`
+                          : ''}
+                        {analysisData.extensibilityRouting?.rationale ? `: ${analysisData.extensibilityRouting.rationale}` : '.'}
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-4">
+                        {analysisData.extensibilityRouting?.rationale || 'AI analyzed legacy database joins and determined the optimal decoupled BTP modernization strategy.'}
+                      </p>
+                    )}
                   </div>
 
                   {/* Interactive Override Button */}

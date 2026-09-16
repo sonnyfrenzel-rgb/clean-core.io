@@ -187,6 +187,27 @@ async function testEndpoint(
     }
   }
 
+  // A server that refuses HEAD answers 405 or 501 rather than throwing, so the
+  // fallback above never ran and a reachable endpoint was reported as failed
+  // (QA review of 33471220d6e9, f480d96b63d1).
+  if (response.status === 405 || response.status === 501) {
+    try {
+      response = await safeFetch(url, {
+        method: 'GET',
+        headers,
+        signal: controller.signal,
+        redirect: 'follow',
+      });
+    } catch (getError: any) {
+      clearTimeout(timeout);
+      if (getError.name === 'AbortError') {
+        throw new Error('Connection timed out after 15 seconds. Verify the URL is correct and the system is reachable.');
+      }
+      const errorMessage = getError.cause?.code || getError.message || 'Unknown error';
+      throw new Error(`Connection failed: ${errorMessage}. Verify the URL, network configuration, and firewall rules.`);
+    }
+  }
+
   clearTimeout(timeout);
   return { httpStatus: response.status };
 }

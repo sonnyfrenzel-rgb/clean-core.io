@@ -29,21 +29,42 @@ const PDF_URL = '/clean-core-explained.pdf';
 export default function GuideShareBar() {
   const reduce = useReducedMotion();
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
 
   async function handleCopy() {
+    // "Link copied" was shown whatever happened: the fallback selected a field
+    // and removed it again without ever copying, so in an embedded browser the
+    // reader pasted whatever was in the clipboard before
+    // (QA review of 33471220d6e9, 823a09338d58).
+    let ok = false;
     try {
       await navigator.clipboard.writeText(GUIDE_URL);
+      ok = true;
     } catch {
-      // Clipboard is blocked in some embedded browsers; selecting the text still
-      // lets the reader copy it by hand.
+      // Clipboard API blocked — the old command still works in those browsers.
       const el = document.createElement('input');
       el.value = GUIDE_URL;
+      el.setAttribute('readonly', 'true');
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
       document.body.appendChild(el);
       el.select();
+      el.setSelectionRange(0, GUIDE_URL.length);
+      try {
+        ok = document.execCommand('copy');
+      } catch {
+        ok = false;
+      }
       document.body.removeChild(el);
+    }
+    if (!ok) {
+      setCopyFailed(true);
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+      copyTimer.current = setTimeout(() => setCopyFailed(false), 6000);
+      return;
     }
     setCopied(true);
     if (copyTimer.current) clearTimeout(copyTimer.current);
@@ -106,7 +127,7 @@ export default function GuideShareBar() {
           type="button"
           onClick={handleCopy}
           aria-live="polite"
-          className={`${tile} ${copied ? 'border-green-300 bg-green-50' : idle}`}
+          className={`${tile} ${copied ? 'border-green-300 bg-green-50' : copyFailed ? 'border-amber-300 bg-amber-50' : idle}`}
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition-colors group-hover:text-green-700">
             <AnimatePresence mode="wait" initial={false}>
@@ -135,10 +156,10 @@ export default function GuideShareBar() {
           </span>
           <span>
             <span className="block text-sm font-black text-gray-950">
-              {copied ? 'Link copied' : 'Copy the link'}
+              {copied ? 'Link copied' : copyFailed ? 'Copy it by hand' : 'Copy the link'}
             </span>
             <span className="mt-0.5 block text-xs leading-relaxed text-gray-500">
-              Paste it in a chat, a ticket, an email
+              {copyFailed ? GUIDE_URL : 'Paste it in a chat, a ticket, an email'}
             </span>
           </span>
         </motion.button>

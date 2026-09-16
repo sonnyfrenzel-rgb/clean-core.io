@@ -61,39 +61,37 @@ function buildRapChart(data: DesignData): string {
   const hasSRVB = projectFiles.some(f => /srvb|service.*bind/i.test(f.path + f.purpose));
   const hasABP = projectFiles.some(f => /abp|handler|impl/i.test(f.path + f.purpose));
 
+  // Every edge used to name a fallback node whether or not the design had it:
+  // with no behavior definition anywhere in the structure, `BDEF --> CORE` still
+  // went in, and Mermaid obligingly drew a BDEF box under the heading
+  // "Auto-Generated from Design JSON" (QA review of 33471220d6e9, 4362479eb86e).
+  // The chain is built from the layers that were actually detected, and
+  // neighbours are connected to each other.
   const lines: string[] = [
     'graph TD',
     '  UI["🖥️ Fiori Elements UI"]',
   ];
 
-  if (hasSRVB || endpoints.length > 0) {
-    const epLabel = endpoints.length > 0 ? `${endpoints.length} Operations` : 'OData V4';
-    lines.push(`  SRVB["🌐 Service Binding<br/>${sanitize(epLabel)}"]`);
-    lines.push('  UI --> SRVB');
-  }
+  const epLabel = endpoints.length > 0 ? `${endpoints.length} Operations` : 'OData V4';
+  const chain: Array<{ id: string; node: string }> = [];
+  if (hasSRVB || endpoints.length > 0) chain.push({ id: 'SRVB', node: `  SRVB["🌐 Service Binding<br/>${sanitize(epLabel)}"]` });
+  if (hasSRVD) chain.push({ id: 'SRVD', node: '  SRVD["📋 Service Definition<br/>SRVD"]' });
+  if (hasBDEF) chain.push({ id: 'BDEF', node: '  BDEF["⚙️ Behavior Definition<br/>BDEF + Validations"]' });
+  if (hasABP) chain.push({ id: 'ABP', node: '  ABP["🔧 ABP Handler Class<br/>Business Logic"]' });
+  if (hasCDS) chain.push({ id: 'CDS', node: '  CDS["📊 CDS Projection View<br/>Data Model"]' });
 
-  if (hasSRVD) {
-    lines.push('  SRVD["📋 Service Definition<br/>SRVD"]');
-    lines.push('  SRVB --> SRVD');
-  }
-
-  if (hasBDEF) {
-    lines.push('  BDEF["⚙️ Behavior Definition<br/>BDEF + Validations"]');
-    lines.push(`  ${hasSRVD ? 'SRVD' : 'SRVB'} --> BDEF`);
-  }
-
-  if (hasABP) {
-    lines.push('  ABP["🔧 ABP Handler Class<br/>Business Logic"]');
-    lines.push(`  ${hasBDEF ? 'BDEF' : 'SRVD'} --> ABP`);
-  }
-
-  if (hasCDS) {
-    lines.push('  CDS["📊 CDS Projection View<br/>Data Model"]');
-    lines.push(`  ${hasABP ? 'ABP' : hasBDEF ? 'BDEF' : 'SRVD'} --> CDS`);
-  }
-
+  for (const layer of chain) lines.push(layer.node);
   lines.push('  CORE["🛡️ S/4HANA Core<br/>Protected Standard"]');
-  lines.push(`  ${hasCDS ? 'CDS' : hasABP ? 'ABP' : 'BDEF'} --> CORE`);
+
+  const ids = ['UI', ...chain.map((l) => l.id), 'CORE'];
+  for (let i = 0; i < ids.length - 1; i += 1) lines.push(`  ${ids[i]} --> ${ids[i + 1]}`);
+
+  // A design that describes none of the RAP layers says so, rather than
+  // letting the reader take the two remaining boxes for an architecture.
+  if (chain.length === 0) {
+    lines.push('  NOTE["⚠️ The design names no RAP artefacts<br/>(no CDS, BDEF, SRVD, SRVB or handler class)"]');
+    lines.push('  UI -.-> NOTE');
+  }
 
   // Add IAM/Auth services if present
   const authService = services.find(s => /iam|auth|role/i.test(s.serviceName + s.purpose));

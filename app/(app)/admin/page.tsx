@@ -14,6 +14,8 @@ import UsageQuotaPanel from '@/components/admin/UsageQuotaPanel';
 export default function AdminConsole() {
   const { profile, loading: profileLoading } = useUserProfile();
   const [requests, setRequests] = useState<any[]>([]);
+  /** A notification that did not go out — the state change stood, the mail did not. */
+  const [mailWarning, setMailWarning] = useState('');
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   // Signup no longer produces a queue to work through: accounts are active the
@@ -120,7 +122,11 @@ export default function AdminConsole() {
       // 2. Dispatch premium Welcome Email to the user in the background
       if (targetReq) {
         try {
-          await fetch('/api/send-approval-email', {
+          // A 500 from the mail route resolves like a 200; only a network
+          // error threw, so a welcome mail that was never sent was reported as
+          // sent (QA review of 33471220d6e9, 57876fae0053). The approval itself
+          // stands either way — it is the notification that failed.
+          const mailRes = await fetch('/api/send-approval-email', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -131,7 +137,12 @@ export default function AdminConsole() {
               name: targetReq.name,
             }),
           });
+          if (!mailRes.ok) {
+            const detail = await mailRes.json().catch(() => ({}));
+            setMailWarning(`The account is active, but the welcome mail to ${targetReq.email} was not sent (${detail.error || mailRes.status}). Send it again from this account's row.`);
+          }
         } catch (emailErr) {
+          setMailWarning(`The account is active, but the welcome mail to ${targetReq.email} could not be sent. Send it again from this account's row.`);
           console.error('Failed to trigger Welcome Email API:', emailErr);
         }
       }
@@ -226,7 +237,7 @@ export default function AdminConsole() {
       // 3. Dispatch premium welcome / deactivation email
       if (targetReq) {
         try {
-          await fetch(currentAllowed ? '/api/send-tenant-revoke-email' : '/api/send-tenant-approval-email', {
+          const mailRes = await fetch(currentAllowed ? '/api/send-tenant-revoke-email' : '/api/send-tenant-approval-email', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -237,7 +248,12 @@ export default function AdminConsole() {
               name: targetReq.name
             })
           });
+          if (!mailRes.ok) {
+            const detail = await mailRes.json().catch(() => ({}));
+            setMailWarning(`Tenant access was changed, but the notification to ${targetReq.email} was not sent (${detail.error || mailRes.status}).`);
+          }
         } catch (emailErr) {
+          setMailWarning(`Tenant access was changed, but the notification to ${targetReq.email} could not be sent.`);
           console.error("Failed to send tenant access update email:", emailErr);
         }
       }
@@ -294,6 +310,13 @@ export default function AdminConsole() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300 w-full max-w-7xl mx-auto">
+      {mailWarning && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-sm text-amber-900 font-medium">
+          <MailWarning size={18} className="text-amber-600 shrink-0 mt-0.5" />
+          <span className="flex-1">{mailWarning}</span>
+          <button type="button" onClick={() => setMailWarning('')} className="text-amber-700 hover:text-amber-900 font-bold text-xs uppercase tracking-widest">Dismiss</button>
+        </div>
+      )}
       
       {/* Header Banner */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl relative overflow-hidden">
@@ -405,6 +428,17 @@ export default function AdminConsole() {
                       {req.status === 'approved' ? (
                         <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-green-200">
                           <CheckCircle2 size={10} /> Active Plan
+                        </span>
+                      ) : req.status === 'suspended' ? (
+                        // Every non-approved account used to read "Pending
+                        // Review", including one an administrator had just
+                        // suspended (QA review of 33471220d6e9, aad1ecf24d47).
+                        <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-rose-200">
+                          <UserX size={10} /> Suspended
+                        </span>
+                      ) : req.status === 'deleted' ? (
+                        <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-gray-200">
+                          <Trash2 size={10} /> Deleted
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-amber-200">

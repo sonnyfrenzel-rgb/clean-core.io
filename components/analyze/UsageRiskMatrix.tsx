@@ -222,7 +222,14 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
                 return (
                   <button
                     key={key}
-                    onClick={() => setSelectedCell(isSelected ? null : key)}
+                    onClick={() => {
+                      // The open object detail belonged to the cell that was
+                      // selected before; it used to stay on screen under a
+                      // different cell's list, or under no cell at all
+                      // (QA review of 33471220d6e9, 989dafdac359).
+                      setSelectedRow(null);
+                      setSelectedCell(isSelected ? null : key);
+                    }}
                     className={clsx(
                       'rounded-xl border px-3 py-3 text-center transition-all min-h-[56px]',
                       CELL_COLORS[key] || 'bg-slate-50 border-slate-200',

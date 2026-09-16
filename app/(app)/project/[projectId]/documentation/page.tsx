@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -21,6 +21,7 @@ import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
+import { escapeHtml } from '@/lib/utils';
 
 const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
   let files: Array<{ path: string, content: string }> = [];
@@ -393,7 +394,13 @@ ${context}`;
       
       setDocumentation(jsonString);
       
-      const updatedCode = addOrUpdateFileInWorkspace(project.generatedCode, 'docs/process-blueprint.md', formatDocsToMarkdown(jsonString));
+      // Both generations rewrite the same `generatedCode` field from the
+      // snapshot they started with, so the second write dropped the first
+      // one's file (QA review of 33471220d6e9, 4db1e81408f4). The workspace is
+      // read back from the database immediately before it is written, and the
+      // two buttons no longer run at the same time.
+      const latest = await getDoc(doc(getDb(), 'projects', idStr));
+      const updatedCode = addOrUpdateFileInWorkspace(latest.data()?.generatedCode ?? project.generatedCode, 'docs/process-blueprint.md', formatDocsToMarkdown(jsonString));
 
       const db = getDb();
       await updateDoc(doc(db, 'projects', idStr), {
@@ -510,7 +517,8 @@ Structure the JSON exactly like this:
       
       setBusinessDocumentation(responseText);
       
-      const updatedCode = addOrUpdateFileInWorkspace(project.generatedCode, 'docs/business-documentation.md', formatBusinessDocsToMarkdown(responseText));
+      const latest = await getDoc(doc(getDb(), 'projects', idStr));
+      const updatedCode = addOrUpdateFileInWorkspace(latest.data()?.generatedCode ?? project.generatedCode, 'docs/business-documentation.md', formatBusinessDocsToMarkdown(responseText));
 
       const db = getDb();
       await updateDoc(doc(db, 'projects', idStr), {
@@ -538,7 +546,16 @@ Structure the JSON exactly like this:
 
   const downloadConfluenceHTML = () => {
     if (!parsedDoc) return;
-    
+
+    /**
+     * The export is an HTML document a reviewer opens, and every value in it
+     * was written by the model from the customer's own ABAP — a comment in the
+     * source is enough to steer it into returning markup (QA review of
+     * 33471220d6e9, 06f7c0c56a6c). Nothing generated reaches the document
+     * unescaped; the markup around it is ours.
+     */
+    const esc = escapeHtml;
+
     const confluenceCSS = `
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #172B4D; line-height: 1.6; padding: 20px; }
@@ -570,23 +587,23 @@ Structure the JSON exactly like this:
         </head>
         <body>
           <div class="doc-header">
-            <h1>${parsedDoc.l1_domain?.name || 'Process Blueprint'}</h1>
+            <h1>${esc(parsedDoc.l1_domain?.name || 'Process Blueprint')}</h1>
             <p>Enterprise Integration Specifications & Workflow Definition</p>
           </div>
           
           <div class="meta-grid">
             <div class="meta-card">
               <h3>Level 1: Business Domain Blueprint</h3>
-              <p><strong>Strategic Goal:</strong> ${parsedDoc.l1_domain?.strategicGoal || 'N/A'}</p>
-              <div class="badge">Owner: ${parsedDoc.l1_domain?.owner || 'N/A'}</div>
+              <p><strong>Strategic Goal:</strong> ${esc(parsedDoc.l1_domain?.strategicGoal || 'N/A')}</p>
+              <div class="badge">Owner: ${esc(parsedDoc.l1_domain?.owner || 'N/A')}</div>
             </div>
             
             <div class="meta-card">
               <h3>Level 2: Process Area Group</h3>
-              <p><strong>Process Area:</strong> ${parsedDoc.l2_group?.processArea || 'N/A'}</p>
+              <p><strong>Process Area:</strong> ${esc(parsedDoc.l2_group?.processArea || 'N/A')}</p>
               <p style="margin-top: 10px;"><strong>KPI Framework:</strong></p>
               <div style="margin-top: 5px;">
-                ${(parsedDoc.l2_group?.kpis || []).map((kpi: string) => `<span class="tech-pill">${kpi}</span>`).join('')}
+                ${(parsedDoc.l2_group?.kpis || []).map((kpi: string) => `<span class="tech-pill">${esc(kpi)}</span>`).join('')}
               </div>
             </div>
           </div>
@@ -605,13 +622,13 @@ Structure the JSON exactly like this:
             <tbody>
               ${(parsedDoc.l4_tasks || []).map((task: any) => `
                 <tr>
-                  <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${task.stepId}</td>
-                  <td><strong>${task.name || `Task ${task.stepId}`}</strong></td>
+                  <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${esc(task.stepId)}</td>
+                  <td><strong>${esc(task.name) || `Task ${esc(task.stepId)}`}</strong></td>
                    <td>
-                     <p style="margin: 0;">${task.description}</p>
+                     <p style="margin: 0;">${esc(task.description)}</p>
                      <p style="margin: 6px 0 0 0; font-size: 11px; color: #6B778C;">
-                       <strong>Inputs:</strong> ${(task.inputs || []).join(', ') || 'N/A'} | 
-                       <strong>Outputs:</strong> ${(task.outputs || []).join(', ') || 'N/A'}
+                       <strong>Inputs:</strong> ${esc((task.inputs || []).join(', ') || 'N/A')} | 
+                       <strong>Outputs:</strong> ${esc((task.outputs || []).join(', ') || 'N/A')}
                      </p>
                    </td>
                   <td>
@@ -619,10 +636,10 @@ Structure the JSON exactly like this:
                       task.complexity === 'High' ? 'complexity-high' :
                       task.complexity === 'Medium' ? 'complexity-medium' :
                       'complexity-low'
-                    }">${task.complexity || 'Low'}</span>
+                    }">${esc(task.complexity || 'Low')}</span>
                   </td>
                   <td>
-                    ${(task.systems || []).map((sys: string) => `<span class="tech-pill">${sys}</span>`).join('')}
+                    ${(task.systems || []).map((sys: string) => `<span class="tech-pill">${esc(sys)}</span>`).join('')}
                   </td>
                 </tr>
               `).join('')}
@@ -646,11 +663,11 @@ Structure the JSON exactly like this:
               <tbody>
                 ${(parsedBusinessDoc.raci_matrix || []).map((raci: any) => `
                   <tr>
-                    <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${raci.stepId}</td>
-                    <td>${raci.r || 'N/A'}</td>
-                    <td>${raci.a || 'N/A'}</td>
-                    <td>${raci.c || 'N/A'}</td>
-                    <td>${raci.i || 'N/A'}</td>
+                    <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${esc(raci.stepId)}</td>
+                    <td>${esc(raci.r || 'N/A')}</td>
+                    <td>${esc(raci.a || 'N/A')}</td>
+                    <td>${esc(raci.c || 'N/A')}</td>
+                    <td>${esc(raci.i || 'N/A')}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -669,10 +686,10 @@ Structure the JSON exactly like this:
               <tbody>
                 ${(parsedBusinessDoc.sop_details || []).map((sop: any) => `
                   <tr>
-                    <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${sop.stepId}</td>
-                    <td>${sop.narrative || 'N/A'}</td>
-                    <td style="color: #BF2600; font-weight: 500;">${sop.businessException || 'N/A'}</td>
-                    <td style="font-weight: 600; color: #006644;">${sop.kpiTarget || 'N/A'}</td>
+                    <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${esc(sop.stepId)}</td>
+                    <td>${esc(sop.narrative || 'N/A')}</td>
+                    <td style="color: #BF2600; font-weight: 500;">${esc(sop.businessException || 'N/A')}</td>
+                    <td style="font-weight: 600; color: #006644;">${esc(sop.kpiTarget || 'N/A')}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -691,10 +708,10 @@ Structure the JSON exactly like this:
               <tbody>
                 ${(parsedBusinessDoc.audit_controls || []).map((ctrl: any) => `
                   <tr>
-                    <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${ctrl.stepId}</td>
-                    <td><strong>${ctrl.controlObjective || 'N/A'}</strong></td>
-                    <td>${ctrl.mitigationAction || 'N/A'}</td>
-                    <td style="font-family: monospace; font-size: 11px;">${ctrl.assertionMethod || 'N/A'}</td>
+                    <td style="font-family: monospace; font-weight: bold; color: #0747A6;">${esc(ctrl.stepId)}</td>
+                    <td><strong>${esc(ctrl.controlObjective || 'N/A')}</strong></td>
+                    <td>${esc(ctrl.mitigationAction || 'N/A')}</td>
+                    <td style="font-family: monospace; font-size: 11px;">${esc(ctrl.assertionMethod || 'N/A')}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -795,7 +812,7 @@ Structure the JSON exactly like this:
 
           <button 
             onClick={generateDocumentation}
-            disabled={isGeneratingDoc}
+            disabled={isGeneratingDoc || isGeneratingBusinessDoc}
             className="flex items-center gap-2 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all font-bold text-xs md:text-sm uppercase tracking-widest disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${isGeneratingDoc ? 'animate-spin' : ''}`} /> 
@@ -1267,7 +1284,7 @@ Structure the JSON exactly like this:
                     
                     <button
                       onClick={generateBusinessDocumentation}
-                      disabled={isGeneratingBusinessDoc}
+                      disabled={isGeneratingBusinessDoc || isGeneratingDoc}
                       className="relative inline-flex items-center gap-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-black uppercase tracking-widest text-xs md:text-sm px-10 py-4.5 rounded-2xl shadow-xl hover:shadow-green-600/20 active:scale-95 transition-all disabled:opacity-50"
                     >
                       <Rocket className="w-4 h-4" />

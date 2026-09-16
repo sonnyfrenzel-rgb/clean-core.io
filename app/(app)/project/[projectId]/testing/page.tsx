@@ -66,6 +66,16 @@ export default function TestingSandboxPage() {
   const { profile } = useUserProfile();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  /**
+   * What is actually in the vault. The connection test runs server-side against
+   * the stored credentials and nothing else — deliberately, so that asking for
+   * stored credentials cannot redirect them to a URL of the caller's choosing.
+   * The screen said it was testing whatever stood in the form, which was a
+   * different statement as soon as the form had been edited since it was saved
+   * (QA review of 33471220d6e9, 40e1db9fd37a).
+   */
+  const [savedS4, setSavedS4] = useState<{ url: string; username: string; authType: string } | null>(null);
   const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
   const [selectedResult, setSelectedResult] = useState<any>(null);
 
@@ -112,12 +122,22 @@ export default function TestingSandboxPage() {
 
   useEffect(() => {
     const fetchProject = async () => {
-      const data = await loadProjectAndHydrate(projectId as string);
-      if (!enforceActiveRun(data, projectId as string)) return;
-      if (data) {
-        setProject(data);
+      // Without the catch, a rejected load left the page on "Loading" for good
+      // and the rejection unhandled (QA review of 33471220d6e9, 03380a33a523).
+      try {
+        const data = await loadProjectAndHydrate(projectId as string);
+        if (!enforceActiveRun(data, projectId as string)) return;
+        if (data) {
+          setProject(data);
+        } else {
+          setLoadError('This project could not be found.');
+        }
+      } catch (err) {
+        console.error('Failed to load project:', err);
+        setLoadError('The project could not be loaded. Check your connection and try again.');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchProject();
   }, [projectId]);
@@ -129,6 +149,7 @@ export default function TestingSandboxPage() {
       }
       // F-03: Load S4 metadata (non-secret) — password is write-only
       if (project.s4Meta?.configured) {
+        setSavedS4({ url: project.s4Meta.url || '', username: project.s4Meta.username || '', authType: (project.s4Meta.authType as string) || 'basic' });
         setS4Url(project.s4Meta.url || '');
         setS4Username(project.s4Meta.username || '');
         setS4AuthType((project.s4Meta.authType as any) || 'basic');
@@ -136,6 +157,7 @@ export default function TestingSandboxPage() {
         if (project.s4Meta.url) setShowSetupGuide(false);
       } else if (project.s4Config) {
         // Legacy fallback
+        setSavedS4({ url: project.s4Config.url || '', username: project.s4Config.username || '', authType: project.s4Config.authType || 'basic' });
         setS4Url(project.s4Config.url || '');
         setS4Username(project.s4Config.username || '');
         setS4Password('');
@@ -143,6 +165,7 @@ export default function TestingSandboxPage() {
         setBtpDestinationJson(project.s4Config.btpDestinationJson || '');
         if (project.s4Config.url) setShowSetupGuide(false);
       } else if (profile?.s4Meta?.configured) {
+        setSavedS4({ url: profile.s4Meta.url || '', username: profile.s4Meta.username || '', authType: (profile.s4Meta.authType as string) || 'basic' });
         setS4Url(profile.s4Meta.url || '');
         setS4Username(profile.s4Meta.username || '');
         setS4AuthType((profile.s4Meta.authType as any) || 'basic');
@@ -150,6 +173,7 @@ export default function TestingSandboxPage() {
         if (profile.s4Meta.url) setShowSetupGuide(false);
       } else if (profile?.s4Config) {
         // Legacy fallback
+        setSavedS4({ url: profile.s4Config.url || '', username: profile.s4Config.username || '', authType: profile.s4Config.authType || 'basic' });
         setS4Url(profile.s4Config.url || '');
         setS4Username(profile.s4Config.username || '');
         setS4Password('');
@@ -205,6 +229,8 @@ export default function TestingSandboxPage() {
         }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Save failed');
+      // What the vault now holds — the connection test compares against this.
+      setSavedS4({ url: s4Url, username: s4Username, authType: s4AuthType });
       
       // Also save environment preference to project
       const db = getDb();
@@ -233,9 +259,26 @@ export default function TestingSandboxPage() {
       : s4AuthType === 'sap_hub' ? 'SAP API Hub Sandbox Key'
       : 'BTP Destination Service';
 
+    // The test uses the saved connection, so it cannot run before there is one,
+    // and it must not claim to be testing something the form has since changed.
+    if (!savedS4 || !savedS4.url) {
+      setConnectionStatus('failed');
+      setConnectionMessage('Save the connection first — the test runs against the saved credentials, which never leave the server.');
+      setSandboxOutput('[sandbox-runtime] No saved connection. Save the tenant URL and credentials, then test.');
+      setTestingConnection(false);
+      return;
+    }
+    if (savedS4.url !== s4Url || savedS4.username !== s4Username || savedS4.authType !== s4AuthType) {
+      setConnectionStatus('failed');
+      setConnectionMessage(`The form no longer matches the saved connection (saved: ${savedS4.url}). Save your changes, then test.`);
+      setSandboxOutput(`[sandbox-runtime] Unsaved changes. The saved connection is ${savedS4.url}; that is the one the test would have used.`);
+      setTestingConnection(false);
+      return;
+    }
+
     setSandboxOutput(
       `[sandbox-runtime] Initiating live connectivity test...\n` +
-      `[sandbox-runtime] Target tenant URL: ${s4Url || 'N/A'}\n` +
+      `[sandbox-runtime] Target tenant URL (saved): ${savedS4.url}\n` +
       `[sandbox-runtime] Authentication method: ${authLabel}\n` +
       `[sandbox-runtime] Sending server-side HTTP handshake via /api/test-s4-connection...\n`
     );
@@ -655,6 +698,15 @@ export default function TestingSandboxPage() {
   const phases = workflowSteps(project);
 
   if (loading) return <div className="p-8">Loading...</div>;
+  if (loadError) return (
+    <div className="p-8 max-w-xl">
+      <div className="p-6 bg-rose-50 border border-rose-200 rounded-2xl text-sm text-rose-900 font-medium">
+        <p className="font-black mb-1">This stage could not be opened</p>
+        <p>{loadError}</p>
+        <button type="button" onClick={() => window.location.reload()} className="mt-4 bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-colors">Try again</button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8">
