@@ -3,7 +3,7 @@ import { verifyApprovalToken } from '@/lib/approval-token';
 import { encrypt, decrypt } from './s4-credentials';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp } from './mfa-gate';
 // Types only — erased at compile time, so the modules themselves still load
-// lazily through `ensureInitialized` below.
+// lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
 import type { Firestore } from 'firebase-admin/firestore';
 
