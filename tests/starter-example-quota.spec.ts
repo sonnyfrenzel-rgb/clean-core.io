@@ -98,6 +98,25 @@ async function analyse(
  */
 const BREAKS_AFTER_RESERVATION = { uploadedFileName: [['not a file name']] };
 
+/**
+ * Was `seen` ever true while `work` was still running?
+ *
+ * Samples in a tight loop and stops the moment the request settles, so a state
+ * that exists only between two points inside the route can be observed without
+ * a wall-clock guess — and a miss ends in a clear assertion rather than in a
+ * twenty-second timeout. Bookkeeping that is taken and given back leaves no
+ * trace once the request is over; if nobody looked while it was there, the
+ * test that follows is a statement about nothing.
+ */
+async function observedWhile(work: Promise<unknown>, seen: () => Promise<boolean>): Promise<boolean> {
+  let running = true;
+  work.then(() => { running = false; }, () => { running = false; });
+  while (running) {
+    if (await seen()) return true;
+  }
+  return seen();
+}
+
 test.beforeAll(async () => {
   const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -248,7 +267,13 @@ test.describe('an example costs nothing the first time, and counts every time af
 test.describe('nothing is spent on a run that does not complete', () => {
   test('a failed first run leaves the free example free', async ({ request }) => {
     await resetAccount();
-    const source = await exampleSource(request, EXAMPLE.file);
+    // The 1000-line example on purpose: the reservation has to be *seen* while
+    // the run is still going, and the evidence build on 37 kB of ABAP is the
+    // work that holds the window open long enough to sample it. The two small
+    // examples run through so fast that a sampler can miss the whole request —
+    // which is what turned the first version of this red in CI and green here.
+    const example = BOM_EXAMPLE;
+    const source = await exampleSource(request, example.file);
 
     const projectId = await newProject();
     const inFlight = request.post('/api/runs/create', {
@@ -259,26 +284,24 @@ test.describe('nothing is spent on a run that does not complete', () => {
     // The reservation is *observed*, not inferred. Without this the test would
     // pass just as well against a route that never reserved anything — the
     // counters would be unchanged either way, and "the refund works" would be
-    // a statement about nothing (QA review of 0472b74d1128).
-    const deadline = Date.now() + 20_000;
-    for (;;) {
-      if ((await profile()).starterExamplesUsed?.[EXAMPLE.name] === true) break;
-      expect(Date.now(), 'the run never reserved the free example, so the refund proves nothing').toBeLessThan(deadline);
-      await new Promise((r) => setTimeout(r, 10));
-    }
+    // a statement about nothing (QA review of 0472b74d1128). The sampler stops
+    // when the request settles, so a miss costs a clear failure, not a hang.
+    const reserved = await observedWhile(inFlight, async () =>
+      (await profile()).starterExamplesUsed?.[example.name] === true);
+    expect(reserved, 'the run never reserved the free example, so the refund proves nothing').toBe(true);
 
     const failed = await inFlight;
     expect(failed.status(), 'the run failed after the reservation').toBe(500);
 
     const after = await profile();
     expect(after.transformationsUsed).toBe(0);
-    expect(after.starterExamplesUsed?.[EXAMPLE.name], 'the free run was handed back').toBeUndefined();
+    expect(after.starterExamplesUsed?.[example.name], 'the free run was handed back').toBeUndefined();
 
     // And it is genuinely still there: the next attempt is the free one.
     expect((await analyse(request, source)).status()).toBe(200);
     const later = await profile();
     expect(later.transformationsUsed, 'still nothing spent').toBe(0);
-    expect(later.starterExamplesUsed?.[EXAMPLE.name]).toBe(true);
+    expect(later.starterExamplesUsed?.[example.name]).toBe(true);
   });
 
   test('a failed repeat spends no unit', async ({ request }) => {
@@ -319,18 +342,29 @@ test.describe('nothing is spent on a run that does not complete', () => {
       data: { projectId, legacyCode: source, s4Deployment: 'public', analysis: '{}', uploadedFileName: 'z.abap' },
     });
 
-    // Not a sleep: the reservation is taken strictly after the route has read
-    // the project and long before it commits, so its appearance is proof that
-    // the read has happened. A wall-clock delay would be a guess.
-    const deadline = Date.now() + 20_000;
-    for (;;) {
-      if ((await profile()).starterExamplesUsed?.[EXAMPLE.name] === true) break;
-      expect(Date.now(), 'the run never reserved the free example').toBeLessThan(deadline);
-      await new Promise((r) => setTimeout(r, 10));
-    }
-    await db().collection('projects').doc(projectId).update({ legacyCode: 'REPORT z_moved.\nWRITE / 1.\n' });
+    // The source is moved *continuously* rather than once at a signal. The
+    // first version waited for the reservation to appear and then wrote once:
+    // green here, red in CI, where the production build ran the whole route
+    // between two polls and committed before the write landed. Timing a single
+    // write into someone else's window is a guess dressed up as a signal.
+    //
+    // Every write below carries a different source, so whatever the route read
+    // at the start, the value at commit time differs from it — unless the
+    // entire request fits between two writes five milliseconds apart.
+    let moving = true;
+    let moves = 0;
+    const move = (async () => {
+      const ref = db().collection('projects').doc(projectId);
+      while (moving) {
+        await ref.update({ legacyCode: `REPORT z_moved_${++moves}.\nWRITE / ${moves}.\n` });
+        await new Promise((r) => setTimeout(r, 5));
+      }
+    })();
 
     const res = await inFlight;
+    moving = false;
+    await move;
+    expect(moves, 'the source never moved, so the refusal proves nothing').toBeGreaterThan(1);
     expect(res.status()).toBe(409);
     expect((await res.json()).code).toBe('source-moved');
 
