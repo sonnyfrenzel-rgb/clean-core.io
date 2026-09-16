@@ -686,6 +686,7 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-075 | medium | Auge-Buttons ohne zugänglichen Namen | 3.0.4 | eingeplant |
 | UX-076 | medium | Onboarding-Abbruch mit Schuld-Formulierung | 0.2 | eingeplant |
 | UX-089 | medium | Vier Begriffe für einen Wert: Audit, Valuation, Asset Value, IP Score | 1.5 | eingeplant |
+| UX-090 | medium | Deck-Fehler zeigt Roh-Techniktext ohne nächsten Schritt (Review von 44f3efb8b007) | 0.8 | behoben (dev) |
 | UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | eingeplant |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |

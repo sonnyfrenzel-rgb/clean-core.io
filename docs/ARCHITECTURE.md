@@ -255,10 +255,15 @@ happens in the browser against Firebase Auth; the route only reads back that the
 factor exists and records the flag. Removing the factor (`/api/mfa/disable`) is the
 one action that needs the stronger step-up: a fresh sign-in that ran the factor.
 
-The distinction is the enrolled state, not the route. `assertReEnrolmentAllowed`
-reads `users/{uid}.mfaEnabled` and applies `assertMfaStepUp` only when a factor
-exists. Both routes check it: they are independent endpoints and a caller can
-reach verify directly with a pending secret.
+The distinction is the factor in Firebase Auth, not the route. `/api/mfa/disable`
+reads the account's factors through the Admin SDK and applies `assertMfaStepUp`
+only when one exists; it clears the flag first and removes the factor second,
+restoring the flag if the removal fails, so an account never requires a factor it
+does not have. A flag without a factor (a failed removal, or the legacy of the
+retired application-level TOTP) is cleared without a step-up: nothing is left
+that a first-factor token could remove. The enrolment record is idempotent for
+the mirror case: the Settings page calls `/api/mfa/enrolled` again whenever
+Firebase Auth shows a factor the profile does not know (SECURITY.md, section 3.5).
 
 ### 5.5 Consent is what the server knows, not what the caller says
 

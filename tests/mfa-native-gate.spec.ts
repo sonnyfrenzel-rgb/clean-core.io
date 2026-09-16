@@ -96,18 +96,36 @@ test.describe('the routes, with what the emulator can mint', () => {
     expect((await profile())?.mfaEnabled).toBe(false);
   });
 
-  test('the factor is removed only by a session that carries it', async ({ request }: { request: APIRequestContext }) => {
+  test('a gated route refuses the first-factor token of an account whose profile requires the factor', async ({ request }: { request: APIRequestContext }) => {
     await adminMergeDoc('users', uid, { mfaEnabled: true, mfaFactor: 'totp' });
-    const res = await request.post('/api/mfa/disable', { headers: headers() });
-    expect(res.status()).toBe(403);
-    expect((await res.json()).error).toContain('Multi-factor authentication required');
-    expect((await profile())?.mfaEnabled).toBe(true);
-  });
-
-  test('a gated route refuses the first-factor token of an enrolled account', async ({ request }: { request: APIRequestContext }) => {
     const res = await request.post('/api/runs/create', { headers: headers(), data: { projectId: 'nowhere', legacyCode: 'REPORT z.', analysis: '{}' } });
     expect(res.status()).toBe(403);
     expect((await res.json()).error).toContain('Multi-factor authentication required');
+  });
+
+  test('a flag without a factor in Firebase Auth is cleared by disable without a step-up', async ({ request }: { request: APIRequestContext }) => {
+    // The stranded state: the profile requires a factor Firebase Auth does not
+    // have — the legacy of the application-level TOTP, or a removal whose
+    // profile write failed. Nothing to remove, nothing a stolen first-factor
+    // token could remove; the flag was refusing its own owner.
+    expect((await profile())?.mfaEnabled).toBe(true);
+    const res = await request.post('/api/mfa/disable', { headers: headers() });
+    expect(res.status()).toBe(200);
+    expect(await res.json()).toEqual({ success: true, removedFactor: false });
+    const after = await profile();
+    expect(after?.mfaEnabled).toBe(false);
+    expect(after?.mfaFactor).toBeUndefined();
+    // With the requirement gone, the same token passes the gate (and reaches
+    // the route's own answer for a project that does not exist).
+    const gated = await request.post('/api/runs/create', { headers: headers(), data: { projectId: 'nowhere', legacyCode: 'REPORT z.', analysis: '{}' } });
+    expect(gated.status()).not.toBe(403);
+  });
+
+  test('with a factor in Firebase Auth, removal needs the factor on the token — decided by the pure step-up', () => {
+    // The emulator cannot enrol a factor, so the route's step-up branch is
+    // the decision tested above (mfaSteppedUp): MFA_REQUIRED without the
+    // factor, MFA_STEP_UP_STALE after five minutes.
+    expect(mfaSteppedUp(true, token(), now())).toEqual(MFA_REQUIRED);
   });
 
   test('the retired application-level routes are gone', async ({ request }: { request: APIRequestContext }) => {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, getAdminDb, assertRecentAuth, QuotaError, getAdminAuth } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, QuotaError, getAdminAuth } from '@/lib/firebase-admin';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 
 /**
@@ -14,7 +14,13 @@ import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
  * (firestore.rules keeps it out of the update allowlist).
  *
  * Not gated by the factor, on purpose: the session that enrols predates it.
- * Recent sign-in is required instead — the enrolment itself needed one.
+ * Not gated by recency either: the route is idempotent, and the Settings page
+ * calls it again whenever Firebase Auth shows a factor the profile does not
+ * know about — the case where this write failed the first time and the
+ * account was left with a factor Firebase asks for at sign-in and a flag the
+ * server gates do not yet require (QA review of d93cb53e2631, 9cba6508b10b).
+ * Firebase Auth is the authority on whether the factor exists; recording that
+ * fact is safe from any valid session of the account.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +30,6 @@ export async function POST(request: NextRequest) {
     }
     const uid = decodedToken.uid;
     await assertRateLimit(`mfa-enrolled:${uid}:${getClientIp(request)}`, 10, 10 * 60 * 1000);
-    assertRecentAuth(decodedToken, 300);
 
     const record = await (await getAdminAuth()).getUser(uid);
     const factors: Array<{ factorId: string; enrollmentTime?: string }> = record.multiFactor?.enrolledFactors ?? [];

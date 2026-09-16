@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUserProfile, UserProfile } from '@/hooks/useUserProfile';
 import { useRouter } from 'next/navigation';
 import { 
@@ -120,11 +120,22 @@ export default function SettingsPage() {
   const [isDisablingMfa, setIsDisablingMfa] = useState(false);
   const [mfaDisableError, setMfaDisableError] = useState('');
 
+  const reconciledRef = useRef(false);
   useEffect(() => {
     const user = getAuth().currentUser;
     if (!user) return;
-    setEnrolledFactorCount(multiFactor(user).enrolledFactors.length);
-  }, [profile?.mfaEnabled, showMfaSetup, showMfaDisable]);
+    const count = multiFactor(user).enrolledFactors.length;
+    setEnrolledFactorCount(count);
+    // A factor Firebase knows and the profile does not: the setup enrolled it
+    // and the server's record of it failed. Recording is idempotent and needs
+    // no recency, so it is simply done again here (QA 9cba6508b10b).
+    if (count > 0 && profile && profile.mfaEnabled !== true && !reconciledRef.current) {
+      reconciledRef.current = true;
+      user.getIdToken().then((token) =>
+        fetch('/api/mfa/enrolled', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }),
+      ).catch((err) => console.error('[settings] could not record the enrolled factor:', err));
+    }
+  }, [profile, showMfaSetup, showMfaDisable]);
 
   /**
    * Re-authenticates the signed-in user the way their account signs in, and
