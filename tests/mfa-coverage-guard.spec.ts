@@ -1,19 +1,20 @@
 /**
- * MFA has to be a server-side control, not a modal.
+ * MFA is a server-side control, and since roadmap 0.13 the factor is Firebase's.
  *
- * Firebase Auth issues a valid ID token before any custom second factor runs —
- * the TOTP prompt is a React state change, not an authentication step. So the
- * client cannot enforce MFA; it can only ask. The real gate is
- * assertMfaSatisfied on the server, which rejects a token from an mfaEnabled
- * account unless the mfa_session cookie is present.
+ * Firebase Auth issues no ID token before an enrolled second factor is
+ * resolved, and the token it then issues names the factor
+ * (`firebase.sign_in_second_factor`). The gate on the server reads that field:
+ * assertMfaSatisfied rejects a first-factor token from an account whose
+ * profile says `mfaEnabled`. What this replaced was an application-level TOTP
+ * whose prompt was a React state change after a valid session already
+ * existed, backed by an `mfa_session` cookie — a stolen ID token from such an
+ * account read every document the owner could, because the rules never saw
+ * the cookie (QA full review of 33471220d6e9, cfafefac08ec).
  *
- * That gate was applied to the S/4, Gemini and secrets routes but not to the
- * two that MINT the trust chain, nor to project deletion. A stolen ID token was
- * therefore enough to write a signed run and a signed audit pack — into the very
- * chain that exists to prove provenance — or to erase one.
- *
- * This spec pins the coverage. The lists are explicit rather than derived so
- * that adding a route forces a decision about which side it belongs on.
+ * That gate was once applied to the S/4, Gemini and secrets routes but not to
+ * the two that MINT the trust chain, nor to project deletion. This spec pins
+ * the coverage. The lists are explicit rather than derived so that adding a
+ * route forces a decision about which side it belongs on.
  */
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
@@ -38,28 +39,17 @@ const MUST_GATE = [
 ];
 
 /**
- * Routes that must NOT require it. Enrolment and verification cannot depend on
- * the factor being enrolled, and public verification has no session at all.
+ * Routes that must NOT require it. Recording an enrolment cannot depend on the
+ * factor — the session that enrols predates it — and public verification has
+ * no session at all.
  */
 const MUST_NOT_GATE = [
-  'app/api/mfa/verify/route.ts',
+  'app/api/mfa/enrolled/route.ts',
   'app/api/export/verify/route.ts',
 ];
 
-/**
- * The two setup routes were in the list above, with the reasoning "enrolment
- * cannot depend on the factor being enrolled". True for a first enrolment, and
- * false for a re-enrolment — and an unconditional no-gate meant an account that
- * already had MFA could have its factor replaced with nothing but a stolen ID
- * token: start, take the new secret, compute its code, verify, done.
- *
- * So the rule is about the enrolled state rather than the route, and this list
- * says so.
- */
-const MUST_GATE_ONLY_WHEN_ALREADY_ENROLLED = [
-  'app/api/mfa/setup/start/route.ts',
-  'app/api/mfa/setup/verify/route.ts',
-];
+/** Removing the factor is the one action that needs the stronger step-up: recent sign-in with the factor. */
+const MUST_STEP_UP = ['app/api/mfa/disable/route.ts'];
 
 test.describe('server-side MFA coverage', () => {
   for (const rel of MUST_GATE) {
@@ -77,17 +67,26 @@ test.describe('server-side MFA coverage', () => {
     });
   }
 
-  for (const rel of MUST_GATE_ONLY_WHEN_ALREADY_ENROLLED) {
-    test(`${rel} gates a re-enrolment but not a first enrolment`, () => {
+  for (const rel of MUST_STEP_UP) {
+    test(`${rel} needs a fresh sign-in with the factor`, () => {
       const s = read(rel);
-      // It must look at the stored state rather than gating unconditionally,
-      // which would make enrolling the first factor impossible.
-      expect(s, `${rel} does not check the enrolled state`).toContain('mfaEnabled');
-      expect(s, `${rel} does not require the existing factor`).toContain('assertMfaStepUp');
-      // And it must return before doing anything when the check fails.
-      expect(s).toMatch(/assertReEnrolmentAllowed\s*\(/);
+      expect(s).toContain('assertMfaStepUp');
+      expect(s).toContain('assertRecentAuth');
+      // The factor itself is removed in Firebase Auth, not in a document of ours.
+      expect(s).toContain('multiFactor: { enrolledFactors: null }');
     });
   }
+
+  test('the application-level TOTP routes and libraries are gone', () => {
+    for (const rel of ['app/api/mfa/verify/route.ts', 'app/api/mfa/setup/start/route.ts', 'app/api/mfa/setup/verify/route.ts', 'lib/mfa.ts', 'lib/totp.ts']) {
+      expect(fs.existsSync(path.join(ROOT, rel)), `${rel} is back`).toBe(false);
+    }
+    // No route mints or reads the old session cookie.
+    expect(read('lib/firebase-admin.ts')).not.toMatch(/cookies\['mfa_session'\]/);
+    // The decision reads the factor off the token, in the pure module the gates call.
+    expect(read('lib/firebase-admin.ts')).toContain("from './mfa-gate'");
+    expect(read('lib/mfa-gate.ts')).toMatch(/sign_in_second_factor/);
+  });
 
   test('admin routes keep the stronger step-up, not the plain gate', () => {
     const admin = [
@@ -106,35 +105,38 @@ test.describe('server-side MFA coverage', () => {
   });
 });
 
-test.describe('client sign-in paths fail closed', () => {
+test.describe('the client never holds a session that is waiting for its second factor', () => {
   const source = () => read('components/LandingModals.tsx');
 
-  test('a failed profile read signs the user out instead of leaving a live session', () => {
+  test('every sign-in path hands a multi-factor challenge to the resolver', () => {
     const s = source();
-    // The email path shared the outer catch, so a Firestore error surfaced as
-    // "Invalid email or password" while the session stayed live and MFA never ran.
-    expect(s).toContain('[handleEmailSignIn] profile read failed');
-    expect(s).toContain('[getRedirectResult] profile read failed');
-    // Both must sign out on that path.
-    const signOuts = s.split('await signOut(auth)').length - 1;
-    expect(signOuts).toBeGreaterThanOrEqual(3); // email, redirect, modal close
+    // Popup, redirect result and e-mail sign-in: each catch routes the
+    // challenge into the second-factor screen before anything else.
+    expect(s).toContain('const interceptSecondFactor = (error: unknown): boolean =>');
+    expect(s.split('interceptSecondFactor(').length - 1).toBeGreaterThanOrEqual(3); // popup, redirect result, e-mail
+    expect(s).toContain("code !== 'auth/multi-factor-auth-required'");
+    expect(s).toContain('getMultiFactorResolver(auth');
+    expect(s).toContain('TotpMultiFactorGenerator.assertionForSignIn(');
+    expect(s).toContain('resolveSignIn(assertion)');
   });
 
-  test('the redirect path consults the profile before navigating', () => {
+  test('no path decides the second factor from the profile, and no session is kept while waiting', () => {
     const s = source();
-    const idx = s.indexOf('getRedirectResult(auth)');
-    expect(idx).toBeGreaterThan(-1);
-    const block = s.slice(idx, idx + 1800);
-    // It used to push straight to /dashboard, skipping MFA on this path only.
-    expect(block).toContain('mfaEnabled');
-    expect(block.indexOf('mfaEnabled')).toBeLessThan(block.indexOf("router.push('/dashboard')"));
-  });
-
-  test('closing the MFA modal ends the session', () => {
-    const s = source();
+    // The profile flag used to route into a TOTP screen after the password had
+    // already produced a valid session; that session was the finding.
+    expect(s).not.toMatch(/profileData\?\.mfaEnabled/);
+    expect(s).not.toContain('pendingMfaUser,');
+    expect(s).not.toContain('/api/mfa/verify');
+    // Closing the screen drops the resolver — there is no user to sign out.
     const idx = s.indexOf('const closeAuthModal');
     expect(idx).toBeGreaterThan(-1);
-    const block = s.slice(idx, idx + 400);
-    expect(block).toContain('signOut(auth)');
+    expect(s.slice(idx, idx + 400)).toContain('setMfaResolver(null)');
+  });
+
+  test('the screen promises no recovery code it cannot take', () => {
+    const s = source();
+    expect(s).not.toMatch(/backup (recovery )?code/i);
+    expect(s).not.toContain("'CC-'");
+    expect(s).toContain('Lost the authenticator?');
   });
 });

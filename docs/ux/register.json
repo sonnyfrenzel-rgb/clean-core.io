@@ -1113,6 +1113,18 @@
       "status": "eingeplant",
       "step": "1.5",
       "updatedAt": "2026-09-15T17:19:09.814Z"
+    },
+    {
+      "id": "UX-090",
+      "fingerprint": "33a920d6be30",
+      "title": "Deck-Fehler zeigt Roh-Techniktext ohne nächsten Schritt",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "44f3efb8b007ba067da68fd3db61a618cba46e41",
+      "createdAt": "2026-09-16T08:01:01.677Z",
+      "status": "eingeplant",
+      "step": "0.8",
+      "updatedAt": "2026-09-16T08:01:01.677Z"
     }
   ]
 }

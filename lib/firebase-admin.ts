@@ -1,6 +1,7 @@
 import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, TERMS_VERSION } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { encrypt, decrypt } from './s4-credentials';
+import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp } from './mfa-gate';
 
 let adminAppModule: any = null;
 let adminAuthModule: any = null;
@@ -47,6 +48,12 @@ async function ensureInitialized() {
   // Fallback: Application Default Credentials (gcloud auth)
   // Always pass projectId so ADC doesn't pick up the wrong gcloud default project.
   adminAppModule.initializeApp({ projectId: 'cleancore-491216' });
+}
+
+/** The Admin Auth client, initialised like everything else here. */
+export async function getAdminAuth() {
+  await ensureInitialized();
+  return adminAuthModule.getAuth();
 }
 
 /**
@@ -552,86 +559,43 @@ export async function approveTenantWithToken(
 // MFA Session Validation & Step-Up Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Re-exported for the routes; the decision itself lives in lib/mfa-gate.ts. */
+export const hasSecondFactor = tokenHasSecondFactor;
+
+/**
+ * The gate every route that mints, mutates or destroys evidence passes through.
+ *
+ * Roadmap 0.13 (Sonny, 16.09.2026, "Variante 2"): the second factor is
+ * Firebase's own TOTP multi-factor, and the proof is the ID token — see
+ * lib/mfa-gate.ts for the decision and for what this replaced.
+ */
 export async function assertMfaSatisfied(req: Request, decodedToken: any) {
+  void req;
   const uid = decodedToken.uid;
   const { db } = await getAdminDb();
-  
-  // 1. Fetch user profile
+
   const userDoc = await db.collection('users').doc(uid).get();
   if (!userDoc.exists) return;
-  
-  const userData = userDoc.data();
-  if (!userData || !userData.mfaEnabled) {
-    return; // MFA is not enabled for this user
-  }
-  
-  // 2. MFA is enabled, check the mfa_session cookie
-  const cookieHeader = req.headers.get('cookie') || '';
-  const cookies = cookieHeader.split(';').reduce((acc: any, c: string) => {
-    const [name, val] = c.trim().split('=');
-    if (name && val) acc[name] = val;
-    return acc;
-  }, {});
-  const sessionCookie = cookies['mfa_session'];
-  
-  if (!sessionCookie) {
-    throw new QuotaError('MFA verification required. Please complete 2FA.', 403);
-  }
-  
-  try {
-    const decrypted = decrypt(decodeURIComponent(sessionCookie));
-    const session = JSON.parse(decrypted);
-    
-    if (session.uid !== uid) {
-      throw new QuotaError('Invalid MFA session.', 403);
-    }
-    
-    const MAX_AGE = 12 * 60 * 60 * 1000; // 12 hours
-    if (Date.now() - session.mfaVerifiedAt > MAX_AGE) {
-      throw new QuotaError('MFA session expired. Please verify again.', 403);
-    }
-  } catch (err) {
-    throw new QuotaError('Invalid or expired MFA session. Please verify again.', 403);
-  }
+
+  const refusal = mfaSatisfied(userDoc.data()?.mfaEnabled === true, decodedToken);
+  if (refusal) throw new QuotaError(refusal.message, refusal.status);
 }
 
+/**
+ * Step-up for the sensitive actions: the factor on the token, and the sign-in
+ * that produced it within five minutes. Re-authenticating an enrolled account
+ * runs the factor again, so both facts arrive on one token.
+ */
 export async function assertMfaStepUp(req: Request, decodedToken: any) {
+  void req;
   const uid = decodedToken.uid;
   const { db } = await getAdminDb();
-  
+
   const userDoc = await db.collection('users').doc(uid).get();
   if (!userDoc.exists) return;
-  
-  const userData = userDoc.data();
-  if (!userData || !userData.mfaEnabled) return;
-  
-  const cookieHeader = req.headers.get('cookie') || '';
-  const cookies = cookieHeader.split(';').reduce((acc: any, c: string) => {
-    const [name, val] = c.trim().split('=');
-    if (name && val) acc[name] = val;
-    return acc;
-  }, {});
-  const sessionCookie = cookies['mfa_session'];
-  
-  if (!sessionCookie) {
-    throw new QuotaError('MFA verification required. Please complete 2FA.', 403);
-  }
-  
-  try {
-    const decrypted = decrypt(decodeURIComponent(sessionCookie));
-    const session = JSON.parse(decrypted);
-    
-    if (session.uid !== uid) {
-      throw new QuotaError('Invalid MFA session.', 403);
-    }
-    
-    const MAX_AGE = 5 * 60 * 1000; // 5 minutes step-up
-    if (Date.now() - session.mfaVerifiedAt > MAX_AGE) {
-      throw new QuotaError('MFA security timeout. Please re-verify your 2FA code in the settings page.', 403);
-    }
-  } catch (err) {
-    throw new QuotaError('MFA security timeout. Please re-verify your 2FA code.', 403);
-  }
+
+  const refusal = mfaSteppedUp(userDoc.data()?.mfaEnabled === true, decodedToken, Math.floor(Date.now() / 1000));
+  if (refusal) throw new QuotaError(refusal.message, refusal.status);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

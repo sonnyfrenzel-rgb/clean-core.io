@@ -74,19 +74,20 @@ This document describes the security architecture and hardening measures impleme
 - Signature verification uses Node's `crypto.createHmac('sha256')` with `timingSafeEqual` comparison to eliminate timing side-channel attacks.
 - Fail-closed behavior is enforced: if `PILOT_APPROVAL_SECRET` is missing or less than 16 characters, token creation/verification fails immediately.
  
-### 3.5 Two-Factor Authentication (MFA) — Server-Side (Option B)
-- **Architecture**: Enforces custom application-level MFA verification on the server-side, preventing raw secrets from leaking to the client bundle.
-- **MFA Session Cookie (HTTP-only)**: A cryptographically signed and encrypted `mfa_session` cookie is set upon successful MFA verification (TOTP or backup code). All protected API routes (Gemini, Test Runner, S/4 HANA connections) assert that this cookie is valid, belongs to the calling user, and is not expired (max 12 hours).
-- **MFA Step-up Verification**: Sensitive actions (GDPR deletion, disabling MFA, admin console actions) enforce recent re-authentication and recent MFA verification (max 5 minutes).
-- **Storage & Cryptography**:
-  - **Encrypted TOTP Secret**: Stored in the private `/mfa_secrets/{uid}` collection. Secrets are encrypted using AES-256-GCM under the `S4_ENCRYPTION_KEY` env var.
-  - **Salt & Pepper Recovery Backup Codes**: Stored in `/mfa_secrets/{uid}`. Backup codes are hashed using a unique cryptographically random salt and a server-side pepper (`MFA_BACKUP_CODE_PEPPER`), compared timing-safely to protect against timing attacks.
-  - **Pending Setup Storage**: MFA secrets generated during `/setup/start` are stored encrypted in a temporary `/mfa_pending/{uid}` collection with a 10-minute expiration, preventing client-side secret injection.
+### 3.5 Two-Factor Authentication (MFA) — Firebase's factor, proven by the token
+- **Architecture** (roadmap 0.13, 16.09.2026): the second factor is Firebase Authentication's own TOTP multi-factor (Identity Platform). The browser enrols it with the Firebase SDK against Firebase Auth directly — no secret, code or backup code ever reaches this server. Firebase issues **no ID token before the factor is resolved**, and the token it then issues names the factor (`firebase.sign_in_second_factor`).
+- **The gate is a token field, not a cookie.** `assertMfaSatisfied` (every route that mints, mutates or destroys evidence) rejects a token from an `mfaEnabled` account unless the token carries the factor; `assertMfaStepUp` / `assertAdminStepUp` (GDPR deletion, disabling MFA, admin console actions) additionally require the sign-in that produced the token to be at most five minutes old — re-authenticating an enrolled account runs the factor again, so both facts arrive on one token. The decision is `lib/mfa-gate.ts`, tested without the Admin SDK (`tests/mfa-native-gate.spec.ts`).
+- **What the server keeps:** `users/{uid}.mfaEnabled` and `mfaFactor`, written only by `POST /api/mfa/enrolled` after reading back from Firebase Auth that the factor exists (the client update allowlist in `firestore.rules` excludes the flag). `POST /api/mfa/disable` removes the factor in Firebase Auth through the Admin SDK — only from a session that carries it.
+- **No backup codes.** Firebase's factor has none. A lost authenticator is handled out of band: the person writes from their account address, an administrator confirms with them and runs `scripts/mfa-reset.ts <email> --apply`, which unenrols the factor; the account signs in with its first factor alone and enrols again in Settings.
+- **E-mail verification is a prerequisite** Firebase enforces (`auth/unverified-email`): Google accounts arrive verified; a password account verifies once from Settings before enrolling.
+- **Retired:** the application-level TOTP (`/api/mfa/setup/*`, `/api/mfa/verify`), the `mfa_session` cookie, the encrypted `mfa_secrets/{uid}` and `mfa_pending/{uid}` documents and the peppered backup codes. The two collections are emptied by enrolment, disablement, the reset script and account deletion, and are no longer written; their deny-all rules stay.
+- **Why:** the application-level prompt was a React state change after the password had already produced a valid Firebase session, and Firestore's rules never saw the session cookie — a stolen ID token from an MFA account read every document its owner could (QA full review of 33471220d6e9, cfafefac08ec). Firebase's factor closes that at the source: there is no session to steal until the code is entered.
+- **Not covered by CI:** the Auth emulator (firebase-tools 15.30.1) cannot enrol a TOTP factor. The gate decision and the negative route paths are tested; enrolment and factor sign-in are verified on the `dev` deployment against the real Auth project and by the administrator's own account.
 
 ### 3.6 Admin Governance & Logging
 - **Console API Routes**: All administrative tasks (user approval/revocation, S/4 HANA access grant/revocation, profile deletion) are routed through secure, server-side APIs (such as `/api/admin/console-action`), preventing direct client-side writes to Firestore.
 - **Audit Logging**: Every administrative action is automatically logged to the `audit_events` collection, capturing the actor's UID/email, action type, target UID, and timestamp.
-- **Admin Verification**: Access requires valid admin credentials, recent re-auth (< 5 min), and active MFA session verification.
+- **Admin Verification**: Access requires valid admin credentials, recent re-auth (< 5 min), and the second factor on the ID token (`assertAdminStepUp`).
 
 ---
 

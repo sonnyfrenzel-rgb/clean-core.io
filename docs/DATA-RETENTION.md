@@ -24,8 +24,9 @@ Two sub-processors receive data in transit for the features that require them �
 | `files/{id}` | Uploaded file metadata | `userId` | Life of account | ✅ query delete |
 | `user_secrets/{uid}/providers/*` | **Encrypted BYOK Gemini keys** (AES-256-GCM) | uid | Life of account | ✅ recursiveDelete |
 | `s4_credentials/{uid}` | **Encrypted S/4HANA creds** (AES-256-GCM) | uid | Life of account | ✅ direct |
-| `mfa_secrets/{uid}` | TOTP secret + hashed backup codes | uid | Life of account | ✅ direct |
-| `mfa_pending/{uid}` | In-flight MFA enrolment | uid | Transient (until confirmed) | ✅ direct |
+| `mfa_secrets/{uid}` | **Legacy** (until roadmap 0.13): application-level TOTP secret + hashed backup codes — no longer written; emptied by enrolment, disablement, `scripts/mfa-reset.ts` and deletion | uid | Until the account enrols Firebase's factor or is deleted | ✅ direct |
+| `mfa_pending/{uid}` | **Legacy** in-flight enrolment of the application-level TOTP — no longer written | uid | Until emptied | ✅ direct |
+| Firebase Auth multi-factor enrolment | TOTP factor (secret held by Firebase Authentication, never by this app) | uid | Life of account; removed by `/api/mfa/disable`, `scripts/mfa-reset.ts` or account deletion | ✅ deleted with the Auth user |
 | `registration_requests/{uid}` | Pilot access requests | uid | Life of account | ✅ direct |
 | `tenant_access_requests/{uid}` | BYOT access requests | uid | Life of account | ✅ direct |
 | `audit_events/{id}` | Admin/security audit log | server | **Retained** for security accountability (see note) | ❌ intentionally kept |

@@ -19,29 +19,22 @@ const rendered = (rel: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '');
 
-test.describe('a backup code can only be spent once', () => {
-  const REL = 'app/api/mfa/verify/route.ts';
-
-  test('read, verify and redeem happen in one transaction', () => {
-    const src = rendered(REL);
-    // Three separate steps let two parallel requests read the same array before
-    // either wrote it back. Both verified, both wrote their own remainder, and
-    // one code produced two twelve-hour sessions.
-    expect(src).toContain('runTransaction');
-    expect(src).toMatch(/tx\.get\(mfaRef\)/);
-    expect(src).toMatch(/tx\.update\(mfaRef/);
-  });
-
-  test('no unguarded read-then-write remains', () => {
-    const src = rendered(REL);
-    expect(src).not.toMatch(/await db\.collection\('mfa_secrets'\)\.doc\(uid\)\.update\(/);
-  });
-
-  test('a failed transaction issues no session', () => {
-    const src = rendered(REL);
-    // Handing out a cookie for a code that may not have been redeemed is the one
-    // outcome worth refusing over.
-    expect(src).toMatch(/catch \(txErr\)[\s\S]{0,400}?status: 503/);
+test.describe('the application-level second factor is retired', () => {
+  // Release 4 pinned that a backup code could be spent only once, in one
+  // transaction, and that a failed transaction issued no session. Roadmap 0.13
+  // removed the code, the cookie and the secret store: the factor is Firebase's
+  // and its proof is the ID token. What is left to pin is that nothing of the
+  // old path came back.
+  test('no route verifies codes or mints a session cookie', () => {
+    expect(fs.existsSync(path.resolve(ROOT, 'app/api/mfa/verify/route.ts'))).toBe(false);
+    expect(fs.existsSync(path.resolve(ROOT, 'lib/mfa.ts'))).toBe(false);
+    expect(fs.existsSync(path.resolve(ROOT, 'lib/totp.ts'))).toBe(false);
+    for (const rel of ['app/api/mfa/enrolled/route.ts', 'app/api/mfa/disable/route.ts']) {
+      const src = rendered(rel);
+      expect(src).not.toMatch(/mfa_session|Set-Cookie|backupCode/);
+      // The legacy store is only ever deleted, never written.
+      expect(src).not.toMatch(/collection\('mfa_secrets'\)\.doc\([^)]*\)\.(set|update)\(/);
+    }
   });
 });
 
@@ -57,7 +50,7 @@ test.describe('the second factor can actually be enrolled', () => {
     expect(src).not.toContain('Scan Authenticator QR');
   });
 
-  test('the otpauth URI the server generates is offered', () => {
+  test('the otpauth URI Firebase generates is offered', () => {
     const jsx = rendered(REL);
     expect(jsx).toContain('href={qrCodeUrl}');
     expect(jsx).toContain('Open in authenticator app');

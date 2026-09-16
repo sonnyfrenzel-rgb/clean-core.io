@@ -839,8 +839,16 @@ jobs:
           </div>
           {detection.error && (
             <div role="alert" className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-              <span className="font-bold">The finding detector failed on this source</span> — the deck shows no verdict, not a clean one.
-              <span className="block mt-1 font-mono text-xs text-amber-800">{detection.error}</span>
+              <span className="font-bold">Findings could not be determined for this source</span> — the deck shows no verdict, not a clean one.
+              <span className="block mt-1">
+                Check the source in stage 1 and run the analysis again; if it happens again, write to{' '}
+                <a href="mailto:info@clean-core.io" className="font-bold underline">info@clean-core.io</a> with the project name.
+              </span>
+              {/* The raw error is for whoever debugs it, not for the board (UX-090). */}
+              <details className="mt-2">
+                <summary className="cursor-pointer text-xs font-bold text-amber-800">Technical details</summary>
+                <span className="block mt-1 font-mono text-xs text-amber-800 break-all">{detection.error}</span>
+              </details>
             </div>
           )}
           <div className="bg-gray-50 rounded-[2rem] md:rounded-[3rem] p-4 md:p-12 border border-gray-100 shadow-inner flex justify-center">
