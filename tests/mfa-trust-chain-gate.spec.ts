@@ -128,21 +128,47 @@ test('no audit pack is created by a token that never met the second factor', asy
   await requireFactor(false);
 });
 
-/** Everything these routes could write for this account, as it stands right now. */
+/**
+ * Everything these routes could write for this account, contents and all.
+ *
+ * Existence and counts are not enough: a route could create an audit-pack
+ * document and then refuse, or rewrite a run while leaving the count alone
+ * (QA review of 83e6bb0dd4b9, 8b27f3aa6388). Documents are serialised with
+ * their keys in order, so the comparison is about content and not about the
+ * order Firestore happened to return.
+ */
+const stable = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(stable);
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    return Object.fromEntries(Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => [k, stable(v)]));
+  }
+  return value instanceof Date ? value.toISOString() : value;
+};
+const docsOf = async (ref: FirebaseFirestore.CollectionReference) => {
+  const snap = await ref.get();
+  return snap.docs
+    .map((d) => [d.id, stable(d.data())] as const)
+    .sort(([a], [b]) => a.localeCompare(b));
+};
+
 async function storedState(projectId: string) {
-  const [user, creds, gemini, runs] = await Promise.all([
+  const project = db().collection('projects').doc(projectId);
+  const [user, creds, gemini, runs, packs, projectDoc] = await Promise.all([
     db().collection('users').doc(uid).get(),
     db().collection('s4_credentials').doc(uid).get(),
     db().collection('user_secrets').doc(uid).collection('providers').doc('gemini').get(),
-    db().collection('projects').doc(projectId).collection('runs').get(),
+    docsOf(project.collection('runs')),
+    docsOf(project.collection('audit_packs')),
+    project.get(),
   ]);
-  return JSON.stringify({
+  return JSON.stringify(stable({
     user: user.data() ?? null,
-    creds: creds.exists,
-    gemini: gemini.exists,
-    runs: runs.size,
-    project: (await db().collection('projects').doc(projectId).get()).exists,
-  });
+    creds: creds.data() ?? null,
+    gemini: gemini.data() ?? null,
+    runs,
+    packs,
+    project: projectDoc.data() ?? null,
+  }));
 }
 
 test('every gated route refuses the token, not only the ones with a fixture', async ({ request }: { request: APIRequestContext }) => {

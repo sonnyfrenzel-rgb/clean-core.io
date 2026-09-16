@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
-import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
+import type { DocumentReference } from 'firebase-admin/firestore';
 import Link from 'next/link';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { claimLinkFetch } from '@/lib/survey/link-fetch';
 import { logger, errMessage } from '@/lib/logger';
 import { verifySurveyToken } from '@/lib/survey/token';
 import { SURVEY_QUESTIONS, getOption } from '@/lib/survey/definition';
@@ -108,22 +109,15 @@ export default async function SurveyPage({
     // dynamically), so the reference is named for what it is — otherwise
     // `tx.get` resolves to the query overload and reads nothing.
     const docRef = ref as DocumentReference;
-    const data = await db.runTransaction(async (tx: Transaction) => {
-      const snap = await tx.get(docRef);
-      const current = snap.exists ? snap.data() : undefined;
-      if (!current?.linkFetchedAt) {
-        tx.set(
-          docRef,
-          {
-            campaign: identity.campaign,
-            uid: identity.uid,
-            linkFetchedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
-      }
-      return current;
+    // The claim itself is `lib/survey/link-fetch.ts`, so that two of them can be
+    // run at once against the emulator and the winner counted — which a page
+    // component cannot be (roadmap 0.17, QA finding cca300dfb572).
+    const { previous: current } = await claimLinkFetch(db, docRef, {
+      campaign: identity.campaign,
+      uid: identity.uid,
+      stamp: FieldValue.serverTimestamp(),
     });
+    const data = current;
     existingAnswers = (data?.answers as Record<string, SurveyAnswer>) || {};
     existingComment = (data?.comment as string) || '';
 

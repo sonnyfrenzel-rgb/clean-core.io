@@ -240,25 +240,32 @@ test.describe('a second tap wins, however the requests come back', () => {
   });
 });
 
-test('the first fetch of a link is claimed in a transaction, not read and then written', () => {
+test('the first fetch of a link is claimed by the shared helper, not by a read and a write', () => {
   /**
    * A mail-security scanner and the recipient open the link at the same moment.
    * Both reads saw no `linkFetchedAt`, both merge-writes went through, and the
    * stored value was the later arrival — while the comment above it says it is
    * the first (QA review of 33471220d6e9, finding 8ccb1b1b765b).
+   *
+   * This is the wiring half. That exactly one of two simultaneous claims wins
+   * is run against the emulator in `tests/survey-link-fetch.spec.ts`
+   * (QA review of 90be9aba984e, cca300dfb572).
    */
   const fs = require('fs') as typeof import('fs');
   const path = require('path') as typeof import('path');
   const src = fs.readFileSync(path.resolve(__dirname, '..', 'app/survey/[token]/page.tsx'), 'utf8');
   const claim = src.slice(src.indexOf('linkFetchedAt` answers'), src.indexOf('existingAnswers = (data?.answers'));
   expect(claim.length, 'the stamping block was not found').toBeGreaterThan(200);
-  expect(claim).toContain('db.runTransaction');
-  expect(claim).toMatch(/tx\.get\(docRef\)/);
-  expect(claim).toMatch(/if \(!current\?\.linkFetchedAt\)/);
-  expect(claim).toMatch(/tx\.set\(/);
+  expect(claim).toContain('claimLinkFetch(db, docRef');
+  expect(src).toContain("from '@/lib/survey/link-fetch'");
   // The read-then-write pair that could interleave is gone.
   expect(claim).not.toMatch(/await ref\.get\(\)/);
   expect(claim).not.toMatch(/await ref\.set\(/);
+  // And the helper is the transaction.
+  const helper = fs.readFileSync(path.resolve(__dirname, '..', 'lib/survey/link-fetch.ts'), 'utf8');
+  expect(helper).toContain('db.runTransaction');
+  expect(helper).toMatch(/tx\.get\(ref\)/);
+  expect(helper).toMatch(/previous\?\.linkFetchedAt/);
 });
 
 test.describe('the arithmetic reports silence as silence', () => {
