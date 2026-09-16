@@ -67,6 +67,27 @@ async function answerFor(uid: string): Promise<ShellAnswer> {
   };
 }
 
+/**
+ * A refusal the caller can act on, rather than a 500 that says nothing.
+ *
+ * `assertMfaSatisfied` and `assertRateLimit` throw a plain object carrying
+ * `status` and `message`, not a `QuotaError`, so both fell into the generic
+ * branch: a reader with a second factor was told "Could not read the workspace
+ * setting" with a 500, and an expected refusal was logged as a server error
+ * (QA review of 1d3068c8020f). Anything carrying a numeric status is a decision
+ * this route made on purpose and is answered as one.
+ */
+function refusal(err: unknown): NextResponse | null {
+  if (err instanceof QuotaError) {
+    return NextResponse.json({ error: err.message }, { status: err.status });
+  }
+  const e = err as { status?: unknown; message?: unknown };
+  if (typeof e?.status === 'number' && typeof e?.message === 'string') {
+    return NextResponse.json({ error: e.message }, { status: e.status });
+  }
+  return null;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const decodedToken = await verifyRequestAuth(req);
@@ -76,9 +97,8 @@ export async function GET(req: NextRequest) {
     await assertMfaSatisfied(req, decodedToken);
     return NextResponse.json(await answerFor(decodedToken.uid));
   } catch (err: unknown) {
-    if (err instanceof QuotaError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    const said = refusal(err);
+    if (said) return said;
     logger.error('workspace-shell read failed', { route: 'api/workspace-shell', error: errMessage(err) });
     return NextResponse.json({ error: 'Could not read the workspace setting.' }, { status: 500 });
   }
@@ -128,9 +148,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, ...(await answerFor(uid)) });
   } catch (err: unknown) {
-    if (err instanceof QuotaError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    const said = refusal(err);
+    if (said) return said;
     logger.error('workspace-shell write failed', { route: 'api/workspace-shell', error: errMessage(err) });
     return NextResponse.json({ error: 'Could not save the workspace setting.' }, { status: 500 });
   }

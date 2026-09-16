@@ -36,6 +36,12 @@ export const GATED_ROUTES: GatedRoute[] = [
   // import. The sign-off it records is carried by the audit pack's decision
   // record, so a token obtained before the second factor must not reach it.
   { file: 'app/api/projects/[projectId]/commands/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/commands`, body: { command: 'revoke-architecture' } },
+  // Roadmap 1.4: the admin-only switch for the workspace shell. Both verbs gate
+  // on the factor; only GET is knocked on here, because POST checks
+  // administrator status first and the probe account is not one — it would
+  // refuse with 403 "administrator setting" and prove nothing about the factor.
+  // The POST refusal for a non-admin is proven in `workspace-shell-guard`.
+  { file: 'app/api/workspace-shell/route.ts', method: 'GET', path: () => '/api/workspace-shell' },
   { file: 'app/api/gemini/route.ts', method: 'POST', path: () => '/api/gemini', body: { prompt: 'hello' } },
   { file: 'app/api/run-tests/route.ts', method: 'POST', path: () => '/api/run-tests', body: { projectId: 'nowhere', testCases: [] } },
   { file: 'app/api/s4-credentials/route.ts', method: 'POST', path: () => '/api/s4-credentials', body: { url: 'https://example.invalid', username: 'u', password: 'p', authType: 'basic' } },
