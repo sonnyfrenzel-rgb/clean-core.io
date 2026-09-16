@@ -139,3 +139,39 @@ test.describe('mail delivery is in the report', () => {
     await expect(page.getByText(/keine Mail versendet/)).toBeVisible();
   });
 });
+
+test.describe('a user cannot write the administrator’s report', () => {
+  /**
+   * `name` comes straight from `firstName` and `lastName` on the user profile —
+   * the account owner types it. Interpolated raw, a first name of `<a href>` put
+   * a working link into the internal report and an `<img src>` made it call out
+   * the moment the administrator opened the mail (QA review of 33471220d6e9,
+   * finding 230989f67624).
+   */
+  const hostile = {
+    ...report,
+    newAccounts: [
+      { name: '<a href="https://phish.example/reset">Password reset</a>', email: 'a@b.c', when: new Date() },
+      { name: 'Tim', email: '<img src="https://tracker.example/p.gif">tim@example.com', when: new Date() },
+    ],
+    newlyActivated: [{ name: '<script>window.__pwned = 1;</script>Maria', email: 'maria@example.com', runs: 2 }],
+    reachedLimit: [{ name: '</div><h1 style="color:red">Quota exceeded — call this number</h1>', email: 'j@example.com' }],
+  };
+
+  test('names and addresses arrive as text, not as markup', async ({ page }) => {
+    await page.setContent(renderUsageReportEmail(hostile), { waitUntil: 'load' });
+
+    // Nothing the user typed became an element.
+    expect(await page.locator('a[href^="https://phish.example"]').count()).toBe(0);
+    expect(await page.locator('img[src^="https://tracker.example"]').count()).toBe(0);
+    expect(await page.evaluate(() => (window as unknown as { __pwned?: number }).__pwned)).toBeUndefined();
+    // …and the report still shows what the person is called, as text.
+    await expect(page.getByText('Password reset', { exact: false })).toBeVisible();
+    await expect(page.getByText('Quota exceeded — call this number')).toBeVisible();
+    expect(await page.locator('h1').count()).toBe(0);
+    // Every link in the report still points where the report's own markup put it.
+    const hrefs = await page.locator('a').evaluateAll((els) => els.map((e) => (e as HTMLAnchorElement).getAttribute('href') || ''));
+    expect(hrefs.length).toBeGreaterThan(0);
+    expect(hrefs.every((h) => h.startsWith('https://clean-core.io'))).toBe(true);
+  });
+});

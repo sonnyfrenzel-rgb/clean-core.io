@@ -3,6 +3,7 @@ import { CONTACT_EMAIL } from '@/lib/constants';
 import { recordEmailSent } from '@/lib/email-events';
 import { verifyAdminRequest, assertAdminStepUp } from '@/lib/firebase-admin';
 import { escapeHtml } from '@/lib/utils';
+import { mockMailAllowed } from '@/lib/mail-delivery-mode';
 import { wrapEmailDocument } from '@/lib/email-layout';
 import { buildWelcomeEmail, WELCOME_EMAIL_SUBJECT } from '@/lib/welcome-email';
 
@@ -97,13 +98,24 @@ export async function POST(request: NextRequest) {
           console.error('[Email] Could not record sent event:', err),
         );
       }
-    } else {
-      // Offline/Local development fallback
+    } else if (mockMailAllowed()) {
+      // Offline/local development: printing the mail to the console *is* the
+      // delivery channel, and the developer has it in front of them.
       console.log('\n======================================================');
       console.log('📬   [WELCOME EMAIL SENT TO USER]   📬');
       console.log(`To: ${rawName} (${email})`);
       console.log(`Subject: ${WELCOME_EMAIL_SUBJECT}`);
       console.log('======================================================\n');
+    } else {
+      // On the real deployment a missing key means nobody was told anything. The
+      // console fallback ran here unguarded and the route still answered
+      // `success: true`, so the admin console reported a welcome mail that was
+      // never sent (QA review of 33471220d6e9, finding 14edf99a390c).
+      console.error('[Email] RESEND_API_KEY missing in production — welcome mail not sent.');
+      return NextResponse.json(
+        { error: 'Email delivery is not configured. Nothing was delivered to the user.' },
+        { status: 503 },
+      );
     }
 
     return NextResponse.json({ success: true });

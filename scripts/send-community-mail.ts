@@ -8,8 +8,14 @@
  * Safety properties, in the order they matter:
  *   - Dry run by default. `--apply` is required to send anything.
  *   - Suppressions win. Anyone in `email_suppressions` is skipped, always.
- *   - Idempotent. Every send is recorded in `email_sends`; a re-run skips whoever
- *     already received this campaign, so an interrupted run is safe to resume.
+ *   - Idempotent, in the outbox sense (`lib/survey/outbox.ts`): the record is
+ *     claimed in a transaction *before* the provider is asked and settled after,
+ *     and the request carries a deterministic `Idempotency-Key`. It used to be
+ *     written after Resend had accepted the message, so a crash or a failed
+ *     Firestore write in between left a delivered mail with no record and the
+ *     next run mailed that person a second copy (QA review of 33471220d6e9,
+ *     finding 6d40362efbf6). A record in `sending` is neither resent nor
+ *     counted — a person checks the provider log and settles it.
  *   - Test accounts excluded. The CI creates a user per pipeline run — they are
  *     the large majority of the `users` collection and must never be mailed.
  *   - Batched with a pause. A first bulk send from a domain that has only ever
@@ -25,11 +31,11 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { createHash } from 'node:crypto';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
-import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { createUnsubscribeToken, normaliseEmail } from '../lib/unsubscribe-token';
 import { isTestAccount } from '../lib/test-accounts';
+import { claimSend, completeSend, failSend, sendIdempotencyKey } from '../lib/survey/outbox';
 import { FIRESTORE_DB_ID } from '../lib/constants';
 
 const PROJECT_ID = 'cleancore-491216';
@@ -118,7 +124,7 @@ interface Recipient {
   firstName: string;
 }
 
-async function loadRecipients(db: Firestore): Promise<{ recipients: Recipient[]; skipped: Record<string, number> }> {
+async function loadRecipients(db: Firestore): Promise<{ recipients: Recipient[]; skipped: Record<string, number>; unresolved: string[] }> {
   const [users, suppressions, sends] = await Promise.all([
     db.collection('users').get(),
     db.collection('email_suppressions').get(),
@@ -126,9 +132,23 @@ async function loadRecipients(db: Firestore): Promise<{ recipients: Recipient[];
   ]);
 
   const suppressed = new Set(suppressions.docs.map((d) => normaliseEmail(d.data().email || '')));
-  const alreadySent = new Set(sends.docs.map((d) => normaliseEmail(d.data().email || '')));
+  // The record is written before the provider is asked (see the loop in main),
+  // so the states mean: `sent` — accepted and recorded; `sending` — the provider
+  // was asked and the outcome was never written, which is a message that may
+  // well have gone out; `failed` — the provider refused. Only the last is asked
+  // again. Records without a state predate the outbox and were only ever written
+  // after success.
+  const alreadySent = new Set<string>();
+  const unresolved: string[] = [];
+  for (const d of sends.docs) {
+    const email = normaliseEmail(d.data().email || '');
+    const state = d.data().state as string | undefined;
+    if (state === 'failed') continue;
+    if (state === 'sending') unresolved.push(email);
+    alreadySent.add(email);
+  }
 
-  const skipped = { noEmail: 0, testAccount: 0, suppressed: 0, alreadySent: 0, deleted: 0, notSelected: 0 };
+  const skipped = { noEmail: 0, testAccount: 0, suppressed: 0, alreadySent: 0, unresolved: unresolved.length, deleted: 0, notSelected: 0 };
   const recipients: Recipient[] = [];
 
   for (const doc of users.docs) {
@@ -150,7 +170,7 @@ async function loadRecipients(db: Firestore): Promise<{ recipients: Recipient[];
   }
 
   recipients.sort((a, b) => a.email.localeCompare(b.email));
-  return { recipients: LIMIT > 0 ? recipients.slice(0, LIMIT) : recipients, skipped };
+  return { recipients: LIMIT > 0 ? recipients.slice(0, LIMIT) : recipients, skipped, unresolved };
 }
 
 async function main() {
@@ -167,13 +187,18 @@ async function main() {
   const app = initializeApp({ credential: applicationDefault(), projectId: PROJECT_ID });
   const db = getFirestore(app, DATABASE_ID);
 
-  const { recipients, skipped } = await loadRecipients(db);
+  const { recipients, skipped, unresolved } = await loadRecipients(db);
 
   console.log(`campaign : ${CAMPAIGN}`);
   console.log(`subject  : ${SUBJECT}`);
   console.log(`from     : ${FROM}`);
   console.log('');
   console.log('skipped  :', Object.entries(skipped).filter(([, n]) => n > 0).map(([k, n]) => `${k}=${n}`).join(' ') || 'nothing');
+  if (unresolved.length) {
+    // Not resent, not counted: nobody knows whether these went out. A person
+    // checks the provider's log and sets the record to `sent` or `failed`.
+    console.log(`unresolved: ${unresolved.length} send(s) started and never recorded — check the provider log: ${unresolved.join(', ')}`);
+  }
   console.log(`sending  : ${recipients.length} recipient(s)`);
   console.log('');
   for (const r of recipients) console.log(`  ${r.email}  (${r.firstName})`);
@@ -200,10 +225,27 @@ async function main() {
       const unsubscribeUrl = `${BASE_URL}/api/unsubscribe?t=${encodeURIComponent(token)}`;
       const vars = { FIRST_NAME: r.firstName, EMAIL: r.email, UNSUBSCRIBE_URL: unsubscribeUrl };
 
+      // The outbox record, claimed in a transaction before the provider is
+      // asked and under a deterministic id. Whatever happens after — a crash, a
+      // failed write, a second process running beside this one — a re-run finds
+      // the claim and does not ask the provider twice.
+      // (lib/survey/outbox.ts holds the transaction; tests/survey-outbox.spec.ts
+      // runs it against the emulator.)
+      if (!(await claimSend(db, CAMPAIGN, r))) {
+        console.log(`  claimed by another run: ${r.email} — skipped`);
+        continue;
+      }
+
       try {
         const res = await fetch('https://api.resend.com/emails', {
           method: 'POST',
-          headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+          headers: {
+            Authorization: `Bearer ${resendKey}`,
+            'Content-Type': 'application/json',
+            // Same campaign, same address, same key — so a request this run
+            // repeats after a lost response cannot become a second copy.
+            'Idempotency-Key': sendIdempotencyKey(CAMPAIGN, r.email),
+          },
           body: JSON.stringify({
             from: FROM,
             to: [r.email],
@@ -222,23 +264,18 @@ async function main() {
         if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
         const { id } = (await res.json()) as { id: string };
 
-        // Recorded before moving on, so an interruption never double-sends.
-        await db
-          .collection('email_sends')
-          .doc(`${CAMPAIGN}:${createHash('sha256').update(r.email).digest('hex')}`)
-          .set({
-            campaign: CAMPAIGN,
-            email: r.email,
-            uid: r.uid,
-            providerId: id,
-            sentAt: FieldValue.serverTimestamp(),
-          });
+        await completeSend(db, CAMPAIGN, r.uid, id);
 
         sent++;
         console.log(`  sent ${r.email} (${id})`);
       } catch (error) {
         failed++;
-        console.error(`  FAILED ${r.email}: ${error instanceof Error ? error.message : String(error)}`);
+        const detail = error instanceof Error ? error.message : String(error);
+        // A refusal is final for this run and the record says so, which is what
+        // makes the next run try this person again. If this write fails too the
+        // record stays in `sending`: reported as unresolved above, never resent.
+        await failSend(db, CAMPAIGN, r.uid, detail).catch(() => {});
+        console.error(`  FAILED ${r.email}: ${detail}`);
       }
     }
 

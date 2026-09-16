@@ -57,10 +57,27 @@ export function withinBudget(budget, spentUsd, call) {
   return spentUsd + estimateCostUsd({ ...call, maxOutputTokens: budget.maxOutputTokens }) <= budget.maxCostUsd;
 }
 
-/** What users see: pages, components, styles, the stage model and the mails. Not API routes, not server helpers. */
+/**
+ * The `lib/` modules that carry something a user reads: the copy a page renders
+ * from data, the guide text, and every mail renderer.
+ *
+ * The scope claimed "what users see … and the mails" while admitting exactly
+ * three `lib/*.ts` files, so a release that changed the feature copy in
+ * `lib/features-content.ts`, the guide in `lib/clean-core-guide.ts` or the body
+ * of a mail could come back as a complete UX review that had never seen the
+ * changed words (QA review of 33471220d6e9, finding 6a774e02134e). One pattern,
+ * so a new `lib/*-content.ts` or a new `lib/*-email.ts` is in the scope the day
+ * it is written rather than the day someone remembers this list.
+ *
+ * Still out: server helpers, API routes, the engine. They decide what is shown,
+ * not how it reads.
+ */
+const UX_LIB = /^lib\/(?:workflow-steps|email-layout|email-events|clean-core-guide|content-dates)\.ts$|^lib\/[a-z0-9-]+-content\.ts$|^lib\/(?:[a-z0-9-]+\/)?[a-z0-9-]*(?:email|mail)\.ts$/;
+
+/** What users see: pages, components, styles, the stage model, the copy modules and the mails. Not API routes, not server helpers. */
 export function isUxRelevant(path) {
   if (/^app\/api\//.test(path)) return false;
-  return /^(app|components)\/.*\.(tsx|css)$/.test(path) || /^lib\/(workflow-steps|email-layout|email-events)\.ts$/.test(path);
+  return /^(app|components)\/.*\.(tsx|css)$/.test(path) || UX_LIB.test(path);
 }
 
 /**

@@ -168,6 +168,99 @@ test.describe('the page does not answer for the reader', () => {
   });
 });
 
+test.describe('a second tap wins, however the requests come back', () => {
+  /**
+   * Every press used to start its own request and then write `saved` and the
+   * status from the value it had captured. Tap A, tap B before A has come back,
+   * and if A finishes last it writes A into the read-back and reports it saved —
+   * while B is what is highlighted and what the server holds. The "Your answers"
+   * panel then contradicted the selection, and the two writes could reach the
+   * server in the wrong order too (QA review of 33471220d6e9, finding
+   * f7110f3d6619).
+   *
+   * Requests for one question are serialised and only the newest press settles
+   * anything, so this is behaviour rather than shape: the slow first answer is
+   * held open while the second is tapped, and the panel has to end on the second.
+   */
+  const QUESTION = SURVEY_QUESTIONS.find((q) => q.where === 'page' && !q.multi)!;
+  const FIRST = QUESTION.options[0];
+  const SECOND = QUESTION.options[1];
+
+  test('the read-back ends on the option the reader tapped last', async ({ page }) => {
+    test.setTimeout(120 * 1000);
+    const token = createSurveyToken(SURVEY_CAMPAIGN, `race-${Date.now()}`, Date.now() + HOUR);
+
+    // The delay has to happen inside the page, not in a Playwright route handler:
+    // route handlers are dispatched one at a time, so delaying one there would
+    // serialise the very concurrency this test is about and pass either way.
+    await page.addInitScript(
+      (cfg: { slowId: string; delayMs: number }) => {
+        const w = window as unknown as { __voteDone: string[] };
+        w.__voteDone = [];
+        const real = window.fetch.bind(window);
+        window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+          const href = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+          if (href.includes('/api/survey/vote') && init && init.method === 'POST') {
+            const body = JSON.parse(String(init.body)) as { optionId?: string };
+            // The first answer is the slow one — the case the defect needed.
+            const wait = body.optionId === cfg.slowId ? cfg.delayMs : 0;
+            return new Promise<Response>((resolve) => {
+              setTimeout(() => {
+                if (body.optionId) w.__voteDone.push(body.optionId);
+                resolve(new Response('{"ok":true}', { status: 200, headers: { 'Content-Type': 'application/json' } }));
+              }, wait);
+            });
+          }
+          return real(input, init);
+        };
+      },
+      { slowId: FIRST.id, delayMs: 4000 },
+    );
+
+    await page.goto(`/survey/${encodeURIComponent(token)}`);
+    await expect(page.getByRole('heading', { name: QUESTION.prompt })).toBeVisible();
+
+    await page.getByRole('button', { name: FIRST.label, exact: false }).click();
+    await page.getByRole('button', { name: SECOND.label, exact: false }).click();
+
+    // Both requests have to have come back before anything is judged: the whole
+    // defect is what the *slow first* one does when it lands last.
+    await page.waitForFunction(() => (window as unknown as { __voteDone: string[] }).__voteDone.length >= 2, null, {
+      timeout: 30000,
+    });
+
+    const row = page.locator('dl > div').filter({ hasText: QUESTION.prompt });
+    await expect(row.locator('dd')).toHaveText(SECOND.label, { timeout: 15000 });
+
+    // Not merely where the screen ended up: the older answer never reached the
+    // server after the newer one either.
+    const done = await page.evaluate(() => (window as unknown as { __voteDone: string[] }).__voteDone);
+    expect(done, 'both answers were sent').toContain(SECOND.id);
+    expect(done[done.length - 1], `the older answer settled last: ${done.join(' → ')}`).toBe(SECOND.id);
+  });
+});
+
+test('the first fetch of a link is claimed in a transaction, not read and then written', () => {
+  /**
+   * A mail-security scanner and the recipient open the link at the same moment.
+   * Both reads saw no `linkFetchedAt`, both merge-writes went through, and the
+   * stored value was the later arrival — while the comment above it says it is
+   * the first (QA review of 33471220d6e9, finding 8ccb1b1b765b).
+   */
+  const fs = require('fs') as typeof import('fs');
+  const path = require('path') as typeof import('path');
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'app/survey/[token]/page.tsx'), 'utf8');
+  const claim = src.slice(src.indexOf('linkFetchedAt` answers'), src.indexOf('existingAnswers = (data?.answers'));
+  expect(claim.length, 'the stamping block was not found').toBeGreaterThan(200);
+  expect(claim).toContain('db.runTransaction');
+  expect(claim).toMatch(/tx\.get\(docRef\)/);
+  expect(claim).toMatch(/if \(!current\?\.linkFetchedAt\)/);
+  expect(claim).toMatch(/tx\.set\(/);
+  // The read-then-write pair that could interleave is gone.
+  expect(claim).not.toMatch(/await ref\.get\(\)/);
+  expect(claim).not.toMatch(/await ref\.set\(/);
+});
+
 test.describe('the arithmetic reports silence as silence', () => {
   test('no answers means zeroes, not percentages over nothing', () => {
     const s = summarise(SURVEY_CAMPAIGN, 30, []);

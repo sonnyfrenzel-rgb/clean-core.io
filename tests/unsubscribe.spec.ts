@@ -85,3 +85,49 @@ test.describe('One-click unsubscribe', () => {
     await expect(page.getByRole('heading', { name: /That did not work/i })).toBeVisible();
   });
 });
+
+test.describe('a verified opt-out that could not be stored is retryable, not acknowledged', () => {
+  /**
+   * The route wrapped the token check and the Firestore write in one `catch` and
+   * answered 200 to both. Firestore being briefly unavailable therefore produced
+   * a successful-looking one-click unsubscribe with no suppression stored: the
+   * provider does not retry a 200, and the person goes on receiving community
+   * mail after asking not to (QA review of 33471220d6e9, finding 0a0ff08e1793).
+   *
+   * The distinction is the whole fix, so it is the distinction that is guarded:
+   * a token that will never verify keeps its 200, and a write that failed asks
+   * to be sent again.
+   */
+  const fs = require('fs') as typeof import('fs');
+  const path = require('path') as typeof import('path');
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'app/api/unsubscribe/route.ts'), 'utf8');
+  const post = src.slice(src.indexOf('export async function POST'), src.indexOf('export async function GET'));
+
+  test('the two failures are separate branches with separate statuses', () => {
+    const verify = post.indexOf('verifyUnsubscribeToken(token)');
+    const tokenAnswer = post.indexOf('{ status: 200 }');
+    const store = post.indexOf('await suppress(email');
+    const storeAnswer = post.indexOf('{ status: 503 }');
+
+    for (const [name, at] of Object.entries({ verify, tokenAnswer, store, storeAnswer })) {
+      expect(at, `${name} is missing — the two failures are back in one catch`).toBeGreaterThan(-1);
+    }
+    // Order: verify, answer 200 for a bad token, then store, then 503 for a
+    // failed write. A single catch cannot produce this shape.
+    expect(verify).toBeLessThan(tokenAnswer);
+    expect(tokenAnswer).toBeLessThan(store);
+    expect(store).toBeLessThan(storeAnswer);
+    // And the success answer is reached only after the write returned.
+    expect(post.indexOf('{ success: true }')).toBeGreaterThan(storeAnswer);
+    expect((post.match(/} catch \(error\) \{/g) || []).length).toBe(2);
+  });
+
+  test('the successful path is unchanged: 200, stored, and idempotent', async ({ request }) => {
+    const email = `unsub-503-${Date.now()}@cleancore-test.io`;
+    const token = createUnsubscribeToken(email);
+    const res = await request.post(`/api/unsubscribe?t=${encodeURIComponent(token)}`);
+    expect(res.status()).toBe(200);
+    expect((await res.json())).toEqual({ success: true });
+    expect(await adminDocExists('email_suppressions', suppressionId(email))).toBe(true);
+  });
+});

@@ -4,6 +4,7 @@ import { CONTACT_EMAIL } from '@/lib/constants';
 import { APP_VERSION } from '@/lib/version';
 import { verifyAdminRequest, assertAdminStepUp } from '@/lib/firebase-admin';
 import { escapeHtml } from '@/lib/utils';
+import { mockMailAllowed } from '@/lib/mail-delivery-mode';
 import { wrapEmailDocument } from '@/lib/email-layout';
 
 export async function POST(request: NextRequest) {
@@ -207,14 +208,22 @@ export async function POST(request: NextRequest) {
           console.error('[Email] Could not record sent event:', err),
         );
       }
-    } else {
-      // Offline/Local development fallback
+    } else if (mockMailAllowed()) {
+      // Offline/local development: the console log *is* the delivery channel.
       console.log('\n======================================================');
       console.log('📬   [WELCOME EMAIL SENT TO USER]   📬');
       console.log(`To: ${name} (${email})`);
       console.log(`Subject: ${emailSubject}`);
       console.log(`Dashboard Link: ${dashboardUrl}`);
       console.log('======================================================\n');
+    } else {
+      // Production without a mail key: nobody was told, and saying otherwise is
+      // the same defect as swallowing a rejection above (finding 14edf99a390c).
+      console.error('[Email] RESEND_API_KEY missing in production — tenant approval mail not sent.');
+      return NextResponse.json(
+        { error: 'Email delivery is not configured. The notification could not be sent.' },
+        { status: 503 },
+      );
     }
 
     return NextResponse.json({ success: true });

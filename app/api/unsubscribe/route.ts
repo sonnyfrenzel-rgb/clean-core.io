@@ -14,8 +14,12 @@ import { APP_BASE_URL } from '@/lib/constants';
  *
  *   POST /api/unsubscribe?t=…   the one-click target named in `List-Unsubscribe`.
  *                               Mail providers POST here with no session and no
- *                               JSON body; anything returning non-2xx here counts
- *                               against sender reputation, so failures are soft.
+ *                               JSON body. A token that cannot be verified is
+ *                               answered 200: it will not verify on a retry, and
+ *                               a non-2xx reads to the provider as a broken
+ *                               unsubscribe. A *verified* opt-out that could not
+ *                               be stored is answered 503, because that one is
+ *                               worth retrying and a silent 200 loses it.
  *   GET  /api/unsubscribe?t=…   a human clicked the visible footer link — hand
  *                               them the confirmation page rather than acting on
  *                               a GET, which link scanners and prefetchers follow.
@@ -51,18 +55,35 @@ async function suppress(email: string, source: 'one-click' | 'confirmation-page'
 export async function POST(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('t') || '';
 
+  let email: string;
   try {
-    const email = verifyUnsubscribeToken(token);
-    await suppress(email, 'one-click');
-    logger.info('unsubscribe accepted', { route: 'api/unsubscribe', source: 'one-click' });
-    return NextResponse.json({ success: true });
+    email = verifyUnsubscribeToken(token);
   } catch (error) {
-    // Never fail loudly at a mail provider: a non-2xx on the one-click endpoint is
-    // read as a broken unsubscribe and damages sender reputation more than the
-    // failed opt-out itself. The attempt is logged so a real problem stays visible.
-    logger.error('unsubscribe failed', { route: 'api/unsubscribe', error: errMessage(error) });
+    // A token that does not verify will not verify on a retry either. Answering
+    // 200 here is deliberate: a non-2xx on the one-click endpoint is read by the
+    // provider as a broken unsubscribe and costs more sender reputation than the
+    // forged or expired token it came from. The attempt is logged so a real
+    // problem stays visible.
+    logger.error('unsubscribe rejected', { route: 'api/unsubscribe', error: errMessage(error) });
     return NextResponse.json({ success: false }, { status: 200 });
   }
+
+  try {
+    await suppress(email, 'one-click');
+  } catch (error) {
+    // A verified opt-out that could not be stored is a different case, and it used
+    // to answer 200 as well: Firestore was briefly unavailable, nothing was
+    // suppressed, the provider saw success and never retried, and the person went
+    // on receiving community mail after asking not to (QA review of 33471220d6e9,
+    // finding 0a0ff08e1793). 503 is the one answer that gets the opt-out another
+    // attempt; RFC 8058 providers retry it, and a transient 503 does not carry the
+    // reputational weight of answering the unsubscribe itself as broken.
+    logger.error('unsubscribe not stored', { route: 'api/unsubscribe', error: errMessage(error) });
+    return NextResponse.json({ success: false, retryable: true }, { status: 503 });
+  }
+
+  logger.info('unsubscribe accepted', { route: 'api/unsubscribe', source: 'one-click' });
+  return NextResponse.json({ success: true });
 }
 
 export async function GET(req: NextRequest) {

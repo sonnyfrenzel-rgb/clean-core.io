@@ -344,6 +344,38 @@ test.describe('the attack-surface map', () => {
     expect(groups.filter((g: { reason: string }) => /dependency audit/.test(g.reason)).map((g: { examples: string[] }) => g.examples)).toEqual([['package-lock.json']]);
   });
 
+  test('the prompt that steers the audit is itself in the audit', async () => {
+    /**
+     * `docs/security/ciso-brief.md` is sent as the CISO's system prompt
+     * (`AUDIT.briefPath` → `audit.mjs`). Excluded from the map as Markdown prose,
+     * a change to it reached no consultant as repository data, so a line telling
+     * the CISO to downgrade findings would have steered the sealed report with
+     * nothing in the audit ever looking at it (QA review of 33471220d6e9,
+     * finding f4561d983d92).
+     */
+    const { inventory, exclusions, AGENT_PROMPTS } = await lib('surface.mjs');
+    const { AUDIT } = await lib('team.mjs');
+    expect(AGENT_PROMPTS).toContain(AUDIT.briefPath);
+    // Every prompt file the agents load, and no more: the audit's budget is not
+    // an invitation to read the whole documentation tree.
+    expect([...AGENT_PROMPTS].sort()).toEqual(['docs/qa/reviewer-brief.md', 'docs/security/ciso-brief.md', 'docs/ux/ux-brief.md']);
+    for (const p of AGENT_PROMPTS) expect(fs.existsSync(path.resolve(ROOT, p)), `${p} does not exist`).toBe(true);
+
+    // In the real inventory, and read by the consultant whose brief covers
+    // prompt injection and model output used in security decisions.
+    const files = inventory();
+    const brief = files.find((f: { path: string }) => f.path === AUDIT.briefPath);
+    expect(brief, 'the CISO brief is not in the surface map').toBeTruthy();
+    expect(brief.domain).toBe('ci-cloud');
+
+    // It is not also counted among the files the report says were left out.
+    const paths = ['docs/security/ciso-brief.md', 'docs/qa/reviewer-brief.md', 'docs/ux/ux-brief.md', 'docs/ROADMAP.md', 'README.md'];
+    expect(inventory(paths).map((f: { path: string }) => f.path)).toEqual(AGENT_PROMPTS);
+    const left = exclusions(paths).flatMap((g: { examples: string[] }) => g.examples);
+    for (const p of AGENT_PROMPTS) expect(left, `${p} is named as excluded as well`).not.toContain(p);
+    expect(left.sort()).toEqual(['README.md', 'docs/ROADMAP.md']);
+  });
+
   test('an npm audit that did not run is reported as unavailable, never as a clean scan', async () => {
     const { readDependencyAudit } = await lib('surface.mjs');
     expect(readDependencyAudit('{"error":{"code":"ENOTFOUND","summary":"request to registry failed"}}')).toEqual({ error: expect.stringMatching(/no audit result/) });

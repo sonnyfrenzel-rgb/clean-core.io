@@ -185,6 +185,61 @@ test.describe('nothing it finds leaks', () => {
 });
 
 test.describe('what a review covers', () => {
+  test('the copy modules and the mail renderers are in the scope the brief claims', async () => {
+    /**
+     * The scope said "what users see … and the mails" and then admitted exactly
+     * three `lib/*.ts` files. A release that changed the feature copy in
+     * `lib/features-content.ts`, the guide in `lib/clean-core-guide.ts` or the
+     * body of a mail came back as a complete review that had never been shown
+     * the changed words (QA review of 33471220d6e9, finding 6a774e02134e).
+     */
+    const { isUxRelevant } = await lib('config.mjs');
+    for (const p of [
+      'lib/features-content.ts',
+      'lib/clean-core-guide.ts',
+      'lib/welcome-email.ts',
+      'lib/admin-signup-email.ts',
+      'lib/usage-report-email.ts',
+      'lib/security-alert-email.ts',
+      'lib/survey/invite-email.ts',
+      'lib/survey/digest-email.ts',
+      'lib/workflow-steps.ts',
+      'lib/email-layout.ts',
+      'lib/email-events.ts',
+      'app/page.tsx',
+      'components/StageHeader.tsx',
+      'app/globals.css',
+    ]) {
+      expect(isUxRelevant(p), `${p} is not in the UX scope`).toBe(true);
+    }
+    // Still out: server helpers, routes, the engine — they decide what is shown,
+    // not how it reads.
+    for (const p of [
+      'lib/firebase-admin.ts',
+      'lib/run-signature.ts',
+      'lib/mail-delivery-mode.ts',
+      'lib/abap/evidence-model.ts',
+      'app/api/gemini/route.ts',
+      'scripts/ux/review.mjs',
+      'tests/landing.spec.ts',
+    ]) {
+      expect(isUxRelevant(p), `${p} is in the UX scope and should not be`).toBe(false);
+    }
+
+    // Nothing the product renders as visible copy is left behind: every tracked
+    // `lib/*-content.ts` is in scope, whatever it is called.
+    const tracked = (require('child_process') as typeof import('child_process'))
+      .execFileSync('git', ['ls-files', 'lib'], { cwd: ROOT, encoding: 'utf8' })
+      .split('\n')
+      .filter(Boolean);
+    const content = tracked.filter((p) => /-content\.ts$/.test(p));
+    expect(content.length, 'no *-content.ts module found — the pattern guards nothing').toBeGreaterThan(0);
+    for (const p of content) expect(isUxRelevant(p), `${p} is not in the UX scope`).toBe(true);
+    const mails = tracked.filter((p) => /(email|mail)\.ts$/.test(p));
+    expect(mails.length).toBeGreaterThan(3);
+    for (const p of mails) expect(isUxRelevant(p), `${p} is not in the UX scope`).toBe(true);
+  });
+
   test('a release starts from the last reviewed checkpoint or the previous tip of main — never a guess', async () => {
     const { chooseDeltaBase } = await lib('range.mjs');
     const ancestors = new Set(['cp>head', 'before>head']);
