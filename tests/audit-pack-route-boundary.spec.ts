@@ -103,7 +103,40 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     const db = adminFirestore(app, FIRESTORE_DB_ID);
     const project = (await db.collection('projects').doc(PROJECT_ID).get()).data()!;
     const run = (await db.collection('projects').doc(PROJECT_ID).collection('runs').doc(project.activeRunId).get()).data()!;
-    return run as { worklist: Array<{ title: string; level?: string; status: string; category: string }>; evidenceReport: unknown[] };
+    return { runId: project.activeRunId as string, ...(run as StoredRun) };
+  }
+
+  interface StoredRun {
+    worklist: Array<{ title: string; level?: string; status: string; category: string; severity?: string; effort?: string; recommendation: string; location?: string }>;
+    dataCoupling: Array<{ tableName: string; accessType: string; isCustom: boolean; riskLevel: string; recommendation: string }>;
+    originalRecommendation?: string;
+    extensibilityRoute: string;
+    recommendationConfidence?: number;
+    recommendationJustification?: string;
+    cleanCoreScore: number;
+    complexityScore: number;
+    criticalityScore: number;
+  }
+
+  /** RFC 4180 as lib/audit-pack.ts writes it: every cell quoted, inner quotes doubled. */
+  function parseCsv(text: string): string[][] {
+    const rows: string[][] = [];
+    let row: string[] = [];
+    let cell = '';
+    let quoted = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (quoted) {
+        if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+        else if (ch === '"') quoted = false;
+        else cell += ch;
+      } else if (ch === '"') quoted = true;
+      else if (ch === ',') { row.push(cell); cell = ''; }
+      else if (ch === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+      else if (ch !== '\r') cell += ch;
+    }
+    if (cell.length || row.length) { row.push(cell); rows.push(row); }
+    return rows;
   }
 
   async function openPack(request: APIRequestContext) {
@@ -191,22 +224,44 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
       expect(['fully', 'review', 'out_of_scope', 'signed_off']).not.toContain(item.level);
       expect(item.title).not.toMatch(/FORGED/);
     }
-    // The ADR's scope section lists items by level. The run's items have none
-    // of the three listed levels, so every list is empty and there is not one
-    // bullet — a forged item of any shape would be a bullet.
+    // The ADR's scope section is the exact projection of the stored worklist by
+    // level (lib/audit-pack.ts, generateArchitectureDecisionRecord): the three
+    // lists, their counts, their bullets. A forged item of any shape — fully,
+    // Low, Finding, with or without a title — is not in the stored worklist and
+    // therefore not in the projection.
+    const lvlOf = (w: StoredRun['worklist'][number]) => w.level || (w.status === 'signed_off' ? 'fully' : w.status === 'in_review' ? 'review' : 'open');
+    const expectedLists = {
+      'Transformed / fully mapped': stored.worklist.filter((w) => lvlOf(w) === 'fully'),
+      'Needs expert review': stored.worklist.filter((w) => lvlOf(w) === 'review'),
+      'Out of scope / deferred': stored.worklist.filter((w) => w.level === 'out_of_scope'),
+    };
     const scope = adr.slice(adr.indexOf('## Scope & consequences'), adr.indexOf('## Evidence'));
-    expect(scope).toContain('**Transformed / fully mapped — 0**');
-    expect(scope).toContain('**Needs expert review — 0**');
-    expect(scope).toContain('**Out of scope / deferred — 0**');
-    expect(scope.match(/^- /gm) ?? []).toHaveLength(0);
+    const bullets = (scope.match(/^- \*\*(.+?)\*\* /gm) ?? []).map((b) => b.slice(4, -3));
+    for (const [heading, items] of Object.entries(expectedLists)) expect(scope).toContain(`**${heading} — ${items.length}**`);
+    expect(bullets).toEqual(Object.values(expectedLists).flat().map((w) => w.title));
+    expect(bullets, 'the stored run carries no listed level, so the projection is empty').toHaveLength(0);
     expect(scope.match(/_None\._/g) ?? []).toHaveLength(3);
-    // The findings CSV is the run's evidence report, row for row.
-    const csvRows = csv.trim().split(/\r?\n/).length - 1;
-    expect(csvRows).toBe(stored.evidenceReport.length);
-    expect(csvRows).toBeGreaterThan(0);
-    // The decision record has exactly the engine's fields — no key the owner writes.
-    expect(Object.keys(record.recommendation).sort()).toEqual(['confidence', 'engineRecommendation', 'justification']);
-    expect(Object.keys(record).sort()).toEqual(['architectReview', 'engineVersion', 'generatedAt', 'projectId', 'recommendation', 'runId', 'scores']);
+    // The findings CSV is the run's data coupling, row for row and field for
+    // field, as the generator writes it (Yes/No for the custom flag).
+    const [header, ...csvRows] = parseCsv(csv);
+    expect(header).toEqual(['Table Name', 'Access Type', 'Is Custom', 'Risk Level', 'Recommendation']);
+    expect(csvRows).toEqual(stored.dataCoupling.map((e) => [e.tableName, e.accessType, e.isCustom ? 'Yes' : 'No', e.riskLevel, e.recommendation]));
+    expect(csvRows.length).toBeGreaterThan(0);
+    // The decision record is the engine's, key for key and value for value —
+    // recursively, against the stored run; there is no room for an owner key.
+    expect(record).toEqual({
+      projectId: PROJECT_ID,
+      runId: stored.runId,
+      generatedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+      engineVersion: expect.any(String),
+      recommendation: {
+        engineRecommendation: stored.originalRecommendation || stored.extensibilityRoute,
+        confidence: stored.recommendationConfidence ?? null,
+        justification: stored.recommendationJustification || null,
+      },
+      architectReview: { attestationType: 'self-attested', recordedIn: USER_ATTESTED_FILE, signed: false },
+      scores: { cleanCoreScore: stored.cleanCoreScore, complexityScore: stored.complexityScore, criticalityScore: stored.criticalityScore },
+    });
     expect(csv).not.toMatch(/(^|[^A-Za-z0-9_])(signed_off|retire)([^A-Za-z0-9_]|$)|FORGED-ITEM|FORGED-LOCATION|FORGED-TITLE/);
     expect(adr).not.toMatch(/(^|[^A-Za-z0-9_])(signed_off|retire)([^A-Za-z0-9_]|$)|FORGED-ITEM|FORGED-TITLE/);
     // The boundary is a character class, not an escape a shell can mangle: it matches the token as a word and nothing inside a longer one.
