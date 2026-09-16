@@ -106,7 +106,8 @@
         "worklist",
         "originalRecommendation",
         "recommendationConfidence",
-        "recommendationJustification"
+        "recommendationJustification",
+        "inputManifest"
       ],
       "unsignedFieldsOnTheRun": [
         "analysis",
@@ -197,7 +198,19 @@
         "source-changed",
         "sign-off-stale"
       ]
-    }
+    },
+    "changes": [
+      {
+        "at": "2026-09-16",
+        "step": "0.5",
+        "what": "Der Lauf fuehrt ein Eingabemanifest. `inputManifest` steht im signierten Payload: jede Eingabe der Analyse mit Klasse, Kennung, Revision und Hash. Das Projekt bekommt keinen neuen Feldnamen — der serverseitige Spiegel liegt unter `auditMetadata.inputManifest`, also innerhalb eines Feldes, das das Register schon fuehrt.",
+        "addedToRun": [
+          "inputManifest"
+        ],
+        "addedToProject": [],
+        "caughtBy": "tests/preservation-register.spec.ts"
+      }
+    ]
   },
   "lockedPaths": [
     {

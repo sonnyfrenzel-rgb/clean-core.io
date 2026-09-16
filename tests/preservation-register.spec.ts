@@ -249,14 +249,32 @@ function firestoreWriteKeys(text: string, collection = 'projects'): Set<string> 
   return keys;
 }
 
-/** The object literal that follows `marker`, as its top-level keys. */
-function keysAfter(text: string, marker: string): string[] {
-  const at = text.indexOf(marker);
-  if (at === -1) return [];
-  const open = text.indexOf('{', at + marker.length);
-  if (open === -1) return [];
+/**
+ * The object literal that follows `marker`, as its top-level keys.
+ *
+ * A marker that no longer matches is an error, not an empty result. The first
+ * version returned `[]`, which makes the register blind in exactly the case it
+ * exists for: when roadmap 0.6 moved the project write into a transaction,
+ * `projectWrite.set(projectRef,` stopped matching, and the comparison degraded
+ * from "these are the fields the route writes" to "the register's list is
+ * empty" — a shape that passes as soon as the list is emptied too.
+ */
+function keysAfter(text: string, marker: string | RegExp): string[] {
+  let end: number;
+  if (typeof marker === 'string') {
+    const at = text.indexOf(marker);
+    if (at === -1) throw new Error(`preservation register: the marker ${marker} is no longer in the file`);
+    end = at + marker.length;
+  } else {
+    const m = marker.exec(text);
+    if (!m) throw new Error(`preservation register: the marker ${marker} no longer matches the file`);
+    end = m.index + m[0].length;
+  }
+  const open = text.indexOf('{', end);
+  if (open === -1) throw new Error(`preservation register: no object literal follows ${marker}`);
   const region = balanced(text, open);
-  return region ? topLevelKeys(region) : [];
+  if (!region) throw new Error(`preservation register: the object literal after ${marker} does not close`);
+  return topLevelKeys(region);
 }
 
 const sorted = (xs: Iterable<string>) => [...xs].sort();
@@ -518,7 +536,9 @@ test.describe('the register matches the code', () => {
     const deleted = [...route.matchAll(/(\w+):\s*FieldValue\.delete\(\)/g)].map((m) => m[1]);
     expect(sorted(deleted)).toEqual(sorted(register.trustChain.projectFieldsDeletedByRunsCreate));
 
-    const written = keysAfter(route, 'projectWrite.set(projectRef,');
+    // Roadmap 0.6 moved this write into the commit-time transaction, so the
+    // call is `tx.set(projectRef, …)` and no longer a batch on `projectWrite`.
+    const written = keysAfter(route, /tx\.set\(\s*projectRef,/);
     expect(sorted(written)).toEqual(sorted(register.trustChain.projectFieldsWrittenByRunsCreate));
 
     for (const stage of register.stages) {
