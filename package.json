@@ -57,6 +57,7 @@
     "tsx": "^4.21.0"
   },
   "devDependencies": {
+    "@abaplint/core": "^2.120.54",
     "@next/eslint-plugin-next": "^16.2.9",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "4.1.11",
