@@ -1219,7 +1219,10 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   <div>
                     <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Extensibility Router</span>
                     <div className="flex items-center gap-2 mt-2 mb-3">
-                      <span className={clsx(
+                      {/* The preservation register names this element as where
+                          `extensibilityRoute` becomes visible; see
+                          docs/registers/preservation-register.json. */}
+                      <span data-stage-output="extensibilityRoute" className={clsx(
                         "text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider shadow-sm",
                         (project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP')
                           ? "bg-blue-50 text-blue-700 border border-blue-100"
@@ -1555,7 +1558,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
           {/* TAB CONTENT: Gaps Backlog */}
           {activeTab === 'backlog' && (
-            <div className="animate-in fade-in duration-300">
+            <div data-stage-output="worklist" className="animate-in fade-in duration-300">
               <GapsWorklist
                 projectId={projectId as string}
                 project={project}

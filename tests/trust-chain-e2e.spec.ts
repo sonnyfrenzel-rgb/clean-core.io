@@ -1,18 +1,41 @@
 /**
- * Trust Chain E2E Test — v1.19
+ * The trust chain, end to end.
  *
- * Verifies the complete Trust Chain enforcement:
- * 1. Run guard blocks access when no activeRunId exists
- * 2. Run guard allows access when activeRunId is present
- * 3. Audit Pack export throws without activeRunId
- * 4. Audit Pack export works with activeRunId
- * 5. Sign endpoint rejects non-active runs
- * 6. Sign endpoint rejects runs without runHash
+ * What it verifies, in the order the chain runs:
+ *   1. the run guard's decision, on projects with and without an active run;
+ *   2. the client-side gate in `generateAuditPack`, which refuses before it asks;
+ *   3. the server: no run → a refusal with a reason; a run → a pack that IS that
+ *      run, signed, verifiable, and refused again the moment the run is altered;
+ *   4. the retired `/api/export/sign`, answering rather than merely reading as if
+ *      it would;
+ *   5. the downstream pages, which must call the guard at all.
  *
- * These tests validate the defensive logic without requiring
- * Firebase emulators or browser automation.
+ * Layers 3 and 4 used to be source greps and one assertion that proved nothing:
+ * `rejects.not.toThrow('Cannot generate Audit Pack without an active analysis
+ * run')` passes for every error that is not that one — including the fetch
+ * error you get when the endpoint does not exist, which is exactly what the
+ * call produced in this process. So the whole suite passed while audit-pack
+ * creation was, as far as it could tell, completely broken (QA review
+ * 812cbce3b485). The greps had the same shape one level down: `content`
+ * containing `'createHmac'` says a route mentions HMAC, not that it signs
+ * anything a verifier accepts.
+ *
+ * So the middle of this file now runs against the emulators and asserts the
+ * answers: the bytes that come back, what they hash to, and what the public
+ * verifier says about them.
  */
 import { test, expect } from '@playwright/test';
+import JSZip from 'jszip';
+import { createHash } from 'crypto';
+import { initializeApp, getApps } from 'firebase/app';
+import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
+import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin/app';
+import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
+import { adminSetDoc } from './helpers/admin-seed';
+import firebaseConfig from '../firebase-config.json';
+import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
+import { canonicalAuditManifest } from '../lib/audit-pack-canonical';
+import { USER_ATTESTED_FILE } from '../lib/audit-pack';
 import { hasActiveRun } from '../lib/run-guard';
 import { generateAuditPack } from '../lib/audit-pack';
 import type { Project } from '../lib/types';
@@ -47,7 +70,7 @@ test.describe('v1.19 Trust Chain Closure', () => {
   });
 
   // ────────────────────────────────────────────────
-  // Item #3 — Audit Pack Run Gate
+  // Item #3 — Audit Pack Run Gate (client side)
   // ────────────────────────────────────────────────
 
   test.describe('Audit Pack Run Gate', () => {
@@ -96,54 +119,190 @@ test.describe('v1.19 Trust Chain Closure', () => {
         .rejects.toThrow('Cannot generate Audit Pack without an active analysis run');
     });
 
-    test('passes the run gate and delegates to the server when activeRunId is present', async () => {
-      const projectWithRun = { ...baseProject, activeRunId: 'run-valid-123' };
-      // Generation is now server-authoritative (v1.20 §5): with a run present it must
-      // NOT throw the "no active run" gate error — it delegates to
-      // /api/audit-pack/create. That endpoint is unreachable in this in-process unit
-      // test, so the call rejects, but with a fetch/generation error, never the gate error.
-      await expect(generateAuditPack(projectWithRun, 'fake-token'))
-        .rejects.not.toThrow('Cannot generate Audit Pack without an active analysis run');
-    });
+    // The third case here — "passes the gate and delegates to the server" —
+    // was `rejects.not.toThrow(<the gate message>)`, which every failure mode
+    // satisfies. What it was reaching for is the server, and the server is
+    // below, where it answers for itself.
 
   });
 
   // ────────────────────────────────────────────────
-  // Item #4 — Audit-pack signing is server-authoritative (structural)
+  // Item #4 — The server: the chain against the emulators
   // ────────────────────────────────────────────────
 
-  test.describe('Audit Pack Trust Chain Requirements', () => {
+  test.describe('the audit pack the server actually makes', () => {
+    test.describe.configure({ mode: 'serial' });
 
-    test('legacy /api/export/sign is retired (410 Gone, no signing)', async () => {
-      const fs = await import('fs');
-      const path = await import('path');
-      const signRoutePath = path.join(__dirname, '..', 'app', 'api', 'export', 'sign', 'route.ts');
-      const content = fs.readFileSync(signRoutePath, 'utf-8');
+    const STAMP = Date.now();
+    const EMAIL = `trust-chain-${STAMP}@cleancore-test.io`;
+    const PASSWORD = 'TrustChain123!';
+    /** Two projects: one that never gets a run, one that gets one and then has it altered. */
+    const NO_RUN = `tc-no-run-${STAMP}`;
+    const WITH_RUN = `tc-with-run-${STAMP}`;
+    const SOURCE = 'REPORT z_trust_chain.\nSELECT * FROM vbak INTO TABLE @DATA(lt_orders).\n';
 
-      // The endpoint no longer signs client-supplied file hashes — it returns 410 Gone
-      // and points callers at the server-authoritative route.
-      expect(content).toContain('410');
-      expect(content).toContain('/api/audit-pack/create');
-      // It must not compute signatures or touch the signing key anymore.
-      expect(content).not.toContain('createHmac');
-      expect(content).not.toContain('AUDIT_SIGNING_KEY');
+    let token = '';
+    const headers = () => ({ Authorization: `Bearer ${token}` });
+    const sha = (b: Buffer | string) => createHash('sha256').update(b).digest('hex');
+
+    const db = () => {
+      const app = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
+      return adminFirestore(app, FIRESTORE_DB_ID);
+    };
+
+    /** The run the server stored — the thing every signed byte has to be traceable to. */
+    async function storedRun(projectId: string) {
+      const project = (await db().collection('projects').doc(projectId).get()).data()!;
+      const runId = project.activeRunId as string;
+      const run = (await db().collection('projects').doc(projectId).collection('runs').doc(runId).get()).data()!;
+      return { runId, run };
+    }
+
+    test.beforeAll(async () => {
+      // Account creation plus three seed calls, each a round trip through the
+      // app under test and the emulator; the default 30 s hook budget is not
+      // enough on a cold dev server.
+      test.setTimeout(180 * 1000);
+      const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      try {
+        connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+      } catch { /* already connected */ }
+      const cred = await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD);
+      token = await cred.user.getIdToken();
+      await adminSetDoc('users', cred.user.uid, {
+        firstName: 'Trust', lastName: 'Chain', email: EMAIL, tier: 'pilot', status: 'approved',
+        transformationsUsed: 0, transformationsLimit: 10, termsVersionAccepted: TERMS_VERSION,
+        mfaEnabled: false, createdAt: new Date(),
+      });
+      for (const id of [NO_RUN, WITH_RUN]) {
+        await adminSetDoc('projects', id, {
+          name: `Trust chain ${id}`, userId: cred.user.uid, createdAt: new Date(),
+          status: 'uploaded', legacyCode: SOURCE,
+        });
+      }
     });
 
-    test('server audit-pack route enforces the run gate and signs server-side', async () => {
-      const fs = await import('fs');
-      const path = await import('path');
-      const createRoutePath = path.join(__dirname, '..', 'app', 'api', 'audit-pack', 'create', 'route.ts');
-      const content = fs.readFileSync(createRoutePath, 'utf-8');
+    test('without a run the server refuses, with the reason and not a generic error', async ({ request }) => {
+      const res = await request.post('/api/audit-pack/create', { headers: headers(), data: { projectId: NO_RUN } });
+      expect(res.status()).toBe(422);
+      // The answer, not the presence of `status: 422` somewhere in the file:
+      // the reason has to be the missing run and has to be readable.
+      expect((await res.json()).error).toBe('No active analysis run. Please run the analysis first.');
+      // And nothing was minted on the way out.
+      expect((await db().collection('projects').doc(NO_RUN).get()).data()?.activeRunId).toBeUndefined();
+    });
 
-      // Server selects the active run (client cannot request a foreign/stale run) and
-      // requires a valid runHash, returning 422 otherwise.
-      expect(content).toContain('activeRunId');
-      expect(content).toContain('runHash');
-      expect(content).toContain('status: 422');
+    test('with a run the pack is that run: its files, its hash, and a signature the public verifier accepts', async ({ request }) => {
+      // Two routes that compile on first use, one full analysis run and a ZIP.
+      test.setTimeout(180 * 1000);
+      const run = await request.post('/api/runs/create', {
+        headers: headers(),
+        data: { projectId: WITH_RUN, legacyCode: SOURCE, analysis: '{"gaps":[]}', uploadedFileName: 'z_trust_chain.abap' },
+      });
+      expect(run.status(), await run.text()).toBe(200);
 
-      // The signature is computed server-side over server-generated content.
-      expect(content).toContain('createHmac');
-      expect(content).toContain('AUDIT_SIGNING_KEY');
+      const res = await request.post('/api/audit-pack/create', { headers: headers(), data: { projectId: WITH_RUN } });
+      expect(res.status(), res.status() === 200 ? '' : await res.text()).toBe(200);
+      const body = await res.body();
+      expect(body.byteLength, 'the server answered 200 with nothing in it').toBeGreaterThan(1000);
+
+      const zip = await JSZip.loadAsync(body);
+      const manifest = JSON.parse(await zip.file('manifest.json')!.async('string'));
+      const stored = await storedRun(WITH_RUN);
+
+      // The pack names the run the server chose, not one the client asked for.
+      expect(manifest.runId).toBe(stored.runId);
+      expect(manifest.projectId).toBe(WITH_RUN);
+      expect(manifest.runHash).toBe(stored.run.runHash);
+      expect(manifest.signed).toBe(true);
+
+      // The archive is exactly what the manifest says it is, byte for byte.
+      const entries = Object.values(zip.files).filter((e) => !e.dir).map((e) => e.name).sort();
+      expect(entries).toEqual([...manifest.files.map((f: { path: string }) => f.path), USER_ATTESTED_FILE, 'manifest.json'].sort());
+      expect(manifest.files.length).toBeGreaterThan(3);
+      for (const f of manifest.files) {
+        expect(sha(await zip.file(f.path)!.async('nodebuffer')), `${f.path} does not hash to its record`).toBe(f.sha256);
+      }
+
+      // The manifest hash is the shared canonical form — recomputed here rather
+      // than read off the manifest, so a route that stopped hashing what it
+      // claims to hash cannot pass.
+      const canonicalManifest = canonicalAuditManifest({
+        files: manifest.files,
+        attested: manifest.attested,
+        projectId: manifest.projectId,
+        runId: manifest.runId,
+        runHash: manifest.runHash,
+        engineVersion: manifest.engineVersion,
+        sapApiCatalogVersion: manifest.sapApiCatalogVersion,
+      });
+      expect(sha(canonicalManifest)).toBe(manifest.manifestHash);
+
+      // And the signature is one the public endpoint accepts. This is the whole
+      // claim the trust chain makes to a recipient, and until now nothing ran it.
+      const verified = await request.post('/api/export/verify', {
+        data: { canonicalManifest, signature: manifest.signature },
+      });
+      expect(verified.status()).toBe(200);
+      const verdict = await verified.json();
+      expect(verdict.valid, `the verifier rejected a pack the server just signed: ${JSON.stringify(verdict)}`).toBe(true);
+      expect(verdict.manifestHash).toBe(manifest.manifestHash);
+
+      // The same verifier says no to one byte of difference — otherwise "valid:
+      // true" above would be a constant rather than an answer.
+      const tampered = await request.post('/api/export/verify', {
+        data: { canonicalManifest: canonicalManifest + ' ', signature: manifest.signature },
+      });
+      expect((await tampered.json()).valid).toBe(false);
+
+      // The evidence inside is the run's own: the engine's finding on VBAK, and
+      // the decision record pointing back at the same run.
+      const csv = await zip.file('03-findings.csv')!.async('string');
+      expect(csv).toMatch(/VBAK/i);
+      const record = JSON.parse(await zip.file('02-decision-record.json')!.async('string'));
+      expect(record.runId).toBe(stored.runId);
+      expect(record.projectId).toBe(WITH_RUN);
+      expect(record.scores.cleanCoreScore).toBe(stored.run.cleanCoreScore);
+    });
+
+    test('a run altered after the fact is refused, not signed over', async ({ request }) => {
+      // The signature covers the manifest, and the manifest covers the run
+      // hash — so a run edited behind the server's back would come back out as
+      // a validly signed pack attesting to the edited content unless the run's
+      // own signature is checked first. Only the Admin SDK can do this edit;
+      // `firestore.rules` answers `allow write: if false` for the whole runs
+      // subcollection, which is a different guarantee and not this one.
+      const { runId } = await storedRun(WITH_RUN);
+      await adminSetDoc(`projects/${WITH_RUN}/runs`, runId, {
+        ...(await db().collection('projects').doc(WITH_RUN).collection('runs').doc(runId).get()).data(),
+        cleanCoreScore: 99,
+      });
+
+      const res = await request.post('/api/audit-pack/create', { headers: headers(), data: { projectId: WITH_RUN } });
+      expect(res.status(), 'the altered run was signed over').toBe(409);
+      expect((await res.json()).error).toContain('no longer matches its own signature');
+    });
+
+    test('the retired signing endpoint answers 410 and points at the server route', async ({ request }) => {
+      // It used to sign a hash the client supplied. Reading `'410'` out of the
+      // file says the token is in the source; this says the endpoint refuses.
+      const res = await request.post('/api/export/sign', {
+        headers: headers(),
+        data: { fileHash: 'a'.repeat(64), projectId: WITH_RUN },
+      });
+      expect(res.status()).toBe(410);
+      const answer = JSON.stringify(await res.json());
+      expect(answer).toContain('/api/audit-pack/create');
+      // Whatever it says, it may not carry a signature.
+      expect(answer).not.toMatch(/"signature"\s*:\s*"[0-9a-f]{64}"/);
+    });
+
+    test.afterAll(async () => {
+      test.setTimeout(120 * 1000);
+      for (const id of [NO_RUN, WITH_RUN]) {
+        await db().collection('projects').doc(id).delete().catch(() => {});
+      }
     });
 
   });

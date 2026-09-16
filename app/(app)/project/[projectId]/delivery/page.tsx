@@ -553,6 +553,7 @@ jobs:
                     const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
                     saveAs(blob, `${fileName}_BusinessDocumentation.md`);
                   }}
+                  data-stage-output="businessDocumentation"
                   className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-2xl hover:bg-blue-700 transition-all font-bold shadow-lg shadow-blue-600/10 uppercase tracking-widest text-xs"
                 >
                   <Download size={20} /> Export Markdown
@@ -620,7 +621,7 @@ jobs:
                   <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
                 )}
                 <div>
-                  <span className="text-white block font-bold">
+                  <span data-stage-output={hasGeneratedCode ? 'generatedCode' : undefined} className="text-white block font-bold">
                     {!hasGeneratedCode
                       ? 'No transformed code generated'
                       : isAbapCloud ? 'abapGit Repo Layout' : 'Transformed CAP Structure'}
@@ -646,7 +647,7 @@ jobs:
                   <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
                 )}
                 <div>
-                  <span className="text-white block font-bold" data-delivery-testing>
+                  <span className="text-white block font-bold" data-delivery-testing data-stage-output={testCaseCount > 0 ? 'testCases' : undefined}>
                     {testCaseCount === 0
                       ? 'No test suite generated'
                       : testsPassed + testsFailed === 0
@@ -678,7 +679,7 @@ jobs:
                   <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
                 )}
                 <div>
-                  <span className="text-white block font-bold">{coveragePercentage !== undefined ? `${coveragePercentage}% Estimated Coverage` : 'Coverage not estimated'}</span>
+                  <span data-stage-output={coveragePercentage !== undefined ? 'coverageEstimate' : undefined} className="text-white block font-bold">{coveragePercentage !== undefined ? `${coveragePercentage}% Estimated Coverage` : 'Coverage not estimated'}</span>
                   {/* "Restricted clean ABAP syntax check compliant" and "Strongly-
                       typed model boundaries compliant" were printed here with no
                       check behind either (CR-16). The figure is the generator's
@@ -697,7 +698,7 @@ jobs:
                   <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
                 )}
                 <div>
-                  <span className="text-white block font-bold">
+                  <span data-stage-output={hasDocumentation ? 'documentation' : undefined} className="text-white block font-bold">
                     {hasDocumentation ? 'Enterprise BPMN Blueprint' : 'No blueprint generated'}
                   </span>
                   <span className="text-[10px] text-gray-400">
@@ -753,7 +754,7 @@ jobs:
                   <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Input Fingerprint</span>
                   {project.auditMetadata?.inputFingerprint ? (
                     <>
-                      <span className="text-xs font-bold text-gray-900 block truncate" title={project.auditMetadata.inputFingerprint.sha256}>
+                      <span data-stage-output="auditMetadata" className="text-xs font-bold text-gray-900 block truncate" title={project.auditMetadata.inputFingerprint.sha256}>
                         SHA-256: {project.auditMetadata.inputFingerprint.sha256.substring(0, 16)}…
                       </span>
                       <span className="text-[10px] text-gray-500 font-medium">

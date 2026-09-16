@@ -184,6 +184,11 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
             <div className="relative">
               <button 
                 onClick={() => setShowUserDropdown(!showUserDropdown)}
+                /* The one element that says whose profile the shell is holding.
+                   It is here with or without a profile, so a test can open the
+                   menu before one has loaded and can tell "nobody" from "the
+                   wrong person" — see tests/profile-session-guard.spec.ts. */
+                data-account-menu
                 className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gray-900 text-white flex items-center justify-center font-bold text-sm shadow-xl hover:scale-105 transition-all outline-none"
               >
                 {profile ? profile.firstName[0] + profile.lastName[0] : <User className="w-5 h-5" />}

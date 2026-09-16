@@ -939,7 +939,11 @@ ${responseText.substring(0, 4000)}`;
 
 
 
-      <div id="design-report" className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mb-12">
+      <div
+        id="design-report"
+        data-stage-output={design ? 'solutionDesign' : undefined}
+        className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mb-12"
+      >
         <div className="bg-gray-50 border-b border-gray-200 px-4 sm:px-8 py-4 sm:py-6 flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <div className="bg-green-600 p-2 sm:p-2.5 rounded-xl shadow-green-200 shadow-lg shrink-0">

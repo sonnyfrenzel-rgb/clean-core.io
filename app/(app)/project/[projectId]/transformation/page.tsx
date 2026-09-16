@@ -965,9 +965,10 @@ CMD ["node", "srv/service.js"]`
               )}
 
               {/* Code Viewer Scroll Container */}
-              <div 
+              <div
                 ref={modernScrollRef}
                 onScroll={handleModernScroll}
+                data-stage-output={transformedCode ? 'generatedCode' : undefined}
                 className="flex-1 overflow-y-auto p-6 pr-12 scrollbar-thin scrollbar-thumb-gray-800"
               >
                 <CodeHighlighter 

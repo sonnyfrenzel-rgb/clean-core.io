@@ -845,7 +845,7 @@ Structure the JSON exactly like this:
           <p className="text-gray-500 font-medium text-sm md:text-base">Analyzing business domains and generating BPMN structures...</p>
         </div>
       ) : parsedDoc ? (
-        <div id="documentation-report" className="space-y-8 mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div id="documentation-report" data-stage-output="documentation" className="space-y-8 mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
           
           {/* Tab Switcher */}
           <div className="flex border-b border-gray-200 mb-8 mt-4 overflow-x-auto gap-4">
@@ -1107,7 +1107,7 @@ Structure the JSON exactly like this:
                   </p>
                 </div>
               ) : parsedBusinessDoc ? (
-                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                <div data-stage-output="businessDocumentation" className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
                   {/* RACI Matrix Section */}
                   <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
