@@ -52,10 +52,27 @@ async function ensureInitialized() {
 /**
  * Verify a Firebase ID token from the client.
  * Returns the decoded token or throws.
+ *
+ * A token that carries the `admin` claim is additionally checked against the
+ * account's revocation time. Custom claims travel inside the ID token, so an
+ * administrator whose claim was withdrawn keeps a token that still says
+ * `admin: true` until it expires — up to an hour — which is why `setAdminClaim`
+ * revokes the refresh tokens on withdrawal. That revocation is only seen by a
+ * verifier that asks for it (`checkRevoked`), and asking costs one Auth lookup
+ * per request. Paying it for every token would add a lookup to every business
+ * route for a privilege almost no caller has; paying it only for tokens that
+ * claim the privilege covers every place the claim is trusted — the admin
+ * routes and the `isAdminClaim` exemptions — at the price of one lookup per
+ * request from a handful of accounts.
  */
 export async function verifyIdToken(idToken: string) {
   await ensureInitialized();
-  return adminAuthModule.getAuth().verifyIdToken(idToken);
+  const auth = adminAuthModule.getAuth();
+  const decoded = await auth.verifyIdToken(idToken);
+  if (decoded.admin === true) {
+    return auth.verifyIdToken(idToken, true);
+  }
+  return decoded;
 }
 
 /**
@@ -83,19 +100,20 @@ export async function verifyRequestAuth(req: Request) {
 
 /**
  * Verify that the request comes from an authenticated admin user.
- * Checks: valid Firebase token + admin custom claim.
+ * Checks: valid, unrevoked Firebase token + admin custom claim.
  * Returns the decoded token or null.
+ *
+ * The claim is the only thing consulted. There used to be an emulator-only
+ * fallback to `users/{uid}.isAdmin` — the display mirror `setAdminClaim`
+ * writes — which the tests never needed (they set the real claim through
+ * /api/test/seed) and which left a second path to admin open: a mirror write
+ * that failed after a withdrawal would have kept the rights the claim no
+ * longer granted.
  */
 export async function verifyAdminRequest(req: Request) {
   const decoded = await verifyRequestAuth(req);
   if (!decoded) return null;
-  if ((decoded as any).admin === true) return decoded;
-  if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-    const { db } = await getAdminDb();
-    const snap = await db.collection('users').doc(decoded.uid).get();
-    if (snap.exists && snap.data()?.isAdmin === true) return decoded;
-  }
-  return null;
+  return (decoded as any).admin === true ? decoded : null;
 }
 
 export function assertRecentAuth(decodedToken: any, maxAgeSeconds = 300): void {
@@ -261,7 +279,10 @@ export async function refundRunQuota(uid: string, inputHash: string): Promise<vo
  * `pending`, `suspended` or `deleted` account — or a stale-Terms account — gets a
  * consistent 403, INCLUDING the BYOK path (which previously skipped the
  * quota-based approval check). Admins and enterprise accounts are exempt from the
- * approval gate. Pass the caller's `admin` custom claim via `isAdminClaim`.
+ * approval gate. Pass the caller's `admin` custom claim via `isAdminClaim` —
+ * the claim is the only admin signal here. `users.isAdmin` is the display
+ * mirror `setAdminClaim` writes for the UI; it used to count as well, so a
+ * withdrawn claim whose mirror write had failed kept the exemptions.
  */
 export async function assertAccountActive(
   uid: string,
@@ -273,7 +294,7 @@ export async function assertAccountActive(
     throw new QuotaError('User profile not found. Please complete registration.', 403);
   }
   const data = snap.data() || {};
-  const isAdmin = opts.isAdminClaim === true || data.isAdmin === true;
+  const isAdmin = opts.isAdminClaim === true;
   const status = data.status || 'pending';
 
   if (status === 'suspended' || status === 'deleted' || data.disabled === true) {
@@ -361,27 +382,51 @@ export async function activateAccount(uid: string): Promise<{ activated: boolean
 /**
  * Sets or revokes the `admin` custom claim on a user and mirrors the boolean to
  * users/{uid}.isAdmin (for UI display). Existing custom claims are preserved.
+ *
+ * The claim is the authorization; the mirror is what the UI shows and decides
+ * nothing (see `verifyAdminRequest`). The two writes are ordered so the mirror
+ * never shows more than the claim grants: a grant writes the claim first, a
+ * withdrawal the mirror first. Either write failing throws, so the route
+ * reports the failure instead of an `ok` for a half-applied change.
+ *
+ * A withdrawal also revokes the account's refresh tokens. The claim lives in
+ * the ID token, so without that the withdrawn administrator kept a working
+ * `admin: true` token until it expired, up to an hour later. With it, every
+ * token issued before the withdrawal is refused by `verifyIdToken` and the
+ * next sign-in mints one without the claim.
  */
 export async function setAdminClaim(uid: string, isAdmin: boolean): Promise<void> {
   await ensureInitialized();
   const auth = adminAuthModule.getAuth();
-
-  const user = await auth.getUser(uid);
-  const claims = { ...(user.customClaims || {}) };
-  if (isAdmin) claims.admin = true; else delete claims.admin;
-  await auth.setCustomUserClaims(uid, claims);
-
   const { db, FieldValue } = await getAdminDb();
-  await db.collection('users').doc(uid).set(
+
+  const writeClaim = async () => {
+    const user = await auth.getUser(uid);
+    const claims = { ...(user.customClaims || {}) };
+    if (isAdmin) claims.admin = true; else delete claims.admin;
+    await auth.setCustomUserClaims(uid, claims);
+  };
+  const writeMirror = () => db.collection('users').doc(uid).set(
     { isAdmin, updatedAt: FieldValue.serverTimestamp() },
     { merge: true },
   );
+
+  if (isAdmin) {
+    await writeClaim();
+    await writeMirror();
+    return;
+  }
+  await writeMirror();
+  await writeClaim();
+  await auth.revokeRefreshTokens(uid);
 }
 
 /**
  * Assert that the user has permission to access S/4HANA live tenant endpoints.
  * - Super-admins (hardcoded emails) are allowed.
- * - Custom claim `admin === true` is allowed.
+ * - Custom claim `admin === true` is allowed (passed in as `isAdminClaim`; the
+ *   `users.isAdmin` mirror is display only and grants nothing here — see
+ *   `assertAccountActive`).
  * - User documents with `s4TenantAccessAllowed === true` are allowed.
  * Throws a QuotaError if access is denied.
  */
@@ -392,13 +437,13 @@ export async function assertS4TenantAccess(
   const { db } = await getAdminDb();
   const ref = db.collection('users').doc(uid);
   const snap = await ref.get();
-  
+
   if (!snap.exists) {
     throw new QuotaError('User profile does not exist.', 404);
   }
-  
+
   const data = snap.data();
-  const isAdminUser = opts?.isAdminClaim === true || (data.isAdmin === true);
+  const isAdminUser = opts?.isAdminClaim === true;
   const s4TenantAccessAllowed = data.s4TenantAccessAllowed === true;
 
   if (!isAdminUser && !s4TenantAccessAllowed) {
