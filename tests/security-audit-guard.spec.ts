@@ -36,6 +36,13 @@ test.describe('the agent has no tools and a small budget', () => {
     expect(src).not.toMatch(/claude-code|npx|child_process|spawn\(|execFile|--tools|Agent|Workflow/);
     expect(src).toMatch(/callReviewer\(\{ apiKey, system, user, schema: CONSULTANT_SCHEMA,/);
     expect(src).toMatch(/callReviewer\(\{ apiKey, system: clean\('outgoing message', brief\), user: cisoUser, schema: REPORT_SCHEMA,/);
+    // The CISO call — last of ~60, the one whose loss costs the whole audit — is asked once more when its
+    // 200 arrives with a body that is not JSON (release audit of 33471220d6e9, 2026-09-15). Exactly once,
+    // exactly that error: a wrong answer or a refusal stays final, and the consultants are never retried.
+    const cisoBlock = src.slice(src.indexOf('const CISO_TRUNCATED_RETRIES'), src.indexOf('const secretFindings'));
+    expect(cisoBlock).toMatch(/const CISO_TRUNCATED_RETRIES = 1;/);
+    expect(cisoBlock).toMatch(/attempt < CISO_TRUNCATED_RETRIES && \/response that is not JSON\/\.test\(message\)/);
+    expect(src.match(/CISO_TRUNCATED_RETRIES/g)?.length).toBe(2);
     // The request the calls build: no tools, no fallback model, no provider that keeps prompts.
     const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
     const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', model: AUDIT.model });

@@ -129,11 +129,18 @@ async function main() {
   const summary = summarise(SURVEY_CAMPAIGN, invited, responses);
   const subject = renderSurveyDigestSubject(summary, daysLeft);
 
+  // What gets printed is what the Actions log of a public repository keeps.
+  // The rendered digest is the private mail — names, addresses, free-text
+  // comments — and it used to be printed in full before every send, which put
+  // every respondent's words on a page anyone can open. The log gets the
+  // subject line (counts only) and the delivery status; the digest itself is
+  // shown only by a dry run on a local machine.
+  const local = !process.env.CI && !process.env.GITHUB_ACTIONS;
   console.log(`campaign : ${SURVEY_CAMPAIGN}`);
   console.log(`subject  : ${subject}`);
-  console.log(`to       : ${to}`);
+  console.log(`to       : ${local ? to : '[address withheld from the log]'}`);
   console.log('');
-  console.log(renderSurveyDigestText(summary, daysLeft));
+  if (!APPLY && local) console.log(renderSurveyDigestText(summary, daysLeft));
 
   if (!APPLY) {
     console.log('DRY RUN — nothing sent. Re-run with --apply.');

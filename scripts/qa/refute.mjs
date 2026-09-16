@@ -25,9 +25,12 @@ if (!secret) {
   process.exit(1);
 }
 
-// The finding comes from the newest decrypted review on this machine — the one just awaited.
+// The finding comes from the newest decrypted review on this machine — the one
+// just awaited. A release's full review lands as `<sha>.full.json` and shares
+// this refuted list, so it is searched too; until it was, no finding of a full
+// review could be refuted at all.
 const reviews = readdirSync(LOCAL_DIR)
-  .filter((f) => f.endsWith('.review.json'))
+  .filter((f) => /\.(review|full)\.json$/.test(f))
   .map((f) => join(LOCAL_DIR, f))
   .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs);
 const finding = reviews.map((p) => JSON.parse(readFileSync(p, 'utf8'))).flatMap((r) => r.findings.map((f) => ({ ...f, reviewedHead: r.range.head }))).find((f) => f.fingerprint === fingerprint);

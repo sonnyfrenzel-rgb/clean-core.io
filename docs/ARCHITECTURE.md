@@ -423,7 +423,7 @@ tier's 5 transformations) are configuration and are fine.
 > `https://clean-core-dev-qcevuoi3uq-ew.a.run.app`. A deploy that "isn't visible on
 > dev" is usually this, not the deploy.
 
-Each env has its own `NEXT_PUBLIC_FIRESTORE_DB_ID`. `firebase.json` has **no** hosting deploy; `vercel.json` only sets cache headers. Second workflow `sync-catalog.yml` refreshes the SAP catalog.
+Each env has its own `NEXT_PUBLIC_FIRESTORE_DB_ID`. `firebase.json` has **no** hosting deploy, and there is no `vercel.json` (removed 2026-09-16: it declared every route publicly cacheable and served nothing on Cloud Run). Second workflow `sync-catalog.yml` refreshes the SAP catalog.
 
 ---
 

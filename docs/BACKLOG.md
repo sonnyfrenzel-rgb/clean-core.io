@@ -3,6 +3,38 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+**Stand 16.09.2026 — die Vollprüfung von v2.10.7 abgearbeitet, auf `dev`.** 144 Befunde von GPT-5.6 Sol
+(4,91 $), jeder am Code geprüft, Ergebnis in `docs/ROADMAP.md` §14: 130 bestätigt, 11 widerlegt mit Beleg
+(`docs/qa/refuted-findings.enc.json`, jetzt 29 Einträge), 2 unklar, 1 nebenbei erledigt. Die Lehre wie gestern:
+die widerlegten waren fast alle Komponenten und Funktionen, die nirgends gerendert oder aufgerufen werden —
+ein Modell liest die Datei, nicht den Aufrufgraphen.
+
+Heute behoben (jeweils mit Test, der ohne den Fix rot ist): die Testkonto-Erkennung zählt nur noch die
+CI-Domain, kein Namenspräfix mehr — `security-user-alice@example.com` war ein Löschkandidat; der
+Delta-Sync der Migration überschreibt kein Zieldokument, das nicht beweisbar älter ist; die Survey-Skripte
+drucken weder Adressen noch den Digest ins öffentliche Actions-Log, und ein fortgesetzter Versand nennt das
+gespeicherte Schlussdatum und zählt Eingeladene je gesendeter Mail; der Offline-Verifier folgt keinem
+`signingKeyUrl` aus dem Pack, lehnt Archiv-Einträge ab, die das Manifest nicht nennt, und beendet ein
+unsigniertes Pack mit 2 statt 0 — dasselbe für die Web-Verifikation; `vercel.json` (jede Route öffentlich
+cachebar, auf Cloud Run ohne Wirkung) ist weg. Die drei übrigen kritischen sind eigene Schritte 0.12–0.13,
+die hohen und mittleren füllen 0.14–0.18.
+
+Daneben: der Security-Audit von 33471220d6e9 hatte nach 70 Minuten und 57 erfolgreichen Beraterläufen
+keinen Bericht, weil die CISO-Antwort abgeschnitten ankam — `audit.mjs` fragt genau diesen einen Aufruf jetzt
+einmal nach, der Lauf ist als Versuch 2 neu gestartet. `refute.mjs` findet jetzt auch Vollprüfungen (vorher
+konnte kein Befund einer Vollprüfung widerlegt werden). Der Bot-Branch `chore/sync-cloudification-repo`
+ist überholt — `dev` trägt denselben `sourceSha256` vom 15.09. —, löschen darf nur Sonny. `sync-catalog.yml`
+steht seit dem 07.09. rot, weil der PR-Schritt bis zum 14.09. an der Repo-Einstellung scheiterte; seit dem
+15.09. öffnet der Job keinen PR mehr, der nächste Montagslauf zeigt es.
+
+**Sonnys Entscheidungen heute:** `CLAUDE.md`, README und jede öffentlich veraltete Datei werden erst mit
+3.0 nachgezogen (3.0.8); die Zustellbarkeit der Mails braucht einen eigenen 3.0-Schritt, weil die Mails
+trotz korrekter SPF/DKIM/DMARC automatisch im Spam landen (3.0.9).
+
+**Offen für Sonny:** den überholten Bot-Branch löschen (`git push origin --delete chore/sync-cloudification-repo`);
+`main` nach einer sauberen QA-Runde; die Survey-Workflows erst danach wieder einschalten; die
+Resend-Tracking-Einstellung prüfen (3.0.9, nur mit Dashboard-Zugang möglich).
+
 **Stand 15.09.2026, Feierabend — v2.9.12 → v2.10.7 auf `main` (3347122); dieser Abschluss-Eintrag liegt auf `dev`
 und geht mit dem nächsten Release nach `main`, damit kein reiner Doku-Push das volle Audit erneut auslöst.** Der Tag hatte zwei Hälften:
 morgens die drei Agenten und die ersten Roadmap-Schritte von Phase 0, nachmittags das Zielbild von 3.0.

@@ -152,6 +152,13 @@ vom 15.09. (**fett**).
 | 0.9 | **Beispiele kosten kein Kontingent** (Entscheidung Sonny 15.09.2026): nur die bestehenden Starter-Beispiele aus `lib/starter-examples.ts`, serverseitig am Fingerabdruck des unveränderten Quelltexts erkannt (ein verändertes Beispiel ist eigener Code); **jedes einmal frei** je Konto; **jeder weitere Start** desselben Beispiels zählt wie eine Analyse, auch gegen die Regel „dieselbe Quelle erneut ist frei"; nach den fünf Analysen geht es nur noch mit eigenem Gemini-Schlüssel (BYOK) weiter (Präzisierung Sonny 15.09.2026). Wer dasselbe Beispiel erneut startet, wird vorher gewarnt — *„You ran this example before. Running it again uses 1 of your 5 free analysis runs once the analysis completes."* — und das Kontingent wird erst **nach abgeschlossener Analyse** abgezogen, nie bei Abbruch oder Fehler. Buchführung nur serverseitig (Admin SDK, wie `chargedInputs`), kein Client-Feld. Mit: Nutzungsbedingungen §6, Welcome-Mail, `lib/clean-core-capabilities.ts` und Admin-Nutzungsansicht, die heute „re-analysing the same source is free" sagen | S |
 | 0.10 | **Demo-Projekt für jedes Konto** (Entscheidung Sonny 15.09.2026, `DESIGN.md` §6.1.2): ein vollständig durchgespieltes, deutlich markiertes Projekt aus einem echten Lauf des achten Starter-Beispiels `Z_MM_PO_APPROVAL` (Emergency purchase approval — derselbe Fall wie in den Mockups), **eine** Demo für alle Konten (keine Kopie je Konto, Anmeldung unverändert), bedienbar ohne Folgen — Zustand nur im Browser, „Reset demo", zählt nicht aufs Kontingent. Im heutigen Produkt mit den sieben Stufen; mit wiederkehrender Einladung zu Beispiel oder eigenem Code (höchstens eine je Bildschirm, nie blockierend). Die Tour mit rund zwölf Stationen wächst mit dem Arbeitsraum (3.0.7) | M |
 | 0.11 | **Vertrauen vor dem Hochladen** (Entscheidung Sonny 15.09.2026, `DESIGN.md` §6.1.3): im heutigen Upload eine Zeile zu Terms §5 und §8 ohne Häkchen und die Karte „Your code and your trust" — EU-Speicherung, Zugriff nur für das Konto, Server-Proxy und verschlüsselter Schlüssel, signierte Läufe, kein Tracking, Löschen, öffentliches Sicherheitsmodell, Training: mit dem Community-Schlüssel gilt der bezahlte Gemini-API-Tarif — kein Training durch Google; mit eigenem Schlüssel die Bedingungen des eigenen Google-Kontos (Sonny 15.09.2026; die Datenschutzerklärung nennt den bezahlten Tarif des Community-Schlüssels ausdrücklich, bevor die Karte es sagt); „free community project"; „Our security model is public" verlinkt auf `SECURITY.md` im öffentlichen Repository. Der Zugriffssatz nennt das Admin-Konto, solange `firestore.rules` ihm Lesezugriff auf Projekte gibt, und die Datenschutzerklärung nennt diesen Zugriff, bevor die Karte live geht. Jede Aussage mit Link auf ihre Quelle; ein Guard prüft, dass die Karte nur Aussagen enthält, die in Terms, Datenschutzerklärung oder `SECURITY.md` stehen | S |
+| 0.12 | **Signierte Exporte lesen nur aus dem Run** (QA-Vollprüfung 15.09.2026, §14: 70c8917150e7, 13c6115ec642 — kritisch, eigener Schritt vor der übrigen Arbeit): Audit-Pack-Generatoren und die initiale Worklist beziehen jedes Feld, das in einen signierten Hash eingeht, aus dem unveränderlichen Run — nichts aus dem Projektdokument (dessen Felder der Besitzer per `firestore.rules` schreiben darf), nichts aus der Modell-Narrative. Was Nutzer oder Modell beisteuern, steht in einem eigenen, unsignierten und so benannten Teil (`00-provenance.md` sagt es heute nur, die Signatur deckt es trotzdem). Mit Test, der ein clientseitig geändertes Feld im signierten Teil rot macht | M |
+| 0.13 | **Zweiter Faktor vor der Sitzung** (§14: cfafefac08ec — kritisch; c4c4f5112a00): mit aktivem zweiten Faktor gilt die Anmeldung erst nach dem Code. Die mutierenden Serverrouten prüfen das bereits (`assertMfaSatisfied`); die Client-Sitzung und der Firestore-Lesezugriff des Kontos entstehen aber schon nach dem Passwort. Lösung ohne Änderung an Sign-up und Konto (Regel oben): Firebase-Multi-Factor oder ein serverseitig gesetzter Claim, den `firestore.rules` und die Seiten prüfen — manueller Regel-Deploy vor der App wie in 0.7. Dazu: Wiederherstellungscodes (`CC-XXXX-YYYY`) sind im Anmeldedialog eingebbar, nicht nur beworben | M |
+| 0.14 | **Konto, Schlüssel und Rechte melden nur, was geschah** (§14: 569fc1c41e35, cc5845ec545e, 8c7c26a637d1, 1c5a5c920b77, 19054f8f195f, e538b51c10f5, 85e767799587, 4f7643df8c3e, 990aa825e15f, 0ce6b0b508e6): kein `ok`, wenn ein Teilschritt der Löschung oder des Widerrufs scheiterte; Kontolöschung vollständig (auch Umfrageantworten) oder abgebrochen, nie „Auth weg, Daten da"; Admin-Widerruf wirkt sofort und der Firestore-Spiegel entscheidet nichts; Fremdantworten (S/4-Metadaten) mit Zeit- und Größengrenze; Ratenlimit-Schlüssel ohne Client-Header (auf Cloud Run ist der letzte `X-Forwarded-For`-Eintrag der echte); MFA-Einrichtung nur einmal je Konto abschließbar; Profil-Lesen einer alten Sitzung erreicht keine neue | M |
+| 0.15 | **Korrekturen in Dashboard, Admin und den sieben Stufen** (§14, hoch: 9b1af76b65c9, 2ea4b0048642, 2d714ac42b63, e184fc0c59bf, 3bb4158405d8, e078d502e983, d967e435917c, 0c3362018102; mittel: 57876fae0053, aad1ecf24d47, 8d9184e6f94f, 210bafeb4c8b, 024ec609bc86, 06f7c0c56a6c, 4db1e81408f4, 217726b404c9, 40e1db9fd37a, 03380a33a523, ce37b706107d, f480d96b63d1, 883625214774, 989dafdac359, 4362479eb86e, 823a09338d58, 72556d36c205): Jahr-1-ROI rechnet die Investition mit; die Transformation startet nicht doppelt und speichert keine leere Modellantwort als fertig; nur ABAP wird als ABAP angenommen und der Sicherheitsscan läuft vor jeder Analyse, auch aus dem Textfeld; BYOK- und Enterprise-Konten sperrt das Kontingent nicht; 1 MB gilt; Exporte (Confluence-HTML, Vorschau) escapen Modellwerte; der Beispiel-abapGit-Export ist aktivierbar; Admin-Mailfehler sind Fehler; „Suspended" heißt nicht „Pending". Was 3.0 ersetzt, bekommt nur den kleinsten Fix | M |
+| 0.16 | **Skripte und Workflows** (§14: a4f7e6aef79b, 1e47826dd2c5, 5a660ef009dc, f4561d983d92, 6a774e02134e, 6d40362efbf6, 2b0cacd91960, 14edf99a390c, 0a0ff08e1793, 6500f93e60fd, 5dbe58873773, 230989f67624, f7110f3d6619, 8ccb1b1b765b): Review-Workflow mit gepinntem Installer und ohne Secrets im Reviewer-Job; Migrationsprüfung über ganze Dokumente statt drei Felder; Send-Record oder Idempotenz-Schlüssel **vor** dem Provider-Aufruf (Survey und Community-Mail); Mail-„Erfolg" nur bei angenommener Zustellung; Escaping in Admin-Mails; der Security-Agent bekommt seinen eigenen CISO-Brief als Prüfobjekt, der UX-Agent auch `lib/*-content.ts` und die Mails. **Die Survey-Workflows bleiben aus, bis die Log-Fixes vom 16.09. auf `main` sind** (`docs/BACKLOG.md`, 15.09.) | M |
+| 0.17 | **Tests, die prüfen, was sie behaupten** (§14: d943e1fc71a5, d163622eab8e, f3428b0782a9, 812cbce3b485, bcbe2c770c8a): Emulator-Tests für die MFA-Pflicht der Vertrauenskette und die Audit-Pack-Erzeugung statt Quelltext-Grep; ein `rejects.not.toThrow('…')` ist kein Beweis; TCO-Guard gegen die Seite statt gegen eine Kopie ihrer Arithmetik, mit dem Null-Fall; Provenance-Zuordnung statt Kardinalität; die siebte Stufe im gerenderten Style-Guard | M |
+| 0.18 | **Engine-Korrekturen aus der Vollprüfung** (§14: eac6118f1eac, 45737310a1d7, 778c72a5cde2, 14d4000c4586, 9fb67cc60860, ba5757ea1a85, 297e73fb33a7, a4fe4e2de430, a48a8ba01b64; Regel in §11: bekannte fachliche Fehler werden korrigiert): `code-assessment.ts` bekommt die Unterscheidung interne Tabelle / Open SQL, die `evidence-model.ts` schon hat; unbewertete Konstrukte (`assessCoverage`) drücken den Score und den Routing-Text statt „100 %, trivial"; LQUA ist Quant, nicht Lagerplatz, VBKD sind kaufmännische Daten, nicht Partner; `SELECT` in einem Literal ist kein SELECT; fehlende Interfaces sind nicht „fully resolved"; ein Satz mit einer erfundenen Zitation ist nicht verankert; Perzentile nach der Aggregation, `Infinity` ist keine Messung. Jeder Punkt mit Referenzfall im Korpus | M |
 | daneben | Referenzkorpus v1 mit externem Review. **Dazu: je Fall das erwartete Prozessskelett** als Ground Truth für Phase 2 | M, extern |
 
 **Fertig, wenn** V25-A09/A10 (harte Zahl bricht den Build; Seiten nennen identische
@@ -325,6 +332,8 @@ QA24-A17 (ein Fingerprint ohne Bestätigung ist kein grüner Status).
 | 3.0.5 | **Aufräumen:** der alte 1.000-Zeichen-Generator und das ungenutzte `components/ProcessDocumentation.tsx` gehen — nie eine öffentliche Seite mit Suchreichweite (3.0.6) | S |
 | 3.0.6 | **Neue Landingpage und öffentliche Texte — Teil des Releases 3.0, nicht danach** (Entscheidung Sonny 15.09.2026): die Startseite nach `docs/roadmap/clean-core-landing-v3_0.html`; **jede Produktansicht darauf aus dem echten Arbeitsraum** — Screenshots oder eingebettete Vorschau des Demo-Projekts `Z_MM_PO_APPROVAL`, bei jedem Release mit `tests/capture-screens.spec.ts` neu erzeugt, sodass Bild und Produkt nie auseinanderlaufen; keine Mockup-Bilder. Erhalten bleiben Anmeldebutton an gleicher Stelle, Navigation zu den Wissensseiten, Metadaten und Canonical, JSON-LD (Organization, SoftwareApplication, FAQPage deckungsgleich mit dem sichtbaren FAQ, BreadcrumbList), Sitemap, Robots und Live-Zahlen aus dem Katalog. **Die Katalog- und Wissensseiten bleiben mit URL, Canonical und Inhalt unverändert erreichbar** (Entscheidung Sonny 15.09.2026, viele Impressionen): `/catalog`, `/catalog/[object]`, `/catalog/browse/[letter]`, `/catalog/module/[area]`, `/catalog-sitemap.xml`, `/sap-clean-core-object-classification`, `/method/levels`, `/sap-cloudification`, `/clean-core-explained`, `/how-it-works`, `/knowledge`, `/abap-custom-code-analysis`, `/clean-core-score`, `/features/[slug]`, `/how-to`, `/whitepaper`, `/licenses`, `/about`, `/trust` — sie bekommen nur den 3.0-Look; die neue Startseite verlinkt aktiv hinein (Objektsuche, Beispielobjekte, A–Z). Grundlage ist Google Search Console (letzte 6 Monate bis 15.09.2026: 9.115 Impressionen, davon 3.706 in den letzten 30 Tagen; Startseite 1.509, `/catalog` 1.491, `/knowledge` 1.417, `/sap-cloudification` 1.371, `/abap-custom-code-analysis` 1.150, rund 70 Objektseiten). Titel und sichtbare Überschriften folgen den Suchanfragen, die schon Reichweite haben, aber kaum Klicks — „SAP Cloudification Repository viewer" (403 Impressionen, Position 8, 0 Klicks), „cloudify SAP", „ABAP (static) code analysis", „Clean Core Score". Gehalten von `tests/seo-surface-guard.spec.ts`. Mit dem Umbau ändern sich bewusst `tests/landing-consistency-guard.spec.ts` (Vergleichszeilen, BenefitCard) und `tests/landing-style-guard.spec.ts` (Eyebrow, Gewichte ≤ 800); `tests/landing.spec.ts` bleibt gültig. Das Pilot-Banner entfällt („Powered by Generative AI" verstößt gegen `DESIGN.md` §3.1); ob der Showroom nach `/how-it-works` zieht, ist offen. Dazu README, How-to, Whitepaper, `llms.txt`, Facts | L |
 | 3.0.7 | **Demo-Projekt und Tour im Arbeitsraum** (`DESIGN.md` §6.1.2): die Demo aus 0.10 in allen Sichten und Ebenen, neu erzeugt mit jedem Release, das Engine oder Regelversion ändert; Tour mit rund zwölf Stationen (Enthüllung bis Übergabe), eine Station je Ort, Fortschritt nur im Browser, Einladung nach jeder dritten Station und am Ende; „Show tips again" im Hilfe-Menü | M |
+| 3.0.8 | **Repo-Texte auf 3.0 ziehen — mit 3.0, nicht vorher** (Entscheidung Sonny 16.09.2026): `CLAUDE.md` (Stufenmodell, Layout, Konventionen, die drei Agenten, Gotchas), `README.md`, `docs/ARCHITECTURE.md`, `SECURITY.md`, `llms.txt`, `docs/QA-REVIEW-LOOP.md` und jede weitere öffentliche Datei im Repository, die noch die sieben Stufen als Produkt, die alte Startseite, Signavio-Import, Dark Mode oder gestrichene Teile beschreibt. Bis dahin bleiben sie, wie sie sind — sie beschreiben das, was ausgeliefert ist. Ein Guard prüft nach dem Umbau, dass keine öffentliche Datei mehr Elemente nennt, die 3.0 entfernt hat (Liste aus 3.0.5 und §8). Zusammen mit den Produkttexten aus 3.0.6 | M |
+| 3.0.9 | **Zustellbarkeit der Mails** (Entscheidung Sonny 16.09.2026): Welcome-, Freigabe-, Umfrage-, Digest- und Community-Mails landen automatisch im Spam, obwohl SPF, DKIM, DMARC `p=reject` und der ausgerichtete Return-Path seit 01.09.2026 korrekt sind (`docs/ARCHITECTURE.md`, Mail-Tabelle) und die Bulk-Sendungen RFC 8058 erfüllen. Erst messen, dann drehen: Seed-Test je Kampagne auf Gmail, Outlook, GMX/web.de und T-Online (Inbox oder Spam, Header vollständig), Google Postmaster Tools und Microsoft SNDS für die Domain, die DMARC-Berichte an `dmarc@clean-core.io` tatsächlich lesen. Dann die Hebel in dieser Reihenfolge: Resend-Tracking aus (nur Sonny kann es prüfen — jeder Link muss mit `https://clean-core.io/` beginnen), DKIM auf 2048 bit zwischen zwei Sendungen, eigene Subdomain für Kampagnen und die Stammdomain nur für Transaktionsmails, ein Absendername für alles, Aufwärmen mit kleinen Mengen an Empfänger, die geöffnet haben, Unterdrückung aus Bounces und Beschwerden (`email_events`) vor jedem Versand, Text- und HTML-Teil deckungsgleich, keine Bilder, keine Kurzlinks. **Fertig, wenn** der Seed-Test bei den vier Anbietern im Posteingang landet und Postmaster die Domain-Reputation nicht „schlecht" nennt — geprüft vor jedem Versand, nicht einmal | M |
 
 **Fertig, wenn** alle Phasenabnahmen auf `main` gelaufen sind, ein Korpusfall den
 ganzen Fluss durchläuft und die Copy-CI grün ist — **und die neue Landingpage mit
@@ -698,3 +707,177 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-083 | low | Download-Fehler bleibt unsichtbar | 3.0 | eingeplant |
 | UX-084 | low | First-Run nennt Quote anders als der Header | 0.2 | eingeplant |
 | UX-085 | low | Kleinstlabels in 10px Kapitälchen | 1.5 | eingeplant |
+
+---
+
+## 14. QA-Befunde aus der Vollprüfung
+
+Jede Version auf `main` bekommt neben der Delta-Review eine Prüfung des ganzen Code-Bestands
+(`openai/gpt-5.6-sol`, `node scripts/qa/await.mjs <sha> --full`, `docs/QA-REVIEW-LOOP.md`). Sie sperrt
+nichts — `main` ist schon draußen —, aber jeder Befund wird am Code geprüft, widerlegte werden mit
+Beleg in `docs/qa/refuted-findings.enc.json` festgehalten, und bestätigte werden hier eingeplant.
+Die Fundstelle steht in der Tabelle; Titel von Sicherheits- und Integritätsbefunden erst, wenn der
+Fix auf `main` ist (§12 gilt sinngemäß). Der Volltext liegt nur lokal unter `.qa-review/`.
+
+Einplanung wie in §12: **kritisch** als eigener Schritt vor jeder anderen Arbeit · **hoch** in die
+laufende Phase · **mittel** in den nächsten passenden Schritt · **niedrig** neben verwandter Arbeit.
+Was der 3.0-Umbau ohnehin ersetzt, wird zurückgestellt, nicht doppelt gebaut.
+
+**Vollprüfung von 33471220d6e9 (v2.10.7, 15.09.2026; 13 Modellaufrufe, 443 Dateien, 4,91 $):**
+144 Befunde — 11 kritisch, 36 hoch, 95 mittel, 2 niedrig. Geprüft am 16.09.2026: **130 bestätigt,
+11 widerlegt, 2 unklar, 1 durch eine Änderung desselben Tages erledigt.** Von den kritischen sind 8 am
+16.09. auf `dev` behoben (Testkonto-Erkennung nur noch über die CI-Domain; Delta-Sync überschreibt
+keine neueren Zieldokumente; Survey-Skripte drucken keine Adressen und keinen Digest ins öffentliche
+Log; der Offline-Verifier folgt keinem `signingKeyUrl` aus dem Pack, weist nicht aufgeführte
+Archiv-Einträge ab und beendet ein unsigniertes Pack mit 2 statt 0; die Web-Verifikation weist nicht
+aufgeführte Einträge ab; `vercel.json` entfernt), 3 sind eigene Schritte **0.12–0.13**. Die hohen und
+mittleren Befunde füllen die neuen Phase-0-Schritte **0.14–0.18** und die genannten bestehenden. Die
+widerlegten betrafen vor allem Komponenten und Funktionen, die nirgends gerendert oder aufgerufen
+werden, und Schutzmaßnahmen an anderer Stelle (Server-Guard, Emulator-Ausnahme, bereits gebauter Fix).
+
+| ID | Schwere | Fundstelle | Befund | Roadmap-Schritt | Status |
+|---|---|---|---|---|---|
+| 13c6115ec642 | critical | app/api/runs/create/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.12 | eingeplant |
+| 1b75f0d332da | critical | scripts/firestore-delta-sync.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | — | behoben (dev) |
+| 33e463a6876e | critical | scripts/verify-pack.mjs | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | — | behoben (dev) |
+| 4a4afa88c231 | critical | scripts/verify-pack.mjs | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | — | behoben (dev) |
+| 4a593e8bd77b | critical | scripts/send-survey-digest.ts | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | — | behoben (dev); Workflow bleibt aus bis `main` |
+| 70c8917150e7 | critical | app/api/audit-pack/create/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.12 | eingeplant |
+| c5eeaff9124a | critical | lib/audit-pack-verify.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.5 | teilweise behoben (dev) — Archiv vollständig; Manifestfelder in 0.5 |
+| cfafefac08ec | critical | components/LandingModals.tsx | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.13 | eingeplant |
+| d2006fdbfa95 | critical | scripts/send-survey.ts | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | — | behoben (dev); Workflow bleibt aus bis `main` |
+| d87b93e17d38 | critical | vercel.json | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | — | behoben (dev) — Datei entfernt, auf Cloud Run ohne Wirkung |
+| f8ef554cfa89 | critical | lib/test-accounts.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | — | behoben (dev) |
+| 0c3362018102 | high | components/SamplePackageDownload.tsx | The advertised importable package contains an invalid CDS view-entity annotation | 0.15 | eingeplant |
+| 0fd415bb9927 | high | tests/security-compliance.spec.ts | Admin E2E requests cannot satisfy the enforced MFA step-up | — | widerlegt |
+| 1012acfcd241 | high | components/TransformationReplay.tsx | Timer-driven replay reports compilation and test-generation results that were never produced | 0.2 | eingeplant |
+| 19054f8f195f | high | lib/firebase-admin.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 1c5a5c920b77 | high | lib/firebase-admin.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 1e47826dd2c5 | high | .github/workflows/grok-review.yml | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.16 | eingeplant |
+| 2526b03d8fd4 | high | lib/project-loader.ts | Run metadata overwrites project workflow state during hydration | — | widerlegt |
+| 2d714ac42b63 | high | app/(app)/project/[projectId]/analyze/page.tsx | Any non-empty text is accepted, charged and signed as legacy code | 0.15 | eingeplant |
+| 2ea4b0048642 | high | app/(app)/project/[projectId]/analyze/page.tsx | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.15 | eingeplant |
+| 3bb4158405d8 | high | app/(app)/project/[projectId]/tco/page.tsx | Year-1 ROI excludes the implementation investment from the return | 0.15 | eingeplant |
+| 3d1ade86103c | high | lib/analysis-prompt.ts | An unspecified deployment target is asserted as Private Edition / RISE | — | unklar — nur über eine handgebaute URL mit `autoAnalyze` erreichbar; wird in 0.15 mitgeschlossen |
+| 45737310a1d7 | high | lib/abap/extensibility-router.ts | Incomplete detector coverage is converted into a 100% clean score and “trivial” feasibility claim | 0.18 | eingeplant |
+| 4a4321a45f3c | high | lib/board-deck.ts | Board deck manufactures go-live approval without approval evidence | 0.8 | eingeplant (= UX-002) |
+| 4f7643df8c3e | high | app/api/fetch-odata-metadata/route.ts | S/4 metadata responses can stream without a timeout or size bound | 0.14 | eingeplant |
+| 50fd6bd9d3c3 | high | components/analyze/TargetScopeMapping.tsx | Every project is shown fabricated cloud-readiness and decommission percentages | 0.2 | eingeplant (= UX-001) |
+| 512ed3a9e6bd | high | scripts/send-survey.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | — | behoben (dev) |
+| 569fc1c41e35 | high | app/api/admin/set-admin-claim/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.14 | eingeplant |
+| 5a660ef009dc | high | scripts/firestore-verify-migration.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.16 | eingeplant |
+| 7569e044e45d | high | scripts/verify-pack.mjs | Packs whose authenticity is skipped receive the verifier's success exit code | — | behoben (dev) |
+| 778c72a5cde2 | high | lib/abap/sap-api-catalog.ts | Catalog maps warehouse quant data to a storage-bin master view | 0.18 | eingeplant |
+| 789f1985a410 | high | components/TransformationShowroom.tsx | Static showroom markup presents unexecuted tests and compilation as passed validations | 0.2 | eingeplant |
+| 7b679cca1fbf | high | lib/runner-egress-attestation.ts | Two blocked destinations are treated as proof that generated runner code has restricted egress | — | widerlegt |
+| 85e767799587 | high | lib/rate-limit.ts | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.14 | eingeplant |
+| 8c7c26a637d1 | high | lib/firebase-admin.ts | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.14 | eingeplant |
+| 9b1af76b65c9 | high | app/(app)/dashboard/page.tsx | BYOK and enterprise users are still blocked by the free transformation limit | 0.15 | eingeplant |
+| a16b24c91b2d | high | components/analyze/EvidenceSweep.tsx | An evidence scan with zero findings never completes | — | widerlegt |
+| a3b0057bd113 | high | components/analyze/ExtensibilityDecisionMatrix.tsx | Missing analysis is replaced with a fabricated project-specific decision matrix | 0.2 | eingeplant |
+| a4f7e6aef79b | high | .github/workflows/grok-review.yml | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.16 | eingeplant |
+| cc5845ec545e | high | lib/firebase-admin.ts | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.14 | eingeplant |
+| d967e435917c | high | app/(app)/project/[projectId]/transformation/page.tsx | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.15 | eingeplant |
+| e078d502e983 | high | app/(app)/project/[projectId]/transformation/page.tsx | Profile hydration can start the automatic transformation twice | 0.15 | eingeplant |
+| e184fc0c59bf | high | app/(app)/project/[projectId]/analyze/page.tsx | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.15 | eingeplant |
+| e538b51c10f5 | high | lib/s4-credentials.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| eac2cdb069a7 | high | lib/chatbot-knowledge.ts | Chatbot teaches a workflow that contradicts the canonical seven phases | 0.2 | eingeplant |
+| eac6118f1eac | high | lib/abap/code-assessment.ts | Internal-table INSERT, MODIFY and DELETE statements are reported as database coupling | 0.18 | eingeplant |
+| f4561d983d92 | high | scripts/security/lib/surface.mjs | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.16 | eingeplant |
+| 00875a4ff030 | medium | tests/board-deck.integrity.test.ts | The tests require go-live approval without execution or sign-off evidence | 0.8 | eingeplant |
+| 024ec609bc86 | medium | app/(app)/project/[projectId]/design/page.tsx | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.15 | eingeplant |
+| 03380a33a523 | medium | app/(app)/project/[projectId]/testing/page.tsx | Project-load failures leave the testing page permanently loading | 0.15 | eingeplant |
+| 06f7c0c56a6c | medium | app/(app)/project/[projectId]/documentation/page.tsx | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.15 | eingeplant |
+| 0a0ff08e1793 | medium | app/api/unsubscribe/route.ts | Failed one-click opt-outs are acknowledged as successful HTTP delivery | 0.16 | eingeplant |
+| 0ce6b0b508e6 | medium | hooks/useUserProfile.ts | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.14 | eingeplant |
+| 11e4ad696bbf | medium | components/UpgradeToEnterpriseModal.tsx | The Jira modal leaves focus in the background and has an unnamed close control | — | widerlegt — toter Code |
+| 130557afb876 | medium | app/(app)/abap-custom-code-analysis/page.tsx | The page advertises an unsupported 80% speed improvement | 0.2 | eingeplant |
+| 13853f86d16f | medium | app/datenschutz/page.tsx | Privacy policy omits non-session local storage written by Settings | 0.2 | eingeplant |
+| 14d4000c4586 | medium | lib/abap/select-parser.ts | SELECT text inside an ABAP string is parsed as a database statement | 0.18 | eingeplant |
+| 14edf99a390c | medium | app/api/send-approval-email/route.ts | Missing production mail configuration still returns email success | 0.16 | eingeplant |
+| 17a808b9bdf7 | medium | components/design/ArchitectureOverview.tsx | Missing architecture evidence is replaced with concrete platform defaults | 0.2 | eingeplant |
+| 1c17fddcb8ee | medium | components/analyze/UsageUpload.tsx | Keyboard users cannot open the usage-file chooser | 1.5 | eingeplant |
+| 210bafeb4c8b | medium | app/(app)/project/[projectId]/analyze/page.tsx | Route overrides retain the original route's confidence and rationale | 0.15 | eingeplant |
+| 217726b404c9 | medium | app/(app)/project/[projectId]/tco/page.tsx | The financial chart omits the Year-0 investment point | 0.15 | eingeplant |
+| 2217e46dd75a | medium | app/method/levels/page.tsx | Hard-coded disagreement count can drift from the generated census | 0.2 | eingeplant |
+| 230989f67624 | medium | lib/usage-report-email.ts | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.16 | eingeplant |
+| 25c80cb2df6f | medium | components/analyze/ConstructFindings.tsx | The UI labels findings “Signed Off” without recording any sign-off | 0.7 | eingeplant |
+| 288aeb937b18 | medium | app/(app)/dashboard/page.tsx | The advertised public forum exists only in local component state | 0.2 | eingeplant (= UX-059) |
+| 2954ffcda441 | medium | components/design/CloudServiceIntegrations.tsx | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.2 | eingeplant |
+| 297e73fb33a7 | medium | lib/abap/result-diff.ts | Ordered value mismatches report zero rows on both sides | 0.18 | eingeplant |
+| 2b0cacd91960 | medium | scripts/send-survey.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.16 | eingeplant |
+| 33a64dc1deb0 | medium | app/(app)/project/[projectId]/documentation/page.tsx | BPMN export does not escape names, roles, or identifiers | 2.6 | eingeplant |
+| 34de0a87ea62 | medium | scripts/qa/lib/report.mjs | Report verdict is not derived consistently from blocking findings | — | unklar — Agenten-Infrastruktur; das Gate `blocks()` greift unabhängig vom Verdikt |
+| 40e1db9fd37a | medium | app/(app)/project/[projectId]/testing/page.tsx | Test Connection ignores the connection details currently shown in the form | 0.15 | eingeplant |
+| 4362479eb86e | medium | components/design/TargetArchitectureDiagram.tsx | Sparse RAP design data produces architecture nodes that were not in the design | 0.15 | eingeplant |
+| 443b6524fe1a | medium | components/HowToClient.tsx | The walkthrough falsely presents generated strategy as SAP-verified and ISO-compliant | 0.2 | eingeplant |
+| 47da79e233b5 | medium | app/catalog/page.tsx | Catalog promises lookup of objects it explicitly does not index | 0.2 | eingeplant |
+| 484096c89fe2 | medium | app/page.tsx | Landing page makes an absolute no-training promise that the privacy policy disclaims | 0.11 | eingeplant |
+| 4c53f05b5d23 | medium | lib/abap/support-matrix.ts | Direct SELECT is called fully supported even when no released mapping exists | 0.2 | eingeplant |
+| 4cce312958d5 | medium | app/(app)/sap-clean-core-object-classification/page.tsx | Quick Answer incorrectly says every graded object is a lookup | 0.2 | eingeplant |
+| 4db1e81408f4 | medium | app/(app)/project/[projectId]/documentation/page.tsx | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.15 | eingeplant |
+| 50a1f1296bef | medium | app/(app)/how-to/page.tsx | Structured guidance publishes a six-stage workflow instead of the product's seven stages | 0.2 | eingeplant |
+| 54635593d237 | medium | app/(app)/project/[projectId]/testing/page.tsx | ABAP suites bypass the UI's global live-test lock | — | widerlegt |
+| 57876fae0053 | medium | app/(app)/admin/page.tsx | Email API failures are treated as successful notifications | 0.15 | eingeplant |
+| 58dc160fd6c3 | medium | app/components/LegalOverlay.tsx | Legal overlay does not behave as an accessible modal | 3.0.4 | eingeplant |
+| 5bbe253e35ef | medium | app/catalog/page.tsx | SAP-area cards label the total object count as successor coverage | 0.2 | eingeplant |
+| 5db7f0eb4e38 | medium | lib/abap/transformation-prompt.ts | Untrusted ABAP is appended to the model prompt without an instruction boundary | — | widerlegt — kein Aufrufer |
+| 5dbe58873773 | medium | lib/email-events.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.16 | eingeplant |
+| 605eb59318f7 | medium | app/(app)/project/[projectId]/transformation/page.tsx | The source analysis score is presented as grounding of generated code | 0.2 | eingeplant |
+| 63c0cec78234 | medium | components/design/ApiBusinessHubMapping.tsx | Unverified model mappings are presented as officially released SAP APIs | 0.2 | eingeplant |
+| 6500f93e60fd | medium | lib/admin-signup-email.ts | Signup notification claims the welcome email reached the user before delivery is known | 0.16 | eingeplant |
+| 6a774e02134e | medium | scripts/ux/lib/config.mjs | The full UX review omits TypeScript modules that supply visible copy and email content | 0.16 | eingeplant |
+| 6d40362efbf6 | medium | scripts/send-community-mail.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.16 | eingeplant |
+| 72556d36c205 | medium | components/SamplePackageDownload.tsx | The ABAP Unit include is named for the local test class instead of its owning global class | 0.15 | eingeplant |
+| 75fb0bb39b9e | medium | app/(app)/project/[projectId]/analyze/page.tsx | Keyboard-only users cannot complete the new-analysis flow | 1.5 | eingeplant |
+| 78c8013a33c1 | medium | components/design/SecurityHardeningChecklist.tsx | Security checklist explanations are mouse-only | 1.5 | eingeplant |
+| 7cd9bc8bd16b | medium | components/UserOnboarding.tsx | The onboarding privacy notice gives an unconditional no-training assurance for BYOK requests | 0.11 | eingeplant |
+| 812cbce3b485 | medium | tests/trust-chain-e2e.spec.ts | Trust-chain test can pass while audit-pack creation is completely broken | 0.17 | eingeplant |
+| 823a09338d58 | medium | components/GuideShareBar.tsx | Clipboard fallback reports success without copying anything | 0.15 | eingeplant |
+| 8272a89de93c | medium | app/(app)/knowledge/page.tsx | The knowledge page claims the app deploys and configures BTP security infrastructure | 0.2 | eingeplant |
+| 883625214774 | medium | components/analyze/GapsWorklist.tsx | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.15 | eingeplant |
+| 8a977779b6bd | medium | components/analyze/ExtensibilityDecisionMatrix.tsx | An empty checkpoint result crashes the decision matrix | — | widerlegt |
+| 8d9184e6f94f | medium | app/(app)/project/[projectId]/analyze/page.tsx | The advertised 1 MB upload limit is not enforced | 0.15 | eingeplant |
+| 989dafdac359 | medium | components/analyze/UsageRiskMatrix.tsx | Changing matrix cells leaves the previous object's detail displayed | 0.15 | eingeplant |
+| 98e7aca0c7ef | medium | lib/chatbot-knowledge.ts | Knowledge base presents drafted architecture as infrastructure the service configures | 0.2 | eingeplant |
+| 990aa825e15f | medium | app/api/mfa/setup/verify/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 9fb67cc60860 | medium | lib/abap/findings-detector.ts | A hierarchy with missing interfaces is still described as fully resolved | 0.18 | eingeplant |
+| a2f85ffb6ce5 | medium | app/(app)/project/[projectId]/delivery/page.tsx | The audit pack is labelled Ready based only on an input fingerprint | 0.6 | eingeplant |
+| a3a6c21cd984 | medium | components/LandingSlideshow.tsx | The landing slideshow presents draft generated output as deployment-ready | 0.2 | eingeplant |
+| a48a8ba01b64 | medium | lib/abap/usage-parser.ts | Non-finite execution counts are accepted as measurements | 0.18 | eingeplant |
+| a4fe4e2de430 | medium | lib/abap/usage-join.ts | Usage percentiles are calculated before duplicate object rows are aggregated | 0.18 | eingeplant |
+| a530d2532b95 | medium | hooks/useTestExecution.ts | Simulated ABAP cases are still presented as passes | 0.2 | eingeplant |
+| a5cd304e9023 | medium | components/PresentationViewer.tsx | Presentations display the viewing date instead of their recorded date | — | widerlegt |
+| a71be0146d3c | medium | lib/board-deck.ts | Resolved-object metric subtracts finding occurrences from object count | 0.8 | eingeplant |
+| a73e75baec14 | medium | components/design/SyncPatternCard.tsx | The design-stage sync card always claims the core has been transformed | 0.2 | eingeplant |
+| aad1ecf24d47 | medium | app/(app)/admin/page.tsx | Suspended accounts are displayed as pending applications | 0.15 | eingeplant |
+| ab15c7746a28 | medium | app/(app)/sap-cloudification/page.tsx | Public copy calls unvalidated model output clean-core-compliant | 0.2 | eingeplant |
+| ad567beae4a0 | medium | components/VerificationRail.tsx | The current phase always appears green even when workflowSteps marks it stale or partial | 1.7 | eingeplant |
+| b0b3150a1974 | medium | components/UserOnboarding.tsx | The mandatory onboarding overlay lacks dialog focus management and semantic labeling | 3.0.4 | eingeplant |
+| b18d35df575f | medium | scripts/qa/refute.mjs | Full-review findings cannot be selected by the refutation command | — | behoben (dev) |
+| b43997202535 | medium | app/(app)/project/[projectId]/transformation/page.tsx | ABAP Cloud transformations are presented as Node.js output | 0.2 | eingeplant (= UX-037) |
+| ba5757ea1a85 | medium | lib/abap/narrative-anchors.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.18 | eingeplant |
+| c217cf83fa3c | medium | app/(app)/project/[projectId]/tco/page.tsx | TCO range controls have no accessible names | 1.5 | eingeplant |
+| c2923dfd70ab | medium | app/(app)/settings/page.tsx | Settings form controls lack programmatic labels and switch state | 3.0.4 | eingeplant |
+| c47eaa19b11d | medium | app/api/v1/purchase-orders/mass-create/route.ts | Mock purchase orders are returned as completed successes without simulation labeling | 0.2 | eingeplant |
+| c4c4f5112a00 | medium | components/LandingModals.tsx | The advertised MFA recovery-code path cannot accept recovery codes | 0.13 | eingeplant |
+| c50ddb41f588 | medium | components/SectionBoundary.tsx | Every section crash is attributed to an older analysis run without evidence | 0.2 | eingeplant |
+| c7466a7f2570 | medium | app/(app)/project/[projectId]/transformation/page.tsx | Remediation mode claims code changes but only changes banner text | 0.2 | eingeplant (= UX-038) |
+| ce37b706107d | medium | app/(app)/project/[projectId]/transformation/page.tsx | Successful generation does not update the project used by the workflow UI | 0.15 | eingeplant |
+| cff3ec1639d4 | medium | app/(app)/tenant-security/page.tsx | Documented admin review claims connection details that the request never collects | 0.2 | eingeplant |
+| d163622eab8e | medium | tests/reference-analysis.spec.ts | Settled-count assertion does not prove which findings have provenance | 0.17 | eingeplant |
+| d2a2d7d872e3 | medium | lib/markdownFormatter.ts | Most generated report formatters bypass mandatory money masking | 0.4 | eingeplant — Nachtrag zu 0.4 |
+| d943e1fc71a5 | medium | tests/mfa-coverage-guard.spec.ts | Trust-chain MFA coverage only checks that a call-shaped string exists | 0.17 | eingeplant |
+| db4bbb64fd81 | medium | components/design/CloudServiceIntegrations.tsx | Cloud-service deep dives cannot be opened with a keyboard | 1.5 | eingeplant |
+| dddbda2a0c32 | medium | app/(app)/how-it-works/page.tsx | The generation stage is described as deterministic and compiled when it is neither | 0.2 | eingeplant |
+| dfc85c150088 | medium | app/(app)/verify-pack/page.tsx | The Audit Pack upload control is not keyboard operable | 1.5 | eingeplant (= UX-003) |
+| e8f7f5d6c528 | medium | app/(app)/knowledge/page.tsx | Both extensibility routes are given an absolute zero-upgrade-impact guarantee | 0.2 | eingeplant |
+| ed9796910f5a | medium | app/globals.css | Mobile document tables remove column headers from the accessibility tree | 3.0.4 | eingeplant |
+| edf9bcc47461 | medium | app/(app)/project/[projectId]/delivery/page.tsx | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.6 | eingeplant |
+| f3428b0782a9 | medium | tests/tco-finite-guard.spec.ts | TCO boundary tests execute a copied model and omit the missing-score case | 0.17 | eingeplant |
+| f480d96b63d1 | medium | app/api/test-s4-connection/route.ts | Endpoints that reject HEAD are never retried with GET | 0.15 | eingeplant |
+| f7110f3d6619 | medium | app/survey/[token]/SurveyClient.tsx | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.16 | eingeplant |
+| f95980a7ffed | medium | lib/audit-pack-verify.ts | Signature-service failures are represented as an unsigned pack | 0.5 | eingeplant |
+| fae6b4d2b2d0 | medium | app/survey/[token]/SurveyClient.tsx | Confirming an emailed preselection clears it for multi-select questions | — | widerlegt |
+| 8ccb1b1b765b | low | app/survey/[token]/page.tsx | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.16 | eingeplant |
+| bcbe2c770c8a | low | tests/workflow-style-guard.spec.ts | Rendered seven-stage style check omits the TCO stage | 0.17 | eingeplant |

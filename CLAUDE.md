@@ -95,7 +95,7 @@ rebuilding it against a dead hostname and a us-west1 database.
 `https://clean-core-dev-qcevuoi3uq-ew.a.run.app`. A change that "isn't on dev" is
 usually this and not the deploy.
 
-There is **no** Firebase Hosting deploy; `firebase.json` is only rules + emulators. `vercel.json` only sets cache headers.
+There is **no** Firebase Hosting deploy; `firebase.json` is only rules + emulators. There is no `vercel.json` either: the one that used to sit here declared every route, `/api/**` included, publicly cacheable for 60 s — inert on Cloud Run, a shared-cache leak the day someone connects Vercel, and gone since 2026-09-16.
 
 ## QA agent — always on for `dev` (since 2026-09-15, until Sonny revokes it)
 

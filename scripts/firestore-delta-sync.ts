@@ -14,6 +14,14 @@
  * source it is reported and left alone — deleting on a hunch is how migrations lose
  * data, and nothing here is authoritative enough to justify it.
  *
+ * And it never replaces a target document just because it differs. The procedure
+ * above runs after the switch, when the app is already writing to the target; a
+ * project a user edited in that window differed from its pre-cutover copy in the
+ * source, and the earlier version took every difference as source-authoritative
+ * and put the stale copy back over the user's edit. A differing document is
+ * written only when the source is provably newer by `updatedAt`; everything else
+ * is a conflict, listed for a person to look at, and left as it is.
+ *
  * Usage:
  *   npx tsx scripts/firestore-delta-sync.ts --source <db> --target <db>            # dry run
  *   npx tsx scripts/firestore-delta-sync.ts --source <db> --target <db> --apply
@@ -32,11 +40,6 @@ function argValue(flag: string): string | undefined {
 const SOURCE = argValue('--source');
 const TARGET = argValue('--target');
 const APPLY = process.argv.includes('--apply');
-
-if (!SOURCE || !TARGET) {
-  console.error('Usage: --source <database-id> --target <database-id> [--apply]');
-  process.exit(1);
-}
 
 /**
  * Transient infrastructure, not user data. Rate-limit counters are rebuilt from
@@ -67,9 +70,35 @@ function fingerprint(data: unknown): string {
   return JSON.stringify(normalise(data));
 }
 
+function toMillis(v: unknown): number | null {
+  if (!v) return null;
+  const maybe = v as { toMillis?: () => number };
+  if (typeof maybe.toMillis === 'function') return maybe.toMillis();
+  const d = new Date(v as string);
+  return isNaN(d.getTime()) ? null : d.getTime();
+}
+
+export type Verdict = 'create' | 'unchanged' | 'update' | 'conflict';
+
+/**
+ * What to do with one document. Exported so the rule can be tested without a
+ * database: the only case that ever writes over an existing document is a
+ * source that carries a later `updatedAt` than the target. No timestamp on
+ * either side, equal timestamps, a newer target — all conflicts.
+ */
+export function reconcile(existing: Record<string, unknown> | undefined, incoming: Record<string, unknown>): Verdict {
+  if (!existing) return 'create';
+  if (fingerprint(existing) === fingerprint(incoming)) return 'unchanged';
+  const source = toMillis(incoming.updatedAt);
+  const target = toMillis(existing.updatedAt);
+  if (source !== null && target !== null && source > target) return 'update';
+  return 'conflict';
+}
+
 interface Plan {
   created: string[];
   updated: string[];
+  conflicts: string[];
   unchanged: number;
   onlyInTarget: string[];
 }
@@ -91,14 +120,20 @@ async function walk(
       const tgtRef = parentTgt ? parentTgt.collection(col.id).doc(doc.id) : tgtDb.collection(col.id).doc(doc.id);
       const existing = await tgtRef.get();
 
-      if (!existing.exists) {
-        plan.created.push(tgtRef.path);
-        if (APPLY) await tgtRef.set(doc.data());
-      } else if (fingerprint(existing.data()) !== fingerprint(doc.data())) {
-        plan.updated.push(tgtRef.path);
-        if (APPLY) await tgtRef.set(doc.data());
-      } else {
-        plan.unchanged++;
+      switch (reconcile(existing.data(), doc.data())) {
+        case 'create':
+          plan.created.push(tgtRef.path);
+          if (APPLY) await tgtRef.set(doc.data());
+          break;
+        case 'update':
+          plan.updated.push(tgtRef.path);
+          if (APPLY) await tgtRef.set(doc.data());
+          break;
+        case 'conflict':
+          plan.conflicts.push(tgtRef.path);
+          break;
+        default:
+          plan.unchanged++;
       }
 
       await walk(srcDb, tgtDb, plan, doc.ref, tgtRef);
@@ -118,12 +153,16 @@ async function findTargetOnly(srcDb: Firestore, tgtDb: Firestore, plan: Plan): P
 }
 
 async function main() {
+  if (!SOURCE || !TARGET) {
+    console.error('Usage: --source <database-id> --target <database-id> [--apply]');
+    process.exit(1);
+  }
   if (!getApps().length) initializeApp({ credential: applicationDefault(), projectId: PROJECT_ID });
   const app = getApps()[0];
-  const srcDb = getFirestore(app, SOURCE!);
-  const tgtDb = getFirestore(app, TARGET!);
+  const srcDb = getFirestore(app, SOURCE);
+  const tgtDb = getFirestore(app, TARGET);
 
-  const plan: Plan = { created: [], updated: [], unchanged: 0, onlyInTarget: [] };
+  const plan: Plan = { created: [], updated: [], conflicts: [], unchanged: 0, onlyInTarget: [] };
 
   console.log(`source: ${SOURCE}`);
   console.log(`target: ${TARGET}`);
@@ -136,8 +175,10 @@ async function main() {
   console.log(`identical      : ${plan.unchanged}`);
   console.log(`to create      : ${plan.created.length}`);
   plan.created.forEach((p) => console.log(`    + ${p}`));
-  console.log(`to update      : ${plan.updated.length}`);
+  console.log(`to update      : ${plan.updated.length}  (source provably newer)`);
   plan.updated.forEach((p) => console.log(`    ~ ${p}`));
+  console.log(`conflicts      : ${plan.conflicts.length}  (differ, target not provably older — left untouched)`);
+  plan.conflicts.forEach((p) => console.log(`    ? ${p}`));
   console.log(`only in target : ${plan.onlyInTarget.length}  (left untouched)`);
   plan.onlyInTarget.forEach((p) => console.log(`    ! ${p}`));
 
@@ -145,12 +186,15 @@ async function main() {
   if (!APPLY) {
     console.log('DRY RUN — nothing written. Re-run with --apply.');
   } else {
-    console.log(`Done. ${plan.created.length} created, ${plan.updated.length} updated.`);
+    console.log(`Done. ${plan.created.length} created, ${plan.updated.length} updated, ${plan.conflicts.length} conflict(s) left for a person.`);
   }
-  process.exit(0);
+  process.exit(plan.conflicts.length ? 2 : 0);
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+// Run only as the entry script; the spec imports `reconcile` from here.
+if (process.argv[1] && /firestore-delta-sync/.test(process.argv[1])) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

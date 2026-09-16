@@ -101,7 +101,26 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       };
     }
 
-    // 3. Verify file integrity
+    // 3. Verify file integrity — in both directions.
+    //
+    // The loop below checks that every file the manifest lists is present and
+    // unchanged. It says nothing about files the manifest does not list, and
+    // that is where a pack could be padded: take a legitimately signed archive,
+    // add a file next to the evidence, and every listed hash, the manifest hash
+    // and the signature still agree. The page then reads "Authenticity &
+    // Integrity Verified" over an archive containing material nobody signed.
+    // So the archive has to match the manifest exactly: an entry the manifest
+    // does not account for is an integrity failure, not a curiosity.
+    const listed = new Set(manifest.files.map((f) => f.path));
+    const unlisted = Object.values(zip.files)
+      .filter((entry) => !entry.dir && entry.name !== 'manifest.json' && !listed.has(entry.name))
+      .map((entry) => entry.name)
+      .sort();
+    for (const name of unlisted) {
+      fileResults.push({ path: name, expectedHash: '', actualHash: '', valid: false, found: true });
+      errors.push(`File not covered by the manifest: ${name}`);
+    }
+
     for (const entry of manifest.files) {
       const file = zip.file(entry.path);
       if (!file) {

@@ -110,6 +110,26 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function toDate(v: unknown): Date | null {
+  if (!v) return null;
+  const maybe = v as { toDate?: () => Date };
+  if (typeof maybe.toDate === 'function') return maybe.toDate();
+  const d = new Date(v as string);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * This runs in the Actions log of a public repository. The recipient list is
+ * the community's addresses and first names, and it used to be printed in
+ * full before every send — plus once more per address on success or failure —
+ * so anyone reading the log had the list without an account. Addresses are
+ * shown only by a run on a local machine; CI sees counts, positions and
+ * provider ids. Provider error bodies can echo the `to` field, so they are
+ * masked before they are logged.
+ */
+const LOCAL = !process.env.CI && !process.env.GITHUB_ACTIONS;
+const maskAddresses = (text: string) => text.replace(/[^\s@"'<>()]+@[^\s@"'<>()]+/g, '[address]');
+
 interface Recipient {
   uid: string;
   email: string;
@@ -175,21 +195,35 @@ async function main() {
 
   const { recipients, skipped } = await loadRecipients(db);
 
-  const now = Date.now();
-  const closesAt = new Date(now + SURVEY_OPEN_DAYS * 24 * 60 * 60 * 1000);
+  // The closing date is read before it is computed. A resumed send — the weekly
+  // cron coming round, or a re-run after a crash — used to derive `closesAt`
+  // from its own start time and mail that to the remaining recipients, while
+  // the campaign document, the survey page and the digest all kept the date
+  // the first run had set. Those people were told a closing day nobody else
+  // was working to. The date the campaign opened with is the date everyone
+  // gets; only a campaign that has not opened yet gets a new one.
+  const campaignRef = db.collection('survey_campaigns').doc(SURVEY_CAMPAIGN);
+  const openCampaign = ONLY ? null : (await campaignRef.get()).data();
+  const resumed = !!openCampaign?.sentAt;
+  const storedClosesAt = resumed ? toDate(openCampaign?.closesAt) : null;
+  const closesAt = storedClosesAt ?? new Date(Date.now() + SURVEY_OPEN_DAYS * 24 * 60 * 60 * 1000);
   // The link outlives the survey by a day so a late tap gets the "closed" page
   // rather than a broken one.
   const tokenExpiry = closesAt.getTime() + 24 * 60 * 60 * 1000;
   const closesOn = closesAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  console.log(`campaign  : ${SURVEY_CAMPAIGN}`);
+  console.log(`campaign  : ${SURVEY_CAMPAIGN}${resumed ? ' (already open — resuming)' : ''}`);
   console.log(`subject   : ${SURVEY_SUBJECT}`);
   console.log(`from      : ${FROM}`);
   console.log(`closes    : ${closesOn}`);
   console.log(`recipients: ${recipients.length}`);
   console.log(`skipped   : ${JSON.stringify(skipped)}`);
   console.log('');
-  for (const r of recipients) console.log(`  ${r.email}${r.firstName ? ` (${r.firstName})` : ''}`);
+  if (LOCAL) {
+    for (const r of recipients) console.log(`  ${r.email}${r.firstName ? ` (${r.firstName})` : ''}`);
+  } else {
+    console.log(`  (${recipients.length} address${recipients.length === 1 ? '' : 'es'} — listed only by a local run)`);
+  }
   console.log('');
 
   if (!APPLY) {
@@ -203,26 +237,27 @@ async function main() {
 
   // Written first: a crash mid-send must not lose the fact that it opened.
   // `--only` is the test send and must not start the clock for everyone.
+  //
+  // `invited` is no longer the size of the recipient list. It used to be
+  // written up front as everyone eligible, and a resumed run then added its
+  // own list on top — which is exactly the people whose sends had failed the
+  // first time and were already counted. The number now grows by one per
+  // message that actually went out, so it reads "people who were asked" on
+  // every run, first or resumed.
   if (!ONLY) {
-    const campaignRef = db.collection('survey_campaigns').doc(SURVEY_CAMPAIGN);
-    const existing = await campaignRef.get();
-    if (existing.exists && existing.data()?.sentAt) {
-      // A second run — the weekly cron coming round again, or a resumed send.
+    if (resumed) {
       // The opening and closing dates were set the first time and must not move:
       // silently extending a survey people were told closes on a given day is a
       // small lie with a long tail.
-      await campaignRef.set(
-        { invited: FieldValue.increment(recipients.length), resumedAt: FieldValue.serverTimestamp() },
-        { merge: true },
-      );
-      console.log('campaign already open — dates left as they were, invited count topped up');
+      await campaignRef.set({ resumedAt: FieldValue.serverTimestamp() }, { merge: true });
+      console.log('campaign already open — dates left as they were');
     } else {
       await campaignRef.set(
         {
           campaign: SURVEY_CAMPAIGN,
           sentAt: FieldValue.serverTimestamp(),
           closesAt,
-          invited: recipients.length,
+          invited: 0,
         },
         { merge: true },
       );
@@ -267,7 +302,9 @@ async function main() {
 
     if (!result.ok) {
       failed++;
-      console.error(`  FAILED ${r.email}: ${result.detail}`);
+      console.error(
+        LOCAL ? `  FAILED ${r.email}: ${result.detail}` : `  FAILED #${index + 1}: ${maskAddresses(result.detail)}`,
+      );
       continue;
     }
     const { id } = result;
@@ -281,10 +318,11 @@ async function main() {
         providerId: id,
         sentAt: FieldValue.serverTimestamp(),
       });
+      await campaignRef.set({ invited: FieldValue.increment(1) }, { merge: true });
     }
 
     sent++;
-    console.log(`  sent ${r.email} (${id})`);
+    console.log(LOCAL ? `  sent ${r.email} (${id})` : `  sent #${index + 1} (${id})`);
   }
 
   console.log('');

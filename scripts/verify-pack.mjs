@@ -12,12 +12,14 @@
  * Usage:
  *   node scripts/verify-pack.mjs <pack.zip> [--key <base64|path|url>]
  *
- * With no --key it fetches https://clean-core.io/.well-known/clean-core-io-signing.json,
- * or the URL the manifest names in `signingKeyUrl`. Point --key at a file or a
+ * With no --key it fetches https://clean-core.io/.well-known/clean-core-io-signing.json
+ * — always that address, never one the pack names. Point --key at a file or a
  * base64 string to check against a key you already hold.
  *
  * Exit codes: 0 verified · 1 verification failed · 2 could not run the check.
  * The third is deliberately distinct — "I could not tell" is not "it is forged".
+ * A pack without an Ed25519 signature exits 2, not 0: its checksums can be
+ * consistent with themselves and still say nothing about who issued it.
  */
 
 import { createHash, createPublicKey, verify as cryptoVerify } from 'node:crypto';
@@ -29,6 +31,8 @@ const require = createRequire(import.meta.url);
 const OK = 0;
 const FAILED = 1;
 const CANNOT_CHECK = 2;
+
+const TRUSTED_KEY_URL = 'https://clean-core.io/.well-known/clean-core-io-signing.json';
 
 const c = {
   ok: (s) => `\x1b[32m${s}\x1b[0m`,
@@ -93,9 +97,18 @@ async function resolveKey(manifest) {
       return { key, keyId: keyIdOf(key) };
     }
   }
-  const url =
-    manifest.signingKeyUrl || 'https://clean-core.io/.well-known/clean-core-io-signing.json';
-  return fetchKey(url);
+  // The pack does not get a say in where its own trust root lives. This used
+  // to honour `manifest.signingKeyUrl` first, so a pack signed with any key at
+  // all could name the document that would confirm it, the verifier fetched
+  // that document from wherever it pointed, and reported success — offline
+  // verification of the forger's own key. The key comes from the fixed origin
+  // or from --key. A pack that names another address is noted, not followed.
+  if (manifest.signingKeyUrl && manifest.signingKeyUrl !== TRUSTED_KEY_URL) {
+    console.log(
+      c.warn(`WARNING   pack names ${manifest.signingKeyUrl} as its key document — ignored`),
+    );
+  }
+  return fetchKey(TRUSTED_KEY_URL);
 }
 
 async function fetchKey(url) {
@@ -153,9 +166,23 @@ async function main() {
       contentsOk = false;
     }
   }
+  // The manifest can only vouch for what it lists. A file dropped in next to
+  // the evidence leaves every listed hash, the manifest hash and the signature
+  // exactly as they were, so a pack that passed the loop above could still
+  // carry a page nobody signed. The archive has to match the manifest, entry
+  // for entry.
+  const listed = new Set((manifest.files || []).map((f) => f.path));
+  const unlisted = Object.values(zip.files)
+    .filter((e) => !e.dir && e.name !== 'manifest.json' && !listed.has(e.name))
+    .map((e) => e.name)
+    .sort();
+  for (const name of unlisted) {
+    console.log(`${c.bad('unlisted')}  ${name}`);
+    contentsOk = false;
+  }
   console.log(
     contentsOk
-      ? `${c.ok('OK')}        ${(manifest.files || []).length} files match their recorded hashes`
+      ? `${c.ok('OK')}        ${(manifest.files || []).length} files match their recorded hashes, nothing else in the archive`
       : c.bad('FAILED    the pack contents do not match the manifest'),
   );
 
@@ -182,7 +209,10 @@ async function main() {
     console.log(
       c.dim('\n          Packs issued after the Ed25519 key was configured carry a signature\n          this script can check on its own.'),
     );
-    process.exit(contentsOk && hashOk ? OK : FAILED);
+    // Consistent checksums are a fact about the archive, not about its origin:
+    // anyone can assemble files, hash them and write the hashes down. Exit 0 is
+    // documented as "verified", and this is not that.
+    process.exit(contentsOk && hashOk ? CANNOT_CHECK : FAILED);
   }
 
   let key, keyId;
