@@ -80,9 +80,11 @@ test.describe('a verdict is only reported when there is one', () => {
 
 test.describe('a figure that does not exist is not printed as one', () => {
   test('the TCO divisions are guarded', () => {
-    const src = read('app/(app)/project/[projectId]/tco/page.tsx');
-    // Both divisors are reachable from the controls on the page: an investment of
-    // zero, and code that already scores at the target.
+    // Both divisors are reachable from the controls on the page: an investment
+    // of zero, and code that already scores at the target. The calculation is
+    // `lib/tco-model.ts` since roadmap 0.17, and both cases are run in
+    // `tests/tco-model.spec.ts`.
+    const src = read('lib/tco-model.ts');
     expect(src).toMatch(/annualSavings > 0\s*\?/);
     expect(src).toMatch(/oneTimeCost > 0\s*\?/);
   });

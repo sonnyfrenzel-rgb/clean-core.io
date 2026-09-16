@@ -163,8 +163,9 @@ test.describe('the TCO page does not invent a business case', () => {
     const src = read(REL);
     expect(src).not.toMatch(/cleanCoreScore\s*\|\|\s*30/);
     // Without a baseline there is no model, and the page says so instead of
-    // presenting euro figures.
-    expect(src).toContain('if (scoreBefore === null) return null;');
+    // presenting euro figures. The refusal lives with the calculation since
+    // roadmap 0.17 (`lib/tco-model.ts`), and is exercised there.
+    expect(read('lib/tco-model.ts')).toContain("if (typeof scoreBefore !== 'number' || !Number.isFinite(scoreBefore)) return null;");
     expect(rendered(REL)).toContain('No baseline to model against');
   });
 
@@ -184,7 +185,7 @@ test.describe('the TCO model refuses degenerate inputs', () => {
   const REL = 'app/(app)/project/[projectId]/tco/page.tsx';
 
   test('the modernised side is not floored while the legacy side rounds to zero', () => {
-    const src = rendered(REL);
+    const src = read('lib/tco-model.ts');
     // The floors were asymmetric: legacy days round to 0 for a small codebase
     // while modern days were pinned at 1 each. The model then reported that
     // modernising *costs* €1,550 a year, pays back in −116 months, and reduces
@@ -194,8 +195,7 @@ test.describe('the TCO model refuses degenerate inputs', () => {
   });
 
   test('no baseline cost means no model', () => {
-    const src = rendered(REL);
-    expect(src).toContain('if (legacyAnnualTotal <= 0) return null;');
+    expect(read('lib/tco-model.ts')).toContain('if (legacyAnnualTotal <= 0) return null;');
   });
 
   test('the overhead figure cannot be an infinity', () => {

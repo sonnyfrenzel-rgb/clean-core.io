@@ -27,6 +27,13 @@ const src = () =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '');
 
+/** The calculation, which the page now calls instead of carrying. */
+const model = () =>
+  (require('fs') as typeof import('fs'))
+    .readFileSync((require('path') as typeof import('path')).resolve(__dirname, '..', 'lib/tco-model.ts'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+
 test.describe('the page', () => {
   test('starts every cost figure empty, not at a default', () => {
     const s = src();
@@ -37,13 +44,16 @@ test.describe('the page', () => {
   });
 
   test('computes nothing until all three are there', () => {
-    expect(src()).toMatch(/if \(devRate === null \|\| userRate === null \|\| oneTimeCost === null\) return null;/);
+    // The refusal moved into `lib/tco-model.ts` with the rest of the
+    // calculation (roadmap 0.17, QA finding f3428b0782a9); the behaviour it
+    // guards is exercised in `tests/tco-model.spec.ts`.
+    expect(model()).toMatch(/if \(devRate === null \|\| userRate === null \|\| oneTimeCost === null\) return null;/);
+    expect(src(), 'and the page asks the model for it').toContain('tcoForecast({');
   });
 
   test('says "no payback in the model" rather than a negative period', () => {
-    const s = src();
-    expect(s).toContain('No payback in the model');
-    expect(s).toMatch(/annualSavings > 0\s*\?/);
+    expect(src()).toContain('No payback in the model');
+    expect(model()).toMatch(/annualSavings > 0\s*\?/);
   });
 
   test('calls itself a demonstration model, not a business case', () => {
