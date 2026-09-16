@@ -6,6 +6,7 @@ import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
 import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc, adminMergeDoc } from './helpers/admin-seed';
+import { GATED_ROUTES } from './helpers/gated-routes';
 
 /**
  * The MFA gate on the trust chain, executed — not grepped.
@@ -116,19 +117,43 @@ test('no audit pack is created by a token that never met the second factor', asy
   expect(refused.status()).toBe(403);
   expect((await refused.json()).error).toContain('Multi-factor authentication required');
 
-  const packs = await db().collection('projects').doc(projectId).collection('audit_packs').get().catch(() => null);
-  expect(packs === null || packs.size === 0, 'nothing was sealed on the way to the refusal').toBe(true);
+  // Not `.catch(() => null)`: a read that failed would then have read as
+  // "nothing there" (QA review of 10b1c3939600, d12d51778b9f).
+  const packs = await db().collection('projects').doc(projectId).collection('audit_packs').get();
+  expect(packs.size, 'nothing was sealed on the way to the refusal').toBe(0);
 
   await db().collection('projects').doc(projectId).delete();
   await requireFactor(false);
 });
 
-test('the model proxy refuses the same token', async ({ request }: { request: APIRequestContext }) => {
+test('every gated route refuses the token, not only the ones with a fixture', async ({ request }: { request: APIRequestContext }) => {
+  // The three cases above check what a refusal leaves behind. This one checks
+  // that the refusal happens at all, on every route the wiring guard lists —
+  // the two halves read the same list, so a route cannot be added to the grep
+  // and never knocked on (QA review of 10b1c3939600, 2f384e262d78).
+  const projectId = `mfa-chain-all-${Date.now()}`;
+  await adminSetDoc('projects', projectId, { userId: uid, name: 'Knock on every door', status: 'analyzed', createdAt: new Date() });
   await requireFactor(true);
-  const refused = await request.post('/api/gemini', { headers: headers(), data: { prompt: 'hello' } });
-  expect(refused.status()).toBe(403);
-  expect((await refused.json()).error).toContain('Multi-factor authentication required');
-  await requireFactor(false);
+  try {
+    for (const route of GATED_ROUTES) {
+      const url = route.path(projectId);
+      const options = { headers: headers(), ...(route.body ? { data: route.body } : {}) };
+      const res = route.method === 'DELETE'
+        ? await request.delete(url, options)
+        : route.method === 'GET'
+          ? await request.get(url, options)
+          : await request.post(url, options);
+      expect(res.status(), `${route.method} ${url} must refuse a first-factor token`).toBe(403);
+      // Not every route reports a refusal in the same field: most answer
+      // `{ error }`, the S/4 connectivity routes `{ status, message }`. The
+      // reason has to be in the answer; which key carries it is the route's.
+      const body = JSON.stringify(await res.json());
+      expect(body, `${route.method} ${url} must say why`).toContain('Multi-factor authentication required');
+    }
+  } finally {
+    await requireFactor(false);
+    await db().collection('projects').doc(projectId).delete().catch(() => {});
+  }
 });
 
 test.afterAll(async () => {

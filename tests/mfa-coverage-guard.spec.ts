@@ -19,24 +19,17 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { GATED_FILES } from './helpers/gated-routes';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
-/** Routes that mint, mutate or destroy evidence — MFA is required. */
-const MUST_GATE = [
-  'app/api/runs/create/route.ts',
-  'app/api/audit-pack/create/route.ts',
-  'app/api/projects/[projectId]/route.ts',
-  'app/api/gemini/route.ts',
-  'app/api/run-tests/route.ts',
-  'app/api/s4-credentials/route.ts',
-  'app/api/secrets/gemini/route.ts',
-  'app/api/test-s4-connection/route.ts',
-  'app/api/fetch-s4-metadata/route.ts',
-  'app/api/fetch-odata-metadata/route.ts',
-  'app/api/test-s4-odata-read/route.ts',
-];
+/**
+ * Routes that mint, mutate or destroy evidence — MFA is required. The list is
+ * shared with the runtime check (tests/mfa-trust-chain-gate.spec.ts), so a
+ * route cannot be added to the grep and never actually knocked on.
+ */
+const MUST_GATE = GATED_FILES;
 
 /**
  * Routes that must NOT require it. Recording an enrolment cannot depend on the
