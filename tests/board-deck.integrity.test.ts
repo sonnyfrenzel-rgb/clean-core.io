@@ -94,7 +94,10 @@ test.describe('Board Deck Integrity & Drift Verification', () => {
     const text = JSON.stringify(deck);
     expect(text).not.toMatch(/approved|proceed to release|fully compliant|zero gaps|LOW RISK/i);
 
-    // Slides 2–4 say "not established" instead of drawing a green row.
+    // Slides 2–5 say "not established" instead of drawing a green row or a
+    // capability, and the whole serialised deck carries no capability or
+    // zero-work claim anywhere (QA 30215a402132).
+    expect(deck.slides[1].title).toBe('Capabilities — Not Determined');
     expect(deck.slides[1].metrics?.find((m) => m.label === 'Findings by Level')?.value).toBe('none detected');
     for (const i of [2, 3]) {
       const row = deck.slides[i].rows?.[0];
@@ -102,6 +105,10 @@ test.describe('Board Deck Integrity & Drift Verification', () => {
       expect(row?.col4).toBe('— Not determined');
       expect(row?.status).toBe('info');
     }
+    for (const label of ['Needs Hand Work', 'Needs Review']) {
+      expect(deck.slides[4].metrics?.find((m) => m.label === label)?.value).toBe('not determined');
+    }
+    expect(text).not.toMatch(/fully supported|high-confidence|resolved to released|fully decomposed|fully resolved|zero manual|cannot be transformed automatically/i);
   });
 
   test('with findings and no blocking one, the deck reports low risk and leaves the release decision open', () => {

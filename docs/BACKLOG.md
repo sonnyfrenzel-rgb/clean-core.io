@@ -73,6 +73,14 @@ Objects" war Objektzahl minus Befundzahl und heißt jetzt „Findings by Level".
 `invited` wird in derselben Transaktion gezählt und geschrieben, der Route-Test leitet seine Verbotsliste aus dem
 ganzen Fixture ab, der Survey-Guard prüft wieder die Reihenfolge. CISO-Effort `medium` (Entscheidung Sonny).
 
+**QA-Runde 4 (`efb7d24`, 0.8 + Runde 3):** fünf Mediums, alle bestätigt und behoben — der leere Deck sagt jetzt auch
+auf Folie 2 und 5 „not determined" statt „Fully Supported"/„0 zu tun"; der Route-Test prüft die Enum-Fälschungen
+feldgenau und nutzt einen Sentinel, der den alten Wert nicht enthält; die Survey-Outbox ist ein Modul
+(`lib/survey/outbox.ts`) mit Emulator-Test (`tests/survey-outbox.spec.ts`: zehn parallele Claims → genau einer
+gewinnt; der Zähler ist transaktional und fällt nie unter einen gespeicherten Wert), der Quelltext-Guard prüft nur
+noch die Verdrahtung. Bemerkenswert: der Admin-SDK läuft aus einer Playwright-Spec gegen den Emulator — das
+öffnet 0.17 (Emulator-Tests statt Quelltext-Greps) einen einfachen Weg.
+
 **Offen für Sonny:** den überholten Bot-Branch löschen (`git push origin --delete chore/sync-cloudification-repo`);
 `main` nach einer sauberen QA-Runde; die Survey-Workflows erst danach wieder einschalten; die
 Resend-Tracking-Einstellung prüfen (3.0.9, nur mit Dashboard-Zugang möglich).

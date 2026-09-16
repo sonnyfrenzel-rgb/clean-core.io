@@ -36,7 +36,7 @@ const FORGED = {
   name: 'FORGED-NAME Approved by the board',
   targetArchitecture: 'retire',
   approvedByArchitect: true,
-  approvedBy: 'forged-cto@example.com',
+  approvedBy: 'forged-owner@example.com',
   architectJustifiedOverride: 'FORGED-OVERRIDE Nothing to migrate, decommission.',
   solutionDesign: '{"FORGED-DESIGN":"everything is fine"}',
   generatedCode: '[{"path":"FORGED-CODE.abap"}]',
@@ -56,7 +56,9 @@ function strings(value: unknown, out: string[] = []): string[] {
 }
 // Enum tokens the engine uses too (`retire` is a route, `signed_off`/`fully`
 // are levels, `Low`/`Finding` are effort and category): their absence cannot
-// be asserted by text, so the ADR's worklist count covers them below.
+// be asserted as bare text, so each is asserted where it would land — field by
+// field in the decision record and the findings CSV, and in the ADR's
+// worklist count — below.
 const ENUM_TOKENS = new Set(['retire', 'signed_off', 'fully', 'Low', 'Finding']);
 const NEVER_SIGNED = [
   ...strings(FORGED).filter((v) => !ENUM_TOKENS.has(v)),
@@ -146,17 +148,33 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     // and the run's worklist is the one in the ADR: nothing "fully mapped",
     // because the run's items are open and the project's signed-off list was
     // never read.
-    expect(await zip.file('03-findings.csv')!.async('string')).toMatch(/VBAK/i);
+    const csv = await zip.file('03-findings.csv')!.async('string');
+    expect(csv).toMatch(/VBAK/i);
     const adr = await zip.file('06-architecture-decision-record.md')!.async('string');
     expect(adr).toContain('Transformed / fully mapped — 0');
     expect(adr).toContain(USER_ATTESTED_FILE);
+
+    // The enum-valued forgeries, field by field. The engine routes a SELECT on
+    // VBAK to RAP, so `retire` — the owner's choice — has no legitimate place
+    // in the decision record; `signed_off` and `fully` are states the run's
+    // worklist never carries; the forged item's id names it outright.
+    const record = JSON.parse(await zip.file('02-decision-record.json')!.async('string'));
+    // The router answers with its label, not the key: In-App (ABAP Cloud) for a
+    // SELECT on VBAK — anything but retire.
+    expect(record.recommendation.engineRecommendation).toMatch(/ABAP Cloud|RAP/);
+    expect(record.recommendation.engineRecommendation).not.toMatch(/retire/i);
+    expect(record.recommendation.targetArchitecture).toBeUndefined();
+    expect(JSON.stringify(record)).not.toMatch(/"retire"|signed_off|FORGED/);
+    expect(csv).not.toMatch(/signed_off|FORGED-ITEM|FORGED-LOCATION/);
+    expect(adr).not.toMatch(/signed_off|FORGED-ITEM/);
+    expect(signedText).not.toMatch(/signed_off|"retire"|FORGED-/);
 
     // The owner's statements are in the attested file, labelled as such — the
     // ones the file is for; drafts such as the design or the generated code are
     // not exported at all.
     const attested = await zip.file(USER_ATTESTED_FILE)!.async('string');
     expect(attested).toContain('not covered by the pack');
-    for (const needle of ['FORGED-NAME Approved by the board', 'forged-cto@example.com', 'Retire / Decommission', 'FORGED-OVERRIDE Nothing to migrate']) expect(attested).toContain(needle);
+    for (const needle of ['FORGED-NAME Approved by the board', 'forged-owner@example.com', 'Retire / Decommission', 'FORGED-OVERRIDE Nothing to migrate']) expect(attested).toContain(needle);
     expect(attested).toContain('overrides the engine');
     for (const needle of ['FORGED-DESIGN', 'FORGED-CODE', 'FORGED-DOCS', 'FORGED-BUSINESS-DOCS', 'FORGED-DECK', 'FORGED-TITLE', 'Board-approved functional gap']) {
       expect(attested, `"${needle}" is not a statement the attested file carries`).not.toContain(needle);
@@ -179,6 +197,10 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     expect(attested).toContain('someone-else@example.com');
     expect(attested).toContain('Side-by-Side BTP (CAP)');
     expect(attested).toContain('FORGED-SECOND');
-    expect(attested).not.toContain('forged-cto@example.com');
+    // The previous approver is gone, not merely joined by the new one: one
+    // address in the file, and it is the current one.
+    expect(attested).not.toContain('forged-owner@example.com');
+    expect(attested.match(/@example\.com/g)?.length).toBe(1);
+    expect(attested).not.toContain('Retire / Decommission');
   });
 });

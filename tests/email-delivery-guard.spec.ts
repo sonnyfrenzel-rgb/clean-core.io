@@ -210,49 +210,39 @@ test.describe('the survey send records before it asks the provider', () => {
    * before the provider is asked, moves to `sent` or `failed` afterwards, and a
    * record stuck in `sending` is neither resent nor counted.
    *
-   * The script is an entry point and cannot be imported without running it, so
-   * this reads the source: the order of the writes is the whole guarantee.
+   * The transactions themselves live in lib/survey/outbox.ts and are exercised
+   * against the emulator in tests/survey-outbox.spec.ts. The script is an entry
+   * point and cannot be imported without running, so what this reads from its
+   * source is the wiring: that the outbox is what the loop calls, in this order.
    */
   const src = read('scripts/send-survey.ts');
-  const loop = src.slice(src.indexOf('for (const [index, r] of recipients.entries())'), src.indexOf("console.log('');\n  console.log(`${sent} of"));
+  const loop = src.slice(src.indexOf('for (const [index, r] of recipients.entries())'), src.indexOf('console.log(`${sent} of'));
 
-  test('the outbox record is claimed in a transaction before the provider call, under a deterministic id', () => {
-    const claim = loop.indexOf('db.runTransaction(');
-    const outbox = loop.indexOf("state: 'sending'");
+  test('the loop claims through the outbox before the provider call and settles through it after', () => {
+    const claim = loop.indexOf('await claimSend(db, SURVEY_CAMPAIGN, r)');
     const provider = loop.indexOf('await sendWithRetry(');
-    expect(claim).toBeGreaterThan(-1);
-    expect(outbox).toBeGreaterThan(-1);
-    expect(provider).toBeGreaterThan(-1);
-    expect(claim, 'the claim is not transactional').toBeLessThan(outbox);
-    expect(outbox, 'the provider is asked before the record exists').toBeLessThan(provider);
-    // A second process finds the claim and skips; only a refused send is claimable again.
-    expect(loop).toMatch(/if \(snap\.exists && state !== 'failed'\) return false;/);
+    const failed = loop.indexOf('await failSend(db, SURVEY_CAMPAIGN, r.uid,');
+    const sent = loop.indexOf('await completeSend(db, SURVEY_CAMPAIGN, r.uid, id)');
+    for (const [name, at] of Object.entries({ claim, provider, failed, sent })) expect(at, `${name} is not wired`).toBeGreaterThan(-1);
+    expect(claim, 'the provider is asked before the claim').toBeLessThan(provider);
+    expect(provider).toBeLessThan(failed);
+    expect(failed).toBeLessThan(sent);
     expect(loop).toMatch(/if \(!claimed\) \{[\s\S]*?continue;/);
-    expect(loop).toMatch(/collection\('email_sends'\)\.doc\(`\$\{SURVEY_CAMPAIGN\}__\$\{r\.uid\}`\)/);
-    expect(loop, 'a non-deterministic add() is back').not.toMatch(/collection\('email_sends'\)\.add\(/);
+    // No writes to the outbox behind the module's back.
+    expect(loop, 'a direct write to email_sends is back').not.toMatch(/collection\('email_sends'\)/);
+    expect(src, 'a per-send increment is back').not.toMatch(/invited: FieldValue\.increment/);
   });
 
-  test('success and refusal each write their state; the count is derived from the records, never incremented', () => {
-    expect(loop.indexOf("state: 'sent'")).toBeGreaterThan(-1);
-    expect(loop.indexOf("state: 'failed'")).toBeGreaterThan(-1);
-    expect(src, 'a per-send increment is back').not.toMatch(/invited: FieldValue\.increment/);
-    // The count is taken after the loop has finished sending and before the run
-    // reports — a count taken earlier would be a snapshot of the previous run.
+  test('the count is recorded through the outbox after the loop and before the run reports', () => {
     const loopStart = src.indexOf('for (const [index, r] of recipients.entries())');
-    const lastSent = src.lastIndexOf("state: 'sent'");
-    const counted = src.indexOf('const invited = await recordInvited(db, campaignRef);');
+    const lastSent = src.lastIndexOf('await completeSend(');
+    const counted = src.indexOf('const invited = await recordInvited(db, SURVEY_CAMPAIGN, campaignRef);');
     const reported = src.indexOf("console.log(`${sent} of");
     expect(counted).toBeGreaterThan(-1);
     expect(counted, 'the count is taken before the loop').toBeGreaterThan(loopStart);
     expect(counted, 'the count is taken before the last record reaches sent').toBeGreaterThan(lastSent);
     expect(counted, 'the count is taken after the run reported').toBeLessThan(reported);
-    // Read and written in one transaction, so two runs at once cannot write a stale count over a fresh one.
-    const record = src.slice(src.indexOf('async function recordInvited'), src.indexOf('async function loadRecipients'));
-    expect(record).toMatch(/db\.runTransaction\(async \(tx\) => \{/);
-    expect(record).toMatch(/await tx\.get\(db\.collection\('email_sends'\)\.where\('campaign', '==', SURVEY_CAMPAIGN\)\)/);
-    expect(record).toMatch(/return state === 'sent' \|\| state === undefined;/);
-    expect(record).toMatch(/tx\.set\(campaignRef, \{ invited \}, \{ merge: true \}\);/);
-    expect(src, 'the count is written outside the transaction').not.toMatch(/await campaignRef\.set\(\{ invited \}/);
+    expect(src, 'the count is written outside the outbox').not.toMatch(/campaignRef\.set\(\{ invited/);
   });
 
   test('a record in sending is skipped, reported, and never counted as sent', () => {

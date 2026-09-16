@@ -27,6 +27,7 @@ import { createUnsubscribeToken, normaliseEmail } from '../lib/unsubscribe-token
 import { createSurveyToken } from '../lib/survey/token';
 import { SURVEY_CAMPAIGN, SURVEY_OPEN_DAYS, SURVEY_SUBJECT } from '../lib/survey/definition';
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../lib/survey/invite-email';
+import { claimSend, completeSend, failSend, recordInvited } from '../lib/survey/outbox';
 import { wrapEmailDocument } from '../lib/email-layout';
 import { FIRESTORE_DB_ID, APP_BASE_URL } from '../lib/constants';
 
@@ -134,27 +135,6 @@ interface Recipient {
   uid: string;
   email: string;
   firstName: string;
-}
-
-/**
- * People the survey reached — every send record that says so, and every record
- * from before the outbox — written to the campaign document in one transaction
- * with the count that produced it. Read and write used to be two steps, and two
- * runs at once could interleave them: one counts, the other sends and writes
- * its count, the first writes its stale one over it. Inside the transaction a
- * send record that changes between the read and the write makes Firestore
- * retry the whole step, so the number written is the number that was true.
- */
-async function recordInvited(db: Firestore, campaignRef: FirebaseFirestore.DocumentReference): Promise<number> {
-  return db.runTransaction(async (tx) => {
-    const sends = await tx.get(db.collection('email_sends').where('campaign', '==', SURVEY_CAMPAIGN));
-    const invited = sends.docs.filter((d) => {
-      const state = d.data().state as string | undefined;
-      return state === 'sent' || state === undefined;
-    }).length;
-    tx.set(campaignRef, { invited }, { merge: true });
-    return invited;
-  });
 }
 
 async function loadRecipients(db: Firestore) {
@@ -333,19 +313,9 @@ async function main() {
     // either had written, both wrote `sending`, both sent. The transaction
     // reads the record and writes it in one step, so the second process
     // finds the claim and skips.
-    const sendRef = db.collection('email_sends').doc(`${SURVEY_CAMPAIGN}__${r.uid}`);
+    // (lib/survey/outbox.ts holds the transaction; tests/survey-outbox.spec.ts runs it against the emulator.)
     if (!ONLY) {
-      const claimed = await db.runTransaction(async (tx) => {
-        const snap = await tx.get(sendRef);
-        const state = snap.exists ? (snap.data()?.state as string | undefined) : undefined;
-        if (snap.exists && state !== 'failed') return false;
-        tx.set(
-          sendRef,
-          { campaign: SURVEY_CAMPAIGN, email: r.email, uid: r.uid, state: 'sending', startedAt: FieldValue.serverTimestamp() },
-          { merge: true },
-        );
-        return true;
-      });
+      const claimed = await claimSend(db, SURVEY_CAMPAIGN, r);
       if (!claimed) {
         console.log(`  claimed by another run: ${LOCAL ? r.email : `#${index + 1}`} — skipped`);
         continue;
@@ -379,7 +349,7 @@ async function main() {
       failed++;
       // A refusal is final for this run and the record says so, which is what
       // makes the next run try this person again.
-      if (!ONLY) await sendRef.set({ state: 'failed', detail: maskAddresses(result.detail).slice(0, 500), failedAt: FieldValue.serverTimestamp() }, { merge: true });
+      if (!ONLY) await failSend(db, SURVEY_CAMPAIGN, r.uid, maskAddresses(result.detail));
       console.error(
         LOCAL ? `  FAILED ${r.email}: ${result.detail}` : `  FAILED #${index + 1}: ${maskAddresses(result.detail)}`,
       );
@@ -387,16 +357,14 @@ async function main() {
     }
     const { id } = result;
 
-    if (!ONLY) {
-      await sendRef.set({ state: 'sent', providerId: id, sentAt: FieldValue.serverTimestamp() }, { merge: true });
-    }
+    if (!ONLY) await completeSend(db, SURVEY_CAMPAIGN, r.uid, id);
 
     sent++;
     console.log(LOCAL ? `  sent ${r.email} (${id})` : `  sent #${index + 1} (${id})`);
   }
 
   if (!ONLY) {
-    const invited = await recordInvited(db, campaignRef);
+    const invited = await recordInvited(db, SURVEY_CAMPAIGN, campaignRef);
     console.log(`invited (from send records): ${invited}`);
   }
 

@@ -138,22 +138,33 @@ export function buildBoardDeck(input: {
   // not name its object, so no object count can be derived from findings; the
   // deck reports what it has: findings by level.
 
+  // With no findings there is no capability to state either: the title, the
+  // bullets and the "zero manual rewrites" note all read as a clean bill, and
+  // slide 1 has just said there is no verdict (QA 30215a402132).
+  const nothingEstablished = findings.length === 0;
   const slide2: SlideData = {
-    title: 'Fully Supported Capabilities',
+    title: nothingEstablished ? 'Capabilities — Not Determined' : 'Fully Supported Capabilities',
     type: 'metrics',
-    subtitle: 'High-confidence automated Clean Core migrations',
+    subtitle: nothingEstablished ? 'No findings were detected; coverage is not established' : 'High-confidence automated Clean Core migrations',
     metrics: [
       { label: 'Coverage Estimate', value: measured(project.coverageEstimate?.percentage, (v) => `${v}%`), sub: 'Fully mapped constructs' },
       { label: 'Clean Core Score', value: measured(project.cleanCoreScore, (v) => `${v}/100`), sub: 'Out of 100 maximum' },
       { label: 'Findings by Level', value: findings.length ? `${counts.fully} · ${counts.partial} · ${counts.notSupported}` : 'none detected', sub: findings.length ? 'fully · partial · not supported' : 'coverage not established' }
     ],
-    content: [
-      'Direct SELECT mappings resolved to released CDS views / APIs.',
-      'Static CALL FUNCTION replaced with equivalent Cloud SDK actions.',
-      'Simple wrapper classes fully decomposed into target modern framework architecture.',
-      'ABAP OO inheritance chains fully resolved to cloud-compatible types.'
-    ],
-    speakerNotes: 'These metrics show the automated conversion confidence. These parts of the code require zero manual code rewrites or custom logic redesigns.'
+    content: nothingEstablished
+      ? [
+          'No capability can be stated: the static analysis returned no findings, which is what a trivial program and a failed detector have in common.',
+          'Establish coverage — analyse the complete source, check the delivery page for a detector error — before this slide is used.',
+        ]
+      : [
+          'Direct SELECT mappings resolved to released CDS views / APIs.',
+          'Static CALL FUNCTION replaced with equivalent Cloud SDK actions.',
+          'Simple wrapper classes fully decomposed into target modern framework architecture.',
+          'ABAP OO inheritance chains fully resolved to cloud-compatible types.',
+        ],
+    speakerNotes: nothingEstablished
+      ? 'Nothing to present here: no findings, no coverage, no capability statement.'
+      : 'These metrics show the automated conversion confidence. These parts of the code require zero manual code rewrites or custom logic redesigns.'
   };
 
   // Slide 3: Where an Expert Must Step In (Partial Support) (matrix slide)
@@ -269,15 +280,15 @@ export function buildBoardDeck(input: {
     subtitle: 'What the analysis measured — no savings are estimated',
     metrics: [
       { label: 'Complexity Score', value: measured(complexity, (v) => `${v}/100`), sub: `Criticality: ${measured(criticality, (v) => `${v}/100`)}` },
-      { label: 'Needs Hand Work', value: `${counts.notSupported}`, sub: 'Constructs no generator can transform' },
-      { label: 'Needs Review', value: `${counts.partial}`, sub: 'Transformable, architect decides' }
+      { label: 'Needs Hand Work', value: nothingEstablished ? 'not determined' : `${counts.notSupported}`, sub: nothingEstablished ? 'no findings — coverage not established' : 'Constructs no generator can transform' },
+      { label: 'Needs Review', value: nothingEstablished ? 'not determined' : `${counts.partial}`, sub: nothingEstablished ? 'no findings — coverage not established' : 'Transformable, architect decides' }
     ],
     content: [
       `**Refactoring Blast Radius**: **${blastRadius}** based on external coupling and nesting depths.`,
       `**Migration Sequence**: Standardize custom databases first, followed by method signatures, and then UI integration.`,
       `**Effort and cost**: not estimated here. This deck reports what the engine measured; converting that into person-days or euros needs your own rates and your own delivery model.`
     ],
-    speakerNotes: `Complexity is ${measured(complexity, (v) => `${v}/100`)} and criticality ${measured(criticality, (v) => `${v}/100`)}. ${counts.notSupported} construct(s) cannot be transformed automatically and ${counts.partial} need an architect decision. This deck deliberately carries no savings estimate — the figures it would take are not ours to invent.`
+    speakerNotes: `Complexity is ${measured(complexity, (v) => `${v}/100`)} and criticality ${measured(criticality, (v) => `${v}/100`)}. ${nothingEstablished ? 'No findings were detected, so nothing can be said about hand work or review needs.' : `${counts.notSupported} construct(s) cannot be transformed automatically and ${counts.partial} need an architect decision.`} This deck deliberately carries no savings estimate — the figures it would take are not ours to invent.`
   };
 
   // Slide 6: Trust & Security Boundaries (bullets slide)
