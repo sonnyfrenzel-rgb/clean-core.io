@@ -29,6 +29,8 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { saveAs } from '@/lib/fileSaver';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
+import NotGenerated from '@/components/NotGenerated';
+import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import StaleNotice from '@/components/StaleNotice';
@@ -64,6 +66,8 @@ export default function TestingSandboxPage() {
   const { projectId } = useParams();
   const router = useRouter();
   const { profile } = useUserProfile();
+  /** Roadmap 1.2 — this stage calls a model, so it has a switch and it can be keyless. */
+  const modelAvailability = useModelAvailability();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -1572,7 +1576,22 @@ export default function TestingSandboxPage() {
           </div>
           
           <div className="p-4 md:p-6 flex-grow overflow-auto">
-            {testCases.length === 0 ? (
+            {testCases.length === 0 && !modelAvailability.enabled('testing') ? (
+              /* Roadmap 1.2 / V25-A12 — "Generate Your Test Suite" over a button
+                 the server refuses tells the reader nothing about why. */
+              <div className="h-full flex items-center justify-center px-4 py-8">
+                <NotGenerated
+                  what="Test suite"
+                  absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
+                  stage="testing"
+                  hint={
+                    modelAvailability.keyAvailable
+                      ? 'Turn the testing stage back on in Settings to generate it.'
+                      : 'Add your own Gemini API key in Settings to generate it.'
+                  }
+                />
+              </div>
+            ) : testCases.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8 bg-[#f8f9ff]/50 rounded-2xl border-2 border-dashed border-slate-200 max-w-md mx-auto my-auto min-h-[300px]">
                 <div className="bg-[#006b2c]/10 p-4 rounded-2xl text-[#006b2c] mb-4 animate-pulse">
                   <ListChecks className="w-10 h-10 md:w-12 md:h-12" />

@@ -17,6 +17,8 @@ import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGemini } from '@/lib/gemini';
 import type { Project, DesignData } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useModelAvailability } from '@/hooks/useModelAvailability';
+import NotGenerated from '@/components/NotGenerated';
 import { saveAs } from '@/lib/fileSaver';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import ArchitectSignOff from '@/components/ArchitectSignOff';
@@ -128,6 +130,8 @@ const prepareAnalysisContext = (analysis: string | object): string => {
 export default function DesignPage() {
   const { projectId } = useParams();
   const { profile } = useUserProfile();
+  /** Roadmap 1.2 — this stage calls a model, so it has a switch and it can be keyless. */
+  const modelAvailability = useModelAvailability();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [design, setDesign] = useState('');
@@ -304,7 +308,7 @@ ${prepareAnalysisContext(analysis)}`;
       console.log('[Design] Generating solution design for:', projectRef.current?.name);
       console.log('[Design] Analysis type:', typeof analysis, '| length:', typeof analysis === 'string' ? analysis.length : JSON.stringify(analysis).length);
 
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true);
+      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, 'design');
       
       console.log('[Design] Gemini response received, length:', responseText?.length);
         
@@ -338,7 +342,7 @@ ${prepareAnalysisContext(analysis)}`;
 Solution Design Context:
 ${responseText.substring(0, 4000)}`;
 
-        const nfrResponse = await callGemini(nfrPrompt, 'gemini-3-flash-preview', true);
+        const nfrResponse = await callGemini(nfrPrompt, 'gemini-3-flash-preview', true, 'design');
         if (nfrResponse) {
           try {
             const cleaned = nfrResponse.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
@@ -957,6 +961,21 @@ ${responseText.substring(0, 4000)}`;
         <div className="p-6 md:p-12 bg-[#FDFDFD]">
           {design ? (
             renderDesignContent()
+          ) : !modelAvailability.enabled('design') ? (
+            /* Roadmap 1.2 / V25-A12 — a button that can only fail is worse than
+               no button. The stage says which of the two reasons applies and
+               what would change it, instead of offering a generation that the
+               server will refuse. */
+            <NotGenerated
+              what="Solution design blueprint"
+              absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
+              stage="design"
+              hint={
+                modelAvailability.keyAvailable
+                  ? 'Turn the design stage back on in Settings to generate it.'
+                  : 'Add your own Gemini API key in Settings to generate it. The signed analysis evidence needs no key and is unaffected.'
+              }
+            />
           ) : (
             <div className="text-center py-12">
               <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />

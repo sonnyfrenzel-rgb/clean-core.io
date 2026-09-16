@@ -87,7 +87,7 @@ export const useTestGeneration = (projectId: string, project: Project | null, se
         - coverageEstimate: { percentage: number, explanation: string, missingCoverage: string }.
         `;
       
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true);
+      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, 'testing');
       
       const result = JSON.parse(responseText || '{}');
       const generatedTestCases: TestCase[] = result.testCases || [];

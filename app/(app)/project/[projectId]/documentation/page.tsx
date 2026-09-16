@@ -10,6 +10,8 @@ import Stepper from '@/components/Stepper';
 import NavigationButtons from '@/components/NavigationButtons';
 import { Download, ArrowLeft, ArrowRight, RefreshCw, AlertCircle, FileCode2, Briefcase, Target, Users, Settings, Activity, Layers, Cpu, Database, Box, Lock, CheckCircle2, X, Rocket } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useModelAvailability } from '@/hooks/useModelAvailability';
+import NotGenerated from '@/components/NotGenerated';
 import { motion, AnimatePresence } from 'motion/react';
 import dynamic from 'next/dynamic';
 import { clsx } from 'clsx';
@@ -252,7 +254,9 @@ export default function DocumentationPage() {
   const { projectId } = useParams();
   const router = useRouter();
   const { profile } = useUserProfile();
-  
+  /** Roadmap 1.2 — this stage calls a model, so it has a switch and it can be keyless. */
+  const modelAvailability = useModelAvailability();
+
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -382,7 +386,7 @@ ${context}`;
 
       console.log('Generating documentation for project:', project.name);
 
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', false);
+      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', false, 'documentation');
       
       if (!responseText) {
         throw new Error('Gemini returned an empty response.');
@@ -503,7 +507,7 @@ Structure the JSON exactly like this:
 }`;
 
       console.log('Generating business process compliance for project:', project.name);
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', false);
+      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', false, 'documentation');
       
       if (!responseText) {
         throw new Error('Gemini returned an empty response.');
@@ -1310,13 +1314,32 @@ Structure the JSON exactly like this:
         </div>
       ) : (
         <div className="p-12 md:p-20 text-center bg-gray-50/50 rounded-[2.5rem] md:rounded-[3rem] border-2 border-dashed border-gray-200 mb-12">
-          <p className="text-gray-500 mb-6 font-medium">No enterprise specifications yet.</p>
-          <button 
-            onClick={generateDocumentation}
-            className="bg-[#0b1c30] text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#006b2c] transition-all shadow-xl hover:shadow-green-600/20"
-          >
-            Start Architectural Mapping
-          </button>
+          {/* Roadmap 1.2 / V25-A12 — an invitation to start something the
+              server would refuse is not an empty state, it is a dead end. When
+              this stage cannot call a model, the reason and the way back stand
+              here instead of the button. */}
+          {!modelAvailability.enabled('documentation') ? (
+            <NotGenerated
+              what="Documentation and business blueprint"
+              absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
+              stage="documentation"
+              hint={
+                modelAvailability.keyAvailable
+                  ? 'Turn the documentation stage back on in Settings to generate it.'
+                  : 'Add your own Gemini API key in Settings to generate it.'
+              }
+            />
+          ) : (
+            <>
+              <p className="text-gray-500 mb-6 font-medium">No enterprise specifications yet.</p>
+              <button
+                onClick={generateDocumentation}
+                className="bg-[#0b1c30] text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#006b2c] transition-all shadow-xl hover:shadow-green-600/20"
+              >
+                Start Architectural Mapping
+              </button>
+            </>
+          )}
         </div>
       )}
 

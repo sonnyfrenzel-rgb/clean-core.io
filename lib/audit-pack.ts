@@ -105,6 +105,30 @@ function mdCell(value: unknown): string {
  * `07-user-attested.md`, which the manifest names but the signature does not
  * cover, and the signed files say so where the statement used to be.
  */
+/**
+ * What the pack says about the model — roadmap 1.2.
+ *
+ * `mc?.provider || 'google-gemini'` and `mc?.model || '—'` were the old
+ * answers, and both are claims nobody checked: the first named a provider for
+ * a run that may never have called one, and the second put a dash in a table
+ * cell, which reads as a measured blank rather than as "there was none". A run
+ * whose `modelParticipation` is `none` says so in words; a run from before the
+ * field existed says that nothing was recorded.
+ */
+type ModelCard = NonNullable<NonNullable<Project['auditMetadata']>['modelCard']>;
+const NO_MODEL_TOOK_PART = 'None — deterministic evidence only';
+const NOT_RECORDED = 'Not recorded';
+
+function modelProviderOf(mc: ModelCard | undefined): string {
+  if (mc?.provider) return mc.provider;
+  return mc?.modelParticipation === 'none' ? NO_MODEL_TOOK_PART : NOT_RECORDED;
+}
+
+function modelIdOf(mc: ModelCard | undefined): string {
+  if (mc?.model) return mc.model;
+  return mc?.modelParticipation === 'none' ? NO_MODEL_TOOK_PART : NOT_RECORDED;
+}
+
 const SEE_ATTESTED = `recorded in ${USER_ATTESTED_FILE} — the account holder's own statement, not covered by the signature`;
 
 export function generateExecutiveSummary(project: Project): string {
@@ -149,8 +173,8 @@ export function generateExecutiveSummary(project: Project): string {
 |---|---|
 | Platform Version | ${mdCell(mc?.engineVersion || APP_VERSION)} |
 | SAP API Catalog | ${mdCell((mc as any)?.catalogVersion || '2024.FPS02')} |
-| Model Provider | ${mdCell(mc?.provider || 'google-gemini')} |
-| Model | ${mdCell(mc?.model || '—')} |
+| Model Provider | ${mdCell(modelProviderOf(mc))} |
+| Model | ${mdCell(modelIdOf(mc))} |
 | BYOK Used | ${mc?.byokUsed ? 'Yes' : 'No'} |
 | Analysis Timestamp | ${mdCell(mc?.analysisTimestamp || '—')} |
 | Design Timestamp | ${mdCell(mc?.designTimestamp || '—')} |
@@ -256,8 +280,8 @@ export function generateExecutiveSummaryDoc(project: Project): string {
     </thead>
     <tbody>
       <tr><td>Platform Version</td><td>${escapeHtml(mc?.engineVersion || APP_VERSION)}</td></tr>
-      <tr><td>Model Provider</td><td>${escapeHtml(mc?.provider || 'google-gemini')}</td></tr>
-      <tr><td>Model</td><td>${escapeHtml(mc?.model || '—')}</td></tr>
+      <tr><td>Model Provider</td><td>${escapeHtml(modelProviderOf(mc))}</td></tr>
+      <tr><td>Model</td><td>${escapeHtml(modelIdOf(mc))}</td></tr>
       <tr><td>BYOK Used</td><td>${mc?.byokUsed ? 'Yes' : 'No'}</td></tr>
       <tr><td>Analysis Timestamp</td><td>${escapeHtml(mc?.analysisTimestamp || '—')}</td></tr>
       <tr><td>Design Timestamp</td><td>${escapeHtml(mc?.designTimestamp || '—')}</td></tr>
@@ -409,8 +433,8 @@ export function generateModelCard(project: Project): string {
 
 | Field | Value |
 |---|---|
-| Model Provider | ${mc?.provider || 'google-gemini'} |
-| Model Identifier | ${mc?.model || '—'} |
+| Model Provider | ${modelProviderOf(mc)} |
+| Model Identifier | ${modelIdOf(mc)} |
 | Platform Version | ${mc?.engineVersion || APP_VERSION} |
 | SAP API Catalog | ${(mc as any)?.catalogVersion || '2024.FPS02'} |
 | BYOK (Bring Your Own Key) | ${mc?.byokUsed ? 'Yes — user-provided API key' : 'No — platform key'} |
@@ -525,7 +549,7 @@ model-generated drafts and user-attested inputs.
 | Data-coupling findings | server-computed |
 | Target-architecture route (RAP/CAP/…) | server-computed (deterministic router) |
 | Router rationale in 02 / 06 | server-computed (deterministic router) |
-| AI narrative (${mdCell(mc?.model || 'Gemini')}) | model-generated — not in this pack; referenced by hash on the run |
+| AI narrative (${mdCell(modelIdOf(mc))}) | model-generated — not in this pack; referenced by hash on the run |
 | Project name, target architecture, architect sign-off / approver / override reason | user-attested — in ${USER_ATTESTED_FILE}, unsigned |
 | HMAC / Ed25519 signature | server-computed integrity seal over the manifest hash |
 

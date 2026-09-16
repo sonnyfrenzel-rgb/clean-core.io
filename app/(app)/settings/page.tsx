@@ -30,6 +30,7 @@ import {
 } from 'firebase/auth';
 import { motion, AnimatePresence } from 'motion/react';
 import { callGemini } from '@/lib/gemini';
+import ModelStagesCard from '@/components/ModelStagesCard';
 import { clsx } from 'clsx';
 
 export default function SettingsPage() {
@@ -1465,6 +1466,10 @@ export default function SettingsPage() {
               </form>
             </div>
           )}
+
+          {/* Roadmap 1.2 — the five model stages, one switch each. Next to the
+              key it spends, because the two questions are asked together. */}
+          <ModelStagesCard />
 
           {isPilotTier && (
             <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-gray-100 relative overflow-hidden transition-all duration-300 hover:shadow-md">

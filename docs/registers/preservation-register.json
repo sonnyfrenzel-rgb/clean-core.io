@@ -95,6 +95,7 @@
         "rulesetVersion",
         "sapApiCatalogVersion",
         "model",
+        "modelParticipation",
         "aiNarrativeMeta",
         "extensibilityRoute",
         "cleanCoreScore",
@@ -114,7 +115,7 @@
         "runHash",
         "signature"
       ],
-      "note": "`analysis` is the model narrative. Only its SHA-256 goes into the signed payload, as aiNarrativeMeta.responseHash with evidentiary: false."
+      "note": "`analysis` is the model narrative. Only its SHA-256 goes into the signed payload, as aiNarrativeMeta.responseHash with evidentiary: false. Roadmap 1.2: a run may have no narrative at all — `modelParticipation` is 'none', `model.provider`, `model.modelId`, `aiNarrativeMeta.provider`, `aiNarrativeMeta.modelId` and `aiNarrativeMeta.responseHash` are null, the input manifest records `model:narrative` at revision 'none', and the run is signed over the deterministic evidence exactly as any other."
     },
     "projectFieldsWrittenByRunsCreate": [
       "activeRunId",
@@ -422,8 +423,12 @@
       },
       "errors": [
         {
-          "when": "the model call fails or returns unparseable JSON",
-          "does": "the worklist falls back to the deterministic findings alone and the run is still created; a thrown error sets the page error banner."
+          "when": "the model call fails, is refused, or returns unparseable JSON",
+          "does": "roadmap 1.2 — the narrative is dropped, the worklist falls back to the deterministic findings alone, and the run is created and signed with modelParticipation 'none'. No error banner: nothing the run depends on has failed."
+        },
+        {
+          "when": "no Gemini key is available for the account, or the analyze stage is switched off in users/{uid}.modelStages",
+          "does": "roadmap 1.2 — the model is not called at all. The page says so before the click (data-zero-llm-notice) and afterwards renders the evidence-only report with 'Not generated' where the narrative would be (V25-A12)."
         },
         {
           "when": "POST /api/runs/create is not ok",
