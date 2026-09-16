@@ -191,17 +191,21 @@ export default function DeliveryPage() {
     return () => { isMounted = false; };
   }, [projectId]);
 
-  const findings = useMemo(() => {
-    if (!project || !project.legacyCode) return [];
+  // A detector that threw used to hand the deck an empty list, and the deck
+  // read an empty list as a clean bill (UX-002). The deck now reads it as "not
+  // determined"; the page says why, so the reader knows which of the two it was.
+  const detection = useMemo<{ findings: ReturnType<typeof detectFindings>; error: string | null }>(() => {
+    if (!project || !project.legacyCode) return { findings: [], error: null };
     const abapSources = [{ file: 'main.abap', content: project.legacyCode }];
     try {
       const realModel = buildClassModel(abapSources);
-      return detectFindings(realModel, abapSources);
+      return { findings: detectFindings(realModel, abapSources), error: null };
     } catch (e) {
       console.error('Error detecting findings:', e);
-      return [];
+      return { findings: [], error: e instanceof Error ? e.message : String(e) };
     }
   }, [project?.legacyCode]);
+  const findings = detection.findings;
 
   const deck = useMemo(() => {
     if (!project) return null;
@@ -833,6 +837,12 @@ jobs:
               <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1">Interactive Strategic Map</p>
             </div>
           </div>
+          {detection.error && (
+            <div role="alert" className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+              <span className="font-bold">The finding detector failed on this source</span> — the deck shows no verdict, not a clean one.
+              <span className="block mt-1 font-mono text-xs text-amber-800">{detection.error}</span>
+            </div>
+          )}
           <div className="bg-gray-50 rounded-[2rem] md:rounded-[3rem] p-4 md:p-12 border border-gray-100 shadow-inner flex justify-center">
             <PresentationViewer data={deck} />
           </div>

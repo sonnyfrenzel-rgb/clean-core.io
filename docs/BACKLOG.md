@@ -26,7 +26,8 @@ Beraterläufen ok, die CISO-*Antwort* selbst kein gültiges JSON. Ob der CISO Pr
 `cisoOutputTokens: 40_000` (inklusive Reasoning, `cisoEffort: 'high'`, bis 300.000 Zeichen Eingabe) mitten im
 JSON abgeschnitten wurde, konnte die eine Fehlerzeile nicht sagen — `openrouter.mjs` nennt jetzt bei ungültigem
 Inhalt `finish_reason` und die Token-Zahlen (nie den Inhalt). Die Budget-Entscheidung — mehr Ausgabe-Tokens
-für den CISO oder Effort `medium` — ist Sonnys; bis dahin hat v2.10.7 keinen Sicherheitsbericht. `refute.mjs` findet jetzt auch Vollprüfungen (vorher
+für den CISO oder Effort `medium` — ist Sonnys: **`medium`** (16.09.2026, `scripts/security/lib/team.mjs`);
+der nächste Release-Audit zeigt, ob es reicht. v2.10.7 hat keinen Sicherheitsbericht. `refute.mjs` findet jetzt auch Vollprüfungen (vorher
 konnte kein Befund einer Vollprüfung widerlegt werden). Der Bot-Branch `chore/sync-cloudification-repo`
 ist überholt — `dev` trägt denselben `sourceSha256` vom 15.09. —, löschen darf nur Sonny. `sync-catalog.yml`
 steht seit dem 07.09. rot, weil der PR-Schritt bis zum 14.09. an der Repo-Einstellung scheiterte; seit dem
@@ -61,6 +62,16 @@ Dockerfile mit Layer-Cache statt Buildpack, Phase 0 „daneben". Modell und Effo
 Standard-Fit-Tabellen an jedem Element mit Standardkandidat direkt die Anpassungsoptionen, die je
 Betriebsmodell (Public Edition, Private Edition/RISE) näher an Fit-to-Standard führen — neuer Schritt **7.8**,
 deterministisch aus Katalog, Level und Scope Item, mit Evidenzstufe und *Not determined* statt erfundenem Weg.
+
+**0.8 gebaut (16.09.2026, `dev`, nach 0.12 auf Sonnys „fahre fort"):** das Board-Deck besiegelt null Befunde nicht
+mehr als „Unconditional Go-Live Approved / LOW RISK" (UX-002, critical), sondern sagt „not determined" — ein
+triviales Programm und ein gestürzter Detektor kommen beide als leere Liste an, und die Delivery-Seite zeigt den
+Fehler jetzt; kein „Approved" mehr aus dem statischen Roll-up, der Sign-off wird gemeldet, wie er ist; „Resolved
+Objects" war Objektzahl minus Befundzahl und heißt jetzt „Findings by Level". Test dreht das Alte um.
+
+**QA-Runde 3 zu 0.12 (`79e7577`, Review-first live: Befunde nach 2 min):** drei Mediums, alle bestätigt und behoben —
+`invited` wird in derselben Transaktion gezählt und geschrieben, der Route-Test leitet seine Verbotsliste aus dem
+ganzen Fixture ab, der Survey-Guard prüft wieder die Reihenfolge. CISO-Effort `medium` (Entscheidung Sonny).
 
 **Offen für Sonny:** den überholten Bot-Branch löschen (`git push origin --delete chore/sync-cloudification-repo`);
 `main` nach einer sauberen QA-Runde; die Survey-Workflows erst danach wieder einschalten; die

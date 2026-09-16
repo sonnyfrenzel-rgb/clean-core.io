@@ -1,6 +1,6 @@
 import type { Project } from '@/lib/types';
 import type { SupportFinding } from '@/lib/abap/class-model';
-import { rollupLevel } from '@/lib/abap/support-matrix';
+import { rollupLevel, type SupportLevel } from '@/lib/abap/support-matrix';
 import { APP_VERSION } from '@/lib/version';
 import type { PresentationData, SlideData } from '@/components/PresentationViewer';
 
@@ -58,27 +58,52 @@ export function buildBoardDeck(input: {
 }): PresentationData {
   const { project, findings, runHistory } = input;
   
-  // Calculate rollup level
-  const levels = findings.map(f => f.level);
-  const overallLevel = findings.length > 0 ? rollupLevel(levels) : 'fully';
-  
-  // Determine overall status, recommendation, and risk rating
-  let recommendation = '';
-  let riskRating = '';
-  let colorStatus = 'success';
-  
-  if (overallLevel === 'not-supported') {
-    recommendation = 'Core Redesign Required (Rejection / Hold)';
+  /**
+   * A verdict needs findings to be a verdict about.
+   *
+   * Zero findings used to roll up to 'fully' — the best level there is — and
+   * the deck went on to print "Unconditional Go-Live Approved / LOW RISK" for
+   * a parse that had returned nothing (UX-002, critical). The delivery page
+   * hands this function an empty list both for genuinely trivial code and for a
+   * detector that threw, and nothing here can tell the two apart; so an empty
+   * list is *not determined*: no level, no risk rating, no recommendation.
+   *
+   * And no "approved" anywhere. The deck's own wording granted a go-live —
+   * conditional or unconditional — from a static roll-up alone, with the
+   * architect's sign-off never read (QA 4a4321a45f3c). A roll-up says what
+   * the code is; whether it may go live is the architect's, and the deck
+   * reports that sign-off as what it is: recorded, self-attested, or absent.
+   */
+  const overallLevel: SupportLevel | null = findings.length > 0 ? rollupLevel(findings.map((f) => f.level)) : null;
+  const counts = {
+    fully: findings.filter((f) => f.level === 'fully').length,
+    partial: findings.filter((f) => f.level === 'partial').length,
+    notSupported: findings.filter((f) => f.level === 'not-supported').length,
+  };
+  const signOff = project.approvedByArchitect
+    ? `recorded — self-attested${project.approvedBy ? ` by ${project.approvedBy}` : ''}, not an organisational approval`
+    : 'not recorded';
+
+  let recommendation: string;
+  let riskRating: string;
+  let requiredActions: string;
+
+  if (overallLevel === null) {
+    recommendation = 'No verdict — no findings were detected, so coverage is not established';
+    riskRating = 'NOT DETERMINED';
+    requiredActions = 'Establish coverage first: analyse the complete source, and check the delivery page for a detector error.';
+  } else if (overallLevel === 'not-supported') {
+    recommendation = 'Core Redesign Required before release';
     riskRating = 'HIGH RISK';
-    colorStatus = 'danger';
+    requiredActions = 'Block deployment, redesign unsupported structures.';
   } else if (overallLevel === 'partial') {
-    recommendation = 'Conditional Go-Live Approved';
+    recommendation = 'Release only with architect sign-off';
     riskRating = 'MEDIUM RISK';
-    colorStatus = 'warning';
+    requiredActions = `Lead Architect sign-off before transport (sign-off ${signOff}).`;
   } else {
-    recommendation = 'Unconditional Go-Live Approved';
+    recommendation = 'No blocking findings — release decision open';
     riskRating = 'LOW RISK';
-    colorStatus = 'success';
+    requiredActions = `No blocking finding among ${findings.length}; the release decision is the architect's (sign-off ${signOff}).`;
   }
 
   /**
@@ -98,16 +123,20 @@ export function buildBoardDeck(input: {
     title: 'Clean-Core Transformation Briefing',
     type: 'split',
     subtitle: `Recommendation: ${recommendation}`,
-    leftContent: `**Decision summary:**\n\n• **Target Architecture**: Clean Core Compliance tier using ${project.extensibilityRoute || 'In-App RAP / Side-by-Side CAP'}.\n• **Overall Readiness**: Clean Core Score is **${measured(project.cleanCoreScore, (v) => `${v}/100`)}**.\n• **Rollup Risk Rating**: **${riskRating}** (${overallLevel.toUpperCase()}).\n• **Required Actions**: ${overallLevel === 'not-supported' ? 'Block deployment, redesign unsupported structures.' : overallLevel === 'partial' ? 'Require Lead Architect sign-off before transport.' : 'Proceed to release queue.'}`,
-    rightContent: `**Governance Status:**\n\n• **Risk Assessment**: ${riskRating}\n• **Evidence Level**: Evidentiary Board Presentation derived from the deterministic evidence engine\n• **Fingerprint Identity**: ${project.auditMetadata?.inputFingerprint?.sha256?.substring(0, 12) || 'N/A'}\n• **Model Registry**: ${project.auditMetadata?.modelCard?.model || `Clean-Core Compiler ${APP_VERSION}`}`,
-    speakerNotes: `Decision-first board recommendation. This project is rated as ${riskRating} due to worst-case rollup of ${overallLevel} compliance. The target architecture is ${project.extensibilityRoute || 'standard Cloud SDK'}.`
+    leftContent: `**Decision summary:**\n\n• **Target Architecture**: Clean Core Compliance tier using ${project.extensibilityRoute || 'In-App RAP / Side-by-Side CAP'}.\n• **Overall Readiness**: Clean Core Score is **${measured(project.cleanCoreScore, (v) => `${v}/100`)}**.\n• **Rollup Risk Rating**: **${riskRating}** (${overallLevel ? overallLevel.toUpperCase() : 'no findings to roll up'}).\n• **Required Actions**: ${requiredActions}`,
+    rightContent: `**Governance Status:**\n\n• **Risk Assessment**: ${riskRating}\n• **Architect Sign-Off**: ${signOff}\n• **Evidence Level**: Evidentiary Board Presentation derived from the deterministic evidence engine\n• **Fingerprint Identity**: ${project.auditMetadata?.inputFingerprint?.sha256?.substring(0, 12) || 'N/A'}\n• **Model Registry**: ${project.auditMetadata?.modelCard?.model || `Clean-Core Compiler ${APP_VERSION}`}`,
+    speakerNotes: overallLevel
+      ? `Decision-first board briefing. This project is rated as ${riskRating} due to worst-case rollup of ${overallLevel} compliance across ${findings.length} finding(s). The target architecture is ${project.extensibilityRoute || 'standard Cloud SDK'}. Architect sign-off ${signOff}.`
+      : 'No verdict: the static analysis returned no findings, which is what a trivial program and a failed detector have in common. Establish coverage before this briefing is used for a decision.'
   };
 
   // Slide 2: What We Can Do (Fully Supported) (metrics slide)
-  const inventoryCount = project.codeInventory?.length ?? 0;
-  const partialCount = findings.filter(f => f.level === 'partial').length;
-  const notSupportedCount = findings.filter(f => f.level === 'not-supported').length;
-  const fullySupportedCount = Math.max(0, inventoryCount - partialCount - notSupportedCount);
+  //
+  // "Resolved Objects" used to be the object count minus the number of partial
+  // and not-supported *findings* — two findings on one object erased another,
+  // fully supported object from the figure (QA a71be0146d3c). A finding does
+  // not name its object, so no object count can be derived from findings; the
+  // deck reports what it has: findings by level.
 
   const slide2: SlideData = {
     title: 'Fully Supported Capabilities',
@@ -116,7 +145,7 @@ export function buildBoardDeck(input: {
     metrics: [
       { label: 'Coverage Estimate', value: measured(project.coverageEstimate?.percentage, (v) => `${v}%`), sub: 'Fully mapped constructs' },
       { label: 'Clean Core Score', value: measured(project.cleanCoreScore, (v) => `${v}/100`), sub: 'Out of 100 maximum' },
-      { label: 'Resolved Objects', value: `${fullySupportedCount} / ${inventoryCount || 1}`, sub: 'Static decomposition success' }
+      { label: 'Findings by Level', value: findings.length ? `${counts.fully} · ${counts.partial} · ${counts.notSupported}` : 'none detected', sub: findings.length ? 'fully · partial · not supported' : 'coverage not established' }
     ],
     content: [
       'Direct SELECT mappings resolved to released CDS views / APIs.',
@@ -154,14 +183,13 @@ export function buildBoardDeck(input: {
   }));
 
   if (partialRows.length === 0) {
-    partialRows.push({
-      col1: 'No partial constructs detected',
-      col2: '—',
-      col3: 'All analyzed objects are fully compliant.',
-      col4: '✅ Fully Supported',
-      status: 'success',
-      url: undefined
-    });
+    // An empty row is not a clean bill: with no findings at all, nothing was
+    // established; with findings and none partial, that is what is said.
+    partialRows.push(
+      findings.length === 0
+        ? { col1: 'No findings detected', col2: '—', col3: 'Not a compliance statement — coverage is not established.', col4: '— Not determined', status: 'info', url: undefined }
+        : { col1: 'No partial constructs detected', col2: '—', col3: `None of the ${findings.length} finding(s) is partial.`, col4: '✅ None partial', status: 'success', url: undefined },
+    );
   }
 
   const slide3: SlideData = {
@@ -199,14 +227,11 @@ export function buildBoardDeck(input: {
   }));
 
   if (notSupportedRows.length === 0) {
-    notSupportedRows.push({
-      col1: 'No unsupported constructs detected',
-      col2: '—',
-      col3: 'Zero kernel calls, dynpros, or static legacy screen layouts found.',
-      col4: '✅ Zero Gaps',
-      status: 'success',
-      url: undefined
-    });
+    notSupportedRows.push(
+      findings.length === 0
+        ? { col1: 'No findings detected', col2: '—', col3: 'Not a compliance statement — coverage is not established.', col4: '— Not determined', status: 'info', url: undefined }
+        : { col1: 'No unsupported constructs detected', col2: '—', col3: `None of the ${findings.length} finding(s) is a kernel call, dynpro or static legacy screen layout.`, col4: '✅ Zero gaps among the findings', status: 'success', url: undefined },
+    );
   }
 
   const slide4: SlideData = {
@@ -244,15 +269,15 @@ export function buildBoardDeck(input: {
     subtitle: 'What the analysis measured — no savings are estimated',
     metrics: [
       { label: 'Complexity Score', value: measured(complexity, (v) => `${v}/100`), sub: `Criticality: ${measured(criticality, (v) => `${v}/100`)}` },
-      { label: 'Needs Hand Work', value: `${notSupportedCount}`, sub: 'Constructs no generator can transform' },
-      { label: 'Needs Review', value: `${partialCount}`, sub: 'Transformable, architect decides' }
+      { label: 'Needs Hand Work', value: `${counts.notSupported}`, sub: 'Constructs no generator can transform' },
+      { label: 'Needs Review', value: `${counts.partial}`, sub: 'Transformable, architect decides' }
     ],
     content: [
       `**Refactoring Blast Radius**: **${blastRadius}** based on external coupling and nesting depths.`,
       `**Migration Sequence**: Standardize custom databases first, followed by method signatures, and then UI integration.`,
       `**Effort and cost**: not estimated here. This deck reports what the engine measured; converting that into person-days or euros needs your own rates and your own delivery model.`
     ],
-    speakerNotes: `Complexity is ${measured(complexity, (v) => `${v}/100`)} and criticality ${measured(criticality, (v) => `${v}/100`)}. ${notSupportedCount} construct(s) cannot be transformed automatically and ${partialCount} need an architect decision. This deck deliberately carries no savings estimate — the figures it would take are not ours to invent.`
+    speakerNotes: `Complexity is ${measured(complexity, (v) => `${v}/100`)} and criticality ${measured(criticality, (v) => `${v}/100`)}. ${counts.notSupported} construct(s) cannot be transformed automatically and ${counts.partial} need an architect decision. This deck deliberately carries no savings estimate — the figures it would take are not ours to invent.`
   };
 
   // Slide 6: Trust & Security Boundaries (bullets slide)

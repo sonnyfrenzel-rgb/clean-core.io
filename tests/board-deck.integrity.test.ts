@@ -49,7 +49,7 @@ test.describe('Board Deck Integrity & Drift Verification', () => {
     expect(slide1.leftContent).toContain('Block deployment');
   });
 
-  test('should recommend Conditional Go-Live with partial-only findings', () => {
+  test('partial-only findings ask for the architect, and report the sign-off as it is', () => {
     const findings: SupportFinding[] = [
       {
         construct: 'dynamic-call',
@@ -65,18 +65,67 @@ test.describe('Board Deck Integrity & Drift Verification', () => {
     const deck = buildBoardDeck({ project: baseProject, findings });
     
     const slide1 = deck.slides[0];
-    expect(slide1.subtitle).toContain('Conditional Go-Live Approved');
+    expect(slide1.subtitle).toContain('Release only with architect sign-off');
     expect(slide1.leftContent).toContain('MEDIUM RISK');
     expect(slide1.leftContent).toContain('Lead Architect sign-off');
+    // The deck used to say "Conditional Go-Live Approved" here, an approval
+    // nobody had given: baseProject carries no sign-off, and the deck says so.
+    expect(slide1.leftContent).toContain('sign-off not recorded');
+    expect(slide1.rightContent).toContain('Architect Sign-Off**: not recorded');
+    expect(JSON.stringify(deck)).not.toMatch(/approved/i);
+
+    const signed = buildBoardDeck({ project: { ...baseProject, approvedByArchitect: true, approvedBy: 'lead@example.com' }, findings });
+    expect(signed.slides[0].rightContent).toContain('recorded — self-attested by lead@example.com, not an organisational approval');
+    expect(JSON.stringify(signed)).not.toMatch(/go-live approved|unconditional/i);
   });
 
-  test('should recommend Unconditional Go-Live with zero findings', () => {
+  test('zero findings is no verdict — not a clean bill, not a risk rating, not a recommendation', () => {
+    // A trivial program and a detector that threw both arrive here as an
+    // empty list. The deck used to seal both as "Unconditional Go-Live
+    // Approved / LOW RISK" (UX-002, critical).
     const deck = buildBoardDeck({ project: baseProject, findings: [] });
-    
+
     const slide1 = deck.slides[0];
-    expect(slide1.subtitle).toContain('Unconditional Go-Live Approved');
+    expect(slide1.subtitle).toContain('No verdict');
+    expect(slide1.leftContent).toContain('NOT DETERMINED');
+    expect(slide1.leftContent).toContain('Establish coverage first');
+    expect(slide1.leftContent).not.toContain('LOW RISK');
+    expect(slide1.speakerNotes).toContain('No verdict');
+    const text = JSON.stringify(deck);
+    expect(text).not.toMatch(/approved|proceed to release|fully compliant|zero gaps|LOW RISK/i);
+
+    // Slides 2–4 say "not established" instead of drawing a green row.
+    expect(deck.slides[1].metrics?.find((m) => m.label === 'Findings by Level')?.value).toBe('none detected');
+    for (const i of [2, 3]) {
+      const row = deck.slides[i].rows?.[0];
+      expect(row?.col1).toBe('No findings detected');
+      expect(row?.col4).toBe('— Not determined');
+      expect(row?.status).toBe('info');
+    }
+  });
+
+  test('with findings and no blocking one, the deck reports low risk and leaves the release decision open', () => {
+    const findings: SupportFinding[] = [
+      {
+        construct: 'direct-select',
+        level: 'fully',
+        title: SUPPORT_MATRIX['direct-select'].title,
+        detail: 'SELECT on VBAK',
+        recommendation: 'Map to I_SalesDocument',
+        howItWorks: howItWorksUrl('direct-select'),
+        requiresSignOff: false,
+      },
+    ];
+    const deck = buildBoardDeck({ project: baseProject, findings });
+    const slide1 = deck.slides[0];
+    expect(slide1.subtitle).toContain('No blocking findings — release decision open');
     expect(slide1.leftContent).toContain('LOW RISK');
-    expect(slide1.leftContent).toContain('Proceed to release queue');
+    expect(slide1.leftContent).toContain("the release decision is the architect's");
+    expect(JSON.stringify(deck)).not.toMatch(/approved|proceed to release queue/i);
+    // Findings by level, not an object count derived from finding counts.
+    expect(deck.slides[1].metrics?.find((m) => m.label === 'Findings by Level')?.value).toBe('1 · 0 · 0');
+    expect(JSON.stringify(deck)).not.toContain('Resolved Objects');
+    expect(deck.slides[2].rows?.[0]?.col3).toBe('None of the 1 finding(s) is partial.');
   });
 
   test('should enforce drift-free matrix specification urls matching SUPPORT_MATRIX', () => {
