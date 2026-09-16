@@ -169,12 +169,22 @@ export function analysisRunInputs(args: {
    * A zero-LLM run used to record the default model here anyway, so its
    * manifest named an input the run never had — and the manifest is inside the
    * signed payload, so the signature would have attested to it.
+   *
+   * `'unattested'` is the third case: a narrative is in the run and which model
+   * produced it was not established (no valid receipt — see
+   * `lib/model-receipt.ts`). It is not `null`, because that would say the run
+   * had no narrative input, and it is not a named model, because no model was
+   * observed. Revision `unattested`, so the one list a reader compares does not
+   * quietly turn an unchecked claim into a recorded input.
    */
-  model: { provider: string; modelId: string; byokUsed: boolean } | null;
+  model: { provider: string; modelId: string; byokUsed: boolean } | 'unattested' | null;
 }): ManifestInput[] {
-  const modelRevision = args.model
-    ? `${args.model.provider}/${args.model.modelId}${args.model.byokUsed ? '+byok' : ''}`
-    : 'none';
+  const modelRevision =
+    args.model === null
+      ? 'none'
+      : args.model === 'unattested'
+        ? 'unattested'
+        : `${args.model.provider}/${args.model.modelId}${args.model.byokUsed ? '+byok' : ''}`;
   return [
     {
       id: INPUT_IDS.source,

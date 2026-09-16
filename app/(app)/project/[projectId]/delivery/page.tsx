@@ -795,7 +795,9 @@ jobs:
                       ? `${project.auditMetadata.modelCard.model} · ${project.auditMetadata.modelCard.byokUsed ? 'BYOK' : 'Platform Key'}`
                       : project.auditMetadata?.modelCard?.modelParticipation === 'none'
                         ? 'No model — deterministic evidence only'
-                        : 'Model not recorded'}
+                        : project.auditMetadata?.modelCard?.modelParticipation === 'narrative'
+                          ? 'Narrative origin not established'
+                          : 'Model not recorded'}
                   </span>
                 </div>
               </div>

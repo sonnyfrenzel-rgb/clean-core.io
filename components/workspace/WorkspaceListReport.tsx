@@ -188,7 +188,6 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           legacyCode: project.legacyCode,
           fileName: project.auditMetadata?.inputFingerprint?.fileName || 'main.abap',
           deployment: project.s4Deployment === 'public' ? 'public' : 'private',
-          byokUsed: profile?.byokConfigured === true,
           callModel,
           signal: controller.signal,
           onStages: (stages) =>

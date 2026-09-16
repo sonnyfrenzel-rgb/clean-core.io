@@ -17,6 +17,8 @@ import {
   NO_KEY_CODE,
   STAGE_DISABLED_CODE,
 } from '@/lib/model-stages';
+import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
+import { issueModelReceipt } from '@/lib/model-receipt';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -26,7 +28,14 @@ import {
  *   { prompt: string, model?: string, jsonResponse?: boolean, customApiKey?: string }
  *
  * Returns:
- *   { text: string }
+ *   { text: string, receipt?: ModelReceipt }
+ *
+ * The receipt is this route's own record that the call happened: the account it
+ * was made for, the SHA-256 of the text returned, the model that served it,
+ * whose key paid for it and when. It is authenticated with `AUDIT_SIGNING_KEY`,
+ * which the browser never holds, and `/api/runs/create` verifies it before a
+ * signed run is allowed to name a provider and a model. See
+ * `lib/model-receipt.ts` for why each claim is in it.
  *
  * v2.3 — this route is NO LONGER the metering point. The community quota is charged
  * per *analysis run* in /api/runs/create (see `reserveRunQuota`), so one ABAP object
@@ -241,7 +250,28 @@ export async function POST(request: NextRequest) {
       return result.text;
     });
 
-    return NextResponse.json({ text });
+    // The receipt. Minted here because this is the only place that knows the
+    // call happened at all — the narrative reaches `/api/runs/create` in a
+    // request body, with nothing tying it to any model.
+    //
+    // A missing signing key does not fail the call. There is no fallback key
+    // (`lib/audit-signing-key.ts`) and there must not be one, but the text is
+    // still the caller's to use; what it loses is the attestation, and the run
+    // then records honestly that the narrative's origin was not established.
+    // Failing here instead would turn a misconfigured deployment into one that
+    // cannot generate anything, which is a worse answer to the same fact.
+    const signingKey = getAuditSigningKey();
+    if (!signingKey) {
+      console.error(MISSING_SIGNING_KEY_LOG);
+      return NextResponse.json({ text });
+    }
+
+    const receipt = issueModelReceipt(
+      { uid: decodedToken.uid, text, modelId: model, byok: !!byokKey },
+      signingKey,
+    );
+
+    return NextResponse.json({ text, receipt });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error('gemini route failed', { route: 'api/gemini', error: message });

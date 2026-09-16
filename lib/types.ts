@@ -152,7 +152,10 @@ export interface AuditMetadata {
     objectType: string;
   };
   modelCard?: {
-    /** `null` on a run no model took part in (roadmap 1.2), never a default. */
+    /**
+     * `null` on a run no model took part in (roadmap 1.2) and on one whose
+     * narrative arrived without a verifiable receipt — never a default.
+     */
     provider: string | null;
     model: string | null;
     /** Mirrors the signed run's `modelParticipation`; absent on runs written before 1.2. */

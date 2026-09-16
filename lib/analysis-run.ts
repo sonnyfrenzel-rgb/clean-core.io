@@ -1,5 +1,6 @@
 import { getAuth } from '@/lib/firebase';
-import { callGemini } from '@/lib/gemini';
+import { callGeminiWithReceipt } from '@/lib/gemini';
+import type { ModelReceipt } from '@/lib/model-receipt';
 import { buildAnalysisPrompt } from '@/lib/analysis-prompt';
 import { buildAbapEvidence, type EvidenceFinding } from '@/lib/abap/evidence-model';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
@@ -69,8 +70,12 @@ export interface AnalysisRunInput {
   /** The uploaded file name, as the run records it. */
   fileName: string;
   deployment: 'public' | 'private';
-  /** From the account — `profile.byokConfigured`. Recorded on the run's model card. */
-  byokUsed: boolean;
+  // `byokUsed` used to be here, taken from `profile.byokConfigured` and sent to
+  // the run route inside a client-supplied `modelCard`. The route has not read
+  // that since 1.2, and since the model receipt the answer comes from the
+  // server's own record of the call (`lib/model-receipt.ts`) or from the profile
+  // the route reads itself. A parameter nobody reads is a claim waiting to be
+  // trusted again.
   /**
    * Whether to ask a model for the narrative. False is roadmap 1.2's path, not
    * a degraded one: the run it produces is signed over the same evidence.
@@ -162,7 +167,7 @@ function aborted(signal: AbortSignal | undefined): boolean {
  * writes and the one thing the signature deliberately does not cover.
  */
 export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunResult> {
-  const { projectId, legacyCode, fileName, deployment, byokUsed, callModel, signal, onStages } = input;
+  const { projectId, legacyCode, fileName, deployment, callModel, signal, onStages } = input;
 
   const stages = stagesFor(callModel);
   const publish = () => onStages?.(stages.map((s) => ({ ...s })));
@@ -191,7 +196,14 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
   if (aborted(signal)) throw new AnalysisRunCancelled();
 
   // 2. The narrative, if this run is meant to have one.
-  let analysis = '';
+  //
+  // What travels to the run route is the model's text as the proxy returned it,
+  // byte for byte, together with the receipt the proxy issued over exactly that
+  // text (`lib/model-receipt.ts`). Rewriting it here would make an honest run
+  // fail the origin check, so the normalisation below is for this function's own
+  // worklist only; the route performs the same normalisation before it signs.
+  let narrative = '';
+  let modelReceipt: ModelReceipt | null = null;
   let narrativeAbsence: ModelAbsence = null;
   let worklist = findingsWorklist(evidenceReport.findings, fileName);
 
@@ -208,15 +220,18 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
         routeReport,
         code: legacyCode,
       });
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, 'analyze', signal);
+      const generated = await callGeminiWithReceipt(prompt, 'gemini-3-flash-preview', true, 'analyze', signal);
       if (aborted(signal)) throw new AnalysisRunCancelled();
+      const responseText = generated.text;
       const cleaned = responseText.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
       const parsed = JSON.parse(cleaned);
       const obj = Array.isArray(parsed) ? parsed[0] : parsed;
       if (!obj || typeof obj !== 'object') throw new Error('the narrative was not an object');
-      // The deterministic figures belong to the run, not to the model.
+      // The deterministic figures belong to the run, not to the model. Dropped
+      // from this function's copy; the route drops them from the one it signs.
       for (const owned of MODEL_MUST_NOT_OWN) delete obj[owned];
-      analysis = JSON.stringify(obj);
+      narrative = responseText;
+      modelReceipt = generated.receipt;
       const gaps = Array.isArray(obj.gaps) ? obj.gaps : [];
       worklist = [
         ...worklist,
@@ -238,7 +253,8 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
       // A narrative that did not arrive is a stage that failed, not a run that
       // failed: the evidence below is signed either way (roadmap 1.2).
       narrativeAbsence = absenceFromError(err);
-      analysis = '';
+      narrative = '';
+      modelReceipt = null;
       worklist = findingsWorklist(evidenceReport.findings, fileName);
       move('narrative', 'failed');
     }
@@ -263,7 +279,8 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
         projectId,
         legacyCode,
         s4Deployment: deployment,
-        analysis,
+        analysis: narrative,
+        ...(modelReceipt ? { modelReceipt } : {}),
         extensibilityRoute: routeReport.recommendedRoute,
         cleanCoreScore: routeReport.cleanCoreScore,
         complexityScore: computeComplexityScore(legacyCode),
@@ -276,11 +293,9 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
         recommendationConfidence: routeReport.confidenceScore,
         recommendationJustification: routeReport.rationale,
         uploadedFileName: fileName,
-        modelCard: {
-          provider: analysis ? 'google-gemini' : null,
-          model: analysis ? 'gemini-3-flash-preview' : null,
-          byokUsed,
-        },
+        // No `modelCard`. It was a client-supplied claim about which model had
+        // run, the route has not read it since 1.2, and what the run records now
+        // comes from the receipt the server issued to itself.
       }),
     });
   } catch (err) {
@@ -304,7 +319,11 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
     runId: runResult.runId,
     findingCount,
     cleanCoreScore: routeReport.cleanCoreScore,
-    modelParticipation: analysis ? 'narrative' : 'none',
+    // The server's answer, not this function's guess. Whether the narrative's
+    // origin was established is decided by the receipt check inside the route,
+    // and a caller told `narrative` by a browser that had no way to know would
+    // be reading the same unchecked claim one layer out.
+    modelParticipation: (runResult.modelParticipation as ModelParticipation | undefined) ?? (narrative ? 'narrative' : 'none'),
     narrativeAbsence,
   };
 }

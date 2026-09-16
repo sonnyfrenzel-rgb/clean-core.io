@@ -29,21 +29,31 @@ export interface AnalysisRun {
   inputManifest?: import('../input-manifest').InputManifest;
   model: {
     /**
-     * `null` when no model took part in this run (roadmap 1.2, the zero-LLM
-     * path). Not absent: absent means an old run that recorded nothing, null
-     * means a run that recorded there was nothing.
+     * Null unless a model call was **observed** for this run — either because
+     * none took part (roadmap 1.2, the zero-LLM path) or because the narrative
+     * arrived without a verifiable receipt (`lib/model-receipt.ts`). Not absent:
+     * absent means an old run that recorded nothing, null means a run that
+     * recorded there was nothing to record. `modelParticipation` says which.
      */
     provider: string | null;
     modelId: string | null;
     engineVersion: string;
+    /**
+     * Whose key served the call, where a receipt established it; otherwise
+     * whether BYOK was configured on the account when the run was created.
+     */
     byokUsed: boolean;
   };
   /**
    * Roadmap 1.2 — what part a model had in this run, inside the signed payload.
    *
-   * `narrative`: a model wrote the analysis narrative `aiNarrativeMeta` hashes.
-   * `none`: nothing did, and the run carries the deterministic evidence alone —
-   * which is still a complete, signed evidence state.
+   * `narrative-attested`: `/api/gemini` issued a receipt for exactly this text,
+   * to this account, and `/api/runs/create` verified it — `model.provider` and
+   * `model.modelId` name what the server actually called.
+   * `narrative`: a narrative is present and its origin was not established;
+   * `model.provider` and `model.modelId` are null.
+   * `none`: nothing was submitted, and the run carries the deterministic
+   * evidence alone — which is still a complete, signed evidence state.
    *
    * Absent on runs signed before 1.2; those canonicalise and verify exactly as
    * they did, because the hash is recomputed from the stored document.

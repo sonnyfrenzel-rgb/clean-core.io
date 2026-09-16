@@ -18,7 +18,8 @@ import { DocumentSection } from '@/components/DocumentSection';
 import { Components } from 'react-markdown';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { escapeHtml } from '@/lib/export-safety';
-import { callGemini } from '@/lib/gemini';
+import { callGeminiWithReceipt } from '@/lib/gemini';
+import type { ModelReceipt } from '@/lib/model-receipt';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import type { Project, AnalysisData, CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -313,13 +314,21 @@ export default function AnalyzePage() {
       // analysis itself: whatever happens here, the run below is created and
       // signed over the deterministic evidence.
       let responseText = '';
+      // The proxy's own record that the call happened, carried to
+      // `/api/runs/create` so the signed run may name the model it observed
+      // rather than the one this page would have guessed
+      // (`lib/model-receipt.ts`). Losing it costs the run nothing but the
+      // attestation.
+      let modelReceipt: ModelReceipt | null = null;
       let narrativeAbsence: ModelAbsence = null;
       if (!modelAvailability.enabled('analyze')) {
         narrativeAbsence = modelAvailability.keyAvailable ? 'stage-off' : 'no-key';
         setLoadingMessage('Evidence scanner only — no narrative for this run.');
       } else {
         try {
-          responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, 'analyze');
+          const generated = await callGeminiWithReceipt(prompt, 'gemini-3-flash-preview', true, 'analyze');
+          responseText = generated.text;
+          modelReceipt = generated.receipt;
         } catch (modelErr) {
           // The reason comes from the code the proxy sends, not from its prose.
           narrativeAbsence = absenceFromError(modelErr);
@@ -405,7 +414,13 @@ export default function AnalyzePage() {
             projectId,
             legacyCode: codeToAnalyze,
             s4Deployment: targetDeployment,
-            analysis: normalizedAnalysis,
+            // The model's text as the proxy returned it, byte for byte. The
+            // receipt is issued over exactly that, so anything rewritten here
+            // would make an honest run fail the origin check; the route performs
+            // the same normalisation server-side before it signs. The copy this
+            // page keeps for the screen (`normalizedAnalysis`) is unaffected.
+            analysis: responseText,
+            ...(modelReceipt ? { modelReceipt } : {}),
             extensibilityRoute: recommendedRoute,
             cleanCoreScore,
             complexityScore,
@@ -418,11 +433,10 @@ export default function AnalyzePage() {
             recommendationConfidence: computedRouteReport.confidenceScore,
             recommendationJustification: computedRouteReport.rationale,
             uploadedFileName,
-            modelCard: {
-              provider: 'google-gemini',
-              model: 'gemini-3-flash-preview',
-              byokUsed: !!profile?.byokConfigured,
-            }
+            // No `modelCard` here any more. It was a client-supplied claim about
+            // which model had run, and the route has not read it since 1.2;
+            // leaving it on the wire only invited someone to start trusting it
+            // again. What the run records now comes from the receipt.
           }),
         });
 
