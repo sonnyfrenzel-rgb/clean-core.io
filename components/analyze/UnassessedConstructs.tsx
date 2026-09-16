@@ -25,24 +25,24 @@ export default function UnassessedConstructs({ coverage }: { coverage: CoverageR
   return (
     <section
       data-testid="unassessed-constructs"
-      className="rounded-3xl border border-slate-300 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-900/40"
+      className="rounded-3xl border border-slate-300 bg-slate-50 p-6"
     >
       <div className="flex items-start gap-3">
-        <ScanLine size={18} className="mt-0.5 shrink-0 text-slate-500 dark:text-slate-400" aria-hidden />
+        <ScanLine size={18} className="mt-0.5 shrink-0 text-slate-500" aria-hidden />
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold text-gray-950 dark:text-slate-100">
+          <h3 className="text-sm font-semibold text-gray-950">
             Outside this analysis
           </h3>
-          <p className="mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{caveat}</p>
+          <p className="mt-1 text-sm leading-relaxed text-slate-700">{caveat}</p>
 
           <ul className="mt-4 flex flex-wrap gap-2">
             {coverage.gaps.map((g) => (
               <li
                 key={g.gap}
-                className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+                className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700"
               >
                 {g.label}
-                <span className="ml-1.5 text-slate-500 dark:text-slate-400">{g.count}</span>
+                <span className="ml-1.5 text-slate-500">{g.count}</span>
               </li>
             ))}
           </ul>
@@ -51,7 +51,7 @@ export default function UnassessedConstructs({ coverage }: { coverage: CoverageR
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
-            className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-gray-950 dark:text-slate-400 dark:hover:text-slate-100"
+            className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-gray-950"
           >
             {open ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
             {open ? 'Hide the statements' : `Show all ${coverage.unassessed.length} statements`}
@@ -61,7 +61,7 @@ export default function UnassessedConstructs({ coverage }: { coverage: CoverageR
             <div className="mt-4 overflow-x-auto">
               <table className="w-full min-w-[34rem] border-collapse text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-300 text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                  <tr className="border-b border-slate-300 text-slate-500">
                     <th scope="col" className="py-2 pr-3 font-medium">Line</th>
                     <th scope="col" className="py-2 pr-3 font-medium">Construct</th>
                     <th scope="col" className="py-2 font-medium">Statement</th>
@@ -71,11 +71,11 @@ export default function UnassessedConstructs({ coverage }: { coverage: CoverageR
                   {coverage.unassessed.map((u, i) => (
                     <tr
                       key={`${u.gap}-${u.line}-${i}`}
-                      className="border-b border-slate-200 align-top last:border-0 dark:border-slate-800"
+                      className="border-b border-slate-200 align-top last:border-0"
                     >
-                      <td className="py-2 pr-3 font-mono tabular-nums text-slate-500 dark:text-slate-400">{u.line}</td>
-                      <td className="py-2 pr-3 text-slate-700 dark:text-slate-300">{u.label}</td>
-                      <td className="py-2 font-mono text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
+                      <td className="py-2 pr-3 font-mono tabular-nums text-slate-500">{u.line}</td>
+                      <td className="py-2 pr-3 text-slate-700">{u.label}</td>
+                      <td className="py-2 font-mono text-[11px] leading-relaxed text-slate-600">
                         {u.snippet}
                       </td>
                     </tr>
@@ -88,8 +88,8 @@ export default function UnassessedConstructs({ coverage }: { coverage: CoverageR
                   const why = coverage.unassessed.find((u) => u.gap === g.gap)?.why;
                   return (
                     <div key={g.gap}>
-                      <dt className="text-xs font-semibold text-gray-950 dark:text-slate-200">{g.label}</dt>
-                      <dd className="mt-0.5 text-xs leading-relaxed text-slate-600 dark:text-slate-400">{why}</dd>
+                      <dt className="text-xs font-semibold text-gray-950">{g.label}</dt>
+                      <dd className="mt-0.5 text-xs leading-relaxed text-slate-600">{why}</dd>
                     </div>
                   );
                 })}

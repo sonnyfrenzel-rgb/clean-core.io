@@ -26,32 +26,13 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
     window.scrollTo(0, 0);
   }, [pathname]);
 
-  // Reactive Workspace Theme Bootstrapper
-  useEffect(() => {
-    const root = window.document.documentElement;
-    if (profile) {
-      const savedTheme = profile.theme || localStorage.getItem('theme') || 'light';
-      if (savedTheme === 'dark') {
-        root.classList.add('dark');
-      } else if (savedTheme === 'light') {
-        root.classList.remove('dark');
-      } else {
-        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        root.classList.toggle('dark', systemDark);
-      }
-    } else {
-      // Fast fallback to local storage during initial load
-      const localTheme = localStorage.getItem('theme') || 'light';
-      if (localTheme === 'dark') {
-        root.classList.add('dark');
-      } else if (localTheme === 'light') {
-        root.classList.remove('dark');
-      } else {
-        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        root.classList.toggle('dark', systemDark);
-      }
-    }
-  }, [profile]);
+  // The theme bootstrapper that used to stand here is gone with dark mode
+  // (roadmap 1.6). It read the theme field off the profile, fell back to a
+  // cached copy in local storage and then to the browser's own colour
+  // preference, and put a class on `<html>` — for a set of overrides that only
+  // ever covered part of the product. Nothing adds that class any more, so
+  // nothing has to remove it, and the field on old accounts is simply not read;
+  // see the note on it in `hooks/useUserProfile.ts`.
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showBanner, setShowBanner] = useState(true);

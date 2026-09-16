@@ -46,7 +46,7 @@ const renderFormattedText = (text: string | undefined) => {
         return <em key={partIdx} className="italic">{part.slice(1, -1)}</em>;
       }
       if (part.startsWith('`') && part.endsWith('`')) {
-        return <code key={partIdx} className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-red-600 dark:text-red-400 font-mono text-[0.85em] border border-gray-200 dark:border-gray-700">{part.slice(1, -1)}</code>;
+        return <code key={partIdx} className="px-1.5 py-0.5 rounded bg-gray-100 text-red-600 font-mono text-[0.85em] border border-gray-200">{part.slice(1, -1)}</code>;
       }
       return part;
     });

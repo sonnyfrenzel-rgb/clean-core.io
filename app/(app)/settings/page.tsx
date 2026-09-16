@@ -7,8 +7,8 @@ import {
   User, Mail, Shield, Zap, Crown, Infinity, 
   Clock, Edit2, CheckCircle2, AlertCircle, 
   LifeBuoy, Send, MessageSquare, Eye, EyeOff,
-  Trash2, KeyRound, Loader2, Sun, Moon, Monitor,
-  Database, Save, Lock, ShieldCheck, Key, RefreshCw, 
+  Trash2, KeyRound, Loader2,
+  Database, Save, Lock, ShieldCheck, Key, RefreshCw,
   ArrowLeft, Copy, Download, Smartphone, Check, X, ArrowRight, Globe,
   BookOpen, ExternalLink, HelpCircle
 } from 'lucide-react';
@@ -80,7 +80,6 @@ export default function SettingsPage() {
   const [isSavingConfig, setIsSavingConfig] = useState(false);
 
   // System Preferences States
-  const [themePreference, setThemePreference] = useState<'light' | 'dark' | 'system'>('light');
   const [backupEnabled, setBackupEnabled] = useState<boolean>(true);
   const [defaultView, setDefaultView] = useState<'dashboard' | 'analytics' | 'transformation'>('dashboard');
   const [desktopChatbotEnabled, setDesktopChatbotEnabled] = useState<boolean>(true);
@@ -403,7 +402,6 @@ export default function SettingsPage() {
     if (profile) {
       setFirstName(profile.firstName || '');
       setLastName(profile.lastName || '');
-      setThemePreference(profile.theme || 'light');
       setBackupEnabled(profile.backupEnabled !== false); // default true
       setDefaultView(profile.landingPageDefault || 'dashboard');
       setDesktopChatbotEnabled(profile.desktopChatbotEnabled !== false); // default true
@@ -434,23 +432,6 @@ export default function SettingsPage() {
       router.push('/dashboard');
     }
   }, [profile, loading, router]);
-
-  // Handle local dark/light toggles instantly
-  useEffect(() => {
-    const root = window.document.documentElement;
-    if (themePreference === 'dark') {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else if (themePreference === 'light') {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    } else {
-      // system
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      root.classList.toggle('dark', systemDark);
-      localStorage.setItem('theme', 'system');
-    }
-  }, [themePreference]);
 
   if (loading) return (
     <div className="h-[60vh] flex flex-col items-center justify-center">
@@ -504,8 +485,9 @@ export default function SettingsPage() {
     if (!profile) return;
     setIsSavingPrefs(true);
     try {
+      // `theme` is deliberately not written: the switch is gone (roadmap 1.6)
+      // and an existing value on the account is left exactly as it is.
       await updateProfile({
-        theme: themePreference,
         backupEnabled,
         landingPageDefault: defaultView,
         desktopChatbotEnabled
@@ -973,54 +955,18 @@ export default function SettingsPage() {
             </div>
             
             <p className="text-gray-600 font-medium mb-8 text-sm md:text-base leading-relaxed">
-              Personalize your Clean-Core workspace theme, configure background backup sync behaviors, and map your default start layouts.
+              Configure background backup sync behaviors and map your default start layouts.
             </p>
 
+            {/* The theme selector — Light / Dark / System — stood here until
+                roadmap 1.6. It offered a theme the product did not have:
+                the dark overrides covered a named list of utility classes and
+                nothing else, so choosing "Dark" left the dashboard table white
+                and the project row barely readable. A switch that makes the app
+                worse is not a preference. */}
             <form onSubmit={handleSavePreferences} className="space-y-6 text-gray-900">
-              {/* Visual Theme Selector */}
-              <div>
-                <label className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-3">
-                  Visual Theme
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setThemePreference('light')}
-                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-bold transition-all ${
-                      themePreference === 'light'
-                        ? 'bg-slate-900 border-slate-900 text-white shadow-md'
-                        : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Sun size={16} /> Light
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setThemePreference('dark')}
-                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-bold transition-all ${
-                      themePreference === 'dark'
-                        ? 'bg-slate-900 border-slate-900 text-white shadow-md'
-                        : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Moon size={16} /> Dark
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setThemePreference('system')}
-                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-bold transition-all ${
-                      themePreference === 'system'
-                        ? 'bg-slate-900 border-slate-900 text-white shadow-md'
-                        : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Monitor size={16} /> System
-                  </button>
-                </div>
-              </div>
-
               {/* Grid layout for other settings */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
                     Default Landing View
