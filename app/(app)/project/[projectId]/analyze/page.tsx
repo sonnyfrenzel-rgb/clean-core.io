@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { scanCodeContent } from '@/lib/staged-code-scan';
 import { looksLikeAbap } from '@/lib/abap-input-check';
+import { routeWasOverridden } from '@/lib/route-override';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType, getAuth } from '@/lib/firebase';
@@ -1092,9 +1093,7 @@ export default function AnalyzePage() {
      * analysis and a guard that counts its call sites (money-honesty-guard).
      */
     const recommendedRoute = analysisData?.extensibilityRouting?.recommendedRoute;
-    const routeIsOverridden = typeof recommendedRoute === 'string'
-      && typeof project?.extensibilityRoute === 'string'
-      && recommendedRoute !== project.extensibilityRoute;
+    const routeIsOverridden = routeWasOverridden(recommendedRoute, project?.extensibilityRoute);
 
     if (analysisData) {
       // Deliberately not overwritten any more. This line used to replace the

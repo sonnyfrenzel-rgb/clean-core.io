@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { looksLikeAbap } from '../lib/abap-input-check';
 import { quotaExhausted, runsAreSelfFunded, runsRemaining } from '../lib/run-quota-rule';
+import { routeWasOverridden } from '../lib/route-override';
 
 /**
  * Two rules the analyze stage and the dashboard used to keep private copies of,
@@ -87,5 +88,31 @@ test.describe('the screens use the shared rules, not private copies', () => {
     const handler = s.slice(s.indexOf('const handleAnalyze'), s.indexOf('const handleAnalyze') + 1200);
     expect(handler, 'the scan runs inside handleAnalyze, on the final string').toContain('scanCodeContent(codeToAnalyze)');
     expect(s).not.toContain("code.trim().length > 0; // Relaxed check");
+  });
+});
+
+test.describe('a route the architect changed is labelled as theirs', () => {
+  test('an override is only claimed when both routes are known', () => {
+    // Confidence and rationale belong to the recommendation. Beside a route
+    // somebody switched to, they read as support for the opposite decision
+    // (QA review of 33471220d6e9, 210bafeb4c8b).
+    expect(routeWasOverridden('Side-by-Side (SAP BTP)', 'In-App (ABAP Cloud)')).toBe(true);
+    expect(routeWasOverridden('In-App (ABAP Cloud)', 'In-App (ABAP Cloud)')).toBe(false);
+    // Nothing was changed: there is only a recommendation, or only a stored route.
+    expect(routeWasOverridden(undefined, 'In-App (ABAP Cloud)')).toBe(false);
+    expect(routeWasOverridden('Side-by-Side (SAP BTP)', undefined)).toBe(false);
+    expect(routeWasOverridden(null, null)).toBe(false);
+    expect(routeWasOverridden('', 'In-App (ABAP Cloud)')).toBe(false);
+    expect(routeWasOverridden('  In-App (ABAP Cloud)  ', 'In-App (ABAP Cloud)')).toBe(false);
+    expect(routeWasOverridden(42, 'In-App (ABAP Cloud)')).toBe(false);
+  });
+
+  test('the stage asks the function, and both labels exist', () => {
+    const page = readFileSync(join(process.cwd(), 'app/(app)/project/[projectId]/analyze/page.tsx'), 'utf8');
+    expect(page).toContain("from '@/lib/route-override'");
+    expect(page).toContain('routeWasOverridden(recommendedRoute, project?.extensibilityRoute)');
+    // The two halves the decision selects between.
+    expect(page).toContain("'Chosen by you'");
+    expect(page).toContain('You changed this route. The recommendation was');
   });
 });
