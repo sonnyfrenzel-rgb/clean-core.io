@@ -33,8 +33,28 @@ function cleanComments(line: string): string {
  * separator (`:` / `,`), which is where an ABAP statement can start.
  */
 export function startsSelectStatement(line: string): boolean {
-  const withoutLiterals = line.replace(/'(?:[^']|'')*'/g, "''").replace(/`(?:[^`]|``)*`/g, '``');
-  return /(?:^|[.:,])\s*SELECT\b/i.test(withoutLiterals);
+  return selectStatementStart(line) !== -1;
+}
+
+/**
+ * Where the SELECT statement begins on this line, or -1.
+ *
+ * The offset matters as much as the answer: `IF sy-subrc = 0. SELECT * FROM
+ * mara INTO TABLE @lt.` does open a query, and buffering the whole line put
+ * `IF sy-subrc = 0.` at the head of the statement that was handed on as SQL
+ * metadata (QA review of 5e598828093c, 09ebbf100061).
+ *
+ * Literals are masked rather than removed, character for character, so the
+ * offset in the masked line is the offset in the real one.
+ */
+export function selectStatementStart(line: string): number {
+  const masked = line
+    .replace(/'(?:[^']|'')*'/g, (m) => `'${'x'.repeat(Math.max(0, m.length - 2))}'`)
+    .replace(/`(?:[^`]|``)*`/g, (m) => `\`${'x'.repeat(Math.max(0, m.length - 2))}\``);
+  const match = /(?:^|[.:,])\s*SELECT\b/i.exec(masked);
+  if (!match) return -1;
+  // The match may start at the statement separator; the statement starts at SELECT.
+  return match.index + match[0].toUpperCase().indexOf('SELECT');
 }
 
 export function extractSelects(content: string): { text: string; line: number }[] {
@@ -58,15 +78,22 @@ export function extractSelects(content: string): { text: string; line: number }[
     // transformation prompt received a sentence as deterministic SQL metadata
     // (QA review of 33471220d6e9, 14d4000c4586). SELECT has to be a statement
     // keyword: outside any literal, and at the start of a statement.
-    if (!inSel && startsSelectStatement(trimmedClean)) {
-      inSel = true;
-      start = i + 1;
-      buf = '';
+    let openedAt = -1;
+    if (!inSel) {
+      openedAt = selectStatementStart(trimmedClean);
+      if (openedAt !== -1) {
+        inSel = true;
+        start = i + 1;
+        buf = '';
+      }
     }
 
     if (!inSel) continue;
 
-    buf += (buf ? ' ' : '') + trimmedClean;
+    // From the SELECT, not from the start of the line: a statement that shares
+    // its line with the one before it would otherwise carry that one's text.
+    const contribution = openedAt !== -1 ? trimmedClean.slice(openedAt) : trimmedClean;
+    buf += (buf ? ' ' : '') + contribution;
 
     // Track quotes inside the accumulated buffer
     let str = false;

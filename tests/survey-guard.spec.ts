@@ -364,13 +364,20 @@ test.describe('the links in the mail go somewhere', () => {
   const path = require('path') as typeof import('path');
   const ROOT = path.resolve(__dirname, '..');
 
-  test('the send workflow passes a real base URL', () => {
-    const wf = fs.readFileSync(path.join(ROOT, '.github/workflows/survey-send.yml'), 'utf8');
-    expect(
-      wf,
-      'survey-send.yml runs the send script without NEXT_PUBLIC_APP_URL — every link ' +
-        'in the mail would be built against localhost:3000',
-    ).toMatch(/NEXT_PUBLIC_APP_URL:\s*https:\/\//);
+  test('there is no survey workflow left to run', () => {
+    // The survey is discontinued (Sonny, 16.09.2026: "kann generell ausbleiben,
+    // ist eh vorbei ohne Erfolg"), and the two workflows are deleted rather
+    // than left switched off. The full review of 52f171091948 had just found
+    // that a manual dry run of the send workflow printed the production
+    // recipient list into public Actions logs (90d94fa15308), and that the
+    // digest could be mailed to any address a dispatcher typed in — neither is
+    // reachable from a file that does not exist.
+    //
+    // The script keeps its own refusal below, because a script can still be run
+    // by hand.
+    for (const wf of ['.github/workflows/survey-send.yml', '.github/workflows/survey-digest.yml']) {
+      expect(fs.existsSync(path.join(ROOT, wf)), `${wf} is gone`).toBe(false);
+    }
   });
 
   test('the script refuses to send rather than mail dead links', () => {

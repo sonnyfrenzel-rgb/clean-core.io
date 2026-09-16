@@ -1,3 +1,4 @@
+import { defineConfig } from '@playwright/test';
 import base from './playwright.config';
 
 /**
@@ -14,14 +15,18 @@ import base from './playwright.config';
  * file once the parallel work is over; it is scaffolding, not configuration.
  */
 const PORT = 3100;
+const server = Array.isArray(base.webServer) ? base.webServer[0] : base.webServer;
 
-export default {
+export default defineConfig({
   ...base,
   use: { ...base.use, baseURL: `http://localhost:${PORT}` },
   webServer: {
-    ...(base.webServer as Record<string, unknown>),
+    ...server,
     command: `npm run dev -- --port ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: true,
+    // The seed helper posts to the app under test, so it has to be told where
+    // that is — the same reason this file exists.
+    env: { ...(server?.env ?? {}), TEST_BASE_URL: `http://localhost:${PORT}` },
   },
-};
+});

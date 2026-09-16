@@ -23,11 +23,12 @@ on:
     - cron: '0 10 * * 5' # 12:00 Berlin during CEST (summer)
     - cron: '0 11 * * 5' # 12:00 Berlin during CET (winter)
   workflow_dispatch:
-    inputs:
-      recipient:
-        description: 'Send to a different address (optional)'
-        required: false
-        type: string
+    # No recipient input. The report is the account list with usage figures, and
+    # a free-text address turned a manual dispatch into a way to send it
+    # anywhere: the job authenticates to production with OIDC, builds the
+    # report and mailed it to whatever was typed in (QA full review of
+    # 52f171091948, 32e9456648b6). It goes to the administrator the script
+    # knows, and nowhere else.
 
 permissions:
   contents: read
@@ -95,15 +96,4 @@ jobs:
         if: steps.clock.outputs.proceed == 'true'
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          # The dispatch input reaches the shell as an environment variable,
-          # never as interpolated text. Written inline as a ${{ }} expression
-          # inside `run:`, a value such as `x@y.com; curl ...` executed as
-          # extra commands in a job that holds id-token: write, GCP workload
-          # identity federation and the Resend API key.
-          RECIPIENT: ${{ inputs.recipient }}
-        run: |
-          if [ -n "$RECIPIENT" ]; then
-            npx tsx scripts/send-usage-report.ts --apply --to "$RECIPIENT"
-          else
-            npx tsx scripts/send-usage-report.ts --apply
-          fi
+        run: npx tsx scripts/send-usage-report.ts --apply
