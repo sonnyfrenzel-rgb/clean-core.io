@@ -170,11 +170,13 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     // decision record and the ADR. `Low` and `Finding` are legitimate CSV tokens
     // (severity, category) and cannot be told apart by text — they travel in the
     // same row as the sentinel title, whose absence is asserted above.
-    expect(csv).not.toMatch(/signed_off|retire|FORGED-ITEM|FORGED-LOCATION|FORGED-TITLE/);
-    expect(adr).not.toMatch(/signed_off|retire|FORGED-ITEM|FORGED-TITLE/);
-    // The regexes above are word-boundary regexes, not backspace characters (QA 00704b78f011).
-    expect(/signed_off/.source).toBe('\bsigned_off\b');
-    expect(signedText).not.toMatch(/signed_off|"retire"|FORGED-/);
+    expect(csv).not.toMatch(/(^|[^A-Za-z0-9_])(signed_off|retire)([^A-Za-z0-9_]|$)|FORGED-ITEM|FORGED-LOCATION|FORGED-TITLE/);
+    expect(adr).not.toMatch(/(^|[^A-Za-z0-9_])(signed_off|retire)([^A-Za-z0-9_]|$)|FORGED-ITEM|FORGED-TITLE/);
+    // The boundary is a character class, not an escape a shell can mangle: it matches the token as a word and nothing inside a longer one.
+    const bounded = /(^|[^A-Za-z0-9_])signed_off([^A-Za-z0-9_]|$)/;
+    expect(bounded.test('status: signed_off,')).toBe(true);
+    expect(bounded.test('unsigned_offset')).toBe(false);
+    expect(signedText).not.toMatch(/(^|[^A-Za-z0-9_])signed_off([^A-Za-z0-9_]|$)|"retire"|FORGED-/);
 
     // The owner's statements are in the attested file, labelled as such — the
     // ones the file is for; drafts such as the design or the generated code are

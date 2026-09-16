@@ -90,6 +90,10 @@ Interleaving „anderer Lauf schreibt unter der Transaktion" — Schreibzugriffe
 einer offenen Transaktion wurden beim Neuversuch verworfen (Emulator-Verhalten, dokumentiert in
 `lib/survey/outbox.ts`); die Zusicherung selbst (Kampagnendokument im Read-Set, `max(stored, counted)`) steht.
 
+**QA-Runde 6 (`a3c2e16`):** die Wortgrenzen im Route-Test waren zum zweiten Mal Backspace-Bytes — jetzt als
+Zeichenklassen ohne Backslash geschrieben, mit Laufzeit-Selbsttest. Lehre: Backslashes in Bash-Heredocs kommen
+einfach an; Patch-Skripte mit Escapes über den Write-Weg oder ohne Escapes.
+
 **0.13, Variante 2 geprüft (16.09.2026):** der Auth-Emulator (firebase-tools 15.30.1) kann **kein TOTP-MFA** —
 `mfaEnrollment:start` verlangt `phoneEnrollmentInfo`; native TOTP wäre in CI nicht testbar. Zudem verlangt
 Firebase eine verifizierte E-Mail vor dem Enrolment (`auth/unverified-email`), was unsere Passwort-Konten heute
