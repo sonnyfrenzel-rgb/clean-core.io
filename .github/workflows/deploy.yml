@@ -56,15 +56,21 @@ jobs:
           npx firebase emulators:start --only auth,firestore --project=cleancore-491216 &
           sleep 10
 
+      # No production secret reaches this job. `MFA_BACKUP_CODE_PEPPER`,
+      # `PILOT_APPROVAL_SECRET` and `S4_ENCRYPTION_KEY` used to be handed to the
+      # build and to Playwright from the same repository secrets the live
+      # service is deployed with — so every test run held the key that every
+      # stored S/4 credential is encrypted with, and the secret that signs
+      # approval tokens (security audit of v2.11.0, SEC-2026-024). The suite
+      # never needed those particular values: it needs *a* pepper, *a* approval
+      # secret and *a* 32-byte key, and `playwright.config.ts` sets all three to
+      # visibly-test values. The deploy job below keeps the real ones.
       - name: Build Next.js Application
         run: npm run build
         env:
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true'
           FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099'
           FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080'
-          MFA_BACKUP_CODE_PEPPER: ${{ secrets.MFA_BACKUP_CODE_PEPPER }}
-          PILOT_APPROVAL_SECRET: ${{ secrets.PILOT_APPROVAL_SECRET }}
-          S4_ENCRYPTION_KEY: ${{ secrets.S4_ENCRYPTION_KEY }}
 
       # E16-F01-US02: the type check is a required gate over everything
       # tsconfig includes — the tests too. `next build` checks application code
@@ -82,9 +88,6 @@ jobs:
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true'
           FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099'
           FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080'
-          MFA_BACKUP_CODE_PEPPER: ${{ secrets.MFA_BACKUP_CODE_PEPPER }}
-          PILOT_APPROVAL_SECRET: ${{ secrets.PILOT_APPROVAL_SECRET }}
-          S4_ENCRYPTION_KEY: ${{ secrets.S4_ENCRYPTION_KEY }}
 
   # Job 1b: Security gate — a failed dependency audit blocks the deploy (F-11)
   security:

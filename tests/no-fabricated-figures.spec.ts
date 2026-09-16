@@ -217,6 +217,52 @@ test.describe('a failed verification is not a forgery verdict', () => {
   });
 });
 
+test.describe('the gate that runs untrusted code holds no production secret', () => {
+  test('the validate job takes nothing but the test model key', () => {
+    // `validate` installs dependencies, builds, and runs the whole Playwright
+    // suite — a job that executes a lot of code nobody on this team wrote, and
+    // that any change to a spec can steer. It used to be handed
+    // MFA_BACKUP_CODE_PEPPER, PILOT_APPROVAL_SECRET and S4_ENCRYPTION_KEY from
+    // the same repository secrets the live service is deployed with: the key
+    // every stored S/4 credential is encrypted with, and the secret that signs
+    // approval tokens, both present in every test run (security audit of
+    // v2.11.0, SEC-2026-024).
+    //
+    // The suite never needed those values, only values of the right shape, and
+    // `playwright.config.ts` sets all three to visibly-test ones. So the rule
+    // is simply that this job gets no secret at all — except the model key,
+    // which is a separate, test-only credential by name and by design.
+    const wf = fs.readFileSync(path.join(ROOT, '.github/workflows/deploy.yml'), 'utf8');
+    const start = wf.indexOf('\n  validate:');
+    expect(start, 'the validate job is gone').toBeGreaterThan(-1);
+    const rest = wf.slice(start + 1);
+    const nextJob = rest.slice(1).search(/^ {2}[a-z][a-z-]*:$/m);
+    const job = nextJob === -1 ? rest : rest.slice(0, nextJob + 1);
+
+    const used = [...job.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((m) => m[1]);
+    expect(
+      used.filter((name) => name !== 'TEST_GEMINI_API_KEY'),
+      'the job that runs the test suite was given a production secret',
+    ).toEqual([]);
+
+    // And the three in question are still deployed to the service, so removing
+    // them from the gate did not quietly remove them from production.
+    const deploy = wf.slice(wf.indexOf('\n  deploy:'));
+    for (const name of ['MFA_BACKUP_CODE_PEPPER', 'PILOT_APPROVAL_SECRET', 'S4_ENCRYPTION_KEY']) {
+      expect(deploy, `${name} no longer reaches the running service`).toContain(`secrets.${name}`);
+    }
+  });
+
+  test('the test values are committed, so the suite needs no secret to run', () => {
+    // If these fall away, CI starts failing for a reason that looks like a code
+    // regression, and the tempting fix is to hand the production secrets back.
+    const config = fs.readFileSync(path.join(ROOT, 'playwright.config.ts'), 'utf8');
+    for (const name of ['PILOT_APPROVAL_SECRET', 'MFA_BACKUP_CODE_PEPPER', 'S4_ENCRYPTION_KEY', 'AUDIT_SIGNING_KEY']) {
+      expect(config, `${name} has no test value in the config`).toContain(`process.env.${name} =`);
+    }
+  });
+});
+
 test.describe('hooks run before any early return', () => {
   const files = ['components/UserOnboarding.tsx', 'components/design/RoutingRationale.tsx'];
   for (const rel of files) {

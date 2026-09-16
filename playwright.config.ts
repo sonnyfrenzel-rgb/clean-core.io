@@ -21,6 +21,16 @@ if (!process.env.MFA_BACKUP_CODE_PEPPER) {
 if (!process.env.AUDIT_SIGNING_KEY) {
   process.env.AUDIT_SIGNING_KEY = 'test-audit-signing-key-for-ci-test-runner-32';
 }
+// 32 bytes of nothing in particular, base64. `lib/s4-credentials.ts` throws
+// without a key and accepts any 32-byte one, so the suite needs *a* key and
+// never the production key: CI used to be handed the same `S4_ENCRYPTION_KEY`
+// the live service uses, which is the key every stored S/4 credential is
+// encrypted with (security audit of v2.11.0, SEC-2026-024). A value committed
+// here is visibly a test value; a production secret in a test job is one
+// dependency or one changed spec away from leaving the building.
+if (!process.env.S4_ENCRYPTION_KEY) {
+  process.env.S4_ENCRYPTION_KEY = Buffer.alloc(32, 'clean-core-test-key').toString('base64');
+}
 
 export default defineConfig({
   testDir: './tests',
