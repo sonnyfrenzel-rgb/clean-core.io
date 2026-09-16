@@ -1,6 +1,10 @@
 import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, TERMS_VERSION } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { encrypt, decrypt } from './s4-credentials';
+// Types only — erased at compile time, so the modules themselves still load
+// lazily through `ensureInitialized` below.
+import type { Auth } from 'firebase-admin/auth';
+import type { Firestore } from 'firebase-admin/firestore';
 
 let adminAppModule: any = null;
 let adminAuthModule: any = null;
@@ -454,14 +458,33 @@ export async function assertS4TenantAccess(
 /**
  * Permanently erases all user data from Firestore collections and deletes the Firebase Auth account.
  * Implements GDPR Right to Erasure (Art. 17 GDPR) server-side to prevent orphaned data.
+ *
+ * Order matters. Everything the account owns is erased first; the profile and
+ * the Auth account go only once all of it is gone. It used to be the other way
+ * round: a refused delete of `s4_credentials` or `mfa_secrets` was collected,
+ * the profile and the Auth user were deleted regardless, and the error was
+ * thrown last. The route did report the failure — to a person who no longer
+ * had an account. POST /api/account/delete requires a recent sign-in, so the
+ * retry that would have finished the erasure could never be made, and the
+ * encrypted credentials stayed behind under a uid nobody could act for. Now a
+ * partial erasure keeps the profile and the sign-in, the error names what is
+ * still there, and the retry is one more click.
+ *
+ * `deps` exists so a test can make one step fail; callers pass the uid alone.
  */
-export async function deleteUserDataAndAccount(uid: string): Promise<void> {
+export async function deleteUserDataAndAccount(
+  uid: string,
+  deps: { db?: Firestore; auth?: Auth } = {},
+): Promise<void> {
   await ensureInitialized();
-  const { db } = await getAdminDb();
+  const db = deps.db ?? (await getAdminDb()).db;
+  const auth = deps.auth ?? adminAuthModule.getAuth();
 
-  // Helper for batch deletion of sub-collections (limit 400 per batch)
-  const deleteCollectionByUid = async (colName: string) => {
-    const q = db.collection(colName).where('userId', '==', uid).limit(400);
+  // Helper for batch deletion of documents owned by the account (limit 400 per
+  // batch). `ownerField` is `userId` almost everywhere; survey_responses keys
+  // its owner as `uid`.
+  const deleteCollectionByUid = async (colName: string, ownerField = 'userId') => {
+    const q = db.collection(colName).where(ownerField, '==', uid).limit(400);
     let snapshot = await q.get();
     while (snapshot.size > 0) {
       const batch = db.batch();
@@ -492,6 +515,11 @@ export async function deleteUserDataAndAccount(uid: string): Promise<void> {
   await deleteCollectionByUid('support_tickets');
   await deleteCollectionByUid('files');
   await deleteCollectionByUid('consent_events'); // F-16: purge consent records (hold uid/email)
+  //    Survey answers and the free-text comment beside them: one document per
+  //    campaign, `${campaign}__${uid}`, written by /api/survey/vote with the
+  //    owner in `uid`. It was missing from this list, so an erased account's
+  //    answers and comment went on being read into the daily digest.
+  await deleteCollectionByUid('survey_responses', 'uid');
 
   // 3. Delete single documents keyed by uid. F-07: do NOT silently swallow
   //    failures — tolerate an idempotent "not found" but collect any real error
@@ -512,7 +540,6 @@ export async function deleteUserDataAndAccount(uid: string): Promise<void> {
   await tryDelete('s4_credentials', () => db.collection('s4_credentials').doc(uid).delete());
   await tryDelete('mfa_secrets', () => db.collection('mfa_secrets').doc(uid).delete());
   await tryDelete('mfa_pending', () => db.collection('mfa_pending').doc(uid).delete());
-  await tryDelete('users', () => db.collection('users').doc(uid).delete());
   // Note: rate_limits docs are pseudonymised (HMAC ids) and self-expire via a
   // Firestore TTL on `expiresAt`; they hold no durable PII and are left to age out.
 
@@ -532,16 +559,30 @@ export async function deleteUserDataAndAccount(uid: string): Promise<void> {
     console.warn('[erasure] orphan-runs backstop skipped:', e?.message || e);
   }
 
-  // 4. Delete the Firebase Auth User (idempotent — tolerate an already-deleted account)
-  try {
-    await adminAuthModule.getAuth().deleteUser(uid);
-  } catch (e: any) {
-    if (e?.code !== 'auth/user-not-found') erasureErrors.push(`auth-user: ${e?.message || e}`);
+  // 4. Stop here while anything of the account's data is left. The profile and
+  //    the sign-in stay, so the person can retry and the error can say what is
+  //    still stored; deleting them first is what made the retry impossible.
+  if (erasureErrors.length > 0) {
+    throw new Error(
+      `Account erasure incomplete for ${uid}; profile and sign-in kept so it can be retried: ${erasureErrors.join(' | ')}`,
+    );
   }
 
-  // 5. F-07: verification — surface a partial erasure instead of a false success.
+  // 5. The profile — nothing else remains that it could be needed for.
+  await tryDelete('users', () => db.collection('users').doc(uid).delete());
   if (erasureErrors.length > 0) {
     throw new Error(`Account erasure incomplete for ${uid}: ${erasureErrors.join(' | ')}`);
+  }
+
+  // 6. The Firebase Auth user, last (idempotent — tolerate an already-deleted
+  //    account). If this fails the data is gone and the sign-in remains, which
+  //    is the one partial state a retry can still finish from.
+  try {
+    await auth.deleteUser(uid);
+  } catch (e: any) {
+    if (e?.code !== 'auth/user-not-found') {
+      throw new Error(`Account erasure incomplete for ${uid}: auth-user: ${e?.message || e}`);
+    }
   }
 }
 

@@ -28,6 +28,7 @@ Two sub-processors receive data in transit for the features that require them �
 | `mfa_pending/{uid}` | In-flight MFA enrolment | uid | Transient (until confirmed) | ✅ direct |
 | `registration_requests/{uid}` | Pilot access requests | uid | Life of account | ✅ direct |
 | `tenant_access_requests/{uid}` | BYOT access requests | uid | Life of account | ✅ direct |
+| `survey_responses/{campaign}__{uid}` | Survey answers and the free-text comment beside them | `uid` | Life of account | ✅ query delete |
 | `audit_events/{id}` | Admin/security audit log | server | **Retained** for security accountability (see note) | ❌ intentionally kept |
 | `rate_limits/{key}` | Sliding-window counters (`gemini:<uid>:<ip>`) | composite | Self-expiring (window) | ❌ no durable PII, auto-expires |
 
@@ -36,6 +37,8 @@ Two sub-processors receive data in transit for the features that require them �
 ## GDPR Art. 17 (Right to Erasure)
 
 Account deletion runs the server-side cascade `deleteUserDataAndAccount(uid)` (`lib/firebase-admin.ts`), which purges every ✅ collection above (subcollections via `recursiveDelete`) and the Firebase Auth user. The cascade's completeness is enforced by an automated test that seeds every collection and asserts it is gone.
+
+The cascade is all-or-nothing in one direction: the profile (`users/{uid}`) and the Auth user are deleted only after everything else is gone. If any step is refused, both are kept, the error names what is still stored, and the person can retry from a signed-in account (`tests/account-erasure.spec.ts`). The alternative — account gone, credentials left — cannot be retried, because the deletion endpoint requires a recent sign-in.
 
 ## Backups
 
