@@ -108,6 +108,244 @@
  * ------------------------------------------------------------- */
 
 /* -------------------------------------------------------------
+ * Semantic tokens — DESIGN.md §1 (roadmap 1.5)
+ *
+ * The app speaks two colour dialects today: Tailwind's `green-600`/`gray-950`
+ * on one page and the literals `#006b2c` / `#00873a` / `#0b1c30` on the next,
+ * across 78 button styles and type down to 8px. Neither dialect knows what a
+ * colour *means*, which is how green ended up on a primary button, an active
+ * tab, a logo and a proof badge — four different claims wearing the same coat.
+ *
+ * These tokens fix the meaning first and the value second. `--cc-success` is
+ * not "the green one", it is **proven**, and `components/cc/` may not paint
+ * anything green that is not. Every pair below is computed against WCAG 2.2 in
+ * DESIGN.md §1.1 and recomputed on every run by `tests/cc-token-guard.spec.ts`
+ * — from the *rendered* `:root`, not from this file, so a token that fails to
+ * reach the browser fails the suite instead of passing on paper.
+ *
+ * Two layers, on purpose:
+ *
+ *   `:root`   — the canonical `--cc-*` names, spelled exactly as DESIGN.md §1
+ *               and the mockups spell them. Plain CSS, always emitted, readable
+ *               from a stylesheet, an inline style or a test.
+ *   `@theme`  — `--color-cc-*` aliases pointing at those, so Tailwind generates
+ *               `bg-cc-surface`, `text-cc-ink`, `border-cc-line` and the rest.
+ *               Aliases rather than copies: a second literal is a second value
+ *               waiting to drift.
+ *
+ * There is no dark counterpart and this is not where one goes (roadmap 1.6).
+ * The replacement for readers who need one is `forced-colors: active`, handled
+ * at the foot of this block.
+ * ------------------------------------------------------------- */
+:root {
+  /* Surfaces and ink */
+  --cc-page: #f8f9ff;
+  --cc-surface: #ffffff;
+  --cc-surface-muted: #f9fafb;
+  --cc-ink: #0b1c30;
+  --cc-ink-muted: #4b5563;
+  --cc-line: #e5e7eb;
+  --cc-field-border: #6b7280;
+
+  /* Brand. `--cc-brand` is 3.3:1 on white — a logo and an accent, never a
+     surface under text. The primary action takes `--cc-brand-strong` (5.0:1). */
+  --cc-brand: #16a34a;
+  --cc-brand-strong: #15803d;
+  --cc-brand-deep: #006b2c;
+  --cc-brand-surface: #f0fdf4;
+
+  --cc-focus: #1d4ed8;
+
+  /* White on a dark or brand surface. Named so that `components/cc/` never has
+     to write a bare colour: every colour utility there names a cc token. */
+  --cc-on-dark: #ffffff;
+
+  /* The five semantic states of §1.1. Green means proven, and nothing else. */
+  --cc-success: #047857;
+  --cc-success-bg: #ecfdf5;
+  --cc-success-border: #a7f3d0;
+  --cc-warning: #92400e;
+  --cc-warning-bg: #fffbeb;
+  --cc-warning-border: #fde68a;
+  /* Amber at 3:1 against white, for a border that has to be seen (§1.1). The
+     darker `--cc-warning` stays for text. */
+  --cc-warning-line: #b45309;
+  --cc-error: #b91c1c;
+  --cc-error-bg: #fef2f2;
+  --cc-error-border: #fecaca;
+  --cc-information: #1d4ed8;
+  --cc-information-bg: #eff6ff;
+  --cc-information-border: #bfdbfe;
+  --cc-neutral: #4b5563;
+  --cc-neutral-bg: #f9fafb;
+  --cc-neutral-border: #e5e7eb;
+
+  /* Dark exists exactly twice (ADR-028): the code surface, and the overlay for
+     layers that sit above content — coach mark and toast. The `dark` button
+     borrows the code surface's value; it is the same near-black, not a third. */
+  --cc-overlay: #0b1c30;
+  --cc-code-bg: #030712;
+  --cc-surface-dark: #030712;
+  --cc-code-ink: #e5e7eb;
+  --cc-code-muted: #9ca3af;
+  --cc-code-keyword: #c4b5fd;
+  --cc-code-literal: #fcd34d;
+  --cc-code-name: #93c5fd;
+  --cc-code-hl: rgb(59 130 246 / 0.28);
+  --cc-code-hl-bar: #93c5fd;
+
+  /* The 4px grid of §1.3. Tailwind's own scale is the same grid, so components
+     use `p-4`/`gap-2`; these exist for stylesheet use and for the record. */
+  --cc-space-1: 4px;
+  --cc-space-2: 8px;
+  --cc-space-3: 12px;
+  --cc-space-4: 16px;
+  --cc-space-5: 24px;
+  --cc-space-6: 32px;
+  --cc-space-7: 48px;
+
+  /* Form and depth, §1.4 — workspace values. The public pages keep their own. */
+  --cc-radius-card: 12px;
+  --cc-radius-row: 8px;
+  --cc-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+  --cc-shadow-dialog: 0 16px 48px rgb(11 28 48 / 0.18);
+
+  --cc-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* The smallest type the workspace allows, §1.2. Written down because the
+     guard measures against a number, and the number should have a name. */
+  --cc-text-min: 11px;
+
+  /* Categorical palette, §1.8 — for charts that are not counting states. A
+     chart that uses a state colour for a category says "proven" about a bar. */
+  --cc-chart-1: #334155;
+  --cc-chart-2: #4f46e5;
+  --cc-chart-3: #0d9488;
+  --cc-chart-4: #9333ea;
+  --cc-chart-5: #c026d3;
+  --cc-seq-1: #e0e7ff;
+  --cc-seq-2: #a5b4fc;
+  --cc-seq-3: #6366f1;
+  --cc-seq-4: #3730a3;
+}
+
+@theme {
+  --color-cc-page: var(--cc-page);
+  --color-cc-surface: var(--cc-surface);
+  --color-cc-surface-muted: var(--cc-surface-muted);
+  --color-cc-surface-dark: var(--cc-surface-dark);
+  --color-cc-ink: var(--cc-ink);
+  --color-cc-ink-muted: var(--cc-ink-muted);
+  --color-cc-line: var(--cc-line);
+  --color-cc-field-border: var(--cc-field-border);
+  --color-cc-brand: var(--cc-brand);
+  --color-cc-brand-strong: var(--cc-brand-strong);
+  --color-cc-brand-deep: var(--cc-brand-deep);
+  --color-cc-brand-surface: var(--cc-brand-surface);
+  --color-cc-focus: var(--cc-focus);
+  --color-cc-on-dark: var(--cc-on-dark);
+  --color-cc-success: var(--cc-success);
+  --color-cc-success-bg: var(--cc-success-bg);
+  --color-cc-success-border: var(--cc-success-border);
+  --color-cc-warning: var(--cc-warning);
+  --color-cc-warning-bg: var(--cc-warning-bg);
+  --color-cc-warning-border: var(--cc-warning-border);
+  --color-cc-warning-line: var(--cc-warning-line);
+  --color-cc-error: var(--cc-error);
+  --color-cc-error-bg: var(--cc-error-bg);
+  --color-cc-error-border: var(--cc-error-border);
+  --color-cc-information: var(--cc-information);
+  --color-cc-information-bg: var(--cc-information-bg);
+  --color-cc-information-border: var(--cc-information-border);
+  --color-cc-neutral: var(--cc-neutral);
+  --color-cc-neutral-bg: var(--cc-neutral-bg);
+  --color-cc-neutral-border: var(--cc-neutral-border);
+  --color-cc-overlay: var(--cc-overlay);
+  --color-cc-code-bg: var(--cc-code-bg);
+  --color-cc-code-ink: var(--cc-code-ink);
+  --color-cc-code-muted: var(--cc-code-muted);
+  --color-cc-code-keyword: var(--cc-code-keyword);
+  --color-cc-code-literal: var(--cc-code-literal);
+  --color-cc-code-name: var(--cc-code-name);
+  --color-cc-code-hl: var(--cc-code-hl);
+
+  --radius-cc-card: var(--cc-radius-card);
+  --radius-cc-row: var(--cc-radius-row);
+
+  --shadow-cc: var(--cc-shadow);
+  --shadow-cc-dialog: var(--cc-shadow-dialog);
+
+  --font-cc-mono: var(--cc-font-mono);
+}
+
+/* -------------------------------------------------------------
+ * The focus ring, once — DESIGN.md §1.6
+ *
+ * 2px `--cc-focus`, 2px away, the element's own radius. Declared here rather
+ * than repeated in eighteen components, because the one thing worse than an
+ * inconsistent ring is a component that removes it and forgets the replacement.
+ * ------------------------------------------------------------- */
+.cc :focus-visible,
+.cc:focus-visible {
+  outline: 2px solid var(--cc-focus);
+  outline-offset: 2px;
+}
+
+/* On the code surface `--cc-focus` is invisible; the ring takes the colour the
+   surface already uses for names, 11.2:1 against it (§1.7). */
+.cc-code-surface :focus-visible {
+  outline-color: var(--cc-code-name);
+}
+
+/* -------------------------------------------------------------
+ * The three chip forms without their fill — DESIGN.md §4, §7.1
+ *
+ * Filled, outline and dashed are the second cue after colour, and the cue has
+ * to survive the two places where colour stops: a printed page and a Windows
+ * high-contrast theme. In both, the fill goes and a filled chip becomes a 2px
+ * border — so the three forms stay three.
+ * ------------------------------------------------------------- */
+@media print {
+  [data-cc-form] {
+    background: #fff !important;
+    color: #0b1c30 !important;
+    border-color: #0b1c30 !important;
+  }
+
+  [data-cc-form='filled'] {
+    border-width: 2px !important;
+  }
+
+  /* §7.1: no background, cards outlined instead of shadowed, no tool or
+     footer bars, and nothing breaks in the middle of a card or a row. */
+  .cc-card {
+    box-shadow: none !important;
+    border: 1px solid #0b1c30 !important;
+    break-inside: avoid;
+  }
+
+  .cc-no-print {
+    display: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  [data-cc-form] {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+  }
+
+  [data-cc-form='filled'] {
+    border-width: 2px;
+  }
+
+  [data-cc-form='dashed'] {
+    border-style: dashed;
+  }
+}
+
+/* -------------------------------------------------------------
  * Long-form document tables (/clean-core-explained)
  *
  * A three-column comparison table cannot be read on a phone without
