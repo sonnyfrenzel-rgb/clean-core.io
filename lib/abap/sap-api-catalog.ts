@@ -41,7 +41,15 @@ export const SAP_API_CATALOG: Record<string, SapApiEntry> = {
   'VBAK':  { view: 'API_SALES_ORDER_SRV',       type: 'OData API' },
   'VBAP':  { view: 'API_SALES_ORDER_SRV',       type: 'OData API' },
   'VBEP':  { view: 'I_SalesOrderScheduleLine',  type: 'CDS View' },
-  'VBKD':  { view: 'I_SalesOrderItemPartner',   type: 'CDS View' },
+  // VBKD is sales-document *business* data — payment terms, incoterms, the
+  // customer purchase order reference. It was mapped to
+  // I_SalesOrderItemPartner, which is the partner assignment: a different
+  // entity with different fields, so a transformation built on it cannot
+  // preserve what the legacy code read (QA review of 33471220d6e9,
+  // 778c72a5cde2). No mapping until a released, field-compatible successor
+  // is verified against SAP's own documentation \u2014 "no released equivalent
+  // found" is a true answer, and a wrong one can be carried into signed
+  // evidence as a recommendation.
   'LIKP':  { view: 'API_OUTBOUND_DELIVERY_SRV', type: 'OData API' },
   'LIPS':  { view: 'API_OUTBOUND_DELIVERY_SRV', type: 'OData API' },
   'VBRK':  { view: 'API_BILLING_DOCUMENT_SRV',  type: 'OData API' },
@@ -97,7 +105,10 @@ export const SAP_API_CATALOG: Record<string, SapApiEntry> = {
   'CEPC':  { view: 'I_ProfitCenter',             type: 'CDS View' },
 
   // ── Warehouse / Inventory ─────────────────────────────────────────────
-  'LQUA':  { view: 'I_WarehouseStorageBin',      type: 'CDS View' },
+  // LQUA is the warehouse *quant* \u2014 stock at a place, with quantity and
+  // batch. It was mapped to I_WarehouseStorageBin, which is storage-bin
+  // master data: the place itself, without any stock on it. Same reason as
+  // VBKD above (778c72a5cde2); LAGP below is the bin and stays.
   'LAGP':  { view: 'I_WarehouseStorageBin',      type: 'CDS View' },
   'T001W': { view: 'I_Plant',                    type: 'CDS View' },
   'T001L': { view: 'I_StorageLocation',          type: 'CDS View' },

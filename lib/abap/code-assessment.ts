@@ -7,6 +7,7 @@
 
 import type { CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import { tokenize } from './declaration-parser';
+import { databaseWriteIn } from './open-sql-discrimination';
 
 // Well-known SAP standard tables and their recommended API/CDS replacements
 const STANDARD_TABLE_MAP: Record<string, string> = {
@@ -201,36 +202,21 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
       }
     }
 
-    // 2. INSERT Statement
-    const insertMatch = text.match(/^INSERT\s+(?:INTO\s+)?([\w\/]+)/i);
-    if (insertMatch) {
-      addStat(insertMatch[1], true, stmt.line, text);
+    // 2.-5. INSERT / UPDATE / MODIFY / DELETE
+    //
+    // ABAP spells internal-table and database operations with the same words,
+    // and this file used to take the first token after each keyword as a table
+    // name. `INSERT ls_item INTO TABLE lt_items` therefore appeared as a
+    // Medium-risk coupling to a database table called LS_ITEM — a dependency
+    // that does not exist, on the architecture surfaces downstream
+    // (QA review of 33471220d6e9, eac6118f1eac). The evidence engine already
+    // told the two forms apart; the rule is one module now, read by both
+    // (`lib/abap/open-sql-discrimination.ts`).
+    const write = databaseWriteIn(text);
+    if (write) {
+      addStat(write.table, true, stmt.line, text);
     }
-
-    // 3. UPDATE Statement
-    const updateMatch = text.match(/^UPDATE\s+([\w\/]+)/i);
-    if (updateMatch) {
-      addStat(updateMatch[1], true, stmt.line, text);
-    }
-
-    // 4. MODIFY Statement
-    const modifyMatch = text.match(/^MODIFY\s+([\w\/]+)/i);
-    if (modifyMatch) {
-      const target = modifyMatch[1].toUpperCase();
-      if (target !== 'SCREEN' && target !== 'LINE' && target !== 'TABLE') {
-        addStat(modifyMatch[1], true, stmt.line, text);
-      }
-    }
-
-    // 5. DELETE Statement
-    const deleteMatch = text.match(/^DELETE\s+(?:FROM\s+)?([\w\/]+)/i);
-    if (deleteMatch) {
-      const target = deleteMatch[1].toUpperCase();
-      if (target !== 'FROM' && target !== 'TABLE' && target !== 'ADJACENT') {
-        addStat(deleteMatch[1], true, stmt.line, text);
-      }
-    }
-  }
+}
 
   // Convert map to entries
   for (const [tableName, stats] of statsMap) {

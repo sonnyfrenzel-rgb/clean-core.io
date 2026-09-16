@@ -39,6 +39,21 @@ export function routeExtensibility(
   deploymentModel: 'public' | 'private'
 ): ExtensibilityRouteReport {
   const findings = evidence.findings;
+  /**
+   * What the engine did not assess.
+   *
+   * A file of nothing but application-server dataset I/O produces no findings,
+   * because no detector claims those statements — and "no findings" then became
+   * a Clean Core Score of 100, "Highly feasible. Trivial extension" and "No
+   * legacy patterns detected". The code had not been found clean; it had not
+   * been read (QA review of 33471220d6e9, 45737310a1d7). Incomplete coverage is
+   * unknown, and unknown is not clean.
+   */
+  const coverage = evidence.coverage;
+  const coverageIncomplete = coverage ? !coverage.complete : false;
+  const unassessedSummary = coverage && coverage.gaps.length
+    ? coverage.gaps.map((g) => `${g.count} \u00d7 ${g.label.toLowerCase()} (from line ${g.firstLine})`).join(', ')
+    : '';
 
   // 1. Calculate Clean Core Score deterministically
   // Start at 100%. Deduct per CATEGORY (not per-finding) with diminishing returns.
@@ -114,6 +129,8 @@ export function routeExtensibility(
 
   // Calculate confidence score based on the weight of findings
   let confidenceScore = 80;
+  // A route chosen from a partial reading is a less confident route, and says so.
+  const confidencePenalty = coverageIncomplete ? Math.min(25, (coverage?.gaps.length || 0) * 5 + 10) : 0;
   if (needsBtp) {
     // Custom writes only add confidence where they actually drove the decision.
     const customWeight = customPersistenceForcesBtp ? customWrites.length * 5 : 0;
@@ -160,10 +177,12 @@ export function routeExtensibility(
     {
       checkpointName: 'Key User Extensibility (Tier 3)',
       question: 'Can the extension be implemented using low-code/no-code Key User tools?',
-      evaluation: findings.length === 0
-        ? 'Highly feasible. Trivial extension with no database writes or external integrations.'
-        : 'Infeasible. Custom logic, DB writes, or complex calculations exceed Key User capabilities.',
-      resultState: findings.length === 0 ? 'In-App Preferred' : 'Neutral',
+      evaluation: findings.length === 0 && coverageIncomplete
+        ? `Not established. No pattern was found, but ${unassessedSummary || 'part of the code'} was not assessed by any detector \u2014 feasibility cannot be judged from what was not read.`
+        : findings.length === 0
+          ? 'Highly feasible. Trivial extension with no database writes or external integrations.'
+          : 'Infeasible. Custom logic, DB writes, or complex calculations exceed Key User capabilities.',
+      resultState: findings.length === 0 && !coverageIncomplete ? 'In-App Preferred' : 'Neutral',
       cleanCoreImpact: 'Safe upgrades guaranteed. Completely isolated from the SAP core.'
     },
     {
@@ -249,16 +268,29 @@ export function routeExtensibility(
   if (bdcCalls.length > 0) {
     assumptions.push('BDC screen automations have no equivalent Fiori/API-based replacement yet.');
   }
-  if (findings.length === 0) {
-    assumptions.push('No legacy patterns detected — code may already be partially modernized or very simple.');
+  if (findings.length === 0 && coverageIncomplete) {
+    assumptions.push(`No legacy pattern was found, but the engine did not assess ${unassessedSummary} \u2014 the score and the route below describe the part that was read, not the whole object.`);
+  } else if (findings.length === 0) {
+    assumptions.push('No legacy patterns detected \u2014 code may already be partially modernized or very simple.');
+  }
+  if (coverageIncomplete && findings.length > 0) {
+    assumptions.push(`Beyond the findings, the engine did not assess ${unassessedSummary}.`);
   }
 
   return {
     recommendedRoute,
-    confidenceScore,
+    confidenceScore: Math.max(30, confidenceScore - confidencePenalty),
     rationale,
     targetArtifact,
-    cleanCoreScore: score,
+    // The score describes what was read. A construct no detector claims cannot
+    // count towards a clean result, so an incomplete reading costs the score
+    // rather than flattering it: five points per unassessed kind, floored at 50,
+    // which is enough to keep a fully-read object's score untouched and enough
+    // that "100 %" never comes out of a file nobody assessed
+    // (QA review of 33471220d6e9, 45737310a1d7).
+    cleanCoreScore: coverageIncomplete
+      ? Math.max(50, score - Math.min(30, (coverage?.gaps.length || 0) * 5))
+      : score,
     checkpoints,
     comparativeAnalysis: {
       inAppABAPCloud,
