@@ -288,9 +288,10 @@
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.607Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.6",
-      "updatedAt": "2026-09-15T12:20:08.736Z"
+      "updatedAt": "2026-09-16T13:00:43.587Z",
+      "fixedIn": "6e57898"
     },
     {
       "id": "UX-024",
