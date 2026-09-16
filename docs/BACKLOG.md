@@ -3,7 +3,8 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
-**Stand 16.09.2026, spät — v2.11.1 steht auf `dev` und wartet auf Sonnys Go. Phase 0 und Phase 1 sind
+**Stand 16.09.2026, spät — v2.11.1 ist um 21:53Z auf `main` gegangen (`a19945e`, 90 Commits seit
+v2.11.0, Fast-Forward, CI grün, Regeln um 20:25Z vorher ausgerollt). Phase 0 und Phase 1 sind
 abgeschlossen, Phase 2 hat begonnen.** Phase 0 zu Ende gebracht mit 0.5 und 0.6 (Eingabemanifest im
 signierten Lauf, konservative Ungültigkeit statt Frischeheuristik), 0.9/0.10/0.11 (die acht Beispiele je
 einmal frei, Demo unter `/demo/{stage}` aus einem echten Engine-Lauf, Vertrauenskarte mit Belegregister),
