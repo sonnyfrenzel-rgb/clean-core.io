@@ -5,7 +5,12 @@
 
 import firebaseConfig from '../../firebase-config.json';
 
-const BASE_URL = 'http://localhost:3000';
+/**
+ * The app under test. Port 3000 unless a run says otherwise — several worktrees
+ * of this repository can have a dev server up at once, and a spec that seeds
+ * through a hard-coded port silently seeds the wrong one.
+ */
+const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
 
 async function callSeedApi(payload: any) {
   const response = await fetch(`${BASE_URL}/api/test/seed`, {
