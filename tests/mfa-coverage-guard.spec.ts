@@ -134,8 +134,19 @@ test.describe('the client never holds a session that is waiting for its second f
 
   test('the screen promises no recovery code it cannot take', () => {
     const s = source();
-    expect(s).not.toMatch(/backup (recovery )?code/i);
-    expect(s).not.toContain("'CC-'");
+    // The rule is that nothing is *offered* that the sign-in cannot accept.
+    // Saying that the old codes no longer exist is the opposite of an offer,
+    // and someone holding a `CC-XXXX-YYYY` from before roadmap 0.13 has to be
+    // told what happened rather than that their code is invalid (UX review of
+    // 52f171091948, d5f35cf138c5). So: every mention has to be a withdrawal.
+    for (const sentence of s.split('\n')) {
+      if (!/backup (recovery )?code|recovery code/i.test(sentence)) continue;
+      expect(sentence, `mentions a recovery code without withdrawing it: ${sentence.trim().slice(0, 120)}`)
+        .toMatch(/no longer exist|which no longer|used to look like/i);
+    }
+    // And no input, label or placeholder invites one.
+    expect(s).not.toMatch(/placeholder="[^"]*(?:backup|recovery)[^"]*"/i);
+    expect(s).not.toMatch(/label[^\n]*(?:backup|recovery) code/i);
     expect(s).toContain('Lost the authenticator?');
   });
 });

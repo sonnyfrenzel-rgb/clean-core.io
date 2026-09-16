@@ -1128,6 +1128,54 @@
       "step": "0.8",
       "updatedAt": "2026-09-16T08:02:34.718Z",
       "fixedIn": "96b19b3c6bbd"
+    },
+    {
+      "id": "UX-091",
+      "fingerprint": "5bbc640bc39f",
+      "title": "Mail-Warnung verspricht erneuten Versand, Zeile kann ihn nicht",
+      "severity": "high",
+      "area": "release",
+      "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
+      "createdAt": "2026-09-16T12:35:26.408Z",
+      "status": "behoben",
+      "fixedIn": "6004fa9",
+      "updatedAt": "2026-09-16T12:35:26.408Z"
+    },
+    {
+      "id": "UX-092",
+      "fingerprint": "f9f396ab3b44",
+      "title": "Start-Button durch Scan blockiert ohne Grund am Button",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
+      "createdAt": "2026-09-16T12:35:26.516Z",
+      "status": "behoben",
+      "fixedIn": "6004fa9",
+      "updatedAt": "2026-09-16T12:35:26.516Z"
+    },
+    {
+      "id": "UX-093",
+      "fingerprint": "1b84676d685d",
+      "title": "Ungespeichert meldet sich als fehlgeschlagene Verbindung",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
+      "createdAt": "2026-09-16T12:35:26.641Z",
+      "status": "behoben",
+      "fixedIn": "6004fa9",
+      "updatedAt": "2026-09-16T12:35:26.641Z"
+    },
+    {
+      "id": "UX-094",
+      "fingerprint": "d5f35cf138c5",
+      "title": "Alte Backup-Codes werden ohne Übergang abgewiesen",
+      "severity": "high",
+      "area": "release",
+      "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
+      "createdAt": "2026-09-16T12:35:26.735Z",
+      "status": "zurückgestellt",
+      "reason": "0.13 hat die Backup-Codes entfernt; der Uebergangstext fuer alte CC-Codes gehoert in denselben Schritt wie die MFA-Oberflaeche und wird dort gebaut.",
+      "updatedAt": "2026-09-16T12:35:26.735Z"
     }
   ]
 }

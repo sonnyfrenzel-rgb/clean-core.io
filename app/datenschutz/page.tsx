@@ -79,6 +79,14 @@ export default function DatenschutzPage() {
             <p className="text-base mb-3">
               The ABAP source files you upload and the generated modernization artifacts (such as solution designs, TypeScript code, and test cases) are stored in our secure Google Firebase cloud environment in Europe.
             </p>
+            <p className="text-base mb-3">
+              <strong className="text-gray-800">Who can read your project:</strong> only the account that created it.
+              The database rules grant read access to the owner and to nobody else &mdash; not to other accounts, and
+              since 16&nbsp;September&nbsp;2026 not to our administrator either. There is no console in which we can
+              open your source code. The one exception is an emergency, such as a credible report that an upload
+              contains malicious code: that is a deliberate server-side act by the operator, not a permission that
+              stands open, and it leaves a record.
+            </p>
             <div className="p-4 bg-green-50 border border-green-200 rounded-2xl">
               <p className="text-sm text-green-800">
                 <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Under Google&apos;s applicable API data-use terms, this content is not used to train Google&apos;s foundational AI models. Which terms apply depends on the key: for the paid Gemini API the &ldquo;not used for training&rdquo; terms apply directly, while a free-tier key is governed by Google&apos;s free-tier data-use terms, which differ. When you use your own key (BYOK), the terms of your own Google account apply. We state the applicable terms rather than an absolute promise we cannot control.

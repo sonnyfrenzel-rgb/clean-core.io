@@ -10,6 +10,20 @@ gebaut und integriert: 0.13 (Firebase-nativer zweiter Faktor), 0.14 (Konto, Schl
 vier Befunde derselben Art — Guards, die Quelltext lesen, wo nur ein Laufzeitnachweis zählt
 (6a1e32c0b973, 1738da3d6e64, cca300dfb572, 6f7a14516006).
 
+**Admin-Einsicht in Projekte entfernt (Sonny, 16.09.2026):** „nimm mich als admin raus beim thema projekt
+einsichtnahme. das muss streng sein und nur in notfällen von schadcode etc." `firestore.rules` gewährt bei
+`projects/{id}` und `projects/{id}/runs/{runId}` keinen Admin-Lesezugriff mehr, und das pauschale Admin-`update`
+auf Projekte ist ebenfalls weg — nur noch der Besitzer. Ein Test in `tests/firestore-rules.spec.ts` meldet sich
+mit echtem Admin-Claim an und weist Lesen, Run-Lesen und Schreiben nach. Die Datenschutzerklärung sagt es jetzt
+ausdrücklich, samt der einen Ausnahme: ein Notfall (glaubwürdige Meldung von Schadcode in einem Upload) ist ein
+bewusster serverseitiger Akt über das Admin-SDK, das die Regeln bauartbedingt umgeht — keine offenstehende
+Berechtigung, und mit Protokoll.
+**Sonny muss die Regeln von Hand deployen** (`npm run deploy:rules`), CI tut das nie. Bis dahin gilt in
+Produktion die alte Fassung.
+Nebenbefund: `tests/security-compliance.spec.ts` prüfte die GDPR-Löschkaskade, indem es sich als Admin anmeldete
+und die Dokumente als Client las — diese Berechtigung gibt es nicht mehr; die Prüfung läuft jetzt serverseitig,
+wie bei den ohnehin gesperrten Collections.
+
 **Umfrage eingestellt (Sonny, 16.09.2026):** „kann generell ausbleiben, ist eh vorbei ohne Erfolg." Die
 Workflows `survey-send.yml` und `survey-digest.yml` bleiben dauerhaft aus — nicht mehr „bis die Log-Fixes auf
 `main` sind", sondern endgültig. Kein weiterer Aufwand in Versand, Digest oder Auswertung. Der Code bleibt

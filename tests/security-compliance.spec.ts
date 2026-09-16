@@ -456,22 +456,18 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     });
     expect(deleteResponse.status()).toBe(200);
 
-    // 4. Verify all documents are purged from Firestore
-    // Sign in as Admin to verify (since normal users get PERMISSION_DENIED on non-existent documents)
-    await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
-
-    const projSnap = await getDoc(doc(firestoreDb, 'projects', `proj-${tempUid}`));
-    expect(projSnap.exists()).toBe(false);
-
-    const exampleSnap = await getDoc(doc(firestoreDb, 'abap_examples', `example-${tempUid}`));
-    expect(exampleSnap.exists()).toBe(false);
-
-    const userSnap = await getDoc(doc(firestoreDb, 'users', tempUid));
-    expect(userSnap.exists()).toBe(false);
-
+    // 4. Verify all documents are purged from Firestore.
+    //
+    // Server-side, like the locked collections below. This used to sign in as
+    // the administrator and read the documents as a client, which worked
+    // because the rules let an administrator read any project. They do not any
+    // more (Sonny, 16.09.2026: only the owner), and a deletion check has no
+    // business needing a permission the product does not grant.
+    expect(await adminDocExists('projects', `proj-${tempUid}`)).toBe(false);
+    expect(await adminDocExists('abap_examples', `example-${tempUid}`)).toBe(false);
+    expect(await adminDocExists('users', tempUid)).toBe(false);
     // The run subcollection under the (now-deleted) project must be gone too.
-    const runSnap = await getDoc(doc(firestoreDb, 'projects', `proj-${tempUid}`, 'runs', `run-${tempUid}`));
-    expect(runSnap.exists()).toBe(false);
+    expect(await adminDocExists(`projects/proj-${tempUid}/runs`, `run-${tempUid}`)).toBe(false);
 
     // Collections locked to `if false` in rules — verify server-side via the seed API.
     expect(await adminDocExists(`user_secrets/${tempUid}/providers`, 'gemini')).toBe(false);

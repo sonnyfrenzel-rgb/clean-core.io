@@ -425,9 +425,24 @@ export default function LandingModals() {
     }
   };
 
+  /**
+   * Recovery codes used to look like `CC-XXXX-YYYY`, and people kept them.
+   *
+   * Roadmap 0.13 replaced the application-level TOTP with Firebase's own factor
+   * and there are no backup codes any more. Someone pasting an old one got
+   * "that code is not valid" and no idea why (UX review of 52f171091948,
+   * d5f35cf138c5). It is not invalid — it no longer exists, and the way back in
+   * is a different one.
+   */
+  const OLD_RECOVERY_CODE = /^CC-[A-Z0-9]{4}-[A-Z0-9]{4}$/i;
+
   const handleMfaPaste = (e: ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pasteData = e.clipboardData.getData('text').trim();
+    if (OLD_RECOVERY_CODE.test(pasteData)) {
+      setAuthError('That is one of the old recovery codes, which no longer exist. Sign in with the 6-digit code from your authenticator app, or write to info@clean-core.io from your account address if you have lost it.');
+      return;
+    }
     if (pasteData.length === 6 && !isNaN(Number(pasteData))) {
       const splitCode = pasteData.split('');
       setMfaCode(splitCode);

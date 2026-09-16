@@ -120,10 +120,16 @@ service cloud.firestore {
     }
 
     match /projects/{projectId} {
-      allow read: if isAuthenticated() && (
-        isAdmin() ||
-        (resource != null && resource.data.userId == request.auth.uid)
-      );
+      // Nobody but the owner reads a project. The administrator used to be able
+      // to, and Sonny took that away on 16.09.2026: a customer's ABAP is the
+      // most private thing in this product, and "the operator can look" is a
+      // sentence the trust card would otherwise have to carry.
+      //
+      // There is no client path left for an emergency either. An emergency —
+      // a report of malicious code in an upload — is handled server-side
+      // through the Admin SDK, which bypasses these rules by design; that is a
+      // deliberate act with a record, not a console anyone can open.
+      allow read: if isAuthenticated() && resource != null && resource.data.userId == request.auth.uid;
       // Quota enforcement and field validation are server-side
       allow create: if isAuthenticated() && 
                     request.resource.data.keys().hasAll(['name', 'status', 'userId', 'createdAt']) &&
@@ -133,8 +139,11 @@ service cloud.firestore {
                     request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 255;
       // F-01: Owner may update their project, but userId and createdAt are immutable.
       // Field-level size validation is enforced by isValidProject().
+      // The administrator cannot write a project either: reading was the
+      // permission in question, and an operator editing someone's evidence is
+      // the worse half of the same thing.
       allow update: if isAuthenticated() && (
-                    isAdmin() || (
+                    (
                       resource.data.userId == request.auth.uid &&
                       // Strict allowlist of client-writable draft & interactive fields (Finding P1)
                       request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -153,10 +162,9 @@ service cloud.firestore {
     }
 
     match /projects/{projectId}/runs/{runId} {
-      allow read: if isAuthenticated() && (
-        isAdmin() ||
-        (resource != null && resource.data.userId == request.auth.uid)
-      );
+      // A run carries the source it was computed from, so it follows the
+      // project: owner only.
+      allow read: if isAuthenticated() && resource != null && resource.data.userId == request.auth.uid;
       allow write: if false;
     }
 

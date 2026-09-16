@@ -21,6 +21,7 @@ const branchSuffix = (process.env.GITHUB_REF_NAME || 'local').replace(/[^a-zA-Z0
 // Unique usernames per run
 const OWNER_EMAIL = `owner-user-${branchSuffix}-${Date.now()}@cleancore-test.io`;
 const ATTACKER_EMAIL = `attacker-user-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+const ADMIN_EMAIL = `rules-admin-${Date.now()}@cleancore-test.io`;
 const TEST_PASSWORD = 'SecurityPassword123!';
 
 test.describe('Firestore Security Rules: AnalysisRuns subcollection validation', () => {
@@ -70,6 +71,51 @@ test.describe('Firestore Security Rules: AnalysisRuns subcollection validation',
       tier: 'pilot',
       status: 'approved',
     });
+  });
+
+  test('an administrator cannot read or write somebody else\'s project', async () => {
+    // Sonny took this away on 16.09.2026: a customer's ABAP is the most private
+    // thing in this product, and an operator who *can* look is a sentence the
+    // trust card would have to carry. There is no client path left — an
+    // emergency, a report of malicious code, is a deliberate server-side act
+    // through the Admin SDK, which bypasses these rules by design.
+    const adminCred = await createUserWithEmailAndPassword(firebaseAuth, ADMIN_EMAIL, TEST_PASSWORD);
+    await adminSetDoc('users', adminCred.user.uid, {
+      firstName: 'Ops', lastName: 'Admin', email: ADMIN_EMAIL, tier: 'pilot', status: 'approved', isAdmin: true,
+    });
+    await adminSetCustomClaim(adminCred.user.uid, { admin: true });
+    await signInWithEmailAndPassword(firebaseAuth, ADMIN_EMAIL, TEST_PASSWORD);
+    await adminCred.user.getIdToken(true);
+
+    expect(firebaseAuth.currentUser?.uid, 'the admin is the signed-in user').toBe(adminCred.user.uid);
+    const tokenClaims = await firebaseAuth.currentUser!.getIdTokenResult(true);
+    expect(tokenClaims.claims.admin, 'and carries the admin claim').toBe(true);
+
+    const projectRef = doc(firestoreDb, 'projects', projectId);
+    let readFailed = false;
+    try {
+      await getDoc(projectRef);
+    } catch {
+      readFailed = true;
+    }
+    expect(readFailed, 'the project of another account stays closed').toBe(true);
+
+    const runRef = doc(firestoreDb, 'projects', projectId, 'runs', runId);
+    let runReadFailed = false;
+    try {
+      await getDoc(runRef);
+    } catch {
+      runReadFailed = true;
+    }
+    expect(runReadFailed, 'and so does its run, which carries the source').toBe(true);
+
+    let updateFailed = false;
+    try {
+      await setDoc(projectRef, { status: 'documented' }, { merge: true });
+    } catch {
+      updateFailed = true;
+    }
+    expect(updateFailed, 'an operator editing evidence is the worse half of the same thing').toBe(true);
   });
 
   test('owner should be allowed to read their own runs, but blocked from writing directly', async () => {
