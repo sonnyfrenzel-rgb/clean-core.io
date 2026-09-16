@@ -16,6 +16,21 @@ Verzweigungen, 2.2 Aufrufe, beide deterministisch und mit Zeilenbereich; **2.3 b
 Phase ist nicht fertig.** Dazu das erste vollständige Security-Audit (247 gemeldet, 24 entschieden, die
 meisten widerlegt), die UX-Delta-Review (7 entschieden, 2 widerlegt) und rund ein Dutzend QA-Runden.
 
+**Spät am Abend des 16.09. dazugekommen:** der Wettlauf-Test zu 0.6 hält jetzt auch auf dem
+Produktionsbuild (`a19945e`, CI grün — die 37-kB-Quelle hält das Fenster offen, der Abtaster stoppt, wenn
+die Anfrage endet). Zwei Unabhängigkeitsprüfungen über der Engine, beide als Ratsche im Test: **abaplint als
+zweiter Parser** (`tests/abaplint-second-opinion.spec.ts`; neun Abweichungen mit Urteil im Register, „wir
+haben recht" ist dort verboten; vier Defekte an Stringtemplate-Literalen in drei Lesern behoben — eines
+davon ließ ein `IF lv = |Status: ok|.` aus dem Diagramm verschwinden) und **fünf metamorphe Eigenschaften**
+(`tests/abap-metamorphic.spec.ts`, 98 Tests, je Eigenschaft ein Rot-Beweis; `ENDIF. " done` zählte nicht
+als Schließer, Komplexität 10 statt 9). Drei weitere Befunde daraus stehen als Entscheidungen 10–12 in
+ROADMAP §9 und zwei als Arbeit in Phase 2. **Referenzkorpus:** vier Modelle mit identischer Ausgangslage
+sagen einstimmig „nicht freigeben"; Entscheidung Sonny: kein externer Prüfer, v2 mit
+Unabhängigkeitsstufen und Negativliste gebaut (ROADMAP §9, Entscheidung 1). Und der QA-Checkpoint hing
+seit `44a8715` fest, weil das aufgelaufene Delta nicht in vier Aufrufe passte — 16 Befunde des großen
+Deltas mit Beleg widerlegt, der Checkpoint wird in Scheiben per `workflow_dispatch` nachgezogen, das Budget
+bleibt unangetastet.
+
 **`firestore.rules` muss vor dem App-Deploy von Hand ausgerollt werden** (`npm run deploy:rules`) — zweimal
 in diesem Release geändert: die Admin-Einsicht in Projekte ist weg, und 0.7 nimmt sechs Felder aus der
 client-schreibbaren Allowlist. Eine App auf nicht ausgerollten Regeln bricht genau an diesen Stellen.

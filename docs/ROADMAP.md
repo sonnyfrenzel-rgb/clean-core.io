@@ -214,6 +214,25 @@ Code-Karte darunter.
   ausgewiesen wird;
 - für Korpusfälle mit Prozess-Ground-Truth das Skelett übereinstimmt.
 
+**Befunde vom 16.09.2026 aus den Unabhängigkeitsprüfungen, in 2.1/2.2 zu beheben:**
+- **Kettensätze in der Coverage untererfasst.** Die Engine hat zwei
+  Anweisungsleser: `readStatements` (`statement-reader.ts`) expandiert
+  `WRITE: a, b, c.` zu drei Anweisungen, `tokenize` (`declaration-parser.ts`)
+  nicht — und `assessCoverage`/`buildAbapEvidence` lesen durch `tokenize`.
+  `Z_MATERIAL_STOCK_CALC` meldet „3 × classic list output", ausgeschrieben sind
+  es 10; `Z_SALES_ORDER_CREATOR` 3 statt 5, `Z_MM_PO_APPROVAL` 2 statt 4. Nicht
+  blind zu beheben: `tokenize` speist auch den Klassenparser, der Ketten selbst
+  zerlegt — zweimal expandieren wäre der nächste Defekt. Korpusfall CC-043
+  (v2) legt den Sollwert fest: ein Anker je Kettenglied. Gefunden durch
+  Eigenschaft P2.
+- **Lokale interne Tabellen als Datenbank-Abhängigkeit.** `extractDataCoupling`
+  meldet `MODIFY gt_bp_data FROM gs_bp_data.` (`Z_BUSINESS_PARTNER_SYNC.txt:59`)
+  als `GT_BP_DATA · Write · Medium`; `evidence-model.ts` unterdrückt denselben
+  Namen als lokal deklariert, `extractDataCoupling` fragt die deklarierten
+  Namen nicht. Die Über-Meldung von `open-sql-discrimination.ts` ist gewollt,
+  aber hier trifft sie eine Variable — die Klasse „erfundene Abhängigkeit" aus
+  QA-Review 33471220d6e9. Gefunden beim Bau von Eigenschaft P1.
+
 ### Phase 3 — v2.13 „Modellieren"
 
 Mockup Screen 1: die Regelkarte BR-004 mit Ankern und den Zuständen „Keep · Change
@@ -564,7 +583,7 @@ ersetzt.
 
 | # | Entscheidung | Warum sie zählt |
 |---|---|---|
-| 1 | **Referenzkorpus v1 und externer Prüfer** | Ohne ihn fehlt die Ground Truth für Level-Regeln, Prozessskelett (Phase 2) und später die Bench |
+| 1 | **Referenzkorpus v2 — ohne externen Prüfer** | Entschieden am 16.09.2026 (Sonny): kein externer SAP-Architekt, der Umfang wäre nicht in vertretbarer Zeit gegenzuzeichnen. Der Korpus lebt mit dieser Einschränkung, trägt sie an jedem Fall und kommt ihr über die Unabhängigkeitsstufen so nah, wie es ohne Architekten geht. Offen bleibt nur noch, ob v2 ins Repository kommt (heute: neben v1 auf dem Desktop) |
 | 2 | **Wer stellt einen Signavio-Workspace für 4.3?** | Clean-Core.io hat keine Lizenz. Ohne einen Mitglieds-Workspace bleibt die Aussage „BPMN 2.0 XML", nie „getestet mit Signavio" |
 | 3 | **„Discussion" aus dem Mockup vor 3.0?** | Kommentare der eingeladenen Personen am Element wären ein weiterer M-Schritt in Phase 5. Ein Kommentar wäre keine Bestätigung |
 | 4 | **Vorschau vor 3.0?** | Bis 3.0 nur Admin — oder ab Phase 5 eine Vorschau für ausgewählte Mitglieder, die dann echtes Feedback geben |
@@ -574,19 +593,55 @@ ersetzt.
 | 8 | **CSP ohne `unsafe-inline`?** | SEC-2026-016. `middleware.ts` begründet über zwanzig Zeilen, warum `script-src` heute `'unsafe-inline'` trägt: Next.js reicht middleware-erzeugte Nonces nicht an seine eigenen `<script>`-Tags weiter. Ob das mit Next 15 noch gilt, ist die eigentliche Frage. Verschärfen heißt: gegen den echten Google-Login testen, sonst sperrt es Leute aus |
 | 9 | **S/4-Zugangsdaten aus der Kindprozess-Umgebung?** | SEC-2026-018. Der Sandbox-Kindprozess bekommt entschlüsselte Zugangsdaten als Umgebungsvariablen und führt modellgeschriebenen Testcode aus. Netz-Sperre unbedingt geladen, keine Shell, Heap gedeckelt — der Schaden bleibt beim Kontoinhaber. Ein Proxy statt Umgebungsvariablen wäre sauberer, ist aber ein Entwurf, keine Reparatur |
 
-**Vertagt am 16.09.2026 auf den 17.09.2026** (Entscheidung Sonny): 7, 8 und 9 —
-sowie die neun UX-Befunde, die das Register weiter in Schritt **0.2** einplant
-(UX-026, -027, -029, -037, -038, -040, -059, -076, -084). Keiner der vier
-Posten blockiert ein Release; sie stehen hier, damit sie morgen nicht neu
-gesucht werden müssen.
+| 10 | **Fehlerhaftes ABAP im ausgelieferten Beispiel reparieren?** | abaplint (zweiter Parser, seit 16.09.2026 als Ratsche in `tests/abaplint-second-opinion.spec.ts`) weist `ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap:500` und `:524` zurück: `INSERT ztab FROM @VALUE #( … )` ist kein gültiges ABAP, eine Host-Expression heißt `@( … )`. Unser Leser ist nachsichtig und erfasst den Write trotzdem. Reparieren ändert Zahlen, die vier Specs pinnen |
+| 11 | **Unquotierte Dezimalzahl: nachsichtig lesen oder nicht?** | Seit 3342f34 liest die Engine `lv = 12.50.` als eine Anweisung. abaplint — und die Sprache — lesen zwei: ABAP-Zahlliterale sind Ganzzahlen, `'12.50'` wäre richtig. Unsere Regel liest also Code, der nicht übersetzen würde. In keinem der acht Beispiele kommt der Fall vor; die Regel ist dort unerprobt |
+| 12 | **Kommentarzeilen zählen als LOC in der Komplexität** | `computeComplexityScore` (`lib/abap/code-assessment.ts`) zählt Kommentar- und Fortsetzungszeilen: `Z_MM_PO_APPROVAL` steigt von 8 auf 9, wenn vor jeder Zeile ein Kommentar steht. Gefunden durch die metamorphe Eigenschaft P3 (`tests/abap-metamorphic.spec.ts`). Ändern heißt, eine Zahl zu ändern, die jeder signierte Run speichert |
 
-Zu **1** (Referenzkorpus): am 16.09.2026 abends an vier Modelle über OpenRouter
-gegeben — Grok 4.6, GLM 5.3, Claude Fable 5.1 und DeepSeek v4 Pro, alle mit
-identischer Ausgangslage, jedes mit dem Auftrag, den Korpus mit mindestens 100
-eigenen realen ABAP-Beispielen zu widerlegen. Das ersetzt den externen Prüfer
-nicht: vier Modelle, die dieselbe Gattung Fehler machen können wie der Autor,
-sind eine Härtung und keine Freigabe. Es soll die Arbeit des Prüfers von Tagen
-auf Stunden bringen.
+**Vertagt am 16.09.2026 auf den 17.09.2026** (Entscheidung Sonny): 7, 8, 9, 10, 11 und 12 —
+sowie die neun UX-Befunde, die das Register weiter in Schritt **0.2** einplant
+(UX-026, -027, -029, -037, -038, -040, -059, -076, -084). Keiner dieser
+Posten blockiert ein Release; sie stehen hier, damit sie morgen nicht neu
+gesucht werden müssen. 10 bis 12 sind am Abend des 16.09. dazugekommen.
+
+Zu **1** (Referenzkorpus), Stand 16.09.2026 spät: Die vier Modelle — Grok 4.6
+(130 Fälle), GLM 5.3 (105), Claude Fable 5.1 (122), DeepSeek v4 Pro (103), alle
+mit identischer Ausgangslage — haben v1 einstimmig **nicht freigegeben**. Ihre
+Lücken konvergieren (Verbuchung/LUW, dynamischer und nativer Code, Makros,
+Berechtigung als fehlende Aussageklasse); Fable fand zusätzlich innere
+Widersprüche des Korpus (drei Ankerkonventionen, eine falsch formulierte
+Regel, R13 einseitig — eine Engine, die v1 besteht, lässt ein KNA1-Update per
+ADBC mit null Befunden durch). Kein einziger Modellfall trägt eine belegte
+Fundstelle: 322 `konstruiert`, 0 `verifiziert` bei dreien; Fables 19
+`verifiziert` meinen ausdrücklich nur, dass die SAP-Objekte und die Syntax
+existieren. Die Berichte sind eine Angriffsflächenkarte, kein Beleg.
+
+Daraus **Referenzkorpus v2** (Datei `referenzkorpus-v2.md` neben den
+v1-Entwürfen auf dem Desktop; nicht im Repository): Schlüssel *(Quelle,
+Zielprofil)* statt *Quelle*; eine Ankerkonvention (Statementbeginn +
+Tokenoffset); R13 zweigeteilt; acht neue Konstruktklassen K12–K19 mit
+31 destillierten Fällen CC-026 bis CC-060, jeder mit Konvergenz-Zeile,
+Beleggrad und den **Unabhängigkeitsstufen**, die er getroffen hat
+(`modellreview` · `abaplint` · `metamorph` · `sap-doku` · `architekt` — die
+letzte für keinen Fall, und das steht so drin); eine Negativliste in jedem
+Export; die v1-Korrekturen; die Autorenberichte mit dem, was bewusst *nicht*
+aufgenommen wurde. Was den Architekten ersetzt, ohne ihn zu ersetzen, läuft
+seither als Ratsche im Test: abaplint als zweiter Parser
+(`tests/abaplint-second-opinion.spec.ts`, neun Abweichungen mit Urteil im
+Register, „wir haben recht" ist dort verboten) und fünf metamorphe
+Eigenschaften (`tests/abap-metamorphic.spec.ts`, 98 Tests, je Eigenschaft ein
+Rot-Beweis). Beide haben am ersten Tag sieben Engine-Befunde geliefert, die
+kein v1-Fall gesehen hätte — vier behoben (Stringtemplate-Literale in drei
+Lesern; `ENDIF. " done` zählte nicht als Schließer), drei stehen oben als 10–12
+und in Phase 2.
+
+Nächste Schritte am Korpus, in dieser Reihenfolge: jede `source.abap` aus v2
+durch abaplint und die Eigenschaften ziehen (erst dann tragen die neuen Fälle
+diese Stufen); ein gezielter Durchgang durch öffentliche ABAP-Repositories
+**nach Konstrukten** (`IN UPDATE TASK`, `EXEC SQL`, `cl_sql_statement`,
+`CALL TRANSACTION USING`, `ENQUEUE_`, `AUTHORITY-CHECK`, `ASSIGN (`,
+`GENERATE SUBROUTINE POOL`) — Treffer mit festgenageltem Commit heben Fälle auf
+`verifiziert (Fundstelle)`, Fehlanzeige belegt, dass die Klasse öffentlich
+nicht vorkommt; das maschinenlesbare Fallbündel mit Kontexthash.
 
 ---
 
