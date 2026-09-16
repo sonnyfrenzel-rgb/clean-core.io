@@ -24,6 +24,19 @@ function cleanComments(line: string): string {
 }
 
 /** Extract all SELECT statements (each terminated by '.') from a source file. */
+/**
+ * Does a statement begin with SELECT on this line, outside of any literal?
+ *
+ * Text literals are removed first — `'...'` and `` `...` `` — so a SELECT that
+ * only exists inside one is gone before the question is asked. What remains
+ * counts when it opens the line or follows a statement end (`.`) or a chain
+ * separator (`:` / `,`), which is where an ABAP statement can start.
+ */
+export function startsSelectStatement(line: string): boolean {
+  const withoutLiterals = line.replace(/'(?:[^']|'')*'/g, "''").replace(/`(?:[^`]|``)*`/g, '``');
+  return /(?:^|[.:,])\s*SELECT\b/i.test(withoutLiterals);
+}
+
 export function extractSelects(content: string): { text: string; line: number }[] {
   const lines = content.split(/\r?\n/);
   const out: { text: string; line: number }[] = [];
@@ -39,7 +52,13 @@ export function extractSelects(content: string): { text: string; line: number }[
     const trimmedClean = cleanLine.trim();
     if (!trimmedClean) continue;
 
-    if (!inSel && /\bSELECT\b/i.test(trimmedClean)) {
+    // `WRITE 'SELECT data FROM cache.'.` is not a query. The old condition was
+    // "the line contains SELECT", so a literal mentioning the word opened a
+    // statement, the parser buffered everything up to the next period, and the
+    // transformation prompt received a sentence as deterministic SQL metadata
+    // (QA review of 33471220d6e9, 14d4000c4586). SELECT has to be a statement
+    // keyword: outside any literal, and at the start of a statement.
+    if (!inSel && startsSelectStatement(trimmedClean)) {
       inSel = true;
       start = i + 1;
       buf = '';

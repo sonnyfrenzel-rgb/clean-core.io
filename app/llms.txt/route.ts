@@ -48,7 +48,7 @@ Apache-2.0. Normalized and enriched by Clean-Core.io.
 
 - [SAP Cloudification Repository Viewer / Object Catalog](${baseUrl}/catalog): look up any SAP standard object and its released successor. Individual object pages live at ${baseUrl}/catalog/<object>, e.g. ${baseUrl}/catalog/vbak.
 - [Clean Core object classification A–D](${baseUrl}/sap-clean-core-object-classification): SAP's four clean-core extensibility levels and how Clean-Core.io derives a readiness grade.
-- [Clean Core Score](${baseUrl}/clean-core-score): how the deterministic score is calculated.
+- [Clean Core Score](${baseUrl}/clean-core-score): how the deterministic score is calculated. Higher is better. Not SAP's "Technical Debt Score" in SAP Cloud ALM, where a higher value means more technical debt; SAP has no metric of this name.
 - [Knowledge base](${baseUrl}/knowledge): Clean Core strategy, In-App RAP vs. Side-by-Side CAP, security architecture.
 - [How it works](${baseUrl}/how-it-works): the evidence engine, the AI layer, and the boundary between them.
 - [ABAP custom code analysis](${baseUrl}/abap-custom-code-analysis): free browser-based first-pass static analysis.

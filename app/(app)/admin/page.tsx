@@ -139,10 +139,10 @@ export default function AdminConsole() {
           });
           if (!mailRes.ok) {
             const detail = await mailRes.json().catch(() => ({}));
-            setMailWarning(`The account is active, but the welcome mail to ${targetReq.email} was not sent (${detail.error || mailRes.status}). Send it again from this account's row.`);
+            setMailWarning(`The account is active, but the welcome mail to ${targetReq.email} was not sent (${detail.error || mailRes.status}). Approve the account again to send it, or write to them directly.`);
           }
         } catch (emailErr) {
-          setMailWarning(`The account is active, but the welcome mail to ${targetReq.email} could not be sent. Send it again from this account's row.`);
+          setMailWarning(`The account is active, but the welcome mail to ${targetReq.email} could not be sent. Approve the account again to send it, or write to them directly.`);
           console.error('Failed to trigger Welcome Email API:', emailErr);
         }
       }

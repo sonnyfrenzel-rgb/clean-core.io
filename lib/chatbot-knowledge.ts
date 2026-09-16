@@ -179,7 +179,7 @@ The central workspace showing all projects. Users can create new projects, view 
 Upload and analyze legacy SAP ABAP customizations. The static analysis engine provides deep insights into code quality and Clean Core compliance.
 - **File Upload**: Drag-and-drop or browse to upload ABAP source files (.clas, .prog, .fugr, etc.)
 - **Parsing Engine**: Automatically detects ABAP patterns (SELECT statements, MODIFY, CALL FUNCTION, custom Z-tables)
-- **Clean Core Score**: A numerical compliance rating based on usage of released vs. unreleased SAP interfaces
+- **Clean Core Score**: A 0-100 grade of how far custom code is decoupled from the standard core, computed deterministically from released vs. unreleased SAP interfaces. **Higher is better.** It is not SAP's "Technical Debt Score" in the RISE with SAP methodology dashboard (SAP Cloud ALM), where a higher value means *more* technical debt — the two point in opposite directions, and SAP has no metric of this name.
 - **Dependency Map**: Visual map of database table dependencies, function module calls, and custom object references
 - **Risk Assessment**: Highlights high-risk patterns like direct table modifications, unreleased API usage, and hardcoded values
 

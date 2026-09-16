@@ -76,6 +76,8 @@ export default function TestingSandboxPage() {
    * (QA review of 33471220d6e9, 40e1db9fd37a).
    */
   const [savedS4, setSavedS4] = useState<{ url: string; username: string; authType: string; btpDestinationJson: string } | null>(null);
+  /** "You have not saved this yet" is not a failed connection — see the test handler. */
+  const [unsavedNotice, setUnsavedNotice] = useState('');
   const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
   const [selectedResult, setSelectedResult] = useState<any>(null);
 
@@ -253,6 +255,7 @@ export default function TestingSandboxPage() {
     setTestingConnection(true);
     setConnectionStatus('disconnected');
     setConnectionMessage('');
+    setUnsavedNotice('');
     
     const authLabel = s4AuthType === 'basic' ? 'Basic Auth' 
       : s4AuthType === 'oauth2' ? 'OAuth 2.0 Client Credentials' 
@@ -262,9 +265,12 @@ export default function TestingSandboxPage() {
     // The test uses the saved connection, so it cannot run before there is one,
     // and it must not claim to be testing something the form has since changed.
     if (!savedS4 || !savedS4.url) {
-      setConnectionStatus('failed');
-      setConnectionMessage('Save the connection first — the test runs against the saved credentials, which never leave the server.');
-      setSandboxOutput('[sandbox-runtime] No saved connection. Save the tenant URL and credentials, then test.');
+      // Not `failed`: nothing was tested, so nothing failed. A red "connection
+      // failed" for an unsaved form reads as a broken tenant
+      // (UX review of 52f171091948, 1b84676d685d).
+      setConnectionStatus('disconnected');
+      setUnsavedNotice('Save the connection first — the test runs against the saved credentials, which never leave the server.');
+      setSandboxOutput('');
       setTestingConnection(false);
       return;
     }
@@ -278,9 +284,9 @@ export default function TestingSandboxPage() {
       || savedS4.btpDestinationJson !== btpDestinationJson
       || s4Password.length > 0;
     if (formChanged) {
-      setConnectionStatus('failed');
-      setConnectionMessage(`The form no longer matches the saved connection (saved: ${savedS4.url}). Save your changes, then test.`);
-      setSandboxOutput(`[sandbox-runtime] Unsaved changes. The saved connection is ${savedS4.url}; that is the one the test would have used.`);
+      setConnectionStatus('disconnected');
+      setUnsavedNotice(`Unsaved changes — the test would run against the saved connection (${savedS4.url}), not what is in the form. Save first, then test.`);
+      setSandboxOutput('');
       setTestingConnection(false);
       return;
     }
@@ -1159,6 +1165,16 @@ export default function TestingSandboxPage() {
                       </>
                     )}
                   </div>
+
+                  {/* Nothing was tested, so nothing failed: an unsaved form is
+                      its own state, in amber, not a red "connection failed"
+                      that reads as a broken tenant (UX review of 52f171091948,
+                      1b84676d685d). */}
+                  {unsavedNotice && (
+                    <div className="p-4 rounded-xl border text-xs font-bold bg-amber-50 border-amber-200 text-amber-800" role="status">
+                      {unsavedNotice}
+                    </div>
+                  )}
 
                   {connectionMessage && (
                     <div className={clsx(

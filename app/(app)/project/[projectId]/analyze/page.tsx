@@ -2056,6 +2056,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   setShowConceptQuestion(true);
                 }}
                 disabled={loading || !legacyCode || !acceptedTerms || stagedScanBlock !== null}
+                title={stagedScanBlock ? `Security Block: ${stagedScanBlock} Remove the flagged content before analysing.` : undefined}
                 className={clsx(
                   "flex items-center gap-3 bg-[#00873a] text-white px-10 py-4 rounded-2xl hover:bg-[#006b2c] hover:shadow-xl hover:shadow-green-900/20 transition-all font-black disabled:opacity-50 disabled:cursor-not-allowed min-w-[220px] justify-center shadow-lg shadow-green-900/10",
                   loading && "animate-pulse",

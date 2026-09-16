@@ -9,10 +9,11 @@
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:44.335Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.2",
       "reportedSeverity": "critical",
-      "updatedAt": "2026-09-15T10:32:44.335Z"
+      "updatedAt": "2026-09-16T12:25:37.483Z",
+      "fixedIn": "c3dc8c4"
     },
     {
       "id": "UX-002",
@@ -35,10 +36,11 @@
       "area": "wissen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:44.439Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.5",
       "reportedSeverity": "critical",
-      "updatedAt": "2026-09-15T10:32:44.439Z"
+      "updatedAt": "2026-09-16T12:25:37.615Z",
+      "fixedIn": "c3dc8c4"
     },
     {
       "id": "UX-004",
@@ -236,9 +238,9 @@
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.379Z",
       "status": "eingeplant",
-      "step": "0.2",
+      "step": "3.0",
       "reportedSeverity": "critical",
-      "updatedAt": "2026-09-15T10:32:45.379Z"
+      "updatedAt": "2026-09-16T12:25:46.468Z"
     },
     {
       "id": "UX-020",
@@ -249,9 +251,9 @@
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.441Z",
       "status": "eingeplant",
-      "step": "1.5",
+      "step": "3.0",
       "reportedSeverity": "critical",
-      "updatedAt": "2026-09-15T10:32:45.441Z"
+      "updatedAt": "2026-09-16T12:25:46.564Z"
     },
     {
       "id": "UX-021",
