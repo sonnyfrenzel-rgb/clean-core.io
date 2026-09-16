@@ -844,19 +844,27 @@ export async function loadGeminiApiKey(uid: string): Promise<string | null> {
 }
 
 /**
- * Deletes the user's custom Gemini API key.
+ * Deletes the user's custom Gemini API key: the encrypted secret first, then
+ * the profile fields that say one is configured.
+ *
+ * Both writes used to end in `.catch(() => {})`. A delete the database refused
+ * left the key in place while the route answered `ok`, and when only the first
+ * write failed the profile stopped claiming a key that was still stored. The
+ * errors propagate now — the route reports success only when both writes went
+ * through — and the order keeps `byokConfigured` from saying "no key" while
+ * one is there.
  */
 export async function deleteGeminiApiKey(uid: string): Promise<void> {
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
-  await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').delete().catch(() => {});
+  await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').delete();
   await db.collection('users').doc(uid).set({
     byokConfigured: FieldValue.delete(),
     byokLast4: FieldValue.delete(),
     byokRotatedAt: FieldValue.delete(),
     geminiApiKey: FieldValue.delete(),
     updatedAt: FieldValue.serverTimestamp(),
-  }, { merge: true }).catch(() => {});
+  }, { merge: true });
 }
 
 

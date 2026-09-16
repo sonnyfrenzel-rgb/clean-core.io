@@ -171,14 +171,21 @@ export async function loadS4ConfigForUser(uid: string): Promise<S4ConfigResolved
   };
 }
 
-/** Löschen (GDPR-Erasure / Disconnect). */
+/**
+ * Löschen (GDPR-Erasure / Disconnect): the vault document first, then the
+ * profile metadata that describes it.
+ *
+ * Both writes swallowed their errors, so a delete the database refused left
+ * the credentials in the vault while the route answered `ok`. They propagate
+ * now, and the route reports success only when both happened.
+ */
 export async function deleteS4Credentials(uid: string): Promise<void> {
   const { db, FieldValue } = await getAdminDb();
-  await db.collection('s4_credentials').doc(uid).delete().catch(() => {});
+  await db.collection('s4_credentials').doc(uid).delete();
   await db.collection('users').doc(uid).set(
     { s4Meta: FieldValue.delete(), s4Config: FieldValue.delete() },
     { merge: true },
-  ).catch(() => {});
+  );
 }
 
 /**
