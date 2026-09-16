@@ -163,7 +163,12 @@ export const TRUST_CLAIMS: TrustClaim[] = [
   },
   {
     id: 'seal',
-    text: 'Every analysis is sealed as a signed, unchangeable run.',
+    // "Every analysis" was more than the evidence says and more than the code
+    // does. An analysis that fails — in the model call, in signing, in the
+    // write — produces no run at all; the reservation goes back and nothing is
+    // recorded (QA review of 5e27b10cac02). The sentence now claims exactly
+    // what SECURITY.md §14.1 backs: the ones that complete.
+    text: 'Every completed analysis is sealed as a signed, unchangeable run.',
     icon: 'seal',
     sources: [
       {

@@ -237,12 +237,22 @@ test('no page promises an outcome nobody measured', () => {
     { re: /\bdramatically\s+(minimi|reduc|lower)/i, why: 'an intensifier standing in for a measurement' },
     { re: /\bTCO\s+by\s+\d/i, why: 'a TCO delta nothing computes' },
   ];
-  // A sentence that says the claim is NOT made is the fix, not the offence.
-  // Deliberately narrow: `no` and `without` appear all over the copy for
-  // unrelated reasons, and letting them excuse a sentence let the LinkedIn
-  // whitepaper's "saving days of manual mapping and boilerplate, without ever
-  // replacing the judgment of the expert" through on the first run.
-  const DISAVOWED = /\b(not|never|neither)\b/i;
+  // A sentence that says the claim is NOT made is the fix, not the offence —
+  // but the negation has to be attached to the claim, not merely somewhere in
+  // the same sentence. Testing the whole sentence let any unrelated negation
+  // wave the promise through: "this is not a workshop — it saves you days of
+  // manual mapping" would have passed (QA review of 5e27b10cac02). The
+  // negation now has to stand in the run-up to the matched phrase, which is
+  // where a disavowal of it actually stands.
+  //
+  // `no` and `without` stay out of the list on purpose: they appear all over
+  // the copy for unrelated reasons, and letting them excuse a claim let the
+  // LinkedIn whitepaper's "saving days of manual mapping and boilerplate,
+  // without ever replacing the judgment of the expert" through on the first run.
+  const NEGATION = /\b(not|never|neither)\b/i;
+  const RUN_UP = 60;
+  const disavowedAt = (sentence: string, at: number): boolean =>
+    NEGATION.test(sentence.slice(Math.max(0, at - RUN_UP), at));
 
   const offenders: string[] = [];
   const inspect = (rel: string, raw: string) => {
@@ -253,7 +263,8 @@ test('no page promises an outcome nobody measured', () => {
       .replace(/<!--[\s\S]*?-->/g, '');
     for (const { re, why } of PROMISES) {
       for (const sentence of text.split(/(?<=[.!?])\s+|\n/)) {
-        if (!re.test(sentence) || DISAVOWED.test(sentence)) continue;
+        const hit = re.exec(sentence);
+        if (!hit || disavowedAt(sentence, hit.index)) continue;
         offenders.push(`${rel}: ${why} — ${sentence.trim().slice(0, 120)}`);
       }
     }
