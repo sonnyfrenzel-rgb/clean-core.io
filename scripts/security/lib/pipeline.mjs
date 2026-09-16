@@ -364,10 +364,12 @@ export function coerceConsultant(answer) {
  * finding, the code under each of them, and the whole report in one answer;
  * three release audits in a row ended without one.
  */
-export function narrativeMessage({ surface, coverage, findings, notRead, failed, droppedNote, maxChars = AUDIT.narrativeInputChars }) {
+export function narrativeMessage({ surface, coverage, findings, notRead, failed, droppedNote, verified = true, maxChars = AUDIT.narrativeInputChars }) {
   const bySeverity = findings.reduce((n, f) => ({ ...n, [f.severity]: (n[f.severity] || 0) + 1 }), {});
   const head = [
-    '## The findings of this audit — already verified; neither add nor remove any',
+    verified
+      ? '## The findings of this audit: you verified them against the code. Neither add nor remove any.'
+      : '## The findings of this audit: reported by the consultants and NOT verified against the code, because the verifying call did not come back. Say so in the summary and in the limitations, claim no verification of your own, and neither add nor remove any.',
     '```json',
     JSON.stringify({ total: findings.length, bySeverity }, null, 1),
     '```',
@@ -398,8 +400,27 @@ export function narrativeMessage({ surface, coverage, findings, notRead, failed,
   let body = texts.join('\n\n');
   // The findings' own text is never dropped — a report that describes fewer
   // findings than it lists would be worse than a long message.
-  const message = [...head, body || '(no finding survived verification)'].join('\n\n');
-  return message.length > maxChars ? message : message;
+  // The limit is the reserve this call was costed with, so it is enforced
+  // rather than observed: the least severe findings are dropped first, and
+  // the message says how many, so the model cannot describe a report it was
+  // not shown (QA review of 7b8add43fa26, 51e8afcef5fb).
+  const RANK = { kritisch: 0, hoch: 1, mittel: 2, niedrig: 3, info: 4 };
+  const room = maxChars - head.join('\n\n').length - 200;
+  const order = texts.map((_, i) => i).sort((x, y) => (RANK[findings[x].severity] ?? 9) - (RANK[findings[y].severity] ?? 9) || x - y);
+  const kept = new Set();
+  let used = 0;
+  for (const i of order) {
+    const cost = texts[i].length + 2;
+    if (used + cost > room) break;
+    kept.add(i);
+    used += cost;
+  }
+  const omitted = texts.length - kept.size;
+  body = texts.filter((_, i) => kept.has(i)).join('\n\n');
+  const note = omitted
+    ? `(${omitted} further finding(s) of the lowest severities are not listed here; they are in the report and counted above.)`
+    : '';
+  return [...head, body || '(no finding survived verification)', note].filter(Boolean).join('\n\n');
 }
 
 /**

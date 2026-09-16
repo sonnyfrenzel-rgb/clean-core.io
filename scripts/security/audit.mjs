@@ -138,7 +138,7 @@ async function main() {
   const findings = verified ? verified.review.findings : consultantFindings;
   const synthesis = { findings: verified ? 'ciso' : 'consultants-unverified', narrative: 'ciso' };
 
-  const narrativeUser = clean('outgoing message', `${CISO_NARRATIVE_TASK}\n\n${narrativeMessage({ surface, coverage, findings, notRead, failed: run.failedCalls, droppedNote: verifiedNote })}`);
+  const narrativeUser = clean('outgoing message', `${CISO_NARRATIVE_TASK}\n\n${narrativeMessage({ surface, coverage, findings, notRead, failed: run.failedCalls, droppedNote: verifiedNote, verified: Boolean(verified) })}`);
   let narrative = null;
   try {
     narrative = await askAgainIfTruncated(
@@ -169,13 +169,18 @@ async function main() {
     verification: `Die Datei ${h.path} auf das Muster prüfen.`,
     confidence: 0.9,
   }));
+  // The rating of a report without a synthesis is the worst finding it carries,
+  // so it is computed from the findings the report will actually have — an
+  // empty list rated everything 'niedrig' (QA review of 7b8add43fa26,
+  // 4930d2571216).
+  const reported = [...secretFindings, ...findings];
   const base = narrative
     ? { ...narrative.review, findings: [] }
-    : reportWithoutNarrative({ findings: [], coverage, reason: 'der abschließende Aufruf kam nicht zurück.' });
+    : reportWithoutNarrative({ findings: reported, coverage, reason: 'der abschließende Aufruf kam nicht zurück.' });
   const report = withCountedCoverage(
     {
       ...base,
-      findings: [...secretFindings, ...findings],
+      findings: reported,
       limitations: [
         ...(base.limitations || []),
         ...(verified ? [] : ['Die Befunde sind Beraterbefunde ohne die zweite Prüfung am Code: der verifizierende Aufruf kam nicht zurück. Jeder Befund ist vor einer Änderung selbst zu prüfen.']),
@@ -202,6 +207,7 @@ async function main() {
     // Above the reserve only when the findings' text alone outgrows it — the code was then left out, and the cost
     // estimate for the CISO was exceeded. Recorded in the sealed report, next to the actual cost.
     cisoInput: { chars: cisoUser.length, reservedChars: AUDIT.cisoInputChars },
+    narrativeInput: { chars: narrativeUser.length, reservedChars: AUDIT.narrativeInputChars },
     redactedSecrets: secretHits.length,
     surface: { files: surface.files.total, byDomain: surface.files.byDomain, apiRoutes: surface.apiRoutes.length, sinks: surface.sinks.length, dependencies: surface.dependencies.vulnerabilities || null },
     report,

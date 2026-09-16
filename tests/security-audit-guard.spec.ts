@@ -522,6 +522,15 @@ test.describe('the audit pipeline', () => {
     expect(AUDIT.cisoInputChars).toBe(300_000);
     expect(AUDIT.narrativeInputChars).toBeLessThan(AUDIT.cisoInputChars);
     expect(AUDIT.narrativeOutputTokens).toBeLessThan(AUDIT.cisoOutputTokens);
+    // The narrative message is held inside the reserve it was costed with.
+    const { narrativeMessage } = await lib('pipeline.mjs');
+    const manyFindings = Array.from({ length: 40 }, (_, i) => ({ severity: i % 4 === 0 ? 'kritisch' : 'niedrig', category: 'C', title: 'T'.repeat(400), impact: 'I'.repeat(400), locations: [], recommendation: 'R'.repeat(400) }));
+    const narrativeArgs = { surface: { head: 'x', files: { total: 1, byDomain: {} }, apiRoutes: [], firestoreRules: {}, dependencies: {} }, coverage: { files_in_scope: 1, deep_read: 1, pattern_scanned_only: 0 }, findings: manyFindings, notRead: [], failed: 0 };
+    const bounded = narrativeMessage({ ...narrativeArgs, maxChars: 6_000 });
+    expect(bounded.length, 'the narrative input stays inside its reserve').toBeLessThanOrEqual(6_000);
+    expect(bounded, 'and says how many findings it left out').toMatch(/further finding\(s\) of the lowest severities/);
+    expect(bounded, 'the severest are the ones it keeps').toContain('kritisch');
+    expect(read('scripts/security/audit.mjs')).toContain('narrativeInput: { chars: narrativeUser.length, reservedChars: AUDIT.narrativeInputChars }');
     // The counted coverage replaces whatever the model wrote.
     expect(withCountedCoverage({ coverage: { files_in_scope: 999, deep_read: 999, pattern_scanned_only: 0, notes: 'model' } }, coverage).coverage).toEqual({ files_in_scope: 10, deep_read: 7, pattern_scanned_only: 3, notes: 'counted model' });
   });
@@ -555,6 +564,10 @@ test.describe('the audit pipeline', () => {
     expect(carried[0]).toMatchObject({ title: 'C', severity: 'hoch' });
     expect(carried[0].description, 'an unverified finding says whose it is').toContain('app-web');
     const rescued = reportWithoutNarrative({ findings: carried, coverage: { files_in_scope: 1, deep_read: 1, pattern_scanned_only: 0, notes: '' }, reason: 'Testfall.' });
+    // The rating is the worst finding the report will carry, so it is computed
+    // from those findings and not from an empty list (QA 4930d2571216).
+    expect(read('scripts/security/audit.mjs')).toContain('reportWithoutNarrative({ findings: reported, coverage,');
+    expect(reportWithoutNarrative({ findings: [], coverage: { files_in_scope: 0, deep_read: 0, pattern_scanned_only: 0, notes: '' }, reason: 'x' }).risk_rating).toBe('niedrig');
     expect(firstViolation(REPORT_SCHEMA, rescued)).toBeNull();
     expect(rescued.risk_rating, 'the rating is the worst single finding, not a verdict').toBe('hoch');
     expect(rescued.executive_summary).toContain('keine CISO-Zusammenfassung');
@@ -564,6 +577,9 @@ test.describe('the audit pipeline', () => {
     expect(src).toMatch(/coerce: coerceConsultant \}/);
     expect(src).toMatch(/coerce: coerceNarrative \}/);
     expect(src).toMatch(/coerceFindings\(answer\)/);
+    // The prose call is told whether anyone verified what it describes.
+    expect(src).toContain('verified: Boolean(verified)');
+    expect(read('scripts/security/lib/pipeline.mjs')).toContain('NOT verified against the code');
   });
 
   test('a rate limit on the last call cannot lose the report: both calls wait up to about 12 minutes', async () => {
