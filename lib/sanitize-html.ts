@@ -54,26 +54,57 @@ export function sanitizeHtml(html: string): string {
 }
 
 /**
- * Lightweight sanitizer for OUR OWN mermaid SVG output.
+ * Sanitizer for the mermaid SVG the design stage renders (SEC-2026-015).
  *
- * DOMPurify's SVG profile (sanitizeSvg) strips the XHTML content INSIDE
- * <foreignObject> — which is exactly where mermaid v11 renders node labels —
- * leaving empty boxes (the "Target Architecture Diagram is blank" bug). The
- * mermaid input here is deterministic and its dynamic label parts are already
- * neutralised upstream (e.g. TargetArchitectureDiagram's sanitize()), so instead
- * of dropping the labels we keep the structure and strip only active content:
- * <script>/<iframe>, inline event handlers, and javascript: URLs.
+ * This was a chain of regular expressions, and its comment said why: DOMPurify
+ * emptied every `<foreignObject>`, which is exactly where mermaid v11 renders
+ * node labels, so the Target Architecture Diagram came out as a row of blank
+ * boxes. That was true, and it is still true of `sanitizeSvg` below. Measured
+ * on a real mermaid v11 flowchart rather than assumed: `USE_PROFILES: { svg,
+ * svgFilters, html }` with `ADD_TAGS: ['foreignObject', 'div', 'span', …]`
+ * keeps all nine `<foreignObject>` elements and not one character of their
+ * contents.
+ *
+ * The cause is one option. DOMPurify will not let an element cross from the SVG
+ * namespace into the HTML namespace except at an "HTML integration point", and
+ * its default set of those is `{ 'annotation-xml': true }` — `foreignobject` is
+ * not in it, so the `<div xmlns="http://www.w3.org/1999/xhtml">` mermaid puts
+ * the label in is dropped with its subtree. `HTML_INTEGRATION_POINTS` is
+ * configurable, and it takes a record: passed an array, DOMPurify clones the
+ * array, the `['foreignobject']` lookup misses, and the labels disappear
+ * exactly as before.
+ *
+ * With `{ foreignobject: true }` the diagram comes through byte for byte — the
+ * theme `<style>` block, the markers, the filters and every label — and the
+ * parser does properly what the regexes were approximating. A pattern list has
+ * to guess how a browser will read markup; six of the ten shapes
+ * `tests/diagram-sanitizer-guard.spec.ts` feeds it came through the old chain
+ * intact, each because the text did not look the way the pattern expected. A
+ * parser reads the markup the way the browser will, and answers about the tree
+ * rather than about the spelling.
+ *
+ * This is the third layer, not the only one: `components/MermaidDiagram.tsx`
+ * initialises mermaid with `securityLevel: 'strict'`, and
+ * `TargetArchitectureDiagram` strips its node labels before they ever become
+ * mermaid source.
  */
+const MERMAID_SVG_CONFIG = {
+  USE_PROFILES: { svg: true, svgFilters: true, html: true },
+  ADD_TAGS: ['foreignObject'],
+  ADD_ATTR: ['dominant-baseline', 'text-anchor', 'requiredFeatures', 'transform', 'style', 'x', 'y', 'width', 'height', 'class', 'xmlns', 'xmlns:xlink', 'viewBox', 'marker-end', 'marker-start', 'font-size', 'fill', 'stroke', 'rx', 'ry', 'cx', 'cy', 'r', 'd', 'points'],
+  // Label markup may cross into the HTML namespace inside <foreignObject> and
+  // nowhere else. This REPLACES DOMPurify's default set rather than extending
+  // it, so 'annotation-xml' stops being one — a diagram has no MathML in it.
+  HTML_INTEGRATION_POINTS: { foreignobject: true } as Record<string, boolean>,
+  // Nothing mermaid emits is in this list; everything in it is a way to get
+  // behaviour, navigation or an outbound request out of a picture.
+  FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'select', 'textarea', 'label', 'link', 'base', 'meta', 'audio', 'video', 'source', 'track', 'canvas', 'math', 'annotation-xml', 'set', 'animate', 'animatetransform', 'animatemotion', 'handler', 'listener'],
+  FORBID_ATTR: ['formaction', 'ping', 'srcdoc', 'srcset'],
+} as const;
+
 export function sanitizeMermaidSvg(svg: string): string {
   if (!svg) return '';
-  return svg
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
-    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
-    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
-    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '')
-    .replace(/(?:href|xlink:href)\s*=\s*(["'])\s*javascript:[^"']*\1/gi, '')
-    .replace(/javascript:/gi, '');
+  return getPurify().sanitize(svg, MERMAID_SVG_CONFIG);
 }
 
 /** Sanitize SVG output using the strict SVG profile (drops foreignObject HTML). */

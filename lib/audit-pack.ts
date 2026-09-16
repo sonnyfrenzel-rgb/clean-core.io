@@ -17,6 +17,12 @@
 
 import type { Project, WorklistItem } from '@/lib/types';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+// The escaper the HTML/Word executive summary below uses at every interpolation.
+// It is imported rather than defined here: one escaper, shared with the stage
+// exports, and its output is unchanged, so the signed bytes of a pack issued
+// before still verify. Project/user/AI-supplied fields (name, approver email,
+// file name, …) must never be able to inject markup into an exported document.
+import { escapeHtml } from '@/lib/export-safety';
 
 interface ManifestFile {
   path: string;
@@ -63,20 +69,6 @@ const ARCH_LABELS: Record<string, string> = {
   event: 'SAP Event Mesh',
   retire: 'Retire / Decommission',
 };
-
-/**
- * Escape a value for safe interpolation into the HTML/Word executive summary.
- * Project/user/AI-supplied fields (name, approver email, file name, …) must never
- * be able to inject markup or active content into the exported document.
- */
-function escapeHtml(value: unknown): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 /**
  * Guard a CSV cell against spreadsheet formula injection: a value that a

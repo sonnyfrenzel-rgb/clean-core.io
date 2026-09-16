@@ -28,9 +28,10 @@ export default function MermaidDiagram({ chart }: { chart: string }) {
         const id = 'm' + Math.random().toString(36).substr(2, 9);
         const { svg } = await mermaid.render(id, chart);
 
-        // Use the mermaid-aware sanitizer: DOMPurify's SVG profile strips the
-        // <foreignObject> label HTML (empty boxes); this keeps labels while still
-        // removing scripts/handlers. See lib/sanitize-html.ts.
+        // Use the mermaid-aware sanitizer: the strict SVG profile empties the
+        // <foreignObject> that carries the label (blank boxes), so this one is
+        // configured to let label markup through and nothing else.
+        // See lib/sanitize-html.ts.
         const cleanSvg = sanitizeMermaidSvg(svg);
         if (ref.current) {
           ref.current.innerHTML = cleanSvg;
