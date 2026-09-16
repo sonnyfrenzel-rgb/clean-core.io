@@ -27,7 +27,7 @@ export const CAPABILITIES: Capability[] = [
     benefit:
       'Replaces "we think this object is risky" with a per-object finding somebody can check. A deterministic engine parses the source before any AI is involved, so the evidence does not depend on a model\'s mood.',
     effort:
-      'One click, about two minutes. Costs one of your five transformations. Re-analysing the same source is free.',
+      'One click, about two minutes. Costs one of your five transformations — except the starter examples, which are free the first time you run each of them. Re-analysing the same source is free; starting the same example again is an ordinary analysis, and the run is only counted once it completes.',
     limit:
       'The A–D grade is an experimental preview estimate, not an authoritative ATC classification. Confirm with SAP ADT and ATC for your target release.',
   },

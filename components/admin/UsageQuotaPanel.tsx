@@ -515,9 +515,11 @@ export default function UsageQuotaPanel() {
                       <div className="px-4 sm:px-6 pb-5">
                         <p className="text-[11px] text-gray-500 font-medium flex items-start gap-2">
                           <CheckCircle2 className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
-                          Only the analysis run in <code className="font-mono">/api/runs/create</code> is counted.
-                          Re-analysing the same source is free; the &ldquo;Objects&rdquo; column shows how many
-                          distinct ABAP sources were actually billed.
+                          Only the analysis run in <code className="font-mono">/api/runs/create</code> is counted, and
+                          only once it has completed &mdash; an aborted or failed run gives the unit back.
+                          Re-analysing the same source is free, and each shipped starter example is free once per
+                          account; every further start of the same example is counted like any other analysis. The
+                          &ldquo;Objects&rdquo; column shows how many distinct ABAP sources were actually billed.
                         </p>
                       </div>
                     </motion.div>
