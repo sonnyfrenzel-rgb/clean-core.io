@@ -74,14 +74,26 @@ if ($manifest.manifestHash -and $manifest.manifestHash -ne $localManifestHash) {
 }
 Write-Output "[OK] Manifest digest verified successfully ($localManifestHash)."
 
-# 3. Verify HMAC signature if key is supplied
+# 3. Authenticity. Checksums that agree with each other say the archive is
+# internally consistent; they say nothing about who issued it. Only a verified
+# signature does that, so only a verified signature ends in SUCCESS.
+#
+# Exit codes follow scripts/verify-pack.mjs, deliberately:
+#   0  verified -- integrity and authenticity
+#   1  verification failed -- something does not match
+#   2  could not run the check -- "I could not tell" is not "it is forged"
+#
+# Until now every path here fell through to "Verification complete: SUCCESS.":
+# an archive that carries no signature at all, and a signed archive whose
+# signature nobody checked because no key was supplied, both ended in the same
+# word as a fully verified one. That is the sentence a reader takes away.
 if ($manifest.signed) {
     if ($SigningKey) {
         $hmac = New-Object System.Security.Cryptography.HMACSHA256
         $hmac.Key = [System.Text.Encoding]::UTF8.GetBytes($SigningKey)
         $sigBytes = $hmac.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($localManifestHash))
         $localSignature = [System.BitConverter]::ToString($sigBytes).Replace("-", "").ToLower()
-        
+
         if ($localSignature -eq $manifest.signature) {
             Write-Output "[OK] Cryptographic signature is valid and authentic."
         } else {
@@ -90,12 +102,18 @@ if ($manifest.signed) {
             exit 1
         }
     } else {
-        Write-Warning "Archive is signed, but no -SigningKey or env:AUDIT_SIGNING_KEY was provided to verify authenticity."
+        Remove-Item -Recurse -Force $tempDir
+        Write-Warning "Contents and manifest agree, but authenticity was NOT checked: the archive is signed and no -SigningKey (or env:AUDIT_SIGNING_KEY) was supplied."
+        Write-Output "Verification incomplete: INTEGRITY ONLY. Supply the signing key to establish who issued this archive."
+        exit 2
     }
 } else {
-    Write-Output "Archive is not signed."
+    Remove-Item -Recurse -Force $tempDir
+    Write-Warning "This archive carries no signature, so nothing here establishes who produced it."
+    Write-Output "Verification incomplete: INTEGRITY ONLY. An unsigned archive proves only that it is consistent with itself."
+    exit 2
 }
 
 # Clean up
 Remove-Item -Recurse -Force $tempDir
-Write-Output "Verification complete: SUCCESS."
+Write-Output "Verification complete: SUCCESS -- contents, manifest and signature all agree."

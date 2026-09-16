@@ -92,6 +92,20 @@ You can verify the integrity and authenticity of any exported ZIP file using [sc
 
 The script will extract the archive, calculate file hashes, match them against the manifest, verify the manifest digest, and validate the cryptographic signature.
 
+**Read the exit code, not just the last line.** The script uses the same three
+codes as `scripts/verify-pack.mjs`, and for the same reason:
+
+| Code | Last line | What it means |
+|---|---|---|
+| `0` | `Verification complete: SUCCESS` | Contents, manifest **and** signature agree. This is the only outcome that says who issued the archive. |
+| `1` | `Verification failed: …` | Something does not match. Do not use the archive. |
+| `2` | `Verification incomplete: INTEGRITY ONLY` | The archive is consistent with itself, and nothing more was established — it carries no signature, or it carries one and no key was supplied to check it. |
+
+Code `2` is deliberately not `0`: "I could not tell" is not "it is genuine", and
+it is not "it is forged" either. Until 16 September 2026 all three outcomes ended
+in the word `SUCCESS` with code `0`, so an unsigned archive and one whose
+signature nobody had checked read exactly like a verified one.
+
 ---
 
 ## 🔒 Post-Export Verification Checklist
