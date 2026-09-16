@@ -74,7 +74,7 @@ const STEPS: Step[] = [
     detail:
       'The deterministic engine parses the source first — findings, database coupling, code inventory, complexity and criticality — and only then does the AI write the narrative around that evidence. Takes a minute or two.',
     see: 'A Clean Core Score, a findings list with line numbers, and a recommended route: in-app ABAP Cloud (RAP) or side-by-side BTP (CAP).',
-    note: 'This is the one step that costs a transformation. Everything after it is included, and re-running the analysis on the same source is free.',
+    note: 'This is the one step that costs a transformation — except the starter examples, which are free the first time you run each of them. Everything after it is included, and re-running the analysis on the same source is free; starting the same example a second time is an ordinary analysis, counted once it completes.',
   },
   {
     n: 5,

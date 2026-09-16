@@ -157,7 +157,12 @@ export default function TermsPage() {
               currently a total of 5 transformations per user account. One transformation is counted when a new ABAP
               source object is submitted for analysis. All subsequent stages of that transformation &mdash; solution
               design, code transformation, documentation, testing, TCO and delivery &mdash; as well as the glossary
-              assistant are not counted, and re-analysing the same source object does not count again. This is a one-time
+              assistant are not counted, and re-analysing the same source object does not count again. The starter
+              examples supplied with the Platform are the exception in both directions: each of them may be analysed
+              once per user account without being counted, and every further analysis of the same example is counted,
+              including where its source is unchanged. An example you have modified is your own source object and is
+              counted as one. A transformation is counted only once the analysis has completed; an analysis that is
+              aborted or fails is not counted. This is a one-time
               allotment and is not reset on a daily or monthly basis. When you provide your own Google Gemini API key
               (BYOK, see section 5), no quota applies. Fair-use rate limits apply to all accounts. The operator may
               adjust, introduce, or remove quotas at any time to protect the stability and fair use of the Platform.

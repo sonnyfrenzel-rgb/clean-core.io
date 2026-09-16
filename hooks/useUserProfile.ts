@@ -18,6 +18,13 @@ export interface UserProfile {
   status: 'pending' | 'approved' | 'suspended' | 'deleted';
   transformationsUsed: number;
   transformationsLimit: number;
+  /**
+   * The shipped starter examples this account has already had for free, keyed by
+   * the example's object name (roadmap 0.9). Server-written, like
+   * `transformationsUsed`: only `reserveRunQuota` puts a name in here, the
+   * Firestore rules keep the client out of it, and the screens only read it.
+   */
+  starterExamplesUsed?: Record<string, boolean>;
   orgId?: string | null;
   maxTeamMembers?: number;
   identityProvider?: 'google' | 'password' | 'okta' | 'azure_ad';

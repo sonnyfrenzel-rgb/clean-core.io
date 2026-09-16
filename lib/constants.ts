@@ -25,6 +25,10 @@ export const CONTACT_EMAIL = 'info@clean-core.io';
  * fingerprint is free. That keeps "5 ABAP-to-Cloud transformations" and "full
  * 7-stage workflow included" (landing page, Terms §6) simultaneously true.
  *
+ * Roadmap 0.9: the shipped starter examples sit outside this count altogether the
+ * first time an account runs each of them, and are counted normally every time
+ * after that — including past the re-analysis exemption above.
+ *
  * NOTE: the Firestore users-create rule independently hardcodes
  * `transformationsLimit == 5`; if this value changes, that rule must change too.
  */

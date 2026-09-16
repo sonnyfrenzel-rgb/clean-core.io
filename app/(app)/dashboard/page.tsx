@@ -1429,11 +1429,7 @@ export default function Dashboard() {
           and "bring your own ABAP first" is where most accounts stop. */}
       {user && (
         <div className="mt-12">
-          <StarterExamples
-            userId={user.uid}
-            limit={profile?.transformationsLimit ?? 5}
-            atLimit={quotaExhausted(profile)}
-          />
+          <StarterExamples userId={user.uid} quota={profile} />
         </div>
       )}
 

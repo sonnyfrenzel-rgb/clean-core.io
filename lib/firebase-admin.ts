@@ -2,6 +2,7 @@ import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, TERMS_VERSION } from '@/lib/constants
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { encrypt, decrypt } from './s4-credentials';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp } from './mfa-gate';
+import { starterExampleForFingerprint } from './starter-example-fingerprints';
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
@@ -222,9 +223,14 @@ export class QuotaError extends Error {
 export interface RunQuotaResult {
   /** true only when a unit was actually deducted (and must be refunded on failure). */
   charged: boolean;
-  reason: 'charged' | 'reanalysis' | 'byok' | 'enterprise';
+  reason: 'charged' | 'reanalysis' | 'byok' | 'enterprise' | 'starter-example';
   used: number;
   limit: number;
+  /**
+   * Set only for `reason: 'starter-example'`: the name of the shipped example this
+   * account has just spent its one free run of, so a failed run can give it back.
+   */
+  starterExample?: string;
 }
 
 /**
@@ -244,14 +250,28 @@ export interface RunQuotaResult {
  * which the Firestore rules keep out of the client's reach (`userClientUpdateKeys`),
  * so it cannot be forged to mint free runs.
  *
+ * v2.11 / roadmap 0.9 — the shipped starter examples are the exception in both
+ * directions. The first run of one, recognised by the fingerprint of its
+ * unchanged source, costs nothing at all: getting a new account to a first result
+ * must not eat the five runs it has to spend on its own code. Every *further* run
+ * of the same example is a normal analysis and is charged — including against the
+ * re-analysis rule above, which would otherwise make example number two, three
+ * and four free forever. What has already been had for free is recorded in
+ * `users/{uid}.starterExamplesUsed`, keyed by the example's object name; like
+ * `chargedInputs` it is written only here, and `userClientUpdateKeys` keeps the
+ * client out of it.
+ *
  * - `tier === 'enterprise'` and BYOK accounts are unmetered (Terms §6).
- * - Otherwise: status must be 'approved' and used < limit, else QuotaError(403).
+ * - Otherwise: status must be 'approved', and used < limit for anything charged.
  *
  * @param inputHash SHA-256 of the analysed source (hex, so a safe Firestore map key).
  */
 export async function reserveRunQuota(uid: string, inputHash: string): Promise<RunQuotaResult> {
   const { db, FieldValue } = await getAdminDb();
   const ref = db.collection('users').doc(uid);
+  // Resolved before the transaction opens: it reads files, and a transaction body
+  // may be retried.
+  const starterExample = await starterExampleForFingerprint(inputHash);
 
   return db.runTransaction(async (tx: any) => {
     const snap = await tx.get(ref);
@@ -274,8 +294,24 @@ export async function reserveRunQuota(uid: string, inputHash: string): Promise<R
       throw new QuotaError('Your account is not active. If you have only just signed up, reload the page to finish setting it up; if it was suspended, contact support.', 403);
     }
 
-    // Already paid for this exact source — a re-analysis, not a new transformation.
-    if (data.chargedInputs && data.chargedInputs[inputHash] === true) {
+    if (starterExample) {
+      // One of the eight shipped examples, unchanged. The first run of it is free
+      // and is not measured against the limit — there is nothing to measure, it
+      // costs no unit. Every run after it drops through to the metered path below,
+      // deliberately past the re-analysis exemption.
+      if (data.starterExamplesUsed?.[starterExample] !== true) {
+        tx.set(
+          ref,
+          {
+            starterExamplesUsed: { [starterExample]: true },
+            updatedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
+        return { charged: false, reason: 'starter-example' as const, used, limit, starterExample };
+      }
+    } else if (data.chargedInputs && data.chargedInputs[inputHash] === true) {
+      // Already paid for this exact source — a re-analysis, not a new transformation.
       return { charged: false, reason: 'reanalysis' as const, used, limit };
     }
 
@@ -301,11 +337,23 @@ export async function reserveRunQuota(uid: string, inputHash: string): Promise<R
 }
 
 /**
- * Best-effort refund of a reserved run unit (e.g. when the run could not be signed
- * or written). Never goes below 0, and drops the fingerprint again so the next
- * attempt is charged normally instead of being mistaken for a free re-analysis.
+ * Best-effort release of whatever `reserveRunQuota` put aside, for a run that
+ * never completed. This is what makes "the unit is spent once the analysis
+ * completes, never on an abort or an error" (roadmap 0.9) true: the reservation
+ * is taken atomically up front, so five parallel requests cannot become six runs,
+ * and anything that fails on the way gives it straight back.
+ *
+ * A charged reservation: the unit returns (never below 0) and the fingerprint is
+ * dropped, so the next attempt is charged normally instead of passing as a free
+ * re-analysis. A free starter-example reservation: no unit was taken, so nothing
+ * is decremented — the example's one free run is handed back instead, which is
+ * why the caller passes the reservation rather than letting this guess.
  */
-export async function refundRunQuota(uid: string, inputHash: string): Promise<void> {
+export async function refundRunQuota(
+  uid: string,
+  inputHash: string,
+  reservation?: RunQuotaResult,
+): Promise<void> {
   try {
     const { db, FieldValue } = await getAdminDb();
     const ref = db.collection('users').doc(uid);
@@ -313,6 +361,14 @@ export async function refundRunQuota(uid: string, inputHash: string): Promise<vo
       const snap = await tx.get(ref);
       if (!snap.exists) return;
       const data = snap.data();
+      if (reservation?.reason === 'starter-example') {
+        const name = reservation.starterExample;
+        // Example names are [A-Z0-9_] (lib/starter-examples.ts), so the dotted
+        // path below cannot be steered anywhere else.
+        if (!name || !/^[A-Za-z0-9_]+$/.test(name)) return;
+        tx.update(ref, { [`starterExamplesUsed.${name}`]: FieldValue.delete() });
+        return;
+      }
       const used = typeof data.transformationsUsed === 'number' ? data.transformationsUsed : 0;
       const updates: Record<string, any> = { [`chargedInputs.${inputHash}`]: FieldValue.delete() };
       if (used > 0) updates.transformationsUsed = FieldValue.increment(-1);

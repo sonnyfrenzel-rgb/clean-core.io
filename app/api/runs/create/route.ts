@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
-import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, reserveRunQuota, refundRunQuota, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, reserveRunQuota, refundRunQuota, assertMfaSatisfied, type RunQuotaResult } from '@/lib/firebase-admin';
 import { APP_VERSION } from '@/lib/version';
 import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
   // run fails after it was charged.
   let chargedUid: string | null = null;
   let chargedHash: string | null = null;
+  let reservation: RunQuotaResult | null = null;
 
   try {
     // 1. Signing key. Unconditional: the check used to run only when NODE_ENV was
@@ -116,11 +117,16 @@ export async function POST(req: NextRequest) {
     // free account can take an ABAP object through the whole 7-stage workflow.
     // Idempotent per source fingerprint: re-analysing the same code costs nothing.
     // Reserved before the expensive evidence build so an exhausted account fails fast.
+    // Roadmap 0.9: a shipped starter example, recognised here by fingerprint, is
+    // free the first time an account runs it — and every later run of it is
+    // charged. Either reservation is released again by the catch below if this run
+    // does not complete.
     try {
       const quota = await reserveRunQuota(decodedToken.uid, hashHex);
-      if (quota.charged) {
+      if (quota.charged || quota.reason === 'starter-example') {
         chargedUid = decodedToken.uid;
         chargedHash = hashHex;
+        reservation = quota;
       }
     } catch (quotaErr: any) {
       if (quotaErr instanceof QuotaError) {
@@ -474,10 +480,11 @@ export async function POST(req: NextRequest) {
       signature,
     });
   } catch (error: any) {
-    // The run never completed — give the unit back and forget the fingerprint, so
-    // the next attempt is charged normally rather than passing as a re-analysis.
+    // The run never completed — give back whatever was reserved: the unit and its
+    // fingerprint, so the next attempt is charged normally rather than passing as a
+    // re-analysis, or the starter example's one free run.
     if (chargedUid && chargedHash) {
-      await refundRunQuota(chargedUid, chargedHash);
+      await refundRunQuota(chargedUid, chargedHash, reservation ?? undefined);
     }
     logger.error('runs/create failed', { route: 'api/runs/create', error: errMessage(error) });
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
