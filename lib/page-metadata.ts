@@ -24,12 +24,20 @@ export function withTwitterCard(meta: Metadata): Metadata {
   const description = typeof og.description === 'string' ? og.description : undefined;
   if (!title && !description) return meta;
 
+  // The card image, for the same reason as the title: a page that declares its
+  // own `openGraph` block does not inherit the root layout's `images`, so a page
+  // that names one has to pass it on here or the Twitter card ships without a
+  // picture. A page that names none still gets none — this copies, it does not
+  // invent.
+  const images = og.images;
+
   return {
     ...meta,
     twitter: {
       card: 'summary_large_image',
       ...(title ? { title } : {}),
       ...(description ? { description } : {}),
+      ...(images ? { images } : {}),
     },
   };
 }

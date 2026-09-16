@@ -202,3 +202,68 @@ test('no screen outside Economics formats an amount of money', () => {
   for (const dir of ['app', 'components', 'lib']) walk(dir);
   expect(offenders).toEqual([]);
 });
+
+/**
+ * Roadmap 0.3: the promises that carry no currency symbol.
+ *
+ * The check above catches an amount — `style: 'currency'`, `€${…}`, `/yr`. It
+ * cannot catch a promise written in words, and that is where the last ones were
+ * hiding: "predict your TCO savings" in the hero of /clean-core-score, "A high
+ * score dramatically minimizes this testing effort" in an answer that shipped as
+ * schema.org markup, "Calculates the reduction in testing and development costs"
+ * as a pillar of the score itself, "saving days of manual mapping" on /about and
+ * in the LinkedIn whitepaper, "80% faster code assessment" in a sidebar. Not one
+ * of them contains a number the product computes.
+ *
+ * `tests/benefit-card-guard.spec.ts` has had the right regexes since the release
+ * that removed this genre from the cards — scoped to one component file. This is
+ * the same rule applied where the traffic is.
+ *
+ * Two deliberate softenings, both to keep the guard from banning honesty:
+ *   - a sentence that negates the claim passes ("we do not claim it saves you
+ *     days" is the disavowal, not the promise);
+ *   - the Economics stage is allowed, because it is the one screen that states
+ *     its assumptions before its figures and is pinned by four other specs.
+ */
+test('no page promises an outcome nobody measured', () => {
+  const ALLOWED = new Set(['app/(app)/project/[projectId]/tco/page.tsx']);
+  const PROMISES: { re: RegExp; why: string }[] = [
+    { re: /\b\d+\s*%\s*(faster|quicker|cheaper|less|lower|fewer|reduction|savings?)\b/i, why: 'a percentage nothing measured' },
+    { re: /\b(save|saves|saving)\s+(you\s+)?(days|weeks|hours|months)\b/i, why: 'a time saving nobody can check' },
+    { re: /\bpredict(s|ing)?\s+(your\s+)?(tco|roi|savings?|costs?)\b/i, why: 'a forecast lib/tco-model.ts refuses to make' },
+    { re: /\breduces?\s+(your\s+)?(tco|total cost of ownership)\b/i, why: 'a TCO reduction nothing computes' },
+    { re: /\bcalculates?\s+the\s+reduction\s+in\b/i, why: 'a reduction nothing calculates' },
+    { re: /\bpays?\s+for\s+itself\b/i, why: 'a payback nobody measured' },
+    { re: /\bdramatically\s+(minimi|reduc|lower)/i, why: 'an intensifier standing in for a measurement' },
+    { re: /\bTCO\s+by\s+\d/i, why: 'a TCO delta nothing computes' },
+  ];
+  // A sentence that says the claim is NOT made is the fix, not the offence.
+  const DISAVOWED = /\b(not|never|no|without|neither)\b/i;
+
+  const offenders: string[] = [];
+  const inspect = (rel: string, raw: string) => {
+    const text = raw
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+      .replace(/<!--[\s\S]*?-->/g, '');
+    for (const { re, why } of PROMISES) {
+      for (const sentence of text.split(/(?<=[.!?])\s+|\n/)) {
+        if (!re.test(sentence) || DISAVOWED.test(sentence)) continue;
+        offenders.push(`${rel}: ${why} — ${sentence.trim().slice(0, 120)}`);
+      }
+    }
+  };
+
+  const walk = (dir: string) => {
+    for (const e of fs.readdirSync(path.resolve(ROOT, dir), { withFileTypes: true })) {
+      const rel = path.posix.join(dir, e.name);
+      if (e.isDirectory()) { if (e.name !== 'generated') walk(rel); }
+      else if (/\.(ts|tsx)$/.test(e.name) && !ALLOWED.has(rel)) inspect(rel, read(rel));
+    }
+  };
+  for (const dir of ['app', 'components', 'lib', 'hooks']) walk(dir);
+  for (const f of ['README.md', 'public/linkedin-whitepaper-template.html']) inspect(f, read(f));
+
+  expect(offenders).toEqual([]);
+});
