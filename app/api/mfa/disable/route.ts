@@ -10,17 +10,18 @@ import { verifyRequestAuth, getAdminDb, getAdminAuth, assertMfaStepUp, assertRec
  * the profile flag follows, and whatever the application-level TOTP of earlier
  * versions left behind is cleared with it (roadmap 0.13).
  *
- * Two systems, one order (QA review of d93cb53e2631, c4f3cb01dc90): the flag
- * is cleared first and the factor removed second. If the removal fails, the
- * account keeps a factor Firebase still asks for at sign-in and a flag that
- * no longer requires it — a state the person can retry from, because the
- * factor sign-in is still theirs. The other order left the account with the
- * flag and no factor: every gated route refusing a first-factor token that no
- * second factor could ever improve, and this very route unreachable. That
- * stranded state — flag without factor, also the legacy of the
- * application-level TOTP — is cleared here without a step-up: with nothing to
- * remove in Firebase Auth there is nothing a stolen first-factor token could
- * remove either, only a flag that was refusing its own owner.
+ * Two systems, no transaction — so the order is chosen such that every state
+ * a failure can leave behind is over-strict, never under-strict (QA reviews of
+ * d93cb53e2631 and 0c35311c7aff: c4f3cb01dc90, b30f4ec006a5). The factor goes
+ * first; if that fails, nothing has changed and the person retries. The flag
+ * goes second; if that fails, the account has a flag and no factor: every
+ * gated route refuses its first-factor token, which no second factor could
+ * improve — but the same call recovers it, because a flag without a factor
+ * in Firebase Auth is cleared here without a step-up. There is nothing left
+ * that a stolen first-factor token could remove, only a flag refusing its own
+ * owner; the Settings page offers exactly that call in that state. No
+ * compensating write, because a compensation that can itself fail is where a
+ * factor with the gate off would come from.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -43,29 +44,11 @@ export async function POST(request: NextRequest) {
         const message = err instanceof Error ? err.message : 'Recent MFA step-up verification required.';
         return NextResponse.json({ error: message }, { status });
       }
-    }
-
-    const { db, FieldValue } = await getAdminDb();
-    const users = db.collection('users').doc(uid);
-    const cleared = {
-      mfaEnabled: false,
-      mfaFactor: FieldValue.delete(),
-      mfaSecret: FieldValue.delete(),
-      mfaBackupCodes: FieldValue.delete(),
-      updatedAt: FieldValue.serverTimestamp(),
-    };
-    await users.set(cleared, { merge: true });
-
-    if (hasFactor) {
       try {
         await auth.updateUser(uid, { multiFactor: { enrolledFactors: null } });
       } catch (removeErr) {
-        // The factor stays and the flag goes back with it: a consistent state
-        // the person can retry from, rather than a flag guarding nothing.
-        console.error('[mfa/disable] factor removal failed — flag restored:', removeErr);
-        await users.set({ mfaEnabled: true, mfaFactor: 'totp', updatedAt: FieldValue.serverTimestamp() }, { merge: true }).catch((restoreErr: unknown) => {
-          console.error('[mfa/disable] and the flag could not be restored:', restoreErr);
-        });
+        // Nothing has changed: the factor is still there and the flag still requires it.
+        console.error('[mfa/disable] factor removal failed:', removeErr);
         return NextResponse.json(
           { error: 'The authenticator could not be removed from your account. Nothing changed — try again in a moment.' },
           { status: 503 },
@@ -73,6 +56,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // From here on a failure leaves flag-without-factor, which this route clears
+    // on the next call without a step-up (see above).
+    const { db, FieldValue } = await getAdminDb();
+    await db.collection('users').doc(uid).set(
+      {
+        mfaEnabled: false,
+        mfaFactor: FieldValue.delete(),
+        mfaSecret: FieldValue.delete(),
+        mfaBackupCodes: FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
     await Promise.all([
       db.collection('mfa_secrets').doc(uid).delete().catch(() => {}),
       db.collection('mfa_pending').doc(uid).delete().catch(() => {}),

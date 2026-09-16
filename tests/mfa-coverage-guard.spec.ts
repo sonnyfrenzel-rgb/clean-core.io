@@ -74,6 +74,15 @@ test.describe('server-side MFA coverage', () => {
       expect(s).toContain('assertRecentAuth');
       // The factor itself is removed in Firebase Auth, not in a document of ours.
       expect(s).toContain('multiFactor: { enrolledFactors: null }');
+      // Two systems, no transaction: the factor goes first (a failure changes
+      // nothing), the flag second (a failure leaves a state every gate refuses).
+      const removal = s.indexOf('multiFactor: { enrolledFactors: null }');
+      const flag = s.indexOf('mfaEnabled: false');
+      expect(removal, 'the factor is removed before the flag is cleared').toBeLessThan(flag);
+      // And never the other way round: a compensating write that can itself
+      // fail is where a factor with the gate off would come from
+      // (QA review of 0c35311c7aff, b30f4ec006a5).
+      expect(s).not.toContain('mfaEnabled: true');
     });
   }
 
