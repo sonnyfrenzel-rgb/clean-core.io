@@ -73,5 +73,24 @@ export const MUST_NOT_GATE = [
 /** Removing the factor needs the stronger step-up: a recent sign-in that carried it. */
 export const MUST_STEP_UP = ['app/api/mfa/disable/route.ts'];
 
+/**
+ * Where a step-up route's two-system writes live, when they are not in the
+ * route file itself.
+ *
+ * `/api/mfa/disable` touches Firebase Auth and Firestore in a fixed order, and
+ * that order was only ever asserted as text because the failing branch cannot
+ * be reached through the route: the Auth emulator enrols no TOTP factor. The
+ * writes therefore sit in `lib/mfa-disable.ts` behind a dependency parameter,
+ * where `tests/mfa-disable-order.spec.ts` runs both failure paths (roadmap
+ * 0.17, QA review 6a1e32c0b973). The gate stays in the route.
+ *
+ * Named here rather than hard-coded in the guard so that the two halves keep
+ * reading the same catalog: a route that moved its writes somewhere else and
+ * did not say so here would be checked in neither file.
+ */
+export const STEP_UP_IMPLEMENTATION: Record<string, { module: string; importedAs: string }[]> = {
+  'app/api/mfa/disable/route.ts': [{ module: 'lib/mfa-disable.ts', importedAs: '@/lib/mfa-disable' }],
+};
+
 /** The files the wiring check must find a gate call in — one entry per file. */
 export const GATED_FILES = [...new Set(GATED_ROUTES.map((r) => r.file))];

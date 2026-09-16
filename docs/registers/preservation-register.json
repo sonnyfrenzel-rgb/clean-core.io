@@ -443,7 +443,35 @@
           "does": "nothing — the page ignores _runLoadFailed and renders an empty report."
         }
       ],
-      "referenceCase": "RC-analyze-signed-run"
+      "referenceCase": "RC-analyze-signed-run",
+      "rendered": {
+        "shows": [
+          {
+            "field": "extensibilityRoute",
+            "locator": "[data-stage-output=\"extensibilityRoute\"]",
+            "why": "the badge in the Extensibility Router card; it prints the route as a label (\"BTP Side-by-Side\"), never the stored string, so only its presence is asserted"
+          },
+          {
+            "field": "worklist",
+            "locator": "[data-stage-output=\"worklist\"]",
+            "opensWith": "Gaps Backlog",
+            "why": "the backlog panel behind the Gaps Backlog tab; its counts come from findings and analysis gaps as well as this field, so only its presence is asserted"
+          }
+        ],
+        "onlyAfterARun": [
+          {
+            "field": "usageReport",
+            "why": "the Usage Risk Matrix additionally needs the route report, which only an analysis run in this session produces; a reload of a seeded project never shows it"
+          }
+        ],
+        "notShown": [
+          {
+            "field": "exports",
+            "why": "write-only: the page writes exports.analysis_confluence_<timestamp> and nothing ever reads it back"
+          }
+        ],
+        "notYetAnchored": []
+      }
     },
     {
       "key": "design",
@@ -578,7 +606,59 @@
           "does": "falls back to rendering the text as markdown."
         }
       ],
-      "referenceCase": "RC-design-awaiting-sign-off"
+      "referenceCase": "RC-design-awaiting-sign-off",
+      "rendered": {
+        "shows": [
+          {
+            "field": "solutionDesign",
+            "locator": "[data-stage-output=\"solutionDesign\"]",
+            "why": "the design report card; it carries the attribute only while there is a design to show"
+          }
+        ],
+        "onlyAfterARun": [],
+        "notShown": [
+          {
+            "field": "status",
+            "why": "no stage renders status: lib/workflow-steps.ts derives every phase state from the artefacts and deliberately does not read it"
+          },
+          {
+            "field": "exports",
+            "why": "write-only: the page writes exports.<name>_<timestamp> and nothing ever reads it back"
+          }
+        ],
+        "notYetAnchored": [
+          {
+            "field": "targetArchitecture",
+            "where": "components/ArchitectSignOff.tsx (the locked panel)",
+            "why": "the reference case is the one BEFORE the sign-off, so the locked panel these render in never appears on it; anchoring them needs a second design reference case"
+          },
+          {
+            "field": "approvedByArchitect",
+            "where": "components/ArchitectSignOff.tsx (the locked panel)",
+            "why": "the reference case is the one before the sign-off, so the locked panel this renders in never appears on it; anchoring it needs a second design reference case"
+          },
+          {
+            "field": "approvedBy",
+            "where": "components/ArchitectSignOff.tsx (the locked panel)",
+            "why": "the reference case is the one before the sign-off, so the locked panel this renders in never appears on it; anchoring it needs a second design reference case"
+          },
+          {
+            "field": "architectSignOffAt",
+            "where": "components/ArchitectSignOff.tsx (the locked panel)",
+            "why": "the reference case is the one before the sign-off, so the locked panel this renders in never appears on it; anchoring it needs a second design reference case"
+          },
+          {
+            "field": "architectJustifiedOverride",
+            "where": "components/ArchitectSignOff.tsx (the locked panel)",
+            "why": "the reference case is the one before the sign-off, so the locked panel this renders in never appears on it; anchoring it needs a second design reference case, and it is printed only when the chosen architecture differs from the engine's recommendation"
+          },
+          {
+            "field": "nonFunctionalRequirements",
+            "where": "components/design/NonFunctionalRequirements.tsx",
+            "why": "each requirement is behind its own label button and the reference case sets none of them"
+          }
+        ]
+      }
     },
     {
       "key": "transformation",
@@ -676,7 +756,28 @@
           "does": "auto-generation is skipped and a StaleNotice names each blocker."
         }
       ],
-      "referenceCase": "RC-transformation-generated-not-tested"
+      "referenceCase": "RC-transformation-generated-not-tested",
+      "rendered": {
+        "shows": [
+          {
+            "field": "generatedCode",
+            "locator": "[data-stage-output=\"generatedCode\"]",
+            "why": "the code viewer; it carries the attribute only while a file of the workspace is actually shown"
+          }
+        ],
+        "onlyAfterARun": [],
+        "notShown": [
+          {
+            "field": "testSuite",
+            "why": "written here as a by-product of the generation and shown on the Testing stage; this page never renders it"
+          },
+          {
+            "field": "status",
+            "why": "no stage renders status: lib/workflow-steps.ts derives every phase state from the artefacts and deliberately does not read it"
+          }
+        ],
+        "notYetAnchored": []
+      }
     },
     {
       "key": "documentation",
@@ -773,7 +874,35 @@
           "does": "logged only; loading stops and the page renders its empty state with no message."
         }
       ],
-      "referenceCase": "RC-documentation-blocked-by-stale-code"
+      "referenceCase": "RC-documentation-blocked-by-stale-code",
+      "rendered": {
+        "provenBy": "RC-testing-draft",
+        "shows": [
+          {
+            "field": "documentation",
+            "locator": "[data-stage-output=\"documentation\"]",
+            "text": "{json:project.documentation.l1_domain.name}",
+            "why": "the blueprint inventory; the domain name is printed at the top of it"
+          },
+          {
+            "field": "businessDocumentation",
+            "locator": "[data-stage-output=\"businessDocumentation\"]",
+            "why": "the SOP, RACI and audit-control tables behind the Business SOP tab; the reference case has none, so what is asserted here is that the panel is absent"
+          }
+        ],
+        "onlyAfterARun": [],
+        "notShown": [
+          {
+            "field": "generatedCode",
+            "why": "read only into the prompt, and only its first 1000 characters (known limit L-04); the workspace copy it writes leaves as a download"
+          },
+          {
+            "field": "status",
+            "why": "no stage renders status: lib/workflow-steps.ts derives every phase state from the artefacts and deliberately does not read it"
+          }
+        ],
+        "notYetAnchored": []
+      }
     },
     {
       "key": "testing",
@@ -911,7 +1040,50 @@
           "does": "the pass rate is null rather than 0/0; the chart shows a 'No verdict' slice."
         }
       ],
-      "referenceCase": "RC-testing-draft"
+      "referenceCase": "RC-testing-draft",
+      "rendered": {
+        "shows": [
+          {
+            "field": "testCases",
+            "locator": "[data-stage-output=\"testCases\"]",
+            "text": "of {count:project.testCases} selected",
+            "why": "the selection line above the case list"
+          },
+          {
+            "field": "testSuite",
+            "locator": "[data-stage-output=\"testSuite\"]",
+            "opensWith": "View Module Code",
+            "why": "the generated suite, behind the terminal toggle"
+          },
+          {
+            "field": "coverageEstimate",
+            "locator": "[data-stage-output=\"coverageEstimate\"]",
+            "text": "{project.coverageEstimate.percentage}% Coverage",
+            "why": "the Estimated Coverage card, which is on screen without a run"
+          }
+        ],
+        "onlyAfterARun": [
+          {
+            "field": "manualTestingRequirements",
+            "why": "the amber caveat block is gated on test results from this session; a reload of a seeded project never shows it, however much is stored"
+          }
+        ],
+        "notShown": [
+          {
+            "field": "s4Environment",
+            "why": "not printed: it decides which of the two environment tabs is selected"
+          },
+          {
+            "field": "generatedCode",
+            "why": "read only into the generation prompt; nothing of it is rendered on this stage"
+          },
+          {
+            "field": "status",
+            "why": "no stage renders status: lib/workflow-steps.ts derives every phase state from the artefacts and deliberately does not read it"
+          }
+        ],
+        "notYetAnchored": []
+      }
     },
     {
       "key": "tco",
@@ -971,7 +1143,29 @@
           "does": "logged only; loading stops and the page renders with its default inputs."
         }
       ],
-      "referenceCase": "RC-tco-model-estimate"
+      "referenceCase": "RC-tco-model-estimate",
+      "alsoDisplays": [
+        "legacyCode",
+        "cleanCoreScore"
+      ],
+      "rendered": {
+        "shows": [
+          {
+            "field": "legacyCode",
+            "locator": "[data-stage-output=\"legacyCode\"]",
+            "text": "{lines:project.legacyCode} LoC",
+            "why": "the line count beside the LoC slider — the only form the source takes on this page"
+          }
+        ],
+        "onlyAfterARun": [],
+        "notShown": [
+          {
+            "field": "cleanCoreScore",
+            "why": "on this path the score is never printed: it is the forecast's input. The branch that does print it is the refusal for a score at or above TCO_TARGET_SCORE, which this reference case, at 62, does not take"
+          }
+        ],
+        "notYetAnchored": []
+      }
     },
     {
       "key": "delivery",
@@ -1082,7 +1276,61 @@
           "does": "logged only; loading stops and the page renders its empty state."
         }
       ],
-      "referenceCase": "RC-delivery-blocked-source-changed"
+      "referenceCase": "RC-delivery-blocked-source-changed",
+      "alsoDisplays": [
+        "generatedCode",
+        "testCases",
+        "coverageEstimate",
+        "documentation",
+        "businessDocumentation",
+        "auditMetadata",
+        "testSuite"
+      ],
+      "rendered": {
+        "shows": [
+          {
+            "field": "generatedCode",
+            "locator": "[data-stage-output=\"generatedCode\"]",
+            "why": "the first line of the integrity report; its wording depends on the route, so only its presence is asserted"
+          },
+          {
+            "field": "testCases",
+            "locator": "[data-stage-output=\"testCases\"]",
+            "text": "Test draft: {count:project.testCases}",
+            "why": "the testing line of the integrity report"
+          },
+          {
+            "field": "documentation",
+            "locator": "[data-stage-output=\"documentation\"]",
+            "text": "Enterprise BPMN Blueprint",
+            "why": "the blueprint line of the integrity report"
+          },
+          {
+            "field": "auditMetadata",
+            "locator": "[data-stage-output=\"auditMetadata\"]",
+            "opensWith": "Compliance Audit Pack",
+            "why": "the input fingerprint inside the audit-pack accordion"
+          },
+          {
+            "field": "coverageEstimate",
+            "locator": "[data-stage-output=\"coverageEstimate\"]",
+            "why": "the coverage line of the integrity report; the reference case has no estimate, so what is asserted is that the line does not claim one"
+          },
+          {
+            "field": "businessDocumentation",
+            "locator": "[data-stage-output=\"businessDocumentation\"]",
+            "why": "the Export Markdown button, which exists only when there is an SOP to export; the reference case has none"
+          }
+        ],
+        "onlyAfterARun": [],
+        "notShown": [
+          {
+            "field": "testSuite",
+            "why": "only a zip entry: the page packages the code and never renders it"
+          }
+        ],
+        "notYetAnchored": []
+      }
     }
   ],
   "referenceCases": [
@@ -1424,7 +1672,7 @@
           "approvedBy": "architect@example.com",
           "architectSignOffAt": "2026-09-16T09:00:00.000Z",
           "generatedCode": "[{\"path\":\"srv/service.ts\",\"content\":\"export const handler = () => 'ok';\\n\"}]",
-          "documentation": "{\"l1_domain\":\"Sales\",\"l2\":[],\"bpmn\":\"\"}",
+          "documentation": "{\"l1_domain\":{\"name\":\"Order to Cash\",\"strategicGoal\":\"Fulfil sales orders without leaving the standard.\",\"owner\":\"Sales Operations\"},\"l2\":[],\"bpmn\":\"\"}",
           "testCases": [
             {
               "id": "TC_01",

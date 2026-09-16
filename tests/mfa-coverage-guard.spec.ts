@@ -19,7 +19,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { GATED_FILES, MUST_NOT_GATE, MUST_STEP_UP } from './helpers/gated-routes';
+import { GATED_FILES, MUST_NOT_GATE, MUST_STEP_UP, STEP_UP_IMPLEMENTATION } from './helpers/gated-routes';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -55,24 +55,36 @@ test.describe('server-side MFA coverage', () => {
       const s = read(rel);
       expect(s).toContain('assertMfaStepUp');
       expect(s).toContain('assertRecentAuth');
+
+      // The two writes moved to the module the catalog names, so that the
+      // order below can be run and not only read (roadmap 0.17). The route has
+      // to still delegate there — otherwise both halves would be reading a file
+      // nothing calls.
+      const implementation = STEP_UP_IMPLEMENTATION[rel] ?? [];
+      expect(implementation.length, `${rel} has no implementation file in the catalog`).toBeGreaterThan(0);
+      for (const impl of implementation) {
+        expect(s, `${rel} no longer delegates to ${impl.module}`).toContain(impl.importedAs);
+      }
+      const written = [s, ...implementation.map((impl) => read(impl.module))].join('\n');
+
       // The factor itself is removed in Firebase Auth, not in a document of ours.
-      expect(s).toContain('multiFactor: { enrolledFactors: null }');
+      expect(written).toContain('multiFactor: { enrolledFactors: null }');
       // Two systems, no transaction: the factor goes first (a failure changes
       // nothing), the flag second (a failure leaves a state every gate refuses).
       //
       // This is a source guard and only a source guard: it holds the order in
-      // the file, not at runtime. The behavioural test needs an account with an
-      // enrolled factor, and the Auth emulator cannot enrol TOTP
-      // (firebase-tools 15.30.1). Roadmap 0.17 carries the emulator tests that
-      // replace source greps; until then the runtime path is verified on `dev`
-      // against the real Auth project.
-      const removal = s.indexOf('multiFactor: { enrolledFactors: null }');
-      const flag = s.indexOf('mfaEnabled: false');
+      // the file, not at runtime — a file in which the removal fails and the
+      // flag is cleared anyway satisfies it. The behaviour is proved in
+      // `tests/mfa-disable-order.spec.ts`, which runs both failure paths
+      // against injected doubles; this stays because a reordered file is worth
+      // catching before anything runs.
+      const removal = written.indexOf('multiFactor: { enrolledFactors: null }');
+      const flag = written.indexOf('mfaEnabled: false');
       expect(removal, 'the factor is removed before the flag is cleared').toBeLessThan(flag);
       // And never the other way round: a compensating write that can itself
       // fail is where a factor with the gate off would come from
       // (QA review of 0c35311c7aff, b30f4ec006a5).
-      expect(s).not.toContain('mfaEnabled: true');
+      expect(written).not.toContain('mfaEnabled: true');
     });
   }
 

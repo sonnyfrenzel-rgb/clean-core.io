@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
@@ -56,6 +56,45 @@ interface InputEntry {
   why: string;
 }
 
+/**
+ * The step from a field name to something on the screen.
+ *
+ * The rendered layer used to open every stage and check the stepper, the stale
+ * notice and two delivery buttons — none of which is an output. A stage that
+ * stopped rendering its own inventory, with a dead `.field` reference left in
+ * the source to satisfy the code layer, still reported success (QA review
+ * 96423cbf366f). So every output the register attributes to a stage is now
+ * classified, and the ones that have a visible form are looked at.
+ *
+ * Four classes, because the honest answer is not always "visible":
+ *   shows          — an element that exists only while the output does, named
+ *                    by `[data-stage-output="<field>"]` in the page itself;
+ *   onlyAfterARun  — rendered only after a generation or a test run in the same
+ *                    session, so a seeded reload can never show it;
+ *   notShown       — no visible form at all (prompt input, download payload,
+ *                    write-only field);
+ *   notYetAnchored — visible somewhere, but this register does not yet name the
+ *                    element, and says where it is instead of pretending.
+ */
+interface ShowsEntry {
+  field: string;
+  locator: string;
+  /** Accessible name of a control that has to be clicked first. */
+  opensWith?: string;
+  /** Text the seeded value must produce on screen; absent means presence only. */
+  text?: string;
+  why: string;
+}
+
+interface RenderedBlock {
+  /** Reference case used to prove this stage's outputs; defaults to the stage's own. */
+  provenBy?: string;
+  shows: ShowsEntry[];
+  onlyAfterARun: Array<{ field: string; why: string }>;
+  notShown: Array<{ field: string; why: string }>;
+  notYetAnchored: Array<{ field: string; where: string; why: string }>;
+}
+
 interface StageEntry {
   key: PhaseKey;
   n: number;
@@ -65,6 +104,9 @@ interface StageEntry {
   alsoWrites: string[];
   inputs: { required: InputEntry[]; optional: InputEntry[] };
   outputs: { clientWrites: string[]; otherCollections?: string[] };
+  /** Fields a stage puts on screen although it writes none of them (tco, delivery). */
+  alsoDisplays?: string[];
+  rendered: RenderedBlock;
   preconditions: {
     enforceActiveRun: boolean;
     generationBlockersTarget: 'transformation' | 'documentation' | 'testing' | null;
@@ -315,6 +357,67 @@ function resolvePlaceholders(value: unknown, rc: ReferenceCase, runId: string): 
 }
 
 const runIdOf = (rc: ReferenceCase) => `${rc.id}-run`;
+
+/* --------------------------------------------- the seed, read as the screen */
+
+/** Everything the register accounts for on a stage: what it writes, plus what it only displays. */
+const accountedFields = (stage: StageEntry) => [...stage.outputs.clientWrites, ...(stage.alsoDisplays ?? [])];
+
+const classifiedEntries = (stage: StageEntry) => [
+  ...stage.rendered.shows,
+  ...stage.rendered.onlyAfterARun,
+  ...stage.rendered.notShown,
+  ...stage.rendered.notYetAnchored,
+];
+
+/** The reference case that proves this stage's rendered outputs. */
+const provingCase = (stage: StageEntry) =>
+  register.referenceCases.find((rc) => rc.id === (stage.rendered.provenBy ?? stage.referenceCase))!;
+
+/**
+ * Whether the seed carries the field at all — the key being there, not the
+ * value being interesting. An empty worklist is a worklist: the panel that
+ * renders it is on screen either way, and the question this layer asks is
+ * whether the stage still renders it.
+ */
+function seedCarries(seed: SeededDocuments, field: string): boolean {
+  return Object.prototype.hasOwnProperty.call(seed.project, field)
+    || Object.prototype.hasOwnProperty.call(seed.run, field);
+}
+
+/** `project.a.b`, `run.x`; a JSON string on the way is parsed when the path continues. */
+function dig(seed: SeededDocuments, dotted: string): unknown {
+  const parts = dotted.split('.');
+  let value: unknown = parts[0] === 'run' ? seed.run : seed.project;
+  for (const part of parts.slice(1)) {
+    if (typeof value === 'string') {
+      try { value = JSON.parse(value); } catch { return undefined; }
+    }
+    if (value === null || typeof value !== 'object') return undefined;
+    value = (value as Record<string, unknown>)[part];
+  }
+  return value;
+}
+
+/**
+ * The text a seeded value has to produce on screen.
+ *
+ * `{project.a.b}` is the value, `{count:project.x}` the length of an array,
+ * `{lines:project.x}` the line count of a string, `{json:…}` the same as the
+ * plain form and written out where the path crosses a stored JSON string.
+ * Anything outside braces is literal.
+ */
+function resolveText(template: string, seed: SeededDocuments): string {
+  return template.replace(/\{([^}]+)\}/g, (_match, expr: string) => {
+    const at = expr.indexOf(':');
+    const fn = at === -1 ? 'value' : expr.slice(0, at);
+    const dotted = at === -1 ? expr : expr.slice(at + 1);
+    const value = dig(seed, dotted);
+    if (fn === 'count') return String(Array.isArray(value) ? value.length : 0);
+    if (fn === 'lines') return String(String(value ?? '').split('\n').length.toLocaleString());
+    return String(value);
+  });
+}
 
 interface SeededDocuments {
   runId: string;
@@ -617,6 +720,64 @@ test.describe('the register matches the code', () => {
     expect(route).toContain(`{ status: ${register.trustChain.auditPackServerBlockers.status} }`);
   });
 
+  test('every output the register attributes to a stage is classified exactly once', () => {
+    for (const stage of register.stages) {
+      const accounted = sorted(accountedFields(stage));
+      const classified = classifiedEntries(stage).map((e) => e.field);
+      expect(sorted(classified), `${stage.key}: the four rendered lists do not cover its outputs`).toEqual(accounted);
+      expect(new Set(classified).size, `${stage.key}: a field is classified twice`).toBe(classified.length);
+      for (const entry of classifiedEntries(stage)) {
+        // A record with no reason is the pretence this layer exists to stop.
+        expect(entry.why.length, `${stage.key}: ${entry.field} is classified without a reason`).toBeGreaterThan(20);
+      }
+      for (const entry of stage.rendered.notYetAnchored) {
+        expect(entry.where.length, `${stage.key}: ${entry.field} does not say where it is`).toBeGreaterThan(0);
+      }
+      // The proving reference case has to exist, and has to carry at least one
+      // of the outputs — otherwise the rendered layer below looks at nothing.
+      const rc = provingCase(stage);
+      expect(rc, `${stage.key}: rendered.provenBy names an unknown reference case`).toBeTruthy();
+    }
+  });
+
+  test('every anchor the register names is in the code, and every anchor in the code is in the register', () => {
+    // `[data-stage-output="x"]` is the whole step from a field name to the
+    // screen. A register that names an element nobody renders is back where it
+    // started, and an attribute nobody declared is coverage nobody decided on.
+    const files: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+        const rel = `${dir}/${entry.name}`;
+        if (entry.isDirectory()) { walk(rel); continue; }
+        if (entry.name.endsWith('.tsx')) files.push(rel);
+      }
+    };
+    walk('app');
+    walk('components');
+
+    const inCode = new Map<string, string[]>();
+    for (const rel of files) {
+      const text = raw(rel);
+      for (const m of text.matchAll(/data-stage-output=(?:"(\w+)"|\{[^}]*?'(\w+)'[^}]*?\})/g)) {
+        const name = m[1] ?? m[2];
+        inCode.set(name, [...(inCode.get(name) ?? []), rel]);
+      }
+    }
+
+    const declared = new Set(register.stages.flatMap((s) => s.rendered.shows.map((e) => e.field)));
+    for (const stage of register.stages) {
+      for (const entry of stage.rendered.shows) {
+        expect(entry.locator, `${stage.key}: ${entry.field} uses a locator this layer does not own`).toBe(
+          `[data-stage-output="${entry.field}"]`,
+        );
+        expect([...inCode.keys()], `${stage.key}: nothing in the code carries ${entry.locator}`).toContain(entry.field);
+      }
+    }
+    for (const name of inCode.keys()) {
+      expect([...declared], `data-stage-output="${name}" is in the code and in no register entry`).toContain(name);
+    }
+  });
+
   test('the locked path from G0:R0 is inherited, not restated', () => {
     const locked = register.lockedPaths.find((p) => p.id === LIVE_TEST_EXECUTION.id);
     expect(locked, 'the register lost the G0:R0 lock').toBeTruthy();
@@ -723,10 +884,8 @@ test.describe('the reference cases, seeded and opened', () => {
     }
   });
 
-  test('each stage opens on its reference case and reports what the register says', async ({ page }) => {
-    test.setTimeout(360 * 1000);
+  async function signIn(page: Page) {
     await page.setViewportSize({ width: 1440, height: 1000 });
-
     await page.goto('/');
     await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
     await page.waitForSelector('input[type="email"]');
@@ -735,6 +894,11 @@ test.describe('the reference cases, seeded and opened', () => {
     await page.click('button[type="submit"]:has-text("Sign In")');
     await page.waitForTimeout(4000);
     await page.evaluate(() => window.stop()).catch(() => {});
+  }
+
+  test('each stage opens on its reference case and reports what the register says', async ({ page }) => {
+    test.setTimeout(360 * 1000);
+    await signIn(page);
 
     for (const rc of register.referenceCases) {
       const projectId = projectIdOf(rc);
@@ -770,6 +934,68 @@ test.describe('the reference cases, seeded and opened', () => {
         await expect(page.locator('[data-handover-bundle]')).toBeDisabled();
         await expect(page.locator('[data-handover-audit-pack]')).toBeDisabled();
       }
+    }
+  });
+
+  /**
+   * The step the layer above was missing: from the field name to the screen.
+   *
+   * The loop before this one proves the contract — stepper, stale notice,
+   * handover controls. None of that is an output. A stage that stopped
+   * rendering its own inventory, with a dead `.field` reference left behind to
+   * satisfy the code layer, passed everything (QA review 96423cbf366f).
+   *
+   * Here every `shows` entry of every stage is looked at, and in both
+   * directions: on screen when the seed carries the field, absent when it does
+   * not — so an element that renders regardless of its value, which would make
+   * the positive half meaningless, fails the negative half.
+   */
+  test('each stage shows the outputs the register attributes to it', async ({ page }) => {
+    test.setTimeout(420 * 1000);
+    await signIn(page);
+
+    for (const stage of register.stages) {
+      const rc = provingCase(stage);
+      const projectId = projectIdOf(rc);
+      const seed = seedDocuments(rc, 'uid-not-used-here', projectId);
+
+      await page.goto(`/project/${projectId}/${stage.key}`, { waitUntil: 'domcontentloaded' });
+      await page.locator('nav[aria-label="Workflow phases"]').waitFor({ timeout: 60000 });
+
+      let proven = 0;
+      for (const entry of stage.rendered.shows) {
+        const element = page.locator(entry.locator).first();
+        if (!seedCarries(seed, entry.field)) {
+          await expect(
+            page.locator(entry.locator),
+            `${stage.key}: ${entry.field} is on screen although ${rc.id} carries none`,
+          ).toHaveCount(0);
+          continue;
+        }
+        if (entry.opensWith) {
+          await page
+            .getByRole('button', { name: new RegExp(entry.opensWith.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') })
+            .first()
+            .click();
+        }
+        await expect(
+          element,
+          `${stage.key}: ${entry.field} is not on the screen — ${entry.why}`,
+        ).toBeVisible({ timeout: 30000 });
+        if (entry.text) {
+          const expected = resolveText(entry.text, seed);
+          expect(expected, `${stage.key}: ${entry.field} resolved to nothing`).not.toContain('undefined');
+          await expect(
+            element,
+            `${stage.key}: ${entry.field} is on screen but not with its own value`,
+          ).toContainText(expected);
+        }
+        proven += 1;
+      }
+      expect(
+        proven,
+        `${stage.key}: ${rc.id} shows none of the stage's outputs — the rendered layer would prove nothing here`,
+      ).toBeGreaterThan(0);
     }
   });
 });

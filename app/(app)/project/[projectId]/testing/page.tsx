@@ -787,7 +787,9 @@ export default function TestingSandboxPage() {
           <div>
             <h3 className="font-bold text-purple-900 mb-1 text-sm md:text-base">Estimated Coverage</h3>
             <p className="text-xs md:text-sm text-purple-700 font-bold uppercase tracking-tight">
-              {project?.coverageEstimate ? `${project.coverageEstimate.percentage}% Coverage` : 'Generate tests to see estimate'}
+              {project?.coverageEstimate
+                ? <span data-stage-output="coverageEstimate">{`${project.coverageEstimate.percentage}% Coverage`}</span>
+                : 'Generate tests to see estimate'}
             </p>
           </div>
         </div>
@@ -1647,7 +1649,7 @@ export default function TestingSandboxPage() {
 
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
                   <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-black text-[#0b1c30]/50 uppercase tracking-widest">{selectedTestCases.length} of {testCases.length} selected</span>
+                    <span data-stage-output="testCases" className="text-[10px] font-black text-[#0b1c30]/50 uppercase tracking-widest">{selectedTestCases.length} of {testCases.length} selected</span>
                     <div className="relative group/tooltip">
                       <button
                         onClick={exportTestCasesToExcel}
@@ -1725,7 +1727,10 @@ export default function TestingSandboxPage() {
           </div>
           <div className="p-4 md:p-6 font-mono text-[11px] md:text-sm bg-[#0b1c30] text-[#00ff41] flex-grow overflow-auto custom-scrollbar">
             {showTestCode ? (
-              <pre className="whitespace-pre-wrap leading-relaxed text-blue-300">
+              <pre
+                data-stage-output={project?.testSuite?.code ? 'testSuite' : undefined}
+                className="whitespace-pre-wrap leading-relaxed text-blue-300"
+              >
                 {project?.testSuite?.code || (isAbapCloud ? 'No test suite generated yet. Generate a suite to inspect local ABAP stubs.' : 'No test code generated yet.')}
               </pre>
             ) : (

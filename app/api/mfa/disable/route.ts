@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, getAdminDb, getAdminAuth, assertMfaStepUp, assertRecentAuth, QuotaError } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminAuth, assertMfaStepUp, assertRecentAuth, QuotaError } from '@/lib/firebase-admin';
+import { retireSecondFactor } from '@/lib/mfa-disable';
 
 /**
  * POST /api/mfa/disable — removes the second factor from the caller's account.
@@ -12,16 +13,11 @@ import { verifyRequestAuth, getAdminDb, getAdminAuth, assertMfaStepUp, assertRec
  *
  * Two systems, no transaction — so the order is chosen such that every state
  * a failure can leave behind is over-strict, never under-strict (QA reviews of
- * d93cb53e2631 and 0c35311c7aff: c4f3cb01dc90, b30f4ec006a5). The factor goes
- * first; if that fails, nothing has changed and the person retries. The flag
- * goes second; if that fails, the account has a flag and no factor: every
- * gated route refuses its first-factor token, which no second factor could
- * improve — but the same call recovers it, because a flag without a factor
- * in Firebase Auth is cleared here without a step-up. There is nothing left
- * that a stolen first-factor token could remove, only a flag refusing its own
- * owner; the Settings page offers exactly that call in that state. No
- * compensating write, because a compensation that can itself fail is where a
- * factor with the gate off would come from.
+ * d93cb53e2631 and 0c35311c7aff: c4f3cb01dc90, b30f4ec006a5). That order, and
+ * the two writes it orders, live in `lib/mfa-disable.ts`, where a spec can make
+ * either of them fail and see what the other did — the reason they are not in
+ * this file any more (roadmap 0.17, QA review 6a1e32c0b973). The gate stays
+ * here: recent sign-in and the factor on the token, before anything is touched.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -44,37 +40,16 @@ export async function POST(request: NextRequest) {
         const message = err instanceof Error ? err.message : 'Recent MFA step-up verification required.';
         return NextResponse.json({ error: message }, { status });
       }
-      try {
-        await auth.updateUser(uid, { multiFactor: { enrolledFactors: null } });
-      } catch (removeErr) {
-        // Nothing has changed: the factor is still there and the flag still requires it.
-        console.error('[mfa/disable] factor removal failed:', removeErr);
-        return NextResponse.json(
-          { error: 'The authenticator could not be removed from your account. Nothing changed — try again in a moment.' },
-          { status: 503 },
-        );
-      }
     }
 
-    // From here on a failure leaves flag-without-factor, which this route clears
-    // on the next call without a step-up (see above).
-    const { db, FieldValue } = await getAdminDb();
-    await db.collection('users').doc(uid).set(
-      {
-        mfaEnabled: false,
-        mfaFactor: FieldValue.delete(),
-        mfaSecret: FieldValue.delete(),
-        mfaBackupCodes: FieldValue.delete(),
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
-    await Promise.all([
-      db.collection('mfa_secrets').doc(uid).delete().catch(() => {}),
-      db.collection('mfa_pending').doc(uid).delete().catch(() => {}),
-    ]);
+    // The factor first, the flag second — and what a failure of either leaves
+    // behind. `lib/mfa-disable.ts` carries the order and the spec that runs it.
+    const outcome = await retireSecondFactor(uid, hasFactor);
+    if (!outcome.ok) {
+      return NextResponse.json({ error: outcome.error }, { status: outcome.status });
+    }
 
-    return NextResponse.json({ success: true, removedFactor: hasFactor });
+    return NextResponse.json({ success: true, removedFactor: outcome.removedFactor });
   } catch (error) {
     console.error('[mfa/disable] Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

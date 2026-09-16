@@ -29,8 +29,14 @@ test.describe('the application-level second factor is retired', () => {
     expect(fs.existsSync(path.resolve(ROOT, 'app/api/mfa/verify/route.ts'))).toBe(false);
     expect(fs.existsSync(path.resolve(ROOT, 'lib/mfa.ts'))).toBe(false);
     expect(fs.existsSync(path.resolve(ROOT, 'lib/totp.ts'))).toBe(false);
-    for (const rel of ['app/api/mfa/enrolled/route.ts', 'app/api/mfa/disable/route.ts']) {
-      const src = rendered(rel);
+    // `/api/mfa/disable` keeps its gate but delegates the two writes to
+    // `lib/mfa-disable.ts` (roadmap 0.17), so the module goes with the route —
+    // otherwise this would be reading a file the legacy store left years ago.
+    for (const rel of [
+      ['app/api/mfa/enrolled/route.ts'],
+      ['app/api/mfa/disable/route.ts', 'lib/mfa-disable.ts'],
+    ]) {
+      const src = rel.map(rendered).join('\n');
       expect(src).not.toMatch(/mfa_session|Set-Cookie|backupCode/);
       // The legacy store is only ever deleted, never written.
       expect(src).not.toMatch(/collection\('mfa_secrets'\)\.doc\([^)]*\)\.(set|update)\(/);

@@ -222,7 +222,7 @@ export default function TcoCalculatorPage() {
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-bold text-gray-700 uppercase">
                 <span>Legacy Lines of Code (LoC)</span>
-                <span className="text-blue-650">{loc.toLocaleString()} LoC</span>
+                <span data-stage-output="legacyCode" className="text-blue-650">{loc.toLocaleString()} LoC</span>
               </div>
               <input 
                 type="range" 
