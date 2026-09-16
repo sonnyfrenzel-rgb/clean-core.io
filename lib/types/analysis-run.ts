@@ -28,11 +28,27 @@ export interface AnalysisRun {
    */
   inputManifest?: import('../input-manifest').InputManifest;
   model: {
-    provider: string;
-    modelId: string;
+    /**
+     * `null` when no model took part in this run (roadmap 1.2, the zero-LLM
+     * path). Not absent: absent means an old run that recorded nothing, null
+     * means a run that recorded there was nothing.
+     */
+    provider: string | null;
+    modelId: string | null;
     engineVersion: string;
     byokUsed: boolean;
   };
+  /**
+   * Roadmap 1.2 — what part a model had in this run, inside the signed payload.
+   *
+   * `narrative`: a model wrote the analysis narrative `aiNarrativeMeta` hashes.
+   * `none`: nothing did, and the run carries the deterministic evidence alone —
+   * which is still a complete, signed evidence state.
+   *
+   * Absent on runs signed before 1.2; those canonicalise and verify exactly as
+   * they did, because the hash is recomputed from the stored document.
+   */
+  modelParticipation?: import('../model-stages').ModelParticipation;
   // Results
   extensibilityRoute: string;
   cleanCoreScore: number;
@@ -47,9 +63,10 @@ export interface AnalysisRun {
    * free text. The narrative is stored for display/downstream but is non-evidentiary.
    */
   aiNarrativeMeta?: {
-    provider: string;
-    modelId: string;
-    responseHash: string; // sha256 of `analysis`
+    /** `null` together with `responseHash` when no narrative was generated. */
+    provider: string | null;
+    modelId: string | null;
+    responseHash: string | null; // sha256 of `analysis`
     evidentiary: false;
   };
   evidenceReport: EvidenceFinding[];

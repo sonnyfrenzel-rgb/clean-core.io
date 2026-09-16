@@ -20,6 +20,8 @@ import { callGemini } from '@/lib/gemini';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import type { Project, AnalysisData, CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { absenceFromError, modelAbsenceReason, type ModelAbsence } from '@/lib/model-stages';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
@@ -57,6 +59,7 @@ import EvidenceSweep from '@/components/analyze/EvidenceSweep';
 import UsageUpload from '@/components/analyze/UsageUpload';
 import { UsageRiskMatrixFor } from '@/components/analyze/UsageRiskMatrix';
 import SectionBoundary from '@/components/SectionBoundary';
+import NotGenerated from '@/components/NotGenerated';
 import TrustBeforeUpload from '@/components/TrustBeforeUpload';
 import WhyScorePanel from '@/components/analyze/WhyScorePanel';
 import { getRunCapabilities } from '@/lib/run-capabilities';
@@ -66,6 +69,44 @@ import { DocumentSkeleton } from '@/components/Skeleton';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';
+
+/**
+ * The deterministic half of the initial worklist: one item per grouped finding.
+ *
+ * Written once because it is now reached from three places — a parsed
+ * narrative, an unparseable one, and a run with no narrative at all (roadmap
+ * 1.2). Three copies of the same mapping would let the zero-LLM path quietly
+ * produce a different worklist from the ordinary one, which is the sort of
+ * difference nobody would look for.
+ */
+function findingsWorklist(
+  findings: import('@/lib/abap/evidence-model').EvidenceFinding[],
+  fileName: string,
+): any[] {
+  const grouped = new Map<string, { finding: any; lines: number[] }>();
+  for (const f of findings) {
+    const groupKey = `${f.kind}::${f.objectName || f.title}`;
+    const existing = grouped.get(groupKey);
+    if (existing) {
+      existing.lines.push(f.lineStart);
+    } else {
+      grouped.set(groupKey, { finding: f, lines: [f.lineStart] });
+    }
+  }
+  return Array.from(grouped.values()).map(({ finding: f, lines }, idx) => ({
+    id: `finding-${f.kind}-${idx}`,
+    title: lines.length > 1 ? `${f.title} (${lines.length}×)` : f.title,
+    category: 'Finding',
+    level: f.severity === 'Critical' || f.severity === 'High' ? 'not-supported' : 'partial',
+    severity: f.severity === 'Critical' || f.severity === 'High' ? 'High' : f.severity === 'Medium' ? 'Medium' : 'Low',
+    location: lines.length > 1 ? `${fileName}:${lines.join(', ')}` : `${fileName}:${lines[0]}`,
+    recommendation: f.recommendation,
+    status: 'open',
+    effort: f.severity === 'Critical' ? 'High' : f.severity === 'High' || f.severity === 'Medium' ? 'Medium' : 'Low',
+    targetAnchor: f.kind,
+    detail: f.technicalDetail,
+  }));
+}
 
 export default function AnalyzePage() {
   const { projectId } = useParams();
@@ -92,6 +133,15 @@ export default function AnalyzePage() {
   const [isSticky, setIsSticky] = useState(false);
   const [routeReport, setRouteReport] = useState<import('@/lib/abap/extensibility-router').ExtensibilityRouteReport | null>(null);
   const [usageReport, setUsageReport] = useState<UsageReportType | null>(null);
+  /**
+   * Roadmap 1.2 — whether a model may write the narrative for this account, and
+   * whether a key exists at all. The stage does not depend on the answer to run:
+   * it decides what the screen says before the click and, afterwards, why the
+   * narrative section is not there.
+   */
+  const modelAvailability = useModelAvailability();
+  /** Set by the run just completed. `null` on a fresh page — see `narrativeAbsence`. */
+  const [lastNarrativeAbsence, setLastNarrativeAbsence] = useState<ModelAbsence>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -279,14 +329,43 @@ export default function AnalyzePage() {
 
       const prompt = buildAnalysisPrompt({ targetDeployment, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze });
 
-      // 3. Fire Gemini call in parallel — result is buffered until sweep completes
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true);
-      
+      // 3. The narrative, if this account has a model for this stage.
+      //
+      // Roadmap 1.2 — the zero-LLM path. This line used to be an unguarded
+      // `await`, so an account with no Gemini key (no community key on the
+      // server, none of its own) got a 503 here, fell into the catch at the
+      // bottom and ended with an error message and **no run at all** — no
+      // evidence, no signature, nothing to carry to the next stage, although
+      // every finding on this page is computed above without a model. The model
+      // call is now one section of the analysis that can be absent, not the
+      // analysis itself: whatever happens here, the run below is created and
+      // signed over the deterministic evidence.
+      let responseText = '';
+      let narrativeAbsence: ModelAbsence = null;
+      if (!modelAvailability.enabled('analyze')) {
+        narrativeAbsence = modelAvailability.keyAvailable ? 'stage-off' : 'no-key';
+        setLoadingMessage('Evidence scanner only — no narrative for this run.');
+      } else {
+        try {
+          responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, 'analyze');
+        } catch (modelErr) {
+          // The reason comes from the code the proxy sends, not from its prose.
+          narrativeAbsence = absenceFromError(modelErr);
+          responseText = '';
+        }
+      }
+      setLastNarrativeAbsence(narrativeAbsence);
+
       let recommendedRoute = computedRouteReport.recommendedRoute;
       let cleanCoreScore = computedRouteReport.cleanCoreScore;
       let normalizedAnalysis = responseText;
       let initialWorklist: any[] = [];
       try {
+        if (!responseText) {
+          // No narrative to parse. The same fallback the catch below uses
+          // builds the worklist from the findings alone.
+          throw new Error('no narrative was generated');
+        }
         let cleaned = responseText.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
         const parsed = JSON.parse(cleaned);
         const obj = Array.isArray(parsed) ? parsed[0] : parsed;
@@ -302,34 +381,8 @@ export default function AnalyzePage() {
           
           const gapsList = obj.gaps || [];
 
-          // Deduplicate findings: group by kind+objectName, aggregate line numbers
-          const findingsGrouped = new Map<string, { finding: any; lines: number[] }>();
-          for (const f of evidenceReport.findings) {
-            const groupKey = `${f.kind}::${f.objectName || f.title}`;
-            const existing = findingsGrouped.get(groupKey);
-            if (existing) {
-              existing.lines.push(f.lineStart);
-            } else {
-              findingsGrouped.set(groupKey, { finding: f, lines: [f.lineStart] });
-            }
-          }
-
           initialWorklist = [
-            ...Array.from(findingsGrouped.values()).map(({ finding: f, lines }, idx) => ({
-              id: `finding-${f.kind}-${idx}`,
-              title: lines.length > 1 ? `${f.title} (${lines.length}×)` : f.title,
-              category: 'Finding',
-              level: f.severity === 'Critical' || f.severity === 'High' ? 'not-supported' : 'partial',
-              severity: f.severity === 'Critical' || f.severity === 'High' ? 'High' : f.severity === 'Medium' ? 'Medium' : 'Low',
-              location: lines.length > 1
-                ? `${uploadedFileName || 'main.abap'}:${lines.join(', ')}`
-                : `${uploadedFileName || 'main.abap'}:${lines[0]}`,
-              recommendation: f.recommendation,
-              status: 'open',
-              effort: f.severity === 'Critical' ? 'High' : f.severity === 'High' || f.severity === 'Medium' ? 'Medium' : 'Low',
-              targetAnchor: f.kind,
-              detail: f.technicalDetail
-            })),
+            ...findingsWorklist(evidenceReport.findings, uploadedFileName || 'main.abap'),
             ...gapsList.map((g: any, idx: number) => ({
               id: `gap-${idx}`,
               title: g.title,
@@ -344,33 +397,10 @@ export default function AnalyzePage() {
           ];
         }
       } catch (e) {
-        console.error('Failed to parse analysis JSON for routing', e);
-        // Fallback worklist building if JSON parsing fails — deduplicated
-        const fallbackGrouped = new Map<string, { finding: any; lines: number[] }>();
-        for (const f of evidenceReport.findings) {
-          const groupKey = `${f.kind}::${f.objectName || f.title}`;
-          const existing = fallbackGrouped.get(groupKey);
-          if (existing) {
-            existing.lines.push(f.lineStart);
-          } else {
-            fallbackGrouped.set(groupKey, { finding: f, lines: [f.lineStart] });
-          }
-        }
-        initialWorklist = Array.from(fallbackGrouped.values()).map(({ finding: f, lines }, idx) => ({
-          id: `finding-${f.kind}-${idx}`,
-          title: lines.length > 1 ? `${f.title} (${lines.length}×)` : f.title,
-          category: 'Finding',
-          level: f.severity === 'Critical' || f.severity === 'High' ? 'not-supported' : 'partial',
-          severity: f.severity === 'Critical' || f.severity === 'High' ? 'High' : f.severity === 'Medium' ? 'Medium' : 'Low',
-          location: lines.length > 1
-            ? `${uploadedFileName || 'main.abap'}:${lines.join(', ')}`
-            : `${uploadedFileName || 'main.abap'}:${lines[0]}`,
-          recommendation: f.recommendation,
-          status: 'open',
-          effort: f.severity === 'Critical' ? 'High' : f.severity === 'High' || f.severity === 'Medium' ? 'Medium' : 'Low',
-          targetAnchor: f.kind,
-          detail: f.technicalDetail
-        }));
+        // A narrative that arrived and could not be read is a defect worth a
+        // log line; a run that deliberately has none is not.
+        if (responseText) console.error('Failed to parse analysis JSON for routing', e);
+        initialWorklist = findingsWorklist(evidenceReport.findings, uploadedFileName || 'main.abap');
       }
 
       const inventory = extractCodeInventory(codeToAnalyze);
@@ -1079,9 +1109,108 @@ export default function AnalyzePage() {
         ? project.cleanCoreScore
         : null;
 
+  /**
+   * Why this run has no narrative — roadmap 1.2.
+   *
+   * The run just finished knows it exactly (`lastNarrativeAbsence`). A page
+   * opened later does not, and must not invent one: it says the reason that is
+   * true *now* — the stage is switched off, or there is no key — and otherwise
+   * the plain "nothing has been generated yet", which is the only honest answer
+   * when the past is not recorded. Nothing about the reason is stored on the
+   * run, because a reason the client supplied has no business inside a
+   * signature.
+   */
+  const narrativeAbsence: ModelAbsence = useMemo(() => {
+    if (!project?.activeRunId || project?.analysis) return null;
+    if (lastNarrativeAbsence) return lastNarrativeAbsence;
+    if (!modelAvailability.known) return null;
+    if (!modelAvailability.keyAvailable) return 'no-key';
+    if (!modelAvailability.stages.analyze) return 'stage-off';
+    return null;
+  }, [
+    project?.activeRunId,
+    project?.analysis,
+    lastNarrativeAbsence,
+    modelAvailability.known,
+    modelAvailability.keyAvailable,
+    modelAvailability.stages,
+  ]);
+
   const renderAnalysisContent = () => {
-    if (!project?.analysis) return null;
-    
+    if (!project?.analysis) {
+      // Roadmap 1.2, acceptance V25-A12: *"'nicht erzeugt' statt leer"*.
+      //
+      // Before this, `return null` was the whole answer, and the screen fell
+      // back to the upload form — a signed run existed, its evidence was in the
+      // database, and the page invited the reader to start an analysis. What
+      // follows is that run's evidence, with the one missing part named as
+      // missing. Everything here is computed without a model.
+      if (!project?.activeRunId) return null;
+      return (
+        <div className="space-y-8 font-sans" data-evidence-only-report>
+          <NotGenerated
+            what="Analysis narrative"
+            absence={narrativeAbsence}
+            stage="analyze"
+            hint="Everything below was computed by the evidence engine and is covered by this run's signature. Re-run the analysis once a model is available to add the narrative."
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-slate-200 bg-white px-6 py-5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Clean Core Score</span>
+              <p className="mt-2 text-3xl font-black text-slate-900">
+                {signedCleanCoreScore !== null ? `${signedCleanCoreScore}%` : 'Not yet computed'}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-6 py-5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Extensibility route</span>
+              <p className="mt-2 text-lg font-black text-slate-900">
+                {project.extensibilityRoute || 'Not determined'}
+              </p>
+              {project.recommendationJustification && (
+                <p className="mt-1 text-xs font-medium leading-relaxed text-slate-600">{project.recommendationJustification}</p>
+              )}
+            </div>
+          </div>
+
+          {missingDeps.length > 0 && <MissingDependencyPrompt missing={missingDeps} />}
+
+          <CoverageVerdict findings={findings} summary={findingsSummary} />
+          <ConstructFindings findings={findings} />
+          {evidenceReport && <UnassessedConstructs coverage={evidenceReport.coverage} />}
+
+          <CodeInventoryTable codeInventory={project.codeInventory || []} />
+          <ModuleHeatmap codeInventory={project.codeInventory || []} />
+          <DataCouplingTable dataCoupling={project.dataCoupling || []} />
+          <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} />
+
+          <GapsWorklist
+            projectId={projectId as string}
+            project={project}
+            findings={findings}
+            analysisGaps={[]}
+            showHelpMode={false}
+            onUpdateWorklist={handleUpdateWorklist}
+          />
+
+          <NotGenerated
+            what="Business value assessment"
+            absence={narrativeAbsence}
+            stage="analyze"
+            hint="Asset score, value drivers and the plain-English action plan come from the narrative."
+          />
+          <NotGenerated
+            what="Modernisation strategy"
+            absence={narrativeAbsence}
+            stage="analyze"
+            hint="The standardisation fit and the recommendation prose come from the narrative. The route above does not."
+          />
+
+          <WhyScorePanel project={project} />
+        </div>
+      );
+    }
+
     // The one reader of a stored analysis: every stored shape, amounts of money masked (lib/money-honesty.ts).
     // Not JSON → null, and the markdown fallback below masks its text the same way.
     const analysisData = readStoredAnalysis<AnalysisData>(project.analysis);
@@ -1724,8 +1853,10 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
   return (
     <div className="animate-in fade-in duration-500 max-w-5xl mx-auto">
-      {/* Sticky Decision-Header */}
-      {project?.analysis && (
+      {/* Sticky Decision-Header. Bound to the run rather than to the narrative
+          (roadmap 1.2): the route and the score in it are the run's, and a run
+          without a narrative has both. */}
+      {(project?.analysis || project?.activeRunId) && (
         <div 
           className={clsx(
             "fixed left-0 right-0 z-50 transition-all duration-500 font-sans border-b border-slate-200 shadow-sm",
@@ -1800,7 +1931,13 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
         </div>
       )}
       
-      {!project?.analysis ? (
+      {/* Which half of the stage the reader sees. Roadmap 1.2: the report is
+          about the RUN, not about the narrative. This used to ask for the
+          narrative alone, so a signed zero-LLM run put the reader back in front
+          of the upload form with a "Start Analysis" button — the analysis had
+          run, and the screen said it had not. A project analysed before runs
+          existed has a narrative and no run, and still opens its report. */}
+      {!project?.analysis && !project?.activeRunId ? (
         loading ? (
           <div className="space-y-6">
             <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-sm flex items-center justify-between">
@@ -1822,7 +1959,11 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 isActive={sweepActive}
                 onComplete={() => {
                   sweepCompleteRef.current = true;
-                  setLoadingMessage('Evidence scan complete — waiting for AI narrative...');
+                  setLoadingMessage(
+                    modelAvailability.enabled('analyze')
+                      ? 'Evidence scan complete — waiting for AI narrative...'
+                      : 'Evidence scan complete — signing the run.',
+                  );
                 }}
                 minDuration={6000}
               />
@@ -2016,6 +2157,20 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
             {/* Pre-Analysis Preview — deterministic quick scan before the big run */}
             {legacyCode && !project?.analysis && !loading && (
               <PreAnalysisPreview code={legacyCode} fileName={uploadedFileName} />
+            )}
+
+            {/* Roadmap 1.2 — what this run will produce, said before the click
+                rather than discovered afterwards. The analysis runs either way. */}
+            {legacyCode && !loading && modelAvailability.known && !modelAvailability.enabled('analyze') && (
+              <div
+                data-zero-llm-notice
+                className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-xs font-medium leading-relaxed text-slate-700"
+              >
+                <span className="font-bold text-slate-900">This run will produce evidence only.</span>{' '}
+                {modelAbsenceReason(modelAvailability.keyAvailable ? 'stage-off' : 'no-key', 'analyze')}{' '}
+                The findings, the extensibility route and the Clean Core Score are computed without a model, and the run is
+                signed exactly as any other.
+              </div>
             )}
 
             {legacyCode && !isFromExample && (!targetDeployment || !acceptedTerms) && (

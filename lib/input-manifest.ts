@@ -164,9 +164,17 @@ export function analysisRunInputs(args: {
   catalogVersion: string;
   rulesetVersion: string;
   engineVersion: string;
-  model: { provider: string; modelId: string; byokUsed: boolean };
+  /**
+   * The model that wrote the narrative, or `null` when none did (roadmap 1.2).
+   * A zero-LLM run used to record the default model here anyway, so its
+   * manifest named an input the run never had — and the manifest is inside the
+   * signed payload, so the signature would have attested to it.
+   */
+  model: { provider: string; modelId: string; byokUsed: boolean } | null;
 }): ManifestInput[] {
-  const modelRevision = `${args.model.provider}/${args.model.modelId}${args.model.byokUsed ? '+byok' : ''}`;
+  const modelRevision = args.model
+    ? `${args.model.provider}/${args.model.modelId}${args.model.byokUsed ? '+byok' : ''}`
+    : 'none';
   return [
     {
       id: INPUT_IDS.source,

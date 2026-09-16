@@ -86,7 +86,7 @@ ${currentCode}
 Return ONLY the raw, corrected TypeScript source — no markdown fences, no commentary.`;
 
     try {
-      const fixedCode = await callGemini(prompt, 'gemini-3-flash-preview', false);
+      const fixedCode = await callGemini(prompt, 'gemini-3-flash-preview', false, 'testing');
       const cleaned = stripCodeFences(fixedCode);
       return cleaned && cleaned.length > 0 ? cleaned : currentCode;
     } catch (err) {
@@ -105,7 +105,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
       ERROR:
       ${errorOutput}`;
       
-      const explanation = await callGemini(prompt, 'gemini-3-flash-preview', false);
+      const explanation = await callGemini(prompt, 'gemini-3-flash-preview', false, 'testing');
       setAiExplanation(explanation || "No explanation provided by AI.");
     } catch (e) {
       console.error("Failed to generate AI explanation", e);

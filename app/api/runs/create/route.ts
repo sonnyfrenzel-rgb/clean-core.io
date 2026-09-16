@@ -12,6 +12,7 @@ import { canonicalizeJson } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { buildSourceChangeRecord } from '@/lib/artefact-digest';
 import { analysisRunInputs, buildInputManifest } from '@/lib/input-manifest';
+import type { ModelParticipation } from '@/lib/model-stages';
 
 // The canonicaliser moved to lib/run-signature.ts so the route that verifies a
 // run uses the same one that produced it. Two implementations of "canonical"
@@ -242,6 +243,23 @@ export async function POST(req: NextRequest) {
     const newRunDoc = runsRef.doc(); // Generate random auto-ID
     const runId = newRunDoc.id;
 
+    // Roadmap 1.2 — the zero-LLM path: did a model have any part in this run?
+    //
+    // The server decides it here, from the one fact it can check: whether a
+    // narrative arrived. Nothing the client says about the model is taken; the
+    // request used to carry a `modelCard` and the route recorded the default
+    // provider and model id whether or not anything had been generated, so a
+    // run with no narrative still claimed a model wrote one. The claim was
+    // inside the signed payload, which is the worst place for a claim nobody
+    // checked.
+    //
+    // Deliberately not a reason: *why* no model ran (no key, the stage switched
+    // off, a call that failed) is live state the screens read from
+    // `/api/model-stages`. Putting a client-supplied reason in the signed run
+    // would sign a sentence the client chose.
+    const modelParticipation: ModelParticipation = finalAnalysisText.trim().length > 0 ? 'narrative' : 'none';
+    const modelRan = modelParticipation === 'narrative';
+
     const provider = 'google-gemini';
     const modelId = byokUsed ? (userData?.byokModel || 'gemini-3-flash-preview') : 'gemini-3-flash-preview';
 
@@ -270,7 +288,7 @@ export async function POST(req: NextRequest) {
         catalogVersion,
         rulesetVersion,
         engineVersion: APP_VERSION,
-        model: { provider, modelId, byokUsed },
+        model: modelRan ? { provider, modelId, byokUsed } : null,
       }),
       projectData?.auditMetadata?.inputManifest || null,
     );
@@ -293,18 +311,39 @@ export async function POST(req: NextRequest) {
       rulesetVersion,
       sapApiCatalogVersion: catalogVersion,
       inputManifest,
-      model: {
-        provider,
-        modelId,
-        engineVersion: APP_VERSION,
-        byokUsed,
-      },
-      aiNarrativeMeta: {
-        provider,
-        modelId,
-        responseHash,
-        evidentiary: false,
-      },
+      model: modelRan
+        ? {
+            provider,
+            modelId,
+            engineVersion: APP_VERSION,
+            byokUsed,
+          }
+        : {
+            // No model took part. `provider` and `modelId` are null rather than
+            // absent so that a reader of an old run and a reader of a zero-LLM
+            // run are told two different things: "this field was not recorded"
+            // and "there was no model". The engine still computed the evidence,
+            // and it is still named.
+            provider: null,
+            modelId: null,
+            engineVersion: APP_VERSION,
+            byokUsed,
+          },
+      /** Roadmap 1.2 — inside the signature, so a run says for itself what it is. */
+      modelParticipation,
+      aiNarrativeMeta: modelRan
+        ? {
+            provider,
+            modelId,
+            responseHash,
+            evidentiary: false,
+          }
+        : {
+            provider: null,
+            modelId: null,
+            responseHash: null,
+            evidentiary: false,
+          },
       extensibilityRoute: extensibilityReport.recommendedRoute,
       cleanCoreScore,
       complexityScore,
@@ -416,8 +455,13 @@ export async function POST(req: NextRequest) {
               objectType: detectObjectType(legacyCode),
             },
             modelCard: {
-              provider,
-              model: modelId,
+              // Mirrors the run's own answer: a card that named a provider and
+              // a model for a run no model took part in was the same untrue
+              // claim one document further out, and this is the copy the
+              // delivery screen and the audit pack read.
+              provider: modelRan ? provider : null,
+              model: modelRan ? modelId : null,
+              modelParticipation,
               engineVersion: APP_VERSION,
               catalogVersion,
               byokUsed,

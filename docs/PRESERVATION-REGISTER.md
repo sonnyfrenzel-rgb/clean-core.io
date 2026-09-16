@@ -70,13 +70,24 @@ Order and per-phase state come only from `lib/workflow-steps.ts`
 
 | # | Stage | Requires | Writes to the project | Blocked by | On a model failure |
 |---|---|---|---|---|---|
-| 1 | **Analyze** | `legacyCode` | *client:* `worklist`, `extensibilityRoute`, `usageReport`, `exports` · *server (`/api/runs/create`):* `activeRunId`, `status`, `charged`, `transformationBypass`, `legacyCode`, `s4Deployment`, `updatedAt`, `worklist`, `extensibilityRoute`, `auditMetadata` — and the immutable `runs/{runId}` | file type, 1 MB, the staged-code scan, `looksLikeAbap`, auth + MFA + account state + quota | the run is still created from the deterministic findings alone; a thrown error shows a banner |
+| 1 | **Analyze** | `legacyCode` | *client:* `worklist`, `extensibilityRoute`, `usageReport`, `exports` · *server (`/api/runs/create`):* `activeRunId`, `status`, `charged`, `transformationBypass`, `legacyCode`, `s4Deployment`, `updatedAt`, `worklist`, `extensibilityRoute`, `auditMetadata` — and the immutable `runs/{runId}` | file type, 1 MB, the staged-code scan, `looksLikeAbap`, auth + MFA + account state + quota | **roadmap 1.2:** the run is created and signed from the deterministic findings alone, with `modelParticipation: 'none'`. No key, a switched-off stage and a failed call are the same outcome for the run and three different sentences on the screen |
 | 2 | **Design** | `activeRunId`, `analysis` | `solutionDesign`, `status`, `nonFunctionalRequirements`, `targetArchitecture`, `approvedByArchitect`, `architectJustifiedOverride`, `architectSignOffAt`, `approvedBy`, `exports` | `enforceActiveRun` only — there is no `design` target in `generationBlockers` | an empty response throws; nothing is written; the NFR call may fail silently |
 | 3 | **Transformation** | `activeRunId`, `legacyCode`, `solutionDesign`, `analysis` | `generatedCode`, `testSuite`, `status` | `enforceActiveRun`, `generationBlockers(…, 'transformation')`: source changed, design stale, sign-off stale | no usable file → throws, **nothing is saved**, the previous artefact stays |
 | 4 | **Documentation** | `activeRunId` | `documentation`, `businessDocumentation`, **`generatedCode`**, `status` | `enforceActiveRun`, `generationBlockers(…, 'documentation')`: the three above **plus** code stale | an empty response throws; `docError` is shown; nothing is written |
 | 5 | **Testing** | `activeRunId` | `s4Environment`, `testCases`, `testSuite`, `coverageEstimate`, `manualTestingRequirements`, `generatedCode`, `status` | `enforceActiveRun`, `generationBlockers(…, 'testing')`, and `LIVE_TEST_EXECUTION` (G0:R0) | generation rethrows; a build error auto-heals and retries; a dead sandbox throws |
 | 6 | **Economics** | `activeRunId`, `cleanCoreScore` | **nothing** | `enforceActiveRun`; a score of `null` or ≥ 95 declines to model anything | no model is called from this stage |
 | 7 | **Delivery** | `activeRunId` | **nothing** | `enforceActiveRun`, `handoverBlockers`, and the server's own 409 (`source-changed`, `sign-off-stale`) | a detector error reads "coverage not established", never a clean bill |
+
+**The model is one section, not the stage** (roadmap 1.2). Five stages send a
+prompt — Analyze, Design, Transformation, Documentation, Testing — and each has
+its own switch on `users/{uid}.modelStages`, written only by
+`POST /api/model-stages` through the Admin SDK (`firestore.rules` keeps the
+browser out of every user field outside `userClientUpdateKeys()`, so no rules
+deploy was needed). `/api/gemini` honours the switch and answers with a code —
+`model-stage-disabled` or `model-key-missing` — so a stage can say *why* nothing
+was generated rather than showing an empty box (V25-A12). Analyze is the one
+stage whose output does not depend on the answer: its evidence, route and score
+are deterministic, and the run is signed either way.
 
 Two entries in that table are worth reading twice. **Documentation writes
 `generatedCode`** — it inserts `docs/process-blueprint.md` into the transformation

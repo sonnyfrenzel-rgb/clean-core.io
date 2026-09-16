@@ -27,6 +27,8 @@ import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
+import NotGenerated from '@/components/NotGenerated';
+import { useModelAvailability } from '@/hooks/useModelAvailability';
 
 interface ProjectFile {
   path: string;
@@ -48,6 +50,8 @@ const CodeHighlighter = nextDynamic(() => import('@/components/CodeHighlighter')
 
 export default function TransformationPage() {
   const { projectId } = useParams();
+  /** Roadmap 1.2 — this stage calls a model, so it has a switch and it can be keyless. */
+  const modelAvailability = useModelAvailability();
   const [project, setProject] = useState<Project | null>(null);
   const projectRef = useRef<any>(null);
   /** One generation at a time — see the dependency note on the callback below. */
@@ -589,7 +593,7 @@ CMD ["node", "srv/service.js"]`
 
       console.log('Transforming code for project:', projectRef.current?.name);
 
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true);
+      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, 'transformation');
       
       let filesArray: ProjectFile[] = [];
       let tests = { config: '', spec: '' };
@@ -932,9 +936,15 @@ CMD ["node", "srv/service.js"]`
               {/* "AI Verified" was unconditional. No compiler, no test runner and
                   no validator has looked at this output — the transformation path
                   parses the model's response, and falls back to accepting
-                  arbitrary non-JSON text. "Generated" is what actually happened. */}
-              <Sparkles size={12} className="text-green-600" />
-              <span className="text-[10px] font-bold text-green-600 uppercase">AI Generated</span>
+                  arbitrary non-JSON text. "Generated" is what actually happened.
+                  Roadmap 1.2: and only when something was (V25-A12) — the badge
+                  used to sit over an empty pane and say a model had produced it. */}
+              {files.length > 0 && (
+                <>
+                  <Sparkles size={12} className="text-green-600" />
+                  <span className="text-[10px] font-bold text-green-600 uppercase">AI Generated</span>
+                </>
+              )}
             </div>
           </div>
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden rounded-b-xl border border-green-100 shadow-lg shadow-green-500/5 bg-[#1e1e1e] h-full relative">
@@ -970,11 +980,36 @@ CMD ["node", "srv/service.js"]`
                 onScroll={handleModernScroll}
                 className="flex-1 overflow-y-auto p-6 pr-12 scrollbar-thin scrollbar-thumb-gray-800"
               >
-                <CodeHighlighter 
-                  language={getFileLanguage(selectedFilePath)} 
-                  customStyle={{ margin: 0, padding: 0, overflow: 'visible', height: 'auto', fontSize: '13px' }}
-                  code={transformedCode}
-                />
+                {files.length === 0 && !loading ? (
+                  /* Roadmap 1.2 / V25-A12. An empty syntax highlighter under a
+                     green "AI Generated" badge is the exact failure the
+                     acceptance names: a reader sees a code pane that produced
+                     nothing and cannot tell whether that is the answer. */
+                  <NotGenerated
+                    what="Transformed code"
+                    absence={
+                      !modelAvailability.enabled('transformation')
+                        ? modelAvailability.keyAvailable
+                          ? 'stage-off'
+                          : 'no-key'
+                        : null
+                    }
+                    stage="transformation"
+                    hint={
+                      modelAvailability.enabled('transformation')
+                        ? 'Run the engine above to generate it from the signed analysis and the approved design.'
+                        : modelAvailability.keyAvailable
+                          ? 'Turn the transformation stage back on in Settings to generate it.'
+                          : 'Add your own Gemini API key in Settings to generate it.'
+                    }
+                  />
+                ) : (
+                  <CodeHighlighter
+                    language={getFileLanguage(selectedFilePath)}
+                    customStyle={{ margin: 0, padding: 0, overflow: 'visible', height: 'auto', fontSize: '13px' }}
+                    code={transformedCode}
+                  />
+                )}
               </div>
 
               {/* Code-Integrity Minimap Heatmap Strip */}

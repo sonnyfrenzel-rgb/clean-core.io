@@ -33,6 +33,13 @@ export interface UserProfile {
   byokConfigured?: boolean;
   byokLast4?: string;
   byokRotatedAt?: any;
+  /**
+   * Which of the five model stages this account has switched on (roadmap 1.2).
+   * Server-written, like `transformationsUsed`: only `POST /api/model-stages`
+   * puts a value in here, `userClientUpdateKeys()` in `firestore.rules` keeps
+   * the browser out of it, and the screens only read it. Absent means all on.
+   */
+  modelStages?: Partial<Record<import('@/lib/model-stages').ModelStage, boolean>>;
   createdAt: any;
   /** Server timestamp written once by `activateAccount`; absent means never activated. */
   activatedAt?: any;

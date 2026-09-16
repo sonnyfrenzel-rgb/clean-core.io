@@ -7,8 +7,16 @@ import {
   assertMfaSatisfied,
   assertAccountActive,
   loadGeminiApiKey,
+  getAdminDb,
 } from '@/lib/firebase-admin';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
+import {
+  isModelStage,
+  modelStageEnabled,
+  MODEL_STAGE_LABELS,
+  NO_KEY_CODE,
+  STAGE_DISABLED_CODE,
+} from '@/lib/model-stages';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -137,11 +145,40 @@ export async function POST(request: NextRequest) {
       prompt,
       model = 'gemini-3-flash-preview',
       jsonResponse = false,
+      stage,
     } = body as {
       prompt: string;
       model?: string;
       jsonResponse?: boolean;
+      /** Which of the five model stages is asking. Absent for the glossary chatbot and the key test. */
+      stage?: string;
     };
+
+    // Roadmap 1.2 — the per-stage switch, enforced on the server.
+    //
+    // The switch is the account owner's preference about their own key and
+    // their own quota, not a security boundary: a caller that omits `stage`
+    // is not stopped, and the five product callers name themselves. It is
+    // enforced here rather than only in the browser so that a page left open
+    // in another tab cannot spend on a stage the owner has since switched off.
+    // The answer carries a code as well as a sentence, because the screens
+    // branch on the reason and a message is for a person to read.
+    if (stage !== undefined) {
+      if (!isModelStage(stage)) {
+        return NextResponse.json({ error: `Unknown model stage: ${stage}.` }, { status: 400 });
+      }
+      const { db } = await getAdminDb();
+      const profile = await db.collection('users').doc(decodedToken.uid).get();
+      if (!modelStageEnabled(profile.exists ? (profile.data() as { modelStages?: Record<string, boolean> }) : null, stage)) {
+        return NextResponse.json(
+          {
+            error: `${MODEL_STAGE_LABELS[stage]} is switched off for this account (${STAGE_DISABLED_CODE}). Turn it back on in Settings to generate it.`,
+            code: STAGE_DISABLED_CODE,
+          },
+          { status: 403 },
+        );
+      }
+    }
 
     if (!prompt) {
       return NextResponse.json(
@@ -173,10 +210,14 @@ export async function POST(request: NextRequest) {
       : getDefaultAI();
 
     if (!ai) {
+      // Roadmap 1.2 — a named reason, not just a sentence. The Analyze stage
+      // reads this code and finishes the run without a narrative instead of
+      // failing; before, the same 503 aborted the whole analysis and the
+      // account ended with no signed evidence at all.
       return NextResponse.json(
         {
-          error:
-            'Gemini API is not configured. Please set GEMINI_API_KEY in your environment or provide a custom API key in your profile.',
+          error: `No Gemini key is available for this account (${NO_KEY_CODE}). Add your own key in Settings, or continue with the deterministic evidence alone.`,
+          code: NO_KEY_CODE,
         },
         { status: 503 },
       );

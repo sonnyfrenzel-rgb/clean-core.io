@@ -1,16 +1,24 @@
 import { getAuth } from '@/lib/firebase';
+import type { ModelStage } from '@/lib/model-stages';
 
 /**
  * Client-side Gemini helper.
  * This module does NOT import @google/genai — all AI calls are proxied
  * through the server-side /api/gemini route so that API keys never
  * reach the browser bundle.
+ *
+ * Roadmap 1.2 — a caller that belongs to one of the five model stages names it.
+ * The server then honours the account's per-stage switch, and the error it
+ * returns carries a code the stage can turn into "not generated, because…"
+ * instead of a failure. The glossary chatbot and the key test pass no stage:
+ * neither is a stage of the workflow.
  */
 
 export async function callGemini(
   prompt: string,
   modelName: string = 'gemini-3-flash-preview',
   jsonResponse: boolean = false,
+  stage?: ModelStage,
 ): Promise<string> {
   let userId: string | undefined;
   let idToken: string | undefined;
@@ -35,6 +43,7 @@ export async function callGemini(
       prompt,
       model: modelName,
       jsonResponse,
+      ...(stage ? { stage } : {}),
       userId,
       idToken,
     }),

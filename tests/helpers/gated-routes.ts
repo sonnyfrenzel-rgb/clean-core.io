@@ -53,6 +53,11 @@ export const GATED_ROUTES: GatedRoute[] = [
   // here so that neither state is a surprise.
   { file: 'app/api/auth/jira/url/route.ts', method: 'GET', path: () => '/api/auth/jira/url', expectedStatus: [404, 403] },
   { file: 'app/api/secrets/gemini/test/route.ts', method: 'POST', path: () => '/api/secrets/gemini/test', body: { apiKey: 'not-a-real-key' } },
+  // Roadmap 1.2 — the per-stage model switch. Reading it says whether a key
+  // exists for this account; writing it decides what the account's own key and
+  // quota may be spent on. Both sit behind the factor.
+  { file: 'app/api/model-stages/route.ts', method: 'GET', path: () => '/api/model-stages' },
+  { file: 'app/api/model-stages/route.ts', method: 'POST', path: () => '/api/model-stages', body: { stages: { design: false } } },
 ];
 
 /**

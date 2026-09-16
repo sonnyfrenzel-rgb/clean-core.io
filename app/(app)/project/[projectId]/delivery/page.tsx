@@ -786,8 +786,15 @@ jobs:
                   <span className="text-xs font-bold text-gray-900 block">
                     {project.auditMetadata?.modelCard?.engineVersion || APP_VERSION}
                   </span>
+                  {/* Roadmap 1.2 — the default model id used to be printed here
+                      whenever the card named none, so a run no model took part
+                      in was reported as a Gemini run under the audit heading. */}
                   <span className="text-[10px] text-gray-500 font-medium">
-                    {project.auditMetadata?.modelCard?.model || 'gemini-3-flash-preview'} · {project.auditMetadata?.modelCard?.byokUsed ? 'BYOK' : 'Platform Key'}
+                    {project.auditMetadata?.modelCard?.model
+                      ? `${project.auditMetadata.modelCard.model} · ${project.auditMetadata.modelCard.byokUsed ? 'BYOK' : 'Platform Key'}`
+                      : project.auditMetadata?.modelCard?.modelParticipation === 'none'
+                        ? 'No model — deterministic evidence only'
+                        : 'Model not recorded'}
                   </span>
                 </div>
               </div>
