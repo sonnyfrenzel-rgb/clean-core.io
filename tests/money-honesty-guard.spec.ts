@@ -238,7 +238,11 @@ test('no page promises an outcome nobody measured', () => {
     { re: /\bTCO\s+by\s+\d/i, why: 'a TCO delta nothing computes' },
   ];
   // A sentence that says the claim is NOT made is the fix, not the offence.
-  const DISAVOWED = /\b(not|never|no|without|neither)\b/i;
+  // Deliberately narrow: `no` and `without` appear all over the copy for
+  // unrelated reasons, and letting them excuse a sentence let the LinkedIn
+  // whitepaper's "saving days of manual mapping and boilerplate, without ever
+  // replacing the judgment of the expert" through on the first run.
+  const DISAVOWED = /\b(not|never|neither)\b/i;
 
   const offenders: string[] = [];
   const inspect = (rel: string, raw: string) => {
