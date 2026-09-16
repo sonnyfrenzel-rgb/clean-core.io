@@ -16,6 +16,8 @@ import {
 } from '../lib/input-manifest';
 import { recomputeStoredRunHash } from '../lib/run-signature';
 import type { Project, TestCase } from '../lib/types';
+import { observedWhile } from './helpers/observed-while';
+import { STARTER_EXAMPLES } from '../lib/starter-examples';
 
 /**
  * Roadmap 0.6 — "Konservative Ungültigkeit statt Frischeheuristik".
@@ -276,7 +278,24 @@ test.describe('server side', () => {
     // nothing said so. The commit is now bound to the source the route read: if
     // it moved, nothing is written.
     const RACE_ID = `p-conservative-race-${Date.now()}`;
-    const EARLIER = `REPORT z_race_${Date.now()}.\nSELECT * FROM vbak INTO TABLE @DATA(lt).\n`;
+    // The window this test needs is the one between the route's first read of
+    // the project and its commit, and the evidence build is what holds it open.
+    // On a two-line report the route can reach the transaction before the
+    // reader's edit has landed; the run then commits legitimately and the test
+    // reports a defect that is not there — green here, red in CI.
+    //
+    // So: the 37 kB shipped example, which `starter-example-quota` already uses
+    // to buy the same window, plus one comment line. The line is not decoration.
+    // It moves the fingerprint off the shipped one, so the run is charged like
+    // any other source instead of taking the free slot — and the charge is the
+    // signal this test samples. Generating something longer was the first
+    // attempt and the wrong one: 400 dense SELECTs build an evidence report
+    // past Firestore's document limit, and the route answers 500 before it ever
+    // reaches the commit this case is about.
+    const LONG_EXAMPLE = STARTER_EXAMPLES.find((e) => e.name === 'ZLEGACY_ORDER_FULFILLMENT_AUDIT')!;
+    const served = await request.get(`/starter-examples/${LONG_EXAMPLE.file}`);
+    expect(served.status(), LONG_EXAMPLE.file).toBe(200);
+    const EARLIER = `${new TextDecoder().decode(await served.body())}\n* race fixture ${Date.now()}\n`;
     const LATER = 'REPORT z_later.\nSELECT * FROM vbap INTO TABLE @DATA(lt).\n';
     const fingerprint = node256(EARLIER);
     await db.doc(`projects/${RACE_ID}`).set({
@@ -291,14 +310,14 @@ test.describe('server side', () => {
     // Not a sleep: the route reserves the quota unit for this fingerprint
     // strictly after it has read the project, and long before it commits. Its
     // appearance is therefore proof that the read has happened — a wall-clock
-    // delay would be a guess, and on a cold route a wrong one.
-    const deadline = Date.now() + 20_000;
-    for (;;) {
+    // delay would be a guess, and on a cold route a wrong one. The sampler
+    // stops when the request settles, so missing the window costs a clear
+    // assertion instead of a twenty-second timeout.
+    const reserved = await observedWhile(inFlight, async () => {
       const u = (await db.doc(`users/${uid}`).get()).data() || {};
-      if (u.chargedInputs?.[fingerprint] === true) break;
-      expect(Date.now(), 'the run never reserved its unit').toBeLessThan(deadline);
-      await new Promise((r) => setTimeout(r, 10));
-    }
+      return u.chargedInputs?.[fingerprint] === true;
+    });
+    expect(reserved, 'the run never reserved its unit, so the edit below races nothing').toBe(true);
     await db.doc(`projects/${RACE_ID}`).update({ legacyCode: LATER });
 
     const res = await inFlight;

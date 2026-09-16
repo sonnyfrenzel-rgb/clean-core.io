@@ -12,6 +12,7 @@ import { starterExampleIndex, fingerprintExampleSource } from '../lib/starter-ex
 import { starterExampleIsFree } from '../lib/run-quota-rule';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { observedWhile } from './helpers/observed-while';
 
 /**
  * Roadmap 0.9 — the eight shipped examples cost no quota, each once per account.
@@ -97,25 +98,6 @@ async function analyse(
  * path "never on an abort or an error" has to survive.
  */
 const BREAKS_AFTER_RESERVATION = { uploadedFileName: [['not a file name']] };
-
-/**
- * Was `seen` ever true while `work` was still running?
- *
- * Samples in a tight loop and stops the moment the request settles, so a state
- * that exists only between two points inside the route can be observed without
- * a wall-clock guess — and a miss ends in a clear assertion rather than in a
- * twenty-second timeout. Bookkeeping that is taken and given back leaves no
- * trace once the request is over; if nobody looked while it was there, the
- * test that follows is a statement about nothing.
- */
-async function observedWhile(work: Promise<unknown>, seen: () => Promise<boolean>): Promise<boolean> {
-  let running = true;
-  work.then(() => { running = false; }, () => { running = false; });
-  while (running) {
-    if (await seen()) return true;
-  }
-  return seen();
-}
 
 test.beforeAll(async () => {
   const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);

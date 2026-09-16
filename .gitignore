@@ -29,3 +29,4 @@ design-capture/
 # Security agent: work files and plaintext audit reports (scripts/security). Never commit.
 .security-audit/
 .ux-review/
+pw.local.config.ts
