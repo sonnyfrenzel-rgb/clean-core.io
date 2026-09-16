@@ -22,9 +22,10 @@
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:44.389Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.8",
-      "updatedAt": "2026-09-15T10:32:44.389Z"
+      "updatedAt": "2026-09-16T06:23:01.203Z",
+      "fixedIn": "5b09c6467e49"
     },
     {
       "id": "UX-003",
