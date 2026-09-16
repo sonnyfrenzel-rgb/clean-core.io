@@ -72,7 +72,11 @@ export function withinBudget(budget, spentUsd, call) {
  * Still out: server helpers, API routes, the engine. They decide what is shown,
  * not how it reads.
  */
-const UX_LIB = /^lib\/(?:workflow-steps|email-layout|email-events|clean-core-guide|content-dates)\.ts$|^lib\/[a-z0-9-]+-content\.ts$|^lib\/(?:[a-z0-9-]+\/)?[a-z0-9-]*(?:email|mail)\.ts$/;
+// `lib/survey/definition.ts` is the survey itself — every question and answer
+// option the survey page renders. It matched none of the patterns, so a
+// reworded question reached the reviewer as an invisible change
+// (QA review of 90be9aba984e, 516525610fdf).
+const UX_LIB = /^lib\/(?:workflow-steps|email-layout|email-events|clean-core-guide|content-dates)\.ts$|^lib\/[a-z0-9-]+-content\.ts$|^lib\/survey\/definition\.ts$|^lib\/(?:[a-z0-9-]+\/)?[a-z0-9-]*(?:email|mail)\.ts$/;
 
 /** What users see: pages, components, styles, the stage model, the copy modules and the mails. Not API routes, not server helpers. */
 export function isUxRelevant(path) {

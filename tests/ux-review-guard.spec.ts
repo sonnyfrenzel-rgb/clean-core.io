@@ -203,6 +203,8 @@ test.describe('what a review covers', () => {
       'lib/security-alert-email.ts',
       'lib/survey/invite-email.ts',
       'lib/survey/digest-email.ts',
+      // The survey itself: every question and answer option the page renders.
+      'lib/survey/definition.ts',
       'lib/workflow-steps.ts',
       'lib/email-layout.ts',
       'lib/email-events.ts',
