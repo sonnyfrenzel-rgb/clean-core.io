@@ -1,5 +1,12 @@
 import type { Project } from '@/lib/types';
 import { artefactDigest, sha256Hex, signOffKey, type TrackedArtefact } from './artefact-digest';
+import {
+  INPUT_IDS,
+  inputLabel,
+  invalidatingInputs,
+  unverifiedInputs,
+  type UnverifiedInput,
+} from './input-manifest';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -114,6 +121,12 @@ export interface Staleness {
   docs: boolean;
   /** The standing architect sign-off was given for a previous source. */
   signOff: boolean;
+  /**
+   * Inputs of the active run that cannot be shown to still match (roadmap 0.6).
+   * Empty on a run signed before the input manifest existed — there is nothing
+   * recorded to compare, and that case is reported rather than guessed at.
+   */
+  unverifiedInputs: UnverifiedInput[];
 }
 
 /**
@@ -136,7 +149,9 @@ export interface Staleness {
  * artefact was produced against an analysis of different code.
  */
 export function staleness(project: Project | null): Staleness {
-  const none: Staleness = { sourceChanged: false, design: false, code: false, tests: false, docs: false, signOff: false };
+  const none: Staleness = {
+    sourceChanged: false, design: false, code: false, tests: false, docs: false, signOff: false, unverifiedInputs: [],
+  };
   if (!project) return none;
 
   const analysed =
@@ -154,6 +169,31 @@ export function staleness(project: Project | null): Staleness {
     project.approvedByArchitect === true && record?.signOff && signOffKey(project.architectSignOffAt) === record.signOff,
   );
 
+  // Roadmap 0.6 — the manifest comparison that replaces the freshness heuristic.
+  //
+  // The two checks above ask whether anything positively proves a result old and,
+  // finding nothing, call it current. This one asks the other question: of the
+  // inputs the signed run recorded, which can still be shown to be the inputs
+  // that are there now? An input that differs, one this reader cannot read, and
+  // one the run never recorded all come back as unverified, and none of them
+  // comes back as current.
+  //
+  // The browser can recompute two of the six: the source and the deployment
+  // target. The other four — catalog, rule set, engine build, narrative model —
+  // are the server's to compare, and `/api/audit-pack/create` does exactly that
+  // before it signs anything.
+  const recorded = project.inputManifest ?? project.auditMetadata?.inputManifest ?? null;
+  const deployment = typeof project.s4Deployment === 'string' && project.s4Deployment ? project.s4Deployment : null;
+  const unverified =
+    project.activeRunId && recorded
+      ? invalidatingInputs(
+          unverifiedInputs(recorded, {
+            [INPUT_IDS.source]: source ? sha256Hex(source) : null,
+            [INPUT_IDS.deployment]: deployment ? sha256Hex(deployment) : null,
+          }),
+        )
+      : [];
+
   return {
     sourceChanged,
     design: sourceChanged || unchangedSince('solutionDesign'),
@@ -161,7 +201,15 @@ export function staleness(project: Project | null): Staleness {
     tests: sourceChanged || unchangedSince('testCases'),
     docs: sourceChanged || unchangedSince('documentation'),
     signOff: (sourceChanged && project.approvedByArchitect === true) || signOffUnchanged,
+    unverifiedInputs: unverified,
   };
+}
+
+/** "the analysed source and the target deployment" — for a blocker sentence. */
+function inputList(unverified: ReadonlyArray<UnverifiedInput>): string {
+  const labels = unverified.map((u) => inputLabel(u.id));
+  if (labels.length <= 1) return labels[0] || '';
+  return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
 }
 
 const present = (project: Project | null) => {
@@ -185,6 +233,9 @@ export function handoverBlockers(project: Project | null): string[] {
   const p = present(project);
   const out: string[] = [];
   if (s.sourceChanged) out.push('the analysis (the source changed after the signed run)');
+  else if (s.unverifiedInputs.length > 0) {
+    out.push(`the analysis (${inputList(s.unverifiedInputs)} cannot be shown to be what the signed run used)`);
+  }
   if (s.design && p.design) out.push('the solution design');
   if (s.signOff) out.push('the architecture sign-off');
   if (s.code && p.code) out.push('the generated code');
@@ -207,6 +258,11 @@ export function generationBlockers(
   const p = present(project);
   const out: string[] = [];
   if (s.sourceChanged) return ['The source changed after the signed run. Re-run the analysis in stage 1 first.'];
+  if (s.unverifiedInputs.length > 0) {
+    return [
+      `The signed run's inputs cannot all be shown to still match — ${inputList(s.unverifiedInputs)}. Re-run the analysis in stage 1 first.`,
+    ];
+  }
   if (s.design && p.design) out.push('The solution design was generated for a previous source. Regenerate it in stage 2 first.');
   if (s.signOff) out.push('The architecture sign-off was given for a previous source. Confirm it again in stage 2.');
   if (target !== 'transformation' && s.code && p.code) {
@@ -375,7 +431,13 @@ export function workflowSteps(project: Project | null): RailStep[] {
   return [
     hasRun && s.sourceChanged
       ? stale(analyze, 'The source on this project is not the one the signed run analysed — re-run the analysis.', 'Source changed')
-      : analyze,
+      : hasRun && s.unverifiedInputs.length > 0
+        ? stale(
+            analyze,
+            `The signed run's inputs cannot all be shown to still match — ${inputList(s.unverifiedInputs)}. Re-run the analysis.`,
+            'Inputs changed',
+          )
+        : analyze,
     hasDesign && s.design
       ? stale(design, 'Designed for a previous source — regenerate it against the current analysis.')
       : hasDesign && s.signOff
@@ -386,7 +448,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
       : transformation,
     hasDocs && s.docs ? stale(documentation, 'Written for a previous source — regenerate it.') : documentation,
     tests.total > 0 && s.tests ? stale(testing, 'Test cases written for a previous source — regenerate the suite.') : testing,
-    hasRun && s.sourceChanged
+    hasRun && (s.sourceChanged || s.unverifiedInputs.length > 0)
       ? stale(economics, 'Modelled on the score of a different source — re-run the analysis.')
       : economics,
     blockers.length > 0
