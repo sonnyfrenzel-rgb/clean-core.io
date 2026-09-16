@@ -3,9 +3,11 @@ import JSZip from 'jszip';
 import { createHash } from 'crypto';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
+import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin/app';
+import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
 import { adminSetDoc, adminMergeDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
-import { TERMS_VERSION } from '../lib/constants';
+import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { canonicalAuditManifest } from '../lib/audit-pack-canonical';
 import { USER_ATTESTED_FILE } from '../lib/audit-pack';
 
@@ -95,6 +97,15 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     });
   });
 
+  /** The signed run as the server stored it — what every signed file has to be traceable to. */
+  async function signedRun() {
+    const app = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
+    const db = adminFirestore(app, FIRESTORE_DB_ID);
+    const project = (await db.collection('projects').doc(PROJECT_ID).get()).data()!;
+    const run = (await db.collection('projects').doc(PROJECT_ID).collection('runs').doc(project.activeRunId).get()).data()!;
+    return run as { worklist: Array<{ title: string; level?: string; status: string; category: string }>; evidenceReport: unknown[] };
+  }
+
   async function openPack(request: APIRequestContext) {
     const res = await request.post('/api/audit-pack/create', { headers: headers(), data: { projectId: PROJECT_ID } });
     expect(res.status(), res.status() === 200 ? '' : await res.text()).toBe(200);
@@ -165,11 +176,37 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     expect(record.recommendation.engineRecommendation).not.toMatch(/retire/i);
     expect(record.recommendation.targetArchitecture).toBeUndefined();
     expect(JSON.stringify(record)).not.toMatch(/"retire"|signed_off|FORGED/);
-    // Destination by destination: the forged worklist item could only land in the
-    // ADR's worklist section and the findings CSV; the forged route only in the
-    // decision record and the ADR. `Low` and `Finding` are legitimate CSV tokens
-    // (severity, category) and cannot be told apart by text — they travel in the
-    // same row as the sentinel title, whose absence is asserted above.
+    // Destination by destination, tied to the signed run rather than to
+    // sentinel text (QA 00704b78f011, 027976c46ba5): whatever a forged
+    // worklist item carries — `fully`, `Low`, `Finding`, a title, nothing —
+    // it is not an item of the run, and the signed files may contain only
+    // those.
+    const stored = await signedRun();
+    expect(stored.worklist.length).toBeGreaterThan(0);
+    for (const item of stored.worklist) {
+      // The run's items are the engine's: open, categorised as findings, never
+      // in a state the owner could have set.
+      expect(item.category).toBe('Finding');
+      expect(item.status).toBe('open');
+      expect(['fully', 'review', 'out_of_scope', 'signed_off']).not.toContain(item.level);
+      expect(item.title).not.toMatch(/FORGED/);
+    }
+    // The ADR's scope section lists items by level. The run's items have none
+    // of the three listed levels, so every list is empty and there is not one
+    // bullet — a forged item of any shape would be a bullet.
+    const scope = adr.slice(adr.indexOf('## Scope & consequences'), adr.indexOf('## Evidence'));
+    expect(scope).toContain('**Transformed / fully mapped — 0**');
+    expect(scope).toContain('**Needs expert review — 0**');
+    expect(scope).toContain('**Out of scope / deferred — 0**');
+    expect(scope.match(/^- /gm) ?? []).toHaveLength(0);
+    expect(scope.match(/_None\._/g) ?? []).toHaveLength(3);
+    // The findings CSV is the run's evidence report, row for row.
+    const csvRows = csv.trim().split(/\r?\n/).length - 1;
+    expect(csvRows).toBe(stored.evidenceReport.length);
+    expect(csvRows).toBeGreaterThan(0);
+    // The decision record has exactly the engine's fields — no key the owner writes.
+    expect(Object.keys(record.recommendation).sort()).toEqual(['confidence', 'engineRecommendation', 'justification']);
+    expect(Object.keys(record).sort()).toEqual(['architectReview', 'engineVersion', 'generatedAt', 'projectId', 'recommendation', 'runId', 'scores']);
     expect(csv).not.toMatch(/(^|[^A-Za-z0-9_])(signed_off|retire)([^A-Za-z0-9_]|$)|FORGED-ITEM|FORGED-LOCATION|FORGED-TITLE/);
     expect(adr).not.toMatch(/(^|[^A-Za-z0-9_])(signed_off|retire)([^A-Za-z0-9_]|$)|FORGED-ITEM|FORGED-TITLE/);
     // The boundary is a character class, not an escape a shell can mangle: it matches the token as a word and nothing inside a longer one.
