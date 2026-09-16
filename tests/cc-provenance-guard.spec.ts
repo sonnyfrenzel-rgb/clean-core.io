@@ -212,10 +212,21 @@ test.describe('and the rendered badge says one of the nine', () => {
         'rgba(0, 0, 0, 0)',
       );
     }
-    const surface = await page.evaluate(() =>
-      getComputedStyle(document.documentElement).getPropertyValue('--cc-surface').trim(),
-    );
-    expect(surface).toBe('#ffffff');
+    // The token's *value*, not its spelling. A custom property comes back as
+    // authored, and the production build minifies `#ffffff` to `#fff` — so this
+    // compared green on the dev server and red in CI, for a colour that never
+    // changed (QA review of 1d3068c8020f). Resolved through the browser, both
+    // spellings answer `rgb(255, 255, 255)`, which is also the form the computed
+    // background below is compared against.
+    const surface = await page.evaluate(() => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--cc-surface)';
+      document.body.appendChild(probe);
+      const resolved = getComputedStyle(probe).color;
+      probe.remove();
+      return resolved;
+    });
+    expect(surface, 'the surface token is not the white the chips stand on').toBe('rgb(255, 255, 255)');
     for (const chip of [...outline, ...dashed]) {
       expect(chip.background, `${chip.value} should stand on the surface, not on a fill`).toBe(
         'rgb(255, 255, 255)',

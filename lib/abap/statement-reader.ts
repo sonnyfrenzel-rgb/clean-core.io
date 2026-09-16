@@ -289,11 +289,38 @@ export function readStatements(source: string): AbapStatement[] {
     let p = from;
     let inQuote = false;
     let inTick = false;
+    // A string template `|…|` is a literal too, and the one most likely to
+    // carry a period: `|Total: { x } EUR.|` ended the statement at the full
+    // stop inside the sentence. Embedded `{ … }` may hold another template, so
+    // the depth is counted rather than toggled (QA review of ca2464aba930).
+    let inTemplate = 0;
+    let inEmbedded = 0;
     while (p < pending.chars.length) {
       const ch = pending.chars[p];
-      if (ch === "'" && !inTick) { inQuote = !inQuote; p += 1; continue; }
-      if (ch === '`' && !inQuote) { inTick = !inTick; p += 1; continue; }
-      if (ch === '.' && !inQuote && !inTick) {
+      if (ch === "'" && !inTick && !inTemplate) { inQuote = !inQuote; p += 1; continue; }
+      if (ch === '`' && !inQuote && !inTemplate) { inTick = !inTick; p += 1; continue; }
+      if (ch === '|' && !inQuote && !inTick) {
+        // Inside `{ … }` a bar opens or closes a *nested* template, and either
+        // way the outer one is still open — so it changes nothing here. Only a
+        // bar outside the braces starts or ends the template this scanner cares
+        // about. Counting bars instead of ignoring them cannot tell an opening
+        // from a closing one, and `|a { |b.c| } d.|.` then never terminated.
+        if (!inEmbedded) inTemplate = inTemplate ? 0 : 1;
+        p += 1;
+        continue;
+      }
+      if (inTemplate && ch === '{') { inEmbedded += 1; p += 1; continue; }
+      if (inTemplate && ch === '}') { inEmbedded = Math.max(0, inEmbedded - 1); p += 1; continue; }
+      // A period between two digits is a decimal point, not a statement end:
+      // `lv_price = 12.50.` is one statement and `IF lv_rate > 0.5.` is one
+      // condition. Splitting there did not merely lose a statement — it handed
+      // on `IF lv_rate > 0` as the condition a gateway would be drawn from.
+      if (
+        ch === '.'
+        && /\d/.test(pending.chars[p - 1] ?? '')
+        && /\d/.test(pending.chars[p + 1] ?? '')
+      ) { p += 1; continue; }
+      if (ch === '.' && !inQuote && !inTick && !inTemplate) {
         emit(out, pending, 0, p, nativeSql);
         noteNativeSqlBoundary();
         pending.chars.splice(0, p + 1);

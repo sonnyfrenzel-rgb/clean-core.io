@@ -262,3 +262,46 @@ test.describe('what the reader will not guess at', () => {
     expect(report.notHandled[0].lineStart).toBe(2);
   });
 });
+
+test.describe('a period is not always the end of a statement', () => {
+  // The scanner cut at every period outside a quoted literal. Two places in
+  // ordinary ABAP put one somewhere else, and the second is the dangerous one:
+  //
+  //   lv_price = 12.50.          two statements, `lv_price = 12` and `50`
+  //   IF lv_rate > 0.5.          the gateway's condition became `IF lv_rate > 0`
+  //   lv = |Total: { x } EUR.|.  the statement ended inside the sentence
+  //
+  // A lost statement is visible. A truncated condition is not: it reads as a
+  // complete condition that says something else (QA review of ca2464aba930).
+
+  test('a decimal point does not end a statement', () => {
+    const st = readStatements('REPORT z.\nlv_price = 12.50.\nIF lv_price > 10.\n  WRITE / lv_price.\nENDIF.');
+    expect(st.map((s) => s.text)).toContain('lv_price = 12.50');
+    expect(st.filter((s) => s.keyword === 'IF').length).toBe(1);
+  });
+
+  test('a truncated condition is the failure that would not be noticed', () => {
+    const st = readStatements('REPORT z.\nIF lv_rate > 0.5.\n  PERFORM apply.\nENDIF.');
+    const branch = st.find((s) => s.keyword === 'IF');
+    expect(branch?.text, 'the condition lost everything after the decimal point').toBe('IF lv_rate > 0.5');
+  });
+
+  test('a string template keeps its full stops', () => {
+    const st = readStatements('REPORT z.\nlv_text = |Total: { lv_price } EUR.|.\nWRITE / lv_text.');
+    expect(st.length).toBe(3);
+    expect(st[1].text).toContain('EUR.');
+  });
+
+  test('a template nested inside an embedded expression still closes', () => {
+    // A bar inside `{ … }` opens or closes a nested template, and either way the
+    // outer one is still open. Counting bars cannot tell the two apart.
+    const st = readStatements('REPORT z.\nlv = |a { |b.c| } d.|.\nWRITE / lv.');
+    expect(st.length, 'the statement never terminated').toBe(3);
+    expect(st[2].text).toBe('WRITE / lv');
+  });
+
+  test('an ordinary period still ends an ordinary statement', () => {
+    const st = readStatements('REPORT z.\nlv = 1. IF lv > 0. ENDIF.');
+    expect(st.map((s) => s.text)).toEqual(['REPORT z', 'lv = 1', 'IF lv > 0', 'ENDIF']);
+  });
+});
