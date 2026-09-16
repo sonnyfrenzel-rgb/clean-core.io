@@ -428,8 +428,8 @@ export default function LandingModals() {
   /**
    * Recovery codes used to look like `CC-XXXX-YYYY`, and people kept them.
    *
-   * Roadmap 0.13 replaced the application-level TOTP with Firebase's own factor
-   * and there are no backup codes any more. Someone pasting an old one got
+   * Roadmap 0.13 replaced the application-level TOTP with Firebase's own
+   * factor, and those backup codes no longer exist. Someone pasting an old one got
    * "that code is not valid" and no idea why (UX review of 52f171091948,
    * d5f35cf138c5). It is not invalid — it no longer exists, and the way back in
    * is a different one.

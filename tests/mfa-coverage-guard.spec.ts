@@ -139,6 +139,11 @@ test.describe('the client never holds a session that is waiting for its second f
     // and someone holding a `CC-XXXX-YYYY` from before roadmap 0.13 has to be
     // told what happened rather than that their code is invalid (UX review of
     // 52f171091948, d5f35cf138c5). So: every mention has to be a withdrawal.
+    // Read line by line, so a mention that wraps has to carry the withdrawal on
+    // the same line as the mention — including in a comment. That is stricter
+    // than it needs to be and it is deliberate: the alternative is joining lines
+    // and guessing where a sentence ends, and a wrong guess here is an offer
+    // shipped to a locked-out user.
     for (const sentence of s.split('\n')) {
       if (!/backup (recovery )?code|recovery code/i.test(sentence)) continue;
       expect(sentence, `mentions a recovery code without withdrawing it: ${sentence.trim().slice(0, 120)}`)
