@@ -132,17 +132,37 @@ export async function verifyRequestAuth(req: Request) {
  * Checks: valid, unrevoked Firebase token + admin custom claim.
  * Returns the decoded token or null.
  *
- * The claim is the only thing consulted. There used to be an emulator-only
- * fallback to `users/{uid}.isAdmin` — the display mirror `setAdminClaim`
- * writes — which the tests never needed (they set the real claim through
- * /api/test/seed) and which left a second path to admin open: a mirror write
- * that failed after a withdrawal would have kept the rights the claim no
- * longer granted.
+ * The claim grants. The `users/{uid}.isAdmin` mirror that `setAdminClaim`
+ * writes grants nothing — there used to be an emulator-only fallback to it,
+ * which left a second path to admin open — but it does deny, and that is what
+ * makes a withdrawal durable.
+ *
+ * A withdrawal removes the claim and revokes the refresh tokens; only the
+ * revocation invalidates the ID token the administrator is holding, because
+ * nothing rewrites a JWT. If that last call fails — a transient Firebase error
+ * — the route reports it, and until then the old token still says
+ * `admin: true` and Firebase has no revocation time to check it against (QA
+ * review of 146ac2e1a724, 9f4046043f12). The mirror is written *before* the
+ * claim is removed and is therefore already `false` in exactly that window.
+ * One read per admin request, on the rarest routes in the app, and the
+ * withdrawal holds whether or not the revocation got through.
  */
 export async function verifyAdminRequest(req: Request) {
   const decoded = await verifyRequestAuth(req);
   if (!decoded) return null;
-  return (decoded as any).admin === true ? decoded : null;
+  if ((decoded as any).admin !== true) return null;
+  try {
+    const { db } = await getAdminDb();
+    const snap = await db.collection('users').doc(decoded.uid).get();
+    // Absent is not a denial: the mirror is a record of withdrawal, and an
+    // account without one has never had its rights taken away.
+    if (snap.exists && snap.data()?.isAdmin === false) return null;
+  } catch (err) {
+    // The mirror could not be read, so the withdrawal cannot be ruled out.
+    console.error('verifyAdminRequest: admin mirror unreadable, refusing:', err);
+    return null;
+  }
+  return decoded;
 }
 
 export function assertRecentAuth(decodedToken: any, maxAgeSeconds = 300): void {

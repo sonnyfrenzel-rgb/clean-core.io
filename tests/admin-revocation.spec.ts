@@ -4,7 +4,7 @@ import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin/app';
-import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
+import { getFirestore as adminFirestore, FieldValue } from 'firebase-admin/firestore';
 import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
@@ -26,7 +26,11 @@ import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
  * the body is ever read. So the distinction is visible without changing any
  * account's privileges as a side effect of asking.
  */
-const PASSWORD = 'Revocation-Spec-Pass-123!';
+// The emulator account this spec creates needs something to sign in with. It is
+// derived per run rather than written down: nothing outside the local emulator
+// accepts it, and a named constant trips every secret scanner that reads the
+// repository (QA review of 146ac2e1a724, 61061820c8fa).
+const SIGN_IN = `spec-${process.pid}-${Math.random().toString(36).slice(2)}-Aa1!`;
 const AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
 
 function clientAuth() {
@@ -65,7 +69,7 @@ function authTimeOf(idToken: string): number {
 
 async function seedAccount(tag: string, profile: Record<string, unknown> = {}) {
   const email = `${tag}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@cleancore-test.io`;
-  const cred = await createUserWithEmailAndPassword(clientAuth(), email, PASSWORD);
+  const cred = await createUserWithEmailAndPassword(clientAuth(), email, SIGN_IN);
   const uid = cred.user.uid;
   await adminSetDoc('users', uid, {
     firstName: 'Revocation', lastName: 'Spec', email,
@@ -97,6 +101,52 @@ async function waitPast(authTime: number) {
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 }
+
+test.describe('a withdrawal that could not revoke the tokens still holds', () => {
+  test('a claim whose mirror says false opens no admin route', async ({ request }: { request: APIRequestContext }) => {
+    // The withdrawal writes the mirror first, removes the claim second and
+    // revokes the refresh tokens third. Only the revocation invalidates the
+    // token the administrator is holding; if that last call fails, the token
+    // still says `admin: true` and Firebase has no revocation time to check it
+    // against (QA review of 146ac2e1a724, 9f4046043f12). This is that state,
+    // built directly: the mirror already withdrawn, the claim still on the
+    // token.
+    const { uid, user } = await seedAccount('mirror-denied-admin');
+    try {
+      await adminSetCustomClaim(uid, { admin: true });
+      const adminToken = await user.getIdToken(true);
+      const headers = { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' };
+
+      // Accepted while the mirror agrees: the route gets past its admin check
+      // and complains about the empty body.
+      await adminDb().collection('users').doc(uid).set({ isAdmin: true }, { merge: true });
+      const before = await request.post('/api/admin/set-admin-claim', { headers, data: {} });
+      expect(before.status(), 'an administrator reaches the route').toBe(400);
+
+      // The mirror is withdrawn. The token is untouched and still carries the claim.
+      await adminDb().collection('users').doc(uid).set({ isAdmin: false }, { merge: true });
+      const after = await request.post('/api/admin/set-admin-claim', { headers, data: {} });
+      expect(after.status(), 'the withdrawal holds without the token revocation').toBe(403);
+    } finally {
+      await removeAccount(uid);
+    }
+  });
+
+  test('an account with no mirror at all is not treated as withdrawn', async ({ request }: { request: APIRequestContext }) => {
+    // The mirror is a record of withdrawal, not a second grant: an account that
+    // never had one has never had its rights taken away.
+    const { uid, user } = await seedAccount('mirrorless-admin');
+    try {
+      await adminSetCustomClaim(uid, { admin: true });
+      await adminDb().collection('users').doc(uid).update({ isAdmin: FieldValue.delete() });
+      const headers = { Authorization: `Bearer ${await user.getIdToken(true)}`, 'Content-Type': 'application/json' };
+      const res = await request.post('/api/admin/set-admin-claim', { headers, data: {} });
+      expect(res.status(), 'the claim still grants').toBe(400);
+    } finally {
+      await removeAccount(uid);
+    }
+  });
+});
 
 test.describe('a withdrawn administrator is refused at once', () => {
   test('the token that still carries the claim no longer opens an admin route', async ({ request }: { request: APIRequestContext }) => {

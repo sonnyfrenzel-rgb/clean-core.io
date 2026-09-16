@@ -125,8 +125,11 @@ export default function GapsWorklist({
       const updatedList = latestList.current.map((item: WorklistItem) =>
         item.id === itemId ? { ...item, status: newStatus } : item,
       );
-      latestList.current = updatedList;
       await onUpdateWorklist(updatedList);
+      // Only a write that went through becomes the base for the next one: a
+      // rejected change used to stay in the snapshot and be replayed by the
+      // following one (QA review of 146ac2e1a724, a423cd8ab43b).
+      latestList.current = updatedList;
     }).catch((err: unknown) => {
       console.error('Failed to update backlog item status:', err);
     });

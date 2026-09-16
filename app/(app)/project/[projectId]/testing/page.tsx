@@ -75,7 +75,7 @@ export default function TestingSandboxPage() {
    * different statement as soon as the form had been edited since it was saved
    * (QA review of 33471220d6e9, 40e1db9fd37a).
    */
-  const [savedS4, setSavedS4] = useState<{ url: string; username: string; authType: string } | null>(null);
+  const [savedS4, setSavedS4] = useState<{ url: string; username: string; authType: string; btpDestinationJson: string } | null>(null);
   const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
   const [selectedResult, setSelectedResult] = useState<any>(null);
 
@@ -149,7 +149,7 @@ export default function TestingSandboxPage() {
       }
       // F-03: Load S4 metadata (non-secret) — password is write-only
       if (project.s4Meta?.configured) {
-        setSavedS4({ url: project.s4Meta.url || '', username: project.s4Meta.username || '', authType: (project.s4Meta.authType as string) || 'basic' });
+        setSavedS4({ url: project.s4Meta.url || '', username: project.s4Meta.username || '', authType: (project.s4Meta.authType as string) || 'basic', btpDestinationJson: '' });
         setS4Url(project.s4Meta.url || '');
         setS4Username(project.s4Meta.username || '');
         setS4AuthType((project.s4Meta.authType as any) || 'basic');
@@ -157,7 +157,7 @@ export default function TestingSandboxPage() {
         if (project.s4Meta.url) setShowSetupGuide(false);
       } else if (project.s4Config) {
         // Legacy fallback
-        setSavedS4({ url: project.s4Config.url || '', username: project.s4Config.username || '', authType: project.s4Config.authType || 'basic' });
+        setSavedS4({ url: project.s4Config.url || '', username: project.s4Config.username || '', authType: project.s4Config.authType || 'basic', btpDestinationJson: project.s4Config.btpDestinationJson || '' });
         setS4Url(project.s4Config.url || '');
         setS4Username(project.s4Config.username || '');
         setS4Password('');
@@ -165,7 +165,7 @@ export default function TestingSandboxPage() {
         setBtpDestinationJson(project.s4Config.btpDestinationJson || '');
         if (project.s4Config.url) setShowSetupGuide(false);
       } else if (profile?.s4Meta?.configured) {
-        setSavedS4({ url: profile.s4Meta.url || '', username: profile.s4Meta.username || '', authType: (profile.s4Meta.authType as string) || 'basic' });
+        setSavedS4({ url: profile.s4Meta.url || '', username: profile.s4Meta.username || '', authType: (profile.s4Meta.authType as string) || 'basic', btpDestinationJson: '' });
         setS4Url(profile.s4Meta.url || '');
         setS4Username(profile.s4Meta.username || '');
         setS4AuthType((profile.s4Meta.authType as any) || 'basic');
@@ -173,7 +173,7 @@ export default function TestingSandboxPage() {
         if (profile.s4Meta.url) setShowSetupGuide(false);
       } else if (profile?.s4Config) {
         // Legacy fallback
-        setSavedS4({ url: profile.s4Config.url || '', username: profile.s4Config.username || '', authType: profile.s4Config.authType || 'basic' });
+        setSavedS4({ url: profile.s4Config.url || '', username: profile.s4Config.username || '', authType: profile.s4Config.authType || 'basic', btpDestinationJson: profile.s4Config.btpDestinationJson || '' });
         setS4Url(profile.s4Config.url || '');
         setS4Username(profile.s4Config.username || '');
         setS4Password('');
@@ -230,7 +230,7 @@ export default function TestingSandboxPage() {
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Save failed');
       // What the vault now holds — the connection test compares against this.
-      setSavedS4({ url: s4Url, username: s4Username, authType: s4AuthType });
+      setSavedS4({ url: s4Url, username: s4Username, authType: s4AuthType, btpDestinationJson });
       
       // Also save environment preference to project
       const db = getDb();
@@ -268,7 +268,16 @@ export default function TestingSandboxPage() {
       setTestingConnection(false);
       return;
     }
-    if (savedS4.url !== s4Url || savedS4.username !== s4Username || savedS4.authType !== s4AuthType) {
+    // The password is write-only, so a filled password box is by definition a
+    // change that has not been saved; the destination JSON is editable in the
+    // same form and was left out of the comparison entirely
+    // (QA review of 146ac2e1a724, 3909a7680413).
+    const formChanged = savedS4.url !== s4Url
+      || savedS4.username !== s4Username
+      || savedS4.authType !== s4AuthType
+      || savedS4.btpDestinationJson !== btpDestinationJson
+      || s4Password.length > 0;
+    if (formChanged) {
       setConnectionStatus('failed');
       setConnectionMessage(`The form no longer matches the saved connection (saved: ${savedS4.url}). Save your changes, then test.`);
       setSandboxOutput(`[sandbox-runtime] Unsaved changes. The saved connection is ${savedS4.url}; that is the one the test would have used.`);

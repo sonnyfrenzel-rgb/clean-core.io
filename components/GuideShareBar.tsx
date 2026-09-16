@@ -60,14 +60,19 @@ export default function GuideShareBar() {
       }
       document.body.removeChild(el);
     }
+    // Each outcome clears the other: a failed second click used to leave
+    // "Link copied" standing from the first, and a success after a failure
+    // fell back to "Copy it by hand" when its timer expired
+    // (QA review of 146ac2e1a724, aa9317005839).
+    if (copyTimer.current) clearTimeout(copyTimer.current);
     if (!ok) {
+      setCopied(false);
       setCopyFailed(true);
-      if (copyTimer.current) clearTimeout(copyTimer.current);
       copyTimer.current = setTimeout(() => setCopyFailed(false), 6000);
       return;
     }
+    setCopyFailed(false);
     setCopied(true);
-    if (copyTimer.current) clearTimeout(copyTimer.current);
     copyTimer.current = setTimeout(() => setCopied(false), 2200);
   }
 

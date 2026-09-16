@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, runTransaction } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -394,19 +394,18 @@ ${context}`;
       
       setDocumentation(jsonString);
       
-      // Both generations rewrite the same `generatedCode` field from the
-      // snapshot they started with, so the second write dropped the first
-      // one's file (QA review of 33471220d6e9, 4db1e81408f4). The workspace is
-      // read back from the database immediately before it is written, and the
-      // two buttons no longer run at the same time.
-      const latest = await getDoc(doc(getDb(), 'projects', idStr));
-      const updatedCode = addOrUpdateFileInWorkspace(latest.data()?.generatedCode ?? project.generatedCode, 'docs/process-blueprint.md', formatDocsToMarkdown(jsonString));
-
-      const db = getDb();
-      await updateDoc(doc(db, 'projects', idStr), {
-        documentation: jsonString,
-        generatedCode: updatedCode,
-        status: 'documented'
+      // Both generations rewrite the same `generatedCode` field. Reading it
+      // back first was not enough — two tabs can both read before either
+      // writes, and the later write still drops the earlier file (QA reviews of
+      // 33471220d6e9 and 146ac2e1a724: 4db1e81408f4, ade8ec0b8903). The
+      // read and the write are one transaction; disabling the buttons is a
+      // courtesy on top, not the mechanism.
+      const projectDoc = doc(getDb(), 'projects', idStr);
+      const updatedCode = await runTransaction(getDb(), async (tx) => {
+        const snap = await tx.get(projectDoc);
+        const merged = addOrUpdateFileInWorkspace(snap.data()?.generatedCode ?? project.generatedCode, 'docs/process-blueprint.md', formatDocsToMarkdown(jsonString));
+        tx.update(projectDoc, { documentation: jsonString, generatedCode: merged, status: 'documented' });
+        return merged;
       });
 
       setProject(prev => prev ? { ...prev, documentation: jsonString, generatedCode: updatedCode, status: 'documented' } : null);
@@ -517,13 +516,13 @@ Structure the JSON exactly like this:
       
       setBusinessDocumentation(responseText);
       
-      const latest = await getDoc(doc(getDb(), 'projects', idStr));
-      const updatedCode = addOrUpdateFileInWorkspace(latest.data()?.generatedCode ?? project.generatedCode, 'docs/business-documentation.md', formatBusinessDocsToMarkdown(responseText));
-
-      const db = getDb();
-      await updateDoc(doc(db, 'projects', idStr), {
-        businessDocumentation: responseText,
-        generatedCode: updatedCode
+      // One transaction, for the same reason as above (ade8ec0b8903).
+      const projectDoc = doc(getDb(), 'projects', idStr);
+      const updatedCode = await runTransaction(getDb(), async (tx) => {
+        const snap = await tx.get(projectDoc);
+        const merged = addOrUpdateFileInWorkspace(snap.data()?.generatedCode ?? project.generatedCode, 'docs/business-documentation.md', formatBusinessDocsToMarkdown(responseText));
+        tx.update(projectDoc, { businessDocumentation: responseText, generatedCode: merged });
+        return merged;
       });
 
       setProject(prev => prev ? { ...prev, businessDocumentation: responseText, generatedCode: updatedCode } : null);

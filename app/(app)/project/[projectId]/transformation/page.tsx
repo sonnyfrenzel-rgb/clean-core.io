@@ -607,14 +607,19 @@ CMD ["node", "srv/service.js"]`
             throw e;
           }
         }
-        filesArray = (result.files || []).filter(isUsableFile);
+        filesArray = (Array.isArray(result.files) ? result.files : []).filter(isUsableFile);
         tests = result.tests || { config: '', spec: '' };
         
-        if (filesArray.length === 0 && result.code) {
-          filesArray.push({
+        // The single-blob answer goes through the same gate as the list: it
+        // used to be pushed unchecked, so `{"files":[],"code":"   "}` reached
+        // the project as a finished transformation (QA review of 146ac2e1a724,
+        // 9712d15149c9).
+        if (filesArray.length === 0) {
+          const single = {
             path: isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts',
-            content: result.code
-          });
+            content: result.code,
+          };
+          if (isUsableFile(single)) filesArray.push(single);
         }
       } catch (e) {
         // Fallback for completely non-JSON text
