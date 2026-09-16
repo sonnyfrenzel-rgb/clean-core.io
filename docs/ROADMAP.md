@@ -570,6 +570,23 @@ ersetzt.
 | 4 | **Vorschau vor 3.0?** | Bis 3.0 nur Admin — oder ab Phase 5 eine Vorschau für ausgewählte Mitglieder, die dann echtes Feedback geben |
 | 5 | **Auszählung der Aktivierungsumfrage** | Sie sollte die Reihenfolge innerhalb der Phasen bestimmen — der ATC-Import (7.1) und die deutsche Oberfläche (3.1) sind Kandidaten |
 | 6 | **Regel-Deploys einplanen** | `firestore.rules` rollt CI nicht aus. 0.7 und 5.4 brauchen den manuellen Produktions-Deploy **vor** der App |
+| 7 | **Drei Repository-Secrets tauschen?** | `S4_ENCRYPTION_KEY`, `PILOT_APPROVAL_SECRET` und `MFA_BACKUP_CODE_PEPPER` lagen bis zum 16.09.2026 in jedem Lauf der öffentlichen CI. Kein Hinweis auf einen Abfluss — es ist eine Frage der Blast Radius. Der Schlüssel ist der teure: jede gespeicherte S/4-Zugangsdatei ist damit verschlüsselt, ein Tausch heißt neu verschlüsseln oder neu eingeben lassen. Die anderen beiden kosten nichts (SEC-2026-024, behoben — der Tausch ist die Frage danach) |
+| 8 | **CSP ohne `unsafe-inline`?** | SEC-2026-016. `middleware.ts` begründet über zwanzig Zeilen, warum `script-src` heute `'unsafe-inline'` trägt: Next.js reicht middleware-erzeugte Nonces nicht an seine eigenen `<script>`-Tags weiter. Ob das mit Next 15 noch gilt, ist die eigentliche Frage. Verschärfen heißt: gegen den echten Google-Login testen, sonst sperrt es Leute aus |
+| 9 | **S/4-Zugangsdaten aus der Kindprozess-Umgebung?** | SEC-2026-018. Der Sandbox-Kindprozess bekommt entschlüsselte Zugangsdaten als Umgebungsvariablen und führt modellgeschriebenen Testcode aus. Netz-Sperre unbedingt geladen, keine Shell, Heap gedeckelt — der Schaden bleibt beim Kontoinhaber. Ein Proxy statt Umgebungsvariablen wäre sauberer, ist aber ein Entwurf, keine Reparatur |
+
+**Vertagt am 16.09.2026 auf den 17.09.2026** (Entscheidung Sonny): 7, 8 und 9 —
+sowie die neun UX-Befunde, die das Register weiter in Schritt **0.2** einplant
+(UX-026, -027, -029, -037, -038, -040, -059, -076, -084). Keiner der vier
+Posten blockiert ein Release; sie stehen hier, damit sie morgen nicht neu
+gesucht werden müssen.
+
+Zu **1** (Referenzkorpus): am 16.09.2026 abends an vier Modelle über OpenRouter
+gegeben — Grok 4.6, GLM 5.3, Claude Fable 5.1 und DeepSeek v4 Pro, alle mit
+identischer Ausgangslage, jedes mit dem Auftrag, den Korpus mit mindestens 100
+eigenen realen ABAP-Beispielen zu widerlegen. Das ersetzt den externen Prüfer
+nicht: vier Modelle, die dieselbe Gattung Fehler machen können wie der Autor,
+sind eine Härtung und keine Freigabe. Es soll die Arbeit des Prüfers von Tagen
+auf Stunden bringen.
 
 ---
 
