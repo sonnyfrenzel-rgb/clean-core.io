@@ -78,11 +78,12 @@ export default function TermsPage() {
             </p>
           </section>
 
-          <section>
+          <section id="free-community-edition" className="scroll-mt-20">
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">2. Free Community Edition; No Fee</h2>
             <p className="text-base mb-3">
               Access to the Platform is provided completely free of charge. No payment, subscription, or consideration is
-              required or accepted.
+              required or accepted. Clean-Core.io is a free community project: there is no paid tier, no paid edition and
+              no commercial version of it.
             </p>
             <p className="text-base">
               Because the Platform is provided free of charge and on a voluntary community basis, there is no entitlement to
@@ -132,7 +133,7 @@ export default function TermsPage() {
             </p>
           </section>
 
-          <section>
+          <section id="third-party-ai" className="scroll-mt-20">
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">5. Third-Party AI Services and Bring-Your-Own-Key (BYOK)</h2>
             <p className="text-base mb-3">
               The Platform relies on third-party generative AI services provided by Google (the Google Gemini API) to
@@ -179,7 +180,7 @@ export default function TermsPage() {
             </p>
           </section>
 
-          <section>
+          <section id="your-content" className="scroll-mt-20">
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">8. Your Content, Intellectual Property, and Responsibility</h2>
             <p className="text-base mb-3">
               You warrant that you are entitled to upload and process any content, code, or data you submit to the Platform,

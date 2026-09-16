@@ -57,6 +57,7 @@ import EvidenceSweep from '@/components/analyze/EvidenceSweep';
 import UsageUpload from '@/components/analyze/UsageUpload';
 import { UsageRiskMatrixFor } from '@/components/analyze/UsageRiskMatrix';
 import SectionBoundary from '@/components/SectionBoundary';
+import TrustBeforeUpload from '@/components/TrustBeforeUpload';
 import WhyScorePanel from '@/components/analyze/WhyScorePanel';
 import { getRunCapabilities } from '@/lib/run-capabilities';
 import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
@@ -1872,6 +1873,11 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 </>
               )}
             </div>
+
+            {/* Roadmap 0.11 / DESIGN.md §6.1.3: what you confirm by uploading, and
+                what we do with the code — every line traceable to the Terms, the
+                Privacy Policy or SECURITY.md (lib/trust-claims.ts). */}
+            <TrustBeforeUpload />
 
             {legacyCode && (
               <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-6 animate-in slide-in-from-bottom-4 mb-8">
