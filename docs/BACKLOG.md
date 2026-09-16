@@ -29,8 +29,18 @@ ROADMAP §9 und zwei als Arbeit in Phase 2. **Referenzkorpus:** vier Modelle mit
 sagen einstimmig „nicht freigeben"; Entscheidung Sonny: kein externer Prüfer, v2 mit
 Unabhängigkeitsstufen und Negativliste gebaut (ROADMAP §9, Entscheidung 1). Und der QA-Checkpoint hing
 seit `44a8715` fest, weil das aufgelaufene Delta nicht in vier Aufrufe passte — 16 Befunde des großen
-Deltas mit Beleg widerlegt, der Checkpoint wird in Scheiben per `workflow_dispatch` nachgezogen, das Budget
-bleibt unangetastet.
+Deltas mit Beleg widerlegt, der Checkpoint wurde in sechs Scheiben per `workflow_dispatch` auf `a19945e`
+nachgezogen, das Budget blieb unangetastet; weitere zwölf Befunde aus den Scheiben widerlegt (drei
+„Modellbeteiligung clientgesteuert" — seit `9585a6d` kommt sie aus der Quittung; vier Objekt-`trim`;
+Regel-Deploy-Familie; Schalter-Absicht).
+
+**Nach dem `main`-Push (a19945e, 21:53Z) in der Nacht:** Security-Audit v2.11.1 **ohne bestätigten Befund**
+(619 Dateien, ein Muster-Treffer im öffentlichen Verifier, im Register erledigt). UX-Review: vier Befunde,
+alle bereits entschieden. Vollreview: 30 kritisch / 94 hoch / 373 mittel, INCOMPLETE — sechs bekannt, acht in
+der Nacht widerlegt (`vercel.json` und die Survey-Workflows existieren am Commit nicht), rund 17 kritische
+Hypothesen zur Audit-Pack-Kanonisierung und zu client-schreibbaren Artefakten in signierten Packs sind
+**der erste Block am 17.09.** (ROADMAP §14). Und das Delta-Review von `04b4684` hängt am 52-kB-Diff des
+Metamorphie-Specs — Entscheidung 13 in ROADMAP §9.
 
 **`firestore.rules` muss vor dem App-Deploy von Hand ausgerollt werden** (`npm run deploy:rules`) — zweimal
 in diesem Release geändert: die Admin-Einsicht in Projekte ist weg, und 0.7 nimmt sechs Felder aus der

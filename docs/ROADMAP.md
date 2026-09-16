@@ -203,6 +203,7 @@ Code-Karte darunter.
 | 2.7 | **Erster Blick:** nach Import oder Beispiel baut sich der Arbeitsraum in vier Etappen auf — Code gelesen · Prozess erkannt · in Fachsprache · „Das ist Ihr Prozess" mit Prozessname, Traceability, Entscheidungen, Regeln und „nicht bestimmt". Jede Zahl aus dem Run, überspringbar, `prefers-reduced-motion` zeigt den Endzustand. Dazu die drei Coach Marks und die vorab beantwortete Frage in „Ask this case" aus den Verzweigungen des Codes, ohne Modellaufruf (`DESIGN.md` §5, §6.2). **Davor „New project"** nach `DESIGN.md` §6.1.1: ein Satz Kern, drei Zeilen, was anders ist, Clean Core in drei Blicken (Bedeutung, Level A–D, Herkunft der Evidenz mit Stand des Katalogabgleichs), dann Beispiel oder eigener Code mit der Kontingent-Zeile aus 0.9 | M |
 | 2.8 | **Versteckte Geschäftsregeln:** Literale in Bedingungen — Toleranzen, Werke, Buchungskreise, Kunden- und Lieferantennummern, Datumsgrenzen, Ausnahmelisten — deterministisch als Regelkandidaten mit Anker; jeder wird in 3.5 beibehalten, geändert, entfällt oder ins Customizing verschoben (Feedback 15.09.2026). Einstufende FORMs (`IF/ELSEIF`-Ketten auf Literalen) öffnen als Entscheidungstabelle am Business-Rule-Task | M |
 | 2.9 | **Große Prozesse navigieren** (`DESIGN.md` §5.9): Übersicht der Phasen als eingeklappte Teilprozesse, Ebenen mit Pfadzeile, Gliederungsbaum statt flacher Schrittliste, Problemzeile je Teilprozess, Minikarte, „Show paths to here" und „Main path", Laufvarianten aus den Selektionsschaltern, Overlays als Filter, Suche öffnet die Ebene des Treffers, stabile Anordnung, Ebene und Auswahl in der URL. Abnahme am 1.000-Zeilen-Beispiel: jeder Schritt in höchstens drei Aktionen erreichbar, per Tastatur wie per Maus | L |
+| 2.10 | **Referenzkorpus v2.1 im Repository:** `docs/korpus/referenzkorpus-v2.1.md` (das Fallbuch mit Rahmen, Regelregister, Negativliste, Gegenreview, Autorenberichten) und `tests/korpus/cases/CC-nnn/` mit `source.abap`, `profile.json`, `expected.json` je Fall, erzeugt aus dem Fallbuch durch `scripts/korpus/build-bundle.mjs` (deterministisch, Quellenhashes geprüft). `tests/korpus-engine.spec.ts` lässt die Engine gegen alle 68 Fälle laufen und vergleicht Befunde, Level, Objekte, Skelettknoten; **Ratsche** wie bei abaplint: `tests/korpus/baseline.json` führt jede Abweichung mit Urteil (`engine-defekt` · `korpus-offen` · `nicht-vergleichbar`) und Grund, ein Fall, der übereinstimmte und es nicht mehr tut, macht den Lauf rot, eine still verschwundene Abweichung ebenfalls. Fundstellen aus öffentlichen Repositories stehen im Repository nur als URL, Commit, Pfad, Zeilen und SHA-256 des Ausschnitts — **kein fremder Code**, elf von zwölf Quellen sind ohne Lizenz. Der Korpus wird nie als Prompt- oder Trainingsmaterial des Modells verwendet, das er prüft | M |
 
 **Fertig, wenn**
 - jeder Task, jedes Gateway und jede Lane einen Zeilenanker trägt oder sichtbar
@@ -583,7 +584,7 @@ ersetzt.
 
 | # | Entscheidung | Warum sie zählt |
 |---|---|---|
-| 1 | **Referenzkorpus v2 — ohne externen Prüfer** | Entschieden am 16.09.2026 (Sonny): kein externer SAP-Architekt, der Umfang wäre nicht in vertretbarer Zeit gegenzuzeichnen. Der Korpus lebt mit dieser Einschränkung, trägt sie an jedem Fall und kommt ihr über die Unabhängigkeitsstufen so nah, wie es ohne Architekten geht. Offen bleibt nur noch, ob v2 ins Repository kommt (heute: neben v1 auf dem Desktop) |
+| 1 | **Referenzkorpus — entschieden** | 16.09.2026 (Sonny): kein externer SAP-Architekt, der Umfang wäre nicht in vertretbarer Zeit gegenzuzeichnen; der Korpus lebt mit dieser Einschränkung und trägt sie an jedem Fall. 17.09.2026 (Sonny): der finale Korpus **kommt ins Repository** — als maschinenlesbares Bündel je Fall plus Spec gegen die Engine, Schritt **2.10**. Bis dahin liegt v2.1 neben v1 und v2 auf dem Desktop |
 | 2 | **Wer stellt einen Signavio-Workspace für 4.3?** | Clean-Core.io hat keine Lizenz. Ohne einen Mitglieds-Workspace bleibt die Aussage „BPMN 2.0 XML", nie „getestet mit Signavio" |
 | 3 | **„Discussion" aus dem Mockup vor 3.0?** | Kommentare der eingeladenen Personen am Element wären ein weiterer M-Schritt in Phase 5. Ein Kommentar wäre keine Bestätigung |
 | 4 | **Vorschau vor 3.0?** | Bis 3.0 nur Admin — oder ab Phase 5 eine Vorschau für ausgewählte Mitglieder, die dann echtes Feedback geben |
@@ -596,12 +597,13 @@ ersetzt.
 | 10 | **Fehlerhaftes ABAP im ausgelieferten Beispiel reparieren?** | abaplint (zweiter Parser, seit 16.09.2026 als Ratsche in `tests/abaplint-second-opinion.spec.ts`) weist `ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap:500` und `:524` zurück: `INSERT ztab FROM @VALUE #( … )` ist kein gültiges ABAP, eine Host-Expression heißt `@( … )`. Unser Leser ist nachsichtig und erfasst den Write trotzdem. Reparieren ändert Zahlen, die vier Specs pinnen |
 | 11 | **Unquotierte Dezimalzahl: nachsichtig lesen oder nicht?** | Seit 3342f34 liest die Engine `lv = 12.50.` als eine Anweisung. abaplint — und die Sprache — lesen zwei: ABAP-Zahlliterale sind Ganzzahlen, `'12.50'` wäre richtig. Unsere Regel liest also Code, der nicht übersetzen würde. In keinem der acht Beispiele kommt der Fall vor; die Regel ist dort unerprobt |
 | 12 | **Kommentarzeilen zählen als LOC in der Komplexität** | `computeComplexityScore` (`lib/abap/code-assessment.ts`) zählt Kommentar- und Fortsetzungszeilen: `Z_MM_PO_APPROVAL` steigt von 8 auf 9, wenn vor jeder Zeile ein Kommentar steht. Gefunden durch die metamorphe Eigenschaft P3 (`tests/abap-metamorphic.spec.ts`). Ändern heißt, eine Zahl zu ändern, die jeder signierte Run speichert |
+| 13 | **QA-Delta-Review: Budget gegen große Diffs** | Ein Diff, der allein das Budget eines Modellaufrufs übersteigt, wird nie gelesen — `tests/abap-metamorphic.spec.ts` (52.712 Zeichen) hält seit `04b4684` den Checkpoint auf `a19945e`, und in der Vollprüfung traf es `analyze/page.tsx` mit 172.900 Zeichen. Der Checkpoint hing heute schon einmal 41 Commits lang fest (44a8715 → a19945e) und wurde mit sechs `workflow_dispatch`-Scheiben nachgezogen, ohne das Budget anzufassen. Optionen: das Budget je Aufruf für einzelne Dateien heben, Test-Dateien mit eigenem Budget lesen, oder große Dateien in Abschnitten reviewen. Jede davon ändert `scripts/qa/lib/config.mjs` oder `review.mjs` — Agentenmaschinerie, braucht dein Go |
 
-**Vertagt am 16.09.2026 auf den 17.09.2026** (Entscheidung Sonny): 7, 8, 9, 10, 11 und 12 —
+**Vertagt am 16.09.2026 auf den 17.09.2026** (Entscheidung Sonny): 7, 8, 9, 10, 11, 12 und 13 —
 sowie die neun UX-Befunde, die das Register weiter in Schritt **0.2** einplant
 (UX-026, -027, -029, -037, -038, -040, -059, -076, -084). Keiner dieser
 Posten blockiert ein Release; sie stehen hier, damit sie morgen nicht neu
-gesucht werden müssen. 10 bis 12 sind am Abend des 16.09. dazugekommen.
+gesucht werden müssen. 10 bis 12 sind am Abend des 16.09. dazugekommen, 13 in der Nacht.
 
 Zu **1** (Referenzkorpus), Stand 16.09.2026 spät: Die vier Modelle — Grok 4.6
 (130 Fälle), GLM 5.3 (105), Claude Fable 5.1 (122), DeepSeek v4 Pro (103), alle
@@ -821,6 +823,26 @@ Fix auf `main` ist (§12 gilt sinngemäß). Der Volltext liegt nur lokal unter `
 Einplanung wie in §12: **kritisch** als eigener Schritt vor jeder anderen Arbeit · **hoch** in die
 laufende Phase · **mittel** in den nächsten passenden Schritt · **niedrig** neben verwandter Arbeit.
 Was der 3.0-Umbau ohnehin ersetzt, wird zurückgestellt, nicht doppelt gebaut.
+
+**Vollprüfung von a19945ef01dc (v2.11.1, 16./17.09.2026, `openai/gpt-5.6-sol`, 14 Aufrufe, 4,57 $):**
+504 Befunde — 30 kritisch, 94 hoch, 373 mittel, 7 niedrig — Verdikt `no_go`, **INCOMPLETE** (der Diff von
+`analyze/page.tsx` allein, 172.900 Zeichen, passt in keinen Aufruf; über sechzig weitere Dateien lagen
+außerhalb der 14 Aufrufe). Erste Sichtung in der Nacht: 6 der 30 kritischen stehen bereits in der Tabelle
+unten (fünf „behoben (dev)", darunter `cfafefac08ec` via 0.13 und `1b75f0d332da`), 8 sind mit Beleg
+widerlegt — `vercel.json` und die beiden Survey-Workflows existieren am geprüften Commit nicht
+(`git cat-file -e` schlägt fehl, kein Workflow ruft `scripts/send-survey*.ts`), drei Muster-Treffer
+„secret-named literal" meinen den öffentlichen Verifier und den dokumentierten Testschlüssel. **Offen und
+zuerst zu prüfen (17.09.):** die Familie um die Audit-Pack-Kanonisierung — elf Befunde zu
+`lib/audit-pack-canonical.ts:46` (Delimiter-Kollisionen in der signierten Dateiliste),
+`lib/audit-pack-verify.ts:136/174` (Attestation nach Versiegelung änderbar, Manifest-Metadaten nicht
+authentifiziert) und `scripts/verify-pack.mjs:212–269` —, dazu vier Befunde „client-schreibbare
+Artefakte gelangen in server-signierte Packs" (`design/documentation/transformation/page.tsx`,
+`firestore.rules:169`), einer zum Admin-Step-up bei rekursiver Projektlöschung
+(`app/api/projects/[projectId]/route.ts:50`) und einer zum `workflow_dispatch` des Nutzungsberichts
+(`usage-report.yml:27`, der Workflow ist aktiv). Diese sind Hypothesen über den Kern der Vertrauenskette;
+sie werden am Code geprüft, nicht nachts entschieden. Von den 94 hohen sind 14 bekannt, 80 neu — Triage nach
+den kritischen. Fingerabdrücke sind weiterhin instabil (`5c7ab85b9493` ist ein Zwilling von `cfafefac08ec`).
+Volltext nur lokal unter `.qa-review/a19945ef01dc.full.json`.
 
 **Vollprüfung von 44f3efb8b007 (v2.10.8, 16.09.2026, `openai/gpt-5.6-sol`, 452 Dateien):** 279 Befunde,
 Verdikt `no_go`, Bericht als **INCOMPLETE** markiert. 128 Fingerabdrücke sind identisch mit der Prüfung von
