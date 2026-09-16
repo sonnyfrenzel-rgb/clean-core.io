@@ -92,12 +92,29 @@ export default function VerifyPackPage() {
         </div>
 
         {/* Drop Zone */}
+        {/* A clickable div is not a control: this page is the one a reviewer
+            opens to check a pack someone sent them, and it could not be reached
+            by keyboard at all — no role, no focus, and the file input hidden
+            without a label (UX review of 52f171091948, 07882b7eb23f). It is a
+            button now, with the state announced rather than only coloured. */}
         <div
+          role="button"
+          tabIndex={verifying ? -1 : 0}
+          aria-label="Upload an Audit Pack ZIP to verify"
+          aria-busy={verifying}
           onDrop={handleDrop}
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onClick={() => inputRef.current?.click()}
+          onKeyDown={(e) => {
+            if (verifying) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              inputRef.current?.click();
+            }
+          }}
           className={`
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2
             relative cursor-pointer rounded-2xl border-2 border-dashed p-12 text-center transition-all duration-300
             ${dragOver
               ? 'border-emerald-500 bg-emerald-50/60 scale-[1.01]'
@@ -110,12 +127,13 @@ export default function VerifyPackPage() {
             ref={inputRef}
             type="file"
             accept=".zip"
+            aria-label="Audit Pack ZIP file"
             onChange={handleInputChange}
             className="hidden"
           />
           <Upload size={40} className={`mx-auto mb-4 ${dragOver ? 'text-emerald-500' : 'text-gray-400'}`} />
-          <p className="text-gray-600 font-semibold text-sm">
-            {verifying ? 'Verifying...' : 'Drop your Audit Pack ZIP here or click to browse'}
+          <p className="text-gray-600 font-semibold text-sm" aria-live="polite">
+            {verifying ? 'Verifying...' : 'Drop your Audit Pack ZIP here, or press Enter to browse'}
           </p>
           <p className="text-gray-400 text-xs mt-1">Accepts .zip files exported from Clean-Core.io</p>
         </div>

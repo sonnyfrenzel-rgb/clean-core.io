@@ -84,15 +84,14 @@ export default function TargetScopeMapping({ showHelpMode, standardFit, recommen
             <h5 className="text-sm font-extrabold text-slate-900">Side-by-Side BTP / Node.js</h5>
             <p className="text-xs text-slate-650 leading-relaxed">{recommendations?.cloudReadiness || 'Custom API layers and microservices completely transformed from standard core.'}</p>
           </div>
-          <div>
-            <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase mb-1.5">
-              <span>Cloud Readiness</span>
-              <span className="text-emerald-600 font-extrabold">95%</span>
-            </div>
-            <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full" style={{ width: '95%' }}></div>
-            </div>
-          </div>
+          {/* "Cloud Readiness 95 %" and the bar under it were a number and a
+              width written into the file — nothing measures either, and the
+              column beside this one had already given up its invented 90/50/15
+              for the three words the model actually returns. A meter with no
+              measurement behind it is the same claim in a friendlier shape, so
+              it is gone rather than rounded (UX review of 52f171091948,
+              29e1d6c0013f). The description above stays: it says what this
+              column is for without pretending to have counted it. */}
         </div>
 
         {/* Column 3: Obsolete / Retire */}
@@ -105,15 +104,7 @@ export default function TargetScopeMapping({ showHelpMode, standardFit, recommen
             <h5 className="text-sm font-extrabold text-slate-900">Redundant & Obsolete Logic</h5>
             <p className="text-xs text-slate-650 leading-relaxed">{recommendations?.decommissioning || 'Obsolete SAP workarounds, manual validation structures, and unused code blocks.'}</p>
           </div>
-          <div>
-            <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase mb-1.5">
-              <span>Decommission Ratio</span>
-              <span className="text-slate-600 font-extrabold">80%</span>
-            </div>
-            <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-              <div className="h-full bg-slate-500 rounded-full" style={{ width: '80%' }}></div>
-            </div>
-          </div>
+          {/* Same as the column before: no ratio was ever computed. */}
         </div>
       </div>
     </div>
