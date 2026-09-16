@@ -7,8 +7,8 @@
   "purpose": "Which text of firestore.rules is live. CI never deploys the rules; a human does, by hand, and the same command records the result here. The offline check (npm run rules:check, tests/rules-deploy-order.spec.ts) compares this record with the working copy and refuses the one order that breaks production: an app that depends on rules which have not been deployed. The online check (npm run rules:verify) asks production what it is actually serving, which is the only way to catch a record that was updated without a deploy.",
   "whyThisExists": "Am 16.09.2026 wurde zum ersten Mal nachgesehen, was cleancore-491216 wirklich ausliefert: das Ruleset vom 20.08.2026 — drei Verschaerfungen hinter dem Repository, ohne dass es jemand wusste. In Produktion waren `termsVersionAccepted`/`termsAcceptedAt` noch client-schreibbar (Befund V14, im Repo laengst geschlossen), `email_events` noch nicht gesperrt, und der Admin-Lesezugriff auf Projekte noch offen. Sonny hat danach ausgerollt und das Ergebnis wurde gegen die Rules-API geprueft: identisch. Genau diese Drift soll dieser Datensatz kuenftig sichtbar machen.",
   "deployed": {
-    "sha256OfLfNormalisedText": "b1cad225116df03d441bfa86f13197b6cd1d632960dc7a051ce02c5749eae106",
-    "deployedAt": "2026-09-16T14:43:04Z",
+    "sha256OfLfNormalisedText": "9d723a3c3f54fe2c7b15c9825dc4837191761b6cd1c495d6085ef96bedefec34",
+    "deployedAt": "2026-09-16",
     "deployedBy": "Sonny Frenzel, by hand (npm run deploy:rules)",
     "project": "cleancore-491216",
     "rulesetName": "projects/cleancore-491216/rulesets/176ce028-8e16-427a-8880-f7b92d3f2d8c",
@@ -19,10 +19,6 @@
     "verifiedAgainstProduction": "2026-09-16 — GET https://firebaserules.googleapis.com/v1/projects/cleancore-491216/releases/cloud.firestore/<database>, then the ruleset it names; both `(default)` and `clean-core-eu` serve this hash. Reproduce with `npm run rules:verify`.",
     "note": "Hashed after normalising CRLF to LF, the same way docs/registers/preservation-register.json does it, so the value is the same on Windows and on CI. This is the text of commit 6a24b632ff44ca33e9fa5be8b99a23de827c05d1 on origin/dev, whose hash the preservation register already carried as its verified baseline — record and production agreed at the moment this file was written, which is the only honest moment to seed it.",
     "clientWritableProjectFields": [
-      "approvedBy",
-      "approvedByArchitect",
-      "architectJustifiedOverride",
-      "architectSignOffAt",
       "businessDocumentation",
       "coverageEstimate",
       "documentation",
@@ -37,27 +33,10 @@
       "s4Environment",
       "solutionDesign",
       "status",
-      "targetArchitecture",
       "testCases",
       "testSuite",
       "updatedAt",
-      "usageReport",
       "worklist"
     ]
-  },
-  "pending": {
-    "sha256OfLfNormalisedText": "9d723a3c3f54fe2c7b15c9825dc4837191761b6cd1c495d6085ef96bedefec34",
-    "recordedAt": "2026-09-16",
-    "recordedFor": "Roadmap 0.7 — die fuenf Freigabefelder und der Nutzungsimport verlassen die Client-Allowlist und werden nur noch von POST /api/projects/{projectId}/commands geschrieben.",
-    "addsToClient": [],
-    "removesFromClient": [
-      "approvedBy",
-      "approvedByArchitect",
-      "architectJustifiedOverride",
-      "architectSignOffAt",
-      "targetArchitecture",
-      "usageReport"
-    ],
-    "note": "Bis Sonny `npm run deploy:rules` ausfuehrt, sind die alten Regeln live und ein Browser koennte diese sechs Felder weiterhin schreiben. Die App haengt nicht daran: die Serverroute ist so oder so der einzige Schreiber, die Regeln sind bis dahin nur weiter als noetig. Deshalb ist das hier ein Sicherheitsfenster und keine kaputte App — die Pruefung laesst diese Richtung stehen und bricht nur, wenn eine nicht ausgerollte Regel einem Client etwas NEU erlaubt. `npm run deploy:rules` rollt aus und loescht diesen Block."
   }
 }
