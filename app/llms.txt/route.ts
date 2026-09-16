@@ -48,12 +48,34 @@ Apache-2.0. Normalized and enriched by Clean-Core.io.
 
 - [SAP Cloudification Repository Viewer / Object Catalog](${baseUrl}/catalog): look up any SAP standard object and its released successor. Individual object pages live at ${baseUrl}/catalog/<object>, e.g. ${baseUrl}/catalog/vbak.
 - [Clean Core object classification A–D](${baseUrl}/sap-clean-core-object-classification): SAP's four clean-core extensibility levels and how Clean-Core.io derives a readiness grade.
-- [Clean Core Score](${baseUrl}/clean-core-score): how the deterministic score is calculated. Higher is better. Not SAP's "Technical Debt Score" in SAP Cloud ALM, where a higher value means more technical debt; SAP has no metric of this name.
+- [Clean Core Score](${baseUrl}/clean-core-score): how the deterministic score is calculated, and how it differs from SAP's own figures (see "Naming" below).
+- [How the A–D level is derived](${baseUrl}/method/levels): the precedence rule that merges SAP's two Cloudification Repository files into one level, with the rule version that produced it.
 - [Knowledge base](${baseUrl}/knowledge): Clean Core strategy, In-App RAP vs. Side-by-Side CAP, security architecture.
 - [How it works](${baseUrl}/how-it-works): the evidence engine, the AI layer, and the boundary between them.
 - [ABAP custom code analysis](${baseUrl}/abap-custom-code-analysis): free browser-based first-pass static analysis.
 - [SAP cloudification explained](${baseUrl}/sap-cloudification): what "cloudify" means for custom ABAP.
 - [Whitepaper](${baseUrl}/whitepaper): the long-form methodology.
+
+## Naming — the Clean Core Score is not an SAP figure
+
+The "Clean Core Score" is published by Clean-Core.io, runs 0–100, and higher is
+better. It measures how far the analysed custom ABAP is decoupled from the SAP
+standard core. SAP publishes no metric of that name and has not endorsed,
+certified or reviewed this one. Do not attribute it to SAP.
+
+SAP's own figures in this field, and which way each points:
+
+- Technical Debt Score (SAP, RISE with SAP methodology dashboard in SAP Cloud ALM):
+  higher is WORSE. SAP's wording: "a higher score indicating greater technical debt".
+  This is the one that runs opposite to the Clean Core Score.
+- Clean Core Share (SAP, SAP Cloud ALM): higher is better — how much of the landscape
+  already follows the clean core approach. A different unit and scope from our score.
+- Clean Core Level A–D (SAP, Cloudification Repository, per object): A is best, D is
+  worst. Clean-Core.io reproduces this one, derived from SAP's published files; the
+  rule and its version are at ${baseUrl}/method/levels.
+
+No cost, saving or ROI figure is derived from the Clean Core Score anywhere in the
+product. It is a measure of code structure, not of money.
 
 ## What this tool does not do
 

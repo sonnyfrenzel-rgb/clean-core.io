@@ -89,7 +89,7 @@ export default function AboutPage() {
           The Mission
         </h2>
         <p className="text-gray-700 leading-relaxed font-medium max-w-3xl">
-          Clean-Core.io exists to solve one of the most expensive problems in the SAP ecosystem: transforming decades of custom ABAP code into cloud-compliant architectures. Instead of replacing the expert, we accelerate their work — generating the first Clean-Core-compliant draft for review and approval, saving days of manual mapping and boilerplate generation.
+          Clean-Core.io exists to solve one of the hardest problems in the SAP ecosystem: transforming decades of custom ABAP code into cloud-compliant architectures. Instead of replacing the expert, we hand them something to start from — the first Clean-Core-compliant draft, with the evidence behind it, for review and approval. We do not claim it saves you days: what takes time is the decisions, and those stay with you.
         </p>
       </section>
 

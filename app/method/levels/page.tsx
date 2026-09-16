@@ -1,10 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, FileCode2, GitMerge, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, FileCode2, GitMerge, AlertTriangle, Fingerprint } from 'lucide-react';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import QuickAnswer from '@/components/QuickAnswer';
-import { getLevelDerivationCensus, getCatalogStats } from '@/lib/abap/catalog-service';
+import {
+  getLevelDerivationCensus,
+  getCatalogStats,
+  getLevelRuleVersion,
+  type LevelRuleArtifact,
+} from '@/lib/abap/catalog-service';
 import { ABCD_META, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 
 /**
@@ -34,7 +39,7 @@ const CANONICAL = 'https://clean-core.io/method/levels';
 export const metadata: Metadata = withTwitterCard({
   title: 'How the Clean Core A–D Level Is Derived | Clean-Core.io',
   description:
-    'The exact rule Clean-Core.io uses to turn SAP\'s two Cloudification Repository files into a clean core level A–D — the order of precedence, the counts behind each branch, and the twenty-two objects where the two files disagree.',
+    'The exact rule Clean-Core.io uses to turn SAP\'s two Cloudification Repository files into a clean core level A–D — the order of precedence, the counts behind each branch, the objects where the two files disagree, and the rule version that produced them.',
   alternates: { canonical: CANONICAL },
   openGraph: {
     title: 'How the Clean Core A–D Level Is Derived | Clean-Core.io',
@@ -55,6 +60,10 @@ export default function LevelDerivationPage() {
   // Server component: reads the generated artifacts directly, no client payload.
   const census = getLevelDerivationCensus();
   const stats = getCatalogStats();
+  // Measured, never typed: the fingerprint is a hash of the rule's own decision
+  // table and the shas are the ones SAP served. tests/level-rule-page-guard
+  // fails if any of it appears as a literal in this file.
+  const ruleVersion = getLevelRuleVersion();
 
   const contested = census.combinations.filter(
     (c) => c.releaseState && c.classificationState && c.grade !== 'A',
@@ -74,6 +83,9 @@ export default function LevelDerivationPage() {
       'The precedence rule that merges SAP\'s object release information and classic API classification into a single clean core level.',
     url: CANONICAL,
     dateModified: APP_RELEASE_DATE,
+    // The rule version, so a machine that cites a level can cite the rule that
+    // produced it. Read from the same source the page prints, never a literal.
+    version: ruleVersion.version,
     isPartOf: { '@type': 'WebSite', name: 'Clean-Core.io', url: 'https://clean-core.io' },
   };
 
@@ -104,6 +116,26 @@ export default function LevelDerivationPage() {
           files disagree. That order is written out here, in the sequence the code checks it, with
           every count taken from the catalog rather than typed in.
         </p>
+
+        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 space-y-3">
+          <div className="flex items-center gap-2 text-gray-500">
+            <Fingerprint size={16} />
+            <span className="text-[11px] font-black uppercase tracking-widest">
+              The version of the rule you are reading
+            </span>
+          </div>
+          <p data-level-rule-version className="font-mono text-sm font-bold text-gray-950 break-all">
+            {ruleVersion.version}
+          </p>
+          <p className="text-sm text-gray-600 leading-relaxed max-w-3xl">
+            The first part is the rule, the two after it are the data. The fingerprint is a hash over
+            every one of the {ruleVersion.decisions} inputs this derivation can tell apart and the
+            level it returns for each, so changing one branch of the table below changes this string
+            — and reordering branches without changing an answer does not. The pairs that follow are
+            SAP&rsquo;s own files, each named by the release we synced and the first eight characters
+            of the checksum of the bytes SAP served. Quote the whole line when you quote a level.
+          </p>
+        </div>
       </header>
 
       <QuickAnswer
@@ -146,6 +178,7 @@ export default function LevelDerivationPage() {
               {(census.releaseFileOnly + census.inBoth).toLocaleString('en-US')}
             </p>
             <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">objects</p>
+            <Provenance artifact={ruleVersion.artifacts[0]} />
           </div>
 
           <div className="rounded-2xl border border-gray-200 p-5">
@@ -163,10 +196,13 @@ export default function LevelDerivationPage() {
               {(census.classificationFileOnly + census.inBoth).toLocaleString('en-US')}
             </p>
             <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">objects</p>
+            <Provenance artifact={ruleVersion.artifacts[1]} />
           </div>
         </div>
         <p className="text-xs text-gray-400">
-          Synced from the repository; catalog as of {stats.syncDate || 'the last sync'}.
+          Synced from the repository; catalog as of {stats.syncDate || 'the last sync'}. Those two
+          checksums are the ones shortened into the rule version at the top of this page, so a level
+          quoted with its version can be traced back to the exact bytes it was derived from.
         </p>
       </section>
 
@@ -360,6 +396,25 @@ export default function LevelDerivationPage() {
         </span>
       </footer>
     </div>
+  );
+}
+
+/**
+ * One artifact's provenance, in the words of the artifact.
+ *
+ * Every value comes from `getLevelRuleVersion()`, which reads the file's own
+ * `meta` block — the file name out of the URL that was fetched, the checksum of
+ * the bytes SAP served, the entry count SAP's file contained. Nothing here is a
+ * literal, because a literal would be a second copy of the truth.
+ */
+function Provenance({ artifact }: { artifact: LevelRuleArtifact }) {
+  return (
+    <p className="mt-3 border-t border-gray-100 pt-3 font-mono text-[11px] leading-relaxed text-gray-500 break-all">
+      {artifact.file}
+      <br />
+      {artifact.release}@{artifact.sha256} · {artifact.entries.toLocaleString('en-US')} entries ·
+      synced {artifact.fetchedAt}
+    </p>
   );
 }
 

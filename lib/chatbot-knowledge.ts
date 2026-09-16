@@ -377,6 +377,40 @@ export const SECURITY_AND_PRIVACY = `
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// THE CLEAN CORE SCORE AND SAP'S OWN FIGURES
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Roadmap 0.3, UX-088.
+ *
+ * The names in this field are close enough to be mistaken for one another, and
+ * one of them runs backwards. A reader who meets "Clean Core Score" here and
+ * "Technical Debt Score" in SAP Cloud ALM in the same week, and is told neither
+ * of them apart, will read one of the two the wrong way round — and a chatbot
+ * that has not been told the difference will cheerfully confirm the mistake.
+ *
+ * So the distinction is stated in the knowledge base, on /clean-core-score and
+ * in /llms.txt, in the same words.
+ */
+export const SCORE_NAMING_AND_SAP_FIGURES = `
+## THE CLEAN CORE SCORE AND SAP'S OWN FIGURES (never conflate these)
+
+**Our figure.** The **Clean Core Score** is published by Clean-Core.io, runs 0–100, and **higher is better**. It measures how far the analysed custom ABAP is decoupled from the SAP standard core, computed deterministically before any AI runs. It is a measure of code structure — no cost, saving or ROI figure is derived from it anywhere in the product.
+
+**SAP publishes no Clean Core Score.** SAP has no metric of that name. If a user says SAP gave them a Clean Core Score, they are most likely looking at one of SAP's three figures below. Ask which.
+
+### SAP's figures, and which way each one points
+- **Technical Debt Score** (SAP — RISE with SAP methodology dashboard in SAP Cloud ALM): **higher is worse**. SAP's own wording is "a higher score indicating greater technical debt". This is the one that runs opposite to ours; it is the mistake worth catching.
+- **Clean Core Share** (SAP — SAP Cloud ALM): higher is better. How much of the landscape already follows the clean core approach. Different unit, different scope: it is not our score.
+- **Clean Core Level A–D** (SAP — Cloudification Repository, per object): A is best, D is worst. This one we DO reproduce: Clean-Core.io derives the A–D level per object from SAP's published files. The precedence rule and its rule version are published at /method/levels.
+
+### Rules for answering
+- Never imply SAP endorses, certifies, publishes or has reviewed the Clean Core Score. Clean-Core.io is independent and community-built.
+- If someone compares a high Clean Core Score with a high Technical Debt Score, say plainly that the two point in opposite directions before answering anything else.
+- The full comparison is on /clean-core-score; point there.
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
 // HONEST LIMITATIONS & DISCLAIMERS
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -403,6 +437,7 @@ export function buildKnowledgeBase(): string {
   return [
     FREE_COMMUNITY_MODEL,
     TRUST_CHAIN_AND_EVIDENCE,
+    SCORE_NAMING_AND_SAP_FIGURES,
     KNOWLEDGE_HUB_FAQS,
     EXTENDED_GLOSSARY,
     RAP_VS_CAP_COMPARISON,

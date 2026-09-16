@@ -204,7 +204,7 @@ export default function AbapAnalysisPage() {
             <h3 className="font-black text-lg text-gray-955 uppercase tracking-tight">Benefits at a glance</h3>
             <ul className="space-y-3 font-bold text-sm text-gray-700">
               <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> 80% faster code assessment
+                <Check className="text-green-600 shrink-0" size={16} /> First pass in minutes, not a workshop
               </li>
               <li className="flex gap-2 items-center">
                 <Check className="text-green-600 shrink-0" size={16} /> Automatic OData API mapping
