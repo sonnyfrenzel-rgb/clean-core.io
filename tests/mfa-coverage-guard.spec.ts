@@ -19,7 +19,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { GATED_FILES } from './helpers/gated-routes';
+import { GATED_FILES, MUST_NOT_GATE, MUST_STEP_UP } from './helpers/gated-routes';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -31,18 +31,8 @@ const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
  */
 const MUST_GATE = GATED_FILES;
 
-/**
- * Routes that must NOT require it. Recording an enrolment cannot depend on the
- * factor — the session that enrols predates it — and public verification has
- * no session at all.
- */
-const MUST_NOT_GATE = [
-  'app/api/mfa/enrolled/route.ts',
-  'app/api/export/verify/route.ts',
-];
+// The other two halves of the catalog, shared with the runtime check.
 
-/** Removing the factor is the one action that needs the stronger step-up: recent sign-in with the factor. */
-const MUST_STEP_UP = ['app/api/mfa/disable/route.ts'];
 
 test.describe('server-side MFA coverage', () => {
   for (const rel of MUST_GATE) {

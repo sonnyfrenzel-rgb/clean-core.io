@@ -20,6 +20,12 @@ export interface GatedRoute {
   /** Request path; `projectId` is one the calling account owns. */
   path: (projectId: string) => string;
   body?: Record<string, unknown>;
+  /**
+   * What a first-factor token must get. 403 everywhere except where the route
+   * refuses even earlier for a reason of its own — a feature flag that turns
+   * the whole integration off answers 404 before it looks at anyone.
+   */
+  expectedStatus?: number[];
 }
 
 export const GATED_ROUTES: GatedRoute[] = [
@@ -36,7 +42,31 @@ export const GATED_ROUTES: GatedRoute[] = [
   { file: 'app/api/fetch-s4-metadata/route.ts', method: 'POST', path: () => '/api/fetch-s4-metadata', body: { useStoredCredentials: true } },
   { file: 'app/api/fetch-odata-metadata/route.ts', method: 'POST', path: () => '/api/fetch-odata-metadata', body: { useStoredCredentials: true } },
   { file: 'app/api/test-s4-odata-read/route.ts', method: 'POST', path: () => '/api/test-s4-odata-read', body: { useStoredCredentials: true, entitySet: 'A_SalesOrder' } },
+  // Found by the completeness check, not by anyone remembering them
+  // (QA review of 84f183b16761, 2f384e262d78): three routes that gate on the
+  // factor and were in none of these lists. Deleting the account is the one
+  // that matters most — a refusal there has to hold or the spec's own account
+  // disappears, which is exactly the failure it would report.
+  { file: 'app/api/account/delete/route.ts', method: 'POST', path: () => '/api/account/delete', body: { confirm: 'DELETE' } },
+  // JIRA_INTEGRATION_ENABLED is off, so this answers 404 before the gate. The
+  // day it is switched on, 403 is what it must answer, and both are accepted
+  // here so that neither state is a surprise.
+  { file: 'app/api/auth/jira/url/route.ts', method: 'GET', path: () => '/api/auth/jira/url', expectedStatus: [404, 403] },
+  { file: 'app/api/secrets/gemini/test/route.ts', method: 'POST', path: () => '/api/secrets/gemini/test', body: { apiKey: 'not-a-real-key' } },
 ];
+
+/**
+ * Routes that must NOT require the factor. Recording an enrolment cannot depend
+ * on it — the session that enrols predates it — and public verification has no
+ * session at all.
+ */
+export const MUST_NOT_GATE = [
+  'app/api/mfa/enrolled/route.ts',
+  'app/api/export/verify/route.ts',
+];
+
+/** Removing the factor needs the stronger step-up: a recent sign-in that carried it. */
+export const MUST_STEP_UP = ['app/api/mfa/disable/route.ts'];
 
 /** The files the wiring check must find a gate call in — one entry per file. */
 export const GATED_FILES = [...new Set(GATED_ROUTES.map((r) => r.file))];

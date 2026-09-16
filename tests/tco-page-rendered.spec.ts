@@ -42,7 +42,10 @@ async function enterCostFigures(page: import('@playwright/test').Page) {
   await page.fill('[data-tco-cost="dev-rate"]', String(DEV_RATE));
   await page.fill('[data-tco-cost="user-rate"]', String(USER_RATE));
   await page.fill('[data-tco-cost="investment"]', String(INVESTMENT));
-  await page.waitForTimeout(400);
+  // Not a sleep: wait for the state the figures produce. A fixed pause is a
+  // guess about how fast the page recomputes, and it reads whatever is on
+  // screen when it expires (QA review of 84f183b16761, c83ea117ce56).
+  await expect(page.locator('body')).not.toContainText('No savings forecast yet', { timeout: 15000 });
 }
 
 test.describe.configure({ mode: 'serial' });

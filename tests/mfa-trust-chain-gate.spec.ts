@@ -6,7 +6,9 @@ import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
 import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc, adminMergeDoc } from './helpers/admin-seed';
-import { GATED_ROUTES } from './helpers/gated-routes';
+import { GATED_ROUTES, GATED_FILES, MUST_NOT_GATE, MUST_STEP_UP } from './helpers/gated-routes';
+import { readdirSync, readFileSync } from 'fs';
+import { join, relative, sep } from 'path';
 
 /**
  * The MFA gate on the trust chain, executed — not grepped.
@@ -126,6 +128,23 @@ test('no audit pack is created by a token that never met the second factor', asy
   await requireFactor(false);
 });
 
+/** Everything these routes could write for this account, as it stands right now. */
+async function storedState(projectId: string) {
+  const [user, creds, gemini, runs] = await Promise.all([
+    db().collection('users').doc(uid).get(),
+    db().collection('s4_credentials').doc(uid).get(),
+    db().collection('user_secrets').doc(uid).collection('providers').doc('gemini').get(),
+    db().collection('projects').doc(projectId).collection('runs').get(),
+  ]);
+  return JSON.stringify({
+    user: user.data() ?? null,
+    creds: creds.exists,
+    gemini: gemini.exists,
+    runs: runs.size,
+    project: (await db().collection('projects').doc(projectId).get()).exists,
+  });
+}
+
 test('every gated route refuses the token, not only the ones with a fixture', async ({ request }: { request: APIRequestContext }) => {
   // The three cases above check what a refusal leaves behind. This one checks
   // that the refusal happens at all, on every route the wiring guard lists —
@@ -134,6 +153,11 @@ test('every gated route refuses the token, not only the ones with a fixture', as
   const projectId = `mfa-chain-all-${Date.now()}`;
   await adminSetDoc('projects', projectId, { userId: uid, name: 'Knock on every door', status: 'analyzed', createdAt: new Date() });
   await requireFactor(true);
+  // Everything these routes could write, before the first knock. A route that
+  // stores credentials, a key or metadata and *then* checks the factor would
+  // answer 403 exactly as a guarded one does, and only this tells them apart
+  // (QA review of 84f183b16761, 29a32db76d33).
+  const before = await storedState(projectId);
   try {
     for (const route of GATED_ROUTES) {
       const url = route.path(projectId);
@@ -143,17 +167,41 @@ test('every gated route refuses the token, not only the ones with a fixture', as
         : route.method === 'GET'
           ? await request.get(url, options)
           : await request.post(url, options);
-      expect(res.status(), `${route.method} ${url} must refuse a first-factor token`).toBe(403);
-      // Not every route reports a refusal in the same field: most answer
-      // `{ error }`, the S/4 connectivity routes `{ status, message }`. The
-      // reason has to be in the answer; which key carries it is the route's.
-      const body = JSON.stringify(await res.json());
-      expect(body, `${route.method} ${url} must say why`).toContain('Multi-factor authentication required');
+      const allowed = route.expectedStatus ?? [403];
+      expect(allowed, `${route.method} ${url} must refuse a first-factor token`).toContain(res.status());
+      if (res.status() === 403) {
+        // Not every route reports a refusal in the same field: most answer
+        // `{ error }`, the S/4 connectivity routes `{ status, message }`. The
+        // reason has to be in the answer; which key carries it is the route's.
+        const body = JSON.stringify(await res.json());
+        expect(body, `${route.method} ${url} must say why`).toContain('Multi-factor authentication required');
+      }
     }
+    expect(await storedState(projectId), 'no refused route wrote anything').toBe(before);
   } finally {
     await requireFactor(false);
     await db().collection('projects').doc(projectId).delete().catch(() => {});
   }
+});
+
+test('the catalog holds every route that gates on the factor', async () => {
+  // The two halves share a list; nothing yet said the list is complete. A new
+  // protected route added to the codebase and not to the catalog would be
+  // checked by neither (QA review of 84f183b16761, 2f384e262d78).
+  const listed = new Set([...GATED_FILES, ...MUST_NOT_GATE, ...MUST_STEP_UP]);
+  const missing: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) { walk(full); continue; }
+      if (entry.name !== 'route.ts') continue;
+      const rel = relative(process.cwd(), full).split(sep).join('/');
+      if (!/assertMfa(Satisfied|StepUp)\s*\(/.test(readFileSync(full, 'utf8'))) continue;
+      if (!listed.has(rel)) missing.push(rel);
+    }
+  };
+  walk(join(process.cwd(), 'app', 'api'));
+  expect(missing, `these routes gate on the factor and are in no list: ${missing.join(', ')}`).toEqual([]);
 });
 
 test.afterAll(async () => {
