@@ -72,7 +72,7 @@ export default function DatenschutzPage() {
             </ul>
           </section>
 
-          <section>
+          <section id="source-code" className="scroll-mt-20">
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
               3. Processing of Source Code &amp; Project Assets
             </h2>
@@ -89,12 +89,12 @@ export default function DatenschutzPage() {
             </p>
             <div className="p-4 bg-green-50 border border-green-200 rounded-2xl">
               <p className="text-sm text-green-800">
-                <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Under Google&apos;s applicable API data-use terms, this content is not used to train Google&apos;s foundational AI models. Which terms apply depends on the key: for the paid Gemini API the &ldquo;not used for training&rdquo; terms apply directly, while a free-tier key is governed by Google&apos;s free-tier data-use terms, which differ. When you use your own key (BYOK), the terms of your own Google account apply. We state the applicable terms rather than an absolute promise we cannot control.
+                <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Which of Google&apos;s data-use terms apply depends on the key that makes the request. The shared community key is a paid Gemini API key, so the paid Gemini API terms govern every request made with it: Google does not use your code to train its models. When you use your own key (BYOK), the terms of your own Google account apply — a key on Google&apos;s free tier is governed by Google&apos;s free-tier data-use terms, which differ. We state the applicable terms rather than an absolute promise we cannot control.
               </p>
             </div>
           </section>
 
-          <section>
+          <section id="hosting" className="scroll-mt-20">
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
               4. Hosting &amp; Subprocessors
             </h2>
@@ -117,7 +117,7 @@ export default function DatenschutzPage() {
             </p>
           </section>
 
-          <section>
+          <section id="your-rights" className="scroll-mt-20">
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
               5. Your Rights Under GDPR (including Art. 17 Deletion)
             </h2>
@@ -134,7 +134,7 @@ export default function DatenschutzPage() {
               <li>Right to Lodge a Complaint with a Supervisory Authority (Art. 77 GDPR)</li>
             </ul>
             <p className="text-sm text-gray-500 mt-4">
-              To exercise these rights, particularly to erase your data, you can trigger account deletion directly in your Profile Settings under the <strong>Danger Zone</strong>, which immediately deletes your live database and authentication entries. Residual copies in encrypted backups age out within 30 days (see section 6). Alternatively, contact us at <a href="mailto:info@clean-core.io" className="text-green-600 hover:underline font-semibold">info@clean-core.io</a>.
+              To exercise these rights, particularly to erase your data, you can trigger account deletion directly in your Profile Settings under the <strong>Danger Zone</strong>, which immediately deletes your live database and authentication entries, including every project and the source code in it. A single project can be deleted on its own at any time from your dashboard. Residual copies in encrypted backups age out within 30 days (see section 6). Alternatively, contact us at <a href="mailto:info@clean-core.io" className="text-green-600 hover:underline font-semibold">info@clean-core.io</a>.
             </p>
           </section>
 
@@ -150,12 +150,24 @@ export default function DatenschutzPage() {
             </p>
           </section>
 
-          <section>
+          <section id="cookies" className="scroll-mt-20">
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
               7. Cookies &amp; Tracking
             </h2>
             <p className="text-base">
               Clean-Core.io uses only strictly necessary cookies and local storage required to authenticate you and maintain your session via Google Firebase Authentication. We do not use analytics, advertising, or tracking cookies, and we embed no third-party marketing or profiling trackers. Because only essential, functional storage is used, no cookie-consent banner is required (§ 25(2) TDDDG / ePrivacy Directive).
+            </p>
+          </section>
+
+          <section id="project-access" className="scroll-mt-20">
+            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
+              8. Who Can Open Your Projects
+            </h2>
+            <p className="text-base mb-3">
+              Only the account that created a project can open it, including the ABAP source code in it. No other account has standing access, and our administrator account does not either: the security rules that govern every read from the browser — published as <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">firestore.rules</code> in our public source repository, where you can read them yourself — grant the owner alone.
+            </p>
+            <p className="text-base">
+              The one exception is an emergency, such as a credible report that an upload contains malicious code. Reaching a project then is a deliberate act by the operator on the server, not a permission that stands open, and it leaves a record. Administrative actions on an account — approval, revocation of access, and deletion — are likewise recorded in an audit log together with the acting administrator, the affected account and the time. There is no sharing feature today: no other user can be granted access to your project, and we do not pass project content to anyone other than the subprocessors named in section 4.
             </p>
           </section>
 
