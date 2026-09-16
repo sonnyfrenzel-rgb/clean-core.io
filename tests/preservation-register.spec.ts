@@ -64,7 +64,17 @@ interface StageEntry {
   page: string;
   alsoWrites: string[];
   inputs: { required: InputEntry[]; optional: InputEntry[] };
-  outputs: { clientWrites: string[]; otherCollections?: string[] };
+  outputs: {
+    clientWrites: string[];
+    otherCollections?: string[];
+    /**
+     * Roadmap 0.7: fields the stage still puts on the project, but through
+     * `POST /api/projects/{projectId}/commands` rather than from the browser.
+     * They are project writes like any other — they are simply not in the
+     * client-writable allowlist of `firestore.rules` any more.
+     */
+    commandWrites?: { via: string; project: string[] };
+  };
   preconditions: {
     enforceActiveRun: boolean;
     generationBlockersTarget: 'transformation' | 'documentation' | 'testing' | null;
@@ -371,7 +381,12 @@ test.describe('the register and the phase contract agree', () => {
     for (const artefact of register.trustChain.stalenessUntrackedArtefacts) {
       expect(TRACKED_ARTEFACTS as readonly string[], `${artefact} is tracked after all`).not.toContain(artefact);
     }
-    const written = sorted(new Set(register.stages.flatMap((s) => s.outputs.clientWrites)));
+    // Written by a stage — from the browser, or (since roadmap 0.7) through the
+    // command route. Where the write is issued is a different question from
+    // whether the artefact can go stale, which is what this test is about.
+    const written = sorted(
+      new Set(register.stages.flatMap((s) => [...s.outputs.clientWrites, ...(s.outputs.commandWrites?.project ?? [])])),
+    );
     for (const artefact of register.trustChain.stalenessUntrackedArtefacts) {
       expect(written, `${artefact} is not written by any stage`).toContain(artefact);
     }
@@ -579,6 +594,13 @@ test.describe('the register matches the code', () => {
     for (const stage of register.stages) {
       for (const field of stage.outputs.clientWrites) {
         expect(allowed, `${stage.key}: the client writes ${field}, the rules do not allow it`).toContain(field);
+      }
+    }
+    // Roadmap 0.7, the mirror image: a field a stage writes through the command
+    // route must NOT be in that allowlist. If it is, the route is decoration.
+    for (const stage of register.stages) {
+      for (const field of stage.outputs.commandWrites?.project ?? []) {
+        expect(allowed, `${stage.key}: ${field} goes through the command route and the rules still allow a browser to write it`).not.toContain(field);
       }
     }
     // …and the other way round: a field the rules allow that no stage writes is

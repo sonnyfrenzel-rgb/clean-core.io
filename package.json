@@ -17,7 +17,10 @@
     "sync:catalog": "tsx scripts/sync-cloudification-repo.ts latest",
     "sync:catalog:all": "tsx scripts/sync-cloudification-repo.ts all",
     "sync:content-dates": "node scripts/sync-content-dates.mjs",
-    "deploy:rules": "firebase deploy --only firestore:rules --config firebase.rules-all-dbs.json --project cleancore-491216"
+    "deploy:rules": "tsx scripts/rules-deploy.ts --deploy",
+    "rules:check": "tsx scripts/rules-deploy.ts",
+    "rules:verify": "tsx scripts/rules-deploy.ts --verify",
+    "rules:record": "tsx scripts/rules-deploy.ts"
   },
   "dependencies": {
     "@google/genai": "^1.17.0",

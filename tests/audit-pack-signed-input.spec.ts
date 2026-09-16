@@ -48,8 +48,12 @@ const auditMetadata = {
   modelCard: { provider: 'google-gemini', model: 'gemini-3-flash-preview', engineVersion: '2.10.8', catalogVersion: '2026.09', byokUsed: false, analysisTimestamp: '2026-09-16T08:00:00.000Z' },
 };
 
-// Every field the owner may write from the browser (firestore.rules, update
-// allowlist), each with a value that would be worth forging.
+// Every field the owner's own statements put on the project document, each with
+// a value that would be worth forging. Most are still written from the browser
+// (firestore.rules, update allowlist); the five release fields went behind
+// POST /api/projects/{id}/commands in roadmap 0.7 and are recorded on the
+// owner's behalf. Either way they are the owner's claim, not the engine's, so
+// either way no signed byte may move when they change.
 const honest = {
   name: 'Order intake',
   status: 'analyzed',

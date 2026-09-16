@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { scanCodeContent } from '@/lib/staged-code-scan';
 import { looksLikeAbap } from '@/lib/abap-input-check';
 import { routeWasOverridden } from '@/lib/route-override';
+import { runProjectCommand } from '@/lib/project-command-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType, getAuth } from '@/lib/firebase';
@@ -1980,11 +1981,16 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 <UsageUpload
                   onImport={async (report) => {
                     setUsageReport(report);
-                    // Persist to project
+                    // Roadmap 0.7: `usageReport` left the client-writable
+                    // allowlist. The server holds it to the key set of
+                    // lib/abap/usage-model.ts and to a row ceiling — the rules
+                    // could only ever say `is map` — and stores what it kept.
                     try {
-                      const docRef = doc(getDb(), 'projects', projectId as string);
-                      await updateDoc(docRef, { usageReport: report });
-                      setProject((prev: any) => prev ? { ...prev, usageReport: report } : prev);
+                      const stored = await runProjectCommand(projectId as string, {
+                        command: 'record-usage-report',
+                        usageReport: report,
+                      });
+                      setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
                     } catch (err) {
                       console.error('Failed to persist usage report:', err);
                     }

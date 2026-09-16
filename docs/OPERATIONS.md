@@ -55,9 +55,15 @@ gcloud firestore export gs://cleancore-backups/$(date +%F) \
 
 Rules must be deployed to **every** database the app uses, not just `(default)`:
 ```bash
-npm run deploy:rules   # firebase deploy --only firestore:rules --config firebase.rules-all-dbs.json
+npm run deploy:rules   # deploys via firebase.rules-all-dbs.json, then records the result
+npm run rules:check    # offline: is the working copy the text we recorded as live?
+npm run rules:verify   # online: what is production actually serving? (needs the gcloud login)
+npm run rules:record -- --pending "why"   # the rules changed and the deploy has to wait
+npm run rules:record -- --deployed        # deployed by hand elsewhere; write it down
 ```
-(A stale ruleset on the named production DB was the root cause of the v2.0 "empty Solution Design" incident — see CHANGELOG.)
+(A stale ruleset on the named production DB was the root cause of the v2.0 "empty Solution Design" incident — see CHANGELOG. It happened again, unnoticed, until 2026-09-16: production was serving the ruleset of 20 August, three tightenings behind the repository. That is why `docs/registers/rules-deployment.json` exists and why `npm run deploy:rules` now records as well as deploys.)
+
+**Never in CI.** No workflow deploys the rules and none may query the Rules API; `tests/rules-deploy-order.spec.ts` fails if one starts to. CI holding credentials that can rewrite security rules is one bad merge from an open database.
 
 ## Secret rotation
 
