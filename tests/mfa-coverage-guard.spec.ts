@@ -76,6 +76,13 @@ test.describe('server-side MFA coverage', () => {
       expect(s).toContain('multiFactor: { enrolledFactors: null }');
       // Two systems, no transaction: the factor goes first (a failure changes
       // nothing), the flag second (a failure leaves a state every gate refuses).
+      //
+      // This is a source guard and only a source guard: it holds the order in
+      // the file, not at runtime. The behavioural test needs an account with an
+      // enrolled factor, and the Auth emulator cannot enrol TOTP
+      // (firebase-tools 15.30.1). Roadmap 0.17 carries the emulator tests that
+      // replace source greps; until then the runtime path is verified on `dev`
+      // against the real Auth project.
       const removal = s.indexOf('multiFactor: { enrolledFactors: null }');
       const flag = s.indexOf('mfaEnabled: false');
       expect(removal, 'the factor is removed before the flag is cleared').toBeLessThan(flag);
