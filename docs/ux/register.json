@@ -1210,9 +1210,10 @@
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
       "createdAt": "2026-09-16T15:22:58.541Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-16T15:22:58.541Z"
+      "updatedAt": "2026-09-16T15:24:02.101Z",
+      "fixedIn": "739c0ea"
     },
     {
       "id": "UX-098",
@@ -1222,9 +1223,10 @@
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
       "createdAt": "2026-09-16T15:22:58.897Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-16T15:22:58.897Z"
+      "updatedAt": "2026-09-16T15:24:02.492Z",
+      "fixedIn": "739c0ea"
     },
     {
       "id": "UX-099",
@@ -1234,9 +1236,10 @@
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
       "createdAt": "2026-09-16T15:22:59.215Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-16T15:22:59.215Z"
+      "updatedAt": "2026-09-16T15:24:02.779Z",
+      "fixedIn": "739c0ea"
     },
     {
       "id": "UX-100",
@@ -1246,9 +1249,10 @@
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
       "createdAt": "2026-09-16T15:22:59.540Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-16T15:22:59.540Z"
+      "updatedAt": "2026-09-16T15:24:03.130Z",
+      "fixedIn": "739c0ea"
     },
     {
       "id": "UX-101",
@@ -1258,10 +1262,11 @@
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
       "createdAt": "2026-09-16T15:22:59.781Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-16T15:22:59.781Z"
+      "updatedAt": "2026-09-16T15:24:03.708Z",
+      "fixedIn": "739c0ea"
     }
   ]
 }

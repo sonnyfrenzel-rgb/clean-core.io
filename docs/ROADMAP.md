@@ -644,14 +644,14 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 
 | ID | Schwere | Befund | Roadmap-Schritt | Status |
 |---|---|---|---|---|
-| UX-002 | critical | Null Befunde als Fully Supported besiegelt | 0.8 | behoben (dev) |
-| UX-001 | high | Er fundene 95%- und 80%-Balken ohne Messung | 0.2 | eingeplant |
-| UX-003 | high | Verify-Pack-Upload ist per Tastatur nicht bedienbar | 1.5 | eingeplant |
+| UX-002 | critical | Null Befunde als Fully Supported besiegelt | 0.8 | behoben |
+| UX-001 | high | Er fundene 95%- und 80%-Balken ohne Messung | 0.2 | behoben |
+| UX-003 | high | Verify-Pack-Upload ist per Tastatur nicht bedienbar | 1.5 | behoben |
 | UX-004 | high | Confluence-Export erfindet fehlende Bewertungen | 1.2 | eingeplant |
 | UX-007 | high | Zielwahl und Dialoge nicht tastaturbedienbar | 1.5 | eingeplant |
-| UX-019 | high | Zustände stärker gezeigt als belegt – Balken, Haken, Exporte | 0.2 | eingeplant |
-| UX-020 | high | Kernpfade per Tastatur und Screenreader blockiert | 1.5 | eingeplant |
-| UX-023 | high | Dark Mode bricht an zentralen Flächen | 1.6 | eingeplant |
+| UX-019 | high | Zustände stärker gezeigt als belegt – Balken, Haken, Exporte | 3.0 | eingeplant |
+| UX-020 | high | Kernpfade per Tastatur und Screenreader blockiert | 3.0 | eingeplant |
+| UX-023 | high | Dark Mode bricht an zentralen Flächen | 1.6 | behoben |
 | UX-024 | high | Orientierung bricht zwischen den Bereichen | — | zurückgestellt |
 | UX-037 | high | Transformation verspricht Node.js auch im RAP-Track | 0.2 | eingeplant |
 | UX-038 | high | Remediation-Modus schaltet nur Text, nicht Code | 0.2 | eingeplant |
@@ -662,6 +662,8 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-062 | high | Dashboard-Tabelle bleibt im Dark Mode weiß | 1.6 | eingeplant |
 | UX-087 | high | Fehlender Debt-Status erscheint in Erfolgsgrün statt neutral | 0.8 | eingeplant |
 | UX-088 | high | Clean Core Score ohne Abgrenzung zu SAPs gegenläufigem Score | 0.3 | eingeplant |
+| UX-091 | high | Mail-Warnung verspricht erneuten Versand, Zeile kann ihn nicht | — | behoben |
+| UX-094 | high | Alte Backup-Codes werden ohne Übergang abgewiesen | — | zurückgestellt |
 | UX-005 | medium | Routenwechsel ohne Bestätigung und Undo | 0.7 | eingeplant |
 | UX-006 | medium | Von Befund kein Weg in den Code | 1.5 | eingeplant |
 | UX-012 | medium | Sticky-Header und Tabs verdecken Inhalt auf Phone | 1.4 | eingeplant |
@@ -692,7 +694,12 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-075 | medium | Auge-Buttons ohne zugänglichen Namen | 3.0.4 | eingeplant |
 | UX-076 | medium | Onboarding-Abbruch mit Schuld-Formulierung | 0.2 | eingeplant |
 | UX-089 | medium | Vier Begriffe für einen Wert: Audit, Valuation, Asset Value, IP Score | 1.5 | eingeplant |
-| UX-090 | medium | Deck-Fehler zeigt Roh-Techniktext ohne nächsten Schritt (Review von 44f3efb8b007) | 0.8 | behoben (dev) |
+| UX-090 | medium | Deck-Fehler zeigt Roh-Techniktext ohne nächsten Schritt | 0.8 | behoben |
+| UX-092 | medium | Start-Button durch Scan blockiert ohne Grund am Button | — | behoben |
+| UX-093 | medium | Ungespeichert meldet sich als fehlgeschlagene Verbindung | — | behoben |
+| UX-097 | medium | Leere Blueprint-Seite bietet Export von Nichts an | sofort | behoben |
+| UX-098 | medium | Paket-Download scheitert lautlos ohne Hinweis | sofort | behoben |
+| UX-099 | medium | Matrix-Close-Buttons ohne Namen für Screenreader | sofort | behoben |
 | UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | eingeplant |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |
@@ -719,7 +726,8 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-083 | low | Download-Fehler bleibt unsichtbar | 3.0 | eingeplant |
 | UX-084 | low | First-Run nennt Quote anders als der Header | 0.2 | eingeplant |
 | UX-085 | low | Kleinstlabels in 10px Kapitälchen | 1.5 | eingeplant |
-
+| UX-100 | low | Filtereintrag mischt Deutsch und Englisch | sofort | behoben |
+| UX-101 | low | 2FA-Schlüssel lässt sich nicht kopieren | sofort | behoben |
 ---
 
 ## 14. QA-Befunde aus der Vollprüfung
