@@ -215,5 +215,22 @@ The `h1` overrides inside the markdown renderers (`{...props}`) are for generate
 
 - **Node version:** package.json requires `>=22.8`; the local machine currently runs **v20.12.2**. `npm run dev`/`build` may warn or fail on engine checks — bump Node to 22 LTS for parity with CI/Cloud Run.
 - **Never regenerate `package-lock.json` on local Node 20.** npm 10.5 resolves the `overrides` block differently from the npm 11 in the Cloud Run buildpack: it silently drops nested entries (e.g. `@apidevtools/json-schema-ref-parser/node_modules/js-yaml`), CI's `npm ci` still passes, and the deploy then dies in Cloud Build with `npm ci can only install packages when your package.json and package-lock.json are in sync`. Use the matching toolchain — `npx --yes --package=node@22 --package=npm@11 -- npm install --package-lock-only` — and validate with the same prefix plus `npm ci --dry-run` before pushing.
+- **A test that waits for a window will be green here and red in CI.** The local
+  dev server compiles as it goes; CI runs `npm start` on a production build and is
+  several times faster. A spec that samples for a state which exists only *during*
+  a request — a reservation between its two writes, say — passes against `npm run
+  dev` and then misses the whole request in CI. Two specs did exactly that on
+  2026-09-16. Either make the window unnecessary (keep changing the thing you are
+  racing, so the value at commit differs from the value at read, whenever the read
+  happened), or sample in a tight loop that **stops when the request settles**, so
+  a miss ends in a clear assertion instead of a twenty-second timeout — and pick
+  input big enough that there is a window at all (`buildAbapEvidence` on the 37 kB
+  example, not on 40 lines). To check a spec the way CI will, build with
+  `NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true` **set for the build** and then `npm
+  start`; without it the browser bundle talks to real Firebase and every
+  signed-in page test fails for a reason that is not in your change.
+- **Run `grep -rl <file> tests/` before pushing a moved or renamed module.** Source-level
+  guards in unrelated specs assert on file paths and call counts; three CI reds in one
+  day came from a module moving under a guard that named it.
 - Ignore for code work: `scratch/`, `tmp/`, `dist/` (stray build artifact — gitignored; the project is web-only, there is no desktop/Electron app), `clean-core-video/`, and committed `*-debug.log` files.
 - Builds fail on any TS or ESLint error (`next.config.mjs` sets `ignoreBuildErrors: false`) — keep the tree clean before committing.
