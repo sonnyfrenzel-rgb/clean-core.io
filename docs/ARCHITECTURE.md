@@ -223,8 +223,20 @@ Two rules follow, and both are guarded by `tests/run-integrity-guard.spec.ts`:
   `extensibilityRoute` are both in the client-writable update allowlist in
   `firestore.rules`, and the pack read them from the project in preference to the
   run. The owner could delete an inconvenient finding and have the pack sign the
-  edited version as bound to the immutable run. If interactive changes are ever
-  worth exporting, they belong in a separately identified, user-attested file.
+  edited version as bound to the immutable run. Those two were plugged first; the
+  rest of the project document — target architecture, sign-off, approver, override
+  reason, name — kept flowing into signed files through `{ ...projectData,
+  ...runData }` until roadmap 0.12 (2026-09-16). Now `lib/audit-pack-build.ts`
+  builds the signed generators' input from a named list of run fields, and the
+  owner's statements go into `07-user-attested.md`: listed under `attested` in
+  `manifest.json`, its **name** bound into the manifest hash
+  (`lib/audit-pack-canonical.ts`, shared by issuer and web verifier), its
+  **contents** deliberately unhashed and unsigned. Both verifiers show it as
+  "user-attested · not covered by the signature"; a pack sealed with it and opened
+  without it fails. The run's signed `worklist` holds findings only — the
+  narrative's `gaps` are model text and reach the project's interactive worklist,
+  not the signature. `tests/audit-pack-signed-input.spec.ts` changes every
+  client-writable field and asserts that no signed byte moves.
 - **`success` means authentic.** `verifyAuditPack` returned true for anything
   internally consistent, including a ZIP anyone can assemble with `signed: false`.
   Local checksum consistency is a real fact and keeps its own field,

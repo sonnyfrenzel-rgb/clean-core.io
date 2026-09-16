@@ -8,6 +8,7 @@
 
 import JSZip from 'jszip';
 import type { AuditPackManifest } from './audit-pack';
+import { canonicalAuditManifest } from './audit-pack-canonical';
 
 /** SHA-256 hash of a string using Web Crypto API. */
 async function sha256(content: string): Promise<string> {
@@ -23,6 +24,12 @@ export interface FileVerifyResult {
   actualHash: string;
   valid: boolean;
   found: boolean;
+  /**
+   * False for a file the manifest lists as user-attested: its name is bound
+   * into the signature, its contents are not, and `valid` only says it was
+   * there. Absent (true) for every signed file.
+   */
+  signed?: boolean;
 }
 
 export interface VerifyResult {
@@ -111,7 +118,8 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
     // Integrity Verified" over an archive containing material nobody signed.
     // So the archive has to match the manifest exactly: an entry the manifest
     // does not account for is an integrity failure, not a curiosity.
-    const listed = new Set(manifest.files.map((f) => f.path));
+    const attested = Array.isArray(manifest.attested) ? manifest.attested : [];
+    const listed = new Set([...manifest.files.map((f) => f.path), ...attested.map((a) => a.path)]);
     const unlisted = Object.values(zip.files)
       .filter((entry) => !entry.dir && entry.name !== 'manifest.json' && !listed.has(entry.name))
       .map((entry) => entry.name)
@@ -119,6 +127,16 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
     for (const name of unlisted) {
       fileResults.push({ path: name, expectedHash: '', actualHash: '', valid: false, found: true });
       errors.push(`File not covered by the manifest: ${name}`);
+    }
+
+    // A user-attested file is listed by name only. Its presence is part of
+    // what was sealed — the name is in the canonical manifest — so a missing
+    // one is an altered archive; its contents are the account holder's own
+    // statement and are reported as exactly that, never as verified.
+    for (const a of attested) {
+      const present = !!zip.file(a.path);
+      fileResults.push({ path: a.path, expectedHash: '', actualHash: '', valid: present, found: present, signed: false });
+      if (!present) errors.push(`Attested file missing from ZIP: ${a.path}`);
     }
 
     for (const entry of manifest.files) {
@@ -152,13 +170,16 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       }
     }
 
-    // 4. Verify manifest hash
-    const sortedFiles = [...manifest.files].sort((a, b) => a.path.localeCompare(b.path));
-    let canonicalManifest = sortedFiles.map(f => `${f.path}:${f.sha256}`).join(';') + ';';
-    if (manifest.runHash !== undefined) {
-      const suffix = `${manifest.projectId || ''}:${manifest.runId || ''}:${manifest.runHash || ''}:${manifest.engineVersion || ''}:${manifest.sapApiCatalogVersion || ''};`;
-      canonicalManifest += suffix;
-    }
+    // 4. Verify manifest hash — rebuilt by the same function the issuer used.
+    const canonicalManifest = canonicalAuditManifest({
+      files: manifest.files,
+      attested,
+      projectId: manifest.projectId,
+      runId: manifest.runId,
+      runHash: manifest.runHash,
+      engineVersion: manifest.engineVersion,
+      sapApiCatalogVersion: manifest.sapApiCatalogVersion,
+    });
     const computedManifestHash = await sha256(canonicalManifest);
     manifestHashValid = computedManifestHash === manifest.manifestHash;
 

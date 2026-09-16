@@ -185,7 +185,9 @@ export default function VerifyPackPage() {
                     <div className="space-y-1.5">
                       {result.fileIntegrity.map((f: FileVerifyResult) => (
                         <div key={f.path} className="flex items-center gap-2 text-xs">
-                          {f.valid ? (
+                          {f.signed === false && f.valid ? (
+                            <AlertCircle size={13} className="text-amber-500 shrink-0" />
+                          ) : f.valid ? (
                             <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
                           ) : (
                             <XCircle size={13} className="text-red-500 shrink-0" />
@@ -193,6 +195,11 @@ export default function VerifyPackPage() {
                           <span className={`truncate ${f.valid ? 'text-gray-600' : 'text-red-700 font-semibold'}`}>
                             {f.path}
                           </span>
+                          {f.signed === false && f.valid && (
+                            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                              user-attested · not covered by the signature
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>

@@ -24,6 +24,21 @@ interface ManifestFile {
   bytes: number;
 }
 
+/**
+ * A file the issuer placed in the archive without signing its contents. Its
+ * path is bound into the manifest hash (see `lib/audit-pack-canonical.ts`);
+ * what is inside is the account holder's own statement and carries no hash on
+ * purpose — a recorded digest of an unsigned file would read as a guarantee it
+ * cannot give.
+ */
+export interface AttestedFile {
+  path: string;
+  provenance: 'user-attested';
+}
+
+/** The one user-attested file a pack carries today. */
+export const USER_ATTESTED_FILE = '07-user-attested.md';
+
 export interface AuditPackManifest {
   version: string;
   runId: string;
@@ -32,6 +47,8 @@ export interface AuditPackManifest {
   engineVersion: string;
   sapApiCatalogVersion: string;
   files: ManifestFile[];
+  /** Present since roadmap 0.12; absent on older packs. */
+  attested?: AttestedFile[];
   manifestHash: string;
   signed: boolean;
   signature: string;
@@ -77,15 +94,22 @@ function mdCell(value: unknown): string {
   return String(value ?? '—').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim() || '—';
 }
 
+/**
+ * The signed generators below read the run and nothing else.
+ *
+ * They used to print the target architecture, the architect's sign-off, the
+ * approver and the project name — every one of them a field the owner writes
+ * from the browser (`firestore.rules`, the update allowlist) — and the pack
+ * hashed and signed the result, so a sign-off typed into a form came out the
+ * other end as server-attested evidence. Those statements now live in
+ * `07-user-attested.md`, which the manifest names but the signature does not
+ * cover, and the signed files say so where the statement used to be.
+ */
+const SEE_ATTESTED = `recorded in ${USER_ATTESTED_FILE} — the account holder's own statement, not covered by the signature`;
+
 export function generateExecutiveSummary(project: Project): string {
   const fp = project.auditMetadata?.inputFingerprint;
   const mc = project.auditMetadata?.modelCard;
-  const arch = project.targetArchitecture ? ARCH_LABELS[project.targetArchitecture] || project.targetArchitecture : 'Not determined';
-  const approved = project.approvedByArchitect ? '✓ Approved' : '○ Pending';
-  const approver = project.approvedBy ? ` by ${project.approvedBy}` : '';
-  const signOffDate = project.architectSignOffAt
-    ? new Date(project.architectSignOffAt as string).toISOString()
-    : '—';
 
   return `# Compliance Audit Pack — Executive Summary
 
@@ -98,14 +122,14 @@ export function generateExecutiveSummary(project: Project): string {
 
 | Field | Value |
 |---|---|
-| Project Name | ${mdCell(project.name)} |
-| Analysis Status | ${mdCell(project.status || 'unknown')} |
+| Project | ${mdCell(project.id)} |
+| Run | ${mdCell(project.activeRunId)} |
+| Run Status | ${mdCell(project.status || 'unknown')} |
 | Clean Core Score | ${project.cleanCoreScore ?? '—'}/100 |
 | Complexity Score | ${project.complexityScore ?? '—'}/100 |
 | Criticality Score | ${project.criticalityScore ?? '—'}/100 |
-| Target Architecture | ${mdCell(arch)} |
-| Architect Sign-Off (self-attested) | ${mdCell(approved + approver)} |
-| Sign-Off Date | ${mdCell(signOffDate)} |
+| Engine Recommendation | ${mdCell(project.extensibilityRoute ? ARCH_LABELS[project.extensibilityRoute] || project.extensibilityRoute : '—')} |
+| Target Architecture & Sign-Off | ${SEE_ATTESTED} |
 | Extensibility Route | ${mdCell(project.extensibilityRoute || '—')} |
 
 ## Input Summary
@@ -145,12 +169,6 @@ Generated code is a draft for review — not a production-ready deliverable.
 export function generateExecutiveSummaryDoc(project: Project): string {
   const fp = project.auditMetadata?.inputFingerprint;
   const mc = project.auditMetadata?.modelCard;
-  const arch = project.targetArchitecture ? ARCH_LABELS[project.targetArchitecture] || project.targetArchitecture : 'Not determined';
-  const approved = project.approvedByArchitect ? '✓ Approved' : '○ Pending';
-  const approver = project.approvedBy ? ` by ${project.approvedBy}` : '';
-  const signOffDate = project.architectSignOffAt
-    ? new Date(project.architectSignOffAt as string).toISOString()
-    : '—';
   const score = project.cleanCoreScore ?? '—';
   const complexity = project.complexityScore ?? '—';
   const criticality = project.criticalityScore ?? '—';
@@ -198,14 +216,14 @@ export function generateExecutiveSummaryDoc(project: Project): string {
       </tr>
     </thead>
     <tbody>
-      <tr><td>Project Name</td><td>${escapeHtml(project.name)}</td></tr>
-      <tr><td>Analysis Status</td><td>${escapeHtml(project.status || 'unknown')}</td></tr>
+      <tr><td>Project</td><td>${escapeHtml(project.id)}</td></tr>
+      <tr><td>Run</td><td>${escapeHtml(project.activeRunId)}</td></tr>
+      <tr><td>Run Status</td><td>${escapeHtml(project.status || 'unknown')}</td></tr>
       <tr><td>Clean Core Score</td><td>${score}/100</td></tr>
       <tr><td>Complexity Score</td><td>${complexity}/100</td></tr>
       <tr><td>Criticality Score</td><td>${criticality}/100</td></tr>
-      <tr><td>Target Architecture</td><td>${escapeHtml(arch)}</td></tr>
-      <tr><td>Architect Sign-Off (self-attested)</td><td>${escapeHtml(approved + approver)}</td></tr>
-      <tr><td>Sign-Off Date</td><td>${escapeHtml(signOffDate)}</td></tr>
+      <tr><td>Engine Recommendation</td><td>${escapeHtml(project.extensibilityRoute ? ARCH_LABELS[project.extensibilityRoute] || project.extensibilityRoute : '—')}</td></tr>
+      <tr><td>Target Architecture &amp; Sign-Off</td><td>${escapeHtml(SEE_ATTESTED)}</td></tr>
       <tr><td>Extensibility Route</td><td>${escapeHtml(project.extensibilityRoute || '—')}</td></tr>
     </tbody>
   </table>
@@ -260,24 +278,25 @@ export function generateExecutiveSummaryDoc(project: Project): string {
 
 export function generateDecisionRecord(project: Project): object {
   return {
-    projectName: project.name,
+    projectId: project.id,
+    runId: project.activeRunId,
     generatedAt: new Date().toISOString(),
     engineVersion: APP_VERSION,
+    // The engine's side of the decision: deterministic router output from the
+    // signed run. Confidence and justification are the router's, not a model's.
     recommendation: {
-      targetArchitecture: project.targetArchitecture || null,
-      originalRecommendation: project.originalRecommendation || null,
+      engineRecommendation: project.originalRecommendation || project.extensibilityRoute || null,
       confidence: project.recommendationConfidence ?? null,
       justification: project.recommendationJustification || null,
     },
+    // The human side — chosen target architecture, sign-off, approver, override
+    // reason — is the account holder's own statement. It is written from the
+    // browser and is not evidence, so it is not in this signed file. It is in
+    // the attested file the manifest names, unsigned and labelled as such.
     architectReview: {
-      // Self-attestation: the sign-off is recorded from the signed-in user's own
-      // client session, not verified by a separate approver or an org role model.
-      // It is a decision record, not a formal organizational approval.
       attestationType: 'self-attested',
-      approved: project.approvedByArchitect ?? false,
-      approvedBy: project.approvedBy || null,
-      signOffTimestamp: project.architectSignOffAt || null,
-      overrideJustification: project.architectJustifiedOverride || null,
+      recordedIn: USER_ATTESTED_FILE,
+      signed: false,
     },
     scores: {
       cleanCoreScore: project.cleanCoreScore ?? null,
@@ -293,14 +312,9 @@ export function generateDecisionRecord(project: Project): object {
  * Reuses the same decision data as generateDecisionRecord, formatted as a standard ADR.
  */
 export function generateArchitectureDecisionRecord(project: Project): string {
-  const arch = project.targetArchitecture ? (ARCH_LABELS[project.targetArchitecture] || project.targetArchitecture) : 'Not determined';
-  const original = project.originalRecommendation ? (ARCH_LABELS[project.originalRecommendation] || project.originalRecommendation) : '—';
-  const overridden = !!project.targetArchitecture && !!project.originalRecommendation && project.targetArchitecture !== project.originalRecommendation;
+  const recommended = project.originalRecommendation || project.extensibilityRoute;
+  const original = recommended ? (ARCH_LABELS[recommended] || recommended) : '—';
   const confidence = project.recommendationConfidence != null ? `${project.recommendationConfidence}%` : '—';
-  const signDate = project.architectSignOffAt ? new Date(project.architectSignOffAt as string).toISOString().slice(0, 10) : '';
-  const status = project.approvedByArchitect
-    ? `Accepted — self-attested by ${mdCell(project.approvedBy || 'architect')}${signDate ? ' on ' + signDate : ''}`
-    : 'Proposed — pending architect sign-off';
   const fp = project.auditMetadata?.inputFingerprint;
   const mc = project.auditMetadata?.modelCard;
   const worklist: WorklistItem[] = project.worklist || [];
@@ -313,26 +327,27 @@ export function generateArchitectureDecisionRecord(project: Project): string {
       ? items.map((w) => `- **${mdCell(w.title)}** (${w.severity || w.effort || '—'}) — ${mdCell(w.recommendation)}${w.location ? ` — at ${mdCell(w.location)}` : ''}`).join('\n')
       : '_None._';
 
-  return `# Architecture Decision Record — ${mdCell(project.name)}
+  return `# Architecture Decision Record — ${mdCell(fp?.fileName || project.id)}
 
 > Generated by Clean-Core.io ${APP_VERSION} on ${new Date().toISOString()}.
 > A machine-assisted decision record for review — it does not replace a formal, governed architecture sign-off.
+> This file is signed and holds the engine's recommendation and its evidence. The architect's decision and sign-off are ${SEE_ATTESTED}.
 
 | Field | Value |
 |---|---|
-| Status | ${mdCell(status)} |
-| Decision | ${mdCell(arch)} |
-| Engine recommendation | ${mdCell(original)}${overridden ? ' (overridden by architect)' : ''} |
+| Run | ${mdCell(project.activeRunId)} |
+| Engine recommendation | ${mdCell(original)} |
 | Confidence | ${confidence} |
+| Decision & sign-off | ${SEE_ATTESTED} |
 | Clean Core / Complexity / Criticality | ${project.cleanCoreScore ?? '—'} / ${project.complexityScore ?? '—'} / ${project.criticalityScore ?? '—'} |
 
 ## Context
 
 ${fp ? `Analysis of "${mdCell(fp.fileName || 'uploaded ABAP')}" (${mdCell(fp.objectType || 'object')}, ${fp.lineCount ?? '—'} LOC). ` : ''}The deterministic evidence engine classified the custom code against SAP Clean Core extensibility guidelines and routed it to a target track before any AI narrative was generated.
 
-## Decision
+## Recommendation
 
-Adopt **${mdCell(arch)}** as the target architecture.${overridden ? ` This overrides the engine's recommendation (${mdCell(original)}). Architect's reasoning: ${mdCell(project.architectJustifiedOverride || '—')}.` : ''}
+The engine routed this object to **${mdCell(original)}**. Whether that recommendation was adopted, overridden or is still open is ${SEE_ATTESTED}.
 
 ## Rationale
 
@@ -357,14 +372,14 @@ ${list(oos)}
 
 ## Evidence
 
-- Extensibility route: ${mdCell(project.extensibilityRoute || arch)}
+- Extensibility route: ${mdCell(project.extensibilityRoute || original)}
 - Engine: ${mdCell(mc?.engineVersion || APP_VERSION)} · SAP catalog: ${mdCell((mc as any)?.catalogVersion || '2024.FPS02')}
 - Bound to the immutable, HMAC-signed analysis run — the findings behind this decision are reproducible.
 
 ## Limitations
 
 - Generated content is a draft for architect review — not a production-ready deliverable or a certified SAP acceptance.
-- The sign-off is self-attested (from the signed-in user's session), not a formally governed organizational approval.
+- The sign-off, where one exists, is self-attested (from the signed-in user's session), not a formally governed organizational approval — and it is not in this file.
 - Dynamic ABAP, Dynpro / screen flows and kernel calls are flagged, not auto-resolved.
 
 *Generated by Clean-Core.io ${APP_VERSION}.*
@@ -468,7 +483,6 @@ export function generateKnownLimitations(): string {
  */
 export function generateProvenanceManifest(project: Project): string {
   const mc = project.auditMetadata?.modelCard;
-  const approved = project.approvedByArchitect ? 'yes (self-attested)' : 'no';
   return `# Provenance & Evidence Classes
 
 > Generated by Clean-Core.io ${APP_VERSION} on ${new Date().toISOString()}.
@@ -490,14 +504,15 @@ model-generated drafts and user-attested inputs.
 
 | Evidence file | Provenance class(es) |
 |---|---|
-| 00-executive-summary.md / .doc | server-computed (scores, fingerprint) · user-attested (project name, sign-off) |
+| 00-executive-summary.md / .doc | server-computed (scores, fingerprint, engine recommendation) |
 | 01-input-fingerprint.json | server-computed |
-| 02-decision-record.json | server-computed (scores) · model-generated (justification) · user-attested (architect review) |
+| 02-decision-record.json | server-computed (scores, deterministic router recommendation and rationale) |
 | 03-findings.csv | server-computed |
 | 04-model-card.md | server-computed |
 | 05-known-limitations.md | static |
-| 06-architecture-decision-record.md | server-computed (evidence) · model-generated (rationale) · user-attested (decision, sign-off) |
-| manifest.json | server-computed (file hashes, manifest hash, HMAC signature) |
+| 06-architecture-decision-record.md | server-computed (evidence, engine recommendation, worklist from the signed run) |
+| ${USER_ATTESTED_FILE} | **user-attested — not covered by the signature.** Project name, chosen target architecture, sign-off, approver, override reason, workflow status. The manifest binds the file's name, not its contents. |
+| manifest.json | server-computed (file hashes, manifest hash, HMAC / Ed25519 signature, attested file names) |
 
 **Headline field provenance**
 
@@ -507,12 +522,79 @@ model-generated drafts and user-attested inputs.
 | Input SHA-256 fingerprint, lines of code | server-computed |
 | Data-coupling findings | server-computed |
 | Target-architecture route (RAP/CAP/…) | server-computed (deterministic router) |
-| Recommendation justification / narrative | model-generated (${mdCell(mc?.model || 'Gemini')}) |
-| Architect sign-off / approver / override reason | user-attested (approved: ${approved}) |
-| HMAC signature | server-computed integrity seal over the manifest hash |
+| Router rationale in 02 / 06 | server-computed (deterministic router) |
+| AI narrative (${mdCell(mc?.model || 'Gemini')}) | model-generated — not in this pack; referenced by hash on the run |
+| Project name, target architecture, architect sign-off / approver / override reason | user-attested — in ${USER_ATTESTED_FILE}, unsigned |
+| HMAC / Ed25519 signature | server-computed integrity seal over the manifest hash |
 
 This is a decision-support package, not a certification. Model-generated and
 user-attested content must be validated by a qualified reviewer.
+`;
+}
+
+/**
+ * What the account holder stated, as they stated it.
+ *
+ * Everything here is written from the browser by the project owner — the
+ * update allowlist in `firestore.rules` names each field — and none of it is
+ * checked by anyone else. It is kept out of the signed files for that reason
+ * and put here, in one place, with the label on the tin. Roadmap 0.7 moves
+ * these fields behind server-validated commands; once a sign-off is a
+ * server-written event, it can be signed.
+ */
+export interface UserAttestations {
+  name?: string;
+  status?: string;
+  targetArchitecture?: string;
+  approvedByArchitect?: boolean;
+  approvedBy?: string;
+  architectSignOffAt?: unknown;
+  architectJustifiedOverride?: string;
+}
+
+export function generateUserAttestations(
+  a: UserAttestations,
+  bound: { projectId: string; runId: string; engineRecommendation?: string },
+): string {
+  const arch = a.targetArchitecture ? ARCH_LABELS[a.targetArchitecture] || a.targetArchitecture : 'Not chosen';
+  const recommended = bound.engineRecommendation ? ARCH_LABELS[bound.engineRecommendation] || bound.engineRecommendation : '—';
+  const overridden = !!a.targetArchitecture && !!bound.engineRecommendation && a.targetArchitecture !== bound.engineRecommendation;
+  let signOffAt = '—';
+  if (a.architectSignOffAt) {
+    const ms =
+      typeof a.architectSignOffAt === 'string'
+        ? Date.parse(a.architectSignOffAt)
+        : typeof (a.architectSignOffAt as { toMillis?: () => number }).toMillis === 'function'
+          ? (a.architectSignOffAt as { toMillis: () => number }).toMillis()
+          : NaN;
+    signOffAt = Number.isFinite(ms) ? new Date(ms).toISOString() : 'unreadable';
+  }
+
+  return `# User-Attested Statements
+
+> Generated by Clean-Core.io ${APP_VERSION} on ${new Date().toISOString()} for project ${mdCell(bound.projectId)}, run ${mdCell(bound.runId)}.
+
+**This file is not covered by the pack's signature.** The manifest binds its name, so a
+reader can see it was in the archive when the pack was sealed; nobody vouches for what
+it says. Every value below was entered or confirmed by the signed-in account holder in
+their own session — a self-declaration, not an organisational mandate and not a finding
+of the engine. The signed files (00–06) hold the evidence; this one holds the decision.
+
+| Statement | Value |
+|---|---|
+| Project name | ${mdCell(a.name)} |
+| Workflow status | ${mdCell(a.status)} |
+| Target architecture chosen | ${mdCell(arch)}${overridden ? ` — overrides the engine's recommendation (${mdCell(recommended)})` : ''} |
+| Engine recommendation (from the signed run, for comparison) | ${mdCell(recommended)} |
+| Architect sign-off | ${a.approvedByArchitect ? 'given (self-attested)' : 'not given'} |
+| Approver | ${mdCell(a.approvedBy)} |
+| Sign-off timestamp | ${mdCell(signOffAt)} |
+| Override justification | ${mdCell(a.architectJustifiedOverride)} |
+
+To rely on any of this, obtain it from the person named above through your own
+governance process. To check the evidence, verify the pack: the files the signature
+covers are listed under \`files\` in \`manifest.json\`; this one is listed under
+\`attested\`.
 `;
 }
 

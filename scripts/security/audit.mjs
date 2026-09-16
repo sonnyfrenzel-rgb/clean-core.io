@@ -18,7 +18,7 @@ import { isPublicByDesign } from '../qa/lib/config.mjs';
 import { callReviewer } from '../qa/lib/openrouter.mjs';
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { AUDIT_PUBLIC_PEM, sealFor } from './lib/envelope.mjs';
-import { cisoMessage, coerceConsultant, coerceReport, consultantMessage, numbered, planBatches, runConsultants, withCountedCoverage } from './lib/pipeline.mjs';
+import { askAgainIfTruncated, cisoMessage, coerceConsultant, coerceReport, consultantMessage, numbered, planBatches, runConsultants, withCountedCoverage } from './lib/pipeline.mjs';
 import { surfaceMap } from './lib/surface.mjs';
 import { AUDIT, CONSULTANTS, CONSULTANT_SCHEMA, REPORT_SCHEMA } from './lib/team.mjs';
 
@@ -97,28 +97,20 @@ async function main() {
 
   const cisoUser = clean('outgoing message', `${CISO_TASK}\n\n${cisoMessage({ surface, results, coverage, notRead, failed: run.failedCalls, readLines })}`);
   // The CISO call is the last of some sixty and the only one whose loss costs
-  // the whole audit. The client deliberately never retries an answer that may
-  // already have been generated and billed, and for the consultants that is
-  // right: one lost batch is one hole in the coverage. Here it is not. On
-  // 2026-09-15 the release audit of 33471220d6e9 ran for seventy minutes, all
-  // 57 consultant calls succeeded, and the CISO's HTTP 200 arrived with a body
-  // that was not JSON — cut off in transit — so three dollars of audit produced
-  // nothing. One second bill for that one call is the cheaper outcome. Only
-  // that error, only once; a wrong answer or a refusal is still final.
+  // the whole audit — a truncated body is asked once more (askAgainIfTruncated
+  // in lib/pipeline.mjs says why, and tests/security-audit-guard.spec.ts
+  // exercises it). One second bill for that one call is the cheaper outcome.
+  // The consultants are never wrapped: one lost batch is one hole, not a lost
+  // audit.
   const CISO_TRUNCATED_RETRIES = 1;
   let ciso;
-  for (let attempt = 0; ; attempt++) {
-    try {
-      ciso = await callReviewer({ apiKey, system: clean('outgoing message', brief), user: cisoUser, schema: REPORT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, maxTokens: cisoTokens, name: 'security_audit_report', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: coerceReport });
-      break;
-    } catch (err) {
-      const message = String(err?.message || err).split('\n')[0];
-      if (attempt < CISO_TRUNCATED_RETRIES && /response that is not JSON/.test(message)) {
-        console.warn(`CISO call ${attempt + 1} answered with a body that is not JSON — asking once more.`);
-        continue;
-      }
-      throw new Error(`the audit did not produce a report (CISO call: ${message}; consultant calls ${results.length}, failed ${run.failedCalls}).`);
-    }
+  try {
+    ciso = await askAgainIfTruncated(
+      () => callReviewer({ apiKey, system: clean('outgoing message', brief), user: cisoUser, schema: REPORT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, maxTokens: cisoTokens, name: 'security_audit_report', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: coerceReport }),
+      { retries: CISO_TRUNCATED_RETRIES, warn: (n) => console.warn(`CISO call ${n} answered with a body that is not JSON — asking once more.`) },
+    );
+  } catch (err) {
+    throw new Error(`the audit did not produce a report (CISO call: ${String(err?.message || err).split('\n')[0]}; consultant calls ${results.length}, failed ${run.failedCalls}).`);
   }
 
   // A credential in the code is reported without a model and without its value; a public-by-design value is not.

@@ -200,3 +200,47 @@ test('a verdict that outran the send record still reaches the user row', () => {
   expect(fn).toContain("uid && kind === 'welcome' && status !== 'email.sent'");
   expect(fn).toContain("db.collection('registration_requests').doc(uid)");
 });
+
+test.describe('the survey send records before it asks the provider', () => {
+  /**
+   * The send record used to be added after Resend had accepted the message. A
+   * crash or a failed Firestore write in that window left a delivered mail with
+   * no record, and the next run — seeing no record — sent it again (QA review of
+   * da8af9df98fb, b6a9e1c54314). The record now exists under a deterministic id
+   * before the provider is asked, moves to `sent` or `failed` afterwards, and a
+   * record stuck in `sending` is neither resent nor counted.
+   *
+   * The script is an entry point and cannot be imported without running it, so
+   * this reads the source: the order of the writes is the whole guarantee.
+   */
+  const src = read('scripts/send-survey.ts');
+  const loop = src.slice(src.indexOf('for (const [index, r] of recipients.entries())'), src.indexOf("console.log('');\n  console.log(`${sent} of"));
+
+  test('the outbox record is written before the provider call, under a deterministic id', () => {
+    const outbox = loop.indexOf("state: 'sending'");
+    const provider = loop.indexOf('await sendWithRetry(');
+    expect(outbox).toBeGreaterThan(-1);
+    expect(provider).toBeGreaterThan(-1);
+    expect(outbox, 'the provider is asked before the record exists').toBeLessThan(provider);
+    expect(loop).toMatch(/collection\('email_sends'\)\.doc\(`\$\{SURVEY_CAMPAIGN\}__\$\{r\.uid\}`\)/);
+    expect(loop, 'a non-deterministic add() is back').not.toMatch(/collection\('email_sends'\)\.add\(/);
+  });
+
+  test('success and refusal each write their state, and only success counts', () => {
+    const sent = loop.indexOf("state: 'sent'");
+    const failed = loop.indexOf("state: 'failed'");
+    const counted = loop.indexOf('invited: FieldValue.increment(1)');
+    expect(sent).toBeGreaterThan(-1);
+    expect(failed).toBeGreaterThan(-1);
+    expect(counted, 'the counter moves before the record says sent').toBeGreaterThan(sent);
+    expect(loop.slice(failed, sent)).not.toContain('invited: FieldValue.increment');
+  });
+
+  test('a record in sending is skipped, reported, and never counted as sent', () => {
+    const load = src.slice(src.indexOf('async function loadRecipients'), src.indexOf('async function main'));
+    expect(load).toMatch(/if \(state === 'failed'\) continue;/);
+    expect(load).toMatch(/if \(state === 'sending'\) unresolved\.push\(email\);/);
+    expect(load).toMatch(/alreadySent\.add\(email\);/);
+    expect(src).toMatch(/unresolved: \$\{unresolved\.length\} send\(s\) started and never recorded/);
+  });
+});

@@ -8,18 +8,10 @@ import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing
 import { signEd25519 } from '@/lib/audit-signing-keypair';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { APP_VERSION } from '@/lib/version';
-import type { Project } from '@/lib/types';
 import { signOffKey } from '@/lib/artefact-digest';
-import {
-  generateExecutiveSummary,
-  generateExecutiveSummaryDoc,
-  generateDecisionRecord,
-  generateArchitectureDecisionRecord,
-  generateFindingsCsv,
-  generateModelCard,
-  generateKnownLimitations,
-  generateProvenanceManifest,
-} from '@/lib/audit-pack';
+import { USER_ATTESTED_FILE, type AttestedFile } from '@/lib/audit-pack';
+import { attestationsOf, buildAuditPackContents } from '@/lib/audit-pack-build';
+import { canonicalAuditManifest } from '@/lib/audit-pack-canonical';
 
 /**
  * POST /api/audit-pack/create  (v1.20 §5 — server-authoritative audit pack)
@@ -214,55 +206,43 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Hydrate a Project view (mirrors lib/project-loader) for the pure generators.
-    const project = {
-      id: projectId,
-      ...projectData,
-      ...runData,
-      // Evidence comes from the run, never from the project.
-      //
-      // Both of these are in the client-writable update allowlist in
-      // firestore.rules, and both were read from the project in preference to
-      // the run. So the owner could delete an inconvenient finding, or mark it
-      // fully mapped, or change the recommended route, and the pack would sign
-      // the edited version and present it as bound to the immutable run. If the
-      // interactive worklist is ever worth exporting, it belongs in a separate,
-      // clearly user-attested file — not in the evidentiary sections.
-      worklist: runData.worklist ?? [],
-      extensibilityRoute: runData.extensibilityRoute,
-    } as unknown as Project;
+    // 1. Server-side file generation.
+    //
+    // Evidence comes from the run, never from the project. The generators used
+    // to be handed `{ ...projectData, ...runData }`; `worklist` and
+    // `extensibilityRoute` were plugged first (both in the client-writable
+    // allowlist in firestore.rules — the owner could delete a finding and have
+    // the pack sign the edited version), and the rest of the project document
+    // — target architecture, sign-off, approver, override reason, name —
+    // followed the same road into signed files until roadmap 0.12. The signed
+    // input is now a named list in lib/audit-pack-build.ts; the owner's own
+    // statements go into one attested file that the manifest lists and the
+    // signature does not cover.
+    const { signed: fileContents, attested: attestedContents } = buildAuditPackContents({
+      projectId,
+      runId,
+      run: { ...runData, worklist: runData.worklist ?? [] },
+      auditMetadata: projectData.auditMetadata,
+      attested: attestationsOf(projectData),
+    });
 
-    // 1. Server-side file generation (identical set to the former client flow)
-    const fileContents: Record<string, string> = {
-      '00-executive-summary.md': generateExecutiveSummary(project),
-      '00-executive-summary.doc': generateExecutiveSummaryDoc(project),
-      '00-provenance.md': generateProvenanceManifest(project), // F-04: per-file/field provenance classes
-
-      '01-input-fingerprint.json': JSON.stringify(
-        project.auditMetadata?.inputFingerprint || { note: 'No fingerprint available.' },
-        null, 2,
-      ),
-      '02-decision-record.json': JSON.stringify(generateDecisionRecord(project), null, 2),
-      '03-findings.csv': generateFindingsCsv(project),
-      '04-model-card.md': generateModelCard(project),
-      '05-known-limitations.md': generateKnownLimitations(),
-      '06-architecture-decision-record.md': generateArchitectureDecisionRecord(project),
-    };
-
-    // 2. Hash server-side
+    // 2. Hash server-side — the signed files only. The attested file gets no
+    // recorded digest: a hash of an unsigned file reads as a guarantee it
+    // cannot give.
     const sha = (s: string) => crypto.createHash('sha256').update(s).digest('hex');
     const enc = new TextEncoder();
     const files = Object.entries(fileContents).map(([path, content]) => ({
       path, sha256: sha(content), bytes: enc.encode(content).byteLength,
     }));
+    const attested: AttestedFile[] = Object.keys(attestedContents).map((path) => ({ path, provenance: 'user-attested' }));
 
-    // 3. Canonical manifest + signature (format matches /api/export/sign + verify)
+    // 3. Canonical manifest + signature. One implementation, shared with the
+    // verifier (lib/audit-pack-canonical.ts): the attested file's name is bound
+    // into the hash, its contents are not.
     const runHash: string = runData.runHash;
     const engineVersion: string = runData.analyzerVersion || APP_VERSION;
     const sapApiCatalogVersion: string = runData.sapApiCatalogVersion || '';
-    const sortedFiles = [...files].sort((a, b) => a.path.localeCompare(b.path));
-    const canonicalSuffix = `${projectId}:${runId}:${runHash}:${engineVersion}:${sapApiCatalogVersion};`;
-    const canonicalManifest = sortedFiles.map(f => `${f.path}:${f.sha256}`).join(';') + ';' + canonicalSuffix;
+    const canonicalManifest = canonicalAuditManifest({ files, attested, projectId, runId, runHash, engineVersion, sapApiCatalogVersion });
     const manifestHash = sha(canonicalManifest);
 
     const signingKey = getAuditSigningKey();
@@ -288,6 +268,7 @@ export async function POST(req: NextRequest) {
       engineVersion,
       sapApiCatalogVersion,
       files,
+      attested,
       manifestHash,
       signed: true,
       signature,
@@ -304,6 +285,8 @@ export async function POST(req: NextRequest) {
     // 4. Assemble ZIP server-side
     const zip = new JSZip();
     for (const [path, content] of Object.entries(fileContents)) zip.file(path, content);
+    for (const [path, content] of Object.entries(attestedContents)) zip.file(path, content);
+    if (!(USER_ATTESTED_FILE in attestedContents)) throw new Error('The attested file was not generated.');
     zip.file('manifest.json', JSON.stringify(manifest, null, 2));
     const buf = await zip.generateAsync({ type: 'nodebuffer' });
 

@@ -37,12 +37,15 @@ test.describe('the agent has no tools and a small budget', () => {
     expect(src).toMatch(/callReviewer\(\{ apiKey, system, user, schema: CONSULTANT_SCHEMA,/);
     expect(src).toMatch(/callReviewer\(\{ apiKey, system: clean\('outgoing message', brief\), user: cisoUser, schema: REPORT_SCHEMA,/);
     // The CISO call — last of ~60, the one whose loss costs the whole audit — is asked once more when its
-    // 200 arrives with a body that is not JSON (release audit of 33471220d6e9, 2026-09-15). Exactly once,
-    // exactly that error: a wrong answer or a refusal stays final, and the consultants are never retried.
+    // 200 arrives with a body that is not JSON (release audit of 33471220d6e9, 2026-09-15). The behaviour
+    // is tested below on the helper; this only pins that the CISO call is the one wrapped in it, once,
+    // and the consultants are not.
     const cisoBlock = src.slice(src.indexOf('const CISO_TRUNCATED_RETRIES'), src.indexOf('const secretFindings'));
     expect(cisoBlock).toMatch(/const CISO_TRUNCATED_RETRIES = 1;/);
-    expect(cisoBlock).toMatch(/attempt < CISO_TRUNCATED_RETRIES && \/response that is not JSON\/\.test\(message\)/);
-    expect(src.match(/CISO_TRUNCATED_RETRIES/g)?.length).toBe(2);
+    expect(cisoBlock).toMatch(/askAgainIfTruncated\(\s*\(\) => callReviewer\(\{ apiKey, system: clean\('outgoing message', brief\), user: cisoUser, schema: REPORT_SCHEMA,/);
+    expect(cisoBlock).toMatch(/\{ retries: CISO_TRUNCATED_RETRIES, warn:/);
+    expect(src.match(/askAgainIfTruncated\(/g)?.length, 'wrapped more than the CISO call').toBe(1);
+    expect(src.slice(0, src.indexOf('const CISO_TRUNCATED_RETRIES'))).not.toMatch(/askAgainIfTruncated\(/);
     // The request the calls build: no tools, no fallback model, no provider that keeps prompts.
     const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
     const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', model: AUDIT.model });
@@ -545,6 +548,45 @@ test.describe('the audit pipeline', () => {
     const capped = await runConsultants({ batches, capUsd: 40, concurrency: 3, messageFor: () => ({ system: 's', user: 'u' }), fits: (committed: number) => committed + 30 <= 40, worstCase: () => 30, call: async () => ({ review: {}, usage: { cost: 25 } }) });
     expect(capped.results).toHaveLength(1);
     expect(capped.notReviewed.map((n: { path: string }) => n.path).sort()).toEqual(['b.ts', 'c.ts', 'd.ts', 'e.ts']);
+  });
+
+  test('a truncated CISO answer is asked once more; a wrong answer, a refusal or a second truncation is final', async () => {
+    const { askAgainIfTruncated } = await lib('pipeline.mjs');
+    const truncated = () => new Error('OpenRouter returned a response that is not JSON.');
+    const wrong = () => new Error('The review was not valid JSON despite the schema.');
+
+    // Cut off once, then fine: two asks, the second answer returned, one warning.
+    let calls = 0;
+    const warned: number[] = [];
+    const answer = await askAgainIfTruncated(
+      async () => { calls++; if (calls === 1) throw truncated(); return { verdict: 'ok', call: calls }; },
+      { retries: 1, warn: (n: number) => warned.push(n) },
+    );
+    expect(answer).toEqual({ verdict: 'ok', call: 2 });
+    expect(calls).toBe(2);
+    expect(warned).toEqual([1]);
+
+    // Cut off twice: two asks, then the error as it was — the retry is one, not a loop.
+    calls = 0;
+    await expect(askAgainIfTruncated(async () => { calls++; throw truncated(); }, { retries: 1 })).rejects.toThrow(/not JSON\.$/);
+    expect(calls).toBe(2);
+
+    // A wrong answer is an answer. One ask.
+    calls = 0;
+    await expect(askAgainIfTruncated(async () => { calls++; throw wrong(); }, { retries: 1 })).rejects.toThrow(/despite the schema/);
+    expect(calls).toBe(1);
+
+    // So is a refusal, a rate limit that ran out, or no content at all.
+    for (const message of ['OpenRouter answered HTTP 429', 'OpenRouter returned no review content (finish_reason=length, completion_tokens=0, reasoning_tokens=0, max_tokens=1)', 'OpenRouter did not answer within 30 min.']) {
+      calls = 0;
+      await expect(askAgainIfTruncated(async () => { calls++; throw new Error(message); }, { retries: 1 })).rejects.toThrow(message.slice(0, 20));
+      expect(calls).toBe(1);
+    }
+
+    // Zero retries: the helper is a pass-through.
+    calls = 0;
+    await expect(askAgainIfTruncated(async () => { calls++; throw truncated(); }, { retries: 0 })).rejects.toThrow();
+    expect(calls).toBe(1);
   });
 
   test('the CISO call is reserved before any consultant spends, and the audit runs its consultants through the bounded runner', () => {

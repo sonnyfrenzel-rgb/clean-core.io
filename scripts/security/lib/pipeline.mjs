@@ -221,6 +221,37 @@ export function codeContext(finding, readLines, contextLines = AUDIT.contextLine
 export const MAX_CONTEXT_LOCATIONS = 8;
 
 /**
+ * Ask once more when — and only when — the answer arrived cut off.
+ *
+ * The client never retries a call that may already have been generated and
+ * billed, and for the consultants that is right: one lost batch is one hole in
+ * the coverage. The CISO call is different — it is the last of some sixty and
+ * the only one whose loss costs the whole audit. On 2026-09-15 the release audit
+ * of 33471220d6e9 ran for seventy minutes, all 57 consultant calls succeeded,
+ * and the CISO's HTTP 200 arrived with a body that was not JSON, so three
+ * dollars of audit produced nothing. A truncated body is the one error that
+ * says nothing about the answer; a wrong answer or a refusal stays final.
+ *
+ * @param call    (attempt) => Promise<answer>
+ * @param retries how many extra asks a truncated body is worth; 1 for the CISO
+ * @param warn    (attemptNumber) => void, told before each extra ask
+ */
+export async function askAgainIfTruncated(call, { retries = 1, warn = () => {} } = {}) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await call(attempt);
+    } catch (err) {
+      const message = String(err?.message || err).split('\n')[0];
+      if (attempt < retries && /response that is not JSON/.test(message)) {
+        warn(attempt + 1);
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+/**
  * What the CISO is shown: the map in numbers, the deterministic coverage, every consultant finding with its cited code.
  * The cited code is fitted into what remains of `maxChars` — the input the cost cap reserves for the CISO — after
  * everything else; a finding whose code no longer fits keeps its text and names its locations as not verifiable

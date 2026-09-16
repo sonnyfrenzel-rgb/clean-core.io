@@ -179,7 +179,16 @@ export async function POST(req: NextRequest) {
       console.warn('Failed to parse and override fields in analysis narrative:', err);
     }
 
-    // Build the server-authoritative initial worklist
+    // Build the server-authoritative initial worklist.
+    //
+    // Findings only. The narrative's `gaps` — whatever the model, or the
+    // client posting as the model, put under that key — used to be mapped in
+    // here as "Functional Gap" items, title, severity, rationale and effort
+    // taken as sent, and the whole list went into the signed payload; the
+    // run's hash and HMAC then attested to claims the client had chosen. The
+    // narrative is excluded from the signature by design (see `aiNarrativeMeta`
+    // below), and its gaps are narrative. They still reach the project's
+    // interactive worklist, which is the owner's to edit anyway.
     const findingsGrouped = new Map<string, { finding: any; lines: number[] }>();
     for (const f of evidenceReport.findings) {
       const groupKey = `${f.kind}::${f.objectName || f.title}`;
@@ -191,7 +200,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const initialWorklist = [
+    const signedWorklist = [
       ...Array.from(findingsGrouped.values()).map(({ finding: f, lines }, idx) => ({
         id: `finding-${f.kind}-${idx}`,
         title: lines.length > 1 ? `${f.title} (${lines.length}×)` : f.title,
@@ -207,18 +216,19 @@ export async function POST(req: NextRequest) {
         targetAnchor: f.kind,
         detail: f.technicalDetail
       })),
-      ...gapsList.map((g: any, idx: number) => ({
-        id: `gap-${idx}`,
-        title: g.title,
-        category: 'Functional Gap',
-        severity: g.severity,
-        location: 'S/4HANA Configuration',
-        recommendation: g.rationale,
-        strategy: g.strategy,
-        status: 'open',
-        effort: g.complexity
-      }))
     ];
+    // Narrative, not evidence: project worklist only, never the signed run.
+    const narrativeGapItems = gapsList.map((g: any, idx: number) => ({
+      id: `gap-${idx}`,
+      title: g.title,
+      category: 'Functional Gap',
+      severity: g.severity,
+      location: 'S/4HANA Configuration',
+      recommendation: g.rationale,
+      strategy: g.strategy,
+      status: 'open',
+      effort: g.complexity
+    }));
 
     // 5. Construct run document properties
     const runsRef = db.collection('projects').doc(projectId).collection('runs');
@@ -272,7 +282,7 @@ export async function POST(req: NextRequest) {
       // v1.17: Store full assessment data for Audit Pack completeness
       dataCoupling,
       codeInventory,
-      worklist: initialWorklist as import('@/lib/types').WorklistItem[],
+      worklist: signedWorklist as import('@/lib/types').WorklistItem[],
       originalRecommendation: extensibilityReport.recommendedRoute,
       recommendationConfidence: extensibilityReport.confidenceScore,
       recommendationJustification: extensibilityReport.rationale,
@@ -335,8 +345,9 @@ export async function POST(req: NextRequest) {
       s4Deployment: targetDeployment,
       updatedAt: new Date(),
       
-      // Save client-writable/interactive fields initially
-      worklist: initialWorklist,
+      // Save client-writable/interactive fields initially — findings plus the
+      // narrative's gaps, which belong here and not in the signed run.
+      worklist: [...signedWorklist, ...narrativeGapItems],
       extensibilityRoute: extensibilityReport.recommendedRoute,
 
       // Write a minimal auditMetadata summary on the project

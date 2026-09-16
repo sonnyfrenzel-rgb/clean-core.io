@@ -104,9 +104,11 @@ async function resolveKey(manifest) {
   // verification of the forger's own key. The key comes from the fixed origin
   // or from --key. A pack that names another address is noted, not followed.
   if (manifest.signingKeyUrl && manifest.signingKeyUrl !== TRUSTED_KEY_URL) {
-    console.log(
-      c.warn(`WARNING   pack names ${manifest.signingKeyUrl} as its key document — ignored`),
-    );
+    // Quoted and stripped of control characters: the value is the pack's, and
+    // a pack that can name its own key document can also put a terminal escape
+    // or a newline in the name and write "Verified." on the line below.
+    const shown = JSON.stringify(String(manifest.signingKeyUrl).replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 200));
+    console.log(c.warn(`WARNING   pack names ${shown} as its key document — ignored`));
   }
   return fetchKey(TRUSTED_KEY_URL);
 }
@@ -171,7 +173,8 @@ async function main() {
   // exactly as they were, so a pack that passed the loop above could still
   // carry a page nobody signed. The archive has to match the manifest, entry
   // for entry.
-  const listed = new Set((manifest.files || []).map((f) => f.path));
+  const attested = Array.isArray(manifest.attested) ? manifest.attested : [];
+  const listed = new Set([...(manifest.files || []).map((f) => f.path), ...attested.map((a) => a.path)]);
   const unlisted = Object.values(zip.files)
     .filter((e) => !e.dir && e.name !== 'manifest.json' && !listed.has(e.name))
     .map((e) => e.name)
@@ -180,18 +183,33 @@ async function main() {
     console.log(`${c.bad('unlisted')}  ${name}`);
     contentsOk = false;
   }
+  // A user-attested file: the issuer bound its name into the manifest, not its
+  // contents. It has to be there — a pack sealed with it and opened without it
+  // was altered — and whatever it says is the account holder's statement.
+  for (const a of attested) {
+    if (zip.file(a.path)) {
+      console.log(`${c.warn('attested')}  ${a.path}  ${c.dim('user-attested — present, not covered by the signature')}`);
+    } else {
+      console.log(`${c.bad('missing')}   ${a.path}  ${c.dim('attested file the manifest names')}`);
+      contentsOk = false;
+    }
+  }
   console.log(
     contentsOk
-      ? `${c.ok('OK')}        ${(manifest.files || []).length} files match their recorded hashes, nothing else in the archive`
+      ? `${c.ok('OK')}        ${(manifest.files || []).length} files match their recorded hashes, nothing else in the archive${attested.length ? ` beyond ${attested.length} attested file(s)` : ''}`
       : c.bad('FAILED    the pack contents do not match the manifest'),
   );
 
-  // 2. The manifest hash, rebuilt the way the issuer built it.
+  // 2. The manifest hash, rebuilt the way the issuer built it
+  //    (lib/audit-pack-canonical.ts — this script repeats the form so it needs
+  //    no build; tests/verify-pack-cli.spec.ts holds the two to the same bytes).
   const sorted = [...(manifest.files || [])].sort((a, b) => a.path.localeCompare(b.path));
+  const attestedPaths = attested.map((a) => a.path).sort((a, b) => a.localeCompare(b));
   const canonical =
     sorted.map((f) => `${f.path}:${f.sha256}`).join(';') +
     ';' +
-    `${manifest.projectId}:${manifest.runId}:${manifest.runHash}:${manifest.engineVersion}:${manifest.sapApiCatalogVersion || ''};`;
+    `${manifest.projectId}:${manifest.runId}:${manifest.runHash}:${manifest.engineVersion}:${manifest.sapApiCatalogVersion || ''};` +
+    (attestedPaths.length ? `attested=${attestedPaths.join(',')};` : '');
   const manifestHash = createHash('sha256').update(canonical).digest('hex');
   const hashOk = manifestHash === manifest.manifestHash;
   console.log(

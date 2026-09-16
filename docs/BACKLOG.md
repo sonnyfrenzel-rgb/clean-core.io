@@ -29,7 +29,11 @@ steht seit dem 07.09. rot, weil der PR-Schritt bis zum 14.09. an der Repo-Einste
 
 **Sonnys Entscheidungen heute:** `CLAUDE.md`, README und jede öffentlich veraltete Datei werden erst mit
 3.0 nachgezogen (3.0.8); die Zustellbarkeit der Mails braucht einen eigenen 3.0-Schritt, weil die Mails
-trotz korrekter SPF/DKIM/DMARC automatisch im Spam landen (3.0.9).
+trotz korrekter SPF/DKIM/DMARC automatisch im Spam landen (3.0.9). Für 0.12 Variante A: signierte Dateien
+nur aus dem Run, die Aussagen des Kontos in einer eigenen, unsignierten und so benannten Datei —
+**gebaut am selben Tag** (`07-user-attested.md`, Name im Hash gebunden, Inhalt nicht; beide Verifier
+zeigen es; Narrative-Gaps nicht mehr im signierten Run). Damit sind 10 der 11 kritischen Befunde der
+Vollprüfung zu, offen bleibt 0.13 (zweiter Faktor vor der Sitzung).
 
 **Offen für Sonny:** den überholten Bot-Branch löschen (`git push origin --delete chore/sync-cloudification-repo`);
 `main` nach einer sauberen QA-Runde; die Survey-Workflows erst danach wieder einschalten; die

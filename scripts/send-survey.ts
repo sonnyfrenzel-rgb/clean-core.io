@@ -144,9 +144,23 @@ async function loadRecipients(db: Firestore) {
   ]);
 
   const suppressed = new Set(suppressions.docs.map((d) => normaliseEmail(d.data().email || '')));
-  const alreadySent = new Set(sends.docs.map((d) => normaliseEmail(d.data().email || '')));
+  // A send record is written *before* the provider is asked (see the loop in
+  // main), so the states mean: `sent` — accepted and recorded; `sending` — the
+  // provider was asked and the outcome was never written, which is a message
+  // that may well have gone out; `failed` — the provider refused. Only the last
+  // is asked again. Records without a state predate the outbox and were only
+  // ever written after success.
+  const alreadySent = new Set<string>();
+  const unresolved: string[] = [];
+  for (const d of sends.docs) {
+    const email = normaliseEmail(d.data().email || '');
+    const state = d.data().state as string | undefined;
+    if (state === 'failed') continue;
+    if (state === 'sending') unresolved.push(email);
+    alreadySent.add(email);
+  }
 
-  const skipped = { noEmail: 0, testAccount: 0, suppressed: 0, alreadySent: 0, deleted: 0, notSelected: 0 };
+  const skipped = { noEmail: 0, testAccount: 0, suppressed: 0, alreadySent: 0, unresolved: unresolved.length, deleted: 0, notSelected: 0 };
   const recipients: Recipient[] = [];
 
   for (const doc of users.docs) {
@@ -163,7 +177,7 @@ async function loadRecipients(db: Firestore) {
   }
 
   recipients.sort((a, b) => a.email.localeCompare(b.email));
-  return { recipients, skipped };
+  return { recipients, skipped, unresolved };
 }
 
 async function main() {
@@ -193,7 +207,7 @@ async function main() {
   }
   const db = getFirestore(getApps()[0], FIRESTORE_DB_ID);
 
-  const { recipients, skipped } = await loadRecipients(db);
+  const { recipients, skipped, unresolved } = await loadRecipients(db);
 
   // The closing date is read before it is computed. A resumed send — the weekly
   // cron coming round, or a re-run after a crash — used to derive `closesAt`
@@ -218,6 +232,11 @@ async function main() {
   console.log(`closes    : ${closesOn}`);
   console.log(`recipients: ${recipients.length}`);
   console.log(`skipped   : ${JSON.stringify(skipped)}`);
+  if (unresolved.length) {
+    // Not resent, not counted: nobody knows whether these went out. A person
+    // checks the provider's log and sets the record to `sent` or `failed`.
+    console.log(`unresolved: ${unresolved.length} send(s) started and never recorded — check the provider log; ${LOCAL ? unresolved.join(', ') : 'listed only by a local run'}`);
+  }
   console.log('');
   if (LOCAL) {
     for (const r of recipients) console.log(`  ${r.email}${r.firstName ? ` (${r.firstName})` : ''}`);
@@ -242,8 +261,10 @@ async function main() {
   // written up front as everyone eligible, and a resumed run then added its
   // own list on top — which is exactly the people whose sends had failed the
   // first time and were already counted. The number now grows by one per
-  // message that actually went out, so it reads "people who were asked" on
-  // every run, first or resumed.
+  // message the provider accepted *and* whose record reached `sent`. A crash
+  // between the two leaves a `sending` record: not counted, not resent, and
+  // reported above as unresolved — the count may run short by those, and never
+  // long.
   if (!ONLY) {
     if (resumed) {
       // The opening and closing dates were set the first time and must not move:
@@ -277,6 +298,20 @@ async function main() {
     const token = createSurveyToken(SURVEY_CAMPAIGN, r.uid, tokenExpiry);
     const unsubscribeUrl = `${BASE_URL}/api/unsubscribe?t=${encodeURIComponent(createUnsubscribeToken(r.email))}`;
 
+    // The outbox record, written before the provider is asked and under a
+    // deterministic id. It used to be added after the provider had accepted
+    // the message — so a crash or a failed write in between left a delivered
+    // mail with no record, and the next run, seeing no record, sent it again.
+    // Now the record is there first; whatever happens after, a re-run finds it
+    // and does not ask the provider twice.
+    const sendRef = db.collection('email_sends').doc(`${SURVEY_CAMPAIGN}__${r.uid}`);
+    if (!ONLY) {
+      await sendRef.set(
+        { campaign: SURVEY_CAMPAIGN, email: r.email, uid: r.uid, state: 'sending', startedAt: FieldValue.serverTimestamp() },
+        { merge: true },
+      );
+    }
+
     const input = {
       name: escapeHtml(r.firstName),
       recipient: escapeHtml(r.email),
@@ -302,6 +337,9 @@ async function main() {
 
     if (!result.ok) {
       failed++;
+      // A refusal is final for this run and the record says so, which is what
+      // makes the next run try this person again.
+      if (!ONLY) await sendRef.set({ state: 'failed', detail: maskAddresses(result.detail).slice(0, 500), failedAt: FieldValue.serverTimestamp() }, { merge: true });
       console.error(
         LOCAL ? `  FAILED ${r.email}: ${result.detail}` : `  FAILED #${index + 1}: ${maskAddresses(result.detail)}`,
       );
@@ -309,15 +347,8 @@ async function main() {
     }
     const { id } = result;
 
-    // The send record is what makes a re-run resume instead of duplicate.
     if (!ONLY) {
-      await db.collection('email_sends').add({
-        campaign: SURVEY_CAMPAIGN,
-        email: r.email,
-        uid: r.uid,
-        providerId: id,
-        sentAt: FieldValue.serverTimestamp(),
-      });
+      await sendRef.set({ state: 'sent', providerId: id, sentAt: FieldValue.serverTimestamp() }, { merge: true });
       await campaignRef.set({ invited: FieldValue.increment(1) }, { merge: true });
     }
 
