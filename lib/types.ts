@@ -119,6 +119,12 @@ export interface Project {
   auditMetadata?: AuditMetadata;
   worklist?: WorklistItem[];
   activeRunId?: string;
+  /**
+   * Not a project field: `loadProjectAndHydrate` spreads the active run over the
+   * project document, so the run's own input manifest (roadmap 0.5) arrives here
+   * on a hydrated project. Readers fall back to `auditMetadata.inputManifest`.
+   */
+  inputManifest?: import('./input-manifest').InputManifest;
 
   // v1.22: Usage Import & Risk Prioritization
   usageReport?: import('./abap/usage-model').UsageReport;
@@ -162,6 +168,13 @@ export interface AuditMetadata {
    * matching is stale (E01-F01-US02). See `lib/artefact-digest.ts`.
    */
   sourceChange?: import('./artefact-digest').SourceChangeRecord;
+  /**
+   * Mirror of the active run's input manifest (roadmap 0.5). Written by
+   * `/api/runs/create` with the run itself, so a reader that has the project
+   * document but not the run — the dashboard, the workspace meta line — can
+   * still say which inputs the current result was computed from.
+   */
+  inputManifest?: import('./input-manifest').InputManifest;
 }
 
 /** Single ABAP artifact extracted from uploaded code */

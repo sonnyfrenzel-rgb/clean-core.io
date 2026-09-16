@@ -29,7 +29,9 @@ import {
   generateModelCard,
   generateKnownLimitations,
   generateProvenanceManifest,
+  generateInputManifestFile,
   generateUserAttestations,
+  INPUT_MANIFEST_FILE,
   USER_ATTESTED_FILE,
   type UserAttestations,
 } from '@/lib/audit-pack';
@@ -68,6 +70,9 @@ const RUN_FIELDS = [
   'analyzerVersion',
   'rulesetVersion',
   'sapApiCatalogVersion',
+  // Roadmap 0.5 — what the run was computed from. Server-written, inside the
+  // run's own signature; the pack repeats it in a file of its own.
+  'inputManifest',
   'model',
   'extensibilityRoute',
   'cleanCoreScore',
@@ -119,6 +124,7 @@ export function buildAuditPackContents(src: AuditPackSource): AuditPackContents 
     '04-model-card.md': generateModelCard(project),
     '05-known-limitations.md': generateKnownLimitations(),
     '06-architecture-decision-record.md': generateArchitectureDecisionRecord(project),
+    [INPUT_MANIFEST_FILE]: generateInputManifestFile(project),
   };
   const attested: Record<string, string> = {
     [USER_ATTESTED_FILE]: generateUserAttestations(src.attested, {

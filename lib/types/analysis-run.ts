@@ -17,6 +17,16 @@ export interface AnalysisRun {
   analyzerVersion: string;
   rulesetVersion: string;
   sapApiCatalogVersion: string;
+  /**
+   * What this run was computed from — every input with its revision and hash
+   * (roadmap 0.5, `lib/input-manifest.ts`). Inside the signed payload, so the
+   * signature covers the binding and not only the result.
+   *
+   * Absent on runs signed before 0.5; those canonicalise and verify exactly as
+   * they did, because the hash is recomputed from the stored document
+   * (`recomputeStoredRunHash`).
+   */
+  inputManifest?: import('../input-manifest').InputManifest;
   model: {
     provider: string;
     modelId: string;

@@ -11,6 +11,7 @@ import { AnalysisRun } from '@/lib/types';
 import { canonicalizeJson } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { buildSourceChangeRecord } from '@/lib/artefact-digest';
+import { analysisRunInputs, buildInputManifest } from '@/lib/input-manifest';
 
 // The canonicaliser moved to lib/run-signature.ts so the route that verifies a
 // run uses the same one that produced it. Two implementations of "canonical"
@@ -245,6 +246,29 @@ export async function POST(req: NextRequest) {
     // arbitrary client free-text out of the cryptographic evidence guarantee.
     const responseHash = crypto.createHash('sha256').update(finalAnalysisText).digest('hex');
 
+    // Roadmap 0.5 — what this run was computed from, by name, revision and hash.
+    //
+    // The five fields below (`inputFingerprint`, `analyzerVersion`,
+    // `rulesetVersion`, `sapApiCatalogVersion`, `model`) each named one input
+    // and nothing tied them together; the only one any reader ever compared was
+    // the source digest, so a catalog re-sync or a different deployment target
+    // left every earlier result reading as current. The manifest is the one
+    // list, inside the signed payload, and `lib/input-manifest.ts` is the only
+    // place that knows how it is formed.
+    const rulesetVersion = 'rules-v1.0';
+    const catalogVersion = getMergedCatalogVersion();
+    const inputManifest = buildInputManifest(
+      analysisRunInputs({
+        sourceSha256: hashHex,
+        deploymentTarget: targetDeployment,
+        catalogVersion,
+        rulesetVersion,
+        engineVersion: APP_VERSION,
+        model: { provider, modelId, byokUsed },
+      }),
+      projectData?.auditMetadata?.inputManifest || null,
+    );
+
     // Create intermediate payload for hashing (analysis excluded — see above)
     const unsignedRunPayload: Omit<AnalysisRun, 'runHash' | 'signature' | 'analysis'> = {
       runId,
@@ -260,8 +284,9 @@ export async function POST(req: NextRequest) {
         objectType: detectObjectType(legacyCode),
       },
       analyzerVersion: APP_VERSION,
-      rulesetVersion: 'rules-v1.0',
-      sapApiCatalogVersion: getMergedCatalogVersion(),
+      rulesetVersion,
+      sapApiCatalogVersion: catalogVersion,
+      inputManifest,
       model: {
         provider,
         modelId,
@@ -321,61 +346,112 @@ export async function POST(req: NextRequest) {
       const prevRun = await db.collection('projects').doc(projectId).collection('runs').doc(projectData.activeRunId).get();
       previousSha256 = prevRun.exists ? prevRun.data()?.inputFingerprint?.sha256 : undefined;
     }
-    const sourceChange =
-      previousSha256 && previousSha256 !== hashHex
-        ? buildSourceChangeRecord(projectData as Record<string, unknown>, previousSha256, runId, new Date().toISOString())
-        : null;
-
-    // 6. Save the run document (runs/{runId} is client-write-blocked)
-    await newRunDoc.set(analysisRun);
-
-    // 7. Update parent project (Only metadata! Finding 6)
+    // 6+7. Run document and project metadata, in one transaction that is bound
+    // to the source this run actually analysed (roadmap 0.6, acceptance W22-A06:
+    // *"Neue Analyse trifft nach Quellenänderung ein — Ergebnis bleibt an alte
+    // Eingabe gebunden; kein stilles Überschreiben des aktuellen Stands"*).
     //
-    // One batch, so the new run cannot become the active one without its source
-    // change being recorded alongside — a run switched in without the record
-    // would make every artefact of the old source read as current again.
+    // The evidence build and the model call take time. The route used to write
+    // `legacyCode` and `activeRunId` from what it had read at the start, so an
+    // analysis that began on source A and finished after the project had moved
+    // to source B put A back on the project and made the A-run the current
+    // state — the later, correct source silently replaced by the older result.
+    // Now the project's source is re-read at commit time: if it moved, nothing
+    // is written at all. The conservative direction is to lose the late result,
+    // not the current state.
     const projectRef = db.collection('projects').doc(projectId);
-    const projectWrite = db.batch();
-    projectWrite.set(projectRef, {
-      activeRunId: runId,
-      status: 'analyzed',
-      charged: true,
-      transformationBypass: true,
-      legacyCode,
-      s4Deployment: targetDeployment,
-      updatedAt: new Date(),
-      
-      // Save client-writable/interactive fields initially — findings plus the
-      // narrative's gaps, which belong here and not in the signed run.
-      worklist: [...signedWorklist, ...narrativeGapItems],
-      extensibilityRoute: extensibilityReport.recommendedRoute,
-
-      // Write a minimal auditMetadata summary on the project
-      auditMetadata: {
-        inputFingerprint: {
-          sha256: hashHex,
-          fileName: targetFileName,
-          lineCount: legacyCode.split('\n').length,
-          byteSize: encoder.encode(legacyCode).byteLength,
-          uploadedAt: new Date().toISOString(),
-          objectType: detectObjectType(legacyCode),
-        },
-        modelCard: {
-          provider,
-          model: modelId,
-          engineVersion: APP_VERSION,
-          catalogVersion: getMergedCatalogVersion(),
-          byokUsed,
-          analysisTimestamp: new Date().toISOString(),
-        }
+    let sourceMoved = false;
+    await db.runTransaction(async (tx: any) => {
+      const fresh = await tx.get(projectRef);
+      const freshData = (fresh.exists ? fresh.data() : {}) || {};
+      const readSource = typeof projectData?.legacyCode === 'string' ? projectData.legacyCode : '';
+      const nowSource = typeof freshData.legacyCode === 'string' ? freshData.legacyCode : '';
+      if (nowSource !== readSource) {
+        sourceMoved = true;
+        return;
       }
-    }, { merge: true });
-    // An `update` with a field path rather than part of the merge above: a merge
-    // would keep keys from an earlier record that this one no longer has.
-    if (sourceChange) {
-      projectWrite.update(projectRef, { 'auditMetadata.sourceChange': sourceChange });
+      // Rebuilt from the transaction's own snapshot rather than the one read at
+      // the start: the source is proven unchanged, the artefacts around it are not.
+      const previousInTx: string | undefined = freshData.auditMetadata?.inputFingerprint?.sha256 || previousSha256;
+      const sourceChange =
+        previousInTx && previousInTx !== hashHex
+          ? buildSourceChangeRecord(freshData as Record<string, unknown>, previousInTx, runId, new Date().toISOString())
+          : null;
+
+      // runs/{runId} is client-write-blocked; written here so the new run cannot
+      // become the active one without its source-change record being written
+      // alongside — a run switched in without the record would make every
+      // artefact of the old source read as current again.
+      tx.set(newRunDoc, analysisRun);
+      tx.set(
+        projectRef,
+        {
+          activeRunId: runId,
+          status: 'analyzed',
+          charged: true,
+          transformationBypass: true,
+          legacyCode,
+          s4Deployment: targetDeployment,
+          updatedAt: new Date(),
+
+          // Save client-writable/interactive fields initially — findings plus the
+          // narrative's gaps, which belong here and not in the signed run.
+          worklist: [...signedWorklist, ...narrativeGapItems],
+          extensibilityRoute: extensibilityReport.recommendedRoute,
+
+          // Write a minimal auditMetadata summary on the project
+          auditMetadata: {
+            inputFingerprint: {
+              sha256: hashHex,
+              fileName: targetFileName,
+              lineCount: legacyCode.split('\n').length,
+              byteSize: encoder.encode(legacyCode).byteLength,
+              uploadedAt: new Date().toISOString(),
+              objectType: detectObjectType(legacyCode),
+            },
+            modelCard: {
+              provider,
+              model: modelId,
+              engineVersion: APP_VERSION,
+              catalogVersion,
+              byokUsed,
+              analysisTimestamp: new Date().toISOString(),
+            },
+            // Roadmap 0.5 — the same manifest the run signed, mirrored where a
+            // reader that holds only the project document can find it.
+            inputManifest,
+          },
+        },
+        { merge: true },
+      );
+      // An `update` with a field path rather than part of the merge above: a merge
+      // would keep keys from an earlier record that this one no longer has.
+      if (sourceChange) {
+        tx.update(projectRef, { 'auditMetadata.sourceChange': sourceChange });
+      }
+    });
+
+    if (sourceMoved) {
+      // Nothing was written. The unit goes back, because the analysis did not
+      // become this project's state — the same rule as any other failure.
+      if (chargedUid && chargedHash) {
+        await refundRunQuota(chargedUid, chargedHash);
+        chargedUid = null;
+        chargedHash = null;
+      }
+      logger.warn('runs/create refused: the source changed while the analysis ran', {
+        route: 'api/runs/create',
+        projectId,
+      });
+      return NextResponse.json(
+        {
+          error:
+            'The source on this project changed while this analysis was running. Nothing was overwritten — re-run the analysis on the current source.',
+          code: 'source-moved',
+        },
+        { status: 409 },
+      );
     }
-    await projectWrite.commit();
 
     // Clean up old denormalized results fields from parent project (Finding 6)
     await db.collection('projects').doc(projectId).update({

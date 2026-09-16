@@ -511,6 +511,7 @@ model-generated drafts and user-attested inputs.
 | 04-model-card.md | server-computed |
 | 05-known-limitations.md | static |
 | 06-architecture-decision-record.md | server-computed (evidence, engine recommendation, worklist from the signed run) |
+| ${INPUT_MANIFEST_FILE} | server-computed (the inputs the run bound itself to, with revision and hash) |
 | ${USER_ATTESTED_FILE} | **user-attested — not covered by the signature.** Project name, chosen target architecture, sign-off, approver, override reason, workflow status. The manifest binds the file's name, not its contents. |
 | manifest.json | server-computed (file hashes, manifest hash, HMAC / Ed25519 signature, attested file names) |
 
@@ -520,6 +521,7 @@ model-generated drafts and user-attested inputs.
 |---|---|
 | Clean Core / Complexity / Criticality scores | server-computed |
 | Input SHA-256 fingerprint, lines of code | server-computed |
+| Input manifest (source, catalog, rule set, deployment target, engine, narrative model) | server-computed — signed with the run |
 | Data-coupling findings | server-computed |
 | Target-architecture route (RAP/CAP/…) | server-computed (deterministic router) |
 | Router rationale in 02 / 06 | server-computed (deterministic router) |
@@ -530,6 +532,57 @@ model-generated drafts and user-attested inputs.
 This is a decision-support package, not a certification. Model-generated and
 user-attested content must be validated by a qualified reviewer.
 `;
+}
+
+/** The pack's record of what the run was computed from. Signed. */
+export const INPUT_MANIFEST_FILE = '08-input-manifest.json';
+
+/**
+ * Roadmap 0.5 — the run's `inputs[]`, as the pack carries them.
+ *
+ * `01-input-fingerprint.json` names one input, the source. Everything else the
+ * findings depend on — the SAP catalog revision, the rule set, the deployment
+ * target, the engine build, the model that wrote the narrative — was scattered
+ * across prose in three other files, and a reader who wanted to know whether two
+ * packs were comparable had to diff those. This file is the list, with each
+ * input's revision, how the run held it, and its digest.
+ *
+ * A run signed before 0.5 has no manifest. The file then says so rather than
+ * being omitted: a pack whose file list changes shape between releases is a pack
+ * whose reader has to guess, and "not recorded" is a fact worth signing.
+ */
+export function generateInputManifestFile(project: Project): string {
+  const m = project.inputManifest;
+  const body = m
+    ? {
+        recorded: true,
+        manifestVersion: m.manifestVersion,
+        revision: m.revision,
+        hash: m.hash,
+        inputs: m.inputs,
+      }
+    : {
+        recorded: false,
+        note:
+          'This run was signed before the input manifest existed (roadmap 0.5). ' +
+          'Its inputs can only be read from the individual fields of the run: the source fingerprint ' +
+          'in 01-input-fingerprint.json, the engine and catalog versions in 04-model-card.md.',
+      };
+  return JSON.stringify(
+    {
+      about:
+        'What the signed run was computed from. `binding: "value"` means the run read the bytes and `sha256` ' +
+        'is their digest; `binding: "reference"` means the run held the input by name and `sha256` is the digest ' +
+        'of `id@revision`, which says which revision was bound and not that the bytes were read. ' +
+        '`dataClass` follows the four classes of the data model: source-artefact, transaction-data, derivation, ' +
+        'secret-identity — a secret is never recorded here.',
+      projectId: project.id ?? null,
+      runId: project.activeRunId ?? null,
+      ...body,
+    },
+    null,
+    2,
+  );
 }
 
 /**
