@@ -28,17 +28,30 @@ import { cn } from '@/lib/utils';
 export type CcButtonVariant = 'primary' | 'secondary' | 'ghost' | 'dark';
 export type CcDensity = 'compact' | 'cozy';
 
-const VARIANT_CLASSES: Record<CcButtonVariant, string> = {
+/**
+ * Exported for `CcLinkButton` alone — the one control that has to be an `<a>`
+ * because it opens a page, and must not therefore be a fifth button style.
+ * Shared rather than copied: two tables are two values waiting to drift, which
+ * is how the product reached 78 styles in the first place.
+ */
+export const CC_BUTTON_VARIANT_CLASSES: Record<CcButtonVariant, string> = {
   primary: 'bg-cc-brand-strong border-cc-brand-strong text-cc-on-dark hover:bg-cc-brand-deep hover:border-cc-brand-deep',
   secondary: 'bg-cc-brand-surface border-cc-brand-strong text-cc-brand-strong hover:bg-cc-brand-surface',
   ghost: 'bg-cc-surface border-cc-field-border text-cc-ink-muted hover:bg-cc-surface-muted',
   dark: 'bg-cc-surface-dark border-cc-surface-dark text-cc-on-dark hover:bg-cc-ink',
 };
 
-const DENSITY_CLASSES: Record<CcDensity, string> = {
+export const CC_BUTTON_DENSITY_CLASSES: Record<CcDensity, string> = {
   compact: 'min-h-[32px] px-3 text-[13px]',
   cozy: 'min-h-[40px] px-4 text-[14px]',
 };
+
+/** The shape both the button and the link wear, so neither can drift from it. */
+export const CC_BUTTON_BASE =
+  'inline-flex items-center justify-center gap-1.5 rounded-cc-row border font-semibold leading-none whitespace-nowrap';
+
+const VARIANT_CLASSES = CC_BUTTON_VARIANT_CLASSES;
+const DENSITY_CLASSES = CC_BUTTON_DENSITY_CLASSES;
 
 export interface CcButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
@@ -68,7 +81,7 @@ export default function CcButton({
       data-cc-density={density}
       data-cc-tone={tone}
       className={cn(
-        'inline-flex items-center justify-center gap-1.5 rounded-cc-row border font-semibold leading-none whitespace-nowrap',
+        CC_BUTTON_BASE,
         'disabled:opacity-60 disabled:cursor-not-allowed',
         VARIANT_CLASSES[variant],
         DENSITY_CLASSES[density],

@@ -28,11 +28,30 @@ import { parseColor, ratioOf, round2 } from './helpers/contrast';
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
-/** Everything roadmap 1.5 built. The old product is not in scope here. */
-const CC_DIRS = ['components/cc', 'app/(app)/admin/design-system'];
+/**
+ * Everything roadmap 1.5 built, plus everything built on it since. The old
+ * product is not in scope here.
+ *
+ * `components/workspace` and the workspace route joined in roadmap 1.4: the
+ * shell is the first real screen made of these components, and a screen that
+ * could write `#0b1c30` or `text-gray-500` beside them would undo the namespace
+ * in the first place it is used.
+ */
+const CC_DIRS = [
+  'components/cc',
+  'app/(app)/admin/design-system',
+  'components/workspace',
+  'app/(app)/project/[projectId]/page.tsx',
+];
 
 function collect(dirRel: string): { rel: string; text: string }[] {
   const out: { rel: string; text: string }[] = [];
+  const target = path.resolve(ROOT, dirRel);
+  // A single file is as legitimate a scope as a directory: the workspace route
+  // is one page next to six stage pages that are not in this namespace.
+  if (fs.statSync(target).isFile()) {
+    return [{ rel: dirRel.replace(/\\/g, '/'), text: fs.readFileSync(target, 'utf8') }];
+  }
   const walk = (dir: string) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);

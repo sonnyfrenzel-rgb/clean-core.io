@@ -1,0 +1,489 @@
+/**
+ * What the workspace shell is allowed to say about a project — roadmap 1.4.
+ *
+ * The shell of `DESIGN.md` §2.3 is four claims stacked on one screen: a meta
+ * line that names the evidence a case rests on, seven object statuses that say
+ * how far each facet of it has got, a layer bar that says where there is
+ * anything to read, and a *Not determined* area that says what the engine could
+ * not work out. Every one of them is a place to be dishonest cheaply, and the
+ * roadmap row is blunt about the one that matters:
+ *
+ *   > sieben Status-Chips — jeder ehrlich, „nicht begonnen", solange nichts da ist
+ *
+ * A tick, a colour or a percentage for a phase nobody ran is the defect this
+ * phase of the roadmap exists to remove. So the derivation lives here, in one
+ * pure module, and the components below it render what it returns and compute
+ * nothing of their own.
+ *
+ * **There is no second ladder.** Five of the seven statuses are derived from
+ * `workflowSteps()` — the contract roadmap 1.7 made the single rule for what a
+ * phase's state is and what colour it may wear. `statusOfPhase` is the *only*
+ * bridge from that contract to the object-status vocabulary of `DESIGN.md`
+ * §4.1, and it keeps 1.7's one invariant intact: the `success` state — green —
+ * is reached if and only if `RailStep.proven` is true. A phase that is `done`
+ * because a model wrote something and nobody checked it comes out as `draft`,
+ * which is amber, which is what the stepper two screens away already paints it.
+ *
+ * **The other two say so.** *Need* and *Standard* are facets of the case whose
+ * artefacts this release does not record: business-rule confirmation arrives
+ * with the process model, and a standard candidate only carries an evidence
+ * level from roadmap 7.2. They could borrow a number — the routing
+ * recommendation is right there on the project — and that is precisely what
+ * `DESIGN.md` §5.3 forbids: *nie „deckt der Standard ab", solange die Stufe das
+ * nicht trägt*. They read "not started" and name the artefact that is missing.
+ * That one of them cannot move yet is the honest result, not an oversight.
+ */
+
+import type { Project } from './types';
+import { workflowSteps, phaseTone, type PhaseKey, type RailStep } from './workflow-steps';
+import type { ObjectStatusValue } from './object-status';
+import type { ProvenanceValue } from './provenance';
+import { INPUT_IDS, type InputManifest } from './input-manifest';
+import { assessCoverage, type UnassessedConstruct } from './abap/coverage';
+
+/* ------------------------------------------------------------------ views */
+
+/**
+ * The three views, in the one order they are ever written (ADR-044): Business
+ * leads, IT follows the process, Management decides at the end. Management in
+ * the middle reads as the centre of gravity, and it is not.
+ */
+export const WORKSPACE_VIEWS = ['business', 'it', 'management'] as const;
+export type WorkspaceView = (typeof WORKSPACE_VIEWS)[number];
+
+/** The view a workspace opens in — ADR-002, and the reason §5 exists. */
+export const DEFAULT_VIEW: WorkspaceView = 'business';
+
+export const VIEW_LABELS: Record<WorkspaceView, string> = {
+  business: 'Business',
+  it: 'IT',
+  management: 'Management',
+};
+
+/** The question each view answers, under the switcher (`DESIGN.md` §2.3, §5.6). */
+export const VIEW_QUESTIONS: Record<WorkspaceView, string> = {
+  business: 'Do I still need this, and what changes for me?',
+  it: 'What exactly, where to, and is it right?',
+  management: 'What do I risk, what do I decide?',
+};
+
+export function isWorkspaceView(value: unknown): value is WorkspaceView {
+  return typeof value === 'string' && (WORKSPACE_VIEWS as readonly string[]).includes(value);
+}
+
+/**
+ * A view in the URL is a perspective, never a grant (ADR-018). Reading it back
+ * can therefore only ever choose between three renderings of the same data, and
+ * an unknown value falls back to the one the workspace opens in.
+ */
+export function viewFromParam(value: string | null | undefined): WorkspaceView {
+  return isWorkspaceView(value) ? value : DEFAULT_VIEW;
+}
+
+/* --------------------------------------------------------------- meta line */
+
+/**
+ * What a value reads when nothing recorded it.
+ *
+ * Not an em dash and not an empty cell: both read as "zero" or as a rendering
+ * fault. A run signed before the input manifest existed (roadmap 0.5) genuinely
+ * has none, and that is a fact about the run, not about this screen.
+ */
+export const META_ABSENT = 'not recorded';
+
+export interface MetaEntry {
+  key: string;
+  /** The word before the value — "manifest", "revision", "engine". */
+  label: string;
+  /** The value in monospace, or `null` when nothing recorded it. */
+  value: string | null;
+}
+
+/** A hash is quoted at the length a person can compare by eye, never in full. */
+function shortHash(hash: string | undefined | null): string | null {
+  return typeof hash === 'string' && hash.length >= 8 ? hash.slice(0, 8) : null;
+}
+
+function inputRevision(manifest: InputManifest | null, id: string): string | null {
+  const found = manifest?.inputs?.find((i) => i.id === id);
+  return typeof found?.revision === 'string' && found.revision.length > 0 ? found.revision : null;
+}
+
+/**
+ * The manifest this project's active run signed.
+ *
+ * `loadProjectAndHydrate` spreads the run over the project document, so a
+ * hydrated project carries the run's own manifest; a bare project document
+ * carries the copy in `auditMetadata`. Both are server-written — neither is in
+ * the client allowlist of `firestore.rules` — which is the only reason this
+ * line is worth printing at all.
+ */
+export function activeManifest(project: Project | null): InputManifest | null {
+  return project?.inputManifest ?? project?.auditMetadata?.inputManifest ?? null;
+}
+
+/**
+ * The mono meta line of `DESIGN.md` §2.3 — what this case's evidence rests on.
+ *
+ * Open in IT, behind "Details" in Business and Management (§2.11). The order is
+ * the mockup's: identity first, then the record, then what produced it.
+ */
+export function metaLine(project: Project | null, projectId: string): MetaEntry[] {
+  const manifest = activeManifest(project);
+  return [
+    { key: 'project', label: 'project', value: projectId || null },
+    { key: 'manifest', label: 'manifest', value: shortHash(manifest?.hash) },
+    {
+      key: 'revision',
+      label: 'revision',
+      value: typeof manifest?.revision === 'number' ? String(manifest.revision) : null,
+    },
+    { key: 'source', label: 'source', value: inputRevision(manifest, INPUT_IDS.source) },
+    { key: 'engine', label: 'engine', value: inputRevision(manifest, INPUT_IDS.engine) },
+    { key: 'rules', label: 'rules', value: inputRevision(manifest, INPUT_IDS.ruleset) },
+    { key: 'catalog', label: 'catalog', value: inputRevision(manifest, INPUT_IDS.catalog) },
+  ];
+}
+
+/* ---------------------------------------------------- the seven statuses */
+
+export const STATUS_FACETS = [
+  'provenance',
+  'need',
+  'standard',
+  'costs',
+  'confirmed',
+  'execution',
+  'handover',
+] as const;
+export type StatusFacet = (typeof STATUS_FACETS)[number];
+
+export interface WorkspaceStatus {
+  facet: StatusFacet;
+  /** The word before the status — "Provenance", "Costs" (`DESIGN.md` §2.3). */
+  label: string;
+  status: ObjectStatusValue;
+  /**
+   * What is on record, or — when nothing is — what would put something there.
+   * Never empty: a status with no reason behind it is a claim a reader cannot
+   * check, and every one of these is checkable.
+   */
+  detail: string;
+  /**
+   * The phase whose evidence this reads, so that nothing here is a second
+   * derivation of how far a project has got. `null` for the two facets this
+   * release records no artefact for, which is the honest answer and is stated
+   * as one.
+   */
+  from: PhaseKey | null;
+  /**
+   * Where the statement comes from, when it has a source worth naming — never
+   * mixed into the status itself (ADR-023). `null` when there is nothing to
+   * attribute, which is the ordinary case for "not started".
+   */
+  provenance: ProvenanceValue | null;
+}
+
+/**
+ * The one bridge from roadmap 1.7's phase contract to the object statuses of
+ * `DESIGN.md` §4.1.
+ *
+ * The invariant it exists to keep: `done` is the only object status in the
+ * `success` state, and it is reached only from `proven`. Generated work that
+ * nothing checked is `draft` — on record, provisional, amber — which is exactly
+ * what the stepper and the rail paint it under `phaseTone`. A `stale` phase is
+ * `partial`, because it is not finished, and it carries the *Stale* provenance
+ * chip beside it rather than a status of its own: *stale* is where a statement
+ * stands, not how far the work got (ADR-023, and the note in `lib/object-status.ts`).
+ */
+export function statusOfPhase(step: RailStep): ObjectStatusValue {
+  switch (step.state) {
+    case 'empty':
+      return 'not-started';
+    case 'stale':
+      return 'partial';
+    case 'partial':
+      return 'partial';
+    case 'done':
+      return step.proven ? 'done' : 'draft';
+  }
+}
+
+/** The *Stale* chip beside a status, and nothing else about staleness. */
+function staleChip(step: RailStep): ProvenanceValue | null {
+  return step.state === 'stale' ? 'stale' : null;
+}
+
+/**
+ * The seven object statuses of the status line, each derived from something on
+ * record.
+ *
+ * Open in IT and Management; in Business they are folded into the single
+ * "Project status" row of ADR-026 and reached from there.
+ */
+export function workspaceStatusLine(project: Project | null): WorkspaceStatus[] {
+  const steps = workflowSteps(project);
+  const by = Object.fromEntries(steps.map((s) => [s.key, s])) as Record<PhaseKey, RailStep>;
+
+  const usage = project?.usageReport ?? null;
+  const usageCount = Array.isArray(usage?.records) ? usage.records.length : 0;
+
+  const provenance: WorkspaceStatus = {
+    facet: 'provenance',
+    label: 'Provenance',
+    status: statusOfPhase(by.analyze),
+    detail: by.analyze.detail,
+    from: 'analyze',
+    provenance: staleChip(by.analyze) ?? (by.analyze.proven ? 'proven' : null),
+  };
+
+  // Need — "do I still need this?" (§5.6). Rule confirmation does not exist in
+  // this release, so the only thing on record that speaks to the question is an
+  // imported usage report. It is `partial` when there is one: usage says whether
+  // a program still runs, which is half the question and is stated as half.
+  const need: WorkspaceStatus =
+    usageCount > 0
+      ? {
+          facet: 'need',
+          label: 'Need',
+          status: 'partial',
+          detail: `Usage imported for ${usageCount} object${usageCount === 1 ? '' : 's'}. No business rule has been confirmed — rule confirmation comes with the process model.`,
+          from: null,
+          provenance: 'imported',
+        }
+      : {
+          facet: 'need',
+          label: 'Need',
+          status: 'not-started',
+          detail:
+            'No business rule confirmed and no usage imported. Usage that was never imported is unknown, never “unused”.',
+          from: null,
+          provenance: null,
+        };
+
+  // Standard — a standard candidate is only worth showing with the evidence
+  // level that says how strongly it is backed, and evidence levels arrive with
+  // roadmap 7.2. The routing recommendation on the project is not that, and
+  // reading it here would be the "the standard covers it" claim §5.3 forbids.
+  const standard: WorkspaceStatus = {
+    facet: 'standard',
+    label: 'Standard',
+    status: 'not-started',
+    detail: 'No standard candidate carries an evidence level yet, so none is claimed here.',
+    from: null,
+    provenance: null,
+  };
+
+  const costs: WorkspaceStatus = {
+    facet: 'costs',
+    label: 'Costs',
+    status: statusOfPhase(by.tco),
+    detail: by.tco.detail,
+    from: 'tco',
+    provenance: staleChip(by.tco) ?? (by.tco.state === 'partial' ? 'simulation' : null),
+  };
+
+  // Confirmed — the architecture sign-off. A self-declaration by the signed-in
+  // account, so it wears the *Confirmed* chip (information) and never the green
+  // of *Proven*: `workflowSteps` already refuses to mark the design phase
+  // `proven`, and `statusOfPhase` therefore cannot return `done` for it.
+  const signedOff = project?.approvedByArchitect === true;
+  const confirmed: WorkspaceStatus = {
+    facet: 'confirmed',
+    label: 'Confirmed',
+    status: statusOfPhase(by.design),
+    detail: by.design.detail,
+    from: 'design',
+    provenance: staleChip(by.design) ?? (signedOff ? 'confirmed' : null),
+  };
+
+  // Execution — a test run. "mock only" is its own object status because a
+  // simulation that reads as a partial pass is the single most expensive lie
+  // this product could tell.
+  const tests = Array.isArray(project?.testCases) ? project!.testCases! : [];
+  const simulated = tests.filter((t) => t?.status === 'Simulated').length;
+  const executed = tests.filter((t) => t?.status === 'Passed' || t?.status === 'Failed').length;
+  const failed = tests.filter((t) => t?.status === 'Failed').length;
+  const mockOnly = tests.length > 0 && executed === 0 && simulated > 0;
+  const execution: WorkspaceStatus = {
+    facet: 'execution',
+    label: 'Execution',
+    status:
+      by.testing.state === 'stale'
+        ? 'partial'
+        : failed > 0
+          ? 'failed'
+          : mockOnly
+            ? 'mock-only'
+            : statusOfPhase(by.testing),
+    detail: by.testing.detail,
+    from: 'testing',
+    provenance: staleChip(by.testing) ?? (mockOnly ? 'demonstrated-mock' : by.testing.proven ? 'proven' : null),
+  };
+
+  const handover: WorkspaceStatus = {
+    facet: 'handover',
+    label: 'Handover',
+    status: statusOfPhase(by.delivery),
+    detail: by.delivery.detail,
+    from: 'delivery',
+    provenance: staleChip(by.delivery),
+  };
+
+  return [provenance, need, standard, costs, confirmed, execution, handover];
+}
+
+/* -------------------------------------------------------------- the layers */
+
+/**
+ * The layers of the Anchor Bar — `DESIGN.md` §2.3 item 4, and only these.
+ *
+ * The bar carries layers and nothing else: the views are a segmented control in
+ * the header and the seven stages are a toolbar under it, so that each of the
+ * three navigations has exactly one job (ADR-018).
+ */
+export const LAYERS = [
+  'need',
+  'standard',
+  'costs',
+  'architecture',
+  'evidence',
+  'changes',
+] as const;
+export type LayerKey = (typeof LAYERS)[number];
+
+export interface WorkspaceLayer {
+  key: LayerKey;
+  label: string;
+  /** The URL fragment that holds where the reader is (ADR-018). */
+  hash: string;
+  /** What is in it — "42 findings", "1 signed run". `null` when it is empty. */
+  count: string | null;
+  /** Why it is empty, in the reader's terms. Shown under "More" (§2.11). */
+  missing: string;
+}
+
+/**
+ * Layers with content first; empty ones go under "More" and say what is missing
+ * (§2.11). Every count below comes from a field that is actually on the project,
+ * which is why four of them are routinely empty on a fresh case — and why the
+ * bar says so instead of showing six confident-looking tabs.
+ */
+export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
+  const usage = project?.usageReport ?? null;
+  const usageCount = Array.isArray(usage?.records) ? usage.records.length : 0;
+  const inventory = Array.isArray(project?.codeInventory) ? project!.codeInventory!.length : 0;
+  const hasRun = typeof project?.activeRunId === 'string' && project.activeRunId.trim().length > 0;
+
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+  return [
+    {
+      key: 'need',
+      label: 'Need & process',
+      hash: '#need',
+      count: usageCount > 0 ? plural(usageCount, 'object with usage') : null,
+      missing: 'The process reconstructed from the code, and the rules hidden in it, are not here yet.',
+    },
+    {
+      key: 'standard',
+      label: 'Standard fit',
+      hash: '#standard',
+      count: null,
+      missing: 'No standard candidate carries an evidence level yet.',
+    },
+    {
+      key: 'costs',
+      label: 'Costs & assumptions',
+      hash: '#costs',
+      count: hasRun ? 'model estimate' : null,
+      missing: 'Economics models costs from a signed run; there is none.',
+    },
+    {
+      key: 'architecture',
+      label: 'Architecture & dependencies',
+      hash: '#architecture',
+      count: inventory > 0 ? plural(inventory, 'object') : null,
+      missing: 'Nothing has been analysed, so there are no objects and no dependencies to show.',
+    },
+    {
+      key: 'evidence',
+      label: 'Evidence & controls',
+      hash: '#evidence',
+      count: hasRun ? '1 signed run' : null,
+      missing: 'No signed run — every figure in this product derives from one.',
+    },
+    {
+      key: 'changes',
+      label: 'Changes & commitments',
+      hash: '#changes',
+      count: null,
+      missing: 'Revisions and decisions are recorded from the process model onward.',
+    },
+  ];
+}
+
+/* ------------------------------------------------------- not determined */
+
+export interface NotDeterminedItem {
+  /** What was seen, in the reader's words. */
+  label: string;
+  /** Why it could not be judged — a limit of the engine, never an accusation. */
+  why: string;
+  /** The line anchor, `L502`. */
+  anchor: string;
+}
+
+export interface NotDetermined {
+  items: NotDeterminedItem[];
+  /** How many constructs the detectors stepped over. */
+  count: number;
+  /** True when there is no source to assess at all — a different thing from zero. */
+  noSource: boolean;
+}
+
+/**
+ * What the engine could not work out — `DESIGN.md` §5.1, §5.5.
+ *
+ * *"Der Zweifel wird sofort beantwortet."* This area is the reason to trust the
+ * rest of the screen, so it is a thing with its own place and not an absence.
+ *
+ * The source is `assessCoverage`, which already answers exactly this question:
+ * which constructs in the code fall outside what the detectors judge, and why.
+ * Three states, and they are three different sentences:
+ *
+ *   - **no source** — nothing has been uploaded, so nothing was stepped over
+ *     and nothing was assessed either;
+ *   - **none** — every construct fell inside the detectors that ran. Stated as
+ *     the boundary of the question the engine answered, never as a clean bill;
+ *   - **some** — each one with its reason and its line.
+ */
+export function notDetermined(project: Project | null): NotDetermined {
+  const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
+  if (!source.trim()) return { items: [], count: 0, noSource: true };
+
+  const report = assessCoverage(source);
+  const items = report.unassessed.map((u: UnassessedConstruct) => ({
+    label: u.label,
+    why: u.why,
+    anchor: `L${u.line}`,
+  }));
+  return { items, count: items.length, noSource: false };
+}
+
+/* ------------------------------------------------------------- the tools */
+
+/**
+ * The seven stages as tools under the header (`DESIGN.md` §2.3 item 3).
+ *
+ * Order and labels come from `lib/workflow-steps.ts` and are not restated here
+ * — the toolbar is the eighth reader of that contract, not a new copy of it. A
+ * tool opens a stage as its own page; it is **not** a progress indicator
+ * (ADR-018), which is why nothing in the toolbar carries a state colour.
+ */
+export function workspaceTools(project: Project | null): Array<{ key: PhaseKey; label: string; path: string }> {
+  return workflowSteps(project).map((s) => ({ key: s.key, label: s.label, path: s.path }));
+}
+
+/** Re-exported so a screen reading a status never has to reach for the ladder itself. */
+export { phaseTone };

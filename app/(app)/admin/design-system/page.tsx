@@ -18,6 +18,7 @@ import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
 import CcField, { CcRequiredNote } from '@/components/cc/Field';
 import CcFilterBar from '@/components/cc/FilterBar';
 import CcIconButton from '@/components/cc/IconButton';
+import CcLinkButton from '@/components/cc/LinkButton';
 import { CcCleanCoreLevel, CcEvidenceLevel } from '@/components/cc/Identifier';
 import CcMessageBox from '@/components/cc/MessageBox';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -189,6 +190,10 @@ export default function DesignSystemGallery() {
             <CcIconButton label="Close panel">
               <FileText size={16} aria-hidden={true} />
             </CcIconButton>
+            {/* A control that goes somewhere, wearing one of the four styles
+                rather than becoming a fifth (roadmap 1.4). It is here so the
+                rendered guard below measures it against the real buttons. */}
+            <CcLinkButton href="/admin/design-system">Open a stage</CcLinkButton>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <CcButton variant="primary" density="cozy">
