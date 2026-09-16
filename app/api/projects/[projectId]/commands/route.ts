@@ -4,7 +4,7 @@ import {
   getAdminDb,
   assertAccountActive,
   assertMfaSatisfied,
-  logAuditEvent,
+  auditActorEmail,
   QuotaError,
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
@@ -109,10 +109,27 @@ export async function POST(
       return NextResponse.json({ error: decision.error, code: decision.code }, { status: decision.status });
     }
 
-    await ref.set({ ...decision.fields, updatedAt: new Date() }, { merge: true });
-    // Every change into the journal (SCHNITT-0-UMFANG §8, package 1). Written by
+    // Every change into the journal (SCHNITT-0-UMFANG §8, package 1), written by
     // the Admin SDK into `audit_events`, which no client can read or write.
-    await logAuditEvent(db, decodedToken.uid, `${decision.action}:${projectId}`, decodedToken.uid);
+    //
+    // One batch, not two awaits. The field write used to go first and the
+    // journal entry second, so a failing journal write left a recorded sign-off
+    // with nothing recording it — and the caller saw a 500 for a change that had
+    // already happened (QA review of fafb3299ae6c). Turning the order around
+    // only moves the lie: then the journal names a sign-off that was never
+    // written. A batch commits both or neither, and both documents live in the
+    // same database, so nothing here needs a transaction.
+    const actorEmail = await auditActorEmail(db, decodedToken.uid);
+    const batch = db.batch();
+    batch.set(ref, { ...decision.fields, updatedAt: new Date() }, { merge: true });
+    batch.set(db.collection('audit_events').doc(), {
+      actorUid: decodedToken.uid,
+      actorEmail,
+      action: `${decision.action}:${projectId}`,
+      targetUid: decodedToken.uid,
+      timestamp: new Date(),
+    });
+    await batch.commit();
 
     return NextResponse.json({ ok: true, fields: decision.fields });
   } catch (err: unknown) {

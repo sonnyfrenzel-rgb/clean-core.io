@@ -783,15 +783,25 @@ export async function assertMfaStepUp(req: Request, decodedToken: any) {
 // Admin Governance Helpers with Audit Event Logging
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function logAuditEvent(db: any, actorUid: string, action: string, targetUid: string) {
-  let actorEmail = 'system-admin';
+/**
+ * The address to record beside an administrative action.
+ *
+ * Split out of `logAuditEvent` so a caller that has to commit the journal entry
+ * together with the change it describes can resolve the actor first and then
+ * write both in one batch (`app/api/projects/[projectId]/commands/route.ts`).
+ * Falls back rather than throwing: a missing profile must not stop the record.
+ */
+export async function auditActorEmail(db: any, actorUid: string): Promise<string> {
   try {
     const actorDoc = await db.collection('users').doc(actorUid).get();
-    if (actorDoc.exists) {
-      actorEmail = actorDoc.data()?.email || actorEmail;
-    }
+    if (actorDoc.exists) return actorDoc.data()?.email || 'system-admin';
   } catch {}
-  
+  return 'system-admin';
+}
+
+export async function logAuditEvent(db: any, actorUid: string, action: string, targetUid: string) {
+  const actorEmail = await auditActorEmail(db, actorUid);
+
   await db.collection('audit_events').add({
     actorUid,
     actorEmail,

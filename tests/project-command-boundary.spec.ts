@@ -123,11 +123,21 @@ test.describe('client, server, index and export name the same six fields', () =>
     expect(route.indexOf('verifyRequestAuth(')).toBeGreaterThan(-1);
     expect(route.indexOf('assertMfaSatisfied(')).toBeGreaterThan(route.indexOf('verifyRequestAuth('));
     expect(route.indexOf('project.userId !== decodedToken.uid')).toBeGreaterThan(route.indexOf('assertMfaSatisfied('));
-    expect(route.indexOf('ref.set('), 'nothing is written before the owner check').toBeGreaterThan(
+    expect(route.indexOf('batch.set(ref,'), 'nothing is written before the owner check').toBeGreaterThan(
       route.indexOf('project.userId !== decodedToken.uid'),
     );
-    // Every change into the journal (SCHNITT-0-UMFANG §8, package 1).
-    expect(route).toContain('logAuditEvent(');
+
+    // Every change into the journal (SCHNITT-0-UMFANG §8, package 1) — and in
+    // the same write as the change itself. Two awaits let the journal entry fail
+    // on its own and leave a recorded sign-off that nothing records; reversing
+    // them only moves the lie to the other side (QA review of fafb3299ae6c).
+    expect(route, 'the journal entry is no longer written here').toContain("db.collection('audit_events')");
+    expect(route, 'the change and its journal entry are not in one batch').toMatch(
+      /const batch = db\.batch\(\)[\s\S]*batch\.set\(ref,[\s\S]*audit_events[\s\S]*await batch\.commit\(\)/,
+    );
+    // And no second, separate write that could succeed or fail on its own.
+    expect(route.match(/await ref\.set\(|await db\.collection\('audit_events'\)\.add\(/g) ?? [], 'a write outside the batch')
+      .toEqual([]);
   });
 
   test('index: both registers name the set the rules and the route agree on', () => {
