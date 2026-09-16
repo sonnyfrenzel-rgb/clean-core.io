@@ -58,6 +58,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (Outbox plus Idempotency-Key), fehlende Mail-Konfiguration in Produktion meldete Erfolg, ein
   fehlgeschlagenes One-Click-Opt-out antwortete 200, und ein späterer Scanner-Event überschrieb den
   Bounce-Grund.
+- **Der Security-Agent verliert keine Prüfung mehr an den letzten Aufruf.** Der CISO schrieb das Urteil über
+  jeden Befund und den ganzen Bericht darum in einer Antwort; drei Release-Prüfungen in Folge endeten ohne
+  Bericht, jedes Mal nachdem rund fünfzig Berater-Aufrufe bezahlt und gelesen waren. Jetzt zwei Aufrufe: erst
+  die Befunde mit dem Code darunter, dann die Prosa aus den Befunden, die übrig blieben — ohne Code. Fällt eine
+  Hälfte aus, liefert die Prüfung die andere und sagt im Bericht, welche fehlt.
 - **QA-Runden zu jedem Schritt.** Die Befunde der Delta-Prüfungen sind in denselben Schritten
   behoben, widerlegte mit Beleg in `docs/qa/refuted-findings.enc.json` festgehalten (37 Einträge).
   Offen und in 0.17 eingeplant: drei Guards, die Quelltext lesen, wo nur ein Laufzeitnachweis zählt.
