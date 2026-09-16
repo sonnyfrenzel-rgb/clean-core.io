@@ -136,6 +136,15 @@ interface Recipient {
   firstName: string;
 }
 
+/** People the survey reached: every send record that says so, and every record from before the outbox. */
+async function countInvited(db: Firestore): Promise<number> {
+  const sends = await db.collection('email_sends').where('campaign', '==', SURVEY_CAMPAIGN).get();
+  return sends.docs.filter((d) => {
+    const state = d.data().state as string | undefined;
+    return state === 'sent' || state === undefined;
+  }).length;
+}
+
 async function loadRecipients(db: Firestore) {
   const [users, suppressions, sends] = await Promise.all([
     db.collection('users').get(),
@@ -260,11 +269,13 @@ async function main() {
   // `invited` is no longer the size of the recipient list. It used to be
   // written up front as everyone eligible, and a resumed run then added its
   // own list on top — which is exactly the people whose sends had failed the
-  // first time and were already counted. The number now grows by one per
-  // message the provider accepted *and* whose record reached `sent`. A crash
-  // between the two leaves a `sending` record: not counted, not resent, and
-  // reported above as unresolved — the count may run short by those, and never
-  // long.
+  // first time and were already counted. It is now derived: after the loop,
+  // the campaign document is set to the number of send records in state
+  // `sent` (plus records from before the outbox, which were only ever written
+  // after success). A counter incremented per send would drift the moment one
+  // increment failed after its record was written; a count recomputed from the
+  // records cannot. A record stuck in `sending` is not counted, not resent, and
+  // reported above as unresolved — the count may run short by those, never long.
   if (!ONLY) {
     if (resumed) {
       // The opening and closing dates were set the first time and must not move:
@@ -298,18 +309,35 @@ async function main() {
     const token = createSurveyToken(SURVEY_CAMPAIGN, r.uid, tokenExpiry);
     const unsubscribeUrl = `${BASE_URL}/api/unsubscribe?t=${encodeURIComponent(createUnsubscribeToken(r.email))}`;
 
-    // The outbox record, written before the provider is asked and under a
+    // The outbox record, claimed before the provider is asked and under a
     // deterministic id. It used to be added after the provider had accepted
     // the message — so a crash or a failed write in between left a delivered
     // mail with no record, and the next run, seeing no record, sent it again.
     // Now the record is there first; whatever happens after, a re-run finds it
     // and does not ask the provider twice.
+    //
+    // Claimed in a transaction, not merely written: two `--apply` processes —
+    // a manual run beside the cron — both read the recipient list before
+    // either had written, both wrote `sending`, both sent. The transaction
+    // reads the record and writes it in one step, so the second process
+    // finds the claim and skips.
     const sendRef = db.collection('email_sends').doc(`${SURVEY_CAMPAIGN}__${r.uid}`);
     if (!ONLY) {
-      await sendRef.set(
-        { campaign: SURVEY_CAMPAIGN, email: r.email, uid: r.uid, state: 'sending', startedAt: FieldValue.serverTimestamp() },
-        { merge: true },
-      );
+      const claimed = await db.runTransaction(async (tx) => {
+        const snap = await tx.get(sendRef);
+        const state = snap.exists ? (snap.data()?.state as string | undefined) : undefined;
+        if (snap.exists && state !== 'failed') return false;
+        tx.set(
+          sendRef,
+          { campaign: SURVEY_CAMPAIGN, email: r.email, uid: r.uid, state: 'sending', startedAt: FieldValue.serverTimestamp() },
+          { merge: true },
+        );
+        return true;
+      });
+      if (!claimed) {
+        console.log(`  claimed by another run: ${LOCAL ? r.email : `#${index + 1}`} — skipped`);
+        continue;
+      }
     }
 
     const input = {
@@ -349,11 +377,16 @@ async function main() {
 
     if (!ONLY) {
       await sendRef.set({ state: 'sent', providerId: id, sentAt: FieldValue.serverTimestamp() }, { merge: true });
-      await campaignRef.set({ invited: FieldValue.increment(1) }, { merge: true });
     }
 
     sent++;
     console.log(LOCAL ? `  sent ${r.email} (${id})` : `  sent #${index + 1} (${id})`);
+  }
+
+  if (!ONLY) {
+    const invited = await countInvited(db);
+    await campaignRef.set({ invited }, { merge: true });
+    console.log(`invited (from send records): ${invited}`);
   }
 
   console.log('');

@@ -132,7 +132,19 @@ export async function callReviewer({ apiKey, system, user, schema, effort, model
         // A model that wraps its JSON in a code fence despite the schema is still answering in JSON.
         review = JSON.parse(content.trim().replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/, ''));
       } catch {
-        throw new Error('The review was not valid JSON despite the schema.');
+        // The same counts as for empty content, for the same reason: the second
+        // attempt of the release audit of 33471220d6e9 (2026-09-16) ended here,
+        // and the one line it left could not say whether the CISO had written
+        // prose or had run out of output tokens halfway through its JSON. The
+        // content itself stays out of the message; the finish reason and the
+        // numbers are enough to tell "cut off" from "answered wrong".
+        const u = json?.usage || {};
+        const reasoning = u.completion_tokens_details?.reasoning_tokens;
+        const finish = FINISH_REASONS.has(choice?.finish_reason) ? choice.finish_reason : 'unrecognised';
+        const why = finish === 'length' ? 'cut off at max_tokens' : 'despite the schema';
+        throw new Error(
+          `The review was not valid JSON ${why} (finish_reason=${finish}, completion_tokens=${Number(u.completion_tokens) || '?'}, reasoning_tokens=${Number(reasoning) || '?'}, max_tokens=${maxTokens ?? BUDGET.maxOutputTokens}).`,
+        );
       }
       if (coerce) review = coerce(review);
       const violation = firstViolation(schema, review);

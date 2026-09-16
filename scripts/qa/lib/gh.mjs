@@ -52,6 +52,33 @@ export function jobsOf(runId) {
 }
 
 /** Poll until the run for `sha` has completed or the deadline passes. */
+/**
+ * Waits until one job of the run — named by prefix — has finished, or the run
+ * has. Returns the run as `runFor` sees it, plus `jobDone` with that job's
+ * conclusion when it was the job and not the run that ended the wait.
+ *
+ * The delta review of a push to dev is done a minute or two after the push;
+ * the smoke check behind it waits for the Cloud Run deploy, which takes
+ * fourteen minutes. Waiting for the whole run meant waiting fourteen minutes
+ * for findings that had been sitting in an artifact for twelve of them
+ * (Sonny, 16.09.2026).
+ */
+export async function waitForJob(workflow, sha, jobPrefix, { timeoutMs, intervalMs = 30_000, onTick, branch = null } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  const ended = new Set(['success', 'failure', 'cancelled', 'skipped']);
+  for (;;) {
+    const run = runFor(workflow, sha, branch);
+    if (run?.status === 'completed') return run;
+    if (run) {
+      const job = jobsOf(run.databaseId).find((j) => j.name.startsWith(jobPrefix));
+      if (job && ended.has(job.conclusion)) return { ...run, jobDone: job.conclusion };
+    }
+    if (Date.now() > deadline) return run ? { ...run, timedOut: true } : null;
+    onTick?.(run);
+    await sleep(intervalMs);
+  }
+}
+
 export async function waitForRun(workflow, sha, { timeoutMs, intervalMs = 30_000, onTick, branch = null } = {}) {
   const deadline = Date.now() + timeoutMs;
   for (;;) {

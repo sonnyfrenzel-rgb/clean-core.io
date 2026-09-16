@@ -11,11 +11,20 @@
  *   3  work to do: blocking findings, or the smoke check did not pass (--full: findings to verify and schedule)
  *   2  no result: the run failed, was superseded, timed out, or the loop is revoked
  *
+ * The review comes first. On dev the review job finishes a minute or two after
+ * the push; the smoke check behind it waits for the Cloud Run deploy, which
+ * takes fourteen. This used to wait for the whole run, so findings sat in an
+ * artifact for twelve minutes while nothing happened. Now the review is
+ * printed as soon as its job is done: with findings, that is the result (exit
+ * 3, smoke noted as pending — the push that fixes them supersedes it anyway);
+ * with a clean review, the smoke check is the only thing left to decide, so
+ * the wait continues for it (Sonny, 16.09.2026).
+ *
  * Plaintext reports are written under .qa-review/ (git-ignored) and nowhere else.
  */
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { gh, ghJson, jobsOf, waitForRun } from './lib/gh.mjs';
+import { gh, ghJson, jobsOf, waitForJob, waitForRun } from './lib/gh.mjs';
 import { git } from './lib/git-delta.mjs';
 import { isBlocking, needsAnotherRound, renderText } from './lib/report.mjs';
 import { LOCAL_DIR, loadDotEnv, sealedReports } from './lib/store.mjs';
@@ -40,6 +49,32 @@ function renderSmoke(s) {
   return lines.join('\n');
 }
 
+/**
+ * The artifacts of exactly this run and attempt, downloaded fresh. Called once
+ * when the review job is done, and once more when the whole run is — the smoke
+ * artifact does not exist the first time.
+ */
+function collect(run, short) {
+  const jobs = jobsOf(run.databaseId);
+  const attempt = String(ghJson(['run', 'view', String(run.databaseId), '--json', 'attempt'])?.attempt ?? '');
+  // A fresh directory for exactly this run: artifacts left from an earlier run of
+  // the same commit must never stand in for a newer run that produced none.
+  const dir = join(LOCAL_DIR, 'runs', `${short}-${run.databaseId}-${attempt}`);
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  try {
+    gh(['run', 'download', String(run.databaseId), '-D', dir]);
+  } catch {
+    /* an artifact may be missing when its job failed or has not run yet; reported below */
+  }
+  // A result counts only when it belongs to this commit and this attempt, and its
+  // job in this attempt succeeded. A re-run keeps the run id and the artifacts of
+  // earlier attempts (QA reviews of 221f2d11768c and 2f9b128bafd4).
+  const succeeded = (prefix) => jobs.some((j) => j.name.startsWith(prefix) && j.conclusion === 'success');
+  const current = (meta) => !attempt || String(meta?.attempt ?? '') === attempt;
+  return { jobs, dir, succeeded, current };
+}
+
 async function main() {
   if (revoked()) {
     console.log('QA loop revoked (repository variable QA_REVIEW_ENABLED=false). Nothing to wait for.');
@@ -50,9 +85,13 @@ async function main() {
 
   const sha = git(['rev-parse', arg || 'HEAD']);
   const short = sha.slice(0, 12);
+  const deadline = Date.now() + timeoutMin * 60_000;
   console.log(`Waiting for the QA run of ${short} (up to ${timeoutMin} min)…`);
 
-  const run = await waitForRun('qa-review.yml', sha, { timeoutMs: timeoutMin * 60_000, branch: FULL ? 'main' : 'dev' });
+  // A release on main is one job; a push to dev is two, and the review is not
+  // made to wait for the smoke check.
+  const wait = FULL ? waitForRun : (workflow, commit, opts) => waitForJob(workflow, commit, 'Delta review', opts);
+  const run = await wait('qa-review.yml', sha, { timeoutMs: deadline - Date.now(), branch: FULL ? 'main' : 'dev' });
   if (!run) {
     console.log(`No QA run exists for ${short} on ${FULL ? 'main' : 'dev'}. Was it pushed there?`);
     return 2;
@@ -66,24 +105,7 @@ async function main() {
     return 2;
   }
 
-  const jobs = jobsOf(run.databaseId);
-  const attempt = String(ghJson(['run', 'view', String(run.databaseId), '--json', 'attempt'])?.attempt ?? '');
-  // A fresh directory for exactly this run: artifacts left from an earlier run of
-  // the same commit must never stand in for a newer run that produced none.
-  const dir = join(LOCAL_DIR, 'runs', `${short}-${run.databaseId}-${attempt}`);
-  rmSync(dir, { recursive: true, force: true });
-  mkdirSync(dir, { recursive: true });
-  try {
-    gh(['run', 'download', String(run.databaseId), '-D', dir]);
-  } catch {
-    /* an artifact may be missing when its job failed; reported below */
-  }
-
-  // A result counts only when it belongs to this commit and this attempt, and its
-  // job in this attempt succeeded. A re-run keeps the run id and the artifacts of
-  // earlier attempts (QA reviews of 221f2d11768c and 2f9b128bafd4).
-  const succeeded = (prefix) => jobs.some((j) => j.name.startsWith(prefix) && j.conclusion === 'success');
-  const current = (meta) => !attempt || String(meta?.attempt ?? '') === attempt;
+  let { jobs, dir, succeeded, current } = collect(run, short);
   if (FULL) {
     // A release on main has no smoke check here and gates nothing: the full review is read, verified and scheduled.
     const full = succeeded('Full review') ? sealedReports(dir, secret, 'qa-full.enc.json').find((r) => r.range?.head === sha && current(r.meta?.run)) || null : null;
@@ -98,14 +120,35 @@ async function main() {
   }
 
   const review = succeeded('Delta review') ? sealedReports(dir, secret).find((r) => r.range?.head === sha && current(r.meta?.run)) || null : null;
-  const smoke = succeeded('Smoke check') ? sealedReports(dir, secret, 'qa-smoke.enc.json').find((s) => s.head === sha && current(s.run)) || null : null;
   if (!review) {
     console.log(`QA run ${run.databaseId} produced no readable report. Jobs: ${jobs.map((j) => `${j.name}=${j.conclusion}`).join(', ')}`);
     console.log(`Log (failed steps only): gh run view ${run.databaseId} --log-failed`);
     return 2;
   }
-
   writeFileSync(join(LOCAL_DIR, `${short}.review.json`), JSON.stringify(review, null, 2));
+
+  // Findings first: the smoke check of a commit about to be superseded decides nothing.
+  if (run.status !== 'completed' && needsAnotherRound(review)) {
+    console.log(`\n${renderText(review)}\n\nSmoke: pending — the deploy of ${short} is still running. The findings above come first; the push that fixes them gets its own smoke check.`);
+    return 3;
+  }
+
+  // A clean review: the smoke check is what remains to decide.
+  let done = run;
+  if (run.status !== 'completed') {
+    console.log(`\n${renderText(review)}\n\nReview clean — waiting for the smoke check of ${short} (deploy running)…`);
+    done = await waitForRun('qa-review.yml', sha, { timeoutMs: deadline - Date.now(), branch: 'dev' });
+    if (!done || done.timedOut) {
+      console.log(`Smoke check of ${short} has not finished after ${timeoutMin} min.`);
+      return 2;
+    }
+    if (done.conclusion === 'cancelled') {
+      console.log(`QA run for ${short} was superseded by a newer push before its smoke check. Await the newer head.`);
+      return 2;
+    }
+    ({ jobs, dir, succeeded, current } = collect(done, short));
+  }
+  const smoke = succeeded('Smoke check') ? sealedReports(dir, secret, 'qa-smoke.enc.json').find((s) => s.head === sha && current(s.run)) || null : null;
   if (smoke) writeFileSync(join(LOCAL_DIR, `${short}.smoke.json`), JSON.stringify(smoke, null, 2));
 
   console.log(`\n${renderText(review)}\n\n${renderSmoke(smoke)}`);

@@ -33,10 +33,13 @@ async function buildPack(opts: {
   extra?: Record<string, string>;
   signingKeyUrl?: string;
   attested?: Record<string, string | null>;
+  /** A pack from before the run binding: no runHash, no suffix in its canonical form. */
+  legacy?: boolean;
 }) {
   const content = '# Executive Summary\nA pack built for the command-line check.';
   const files = [{ path: '00-executive-summary.md', sha256: sha(content), bytes: content.length }];
-  const meta = { projectId: 'p-1', runId: 'r-1', runHash: 'h-1', engineVersion: 'v1.0', sapApiCatalogVersion: '2024.FPS02' };
+  const meta: Record<string, string> = { projectId: 'p-1', runId: 'r-1', engineVersion: 'v1.0', sapApiCatalogVersion: '2024.FPS02' };
+  if (!opts.legacy) meta.runHash = 'h-1';
   // Built with the issuer's own function: the script must arrive at the same
   // bytes on its own, or the signature it checks is over something else.
   const attested = Object.keys(opts.attested || {}).map((path) => ({ path, provenance: 'user-attested' as const }));
@@ -107,6 +110,16 @@ test('an attested file the manifest names has to be in the archive', async () =>
   expect(out).toContain('missing');
   expect(out).toContain('NOT verified');
   expect(code).toBe(1);
+});
+
+test('a pack from before the run binding canonicalises without the suffix, as the web verifier does', async () => {
+  // Such a pack carries only the HMAC, so the script cannot check its
+  // signature (exit 2) — but its manifest digest has to agree, and it did not:
+  // the script appended a run suffix the pack never had.
+  const { code, out } = run([await buildPack({ legacy: true })]);
+  expect(out).toContain('manifest digest');
+  expect(out).not.toContain('FAILED');
+  expect(code).toBe(2);
 });
 
 test('a pack without a signature is "could not check", never "verified"', async () => {

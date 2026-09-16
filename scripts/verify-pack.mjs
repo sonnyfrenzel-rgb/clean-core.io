@@ -205,10 +205,16 @@ async function main() {
   //    no build; tests/verify-pack-cli.spec.ts holds the two to the same bytes).
   const sorted = [...(manifest.files || [])].sort((a, b) => a.path.localeCompare(b.path));
   const attestedPaths = attested.map((a) => a.path).sort((a, b) => a.localeCompare(b));
+  // The run suffix belongs only to a pack that carries a run hash. Appending
+  // it unconditionally turned every pack issued before the run binding into
+  // "FAILED manifest digest" here while the web verifier said OK — two
+  // verifiers, two answers, for the same file (QA review of ca3264f05f39).
   const canonical =
     sorted.map((f) => `${f.path}:${f.sha256}`).join(';') +
     ';' +
-    `${manifest.projectId}:${manifest.runId}:${manifest.runHash}:${manifest.engineVersion}:${manifest.sapApiCatalogVersion || ''};` +
+    (manifest.runHash !== undefined
+      ? `${manifest.projectId || ''}:${manifest.runId || ''}:${manifest.runHash || ''}:${manifest.engineVersion || ''}:${manifest.sapApiCatalogVersion || ''};`
+      : '') +
     (attestedPaths.length ? `attested=${attestedPaths.join(',')};` : '');
   const manifestHash = createHash('sha256').update(canonical).digest('hex');
   const hashOk = manifestHash === manifest.manifestHash;

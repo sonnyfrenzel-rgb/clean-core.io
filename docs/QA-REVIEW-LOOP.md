@@ -123,7 +123,12 @@ Die verbindliche Arbeitsanweisung steht im Skill `qa-review-loop`; hier die Rege
 an denen sie gemessen wird.
 
 1. **Nach jedem Push auf `dev`** startet `node scripts/qa/await.mjs <sha>` im
-   Hintergrund. Ein Hook in `.claude/settings.json` erinnert daran.
+   Hintergrund. Ein Hook in `.claude/settings.json` erinnert daran. **Die Review kommt
+   zuerst** (seit 16.09.2026): sobald der Review-Job fertig ist — ein bis zwei Minuten
+   nach dem Push — druckt `await.mjs` die Befunde und endet mit Exit 3, während das
+   Deploy noch läuft; der Smoke-Check des Commits, den der nächste Push ohnehin
+   ersetzt, entscheidet nichts. Nur bei einer sauberen Review wartet es weiter auf
+   den Smoke-Check, denn dann ist er das Einzige, was noch zu entscheiden ist.
 2. **Jeder Befund wird geprüft, bevor etwas geändert wird** — die zitierte Stelle
    lesen, den Fehlerfall nachvollziehen, wenn möglich reproduzieren. Modellbefunde
    sind Hypothesen (von ~20 Grok-Befunden im August waren 2 falsch).

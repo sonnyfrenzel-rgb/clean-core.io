@@ -28,6 +28,9 @@ node scripts/qa/await.mjs <pushed-sha> --timeout=60     # run_in_background: tru
 ```
 
 Exit codes: `0` go · `3` findings or smoke not OK · `2` no result (failed, superseded, timed out, revoked).
+The review comes first (Sonny, 16.09.2026): with findings, `await.mjs` returns exit `3` as soon as the review
+job is done — one to two minutes after the push — and notes the smoke check as pending; do not wait for it,
+the push that fixes the findings gets its own. Only a clean review keeps waiting for the smoke check.
 On `2` with "superseded": await the newer head instead. On a failed run: `gh run view <id> --log-failed`,
 fix the cause if it is ours (never print or paste the report content into a commit, issue or public place).
 

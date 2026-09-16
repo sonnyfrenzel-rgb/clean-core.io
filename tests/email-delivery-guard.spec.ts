@@ -216,24 +216,30 @@ test.describe('the survey send records before it asks the provider', () => {
   const src = read('scripts/send-survey.ts');
   const loop = src.slice(src.indexOf('for (const [index, r] of recipients.entries())'), src.indexOf("console.log('');\n  console.log(`${sent} of"));
 
-  test('the outbox record is written before the provider call, under a deterministic id', () => {
+  test('the outbox record is claimed in a transaction before the provider call, under a deterministic id', () => {
+    const claim = loop.indexOf('db.runTransaction(');
     const outbox = loop.indexOf("state: 'sending'");
     const provider = loop.indexOf('await sendWithRetry(');
+    expect(claim).toBeGreaterThan(-1);
     expect(outbox).toBeGreaterThan(-1);
     expect(provider).toBeGreaterThan(-1);
+    expect(claim, 'the claim is not transactional').toBeLessThan(outbox);
     expect(outbox, 'the provider is asked before the record exists').toBeLessThan(provider);
+    // A second process finds the claim and skips; only a refused send is claimable again.
+    expect(loop).toMatch(/if \(snap\.exists && state !== 'failed'\) return false;/);
+    expect(loop).toMatch(/if \(!claimed\) \{[\s\S]*?continue;/);
     expect(loop).toMatch(/collection\('email_sends'\)\.doc\(`\$\{SURVEY_CAMPAIGN\}__\$\{r\.uid\}`\)/);
     expect(loop, 'a non-deterministic add() is back').not.toMatch(/collection\('email_sends'\)\.add\(/);
   });
 
-  test('success and refusal each write their state, and only success counts', () => {
-    const sent = loop.indexOf("state: 'sent'");
-    const failed = loop.indexOf("state: 'failed'");
-    const counted = loop.indexOf('invited: FieldValue.increment(1)');
-    expect(sent).toBeGreaterThan(-1);
-    expect(failed).toBeGreaterThan(-1);
-    expect(counted, 'the counter moves before the record says sent').toBeGreaterThan(sent);
-    expect(loop.slice(failed, sent)).not.toContain('invited: FieldValue.increment');
+  test('success and refusal each write their state; the count is derived from the records, never incremented', () => {
+    expect(loop.indexOf("state: 'sent'")).toBeGreaterThan(-1);
+    expect(loop.indexOf("state: 'failed'")).toBeGreaterThan(-1);
+    expect(src, 'a per-send increment is back').not.toMatch(/invited: FieldValue\.increment/);
+    const after = src.slice(src.indexOf("console.log(`${sent} of"));
+    void after;
+    expect(src).toMatch(/const invited = await countInvited\(db\);\s*await campaignRef\.set\(\{ invited \}, \{ merge: true \}\);/);
+    expect(src).toMatch(/return state === 'sent' \|\| state === undefined;/);
   });
 
   test('a record in sending is skipped, reported, and never counted as sent', () => {

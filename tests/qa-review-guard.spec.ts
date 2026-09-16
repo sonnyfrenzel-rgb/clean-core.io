@@ -250,6 +250,21 @@ test.describe('the reviewer', () => {
     const lowercase = async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'private_verdict', message: { content: '' } }] }), { status: 200 });
     const error3 = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: lowercase }).catch((e: Error) => e);
     expect(String(error3.message)).not.toContain('private_verdict');
+
+    // Content that is not JSON: the same counts, the content itself never. A
+    // finish reason of "length" says the answer was cut off at max_tokens —
+    // the case the release audit of 33471220d6e9 could not distinguish from a
+    // model that had simply answered in prose.
+    const cutOff = async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'length', message: { content: `{"verdict":"${sentinel}` } }], usage: { completion_tokens: 40000, completion_tokens_details: { reasoning_tokens: 31000 } } }), { status: 200 });
+    const error4 = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', maxTokens: 40000, fetchImpl: cutOff }).catch((e: Error) => e);
+    expect(String(error4.message)).toMatch(/^The review was not valid JSON cut off at max_tokens \(finish_reason=length, completion_tokens=40000, reasoning_tokens=31000, max_tokens=40000\)\.$/);
+    expect(String(error4.message)).not.toContain(sentinel);
+    const prose = async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: `${sentinel} I decline to answer in JSON.` } }], usage: { completion_tokens: 12 } }), { status: 200 });
+    const error5 = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: prose }).catch((e: Error) => e);
+    expect(String(error5.message)).toMatch(/^The review was not valid JSON despite the schema \(finish_reason=stop, completion_tokens=12, reasoning_tokens=\?, max_tokens=\d+\)\.$/);
+    expect(String(error5.message)).not.toContain(sentinel);
+    // Neither message reads as a truncated HTTP body, which is the one case the CISO call asks again for.
+    expect(String(error4.message)).not.toMatch(/response that is not JSON/);
   });
 
   test('valid JSON that is not a review is rejected, not approved', async () => {

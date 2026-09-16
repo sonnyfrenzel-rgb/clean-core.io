@@ -10,7 +10,7 @@
  * is dependency-free by design and repeats the form; `tests/verify-pack-cli.spec.ts`
  * holds it to the same bytes.
  *
- * Format, unchanged since v1.18.1 for the signed part:
+ * Format, unchanged for the signed part since the run binding was added:
  *
  *   <path>:<sha256>;…;<projectId>:<runId>:<runHash>:<engineVersion>:<catalogVersion>;
  *
@@ -35,7 +35,7 @@ export interface CanonicalManifestParts {
   attested?: ReadonlyArray<{ path: string }>;
   projectId?: string;
   runId?: string;
-  /** Absent only on packs older than v1.18.1; those carry no run binding. */
+  /** Absent only on packs issued before the run binding existed; those canonicalise without the suffix. */
   runHash?: string;
   engineVersion?: string;
   sapApiCatalogVersion?: string;

@@ -21,7 +21,12 @@ die hohen und mittleren füllen 0.14–0.18.
 
 Daneben: der Security-Audit von 33471220d6e9 hatte nach 70 Minuten und 57 erfolgreichen Beraterläufen
 keinen Bericht, weil die CISO-Antwort abgeschnitten ankam — `audit.mjs` fragt genau diesen einen Aufruf jetzt
-einmal nach, der Lauf ist als Versuch 2 neu gestartet. `refute.mjs` findet jetzt auch Vollprüfungen (vorher
+einmal nach (als testbarer Helper `askAgainIfTruncated`). **Versuch 2 scheiterte anders:** 54 von 57
+Beraterläufen ok, die CISO-*Antwort* selbst kein gültiges JSON. Ob der CISO Prosa schrieb oder bei
+`cisoOutputTokens: 40_000` (inklusive Reasoning, `cisoEffort: 'high'`, bis 300.000 Zeichen Eingabe) mitten im
+JSON abgeschnitten wurde, konnte die eine Fehlerzeile nicht sagen — `openrouter.mjs` nennt jetzt bei ungültigem
+Inhalt `finish_reason` und die Token-Zahlen (nie den Inhalt). Die Budget-Entscheidung — mehr Ausgabe-Tokens
+für den CISO oder Effort `medium` — ist Sonnys; bis dahin hat v2.10.7 keinen Sicherheitsbericht. `refute.mjs` findet jetzt auch Vollprüfungen (vorher
 konnte kein Befund einer Vollprüfung widerlegt werden). Der Bot-Branch `chore/sync-cloudification-repo`
 ist überholt — `dev` trägt denselben `sourceSha256` vom 15.09. —, löschen darf nur Sonny. `sync-catalog.yml`
 steht seit dem 07.09. rot, weil der PR-Schritt bis zum 14.09. an der Repo-Einstellung scheiterte; seit dem
@@ -34,6 +39,28 @@ nur aus dem Run, die Aussagen des Kontos in einer eigenen, unsignierten und so b
 **gebaut am selben Tag** (`07-user-attested.md`, Name im Hash gebunden, Inhalt nicht; beide Verifier
 zeigen es; Narrative-Gaps nicht mehr im signierten Run). Damit sind 10 der 11 kritischen Befunde der
 Vollprüfung zu, offen bleibt 0.13 (zweiter Faktor vor der Sitzung).
+
+**QA-Runde 2 zu 0.12 (`ca3264f`):** der `validate`-Job war rot, weil zwei Kommentare in
+`lib/audit-pack-canonical.ts` ein Versionsliteral trugen (Version-Drift-Guard) — behoben; die
+Pipeline-E2E war „flaky" (Design-Seite unter Parallel-Last, allein grün). Bestätigt und behoben: die
+Survey-Outbox wird in einer Transaktion beansprucht (zwei `--apply`-Prozesse senden nicht doppelt), `invited`
+wird nach dem Lauf aus den `sent`-Records abgeleitet statt hochgezählt; das Offline-CLI kanonisiert Packs ohne
+`runHash` wie der Web-Verifier; ein Route-Test (`tests/audit-pack-route-boundary.spec.ts`, Emulator) prüft
+die Signaturgrenze durch `/api/runs/create` und `/api/audit-pack/create` hindurch. Widerlegt: der Redaktor
+hatte meine eigene Widerlegungsbegründung als Secret gelesen (Zuweisungsform) — umformuliert, mit
+`redactSecrets` gegengeprüft.
+
+**QA-Rundenzeit (Frage Sonny 16.09.2026):** eine Runde auf `dev` dauert 14–17 min — Modell 8–125 s,
+`validate` ~7 min, Cloud-Run-Deploy ~7 min. Ein anderes Flash-Modell wäre der falsche Hebel (Luna: 0,3–7 Cent
+je Runde). Entscheidung Sonny: **Option 1 jetzt** — `await.mjs` liefert die Befunde, sobald der Review-Job
+fertig ist (Exit 3, Smoke „pending"), und wartet nur bei sauberer Review auf den Smoke-Check
+(`waitForJob` in `scripts/qa/lib/gh.mjs`; Runbook §4 und Skill angepasst); **Option 2 als Roadmap-Punkt** —
+Dockerfile mit Layer-Cache statt Buildpack, Phase 0 „daneben". Modell und Effort bleiben.
+
+**Roadmap-Ergänzung (Sonny 16.09.2026):** in der Business-Sicht zeigen Prozesskarte, Prozesskette und
+Standard-Fit-Tabellen an jedem Element mit Standardkandidat direkt die Anpassungsoptionen, die je
+Betriebsmodell (Public Edition, Private Edition/RISE) näher an Fit-to-Standard führen — neuer Schritt **7.8**,
+deterministisch aus Katalog, Level und Scope Item, mit Evidenzstufe und *Not determined* statt erfundenem Weg.
 
 **Offen für Sonny:** den überholten Bot-Branch löschen (`git push origin --delete chore/sync-cloudification-repo`);
 `main` nach einer sauberen QA-Runde; die Survey-Workflows erst danach wieder einschalten; die
