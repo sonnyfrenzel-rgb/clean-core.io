@@ -38,7 +38,8 @@
     },
     "rules": {
       "file": "firestore.rules",
-      "sha256OfLfNormalisedText": "b1cad225116df03d441bfa86f13197b6cd1d632960dc7a051ce02c5749eae106",
+      "sha256OfLfNormalisedText": "9d723a3c3f54fe2c7b15c9825dc4837191761b6cd1c495d6085ef96bedefec34",
+      "deploymentRecord": "docs/registers/rules-deployment.json",
       "note": "Hashed after normalising CRLF to LF so the value is the same on Windows and on CI.",
       "projectDocument": {
         "read": "owner (resource.data.userId == request.auth.uid) or admin",
@@ -50,11 +51,6 @@
           "s4Deployment",
           "extensibilityRoute",
           "solutionDesign",
-          "targetArchitecture",
-          "approvedByArchitect",
-          "architectJustifiedOverride",
-          "architectSignOffAt",
-          "approvedBy",
           "generatedCode",
           "documentation",
           "businessDocumentation",
@@ -67,7 +63,6 @@
           "exports",
           "updatedAt",
           "s4Environment",
-          "usageReport",
           "nonFunctionalRequirements"
         ]
       },
@@ -77,7 +72,7 @@
         "write": "never from a client — `allow write: if false`"
       },
       "changedAt": "2026-09-16",
-      "changeReason": "Der Administrator liest keine Projekte mehr (Sonny, 16.09.2026). `projects/{projectId}` und `projects/{projectId}/runs/{runId}` gewaehren keinen `isAdmin()`-Lesezugriff mehr, und das pauschale Admin-`update` auf Projekte ist ebenfalls entfallen: nur noch der Besitzer. Ein Notfall (glaubwuerdige Meldung von Schadcode) ist ein bewusster serverseitiger Akt ueber das Admin-SDK, das die Regeln bauartbedingt umgeht. Vorheriger Stand: 96ece81b991cfeac4c5b0033e333e47ae9459c1fb825292c29e92fc69ec7fbe2."
+      "changeReason": "Roadmap 0.7: sechs Felder verlassen die Client-Allowlist und werden nur noch von POST /api/projects/{projectId}/commands geschrieben — die fuenf Freigabefelder (`targetArchitecture`, `approvedByArchitect`, `architectJustifiedOverride`, `architectSignOffAt`, `approvedBy`) und `usageReport`. Der Browser bestimmte bis dahin selbst, welche Adresse in `approvedBy` stand, und `usageReport` war nur als `is map` geprueft. Vorheriger Stand: b1cad225116df03d441bfa86f13197b6cd1d632960dc7a051ce02c5749eae106 (davor: der Wegfall des Admin-Lesezugriffs am 16.09.2026, 96ece81b991cfeac4c5b0033e333e47ae9459c1fb825292c29e92fc69ec7fbe2). Welche Fassung ausgerollt ist, steht in docs/registers/rules-deployment.json — CI rollt die Regeln nie aus."
     }
   },
   "trustChain": {
@@ -167,6 +162,23 @@
       "usageReport",
       "exports"
     ],
+    "serverOnlyProjectFields": {
+      "route": "app/api/projects/[projectId]/commands/route.ts",
+      "contract": "lib/project-commands.ts",
+      "guard": "tests/project-command-boundary.spec.ts",
+      "journal": "audit_events — geschrieben vom Admin-SDK (logAuditEvent), fuer keinen Client les- oder schreibbar",
+      "roadmapStep": "0.7",
+      "fields": [
+        "approvedBy",
+        "approvedByArchitect",
+        "architectJustifiedOverride",
+        "architectSignOffAt",
+        "targetArchitecture",
+        "usageReport"
+      ],
+      "reason": "Die fuenf Freigabefelder und der Nutzungsimport. Eine Freigabe entsteht auf dem Server oder gar nicht: der Browser schrieb bis Roadmap 0.7 auch `approvedBy`, also die Adresse, die auf der Freigabe steht. Sie kommt jetzt vom verifizierten ID-Token, der Zeitstempel von der Serveruhr. `usageReport` war in den Regeln nur als `is map` geprueft (Security-Audit v2.11.0); die Route haelt ihn auf den Schluesselsatz von lib/abap/usage-model.ts und eine Zeilenobergrenze.",
+      "stillAttestedNotSigned": "Der Audit-Pack fuehrt diese Felder weiterhin in 07-user-attested.md: sie bleiben eine Selbsterklaerung des angemeldeten Kontos. Servervalidiert heisst wahrheitsgemaess aufgezeichnet, nicht amtlich."
+    },
     "clientWritableFieldsNoStageWrites": {
       "legacyCode": "Reaches the project through POST /api/runs/create and through the dashboard's project creation. Client-writable by the rules, which is precisely why staleness().sourceChanged exists.",
       "s4Deployment": "Written by POST /api/runs/create from the deployment the reader chose on Analyze.",
@@ -382,9 +394,14 @@
         "clientWrites": [
           "worklist",
           "extensibilityRoute",
-          "usageReport",
           "exports"
         ],
+        "commandWrites": {
+          "via": "POST /api/projects/{projectId}/commands",
+          "project": [
+            "usageReport"
+          ]
+        },
         "serverWrites": {
           "via": "POST /api/runs/create",
           "creates": "projects/{projectId}/runs/{runId}",
@@ -563,13 +580,18 @@
           "solutionDesign",
           "status",
           "nonFunctionalRequirements",
-          "targetArchitecture",
-          "approvedByArchitect",
-          "architectJustifiedOverride",
-          "architectSignOffAt",
-          "approvedBy",
           "exports"
         ],
+        "commandWrites": {
+          "via": "POST /api/projects/{projectId}/commands",
+          "project": [
+            "targetArchitecture",
+            "approvedByArchitect",
+            "architectJustifiedOverride",
+            "architectSignOffAt",
+            "approvedBy"
+          ]
+        },
         "serverWrites": null,
         "consumedByNextStage": [
           "solutionDesign",

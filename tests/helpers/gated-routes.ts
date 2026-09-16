@@ -32,6 +32,10 @@ export const GATED_ROUTES: GatedRoute[] = [
   { file: 'app/api/runs/create/route.ts', method: 'POST', path: () => '/api/runs/create', body: { projectId: 'nowhere', legacyCode: 'REPORT z.', s4Deployment: 'public', analysis: '{}' } },
   { file: 'app/api/audit-pack/create/route.ts', method: 'POST', path: () => '/api/audit-pack/create', body: { projectId: 'nowhere' } },
   { file: 'app/api/projects/[projectId]/route.ts', method: 'DELETE', path: (p) => `/api/projects/${p}` },
+  // Roadmap 0.7: the only writer of the five release fields and the usage
+  // import. The sign-off it records is carried by the audit pack's decision
+  // record, so a token obtained before the second factor must not reach it.
+  { file: 'app/api/projects/[projectId]/commands/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/commands`, body: { command: 'revoke-architecture' } },
   { file: 'app/api/gemini/route.ts', method: 'POST', path: () => '/api/gemini', body: { prompt: 'hello' } },
   { file: 'app/api/run-tests/route.ts', method: 'POST', path: () => '/api/run-tests', body: { projectId: 'nowhere', testCases: [] } },
   { file: 'app/api/s4-credentials/route.ts', method: 'POST', path: () => '/api/s4-credentials', body: { url: 'https://example.invalid', username: 'u', password: 'p', authType: 'basic' } },

@@ -146,13 +146,32 @@ service cloud.firestore {
                     (
                       resource.data.userId == request.auth.uid &&
                       // Strict allowlist of client-writable draft & interactive fields (Finding P1)
+                      //
+                      // Roadmap 0.7: six fields left this list and are written
+                      // exclusively by POST /api/projects/{projectId}/commands
+                      // (Admin SDK, after a verified token, the second factor
+                      // and a validated transition):
+                      //
+                      //   targetArchitecture · approvedByArchitect ·
+                      //   architectJustifiedOverride · architectSignOffAt ·
+                      //   approvedBy   — the five release fields. The browser
+                      //   used to decide whose address went into `approvedBy`;
+                      //   it now comes off the ID token.
+                      //
+                      //   usageReport  — validated as `is map` and nothing
+                      //   else, so any structure of any size could be put on a
+                      //   project document (security audit of v2.11.0). The
+                      //   route holds it to the model's key set and a ceiling.
+                      //
+                      // The list here and `SERVER_ONLY_PROJECT_FIELDS` in
+                      // lib/project-commands.ts are held apart by
+                      // tests/project-command-boundary.spec.ts.
                       request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                         'status', 'legacyCode', 's4Deployment', 'extensibilityRoute', 'solutionDesign',
-                        'targetArchitecture', 'approvedByArchitect', 'architectJustifiedOverride', 'architectSignOffAt', 'approvedBy',
                         'generatedCode', 'documentation', 'businessDocumentation', 'presentation',
                         'testCases', 'testSuite', 'coverageEstimate', 'manualTestingRequirements',
                         'worklist', 'exports', 'updatedAt', 's4Environment',
-                        'usageReport', 'nonFunctionalRequirements'
+                        'nonFunctionalRequirements'
                       ])
                     )) && isValidProject(request.resource.data, true);
       // F-03: project deletion is server-only via the Admin SDK (recursiveDelete

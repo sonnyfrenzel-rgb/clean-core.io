@@ -23,7 +23,8 @@ import { saveAs } from '@/lib/fileSaver';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import ArchitectSignOff from '@/components/ArchitectSignOff';
 import type { TargetArchitecture } from '@/components/ArchitectSignOff';
-import { getAuth } from 'firebase/auth';
+import { recommendedArchitecture } from '@/lib/project-commands';
+import { runProjectCommand } from '@/lib/project-command-client';
 
 // Helper imports from components
 import { getSecurityExplanation } from '@/components/design/SecurityHardeningChecklist';
@@ -785,7 +786,13 @@ ${responseText.substring(0, 4000)}`;
           {/* Architect sign-off / decision — always last */}
           <div className="bg-white rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-sm">
               <ArchitectSignOff
-                recommendation={project?.originalRecommendation || (project?.extensibilityRoute?.includes('BTP') ? 'cap' : 'rap')}
+                // The two shapes `originalRecommendation` arrives in — the five
+                // architecture codes and the router's own route names — are
+                // translated in one place, which the server validates against.
+                recommendation={recommendedArchitecture({
+                  originalRecommendation: project?.originalRecommendation,
+                  extensibilityRoute: project?.extensibilityRoute,
+                }) || 'rap'}
                 confidenceScore={project?.recommendationConfidence}
                 justificationText={project?.recommendationJustification || `Based on the code analysis, the ${project?.extensibilityRoute?.includes('BTP') ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`}
                 isLocked={project?.approvedByArchitect === true}
@@ -794,43 +801,27 @@ ${responseText.substring(0, 4000)}`;
                 lockedByEmail={project?.approvedBy}
                 lockedAt={project?.architectSignOffAt ? String(project.architectSignOffAt) : undefined}
                 canUnlock={true}
+                // Roadmap 0.7: the five release fields are no longer writable
+                // from here. The server records them and answers with what it
+                // stored — including the address it read off the ID token and
+                // the timestamp off its own clock, neither of which this page
+                // is entitled to invent.
                 onLock={async (architecture, justification) => {
-                  const auth = getAuth();
-                  const userEmail = auth.currentUser?.email || 'unknown';
-                  const db = getDb();
-                  await updateDoc(doc(db, 'projects', projectId as string), {
+                  const stored = await runProjectCommand(projectId as string, {
+                    command: 'approve-architecture',
                     targetArchitecture: architecture,
-                    approvedByArchitect: true,
-                    architectJustifiedOverride: justification || '',
-                    architectSignOffAt: new Date().toISOString(),
-                    approvedBy: userEmail,
+                    justification: justification || '',
                   });
-                  setProject((prev: Project | null) => prev ? {
-                    ...prev,
-                    targetArchitecture: architecture,
-                    approvedByArchitect: true,
-                    architectJustifiedOverride: justification || '',
-                    architectSignOffAt: new Date().toISOString(),
-                    approvedBy: userEmail,
-                  } : null);
+                  setProject((prev: Project | null) => prev ? { ...prev, ...stored } as Project : null);
                 }}
                 onUnlock={async () => {
-                  const db = getDb();
-                  await updateDoc(doc(db, 'projects', projectId as string), {
-                    approvedByArchitect: false,
-                    targetArchitecture: null,
-                    architectJustifiedOverride: '',
-                    architectSignOffAt: null,
-                    approvedBy: '',
-                  });
+                  const stored = await runProjectCommand(projectId as string, { command: 'revoke-architecture' });
                   setProject((prev: Project | null) => prev ? {
                     ...prev,
-                    approvedByArchitect: false,
+                    ...stored,
                     targetArchitecture: undefined,
-                    architectJustifiedOverride: '',
                     architectSignOffAt: undefined,
-                    approvedBy: '',
-                  } : null);
+                  } as Project : null);
                 }}
               />
           </div>

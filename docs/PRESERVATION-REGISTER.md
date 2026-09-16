@@ -70,8 +70,8 @@ Order and per-phase state come only from `lib/workflow-steps.ts`
 
 | # | Stage | Requires | Writes to the project | Blocked by | On a model failure |
 |---|---|---|---|---|---|
-| 1 | **Analyze** | `legacyCode` | *client:* `worklist`, `extensibilityRoute`, `usageReport`, `exports` · *server (`/api/runs/create`):* `activeRunId`, `status`, `charged`, `transformationBypass`, `legacyCode`, `s4Deployment`, `updatedAt`, `worklist`, `extensibilityRoute`, `auditMetadata` — and the immutable `runs/{runId}` | file type, 1 MB, the staged-code scan, `looksLikeAbap`, auth + MFA + account state + quota | **roadmap 1.2:** the run is created and signed from the deterministic findings alone, with `modelParticipation: 'none'`. No key, a switched-off stage and a failed call are the same outcome for the run and three different sentences on the screen |
-| 2 | **Design** | `activeRunId`, `analysis` | `solutionDesign`, `status`, `nonFunctionalRequirements`, `targetArchitecture`, `approvedByArchitect`, `architectJustifiedOverride`, `architectSignOffAt`, `approvedBy`, `exports` | `enforceActiveRun` only — there is no `design` target in `generationBlockers` | an empty response throws; nothing is written; the NFR call may fail silently |
+| 1 | **Analyze** | `legacyCode` | *client:* `worklist`, `extensibilityRoute`, `exports` · *command (`/api/projects/{id}/commands`):* `usageReport` · *server (`/api/runs/create`):* `activeRunId`, `status`, `charged`, `transformationBypass`, `legacyCode`, `s4Deployment`, `updatedAt`, `worklist`, `extensibilityRoute`, `auditMetadata` — and the immutable `runs/{runId}` | file type, 1 MB, the staged-code scan, `looksLikeAbap`, auth + MFA + account state + quota | the run is still created from the deterministic findings alone; a thrown error shows a banner |
+| 2 | **Design** | `activeRunId`, `analysis` | *client:* `solutionDesign`, `status`, `nonFunctionalRequirements`, `exports` · *command (`/api/projects/{id}/commands`):* `targetArchitecture`, `approvedByArchitect`, `architectJustifiedOverride`, `architectSignOffAt`, `approvedBy` | `enforceActiveRun` only — there is no `design` target in `generationBlockers`; the sign-off itself additionally needs a signed run, a known architecture and a reason for an override, all decided on the server | an empty response throws; nothing is written; the NFR call may fail silently |
 | 3 | **Transformation** | `activeRunId`, `legacyCode`, `solutionDesign`, `analysis` | `generatedCode`, `testSuite`, `status` | `enforceActiveRun`, `generationBlockers(…, 'transformation')`: source changed, design stale, sign-off stale | no usable file → throws, **nothing is saved**, the previous artefact stays |
 | 4 | **Documentation** | `activeRunId` | `documentation`, `businessDocumentation`, **`generatedCode`**, `status` | `enforceActiveRun`, `generationBlockers(…, 'documentation')`: the three above **plus** code stale | an empty response throws; `docError` is shown; nothing is written |
 | 5 | **Testing** | `activeRunId` | `s4Environment`, `testCases`, `testSuite`, `coverageEstimate`, `manualTestingRequirements`, `generatedCode`, `status` | `enforceActiveRun`, `generationBlockers(…, 'testing')`, and `LIVE_TEST_EXECUTION` (G0:R0) | generation rethrows; a build error auto-heals and retries; a dead sandbox throws |
@@ -112,7 +112,11 @@ erfasst."*) is not decoration. It is what makes a later re-review repeatable.
   The guard also parses the client-writable allowlist out of the file and checks
   that every field a stage writes from the browser is in it. **CI never deploys
   the rules** (`npm run deploy:rules` is manual), so a register that did not pin
-  them would describe a permission model nobody had deployed.
+  them would describe a permission model nobody had deployed. Since roadmap 0.7
+  the register no longer has to pin them *alone*: `docs/registers/rules-deployment.json`
+  records which text is actually live, `npm run rules:check` compares it with the
+  working copy, and `tests/rules-deploy-order.spec.ts` fails when the app would
+  ship ahead of a rules change it depends on.
 - **Deployment** — Cloud Run `europe-west1`, project `cleancore-491216`: `main` →
   `clean-core`, `dev` → `clean-core-dev`. `release` was retired on 31.08.2026.
 
@@ -224,8 +228,13 @@ The reason and the four conditions for reopening are in `lib/locked-paths.ts` an
    fails and names the field.
 3. Update `docs/registers/preservation-register.json` to what the code now does —
    not to what it was supposed to do.
-4. If `firestore.rules` changed, run the rules deploy (`npm run deploy:rules`,
-   manual) and update `baseline.rules.sha256OfLfNormalisedText`.
+4. If `firestore.rules` changed, update `baseline.rules.sha256OfLfNormalisedText`
+   and deal with the deploy: `npm run deploy:rules` (manual — it deploys to every
+   database *and* records the new text in `docs/registers/rules-deployment.json`
+   in one command), or, if the deploy has to wait, `npm run rules:record --
+   --pending "<why>"`. A rules change that gives a client a field it did not have
+   must be deployed *before* the app that uses it; `npm run rules:check` and
+   `tests/rules-deploy-order.spec.ts` refuse the other order.
 5. If the change removes a limit in §6, delete the limit and its assertion in the
    same commit. A limit that is quietly fixed and quietly left in the register is
    the same failure as one that is quietly introduced.
