@@ -2,11 +2,13 @@
   "schemaVersion": 1,
   "id": "preservation-register",
   "roadmapStep": "1.1",
-  "acceptance": ["QA24-A04", "W22-A04"],
+  "acceptance": [
+    "QA24-A04",
+    "W22-A04"
+  ],
   "purpose": "What the seven workflow stages do today, taken from the code, so that nothing is lost unnoticed in the 3.0 rebuild. Every entry is checked against the code by tests/preservation-register.spec.ts; where this file and the code disagree, the test fails and the code wins.",
   "humanDocument": "docs/PRESERVATION-REGISTER.md",
   "guard": "tests/preservation-register.spec.ts",
-
   "baseline": {
     "verifiedAgainstCommit": "52f171091948edc12384992f877e2be864c589d3",
     "verifiedAgainstBranch": "origin/dev",
@@ -36,7 +38,7 @@
     },
     "rules": {
       "file": "firestore.rules",
-      "sha256OfLfNormalisedText": "96ece81b991cfeac4c5b0033e333e47ae9459c1fb825292c29e92fc69ec7fbe2",
+      "sha256OfLfNormalisedText": "b1cad225116df03d441bfa86f13197b6cd1d632960dc7a051ce02c5749eae106",
       "note": "Hashed after normalising CRLF to LF so the value is the same on Windows and on CI.",
       "projectDocument": {
         "read": "owner (resource.data.userId == request.auth.uid) or admin",
@@ -73,10 +75,11 @@
         "path": "projects/{projectId}/runs/{runId}",
         "read": "owner or admin",
         "write": "never from a client — `allow write: if false`"
-      }
+      },
+      "changedAt": "2026-09-16",
+      "changeReason": "Der Administrator liest keine Projekte mehr (Sonny, 16.09.2026). `projects/{projectId}` und `projects/{projectId}/runs/{runId}` gewaehren keinen `isAdmin()`-Lesezugriff mehr, und das pauschale Admin-`update` auf Projekte ist ebenfalls entfallen: nur noch der Besitzer. Ein Notfall (glaubwuerdige Meldung von Schadcode) ist ein bewusster serverseitiger Akt ueber das Admin-SDK, das die Regeln bauartbedingt umgeht. Vorheriger Stand: 96ece81b991cfeac4c5b0033e333e47ae9459c1fb825292c29e92fc69ec7fbe2."
     }
   },
-
   "trustChain": {
     "run": {
       "writtenBy": "app/api/runs/create/route.ts",
@@ -105,7 +108,11 @@
         "recommendationConfidence",
         "recommendationJustification"
       ],
-      "unsignedFieldsOnTheRun": ["analysis", "runHash", "signature"],
+      "unsignedFieldsOnTheRun": [
+        "analysis",
+        "runHash",
+        "signature"
+      ],
       "note": "`analysis` is the model narrative. Only its SHA-256 goes into the signed payload, as aiNarrativeMeta.responseHash with evidentiary: false."
     },
     "projectFieldsWrittenByRunsCreate": [
@@ -135,11 +142,20 @@
     "hydration": {
       "reader": "loadProjectAndHydrate(projectId)",
       "rule": "project document, then the active run spread over it — the run wins on every shared key.",
-      "projectLeadingFields": ["worklist", "extensibilityRoute", "exports"],
+      "projectLeadingFields": [
+        "worklist",
+        "extensibilityRoute",
+        "exports"
+      ],
       "onMissingRun": "_runLoadFailed = true, _runLoadError set; in-memory only, never persisted.",
       "consequence": "Every field in projectFieldsDeletedByRunsCreate reaches a stage only through hydration. A reader that does not hydrate (the dashboard) never sees them."
     },
-    "stalenessTrackedArtefacts": ["solutionDesign", "generatedCode", "testCases", "documentation"],
+    "stalenessTrackedArtefacts": [
+      "solutionDesign",
+      "generatedCode",
+      "testCases",
+      "documentation"
+    ],
     "stalenessUntrackedArtefacts": [
       "businessDocumentation",
       "testSuite",
@@ -155,7 +171,11 @@
       "updatedAt": "Written by POST /api/runs/create.",
       "presentation": "Written by nothing. Declared on the Project type, size-validated in firestore.rules and in the client-writable allowlist, and no stage or route sets it (see knownLimit L-09)."
     },
-    "generationBlockerTargets": ["transformation", "documentation", "testing"],
+    "generationBlockerTargets": [
+      "transformation",
+      "documentation",
+      "testing"
+    ],
     "generationBlockerMessages": {
       "sourceChanged": "The source changed after the signed run. Re-run the analysis in stage 1 first.",
       "designStale": "The solution design was generated for a previous source. Regenerate it in stage 2 first.",
@@ -173,10 +193,12 @@
     "auditPackServerBlockers": {
       "route": "app/api/audit-pack/create/route.ts",
       "status": 409,
-      "codes": ["source-changed", "sign-off-stale"]
+      "codes": [
+        "source-changed",
+        "sign-off-stale"
+      ]
     }
   },
-
   "lockedPaths": [
     {
       "id": "G0:R0",
@@ -187,7 +209,6 @@
       "inheritedFrom": "docs/roadmap/SCHNITT-0-UMFANG.md §1 — \"Die Grenze steht in SECURITY.md; das Erhaltungsregister erbt sie in v2.11.\""
     }
   ],
-
   "knownLimits": [
     {
       "id": "L-01",
@@ -253,7 +274,6 @@
       "evidence": "lib/workflow-steps.ts, the `economics` phase and workflowSummary."
     }
   ],
-
   "stages": [
     {
       "key": "analyze",
@@ -265,27 +285,92 @@
       "purpose": "Stage the ABAP source, run the deterministic evidence engine, and mint the immutable signed run every later figure derives from.",
       "inputs": {
         "required": [
-          { "field": "legacyCode", "from": "project", "why": "the source to analyse; POST /api/runs/create refuses with 400 without it" }
+          {
+            "field": "legacyCode",
+            "from": "project",
+            "why": "the source to analyse; POST /api/runs/create refuses with 400 without it"
+          }
         ],
         "optional": [
-          { "field": "activeRunId", "from": "project", "why": "decides whether the page shows a report or the upload area" },
-          { "field": "analysis", "from": "run", "why": "the model narrative, rendered as the report" },
-          { "field": "cleanCoreScore", "from": "run", "why": "headline score" },
-          { "field": "complexityScore", "from": "run", "why": "assessment panel" },
-          { "field": "criticalityScore", "from": "run", "why": "assessment panel" },
-          { "field": "codeInventory", "from": "run", "why": "inventory table" },
-          { "field": "dataCoupling", "from": "run", "why": "data coupling table" },
-          { "field": "extensibilityRoute", "from": "project", "why": "route badge and the override switch" },
-          { "field": "worklist", "from": "project", "why": "the editable gaps worklist" },
-          { "field": "usageReport", "from": "project", "why": "usage-weighted risk matrix" },
-          { "field": "s4Deployment", "from": "project", "why": "public vs private edition decides the routing rule" },
-          { "field": "fromExample", "from": "project", "why": "a starter example skips the terms checkbox" },
-          { "field": "isExample", "from": "project", "why": "as above" },
-          { "field": "name", "from": "project", "why": "export file names" }
+          {
+            "field": "activeRunId",
+            "from": "project",
+            "why": "decides whether the page shows a report or the upload area"
+          },
+          {
+            "field": "analysis",
+            "from": "run",
+            "why": "the model narrative, rendered as the report"
+          },
+          {
+            "field": "cleanCoreScore",
+            "from": "run",
+            "why": "headline score"
+          },
+          {
+            "field": "complexityScore",
+            "from": "run",
+            "why": "assessment panel"
+          },
+          {
+            "field": "criticalityScore",
+            "from": "run",
+            "why": "assessment panel"
+          },
+          {
+            "field": "codeInventory",
+            "from": "run",
+            "why": "inventory table"
+          },
+          {
+            "field": "dataCoupling",
+            "from": "run",
+            "why": "data coupling table"
+          },
+          {
+            "field": "extensibilityRoute",
+            "from": "project",
+            "why": "route badge and the override switch"
+          },
+          {
+            "field": "worklist",
+            "from": "project",
+            "why": "the editable gaps worklist"
+          },
+          {
+            "field": "usageReport",
+            "from": "project",
+            "why": "usage-weighted risk matrix"
+          },
+          {
+            "field": "s4Deployment",
+            "from": "project",
+            "why": "public vs private edition decides the routing rule"
+          },
+          {
+            "field": "fromExample",
+            "from": "project",
+            "why": "a starter example skips the terms checkbox"
+          },
+          {
+            "field": "isExample",
+            "from": "project",
+            "why": "as above"
+          },
+          {
+            "field": "name",
+            "from": "project",
+            "why": "export file names"
+          }
         ]
       },
       "outputs": {
-        "clientWrites": ["worklist", "extensibilityRoute", "usageReport", "exports"],
+        "clientWrites": [
+          "worklist",
+          "extensibilityRoute",
+          "usageReport",
+          "exports"
+        ],
         "serverWrites": {
           "via": "POST /api/runs/create",
           "creates": "projects/{projectId}/runs/{runId}",
@@ -302,7 +387,13 @@
             "auditMetadata"
           ]
         },
-        "consumedByNextStage": ["activeRunId", "analysis", "cleanCoreScore", "extensibilityRoute", "legacyCode"]
+        "consumedByNextStage": [
+          "activeRunId",
+          "analysis",
+          "cleanCoreScore",
+          "extensibilityRoute",
+          "legacyCode"
+        ]
       },
       "preconditions": {
         "enforceActiveRun": false,
@@ -317,14 +408,25 @@
         ]
       },
       "errors": [
-        { "when": "the model call fails or returns unparseable JSON", "does": "the worklist falls back to the deterministic findings alone and the run is still created; a thrown error sets the page error banner." },
-        { "when": "POST /api/runs/create is not ok", "does": "throws the route's error message; the reserved quota unit is refunded server-side and the fingerprint forgotten." },
-        { "when": "the project document does not exist", "does": "nothing — loadProjectAndHydrate returns null, `project` stays null and the page renders the upload area as if the project were new. No 'not found' message." },
-        { "when": "the active run cannot be read", "does": "nothing — the page ignores _runLoadFailed and renders an empty report." }
+        {
+          "when": "the model call fails or returns unparseable JSON",
+          "does": "the worklist falls back to the deterministic findings alone and the run is still created; a thrown error sets the page error banner."
+        },
+        {
+          "when": "POST /api/runs/create is not ok",
+          "does": "throws the route's error message; the reserved quota unit is refunded server-side and the fingerprint forgotten."
+        },
+        {
+          "when": "the project document does not exist",
+          "does": "nothing — loadProjectAndHydrate returns null, `project` stays null and the page renders the upload area as if the project were new. No 'not found' message."
+        },
+        {
+          "when": "the active run cannot be read",
+          "does": "nothing — the page ignores _runLoadFailed and renders an empty report."
+        }
       ],
       "referenceCase": "RC-analyze-signed-run"
     },
-
     {
       "key": "design",
       "n": 2,
@@ -335,22 +437,79 @@
       "purpose": "Turn the analysis into a target architecture (RAP in-app or CAP side-by-side) and record the architect's self-declared sign-off.",
       "inputs": {
         "required": [
-          { "field": "activeRunId", "from": "project", "via": "enforceActiveRun", "why": "enforceActiveRun redirects to Analyze without it" },
-          { "field": "analysis", "from": "run", "why": "the prompt context; without it the page cannot auto-generate" }
+          {
+            "field": "activeRunId",
+            "from": "project",
+            "via": "enforceActiveRun",
+            "why": "enforceActiveRun redirects to Analyze without it"
+          },
+          {
+            "field": "analysis",
+            "from": "run",
+            "why": "the prompt context; without it the page cannot auto-generate"
+          }
         ],
         "optional": [
-          { "field": "extensibilityRoute", "from": "project", "why": "chooses the RAP or the CAP prompt" },
-          { "field": "solutionDesign", "from": "project", "why": "an existing design is shown instead of generated" },
-          { "field": "originalRecommendation", "from": "run", "why": "what the engine recommended, shown beside the override" },
-          { "field": "recommendationConfidence", "from": "run", "why": "confidence shown on the sign-off card" },
-          { "field": "recommendationJustification", "from": "run", "why": "rationale shown on the sign-off card" },
-          { "field": "targetArchitecture", "from": "project", "why": "the confirmed target" },
-          { "field": "approvedByArchitect", "from": "project", "why": "locks the sign-off card" },
-          { "field": "approvedBy", "from": "project", "why": "who declared it" },
-          { "field": "architectSignOffAt", "from": "project", "why": "when — and the staleness key" },
-          { "field": "architectJustifiedOverride", "from": "project", "why": "why the recommendation was overridden" },
-          { "field": "nonFunctionalRequirements", "from": "project", "why": "restored NFR panel" },
-          { "field": "name", "from": "project", "why": "export file name" }
+          {
+            "field": "extensibilityRoute",
+            "from": "project",
+            "why": "chooses the RAP or the CAP prompt"
+          },
+          {
+            "field": "solutionDesign",
+            "from": "project",
+            "why": "an existing design is shown instead of generated"
+          },
+          {
+            "field": "originalRecommendation",
+            "from": "run",
+            "why": "what the engine recommended, shown beside the override"
+          },
+          {
+            "field": "recommendationConfidence",
+            "from": "run",
+            "why": "confidence shown on the sign-off card"
+          },
+          {
+            "field": "recommendationJustification",
+            "from": "run",
+            "why": "rationale shown on the sign-off card"
+          },
+          {
+            "field": "targetArchitecture",
+            "from": "project",
+            "why": "the confirmed target"
+          },
+          {
+            "field": "approvedByArchitect",
+            "from": "project",
+            "why": "locks the sign-off card"
+          },
+          {
+            "field": "approvedBy",
+            "from": "project",
+            "why": "who declared it"
+          },
+          {
+            "field": "architectSignOffAt",
+            "from": "project",
+            "why": "when — and the staleness key"
+          },
+          {
+            "field": "architectJustifiedOverride",
+            "from": "project",
+            "why": "why the recommendation was overridden"
+          },
+          {
+            "field": "nonFunctionalRequirements",
+            "from": "project",
+            "why": "restored NFR panel"
+          },
+          {
+            "field": "name",
+            "from": "project",
+            "why": "export file name"
+          }
         ]
       },
       "outputs": {
@@ -366,7 +525,11 @@
           "exports"
         ],
         "serverWrites": null,
-        "consumedByNextStage": ["solutionDesign", "approvedByArchitect", "architectSignOffAt"]
+        "consumedByNextStage": [
+          "solutionDesign",
+          "approvedByArchitect",
+          "architectSignOffAt"
+        ]
       },
       "preconditions": {
         "enforceActiveRun": true,
@@ -376,15 +539,29 @@
         ]
       },
       "errors": [
-        { "when": "the model returns an empty response", "does": "throws 'Gemini returned an empty response…'; designError is shown and nothing is written." },
-        { "when": "the NFR call or its JSON parse fails", "does": "swallowed on purpose — the design is already saved; the NFR panel stays empty." },
-        { "when": "the active run cannot be read", "does": "the only stage that surfaces it: designError names the run load error and tells the reader to reload or re-run stage 1." },
-        { "when": "loadProjectAndHydrate rejects", "does": "nothing catches it — the effect has no try/catch and no finally, so the page stays on its loading state and the rejection is unhandled." },
-        { "when": "the design JSON cannot be parsed", "does": "falls back to rendering the text as markdown." }
+        {
+          "when": "the model returns an empty response",
+          "does": "throws 'Gemini returned an empty response…'; designError is shown and nothing is written."
+        },
+        {
+          "when": "the NFR call or its JSON parse fails",
+          "does": "swallowed on purpose — the design is already saved; the NFR panel stays empty."
+        },
+        {
+          "when": "the active run cannot be read",
+          "does": "the only stage that surfaces it: designError names the run load error and tells the reader to reload or re-run stage 1."
+        },
+        {
+          "when": "loadProjectAndHydrate rejects",
+          "does": "nothing catches it — the effect has no try/catch and no finally, so the page stays on its loading state and the rejection is unhandled."
+        },
+        {
+          "when": "the design JSON cannot be parsed",
+          "does": "falls back to rendering the text as markdown."
+        }
       ],
       "referenceCase": "RC-design-awaiting-sign-off"
     },
-
     {
       "key": "transformation",
       "n": 3,
@@ -395,40 +572,94 @@
       "purpose": "Generate the target code from source, analysis and design — as a file list, not a blob.",
       "inputs": {
         "required": [
-          { "field": "activeRunId", "from": "project", "via": "enforceActiveRun", "why": "enforceActiveRun redirects to Analyze without it" },
-          { "field": "legacyCode", "from": "project", "why": "prompt input; auto-generation requires it" },
-          { "field": "solutionDesign", "from": "project", "why": "prompt input; auto-generation requires it" },
-          { "field": "analysis", "from": "run", "why": "prompt input; auto-generation requires it" }
+          {
+            "field": "activeRunId",
+            "from": "project",
+            "via": "enforceActiveRun",
+            "why": "enforceActiveRun redirects to Analyze without it"
+          },
+          {
+            "field": "legacyCode",
+            "from": "project",
+            "why": "prompt input; auto-generation requires it"
+          },
+          {
+            "field": "solutionDesign",
+            "from": "project",
+            "why": "prompt input; auto-generation requires it"
+          },
+          {
+            "field": "analysis",
+            "from": "run",
+            "why": "prompt input; auto-generation requires it"
+          }
         ],
         "optional": [
-          { "field": "extensibilityRoute", "from": "project", "why": "chooses the RAP or the CAP prompt" },
-          { "field": "generatedCode", "from": "project", "why": "an existing artefact is shown instead of generated" },
-          { "field": "name", "from": "project", "why": "download names" }
+          {
+            "field": "extensibilityRoute",
+            "from": "project",
+            "why": "chooses the RAP or the CAP prompt"
+          },
+          {
+            "field": "generatedCode",
+            "from": "project",
+            "why": "an existing artefact is shown instead of generated"
+          },
+          {
+            "field": "name",
+            "from": "project",
+            "why": "download names"
+          }
         ]
       },
       "outputs": {
-        "clientWrites": ["generatedCode", "testSuite", "status"],
+        "clientWrites": [
+          "generatedCode",
+          "testSuite",
+          "status"
+        ],
         "serverWrites": null,
-        "consumedByNextStage": ["generatedCode", "testSuite"]
+        "consumedByNextStage": [
+          "generatedCode",
+          "testSuite"
+        ]
       },
       "preconditions": {
         "enforceActiveRun": true,
         "generationBlockersTarget": "transformation",
-        "blocksOn": ["sourceChanged", "designStale", "signOffStale"],
+        "blocksOn": [
+          "sourceChanged",
+          "designStale",
+          "signOffStale"
+        ],
         "otherGates": [
           "generationInFlight ref — a second generation cannot start while one is in flight"
         ]
       },
       "errors": [
-        { "when": "the model returns no usable file", "does": "throws 'The model returned no usable code. Nothing was saved — the previous version is untouched.' The previous generatedCode stays." },
-        { "when": "the response is not JSON", "does": "falls back to one file (srv/service.ts or the RAP behavior class) and keeps it only if it passes isUsableFile." },
-        { "when": "the project document does not exist", "does": "sets 'Project not found.' and stops loading." },
-        { "when": "loadProjectAndHydrate rejects", "does": "sets 'Failed to load project data.' and stops loading." },
-        { "when": "generationBlockers is non-empty", "does": "auto-generation is skipped and a StaleNotice names each blocker." }
+        {
+          "when": "the model returns no usable file",
+          "does": "throws 'The model returned no usable code. Nothing was saved — the previous version is untouched.' The previous generatedCode stays."
+        },
+        {
+          "when": "the response is not JSON",
+          "does": "falls back to one file (srv/service.ts or the RAP behavior class) and keeps it only if it passes isUsableFile."
+        },
+        {
+          "when": "the project document does not exist",
+          "does": "sets 'Project not found.' and stops loading."
+        },
+        {
+          "when": "loadProjectAndHydrate rejects",
+          "does": "sets 'Failed to load project data.' and stops loading."
+        },
+        {
+          "when": "generationBlockers is non-empty",
+          "does": "auto-generation is skipped and a StaleNotice names each blocker."
+        }
       ],
       "referenceCase": "RC-transformation-generated-not-tested"
     },
-
     {
       "key": "documentation",
       "n": 4,
@@ -439,63 +670,164 @@
       "purpose": "Write the process blueprint (L1-L4 plus a BPMN flow) and, on top of it, the business SOP and RACI layer.",
       "inputs": {
         "required": [
-          { "field": "activeRunId", "from": "project", "via": "enforceActiveRun", "why": "enforceActiveRun redirects to Analyze without it" }
+          {
+            "field": "activeRunId",
+            "from": "project",
+            "via": "enforceActiveRun",
+            "why": "enforceActiveRun redirects to Analyze without it"
+          }
         ],
         "optional": [
-          { "field": "generatedCode", "from": "project", "why": "first 1,000 characters go into the prompt, and the blueprint is merged back into it" },
-          { "field": "solutionDesign", "from": "project", "why": "first 1,000 characters go into the prompt" },
-          { "field": "analysis", "from": "run", "why": "first 1,000 characters go into the prompt" },
-          { "field": "documentation", "from": "project", "why": "an existing blueprint is shown instead of generated" },
-          { "field": "businessDocumentation", "from": "project", "why": "an existing SOP layer is shown instead of generated" },
-          { "field": "name", "from": "project", "why": "prompt context and export names" }
+          {
+            "field": "generatedCode",
+            "from": "project",
+            "why": "first 1,000 characters go into the prompt, and the blueprint is merged back into it"
+          },
+          {
+            "field": "solutionDesign",
+            "from": "project",
+            "why": "first 1,000 characters go into the prompt"
+          },
+          {
+            "field": "analysis",
+            "from": "run",
+            "why": "first 1,000 characters go into the prompt"
+          },
+          {
+            "field": "documentation",
+            "from": "project",
+            "why": "an existing blueprint is shown instead of generated"
+          },
+          {
+            "field": "businessDocumentation",
+            "from": "project",
+            "why": "an existing SOP layer is shown instead of generated"
+          },
+          {
+            "field": "name",
+            "from": "project",
+            "why": "prompt context and export names"
+          }
         ]
       },
       "outputs": {
-        "clientWrites": ["documentation", "businessDocumentation", "generatedCode", "status"],
+        "clientWrites": [
+          "documentation",
+          "businessDocumentation",
+          "generatedCode",
+          "status"
+        ],
         "serverWrites": null,
-        "consumedByNextStage": ["documentation", "businessDocumentation"],
+        "consumedByNextStage": [
+          "documentation",
+          "businessDocumentation"
+        ],
         "note": "This is the one stage that writes an upstream stage's artefact: both generations insert docs/process-blueprint.md into generatedCode, inside a Firestore transaction that re-reads it."
       },
       "preconditions": {
         "enforceActiveRun": true,
         "generationBlockersTarget": "documentation",
-        "blocksOn": ["sourceChanged", "designStale", "signOffStale", "codeStale"],
+        "blocksOn": [
+          "sourceChanged",
+          "designStale",
+          "signOffStale",
+          "codeStale"
+        ],
         "otherGates": [
           "the business layer additionally requires a technical blueprint to exist"
         ]
       },
       "errors": [
-        { "when": "the model returns an empty response", "does": "throws 'Gemini returned an empty response.'; docError is shown and nothing is written." },
-        { "when": "generationBlockers is non-empty", "does": "docError is set to the blocker text before any model call, and a StaleNotice repeats it." },
-        { "when": "the stored blueprint does not parse or has no l1_domain", "does": "parsedDoc is null and the page renders the empty state; the stored text is not deleted." },
-        { "when": "loadProjectAndHydrate rejects", "does": "logged only; loading stops and the page renders its empty state with no message." }
+        {
+          "when": "the model returns an empty response",
+          "does": "throws 'Gemini returned an empty response.'; docError is shown and nothing is written."
+        },
+        {
+          "when": "generationBlockers is non-empty",
+          "does": "docError is set to the blocker text before any model call, and a StaleNotice repeats it."
+        },
+        {
+          "when": "the stored blueprint does not parse or has no l1_domain",
+          "does": "parsedDoc is null and the page renders the empty state; the stored text is not deleted."
+        },
+        {
+          "when": "loadProjectAndHydrate rejects",
+          "does": "logged only; loading stops and the page renders its empty state with no message."
+        }
       ],
       "referenceCase": "RC-documentation-blocked-by-stale-code"
     },
-
     {
       "key": "testing",
       "n": 5,
       "label": "Testing",
       "route": "/project/{projectId}/testing",
       "page": "app/(app)/project/[projectId]/testing/page.tsx",
-      "alsoWrites": ["hooks/useTestGeneration.ts", "hooks/useTestExecution.ts"],
+      "alsoWrites": [
+        "hooks/useTestGeneration.ts",
+        "hooks/useTestExecution.ts"
+      ],
       "purpose": "Generate a test suite for the transformed code and run it against mocks in the restricted runner. Tenant execution is locked (G0:R0).",
       "inputs": {
         "required": [
-          { "field": "activeRunId", "from": "project", "via": "enforceActiveRun", "why": "enforceActiveRun redirects to Analyze without it" }
+          {
+            "field": "activeRunId",
+            "from": "project",
+            "via": "enforceActiveRun",
+            "why": "enforceActiveRun redirects to Analyze without it"
+          }
         ],
         "optional": [
-          { "field": "legacyCode", "from": "project", "why": "prompt context" },
-          { "field": "solutionDesign", "from": "project", "why": "prompt context" },
-          { "field": "generatedCode", "from": "project", "why": "prompt context and the module the runner executes" },
-          { "field": "extensibilityRoute", "from": "project", "why": "ABAP Unit stubs vs node:test suite" },
-          { "field": "testCases", "from": "project", "why": "the saved suite, shown after a reload" },
-          { "field": "testSuite", "from": "project", "why": "the runnable suite code" },
-          { "field": "s4Environment", "from": "project", "why": "which environment tab opens" },
-          { "field": "s4Meta", "from": "project", "why": "non-secret connection metadata; the password is write-only" },
-          { "field": "s4Config", "from": "project", "why": "deprecated cleartext fallback, still read" },
-          { "field": "name", "from": "project", "why": "Excel export name" }
+          {
+            "field": "legacyCode",
+            "from": "project",
+            "why": "prompt context"
+          },
+          {
+            "field": "solutionDesign",
+            "from": "project",
+            "why": "prompt context"
+          },
+          {
+            "field": "generatedCode",
+            "from": "project",
+            "why": "prompt context and the module the runner executes"
+          },
+          {
+            "field": "extensibilityRoute",
+            "from": "project",
+            "why": "ABAP Unit stubs vs node:test suite"
+          },
+          {
+            "field": "testCases",
+            "from": "project",
+            "why": "the saved suite, shown after a reload"
+          },
+          {
+            "field": "testSuite",
+            "from": "project",
+            "why": "the runnable suite code"
+          },
+          {
+            "field": "s4Environment",
+            "from": "project",
+            "why": "which environment tab opens"
+          },
+          {
+            "field": "s4Meta",
+            "from": "project",
+            "why": "non-secret connection metadata; the password is write-only"
+          },
+          {
+            "field": "s4Config",
+            "from": "project",
+            "why": "deprecated cleartext fallback, still read"
+          },
+          {
+            "field": "name",
+            "from": "project",
+            "why": "Excel export name"
+          }
         ]
       },
       "outputs": {
@@ -513,29 +845,56 @@
           "creates": "s4_credentials/{uid} (AES-256-GCM, server-only collection)",
           "project": []
         },
-        "otherCollections": ["tenant_access_requests/{uid}"],
-        "consumedByNextStage": ["testCases", "coverageEstimate"],
+        "otherCollections": [
+          "tenant_access_requests/{uid}"
+        ],
+        "consumedByNextStage": [
+          "testCases",
+          "coverageEstimate"
+        ],
         "note": "Verdicts are not written. generatedCode and testSuite are rewritten only by the auto-heal path in useTestExecution."
       },
       "preconditions": {
         "enforceActiveRun": true,
         "generationBlockersTarget": "testing",
-        "blocksOn": ["sourceChanged", "designStale", "signOffStale", "codeStale"],
+        "blocksOn": [
+          "sourceChanged",
+          "designStale",
+          "signOffStale",
+          "codeStale"
+        ],
         "otherGates": [
           "LIVE_TEST_EXECUTION (G0:R0) keeps tenant execution closed; the connection check, the metadata read and one read-only OData call stay open"
         ]
       },
       "errors": [
-        { "when": "the model call or its JSON parse fails", "does": "the error is rethrown to the page, which logs it; nothing is written." },
-        { "when": "the sandbox returns a build error", "does": "auto-heals the module or the test code, persists the repair and retries up to the retry limit; if the heal itself fails the original result is returned." },
-        { "when": "the sandbox is unreachable or answers with non-JSON", "does": "throws 'Network error…' or 'Execution environment failure (Status …)'." },
-        { "when": "the project document does not exist", "does": "sets 'This project could not be found.' and renders a 'This stage could not be opened' panel with a retry button." },
-        { "when": "loadProjectAndHydrate rejects", "does": "sets 'The project could not be loaded. Check your connection and try again.'" },
-        { "when": "no test returned a verdict", "does": "the pass rate is null rather than 0/0; the chart shows a 'No verdict' slice." }
+        {
+          "when": "the model call or its JSON parse fails",
+          "does": "the error is rethrown to the page, which logs it; nothing is written."
+        },
+        {
+          "when": "the sandbox returns a build error",
+          "does": "auto-heals the module or the test code, persists the repair and retries up to the retry limit; if the heal itself fails the original result is returned."
+        },
+        {
+          "when": "the sandbox is unreachable or answers with non-JSON",
+          "does": "throws 'Network error…' or 'Execution environment failure (Status …)'."
+        },
+        {
+          "when": "the project document does not exist",
+          "does": "sets 'This project could not be found.' and renders a 'This stage could not be opened' panel with a retry button."
+        },
+        {
+          "when": "loadProjectAndHydrate rejects",
+          "does": "sets 'The project could not be loaded. Check your connection and try again.'"
+        },
+        {
+          "when": "no test returned a verdict",
+          "does": "the pass rate is null rather than 0/0; the chart shows a 'No verdict' slice."
+        }
       ],
       "referenceCase": "RC-testing-draft"
     },
-
     {
       "key": "tco",
       "n": 6,
@@ -546,11 +905,24 @@
       "purpose": "Price the upgrade effort with the reader's own cost figures, on assumed coefficients. A demonstration model, not a business case.",
       "inputs": {
         "required": [
-          { "field": "activeRunId", "from": "project", "via": "enforceActiveRun", "why": "enforceActiveRun redirects to Analyze without it" },
-          { "field": "cleanCoreScore", "from": "run", "why": "the baseline; without it the page declines to model anything" }
+          {
+            "field": "activeRunId",
+            "from": "project",
+            "via": "enforceActiveRun",
+            "why": "enforceActiveRun redirects to Analyze without it"
+          },
+          {
+            "field": "cleanCoreScore",
+            "from": "run",
+            "why": "the baseline; without it the page declines to model anything"
+          }
         ],
         "optional": [
-          { "field": "legacyCode", "from": "project", "why": "its line count seeds the editable estate size — not multiplied" }
+          {
+            "field": "legacyCode",
+            "from": "project",
+            "why": "its line count seeds the editable estate size — not multiplied"
+          }
         ]
       },
       "outputs": {
@@ -568,13 +940,21 @@
         ]
       },
       "errors": [
-        { "when": "there is no signed score", "does": "renders 'No baseline to model against' and says every figure derives from a signed run." },
-        { "when": "the score is at or above 95", "does": "declines to price an improvement rather than reporting a negative return." },
-        { "when": "loadProjectAndHydrate rejects", "does": "logged only; loading stops and the page renders with its default inputs." }
+        {
+          "when": "there is no signed score",
+          "does": "renders 'No baseline to model against' and says every figure derives from a signed run."
+        },
+        {
+          "when": "the score is at or above 95",
+          "does": "declines to price an improvement rather than reporting a negative return."
+        },
+        {
+          "when": "loadProjectAndHydrate rejects",
+          "does": "logged only; loading stops and the page renders with its default inputs."
+        }
       ],
       "referenceCase": "RC-tco-model-estimate"
     },
-
     {
       "key": "delivery",
       "n": 7,
@@ -585,19 +965,65 @@
       "purpose": "Report what is on record for handover and, when nothing is stale, produce the delivery ZIP and the signed audit pack.",
       "inputs": {
         "required": [
-          { "field": "activeRunId", "from": "project", "via": "enforceActiveRun", "why": "enforceActiveRun redirects to Analyze without it" }
+          {
+            "field": "activeRunId",
+            "from": "project",
+            "via": "enforceActiveRun",
+            "why": "enforceActiveRun redirects to Analyze without it"
+          }
         ],
         "optional": [
-          { "field": "generatedCode", "from": "project", "why": "the ZIP's source files" },
-          { "field": "testSuite", "from": "project", "why": "the ZIP's test file" },
-          { "field": "testCases", "from": "project", "via": "testEvidence", "why": "the verdict counts on screen, read through testEvidence(project)" },
-          { "field": "coverageEstimate", "from": "project", "why": "the coverage figure" },
-          { "field": "documentation", "from": "project", "why": "the ZIP's docs folder" },
-          { "field": "businessDocumentation", "from": "project", "why": "the ZIP's business SOP" },
-          { "field": "extensibilityRoute", "from": "project", "why": "abapGit layout vs CAP layout" },
-          { "field": "legacyCode", "from": "project", "why": "the board deck's own finding detection runs on it" },
-          { "field": "auditMetadata", "from": "project", "why": "model card and fingerprint on the audit-pack card" },
-          { "field": "name", "from": "project", "why": "file names" }
+          {
+            "field": "generatedCode",
+            "from": "project",
+            "why": "the ZIP's source files"
+          },
+          {
+            "field": "testSuite",
+            "from": "project",
+            "why": "the ZIP's test file"
+          },
+          {
+            "field": "testCases",
+            "from": "project",
+            "via": "testEvidence",
+            "why": "the verdict counts on screen, read through testEvidence(project)"
+          },
+          {
+            "field": "coverageEstimate",
+            "from": "project",
+            "why": "the coverage figure"
+          },
+          {
+            "field": "documentation",
+            "from": "project",
+            "why": "the ZIP's docs folder"
+          },
+          {
+            "field": "businessDocumentation",
+            "from": "project",
+            "why": "the ZIP's business SOP"
+          },
+          {
+            "field": "extensibilityRoute",
+            "from": "project",
+            "why": "abapGit layout vs CAP layout"
+          },
+          {
+            "field": "legacyCode",
+            "from": "project",
+            "why": "the board deck's own finding detection runs on it"
+          },
+          {
+            "field": "auditMetadata",
+            "from": "project",
+            "why": "model card and fingerprint on the audit-pack card"
+          },
+          {
+            "field": "name",
+            "from": "project",
+            "why": "file names"
+          }
         ],
         "alsoReads": "projects/{projectId}/runs where userId == current user — the run-over-run trend for the board deck."
       },
@@ -621,15 +1047,26 @@
         ]
       },
       "errors": [
-        { "when": "the finding detector throws", "does": "the deck reads 'coverage not established' instead of a clean bill, and the page says a detector error occurred." },
-        { "when": "the audit pack call fails", "does": "alerts the route's message; nothing is downloaded." },
-        { "when": "the run history query fails", "does": "logged; the trend is empty and the rest of the page renders." },
-        { "when": "loadProjectAndHydrate rejects", "does": "logged only; loading stops and the page renders its empty state." }
+        {
+          "when": "the finding detector throws",
+          "does": "the deck reads 'coverage not established' instead of a clean bill, and the page says a detector error occurred."
+        },
+        {
+          "when": "the audit pack call fails",
+          "does": "alerts the route's message; nothing is downloaded."
+        },
+        {
+          "when": "the run history query fails",
+          "does": "logged; the trend is empty and the rest of the page renders."
+        },
+        {
+          "when": "loadProjectAndHydrate rejects",
+          "does": "logged only; loading stops and the page renders its empty state."
+        }
       ],
       "referenceCase": "RC-delivery-blocked-source-changed"
     }
   ],
-
   "referenceCases": [
     {
       "id": "RC-analyze-signed-run",
@@ -664,7 +1101,13 @@
         "run": {
           "status": "completed",
           "createdAt": "2026-09-16T08:00:00.000Z",
-          "inputFingerprint": { "sha256": "@sha256:legacyCode", "fileName": "z_pr_analyze.abap", "lineCount": 4, "byteSize": 94, "objectType": "Report" },
+          "inputFingerprint": {
+            "sha256": "@sha256:legacyCode",
+            "fileName": "z_pr_analyze.abap",
+            "lineCount": 4,
+            "byteSize": 94,
+            "objectType": "Report"
+          },
           "analyzerVersion": "v2.11.0",
           "rulesetVersion": "rules-v1.0",
           "extensibilityRoute": "Side-by-Side (SAP BTP)",
@@ -688,9 +1131,18 @@
           "tco": "partial",
           "delivery": "empty"
         },
-        "badges": { "analyze": "Signed run", "tco": "Model estimate" },
-        "detailContains": { "analyze": "Clean Core Score 62" },
-        "generationBlockers": { "transformation": [], "documentation": [], "testing": [] },
+        "badges": {
+          "analyze": "Signed run",
+          "tco": "Model estimate"
+        },
+        "detailContains": {
+          "analyze": "Clean Core Score 62"
+        },
+        "generationBlockers": {
+          "transformation": [],
+          "documentation": [],
+          "testing": []
+        },
         "handoverBlockers": [],
         "staleNoticeOnOwnStage": false
       }
@@ -709,13 +1161,26 @@
           "solutionDesign": "{\"projectName\":\"Preservation register\",\"architectureOverview\":{\"approachDescription\":\"Side-by-side CAP service.\",\"nodeFramework\":\"SAP CAP\",\"runtimePlatform\":\"SAP BTP\"},\"nodeAppBlueprint\":{\"projectStructure\":[],\"apiEndpoints\":[]},\"cloudServices\":[],\"dataSync\":{\"patternName\":\"Event-driven\",\"description\":\"Event Mesh.\"},\"securityHardening\":[],\"roadmap\":[]}",
           "worklist": [],
           "auditMetadata": {
-            "inputFingerprint": { "sha256": "@sha256:legacyCode", "fileName": "z_pr_design.abap", "lineCount": 3, "byteSize": 70, "uploadedAt": "2026-09-16T08:00:00.000Z", "objectType": "Report" }
+            "inputFingerprint": {
+              "sha256": "@sha256:legacyCode",
+              "fileName": "z_pr_design.abap",
+              "lineCount": 3,
+              "byteSize": 70,
+              "uploadedAt": "2026-09-16T08:00:00.000Z",
+              "objectType": "Report"
+            }
           }
         },
         "run": {
           "status": "completed",
           "createdAt": "2026-09-16T08:00:00.000Z",
-          "inputFingerprint": { "sha256": "@sha256:legacyCode", "fileName": "z_pr_design.abap", "lineCount": 3, "byteSize": 70, "objectType": "Report" },
+          "inputFingerprint": {
+            "sha256": "@sha256:legacyCode",
+            "fileName": "z_pr_design.abap",
+            "lineCount": 3,
+            "byteSize": 70,
+            "objectType": "Report"
+          },
           "analyzerVersion": "v2.11.0",
           "rulesetVersion": "rules-v1.0",
           "extensibilityRoute": "Side-by-Side (SAP BTP)",
@@ -738,9 +1203,17 @@
           "tco": "partial",
           "delivery": "empty"
         },
-        "badges": { "design": "Awaiting sign-off" },
-        "detailContains": { "design": "the target architecture has not been confirmed" },
-        "generationBlockers": { "transformation": [], "documentation": [], "testing": [] },
+        "badges": {
+          "design": "Awaiting sign-off"
+        },
+        "detailContains": {
+          "design": "the target architecture has not been confirmed"
+        },
+        "generationBlockers": {
+          "transformation": [],
+          "documentation": [],
+          "testing": []
+        },
         "handoverBlockers": [],
         "staleNoticeOnOwnStage": false
       }
@@ -765,13 +1238,26 @@
           "generatedCode": "[{\"path\":\"srv/service.ts\",\"content\":\"export const handler = () => 'ok';\\n\"}]",
           "worklist": [],
           "auditMetadata": {
-            "inputFingerprint": { "sha256": "@sha256:legacyCode", "fileName": "z_pr_transform.abap", "lineCount": 3, "byteSize": 74, "uploadedAt": "2026-09-16T08:00:00.000Z", "objectType": "Report" }
+            "inputFingerprint": {
+              "sha256": "@sha256:legacyCode",
+              "fileName": "z_pr_transform.abap",
+              "lineCount": 3,
+              "byteSize": 74,
+              "uploadedAt": "2026-09-16T08:00:00.000Z",
+              "objectType": "Report"
+            }
           }
         },
         "run": {
           "status": "completed",
           "createdAt": "2026-09-16T08:00:00.000Z",
-          "inputFingerprint": { "sha256": "@sha256:legacyCode", "fileName": "z_pr_transform.abap", "lineCount": 3, "byteSize": 74, "objectType": "Report" },
+          "inputFingerprint": {
+            "sha256": "@sha256:legacyCode",
+            "fileName": "z_pr_transform.abap",
+            "lineCount": 3,
+            "byteSize": 74,
+            "objectType": "Report"
+          },
           "analyzerVersion": "v2.11.0",
           "rulesetVersion": "rules-v1.0",
           "extensibilityRoute": "Side-by-Side (SAP BTP)",
@@ -794,9 +1280,19 @@
           "tco": "partial",
           "delivery": "partial"
         },
-        "badges": { "transformation": "Generated", "delivery": "Review only" },
-        "detailContains": { "transformation": "not compiled or tested", "delivery": "no test suite" },
-        "generationBlockers": { "transformation": [], "documentation": [], "testing": [] },
+        "badges": {
+          "transformation": "Generated",
+          "delivery": "Review only"
+        },
+        "detailContains": {
+          "transformation": "not compiled or tested",
+          "delivery": "no test suite"
+        },
+        "generationBlockers": {
+          "transformation": [],
+          "documentation": [],
+          "testing": []
+        },
         "handoverBlockers": [],
         "staleNoticeOnOwnStage": false
       }
@@ -821,19 +1317,34 @@
           "generatedCode": "[{\"path\":\"srv/service.ts\",\"content\":\"export const stale = true;\\n\"}]",
           "worklist": [],
           "auditMetadata": {
-            "inputFingerprint": { "sha256": "@sha256:legacyCode", "fileName": "z_pr_docs.abap", "lineCount": 4, "byteSize": 118, "uploadedAt": "2026-09-16T10:00:00.000Z", "objectType": "Report" },
+            "inputFingerprint": {
+              "sha256": "@sha256:legacyCode",
+              "fileName": "z_pr_docs.abap",
+              "lineCount": 4,
+              "byteSize": 118,
+              "uploadedAt": "2026-09-16T10:00:00.000Z",
+              "objectType": "Report"
+            },
             "sourceChange": {
               "at": "2026-09-16T10:00:00.000Z",
               "runId": "@runId",
               "previousSha256": "@sha256:previousSource",
-              "artefacts": { "generatedCode": "@artefactDigest:generatedCode" }
+              "artefacts": {
+                "generatedCode": "@artefactDigest:generatedCode"
+              }
             }
           }
         },
         "run": {
           "status": "completed",
           "createdAt": "2026-09-16T10:00:00.000Z",
-          "inputFingerprint": { "sha256": "@sha256:legacyCode", "fileName": "z_pr_docs.abap", "lineCount": 4, "byteSize": 118, "objectType": "Report" },
+          "inputFingerprint": {
+            "sha256": "@sha256:legacyCode",
+            "fileName": "z_pr_docs.abap",
+            "lineCount": 4,
+            "byteSize": 118,
+            "objectType": "Report"
+          },
           "analyzerVersion": "v2.11.0",
           "rulesetVersion": "rules-v1.0",
           "extensibilityRoute": "Side-by-Side (SAP BTP)",
@@ -856,14 +1367,25 @@
           "tco": "partial",
           "delivery": "stale"
         },
-        "badges": { "transformation": "Stale", "delivery": "Blocked" },
-        "detailContains": { "transformation": "Generated from a previous source" },
+        "badges": {
+          "transformation": "Stale",
+          "delivery": "Blocked"
+        },
+        "detailContains": {
+          "transformation": "Generated from a previous source"
+        },
         "generationBlockers": {
           "transformation": [],
-          "documentation": ["The code was generated from a previous source. Regenerate it in stage 3 first."],
-          "testing": ["The code was generated from a previous source. Regenerate it in stage 3 first."]
+          "documentation": [
+            "The code was generated from a previous source. Regenerate it in stage 3 first."
+          ],
+          "testing": [
+            "The code was generated from a previous source. Regenerate it in stage 3 first."
+          ]
         },
-        "handoverBlockers": ["the generated code"],
+        "handoverBlockers": [
+          "the generated code"
+        ],
         "staleNoticeOnOwnStage": true
       }
     },
@@ -886,20 +1408,51 @@
           "generatedCode": "[{\"path\":\"srv/service.ts\",\"content\":\"export const handler = () => 'ok';\\n\"}]",
           "documentation": "{\"l1_domain\":\"Sales\",\"l2\":[],\"bpmn\":\"\"}",
           "testCases": [
-            { "id": "TC_01", "name": "Totals are summed", "category": "Unit", "description": "Adds the order lines.", "priority": "High" },
-            { "id": "TC_02", "name": "Rounding is half-up", "category": "Unit", "description": "Rounds to two decimals.", "priority": "Medium" }
+            {
+              "id": "TC_01",
+              "name": "Totals are summed",
+              "category": "Unit",
+              "description": "Adds the order lines.",
+              "priority": "High"
+            },
+            {
+              "id": "TC_02",
+              "name": "Rounding is half-up",
+              "category": "Unit",
+              "description": "Rounds to two decimals.",
+              "priority": "Medium"
+            }
           ],
-          "testSuite": { "code": "import { test } from 'node:test';\ntest('TC_01: totals', () => {});\n" },
-          "coverageEstimate": { "percentage": 40, "explanation": "Two cases.", "missingCoverage": "Integration paths." },
+          "testSuite": {
+            "code": "import { test } from 'node:test';\ntest('TC_01: totals', () => {});\n"
+          },
+          "coverageEstimate": {
+            "percentage": 40,
+            "explanation": "Two cases.",
+            "missingCoverage": "Integration paths."
+          },
           "worklist": [],
           "auditMetadata": {
-            "inputFingerprint": { "sha256": "@sha256:legacyCode", "fileName": "z_pr_testing.abap", "lineCount": 3, "byteSize": 72, "uploadedAt": "2026-09-16T08:00:00.000Z", "objectType": "Report" }
+            "inputFingerprint": {
+              "sha256": "@sha256:legacyCode",
+              "fileName": "z_pr_testing.abap",
+              "lineCount": 3,
+              "byteSize": 72,
+              "uploadedAt": "2026-09-16T08:00:00.000Z",
+              "objectType": "Report"
+            }
           }
         },
         "run": {
           "status": "completed",
           "createdAt": "2026-09-16T08:00:00.000Z",
-          "inputFingerprint": { "sha256": "@sha256:legacyCode", "fileName": "z_pr_testing.abap", "lineCount": 3, "byteSize": 72, "objectType": "Report" },
+          "inputFingerprint": {
+            "sha256": "@sha256:legacyCode",
+            "fileName": "z_pr_testing.abap",
+            "lineCount": 3,
+            "byteSize": 72,
+            "objectType": "Report"
+          },
           "analyzerVersion": "v2.11.0",
           "rulesetVersion": "rules-v1.0",
           "extensibilityRoute": "Side-by-Side (SAP BTP)",
@@ -922,9 +1475,19 @@
           "tco": "partial",
           "delivery": "partial"
         },
-        "badges": { "testing": "Test draft", "delivery": "Review only" },
-        "detailContains": { "testing": "no test run on record", "delivery": "tests not run" },
-        "generationBlockers": { "transformation": [], "documentation": [], "testing": [] },
+        "badges": {
+          "testing": "Test draft",
+          "delivery": "Review only"
+        },
+        "detailContains": {
+          "testing": "no test run on record",
+          "delivery": "tests not run"
+        },
+        "generationBlockers": {
+          "transformation": [],
+          "documentation": [],
+          "testing": []
+        },
         "handoverBlockers": [],
         "staleNoticeOnOwnStage": false
       }
@@ -942,13 +1505,26 @@
           "extensibilityRoute": "Side-by-Side (SAP BTP)",
           "worklist": [],
           "auditMetadata": {
-            "inputFingerprint": { "sha256": "@sha256:legacyCode", "fileName": "z_pr_tco.abap", "lineCount": 3, "byteSize": 68, "uploadedAt": "2026-09-16T08:00:00.000Z", "objectType": "Report" }
+            "inputFingerprint": {
+              "sha256": "@sha256:legacyCode",
+              "fileName": "z_pr_tco.abap",
+              "lineCount": 3,
+              "byteSize": 68,
+              "uploadedAt": "2026-09-16T08:00:00.000Z",
+              "objectType": "Report"
+            }
           }
         },
         "run": {
           "status": "completed",
           "createdAt": "2026-09-16T08:00:00.000Z",
-          "inputFingerprint": { "sha256": "@sha256:legacyCode", "fileName": "z_pr_tco.abap", "lineCount": 3, "byteSize": 68, "objectType": "Report" },
+          "inputFingerprint": {
+            "sha256": "@sha256:legacyCode",
+            "fileName": "z_pr_tco.abap",
+            "lineCount": 3,
+            "byteSize": 68,
+            "objectType": "Report"
+          },
           "analyzerVersion": "v2.11.0",
           "rulesetVersion": "rules-v1.0",
           "extensibilityRoute": "Side-by-Side (SAP BTP)",
@@ -971,9 +1547,17 @@
           "tco": "partial",
           "delivery": "empty"
         },
-        "badges": { "tco": "Model estimate" },
-        "detailContains": { "tco": "assumed effort coefficients" },
-        "generationBlockers": { "transformation": [], "documentation": [], "testing": [] },
+        "badges": {
+          "tco": "Model estimate"
+        },
+        "detailContains": {
+          "tco": "assumed effort coefficients"
+        },
+        "generationBlockers": {
+          "transformation": [],
+          "documentation": [],
+          "testing": []
+        },
         "handoverBlockers": [],
         "staleNoticeOnOwnStage": false
       }
@@ -998,18 +1582,39 @@
           "generatedCode": "[{\"path\":\"srv/service.ts\",\"content\":\"export const handler = () => 'ok';\\n\"}]",
           "documentation": "{\"l1_domain\":\"Sales\",\"l2\":[],\"bpmn\":\"\"}",
           "testCases": [
-            { "id": "TC_01", "name": "Totals are summed", "category": "Unit", "description": "Adds the order lines.", "priority": "High" }
+            {
+              "id": "TC_01",
+              "name": "Totals are summed",
+              "category": "Unit",
+              "description": "Adds the order lines.",
+              "priority": "High"
+            }
           ],
-          "testSuite": { "code": "import { test } from 'node:test';\ntest('TC_01: totals', () => {});\n" },
+          "testSuite": {
+            "code": "import { test } from 'node:test';\ntest('TC_01: totals', () => {});\n"
+          },
           "worklist": [],
           "auditMetadata": {
-            "inputFingerprint": { "sha256": "@sha256:previousSource", "fileName": "z_pr_delivery.abap", "lineCount": 3, "byteSize": 76, "uploadedAt": "2026-09-16T08:00:00.000Z", "objectType": "Report" }
+            "inputFingerprint": {
+              "sha256": "@sha256:previousSource",
+              "fileName": "z_pr_delivery.abap",
+              "lineCount": 3,
+              "byteSize": 76,
+              "uploadedAt": "2026-09-16T08:00:00.000Z",
+              "objectType": "Report"
+            }
           }
         },
         "run": {
           "status": "completed",
           "createdAt": "2026-09-16T08:00:00.000Z",
-          "inputFingerprint": { "sha256": "@sha256:previousSource", "fileName": "z_pr_delivery.abap", "lineCount": 3, "byteSize": 76, "objectType": "Report" },
+          "inputFingerprint": {
+            "sha256": "@sha256:previousSource",
+            "fileName": "z_pr_delivery.abap",
+            "lineCount": 3,
+            "byteSize": 76,
+            "objectType": "Report"
+          },
           "analyzerVersion": "v2.11.0",
           "rulesetVersion": "rules-v1.0",
           "extensibilityRoute": "Side-by-Side (SAP BTP)",
@@ -1032,12 +1637,23 @@
           "tco": "stale",
           "delivery": "stale"
         },
-        "badges": { "analyze": "Source changed", "delivery": "Blocked" },
-        "detailContains": { "delivery": "Handover blocked" },
+        "badges": {
+          "analyze": "Source changed",
+          "delivery": "Blocked"
+        },
+        "detailContains": {
+          "delivery": "Handover blocked"
+        },
         "generationBlockers": {
-          "transformation": ["The source changed after the signed run. Re-run the analysis in stage 1 first."],
-          "documentation": ["The source changed after the signed run. Re-run the analysis in stage 1 first."],
-          "testing": ["The source changed after the signed run. Re-run the analysis in stage 1 first."]
+          "transformation": [
+            "The source changed after the signed run. Re-run the analysis in stage 1 first."
+          ],
+          "documentation": [
+            "The source changed after the signed run. Re-run the analysis in stage 1 first."
+          ],
+          "testing": [
+            "The source changed after the signed run. Re-run the analysis in stage 1 first."
+          ]
         },
         "handoverBlockers": [
           "the analysis (the source changed after the signed run)",
