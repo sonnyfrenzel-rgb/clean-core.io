@@ -37,7 +37,10 @@ export interface GalleryAdmin {
  * worst way to find out (the same note stands in `workflow-style-guard.spec.ts`).
  */
 export async function createGalleryAdmin(prefix: string): Promise<GalleryAdmin> {
-  const email = `${prefix}-${Date.now()}@cleancore-test.io`;
+  // `fullyParallel` sends the tests of one file to several workers, so this hook
+  // runs once per worker — at the same millisecond, with the same prefix. A
+  // timestamp alone collides with `auth/email-already-in-use`.
+  const email = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@cleancore-test.io`;
   const password = 'DesignSystem123!';
 
   const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);

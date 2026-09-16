@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { t } from '@/lib/cc-messages';
 import CcButton from './Button';
 
@@ -54,9 +55,12 @@ export default function CcMessageBox({
 
     openerRef.current = document.activeElement as HTMLElement | null;
 
-    // Everything that is not the dialog goes inert. Marking the siblings rather
-    // than the whole body keeps the dialog itself reachable — `inert` is
-    // inherited, so a body-level flag would take the box with it.
+    // Everything that is not the dialog goes inert. `inert` is inherited, so
+    // this only works if the dialog is a *child of body* rather than buried in
+    // the tree that is being switched off — which is why the box is portalled.
+    // Without the portal, the ancestor holding the dialog has to be left
+    // reachable, and then so is the whole page inside it: the guard found
+    // exactly that, as a focus that never entered the box.
     const container = boxRef.current?.parentElement;
     const siblings: HTMLElement[] = [];
     if (container) {
@@ -100,9 +104,9 @@ export default function CcMessageBox({
     };
   }, [open, onCancel]);
 
-  if (!open) return null;
+  if (!open || typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div data-cc-message-box-layer="" className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         data-cc-scrim=""
@@ -132,6 +136,7 @@ export default function CcMessageBox({
           </CcButton>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
