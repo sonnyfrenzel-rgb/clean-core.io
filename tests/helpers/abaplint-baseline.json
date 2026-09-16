@@ -1,0 +1,194 @@
+{
+  "abaplintVersion": "2.120.54",
+  "agreement": [
+    {
+      "file": "ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap",
+      "statementsOurs": 828,
+      "statementsAbaplint": 829,
+      "branchesOurs": 88,
+      "branchesAbaplint": 88,
+      "formsOurs": 42,
+      "formsAbaplint": 42,
+      "performsOurs": 50,
+      "performsAbaplint": 50
+    },
+    {
+      "file": "Z_BUSINESS_PARTNER_SYNC.txt",
+      "statementsOurs": 70,
+      "statementsAbaplint": 71,
+      "branchesOurs": 3,
+      "branchesAbaplint": 3,
+      "formsOurs": 3,
+      "formsAbaplint": 3,
+      "performsOurs": 3,
+      "performsAbaplint": 3
+    },
+    {
+      "file": "Z_EMPLOYEE_EXPENSE_VAL.txt",
+      "statementsOurs": 77,
+      "statementsAbaplint": 77,
+      "branchesOurs": 2,
+      "branchesAbaplint": 2,
+      "formsOurs": 2,
+      "formsAbaplint": 2,
+      "performsOurs": 2,
+      "performsAbaplint": 2
+    },
+    {
+      "file": "Z_INVOICE_EXTRACTOR.txt",
+      "statementsOurs": 47,
+      "statementsAbaplint": 47,
+      "branchesOurs": 2,
+      "branchesAbaplint": 2,
+      "formsOurs": 2,
+      "formsAbaplint": 2,
+      "performsOurs": 2,
+      "performsAbaplint": 2
+    },
+    {
+      "file": "Z_MATERIAL_STOCK_CALC.txt",
+      "statementsOurs": 72,
+      "statementsAbaplint": 72,
+      "branchesOurs": 1,
+      "branchesAbaplint": 1,
+      "formsOurs": 3,
+      "formsAbaplint": 3,
+      "performsOurs": 3,
+      "performsAbaplint": 3
+    },
+    {
+      "file": "Z_MM_PO_APPROVAL.abap",
+      "statementsOurs": 444,
+      "statementsAbaplint": 444,
+      "branchesOurs": 41,
+      "branchesAbaplint": 41,
+      "formsOurs": 35,
+      "formsAbaplint": 35,
+      "performsOurs": 34,
+      "performsAbaplint": 34
+    },
+    {
+      "file": "Z_ORDER_INTEGRITY_CHECK.txt",
+      "statementsOurs": 68,
+      "statementsAbaplint": 68,
+      "branchesOurs": 2,
+      "branchesAbaplint": 2,
+      "formsOurs": 1,
+      "formsAbaplint": 1,
+      "performsOurs": 0,
+      "performsAbaplint": 0
+    },
+    {
+      "file": "Z_SALES_ORDER_CREATOR.txt",
+      "statementsOurs": 62,
+      "statementsAbaplint": 63,
+      "branchesOurs": 1,
+      "branchesAbaplint": 1,
+      "formsOurs": 2,
+      "formsAbaplint": 2,
+      "performsOurs": 2,
+      "performsAbaplint": 2
+    }
+  ],
+  "disagreements": [
+    {
+      "file": "ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap",
+      "area": "parse",
+      "key": "unknown@L500",
+      "line": 500,
+      "source": "INSERT zsd_ord_risk FROM @VALUE #( mandt = sy-mandt vbeln = is_order-vbeln risk_score = is_order-risk_score risk_text = ",
+      "ours": "INSERT — INSERT zsd_ord_risk FROM @VALUE #( mandt = sy-mandt vbeln = is_order-vbeln risk_",
+      "abaplint": "cannot parse this line",
+      "verdict": "abaplint-right",
+      "reason": "The shipped example is malformed ABAP. A host expression in Open SQL is written `@( … )`; `@VALUE #( … )` is not a host variable and not a host expression, and abaplint rejects it at the newest release while accepting `INSERT ztab FROM @( VALUE #( a = 1 ) ).` unchanged. Our reader is charitable and still records the write to ZSD_ORD_RISK, which is the fact the product needs from a line of legacy code it did not write. The defect is in the example, not in the engine: fixing it means editing a shipped starter file whose counts four specs pin, and that is a decision for the operator, not a side effect of this branch."
+    },
+    {
+      "file": "ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap",
+      "area": "parse",
+      "key": "unknown@L524",
+      "line": 524,
+      "source": "INSERT zsd_legacy_log FROM @VALUE #( mandt = sy-mandt datum = gs_log-datum uzeit = gs_log-uzeit uname = gs_log-uname obj",
+      "ours": "INSERT — INSERT zsd_legacy_log FROM @VALUE #( mandt = sy-mandt datum = gs_log-datum uzeit",
+      "abaplint": "cannot parse this line",
+      "verdict": "abaplint-right",
+      "reason": "The same malformed host expression as L500, in `persist_run_log`. Same reasoning, same decision."
+    },
+    {
+      "file": "ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap",
+      "area": "statement",
+      "key": "L656-656",
+      "line": 656,
+      "source": "SELECT COUNT(*) INTO :lv_count FROM VBAK WHERE MANDT = :sy-mandt",
+      "ours": "0 statement(s)",
+      "abaplint": "1 statement(s)",
+      "verdict": "abaplint-right",
+      "reason": "Inside `EXEC SQL. … ENDEXEC.` abaplint gives the native SQL its own statement and `ENDEXEC.` another; our reader returns one statement covering both, because native SQL carries no ABAP period and nothing closes the statement until `ENDEXEC.` does. abaplint models this better. Not changed: the `nativeSql` flag still bounds the region correctly (`readStatements` reads `ENDEXEC` off the statement it just emitted), no branch, call or database write is read out of a native-SQL statement, and the only cost is that `ENDEXEC.` has no anchor of its own — which no surface asks for. Splitting statements inside a region that by definition has no statement separator would put the boundary detection at risk for no reader-visible gain."
+    },
+    {
+      "file": "ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap",
+      "area": "statement",
+      "key": "L656-657",
+      "line": 656,
+      "source": "SELECT COUNT(*) INTO :lv_count FROM VBAK WHERE MANDT = :sy-mandt",
+      "ours": "1 statement(s)",
+      "abaplint": "0 statement(s)",
+      "verdict": "abaplint-right",
+      "reason": "The second of the three records the EXEC SQL region produces: our reader returns one statement spanning L656-657 where abaplint has two, so this range exists on our side and not on theirs. Same decision as the record above — abaplint models it better, the difference costs nothing a surface reads."
+    },
+    {
+      "file": "ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap",
+      "area": "statement",
+      "key": "L657-657",
+      "line": 657,
+      "source": "ENDEXEC.",
+      "ours": "0 statement(s)",
+      "abaplint": "1 statement(s)",
+      "verdict": "abaplint-right",
+      "reason": "The third of the three EXEC SQL records: `ENDEXEC.` is a statement of its own to abaplint and our reader folds it into the native-SQL statement above it, because that statement only ends where ENDEXEC supplies the period native SQL never carries."
+    },
+    {
+      "file": "Z_BUSINESS_PARTNER_SYNC.txt",
+      "area": "parse",
+      "key": "unknown@L53",
+      "line": 53,
+      "source": "* Cleanup names and do legacy formatting",
+      "ours": "not a statement (comment)",
+      "abaplint": "cannot parse this line",
+      "verdict": "both-defensible",
+      "reason": "An indented `*` used as a comment. abaplint is right about the language — ABAP only accepts `*` as a comment in column 1, so this line is a syntax error, and abaplint says so by refusing to parse it. Our reader treats an indented asterisk as a comment when no statement is open and as multiplication when one is (`isAbapCommentLine`), a rule taken on purpose after the opposite reading swallowed the price-tolerance IF of Z_MM_PO_APPROVAL.abap and this reading is what keeps the BAPI call below Z_SALES_ORDER_CREATOR.txt:70. Both engines agree the line executes nothing; they differ only on whether to report it. Not changed — the product reads code users upload, not code a compiler accepted."
+    },
+    {
+      "file": "Z_BUSINESS_PARTNER_SYNC.txt",
+      "area": "statement",
+      "key": "L53-53",
+      "line": 53,
+      "source": "* Cleanup names and do legacy formatting",
+      "ours": "0 statement(s)",
+      "abaplint": "1 statement(s)",
+      "verdict": "both-defensible",
+      "reason": "The statement-count half of the indented-asterisk record above: abaplint emits one unparseable node at L53 where our reader emits nothing, so the file is 71 statements to abaplint and 70 to us. Neither engine claims the line does anything."
+    },
+    {
+      "file": "Z_SALES_ORDER_CREATOR.txt",
+      "area": "parse",
+      "key": "unknown@L70",
+      "line": 70,
+      "source": "* Call BAPI Function Module Simulation",
+      "ours": "not a statement (comment)",
+      "abaplint": "cannot parse this line",
+      "verdict": "both-defensible",
+      "reason": "The same indented `*`, directly above the `CALL FUNCTION 'BAPI_SALESORDER_CREATEFROMDAT2'` this file exists to demonstrate. Reading it as code loses the BAPI call, which is why our reader reads it as a comment."
+    },
+    {
+      "file": "Z_SALES_ORDER_CREATOR.txt",
+      "area": "statement",
+      "key": "L70-70",
+      "line": 70,
+      "source": "* Call BAPI Function Module Simulation",
+      "ours": "0 statement(s)",
+      "abaplint": "1 statement(s)",
+      "verdict": "both-defensible",
+      "reason": "The statement-count half of the indented-asterisk record above: abaplint emits one unparseable node at L70 where our reader emits nothing at all, so the file is 63 statements to abaplint and 62 to us. The line is prose either way."
+    }
+  ]
+}
