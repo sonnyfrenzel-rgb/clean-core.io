@@ -107,6 +107,8 @@ test.describe('a route the architect changed is labelled as theirs', () => {
     expect(routeWasOverridden(42, 'In-App (ABAP Cloud)')).toBe(false);
   });
 
+  // The wiring check. What the labels actually do when the routes differ is
+  // read off the rendered page in tests/analyze-route-override-rendered.spec.ts.
   test('the stage asks the function, and both labels exist', () => {
     const page = readFileSync(join(process.cwd(), 'app/(app)/project/[projectId]/analyze/page.tsx'), 'utf8');
     expect(page).toContain("from '@/lib/route-override'");
