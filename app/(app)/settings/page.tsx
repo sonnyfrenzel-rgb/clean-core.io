@@ -332,6 +332,34 @@ export default function SettingsPage() {
     }
   };
 
+  // The over-strict state: the profile requires a factor Firebase Auth does not
+  // have (a removal whose second write failed, or the retired application-level
+  // TOTP). The server clears it without a code, because there is no factor a
+  // stolen first-factor token could remove.
+  const [strandedError, setStrandedError] = useState('');
+  const [isClearingStranded, setIsClearingStranded] = useState(false);
+  const handleTurnOffStranded = async () => {
+    setStrandedError('');
+    setIsClearingStranded(true);
+    try {
+      const currentUser = getAuth().currentUser;
+      if (!currentUser) throw new Error('No user found.');
+      const token = await currentUser.getIdToken(true);
+      const res = await fetch('/api/mfa/disable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Could not turn off two-factor authentication.');
+      }
+    } catch (error: unknown) {
+      setStrandedError(error instanceof Error ? error.message : 'Could not turn off two-factor authentication.');
+    } finally {
+      setIsClearingStranded(false);
+    }
+  };
+
   const handleDisableMfa = async () => {
     setMfaDisableError('');
     setIsDisablingMfa(true);
@@ -1122,13 +1150,29 @@ export default function SettingsPage() {
                       <p className="font-bold flex items-center gap-1.5"><AlertCircle size={14} className="text-amber-600" /> Your two-factor setting predates Firebase's factor</p>
                       <p className="mt-1 leading-relaxed">The authenticator you set up earlier no longer signs you in. Set it up again — it takes a minute — and the account is protected at sign-in itself, before any session exists.</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleStartMfaSetup}
-                      className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3 rounded-xl transition-all text-xs flex items-center gap-2 shadow-lg shadow-green-600/10"
-                    >
-                      <ShieldCheck size={14} /> Set up the authenticator again
-                    </button>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={handleStartMfaSetup}
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3 rounded-xl transition-all text-xs flex items-center gap-2 shadow-lg shadow-green-600/10"
+                      >
+                        <ShieldCheck size={14} /> Set up the authenticator again
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleTurnOffStranded}
+                        disabled={isClearingStranded}
+                        className="bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 font-bold px-5 py-3 rounded-xl transition-all text-xs flex items-center gap-2 disabled:opacity-60"
+                      >
+                        <X size={14} /> {isClearingStranded ? 'Turning off...' : 'Turn off two-factor authentication'}
+                      </button>
+                    </div>
+                    {strandedError && (
+                      <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-2.5 text-xs text-rose-700 font-bold">
+                        <X size={14} className="shrink-0 mt-0.5" />
+                        <span>{strandedError}</span>
+                      </div>
+                    )}
                   </div>
                 ) : profile?.mfaEnabled ? (
                   <div className="space-y-4">
