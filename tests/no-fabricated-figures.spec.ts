@@ -84,16 +84,42 @@ test.describe('no fabricated figures on measured values', () => {
   });
 });
 
-test.describe('workflow inputs never reach a shell as interpolated text', () => {
-  test('usage-report passes the dispatch input through the environment', () => {
+test.describe('a private report goes to one address, and no input reaches a shell', () => {
+  test('usage-report takes no recipient at all', () => {
     const wf = fs.readFileSync(path.join(ROOT, '.github/workflows/usage-report.yml'), 'utf8');
-    // A ${{ }} expression inside a run: block is executed as shell text.
-    const runBlocks = wf.split(/^\s*run: \|/m).slice(1);
-    for (const block of runBlocks) {
-      const body = block.split(/^\s{0,8}- name:/m)[0];
-      expect(body, 'a dispatch input is interpolated into a run: block').not.toMatch(/\$\{\{\s*inputs\./);
+    // The report is the account list with usage figures. A free-text recipient
+    // on manual dispatch turned this into a way to send it anywhere: the job
+    // authenticates to production with OIDC, builds the report and mailed it to
+    // whatever was typed (QA full review of 52f171091948, 32e9456648b6). The
+    // address is the one the script knows.
+    expect(wf, 'no dispatch input at all').not.toMatch(/inputs:\s*\n\s+recipient:/);
+    expect(wf).not.toMatch(/\$\{\{\s*inputs\./);
+    expect(wf).toContain('npx tsx scripts/send-usage-report.ts --apply');
+    expect(wf, 'and no override on the command line either').not.toMatch(/--to\s/);
+  });
+
+  test('no workflow interpolates a dispatch input into a run block', () => {
+    // A ${{ }} expression inside a run: block is executed as shell text, in
+    // jobs that hold id-token: write and the provider keys.
+    const dir = path.join(ROOT, '.github/workflows');
+    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.yml'));
+    expect(files.length).toBeGreaterThan(3);
+    for (const file of files) {
+      const wf = fs.readFileSync(path.join(dir, file), 'utf8');
+      for (const block of wf.split(/^\s*run: \|/m).slice(1)) {
+        const body = block.split(/^\s{0,8}- name:/m)[0];
+        expect(body, `${file} interpolates a dispatch input into a run: block`).not.toMatch(/\$\{\{\s*inputs\./);
+      }
     }
-    expect(wf).toContain('RECIPIENT: ${{ inputs.recipient }}');
+  });
+
+  test('the discontinued survey workflows are gone, not merely disabled', () => {
+    // A manual dry run printed the production recipient list into public
+    // Actions logs, and the digest could be mailed to any address
+    // (90d94fa15308, c0557b564704). The survey is over (Sonny, 16.09.2026).
+    for (const wf of ['survey-send.yml', 'survey-digest.yml']) {
+      expect(fs.existsSync(path.join(ROOT, '.github/workflows', wf)), `${wf} is gone`).toBe(false);
+    }
   });
 });
 
