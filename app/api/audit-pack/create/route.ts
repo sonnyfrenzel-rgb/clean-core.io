@@ -9,6 +9,14 @@ import { signEd25519 } from '@/lib/audit-signing-keypair';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { APP_VERSION } from '@/lib/version';
 import { signOffKey } from '@/lib/artefact-digest';
+import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
+import {
+  INPUT_IDS,
+  inputLabel,
+  invalidatingInputs,
+  referenceDigest,
+  unverifiedInputs,
+} from '@/lib/input-manifest';
 import { USER_ATTESTED_FILE, type AttestedFile } from '@/lib/audit-pack';
 import { attestationsOf, buildAuditPackContents } from '@/lib/audit-pack-build';
 import { canonicalAuditManifest } from '@/lib/audit-pack-canonical';
@@ -145,6 +153,46 @@ export async function POST(req: NextRequest) {
           blockers.push({
             code: 'source-changed',
             message: 'The source on this project is not the one the signed run analysed. Re-run the analysis.',
+          });
+        }
+      }
+
+      // 1b. Roadmap 0.6 — the manifest comparison, server side.
+      //
+      // The check above compares one input, the source, and only when both ends
+      // happen to be readable: an unreadable fingerprint meant no comparison and
+      // no blocker, which is the freshness heuristic in its purest form. The run
+      // records all six inputs since roadmap 0.5, and every one of them is
+      // rebuilt here from what is live *now*. An input that differs, one that
+      // cannot be read and one the run never recorded are three reasons and one
+      // verdict: the pack is refused. Engine build and narrative model are
+      // `derivation`-class and are reported, not blocking — the evidence was not
+      // computed from them, and a release would otherwise invalidate every
+      // project on the platform.
+      const recordedManifest = runData.inputManifest;
+      if (recordedManifest) {
+        const live: Record<string, string | null> = {
+          [INPUT_IDS.source]:
+            typeof projectData.legacyCode === 'string' && projectData.legacyCode.trim()
+              ? crypto.createHash('sha256').update(projectData.legacyCode, 'utf8').digest('hex')
+              : null,
+          [INPUT_IDS.deployment]:
+            typeof projectData.s4Deployment === 'string' && projectData.s4Deployment
+              ? crypto.createHash('sha256').update(projectData.s4Deployment, 'utf8').digest('hex')
+              : null,
+          [INPUT_IDS.catalog]: referenceDigest(INPUT_IDS.catalog, getMergedCatalogVersion()),
+          [INPUT_IDS.ruleset]:
+            typeof runData.rulesetVersion === 'string'
+              ? referenceDigest(INPUT_IDS.ruleset, runData.rulesetVersion)
+              : null,
+        };
+        const unverified = invalidatingInputs(unverifiedInputs(recordedManifest, live));
+        if (unverified.length > 0) {
+          blockers.push({
+            code: 'inputs-unverified',
+            message: `The signed run's inputs cannot all be shown to still match: ${unverified
+              .map((u) => `${inputLabel(u.id)} (${u.reason})`)
+              .join(', ')}. Re-run the analysis so the pack is bound to the inputs it was computed from.`,
           });
         }
       }
