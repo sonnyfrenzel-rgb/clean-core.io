@@ -530,12 +530,24 @@ test.describe('the audit pipeline', () => {
     expect(bounded.length, 'the narrative input stays inside its reserve').toBeLessThanOrEqual(6_000);
     expect(bounded, 'and says how many findings it left out').toMatch(/further finding\(s\) of the lowest severities/);
     expect(bounded, 'the severest are the ones it keeps').toContain('kritisch');
-    expect(read('scripts/security/audit.mjs')).toContain('narrativeInput: { chars: narrativeUser.length, reservedChars: AUDIT.narrativeInputChars }');
+    expect(read('scripts/security/audit.mjs')).toContain('narrativeInput: { chars: narrativeUser.length, reservedChars: AUDIT.narrativeInputChars, truncated: narrativeTruncated }');
     // Redaction runs after the message is built and can make it longer; the
     // bound is applied to what is actually sent (QA a05856ec23f4).
     const auditSource = read('scripts/security/audit.mjs');
-    expect(auditSource).toContain('let narrativeUser = buildNarrative(AUDIT.narrativeInputChars);');
-    expect(auditSource).toContain('if (narrativeUser.length > AUDIT.narrativeInputChars)');
+    expect(auditSource).toContain('const NARRATIVE_PREFIX = ');
+    expect(auditSource).toContain('buildNarrative(NARRATIVE_CAP - NARRATIVE_PREFIX.length)');
+    expect(auditSource, 'the payload is rebuilt with the room redaction took').toContain('narrativeUser.length > NARRATIVE_CAP && attempt < 3');
+    expect(auditSource, 'and cut at the reserve if even that does not fit').toContain('narrativeTruncated = true;');
+    expect(auditSource).toContain('truncated: narrativeTruncated');
+    // The invariant, run rather than read: whatever redaction does to the text,
+    // what goes out is never larger than what the cap paid for.
+    const { redactSecrets } = await import(path.resolve(ROOT, 'scripts/qa/lib/redact.mjs'));
+    const CAP = 6_000;
+    const PREFIX = 'TASK\n\n';
+    const build = (maxChars: number) => redactSecrets(PREFIX + narrativeMessage({ ...narrativeArgs, maxChars })).text;
+    let payload = build(CAP - PREFIX.length);
+    for (let attempt = 0; payload.length > CAP && attempt < 3; attempt++) payload = build(Math.max(1_000, CAP - PREFIX.length - (payload.length - CAP)));
+    expect(payload.length, 'the built payload fits the cap').toBeLessThanOrEqual(CAP);
     // The counted coverage replaces whatever the model wrote.
     expect(withCountedCoverage({ coverage: { files_in_scope: 999, deep_read: 999, pattern_scanned_only: 0, notes: 'model' } }, coverage).coverage).toEqual({ files_in_scope: 10, deep_read: 7, pattern_scanned_only: 3, notes: 'counted model' });
   });

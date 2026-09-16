@@ -140,14 +140,24 @@ async function main() {
 
   // Redaction runs after the message is built and replaces a secret-shaped
   // value with a longer marker, so the cleaned message can be larger than the
-  // reserve it was costed with (QA review of 0bf8637953a3, a05856ec23f4). It
-  // is built once, cleaned, and — if redaction pushed it over — built once
-  // more with the room that redaction took away.
-  const buildNarrative = (maxChars) => clean('outgoing message', `${CISO_NARRATIVE_TASK}\n\n${narrativeMessage({ surface, coverage, findings, notRead, failed: run.failedCalls, droppedNote: verifiedNote, verified: Boolean(verified), maxChars })}`);
-  let narrativeUser = buildNarrative(AUDIT.narrativeInputChars);
-  if (narrativeUser.length > AUDIT.narrativeInputChars) {
-    const overflow = narrativeUser.length - AUDIT.narrativeInputChars;
-    narrativeUser = buildNarrative(Math.max(2_000, AUDIT.narrativeInputChars - overflow));
+  // reserve it was costed with (QA review of 0bf8637953a3, a05856ec23f4). The
+  // reserve is what this call was priced at, so it holds unconditionally: the
+  // body is rebuilt with the room redaction took, and if that still does not
+  // fit — a message that is nothing but redaction markers — the payload is cut
+  // at the reserve and says so, because a request larger than its budget is a
+  // request the cap did not authorise.
+  const NARRATIVE_PREFIX = `${CISO_NARRATIVE_TASK}\n\n`;
+  const buildNarrative = (maxChars) => clean('outgoing message', NARRATIVE_PREFIX + narrativeMessage({ surface, coverage, findings, notRead, failed: run.failedCalls, droppedNote: verifiedNote, verified: Boolean(verified), maxChars }));
+  const NARRATIVE_CAP = AUDIT.narrativeInputChars;
+  let narrativeUser = buildNarrative(NARRATIVE_CAP - NARRATIVE_PREFIX.length);
+  for (let attempt = 0; narrativeUser.length > NARRATIVE_CAP && attempt < 3; attempt++) {
+    const overflow = narrativeUser.length - NARRATIVE_CAP;
+    narrativeUser = buildNarrative(Math.max(1_000, NARRATIVE_CAP - NARRATIVE_PREFIX.length - overflow));
+  }
+  let narrativeTruncated = false;
+  if (narrativeUser.length > NARRATIVE_CAP) {
+    narrativeTruncated = true;
+    narrativeUser = `${narrativeUser.slice(0, NARRATIVE_CAP - 120)}\n\n(Cut here: the message did not fit the reserve for this call. Findings beyond this point are in the report and counted above.)`;
   }
   let narrative = null;
   try {
@@ -217,7 +227,7 @@ async function main() {
     // Above the reserve only when the findings' text alone outgrows it — the code was then left out, and the cost
     // estimate for the CISO was exceeded. Recorded in the sealed report, next to the actual cost.
     cisoInput: { chars: cisoUser.length, reservedChars: AUDIT.cisoInputChars },
-    narrativeInput: { chars: narrativeUser.length, reservedChars: AUDIT.narrativeInputChars },
+    narrativeInput: { chars: narrativeUser.length, reservedChars: AUDIT.narrativeInputChars, truncated: narrativeTruncated },
     redactedSecrets: secretHits.length,
     surface: { files: surface.files.total, byDomain: surface.files.byDomain, apiRoutes: surface.apiRoutes.length, sinks: surface.sinks.length, dependencies: surface.dependencies.vulnerabilities || null },
     report,
