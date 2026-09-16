@@ -221,6 +221,72 @@ export async function safeFetch(
   throw new SsrfError('Too many redirects.');
 }
 
+/** Thrown by `readBoundedBody` when a response is larger, or slower, than it was allowed to be. */
+export class ResponseLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ResponseLimitError';
+  }
+}
+
+/**
+ * Reads a response body under a byte limit and a deadline.
+ *
+ * `safeFetch` decides where a request may go and says nothing about what may
+ * come back. The callers' timeout covered the wait for the headers only —
+ * `clearTimeout` ran before `return response` — and `response.text()` then
+ * read a body of any length for any length of time, from a host the person
+ * using the route had chosen. A tenant that answers slowly, or with a
+ * $metadata of a few hundred megabytes, held the request and its memory for
+ * as long as it liked.
+ *
+ * A `Content-Length` above the limit is refused before a byte is read. A body
+ * that grows past the limit, or has not ended by the deadline, is cancelled
+ * and refused with what was read discarded. Decoded as `text()` decodes:
+ * UTF-8, byte-order mark dropped.
+ */
+export async function readBoundedBody(
+  response: Response,
+  limits: { maxBytes: number; timeoutMs: number },
+): Promise<string> {
+  const declared = Number(response.headers.get('content-length'));
+  if (Number.isFinite(declared) && declared > limits.maxBytes) {
+    throw new ResponseLimitError(
+      `Response body of ${declared} bytes exceeds the ${limits.maxBytes}-byte limit.`,
+    );
+  }
+  if (!response.body) return '';
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  let timedOut = false;
+  const deadline = setTimeout(() => {
+    timedOut = true;
+    // Cancelling settles the read that is waiting, with `done: true`.
+    reader.cancel().catch(() => {});
+  }, limits.timeoutMs);
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      received += value.byteLength;
+      if (received > limits.maxBytes) {
+        await reader.cancel().catch(() => {});
+        throw new ResponseLimitError(`Response body exceeds the ${limits.maxBytes}-byte limit.`);
+      }
+      chunks.push(value);
+    }
+  } finally {
+    clearTimeout(deadline);
+  }
+  if (timedOut) {
+    throw new ResponseLimitError(`Response body was not complete after ${limits.timeoutMs} ms.`);
+  }
+  return new TextDecoder('utf-8').decode(Buffer.concat(chunks));
+}
+
 /**
  * Whether an OData service path may be appended to an allowlisted S/4 host.
  *
