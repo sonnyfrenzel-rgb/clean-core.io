@@ -21,6 +21,7 @@ const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false }
 
 import { ProjectSkeleton, ExampleSkeleton } from '@/components/Skeleton';
 import StarterExamples from '@/components/StarterExamples';
+import DemoEntryCard from '@/components/demo/DemoEntryCard';
 
 const STATIC_EXAMPLES = [
   {
@@ -1363,6 +1364,11 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* The demo project — roadmap 0.10. One demo for every account, so it is a
+          link rather than a row of the list below: the list is a Firestore query
+          over this account's projects and the demo belongs to no account. */}
+      <DemoEntryCard />
 
       {/* Project Tree View */}
       {loadingProjects ? (

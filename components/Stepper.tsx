@@ -22,15 +22,23 @@ export default function Stepper({
   steps,
   current,
   projectId,
+  basePath,
 }: {
   steps: RailStep[];
   current: PhaseKey;
   projectId: string;
+  /**
+   * What the seven links are relative to. Defaults to the project the steps
+   * belong to; the demo project (roadmap 0.10) passes `/demo`, because it has
+   * seven stages and deliberately no project document behind them.
+   */
+  basePath?: string;
 }) {
   const router = useRouter();
+  const root = basePath ?? `/project/${projectId}`;
 
   const go = (step: RailStep) => {
-    router.push(`/project/${projectId}/${step.path}`);
+    router.push(`${root}/${step.path}`);
     window.scrollTo(0, 0);
   };
 
