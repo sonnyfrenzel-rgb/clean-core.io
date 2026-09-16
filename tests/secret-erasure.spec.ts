@@ -9,10 +9,15 @@ import { deleteS4Credentials } from '../lib/s4-credentials';
  *
  * Both helpers ended every write in `.catch(() => {})`, so a delete the
  * database refused resolved like a delete that worked and the route answered
- * `ok` with the secret still stored. Against the Firestore emulator, which
+ * `ok` with the secret still stored. Run against the Firestore emulator, which
  * refuses a document id of the form `__x__` as reserved — the client library
  * does not check for it, so the refusal comes back from the server as a
  * rejected write, which is exactly the failure that used to be swallowed.
+ *
+ * Both functions are Firestore-only, which is why they can be called from here
+ * at all: the Admin Auth module reaches ESM-only `jose` and cannot be required
+ * under Playwright's CommonJS transform, so `lib/firebase-admin.ts` loads it
+ * only where authentication is actually used.
  */
 const RESERVED_UID = '__secret-erasure-spec__';
 
