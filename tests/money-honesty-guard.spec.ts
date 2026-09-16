@@ -250,25 +250,61 @@ test('no page promises an outcome nobody measured', () => {
   // LinkedIn whitepaper's "saving days of manual mapping and boilerplate,
   // without ever replacing the judgment of the expert" through on the first run.
   const NEGATION = /\b(not|never|neither)\b/i;
-  const RUN_UP = 60;
-  const disavowedAt = (sentence: string, at: number): boolean =>
-    NEGATION.test(sentence.slice(Math.max(0, at - RUN_UP), at));
+  // The clause the phrase sits in, and no further. A window of N characters is
+  // not enough — "The score does not replace review, but it predicts your TCO
+  // savings" puts the negation 32 characters from the claim and negates
+  // something else entirely. A clause boundary is what ends a negation's reach.
+  const CLAUSE_BREAK = /[,;:—–]|\b(?:but|however|yet|though|although|while|and)\b/gi;
+  const disavowedAt = (sentence: string, at: number): boolean => {
+    const runUp = sentence.slice(0, at);
+    let start = 0;
+    for (const m of runUp.matchAll(CLAUSE_BREAK)) start = (m.index ?? 0) + m[0].length;
+    return NEGATION.test(runUp.slice(start));
+  };
 
-  const offenders: string[] = [];
-  const inspect = (rel: string, raw: string) => {
+  const offencesIn = (rel: string, raw: string): string[] => {
     const text = raw
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/^\s*\/\/.*$/gm, '')
       .replace(/<!--[\s\S]*?-->/g, '');
+    const found: string[] = [];
     for (const { re, why } of PROMISES) {
       for (const sentence of text.split(/(?<=[.!?])\s+|\n/)) {
         const hit = re.exec(sentence);
         if (!hit || disavowedAt(sentence, hit.index)) continue;
-        offenders.push(`${rel}: ${why} — ${sentence.trim().slice(0, 120)}`);
+        found.push(`${rel}: ${why} — ${sentence.trim().slice(0, 120)}`);
       }
     }
+    return found;
   };
+
+  // The guard has to be shown to still catch things, because every change to it
+  // so far has been a change that made it catch less. Left column: what it must
+  // flag. Right column: what it must let through, all of them sentences that
+  // are really in the product.
+  const MUST_FLAG = [
+    // The counter-example from the QA review of dbf74bbeaa13: a negation that
+    // governs a different clause entirely.
+    'The score does not replace review, but it predicts your TCO savings.',
+    'This is not a workshop — it saves you days of manual mapping.',
+    'Clean Core work pays for itself within a year.',
+    'Teams report 40% fewer regressions after decoupling.',
+  ];
+  const MUST_PASS = [
+    'We do not claim it saves you days: what takes time is the decisions, and those stay with you.',
+    'No cost, saving or ROI figure is derived from the Clean Core Score anywhere in the product.',
+    'First pass in minutes, not a workshop.',
+  ];
+  for (const sentence of MUST_FLAG) {
+    expect(offencesIn('fixture', sentence), `the guard no longer catches: ${sentence}`).not.toEqual([]);
+  }
+  for (const sentence of MUST_PASS) {
+    expect(offencesIn('fixture', sentence), `the guard now bans an honest sentence: ${sentence}`).toEqual([]);
+  }
+
+  const offenders: string[] = [];
+  const inspect = (rel: string, raw: string) => { offenders.push(...offencesIn(rel, raw)); };
 
   const walk = (dir: string) => {
     for (const e of fs.readdirSync(path.resolve(ROOT, dir), { withFileTypes: true })) {
