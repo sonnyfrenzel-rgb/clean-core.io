@@ -16,6 +16,7 @@ import nextDynamic from 'next/dynamic';
 import { DocumentSection } from '@/components/DocumentSection';
 import { Components } from 'react-markdown';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
+import { escapeHtml } from '@/lib/export-safety';
 import { callGemini } from '@/lib/gemini';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import type { Project, AnalysisData, CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
@@ -484,6 +485,23 @@ export default function AnalyzePage() {
     }
   }, [autoAnalyze, legacyCode, project?.analysis]);
 
+  /**
+   * The export below is an HTML document a reviewer opens or pastes into
+   * Confluence, and nearly every value in it was written either by the account
+   * holder (the project name) or by the model out of the customer's own ABAP —
+   * a comment in the uploaded source is enough to steer it into returning
+   * markup (SEC-2026-014). Nothing of either kind reaches the template
+   * unescaped; the markup around it is ours. The same `esc` as the design and
+   * documentation exports, from the one escaper in `lib/export-safety.ts`.
+   *
+   * Attributes are the other half of the rule: escaping the five HTML
+   * characters still leaves a value free inside `style="…"`, so no attribute in
+   * this document interpolates a foreign value at all. Every colour and label a
+   * branch picks is hoisted into a local constant and the attribute reads only
+   * that constant.
+   */
+  const esc = escapeHtml;
+
   const exportToConfluence = async () => {
     if (!project?.analysis) return;
 
@@ -529,18 +547,22 @@ export default function AnalyzePage() {
       };
 
       // Build visual table for gaps
-      const gapsRows = data.gaps?.map(g => `
+      const gapsRows = data.gaps?.map(g => {
+        const sevBg = g.severity === 'High' ? '#ffebe6' : g.severity === 'Medium' ? '#fffae6' : '#e6fcff';
+        const sevFg = g.severity === 'High' ? '#de350b' : g.severity === 'Medium' ? '#974f0c' : '#007a87';
+        return `
         <tr>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: bold;">${g.title}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0;"><span style="padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; background: ${g.severity === 'High' ? '#ffebe6' : g.severity === 'Medium' ? '#fffae6' : '#e6fcff'}; color: ${g.severity === 'High' ? '#de350b' : g.severity === 'Medium' ? '#974f0c' : '#007a87'};">${g.severity}</span></td>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: 500; color: #0747a6;">${g.strategy}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${g.rationale}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: bold;">${g.complexity}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: bold;">${esc(g.title)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0;"><span style="padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; background: ${sevBg}; color: ${sevFg};">${esc(g.severity)}</span></td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: 500; color: #0747a6;">${esc(g.strategy)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${esc(g.rationale)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: bold;">${esc(g.complexity)}</td>
         </tr>
-      `).join('') || '';
+      `;
+      }).join('') || '';
 
       const stepsList = data.strategicNextSteps?.map(step => `
-        <li style="margin-bottom: 10px; font-size: 14px;"><strong>${step}</strong></li>
+        <li style="margin-bottom: 10px; font-size: 14px;"><strong>${esc(step)}</strong></li>
       `).join('') || '';
 
       // Extensibility Routing Pathway and Comparative matrices
@@ -628,15 +650,36 @@ export default function AnalyzePage() {
         }
       };
 
-      const checkpointsRows = checkpoints.map((cp, idx) => `
+      const checkpointsRows = checkpoints.map((cp, idx) => {
+        // A model that answers with something other than a string used to crash
+        // the export here, on .includes(), before anything was rendered.
+        const state = String(cp.resultState ?? '');
+        const stateBg = state.includes('Side-by-Side') ? '#deebff' : state.includes('In-App') ? '#e3fcef' : '#f4f5f7';
+        const stateFg = state.includes('Side-by-Side') ? '#0747a6' : state.includes('In-App') ? '#006644' : '#505f79';
+        return `
         <tr>
           <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: bold; text-align: center;">${idx + 1}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: bold;">${cp.checkpointName}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-size: 13px;">${cp.question}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #172b4d;">${cp.evaluation}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; text-align: center;"><span style="padding: 2.5px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; background: ${cp.resultState.includes('Side-by-Side') ? '#deebff' : cp.resultState.includes('In-App') ? '#e3fcef' : '#f4f5f7'}; color: ${cp.resultState.includes('Side-by-Side') ? '#0747a6' : cp.resultState.includes('In-App') ? '#006644' : '#505f79'};">${cp.resultState}</span></td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: bold;">${esc(cp.checkpointName)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-size: 13px;">${esc(cp.question)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #172b4d;">${esc(cp.evaluation)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #ebecf0; text-align: center;"><span style="padding: 2.5px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; background: ${stateBg}; color: ${stateFg};">${esc(state)}</span></td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
+
+      // The two score cards below colour their left border and caption by
+      // threshold. Both are decided here so that the template's `style="…"`
+      // reads a constant rather than an expression over a stored value.
+      const complexity = project.complexityScore;
+      const criticality = project.criticalityScore;
+      const complexityColor = complexity !== undefined && complexity >= 7 ? '#de350b' : complexity !== undefined && complexity >= 4 ? '#ff991f' : '#00875a';
+      const criticalityColor = criticality !== undefined && criticality >= 7 ? '#de350b' : criticality !== undefined && criticality >= 4 ? '#ff991f' : '#00875a';
+      const complexityNote = complexity !== undefined && complexity >= 7
+        ? 'High — significant refactoring needed'
+        : complexity !== undefined && complexity >= 4 ? 'Moderate — manageable effort' : 'Low — straightforward migration';
+      const criticalityNote = criticality !== undefined && criticality >= 7
+        ? 'Mission-critical — requires careful planning'
+        : criticality !== undefined && criticality >= 4 ? 'Important — schedule appropriately' : 'Low impact — quick win candidate';
 
       htmlContent = `
         <!DOCTYPE html>
@@ -663,25 +706,25 @@ export default function AnalyzePage() {
         </head>
         <body>
           <div class="header">
-            <h1>Business Analysis Report: ${data.projectTitle || project.name}</h1>
+            <h1>Business Analysis Report: ${esc(data.projectTitle || project.name)}</h1>
             <div class="meta">Clean Core Compliance: <strong>${typeof signedScore === 'number' ? `${signedScore}%` : 'not computed'}</strong> | Generated by Clean-Core.io | ${new Date().toLocaleDateString()}</div>
           </div>
           <div class="content">
             <div class="summary-box">
               <h3 style="margin-top: 0; color: #0747a6;">Executive Summary</h3>
-              <p>${data.summary}</p>
+              <p>${esc(data.summary)}</p>
             </div>
 
             <h2>Business Value & Executive Action Center</h2>
             <div class="card-grid" style="grid-template-cols: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
               <div class="card" style="border-left: 4px solid #00875a; background: #e3fcef10;">
                 <div class="card-title" style="color: #00875a;">Business Asset Audit</div>
-                <p style="font-size: 13px; margin-bottom: 8px;"><strong>Legacy Asset Score:</strong> ${bizFallback.legacyAssetScore !== null ? `${bizFallback.legacyAssetScore}% (Custom IP Value)` : 'not computed'}</p>
-                <p style="font-size: 13px; margin-bottom: 8px;"><strong>Technical Debt Level:</strong> ${bizFallback.technicalDebtLevel ?? 'not computed'}</p>
+                <p style="font-size: 13px; margin-bottom: 8px;"><strong>Legacy Asset Score:</strong> ${bizFallback.legacyAssetScore !== null ? `${esc(bizFallback.legacyAssetScore)}% (Custom IP Value)` : 'not computed'}</p>
+                <p style="font-size: 13px; margin-bottom: 8px;"><strong>Technical Debt Level:</strong> ${esc(bizFallback.technicalDebtLevel ?? 'not computed')}</p>
                 <p style="font-size: 13px; margin-bottom: 12px;"><strong>Annual maintenance cost:</strong> not determined</p>
                 <div style="font-size: 12px; margin-bottom: 6px;"><strong>Value Drivers:</strong></div>
                 <ul style="font-size: 12px; padding-left: 20px; margin-bottom: 10px;">
-                  ${(bizFallback.valueDrivers ?? []).map(d => `<li>${d}</li>`).join('') || '<li>not identified for this run</li>'}
+                  ${(bizFallback.valueDrivers ?? []).map(d => `<li>${esc(d)}</li>`).join('') || '<li>not identified for this run</li>'}
                 </ul>
                 <p style="font-size: 12px; font-weight: bold; background: #effcf6; padding: 10px; border-radius: 6px; border: 1px solid #d3f9e8; color: #006644; margin-top: 10px;">
                   <strong>Cost and ROI:</strong> Not determined. A cost or ROI figure needs approved cost assumptions, and this analysis has none — the Economics stage models costs only from figures you enter.
@@ -691,18 +734,18 @@ export default function AnalyzePage() {
                 <div class="card-title" style="color: #0747a6;">Plain English Stakeholder Roadmap</div>
                 <p style="font-size: 13px; color: #5e6c84; margin-bottom: 12px; font-style: italic;">Simplified action items to modernize this business capability successfully:</p>
                 <ul style="font-size: 13px; line-height: 1.8; padding-left: 20px; font-weight: bold; color: #253858;">
-                  ${bizFallback.plainEnglishActionPlan.map(action => `<li style="margin-bottom: 8px;">${action}</li>`).join('')}
+                  ${bizFallback.plainEnglishActionPlan.map(action => `<li style="margin-bottom: 8px;">${esc(action)}</li>`).join('')}
                 </ul>
               </div>
             </div>
 
             <h2>As-Is Process & Legacy Context</h2>
-            <p>${data.asIsContext}</p>
+            <p>${esc(data.asIsContext)}</p>
 
             <h2>Standard Fit Assessment</h2>
-            <p><strong>Target Standard Process ID / Module:</strong> ${data.standardFit?.targetStandardProcess || 'N/A'}</p>
-            <p><strong>Standardization Potential:</strong> <span class="badge">${data.standardFit?.potential || 'not computed'}</span></p>
-            <p>${data.standardFit?.rationale}</p>
+            <p><strong>Target Standard Process ID / Module:</strong> ${esc(data.standardFit?.targetStandardProcess || 'N/A')}</p>
+            <p><strong>Standardization Potential:</strong> <span class="badge">${esc(data.standardFit?.potential || 'not computed')}</span></p>
+            <p>${esc(data.standardFit?.rationale)}</p>
 
             <h2>SAP Extensibility Routing Decision Path</h2>
             <p>The legacy ABAP code was evaluated step-by-step against the official SAP Clean Core extensibility decision tree. Below is the detailed pathway and checkpoint audit:</p>
@@ -726,28 +769,28 @@ export default function AnalyzePage() {
             <div class="card-grid" style="grid-template-cols: 1fr 1fr; margin-bottom: 30px;">
               <div class="card" style="border-left: 4px solid #006644; background: #e3fcef20;">
                 <div class="card-title" style="color: #006644;">⚙️ In-App ABAP Cloud (RAP) Track</div>
-                <p style="font-size: 11px; color: #5e6c84; font-weight: bold; margin-bottom: 8px;">Feasibility: ${comparative.inAppABAPCloud.technicalFeasibility}</p>
-                <p style="font-size: 13px; margin-bottom: 12px;">${comparative.inAppABAPCloud.fitDetails}</p>
+                <p style="font-size: 11px; color: #5e6c84; font-weight: bold; margin-bottom: 8px;">Feasibility: ${esc(comparative.inAppABAPCloud.technicalFeasibility)}</p>
+                <p style="font-size: 13px; margin-bottom: 12px;">${esc(comparative.inAppABAPCloud.fitDetails)}</p>
                 <div style="font-size: 12px; margin-bottom: 8px;"><strong>Technical Pros:</strong></div>
                 <ul style="font-size: 12px; padding-left: 20px; margin-bottom: 12px;">
-                  ${comparative.inAppABAPCloud.pros.map(pro => `<li>${pro}</li>`).join('')}
+                  ${comparative.inAppABAPCloud.pros.map(pro => `<li>${esc(pro)}</li>`).join('')}
                 </ul>
                 <div style="font-size: 12px; margin-bottom: 8px;"><strong>Limitations (Cons):</strong></div>
                 <ul style="font-size: 12px; padding-left: 20px; color: #5e6c84; margin-bottom: 0;">
-                  ${comparative.inAppABAPCloud.cons.map(con => `<li>${con}</li>`).join('')}
+                  ${comparative.inAppABAPCloud.cons.map(con => `<li>${esc(con)}</li>`).join('')}
                 </ul>
               </div>
               <div class="card" style="border-left: 4px solid #0747a6; background: #deebff20;">
                 <div class="card-title" style="color: #0747a6;">☁️ Side-by-Side SAP BTP (CAP) Track</div>
-                <p style="font-size: 11px; color: #5e6c84; font-weight: bold; margin-bottom: 8px;">Feasibility: ${comparative.sideBySideBTP.technicalFeasibility}</p>
-                <p style="font-size: 13px; margin-bottom: 12px;">${comparative.sideBySideBTP.fitDetails}</p>
+                <p style="font-size: 11px; color: #5e6c84; font-weight: bold; margin-bottom: 8px;">Feasibility: ${esc(comparative.sideBySideBTP.technicalFeasibility)}</p>
+                <p style="font-size: 13px; margin-bottom: 12px;">${esc(comparative.sideBySideBTP.fitDetails)}</p>
                 <div style="font-size: 12px; margin-bottom: 8px;"><strong>Technical Pros:</strong></div>
                 <ul style="font-size: 12px; padding-left: 20px; margin-bottom: 12px;">
-                  ${comparative.sideBySideBTP.pros.map(pro => `<li>${pro}</li>`).join('')}
+                  ${comparative.sideBySideBTP.pros.map(pro => `<li>${esc(pro)}</li>`).join('')}
                 </ul>
                 <div style="font-size: 12px; margin-bottom: 8px;"><strong>Limitations (Cons):</strong></div>
                 <ul style="font-size: 12px; padding-left: 20px; color: #5e6c84; margin-bottom: 0;">
-                  ${comparative.sideBySideBTP.cons.map(con => `<li>${con}</li>`).join('')}
+                  ${comparative.sideBySideBTP.cons.map(con => `<li>${esc(con)}</li>`).join('')}
                 </ul>
               </div>
             </div>
@@ -772,15 +815,15 @@ export default function AnalyzePage() {
             <div class="card-grid">
               <div class="card">
                 <div class="card-title" style="color: #00875a;">Keep Core Clean</div>
-                <p style="font-size: 13px; margin: 0;">${data.recommendations?.keepCoreClean}</p>
+                <p style="font-size: 13px; margin: 0;">${esc(data.recommendations?.keepCoreClean)}</p>
               </div>
               <div class="card">
                 <div class="card-title" style="color: #de350b;">Decommissioning</div>
-                <p style="font-size: 13px; margin: 0;">${data.recommendations?.decommissioning}</p>
+                <p style="font-size: 13px; margin: 0;">${esc(data.recommendations?.decommissioning)}</p>
               </div>
               <div class="card">
                 <div class="card-title" style="color: #0747a6;">Cloud Readiness</div>
-                <p style="font-size: 13px; margin: 0;">${data.recommendations?.cloudReadiness}</p>
+                <p style="font-size: 13px; margin: 0;">${esc(data.recommendations?.cloudReadiness)}</p>
               </div>
             </div>
 
@@ -790,19 +833,19 @@ export default function AnalyzePage() {
             </ol>
 
             <h2>Detailed Technical Assessment</h2>
-            ${project.complexityScore !== undefined || project.criticalityScore !== undefined ? `
+            ${complexity !== undefined || criticality !== undefined ? `
             <div class="card-grid" style="grid-template-cols: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
-              ${project.complexityScore !== undefined ? `
-              <div class="card" style="border-left: 4px solid ${project.complexityScore >= 7 ? '#de350b' : project.complexityScore >= 4 ? '#ff991f' : '#00875a'};">
+              ${complexity !== undefined ? `
+              <div class="card" style="border-left: 4px solid ${complexityColor};">
                 <div class="card-title">Complexity Score</div>
-                <p style="font-size: 28px; font-weight: bold; margin: 0;">${project.complexityScore}<span style="color: #6b778c; font-size: 14px;">/10</span></p>
-                <p style="font-size: 12px; color: #6b778c; margin-top: 4px;">${project.complexityScore >= 7 ? 'High — significant refactoring needed' : project.complexityScore >= 4 ? 'Moderate — manageable effort' : 'Low — straightforward migration'}</p>
+                <p style="font-size: 28px; font-weight: bold; margin: 0;">${esc(complexity)}<span style="color: #6b778c; font-size: 14px;">/10</span></p>
+                <p style="font-size: 12px; color: #6b778c; margin-top: 4px;">${complexityNote}</p>
               </div>` : ''}
-              ${project.criticalityScore !== undefined ? `
-              <div class="card" style="border-left: 4px solid ${project.criticalityScore >= 7 ? '#de350b' : project.criticalityScore >= 4 ? '#ff991f' : '#00875a'};">
+              ${criticality !== undefined ? `
+              <div class="card" style="border-left: 4px solid ${criticalityColor};">
                 <div class="card-title">Criticality Score</div>
-                <p style="font-size: 28px; font-weight: bold; margin: 0;">${project.criticalityScore}<span style="color: #6b778c; font-size: 14px;">/10</span></p>
-                <p style="font-size: 12px; color: #6b778c; margin-top: 4px;">${project.criticalityScore >= 7 ? 'Mission-critical — requires careful planning' : project.criticalityScore >= 4 ? 'Important — schedule appropriately' : 'Low impact — quick win candidate'}</p>
+                <p style="font-size: 28px; font-weight: bold; margin: 0;">${esc(criticality)}<span style="color: #6b778c; font-size: 14px;">/10</span></p>
+                <p style="font-size: 12px; color: #6b778c; margin-top: 4px;">${criticalityNote}</p>
               </div>` : ''}
             </div>` : ''}
 
@@ -816,18 +859,18 @@ export default function AnalyzePage() {
                 <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Criticality</th>
               </tr></thead>
               <tbody>
-                ${(project.codeInventory || []).map((item: any) => `<tr>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${item.objectName || ''}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.type || ''}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${item.module || '—'}</td>
+                ${(project.codeInventory || []).map((item: any) => {
+                  const critBg = item.criticality === 'High' ? '#ffebe6' : item.criticality === 'Medium' ? '#fff0b3' : '#e3fcef';
+                  const critFg = item.criticality === 'High' ? '#de350b' : item.criticality === 'Medium' ? '#974f0c' : '#006644';
+                  return `<tr>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${esc(item.objectName || '')}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${esc(item.type || '')}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${esc(item.module || '—')}</td>
                   <td style="padding:10px;border-bottom:1px solid #ebecf0;">
-                    <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;background:${
-                      item.criticality === 'High' ? '#ffebe6' : item.criticality === 'Medium' ? '#fff0b3' : '#e3fcef'
-                    };color:${
-                      item.criticality === 'High' ? '#de350b' : item.criticality === 'Medium' ? '#974f0c' : '#006644'
-                    };">${item.criticality || 'Low'}</span>
+                    <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;background:${critBg};color:${critFg};">${esc(item.criticality || 'Low')}</span>
                   </td>
-                </tr>`).join('')}
+                </tr>`;
+                }).join('')}
               </tbody>
             </table>` : ''}
 
@@ -841,26 +884,24 @@ export default function AnalyzePage() {
                 <th style="background:#f4f5f7;padding:10px;font-size:11px;text-transform:uppercase;color:#6b778c;">Recommendation</th>
               </tr></thead>
               <tbody>
-                ${(project.dataCoupling || []).map((item: any) => `<tr>
+                ${(project.dataCoupling || []).map((item: any) => {
+                  const accessBg = item.accessType !== 'Read' ? '#ffebe6' : '#f4f5f7';
+                  const accessFg = item.accessType !== 'Read' ? '#de350b' : '#5e6c84';
+                  const riskBg = item.riskLevel === 'High' ? '#ffebe6' : item.riskLevel === 'Medium' ? '#fff0b3' : '#e3fcef';
+                  const riskFg = item.riskLevel === 'High' ? '#de350b' : item.riskLevel === 'Medium' ? '#974f0c' : '#006644';
+                  return `<tr>
                   <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">
-                    ${item.tableName || ''} ${item.isCustom ? '<span style="color:#0747a6;font-size:9px;">(Custom)</span>' : ''}
+                    ${esc(item.tableName || '')} ${item.isCustom ? '<span style="color:#0747a6;font-size:9px;">(Custom)</span>' : ''}
                   </td>
                   <td style="padding:10px;border-bottom:1px solid #ebecf0;">
-                    <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;background:${
-                      item.accessType !== 'Read' ? '#ffebe6' : '#f4f5f7'
-                    };color:${
-                      item.accessType !== 'Read' ? '#de350b' : '#5e6c84'
-                    };">${item.accessType || 'Read'}</span>
+                    <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;background:${accessBg};color:${accessFg};">${esc(item.accessType || 'Read')}</span>
                   </td>
                   <td style="padding:10px;border-bottom:1px solid #ebecf0;">
-                    <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;background:${
-                      item.riskLevel === 'High' ? '#ffebe6' : item.riskLevel === 'Medium' ? '#fff0b3' : '#e3fcef'
-                    };color:${
-                      item.riskLevel === 'High' ? '#de350b' : item.riskLevel === 'Medium' ? '#974f0c' : '#006644'
-                    };">${item.riskLevel || 'Low'}</span>
+                    <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;background:${riskBg};color:${riskFg};">${esc(item.riskLevel || 'Low')}</span>
                   </td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-size:11px;color:#5e6c84;">${item.recommendation || ''}</td>
-                </tr>`).join('')}
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-size:11px;color:#5e6c84;">${esc(item.recommendation || '')}</td>
+                </tr>`;
+                }).join('')}
               </tbody>
             </table>` : ''}
 
@@ -880,14 +921,16 @@ export default function AnalyzePage() {
               const rows = sorted.map(({ f, lines, snippets }) => {
                 const sevColor = f.severity === 'Critical' ? '#ffebe6;color:#de350b' : f.severity === 'High' ? '#fff0b3;color:#974f0c' : f.severity === 'Medium' ? '#fffae6;color:#974f0c' : '#e3fcef;color:#006644';
                 const confColor = (f.sapReplacement?.confidence === 'Catalog Match' || f.sapReplacement?.confidence === 'Verified') ? '#006644' : f.sapReplacement?.confidence === 'Candidate' ? '#974f0c' : '#de350b';
+                const srcColor = f.source === 'static-parser' ? '#e3fcef;color:#006644' : f.source === 'catalog-match' ? '#fffae6;color:#974f0c' : '#deebff;color:#0747a6';
+                const srcLabel = f.source === 'static-parser' ? '⚙ Parser' : f.source === 'catalog-match' ? '📋 Catalog' : '🤖 LLM';
                 return `<tr>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${f.title}${lines.length > 1 ? ` (${lines.length}×)` : ''}<br/><span style="font-size:10px;color:#6b778c;">${f.kind}</span></td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-family:monospace;font-size:11px;">${lines.join(', ')}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><code style="font-size:10px;background:#f4f5f7;padding:2px 4px;border-radius:3px;">${snippets[0] || '—'}</code></td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;background:${sevColor};">${f.severity}</span></td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;background:${f.source === 'static-parser' ? '#e3fcef;color:#006644' : f.source === 'catalog-match' ? '#fffae6;color:#974f0c' : '#deebff;color:#0747a6'};">${f.source === 'static-parser' ? '⚙ Parser' : f.source === 'catalog-match' ? '📋 Catalog' : '🤖 LLM'}</span></td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${f.sapReplacement ? `${f.sapReplacement.objectName}<br/><span style="font-size:10px;font-weight:bold;color:${confColor};">${f.sapReplacement.confidence}</span>` : '—'}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-size:10px;">${(f.targetOptions || []).slice(0, 2).join(', ') || '—'}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${esc(f.title)}${lines.length > 1 ? ` (${lines.length}×)` : ''}<br/><span style="font-size:10px;color:#6b778c;">${esc(f.kind)}</span></td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-family:monospace;font-size:11px;">${esc(lines.join(', '))}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><code style="font-size:10px;background:#f4f5f7;padding:2px 4px;border-radius:3px;">${esc(snippets[0] || '—')}</code></td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;background:${sevColor};">${esc(f.severity)}</span></td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;background:${srcColor};">${srcLabel}</span></td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;">${f.sapReplacement ? `${esc(f.sapReplacement.objectName)}<br/><span style="font-size:10px;font-weight:bold;color:${confColor};">${esc(f.sapReplacement.confidence)}</span>` : '—'}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-size:10px;">${esc((f.targetOptions || []).slice(0, 2).join(', ') || '—')}</td>
                 </tr>`;
               }).join('');
               return `
@@ -919,13 +962,13 @@ export default function AnalyzePage() {
                 const sevColor = item.severity === 'High' ? '#ffebe6;color:#de350b' : item.severity === 'Medium' ? '#fffae6;color:#974f0c' : '#e3fcef;color:#006644';
                 const statusColor = item.status === 'resolved' ? '#006644' : item.status === 'in-progress' ? '#0747a6' : '#6b778c';
                 return `<tr>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${item.title || '—'}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;background:${sevColor};">${item.severity || '—'}</span></td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-size:11px;color:#5e6c84;">${item.category || '—'}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-size:11px;">${item.location || '—'}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-size:11px;color:#5e6c84;">${item.recommendation || item.strategy || '—'}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${item.effort || '—'}</td>
-                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><span style="font-weight:bold;color:${statusColor};text-transform:capitalize;">${item.status || 'open'}</span></td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${esc(item.title || '—')}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;background:${sevColor};">${esc(item.severity || '—')}</span></td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-size:11px;color:#5e6c84;">${esc(item.category || '—')}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-size:11px;">${esc(item.location || '—')}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-size:11px;color:#5e6c84;">${esc(item.recommendation || item.strategy || '—')}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;font-weight:bold;">${esc(item.effort || '—')}</td>
+                  <td style="padding:10px;border-bottom:1px solid #ebecf0;"><span style="font-weight:bold;color:${statusColor};text-transform:capitalize;">${esc(item.status || 'open')}</span></td>
                 </tr>`;
               }).join('');
               return `
@@ -976,7 +1019,7 @@ export default function AnalyzePage() {
         </head>
         <body>
           <div class="header">
-            <h1>Business Analysis Report: ${project.name}</h1>
+            <h1>Business Analysis Report: ${esc(project.name)}</h1>
             <div class="meta">Generated by Clean-Core.io | ${new Date().toLocaleDateString()}</div>
           </div>
           <div class="content">

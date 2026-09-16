@@ -1,18 +1,26 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { sapApiHubHref, sapApiHubLink } from '../lib/export-safety';
-import { escapeHtml } from '../lib/utils';
+import { sapApiHubHref, sapApiHubLink, escapeHtml } from '../lib/export-safety';
+import { escapeHtml as escapeHtmlFromUtils } from '../lib/utils';
 
 /**
- * Two stages assemble an HTML document out of values the model wrote from the
- * customer's own ABAP, and a reviewer opens it — the design preview even opened
- * it in this application's origin (QA review of 33471220d6e9: 024ec609bc86,
- * 06f7c0c56a6c). A comment in the uploaded source is enough to steer a model
- * into returning markup.
+ * Three stages assemble an HTML document out of values the model wrote from the
+ * customer's own ABAP and out of the name the account holder typed, and a
+ * reviewer opens it — the design preview even opened it in this application's
+ * origin (QA review of 33471220d6e9: 024ec609bc86, 06f7c0c56a6c; SEC-2026-014).
+ * A comment in the uploaded source is enough to steer a model into returning
+ * markup.
+ *
+ * What the produced documents actually contain is checked by walking the real
+ * application and opening the real download (`tests/export-inertness-guard.spec.ts`).
+ * The checks here are the cheap early warning beside it: they read the source and
+ * fail the moment a new value is interpolated without going through the escaper,
+ * or lands somewhere escaping alone would not save it.
  */
 
 const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
+const ANALYZE = 'app/(app)/project/[projectId]/analyze/page.tsx';
 const DESIGN = 'app/(app)/project/[projectId]/design/page.tsx';
 const DOCS = 'app/(app)/project/[projectId]/documentation/page.tsx';
 
@@ -73,4 +81,131 @@ test('a refused URL leaves the label as text, and the label is escaped either wa
 test('escaping closes an attribute as well as an element', () => {
   expect(escapeHtml('</td><script>alert(1)</script>')).toBe('&lt;/td&gt;&lt;script&gt;alert(1)&lt;/script&gt;');
   expect(escapeHtml('" onmouseover="alert(1)')).toBe('&quot; onmouseover=&quot;alert(1)');
+});
+
+test('there is one escaper, and it shows a value rather than dropping it', () => {
+  // `lib/utils.ts` and `lib/audit-pack.ts` each had their own copy, which is how
+  // two documents built from the same fields came to have two answers.
+  expect(escapeHtmlFromUtils, 'lib/utils.ts defines an escaper of its own again').toBe(escapeHtml);
+  expect(read('lib/audit-pack.ts'), 'the audit pack defines an escaper of its own again')
+    .not.toMatch(/function escapeHtml\s*\(/);
+
+  // An audit pack's bytes are signed, so the entity this produces is not free to
+  // change: `'` has been `&#39;` in every pack issued so far.
+  expect(escapeHtml("the account holder's statement")).toBe('the account holder&#39;s statement');
+
+  // A report may need to show a zero or a false. An escaper that returned '' for
+  // anything falsy would be a quieter bug than the one it is here to prevent.
+  expect(escapeHtml(0)).toBe('0');
+  expect(escapeHtml(false)).toBe('false');
+  expect(escapeHtml(null)).toBe('');
+  expect(escapeHtml(undefined)).toBe('');
+});
+
+/** Every `${…}` of a template region, and whether it lands inside a quoted attribute. */
+function interpolations(segment: string, inAttr = false, out: Array<{ expr: string; inAttr: boolean }> = []) {
+  let attr = inAttr;
+  let i = 0;
+  while (i < segment.length) {
+    if (segment[i] === '$' && segment[i + 1] === '{') {
+      let depth = 1;
+      let j = i + 2;
+      while (j < segment.length && depth > 0) {
+        if (segment[j] === '{') depth += 1;
+        else if (segment[j] === '}') depth -= 1;
+        if (depth === 0) break;
+        j += 1;
+      }
+      const expr = segment.slice(i + 2, j);
+      out.push({ expr: expr.replace(/\s+/g, ' ').trim(), inAttr: attr });
+      // Inside an interpolation we are back in JavaScript, so a template nested
+      // there starts again outside any attribute.
+      interpolations(expr, false, out);
+      i = j + 1;
+      continue;
+    }
+    if (segment[i] === '"') attr = !attr;
+    i += 1;
+  }
+  return out;
+}
+
+const region = (source: string, from: string, to: string) =>
+  source.slice(source.indexOf(from), source.indexOf(to));
+
+/** A conditional that can only ever produce one of our own quoted literals. */
+function yieldsOnlyOwnLiterals(expr: string): boolean {
+  const skeleton = expr.replace(/'[^']*'/g, '§').replace(/\s+/g, ' ').trim();
+  return /^(?:[^?:]*\?\s*§\s*:\s*)+§$/.test(skeleton);
+}
+
+test('nothing foreign is interpolated into an attribute of an exported document', () => {
+  // Escaping the five HTML characters is the right answer for a text node and
+  // for a quoted attribute value, and not the whole answer for `style="…"` or
+  // `href="…"`, where a well-formed value can still carry a URL scheme or a
+  // declaration. So the rule for attributes is stricter than escaping: an
+  // attribute may interpolate a constant decided just above the template, or a
+  // conditional whose every branch is a literal of ours — and nothing else.
+  const regions: Array<[string, string]> = [
+    [ANALYZE, 'const gapsRows'],
+    [DESIGN, 'const structureRows'],
+    [DOCS, 'const html = `'],
+  ];
+  const ends: Record<string, string> = {
+    [ANALYZE]: 'const blob = new Blob',
+    [DESIGN]: 'if (viewOnly) {',
+    [DOCS]: '_Confluence.html',
+  };
+
+  const offenders: string[] = [];
+  let checked = 0;
+  for (const [file, from] of regions) {
+    const seen = interpolations(region(read(file), from, ends[file])).filter((e) => e.inAttr);
+    checked += seen.length;
+    for (const { expr } of seen) {
+      if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(expr)) continue;
+      if (yieldsOnlyOwnLiterals(expr)) continue;
+      offenders.push(`${file}: ${expr}`);
+    }
+  }
+
+  // If this drops to nothing the scan stopped finding the regions at all, and
+  // the check above would pass for the wrong reason.
+  expect(checked, 'no attribute interpolation was found — the scan lost its regions').toBeGreaterThan(15);
+  expect(offenders, `a value reaches an attribute of an exported document:\n${offenders.join('\n')}`).toEqual([]);
+});
+
+/**
+ * The analysis export, read expression by expression.
+ *
+ * Anything that reads one of the stage's data roots goes through `esc` — the
+ * two below are the audited exceptions, and they have to stay present, or this
+ * list is a note about code that no longer exists.
+ */
+const ANALYSIS_EXPORT_EXCEPTIONS: Array<[string, string]> = [
+  [
+    `item.isCustom ? '<span style="color:#0747a6;font-size:9px;">(Custom)</span>' : ''`,
+    'a boolean chooses between our own markup and nothing; the value itself is never written',
+  ],
+  [
+    'renderMarkdownSafe(withoutUnapprovedMoney(project.analysis))',
+    'the markdown fallback, sanitized by DOMPurify rather than escaped, because it is meant to carry formatting',
+  ],
+];
+
+test('the analysis export escapes every stored value it writes', () => {
+  const seg = region(read(ANALYZE), 'const gapsRows', 'const blob = new Blob');
+  const roots = /\b(data|project|item|g|cp|f|comparative|bizFallback)\./;
+  const audited = new Set(ANALYSIS_EXPORT_EXCEPTIONS.map(([expr]) => expr));
+
+  const all = interpolations(seg);
+  expect(all.length, 'the analysis export template was not found').toBeGreaterThan(80);
+
+  const left = all
+    .map((e) => e.expr)
+    .filter((expr) => roots.test(expr) && !expr.includes('esc(') && !audited.has(expr));
+  expect(left, `unescaped in the analysis export: ${left.join('\n')}`).toEqual([]);
+
+  const stale = ANALYSIS_EXPORT_EXCEPTIONS.filter(([expr]) => !all.some((e) => e.expr === expr));
+  expect(stale.map(([e]) => e), 'an audited exception no longer appears in the export').toEqual([]);
 });
