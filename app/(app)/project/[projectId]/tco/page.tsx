@@ -175,7 +175,12 @@ export default function TcoCalculatorPage() {
     // 3. Financial Benefits & ROI
     const annualSavings = legacyAnnualTotal - modernAnnualTotal;
     const cumulativeSavings5Yr = Array.from({ length: 6 }, (_, i) => {
-      if (i === 0) return { year: 'Year 0', Legacy: 0, Modernized: -oneTimeCost, NetBenefit: -oneTimeCost };
+      // The Year-0 row used its own key for the net benefit — `NetBenefit`,
+      // where every other row and the chart series say `Net Financial Benefit`.
+      // Recharts found no value for Year 0 and started the area at Year 1, so
+      // the investment, the one negative point in the forecast, was not drawn
+      // (QA review of 33471220d6e9, 217726b404c9).
+      if (i === 0) return { year: 'Year 0', 'Legacy TCO': 0, 'Modernized TCO': oneTimeCost, 'Net Financial Benefit': -oneTimeCost };
       const legacyCum = legacyAnnualTotal * i;
       const modernCum = oneTimeCost + (modernAnnualTotal * i);
       const netBenefit = legacyCum - modernCum;
@@ -202,7 +207,11 @@ export default function TcoCalculatorPage() {
     // and the page makes it separately.
     const paybackMonths =
       annualSavings > 0 ? Math.round((oneTimeCost / annualSavings) * 12 * 10) / 10 : null;
-    const roiYear1 = oneTimeCost > 0 ? Math.round((annualSavings / oneTimeCost) * 100) : null;
+    // Year-1 ROI is the return after the investment, not the ratio of savings
+    // to it: with €100k invested and €20k saved, the old figure printed "20 %"
+    // beside its own Year-1 net benefit of -€80k (QA review of 33471220d6e9,
+    // 3bb4158405d8). Same numerator as the cumulative curve, first year.
+    const roiYear1 = oneTimeCost > 0 ? Math.round(((annualSavings - oneTimeCost) / oneTimeCost) * 100) : null;
     const overheadReductionPct = Math.round((1 - modernAnnualTotal / legacyAnnualTotal) * 100);
 
     // Backstop rather than the primary defence. Every known path is guarded

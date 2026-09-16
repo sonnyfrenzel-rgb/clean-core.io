@@ -33,12 +33,25 @@ interface ProjectFile {
   content: string;
 }
 
+/**
+ * A file the workspace can show and the next stage can read. The model's answer
+ * was taken at its word: `result.files || []` accepted an empty list, a list of
+ * nulls, or entries with no path, and all of them were written to the project
+ * as a finished transformation (QA review of 33471220d6e9, d967e435917c).
+ */
+const isUsableFile = (f: unknown): f is ProjectFile =>
+  !!f && typeof f === 'object'
+  && typeof (f as ProjectFile).path === 'string' && (f as ProjectFile).path.trim().length > 0
+  && typeof (f as ProjectFile).content === 'string' && (f as ProjectFile).content.trim().length > 0;
+
 const CodeHighlighter = nextDynamic(() => import('@/components/CodeHighlighter'), { ssr: false });
 
 export default function TransformationPage() {
   const { projectId } = useParams();
   const [project, setProject] = useState<Project | null>(null);
   const projectRef = useRef<any>(null);
+  /** One generation at a time — see the dependency note on the callback below. */
+  const generationInFlight = useRef(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -433,6 +446,8 @@ CMD ["node", "srv/service.js"]`
   ];
 
   const generateTransformation = useCallback(async (legacyCode: string, design: string, analysis: string) => {
+    if (generationInFlight.current) return;
+    generationInFlight.current = true;
     setLoading(true);
     setProgress(0);
     setError('');
@@ -592,7 +607,7 @@ CMD ["node", "srv/service.js"]`
             throw e;
           }
         }
-        filesArray = result.files || [];
+        filesArray = (result.files || []).filter(isUsableFile);
         tests = result.tests || { config: '', spec: '' };
         
         if (filesArray.length === 0 && result.code) {
@@ -608,9 +623,19 @@ CMD ["node", "srv/service.js"]`
             path: isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts',
             content: responseText || ''
           }
-        ];
+        ].filter(isUsableFile);
       }
       
+      // Nothing usable came back. This used to be written anyway: an empty
+      // file list, an empty test suite and `status: 'transformed'` — on a
+      // first run the later stages saw a transformed project with no code, and
+      // on a rerun the empty answer replaced the code that was already there
+      // (QA review of 33471220d6e9, d967e435917c). The previous artefact stays
+      // and the stage reports a failed generation.
+      if (filesArray.length === 0) {
+        throw new Error('The model returned no usable code. Nothing was saved — the previous version is untouched. Try the generation again.');
+      }
+
       setTransformationLog(prev => [...prev, 'Code generation complete.', 'Optimizing imports...', 'Finalizing transformation...']);
       
       await updateDoc(doc(getDb(), 'projects', projectId as string), {
@@ -620,6 +645,11 @@ CMD ["node", "srv/service.js"]`
       });
       
       setFiles(filesArray);
+      // The stepper, the blockers and the verification rail all read `project`
+      // (`lib/workflow-steps.ts`); without this they went on describing the
+      // state before the generation until something else reloaded the page
+      // (QA review of 33471220d6e9, ce37b706107d).
+      setProject((prev: any) => prev ? { ...prev, generatedCode: JSON.stringify(filesArray), testSuite: tests, status: 'transformed' } : prev);
       const mainPath = isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts';
       const hasMainFile = filesArray.some(f => f.path === mainPath);
       setSelectedFilePath(hasMainFile ? mainPath : (filesArray[0]?.path || ''));
@@ -627,10 +657,18 @@ CMD ["node", "srv/service.js"]`
       console.error('Transformation Error:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred during code transformation.');
     } finally {
+      generationInFlight.current = false;
       setLoading(false);
       setProgress(100);
     }
-  }, [projectId, profile?.byokConfigured]);
+    // `profile?.byokConfigured` used to be a dependency here although nothing
+    // in this callback reads it. Hydration flipped it from undefined to true,
+    // the callback got a new identity, the effect below re-ran and started a
+    // second generation while the first model call was still in flight — two
+    // charged runs, and whichever answer wrote last became the artefact
+    // (QA review of 33471220d6e9, e078d502e983). The ref is the second half:
+    // a dependency is not the only way to be called twice.
+  }, [projectId]);
 
   useEffect(() => {
     const fetchProject = async () => {

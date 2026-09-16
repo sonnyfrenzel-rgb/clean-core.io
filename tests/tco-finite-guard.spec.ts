@@ -53,7 +53,7 @@ function model(scoreBefore: number, oneTimeCost = 15000) {
   return {
     annualSavings,
     overheadReductionPct: Math.round((1 - modernAnnual / legacyAnnual) * 100),
-    roiYear1: oneTimeCost > 0 ? Math.round((annualSavings / oneTimeCost) * 100) : null,
+    roiYear1: oneTimeCost > 0 ? Math.round(((annualSavings - oneTimeCost) / oneTimeCost) * 100) : null,
     paybackMonths: annualSavings > 0 ? Math.round((oneTimeCost / annualSavings) * 12 * 10) / 10 : null,
     chart,
   };
@@ -122,5 +122,34 @@ test.describe('the page carries the guard, not just this spec', () => {
     const src = fs.readFileSync(PAGE, 'utf8');
     expect(src).toContain('everyFigureFinite');
     expect(src).toContain('Number.isFinite');
+  });
+});
+
+test.describe('the first year pays for itself or it does not', () => {
+  // "20 % return" printed beside a Year-1 net benefit of -€80,000: the figure
+  // was annual savings over the investment, which is a ratio, not a return
+  // (QA review of 33471220d6e9, 3bb4158405d8).
+  test('a first year that does not recover the investment shows a negative return', () => {
+    const roi = (savings: number, invest: number) => Math.round(((savings - invest) / invest) * 100);
+    expect(roi(20_000, 100_000)).toBe(-80);
+    expect(roi(100_000, 100_000)).toBe(0);
+    expect(roi(150_000, 100_000)).toBe(50);
+  });
+
+  test('the page and this guard compute it the same way', () => {
+    const page = fs.readFileSync(path.join(process.cwd(), 'app/(app)/project/[projectId]/tco/page.tsx'), 'utf8');
+    expect(page).toContain('((annualSavings - oneTimeCost) / oneTimeCost) * 100');
+    expect(page, 'the savings-to-investment ratio is gone').not.toContain('(annualSavings / oneTimeCost) * 100');
+  });
+
+  test('the Year-0 row uses the same keys as the series it is drawn in', () => {
+    const page = fs.readFileSync(path.join(process.cwd(), 'app/(app)/project/[projectId]/tco/page.tsx'), 'utf8');
+    // Recharts drops a row that has no value under the series key, so the
+    // investment was simply not drawn (217726b404c9).
+    expect(page, 'no row carries a key the chart does not read').not.toMatch(/NetBenefit:/);
+    const yearZero = page.slice(page.indexOf("year: 'Year 0'"), page.indexOf("year: 'Year 0'") + 200);
+    expect(yearZero).toContain("'Net Financial Benefit'");
+    expect(yearZero).toContain("'Legacy TCO'");
+    expect(yearZero).toContain("'Modernized TCO'");
   });
 });
