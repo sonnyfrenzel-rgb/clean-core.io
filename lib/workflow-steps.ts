@@ -61,11 +61,63 @@ export interface RailStep {
   state: PhaseState;
   /** `state === 'done'`. Kept because most readers only ask that. */
   done: boolean;
+  /**
+   * The phase is done **and** what makes it done is a record nothing had to take
+   * on trust: a server-written signed run, an executed verdict. False for
+   * everything a model produced that nothing has checked, and for a
+   * self-declaration — both of which are still `done`, because they are on
+   * record, and neither of which may be painted green (roadmap 1.7).
+   *
+   * Kept apart from `done` on purpose. `done` answers "is this phase's own
+   * output on record"; `proven` answers "did anything verify it". Merging them
+   * would either colour unverified work green or park `workflowSummary().next`
+   * on a phase the reader can never finish.
+   */
+  proven: boolean;
   /** A few words for a badge — "Test draft", "Model estimate". */
   badge: string;
   /** What is on record, in the product's own words. */
   detail: string;
 }
+
+/**
+ * The one colour rule, read by the stepper, the rail and the dashboard row.
+ *
+ * Before it each of the three carried its own ladder, and they did not agree:
+ * the rail painted the phase you were *looking at* green whatever was on record
+ * for it, so opening a phase with nothing in it made the rail report a finished
+ * phase while the stepper, two hundred pixels above, showed the same phase grey.
+ * Position is not evidence, and it is not a colour here any more — the current
+ * phase is marked by a ring and an inner dot in the product's ink, never by the
+ * status colour.
+ *
+ * - `proven`   green. Reserved. See `RailStep.proven`.
+ * - `unproven` amber. Something is on record that nothing has verified — an
+ *              unconfirmed design, generated code, a generated blueprint, a test
+ *              suite nobody ran, a cost model on assumed coefficients.
+ * - `stale`    rose. Built for a source that is no longer the one under analysis.
+ * - `none`     grey. Nothing on record.
+ */
+export type PhaseTone = 'proven' | 'unproven' | 'stale' | 'none';
+
+export function phaseTone(step: Pick<RailStep, 'state' | 'proven'>): PhaseTone {
+  if (step.state === 'stale') return 'stale';
+  if (step.proven) return 'proven';
+  return step.state === 'empty' ? 'none' : 'unproven';
+}
+
+/**
+ * The classes that carry the tone, written out once so the three surfaces
+ * cannot drift into four shades of "nearly green". Every shade here is a
+ * Tailwind default; half-steps would have to be declared in the `@theme` block
+ * of `app/globals.css` first (see CLAUDE.md).
+ */
+export const PHASE_TONE_CLASS: Record<PhaseTone, { border: string; fill: string; surface: string; ink: string }> = {
+  proven: { border: 'border-green-600', fill: 'bg-green-600', surface: 'bg-white', ink: 'text-green-600' },
+  unproven: { border: 'border-amber-400', fill: 'bg-amber-400', surface: 'bg-amber-50', ink: 'text-amber-700' },
+  stale: { border: 'border-rose-400', fill: 'bg-rose-400', surface: 'bg-rose-50', ink: 'text-rose-700' },
+  none: { border: 'border-gray-300', fill: 'bg-gray-200', surface: 'bg-white', ink: 'text-gray-400' },
+};
 
 export const PHASES: ReadonlyArray<{ n: number; key: PhaseKey; label: string }> = [
   { n: 1, key: 'analyze', label: 'Analyze' },
@@ -287,14 +339,30 @@ export function workflowSteps(project: Project | null): RailStep[] {
   const tests = testEvidence(project);
   const executed = tests.passed + tests.failed;
 
-  const phase = (key: PhaseKey, s: Omit<RailStep, 'n' | 'key' | 'label' | 'path' | 'done'>): RailStep => {
+  // `proven` is opt-in and can only ever be true on a `done` phase: a phase that
+  // forgets to claim it is amber, which is the safe direction. Roadmap 1.7.
+  type PhaseFacts = Omit<RailStep, 'n' | 'key' | 'label' | 'path' | 'done' | 'proven'> & { proven?: boolean };
+  const phase = (key: PhaseKey, s: PhaseFacts): RailStep => {
     const p = PHASES.find((x) => x.key === key)!;
-    return { n: p.n, key, label: p.label, path: key, done: s.state === 'done', ...s };
+    return {
+      n: p.n,
+      key,
+      label: p.label,
+      path: key,
+      state: s.state,
+      badge: s.badge,
+      detail: s.detail,
+      done: s.state === 'done',
+      proven: s.state === 'done' && s.proven === true,
+    };
   };
 
+  // Proven: `activeRunId` is written only by `/api/runs/create`, is not in the
+  // client allowlist, and the run it points at is canonical-JSON signed.
   const analyze = hasRun
     ? phase('analyze', {
         state: 'done',
+        proven: true,
         badge: 'Signed run',
         detail: score !== null ? `Signed run, Clean Core Score ${score}.` : 'Signed run on record.',
       })
@@ -309,6 +377,11 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // The design page itself will not move on until the target architecture is
   // confirmed, so a generated design without that confirmation is not a
   // finished phase by the product's own rule.
+  //
+  // Not proven even when it is signed off: the design is the model's text, and
+  // the sign-off is the signed-in account saying so about itself. The audit pack
+  // puts both in `07-user-attested.md`, "not covered by the signature" — so the
+  // colour here says the same thing the export says.
   const design = !hasDesign
     ? phase('design', { state: 'empty', badge: 'Not started', detail: 'No solution design yet.' })
     : signedOff
@@ -323,6 +396,8 @@ export function workflowSteps(project: Project | null): RailStep[] {
           detail: 'Design generated — the target architecture has not been confirmed.',
         });
 
+  // Done, never proven: the detail says "not compiled or tested" and the colour
+  // now says it too. This is the model's output with nothing checking it.
   const transformation = hasGenerated
     ? phase('transformation', {
         state: 'done',
@@ -331,6 +406,8 @@ export function workflowSteps(project: Project | null): RailStep[] {
       })
     : phase('transformation', { state: 'empty', badge: 'Not started', detail: 'No code generated yet.' });
 
+  // Same: a generated blueprint is on record, and nothing has checked it against
+  // the code it describes.
   const documentation = hasDocs
     ? phase('documentation', { state: 'done', badge: 'Generated', detail: 'Blueprint and BPMN flow generated.' })
     : phase('documentation', { state: 'empty', badge: 'Not started', detail: 'No blueprint generated.' });
@@ -346,8 +423,11 @@ export function workflowSteps(project: Project | null): RailStep[] {
   if (tests.total === 0) {
     testing = phase('testing', { state: 'empty', badge: 'Not started', detail: 'No test suite generated.' });
   } else if (tests.passed === tests.total) {
+    // Proven: every case carries a verdict that is the result of an execution.
+    // `testEvidence` refuses to count `Simulated` or `Connectivity` as one.
     testing = phase('testing', {
       state: 'done',
+      proven: true,
       badge: 'Passed',
       detail: `All ${plural(tests.total, 'test case')} returned a pass.`,
     });
@@ -396,9 +476,13 @@ export function workflowSteps(project: Project | null): RailStep[] {
     !hasDocs && 'no documentation',
   ].filter(Boolean) as string[];
 
+  // The one place where generated work earns green, and only because something
+  // checked it: `gaps` is empty exactly when every generated case carries an
+  // executed pass over the generated code. Transformation on its own never does.
   const delivery = gaps.length === 0
     ? phase('delivery', {
         state: 'done',
+        proven: true,
         badge: 'Ready',
         detail: 'Code, documentation and a passing test run are on record. Whether to deploy remains an architect’s decision.',
       })
@@ -424,6 +508,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
     ...base,
     state: 'stale',
     done: false,
+    proven: false,
     badge,
     detail,
   });
@@ -441,7 +526,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
     hasDesign && s.design
       ? stale(design, 'Designed for a previous source — regenerate it against the current analysis.')
       : hasDesign && s.signOff
-        ? { ...design, state: 'partial', done: false, badge: 'Re-confirm', detail: 'The sign-off was given for a previous source — confirm the target architecture again.' }
+        ? { ...design, state: 'partial', done: false, proven: false, badge: 'Re-confirm', detail: 'The sign-off was given for a previous source — confirm the target architecture again.' }
         : design,
     hasGenerated && s.code
       ? stale(transformation, 'Generated from a previous source — regenerate it once the design is current.')

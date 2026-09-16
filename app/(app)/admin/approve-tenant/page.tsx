@@ -279,7 +279,7 @@ function TenantApprovalContent() {
 
               <div className="bg-slate-950 border border-slate-850 p-4 rounded-2xl text-xs text-slate-400 space-y-1.5 font-medium">
                 <p className="font-bold text-white uppercase tracking-wide">⚠️ Provisioning Scope:</p>
-                <p>• Unlocks <strong className="text-blue-400">Connected S/4HANA Tenant</strong> tab</p>
+                <p>• Unlocks the <strong className="text-blue-400">Check tenant connection</strong> tab</p>
                 <p>• Activates dynamic destination endpoint mapping environment variables</p>
                 <p>• Enables Basic Auth or Client Credentials storage</p>
               </div>

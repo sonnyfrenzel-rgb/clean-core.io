@@ -796,7 +796,10 @@ export default function TestingSandboxPage() {
             <Globe className="w-5 h-5 text-blue-600" />
             Validation Environment
           </h2>
-          <p className="text-xs text-[#0b1c30]/60 mt-1 font-medium">Mock runs the tests in the sandbox. The tenant tab checks a connection — running tests against a tenant is locked.</p>
+          {/* Two tabs, named after what each one does. The lock is not repeated
+              here: it stands once, inside the tenant tab it applies to (roadmap
+              1.7, ADR-004). */}
+          <p className="text-xs text-[#0b1c30]/60 mt-1 font-medium">Mock runs the generated suite in the sandbox. The tenant tab checks a connection and reads its OData metadata.</p>
         </div>
         <div className="flex bg-gray-100 p-1.5 rounded-2xl w-full sm:w-auto self-start sm:self-auto">
           <button
@@ -819,8 +822,11 @@ export default function TestingSandboxPage() {
                 : "text-gray-500 hover:text-gray-900"
             )}
           >
-            Connected S/4HANA Tenant
-            <span className="bg-amber-100 text-amber-800 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-normal" data-live-test-lock>Check only</span>
+            {/* ADR-004 (15.09.2026): the tab stays visible and is named after
+                what it does. It carried "Connected S/4HANA Tenant" and a "Check
+                only" pill, which was the lock notice a third time on one screen
+                and told the reader what the tab is *not*. */}
+            Check tenant connection
           </button>
         </div>
       </div>
@@ -835,12 +841,24 @@ export default function TestingSandboxPage() {
             className="overflow-hidden animate-in fade-in"
           >
             {LIVE_TEST_EXECUTION.locked && (
-              // The documented lock (lib/locked-paths.ts, G0:R0), said where the path would otherwise be offered.
+              // The documented lock (lib/locked-paths.ts, G0:R0), said once, where
+              // the path would otherwise be offered — and with the way out named,
+              // so it is a boundary and not a dead end (roadmap 1.7, ADR-004).
+              // It stood in three places on this one screen before: here, as a
+              // pill on the tab, and beside the run button. Three copies of a
+              // refusal read as three different refusals.
               <div data-live-test-lock className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
                 <LockIcon className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                 <div className="text-xs text-amber-900 font-medium leading-relaxed">
                   <p className="font-bold mb-0.5">Tests against a tenant are locked</p>
                   <p>{LIVE_TEST_EXECUTION.userNotice}</p>
+                  <p className="mt-1.5">
+                    {profile?.s4TenantAccessAllowed || profile?.isAdmin
+                      ? 'Bring your own tenant (BYOT) is granted for this account, so the connection check, the OData metadata read and the read-only call below are open to you. That approval does not lift this lock: it is lifted when the runner has its own isolated service and its review is closed, not by a permission.'
+                      : profile?.s4TenantAccessRequested
+                        ? 'Bring your own tenant (BYOT) is what opens the connection check, the OData metadata read and the read-only call — your request for it is with an administrator. That approval does not lift this lock: it is lifted when the runner has its own isolated service and its review is closed, not by a permission.'
+                        : 'Bring your own tenant (BYOT) is what opens the connection check, the OData metadata read and the read-only call: ask for it with the form below and an administrator reviews it by hand. That approval does not lift this lock: it is lifted when the runner has its own isolated service and its review is closed, not by a permission.'}
+                  </p>
                 </div>
               </div>
             )}
@@ -987,7 +1005,7 @@ export default function TestingSandboxPage() {
                             <span className="bg-indigo-600 text-white text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">4</span>
                             <div>
                               <p className="text-xs font-bold text-indigo-950">Save the Connection</p>
-                              <p className="text-[11px] text-indigo-800/80 font-medium">Click <strong>"Save Connection"</strong> to persist the config. Running the generated tests against the tenant is locked until the test runner has its own isolated service; the Mock Environment runs them against mocks.</p>
+                              <p className="text-[11px] text-indigo-800/80 font-medium">Click <strong>"Save Connection"</strong> to persist the config. The Mock Environment tab is where the generated suite runs.</p>
                             </div>
                           </div>
 
@@ -1464,7 +1482,7 @@ export default function TestingSandboxPage() {
                       <li><strong>Request access:</strong> Use the form below to request access for your organization.</li>
                       <li><strong>Provide HTTPS endpoint:</strong> Set up a secure HTTPS connection to your S/4HANA sandbox or test system.</li>
                       <li><strong>Configure credentials:</strong> Once approved, you can configure your credentials (Basic Auth or OAuth 2.0).</li>
-                      <li><strong>Check the connection:</strong> Test the handshake, read OData metadata and make one read-only call from the Stage 5 testing environment. Running the generated tests against the tenant is locked until the test runner has its own isolated service.</li>
+                      <li><strong>Check the connection:</strong> Test the handshake, read OData metadata and make one read-only call from the Stage 5 testing environment. That is the whole of what this tab does; the notice above says what it does not.</li>
                     </ol>
                   </div>
 
@@ -1584,10 +1602,13 @@ export default function TestingSandboxPage() {
               </div>
             ) : (
               <div className="space-y-3">
+                {/* Not a second lock notice — the one above this panel is the
+                    only one on this screen (roadmap 1.7). What belongs beside a
+                    disabled button is the way forward, so that is all this says. */}
                 {activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION.locked && (
-                  <div data-live-test-lock className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl text-xs font-semibold flex items-center gap-2">
-                    <LockIcon className="w-4 h-4 text-amber-700 shrink-0" />
-                    <span>Running these tests against the tenant is locked. Switch to the Mock Environment to run them in the sandbox.</span>
+                  <div data-live-test-hint className="p-3.5 bg-gray-50 border border-gray-200 text-gray-700 rounded-2xl text-xs font-semibold flex items-center gap-2">
+                    <ListChecks className="w-4 h-4 text-gray-500 shrink-0" />
+                    <span>Switch to the Mock Environment to run this suite in the sandbox.</span>
                   </div>
                 )}
 

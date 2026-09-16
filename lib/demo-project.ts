@@ -68,6 +68,12 @@ export interface DemoRailStep {
   path: string;
   state: PhaseState;
   done: boolean;
+  /**
+   * Always false here, and it is not a placeholder: the demo produces no signed
+   * run and executes no test, so no phase of it is backed by evidence. Green is
+   * for proven work (roadmap 1.7), and a demo may not borrow it.
+   */
+  proven: boolean;
   badge: string;
   detail: string;
 }
@@ -164,7 +170,7 @@ function railStep(
   detail: string,
 ): DemoRailStep {
   const p = PHASES.find((x) => x.key === key)!;
-  return { n: p.n, key, label: p.label, path: key, state, done: state === 'done', badge, detail };
+  return { n: p.n, key, label: p.label, path: key, state, done: state === 'done', proven: false, badge, detail };
 }
 
 /**
