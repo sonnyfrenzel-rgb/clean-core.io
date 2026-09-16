@@ -104,7 +104,7 @@ interface Scanned {
  * statement that was meant as prose — the reader continues the statement, which
  * ABAP would too.
  */
-function isCommentLine(raw: string, statementOpen: boolean): boolean {
+export function isAbapCommentLine(raw: string, statementOpen: boolean): boolean {
   if (raw.startsWith('*')) return true;
   return !statementOpen && /^\s+\*/.test(raw);
 }
@@ -275,7 +275,7 @@ export function readStatements(source: string): AbapStatement[] {
 
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
-    if (isCommentLine(raw, pending.chars.length > 0)) continue;
+    if (isAbapCommentLine(raw, pending.chars.length > 0)) continue;
 
     const trimmed = stripInlineComment(raw).trim();
     if (!trimmed) continue;

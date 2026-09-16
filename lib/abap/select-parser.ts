@@ -2,12 +2,21 @@ import type {
   SelectModel, JoinClause, JoinType, SelectField, SqlTableRef, SqlQuirk,
 } from './sql-model';
 import type { SourceRef } from './class-model';
+import { isAbapCommentLine } from './statement-reader';
 
 const up = (s: string) => s.trim().toUpperCase();
 
-/** Helper to clean inline comments from a line, respecting string literals and backticks. */
-function cleanComments(line: string): string {
-  if (/^\s*\*/.test(line)) return '';
+/**
+ * Clean inline comments from a line, respecting string literals and backticks.
+ *
+ * `statementOpen` says whether a SELECT is still being buffered. An **indented**
+ * asterisk is a continuation there and a comment everywhere else — the rule is
+ * `isAbapCommentLine` in `statement-reader.ts`, written down once with the two
+ * shipped examples that disagree. `^\s*\*` dropped the continuation of a
+ * multi-line arithmetic expression, so the statement never found its period.
+ */
+function cleanComments(line: string, statementOpen: boolean): string {
+  if (isAbapCommentLine(line, statementOpen)) return '';
   let clean = '';
   let inSingleQuote = false;
   let inBacktick = false;
@@ -68,7 +77,7 @@ export function extractSelects(content: string): { text: string; line: number }[
 
   for (let i = 0; i < lines.length; i++) {
     const rawLine = lines[i];
-    const cleanLine = cleanComments(rawLine);
+    const cleanLine = cleanComments(rawLine, inSel);
     const trimmedClean = cleanLine.trim();
     if (!trimmedClean) continue;
 

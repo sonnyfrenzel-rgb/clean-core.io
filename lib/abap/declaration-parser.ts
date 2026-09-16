@@ -2,6 +2,7 @@ import type {
   ClassNode, MethodDecl, AttributeDecl, EventDecl, AliasDecl,
   ParamDef, TypeRef, Visibility, SourceRef,
 } from './class-model';
+import { isAbapCommentLine } from './statement-reader';
 
 /**
  * ABAP declaration parser — parses ONLY the declaration parts of class/interface
@@ -30,8 +31,14 @@ export function tokenize(source: string): Statement[] {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    // Full-line comment
-    if (/^\s*\*/.test(line)) continue;
+    // A comment line — and an indented asterisk is only one where no statement
+    // is open. `^\s*\*` dropped the continuation of
+    // `lv_dev_pct = ( lv_price - lv_ref )` / `* 100 / lv_ref.`, so the statement
+    // never found its period and swallowed the `IF` below it: a price-tolerance
+    // check, gone from the evidence of a file this product ships as a starter
+    // example. The rule lives once, in `statement-reader.ts`, with the two real
+    // lines that disagree written out beside it.
+    if (isAbapCommentLine(line, buf.length > 0)) continue;
     // Strip inline comment ("...) when not inside a string literal or backtick literal
     let clean = '';
     for (let c = 0; c < line.length; c++) {
