@@ -121,6 +121,71 @@ function modelIdOf(mc: ModelCard | undefined): string {
   return mc?.modelParticipation === 'none' ? NO_MODEL_TOOK_PART : NOT_RECORDED;
 }
 
+/**
+ * "No — platform key" answers a question that was never asked when no model ran.
+ *
+ * `byokUsed` is false both when the shared key was used and when no key was
+ * used at all, so the line read as "we spent the platform key on this" for a
+ * run that spent nothing (QA review of cf0f2244eda4). Whose key it was is only
+ * a question once there was a call.
+ */
+function byokLineOf(mc: ModelCard | undefined): string {
+  if (mc?.modelParticipation === 'none') return 'Not applicable — no model was called';
+  return mc?.byokUsed ? 'Yes — user-provided API key' : 'No — platform key';
+}
+
+/**
+ * Who wrote the narrative is not something this pack can prove.
+ *
+ * The run records whether a narrative is present, because that is the one fact
+ * the route can check: the text arrives in the request body, and the model call
+ * happens in a separate request to `/api/gemini` with nothing tying the two
+ * together. So the model identifier above names the model the account was
+ * configured with, not a model the server watched produce this text (QA review
+ * of cf0f2244eda4). A reader of an audit pack is entitled to that distinction,
+ * and the honest place to state it is beside the claim, not in a commit message.
+ */
+function narrativeOriginOf(mc: ModelCard | undefined): string {
+  if (mc?.modelParticipation === 'none') return 'No narrative — nothing was submitted for this run';
+  if (!mc?.modelParticipation) return NOT_RECORDED;
+  return 'Submitted with the analysis; the server did not observe it being generated';
+}
+
+/**
+ * The five bullets under "Usage Context" were a constant.
+ *
+ * They listed what a model had done — scoring, routing, transformation, test
+ * generation — in every pack, including one whose own model card says no model
+ * took part, and including runs whose later stages were never generated. Two of
+ * the five were never true of any run: the Clean Core score and the
+ * extensibility route are computed by the deterministic engine in
+ * `lib/abap/`, before any model is involved, and a signed run recomputes both
+ * server-side. A model card that credits a model for the engine's work is the
+ * kind of sentence this pack exists to prevent (QA review of cf0f2244eda4).
+ */
+function usageContextOf(mc: ModelCard | undefined): string {
+  if (mc?.modelParticipation === 'none') {
+    return [
+      'No model was called for this run. Everything in this pack was produced by the',
+      'deterministic engine: the evidence report, the Clean Core score and the',
+      'extensibility route are computed from the source, and the signed run carries',
+      'the inputs they were computed from.',
+      '',
+      'Where a stage would have shown model-written text, the pack says so rather than',
+      'leaving a gap.',
+    ].join('\n');
+  }
+  return [
+    'The deterministic engine produced the evidence report, the Clean Core score and',
+    'the extensibility route; these are recomputed on the server and covered by the',
+    'signature. The model was used for written text on top of that — the analysis',
+    'narrative, and whichever later stages were generated in this project.',
+    '',
+    'Model output is a draft for human review. Architecture decisions require an',
+    `explicit sign-off, and that sign-off is ${SEE_ATTESTED}.`,
+  ].join('\n');
+}
+
 const SEE_ATTESTED = `recorded in ${USER_ATTESTED_FILE} — the account holder's own statement, not covered by the signature`;
 
 export function generateExecutiveSummary(project: Project): string {
@@ -429,7 +494,8 @@ export function generateModelCard(project: Project): string {
 | Model Identifier | ${modelIdOf(mc)} |
 | Platform Version | ${mc?.engineVersion || APP_VERSION} |
 | SAP API Catalog | ${(mc as any)?.catalogVersion || '2024.FPS02'} |
-| BYOK (Bring Your Own Key) | ${mc?.byokUsed ? 'Yes — user-provided API key' : 'No — platform key'} |
+| BYOK (Bring Your Own Key) | ${byokLineOf(mc)} |
+| Narrative origin | ${narrativeOriginOf(mc)} |
 
 ## Processing Timestamps
 
@@ -441,14 +507,7 @@ export function generateModelCard(project: Project): string {
 
 ## Usage Context
 
-The AI model was used for:
-- Structural analysis of legacy ABAP code
-- Clean Core compliance scoring
-- Extensibility route recommendation
-- Code transformation to RAP/CAP target architecture
-- Test case generation
-
-The AI output is a draft for human review. All architecture decisions require explicit architect sign-off before adoption.
+${usageContextOf(mc)}
 `;
 }
 

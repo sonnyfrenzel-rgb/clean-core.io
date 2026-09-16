@@ -257,6 +257,16 @@ export async function POST(req: NextRequest) {
     // off, a call that failed) is live state the screens read from
     // `/api/model-stages`. Putting a client-supplied reason in the signed run
     // would sign a sentence the client chose.
+    //
+    // What this does NOT establish, and what the pack therefore must not claim:
+    // that a model wrote the narrative. The narrative arrives in the request
+    // body. The server proxies model calls through `/api/gemini`, but that is a
+    // separate request with nothing tying it to this run, so "a narrative is
+    // present" is the whole of what is known here — `none` is certain, and
+    // `narrative` says a narrative is in the run and not who produced it (QA
+    // review of cf0f2244eda4). The model card spells that out; making it a
+    // server-observed fact needs a receipt from `/api/gemini` that this route
+    // can check, which is its own step.
     const modelParticipation: ModelParticipation = finalAnalysisText.trim().length > 0 ? 'narrative' : 'none';
     const modelRan = modelParticipation === 'narrative';
 

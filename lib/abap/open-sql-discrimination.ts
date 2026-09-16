@@ -25,7 +25,13 @@
  * write, and treating them as internal would hide exactly the statement that
  * matters most.
  */
-const INTERNAL_TABLE_CLAUSE = /\b(?:INTO\s+TABLE|LINES\s+OF|INITIAL\s+LINE|ADJACENT\s+DUPLICATES|ASSIGNING|REFERENCE\s+INTO|TRANSPORTING|\bINDEX\b)/i;
+// Every alternative closes with a word boundary. `ASSIGNING` and `TRANSPORTING`
+// did not, so they also matched inside `assigning_clerk` and
+// `transporting_flag` — ordinary column names. No statement reached a wrong
+// answer through it, because each branch decides on its own structure, but a
+// clause test that fires on half an identifier is one refactor away from doing
+// so (QA review of cf0f2244eda4).
+const INTERNAL_TABLE_CLAUSE = /\b(?:INTO\s+TABLE\b|LINES\s+OF\b|INITIAL\s+LINE\b|ADJACENT\s+DUPLICATES\b|ASSIGNING\b|REFERENCE\s+INTO\b|TRANSPORTING\b|INDEX\b)/i;
 
 /** Words that are never a table name in these positions. */
 const NOT_A_TABLE = new Set(['SCREEN', 'LINE', 'TABLE', 'FROM', 'ADJACENT']);
@@ -41,8 +47,40 @@ export interface SqlWrite {
  * The database write in this statement, or `null` when it is an internal-table
  * operation, a screen statement, or nothing of the sort.
  */
+/**
+ * The statement with its text literals blanked, keeping every offset.
+ *
+ * The clause test below runs over the whole statement, so a literal containing
+ * one of those words — `DELETE FROM zlog WHERE reason = 'assigning'` — would
+ * offer it to the test as if it were syntax. No input actually reaches a wrong
+ * answer through that today, because each branch decides on its own structure
+ * and not on the flag alone; sixteen adversarial statements were measured
+ * before this was written (QA review of cf0f2244eda4). It is closed anyway:
+ * the next branch that leans on the flag would inherit the hole, and
+ * `lib/abap/select-parser.ts` already established that a keyword inside a
+ * literal is not a keyword.
+ */
+function withoutLiterals(text: string): string {
+  let out = '';
+  let quote: string | null = null;
+  for (const ch of text) {
+    if (quote) {
+      out += ch === quote ? ch : ' ';
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === "'" || ch === '`') {
+      quote = ch;
+      out += ch;
+      continue;
+    }
+    out += ch;
+  }
+  return out;
+}
+
 export function databaseWriteIn(text: string): SqlWrite | null {
-  const isInternalTableOp = INTERNAL_TABLE_CLAUSE.test(text);
+  const isInternalTableOp = INTERNAL_TABLE_CLAUSE.test(withoutLiterals(text));
 
   // INSERT — the database form is `INSERT tab FROM …` or `INSERT INTO tab VALUES …`.
   // `INSERT <wa> INTO <itab>` is the internal form and carries none of the

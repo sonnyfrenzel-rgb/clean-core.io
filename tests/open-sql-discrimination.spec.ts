@@ -84,3 +84,43 @@ test('both engines read the same rule', () => {
   expect(assessment).not.toMatch(/const modifyMatch = text\.match/);
   expect(assessment).not.toMatch(/const deleteMatch = text\.match/);
 });
+
+test.describe('an internal-table word is only a clause where it is syntax', () => {
+  // The clause test runs over the whole statement, so a column called
+  // `transporting_flag` and a literal reading 'assigning' both offered it a
+  // keyword that is not one (QA review of cf0f2244eda4). Nothing was wrong at
+  // the time — each branch decides on its own structure — and these cases keep
+  // it that way for the branch somebody adds next.
+
+  const REAL_WRITES = [
+    "DELETE FROM zlog WHERE reason = 'assigning'",
+    "DELETE FROM zlog WHERE reason = 'transporting'",
+    "DELETE FROM zlog WHERE reason = 'into table'",
+    "DELETE FROM zlog WHERE reason = 'index'",
+    "UPDATE ztab SET reason = 'adjacent duplicates' WHERE id = 1",
+    "UPDATE ztab SET transporting_flag = 'X' WHERE id = 1",
+    "UPDATE zorders SET assigning_clerk = 'AB' WHERE vbeln = '1'",
+    "UPDATE zorders SET note = 'reference into the ledger' WHERE id = 1",
+    "DELETE FROM zorders WHERE bukrs = '1000' AND line_index = 5",
+    "MODIFY ztab FROM TABLE lt_rows",
+  ];
+
+  const REAL_INTERNAL = [
+    'DELETE lt_items INDEX 3',
+    'INSERT ls_wa INTO TABLE lt_items',
+    'MODIFY lt_items FROM ls_wa INDEX 2',
+    'DELETE ADJACENT DUPLICATES FROM lt_items',
+  ];
+
+  for (const statement of REAL_WRITES) {
+    test(`a database write survives the word in it: ${statement.slice(0, 48)}`, () => {
+      expect(databaseWriteIn(statement), 'a real database write was read as internal-table work').not.toBeNull();
+    });
+  }
+
+  for (const statement of REAL_INTERNAL) {
+    test(`internal-table work stays internal: ${statement.slice(0, 48)}`, () => {
+      expect(databaseWriteIn(statement), 'internal-table work was reported as a database write').toBeNull();
+    });
+  }
+});
