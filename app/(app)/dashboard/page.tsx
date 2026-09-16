@@ -11,6 +11,7 @@ import { Plus, Trash2, ArrowRight, FolderOpen, Folder, ChevronRight, ChevronDown
 import { format } from 'date-fns';
 import nextDynamic from 'next/dynamic';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { quotaExhausted, runsRemaining, runsAreSelfFunded } from '@/lib/run-quota-rule';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
@@ -314,7 +315,9 @@ export default function Dashboard() {
     if (!projectName || isCreating || !exampleToStart || !profile) return;
     
     // Check limit
-    if (profile.transformationsUsed >= profile.transformationsLimit) {
+    // The server's rule, not a third of it: an enterprise account and an
+    // account with its own Gemini key are never charged (QA 9b1af76b65c9).
+    if (quotaExhausted(profile)) {
       alert(`Limit reached! You've used all ${profile.transformationsLimit} free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.`);
       return;
     }
@@ -466,7 +469,9 @@ export default function Dashboard() {
     e.preventDefault();
     if (!projectName || isCreating || !profile) return;
 
-    if (profile.transformationsUsed >= profile.transformationsLimit) {
+    // The server's rule, not a third of it: an enterprise account and an
+    // account with its own Gemini key are never charged (QA 9b1af76b65c9).
+    if (quotaExhausted(profile)) {
       alert(`Limit reached! You've used all ${profile.transformationsLimit} free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.`);
       return;
     }
@@ -935,14 +940,14 @@ export default function Dashboard() {
 
   return (
     <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-8">
-      {profile && profile.transformationsUsed >= profile.transformationsLimit && (
+      {quotaExhausted(profile) && (
         <div className="mb-8 p-6 bg-amber-50 border-2 border-amber-200 rounded-[2rem] flex flex-col sm:flex-row items-center gap-4 animate-in slide-in-from-top-4 duration-500 shadow-sm text-center sm:text-left">
           <div className="bg-amber-100 p-3 rounded-2xl shrink-0">
             <ShieldAlert size={24} className="text-amber-700" />
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-black text-amber-900 tracking-tight">Limit Reached</h3>
-            <p className="text-amber-800 font-medium text-sm">You've used your {profile.transformationsLimit} free transformations. Add your own Gemini API key in settings for unlimited runs — at no cost.</p>
+            <p className="text-amber-800 font-medium text-sm">You've used your {profile?.transformationsLimit ?? 5} free transformations. Add your own Gemini API key in settings for unlimited runs — at no cost.</p>
           </div>
           <button 
             onClick={() => router.push('/settings')}
@@ -1016,7 +1021,7 @@ export default function Dashboard() {
             </div>
 
             {/* Quota limit feedback */}
-            {profile && profile.tier !== 'enterprise' && profile.transformationsUsed >= profile.transformationsLimit ? (
+            {quotaExhausted(profile) ? (
               <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-red-50 to-rose-50/30 border border-red-200/60 shadow-sm flex items-start gap-3">
                 <div className="bg-red-100 p-2.5 rounded-lg text-red-700 shrink-0">
                   <ShieldAlert className="w-5 h-5 text-red-600 animate-bounce" />
@@ -1024,7 +1029,7 @@ export default function Dashboard() {
                 <div className="flex-1">
                   <h4 className="text-xs font-black uppercase tracking-wider text-red-800 font-mono">Quota Exceeded</h4>
                   <p className="text-xs text-red-700 font-semibold mt-0.5 leading-snug">
-                    You have used all <strong>{profile.transformationsLimit}</strong> free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.
+                    You have used all <strong>{profile?.transformationsLimit ?? 5}</strong> free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.
                   </p>
                 </div>
               </div>
@@ -1036,11 +1041,11 @@ export default function Dashboard() {
                 <div className="flex-1">
                   <h4 className="text-xs font-black uppercase tracking-wider text-green-800 font-mono">Free Balance Status</h4>
                   <p className="text-sm text-green-700 font-semibold mt-0.5 leading-snug">
-                    {profile?.tier === 'enterprise' ? (
-                      <span>✨ Unlimited enterprise transformations remaining.</span>
+                    {runsAreSelfFunded(profile) ? (
+                      <span>{profile?.tier === 'enterprise' ? '✨ Unlimited enterprise transformations remaining.' : '✨ Your own Gemini key — runs are not counted against the free quota.'}</span>
                     ) : (
                       <span>
-                        You have <strong>{Math.max(0, (profile?.transformationsLimit || 5) - (profile?.transformationsUsed || 0))}</strong> of <strong>{profile?.transformationsLimit || 5}</strong> free transformations left.
+                        You have <strong>{runsRemaining(profile)}</strong> of <strong>{profile?.transformationsLimit || 5}</strong> free transformations left.
                       </span>
                     )}
                   </p>
@@ -1056,14 +1061,14 @@ export default function Dashboard() {
                 className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                 placeholder="e.g., Z_FI_INVOICE_REPORT"
                 autoFocus
-                disabled={isCreating || (profile?.tier !== 'enterprise' && (profile?.transformationsUsed || 0) >= (profile?.transformationsLimit || 5))}
+                disabled={isCreating || quotaExhausted(profile)}
               />
             </div>
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => setShowUpload(false)} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" disabled={isCreating}>Cancel</button>
               <button 
                 type="submit" 
-                disabled={!projectName.trim() || isCreating || (profile?.tier !== 'enterprise' && (profile?.transformationsUsed || 0) >= (profile?.transformationsLimit || 5))} 
+                disabled={!projectName.trim() || isCreating || quotaExhausted(profile)} 
                 className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2"
               >
                 {isCreating ? <><RefreshCw className="w-4 h-4 animate-spin" /> Creating...</> : 'Create Project'}
@@ -1125,7 +1130,7 @@ export default function Dashboard() {
             <p className="mb-4 text-sm text-gray-500">Name your new project based on <strong>{exampleToStart.name}</strong>.</p>
             
             {/* Quota limit feedback */}
-            {profile && profile.tier !== 'enterprise' && profile.transformationsUsed >= profile.transformationsLimit ? (
+            {quotaExhausted(profile) ? (
               <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-red-50 to-rose-50/30 border border-red-200/60 shadow-sm flex items-start gap-3">
                 <div className="bg-red-100 p-2.5 rounded-lg text-red-700 shrink-0">
                   <ShieldAlert className="w-5 h-5 text-red-600 animate-bounce" />
@@ -1133,7 +1138,7 @@ export default function Dashboard() {
                 <div className="flex-1">
                   <h4 className="text-xs font-black uppercase tracking-wider text-red-800 font-mono">Quota Exceeded</h4>
                   <p className="text-xs text-red-700 font-semibold mt-0.5 leading-snug">
-                    You have used all <strong>{profile.transformationsLimit}</strong> free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.
+                    You have used all <strong>{profile?.transformationsLimit ?? 5}</strong> free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.
                   </p>
                 </div>
               </div>
@@ -1145,11 +1150,11 @@ export default function Dashboard() {
                 <div className="flex-1">
                   <h4 className="text-xs font-black uppercase tracking-wider text-green-800 font-mono">Free Balance Status</h4>
                   <p className="text-sm text-green-700 font-semibold mt-0.5 leading-snug">
-                    {profile?.tier === 'enterprise' ? (
-                      <span>✨ Unlimited enterprise transformations remaining.</span>
+                    {runsAreSelfFunded(profile) ? (
+                      <span>{profile?.tier === 'enterprise' ? '✨ Unlimited enterprise transformations remaining.' : '✨ Your own Gemini key — runs are not counted against the free quota.'}</span>
                     ) : (
                       <span>
-                        You have <strong>{Math.max(0, (profile?.transformationsLimit || 5) - (profile?.transformationsUsed || 0))}</strong> of <strong>{profile?.transformationsLimit || 5}</strong> free transformations left.
+                        You have <strong>{runsRemaining(profile)}</strong> of <strong>{profile?.transformationsLimit || 5}</strong> free transformations left.
                       </span>
                     )}
                   </p>
@@ -1165,14 +1170,14 @@ export default function Dashboard() {
                 className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                 placeholder={`e.g., Transform ${exampleToStart.name}`}
                 autoFocus
-                disabled={isCreating || (profile?.tier !== 'enterprise' && (profile?.transformationsUsed || 0) >= (profile?.transformationsLimit || 5))}
+                disabled={isCreating || quotaExhausted(profile)}
               />
             </div>
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => { setExampleToStart(null); setProjectName(''); }} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" disabled={isCreating}>Cancel</button>
               <button 
                 type="submit" 
-                disabled={!projectName.trim() || isCreating || (profile?.tier !== 'enterprise' && (profile?.transformationsUsed || 0) >= (profile?.transformationsLimit || 5))} 
+                disabled={!projectName.trim() || isCreating || quotaExhausted(profile)} 
                 className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2"
               >
                 {isCreating ? <><RefreshCw className="w-4 h-4 animate-spin" /> Starting...</> : 'Start Transformation'}
@@ -1421,10 +1426,7 @@ export default function Dashboard() {
           <StarterExamples
             userId={user.uid}
             limit={profile?.transformationsLimit ?? 5}
-            atLimit={
-              profile?.tier !== 'enterprise' &&
-              (profile?.transformationsUsed || 0) >= (profile?.transformationsLimit || 5)
-            }
+            atLimit={quotaExhausted(profile)}
           />
         </div>
       )}

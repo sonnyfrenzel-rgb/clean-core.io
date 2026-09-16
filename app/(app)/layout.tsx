@@ -13,6 +13,7 @@ import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import SiteFooter from '@/components/SiteFooter';
 import { APP_VERSION } from '@/lib/version';
 import UserOnboarding from '@/components/UserOnboarding';
+import { runsAreSelfFunded, runsRemaining } from '@/lib/run-quota-rule';
 
 export default function AppLayout({children}: {children: React.ReactNode}) {
   const pathname = usePathname();
@@ -185,9 +186,9 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                   {getTierBadge(profile.tier)}
                 </div>
                 <div className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest md:mt-0.5 whitespace-nowrap">
-                  {profile.transformationsLimit > 900
+                  {runsAreSelfFunded(profile) || profile.transformationsLimit > 900
                     ? 'Unlimited'
-                    : `${Math.max(0, profile.transformationsLimit - profile.transformationsUsed)} of ${profile.transformationsLimit} left`}
+                    : `${runsRemaining(profile)} of ${profile.transformationsLimit} left`}
                 </div>
               </div>
             )}
