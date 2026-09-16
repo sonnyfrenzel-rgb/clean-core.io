@@ -3,6 +3,51 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+**Stand 16.09.2026, spät — v2.11.1 steht auf `dev` und wartet auf Sonnys Go. Phase 0 und Phase 1 sind
+abgeschlossen, Phase 2 hat begonnen.** Phase 0 zu Ende gebracht mit 0.5 und 0.6 (Eingabemanifest im
+signierten Lauf, konservative Ungültigkeit statt Frischeheuristik), 0.9/0.10/0.11 (die acht Beispiele je
+einmal frei, Demo unter `/demo/{stage}` aus einem echten Engine-Lauf, Vertrauenskarte mit Belegregister),
+0.3 (Regelversion gemessen, fünf TCO-Versprechen weg, Abgrenzung zu SAPs Kennzahlen), 0.7 (Freigabefelder
+nur noch über `POST /api/projects/{id}/commands`, Regel-Deploy mit Datensatz), 0.17 (die fünf offenen
+Punkte nachgezogen) und 0.18 (Engine-Korrekturen). Phase 1 vollständig: 1.1 Erhaltungsregister, 1.2
+Zero-LLM-Pfad, 1.4 Arbeitsraum-Schale, 1.5 Gestaltung als Komponenten, 1.6 kein Dark Mode, 1.7 Grün heißt
+belegt, 1.8 „My workspace" als List Report — 1.3 war in v2.10.1 vorgezogen. Phase 2 begonnen: 2.1
+Verzweigungen, 2.2 Aufrufe, beide deterministisch und mit Zeilenbereich; **2.3 bis 2.9 stehen aus, die
+Phase ist nicht fertig.** Dazu das erste vollständige Security-Audit (247 gemeldet, 24 entschieden, die
+meisten widerlegt), die UX-Delta-Review (7 entschieden, 2 widerlegt) und rund ein Dutzend QA-Runden.
+
+**`firestore.rules` muss vor dem App-Deploy von Hand ausgerollt werden** (`npm run deploy:rules`) — zweimal
+in diesem Release geändert: die Admin-Einsicht in Projekte ist weg, und 0.7 nimmt sechs Felder aus der
+client-schreibbaren Allowlist. Eine App auf nicht ausgerollten Regeln bricht genau an diesen Stellen.
+Anlass dafür war ein Befund: das erste Nachsehen über die Rules-API zeigte am 16.09. in Produktion das
+Ruleset vom 20.08., drei Verschärfungen hinter dem Repository — einen Monat lang, ohne dass irgendetwas
+es gemeldet hätte. Ausgerollt um 14:43:04Z nach Sonnys Go, danach auf allen sechs Datenbanken nachgeprüft.
+`docs/registers/rules-deployment.json` hält jetzt fest, welcher Text live ist; `npm run rules:check`
+vergleicht offline, `npm run rules:verify` fragt die Produktion, `tests/rules-deploy-order.spec.ts` bricht
+bei der einen Reihenfolge, die Produktion kaputt macht.
+
+Was nur Sonny entscheiden oder tun kann:
+- **Die drei CI-Secrets tauschen?** `S4_ENCRYPTION_KEY`, `MFA_BACKUP_CODE_PEPPER` und
+  `PILOT_APPROVAL_SECRET` lagen bis zum 16.09. in jedem Lauf des `validate`-Jobs, also in einem Job, der die
+  ganze Testsuite ausführt und den jede Änderung an einem Spec steuern kann (SEC-2026-024). Der Job bekommt
+  sie nicht mehr; ob die Werte selbst zu tauschen sind, ist seine Entscheidung.
+- **Das Sicherheitsregister hängt hinterher.** SEC-2026-008 (0.7), SEC-2026-014 und SEC-2026-015 sind in
+  diesem Release behoben, stehen im versiegelten Register aber weiter auf `eingeplant` — und damit auch in
+  `docs/ROADMAP.md` §12, das daraus erzeugt wird. Ein Lauf von `scripts/security/register.mjs decide` zieht
+  das nach; eine Statusentscheidung ist keine Dokumentationsarbeit, deshalb steht sie hier.
+- **SEC-2026-016 und SEC-2026-018 warten auf ihn:** eine Härtung an einer Stelle, an der eine Verschärfung
+  schon einmal die Anmeldung gebrochen hat (braucht einen Test gegen den echten Login), und ein Entwurf, der
+  entschlüsselte Zugangsdaten nicht mehr in die Umgebung eines Kindprozesses gibt.
+- **0.2 ist nicht abgehakt.** Die Signavio-Aussagen wurden in v2.10.2 zurückgenommen, aber das UX-Register
+  plant noch neun Befunde in diesen Schritt ein (UX-026, UX-027, UX-029, UX-037, UX-038, UX-040,
+  UX-059, UX-076, UX-084). Entweder gehören sie woandershin, oder Phase 0 hat noch einen Rest.
+- **Offen aus 0.17, nicht nachgezogen:** `42a7d6a55d3b` — die Verlusttoleranz der beiden CISO-Aufrufe ist an
+  den Bausteinen getestet, nicht am Einstiegspunkt; dafür müsste `audit.mjs` seine Orchestrierung als
+  Funktion exportieren, statt beim Import eine Prüfung zu starten. Agenten-Maschinerie, also sein Go.
+- Weiter offen aus dem Stand davor: Identity-Platform-Upgrade und der Faktor-Login auf `dev` gegen das echte
+  Auth; der überholte Bot-Branch `chore/sync-cloudification-repo`; der QA-Secret-Scanner, der gelöschte
+  Zeilen meldet; die Resend-Tracking-Einstellung (3.0.9).
+
 **Stand 16.09.2026, Abend — v2.11.0 steht auf `dev` und wartet auf Sonnys Go.** Vier Schnitt-0-Schritte
 gebaut und integriert: 0.13 (Firebase-nativer zweiter Faktor), 0.14 (Konto, Schlüssel, Rechte),
 0.15 (Dashboard, Admin, die sieben Stufen), 0.16 (Skripte und Workflows). Letzte Delta-Prüfung

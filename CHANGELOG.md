@@ -10,6 +10,207 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.11.1] — 2026-09-16
+
+### Phase 1 ist abgeschlossen, Phase 0 bis auf einen Schritt, Phase 2 beginnt — und vier Stellen, die einen Beleg behaupteten, den niemand geprüft hatte
+
+**Was in Phase 0 offen bleibt, damit es nicht in einer Überschrift verschwindet:** Schritt **0.2**. Sein
+Signavio-Teil ging in v2.10.2 raus, der Rest nicht — das UX-Register führt neun bestätigte Befunde weiter
+dorthin, darunter UX-027 („grüner Haken für ungeprüften Code"), UX-037 („Transformation verspricht Node.js
+auch im RAP-Track") und UX-059 („Forum täuscht einen öffentlichen Post vor, speichert nur lokal"). Das ist
+dieselbe Gattung Unwahrheit, die dieses Release an vier anderen Stellen abräumt, und sie steht noch. Dazu
+bleibt aus 0.17 ein Punkt offen (`42a7d6a55d3b`): die Verlusttoleranz des Sicherheits-Agenten ist an seinen
+Bausteinen getestet, nicht am Einstiegspunkt — eine Änderung am Agenten selbst und damit ein eigener Schritt.
+
+- **Roadmap 0.5 und 0.6 — ein Lauf sagt, woraus er gerechnet wurde, und ein altes Ergebnis bleibt daran
+  gebunden.** Ein Lauf nannte seine Eingaben in fünf unverbundenen Feldern, und verglichen hat nie jemand
+  mehr als den Quelltext-Digest: ein Katalog-Resync, ein anderes Regelwerk oder ein anderes Zielsystem
+  verschob die Befunde, und jedes frühere Ergebnis las sich weiter als aktuell. `lib/input-manifest.ts`
+  führt jetzt sechs Eingaben mit Datenklasse, Revision und Digest im signierten Payload, gespiegelt nach
+  `auditMetadata.inputManifest` und im Pack als `08-input-manifest.json`. `binding` sagt die Wahrheit über
+  den Hash — `value` heißt, die Bytes wurden gelesen, `reference` heißt, die Eingabe wurde unter Namen und
+  Revision gebunden, nie die Behauptung, fünf Megabyte Katalog seien gelesen worden. Die Frischeheuristik
+  fragte „beweist irgendetwas, dass das alt ist?" und fiel auf „aktuell" zurück, wenn nichts es bewies — ein
+  unlesbarer Fingerabdruck, eine leere Quelle, eine nie verglichene Eingabe. Jetzt wird andersherum gefragt:
+  welche Eingabe lässt sich noch als dieselbe zeigen? Die Datenklasse entscheidet die Folge — Quelle,
+  Katalog, Regelwerk und Zielsystem blockieren, Engine-Build und Narrativ-Modell melden nur, sonst
+  entwertete jedes Release jedes Projekt. Dazu W22-A06: eine Analyse, die auf Quelle A begann und
+  committet, nachdem das Projekt auf B gewechselt war, schrieb A samt `activeRunId` still über B; Lauf und
+  Projektstand gehen jetzt in einer Transaktion, die die Quelle neu liest, die Kontingenteinheit kommt
+  zurück, die Route antwortet 409. Die kanonische Form der Audit-Packs ist unangetastet — jedes zuvor
+  versiegelte Pack verifiziert Byte für Byte.
+- **Roadmap 0.7 — eine Freigabe entsteht auf dem Server oder gar nicht, und die Regeln haben einen
+  Deployment-Datensatz.** Sechs Felder verlassen die client-schreibbare Allowlist in `firestore.rules` — die
+  fünf Freigabefelder und der Nutzungsimport — und werden nur noch von
+  `POST /api/projects/{projectId}/commands` geschrieben. Der Browser bestimmte bis hierher selbst, welche
+  Adresse auf der Freigabe steht: er schickte `auth.currentUser.email`. Sie kommt jetzt aus dem verifizierten
+  ID-Token, der Zeitstempel von der Serveruhr, über die Route entscheidet das Eigentum und nicht das
+  Adminrecht, und jede angenommene Änderung schreibt ihre `audit_events`-Zeile im selben `WriteBatch` —
+  sonst steht nach einem gescheiterten zweiten Schreibvorgang eine aufgezeichnete Architekten-Freigabe da,
+  die nichts aufzeichnet. Schließt SEC-2026-008. **Der Regel-Deploy war der eigentliche Befund:** CI rollt
+  `firestore.rules` nie aus, und das erste Nachsehen über die Rules-API — es gab bis dahin keines — zeigte
+  in Produktion das Ruleset vom 20. August, einen Monat und drei Verschärfungen hinter dem Repository. Mit
+  Sonnys Go am 16.09. um 14:43:04Z ausgerollt und danach auf allen sechs Datenbanken nachgeprüft.
+  `docs/registers/rules-deployment.json` hält fest, welcher Text live ist, `npm run deploy:rules` rollt aus
+  *und* schreibt es auf, `npm run rules:verify` fragt die Produktion. **Dieses Release ändert die Regeln
+  erneut und braucht denselben Handgriff vor dem App-Deploy.**
+- **Der Administrator liest keine Projekte mehr** (Entscheidung Sonny, 16.09.2026). `firestore.rules`
+  gewährt bei `projects/{id}` und `projects/{id}/runs/{runId}` keinen Admin-Lesezugriff mehr, und das
+  pauschale Admin-`update` auf Projekte ist mit weg — Lesen war die Berechtigung, um die es ging, und ein
+  Betreiber, der fremde Evidenz bearbeitet, ist die schlechtere Hälfte derselben Sache. Die
+  Datenschutzerklärung nennt die eine Ausnahme beim Namen: eine glaubwürdige Meldung von Schadcode in einem
+  Upload wird serverseitig über das Admin-SDK behandelt, das die Regeln bauartbedingt umgeht — ein
+  bewusster Akt mit Protokoll, keine offenstehende Berechtigung. Dabei gefunden: der GDPR-Löschtest belegte
+  seine Kaskade, indem er sich als Administrator anmeldete und die Dokumente als Client las, also mit genau
+  der Berechtigung, die entfernt wurde; er prüft jetzt serverseitig.
+- **Roadmap 0.9, 0.10 und 0.11 — der erste Blick kostet nichts und verspricht nichts.** Ein neues Konto
+  musste den Weg zum ersten Ergebnis aus den fünf Läufen bezahlen, die es für den eigenen Code braucht: die
+  acht mitgelieferten Beispiele sind jetzt je einmal frei, serverseitig am Fingerabdruck des unveränderten
+  Quelltexts erkannt — ein Client-Flag würde Freiläufe drucken, und ein bearbeitetes Beispiel ist eigener
+  Code und kostet. Jeder weitere Start desselben Beispiels ist eine gewöhnliche Analyse, bewusst an der
+  Wiederholungsbefreiung vorbei, und der Bildschirm sagt das vor dem Klick. `/demo/{stage}` zeigt die sieben
+  Stufen an einem echten Engine-Lauf über `Z_MM_PO_APPROVAL` — 30 Befunde mit Zeilenankern, Clean Core
+  Score 43, jede Zahl zur Laufzeit gerechnet statt abgeschrieben. Aus der Vertrauenskette ist das Demo nicht
+  per Flag herausgehalten, sondern baulich: eigene Route, kein Projektdokument, kein Run, kein Pack, kein
+  Firestore-Schreibzugriff, dazu eine ausgeführte Invariante, die beim Bauen wirft, wenn je ein Feld der
+  Vertrauenskette darin auftaucht. Über dem Upload steht die Karte „Your code and your trust", und sie ist
+  keine Copy: jede Zeile ist ein Anspruch in `lib/trust-claims.ts` neben dem Satz aus Terms, Datenschutz
+  oder `SECURITY.md`, der ihn trägt — `tests/trust-card-guard.spec.ts` fällt um, wenn ein Beleg nicht
+  wörtlich im Dokument steht oder auf der gerenderten Seite nicht zu finden ist. Eine Zeile blieb weg, weil
+  nichts sie trägt: „Others see it only if you invite them" — Teilen gibt es noch nicht.
+- **Roadmap 0.3 — der Score sagt, was er ist, wessen er ist und wohin er zeigt.** Der Name bleibt „Clean
+  Core Score" (Entscheidung Sonny, 16.09.2026) und wird bekannt gemacht; `/clean-core-score` behält URL,
+  Canonical und Position. Die Seite versprach im Hero „predict your TCO savings", nannte die Reduktion von
+  Test- und Entwicklungskosten als eine der vier Säulen des Scores und lieferte „A high score dramatically
+  minimizes this testing effort" als schema.org-Antwort an Antwortmaschinen aus. Fünf solche Versprechen auf
+  vier Oberflächen sind weg — und der Guard, der sie hätte fangen müssen, fing bisher nur Beträge mit
+  Währungszeichen, nicht das Versprechen in Worten. `/method/levels` nennt die Version der Level-Regel, und
+  sie ist gemessen statt getippt: ein Fingerabdruck über alle 48 Eingaben, die die Ableitung unterscheiden
+  kann, dazu Release und Prüfsumme beider SAP-Dateien. Chatbot-Wissen, `/llms.txt` und die Score-Seite
+  grenzen den Score gegen SAPs `Technical Debt Score` ab, der in die andere Richtung zeigt (schließt
+  UX-088).
+- **Roadmap 0.17 und 0.18 — Prüfungen, die prüfen, und bekannte fachliche Fehler der Engine.** Ein
+  `rejects.not.toThrow('…')` ist für jeden Fehler erfüllt, der nicht genau dieser ist: die Trust-Chain-Suite
+  war grün, während die Audit-Pack-Erzeugung, soweit sie es sehen konnte, vollständig kaputt war. Sie läuft
+  jetzt gegen die Emulatoren — 422 ohne Lauf, ein Archiv, dessen Signatur der öffentliche
+  `/api/export/verify` annimmt und ein Byte Unterschied nicht, 409 für den nachträglich veränderten Lauf.
+  Dazu: der TCO-Guard rechnet dieselbe Funktion wie die Seite statt eine Kopie ihrer Arithmetik, die
+  MFA-Verweigerung ist auf allen Routen belegt, die auf den Faktor prüfen (der Katalog fand dabei drei
+  ungelistete: Kontolöschung, Jira-URL, Gemini-Schlüsseltest), die Referenzläufe werden zugeordnet statt
+  gezählt, und das Erhaltungsregister kennt den Griff vom Feldnamen zum sichtbaren Element. Aus der Engine:
+  eine interne Tabelle ist keine Datenbank — `INSERT ls_item INTO TABLE lt_items` erschien als
+  Medium-Kopplung an eine Tabelle namens LS_ITEM —, unbewertete Konstrukte drücken Score und Routing-Text,
+  statt „100 %, trivial" zu melden, ein SELECT in einem Textliteral ist keine Abfrage, und VBKD und LQUA
+  sind aus dem Katalog entfernt statt durch eine Vermutung ersetzt.
+- **Roadmap 1.1 und 1.2 — das Erhaltungsregister, und ein Lauf ohne Schlüssel.** Bevor umgebaut wird,
+  steht geschrieben, was funktioniert: die sieben Stufen mit Eingaben, Ausgaben, Voraussetzungen, Fehlern
+  und je einem Referenzfall, dazu Commit, Build und — weil CI sie nie ausrollt — `firestore.rules` samt
+  Schreib-Allowlist an ihrem Hash festgenagelt. Das Register ist Daten, keine Prosa, damit eine Maschine es
+  mit dem Code vergleichen kann: 25 Tests leiten jede Behauptung aus dem Quelltext neu ab und bauen die
+  sieben Referenzfälle im Emulator auf, ohne einen einzigen Modellaufruf. Neun Grenzen hat es beim
+  Schreiben gefunden und als Grenzen festgehalten, statt sie als Parität zu konservieren. — Ein Konto ohne
+  Gemini-Schlüssel bekam bisher 503 und endete *ohne jeden Lauf*: keine Belege, keine Signatur, nichts für
+  die nächste Stufe, obwohl jeder Befund dieser Seite vor jedem Modell gerechnet wird. Der Modellaufruf ist
+  jetzt ein Abschnitt der Analyse, der fehlen darf; der Lauf wird über den deterministischen Belegen
+  signiert und trägt `modelParticipation: 'none'`, statt `provider: google-gemini` und eine voreingestellte
+  Modell-ID in eine Signatur zu schreiben, die niemand geprüft hat. Fünf Modellstufen sind einzeln
+  zuschaltbar, und wo eine Narrative fehlt, steht „nicht erzeugt" statt eines leeren Kastens — vorher zeigte
+  die Analyse-Stufe bei einem signierten Lauf ohne Narrative wieder das Upload-Formular.
+- **Roadmap 1.5, 1.4 und 1.8 — die neue Oberfläche wächst hinter dem Schalter.** `DESIGN.md` als Code:
+  semantische Tokens statt zweier Farbdialekte, eine Herkunftsliste `lib/provenance.ts` mit neun Werten, aus
+  der `CcProvenanceChip` seine Beschriftung nimmt — ein falsches Badge lässt sich damit nicht mehr
+  schreiben, nur falsch werten, und das fängt TypeScript. Keine Komponente nimmt ein `className`; das ist
+  das Loch, durch das jeder Style-Guard ausläuft. `/project/{id}` hat noch nie etwas geliefert und liefert
+  jetzt die Arbeitsraum-Schale — für Administratoren mit eingeschalteter Vorschau, für alle anderen
+  unverändert nichts: Kopfzeile mit dem Input-Manifest aus 0.5 („not recorded" statt Gedankenstrich, wo
+  niemand etwas aufgeschrieben hat), sieben Status-Chips, deren Grün nur aus `proven` erreichbar ist,
+  Ebenenleiste und der Bereich „Not determined" mit Grund und Zeile. Zwei Chips sagen „not started" und
+  nennen, was fehlt, statt sich die Routing-Empfehlung zu leihen, die auf dem Projekt liegt. Dazu „My
+  workspace" als List Report: null ist nicht null Befunde — ein Projekt, das niemand analysiert hat, druckt
+  ein Wort und keine Zahl —, leer und „kein Treffer" sind zwei Komponenten mit zwei Sätzen, *Stale* steht
+  als Herkunfts-Chip neben dem Objektstatus und nicht als Status, und der Preis steht vor dem Klick.
+- **Roadmap 1.6 und 1.7 — kein Dark Mode, und Grün heißt belegt.** Was entfernt wurde, war nie ein Theme:
+  58 Zeilen `.dark`-Überschreibungen färbten mit `!important` eine handverlesene Liste von
+  Utility-Klassen um, und alles, was die Liste nicht nannte, blieb hell — die Dashboard-Tabelle behielt
+  ihren weißen Grund unter einem fast schwarzen Body, die Projektzeile verlor fast ihren ganzen Kontrast.
+  Die UX-Prüfung fand dasselbe von außen, ohne den Code zu lesen (UX-023, UX-044, UX-061, UX-062). Der
+  Guard hängt `class="dark"` an `<html>` und verlangt, dass sich an rund 600 Elementen keine einzige Farbe
+  bewegt; das Profilfeld `theme` bleibt als totes Feld stehen, weil es zu löschen eine Migration von
+  Kontodaten wäre. — Die Verification Rail malte die Phase, auf der der Leser stand, grün, bevor sie
+  irgendetwas anderes fragte, und fünf der sieben Grün standen für Arbeit, die nichts geprüft hat: ein
+  Design, das das Konto sich selbst freigegeben hat, Code, den das Modell geschrieben und niemand kompiliert
+  hat. `phaseTone` in `lib/workflow-steps.ts` ist jetzt die eine Regel für Stepper, Rail und
+  Dashboard-Zeile: grün genau dann, wenn ein signierter Lauf, ein ausgeführtes Urteil oder eine Übergabe
+  darauf steht. Der Sperrhinweis des Live-Testmodus stand dreimal auf einem Schirm, und keine der drei
+  Absagen sagte, wie man die Verbindung bekommt; jetzt steht er einmal, mit dem BYOT-Weg und dem Satz, dass
+  eine BYOT-Freigabe G0:R0 nicht aufhebt.
+- **Phase 2 hat begonnen: 2.1 und 2.2, beide deterministisch.** IF/ELSEIF/ELSE und CASE/WHEN kommen mit dem
+  Bedingungstext im Wortlaut der Quelle und je eigenem Zeilenbereich aus dem Code, die Verschachtelung
+  erhalten statt eingeebnet; dazu der FORM/PERFORM-Graph mit Rekursion und fehlenden Zielen,
+  Funktionsbausteine mit gekennzeichneten BAPIs, CALL TRANSACTION, SUBMIT mit Programmnamen,
+  AUTHORITY-CHECK mit Objekt und Feldern, und die Schreibzugriffe. Bisher folgte die Engine keinem einzigen
+  PERFORM und erfasste AUTHORITY-CHECK ohne Objekt und ohne Felder. Ein Name, der kein Literal ist, wird
+  nicht geraten: `CALL TRANSACTION c_tcode_va02` wird über die Konstante aufgelöst, steht dort eine
+  Variable, heißt der Aufruf `dynamic`. Erreichbarkeit ist nicht dasselbe wie „wird aufgerufen", und gibt
+  es ein `PERFORM (name)` im Quelltext, meldet `reachabilityCertain` false, weil die Liste dann eine Meinung
+  ist. Nichts davon geht in den signierten Lauf; das Prozessskelett kommt mit 2.3. **Die Phase ist damit
+  nicht fertig** — 2.3 bis 2.9 stehen aus, und die Roadmap führt sie weiter als offen.
+- **Ein eingerückter Stern ist Multiplikation oder Kommentar, je nachdem, was darüber steht.**
+  `declaration-parser.ts` und `select-parser.ts` warfen jede Zeile weg, die auf `^\s*\*` passt. In
+  `Z_MM_PO_APPROVAL.abap:411` ist das die zweite Zeile einer über zwei Zeilen geschriebenen Multiplikation:
+  die Zuweisung fand ihren Punkt nie und verschluckte die Anweisung darunter — `IF lv_dev_pct > 5.`, die
+  Preistoleranz-Prüfung. Die Engine verlor eine Verzweigung in einer Datei, die dieses Produkt als
+  Starterbeispiel ausliefert, lautlos, und jeder Leser dieser Beweise bekam gesagt, da sei nichts. Der
+  entgegengesetzte Fehler kostet genauso viel: `Z_SALES_ORDER_CREATOR.txt:70` hat einen eingerückten Stern
+  als echten Kommentar direkt über einem BAPI-Aufruf. Die Regel steht jetzt einmal, in
+  `statement-reader.ts`, und alle drei Parser lesen sie: Spalte 1 ist immer Kommentar, eingerückt nur dann,
+  wenn keine Anweisung offen ist. Über die acht ausgelieferten Beispiele ändert sich genau eine Zahl —
+  `Z_MM_PO_APPROVAL.abap` von 387 auf 388 Anweisungen und von 39 auf 40 IF; Score, Befundzahl,
+  Datenkopplung und Komplexität aller acht bleiben gleich — die wiedergefundene Verzweigung geht in
+  keine dieser Kennzahlen ein. Bei fremdem Code kann sie es, und das ist der Sinn der Sache.
+- **Das erste vollständige Audit des Security-Agenten: 247 gemeldete Befunde, 24 entschieden, die meisten
+  widerlegt.** Der Bericht sagt selbst, dass seine Verifikationsstufe nicht zurückkam — die Befunde sind
+  gemeldet, nicht geprüft. Die drei als kritisch gemeldeten halten alle drei nicht: ein „Geheimnis im
+  Code", das die öffentliche URL des öffentlichen Signaturschlüssels ist; eine „unauthentifizierte"
+  Seed-Route, die drei unabhängige Gates hat; und die Behauptung, `firestore.rules` sei nicht im Prüfumfang
+  gewesen — widerlegt von zwei Befunden desselben Berichts, die daraus Zeilennummern zitieren. Von 29 als
+  hoch gemeldeten sind 21 entschieden, vierzehn davon widerlegt; der größte widerlegte Block liest die
+  aufrufende Zeile und nicht die Funktion, die sie entgegennimmt. Behoben und ausgeliefert:
+  **SEC-2026-021** — `scripts/verify-export.ps1` endete auf jedem Pfad mit `Verification complete: SUCCESS.`
+  und Exit-Code 0, auch für ein Archiv ganz ohne Signatur und für eines, dessen Signatur mangels
+  Schlüssel niemand geprüft hatte; das Geschwisterskript `verify-pack.mjs` hatte die Regel die ganze Zeit
+  richtig (0 verifiziert, 1 fehlgeschlagen, 2 nicht prüfbar), und zwei Prüfer desselben Produkts dürfen
+  dieselbe Frage nicht gegensätzlich beantworten. **SEC-2026-023** — das Wiederherstellungsskript für einen
+  verlorenen Authenticator, die sicherheitsrelevanteste Handlung eines Administrators an einem fremden
+  Konto, schrieb nur einen `mfaResetAt`-Stempel: ein Feld, das der nächste Reset überschreibt und das
+  niemanden nennt, während die Datenschutzerklärung einen Eintrag mit handelndem Administrator, Konto und
+  Zeit verspricht. Es schreibt jetzt nach `audit_events` und verlangt dafür `--operator <mail>`.
+  **SEC-2026-024** — der `validate`-Job führt die ganze Playwright-Suite aus und bekam dabei
+  `S4_ENCRYPTION_KEY`, `MFA_BACKUP_CODE_PEPPER` und `PILOT_APPROVAL_SECRET` aus denselben
+  Repository-Secrets, mit denen der laufende Dienst ausgerollt wird; er bekommt jetzt kein
+  Produktionsgeheimnis mehr, und zwei Guards halten beide Hälften. **SEC-2026-014 und -015** — der
+  Confluence-Export der Analyse-Stufe escapt jede Einsetzung über einen Escaper an einer Stelle
+  (`lib/export-safety.ts`), und `sanitizeMermaidSvg` ist keine Kette regulärer Ausdrücke mehr, sondern
+  DOMPurify mit `HTML_INTEGRATION_POINTS: { foreignobject: true }` — sechs von zehn Formen, die in einem
+  Bild nichts zu suchen haben, kamen durch die alte Kette unverändert hindurch. Öffentlich stehen nur IDs
+  (`docs/ROADMAP.md` §12).
+- **UX-Review und rund ein Dutzend QA-Runden.** Die Delta-Review von v2.11.0 brachte sieben entschiedene
+  Befunde, zwei davon widerlegt: die leere Blueprint-Seite bot Export von nichts an, weil der Aktionsbalken
+  eine andere Bedingung fragte als die Seite darunter; der Paket-Download scheiterte lautlos; zwei
+  Icon-Knöpfe der Nutzungsmatrix hatten keinen Namen; und der 2FA-Kopierknopf meldete „copied to
+  clipboard!", ohne das Ergebnis von `navigator.clipboard.writeText` abzuwarten — wo der Browser die
+  Zwischenablage verweigert, hatte der Leser danach nichts eingefügt und wusste es nicht. `docs/ROADMAP.md`
+  §13 wird seitdem aus dem Register erzeugt statt daneben gepflegt; die Tabelle war abgedriftet. Der
+  schwerste bestätigte QA-Befund: **das Audit-Pack schrieb dem Modell die Arbeit der Engine zu.** Unter
+  „Usage Context" stand in *jedem* Pack eine feste Liste von fünf Dingen, die „das KI-Modell getan hat",
+  zwei davon nie wahr — Clean-Core-Score und Extensibility-Route rechnet die deterministische Engine vor
+  jedem Modell, und ein signierter Lauf rechnet beide serverseitig nach. Ebenso stand „BYOK: No — platform
+  key" in Packs, deren eigenes Datenblatt sagt, dass gar kein Modell lief. `modelParticipation` bleibt aus
+  der einzigen Tatsache abgeleitet, die die Route prüfen kann — liegt eine Narrative im Request-Body —,
+  und das Datenblatt sagt das jetzt in einer eigenen Zeile, statt es dem Leser zu überlassen. Eine
+  serverseitig beobachtete Tatsache daraus zu machen braucht eine Quittung von `/api/gemini` und ist ein
+  eigener Schritt.
+
 ## [v2.11.0] — 2026-09-16
 
 ### Der zweite Faktor ist Firebases eigener, und vier Schnitt-0-Schritte arbeiten die Vollprüfung ab

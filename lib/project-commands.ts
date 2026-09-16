@@ -11,7 +11,7 @@
  * name went on the sign-off. It read `auth.currentUser.email` because the page
  * was honest, not because anything made it.
  *
- * The security audit of v2.11.0 named `usageReport` in the same breath, for a
+ * The first full security audit named `usageReport` in the same breath, for a
  * different reason: the rules validated it as `is map` and nothing else, so a
  * browser could put an arbitrary structure of arbitrary size on a project
  * document that later drives the risk matrix.
@@ -40,7 +40,7 @@ export const RELEASE_FIELDS = [
 
 /**
  * Every project field a browser may no longer write: the five release fields
- * plus the usage import the v2.11.0 audit named. None of these may appear in
+ * plus the usage import that same audit named. None of these may appear in
  * the `affectedKeys().hasOnly([…])` allowlist of `firestore.rules`.
  */
 export const SERVER_ONLY_PROJECT_FIELDS = [...RELEASE_FIELDS, 'usageReport'] as const;
