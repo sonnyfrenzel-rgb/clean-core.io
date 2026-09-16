@@ -11,11 +11,13 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
-  signOut
+  signOut,
+  getMultiFactorResolver,
+  TotpMultiFactorGenerator,
+  type MultiFactorResolver,
 } from 'firebase/auth';
 import { getAuth, getDb } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { verifyTOTP } from '@/lib/totp';
+import { doc, setDoc } from 'firebase/firestore';
 import { 
   X, 
   ArrowRight, 
@@ -65,10 +67,25 @@ export default function LandingModals() {
   const [showDatenschutz, setShowDatenschutz] = useState(false);
   const [showTermsOverlay, setShowTermsOverlay] = useState(false);
 
-  // 2FA Interceptor States
+  // The second factor is Firebase's own (roadmap 0.13): a sign-in on an
+  // enrolled account stops with `auth/multi-factor-auth-required` before any
+  // session exists, and the resolver it hands over is the only thing this
+  // screen holds. There is no signed-in user to keep and nothing to sign out —
+  // the old `pendingMfaUser` was exactly the session the finding was about.
   const [mfaCode, setMfaCode] = useState<string[]>(['', '', '', '', '', '']);
-  const [pendingMfaUser, setPendingMfaUser] = useState<any>(null);
-  const [pendingMfaProfile, setPendingMfaProfile] = useState<any>(null);
+  const [mfaResolver, setMfaResolver] = useState<MultiFactorResolver | null>(null);
+
+  /** Routes a sign-in error into the second-factor screen when that is what it is. */
+  const interceptSecondFactor = (error: unknown): boolean => {
+    const code = (error as { code?: string } | null)?.code;
+    if (code !== 'auth/multi-factor-auth-required') return false;
+    setMfaResolver(getMultiFactorResolver(auth, error as Parameters<typeof getMultiFactorResolver>[1]));
+    setMfaCode(['', '', '', '', '', '']);
+    setAuthError('');
+    setAuthMode('mfa');
+    updateQueryParams('auth', 'mfa');
+    return true;
+  };
 
   // Sync auth mode with search param
   useEffect(() => {
@@ -100,39 +117,19 @@ export default function LandingModals() {
     // failure, sign out rather than proceeding — the same fail-closed rule the
     // popup and password paths follow.
     getRedirectResult(auth)
-      .then(async (result) => {
+      .then((result) => {
         if (!result?.user) return;
-        const signedInUser = result.user;
-        try {
-          const snap = await getDoc(doc(getDb(), 'users', signedInUser.uid));
-          const profileData = snap.exists() ? snap.data() : undefined;
-          if (profileData?.mfaEnabled) {
-            setPendingMfaUser(signedInUser);
-            setPendingMfaProfile(profileData);
-            setAuthMode('mfa');
-            updateQueryParams('auth', 'mfa');
-            return;
-          }
-        } catch (profileErr) {
-          console.error('[getRedirectResult] profile read failed — signing out:', profileErr);
-          await signOut(auth).catch(() => {});
-          setAuthError('Could not verify your account. Please sign in again.');
-          return;
-        }
         setIsNavigating(true);
         router.push('/dashboard');
       })
       .catch((err) => {
+        if (interceptSecondFactor(err)) return;
         console.error('[getRedirectResult] Error:', err);
       });
   }, [auth, router]);
 
   const closeAuthModal = async () => {
-    if (authMode === 'mfa' && pendingMfaUser) {
-      await signOut(auth);
-    }
-    setPendingMfaUser(null);
-    setPendingMfaProfile(null);
+    setMfaResolver(null);
     setAuthError('');
     setEmail('');
     setPassword('');
@@ -146,31 +143,7 @@ export default function LandingModals() {
   const handleSignIn = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      const userCredential = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
-      const signedInUser = userCredential.user;
-      
-      const db = getDb();
-      const userDocRef = doc(db, 'users', signedInUser.uid);
-
-      // The profile read decides whether MFA is required, so it needs its own
-      // catch and must fail closed — the same rule the email and redirect paths
-      // follow. Proceeding on a read error signed the user in with the second
-      // factor never consulted.
-      try {
-        const userDoc = await getDoc(userDocRef);
-        const profileData = userDoc.exists() ? userDoc.data() : undefined;
-        if (profileData?.mfaEnabled) {
-          setPendingMfaUser(signedInUser);
-          setPendingMfaProfile(profileData);
-          setAuthMode('mfa');
-          return;
-        }
-      } catch (firestoreErr) {
-        console.error('[handleSignIn] profile read failed — signing out:', firestoreErr);
-        await signOut(auth).catch(() => {});
-        setAuthError('Could not verify your account. Please sign in again.');
-        return;
-      }
+      await signInWithPopup(auth, provider, browserPopupRedirectResolver);
 
       // A first-time Google user gets no profile here on purpose.
       //
@@ -184,13 +157,16 @@ export default function LandingModals() {
       // Signing in is now all this does. `UserOnboarding`, mounted in the app
       // shell, sees the missing profile, asks for a name and both agreements,
       // and creates the account through the one path that records consent
-      // server-side.
+      // server-side. The second factor, where one is enrolled, has already
+      // been resolved by the time this line runs — Firebase does not sign in
+      // without it.
 
       setIsNavigating(true);
       setTimeout(() => {
         router.push('/dashboard');
       }, 850);
     } catch (error: any) {
+      if (interceptSecondFactor(error)) return;
       console.error('Error signing in with popup:', error);
       const code = error?.code || '';
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
@@ -211,43 +187,19 @@ export default function LandingModals() {
     setAuthError('');
     setIsSubmitting(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const signedInUser = userCredential.user;
-      
-      const db = getDb();
-      const userDocRef = doc(db, 'users', signedInUser.uid);
-
-      // The profile read decides whether MFA is required, so it needs its own
-      // catch. Sharing the outer one meant a Firestore error surfaced as
-      // "Invalid email or password" while the Firebase session stayed live and
-      // the MFA check never ran — the user was signed in by an error message
-      // that told them they were not. Fail closed: sign out and say what
-      // actually happened. (The Google path already does this.)
-      let profileData: Record<string, unknown> | undefined;
-      try {
-        const userDoc = await getDoc(userDocRef);
-        profileData = userDoc.exists() ? userDoc.data() : undefined;
-      } catch (profileErr) {
-        console.error('[handleEmailSignIn] profile read failed — signing out:', profileErr);
-        await signOut(auth).catch(() => {});
-        setAuthError('Could not verify your account. Please try again.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      if (profileData?.mfaEnabled) {
-        setPendingMfaUser(signedInUser);
-        setPendingMfaProfile(profileData);
-        setAuthMode('mfa');
-        setIsSubmitting(false);
-        return;
-      }
+      // On an enrolled account this throws before any session exists and the
+      // catch below turns it into the second-factor screen.
+      await signInWithEmailAndPassword(auth, email, password);
 
       setIsNavigating(true);
       setTimeout(() => {
         router.push('/dashboard');
       }, 850);
     } catch (error: any) {
+      if (interceptSecondFactor(error)) {
+        setIsSubmitting(false);
+        return;
+      }
       console.error('Sign-in error:', error);
       let errorMsg = 'Invalid email or password.';
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -378,33 +330,33 @@ export default function LandingModals() {
   };
 
   const handleVerifyMfa = async (codeStr: string) => {
-    if (!pendingMfaUser || !pendingMfaProfile) return;
+    if (!mfaResolver) return;
     setAuthError('');
     setIsSubmitting(true);
     try {
-      const token = await pendingMfaUser.getIdToken();
-      const res = await fetch('/api/mfa/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ code: codeStr })
-      });
-      
-      if (res.ok) {
-        setIsNavigating(true);
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 850);
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        setAuthError(errData.error || 'Invalid 6-digit code or backup recovery code.');
-        setIsSubmitting(false);
-      }
-    } catch (error) {
-      console.error('MFA validation error:', error);
-      setAuthError('Error validating MFA. Please try again.');
+      const hint =
+        mfaResolver.hints.find((h) => h.factorId === TotpMultiFactorGenerator.FACTOR_ID) ?? mfaResolver.hints[0];
+      const assertion = TotpMultiFactorGenerator.assertionForSignIn(hint.uid, codeStr);
+      // The session comes into existence here, and its ID token names the factor.
+      await mfaResolver.resolveSignIn(assertion);
+      setMfaResolver(null);
+      setIsNavigating(true);
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 850);
+    } catch (error: any) {
+      console.error('MFA validation error:', error?.code);
+      const code = error?.code || '';
+      setAuthError(
+        code === 'auth/invalid-verification-code'
+          ? 'That code is not valid. Enter the current 6-digit code from your authenticator app.'
+          : code === 'auth/too-many-requests'
+            ? 'Too many attempts. Wait a moment and try again.'
+            : code === 'auth/multi-factor-session-expired' || code === 'auth/code-expired'
+              ? 'This sign-in has expired. Go back and sign in again.'
+              : 'Could not verify the code. Please try again.',
+      );
+      setMfaCode(['', '', '', '', '', '']);
       setIsSubmitting(false);
     }
   };
@@ -518,7 +470,7 @@ export default function LandingModals() {
                   </div>
                   <h3 className="text-3xl font-black text-gray-950 tracking-tight mb-2">Two-Factor Auth</h3>
                   <p className="text-sm font-medium text-gray-500 mb-8 leading-relaxed">
-                    Please enter the 6-digit verification code from your authenticator app (Google Authenticator, Authy, etc.) or a backup recovery code.
+                    Enter the 6-digit code from your authenticator app (Google Authenticator, Authy, 1Password, …). Your sign-in completes only with it.
                   </p>
 
                   <div className="space-y-6">
@@ -550,7 +502,7 @@ export default function LandingModals() {
 
                     <div className="pt-2">
                       <p className="text-xs text-center text-gray-400 font-medium leading-normal">
-                        Make sure your authenticator clock is synced correctly. Enter a backup code starting with 'CC-' if you lost your device.
+                        Make sure your authenticator's clock is in sync. Lost the authenticator? Write to info@clean-core.io from your account address — an administrator removes the factor after confirming with you, and you set it up again in Settings.
                       </p>
                     </div>
 

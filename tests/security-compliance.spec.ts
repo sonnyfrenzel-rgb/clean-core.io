@@ -10,7 +10,6 @@ import { createHash } from 'crypto';
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
 
 import { createApprovalToken } from '../lib/approval-token';
-import { generateTOTP } from '../lib/totp';
 import { computeRunHash, signRunHash } from '../lib/run-signature';
 import firebaseConfig from '../firebase-config.json';
 
@@ -800,74 +799,6 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     await expect(getDoc(s4CredentialsDoc)).rejects.toThrow();
   });
 
-  test('should successfully complete the server-side MFA lifecycle (setup, verify, disable)', async ({ request }) => {
-    // 1. Get auth token
-    const cred = await signInWithEmailAndPassword(firebaseAuth, NORMAL_USER_EMAIL, TEST_PASSWORD);
-    const token = await cred.user.getIdToken();
-
-    // 2. Start setup
-    const startRes = await request.post('/api/mfa/setup/start', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    expect(startRes.status()).toBe(200);
-    const { secret, qrCodeUrl } = await startRes.json();
-    expect(secret).toBeDefined();
-    expect(qrCodeUrl).toContain(encodeURIComponent(NORMAL_USER_EMAIL));
-
-    // 3. Verify setup
-    const currentCode = await generateTOTP(secret);
-    const verifySetupRes = await request.post('/api/mfa/setup/verify', {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      data: { secret, code: currentCode }
-    });
-    expect(verifySetupRes.status()).toBe(200);
-    const { backupCodes } = await verifySetupRes.json();
-    expect(backupCodes).toHaveLength(5);
-
-    // 4. Verify login flow MFA token verification
-    const loginTotpCode = await generateTOTP(secret);
-    const loginVerifyRes = await request.post('/api/mfa/verify', {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      data: { code: loginTotpCode }
-    });
-    expect(loginVerifyRes.status()).toBe(200);
-
-    // 5. Verify using a backup code
-    const testBackupCode = backupCodes[0];
-    const backupVerifyRes = await request.post('/api/mfa/verify', {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      data: { code: testBackupCode }
-    });
-    expect(backupVerifyRes.status()).toBe(200);
-
-    // Re-verifying with the same backup code must fail (consumed)
-    const backupVerifyRes2 = await request.post('/api/mfa/verify', {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      data: { code: testBackupCode }
-    });
-    expect(backupVerifyRes2.status()).toBe(400);
-
-    // 6. Disable MFA
-    // Extract the cookie from backup verify response
-    const setCookieHeader = backupVerifyRes.headers()['set-cookie'] || '';
-    const match = setCookieHeader.match(/mfa_session=([^;]+)/);
-    const cookieVal = match ? match[1] : '';
-
-    // Force refresh token to get a fresh auth_time
-    const freshToken = await cred.user.getIdToken(true);
-    const disableRes = await request.post('/api/mfa/disable', {
-      headers: {
-        'Authorization': `Bearer ${freshToken}`,
-        'Cookie': `mfa_session=${cookieVal}`
-      }
-    });
-    expect(disableRes.status()).toBe(200);
-
-    // Check user profile has mfaEnabled = false
-    const userDoc = await getDoc(doc(firestoreDb, 'users', cred.user.uid));
-    expect(userDoc.data()?.mfaEnabled).toBe(false);
-  });
-
   test('should restrict orgId and maxTeamMembers manipulation on profile create/update', async () => {
     // 1. Try to create with an orgId
     const testEmail = `org-test-${Date.now()}@cleancore-test.io`;
@@ -911,81 +842,53 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     ).rejects.toThrow();
   });
 
-  test('should enforce MFA session cookie gate on protected routes', async ({ request }) => {
-    // 1. Register a temporary user
+  test('an account with a second factor is refused by the gated routes until the token carries the factor', async ({ request }) => {
+    // Roadmap 0.13: the second factor is Firebase's own TOTP multi-factor, and
+    // the proof is the ID token's `firebase.sign_in_second_factor`. The Auth
+    // emulator cannot enrol a TOTP factor, so the positive path — a token that
+    // names the factor — is exercised on the gate functions in
+    // tests/mfa-native-gate.spec.ts. What the emulator can show is the
+    // negative: a profile that requires the factor, a token that never saw
+    // one, and the gated route saying so.
     const mfaEmail = `mfa-gate-test-${Date.now()}@cleancore-test.io`;
     const cred = await createUserWithEmailAndPassword(firebaseAuth, mfaEmail, TEST_PASSWORD);
     const mfaUid = cred.user.uid;
-
-    // Create profile via Admin SDK (bypasses security rules)
     await adminSetDoc('users', mfaUid, {
       firstName: 'Mfa',
       lastName: 'Gate',
       email: mfaEmail,
       tier: 'pilot',
-      status: 'pending',
+      status: 'approved',
+      activatedAt: new Date(),
       isAdmin: false,
       transformationsUsed: 0,
       transformationsLimit: 5,
       maxTeamMembers: 1,
       s4TenantAccessAllowed: false,
       s4TenantAccessRequested: false,
-      mfaEnabled: false,
+      mfaEnabled: true,
+      mfaFactor: 'totp',
       createdAt: new Date(),
     });
-
-    // Activate the account. Registration does this by itself now; seeding it
-    // directly keeps this test about MFA rather than about signup.
-    await adminMergeDoc('users', mfaUid, { status: 'approved', activatedAt: new Date() });
-
-    // Sign back in as the MFA user to get a fresh token with approved status
     const mfaCred = await signInWithEmailAndPassword(firebaseAuth, mfaEmail, TEST_PASSWORD);
     const mfaToken = await mfaCred.user.getIdToken();
 
-    // 2. Set up MFA for this user
-    const startRes = await request.post('/api/mfa/setup/start', {
-      headers: { 'Authorization': `Bearer ${mfaToken}` }
-    });
-    const { secret } = await startRes.json();
-    const currentCode = await generateTOTP(secret);
-
-    // Complete setup (enables MFA and sets cookie)
-    const verifySetupRes = await request.post('/api/mfa/setup/verify', {
-      headers: { 'Authorization': `Bearer ${mfaToken}`, 'Content-Type': 'application/json' },
-      data: { code: currentCode }
-    });
-    expect(verifySetupRes.status()).toBe(200);
-
-    // Extract the mfa_session cookie from the verify setup headers
-    const setCookieHeader = verifySetupRes.headers()['set-cookie'] || '';
-    expect(setCookieHeader).toContain('mfa_session');
-
-    // 3. Access /api/gemini with token but NO cookie (should fail with 403)
+    // The token was issued by the first factor alone.
     const blockedRes = await request.post('/api/gemini', {
-      headers: {
-        'Authorization': `Bearer ${mfaToken}`,
-        'Content-Type': 'application/json',
-        'Cookie': '' // explicit empty cookies
-      },
-      data: { prompt: 'Hello' }
+      headers: { Authorization: `Bearer ${mfaToken}`, 'Content-Type': 'application/json' },
+      data: { prompt: 'Hello' },
     });
     expect(blockedRes.status()).toBe(403);
     const blockedBody = await blockedRes.json();
-    expect(blockedBody.error).toContain('MFA verification required');
+    expect(blockedBody.error).toContain('Multi-factor authentication required');
 
-    // 4. Access /api/gemini WITH cookie (should pass)
-    const match = setCookieHeader.match(/mfa_session=([^;]+)/);
-    const cookieVal = match ? match[1] : '';
-
+    // The same account without the requirement passes the gate (and reaches
+    // whatever the route does next — anything but the gate's 403).
+    await adminMergeDoc('users', mfaUid, { mfaEnabled: false });
     const allowedRes = await request.post('/api/gemini', {
-      headers: {
-        'Authorization': `Bearer ${mfaToken}`,
-        'Content-Type': 'application/json',
-        'Cookie': `mfa_session=${cookieVal}`
-      },
-      data: { prompt: 'Explain ABAP select statement in 10 words.' }
+      headers: { Authorization: `Bearer ${mfaToken}`, 'Content-Type': 'application/json' },
+      data: { prompt: 'Explain ABAP select statement in 10 words.' },
     });
-    // It should either return 200 (success) or 502/500 if Gemini API is offline, but NOT 403 (MFA blocked)!
     expect(allowedRes.status()).not.toBe(403);
   });
 

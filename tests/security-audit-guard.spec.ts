@@ -87,12 +87,15 @@ test.describe('the agent has no tools and a small budget', () => {
 });
 
 test.describe('three jobs, three trust levels', () => {
-  test('triggers on main (full) and dev (self-test only when the agent changed), revocable, read-only token', () => {
-    expect(wf()).toMatch(/push:\s*\n\s*branches: \[main, dev\]/);
+  test('triggers on main only — no dev self-test — revocable, read-only token', () => {
+    // Sonny, 16.09.2026: security is tested thoroughly on releases, not sampled on pushes to dev.
+    expect(wf()).toMatch(/push:\s*\n\s*branches: \[main\]/);
+    expect(wf()).not.toMatch(/branches: \[main, dev\]/);
+    expect(job('scope')).not.toMatch(/self-test/);
+    expect(job('scope')).toMatch(/if \[ "\$REF_NAME" = "main" \]; then\s*\n\s*echo "mode=full"/);
     const perms = wf().slice(wf().indexOf('\npermissions:'), wf().indexOf('\njobs:'));
     expect(perms).not.toMatch(/write/);
     expect(job('scope')).toContain("if: vars.SECURITY_AUDIT_ENABLED != 'false'");
-    expect(job('scope')).toContain("scripts/security/|docs/security/|\\.github/workflows/security-audit\\.yml$");
     expect(wf()).not.toMatch(/pull_request_target/);
     // A concurrency group keeps one pending run and cancels the one before it: a release would go unaudited.
     expect(wf()).not.toMatch(/^\s*concurrency:/m);

@@ -3,11 +3,14 @@ name: Security Audit
 # The security agent (docs/SECURITY-AUDIT-AGENT.md): every new release on `main`
 # gets a full audit by a CISO and five consultants — DeepSeek V4.1 Flash over
 # OpenRouter, a pipeline of model calls without tools — and the report arrives in
-# the owner's inbox, in German. When the agent itself changes on `dev`, the whole
-# chain runs once as a self-test on two files with a $0.20 cap.
+# the owner's inbox, in German. Only `main`: the self-test that used to run on
+# `dev` whenever the agent changed is gone (Sonny, 16.09.2026) — security is
+# tested thoroughly on releases, not sampled on pushes. The self-test mode stays
+# available to a person running `SECURITY_AUDIT_MODE=self-test node
+# scripts/security/audit.mjs` locally; no workflow triggers it.
 #
 # Three jobs, three trust levels:
-#   scope    no secrets    decides full audit, self-test or nothing
+#   scope    no secrets    confirms the release and hands the mode on
 #   audit    model key     sends the code to the model, seals the report with the PUBLIC key — cannot open it
 #   deliver  private key   opens, renders and mails the report — runs no model
 # This repository and its logs are public: nothing the audit finds reaches a log.
@@ -15,7 +18,7 @@ name: Security Audit
 # Revocation: `gh variable set SECURITY_AUDIT_ENABLED --body false`.
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
 
 permissions:
   contents: read
@@ -45,18 +48,10 @@ jobs:
         id: decide
         env:
           REF_NAME: ${{ github.ref_name }}
-          BEFORE: ${{ github.event.before }}
-          HEAD_SHA: ${{ github.sha }}
         run: |
+          # Only a release on main is audited; any other ref is a misconfiguration, not a sample.
           if [ "$REF_NAME" = "main" ]; then
             echo "mode=full" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          # dev: only when the agent itself changed. An unknown previous tip counts as changed.
-          if ! printf '%s' "$BEFORE" | grep -Eq '^[0-9a-f]{40}$' || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-            echo "mode=self-test" >> "$GITHUB_OUTPUT"
-          elif git diff --name-only "$BEFORE" "$HEAD_SHA" | grep -Eq '^(scripts/security/|docs/security/|\.github/workflows/security-audit\.yml$)'; then
-            echo "mode=self-test" >> "$GITHUB_OUTPUT"
           else
             echo "mode=skip" >> "$GITHUB_OUTPUT"
           fi

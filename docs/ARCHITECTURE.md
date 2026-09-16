@@ -148,15 +148,19 @@ Required secrets: `GEMINI_API_KEY`, `RESEND_API_KEY`, `S4_ENCRYPTION_KEY`, `MFA_
 
 ### 5.1 Two invariants that are easy to break by copy-paste
 
-**MFA is a server-side control, not a modal.** Firebase Auth issues a valid ID
-token *before* any custom second factor runs — the TOTP prompt is a React state
-change. The client can therefore only ask; the gate is `assertMfaSatisfied` on
-the server, which rejects a token from an `mfaEnabled` account without the
-`mfa_session` cookie. Every route that mints, mutates or destroys evidence must
-call it (or the stronger `assertMfaStepUp` / `assertAdminStepUp`). Enrolment and
-verification must NOT — they cannot depend on the factor being enrolled.
-`tests/mfa-coverage-guard.spec.ts` lists both sides explicitly so a new route
-forces a decision rather than defaulting to unguarded.
+**MFA is a server-side control, and since roadmap 0.13 the factor is Firebase's.**
+Firebase Auth issues no ID token before an enrolled second factor is resolved, and
+the token it then issues names the factor (`firebase.sign_in_second_factor`). The
+gate is `assertMfaSatisfied` on the server, which rejects a first-factor token from
+an `mfaEnabled` account; the decision is the pure `lib/mfa-gate.ts`. Every route
+that mints, mutates or destroys evidence must call it (or the stronger
+`assertMfaStepUp` / `assertAdminStepUp`, which also want the sign-in to be recent).
+Recording an enrolment (`/api/mfa/enrolled`) cannot require the factor — the session
+that enrols predates it — and `tests/mfa-coverage-guard.spec.ts` lists both sides
+explicitly so a new route forces a decision. What this replaced — an application-level
+TOTP whose prompt was a React state change after the password had produced a session,
+backed by an `mfa_session` cookie the rules never saw — is gone with its routes,
+libraries and collections (SECURITY.md §3.5).
 
 **The S/4 credential vault is all-or-nothing.** `resolveS4Connection()` in
 `lib/s4-credentials.ts` owns this: if a request asks for stored credentials the
@@ -244,17 +248,22 @@ Two rules follow, and both are guarded by `tests/run-integrity-guard.spec.ts`:
 
 ### 5.4 Re-enrolment is not enrolment
 
-MFA setup cannot require the factor it is about to create — that is why
-`mfa/setup/start` and `mfa/setup/verify` sit in the `MUST_NOT_GATE` half of
-`tests/mfa-coverage-guard.spec.ts`. The reasoning is right and its scope was
-wrong: applied unconditionally it meant an account that *already* had MFA could
-have its factor replaced with nothing but a stolen ID token — start, take the new
-secret, compute its code, verify, done.
+MFA setup cannot require the factor it is about to create — which is why
+`/api/mfa/enrolled` sits in the `MUST_NOT_GATE` half of
+`tests/mfa-coverage-guard.spec.ts`. With Firebase's factor the enrolment itself
+happens in the browser against Firebase Auth; the route only reads back that the
+factor exists and records the flag. Removing the factor (`/api/mfa/disable`) is the
+one action that needs the stronger step-up: a fresh sign-in that ran the factor.
 
-The distinction is the enrolled state, not the route. `assertReEnrolmentAllowed`
-reads `users/{uid}.mfaEnabled` and applies `assertMfaStepUp` only when a factor
-exists. Both routes check it: they are independent endpoints and a caller can
-reach verify directly with a pending secret.
+The distinction is the factor in Firebase Auth, not the route. `/api/mfa/disable`
+reads the account's factors through the Admin SDK and applies `assertMfaStepUp`
+only when one exists; it clears the flag first and removes the factor second,
+restoring the flag if the removal fails, so an account never requires a factor it
+does not have. A flag without a factor (a failed removal, or the legacy of the
+retired application-level TOTP) is cleared without a step-up: nothing is left
+that a first-factor token could remove. The enrolment record is idempotent for
+the mirror case: the Settings page calls `/api/mfa/enrolled` again whenever
+Firebase Auth shows a factor the profile does not know (SECURITY.md, section 3.5).
 
 ### 5.5 Consent is what the server knows, not what the caller says
 

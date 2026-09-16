@@ -20,7 +20,7 @@ schätzt sich jetzt auf höchstens rund 0,95 $.
 ```
  git push main ── security-audit.yml
                    │
-                   ├─ scope    (keine Secrets)        main → Vollaudit · dev → Selbsttest nur, wenn der Agent selbst geändert wurde
+                   ├─ scope    (keine Secrets)        nur main → Vollaudit (kein Selbsttest auf dev mehr, Entscheidung Sonny 16.09.2026)
                    │
                    ├─ audit    (nur Modellschlüssel)
                    │    1. Karte der Angriffsfläche — eigener Code, ohne Abhängigkeiten, ohne Token:
@@ -112,8 +112,8 @@ DeepSeek V4.1 Flash: **0,15 $ je Mio. Eingabe-Token, 0,60 $ je Mio. Ausgabe-Toke
 | **Budget 3 $ je Audit — geschätzt, vor jedem Aufruf gegen das tatsächlich Ausgegebene geprüft** | ein Aufruf, der es nach der Schätzung reißen würde, findet nicht statt; seine Dateien stehen als nicht gründlich gelesen im Bericht. Der CISO-Aufruf ist vorab reserviert, ein Bericht entsteht immer. Harte Grenze: das Kreditlimit am OpenRouter-Schlüssel |
 | Aufteilung nach Domänen | jede Datei wird von genau einem Consultant gelesen oder, bei Testdateien, nur über die Karte geprüft |
 | 100.000 Zeichen je Consultant-Aufruf, höchstens 60 Aufrufe, vier gleichzeitig; eine größere Datei wird in Teilen gelesen | gemessen am 15.09.2026: ein Aufruf mit 284.000 Zeichen lief 16,6 min und endete ohne lesbare Antwort, einer mit 100.000 Zeichen antwortete in 177 s für 0,007 $. Heute 461 Dateien in 51 Aufrufen, Schätzung im ungünstigsten Fall 0,94 $, rund eine halbe Stunde. Das Budget rechnet jeden laufenden Aufruf mit seinem ungünstigsten Fall, bis er abgerechnet ist |
-| Audit nur bei `main`-Releases | kein Audit je Push auf `dev` |
-| Selbsttest an zwei Dateien mit 0,20 $ | nur wenn der Agent selbst auf `dev` geändert wurde |
+| Audit nur bei `main`-Releases | kein Audit und seit dem 16.09.2026 auch kein Selbsttest je Push auf `dev` — Sicherheit wird gründlich am Release geprüft, nicht stichprobenartig am Push |
+| Selbsttest an zwei Dateien mit 0,20 $ | nur noch von Hand: `SECURITY_AUDIT_MODE=self-test node scripts/security/audit.mjs` mit `OPENROUTER_API_KEY` lokal; kein Workflow löst ihn aus |
 
 Die tatsächlichen Kosten stehen in jeder Mail im Nachweisblock; fehlt eine Angabe oder
 scheiterte ein Aufruf, steht dort „unbekannt", nie 0 $.
@@ -155,7 +155,7 @@ Verbindlich im Skill `security-audit-intake`; die Regeln:
 ## 6. Widerruf und Einrichtung
 
 ```bash
-gh variable set SECURITY_AUDIT_ENABLED --body false   # stoppt Audit, Selbsttest und den Posteingang
+gh variable set SECURITY_AUDIT_ENABLED --body false   # stoppt Audit und Posteingang
 gh variable delete SECURITY_AUDIT_ENABLED             # wieder an
 ```
 
@@ -185,5 +185,5 @@ Alte Berichte bleiben nur mit dem alten Schlüssel lesbar.
 | Bericht nennt Dateien „outside the … cost cap" oder „model call failed" | Budget oder ein einzelner Aufruf | der Rest des Audits gilt; die Dateien stehen unter Umfang und Grenzen |
 | „model call failed: OpenRouter answered HTTP 429" oder „the audit did not produce a report (CISO call: … HTTP 429)" | Ratenlimit des Anbieters trotz acht Wiederholungen — mit dessen Wartezeit (bis 120 s je Versuch, also bis 16 Minuten) oder 15 s, 30 s, 60 s, dann 120 s, zusammen rund 12 Minuten (seit 15.09.2026; vorher sechs mit rund 100 s, woran die Selbsttests von e3a7853 und 5a284ee scheiterten) | Lauf neu starten (`gh run rerun <id>`); hält es an, `concurrency` in `team.mjs` als eigener Schritt senken. Anbieter-Fallback für dasselbe Modell (`allow_fallbacks`) ist bewusst aus und nur mit Sonnys Entscheidung zu ändern |
 | `deliver` rot, „Resend rejected … HTTP 4xx" | Mailschlüssel oder Absenderdomain | Resend-Konto prüfen; der Bericht liegt 90 Tage als Artefakt |
-| Keine Mail nach einem `dev`-Push | `scope` hat „skip" entschieden — der Agent wurde nicht geändert | erwartet |
-| Mail mit `[SELBSTTEST]` | der Agent wurde auf `dev` geändert | Kette funktioniert; kein Audit-Ergebnis |
+| Keine Mail nach einem `dev`-Push | der Workflow läuft nur auf `main` | erwartet |
+| Mail mit `[SELBSTTEST]` | jemand hat den Selbsttest von Hand gestartet | Kette funktioniert; kein Audit-Ergebnis |

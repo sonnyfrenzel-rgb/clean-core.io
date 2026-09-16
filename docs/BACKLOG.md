@@ -100,6 +100,29 @@ Firebase eine verifizierte E-Mail vor dem Enrolment (`auth/unverified-email`), w
 nicht haben, und das Identity-Platform-Upgrade gilt für das eine Firebase-Projekt, das dev und prod teilen.
 Entscheidung Sonny steht aus (siehe Bericht).
 
+**v2.10.8 ist auf `main`** (Go Sonny 16.09.2026, nach sauberer Runde: 0.12, 0.8, die Antwort auf die
+Vollprüfung, Review-first-Schleife, CISO `medium`). Die drei Release-Intakes (Security, UX, QA-Vollprüfung)
+laufen; die UX-Review brachte einen unentschiedenen Befund (33a920d6be30, Roh-Fehlertext im Deck-Banner —
+sofort behoben: verständliche Zeile mit nächstem Schritt, Technik einklappbar).
+
+**Security-Agent ohne dev-Selbsttest** (Entscheidung Sonny 16.09.2026): der Workflow läuft nur noch auf
+`main`; der Selbsttest bleibt von Hand startbar.
+
+**0.13 gebaut, Variante 2** (Entscheidung Sonny 16.09.2026, nachdem klar war: er ist der einzige MFA-Nutzer,
+sein Konto ist Google-verifiziert, Identity Platform kostet bis 50.000 MAU nichts): Firebase-native TOTP-MFA.
+Kein ID-Token vor dem zweiten Faktor; die Server-Gates lesen `firebase.sign_in_second_factor` vom Token
+(`lib/mfa-gate.ts`, rein und ohne Admin-SDK testbar); Enrolment im Browser gegen Firebase Auth, `enrolled`/
+`disable` als Routen; der eigene TOTP-Apparat ist weg (Routen, `lib/mfa.ts`, `lib/totp.ts`, Cookie, Secrets,
+Backup-Codes). Recovery über `scripts/mfa-reset.ts`, TOTP-Freischaltung über `scripts/mfa-enable-totp.ts`.
+**Nächste Schritte, nur Sonny:** Identity-Platform-Upgrade in der Firebase-Console; dann sage ich, wann das
+Freischalt-Skript läuft, prüfe Enrolment und Login auf `dev` gegen das echte Auth, und er richtet seinen
+Faktor in den Einstellungen neu ein. Bis zum Upgrade schlägt jedes Enrolment mit einem Firebase-Fehler fehl —
+das ist der erwartete Zustand, kein Bug. **Das Reset-Skript einmal für sein Konto laufen lassen** (`mfa-reset
+<email> --apply`), bevor er nach dem Deploy anmeldet: sein Profil-Flag stammt vom alten TOTP; die Einstellungen
+zeigen bis dahin „Set up again", und die mutierenden Routen verlangen einen Faktor, den es noch nicht gibt.
+
+**0.14 läuft parallel** in einem eigenen Worktree (Agent), Ergebnis wird hier integriert.
+
 **Offen für Sonny:** den überholten Bot-Branch löschen (`git push origin --delete chore/sync-cloudification-repo`);
 `main` nach einer sauberen QA-Runde; die Survey-Workflows erst danach wieder einschalten; die
 Resend-Tracking-Einstellung prüfen (3.0.9, nur mit Dashboard-Zugang möglich).
