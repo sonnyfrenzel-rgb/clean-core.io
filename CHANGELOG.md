@@ -10,6 +10,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.10.8] — 2026-09-16
+
+### Signierte Exporte lesen nur aus dem Run, das Board-Deck besiegelt nichts mehr, die Vollprüfung ist abgearbeitet
+
+- **Roadmap 0.12 — das Audit-Pack signiert nur, was der Server weiß.** Die Generatoren bekamen
+  bisher das ganze Projektdokument unter den Run gelegt, und alles, was der Besitzer im Browser
+  schreiben darf — Zielarchitektur, Sign-off, Freigebender, Begründung, Name —, landete in
+  gehashten, signierten Dateien: eine ins Formular getippte Freigabe kam als Server-Evidenz mit
+  Signatur heraus. Jetzt baut `lib/audit-pack-build.ts` die Eingabe der signierten Generatoren aus
+  einer benannten Liste von Run-Feldern; die Aussagen des Kontos stehen in `07-user-attested.md`,
+  das `manifest.json` unter `attested` führt — der Name ist in den signierten Hash gebunden, der
+  Inhalt bewusst nicht. Web- und Offline-Verifier zeigen die Datei als „user-attested · not covered by
+  the signature", weisen ein Pack ohne sie ab und lassen keine zweite nach dem Versiegeln zu; Packs von
+  vor dieser Version kanonisieren Byte für Byte wie bisher. Die Narrative-Gaps des Modells gehen nur
+  noch in die Projekt-Worklist, nie in den signierten Run. Ein Emulator-Test geht durch beide Routen
+  und vergleicht jede signierte Datei Feld für Feld mit dem gespeicherten Run.
+- **Roadmap 0.8 — null Befunde sind kein Urteil.** Das Board-Deck rollte eine leere Befundliste zu
+  „Fully Supported" hoch und druckte „Unconditional Go-Live Approved / LOW RISK" für eine Analyse, die
+  nichts zurückgegeben hatte. Jetzt sagt es „not determined" — ohne Level, Risiko und Empfehlung —,
+  und die Folien 2–5 sagen „coverage not established" statt grüner Zeilen. Kein „Approved" mehr aus
+  dem statischen Roll-up: der Sign-off wird gemeldet, wie er ist (recorded/self-attested/not
+  recorded), die Freigabe bleibt beim Architekten. „Resolved Objects" war Objektzahl minus Befundzahl
+  und heißt jetzt „Findings by Level". Die Delivery-Seite zeigt einen Detektorfehler statt ihn als
+  leere Liste durchzureichen.
+- **Die Vollprüfung von v2.10.7 ist abgearbeitet:** 144 Befunde, 130 bestätigt, 11 widerlegt mit Beleg,
+  2 unklar. Behoben: die Testkonto-Erkennung zählt nur noch die CI-Domain (ein Präfix wie
+  `security-user-` machte reale Adressen zu Löschkandidaten); der Delta-Sync der Migration
+  überschreibt kein Zieldokument, das nicht beweisbar älter ist; die Survey-Skripte drucken weder
+  Adressen noch den Digest ins öffentliche Actions-Log, beanspruchen jeden Empfänger transaktional
+  vor dem Provider-Aufruf und zählen Eingeladene aus den Records; der Offline-Verifier folgt keinem
+  `signingKeyUrl` aus dem Pack, weist nicht aufgeführte Archiv-Einträge ab und beendet ein
+  unsigniertes Pack mit 2 statt 0; `vercel.json` (jede Route öffentlich cachebar) ist weg. Die
+  übrigen bestätigten Befunde stehen mit Schritt und Status in `docs/ROADMAP.md` §14.
+- **Die QA-Schleife liefert die Review zuerst.** Eine Runde auf `dev` dauerte 14–17 Minuten, davon
+  8–125 Sekunden Modell; der Rest war das Deploy. `scripts/qa/await.mjs` druckt die Befunde, sobald
+  der Review-Job fertig ist, und wartet nur bei sauberer Review auf den Smoke-Check. Der
+  Security-Agent fragt einen abgeschnittenen CISO-Aufruf einmal nach und läuft mit Effort `medium`;
+  der OpenRouter-Client nennt bei ungültiger Antwort den Abbruchgrund und die Token-Zahlen.
+- **Roadmap:** Anpassungsoptionen zum Standard je Betriebsmodell in Prozesskarte, Prozesskette und
+  Standard-Fit-Tabellen (7.8); Repo-Texte und Mail-Zustellbarkeit mit 3.0 (3.0.8, 3.0.9); ein
+  schnelleres Cloud-Run-Deploy als Phase-0-Schritt daneben.
+
 ## [v2.10.7] — 2026-09-15
 
 ### Zielbild 3.0 abgenommen, aktueller SAP-Katalog, ein achtes Beispiel
