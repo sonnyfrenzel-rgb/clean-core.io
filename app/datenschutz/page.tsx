@@ -80,12 +80,12 @@ export default function DatenschutzPage() {
               The ABAP source files you upload and the generated modernization artifacts (such as solution designs, TypeScript code, and test cases) are stored in our secure Google Firebase cloud environment in Europe.
             </p>
             <p className="text-base mb-3">
-              <strong className="text-gray-800">Who can read your project:</strong> only the account that created it.
-              The database rules grant read access to the owner and to nobody else &mdash; not to other accounts, and
-              since 16&nbsp;September&nbsp;2026 not to our administrator either. There is no console in which we can
-              open your source code. The one exception is an emergency, such as a credible report that an upload
-              contains malicious code: that is a deliberate server-side act by the operator, not a permission that
-              stands open, and it leaves a record.
+              <strong className="text-gray-800">Who can read your project:</strong> only the account that created it
+              &mdash; not other accounts, and since 16&nbsp;September&nbsp;2026 not our administrator either.{' '}
+              <a href="#project-access" className="text-green-700 underline underline-offset-2 hover:text-green-800">
+                Section 8
+              </a>{' '}
+              says this in full, names the rules you can read for yourself, and describes the one exception.
             </p>
             <div className="p-4 bg-green-50 border border-green-200 rounded-2xl">
               <p className="text-sm text-green-800">
