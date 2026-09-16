@@ -440,10 +440,19 @@ export async function POST(req: NextRequest) {
     if (sourceMoved) {
       // Nothing was written. The unit goes back, because the analysis did not
       // become this project's state — the same rule as any other failure.
+      //
+      // The reservation has to travel with it. Since 0.9 a reservation is one of
+      // two things, and they are given back differently: a charged one releases
+      // the unit and the fingerprint, a free starter example releases the
+      // example's first run. Refunding without it took the charged branch for a
+      // starter example — it decremented a unit that was never taken and left
+      // the example marked as used, so the reader lost the free run for good
+      // (QA review of 6a24b632ff44).
       if (chargedUid && chargedHash) {
-        await refundRunQuota(chargedUid, chargedHash);
+        await refundRunQuota(chargedUid, chargedHash, reservation ?? undefined);
         chargedUid = null;
         chargedHash = null;
+        reservation = null;
       }
       logger.warn('runs/create refused: the source changed while the analysis ran', {
         route: 'api/runs/create',

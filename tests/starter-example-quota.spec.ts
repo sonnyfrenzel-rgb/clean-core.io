@@ -171,6 +171,27 @@ test.describe('an example costs nothing the first time, and counts every time af
     expect(after.chargedInputs?.[fingerprintExampleSource(source)]).toBeUndefined();
   });
 
+  test('two simultaneous first starts consume one free run, not two', async ({ request }) => {
+    // The free run is bookkeeping read and then written, so the interesting
+    // question is what happens when two requests read it in the same instant.
+    // Every other test here is serial and cannot see it: both would find
+    // `starterExamplesUsed` empty, both would take the free path, and the
+    // account would get two free analyses of the same example (QA review of
+    // 6a24b632ff44). The reservation is a transaction, so exactly one wins.
+    await resetAccount();
+    const source = await exampleSource(request, EXAMPLE.file);
+
+    const [a, b] = await Promise.all([analyse(request, source), analyse(request, source)]);
+    const completed = [a, b].filter((r) => r.status() === 200);
+    expect(completed.length, `neither run completed: ${a.status()} / ${b.status()}`).toBeGreaterThanOrEqual(1);
+
+    const after = await profile();
+    expect(after.starterExamplesUsed?.[EXAMPLE.name], 'the free run was not recorded').toBe(true);
+    // Exactly one of the completed runs was the free one. Two completed runs
+    // must therefore have spent one unit; a single completed run, none.
+    expect(after.transformationsUsed, 'more than one run was given away free').toBe(completed.length - 1);
+  });
+
   test('the file with a byte-order mark is recognised too', async ({ request }) => {
     await resetAccount();
     const source = await exampleSource(request, BOM_EXAMPLE.file);
@@ -258,6 +279,52 @@ test.describe('nothing is spent on a run that does not complete', () => {
     // disable metering for this source.
     expect((await analyse(request, source)).status()).toBe(200);
     expect((await profile()).transformationsUsed).toBe(1);
+  });
+
+  test('a first run refused because the source moved gives the free example back', async ({ request }) => {
+    // The second way a run ends without becoming state: 0.6 refuses to commit
+    // when the project's source changed while the analysis ran. That path has
+    // its own refund, and it was releasing the wrong thing — it ran the charged
+    // branch for a free starter reservation, so it decremented a unit that was
+    // never taken and left the example marked as used. The reader lost the free
+    // run for good and it looked like a gift (QA review of 6a24b632ff44).
+    await resetAccount({ transformationsUsed: 2 });
+    const source = await exampleSource(request, EXAMPLE.file);
+
+    const projectId = `starter-quota-moved-${Date.now()}`;
+    await adminSetDoc('projects', projectId, {
+      userId: uid, name: 'Starter example, source moved', status: 'uploaded',
+      createdAt: new Date(), legacyCode: source,
+    });
+
+    const inFlight = request.post('/api/runs/create', {
+      headers: headers(),
+      data: { projectId, legacyCode: source, s4Deployment: 'public', analysis: '{}', uploadedFileName: 'z.abap' },
+    });
+
+    // Not a sleep: the reservation is taken strictly after the route has read
+    // the project and long before it commits, so its appearance is proof that
+    // the read has happened. A wall-clock delay would be a guess.
+    const deadline = Date.now() + 20_000;
+    for (;;) {
+      if ((await profile()).starterExamplesUsed?.[EXAMPLE.name] === true) break;
+      expect(Date.now(), 'the run never reserved the free example').toBeLessThan(deadline);
+      await new Promise((r) => setTimeout(r, 10));
+    }
+    await db().collection('projects').doc(projectId).update({ legacyCode: 'REPORT z_moved.\nWRITE / 1.\n' });
+
+    const res = await inFlight;
+    expect(res.status()).toBe(409);
+    expect((await res.json()).code).toBe('source-moved');
+
+    const after = await profile();
+    expect(after.starterExamplesUsed?.[EXAMPLE.name], 'the free example was not given back').toBeUndefined();
+    expect(after.transformationsUsed, 'a unit was refunded that was never taken').toBe(2);
+    expect(after.chargedInputs ?? {}, 'nothing was charged, so nothing is on the charged list').toEqual({});
+
+    // And it really is free again, not merely absent from the bookkeeping.
+    expect((await analyse(request, source)).status()).toBe(200);
+    expect((await profile()).transformationsUsed, 'the retry spent a unit after all').toBe(2);
   });
 });
 

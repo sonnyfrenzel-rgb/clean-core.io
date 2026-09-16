@@ -48,12 +48,21 @@ const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
  * The readable prose of a document: JSX tags, markdown emphasis, HTML entities
  * and line breaks removed, so a sentence that a page splits across four indented
  * lines and two `<strong>` tags is still one sentence.
+ *
+ * Comments are removed as well, and that is the part that carries weight. The
+ * first version removed only JSX comments, so a sentence the page had stopped
+ * showing still counted as evidence for a trust claim as long as it survived
+ * anywhere in the file — in a `//` note, a block comment, a dead constant
+ * (QA review of 6a24b632ff44). Evidence that nobody can read is not evidence.
+ * The `[^:]` guard keeps `https://…` out of the line-comment rule.
  */
 function prose(rel: string): string {
   let text = read(rel);
   if (rel.endsWith('.tsx')) {
     text = text
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/(^|[^:])\/\/[^\n]*/g, '$1')
       .replace(/\{\s*(['"])([^'"]*)\1\s*\}/g, '$2')
       .replace(/<[^<>]*>/g, ' ');
   } else {

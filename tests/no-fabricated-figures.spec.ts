@@ -98,42 +98,81 @@ test.describe('a private report goes to one address, and no input reaches a shel
     expect(wf, 'and no override on the command line either').not.toMatch(/--to\s/);
   });
 
+  /**
+   * Every `run:` command in the file, block, folded and inline alike.
+   *
+   * The first version split on `run: |` and therefore looked at literal blocks
+   * only — an inline `run: echo "${{ inputs.x }}"` or a folded `run: >` walked
+   * straight past it (QA review of cc87c7717ca1, 3e88a1000811). The second
+   * version read the block indicator but not a YAML comment after it, so
+   * `run: | # build` was mistaken for an inline command and its whole body was
+   * never looked at (QA review of 6a24b632ff44) — the quietest possible way for
+   * this sweep to report success over code it did not read.
+   */
+  const runCommands = (wf: string): string[] => {
+    const lines = wf.split('\n');
+    const out: string[] = [];
+    for (let i = 0; i < lines.length; i++) {
+      const m = /^(\s*)(?:-\s+)?run:\s*(.*)$/.exec(lines[i]);
+      if (!m) continue;
+      const [, indent, rest] = m;
+      // `|`, `>`, with chomping and indentation indicators, and an optional
+      // trailing comment — everything else on the line is the command itself.
+      if (rest && !/^[|>][-+0-9]*[ \t]*(?:#.*)?$/.test(rest.trim())) {
+        out.push(rest); // inline scalar
+        continue;
+      }
+      // Block or folded: everything indented deeper than the `run:` key.
+      const body: string[] = [];
+      for (let j = i + 1; j < lines.length; j++) {
+        const line = lines[j];
+        if (line.trim() === '') { body.push(line); continue; }
+        const lead = line.length - line.trimStart().length;
+        if (lead <= indent.length) break;
+        body.push(line);
+      }
+      out.push(body.join('\n'));
+    }
+    return out;
+  };
+
+  test('the collector reads a block whose header carries a comment', () => {
+    // The regression fixture for the finding above. Every one of these four is
+    // a run command a workflow may legitimately write, and the body of each has
+    // to reach the sweep — otherwise the sweep passes by not looking.
+    const fixture = [
+      'jobs:',
+      '  a:',
+      '    steps:',
+      '      - name: block with a comment',
+      '        run: | # the comment that used to hide this body',
+      '          echo "BLOCK ${{ inputs.one }}"',
+      '      - name: folded, chomped, with a comment',
+      '        run: >-   # and here too',
+      '          echo "FOLDED ${{ inputs.two }}"',
+      '      - name: plain block',
+      '        run: |',
+      '          echo "PLAIN ${{ inputs.three }}"',
+      '      - name: inline',
+      '        run: echo "INLINE ${{ inputs.four }}"',
+    ].join('\n');
+
+    const found = runCommands(fixture);
+    expect(found.length, 'one command per run: key').toBe(4);
+    for (const marker of ['BLOCK', 'FOLDED', 'PLAIN', 'INLINE']) {
+      expect(found.some((c) => c.includes(marker)), `the ${marker} command was not collected`).toBe(true);
+    }
+    // And the sweep's own assertion catches all four, not merely three.
+    const caught = found.filter((c) => /\$\{\{\s*(?:inputs|github\.event)\./.test(c));
+    expect(caught.length, 'a run command carrying a dispatch input slipped through').toBe(4);
+  });
+
   test('no workflow interpolates a dispatch input into any run command', () => {
     // A ${{ }} expression inside a run: is executed as shell text, in jobs that
-    // hold id-token: write and the provider keys. The first version of this
-    // sweep split on `run: |` and therefore looked at literal blocks only — an
-    // inline `run: echo "${{ inputs.x }}"` or a folded `run: >` walked straight
-    // past it (QA review of cc87c7717ca1, 3e88a1000811). Every run command is
-    // collected instead, whatever its scalar style, and `.yaml` counts too.
+    // hold id-token: write and the provider keys.
     const dir = path.join(ROOT, '.github/workflows');
     const files = fs.readdirSync(dir).filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'));
     expect(files.length).toBeGreaterThan(3);
-
-    /** Every `run:` command in the file, block, folded and inline alike. */
-    const runCommands = (wf: string): string[] => {
-      const lines = wf.split('\n');
-      const out: string[] = [];
-      for (let i = 0; i < lines.length; i++) {
-        const m = /^(\s*)(?:-\s+)?run:\s*(.*)$/.exec(lines[i]);
-        if (!m) continue;
-        const [, indent, rest] = m;
-        if (rest && !/^[|>][-+0-9]*\s*$/.test(rest.trim())) {
-          out.push(rest); // inline scalar
-          continue;
-        }
-        // Block or folded: everything indented deeper than the `run:` key.
-        const body: string[] = [];
-        for (let j = i + 1; j < lines.length; j++) {
-          const line = lines[j];
-          if (line.trim() === '') { body.push(line); continue; }
-          const lead = line.length - line.trimStart().length;
-          if (lead <= indent.length) break;
-          body.push(line);
-        }
-        out.push(body.join('\n'));
-      }
-      return out;
-    };
 
     // The collector has to see the commands that are really there.
     const total = files.reduce((n, f) => n + runCommands(fs.readFileSync(path.join(dir, f), 'utf8')).length, 0);
