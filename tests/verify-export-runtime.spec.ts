@@ -26,11 +26,21 @@ const SCRIPT = path.join(ROOT, 'scripts', 'verify-export.ps1');
  *   0 verified · 1 verification failed · 2 could not run the check
  */
 
-/** `pwsh` on Linux and modern Windows, `powershell` on a Windows box without it. */
+/**
+ * `pwsh` on Linux and modern Windows, `powershell` on a Windows box without it.
+ *
+ * The probe asks for a distinctive exit code rather than zero, so it establishes
+ * both halves of what the tests below need: the shell runs, and its exit code
+ * reaches us. Deliberately probed with a trivial command and **not** with the
+ * script under test — otherwise a verifier that exits wrongly and prints
+ * nothing recognisable would be mistaken for a machine that cannot run
+ * PowerShell, and the suite would skip the regression instead of reporting it
+ * (QA review of 1f97a82c9787).
+ */
 function powershell(): string | null {
   for (const exe of ['pwsh', 'powershell']) {
-    const probe = spawnSync(exe, ['-NoProfile', '-Command', 'exit 0'], { encoding: 'utf8' });
-    if (!probe.error && probe.status === 0) return exe;
+    const probe = spawnSync(exe, ['-NoProfile', '-Command', 'exit 7'], { encoding: 'utf8' });
+    if (!probe.error && probe.status === 7) return exe;
   }
   return null;
 }
@@ -99,13 +109,6 @@ test.describe('the offline export verifier, executed', () => {
     const zip = await buildArchive(dir, 'signed', { signed: true, key: KEY });
     const verified = run(zip, true);
 
-    // If the baseline cannot even run, this platform cannot execute the script
-    // and asserting anything about the other two would be asserting about noise.
-    test.skip(
-      verified.code !== 0 && !/Verification/.test(verified.out),
-      `The script did not run under ${shell}: ${verified.out.trim().slice(0, 300)}`,
-    );
-
     expect(verified.code, `verified archive did not exit 0:\n${verified.out}`).toBe(0);
     expect(verified.out).toContain('SUCCESS');
 
@@ -134,7 +137,6 @@ test.describe('the offline export verifier, executed', () => {
     fs.writeFileSync(broken, await buf.generateAsync({ type: 'nodebuffer' }));
 
     const r = run(broken, true);
-    test.skip(r.code !== 1 && !/Verification/.test(r.out), `The script did not run under ${shell}.`);
     expect(r.code, `a changed file did not exit 1:\n${r.out}`).toBe(1);
     expect(r.out).not.toContain('SUCCESS');
   });
