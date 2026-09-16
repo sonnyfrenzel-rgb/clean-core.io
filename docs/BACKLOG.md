@@ -10,6 +10,13 @@ gebaut und integriert: 0.13 (Firebase-nativer zweiter Faktor), 0.14 (Konto, Schl
 vier Befunde derselben Art — Guards, die Quelltext lesen, wo nur ein Laufzeitnachweis zählt
 (6a1e32c0b973, 1738da3d6e64, cca300dfb572, 6f7a14516006).
 
+**Umfrage eingestellt (Sonny, 16.09.2026):** „kann generell ausbleiben, ist eh vorbei ohne Erfolg." Die
+Workflows `survey-send.yml` und `survey-digest.yml` bleiben dauerhaft aus — nicht mehr „bis die Log-Fixes auf
+`main` sind", sondern endgültig. Kein weiterer Aufwand in Versand, Digest oder Auswertung. Der Code bleibt
+vorerst stehen (Ausbau wäre eine eigene Entscheidung); die Korrekturen aus 0.16 an `send-survey.ts`,
+`lib/survey/outbox.ts` und der Umfrageseite sind gebaut und bleiben, weil sie dieselben Mail-Bausteine
+betreffen wie der Rest.
+
 Was nur Sonny entscheiden oder tun kann:
 - **Security-Agent auf `main` fällt seit drei Läufen aus** (zuletzt 35069919896): 52 Consultant-Calls
   laufen durch, dann antwortet der CISO-Call zweimal nicht mit JSON und die ganze Prüfung ist verloren.

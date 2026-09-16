@@ -35,17 +35,22 @@ test.describe('the agent has no tools and a small budget', () => {
     const src = read('scripts/security/audit.mjs');
     expect(src).not.toMatch(/claude-code|npx|child_process|spawn\(|execFile|--tools|Agent|Workflow/);
     expect(src).toMatch(/callReviewer\(\{ apiKey, system, user, schema: CONSULTANT_SCHEMA,/);
-    expect(src).toMatch(/callReviewer\(\{ apiKey, system: clean\('outgoing message', brief\), user: cisoUser, schema: REPORT_SCHEMA,/);
-    // The CISO call — last of ~60, the one whose loss costs the whole audit — is asked once more when its
-    // 200 arrives with a body that is not JSON (release audit of 33471220d6e9, 2026-09-15). The behaviour
-    // is tested below on the helper; this only pins that the CISO call is the one wrapped in it, once,
-    // and the consultants are not.
+    // The CISO answers in two calls since 16.09.2026 — the findings, then the
+    // prose around them. One answer holding both ended three release audits in
+    // a row as a body that was not JSON, each time after some fifty consultant
+    // calls had been paid for. Each call is asked once more on a non-JSON body;
+    // the consultants are never wrapped, because one lost batch is one hole.
+    expect(src).toMatch(/callReviewer\(\{ apiKey, system: clean\('outgoing message', brief\), user: cisoUser, schema: FINDINGS_SCHEMA,/);
+    expect(src).toMatch(/callReviewer\(\{ apiKey, system: clean\('outgoing message', brief\), user: narrativeUser, schema: NARRATIVE_SCHEMA,/);
     const cisoBlock = src.slice(src.indexOf('const CISO_TRUNCATED_RETRIES'), src.indexOf('const secretFindings'));
     expect(cisoBlock).toMatch(/const CISO_TRUNCATED_RETRIES = 1;/);
-    expect(cisoBlock).toMatch(/askAgainIfTruncated\(\s*\(\) => callReviewer\(\{ apiKey, system: clean\('outgoing message', brief\), user: cisoUser, schema: REPORT_SCHEMA,/);
-    expect(cisoBlock).toMatch(/\{ retries: CISO_TRUNCATED_RETRIES, warn:/);
-    expect(src.match(/askAgainIfTruncated\(/g)?.length, 'wrapped more than the CISO call').toBe(1);
+    expect(cisoBlock.match(/\{ retries: CISO_TRUNCATED_RETRIES, warn:/g)?.length, 'both CISO calls are asked again').toBe(2);
+    expect(src.match(/askAgainIfTruncated\(/g)?.length, 'wrapped more than the two CISO calls').toBe(2);
     expect(src.slice(0, src.indexOf('const CISO_TRUNCATED_RETRIES'))).not.toMatch(/askAgainIfTruncated\(/);
+    // Neither loss throws away the other half; losing both does.
+    expect(cisoBlock).toMatch(/the consultants' own findings are reported, unverified/);
+    expect(cisoBlock).toMatch(/the findings are reported without a synthesis/);
+    expect(cisoBlock).toMatch(/both CISO calls failed/);
     // The request the calls build: no tools, no fallback model, no provider that keeps prompts.
     const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
     const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', model: AUDIT.model });
@@ -509,8 +514,14 @@ test.describe('the audit pipeline', () => {
     for (let i = 1; i <= 6; i++) expect(tiny).toContain(`Finding ${i} (API1)`);
     expect(read('scripts/security/audit.mjs')).toContain('cisoInput: { chars: cisoUser.length, reservedChars: AUDIT.cisoInputChars }');
     const { AUDIT } = await lib('team.mjs');
-    expect(read('scripts/security/audit.mjs')).toContain('estimate(brief.length + CISO_TASK.length + 2 + AUDIT.cisoInputChars, cisoTokens)');
+    // Both CISO calls are reserved out of the cap before a consultant spends,
+    // so the report is written even when the consultants have used the rest.
+    const auditSrc = read('scripts/security/audit.mjs');
+    expect(auditSrc).toContain('estimate(brief.length + CISO_FINDINGS_TASK.length + 2 + AUDIT.cisoInputChars, cisoTokens)');
+    expect(auditSrc).toContain('estimate(brief.length + CISO_NARRATIVE_TASK.length + 2 + AUDIT.narrativeInputChars,');
     expect(AUDIT.cisoInputChars).toBe(300_000);
+    expect(AUDIT.narrativeInputChars).toBeLessThan(AUDIT.cisoInputChars);
+    expect(AUDIT.narrativeOutputTokens).toBeLessThan(AUDIT.cisoOutputTokens);
     // The counted coverage replaces whatever the model wrote.
     expect(withCountedCoverage({ coverage: { files_in_scope: 999, deep_read: 999, pattern_scanned_only: 0, notes: 'model' } }, coverage).coverage).toEqual({ files_in_scope: 10, deep_read: 7, pattern_scanned_only: 3, notes: 'counted model' });
   });
@@ -528,9 +539,31 @@ test.describe('the audit pipeline', () => {
     const report = coerceReport({ executive_summary: 'S', risk_rating: 'info', findings: [{ title: 'F', severity: 'Medium' }], hardening: [{ title: 'h', priority: 'p1' }], coverage: { files_in_scope: '9' } });
     expect(firstViolation(REPORT_SCHEMA, report)).toBeNull();
     expect(report).toMatchObject({ risk_rating: 'niedrig', findings: [{ severity: 'mittel', description: '' }], hardening: [{ priority: 'P1' }], coverage: { files_in_scope: 9 } });
+    // Each half of the split answer is coerced and validated on its own.
+    const { coerceFindings, coerceNarrative, coerceConsultantFindings, reportWithoutNarrative } = await lib('pipeline.mjs');
+    const { FINDINGS_SCHEMA, NARRATIVE_SCHEMA } = await lib('team.mjs');
+    const half = { findings: coerceFindings({ findings: [{ title: 'F', severity: 'Medium' }] }) };
+    expect(firstViolation(FINDINGS_SCHEMA, half)).toBeNull();
+    expect(half.findings[0]).toMatchObject({ severity: 'mittel', description: '' });
+    const prose = coerceNarrative({ executive_summary: 'S', risk_rating: 'info', hardening: [{ title: 'h', priority: 'p1' }], coverage: { files_in_scope: 9 } });
+    expect(firstViolation(NARRATIVE_SCHEMA, prose)).toBeNull();
+    expect(prose).toMatchObject({ risk_rating: 'niedrig', hardening: [{ priority: 'P1' }] });
+    expect(prose, 'the prose call never carries findings').not.toHaveProperty('findings');
+
+    // A lost call is not a lost audit: what is left is reported, and says so.
+    const carried = coerceConsultantFindings([{ consultant: 'app-web', review: { findings: [{ title: 'C', severity: 'hoch' }] } }]);
+    expect(carried[0]).toMatchObject({ title: 'C', severity: 'hoch' });
+    expect(carried[0].description, 'an unverified finding says whose it is').toContain('app-web');
+    const rescued = reportWithoutNarrative({ findings: carried, coverage: { files_in_scope: 1, deep_read: 1, pattern_scanned_only: 0, notes: '' }, reason: 'Testfall.' });
+    expect(firstViolation(REPORT_SCHEMA, rescued)).toBeNull();
+    expect(rescued.risk_rating, 'the rating is the worst single finding, not a verdict').toBe('hoch');
+    expect(rescued.executive_summary).toContain('keine CISO-Zusammenfassung');
+    expect(rescued.limitations.join(' ')).toContain('Testfall.');
+
     const src = read('scripts/security/audit.mjs');
     expect(src).toMatch(/coerce: coerceConsultant \}/);
-    expect(src).toMatch(/coerce: coerceReport \}/);
+    expect(src).toMatch(/coerce: coerceNarrative \}/);
+    expect(src).toMatch(/coerceFindings\(answer\)/);
   });
 
   test('a rate limit on the last call cannot lose the report: both calls wait up to about 12 minutes', async () => {
@@ -541,7 +574,9 @@ test.describe('the audit pipeline', () => {
     expect(pauses).toEqual([15_000, 30_000, 60_000, 120_000, 120_000, 120_000, 120_000, 120_000]);
     expect(pauses.reduce((a: number, b: number) => a + b, 0)).toBe(705_000);
     const src = read('scripts/security/audit.mjs');
-    expect(src.match(/retries: AUDIT\.rateLimitRetries, retryDelayMs: AUDIT\.rateLimitDelayMs, coerce: coerce(?:Consultant|Report) \}/g)).toHaveLength(2);
+    // All three model calls wait the same way: the two consultants' and the two
+    // halves of the CISO's answer.
+    expect(src.match(/retries: AUDIT\.rateLimitRetries, retryDelayMs: AUDIT\.rateLimitDelayMs, coerce: /g)).toHaveLength(3);
     // Longer waits, not a looser policy: the request still allows no fallback and no provider that keeps prompts.
     expect(read('scripts/qa/lib/openrouter.mjs')).toContain("provider: { allow_fallbacks: false, data_collection: 'deny' }");
   });

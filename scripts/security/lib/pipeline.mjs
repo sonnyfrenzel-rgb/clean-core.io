@@ -354,6 +354,114 @@ export function coerceConsultant(answer) {
   };
 }
 
+/**
+ * What the second CISO call is shown: the findings that survived the first one,
+ * in their own words and without a line of code, plus the map and the counted
+ * coverage. It writes the report around them — summary, rating, hardening,
+ * positives, limitations — and never adds or removes a finding.
+ *
+ * Small on purpose. The single call it replaces had to hold every consultant
+ * finding, the code under each of them, and the whole report in one answer;
+ * three release audits in a row ended without one.
+ */
+export function narrativeMessage({ surface, coverage, findings, notRead, failed, droppedNote, maxChars = AUDIT.narrativeInputChars }) {
+  const bySeverity = findings.reduce((n, f) => ({ ...n, [f.severity]: (n[f.severity] || 0) + 1 }), {});
+  const head = [
+    '## The findings of this audit — already verified; neither add nor remove any',
+    '```json',
+    JSON.stringify({ total: findings.length, bySeverity }, null, 1),
+    '```',
+    '## Coverage — counted by the pipeline; use these numbers',
+    `${coverage.files_in_scope} files in scope · ${coverage.deep_read} read in depth by a consultant · ${coverage.pattern_scanned_only} covered by the deterministic scan only.`,
+    notRead.length ? `Not read in depth: ${notRead.length} file(s), with reasons recorded in the report.` : 'Every file assigned to a consultant was read.',
+    failed ? `${failed} consultant call(s) failed; their files count as not read in depth.` : '',
+    droppedNote ? `From the verification step: ${droppedNote}` : '',
+    `## Attack surface`,
+    '```json',
+    JSON.stringify({
+      head: surface.head,
+      files: { inScope: surface.files.total, byDomain: surface.files.byDomain },
+      apiRoutes: surface.apiRoutes?.length || 0,
+      routesWithoutAuthMarker: (surface.apiRoutes || []).filter((r) => !r.authMarkers.length).length,
+      openFirestoreRules: surface.firestoreRules?.openRules || [],
+      dependencies: surface.dependencies,
+    }, null, 1),
+    '```',
+  ].filter(Boolean);
+  const texts = findings.map((f, i) => [
+    `### ${i + 1} · ${f.severity} · ${f.category}`,
+    f.title,
+    `Impact: ${f.impact}`,
+    `Where: ${(f.locations || []).map((l) => `${l.file}:${l.line}`).join(', ') || 'not located'}`,
+    `Recommended: ${f.recommendation}`,
+  ].join('\n'));
+  let body = texts.join('\n\n');
+  // The findings' own text is never dropped — a report that describes fewer
+  // findings than it lists would be worse than a long message.
+  const message = [...head, body || '(no finding survived verification)'].join('\n\n');
+  return message.length > maxChars ? message : message;
+}
+
+/**
+ * The consultants' own findings in the report's shape — what goes in when the
+ * verifying call does not come back. They are not a CISO's verdict, and the
+ * report says so in its limitations; this only carries them across, keeping the
+ * consultant's name so a reader can see whose finding it is.
+ */
+export function coerceConsultantFindings(results) {
+  const findings = results.flatMap((r) => (r.review.findings || []).map((f) => ({ ...f, consultant: r.consultant })));
+  return coerceReport({ findings }).findings.map((f, i) => ({
+    ...f,
+    description: f.description || `Befund von ${findings[i]?.consultant || 'einem Berater'}, ohne zweite Prüfung am Code.`,
+  }));
+}
+
+/** The findings half of a report, coerced on its own (the first CISO call). */
+export function coerceFindings(answer) {
+  return coerceReport({ findings: answer?.findings }).findings;
+}
+
+/** The prose half, coerced on its own (the second CISO call). */
+export function coerceNarrative(answer) {
+  const { executive_summary, risk_rating, hardening, positive_observations, coverage, limitations } = coerceReport(answer);
+  return { executive_summary, risk_rating, hardening, positive_observations, coverage, limitations };
+}
+
+/**
+ * A report written without the model, from findings that already exist.
+ *
+ * Used when a CISO call does not come back. The alternative was to throw away
+ * fifty consultant calls, which is what happened three releases in a row: the
+ * findings were there, and the audit reported nothing at all. What this
+ * produces says plainly which half is missing, so nobody reads it as a CISO's
+ * verdict (`limitations`, and the summary's first sentence).
+ */
+export function reportWithoutNarrative({ findings, coverage, reason }) {
+  const worst = ['kritisch', 'hoch', 'mittel', 'niedrig'].find((level) => findings.some((f) => f.severity === level)) || 'niedrig';
+  const counted = ['kritisch', 'hoch', 'mittel', 'niedrig', 'info']
+    .map((level) => [level, findings.filter((f) => f.severity === level).length])
+    .filter(([, n]) => n > 0)
+    .map(([level, n]) => `${n} ${level}`)
+    .join(', ') || 'keine';
+  return {
+    executive_summary: [
+      'Dieser Bericht hat keine CISO-Zusammenfassung: der abschließende Aufruf kam nicht zurück.',
+      `Er enthält die Befunde der Berater (${counted}) und die gezählte Abdeckung, sonst nichts.`,
+      'Die Einstufung unten ist der schwerste Einzelbefund, nicht das Urteil eines Prüfers über das Ganze.',
+    ].join(' '),
+    risk_rating: worst,
+    findings,
+    hardening: [],
+    positive_observations: [],
+    coverage: { ...coverage },
+    limitations: [
+      `Die Synthese fehlt: ${reason}`,
+      'Die Befunde sind Beraterbefunde ohne die zweite Prüfung am Code; jeder ist vor einer Änderung selbst zu verifizieren.',
+      'Ohne Synthese gibt es keine Härtungsempfehlungen und keine positiven Beobachtungen in diesem Bericht.',
+    ],
+  };
+}
+
 export function coerceReport(answer) {
   const coverage = answer?.coverage || {};
   return {

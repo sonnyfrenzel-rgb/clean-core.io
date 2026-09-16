@@ -34,6 +34,13 @@ export const AUDIT = {
   /** Includes reasoning tokens. */
   consultantOutputTokens: 24_000,
   cisoOutputTokens: 40_000,
+  /**
+   * The second CISO call writes prose about findings it is handed, without any
+   * code: a fraction of the first call's input and output, and reserved out of
+   * the same cap.
+   */
+  narrativeInputChars: 60_000,
+  narrativeOutputTokens: 12_000,
   /** The CISO's user message, in characters: reserved out of the cap before any consultant spends, and enforced when it is built (lib/pipeline.mjs cisoMessage). */
   cisoInputChars: 300_000,
   /**
@@ -132,6 +139,64 @@ export const CONSULTANT_SCHEMA = {
     },
     checked_sound: { type: 'array', items: { type: 'string' } },
     notes: { type: 'string' },
+  },
+};
+
+/**
+ * The CISO answers in two calls, not one.
+ *
+ * Until 16.09.2026 the CISO wrote the whole report — the verdict on every
+ * consultant finding, the summary, the rating, the hardening list, the positive
+ * observations and the limitations — in a single answer of at most
+ * `cisoOutputTokens`, shared with its reasoning. Three release audits in a row
+ * ended without a report: the consultants had done their fifty-odd calls, and
+ * the last one came back as a body that was not JSON. Splitting it is the fix
+ * Sonny approved on 16.09.2026: the findings first, the prose afterwards, each
+ * small enough to finish — and if one of them still fails, the audit delivers
+ * what it has instead of losing everything (scripts/security/audit.mjs).
+ */
+const FINDING_ITEM = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['title', 'severity', 'category', 'locations', 'description', 'preconditions', 'impact', 'evidence', 'recommendation', 'verification', 'confidence'],
+  properties: {
+    title: { type: 'string' },
+    severity: { type: 'string', enum: ['kritisch', 'hoch', 'mittel', 'niedrig', 'info'] },
+    category: { type: 'string', description: 'OWASP Top 10 / API / LLM Top 10 identifier, or CWE.' },
+    locations: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['file', 'line'], properties: { file: { type: 'string' }, line: { type: 'number' } } } },
+    description: { type: 'string' },
+    preconditions: { type: 'string' },
+    impact: { type: 'string' },
+    evidence: { type: 'string', description: 'At most three quoted lines; never a secret value.' },
+    recommendation: { type: 'string' },
+    verification: { type: 'string', description: 'How the maintainer confirms the finding before fixing it.' },
+    confidence: { type: 'number' },
+  },
+};
+
+/** Call one: every consultant finding weighed against its code, and nothing else. */
+export const FINDINGS_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['findings'],
+  properties: {
+    findings: { type: 'array', items: FINDING_ITEM },
+    notes: { type: 'string', description: 'German, at most three sentences: what was dropped and why, for the limitations of the report.' },
+  },
+};
+
+/** Call two: the report around the findings that survived call one. */
+export const NARRATIVE_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['executive_summary', 'risk_rating', 'hardening', 'positive_observations', 'coverage', 'limitations'],
+  properties: {
+    executive_summary: { type: 'string', description: 'German, at most eight sentences, for the owner of the product.' },
+    risk_rating: { type: 'string', enum: ['kritisch', 'hoch', 'mittel', 'niedrig'] },
+    hardening: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['title', 'priority', 'rationale'], properties: { title: { type: 'string' }, priority: { type: 'string', enum: ['P1', 'P2', 'P3'] }, rationale: { type: 'string' } } } },
+    positive_observations: { type: 'array', items: { type: 'string' } },
+    coverage: { type: 'object', additionalProperties: false, required: ['files_in_scope', 'deep_read', 'pattern_scanned_only', 'notes'], properties: { files_in_scope: { type: 'number' }, deep_read: { type: 'number' }, pattern_scanned_only: { type: 'number' }, notes: { type: 'string' } } },
+    limitations: { type: 'array', items: { type: 'string' } },
   },
 };
 
