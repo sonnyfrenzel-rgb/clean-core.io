@@ -136,13 +136,25 @@ interface Recipient {
   firstName: string;
 }
 
-/** People the survey reached: every send record that says so, and every record from before the outbox. */
-async function countInvited(db: Firestore): Promise<number> {
-  const sends = await db.collection('email_sends').where('campaign', '==', SURVEY_CAMPAIGN).get();
-  return sends.docs.filter((d) => {
-    const state = d.data().state as string | undefined;
-    return state === 'sent' || state === undefined;
-  }).length;
+/**
+ * People the survey reached — every send record that says so, and every record
+ * from before the outbox — written to the campaign document in one transaction
+ * with the count that produced it. Read and write used to be two steps, and two
+ * runs at once could interleave them: one counts, the other sends and writes
+ * its count, the first writes its stale one over it. Inside the transaction a
+ * send record that changes between the read and the write makes Firestore
+ * retry the whole step, so the number written is the number that was true.
+ */
+async function recordInvited(db: Firestore, campaignRef: FirebaseFirestore.DocumentReference): Promise<number> {
+  return db.runTransaction(async (tx) => {
+    const sends = await tx.get(db.collection('email_sends').where('campaign', '==', SURVEY_CAMPAIGN));
+    const invited = sends.docs.filter((d) => {
+      const state = d.data().state as string | undefined;
+      return state === 'sent' || state === undefined;
+    }).length;
+    tx.set(campaignRef, { invited }, { merge: true });
+    return invited;
+  });
 }
 
 async function loadRecipients(db: Firestore) {
@@ -384,8 +396,7 @@ async function main() {
   }
 
   if (!ONLY) {
-    const invited = await countInvited(db);
-    await campaignRef.set({ invited }, { merge: true });
+    const invited = await recordInvited(db, campaignRef);
     console.log(`invited (from send records): ${invited}`);
   }
 

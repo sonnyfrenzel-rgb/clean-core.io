@@ -236,10 +236,23 @@ test.describe('the survey send records before it asks the provider', () => {
     expect(loop.indexOf("state: 'sent'")).toBeGreaterThan(-1);
     expect(loop.indexOf("state: 'failed'")).toBeGreaterThan(-1);
     expect(src, 'a per-send increment is back').not.toMatch(/invited: FieldValue\.increment/);
-    const after = src.slice(src.indexOf("console.log(`${sent} of"));
-    void after;
-    expect(src).toMatch(/const invited = await countInvited\(db\);\s*await campaignRef\.set\(\{ invited \}, \{ merge: true \}\);/);
-    expect(src).toMatch(/return state === 'sent' \|\| state === undefined;/);
+    // The count is taken after the loop has finished sending and before the run
+    // reports — a count taken earlier would be a snapshot of the previous run.
+    const loopStart = src.indexOf('for (const [index, r] of recipients.entries())');
+    const lastSent = src.lastIndexOf("state: 'sent'");
+    const counted = src.indexOf('const invited = await recordInvited(db, campaignRef);');
+    const reported = src.indexOf("console.log(`${sent} of");
+    expect(counted).toBeGreaterThan(-1);
+    expect(counted, 'the count is taken before the loop').toBeGreaterThan(loopStart);
+    expect(counted, 'the count is taken before the last record reaches sent').toBeGreaterThan(lastSent);
+    expect(counted, 'the count is taken after the run reported').toBeLessThan(reported);
+    // Read and written in one transaction, so two runs at once cannot write a stale count over a fresh one.
+    const record = src.slice(src.indexOf('async function recordInvited'), src.indexOf('async function loadRecipients'));
+    expect(record).toMatch(/db\.runTransaction\(async \(tx\) => \{/);
+    expect(record).toMatch(/await tx\.get\(db\.collection\('email_sends'\)\.where\('campaign', '==', SURVEY_CAMPAIGN\)\)/);
+    expect(record).toMatch(/return state === 'sent' \|\| state === undefined;/);
+    expect(record).toMatch(/tx\.set\(campaignRef, \{ invited \}, \{ merge: true \}\);/);
+    expect(src, 'the count is written outside the transaction').not.toMatch(/await campaignRef\.set\(\{ invited \}/);
   });
 
   test('a record in sending is skipped, reported, and never counted as sent', () => {

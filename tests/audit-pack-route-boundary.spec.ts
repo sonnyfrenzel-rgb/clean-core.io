@@ -29,28 +29,41 @@ const NARRATIVE = JSON.stringify({
   gaps: [{ title: 'Board-approved functional gap', severity: 'High', rationale: 'Chosen by the client', strategy: 'retire', complexity: 'Low' }],
 });
 
-// Every statement the owner can write from the browser, each worth forging.
+// Every statement the owner can write from the browser, each worth forging —
+// and each a string that cannot occur in a signed file by accident, so that
+// every one of them can be asserted absent.
 const FORGED = {
-  name: 'Approved by the board',
+  name: 'FORGED-NAME Approved by the board',
   targetArchitecture: 'retire',
   approvedByArchitect: true,
-  approvedBy: 'cto@example.com',
-  architectJustifiedOverride: 'Nothing to migrate, decommission.',
-  solutionDesign: '{"everything":"fine"}',
-  documentation: 'All tests passed.',
-  presentation: 'Go-live approved.',
-  worklist: [{ id: 'finding-forged', title: 'Every finding resolved', status: 'signed_off', level: 'fully', location: 'nowhere', recommendation: 'none', effort: 'Low', category: 'Finding' }],
+  approvedBy: 'forged-cto@example.com',
+  architectJustifiedOverride: 'FORGED-OVERRIDE Nothing to migrate, decommission.',
+  solutionDesign: '{"FORGED-DESIGN":"everything is fine"}',
+  generatedCode: '[{"path":"FORGED-CODE.abap"}]',
+  documentation: 'FORGED-DOCS All tests passed.',
+  businessDocumentation: 'FORGED-BUSINESS-DOCS signed off by everyone.',
+  presentation: 'FORGED-DECK Go-live approved.',
+  extensibilityRoute: 'FORGED-ROUTE',
+  worklist: [{ id: 'FORGED-ITEM', title: 'FORGED-TITLE Every finding resolved', status: 'signed_off', level: 'fully', location: 'FORGED-LOCATION', recommendation: 'FORGED-RECOMMENDATION', effort: 'Low', category: 'Finding' }],
 };
+
+/** Every string in a fixture, however nested — the forbidden list is derived, not typed. */
+function strings(value: unknown, out: string[] = []): string[] {
+  if (typeof value === 'string') out.push(value);
+  else if (Array.isArray(value)) value.forEach((v) => strings(v, out));
+  else if (value && typeof value === 'object') Object.values(value).forEach((v) => strings(v, out));
+  return out;
+}
+// Enum tokens the engine uses too (`retire` is a route, `signed_off`/`fully`
+// are levels, `Low`/`Finding` are effort and category): their absence cannot
+// be asserted by text, so the ADR's worklist count covers them below.
+const ENUM_TOKENS = new Set(['retire', 'signed_off', 'fully', 'Low', 'Finding']);
 const NEVER_SIGNED = [
-  'Approved by the board',
-  'cto@example.com',
-  'Nothing to migrate',
-  'Go-live approved',
-  'All tests passed',
+  ...strings(FORGED).filter((v) => !ENUM_TOKENS.has(v)),
+  // The chosen architecture as the generators would label it.
   'Retire / Decommission',
-  'Every finding resolved',
-  'Board-approved functional gap',
-  'Chosen by the client',
+  // The narrative, every field of it.
+  ...strings(JSON.parse(NARRATIVE)).filter((v) => !ENUM_TOKENS.has(v)),
 ];
 
 test.describe('the audit-pack route signs the run and nothing the owner wrote', () => {
@@ -122,9 +135,11 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
       expect(sha(await zip.file(f.path)!.async('nodebuffer')), `${f.path} does not hash to its record`).toBe(f.sha256);
     }
 
-    // Not one forged value, not one narrative gap, in anything the signature covers.
+    // Not one forged value, not one narrative gap, in anything the signature covers — and the
+    // manifest itself, which is signed content too, carries none of them either.
+    expect(NEVER_SIGNED.length).toBeGreaterThanOrEqual(16);
     const signed = await Promise.all(manifest.files.map((f: { path: string }) => zip.file(f.path)!.async('string')));
-    const signedText = signed.join('\n');
+    const signedText = signed.join('\n') + '\n' + JSON.stringify(manifest);
     for (const needle of NEVER_SIGNED) expect(signedText, `"${needle}" reached a signed file`).not.toContain(needle);
 
     // The engine's own evidence is there — the finding on VBAK from the run —
@@ -136,16 +151,21 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     expect(adr).toContain('Transformed / fully mapped — 0');
     expect(adr).toContain(USER_ATTESTED_FILE);
 
-    // The owner's statements are in the attested file, labelled as such.
+    // The owner's statements are in the attested file, labelled as such — the
+    // ones the file is for; drafts such as the design or the generated code are
+    // not exported at all.
     const attested = await zip.file(USER_ATTESTED_FILE)!.async('string');
     expect(attested).toContain('not covered by the pack');
-    for (const needle of ['Approved by the board', 'cto@example.com', 'Retire / Decommission', 'Nothing to migrate']) expect(attested).toContain(needle);
+    for (const needle of ['FORGED-NAME Approved by the board', 'forged-cto@example.com', 'Retire / Decommission', 'FORGED-OVERRIDE Nothing to migrate']) expect(attested).toContain(needle);
     expect(attested).toContain('overrides the engine');
+    for (const needle of ['FORGED-DESIGN', 'FORGED-CODE', 'FORGED-DOCS', 'FORGED-BUSINESS-DOCS', 'FORGED-DECK', 'FORGED-TITLE', 'Board-approved functional gap']) {
+      expect(attested, `"${needle}" is not a statement the attested file carries`).not.toContain(needle);
+    }
   });
 
   test('changing the owner\'s statements again changes the attested file and not one signed byte', async ({ request }) => {
     const before = await openPack(request);
-    await adminMergeDoc('projects', PROJECT_ID, { approvedBy: 'someone-else@example.com', targetArchitecture: 'cap', architectJustifiedOverride: 'Second thoughts.' });
+    await adminMergeDoc('projects', PROJECT_ID, { approvedBy: 'someone-else@example.com', targetArchitecture: 'cap', architectJustifiedOverride: 'FORGED-SECOND Second thoughts.' });
     const after = await openPack(request);
 
     // Generation time differs; nothing else may.
@@ -158,6 +178,7 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     const attested = await after.zip.file(USER_ATTESTED_FILE)!.async('string');
     expect(attested).toContain('someone-else@example.com');
     expect(attested).toContain('Side-by-Side BTP (CAP)');
-    expect(attested).not.toContain('cto@example.com');
+    expect(attested).toContain('FORGED-SECOND');
+    expect(attested).not.toContain('forged-cto@example.com');
   });
 });

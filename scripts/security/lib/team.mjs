@@ -36,9 +36,15 @@ export const AUDIT = {
   cisoOutputTokens: 40_000,
   /** The CISO's user message, in characters: reserved out of the cap before any consultant spends, and enforced when it is built (lib/pipeline.mjs cisoMessage). */
   cisoInputChars: 300_000,
-  /** The consultants read much code and answer compactly; the CISO weighs every finding against its code. */
+  /**
+   * The consultants read much code and answer compactly; the CISO weighs every finding against its code.
+   * The CISO ran at `high` until 16.09.2026: the release audit of 33471220d6e9 then ended twice without a
+   * report — once with a body cut off in transit, once with an answer that was not JSON — and with up to
+   * 300,000 characters of input and 40,000 output tokens shared between reasoning and the report, the
+   * reasoning was the likelier place for the budget to go. Sonny, 16.09.2026: `medium`.
+   */
   consultantEffort: 'medium',
-  cisoEffort: 'high',
+  cisoEffort: 'medium',
   requestTimeoutMs: 20 * 60_000,
   /** Consultant calls running at once; the cap reserves the worst case of each (lib/pipeline.mjs runConsultants). */
   concurrency: 4,
