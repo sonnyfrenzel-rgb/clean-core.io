@@ -1122,9 +1122,10 @@
       "area": "release",
       "firstSeenHead": "44f3efb8b007ba067da68fd3db61a618cba46e41",
       "createdAt": "2026-09-16T08:01:01.677Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.8",
-      "updatedAt": "2026-09-16T08:01:01.677Z"
+      "updatedAt": "2026-09-16T08:02:34.718Z",
+      "fixedIn": "96b19b3c6bbd"
     }
   ]
 }
