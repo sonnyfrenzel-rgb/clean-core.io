@@ -791,8 +791,17 @@ Structure the JSON exactly like this:
             The two exports and a green "Regenerate" used to sit above the words
             "No enterprise specifications yet" — two outputs of nothing, and a
             "re"-generate for something that had never been generated once. The
-            empty state below carries the single action instead. */}
-        <div className={`flex flex-wrap gap-3 ${documentation ? '' : 'hidden'}`}>
+            empty state below carries the single action instead.
+
+            The condition is `parsedDoc`, not `documentation`, and that is the
+            whole point: the page below shows its empty state when the blueprint
+            does not parse, while this bar was asking only whether some text had
+            been stored. A stored document that yields no blueprint put both on
+            the screen at once — the words "No enterprise specifications yet"
+            with two exports above them (UX review of 52f171091948, 5bf7552894e5;
+            visible in screenshot 07-documentation-desktop-s1). Two conditions
+            for one question is how a screen ends up contradicting itself. */}
+        <div className={`flex flex-wrap gap-3 ${parsedDoc ? '' : 'hidden'}`}>
           <button
             onClick={downloadBPMN}
             disabled={!parsedDoc?.l3_flow || isGeneratingDoc}

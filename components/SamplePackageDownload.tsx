@@ -273,9 +273,11 @@ SELECT vbeln, erdat, netwr
 
 export default function SamplePackageDownload() {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadFailed, setDownloadFailed] = useState(false);
 
   const handleDownload = async () => {
     setIsDownloading(true);
+    setDownloadFailed(false);
     try {
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
@@ -296,7 +298,12 @@ export default function SamplePackageDownload() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
+      // A failure here used to end in the console and nowhere else: the spinner
+      // stopped, the button went back to its normal words, and the visitor was
+      // left unable to tell whether the click, the browser or the file was the
+      // problem (UX review of 52f171091948, 8e93fa4d6bfe).
       console.error('Download failed:', err);
+      setDownloadFailed(true);
     } finally {
       setIsDownloading(false);
     }
@@ -374,9 +381,20 @@ export default function SamplePackageDownload() {
                 </>
               )}
             </button>
-            <p className="text-[10px] text-slate-500 font-medium text-center mt-2">
-              ~5 KB · Ready for Eclipse ADT import
+            {/* Announced, not merely shown: a reader who does not see the button
+                change still hears that the download did not happen. */}
+            <p role="status" aria-live="polite" className="sr-only">
+              {downloadFailed ? 'The package could not be built. Try again.' : ''}
             </p>
+            {downloadFailed ? (
+              <p className="text-[10px] font-bold text-amber-300 text-center mt-2 leading-relaxed">
+                The package could not be built. Try again — nothing was sent anywhere.
+              </p>
+            ) : (
+              <p className="text-[10px] text-slate-500 font-medium text-center mt-2">
+                ~5 KB · Ready for Eclipse ADT import
+              </p>
+            )}
           </div>
         </div>
       </div>

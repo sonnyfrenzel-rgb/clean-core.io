@@ -257,7 +257,15 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
             <h5 className="text-sm font-bold text-slate-800">
               {grid.get(selectedCell)?.length || 0} objects in cell
             </h5>
-            <button onClick={() => setSelectedCell(null)} className="text-slate-400 hover:text-slate-600">
+            {/* An icon-only button has no accessible name of its own: a screen
+                reader announces "button" and nothing about what it closes, and
+                this panel has two of them (UX review of 52f171091948,
+                f320972178fb). */}
+            <button
+              onClick={() => setSelectedCell(null)}
+              aria-label="Close cell details"
+              className="text-slate-400 hover:text-slate-600"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -311,7 +319,11 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
                 {QUADRANT_META[selectedRow.quadrant].emoji} {QUADRANT_META[selectedRow.quadrant].label}
               </span>
             </div>
-            <button onClick={() => setSelectedRow(null)} className="text-slate-400 hover:text-slate-600">
+            <button
+              onClick={() => setSelectedRow(null)}
+              aria-label="Close object details"
+              className="text-slate-400 hover:text-slate-600"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>

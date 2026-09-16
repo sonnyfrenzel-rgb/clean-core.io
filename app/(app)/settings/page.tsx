@@ -107,6 +107,23 @@ export default function SettingsPage() {
   const [mfaSetupError, setMfaSetupError] = useState('');
   const [isVerifyingMfa, setIsVerifyingMfa] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
+  /**
+   * What the last copy in the second-factor setup actually did.
+   *
+   * It used to say "copied to clipboard!" in a browser alert without waiting
+   * for the write to resolve — so a clipboard the browser refused (an insecure
+   * context, a denied permission) still reported success, and the person went
+   * on to paste nothing (UX review of 52f171091948, 1b363262f915).
+   */
+  const [mfaCopied, setMfaCopied] = useState<'idle' | 'secret' | 'link' | 'failed'>('idle');
+  const copyMfa = async (what: 'secret' | 'link', text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setMfaCopied(what);
+    } catch {
+      setMfaCopied('failed');
+    }
+  };
   const [verificationMailSent, setVerificationMailSent] = useState(false);
   // What Firebase Auth says, as opposed to the profile flag: an account whose
   // flag predates Firebase's factor shows "set up again", not "enabled".
@@ -1993,16 +2010,34 @@ export default function SettingsPage() {
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Secret Setup Key</span>
                       <span className="font-mono text-base font-black tracking-wider text-gray-800 uppercase block select-all">{tempMfaSecret}</span>
                       
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(tempMfaSecret);
-                          alert('Setup key copied to clipboard!');
-                        }}
-                        className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-green-700 hover:text-green-800 transition-colors mt-1.5"
-                      >
-                        <Copy size={10} /> Copy setup key
-                      </button>
+                      <div className="flex flex-wrap items-center justify-center gap-4 mt-1.5">
+                        <button
+                          type="button"
+                          onClick={() => copyMfa('secret', tempMfaSecret)}
+                          className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-green-700 hover:text-green-800 transition-colors"
+                        >
+                          <Copy size={10} /> Copy setup key
+                        </button>
+                        {/* The link above opens an app that may not be installed,
+                            and on a desktop usually is not. The URI in writing is
+                            the way through for everyone else. */}
+                        <button
+                          type="button"
+                          onClick={() => copyMfa('link', qrCodeUrl)}
+                          className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-gray-600 hover:text-gray-800 transition-colors"
+                        >
+                          <Copy size={10} /> Copy setup link
+                        </button>
+                      </div>
+                      <p role="status" aria-live="polite" className="text-[10px] font-bold mt-1 min-h-[1rem]">
+                        {mfaCopied === 'secret' && <span className="text-green-700">Setup key copied.</span>}
+                        {mfaCopied === 'link' && <span className="text-green-700">Setup link copied.</span>}
+                        {mfaCopied === 'failed' && (
+                          <span className="text-amber-700">
+                            Your browser did not allow the copy. Select the key above and copy it by hand.
+                          </span>
+                        )}
+                      </p>
                     </div>
 
                     <button

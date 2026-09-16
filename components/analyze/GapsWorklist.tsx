@@ -279,7 +279,11 @@ export default function GapsWorklist({
               className="border border-slate-205 rounded-xl px-3 py-2 text-xs font-bold bg-white text-slate-600 focus:outline-none"
             >
               <option value="all">All Categories</option>
-              <option value="Finding">Statischer Finding</option>
+              {/* "Statischer Finding" was half German in an otherwise English
+                  list, and it did not match the word the table itself uses for
+                  the category (UX review of 52f171091948, 0cac41894022). The
+                  value stays `Finding` — it is the stored category, not copy. */}
+              <option value="Finding">Static finding</option>
               <option value="Functional Gap">Functional Gap</option>
             </select>
 

@@ -1177,6 +1177,91 @@
       "status": "zurückgestellt",
       "reason": "0.13 hat die Backup-Codes entfernt; der Uebergangstext fuer alte CC-Codes gehoert in denselben Schritt wie die MFA-Oberflaeche und wird dort gebaut.",
       "updatedAt": "2026-09-16T12:35:26.735Z"
+    },
+    {
+      "id": "UX-095",
+      "fingerprint": "a3b94729039a",
+      "title": "Einmaliges Violet ohne System in Evidence-Bar",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
+      "createdAt": "2026-09-16T15:22:34.351Z",
+      "status": "widerlegt",
+      "reason": "Violet ist hier kein Drift, und der Bericht widerspricht sich selbst: seine eigene Abdeckungsnotiz sagt 'violet-400 1/1 in SamplePackageDownload.tsx:334 ist bewusst als vierte Dateityp-Farbe neben emerald/blue/slate, kein Drift'. Der Scan-Treffer violet-400 steht genau dort und nicht in der Evidence-Bar. Die Evidence-Bar in app/(app)/project/[projectId]/analyze/page.tsx:1287 verwendet 'from-indigo-50/80 to-violet-50/80' mit 'border-indigo-100/60' -- ein Verlaufspartner innerhalb des Indigo-Tons, keine vierte Kategorie und kein neuer Akzent.",
+      "updatedAt": "2026-09-16T15:22:34.351Z"
+    },
+    {
+      "id": "UX-096",
+      "fingerprint": "7cba0d1e8856",
+      "title": "Neues Violett ohne Rolle im Farbsystem",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
+      "createdAt": "2026-09-16T15:22:45.638Z",
+      "status": "widerlegt",
+      "reason": "Dasselbe violet-400 wie UX-095, aus derselben Zeile: components/SamplePackageDownload.tsx:334 gibt der vierten Dateiart im abapGit-Paket ihre Farbe, neben emerald, blue und slate fuer die anderen drei. Das ist die Rolle im System, nicht ihr Fehlen -- und die Abdeckungsnotiz desselben Berichts sagt genau das. Sonst gibt es im Produkt violet nur als Verlaufspartner von Indigo (TransformationShowroom, Evidence-Bar).",
+      "updatedAt": "2026-09-16T15:22:45.638Z"
+    },
+    {
+      "id": "UX-097",
+      "fingerprint": "5bf7552894e5",
+      "title": "Leere Blueprint-Seite bietet Export von Nichts an",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
+      "createdAt": "2026-09-16T15:22:58.541Z",
+      "status": "eingeplant",
+      "step": "sofort",
+      "updatedAt": "2026-09-16T15:22:58.541Z"
+    },
+    {
+      "id": "UX-098",
+      "fingerprint": "8e93fa4d6bfe",
+      "title": "Paket-Download scheitert lautlos ohne Hinweis",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
+      "createdAt": "2026-09-16T15:22:58.897Z",
+      "status": "eingeplant",
+      "step": "sofort",
+      "updatedAt": "2026-09-16T15:22:58.897Z"
+    },
+    {
+      "id": "UX-099",
+      "fingerprint": "f320972178fb",
+      "title": "Matrix-Close-Buttons ohne Namen für Screenreader",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
+      "createdAt": "2026-09-16T15:22:59.215Z",
+      "status": "eingeplant",
+      "step": "sofort",
+      "updatedAt": "2026-09-16T15:22:59.215Z"
+    },
+    {
+      "id": "UX-100",
+      "fingerprint": "0cac41894022",
+      "title": "Filtereintrag mischt Deutsch und Englisch",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
+      "createdAt": "2026-09-16T15:22:59.540Z",
+      "status": "eingeplant",
+      "step": "sofort",
+      "updatedAt": "2026-09-16T15:22:59.540Z"
+    },
+    {
+      "id": "UX-101",
+      "fingerprint": "1b363262f915",
+      "title": "2FA-Schlüssel lässt sich nicht kopieren",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
+      "createdAt": "2026-09-16T15:22:59.781Z",
+      "status": "eingeplant",
+      "step": "sofort",
+      "reportedSeverity": "medium",
+      "updatedAt": "2026-09-16T15:22:59.781Z"
     }
   ]
 }
