@@ -1070,17 +1070,6 @@ export default function AnalyzePage() {
     [legacyCode],
   );
 
-  /**
-   * The stored route differs from the one that was recommended — an architect
-   * pressed "Switch Track". The recommendation's confidence and rationale
-   * describe the other route and are labelled as such from here on.
-   */
-  const routeIsOverridden = (() => {
-    const recommended = (project?.analysis ? readStoredAnalysis<AnalysisData>(project.analysis) : null)?.extensibilityRouting?.recommendedRoute;
-    const stored = project?.extensibilityRoute;
-    return typeof recommended === 'string' && typeof stored === 'string' && recommended !== stored;
-  })();
-
   const signedCleanCoreScore: number | null =
     typeof routeReport?.cleanCoreScore === 'number'
       ? routeReport.cleanCoreScore
@@ -1094,6 +1083,18 @@ export default function AnalyzePage() {
     // The one reader of a stored analysis: every stored shape, amounts of money masked (lib/money-honesty.ts).
     // Not JSON → null, and the markdown fallback below masks its text the same way.
     const analysisData = readStoredAnalysis<AnalysisData>(project.analysis);
+
+    /**
+     * The stored route differs from the one that was recommended — an architect
+     * pressed "Switch Track". The recommendation's confidence and rationale
+     * describe the other route and are labelled as such below. Read from the
+     * analysis already parsed above: this page has one reader of a stored
+     * analysis and a guard that counts its call sites (money-honesty-guard).
+     */
+    const recommendedRoute = analysisData?.extensibilityRouting?.recommendedRoute;
+    const routeIsOverridden = typeof recommendedRoute === 'string'
+      && typeof project?.extensibilityRoute === 'string'
+      && recommendedRoute !== project.extensibilityRoute;
 
     if (analysisData) {
       // Deliberately not overwritten any more. This line used to replace the
