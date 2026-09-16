@@ -110,15 +110,23 @@ function mdCell(value: unknown): string {
 type ModelCard = NonNullable<NonNullable<Project['auditMetadata']>['modelCard']>;
 const NO_MODEL_TOOK_PART = 'None — deterministic evidence only';
 const NOT_RECORDED = 'Not recorded';
+/**
+ * The third answer, and the one this pack could not give before: a narrative is
+ * in the run and no model call was observed for it. Distinct from "not
+ * recorded", which is what an old run says about a field it never had.
+ */
+const NOT_ESTABLISHED = 'Not established — the narrative was submitted with the run';
 
 function modelProviderOf(mc: ModelCard | undefined): string {
   if (mc?.provider) return mc.provider;
-  return mc?.modelParticipation === 'none' ? NO_MODEL_TOOK_PART : NOT_RECORDED;
+  if (mc?.modelParticipation === 'none') return NO_MODEL_TOOK_PART;
+  return mc?.modelParticipation === 'narrative' ? NOT_ESTABLISHED : NOT_RECORDED;
 }
 
 function modelIdOf(mc: ModelCard | undefined): string {
   if (mc?.model) return mc.model;
-  return mc?.modelParticipation === 'none' ? NO_MODEL_TOOK_PART : NOT_RECORDED;
+  if (mc?.modelParticipation === 'none') return NO_MODEL_TOOK_PART;
+  return mc?.modelParticipation === 'narrative' ? NOT_ESTABLISHED : NOT_RECORDED;
 }
 
 /**
@@ -131,24 +139,39 @@ function modelIdOf(mc: ModelCard | undefined): string {
  */
 function byokLineOf(mc: ModelCard | undefined): string {
   if (mc?.modelParticipation === 'none') return 'Not applicable — no model was called';
+  // Whose key it was is a fact about a call. Where no call was observed, the
+  // run's `byokUsed` says only whether BYOK was configured on the account at
+  // the time, which is a different question, and this row has no business
+  // answering it as though it were the same one.
+  if (mc?.modelParticipation === 'narrative') return NOT_ESTABLISHED;
   return mc?.byokUsed ? 'Yes — user-provided API key' : 'No — platform key';
 }
 
 /**
- * Who wrote the narrative is not something this pack can prove.
+ * Where the narrative came from — now an observation where there is one.
  *
- * The run records whether a narrative is present, because that is the one fact
- * the route can check: the text arrives in the request body, and the model call
- * happens in a separate request to `/api/gemini` with nothing tying the two
- * together. So the model identifier above names the model the account was
- * configured with, not a model the server watched produce this text (QA review
- * of cf0f2244eda4). A reader of an audit pack is entitled to that distinction,
- * and the honest place to state it is beside the claim, not in a commit message.
+ * This row used to be a disclaimer, and it had to be: the text arrived in the
+ * request body, the model call happened in a separate request to `/api/gemini`
+ * with nothing tying the two together, so the model identifier above named the
+ * model the account was configured with and not one the server watched produce
+ * this text (QA review of cf0f2244eda4). Stating that beside the claim was
+ * better than not stating it, and it was still a claim nobody had checked.
+ *
+ * `/api/gemini` now issues a receipt over the account, the digest of the text it
+ * returned, the model that served it and the time; `/api/runs/create` verifies
+ * it against the narrative it was given and records a provider only when it
+ * verifies (`lib/model-receipt.ts`). So there are three answers, and one of them
+ * is finally a positive one.
  */
 function narrativeOriginOf(mc: ModelCard | undefined): string {
   if (mc?.modelParticipation === 'none') return 'No narrative — nothing was submitted for this run';
-  if (!mc?.modelParticipation) return NOT_RECORDED;
-  return 'Submitted with the analysis; the server did not observe it being generated';
+  if (mc?.modelParticipation === 'narrative-attested') {
+    return 'Observed — the platform issued a receipt for this text and the run route verified it';
+  }
+  if (mc?.modelParticipation === 'narrative') {
+    return 'Not established — submitted with the analysis, with no verifiable record of a model call';
+  }
+  return NOT_RECORDED;
 }
 
 /**
@@ -175,14 +198,33 @@ function usageContextOf(mc: ModelCard | undefined): string {
       'leaving a gap.',
     ].join('\n');
   }
+  const closing = [
+    '',
+    'Model output is a draft for human review. Architecture decisions require an',
+    `explicit sign-off, and that sign-off is ${SEE_ATTESTED}.`,
+  ];
+  if (mc?.modelParticipation === 'narrative') {
+    // The old text said "The model was used for written text on top of that",
+    // which is the very claim the run could not make. A narrative is here; who
+    // wrote it is not known, and the paragraph says that rather than crediting
+    // a model the platform never saw.
+    return [
+      'The deterministic engine produced the evidence report, the Clean Core score and',
+      'the extensibility route; these are recomputed on the server and covered by the',
+      'signature.',
+      '',
+      'A written narrative is stored with this run and its origin was not established:',
+      'no verifiable record of a model call for this text reached the run. It is not',
+      'covered by the signature and nothing in this pack is derived from it.',
+      ...closing,
+    ].join('\n');
+  }
   return [
     'The deterministic engine produced the evidence report, the Clean Core score and',
     'the extensibility route; these are recomputed on the server and covered by the',
     'signature. The model was used for written text on top of that — the analysis',
     'narrative, and whichever later stages were generated in this project.',
-    '',
-    'Model output is a draft for human review. Architecture decisions require an',
-    `explicit sign-off, and that sign-off is ${SEE_ATTESTED}.`,
+    ...closing,
   ].join('\n');
 }
 

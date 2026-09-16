@@ -143,10 +143,37 @@ export function absenceFromError(err: unknown): Exclude<ModelAbsence, null> {
 /**
  * What a run records about the model's part in it.
  *
- * `narrative` — a model wrote the analysis narrative that this run's
- * `aiNarrativeMeta` hashes. `none` — nothing did, and the run carries the
- * deterministic evidence alone. The value is inside the signed payload, so a
- * reader of a run can tell the two apart without trusting the screen that shows
- * it to them.
+ * Three values, because there are three states and the middle one used to be
+ * folded into the optimistic end of the pair:
+ *
+ *   - `none` — no narrative at all. The run carries the deterministic evidence
+ *     alone, which is still a complete, signed evidence state. Always sound:
+ *     no text, certainly no model narrative.
+ *   - `narrative` — a narrative is in the run and **where it came from was not
+ *     established**. The text arrived in the request body; nothing tied it to a
+ *     model call. `model.provider` and `model.modelId` are null, because naming
+ *     a provider here is the claim nobody checked.
+ *   - `narrative-attested` — a narrative is in the run and `/api/gemini` issued
+ *     a receipt for exactly this text, to this account, inside the window
+ *     (`lib/model-receipt.ts`), which `/api/runs/create` verified. Only then may
+ *     the run name a provider and a model id, and only the ones the server
+ *     actually called.
+ *
+ * A third value rather than a flag beside the pair: the distinction *is* what
+ * this field records, and a second field would let the two disagree — a run
+ * saying `narrative` with the flag set is a state nothing could mean. It also
+ * costs the run document nothing, and every existing reader branches on
+ * `=== 'none'`, so none of them starts lying when a third value appears.
+ *
+ * Runs written before the receipt existed carry `narrative`, which is exactly
+ * true of them: a narrative was in the run and nobody had checked its origin.
+ *
+ * The value is inside the signed payload, so a reader of a run can tell the
+ * three apart without trusting the screen that shows it to them.
  */
-export type ModelParticipation = 'narrative' | 'none';
+export type ModelParticipation = 'narrative' | 'narrative-attested' | 'none';
+
+/** True for the two values that mean a narrative is present, whatever its origin. */
+export function hasNarrative(participation: ModelParticipation | undefined | null): boolean {
+  return participation === 'narrative' || participation === 'narrative-attested';
+}

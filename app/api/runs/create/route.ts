@@ -13,6 +13,7 @@ import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing
 import { buildSourceChangeRecord } from '@/lib/artefact-digest';
 import { analysisRunInputs, buildInputManifest } from '@/lib/input-manifest';
 import type { ModelParticipation } from '@/lib/model-stages';
+import { verifyModelReceipt } from '@/lib/model-receipt';
 
 // The canonicaliser moved to lib/run-signature.ts so the route that verifies a
 // run uses the same one that produced it. Two implementations of "canonical"
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
     // Load user profile from database to determine BYOK configuration server-side (Finding P0/P1)
     const userDoc = await db.collection('users').doc(decodedToken.uid).get();
     const userData = userDoc.exists ? userDoc.data() : null;
-    const byokUsed = userData?.byokConfigured === true;
+    const byokConfigured = userData?.byokConfigured === true;
 
     // 4. Server-Authoritative Analysis Recomputations (Finding 1)
     const encoder = new TextEncoder();
@@ -157,6 +158,15 @@ export async function POST(req: NextRequest) {
     const cleanCoreScore = extensibilityReport.cleanCoreScore;
 
     // Parse and override LLM narrative JSON with server-calculated scores and extensibility route
+    //
+    // `analysis` is the model's text as `/api/gemini` returned it, byte for
+    // byte. That is what makes the receipt checkable: a receipt is issued over
+    // the text the proxy produced, so anything the browser rewrote on the way
+    // here would make every honest run fail the hash comparison. The two
+    // normalisations the Analyze page used to perform on its way to this route
+    // — unwrapping a top-level array and dropping the three figures the model
+    // must not own — are therefore performed here instead, where the run is
+    // signed. The page still normalises its *own* copy for the screen.
     let finalAnalysisText = analysis || '';
     let gapsList: any[] = [];
     try {
@@ -167,8 +177,19 @@ export async function POST(req: NextRequest) {
       } else if (typeof analysis === 'object' && analysis !== null) {
         analysisObj = analysis;
       }
-      
-      if (analysisObj) {
+      // A model that answers with `[{…}]` used to be unwrapped in the browser.
+      // Unwrapped nowhere, the overrides below would be set as properties on an
+      // array and `JSON.stringify` would drop every one of them silently.
+      if (Array.isArray(analysisObj)) analysisObj = analysisObj[0] ?? null;
+
+      if (analysisObj && typeof analysisObj === 'object') {
+        // The deterministic figures belong to the run, not to the model. Stored
+        // alongside the signed ones they become a second, unsigned truth that
+        // the screen and the Confluence export are happy to print. `cleanCoreScore`
+        // is overwritten with the authoritative value one line down; the other
+        // two have no place in the narrative at all.
+        delete analysisObj.complexityScore;
+        delete analysisObj.criticalityScore;
         analysisObj.cleanCoreScore = cleanCoreScore;
         if (!analysisObj.extensibilityRouting) {
           analysisObj.extensibilityRouting = {};
@@ -243,35 +264,65 @@ export async function POST(req: NextRequest) {
     const newRunDoc = runsRef.doc(); // Generate random auto-ID
     const runId = newRunDoc.id;
 
-    // Roadmap 1.2 — the zero-LLM path: did a model have any part in this run?
+    // Roadmap 1.2, and the step that finished it — did a model have any part in
+    // this run, and can the server say so of its own knowledge?
     //
-    // The server decides it here, from the one fact it can check: whether a
-    // narrative arrived. Nothing the client says about the model is taken; the
-    // request used to carry a `modelCard` and the route recorded the default
-    // provider and model id whether or not anything had been generated, so a
-    // run with no narrative still claimed a model wrote one. The claim was
-    // inside the signed payload, which is the worst place for a claim nobody
-    // checked.
+    // Nothing the client says about the model is taken. The request used to
+    // carry a `modelCard` and the route recorded the default provider and model
+    // id whether or not anything had been generated, so a run with no narrative
+    // still claimed a model wrote one. 1.2 fixed the `none` direction. The
+    // positive one stayed wrong for one more step: any text in the body made the
+    // signed run record `provider: 'google-gemini'` and a model id, for a call
+    // the server had never seen. The model card documented that in a "Narrative
+    // origin" row, and documenting a claim is not the same as making it true.
+    //
+    // Now it is an observation. `/api/gemini` — the only path from this product
+    // to a model — issues a receipt over the account, the SHA-256 of the text it
+    // returned, the model that served it and the time (`lib/model-receipt.ts`).
+    // It is authenticated with `AUDIT_SIGNING_KEY`, which the browser never
+    // holds. The receipt is checked against **the narrative as submitted**, not
+    // against the normalised text stored below: the proxy hashed what it
+    // returned, and that is the only string the two sides can both name.
+    //
+    // A run is never refused for a receipt. An older client, a retry that lost
+    // it, a deployment with no key: all of them still get a signed run with the
+    // narrative kept. What changes is what the run is allowed to say about where
+    // that narrative came from.
     //
     // Deliberately not a reason: *why* no model ran (no key, the stage switched
     // off, a call that failed) is live state the screens read from
     // `/api/model-stages`. Putting a client-supplied reason in the signed run
     // would sign a sentence the client chose.
-    //
-    // What this does NOT establish, and what the pack therefore must not claim:
-    // that a model wrote the narrative. The narrative arrives in the request
-    // body. The server proxies model calls through `/api/gemini`, but that is a
-    // separate request with nothing tying it to this run, so "a narrative is
-    // present" is the whole of what is known here — `none` is certain, and
-    // `narrative` says a narrative is in the run and not who produced it (QA
-    // review of cf0f2244eda4). The model card spells that out; making it a
-    // server-observed fact needs a receipt from `/api/gemini` that this route
-    // can check, which is its own step.
-    const modelParticipation: ModelParticipation = finalAnalysisText.trim().length > 0 ? 'narrative' : 'none';
-    const modelRan = modelParticipation === 'narrative';
+    const narrativeAsSubmitted = typeof analysis === 'string' ? analysis : '';
+    const receiptVerdict = verifyModelReceipt(body.modelReceipt, {
+      uid: decodedToken.uid,
+      text: narrativeAsSubmitted,
+      key: signingKey,
+    });
+    const attested = receiptVerdict.ok ? receiptVerdict.receipt : null;
+    if (!receiptVerdict.ok && receiptVerdict.refusal !== 'absent') {
+      // Worth a line: `text-mismatch` and `wrong-account` are what a tampered
+      // or borrowed receipt looks like, and `expired` is what a slow client
+      // looks like. The narrative itself is never logged.
+      logger.warn('runs/create: a model receipt did not establish the narrative origin', {
+        route: 'api/runs/create',
+        refusal: receiptVerdict.refusal,
+        projectId,
+      });
+    }
 
-    const provider = 'google-gemini';
-    const modelId = byokUsed ? (userData?.byokModel || 'gemini-3-flash-preview') : 'gemini-3-flash-preview';
+    const modelParticipation: ModelParticipation =
+      finalAnalysisText.trim().length === 0 ? 'none' : attested ? 'narrative-attested' : 'narrative';
+
+    // Named only when observed. Null covers both other cases, and the run's own
+    // `modelParticipation` is what tells them apart: `none` means nothing was
+    // submitted, `narrative` means something was and its origin is unknown.
+    const provider = attested ? attested.provider : null;
+    const modelId = attested ? attested.modelId : null;
+    // Whose key served the call, where that is known. `byokConfigured` answers a
+    // different question — whether BYOK is set up on the account *now* — and the
+    // model card prints this as though it answered the first one.
+    const byokUsed = attested ? attested.byok : byokConfigured;
 
     // v1.20 §6 — Server-authoritative narrative separation.
     // The AI narrative (`finalAnalysisText`) is client/LLM-produced, not server
@@ -298,7 +349,16 @@ export async function POST(req: NextRequest) {
         catalogVersion,
         rulesetVersion,
         engineVersion: APP_VERSION,
-        model: modelRan ? { provider, modelId, byokUsed } : null,
+        // Three states, three revisions: a named model, `unattested` for a
+        // narrative whose origin was not established, `none` for no narrative
+        // at all. The manifest is inside the signature, so recording a model
+        // here on the strength of an unchecked claim would sign it.
+        model:
+          attested && provider && modelId
+            ? { provider, modelId, byokUsed }
+            : modelParticipation === 'narrative'
+              ? 'unattested'
+              : null,
       }),
       projectData?.auditMetadata?.inputManifest || null,
     );
@@ -321,39 +381,29 @@ export async function POST(req: NextRequest) {
       rulesetVersion,
       sapApiCatalogVersion: catalogVersion,
       inputManifest,
-      model: modelRan
-        ? {
-            provider,
-            modelId,
-            engineVersion: APP_VERSION,
-            byokUsed,
-          }
-        : {
-            // No model took part. `provider` and `modelId` are null rather than
-            // absent so that a reader of an old run and a reader of a zero-LLM
-            // run are told two different things: "this field was not recorded"
-            // and "there was no model". The engine still computed the evidence,
-            // and it is still named.
-            provider: null,
-            modelId: null,
-            engineVersion: APP_VERSION,
-            byokUsed,
-          },
+      model: {
+        // Null unless a receipt established it — and null rather than absent, so
+        // that a reader of an old run and a reader of this one are told two
+        // different things: "this field was not recorded" and "there was nothing
+        // to record". Which of the two nulls it is, `modelParticipation` says.
+        // The engine still computed the evidence, and it is still named.
+        provider,
+        modelId,
+        engineVersion: APP_VERSION,
+        byokUsed,
+      },
       /** Roadmap 1.2 — inside the signature, so a run says for itself what it is. */
       modelParticipation,
-      aiNarrativeMeta: modelRan
-        ? {
-            provider,
-            modelId,
-            responseHash,
-            evidentiary: false,
-          }
-        : {
-            provider: null,
-            modelId: null,
-            responseHash: null,
-            evidentiary: false,
-          },
+      aiNarrativeMeta: {
+        provider,
+        modelId,
+        // Present whenever a narrative is, whatever its origin: the hash is of
+        // the text this run stores, and that is true either way. It is not the
+        // receipt's hash — the receipt covers the text as the proxy returned it,
+        // this covers the text after the server's overrides.
+        responseHash: modelParticipation === 'none' ? null : responseHash,
+        evidentiary: false,
+      },
       extensibilityRoute: extensibilityReport.recommendedRoute,
       cleanCoreScore,
       complexityScore,
@@ -469,8 +519,8 @@ export async function POST(req: NextRequest) {
               // a model for a run no model took part in was the same untrue
               // claim one document further out, and this is the copy the
               // delivery screen and the audit pack read.
-              provider: modelRan ? provider : null,
-              model: modelRan ? modelId : null,
+              provider,
+              model: modelId,
               modelParticipation,
               engineVersion: APP_VERSION,
               catalogVersion,
@@ -541,6 +591,11 @@ export async function POST(req: NextRequest) {
       runId,
       runHash,
       signature,
+      // What the run actually recorded about the model's part in it. The caller
+      // cannot work this out for itself — whether the receipt verified is
+      // decided here — and a browser that reported its own guess would be the
+      // unchecked claim again, one layer further out.
+      modelParticipation,
     });
   } catch (error: any) {
     // The run never completed — give back whatever was reserved: the unit and its

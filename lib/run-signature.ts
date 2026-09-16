@@ -61,8 +61,13 @@ export function recomputeStoredRunHash(runData: Record<string, unknown>): string
   return computeRunHash(unsigned);
 }
 
-/** Constant-time compare that does not leak length through an exception. */
-function timingSafeEqualHex(a: string, b: string): boolean {
+/**
+ * Constant-time compare that does not leak length through an exception.
+ *
+ * Exported because `lib/model-receipt.ts` compares a MAC the same way, and a
+ * second copy of "compare two hex digests" is a second chance to write `===`.
+ */
+export function timingSafeEqualHex(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
   try {
     return crypto.timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'));

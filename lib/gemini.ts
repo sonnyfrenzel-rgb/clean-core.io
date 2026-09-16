@@ -1,5 +1,6 @@
 import { getAuth } from '@/lib/firebase';
 import type { ModelStage } from '@/lib/model-stages';
+import type { ModelReceipt } from '@/lib/model-receipt';
 
 /**
  * Client-side Gemini helper.
@@ -14,7 +15,28 @@ import type { ModelStage } from '@/lib/model-stages';
  * neither is a stage of the workflow.
  */
 
-export async function callGemini(
+export interface GeminiResult {
+  text: string;
+  /**
+   * The server's record that the call happened (`lib/model-receipt.ts`).
+   *
+   * `null` when the deployment could not mint one. A caller that carries it to
+   * `/api/runs/create` gets a run that names the model; a caller that does not,
+   * or cannot, gets a run that says the narrative's origin was not established.
+   * Neither fails.
+   */
+  receipt: ModelReceipt | null;
+}
+
+/**
+ * The same call as `callGemini`, with the receipt the proxy issued.
+ *
+ * Only the Analyze stage needs it today, because only that stage's output
+ * becomes part of a signed run. The other four stages write into the project
+ * document, which no signature covers, so a receipt there would attest to
+ * nothing.
+ */
+export async function callGeminiWithReceipt(
   prompt: string,
   modelName: string = 'gemini-3-flash-preview',
   jsonResponse: boolean = false,
@@ -26,7 +48,7 @@ export async function callGemini(
    * `lib/analysis-run.ts`).
    */
   signal?: AbortSignal,
-): Promise<string> {
+): Promise<GeminiResult> {
   let userId: string | undefined;
   let idToken: string | undefined;
 
@@ -66,5 +88,15 @@ export async function callGemini(
   }
 
   const data = await response.json();
-  return data.text;
+  return { text: data.text, receipt: data.receipt ?? null };
+}
+
+export async function callGemini(
+  prompt: string,
+  modelName: string = 'gemini-3-flash-preview',
+  jsonResponse: boolean = false,
+  stage?: ModelStage,
+  signal?: AbortSignal,
+): Promise<string> {
+  return (await callGeminiWithReceipt(prompt, modelName, jsonResponse, stage, signal)).text;
 }
