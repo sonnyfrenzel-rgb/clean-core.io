@@ -799,7 +799,7 @@ export default function TestingSandboxPage() {
           {/* Two tabs, named after what each one does. The lock is not repeated
               here: it stands once, inside the tenant tab it applies to (roadmap
               1.7, ADR-004). */}
-          <p className="text-xs text-[#0b1c30]/60 mt-1 font-medium">Mock runs the generated suite in the sandbox. The other tab checks a tenant connection and reads its OData metadata.</p>
+          <p className="text-xs text-[#0b1c30]/60 mt-1 font-medium">Mock runs the generated suite in the sandbox. The tenant tab checks a connection and reads its OData metadata.</p>
         </div>
         <div className="flex bg-gray-100 p-1.5 rounded-2xl w-full sm:w-auto self-start sm:self-auto">
           <button
