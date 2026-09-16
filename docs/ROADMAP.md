@@ -621,12 +621,13 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-014 | hoch | P1 | Phase 1 · Export-Escaping | eingeplant |
 | SEC-2026-015 | hoch | P2 | Phase 1 · Export-Escaping | eingeplant |
 | SEC-2026-016 | hoch | P2 | eigener Schritt, braucht Sonnys Go | eingeplant |
+| SEC-2026-018 | hoch | P3 | eigener Schritt: S/4-Credential-Proxy, braucht Sonnys Entscheidung | eingeplant |
 
 Erstes Audit: v2.11.0 (16.09.2026), 247 gemeldete Befunde. Der Bericht sagt selbst,
 dass seine Verifikationsstufe nicht zurückkam — die Befunde sind gemeldet, nicht
 geprüft. Die drei als kritisch gemeldeten sind nachgeprüft und **alle drei widerlegt**,
 ebenso vier der als hoch gemeldeten; die Begründungen mit Belegstellen stehen im
-versiegelten Register. Von den 29 als hoch gemeldeten sind 13 entschieden: neun widerlegt, vier eingeplant. Der groesste widerlegte Block betraf angeblich client-schreibbare Felder und einen "nicht eingesehenen" Sanitizer -- gelesen ist er DOMPurify mit enger Allowlist. Die restlichen werden fortlaufend triagiert.
+versiegelten Register. Von den 29 als hoch gemeldeten sind 17 entschieden: zwoelf widerlegt, fuenf eingeplant. Der groesste widerlegte Block betraf angeblich client-schreibbare Felder und einen "nicht eingesehenen" Sanitizer -- gelesen ist er DOMPurify mit enger Allowlist. Die restlichen werden fortlaufend triagiert.
 
 ---
 
