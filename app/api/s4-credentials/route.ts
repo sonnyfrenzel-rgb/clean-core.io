@@ -84,6 +84,13 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: e.message || 'MFA verification required.' }, { status: 403 });
   }
 
-  await deleteS4Credentials(decoded.uid);
+  // `ok` only once both the vault document and the profile metadata are gone;
+  // a refused delete is reported, not answered with success.
+  try {
+    await deleteS4Credentials(decoded.uid);
+  } catch (e) {
+    const message = e instanceof Error && e.message ? e.message : 'Failed to delete credentials.';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }

@@ -9,9 +9,11 @@ import { verifyAdminRequest, setAdminClaim, assertAdminStepUp } from '@/lib/fire
  *
  * Body: { uid: string, isAdmin?: boolean }   // isAdmin defaults to true
  *
- * Note: after a claim change the target user must refresh their ID token
- * (re-login or getIdToken(true)) before the new claim takes effect in the
- * Firestore rules and on subsequent server requests.
+ * Note: after a grant the target user must refresh their ID token (re-login or
+ * getIdToken(true)) before the new claim takes effect in the Firestore rules
+ * and on subsequent server requests. A withdrawal needs no cooperation: it
+ * revokes the account's refresh tokens, so the tokens that still carry the
+ * claim are refused from then on (see `setAdminClaim`).
  */
 export async function POST(req: Request) {
   const admin = await verifyAdminRequest(req);

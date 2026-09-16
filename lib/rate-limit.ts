@@ -62,12 +62,23 @@ export async function assertRateLimit(
 }
 
 /**
- * Extract client IP from a NextRequest (works behind proxies).
+ * The client address a rate-limit key is built from.
+ *
+ * `X-Forwarded-For` is a list the request grows as it travels: every hop
+ * appends the peer it saw, and the beginning is whatever the client sent. This
+ * took the first entry — the one the caller writes — so one new header value
+ * per request was a new window each time, and every per-IP limit, including
+ * the unauthenticated ones, was a formality. On Cloud Run the Google front end
+ * appends the connecting address as the last entry, and the service sits
+ * behind it directly (domain mapping, no load balancer that would add an entry
+ * of its own), so the last entry is the only one the client did not choose.
+ * `x-real-ip` is not set there; it stays for a local proxy that sets it.
  */
 export function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    request.headers.get('x-real-ip') ||
-    '0.0.0.0'
-  );
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    const hops = forwarded.split(',').map((hop) => hop.trim()).filter(Boolean);
+    if (hops.length > 0) return hops[hops.length - 1];
+  }
+  return request.headers.get('x-real-ip')?.trim() || '0.0.0.0';
 }

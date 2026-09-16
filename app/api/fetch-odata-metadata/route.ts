@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isUrlSafe, safeFetch, SsrfError } from '@/lib/url-validation';
+import { isUrlSafe, safeFetch, SsrfError, readBoundedBody } from '@/lib/url-validation';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 
@@ -164,6 +164,14 @@ async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, st
 }
 
 // --- Helper: Fetch with timeout ---
+// The timeout below covers the wait for the headers; the body is read
+// separately under these limits. The read used to follow `return response`
+// with the timer already cleared, so a tenant could answer as slowly and as
+// largely as it liked. An OData $metadata document is usually well under a
+// megabyte; 8 MB leaves room for the largest ones without letting a host of
+// the caller's choosing fill the memory of the instance.
+const RESPONSE_BODY_LIMITS = { maxBytes: 8 * 1024 * 1024, timeoutMs: 20000 };
+
 async function fetchWithTimeout(url: string, headers: Record<string, string>, timeoutMs = 20000): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -407,7 +415,7 @@ export async function POST(req: NextRequest) {
           const response = await fetchWithTimeout(candidateUrl, headers);
 
           if (response.ok) {
-            const xml = await response.text();
+            const xml = await readBoundedBody(response, RESPONSE_BODY_LIMITS);
             const entityTypes = extractEntityTypes(xml);
 
             return NextResponse.json({
@@ -455,7 +463,7 @@ export async function POST(req: NextRequest) {
         if (!response.ok) continue;
 
         const contentType = response.headers.get('content-type') || '';
-        const body = await response.text();
+        const body = await readBoundedBody(response, RESPONSE_BODY_LIMITS);
 
         let services: Array<{ title: string; path: string; serviceUrl: string }> = [];
 

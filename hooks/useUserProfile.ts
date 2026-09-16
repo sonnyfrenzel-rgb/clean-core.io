@@ -125,8 +125,16 @@ export function useUserProfile() {
         unsubscribeProfile = null;
       }
     };
+    // The one-time `getDoc` below cannot be released the way the listener can.
+    // It used to call `setProfile` whenever it settled, and after a sign-out
+    // or a switch to another account that put the previous account's profile
+    // on the next one's screen. Each sign-in takes a generation number; a
+    // fetch applies its result only while its generation is still the current
+    // one and the signed-in user is still the one it was started for.
+    let generation = 0;
 
     const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
+      const thisGeneration = ++generation;
       console.log('[PROFILE HOOK LOG] onAuthStateChanged fired. user:', user ? user.email : 'null');
       releaseProfile();
       if (!user) {
@@ -144,6 +152,7 @@ export function useUserProfile() {
       // Immediate, robust one-time getDoc fetch to ensure loading state resolves
       // even if the persistent onSnapshot streaming connection hangs or is blocked on CI runners.
       getDoc(userDocRef).then((docSnap) => {
+        if (thisGeneration !== generation || auth.currentUser?.uid !== user.uid) return;
         if (docSnap.exists()) {
           const data = docSnap.data() as UserProfile;
           // Enforce pilot limit for pilot users
@@ -182,6 +191,8 @@ export function useUserProfile() {
     });
 
     return () => {
+      // Retire the generation too, so a fetch that settles after unmount is dropped.
+      generation += 1;
       releaseProfile();
       unsubscribeAuth();
     };
