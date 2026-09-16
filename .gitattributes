@@ -1,0 +1,16 @@
+# Workflow files stay LF in every checkout.
+#
+# They are read by Linux runners, and by guards that split them on a bare line
+# feed. On 2026-09-16 three separate guards reported false failures in agent
+# worktrees, where the files had been checked out with CRLF: one sweep found
+# zero run commands in nine workflows and reported success over code it had not
+# read, and one job-slicer never found the job boundary, so it read the *next*
+# job's secrets and reported a secret in a job that holds none. Three agents
+# spent time on it. The files are LF in the index either way; this makes the
+# working tree agree.
+.github/workflows/*.yml text eol=lf
+.github/workflows/*.yaml text eol=lf
+
+# Firestore rules are hashed LF-normalised by the preservation register and
+# deployed as text; a CRLF working copy makes the hash disagree with itself.
+*.rules text eol=lf
