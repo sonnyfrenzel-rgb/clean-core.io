@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
           </p>
 
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            When you enter your Stage 5 Testing Sandbox, you will notice the custom tenant panel is fully unlocked. Simply click the new "Connected S/4HANA Tenant" tab, plug in your credentials, and click "Test Connection".
+            When you enter your Stage 5 Testing Sandbox, you will notice the custom tenant panel is fully unlocked. Simply click the new "Check tenant connection" tab, plug in your credentials, and click "Test Connection".
           </p>
 
           <!-- Security Trust Indicator -->

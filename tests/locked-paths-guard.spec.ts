@@ -67,10 +67,17 @@ test.describe('the lock holds in code', () => {
 
   test('the testing page shows the lock and does not offer the run', () => {
     const src = read('app/(app)/project/[projectId]/testing/page.tsx');
-    expect((src.match(/data-live-test-lock/g) || []).length).toBeGreaterThanOrEqual(3);
+    // Once, not three times. Roadmap 1.7 (ADR-004, 15.09.2026): the notice used
+    // to stand as a pill on the tab, as a panel above the connection card and
+    // again beside the run button — three refusals on one screen read as three
+    // different refusals, and none of them said how to get the connection
+    // itself. The run is still refused; what changed is how often it is said.
+    expect((src.match(/data-live-test-lock/g) || []).length).toBe(1);
     expect(src).toContain('{LIVE_TEST_EXECUTION.userNotice}');
     expect(src).toMatch(/disabled=\{[^}]*activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION\.locked/);
     expect(src).not.toContain('>Admin-Gated</span>');
+    // The way out, named: BYOT is what opens the connection check.
+    expect(src).toMatch(/Bring your own tenant \(BYOT\)/);
   });
 });
 
@@ -146,11 +153,23 @@ test.describe('the lock holds when used', () => {
     await page.goto(`/project/${PROJECT_ID}/testing`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(LIVE_TEST_EXECUTION.userNotice).first()).toBeVisible({ timeout: 30000 });
     await expect(page.getByText('Tests against a tenant are locked')).toBeVisible();
-    await expect(page.getByRole('button', { name: /Connected S\/4HANA Tenant/ })).toContainText('Check only');
+
+    // Roadmap 1.7 / ADR-004: the tab is named after what it does, and the notice
+    // stands exactly once on this screen — with the way to open the connection
+    // itself, so the reader is turned away from one thing rather than from all
+    // of them.
+    const tab = page.getByRole('button', { name: /^Check tenant connection$/ });
+    await expect(tab).toBeVisible();
+    await expect(tab).not.toContainText('Check only');
+    const notice = page.locator('[data-live-test-lock]');
+    await expect(notice).toHaveCount(1);
+    await expect(notice).toBeVisible();
+    await expect(notice).toContainText('Bring your own tenant (BYOT)');
+    await expect(notice).toContainText('an administrator reviews it by hand');
 
     // The saved suite is listed after a reload (it was not until the QA review of a0c108513165), so the run itself
-    // can be tried: on the tenant tab the list says it is locked, the button is disabled, and a click reaches nothing.
-    await expect(page.getByText('Running these tests against the tenant is locked.')).toBeVisible({ timeout: 30000 });
+    // can be tried: on the tenant tab the button is disabled, it says where the suite can run, and a click reaches nothing.
+    await expect(page.getByText('Switch to the Mock Environment to run this suite in the sandbox.')).toBeVisible({ timeout: 30000 });
     // A saved suite opens selected, as a generated one does — so the button is disabled by the tab, not by an empty selection.
     await expect(page.getByRole('checkbox').first()).toBeChecked();
     const run = page.getByRole('button', { name: /Run Selected/ });

@@ -15,7 +15,7 @@ import { quotaExhausted, runsRemaining, runsAreSelfFunded } from '@/lib/run-quot
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
-import { workflowSteps, workflowSummary, testEvidence } from '@/lib/workflow-steps';
+import { workflowSteps, workflowSummary, testEvidence, phaseTone, PHASE_TONE_CLASS } from '@/lib/workflow-steps';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 
@@ -2192,7 +2192,9 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
           {/* The seven phases in the stepper's colours, so the row and the
               stage pages cannot tell two different stories. A single bar filled
               to a percentage could not show that Testing is a draft while
-              Documentation is done. */}
+              Documentation is done.
+              The ladder itself is `phaseTone` — this row had its own copy of it
+              until roadmap 1.7, and that copy painted generated code green. */}
           <ol className="flex gap-1" aria-label="Phases">
             {phases.map((p) => (
               <li
@@ -2200,15 +2202,8 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
                 title={`${p.n}. ${p.label} — ${p.badge}: ${p.detail}`}
                 data-phase={p.key}
                 data-phase-state={p.state}
-                className={`h-1.5 flex-1 rounded-full ${
-                  p.done
-                    ? 'bg-green-600'
-                    : p.state === 'stale'
-                      ? 'bg-rose-400'
-                      : p.state === 'partial'
-                        ? 'bg-amber-400'
-                        : 'bg-gray-200'
-                }`}
+                data-phase-tone={phaseTone(p)}
+                className={`h-1.5 flex-1 rounded-full ${PHASE_TONE_CLASS[phaseTone(p)].fill}`}
               >
                 <span className="sr-only">{`${p.label}: ${p.badge}`}</span>
               </li>

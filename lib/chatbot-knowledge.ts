@@ -120,7 +120,7 @@ The platform mounts the new code inside a restricted test runner and runs select
 - **Locked: tests against a live tenant.** ${LIVE_TEST_EXECUTION.userNotice}
 - **TAP Format**: Test Anything Protocol — a standardized text output format for logging unit test assertions, passes, and fails.
 - **Test Coverage**: Generated test cases assert data models, validation rules, security checks, and service endpoint response values.
-- **Mock vs Tenant tab**: the Mock Environment runs the tests; the Connected S/4HANA Tenant tab checks the connection, reads OData metadata and makes one read-only call — it does not run the tests.
+- **Mock vs Tenant tab**: the Mock Environment runs the tests; the "Check tenant connection" tab checks the connection, reads OData metadata and makes one read-only call — it does not run the tests.
 - **Features**: Automated test case generation, sandbox execution against mocks, tenant connection check, TAP-formatted execution logs.
 
 ### Phase 5: Process Blueprint & Documentation
