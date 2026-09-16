@@ -30,12 +30,16 @@ import firebaseConfig from '../firebase-config.json';
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
-const STAGES = ['analyze', 'design', 'transformation', 'testing', 'documentation', 'delivery'];
+// All seven, including Economics: the rendered comparison used to visit six and
+// the test was still called "on all seven", so a TCO-specific ancestor or
+// stylesheet could move that title's colour, size, case or spacing unnoticed
+// (QA review of 33471220d6e9, bcbe2c770c8a).
+const STAGES = ['analyze', 'design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'];
 
 test.describe('one stage header, defined once', () => {
   test('no stage writes its own title', () => {
     const offenders: string[] = [];
-    for (const stage of [...STAGES, 'tco']) {
+    for (const stage of STAGES) {
       const rel = `app/(app)/project/[projectId]/${stage}/page.tsx`;
       const src = read(rel);
       // Markdown renderers map `h1` for *generated content*, which is not a stage

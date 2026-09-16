@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { tcoForecast, TCO_TARGET_SCORE } from '@/lib/tco-model';
 import { useParams } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -104,144 +105,21 @@ export default function TcoCalculatorPage() {
 
   // The model. A demonstration, not a business case: the effort coefficients,
   // the 85% test effect and the target score are assumptions (CR-23).
-  const calculations = useMemo(() => {
-    // No forecast from figures nobody entered.
-    if (devRate === null || userRate === null || oneTimeCost === null) return null;
-
-    // No `|| 30`. A project that was never scored has no baseline, and
-    // inventing one produced a full financial case out of a number nobody
-    // measured.
-    const scoreBefore =
-      typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : null;
-    // An assumption, and labelled as one wherever it is shown. Nothing in the
-    // run establishes what the code will score after modernisation.
-    const scoreAfter = 95;
-
-    // Without a baseline there is no model. Returning null here is the whole
-    // point: the page used to substitute 30 and then present exact euro figures,
-    // payback months and an ROI percentage for a project nothing had measured.
-    if (scoreBefore === null) return null;
-
-    // 1. Pre-Modernization Maintenance Efforts (Days per year)
-    // Legacy custom code is tightly coupled, requiring substantial adaptation effort per upgrade
-    const legacyDevDaysMajor = Math.round((loc / 1000) * 2.5 * upgradeFreq);
-    const legacyDevDaysFp = Math.round((loc / 1000) * 0.8 * fpFreq);
-    const legacyDevDaysTotal = legacyDevDaysMajor + legacyDevDaysFp;
-
-    const legacyTestDaysMajor = Math.round((loc / 1000) * 1.8 * upgradeFreq);
-    const legacyTestDaysFp = Math.round((loc / 1000) * 0.6 * fpFreq);
-    const legacyTestDaysTotal = legacyTestDaysMajor + legacyTestDaysFp;
-
-    const legacyDevCost = legacyDevDaysTotal * devRate;
-    const legacyTestCost = legacyTestDaysTotal * userRate;
-    const legacyAnnualTotal = legacyDevCost + legacyTestCost;
-
-    // 2. Post-Modernization Maintenance Efforts (Days per year)
-    // Decoupled, upgrade-safe standard API extensions require minimal maintenance (Clean Core)
-    //
-    // v2.8.6: guarded the two divisions downstream of this one, and not this one.
-    //
-    // The divisor is `100 - scoreBefore`. At a score of 100 it is
-    // zero: `factor` becomes Infinity, and from there the ROI reads -Infinity,
-    // the overhead reduction reads -Infinity, and the five-year chart is handed
-    // Infinity for every modernised year.
-    //
-    // At 99 there is no division by zero and the output is worse for it, because
-    // it looks like a number: factor 5, so the model claims modernising costs
-    // 3.35x more, ROI -749%, "overhead reduction" -235%. Both cases have the same
-    // cause — `scoreAfter` is a fixed assumption of 95, and code already at or
-    // above it has nothing this model can offer.
-    //
-    // So the model declines instead of computing. Saying "this does not apply
-    // here" is the honest output; a negative business case derived from an
-    // assumed target is not a finding about the customer's code.
-    if (scoreBefore >= scoreAfter) return null;
-
-    const factor = (100 - scoreAfter) / (100 - scoreBefore); // Adaptation reduction factor (typically ~0.08)
-    
-    // No `Math.max(1, …)`. The floors were asymmetric: the legacy side rounds to
-    // zero days for a small codebase while the modernised side was pinned at one
-    // day each, so the model reported that modernising *costs* €1,550 a year and
-    // pays back in −116 months. The old `lineCount * 10` extrapolation hid it by
-    // never letting `loc` fall below 1,000; removing that extrapolation — the
-    // right change — exposed this one underneath.
-    const modernDevDaysTotal = Math.round(legacyDevDaysTotal * factor);
-    const modernTestDaysTotal = Math.round(legacyTestDaysTotal * 0.15); // 85% automated test coverage in Sandbox
-
-    const modernDevCost = modernDevDaysTotal * devRate;
-    const modernTestCost = modernTestDaysTotal * userRate;
-    const modernAnnualTotal = modernDevCost + modernTestCost;
-
-    // 3. Financial Benefits & ROI
-    const annualSavings = legacyAnnualTotal - modernAnnualTotal;
-    const cumulativeSavings5Yr = Array.from({ length: 6 }, (_, i) => {
-      // The Year-0 row used its own key for the net benefit — `NetBenefit`,
-      // where every other row and the chart series say `Net Financial Benefit`.
-      // Recharts found no value for Year 0 and started the area at Year 1, so
-      // the investment, the one negative point in the forecast, was not drawn
-      // (QA review of 33471220d6e9, 217726b404c9).
-      if (i === 0) return { year: 'Year 0', 'Legacy TCO': 0, 'Modernized TCO': oneTimeCost, 'Net Financial Benefit': -oneTimeCost };
-      const legacyCum = legacyAnnualTotal * i;
-      const modernCum = oneTimeCost + (modernAnnualTotal * i);
-      const netBenefit = legacyCum - modernCum;
-      return {
-        year: `Year ${i}`,
-        'Legacy TCO': Math.round(legacyCum),
-        'Modernized TCO': Math.round(modernCum),
-        'Net Financial Benefit': Math.round(netBenefit)
-      };
-    });
-
-    // Below a few hundred lines the whole model rounds to nothing: there is no
-    // legacy maintenance cost to save against, so every figure downstream is a
-    // division by zero wearing a euro sign. The page says so instead.
-    if (legacyAnnualTotal <= 0) return null;
-
-    // Two divisions with no guard on their divisor, both reachable from the
-    // controls on this page: an investment of 0 made the ROI `Infinity`, and code
-    // that already scores at the target saves nothing per year, which made the
-    // payback period `Infinity` too. Both were rendered straight to the screen.
-    //
-    // Neither is a number, so neither is shown as one. `null` means "this figure
-    // does not exist for these inputs", which is a different statement from zero
-    // and the page makes it separately.
-    const paybackMonths =
-      annualSavings > 0 ? Math.round((oneTimeCost / annualSavings) * 12 * 10) / 10 : null;
-    // Year-1 ROI is the return after the investment, not the ratio of savings
-    // to it: with €100k invested and €20k saved, the old figure printed "20 %"
-    // beside its own Year-1 net benefit of -€80k (QA review of 33471220d6e9,
-    // 3bb4158405d8). Same numerator as the cumulative curve, first year.
-    const roiYear1 = oneTimeCost > 0 ? Math.round(((annualSavings - oneTimeCost) / oneTimeCost) * 100) : null;
-    const overheadReductionPct = Math.round((1 - modernAnnualTotal / legacyAnnualTotal) * 100);
-
-    // Backstop rather than the primary defence. Every known path is guarded
-    // above; this catches the next input nobody thought of, because a chart is
-    // the one place a non-finite number renders without complaining.
-    const everyFigureFinite = [
-      legacyAnnualTotal, modernAnnualTotal, annualSavings, overheadReductionPct,
-      ...cumulativeSavings5Yr.flatMap((r) => Object.values(r).filter((v) => typeof v === 'number') as number[]),
-    ].every(Number.isFinite);
-    if (!everyFigureFinite) return null;
-
-    return {
-      legacyDevDaysTotal,
-      legacyTestDaysTotal,
-      legacyAnnualTotal,
-      modernDevDaysTotal,
-      modernTestDaysTotal,
-      modernAnnualTotal,
-      annualSavings,
-      overheadReductionPct,
-      cumulativeSavings5Yr,
-      paybackMonths,
-      roiYear1,
-      scoreBefore,
-      scoreAfter,
-      // The rates the figures were priced with — non-null here by the gate above.
+  // The forecast itself lives in `lib/tco-model.ts` — the page shows it, the
+  // spec runs it, and neither carries its own copy of the arithmetic any more
+  // (roadmap 0.17, QA finding f3428b0782a9).
+  const calculations = useMemo(
+    () => tcoForecast({
+      loc,
       devRate,
       userRate,
-    };
-  }, [project, loc, devRate, userRate, upgradeFreq, fpFreq, oneTimeCost]);
+      upgradeFreq,
+      fpFreq,
+      oneTimeCost,
+      scoreBefore: typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : null,
+    }),
+    [project, loc, devRate, userRate, upgradeFreq, fpFreq, oneTimeCost],
+  );
 
   const handlePrint = () => {
     window.print();
@@ -258,7 +136,7 @@ export default function TcoCalculatorPage() {
   // assumed target. Everything else — missing cost figures, an estate too small
   // to price — is shown next to the inputs that would change it.
   const baselineScore = typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : null;
-  if (baselineScore === null || baselineScore >= 95) {
+  if (baselineScore === null || baselineScore >= TCO_TARGET_SCORE) {
     return (
       <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8">
         <VerificationRail steps={phases} current="tco" projectId={projectId as string} />
@@ -266,9 +144,9 @@ export default function TcoCalculatorPage() {
         <div className="max-w-2xl mx-auto mt-10 bg-white border border-amber-200 rounded-[2rem] p-8 shadow-sm">
           <StageHeader title="No baseline to model against" />
           <p className="text-sm text-slate-600 -mt-4 leading-relaxed">
-            {typeof project?.cleanCoreScore === 'number' && project.cleanCoreScore >= 95 ? (
+            {typeof project?.cleanCoreScore === 'number' && project.cleanCoreScore >= TCO_TARGET_SCORE ? (
               <>
-                This code already scores {project.cleanCoreScore}, at or above the {95} this model
+                This code already scores {project.cleanCoreScore}, at or above the {TCO_TARGET_SCORE} this model
                 assumes modernisation would reach. The model has no improvement to price, so it
                 declines rather than pricing one. It would otherwise report a negative return &mdash;
                 and at a score of exactly 100 it divided by zero and put an infinity on the chart.
