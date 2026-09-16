@@ -370,8 +370,22 @@ const runIdOf = (rc: ReferenceCase) => `${rc.id}-run`;
 
 /* --------------------------------------------- the seed, read as the screen */
 
-/** Everything the register accounts for on a stage: what it writes, plus what it only displays. */
-const accountedFields = (stage: StageEntry) => [...stage.outputs.clientWrites, ...(stage.alsoDisplays ?? [])];
+/**
+ * Everything the register accounts for on a stage: what it writes, plus what it
+ * only displays.
+ *
+ * `commandWrites` counts. Roadmap 0.7 moved six release fields out of the
+ * client-writable allowlist and behind `POST /api/projects/{id}/commands`, but
+ * the stage still puts them on the project and still shows them — only the
+ * writer changed. Leaving them out here would quietly drop six fields from the
+ * rendered classification, which is the one layer that asks whether an output
+ * reaches the screen at all.
+ */
+const accountedFields = (stage: StageEntry) => [
+  ...stage.outputs.clientWrites,
+  ...(stage.outputs.commandWrites?.project ?? []),
+  ...(stage.alsoDisplays ?? []),
+];
 
 const classifiedEntries = (stage: StageEntry) => [
   ...stage.rendered.shows,

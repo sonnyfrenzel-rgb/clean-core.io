@@ -8,7 +8,7 @@ is the same register in the form a test can check, and
 [`tests/preservation-register.spec.ts`](../tests/preservation-register.spec.ts)
 is the test that checks it.
 
-**Verified against commit `52f171091948edc12384992f877e2be864c589d3`** (`origin/dev`,
+**Verified against commit `ea6f1426c24084693235a568cf02e4237477217a`** (`origin/dev`,
 16.09.2026), build `v2.11.0`, `firestore.rules` at SHA-256
 `96ece81b…7fbe2` (of the LF-normalised file).
 
@@ -101,7 +101,7 @@ writes nothing at all**: opening it used to set `status: 'completed'`, which mea
 wiederholen — Commit, Schema, Rules, Katalog und Deploymentbezug explizit
 erfasst."*) is not decoration. It is what makes a later re-review repeatable.
 
-- **Commit** — `52f171091948edc12384992f877e2be864c589d3`. The register describes
+- **Commit** — `ea6f1426c24084693235a568cf02e4237477217a`. The register describes
   that tree and no other. The guard requires this file and the JSON to name the
   same one.
 - **Build** — `v2.11.0`; `npx tsc --noEmit -p tsconfig.json`, `npm run lint`,
