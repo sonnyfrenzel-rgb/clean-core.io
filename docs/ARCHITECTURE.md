@@ -45,6 +45,8 @@ Downstream stages call `enforceActiveRun()` — missing Run redirects to Analyze
 - **Economics cannot be `done` in this release** (no observed costs exist; CR-23 / E12-F02). `workflowSummary().next` skips it so "continue" never parks there.
 - The stepper's circles show state, not position: being on Testing says nothing about Design. `tests/workflow-phases-guard.spec.ts` holds this, including a rendered check that dashboard, stepper and delivery agree on a test draft.
 
+**What each stage reads, writes, requires and does when something fails** is the preservation register — `docs/PRESERVATION-REGISTER.md` (the reasoning and the limits) and `docs/registers/preservation-register.json` (the same thing field by field, with one seeded reference case per stage). `tests/preservation-register.spec.ts` re-derives all of it from the code, so a stage that gains or loses a field, a guard or a blocker fails the suite. Roadmap step 1.1; it is what step 3.0.3 re-runs against the rebuilt workspace.
+
 ---
 
 ## 3. The trust chain (server-authoritative)
