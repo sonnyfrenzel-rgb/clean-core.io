@@ -98,17 +98,50 @@ test.describe('a private report goes to one address, and no input reaches a shel
     expect(wf, 'and no override on the command line either').not.toMatch(/--to\s/);
   });
 
-  test('no workflow interpolates a dispatch input into a run block', () => {
-    // A ${{ }} expression inside a run: block is executed as shell text, in
-    // jobs that hold id-token: write and the provider keys.
+  test('no workflow interpolates a dispatch input into any run command', () => {
+    // A ${{ }} expression inside a run: is executed as shell text, in jobs that
+    // hold id-token: write and the provider keys. The first version of this
+    // sweep split on `run: |` and therefore looked at literal blocks only — an
+    // inline `run: echo "${{ inputs.x }}"` or a folded `run: >` walked straight
+    // past it (QA review of cc87c7717ca1, 3e88a1000811). Every run command is
+    // collected instead, whatever its scalar style, and `.yaml` counts too.
     const dir = path.join(ROOT, '.github/workflows');
-    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.yml'));
+    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'));
     expect(files.length).toBeGreaterThan(3);
+
+    /** Every `run:` command in the file, block, folded and inline alike. */
+    const runCommands = (wf: string): string[] => {
+      const lines = wf.split('\n');
+      const out: string[] = [];
+      for (let i = 0; i < lines.length; i++) {
+        const m = /^(\s*)(?:-\s+)?run:\s*(.*)$/.exec(lines[i]);
+        if (!m) continue;
+        const [, indent, rest] = m;
+        if (rest && !/^[|>][-+0-9]*\s*$/.test(rest.trim())) {
+          out.push(rest); // inline scalar
+          continue;
+        }
+        // Block or folded: everything indented deeper than the `run:` key.
+        const body: string[] = [];
+        for (let j = i + 1; j < lines.length; j++) {
+          const line = lines[j];
+          if (line.trim() === '') { body.push(line); continue; }
+          const lead = line.length - line.trimStart().length;
+          if (lead <= indent.length) break;
+          body.push(line);
+        }
+        out.push(body.join('\n'));
+      }
+      return out;
+    };
+
+    // The collector has to see the commands that are really there.
+    const total = files.reduce((n, f) => n + runCommands(fs.readFileSync(path.join(dir, f), 'utf8')).length, 0);
+    expect(total, 'the sweep found no run commands at all').toBeGreaterThan(10);
+
     for (const file of files) {
-      const wf = fs.readFileSync(path.join(dir, file), 'utf8');
-      for (const block of wf.split(/^\s*run: \|/m).slice(1)) {
-        const body = block.split(/^\s{0,8}- name:/m)[0];
-        expect(body, `${file} interpolates a dispatch input into a run: block`).not.toMatch(/\$\{\{\s*inputs\./);
+      for (const command of runCommands(fs.readFileSync(path.join(dir, file), 'utf8'))) {
+        expect(command, `${file} interpolates a dispatch input into a run command`).not.toMatch(/\$\{\{\s*(?:inputs|github\.event)\./);
       }
     }
   });
