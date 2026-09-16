@@ -19,6 +19,13 @@ export async function callGemini(
   modelName: string = 'gemini-3-flash-preview',
   jsonResponse: boolean = false,
   stage?: ModelStage,
+  /**
+   * Roadmap 1.8 — lets a caller stop *waiting*. It does not stop the call: the
+   * route below runs to completion on the server whatever this browser does,
+   * and every screen that offers a cancel has to say so (`CANCEL_REACH` in
+   * `lib/analysis-run.ts`).
+   */
+  signal?: AbortSignal,
 ): Promise<string> {
   let userId: string | undefined;
   let idToken: string | undefined;
@@ -39,6 +46,7 @@ export async function callGemini(
       'Content-Type': 'application/json',
       ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {}),
     },
+    ...(signal ? { signal } : {}),
     body: JSON.stringify({
       prompt,
       model: modelName,

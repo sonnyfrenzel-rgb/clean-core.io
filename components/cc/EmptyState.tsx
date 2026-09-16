@@ -57,9 +57,18 @@ export function CcEmptyState({
 }
 
 export function CcNoMatches({
+  title,
   reason,
   onClear,
 }: {
+  /**
+   * The sentence, when the noun is not "findings" — the workspace filters
+   * projects (roadmap 1.8). It still has to name what did not match: a
+   * no-matches state that says nothing about the noun is one step away from
+   * being read as an empty one, which is the failure this component exists to
+   * prevent.
+   */
+  title?: React.ReactNode;
   /** Why nothing matched, in terms of the filters — not "try again". */
   reason?: React.ReactNode;
   onClear: () => void;
@@ -72,7 +81,9 @@ export function CcNoMatches({
       <div className="mb-1.5 flex justify-center text-cc-ink-muted">
         <Filter size={20} aria-hidden={true} />
       </div>
-      <div className="text-[14px] font-bold text-cc-ink">{t('filter.noMatch')}</div>
+      <div data-cc-no-match-title="" className="text-[14px] font-bold text-cc-ink">
+        {title ?? t('filter.noMatch')}
+      </div>
       {reason ? (
         <p className="mx-auto mt-1 mb-2.5 max-w-md text-[12px] font-medium leading-snug text-cc-ink-muted">
           {reason}
