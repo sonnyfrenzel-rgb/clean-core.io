@@ -63,6 +63,17 @@ function totalRow(label: string, value: string, highlight = false): string {
     </div>`;
 }
 
+/**
+ * Every dynamic value here is escaped, and `name` is why.
+ *
+ * `lib/usage-report.ts` builds the displayed name straight from `firstName` and
+ * `lastName` on the user profile, which the account owner chooses. Interpolated
+ * raw, a first name of `<a href="…">` put a working link into the administrator's
+ * own weekly report, and an `<img src="…">` made it call out the moment the mail
+ * was opened. The failure details further down were already escaped; these three
+ * lines were not (QA review of 33471220d6e9, finding 230989f67624). Styling
+ * markup stays outside the escaped values.
+ */
 function personList(
   title: string,
   people: { name: string; email: string; suffix?: string }[],
@@ -73,18 +84,18 @@ function personList(
         .map(
           (p) => `
         <div style="padding: 9px 0; border-bottom: 1px solid #f1f5f9;">
-          <div style="font-size: 15px; font-weight: 700; color: #0f172a;">${p.name}${
-            p.suffix ? ` <span style="font-weight: 600; color: #047857;">${p.suffix}</span>` : ''
+          <div style="font-size: 15px; font-weight: 700; color: #0f172a;">${escapeHtml(p.name)}${
+            p.suffix ? ` <span style="font-weight: 600; color: #047857;">${escapeHtml(p.suffix)}</span>` : ''
           }</div>
-          <div style="font-size: 13px; color: #64748b; word-break: break-word; line-height: 1.5;">${p.email}</div>
+          <div style="font-size: 13px; color: #64748b; word-break: break-word; line-height: 1.5;">${escapeHtml(p.email)}</div>
         </div>`,
         )
         .join('')
-    : `<p style="font-size: 14px; color: #94a3b8; margin: 6px 0 0 0; font-style: italic; line-height: 1.5;">${emptyText}</p>`;
+    : `<p style="font-size: 14px; color: #94a3b8; margin: 6px 0 0 0; font-style: italic; line-height: 1.5;">${escapeHtml(emptyText)}</p>`;
 
   return `
     <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
-      <span style="font-weight: 800; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">${title}</span>
+      <span style="font-weight: 800; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">${escapeHtml(title)}</span>
       ${rows}
     </div>`;
 }

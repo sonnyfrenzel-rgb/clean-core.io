@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import Link from 'next/link';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { logger, errMessage } from '@/lib/logger';
@@ -96,18 +97,33 @@ export default async function SurveyPage({
 
     // Set once. `linkFetchedAt` answers "did this mail get as far as a machine
     // that opens links", and the first fetch is the only one that says anything.
-    const snap = await ref.get();
-    const data = snap.exists ? snap.data() : undefined;
-    if (!data?.linkFetchedAt) {
-      await ref.set(
-        {
-          campaign: identity.campaign,
-          uid: identity.uid,
-          linkFetchedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
-    }
+    //
+    // In a transaction, because the concurrency it describes is the concurrency
+    // it suffers from: a mail gateway and the recipient open the same link at
+    // the same moment, both reads see no `linkFetchedAt`, both merge-writes go
+    // through, and the stored value is the later arrival rather than the first
+    // (QA review of 33471220d6e9, finding 8ccb1b1b765b). The transaction re-runs
+    // on a conflict, and the second attempt reads the field the first one wrote.
+    // `getAdminDb()` hands back an untyped handle (the Admin SDK is imported
+    // dynamically), so the reference is named for what it is — otherwise
+    // `tx.get` resolves to the query overload and reads nothing.
+    const docRef = ref as DocumentReference;
+    const data = await db.runTransaction(async (tx: Transaction) => {
+      const snap = await tx.get(docRef);
+      const current = snap.exists ? snap.data() : undefined;
+      if (!current?.linkFetchedAt) {
+        tx.set(
+          docRef,
+          {
+            campaign: identity.campaign,
+            uid: identity.uid,
+            linkFetchedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
+      }
+      return current;
+    });
     existingAnswers = (data?.answers as Record<string, SurveyAnswer>) || {};
     existingComment = (data?.comment as string) || '';
 

@@ -129,8 +129,21 @@ export async function recordEmailEvent(input: EmailEventInput, eventId: string):
     const currentIsNegative = TERMINAL_NEGATIVE.has(data.status);
 
     // A negative verdict always wins; otherwise only a better rank replaces it.
-    const status =
-      isNegative || (!currentIsNegative && incomingRank > currentRank) ? input.type : data.status || input.type;
+    const statusWins =
+      isNegative || (!currentIsNegative && incomingRank > currentRank) || !data.status;
+    const status = statusWins ? input.type : data.status;
+
+    // The detail and the time belong to the status, not to the last message that
+    // arrived. A welcome mail that bounced with a reason and was then "opened" by
+    // a scanner kept the bounce as its status while the reason was overwritten
+    // with the scanner's empty detail and its timestamp — so the operator was
+    // left with a failed onboarding mail and no way to say why (QA review of
+    // 33471220d6e9, finding 5dbe58873773). A losing event is still recorded in
+    // `timeline` below; it just does not get to relabel the verdict.
+    const lastDetail = statusWins ? input.detail ?? null : data.lastDetail ?? null;
+    const lastEventAt = statusWins
+      ? input.occurredAt ?? new Date().toISOString()
+      : data.lastEventAt ?? input.occurredAt ?? new Date().toISOString();
 
     tx.set(
       ref,
@@ -139,8 +152,8 @@ export async function recordEmailEvent(input: EmailEventInput, eventId: string):
         to: input.to,
         subject: input.subject ?? data.subject ?? null,
         status,
-        lastDetail: input.detail ?? data.lastDetail ?? null,
-        lastEventAt: input.occurredAt ?? new Date().toISOString(),
+        lastDetail,
+        lastEventAt,
         updatedAt: FieldValue.serverTimestamp(),
         // Capped: a message with a pathological retry loop must not grow a
         // document past Firestore's 1 MB limit.
@@ -163,8 +176,10 @@ export async function recordEmailEvent(input: EmailEventInput, eventId: string):
         db.collection('registration_requests').doc(data.uid),
         {
           welcomeMailStatus: status,
-          welcomeMailDetail: input.detail ?? null,
-          welcomeMailAt: input.occurredAt ?? new Date().toISOString(),
+          // The same three values as the summary above, for the same reason: the
+          // row must not show a bounce with a scanner's blank reason beside it.
+          welcomeMailDetail: lastDetail,
+          welcomeMailAt: lastEventAt,
         },
         { merge: true },
       );

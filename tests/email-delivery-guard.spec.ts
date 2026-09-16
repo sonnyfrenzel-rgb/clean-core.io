@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { verifyResendSignature } from '../lib/email-events';
+import { mockMailAllowed } from '../lib/mail-delivery-mode';
+import { sendIdempotencyKey } from '../lib/survey/outbox';
 
 /**
  * The platform used to learn nothing about a message after Resend accepted it.
@@ -252,4 +254,154 @@ test.describe('the survey send records before it asks the provider', () => {
     expect(load).toMatch(/alreadySent\.add\(email\);/);
     expect(src).toMatch(/unresolved: \$\{unresolved\.length\} send\(s\) started and never recorded/);
   });
+});
+
+test.describe('a retry of a bulk send cannot become a second copy', () => {
+  /**
+   * The outbox record stops the *next run* asking again. It does not stop this
+   * one: `sendWithRetry` repeats a request that timed out or came back 429 or
+   * 5xx, and any of those can reach the caller after Resend has accepted the
+   * message (QA review of 33471220d6e9, findings 2b0cacd91960, 6d40362efbf6).
+   * The provider deduplicates on the key, so the key has to be the same in
+   * every attempt of every run — and different for anyone else.
+   */
+  test('the key is derived from the campaign and the normalised address, and from nothing else', () => {
+    const a = sendIdempotencyKey('survey-2026-09', 'Person@Example.COM');
+    expect(sendIdempotencyKey('survey-2026-09', ' person@example.com ')).toBe(a);
+    expect(sendIdempotencyKey('survey-2026-09', 'other@example.com')).not.toBe(a);
+    expect(sendIdempotencyKey('community-update-v2.3', 'person@example.com')).not.toBe(a);
+    // No timestamp, no random: the same input a week later is the same key.
+    expect(sendIdempotencyKey('survey-2026-09', 'person@example.com')).toBe(a);
+    // Header-safe and inside Resend's 256 characters, even for a long campaign id.
+    const long = sendIdempotencyKey('x'.repeat(300), 'person@example.com');
+    expect(long.length).toBeLessThanOrEqual(256);
+    expect(long).toMatch(/^[A-Za-z0-9._-]+$/);
+    // The address itself never travels in the header.
+    expect(a).not.toContain('example.com');
+  });
+
+  test('both bulk senders send the key with every attempt', () => {
+    const survey = read('scripts/send-survey.ts');
+    // The header sits inside sendWithRetry, so it is on the retry as well as the
+    // first attempt — not at the call site, which runs once.
+    const retry = survey.slice(survey.indexOf('async function sendWithRetry'), survey.indexOf('const APPLY ='));
+    expect(retry).toContain("'Idempotency-Key': idempotencyKey");
+    expect(retry).toMatch(/for \(let attempt = 1; attempt <= ATTEMPTS; attempt\+\+\)/);
+    expect(survey).toContain('sendIdempotencyKey(SURVEY_CAMPAIGN, r.email)');
+
+    const community = read('scripts/send-community-mail.ts');
+    expect(community).toContain("'Idempotency-Key': sendIdempotencyKey(CAMPAIGN, r.email)");
+  });
+
+  test('the community send claims through the outbox before the provider and settles through it after', () => {
+    const src = read('scripts/send-community-mail.ts');
+    const loop = src.slice(src.indexOf('for (const r of batch)'), src.indexOf("console.log(`Done."));
+    const claim = loop.indexOf('await claimSend(db, CAMPAIGN, r)');
+    const provider = loop.indexOf('await fetch(');
+    const done = loop.indexOf('await completeSend(db, CAMPAIGN, r.uid, id)');
+    const failed = loop.indexOf('await failSend(db, CAMPAIGN, r.uid, detail)');
+    for (const [name, at] of Object.entries({ claim, provider, done, failed })) expect(at, `${name} is not wired`).toBeGreaterThan(-1);
+    expect(claim, 'the provider is asked before the claim').toBeLessThan(provider);
+    expect(provider).toBeLessThan(done);
+    expect(loop).toMatch(/if \(!\(await claimSend\(db, CAMPAIGN, r\)\)\) \{[\s\S]*?continue;/);
+    // No write to email_sends behind the outbox's back, and no post-send record.
+    expect(src, 'a direct write to email_sends is back').not.toMatch(/collection\('email_sends'\)\s*\n?\s*\.doc\(/);
+    expect(src).not.toMatch(/sentAt: FieldValue\.serverTimestamp\(\)/);
+  });
+});
+
+test.describe('a mail nobody could send is not reported as sent', () => {
+  /**
+   * Three admin routes logged the message to the console whenever `RESEND_API_KEY`
+   * was absent and answered `{ success: true }` anyway. Locally that is right —
+   * the log is the delivery channel. In production it told an administrator that
+   * a welcome mail had gone out when no request had been made (QA review of
+   * 33471220d6e9, finding 14edf99a390c).
+   */
+  const withEnv = (nodeEnv: string | undefined, emulator: string | undefined) => {
+    const prevNode = process.env.NODE_ENV;
+    const prevEmu = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR;
+    try {
+      // NODE_ENV is readonly in the Next types; the runtime value is what the guard reads.
+      (process.env as Record<string, string | undefined>).NODE_ENV = nodeEnv;
+      (process.env as Record<string, string | undefined>).NEXT_PUBLIC_USE_FIREBASE_EMULATOR = emulator;
+      return mockMailAllowed();
+    } finally {
+      (process.env as Record<string, string | undefined>).NODE_ENV = prevNode;
+      (process.env as Record<string, string | undefined>).NEXT_PUBLIC_USE_FIREBASE_EMULATOR = prevEmu;
+    }
+  };
+
+  test('the console is a delivery channel locally and against the emulators, never on the deployment', () => {
+    expect(withEnv('development', undefined)).toBe(true);
+    expect(withEnv('test', undefined)).toBe(true);
+    // CI runs a production build against the emulators with no mail key, which is
+    // not a misconfiguration — printing the mail is the delivery channel there.
+    expect(withEnv('production', 'true')).toBe(true);
+    // The real deployment: neither holds, and nobody was told anything.
+    expect(withEnv('production', undefined)).toBe(false);
+    expect(withEnv('production', 'false')).toBe(false);
+  });
+
+  test('all three routes gate the mock on it and answer 503 instead of success', () => {
+    for (const rel of [
+      'app/api/send-approval-email/route.ts',
+      'app/api/send-tenant-approval-email/route.ts',
+      'app/api/send-tenant-revoke-email/route.ts',
+    ]) {
+      const s = read(rel);
+      expect(s, `${rel} does not import the guard`).toContain("from '@/lib/mail-delivery-mode'");
+      expect(s, `${rel} logs the mock unguarded`).toContain('} else if (mockMailAllowed()) {');
+      // The 503 has to come before the success answer, or the fallthrough is back.
+      const refusal = s.indexOf('{ status: 503 }');
+      const success = s.indexOf('NextResponse.json({ success: true })');
+      expect(refusal, `${rel} has no 503 for a missing mail configuration`).toBeGreaterThan(-1);
+      expect(refusal, `${rel} answers success before it refuses`).toBeLessThan(success);
+    }
+  });
+});
+
+test.describe('a verdict keeps the reason that belongs to it', () => {
+  /**
+   * A welcome mail bounced with a reason, then a scanner opened it. The status
+   * correctly stayed bounced — and the reason, and the time, were rewritten with
+   * the scanner's, on the summary and on the account's row in the admin console.
+   * The operator was left with a failed onboarding mail and nothing to diagnose
+   * it with (QA review of 33471220d6e9, finding 5dbe58873773).
+   */
+  test('only the event that wins the status writes the detail and the time', () => {
+    const s = read('lib/email-events.ts');
+    const fn = s.slice(s.indexOf('export async function recordEmailEvent'), s.indexOf('export async function recordEmailSent'));
+    expect(fn).toContain('const statusWins =');
+    expect(fn).toMatch(/const lastDetail = statusWins \? input\.detail \?\? null : data\.lastDetail \?\? null;/);
+    expect(fn).toMatch(/const lastEventAt = statusWins\s*\n?\s*\? input\.occurredAt/);
+    // The mirror onto the registration request writes the same two values, not
+    // the incoming event's.
+    const mirror = fn.slice(fn.indexOf("db.collection('registration_requests')"));
+    expect(mirror).toContain('welcomeMailDetail: lastDetail');
+    expect(mirror).toContain('welcomeMailAt: lastEventAt');
+    expect(mirror).not.toMatch(/input\.detail|input\.occurredAt/);
+  });
+});
+
+test('the signup notification does not claim a queued mail arrived', () => {
+  const s = read('lib/admin-signup-email.ts');
+  // "has gone to the user" was a delivery claim made in the same request that
+  // posted the message to Resend (finding 6500f93e60fd).
+  expect(s).not.toContain('has gone to the user');
+  expect(s).toContain('submitted for delivery');
+  expect(s).toMatch(/whether it arrived is on the account/i);
+});
+
+test('the weekly admin report escapes every name it was handed', () => {
+  const s = read('lib/usage-report-email.ts');
+  const fn = s.slice(s.indexOf('function personList'), s.indexOf('function deliveryPanel'));
+  // A first name of `<a href>` or `<img src>` put a working link, or a remote
+  // call, into the administrator's own report (finding 230989f67624).
+  for (const raw of ['${p.name}', '${p.suffix}', '${p.email}', '${title}', '${emptyText}']) {
+    expect(fn, `personList still interpolates ${raw} unescaped`).not.toContain(raw);
+  }
+  for (const escaped of ['escapeHtml(p.name)', 'escapeHtml(p.suffix)', 'escapeHtml(p.email)', 'escapeHtml(title)', 'escapeHtml(emptyText)']) {
+    expect(fn, `personList does not escape with ${escaped}`).toContain(escaped);
+  }
 });

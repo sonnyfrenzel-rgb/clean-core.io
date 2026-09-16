@@ -27,9 +27,33 @@ const git = (args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 6
  * or a format nobody listed stays in the map (QA review of b5e277c2e263, finding
  * ffcb81ab61a8). Unknown means included.
  */
+/**
+ * Markdown that executable code loads as a model prompt — in the map whatever
+ * the extension rule below says.
+ *
+ * `docs/security/ciso-brief.md` is this audit's own CISO system prompt
+ * (`scripts/security/lib/team.mjs` names it, `scripts/security/audit.mjs` reads
+ * it and sends it as the system message). Excluded as prose, a change to it
+ * reached no consultant as repository data, and a line telling the CISO to
+ * downgrade findings would have steered the sealed report without anything in
+ * the audit ever looking at it (QA review of 33471220d6e9, finding f4561d983d92).
+ * The QA and UX briefs are loaded the same way by `scripts/qa/lib/prompt.mjs`
+ * and `scripts/ux/lib/prompt.mjs`.
+ *
+ * Deliberately these three files and not every `.md` in the repository: what
+ * makes them reviewable is that code reads them as instructions, not that they
+ * are documentation. Together they are about 25,000 characters — a quarter of
+ * one consultant call.
+ */
+export const AGENT_PROMPTS = [
+  'docs/security/ciso-brief.md',
+  'docs/qa/reviewer-brief.md',
+  'docs/ux/ux-brief.md',
+];
+
 export const EXCLUSIONS = [
   { reason: 'binary media, fonts and archives — no executable content', test: (p) => /\.(png|jpe?g|gif|ico|webp|pdf|mp3|mp4|woff2?|ttf|zip)$/.test(p) },
-  { reason: 'Markdown prose — not built, not served', test: (p) => /\.md$/.test(p) },
+  { reason: 'Markdown prose — not built, not served; the briefs an agent loads as a model prompt are in the map (AGENT_PROMPTS)', test: (p) => /\.md$/.test(p) },
   { reason: 'data files under docs/ (JSON, text, the public key) — not built, not served', test: (p) => /^docs\/.*\.(json|txt|pem|csv)$/.test(p) },
   { reason: 'data files of the separate video project — not part of the app build or deployment', test: (p) => /^clean-core-video\/.*\.(json|txt)$/.test(p) },
   { reason: 'sample ABAP and static text assets — data, not code', test: (p) => /^abap-test-files\/.*\.(abap|txt)$/.test(p) || /^public\/.*\.(abap|txt|vtt|sha256)$/.test(p) },
@@ -44,11 +68,14 @@ export const EXCLUSIONS = [
  */
 const EXECUTABLE = /\.(js|mjs|cjs|jsx|ts|tsx|mts|cts|sh|bash|zsh|ps1|psm1|cmd|bat|py|rb|pl|php|html?|mdx|svg|yml|yaml|toml|rules)$/i;
 
-const excludedBy = (path) => (EXECUTABLE.test(path) ? null : EXCLUSIONS.find((e) => e.test(path)) || null);
+const excludedBy = (path) =>
+  EXECUTABLE.test(path) || AGENT_PROMPTS.includes(path) ? null : EXCLUSIONS.find((e) => e.test(path)) || null;
 
 /** Domains the consultants are split by. The first match wins. */
 export const DOMAINS = [
-  { domain: 'ci-cloud', test: (p) => /^\.github\/|^(Dockerfile|cloudbuild|firebase\.json|firebase\.rules-all-dbs\.json|vercel\.json)|^scripts\//.test(p) },
+  // The agent prompts go to `ci-cloud-ai`, the consultant whose brief already covers
+  // prompt injection and model output used in security decisions (lib/team.mjs).
+  { domain: 'ci-cloud', test: (p) => AGENT_PROMPTS.includes(p) || /^\.github\/|^(Dockerfile|cloudbuild|firebase\.json|firebase\.rules-all-dbs\.json|vercel\.json)|^scripts\//.test(p) },
   { domain: 'data-rules', test: (p) => /^firestore\.rules$|^hooks\/|^lib\/(firebase|consent|usage|survey)/.test(p) },
   { domain: 'identity-crypto', test: (p) => /(mfa|approval-token|audit-|signing|signature|run-guard|s4-credentials|verify-pack|\.well-known|account\/|auth)/.test(p) },
   { domain: 'appsec-api', test: (p) => /^app\/api\/|^middleware\.ts$|^lib\/(gemini|rate-limit|safe-fetch|sanitize|runner|test-verdicts|abap\/)/.test(p) },

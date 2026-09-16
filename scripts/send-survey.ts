@@ -27,7 +27,7 @@ import { createUnsubscribeToken, normaliseEmail } from '../lib/unsubscribe-token
 import { createSurveyToken } from '../lib/survey/token';
 import { SURVEY_CAMPAIGN, SURVEY_OPEN_DAYS, SURVEY_SUBJECT } from '../lib/survey/definition';
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../lib/survey/invite-email';
-import { claimSend, completeSend, failSend, recordInvited } from '../lib/survey/outbox';
+import { claimSend, completeSend, failSend, recordInvited, sendIdempotencyKey } from '../lib/survey/outbox';
 import { wrapEmailDocument } from '../lib/email-layout';
 import { FIRESTORE_DB_ID, APP_BASE_URL } from '../lib/constants';
 
@@ -49,17 +49,31 @@ const ATTEMPTS = 3;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** POSTs one message, retrying the failures that are worth retrying. */
+/**
+ * POSTs one message, retrying the failures that are worth retrying.
+ *
+ * `idempotencyKey` is what makes those retries safe. A timeout, a 429 or a 5xx
+ * can all reach the caller after Resend has already accepted the message, and
+ * the attempt after it would then deliver a second copy — the outbox record
+ * only stops the *next run*, not the retry inside this one (QA review of
+ * 33471220d6e9, finding 2b0cacd91960). The key is derived from the campaign and
+ * the address, so every attempt of every run carries the same one.
+ */
 async function sendWithRetry(
   key: string,
   payload: unknown,
+  idempotencyKey: string,
 ): Promise<{ ok: true; id: string } | { ok: false; detail: string }> {
   let detail = 'no attempt made';
   for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
     try {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        headers: {
+          Authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+        },
         body: JSON.stringify(payload),
       });
       if (res.ok) {
@@ -343,7 +357,7 @@ async function main() {
         'List-Unsubscribe': `<${unsubscribeUrl}>, <mailto:${REPLY_TO}?subject=Unsubscribe>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
       },
-    });
+    }, sendIdempotencyKey(SURVEY_CAMPAIGN, r.email));
 
     if (!result.ok) {
       failed++;

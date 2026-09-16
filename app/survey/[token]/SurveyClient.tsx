@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Check, Loader2, AlertCircle, Send } from 'lucide-react';
 import {
   SURVEY_QUESTIONS,
@@ -106,13 +106,42 @@ export default function SurveyClient({
     }
   }
 
+  /**
+   * One request at a time per question, and only the newest press may speak.
+   *
+   * Every press used to start its own request and then write `saved` and the
+   * status from the value it had captured. Tap A, tap B before A's request has
+   * come back, and if A finishes last it writes A into `saved` and reports
+   * "saved" — while B is what is highlighted on screen and what the server
+   * holds. The read-back at the foot of the page then contradicted the
+   * selection, and the two requests could also reach the server in the wrong
+   * order (QA review of 33471220d6e9, finding f7110f3d6619).
+   *
+   * `queues` serialises the requests for one question, so the server's last
+   * write is the reader's last press; `latest` is the sequence number of that
+   * press, and a request that is no longer the latest settles nothing.
+   * Questions stay tappable — the answer on screen is the answer being sent.
+   */
+  const queues = useRef<Record<string, Promise<void>>>({});
+  const latest = useRef<Record<string, number>>({});
+
   /** A press on this page. An event handler, so setting state here is the normal path. */
   async function record(questionId: string, value: SurveyAnswer) {
+    const seq = (latest.current[questionId] ?? 0) + 1;
+    latest.current[questionId] = seq;
     setStatus((s) => ({ ...s, [questionId]: 'saving' }));
     setAnswers((a) => ({ ...a, [questionId]: value }));
-    const ok = await post(questionId, value);
-    if (ok) setSaved((s) => ({ ...s, [questionId]: value }));
-    setStatus((s) => ({ ...s, [questionId]: ok ? 'saved' : 'error' }));
+
+    const run = (queues.current[questionId] ?? Promise.resolve()).then(async () => {
+      const ok = await post(questionId, value);
+      // Superseded while it was in flight: the press that superseded it owns
+      // the outcome, and writing this one's would be writing the older answer.
+      if (latest.current[questionId] !== seq) return;
+      if (ok) setSaved((s) => ({ ...s, [questionId]: value }));
+      setStatus((s) => ({ ...s, [questionId]: ok ? 'saved' : 'error' }));
+    });
+    queues.current[questionId] = run;
+    await run;
   }
 
   /**

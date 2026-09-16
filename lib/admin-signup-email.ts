@@ -18,6 +18,14 @@ import { APP_BASE_URL, CONTACT_EMAIL } from '@/lib/constants';
  * rows stack rather than sitting in two columns.
  *
  * Every interpolated value must be HTML-escaped by the caller.
+ *
+ * It says the welcome mail was *submitted for delivery*, not that it reached the
+ * user. This notification is built in the same request that posts the welcome
+ * mail to Resend, and a 200 from `POST /emails` means queued — `lib/email-events.ts`
+ * exists precisely because the two are not the same thing. The mail can still be
+ * delayed, quarantined or bounced afterwards, and only the webhook can say which;
+ * so the sentence points at the account's row in the admin console, where that
+ * verdict lands (QA review of 33471220d6e9, finding 6500f93e60fd).
  */
 
 export interface AdminSignupEmailInput {
@@ -102,7 +110,7 @@ export function buildAdminSignupEmail({
                   <h1 style="font-size: 23px; font-weight: 800; color: #0f172a; margin: 14px 0 0 0; letter-spacing: -0.02em; line-height: 1.2;">A new account was created</h1>
 
                   <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 16px 0 20px 0;">
-                    Activated immediately &mdash; no approval step, so there is nothing for you to do. The welcome email with the first-run guide has gone to the user.
+                    Activated immediately &mdash; no approval step, so there is nothing for you to do. The welcome email with the first-run guide was <strong>submitted for delivery</strong>; whether it arrived is on the account&rsquo;s row in the admin console.
                   </p>
 
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; margin-bottom: 20px;">

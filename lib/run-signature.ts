@@ -46,6 +46,21 @@ export function signRunHash(runHash: string, key: string): string {
   return crypto.createHmac('sha256', key).update(runHash).digest('hex');
 }
 
+/**
+ * The hash a stored run document should carry, recomputed from its own content.
+ *
+ * Exported so a caller that has no signing key can still prove the document was
+ * not altered — the migration verifier does exactly that, and comparing the
+ * stored `runHash` of source and target only proves the field was copied, not
+ * that the content behind it still matches. `verifyRunIntegrity` below uses this
+ * and then checks the HMAC on top, so the two can never drift.
+ */
+export function recomputeStoredRunHash(runData: Record<string, unknown>): string {
+  const unsigned: Record<string, unknown> = { ...runData };
+  for (const f of UNSIGNED_FIELDS) delete unsigned[f];
+  return computeRunHash(unsigned);
+}
+
 /** Constant-time compare that does not leak length through an exception. */
 function timingSafeEqualHex(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
@@ -74,10 +89,7 @@ export function verifyRunIntegrity(runData: Record<string, any>, key: string): R
     return { valid: false, reason: 'missing-fields' };
   }
 
-  const unsigned: Record<string, any> = { ...runData };
-  for (const f of UNSIGNED_FIELDS) delete unsigned[f];
-
-  const recomputed = computeRunHash(unsigned);
+  const recomputed = recomputeStoredRunHash(runData);
   if (!timingSafeEqualHex(recomputed, runData.runHash)) {
     return { valid: false, reason: 'hash-mismatch' };
   }
