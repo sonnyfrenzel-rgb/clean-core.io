@@ -83,11 +83,20 @@ export function classifySends(records: SendRecord[]): { sent: string[]; sending:
 
 /**
  * People the survey reached, written to the campaign document in one
- * transaction with the count that produced it. Two guarantees: the number
- * written is the number of records the transaction read (a record that
- * changes between read and commit makes Firestore run the step again), and it
- * never goes down — a send record is never un-sent, so a smaller number can
- * only be a staler one, and it is not written.
+ * transaction with the count that produced it. Two guarantees: a campaign
+ * document another run wrote between this read and this commit is a conflict
+ * — Firestore runs the step again on the fresh state, so a stale count never
+ * lands on top of a fresher one — and the number never goes down, because a
+ * send record is never un-sent and a smaller number can only be a staler one.
+ * What the transaction does not promise: a send record that *appears* while
+ * it runs is not a conflict (Firestore locks what was read, not the range),
+ * so it is counted by the next run. Never long, at worst one run late. The
+ * forced interleaving — another run writing under this transaction — is not
+ * asserted against the emulator: writes issued from the same Admin client
+ * while its transaction was open were discarded on the retry (observed
+ * 16.09.2026), which says something about the emulator and nothing about
+ * Firestore. tests/survey-outbox.spec.ts asserts what holds everywhere: one
+ * claim wins, committed counts never fall, a later run converges on the records.
  */
 export async function recordInvited(db: Firestore, campaign: string, campaignRef: DocumentReference): Promise<number> {
   return db.runTransaction(async (tx: Transaction) => {

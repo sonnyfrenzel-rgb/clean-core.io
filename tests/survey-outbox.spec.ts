@@ -70,35 +70,58 @@ test('invited is the number of records that say the mail went out, written with 
   expect(await recordInvited(db, campaign, campaignRef())).toBe(4);
 });
 
-test('concurrent counts and sends end with the count of the records, never below it', async () => {
-  // Five more recipients settle while five counts run; whatever the
-  // interleaving, the transactions serialise and the last committed count is
-  // the count of the records it read — and a count can never go down.
+test('five runs racing for one recipient make exactly one provider call', async () => {
+  // The send loop, reduced to its guard: a run asks the provider only when its
+  // claim succeeded. Five such runs at once, one recipient, one call.
+  const recipient = { uid: 'u-loop-race', email: 'loop-race@cleancore-test.io' };
+  let providerCalls = 0;
+  const run = async () => {
+    if (!(await claimSend(db, campaign, recipient))) return 'skipped';
+    providerCalls++;
+    await completeSend(db, campaign, recipient.uid, `p-${providerCalls}`);
+    return 'sent';
+  };
+  const outcomes = await Promise.all(Array.from({ length: 5 }, run));
+  expect(providerCalls).toBe(1);
+  expect(outcomes.filter((o) => o === 'sent')).toHaveLength(1);
+  expect((await sendRef(db, campaign, recipient.uid).get()).data()).toMatchObject({ state: 'sent', providerId: 'p-1' });
+});
+
+test('every committed count is at least the one before it, and the last one is the count of the records', async () => {
+  // Five more recipients settle while five counts run. Each count resolves
+  // after its commit; whatever the interleaving, the sequence of committed
+  // values never goes down, and the last commit counts every record it read.
   const extra = Array.from({ length: 5 }, (_, i) => ({ uid: `u-conc-${i}`, email: `conc-${i}@cleancore-test.io` }));
   await Promise.all(extra.map((r) => claimSend(db, campaign, r)));
-  const results = await Promise.all([
-    ...extra.map((r) => completeSend(db, campaign, r.uid, `p-${r.uid}`).then(() => -1)),
-    ...Array.from({ length: 5 }, () => recordInvited(db, campaign, campaignRef())),
+  const committed: number[] = [];
+  await Promise.all([
+    ...extra.map((r) => completeSend(db, campaign, r.uid, `p-${r.uid}`)),
+    ...Array.from({ length: 5 }, () => recordInvited(db, campaign, campaignRef()).then((n) => { committed.push(n); })),
   ]);
-  const counts = results.filter((n) => n >= 0);
-  for (let i = 1; i < counts.length; i++) expect(counts[i]).toBeGreaterThanOrEqual(0);
+  expect(committed).toHaveLength(5);
+  for (let i = 1; i < committed.length; i++) expect(committed[i], `count ${i} dropped: ${committed.join(' → ')}`).toBeGreaterThanOrEqual(committed[i - 1]);
 
+  const sent = async () => (await db.collection('email_sends').where('campaign', '==', campaign).get()).docs.filter((d) => ['sent', undefined].includes(d.data().state)).length;
   const final = await recordInvited(db, campaign, campaignRef());
-  const sent = (await db.collection('email_sends').where('campaign', '==', campaign).get()).docs.filter((d) => {
-    const state = d.data().state;
-    return state === 'sent' || state === undefined;
-  }).length;
-  expect(final).toBe(sent);
-  expect(final).toBe(9);
-  expect((await campaignRef().get()).data()?.invited).toBe(9);
+  expect(final).toBe(await sent());
+  expect(final).toBe(10);
+  expect((await campaignRef().get()).data()?.invited).toBe(10);
 });
 
 test('a stale run cannot lower the count', async () => {
   // A campaign document that already says more than the records do — a run
   // that counted with a wider view — is left alone by a narrower count.
-  await campaignRef().set({ invited: 12 }, { merge: true });
-  expect(await recordInvited(db, campaign, campaignRef())).toBe(12);
-  expect((await campaignRef().get()).data()?.invited).toBe(12);
+  await campaignRef().set({ invited: 14 }, { merge: true });
+  expect(await recordInvited(db, campaign, campaignRef())).toBe(14);
+  expect((await campaignRef().get()).data()?.invited).toBe(14);
+  // …and a narrower stored value is brought back up to the records.
+  await campaignRef().set({ invited: 3 }, { merge: true });
+  expect(await recordInvited(db, campaign, campaignRef())).toBe(10);
+  // A run that settles one more send is counted by the run after it.
+  const late = { uid: 'u-late', email: 'late@cleancore-test.io' };
+  expect(await claimSend(db, campaign, late)).toBe(true);
+  await completeSend(db, campaign, late.uid, 'p-late');
+  expect(await recordInvited(db, campaign, campaignRef())).toBe(11);
 });
 
 test.afterAll(async () => {

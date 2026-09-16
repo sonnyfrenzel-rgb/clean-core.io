@@ -81,6 +81,21 @@ gewinnt; der Zähler ist transaktional und fällt nie unter einen gespeicherten 
 noch die Verdrahtung. Bemerkenswert: der Admin-SDK läuft aus einer Playwright-Spec gegen den Emulator — das
 öffnet 0.17 (Emulator-Tests statt Quelltext-Greps) einen einfachen Weg.
 
+**QA-Runde 5 (`9f4cede`):** vier Mediums — der leere Deck zeigt auch die Coverage-Kennzahl nicht mehr als
+Prozent (der Clean-Core-Score bleibt, als Wert des signierten Runs beschriftet); mein `` im Route-Test war als
+Backspace-Byte in der Datei gelandet (Heredoc) und ist jetzt echte Wortgrenze, die Enum-Fälschungen werden je
+Zielort geprüft; der Outbox-Test hat einen Loop-Harness (fünf Läufe, ein Provider-Aufruf), prüft die Monotonie der
+committeten Zähler und die Konvergenz auf die Records. **Nicht belegbar gegen den Emulator:** das erzwungene
+Interleaving „anderer Lauf schreibt unter der Transaktion" — Schreibzugriffe aus demselben Admin-Client während
+einer offenen Transaktion wurden beim Neuversuch verworfen (Emulator-Verhalten, dokumentiert in
+`lib/survey/outbox.ts`); die Zusicherung selbst (Kampagnendokument im Read-Set, `max(stored, counted)`) steht.
+
+**0.13, Variante 2 geprüft (16.09.2026):** der Auth-Emulator (firebase-tools 15.30.1) kann **kein TOTP-MFA** —
+`mfaEnrollment:start` verlangt `phoneEnrollmentInfo`; native TOTP wäre in CI nicht testbar. Zudem verlangt
+Firebase eine verifizierte E-Mail vor dem Enrolment (`auth/unverified-email`), was unsere Passwort-Konten heute
+nicht haben, und das Identity-Platform-Upgrade gilt für das eine Firebase-Projekt, das dev und prod teilen.
+Entscheidung Sonny steht aus (siehe Bericht).
+
 **Offen für Sonny:** den überholten Bot-Branch löschen (`git push origin --delete chore/sync-cloudification-repo`);
 `main` nach einer sauberen QA-Runde; die Survey-Workflows erst danach wieder einschalten; die
 Resend-Tracking-Einstellung prüfen (3.0.9, nur mit Dashboard-Zugang möglich).

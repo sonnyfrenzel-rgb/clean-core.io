@@ -147,8 +147,13 @@ export function buildBoardDeck(input: {
     type: 'metrics',
     subtitle: nothingEstablished ? 'No findings were detected; coverage is not established' : 'High-confidence automated Clean Core migrations',
     metrics: [
-      { label: 'Coverage Estimate', value: measured(project.coverageEstimate?.percentage, (v) => `${v}%`), sub: 'Fully mapped constructs' },
-      { label: 'Clean Core Score', value: measured(project.cleanCoreScore, (v) => `${v}/100`), sub: 'Out of 100 maximum' },
+      // With nothing established, a coverage figure on a slide titled "Not
+      // Determined" reads as coverage of these findings, which it is not (QA
+      // 1f94420f3234). The Clean Core Score is the signed run's own measure,
+      // taken by the evidence engine over the whole source — it stays, labelled
+      // as what it is, and never as a statement about these findings.
+      { label: 'Coverage Estimate', value: nothingEstablished ? 'not determined' : measured(project.coverageEstimate?.percentage, (v) => `${v}%`), sub: nothingEstablished ? 'no findings — nothing to map' : 'Fully mapped constructs' },
+      { label: 'Clean Core Score', value: measured(project.cleanCoreScore, (v) => `${v}/100`), sub: nothingEstablished ? "the signed run's score — independent of these findings" : 'Out of 100 maximum' },
       { label: 'Findings by Level', value: findings.length ? `${counts.fully} · ${counts.partial} · ${counts.notSupported}` : 'none detected', sub: findings.length ? 'fully · partial · not supported' : 'coverage not established' }
     ],
     content: nothingEstablished

@@ -83,7 +83,9 @@ test.describe('Board Deck Integrity & Drift Verification', () => {
     // A trivial program and a detector that threw both arrive here as an
     // empty list. The deck used to seal both as "Unconditional Go-Live
     // Approved / LOW RISK" (UX-002, critical).
-    const deck = buildBoardDeck({ project: baseProject, findings: [] });
+    // A project that carries numbers of its own: none of them may read as
+    // coverage of findings that do not exist.
+    const deck = buildBoardDeck({ project: { ...baseProject, cleanCoreScore: 100, coverageEstimate: { percentage: 100 } as never }, findings: [] });
 
     const slide1 = deck.slides[0];
     expect(slide1.subtitle).toContain('No verdict');
@@ -108,6 +110,12 @@ test.describe('Board Deck Integrity & Drift Verification', () => {
     for (const label of ['Needs Hand Work', 'Needs Review']) {
       expect(deck.slides[4].metrics?.find((m) => m.label === label)?.value).toBe('not determined');
     }
+    expect(deck.slides[1].metrics?.find((m) => m.label === 'Coverage Estimate')?.value).toBe('not determined');
+    // No metric on the empty deck is a percentage, and nothing claims a mapping.
+    for (const slide of deck.slides) for (const m of slide.metrics ?? []) expect(m.value, `${slide.title} · ${m.label}`).not.toMatch(/%$/);
+    expect(text).not.toContain('Fully mapped constructs');
+    // The run's own score is measured by a different detector and stays — as the run's, not as coverage.
+    expect(deck.slides[1].metrics?.find((m) => m.label === 'Clean Core Score')).toEqual({ label: 'Clean Core Score', value: '100/100', sub: "the signed run's score — independent of these findings" });
     expect(text).not.toMatch(/fully supported|high-confidence|resolved to released|fully decomposed|fully resolved|zero manual|cannot be transformed automatically/i);
   });
 
