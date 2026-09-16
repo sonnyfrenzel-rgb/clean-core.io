@@ -204,7 +204,7 @@ Execute automated tests and validate your modernized code.
 - **Mock Environment**: Run tests without an S/4HANA tenant, against mocks in a restricted Node process
 - **Tenant Environment**: Connect a real S/4HANA sandbox to check the connection and read OData metadata (requires BYOT setup). Running tests against it is locked.
 - **S/4HANA Live Tenant Bridge**: Configure connection to your S/4HANA system with Basic Auth, OAuth 2.0, SAP API Hub Key, or BTP Destination JSON
-- **Test Results Dashboard**: TAP-formatted logs with pass/fail status, execution time, and AI-powered explanations
+- **Test Results Dashboard**: TAP-formatted logs with pass/fail status, execution time, and model-written explanations
 
 ### Documentation Stage (/project/[id]/documentation)
 Auto-generate comprehensive migration documentation.
