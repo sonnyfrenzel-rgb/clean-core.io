@@ -92,8 +92,15 @@ export const NOT_GENERATED = 'Not generated';
 /**
  * Why a section has no model output. `null` is the ordinary case: the account
  * can generate it and simply has not yet.
+ *
+ * `declined` is the reader's own choice rather than a limit of the account —
+ * roadmap 1.8's "Run without model" in the workspace list report. It is in this
+ * union, and not a sentence written at the button, for the reason the rest of
+ * this file exists: there is one spelling of every absence, and a fourth reason
+ * invented next to the three that were already here is how "not generated"
+ * becomes four different claims.
  */
-export type ModelAbsence = 'stage-off' | 'no-key' | 'failed' | null;
+export type ModelAbsence = 'stage-off' | 'no-key' | 'failed' | 'declined' | null;
 
 /** The error code `/api/gemini` returns when the caller's stage is switched off. */
 export const STAGE_DISABLED_CODE = 'model-stage-disabled';
@@ -112,6 +119,8 @@ export function modelAbsenceReason(absence: ModelAbsence, stage?: ModelStage): s
       return 'No Gemini key is available for this account — neither the community key nor one of your own.';
     case 'failed':
       return 'The model call did not come back with anything usable.';
+    case 'declined':
+      return 'This run was started without the model, so no narrative was asked for.';
     default:
       return 'Nothing has been generated for this section yet.';
   }

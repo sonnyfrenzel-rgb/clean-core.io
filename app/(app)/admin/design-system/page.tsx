@@ -21,10 +21,12 @@ import CcIconButton from '@/components/cc/IconButton';
 import { CcCleanCoreLevel, CcEvidenceLevel } from '@/components/cc/Identifier';
 import CcMessageBox from '@/components/cc/MessageBox';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcObjectIdentifier from '@/components/cc/ObjectIdentifier';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcRunIndicator, { CcRunCost } from '@/components/cc/RunIndicator';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
+import CcTable from '@/components/cc/Table';
 import { CcRulePropertyTag, CcTag } from '@/components/cc/Tag';
 import CcToast from '@/components/cc/Toast';
 import CcWhyPopover from '@/components/cc/WhyPopover';
@@ -481,6 +483,70 @@ export default function DesignSystemGallery() {
             </CcEmptyState>
           </CcCard>
         </div>
+      </Section>
+
+      {/* Roadmap 1.8 added the two pieces §2.4 always needed and 1.5 did not
+          build: the Object Identifier and the table itself. They are here for
+          the same reason as everything else on this page — a component that is
+          not here is a component nothing measures. */}
+      <Section id="ds-table" title="Table">
+        <CcCard title="Projects" count={3}>
+          <CcTable
+            caption="Three projects, one of them with nothing on it"
+            columns={[
+              { key: 'project', label: 'Project' },
+              { key: 'lines', label: 'Lines', numeric: true, width: '110px' },
+              { key: 'findings', label: 'Findings', numeric: true, width: '120px' },
+              { key: 'status', label: 'Status', width: '260px' },
+            ]}
+            rows={[
+              {
+                key: 'demo',
+                cells: {
+                  project: (
+                    <CcObjectIdentifier
+                      title="Demo · Z_MM_PO_APPROVAL"
+                      identifier="Fully worked example · fictitious code"
+                      meta={<CcTag>Demo</CcTag>}
+                    />
+                  ),
+                  lines: '668',
+                  findings: '42',
+                  status: <CcObjectStatus value="partial" />,
+                },
+              },
+              {
+                key: 'staged',
+                cells: {
+                  project: (
+                    <CcObjectIdentifier title="Staged, never analysed" identifier="P-0422" />
+                  ),
+                  lines: '2,410',
+                  findings: (
+                    <span className="text-[12px] font-medium text-cc-ink-muted">not analysed</span>
+                  ),
+                  status: <CcObjectStatus value="draft" />,
+                },
+              },
+              {
+                key: 'stale',
+                cells: {
+                  project: (
+                    <CcObjectIdentifier title="Source changed after the run" identifier="P-0359" />
+                  ),
+                  lines: '1,812',
+                  findings: '61',
+                  status: (
+                    <span className="flex flex-col items-start gap-1">
+                      <CcObjectStatus value="partial" />
+                      <CcProvenanceChip value="stale" note="source changed" />
+                    </span>
+                  ),
+                },
+              },
+            ]}
+          />
+        </CcCard>
       </Section>
 
       <Section id="ds-code" title="Code surface">

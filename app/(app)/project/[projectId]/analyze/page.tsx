@@ -28,6 +28,14 @@ import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { buildAnalysisPrompt } from '@/lib/analysis-prompt';
+/**
+ * The deterministic half of the initial worklist. It used to be a function in
+ * this file; roadmap 1.8 moved it to `lib/analysis-run.ts`, where the workspace
+ * list report reaches it too. A second copy would let a run started from a table
+ * row produce a different worklist from one started here, which is the sort of
+ * difference nobody would look for.
+ */
+import { findingsWorklist } from '@/lib/analysis-run';
 import { readStoredAnalysis, withoutUnapprovedMoney } from '@/lib/money-honesty';
 import AnchoredNarrative from '@/components/analyze/AnchoredNarrative';
 import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
@@ -70,44 +78,6 @@ import { DocumentSkeleton } from '@/components/Skeleton';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';
-
-/**
- * The deterministic half of the initial worklist: one item per grouped finding.
- *
- * Written once because it is now reached from three places — a parsed
- * narrative, an unparseable one, and a run with no narrative at all (roadmap
- * 1.2). Three copies of the same mapping would let the zero-LLM path quietly
- * produce a different worklist from the ordinary one, which is the sort of
- * difference nobody would look for.
- */
-function findingsWorklist(
-  findings: import('@/lib/abap/evidence-model').EvidenceFinding[],
-  fileName: string,
-): any[] {
-  const grouped = new Map<string, { finding: any; lines: number[] }>();
-  for (const f of findings) {
-    const groupKey = `${f.kind}::${f.objectName || f.title}`;
-    const existing = grouped.get(groupKey);
-    if (existing) {
-      existing.lines.push(f.lineStart);
-    } else {
-      grouped.set(groupKey, { finding: f, lines: [f.lineStart] });
-    }
-  }
-  return Array.from(grouped.values()).map(({ finding: f, lines }, idx) => ({
-    id: `finding-${f.kind}-${idx}`,
-    title: lines.length > 1 ? `${f.title} (${lines.length}×)` : f.title,
-    category: 'Finding',
-    level: f.severity === 'Critical' || f.severity === 'High' ? 'not-supported' : 'partial',
-    severity: f.severity === 'Critical' || f.severity === 'High' ? 'High' : f.severity === 'Medium' ? 'Medium' : 'Low',
-    location: lines.length > 1 ? `${fileName}:${lines.join(', ')}` : `${fileName}:${lines[0]}`,
-    recommendation: f.recommendation,
-    status: 'open',
-    effort: f.severity === 'Critical' ? 'High' : f.severity === 'High' || f.severity === 'Medium' ? 'Medium' : 'Low',
-    targetAnchor: f.kind,
-    detail: f.technicalDetail,
-  }));
-}
 
 export default function AnalyzePage() {
   const { projectId } = useParams();

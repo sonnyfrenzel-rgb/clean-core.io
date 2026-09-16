@@ -27,6 +27,14 @@ import { cn } from '@/lib/utils';
  */
 export interface CcCardProps {
   title?: React.ReactNode;
+  /**
+   * The heading level, 3 by default. A card is an `h3` under a section's `h2`
+   * (§2.3) — but on a List Report the card *is* the section, its toolbar title
+   * is the section title, and an `h1` followed by an `h3` is a skipped level.
+   * The style does not change with it: the classes below fix size, weight and
+   * margin, so `tests/cc-style-guard.spec.ts` still sees one computed title.
+   */
+  level?: 2 | 3;
   /** "(42)" after the title — the count of what is inside. */
   count?: number | string;
   /** Provenance chip, evidence level, tag: what the card's content is worth. */
@@ -39,12 +47,14 @@ export interface CcCardProps {
 
 export default function CcCard({
   title,
+  level = 3,
   count,
   meta,
   actions,
   density = 'cozy',
   children,
 }: CcCardProps) {
+  const Heading = level === 2 ? 'h2' : 'h3';
   return (
     <section
       data-cc-card=""
@@ -56,9 +66,12 @@ export default function CcCard({
       {(title || meta || actions) && (
         <div className="mb-2.5 flex flex-wrap items-center gap-2">
           {title ? (
-            <h3 data-cc-card-title className="m-0 text-[14px] font-bold leading-tight text-cc-ink">
+            <Heading
+              data-cc-card-title
+              className="m-0 text-[14px] font-bold leading-tight text-cc-ink"
+            >
               {title}
-            </h3>
+            </Heading>
           ) : null}
           {count !== undefined ? (
             <span
