@@ -250,7 +250,24 @@ test.describe('nothing is spent on a run that does not complete', () => {
     await resetAccount();
     const source = await exampleSource(request, EXAMPLE.file);
 
-    const failed = await analyse(request, source, BREAKS_AFTER_RESERVATION);
+    const projectId = await newProject();
+    const inFlight = request.post('/api/runs/create', {
+      headers: headers(),
+      data: { projectId, legacyCode: source, s4Deployment: 'public', analysis: '{}', ...BREAKS_AFTER_RESERVATION },
+    });
+
+    // The reservation is *observed*, not inferred. Without this the test would
+    // pass just as well against a route that never reserved anything — the
+    // counters would be unchanged either way, and "the refund works" would be
+    // a statement about nothing (QA review of 0472b74d1128).
+    const deadline = Date.now() + 20_000;
+    for (;;) {
+      if ((await profile()).starterExamplesUsed?.[EXAMPLE.name] === true) break;
+      expect(Date.now(), 'the run never reserved the free example, so the refund proves nothing').toBeLessThan(deadline);
+      await new Promise((r) => setTimeout(r, 10));
+    }
+
+    const failed = await inFlight;
     expect(failed.status(), 'the run failed after the reservation').toBe(500);
 
     const after = await profile();

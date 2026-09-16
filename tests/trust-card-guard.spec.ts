@@ -68,13 +68,18 @@ function prose(rel: string): string {
   } else {
     text = text.replace(/```[\s\S]*?```/g, ' ').replace(/\*\*/g, '').replace(/`/g, '');
   }
+  return normalise(text);
+}
+
+/** The shape both halves have to agree in: entities resolved, whitespace flat. */
+function normalise(text: string): string {
   return text
     .replace(/&amp;/g, '&')
     .replace(/&apos;|&rsquo;|&lsquo;/g, "'")
     .replace(/&quot;|&ldquo;|&rdquo;/g, '"')
     .replace(/&mdash;/g, '—')
     .replace(/&ndash;/g, '–')
-    .replace(/&nbsp;/g, ' ')
+    .replace(/&nbsp;| /g, ' ')
     .replace(/&middot;/g, '·')
     .replace(/[‘’]/g, "'")
     .replace(/[“”]/g, '"')
@@ -121,6 +126,40 @@ test.describe('every statement on the card is written down somewhere', () => {
       }
     });
   }
+
+  test('every cited sentence is on the page a reader opens, not merely in its source', async ({ page }) => {
+    // The source check above is the fast one; this is the one that decides.
+    // A sentence can survive in a `.tsx` file without being shown — in a dead
+    // constant, in a branch nothing renders, behind a condition that is never
+    // true. Stripping comments closed one of those doors (QA review of
+    // 6a24b632ff44); the QA agent was right that it did not close the rest,
+    // and only the rendered document can. SECURITY.md has no rendered form —
+    // it *is* the document — so it stays on the file.
+    const wanted = new Map<string, { claim: string; evidence: string }[]>();
+    for (const claim of ALL_CLAIMS) {
+      for (const source of claim.sources) {
+        if (source.file === 'SECURITY.md') continue;
+        const route = source.href.split('#')[0];
+        const list = wanted.get(route) ?? [];
+        for (const evidence of source.evidence) list.push({ claim: claim.id, evidence });
+        wanted.set(route, list);
+      }
+    }
+    expect(wanted.size, 'no claim cites a page of this app any more').toBeGreaterThan(0);
+
+    for (const [route, entries] of wanted) {
+      await page.goto(route, { waitUntil: 'domcontentloaded' });
+      const rendered = normalise(await page.locator('body').innerText());
+      expect(rendered.length, `${route} rendered nothing`).toBeGreaterThan(500);
+      for (const { claim, evidence } of entries) {
+        expect(
+          rendered,
+          `${claim}: a reader opening ${route} does not find "${evidence}". ` +
+            'The sentence is in the source but not on the page.',
+        ).toContain(normalise(evidence));
+      }
+    }
+  });
 
   test('every link reaches the place that carries the claim', () => {
     for (const claim of ALL_CLAIMS) {
