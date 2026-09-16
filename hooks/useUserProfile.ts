@@ -40,6 +40,15 @@ export interface UserProfile {
    * the browser out of it, and the screens only read it. Absent means all on.
    */
   modelStages?: Partial<Record<import('@/lib/model-stages').ModelStage, boolean>>;
+  /**
+   * The admin-only switch the 3.0 interface grows behind (roadmap 1.4).
+   * Server-written, like `modelStages`: only `POST /api/workspace-shell` puts a
+   * value in here, `userClientUpdateKeys()` in `firestore.rules` keeps the
+   * browser out of it, and screens only read it — through
+   * `workspaceShellEnabled`, never directly, because being on is the flag
+   * *and* still being an administrator.
+   */
+  workspaceShell?: boolean;
   createdAt: any;
   /** Server timestamp written once by `activateAccount`; absent means never activated. */
   activatedAt?: any;

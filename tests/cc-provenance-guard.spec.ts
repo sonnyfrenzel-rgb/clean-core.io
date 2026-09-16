@@ -30,6 +30,13 @@ import { createGalleryAdmin, openGallery, GALLERY_PATH, type GalleryAdmin } from
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
+/**
+ * Everything roadmap 1.5 built, plus the workspace shell roadmap 1.4 built on
+ * it. The shell is the first screen that states provenance about a real
+ * project, so it is the first place a freehand badge would actually be read.
+ */
+const CC_SOURCE_DIRS = ['components/cc', 'app/(app)/admin/design-system', 'components/workspace'];
+
 function ccSources(): { rel: string; text: string }[] {
   const out: { rel: string; text: string }[] = [];
   const walk = (dir: string) => {
@@ -46,7 +53,7 @@ function ccSources(): { rel: string; text: string }[] {
       });
     }
   };
-  for (const dir of ['components/cc', 'app/(app)/admin/design-system']) walk(path.resolve(ROOT, dir));
+  for (const dir of CC_SOURCE_DIRS) walk(path.resolve(ROOT, dir));
   return out;
 }
 
