@@ -2,7 +2,13 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { gradeFromSapStates } from '../lib/abap/abcd-classification';
-import { getLevelDerivationCensus } from '../lib/abap/catalog-service';
+import { getLevelDerivationCensus, getLevelRuleVersion } from '../lib/abap/catalog-service';
+import {
+  enumerateLevelRule,
+  fingerprintLevelRule,
+  RULE_RELEASE_STATES,
+  RULE_CLASSIFICATION_STATES,
+} from '../lib/abap/level-rule-version';
 
 /**
  * A published rule that drifts from the code is worse than no published rule.
@@ -110,5 +116,101 @@ test.describe('the census the page prints is derived from the artifacts', () => 
     );
     expect(deprecatedWithout).toBeDefined();
     expect(deprecatedWithout!.withSuccessor).toBe(0);
+  });
+});
+
+/**
+ * Roadmap 0.3: the rule page carries its rule version.
+ *
+ * A version string is the easiest thing in a codebase to get wrong, because
+ * nothing punishes leaving it alone. Typed into the markup it is right on the
+ * day it is typed and quietly wrong from the next change onwards — and the
+ * reader has no way to tell which of the two they are looking at.
+ *
+ * So the version is measured: the fingerprint is a hash over the rule's own
+ * decision table and the rest is the checksums SAP served. These tests are what
+ * make the typed-in version impossible rather than merely discouraged — the
+ * fingerprint has to move when the rule moves, the page has to carry no literal
+ * of its own, and the string on the running page has to be the string the data
+ * produces.
+ */
+test.describe('the rule page carries the version of the rule', () => {
+  test('the fingerprint moves when the rule moves', () => {
+    const real = fingerprintLevelRule(enumerateLevelRule());
+
+    // One branch changed, nothing else: notToBeReleased grades B instead of D —
+    // precisely the reading two reviews arrived at and the page argues against.
+    const altered = fingerprintLevelRule(
+      enumerateLevelRule({
+        grade: (s) =>
+          (s.releaseState || '').toLowerCase() === 'nottobereleased'
+            ? { grade: 'B', provenance: 'catalog' }
+            : gradeFromSapStates(s),
+      }),
+    );
+
+    expect(
+      altered,
+      'the fingerprint did not move when a branch of the rule changed, so it is not reading the rule',
+    ).not.toBe(real);
+  });
+
+  test('the fingerprint does not move when only the order does', () => {
+    // The page says reordering branches without changing an answer is not a new
+    // rule. That is a promise about the fingerprint, so it gets checked.
+    const decisions = enumerateLevelRule();
+    const shuffled = [...decisions].reverse();
+    expect(fingerprintLevelRule(shuffled)).toBe(fingerprintLevelRule(decisions));
+  });
+
+  test('the enumerated domain covers every state SAP actually ships', () => {
+    // A state the rule has never seen falls through to the residual branch. That
+    // is a defensible answer, but the version must at least know the state
+    // exists — otherwise SAP can introduce one and the fingerprint stays put.
+    const version = getLevelRuleVersion();
+    const domain = new Set(
+      enumerateLevelRule().flatMap((d) => [d.releaseState, d.classificationState].filter(Boolean)),
+    );
+    for (const state of [...RULE_RELEASE_STATES, ...RULE_CLASSIFICATION_STATES]) {
+      expect(domain, `the rule branches on "${state}" and the fingerprint does not see it`).toContain(
+        state,
+      );
+    }
+    // 4 release states (incl. absent) x 3 classification states x successor x SAP object.
+    expect(version.decisions).toBeGreaterThanOrEqual(domain.size);
+  });
+
+  test('the page states no version of its own', () => {
+    const version = getLevelRuleVersion();
+    const source = fs.readFileSync(PAGE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+    const literals = [
+      version.fingerprint,
+      version.version,
+      ...version.artifacts.flatMap((a) => [a.sha256, a.fetchedAt, a.file, String(a.entries)]),
+    ];
+    for (const literal of literals) {
+      expect(
+        source,
+        `"${literal}" is written into the page. Every part of the rule version has to come from ` +
+          'getLevelRuleVersion(), or a catalog sync or a rule change will leave the page ' +
+          'confidently describing a version that no longer exists.',
+      ).not.toContain(literal);
+    }
+  });
+
+  test('the running page shows the version the data produces', async ({ page }) => {
+    const version = getLevelRuleVersion();
+    await page.goto('/method/levels');
+    const shown = (await page.locator('[data-level-rule-version]').first().innerText()).trim();
+
+    expect(shown, 'the rendered rule version is not the one the data produces').toBe(version.version);
+    // The two artifact checksums are in the version line, and the full provenance
+    // of each file is on the page next to the file it belongs to.
+    const body = await page.locator('body').innerText();
+    for (const a of version.artifacts) {
+      expect(body, `${a.file} is not named on the page`).toContain(a.file);
+      expect(body, `the sync date of ${a.release} is not on the page`).toContain(a.fetchedAt);
+    }
   });
 });
