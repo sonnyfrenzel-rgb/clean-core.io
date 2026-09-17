@@ -583,89 +583,34 @@ export default function AnalyzePage() {
       // Extensibility Routing Pathway and Comparative matrices
       const isBtp = (project.extensibilityRoute || data.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP');
       
-      const checkpoints = data.extensibilityRouting?.decisionTreeCheckpoints || [
-        {
-          checkpointName: 'Transactional Coupling',
-          question: 'Does the legacy logic require synchronous execution and update locks within standard S/4HANA transactional postings?',
-          evaluation: isBtp 
-            ? 'The custom logic executes asynchronously or independently without blocking standard ERP database threads (e.g. read-only analytics, decoupled webhooks, or scheduled updates).' 
-            : 'The custom logic requires synchronous validation and real-time locking within standard SAP LUW processes (e.g., during posting of sales orders or billing items).',
-          resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
-          cleanCoreImpact: isBtp 
-            ? 'Side-by-side execution leaves S/4HANA upgrade cycles completely unaffected.' 
-            : 'In-App extensibility (RAP) is required to run within the ERP core transaction boundaries while keeping the repository clean.'
-        },
-        {
-          checkpointName: 'UI Paradigm & Customization',
-          question: 'Does the application require an external-facing portal, heavy custom branding, or tight integration with third-party SaaS services?',
-          evaluation: isBtp 
-            ? 'Requires a highly responsive, modern Fiori Elements or custom React UI available to external vendors and clients without exposing standard SAP ports.' 
-            : 'The UI is embedded inside standard S/4HANA transaction screens for internal business users utilizing standard Fiori grids.',
-          resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
-          cleanCoreImpact: isBtp 
-            ? 'BTP decoupled hosting allows modern web framework freedom and enterprise-grade security isolation.' 
-            : 'ABAP RAP keeps the UI aligned with standard S/4HANA layouts, eliminating custom server configurations.'
-        },
-        {
-          checkpointName: 'Data & DB Proximity',
-          question: 'Does the logic perform compute-intensive joins across dozens of custom database tables or require a separate persistent schema?',
-          evaluation: isBtp 
-            ? 'The application relies on decoupled custom data stores, external SaaS APIs, or complex pre-aggregations that would overhead the core database.' 
-            : 'Requires direct, low-latency joins and real-time reads on standard tables (e.g. BSEG, KNA1) inside standard transactional screens.',
-          resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
-          cleanCoreImpact: isBtp 
-            ? 'Decoupling database schemas keeps the ERP core lightweight, safe, and easily upgradeable.' 
-            : 'Uses standard released RAP CDS projection views and standard repository items, preserving database integrity.'
-        },
-        {
-          checkpointName: 'Lifecycle & Resource Scaling',
-          question: 'Does the solution experience highly volatile, bursty resource scaling requirements or have massive external workloads?',
-          evaluation: isBtp 
-            ? 'Scaling requirements are independent of core ERP compute threads, with unpredictable high-volume external webhook events.' 
-            : 'Resource consumption remains flat, predictable, and fully aligned with internal S/4HANA user transaction volume.',
-          resultState: isBtp ? 'Side-by-Side Preferred' : 'Neutral',
-          cleanCoreImpact: isBtp 
-            ? 'Scale-out workloads are absorbed by BTP Cloud Foundry/Kyma, shielding the ERP core system from resource starvation.' 
-            : 'ABAP Cloud leverages standard ERP server resource pools, maintaining unified resource constraints.'
-        }
-      ];
+      /*
+       * `decisionTreeCheckpoints` and `comparativeAnalysis` are optional: the model
+       * returns them when it produced them, and often it did not. Where it had not,
+       * this export wrote four complete checkpoints and a full two-track comparison
+       * — named milestones, an "Evaluation Question", a "Legacy Code Assessment"
+       * per checkpoint, feasibility grades, pros and cons — all of it decided by
+       * one boolean: whether the chosen route contains the letters "BTP". Nothing
+       * had been assessed and none of it was read off the customer's code, yet the
+       * document said the code "was evaluated step-by-step" and that the comparison
+       * was "mapped specifically to this project's requirements". This file is
+       * exported to Confluence and kept as the record of a decision (QA 0613631545b2).
+       *
+       * The screen had the same fallback one layer down, in
+       * `components/analyze/ExtensibilityDecisionMatrix.tsx`; both are gone, because
+       * a corrected export beside a screen that still invents is not a correction.
+       *
+       * Same rule as the business-value block above: a missing value is reported
+       * missing.
+       */
+      const checkpoints = data.extensibilityRouting?.decisionTreeCheckpoints ?? null;
+      const comparative = data.extensibilityRouting?.comparativeAnalysis ?? null;
+      const notDetermined = (what: string) => `
+            <div style="border: 1px dashed #c1c7d0; border-radius: 8px; padding: 16px; margin: 20px 0; color: #5e6c84; font-size: 13px;">
+              <strong style="text-transform: uppercase; font-size: 11px; letter-spacing: 0.06em;">Not determined for this run</strong>
+              <p style="margin: 8px 0 0;">${what} Nothing is inferred here from the chosen route.</p>
+            </div>`;
 
-      const comparative = data.extensibilityRouting?.comparativeAnalysis || {
-        inAppABAPCloud: {
-          technicalFeasibility: isBtp ? 'Partially Compatible' : 'Highly Compatible',
-          fitDetails: isBtp 
-            ? 'Technically possible to implement in RAP, but transactional tight coupling would restrict SaaS integrations and UI layout options.' 
-            : 'Perfect technical fit. Executes inside standard S/4HANA transaction pipelines utilizing RAP CDS views and behavior definitions.',
-          pros: [
-            'Zero latency database reads on core S/4HANA standard tables',
-            'Synchronous transactional execution inside standard SAP LUW',
-            'Direct reuse of existing standard locks and validations'
-          ],
-          cons: [
-            'Language restricted strictly to released ABAP Cloud standard repository items',
-            'No access to external SaaS libraries or Node.js frameworks',
-            'Any compute overhead directly blocks ERP core system processes'
-          ]
-        },
-        sideBySideBTP: {
-          technicalFeasibility: isBtp ? 'Highly Compatible' : 'Partially Compatible',
-          fitDetails: isBtp 
-            ? 'Ideal architectural fit. The application runs as a fully decoupled, upgrade-safe microservice on SAP BTP using CAP and Node.js.' 
-            : 'Feasible via event triggers (Event Mesh) or API destinations, but adds HTTP latency and requires destination configuration.',
-          pros: [
-            'Absolute lifecycle isolation - zero upgrade blockers for S/4HANA core',
-            'Total development freedom with Node.js, TypeScript, and modern NPM libraries',
-            'Allows external portal hosting and multi-tenant SaaS scaling'
-          ],
-          cons: [
-            'Requires configuring standard cloud API destinations and credentials',
-            'Introduces HTTP request latency for transactional processes',
-            'Needs ERP-side trigger classes to capture transactional database state changes'
-          ]
-        }
-      };
-
-      const checkpointsRows = checkpoints.map((cp, idx) => {
+      const checkpointsRows = (checkpoints ?? []).map((cp, idx) => {
         // A model that answers with something other than a string used to crash
         // the export here, on .includes(), before anything was rendered.
         const state = String(cp.resultState ?? '');
@@ -763,6 +708,7 @@ export default function AnalyzePage() {
             <p>${esc(data.standardFit?.rationale)}</p>
 
             <h2>SAP Extensibility Routing Decision Path</h2>
+            ${checkpoints === null ? notDetermined('This analysis did not return the step-by-step checkpoints behind the routing decision.') : `
             <p>The legacy ABAP code was evaluated step-by-step against the official SAP Clean Core extensibility decision tree. Below is the detailed pathway and checkpoint audit:</p>
             <table>
               <thead>
@@ -777,9 +723,10 @@ export default function AnalyzePage() {
               <tbody>
                 ${checkpointsRows}
               </tbody>
-            </table>
+            </table>`}
 
             <h2>Extensibility Track Comparative Matrix</h2>
+            ${comparative === null ? notDetermined('This analysis did not return a side-by-side comparison of the two extensibility tracks.') : `
             <p>Direct architectural comparison of both available tracks mapped specifically to this project's requirements:</p>
             <div class="card-grid" style="grid-template-cols: 1fr 1fr; margin-bottom: 30px;">
               <div class="card" style="border-left: 4px solid #006644; background: #e3fcef20;">
@@ -808,7 +755,7 @@ export default function AnalyzePage() {
                   ${comparative.sideBySideBTP.cons.map(con => `<li>${esc(con)}</li>`).join('')}
                 </ul>
               </div>
-            </div>
+            </div>`}
 
             <h2>Functional Gaps Analysis Matrix</h2>
             <table>

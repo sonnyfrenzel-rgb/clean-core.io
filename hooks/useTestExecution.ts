@@ -5,6 +5,7 @@ import { callGemini } from '@/lib/gemini';
 import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase } from '@/lib/types';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
+import { parseGeneratedPackage, failingFileIndex, replaceFileContent } from '@/lib/generated-package';
 
 export const useTestExecution = (projectId: string, project: Project | null, setProject?: React.Dispatch<React.SetStateAction<Project | null>>) => {
   const [isRunning, setIsRunning] = useState(false);
@@ -63,19 +64,26 @@ export const useTestExecution = (projectId: string, project: Project | null, set
   const stripCodeFences = (s: string) =>
     s.replace(/^```[a-zA-Z]*\n?/gm, '').replace(/```$/gm, '').trim();
 
+
   /**
    * Auto-healing: on a compilation/syntax error, ask the AI to repair the
    * offending generated code and return the fixed source. `kind` selects whether
    * we are fixing the transformed application module (app.ts) or the test suite,
    * because either can carry an AI-introduced syntax error.
    */
-  const autoHealCode = async (errorOutput: string, currentCode: string, kind: 'module' | 'test') => {
-    const label = kind === 'module' ? 'transformed application module (app.ts)' : 'Node.js test suite (test.ts)';
-    setSandboxOutput(prev => prev + `\n\n[Auto-Healing] Compilation error detected. Asking the AI to repair the ${kind === 'module' ? 'module' : 'test'} code...`);
+  const autoHealCode = async (errorOutput: string, currentCode: string, kind: 'module' | 'test', filePath?: string) => {
+    const label = kind === 'module'
+      ? (filePath ? `generated source file \`${filePath}\`` : 'transformed application module (app.ts)')
+      : 'Node.js test suite (test.ts)';
+    setSandboxOutput(prev => prev + `\n\n[Auto-Healing] Compilation error detected. Asking the AI to repair ${kind === 'module' ? (filePath || 'the module') : 'the test'} code...`);
     const prompt = `The following ${label} failed to compile in an esbuild/TypeScript sandbox. Fix ONLY what is needed so it compiles and runs — preserve the intended behaviour, imports, and test cases. Do not remove test cases or change business logic.
 
 Common causes: a colon used where a semicolon/comma was expected, a missing bracket, an invalid TypeScript annotation, or a bad import path.
-${kind === 'test' ? "IMPORTANT: the application under test is in './app' (app.ts) in the same directory — import from './app', not './index'." : "IMPORTANT: this is a self-contained module; keep all exported functions/classes so the tests can import them from './app'."}
+${kind === 'test'
+  ? "IMPORTANT: the application under test is in './app' (app.ts) in the same directory — import from './app', not './index'."
+  : filePath
+    ? `IMPORTANT: this is one file of a multi-file package and other files import from it. Keep every export and every import path exactly as they are; return this one file only.`
+    : "IMPORTANT: this is a self-contained module; keep all exported functions/classes so the tests can import them from './app'."}
 
 COMPILER ERROR:
 ${errorOutput}
@@ -114,7 +122,38 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
 
   const executeWithHealing = async (payload: { tests: Project['testSuite']; projectId: string; code: string | undefined }, maxRetries = 2): Promise<{ exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[] }> => {
     let currentPayload = { ...payload };
-    
+    /**
+     * A repair is held here until a run proves it compiles.
+     *
+     * It used to be written to Firestore the moment the model answered, before
+     * the retry that would show whether the repair was any good — so a second
+     * failure left the project holding an unverified replacement for the artefact
+     * that at least was the one the reader had seen. Worse for a package: the
+     * model is asked for *one* module and its answer was written over the whole
+     * serialised `{path, content}` array, so every other generated file was gone
+     * (QA c1523df5fc4e). The repair now replaces one file inside a working copy,
+     * and nothing reaches the database until a run comes back without a build
+     * error.
+     */
+    let pendingPatch: { generatedCode?: string; testSuite?: Project['testSuite'] } | null = null;
+
+    // Written key by key with literal field names: `tests/preservation-register.spec.ts`
+    // reads the keys of every client write out of this source, and a variable in
+    // place of the object literal makes the stage's declared writes unreadable.
+    const persistRepairs = async () => {
+      if (!pendingPatch || !setProject || !project) return;
+      const patch = pendingPatch;
+      pendingPatch = null;
+      const db = getDb();
+      if (patch.generatedCode !== undefined) {
+        await updateDoc(doc(db, 'projects', projectId), { generatedCode: patch.generatedCode });
+      }
+      if (patch.testSuite !== undefined) {
+        await updateDoc(doc(db, 'projects', projectId), { testSuite: patch.testSuite });
+      }
+      setProject((prev: Project | null) => (prev ? { ...prev, ...patch } : prev));
+    };
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       let response;
       try {
@@ -149,31 +188,40 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
       }
 
       // Compilation/syntax error in AI-generated code (returned as HTTP 200 + buildError).
-      // Auto-heal the offending source — the transformed module (app.ts) or the test
-      // suite, chosen from the compiler error — then persist and retry.
+      // Auto-heal the offending source — one file of the generated package, or the
+      // test suite, chosen from the compiler error — then retry. The repair is held
+      // until a run compiles; see `pendingPatch` above.
       if (result.buildError && attempt < maxRetries) {
         const errText = result.error || '';
         const targetsModule = /app\.ts/.test(errText) || !currentPayload.tests?.code;
         try {
           if (targetsModule) {
-            const fixed = await autoHealCode(errText, currentPayload.code || '', 'module');
-            currentPayload = { ...currentPayload, code: fixed };
-            if (setProject && project) {
-              const db = getDb();
-              await updateDoc(doc(db, 'projects', projectId), { generatedCode: fixed });
-              setProject((prev: Project | null) => prev ? { ...prev, generatedCode: fixed } : prev);
+            // A package is repaired file by file. The model is asked for one
+            // module, so one module is what it is allowed to replace.
+            const pkg = parseGeneratedPackage(currentPayload.code);
+            let fixedCode: string;
+            let repairedLabel = 'Module';
+            if (pkg) {
+              const idx = failingFileIndex(pkg, errText);
+              if (idx < 0) {
+                setSandboxOutput(prev => prev + `\n[Auto-Healing] No source file in the generated package matches the compiler error — the package is left as it is.\n`);
+                return result;
+              }
+              const repaired = await autoHealCode(errText, pkg[idx].content, 'module', pkg[idx].path);
+              fixedCode = replaceFileContent(pkg, idx, repaired);
+              repairedLabel = pkg[idx].path;
+            } else {
+              fixedCode = await autoHealCode(errText, currentPayload.code || '', 'module');
             }
+            currentPayload = { ...currentPayload, code: fixedCode };
+            pendingPatch = { ...(pendingPatch || {}), generatedCode: fixedCode };
+            setSandboxOutput(prev => prev + `\n[Auto-Healing] ${repairedLabel} repaired. Retrying execution — nothing is saved until it compiles...\n`);
           } else {
             const fixed = await autoHealCode(errText, currentPayload.tests?.code || '', 'test');
             currentPayload = { ...currentPayload, tests: { ...currentPayload.tests, code: fixed } };
-            if (setProject && project) {
-              const db = getDb();
-              const updatedTestSuite = { ...project.testSuite, code: fixed };
-              await updateDoc(doc(db, 'projects', projectId), { testSuite: updatedTestSuite });
-              setProject((prev: Project | null) => prev ? { ...prev, testSuite: updatedTestSuite } : prev);
-            }
+            pendingPatch = { ...(pendingPatch || {}), testSuite: { ...project?.testSuite, code: fixed } as Project['testSuite'] };
+            setSandboxOutput(prev => prev + `\n[Auto-Healing] Test code repaired. Retrying execution — nothing is saved until it compiles...\n`);
           }
-          setSandboxOutput(prev => prev + `\n[Auto-Healing] ${targetsModule ? 'Module' : 'Test'} code repaired. Retrying execution...\n`);
           continue;
         } catch (healError) {
           console.error('Auto-healing failed', healError);
@@ -183,6 +231,15 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
 
       if (!response.ok) {
         throw new Error(result.error || 'Test execution failed');
+      }
+
+      // Only a run that got past the compiler earns the write. A build error on
+      // the last attempt returns here too, and the project keeps the artefact it
+      // had rather than an unverified replacement.
+      if (!result.buildError) {
+        await persistRepairs();
+      } else if (pendingPatch) {
+        setSandboxOutput(prev => prev + `\n[Auto-Healing] The repair still does not compile. Nothing was saved — the generated package is unchanged.\n`);
       }
 
       return result;

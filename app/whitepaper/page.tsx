@@ -197,7 +197,17 @@ export default function WhitepaperPage() {
           <CardGrid cards={benefitsEvidence} />
           <div className="bg-emerald-50/70 border border-emerald-200 border-l-4 border-l-green-600 rounded-xl p-6 mt-8">
             <p className="text-sm text-gray-700 leading-relaxed">
-              A guided 7-stage workflow takes you from Analyze → Design → Transformation → Documentation → Testing → TCO → Delivery, and lets you export a compiled package with all modularized files, standard abapGit export and tests.
+              {/*
+                This promised "a compiled package". Nothing in this product compiles
+                ABAP — the delivery stage labels its own handover "not compiled or
+                tested", the terms two sections up disclaim compilation status, and the
+                landing page asks the reader to compile the package in their own ADT.
+                A whitepaper that contradicts all three is where an architect forms the
+                expectation (QA ce41dce9ccd5, 2f60dc7f9d20). It now says what the export
+                is: the files, the layout and the generated tests, for compiling and
+                activating in your system.
+              */}
+              A guided 7-stage workflow takes you from Analyze → Design → Transformation → Documentation → Testing → TCO → Delivery, and lets you export the generated package — all modularized files, standard abapGit layout and the generated tests — to compile, activate and test in your own system.
             </p>
           </div>
         </section>

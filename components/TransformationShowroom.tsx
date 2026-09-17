@@ -289,7 +289,7 @@ export default function TransformationShowroom() {
               </div>
             </div>
 
-            {/* Parser Insight + Validation Row */}
+            {/* Parser Insight Row */}
             <div className="mt-6 flex flex-col sm:flex-row gap-4">
               {/* Parser Insight Badge */}
               <div className="flex-1 bg-blue-50/50 border border-blue-200/60 rounded-xl p-4">
@@ -314,25 +314,17 @@ export default function TransformationShowroom() {
                 </div>
               </div>
 
-              {/* Validation Badges */}
-              <div className="flex flex-col gap-2 justify-center shrink-0">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-xl">
-                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-xs font-bold text-green-700">
-                    CDS test environment created
-                  </span>
-                </div>
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-xl">
-                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-xs font-bold text-green-700">
-                    1 of 1 unit tests passed
-                  </span>
-                </div>
-              </div>
+              {/*
+                Two green ticks stood here: "CDS test environment created" and
+                "1 of 1 unit tests passed". No test environment was ever created and
+                no test was ever run — the whole panel is fixed text, and this product
+                has no ABAP compiler and no ABAP test runner at all. They are removed
+                rather than reworded, because there is no true version of a green tick
+                for work that did not happen (QA fa9e39148077, 1925189d0606; the same
+                reason UX-027 took the success tick off the delivery stage). What the
+                engine really did to this program is in the Parser Insight to the left,
+                and the one sentence about what this page is stands in its header.
+              */}
             </div>
           </div>
 
@@ -433,7 +425,7 @@ export default function TransformationShowroom() {
               </div>
             </div>
 
-            {/* Parser Insight + Validation Row */}
+            {/* Parser Insight Row */}
             <div className="mt-6 flex flex-col sm:flex-row gap-4">
               {/* Parser Insight Badge */}
               <div className="flex-1 bg-blue-50/50 border border-blue-200/60 rounded-xl p-4">
@@ -463,25 +455,13 @@ export default function TransformationShowroom() {
                 </div>
               </div>
 
-              {/* Validation Badges */}
-              <div className="flex flex-col gap-2 justify-center shrink-0">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-xl">
-                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-xs font-bold text-green-700">
-                    Service definition compiled
-                  </span>
-                </div>
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-xl">
-                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-xs font-bold text-green-700">
-                    Schema validated
-                  </span>
-                </div>
-              </div>
+              {/*
+                And here: "Service definition compiled" and "Schema validated", both
+                green, neither performed. Removed for the reason given on tab 1. The
+                caution this tab already carries — "Candidate match — semantics
+                unverified" — is the true statement about this example, and a pair of
+                green ticks beside it took it straight back out.
+              */}
             </div>
           </div>
 
@@ -635,9 +615,13 @@ lv_func = get_dynamic_function( ).
           <span className="text-[11px] font-mono font-bold text-slate-400 tracking-wide">
             {/* The date used to be the literal "July 2026" next to a version that
                 updates itself, so every release pushed the two further apart. It
-                is the release the examples were verified against, and it comes
-                from the same constant as the version. */}
-            Verified against Clean-Core Engine {APP_VERSION} · {APP_RELEASE_DATE}
+                is the release these examples were produced with, and it comes
+                from the same constant as the version.
+
+                It said "Verified against". Nothing verified them — no compiler and
+                no test run exists for ABAP here — so the stamp now says what it can
+                stand behind: which release generated them (QA fa9e39148077). */}
+            Generated with Clean-Core Engine {APP_VERSION} · {APP_RELEASE_DATE}
           </span>
         </div>
       </div>

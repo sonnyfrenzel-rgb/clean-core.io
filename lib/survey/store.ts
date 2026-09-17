@@ -81,6 +81,49 @@ export function docId(campaign: string, uid: string): string {
   return `${campaign}__${uid}`;
 }
 
+/** The one method of the Admin SDK document reference this needs. `getAdminDb` hands back an untyped handle. */
+export interface AnswerDocRef {
+  set: (data: Record<string, unknown>, options?: { merge?: boolean }) => Promise<unknown>;
+}
+
+/**
+ * Writes one answer into the nested `answers` map, without touching the others.
+ *
+ * **A dot in a key of `set()` is not a field path.** The route used to write
+ * ``{ [`answers.${q}`]: value }, { merge: true }`` with a comment claiming the
+ * dotted path kept one answer from overwriting the next. It does the opposite of
+ * what it says: `update()` interprets a dotted key as a path into the document,
+ * `set()` does not, so every answer landed in a top-level field whose *name*
+ * contained a dot and `data.answers` stayed `undefined`. The endpoint returned
+ * `ok: true` the whole time, and `app/survey/[token]/page.tsx` and
+ * `scripts/send-survey-digest.ts` — both of which read the nested map — saw
+ * nothing. A live satisfaction survey ran that way (QA findings b22563b1cd74,
+ * a0a649312df1).
+ *
+ * A nested map with `merge: true` is the form that does what the old comment
+ * promised: Firestore merges maps key by key, so a second question's answer
+ * leaves the first one standing. It is a module rather than four lines in the
+ * route so that it can be run against the emulator and read back, the way
+ * `lib/survey/link-fetch.ts` is — no spec in this repo imports a route handler.
+ */
+export async function recordAnswer(
+  ref: AnswerDocRef,
+  fields: { campaign: string; uid: string; questionId: string; value: SurveyAnswer; stamp: unknown },
+): Promise<void> {
+  await ref.set(
+    {
+      campaign: fields.campaign,
+      uid: fields.uid,
+      // Nested maps, merged key by key — never a dotted key, see above.
+      answers: { [fields.questionId]: fields.value },
+      answeredAt: { [fields.questionId]: fields.stamp },
+      confirmedAt: fields.stamp,
+      updatedAt: fields.stamp,
+    },
+    { merge: true },
+  );
+}
+
 /**
  * Turns raw responses into the numbers the digest prints.
  *

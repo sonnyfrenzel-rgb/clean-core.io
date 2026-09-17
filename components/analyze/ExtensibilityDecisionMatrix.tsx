@@ -30,6 +30,33 @@ interface ExtensibilityDecisionMatrixProps {
   comparativeAnalysis?: ComparativeAnalysis;
 }
 
+/**
+ * What stands where an answer is missing.
+ *
+ * Both halves of this panel are optional: the model returns checkpoints and a
+ * comparison when it has them, and quite often it does not. Both used to be
+ * replaced by a complete, confident set written out below — four named
+ * checkpoints with a "Custom Technical Assessment" of the reader's own code, and
+ * a two-track comparison with feasibility grades, pros and cons — all of it
+ * decided by one boolean: whether the chosen route contains the letters "BTP".
+ * Nothing had been assessed, and the reader had no way to tell which of the two
+ * they were looking at (QA 0613631545b2).
+ */
+function NotDetermined({ what }: { what: string }) {
+  return (
+    <div
+      data-not-determined
+      className="bg-slate-50/50 border border-dashed border-slate-300 rounded-[1.5rem] p-5 text-xs text-slate-600 leading-relaxed font-medium"
+    >
+      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 font-mono">
+        Not determined for this run
+      </span>
+      {what} The route above stands on the evidence the analysis did produce; nothing is filled
+      in here from the route itself, because that would be this panel answering its own question.
+    </div>
+  );
+}
+
 export default function ExtensibilityDecisionMatrix({
   extensibilityRoute,
   decisionTreeCheckpoints,
@@ -40,94 +67,19 @@ export default function ExtensibilityDecisionMatrix({
 
   const isBtp = extensibilityRoute.includes('BTP');
 
-  const checkpoints = decisionTreeCheckpoints || [
-    {
-      checkpointName: 'Transactional Coupling',
-      question: 'Does the legacy logic require synchronous execution and update locks within standard S/4HANA transactional postings?',
-      evaluation: isBtp 
-        ? 'The custom logic executes asynchronously or independently without blocking standard ERP database threads (e.g. read-only analytics, decoupled webhooks, or scheduled updates).' 
-        : 'The custom logic requires synchronous validation and real-time locking within standard SAP LUW processes (e.g., during posting of sales orders or billing items).',
-      resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred' as const,
-      cleanCoreImpact: isBtp 
-        ? 'Side-by-side execution leaves S/4HANA upgrade cycles completely unaffected.' 
-        : 'In-App extensibility (RAP) is required to run within the ERP core transaction boundaries while keeping the repository clean.'
-    },
-    {
-      checkpointName: 'UI Paradigm & Customization',
-      question: 'Does the application require an external-facing portal, heavy custom branding, or tight integration with third-party SaaS services?',
-      evaluation: isBtp 
-        ? 'Requires a highly responsive, modern Fiori Elements or custom React UI available to external vendors and clients without exposing standard SAP ports.' 
-        : 'The UI is embedded inside standard S/4HANA transaction screens for internal business users utilizing standard Fiori grids.',
-      resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred' as const,
-      cleanCoreImpact: isBtp 
-        ? 'BTP decoupled hosting allows modern web framework freedom and enterprise-grade security isolation.' 
-        : 'ABAP RAP keeps the UI aligned with standard S/4HANA layouts, eliminating custom server configurations.'
-    },
-    {
-      checkpointName: 'Data & DB Proximity',
-      question: 'Does the logic perform compute-intensive joins across dozens of custom database tables or require a separate persistent schema?',
-      evaluation: isBtp 
-        ? 'The application relies on decoupled custom data stores, external SaaS APIs, or complex pre-aggregations that would overhead the core database.' 
-        : 'Requires direct, low-latency joins and real-time reads on standard tables (e.g. BSEG, KNA1) inside standard transactional screens.',
-      resultState: isBtp ? 'Side-by-Side Preferred' : 'In-App Preferred' as const,
-      cleanCoreImpact: isBtp 
-        ? 'Decoupling database schemas keeps the ERP core lightweight, safe, and easily upgradeable.' 
-        : 'Uses standard released RAP CDS projection views and standard repository items, preserving database integrity.'
-    },
-    {
-      checkpointName: 'Lifecycle & Resource Scaling',
-      question: 'Does the solution experience highly volatile, bursty resource scaling requirements or have massive external workloads?',
-      evaluation: isBtp 
-        ? 'Scaling requirements are independent of core ERP compute threads, with unpredictable high-volume external webhook events.' 
-        : 'Resource consumption remains flat, predictable, and fully aligned with internal S/4HANA user transaction volume.',
-      resultState: isBtp ? 'Side-by-Side Preferred' : 'Neutral' as const,
-      cleanCoreImpact: isBtp 
-        ? 'Scale-out workloads are absorbed by BTP Cloud Foundry/Kyma, shielding the ERP core system from resource starvation.' 
-        : 'ABAP Cloud leverages standard ERP server resource pools, maintaining unified resource constraints.'
-    }
-  ];
+  const checkpoints: Checkpoint[] = decisionTreeCheckpoints ?? [];
+  const comparative: ComparativeAnalysis | null = comparativeAnalysis ?? null;
+  // A stored answer can shrink between renders; an index past the end would read
+  // `undefined` and take the panel down with it.
+  const active = checkpoints.length > 0 ? Math.min(selectedCheckpoint, checkpoints.length - 1) : 0;
 
-  const comparative = comparativeAnalysis || {
-    inAppABAPCloud: {
-      technicalFeasibility: isBtp ? 'Partially Compatible' : 'Highly Compatible',
-      fitDetails: isBtp 
-        ? 'Technically possible to implement in RAP, but transactional tight coupling would restrict SaaS integrations and UI layout options.' 
-        : 'Perfect technical fit. Executes inside standard S/4HANA transaction pipelines utilizing RAP CDS views and behavior definitions.',
-      pros: [
-        'Zero latency database reads on core S/4HANA standard tables',
-        'Synchronous transactional execution inside standard SAP LUW',
-        'Direct reuse of existing standard locks and validations'
-      ],
-      cons: [
-        'Language restricted strictly to released ABAP Cloud standard repository items',
-        'No access to external SaaS libraries or Node.js frameworks',
-        'Any compute overhead directly blocks ERP core system processes'
-      ]
-    },
-    sideBySideBTP: {
-      technicalFeasibility: isBtp ? 'Highly Compatible' : 'Partially Compatible',
-      fitDetails: isBtp 
-        ? 'Ideal architectural fit. The application runs as a fully decoupled, upgrade-safe microservice on SAP BTP using CAP and Node.js.' 
-        : 'Feasible via event triggers (Event Mesh) or API destinations, but adds HTTP latency and requires destination configuration.',
-      pros: [
-        'Absolute lifecycle isolation - zero upgrade blockers for S/4HANA core',
-        'Total development freedom with Node.js, TypeScript, and modern NPM libraries',
-        'Allows external portal hosting and multi-tenant SaaS scaling'
-      ],
-      cons: [
-        'Requires configuring standard cloud API destinations and credentials',
-        'Introduces HTTP request latency for transactional processes',
-        'Needs ERP-side trigger classes to capture transactional database state changes'
-      ]
-    }
-  };
 
   return (
     <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden group mb-8 animate-in fade-in duration-700">
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h3 className="text-xl font-black text-slate-900 tracking-tight">Extensibility Decision Matrix & Path</h3>
-          <p className="text-xs text-slate-400 mt-1">Detailed comparison and dynamic AI checkpoints that determined the active modernization track.</p>
+          <p className="text-xs text-slate-400 mt-1">The checkpoints and the track comparison this analysis produced — and nothing where it produced none.</p>
         </div>
         <span className="bg-slate-105 text-slate-700 border border-slate-200/60 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider font-mono shrink-0 self-start md:self-center">
           SAP Clean Core Guidelines
@@ -135,7 +87,10 @@ export default function ExtensibilityDecisionMatrix({
       </div>
 
       <div className="space-y-8 animate-in fade-in duration-300">
-        {/* Pathway Explorer */}
+        {checkpoints.length === 0 ? (
+          <NotDetermined what="This analysis did not return the step-by-step checkpoints behind the routing decision." />
+        ) : (
+        /* Pathway Explorer */
         <div className="bg-slate-50/50 border border-slate-150 rounded-[1.5rem] p-5 shadow-sm">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-4 font-mono">AI Routing Decision Pathway Explorer</span>
           <div className="relative">
@@ -143,7 +98,7 @@ export default function ExtensibilityDecisionMatrix({
             <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-slate-200 -translate-y-1/2 hidden md:block z-0"></div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative z-10">
               {checkpoints.map((cp, idx) => {
-                const isActive = selectedCheckpoint === idx;
+                const isActive = active === idx;
                 const isSideBySide = cp.resultState === 'Side-by-Side Preferred';
                 const isInApp = cp.resultState === 'In-App Preferred';
                 
@@ -195,33 +150,37 @@ export default function ExtensibilityDecisionMatrix({
           <div ref={detailPanelRef} className="bg-white border border-slate-150 rounded-xl p-5 mt-5 animate-in fade-in slide-in-from-top-1 duration-300">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-150 pb-4 mb-4">
               <div className="space-y-1">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block font-mono">Selected Milestone {selectedCheckpoint + 1} • {checkpoints[selectedCheckpoint].checkpointName}</span>
-                <h4 className="text-sm font-extrabold text-slate-900 leading-snug">{checkpoints[selectedCheckpoint].question}</h4>
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block font-mono">Selected Milestone {active + 1} • {checkpoints[active].checkpointName}</span>
+                <h4 className="text-sm font-extrabold text-slate-900 leading-snug">{checkpoints[active].question}</h4>
               </div>
               <span className={clsx(
                 "text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-sm shrink-0 self-start md:self-auto",
-                checkpoints[selectedCheckpoint].resultState === 'Side-by-Side Preferred' ? "bg-blue-600 text-white" :
-                checkpoints[selectedCheckpoint].resultState === 'In-App Preferred' ? "bg-emerald-600 text-white" :
+                checkpoints[active].resultState === 'Side-by-Side Preferred' ? "bg-blue-600 text-white" :
+                checkpoints[active].resultState === 'In-App Preferred' ? "bg-emerald-600 text-white" :
                 "bg-slate-600 text-white"
               )}>
-                {checkpoints[selectedCheckpoint].resultState}
+                {checkpoints[active].resultState}
               </span>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-relaxed">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1.5">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block font-mono">Custom Technical Assessment</span>
-                <p className="text-slate-700 font-medium">{checkpoints[selectedCheckpoint].evaluation}</p>
+                <p className="text-slate-700 font-medium">{checkpoints[active].evaluation}</p>
               </div>
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1.5">
                 <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest block font-mono">Clean Core Implementation Impact</span>
-                <p className="text-slate-600 font-medium">{checkpoints[selectedCheckpoint].cleanCoreImpact}</p>
+                <p className="text-slate-600 font-medium">{checkpoints[active].cleanCoreImpact}</p>
               </div>
             </div>
           </div>
         </div>
+        )}
 
-        {/* Tailored comparative matrix */}
+        {comparative === null ? (
+          <NotDetermined what="This analysis did not return a side-by-side comparison of the two extensibility tracks." />
+        ) : (
+        /* Tailored comparative matrix */
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Track 1: In-App ABAP Cloud */}
           <div className={clsx(
@@ -347,6 +306,7 @@ export default function ExtensibilityDecisionMatrix({
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );
