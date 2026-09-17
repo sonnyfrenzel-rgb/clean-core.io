@@ -11,11 +11,12 @@
  *
  * So the version is measured, not declared. The rule's inputs are a small,
  * closed set — a release state, a classification state, whether SAP named a
- * successor, whether the object is SAP's at all — so every input the rule can
- * distinguish is enumerated, the answer it gives for each is recorded, and the
- * whole table is hashed. Change one branch of `gradeFromSapStates` and the
- * fingerprint moves. Change nothing and it cannot move, whatever anyone writes
- * in the markup.
+ * successor, whether the object is SAP's at all, whether it is the customer's,
+ * and how the code uses it (not known, read, written) — so every input the rule
+ * can distinguish is enumerated, the answer it gives for each is recorded, and
+ * the whole table is hashed. Change one branch of `gradeFromSapStatesForUse`
+ * (which includes `gradeFromSapStates`) and the fingerprint moves. Change
+ * nothing and it cannot move, whatever anyone writes in the markup.
  *
  * The artifact half of the version lives in `catalog-service.ts`
  * (`getLevelRuleVersion`), because that is where the two generated files are
@@ -24,17 +25,21 @@
  */
 import { createHash } from 'crypto';
 import {
-  gradeFromSapStates,
+  gradeFromSapStatesForUse,
   type CloudReadinessGrade,
   type GradeProvenance,
+  type ObjectUse,
   type SapObjectStates,
 } from './abcd-classification';
 
 /** The shape of the graded answer the fingerprint reads. */
-export type LevelGrader = (states: SapObjectStates) => {
+export type LevelGrader = (states: SapObjectStates, use: ObjectUse | null) => {
   grade: CloudReadinessGrade;
   provenance: GradeProvenance;
 };
+
+/** The uses the rule can be asked about; `null` is "only the name is known". */
+export const RULE_USES: readonly (ObjectUse | null)[] = [null, 'read', 'write'];
 
 /**
  * The release-file states the rule branches on, verbatim from
@@ -50,6 +55,8 @@ export interface LevelRuleDecision {
   classificationState: string | null;
   hasSuccessor: boolean;
   isSapObject: boolean;
+  isCustomerObject: boolean;
+  use: ObjectUse | null;
   grade: CloudReadinessGrade;
   provenance: GradeProvenance;
 }
@@ -77,7 +84,7 @@ export function enumerateLevelRule(
     grade?: LevelGrader;
   } = {},
 ): LevelRuleDecision[] {
-  const grade = options.grade ?? gradeFromSapStates;
+  const grade = options.grade ?? gradeFromSapStatesForUse;
   const releaseStates = dedupe([...RULE_RELEASE_STATES, ...(options.releaseStates ?? [])]);
   const classificationStates = dedupe([
     ...RULE_CLASSIFICATION_STATES,
@@ -89,20 +96,30 @@ export function enumerateLevelRule(
     for (const classificationState of [null, ...classificationStates]) {
       for (const hasSuccessor of [false, true]) {
         for (const isSapObject of [false, true]) {
-          const answer = grade({
-            releaseState: releaseState ?? undefined,
-            classificationState: classificationState ?? undefined,
-            hasSuccessor,
-            isSapObject,
-          });
-          decisions.push({
-            releaseState,
-            classificationState,
-            hasSuccessor,
-            isSapObject,
-            grade: answer.grade,
-            provenance: answer.provenance,
-          });
+          for (const isCustomerObject of [false, true]) {
+            for (const use of RULE_USES) {
+              const answer = grade(
+                {
+                  releaseState: releaseState ?? undefined,
+                  classificationState: classificationState ?? undefined,
+                  hasSuccessor,
+                  isSapObject,
+                  isCustomerObject,
+                },
+                use,
+              );
+              decisions.push({
+                releaseState,
+                classificationState,
+                hasSuccessor,
+                isSapObject,
+                isCustomerObject,
+                use,
+                grade: answer.grade,
+                provenance: answer.provenance,
+              });
+            }
+          }
         }
       }
     }
@@ -125,6 +142,8 @@ export function fingerprintLevelRule(decisions: readonly LevelRuleDecision[]): s
         d.classificationState ?? '-',
         d.hasSuccessor ? 'successor' : 'no-successor',
         d.isSapObject ? 'sap' : 'non-sap',
+        d.isCustomerObject ? 'customer' : 'not-customer',
+        d.use ?? 'use-unknown',
         d.grade,
         d.provenance,
       ].join('|'),

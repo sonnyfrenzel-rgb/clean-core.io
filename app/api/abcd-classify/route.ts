@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
-import { gradeSapObject } from '@/lib/abap/catalog-service';
-import type { GradedObject } from '@/lib/abap/abcd-classification';
+import { gradeSapObjectUse } from '@/lib/abap/catalog-service';
+import { gradeKey, objectUseFromAccess, type GradedObject, type ObjectUse } from '@/lib/abap/abcd-classification';
 
 /**
  * Resolve clean core levels for a batch of SAP object names.
+ *
+ * An entry is either a name — graded from the name alone, keyed by the name, as
+ * this route has always answered — or `{ name, use }` for a table the code
+ * reads or writes, graded for that use and keyed `NAME@use` (`gradeKey`). The
+ * use changes the answer for a table like KNA1: C to read it, D to write it.
  *
  * Why a route at all: the grade is a lookup against ~4 MB of generated catalog
  * artifacts. The analyze view that needs it is a client component, so importing
@@ -31,23 +36,37 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const names = (body as { objects?: unknown })?.objects;
-  if (!Array.isArray(names)) {
-    return NextResponse.json({ error: 'Expected { objects: string[] }' }, { status: 400 });
-  }
-  if (names.length > MAX_OBJECTS) {
+  const entries = (body as { objects?: unknown })?.objects;
+  if (!Array.isArray(entries)) {
     return NextResponse.json(
-      { error: `Too many objects (${names.length}); the limit is ${MAX_OBJECTS}.` },
+      { error: 'Expected { objects: Array<string | { name: string; use: "read" | "write" }> }' },
+      { status: 400 },
+    );
+  }
+  if (entries.length > MAX_OBJECTS) {
+    return NextResponse.json(
+      { error: `Too many objects (${entries.length}); the limit is ${MAX_OBJECTS}.` },
       { status: 400 },
     );
   }
 
   const grades: Record<string, GradedObject> = {};
-  for (const raw of names) {
-    if (typeof raw !== 'string') continue;
-    const name = raw.trim().toUpperCase();
-    if (!name || grades[name]) continue;
-    grades[name] = gradeSapObject(name);
+  for (const raw of entries) {
+    let name: string;
+    let use: ObjectUse | null = null;
+    if (typeof raw === 'string') {
+      name = raw;
+    } else if (raw && typeof raw === 'object' && typeof (raw as { name?: unknown }).name === 'string') {
+      name = (raw as { name: string }).name;
+      // Only the two uses the rule knows; anything else is graded from the name.
+      use = objectUseFromAccess(String((raw as { use?: unknown }).use ?? ''));
+    } else {
+      continue;
+    }
+    name = name.trim().toUpperCase();
+    const key = gradeKey(name, use);
+    if (!name || grades[key]) continue;
+    grades[key] = gradeSapObjectUse(name, use);
   }
 
   return NextResponse.json({ grades });

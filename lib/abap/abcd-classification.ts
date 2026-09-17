@@ -172,16 +172,67 @@ export function worstGrade(grades: CloudReadinessGrade[]): CloudReadinessGrade {
  *                      level concept that IS the definition of level C ("SAP
  *                      internal objects, not classified or intended for
  *                      customer use") — a derived-but-principled verdict.
+ *   own-object       - the customer's own table or view (Z*, Y*), read or
+ *                      written by the code. SAP's files do not classify it, and
+ *                      that is not the same as knowing nothing: classic ABAP
+ *                      working on its own data is level B. Only a *data* use
+ *                      gets this — a customer function or class the code calls
+ *                      has an implementation that was not read, so it stays
+ *                      heuristic.
  *   heuristic        - no SAP data applies (custom Z/Y objects, or evidence
  *                      without an object name). Falls back to risk/criticality.
  */
-export type GradeProvenance = 'catalog' | 'catalog-residual' | 'heuristic';
+export type GradeProvenance = 'catalog' | 'catalog-residual' | 'own-object' | 'heuristic';
+
+/**
+ * How the code touches a data object — the input the object's own grade does
+ * not have.
+ *
+ * The same table is two different things depending on the statement. Reading
+ * KNA1 is using an internal SAP object: level C, with a changelog check before
+ * each upgrade. Writing to KNA1 directly bypasses the application that owns it:
+ * level D. A grade computed from the name alone has to pick one of the two, and
+ * it used to pick D for both — which told everyone who only reads a customer
+ * record to replace code that is conditionally clean.
+ *
+ * Only what the engine actually knows is modelled: `extractDataCoupling` sees
+ * reads and writes. A type reference or a call has no use here yet, and gets the
+ * object's own grade.
+ */
+export type ObjectUse = 'read' | 'write';
+
+/** The data-coupling access type as a use. A mixed access counts as a write. */
+export function objectUseFromAccess(accessType?: string | null): ObjectUse | null {
+  const access = (accessType || '').trim().toLowerCase();
+  if (access === 'read') return 'read';
+  if (access === 'write' || access === 'read/write') return 'write';
+  return null;
+}
+
+/**
+ * The key a batch of graded objects is looked up by. A plain name for an object
+ * whose use is not known — the shape `/api/abcd-classify` has always answered
+ * with — and `NAME@use` where the use is part of the question.
+ */
+export function gradeKey(name: string, use: ObjectUse | null): string {
+  const key = (name || '').trim().toUpperCase();
+  return use ? `${key}@${use}` : key;
+}
 
 export interface GradedObject {
   grade: CloudReadinessGrade;
   provenance: GradeProvenance;
   /** verbatim SAP state behind the grade, when one applied (e.g. 'classicAPI') */
   state?: string;
+  /** the use the grade was computed for; absent when only the name was known */
+  use?: ObjectUse;
+  /**
+   * The grade the object gets from its name alone — set only where the use
+   * moved the answer away from it, so a surface can say "C because it is read;
+   * on its own, D" instead of showing a letter that disagrees with the catalog
+   * page without a word.
+   */
+  objectGrade?: CloudReadinessGrade;
   /**
    * The two questions the single letter above is the answer to, kept apart.
    *
@@ -252,6 +303,12 @@ export interface SapObjectStates {
   hasSuccessor?: boolean;
   /** false for customer objects (Z, Y prefixes), where SAP data cannot apply */
   isSapObject?: boolean;
+  /**
+   * true for a name in the customer namespace (Z, Y). Not the negation of `isSapObject`: a namespaced
+   * object SAP does not list is neither known to be SAP's nor known to be the
+   * customer's, and must not be graded as either.
+   */
+  isCustomerObject?: boolean;
 }
 
 /**
@@ -303,6 +360,45 @@ export function gradeFromSapStates(s: SapObjectStates): GradedObject {
   if (s.isSapObject) return { grade: 'C', provenance: 'catalog-residual', ...views };
 
   return { grade: 'Unknown', provenance: 'heuristic', ...views };
+}
+
+/**
+ * Grade one *use* of an object: the object's own grade, and then the two places
+ * where how the code touches it changes the answer.
+ *
+ *   1. A table SAP will not release, and that the classic file does not name —
+ *      KNA1, VBAK, BSEG and the other tables and views in that position.
+ *      Read directly, it is an internal SAP object: level C. Written directly,
+ *      it stays D. The successor SAP names (I_CUSTOMER for KNA1) is where a read
+ *      can be re-pointed; it is not a claim that the successor is a drop-in
+ *      replacement, and nothing here reads it as one. An object the classic file
+ *      does name keeps its own grade: `classicAPI` beside `notToBeReleased` is
+ *      the contested overlap `/method/levels` argues through, and `noAPI` says
+ *      not for customer use whatever the access.
+ *
+ *   2. The customer's own table or view (Z, Y), read or written: level B, as
+ *      classic ABAP working on its own data — not Unknown, because the engine
+ *      saw the whole dependency, and not the risk heuristic, which graded every
+ *      write to an own table D. A namespaced object SAP does not list is not
+ *      assumed to be the customer's and is left alone.
+ *
+ * Without a use this is `gradeFromSapStates` unchanged, so the catalog pages and
+ * the published census keep the answer for the name.
+ */
+export function gradeFromSapStatesForUse(s: SapObjectStates, use: ObjectUse | null): GradedObject {
+  const object = gradeFromSapStates(s);
+  if (!use) return object;
+
+  const release = (s.releaseState || '').toLowerCase();
+  const classification = (s.classificationState || '').toLowerCase();
+
+  if (s.isCustomerObject && !release && !classification) {
+    return { ...object, grade: 'B', provenance: 'own-object', use, objectGrade: object.grade };
+  }
+  if (release === 'nottobereleased' && !classification && use === 'read') {
+    return { ...object, grade: 'C', use, objectGrade: object.grade };
+  }
+  return { ...object, use };
 }
 
 /** Customer objects (Z*, Y*) carry no SAP classification — SAP data cannot apply. */

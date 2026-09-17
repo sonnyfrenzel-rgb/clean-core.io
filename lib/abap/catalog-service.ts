@@ -21,9 +21,11 @@ import { SAP_API_CATALOG, SAP_API_CATALOG_VERSION, type SapApiEntry, type SapApi
 import type { CloudificationArtifact, NormalizedEntry } from './cloudification-repo';
 import {
   gradeFromSapStates,
+  gradeFromSapStatesForUse,
   isCustomerObject,
   isNamespacedObject,
   type GradedObject,
+  type ObjectUse,
   type SapObjectStates,
   type CloudReadinessGrade,
 } from './abcd-classification';
@@ -191,6 +193,7 @@ export function getSapObjectStates(objectName: string): SapObjectStates {
     classificationState: classification?.state,
     hasSuccessor: Boolean(release?.successors?.length || classification?.successors?.length),
     isSapObject: !isCustomerObject(key) && (listed || !isNamespacedObject(key)),
+    isCustomerObject: isCustomerObject(key),
   };
 }
 
@@ -199,9 +202,41 @@ export function getSapObjectStates(objectName: string): SapObjectStates {
  *
  * Returns provenance alongside the grade so the UI can separate a looked-up
  * grade from an estimated one — the distinction the public pages promise.
+ *
+ * This is the answer for the *name*. Where the code's use of the object is
+ * known, `gradeSapObjectUse` is the answer the analysis shows.
  */
 export function gradeSapObject(objectName: string): GradedObject {
   return gradeFromSapStates(getSapObjectStates(objectName));
+}
+
+/**
+ * Clean core level for one use of an object — the grade the analysis panel
+ * shows next to a table the code reads or writes (`/api/abcd-classify`), and
+ * the grade the reference corpus compares, so the two cannot drift apart.
+ */
+export function gradeSapObjectUse(objectName: string, use: ObjectUse | null): GradedObject {
+  return gradeFromSapStatesForUse(getSapObjectStates(objectName), use);
+}
+
+/** SAP object types the repository files list that code reads and writes as data. */
+const DATA_OBJECT_TYPES = new Set(['TABL', 'VIEW', 'DDLS']);
+
+/**
+ * Both answers for a data object whose level depends on the access, or `null`.
+ *
+ * The catalog page has no code to look at, so for KNA1 it cannot know whether
+ * the reader reads or writes. Where that decides the level it shows both rather
+ * than the stricter one alone; everywhere else there is one answer and this
+ * returns nothing.
+ */
+export function gradeSapObjectUses(objectName: string): { read: GradedObject; write: GradedObject } | null {
+  const key = (objectName || '').toUpperCase().trim();
+  const tadir = CR.entries?.[key]?.tadir ?? CR_CLASS.entries?.[key]?.tadir;
+  if (!tadir || !DATA_OBJECT_TYPES.has(tadir)) return null;
+  const read = gradeSapObjectUse(key, 'read');
+  const write = gradeSapObjectUse(key, 'write');
+  return read.grade === write.grade ? null : { read, write };
 }
 
 export interface LevelDerivationCensus {
@@ -319,8 +354,9 @@ let levelRuleVersionCache: LevelRuleVersion | null = null;
  *
  * Two halves, both measured:
  *
- *   the rule   — every input `gradeFromSapStates` can tell apart, enumerated and
- *                hashed (see `level-rule-version.ts`). The states SAP actually
+ *   the rule   — every input `gradeFromSapStatesForUse` can tell apart (the two
+ *                states, the owner, and how the code uses the object),
+ *                enumerated and hashed (see `level-rule-version.ts`). The states SAP actually
  *                ships are read out of the artifacts and folded into the domain,
  *                so a state nobody anticipated moves the fingerprint too.
  *   the data   — the release and the SHA-256 SAP served, per file, with the date
