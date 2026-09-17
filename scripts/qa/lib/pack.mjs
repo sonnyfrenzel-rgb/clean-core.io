@@ -15,11 +15,12 @@ const rank = (f) => {
   return ranks.length ? Math.min(...ranks) : RISK_ORDER.length;
 };
 
-export const fileChars = (f) => f.diff.length + (f.callers || []).reduce((n, c) => n + c.callers.reduce((m, x) => m + x.text.length + x.file.length + 16, c.symbol.length), 0) + f.path.length + 64;
+/** A file's own characters: its diff, its callers, and the carried findings and refutations that are sent only with it (prompt.mjs carriedChars). */
+export const fileChars = (f) => f.diff.length + (f.callers || []).reduce((n, c) => n + c.callers.reduce((m, x) => m + x.text.length + x.file.length + 16, c.symbol.length), 0) + (f.carriedChars || 0) + f.path.length + 64;
 
 /**
- * @param files     [{ path, status, tags, diff, callers?, truncated? }]
- * @param baseChars characters every batch repeats (brief, triage, claims, previous findings)
+ * @param files     [{ path, status, tags, diff, callers?, truncated?, carriedChars? }]
+ * @param baseChars characters every batch repeats (brief, triage, claims) — not the register, which travels with its files
  * @param options   the delta review's budget and price by default; the full review passes its own
  */
 export function packBatches(files, baseChars, { budget = BUDGET, price = PRICE_PER_MTOK } = {}) {

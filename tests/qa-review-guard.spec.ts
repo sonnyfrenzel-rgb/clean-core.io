@@ -417,6 +417,46 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     expect(read('scripts/qa/review.mjs')).toMatch(/run: \{ id: env\.GITHUB_RUN_ID \|\| null, attempt: env\.GITHUB_RUN_ATTEMPT \|\| null \}/);
   });
 
+  test('a batch is told only about its own files: the part every batch repeats does not grow with the register', async () => {
+    const { buildUserMessage, carriedChars, CARRIED_LIMITS } = await lib('prompt.mjs');
+    const { buildFullUserMessage } = await lib('full.mjs');
+    const { packBatches } = await lib('pack.mjs');
+    const range = { base: 'b'.repeat(40), head: 'h'.repeat(40), baseReason: 'last reviewed checkpoint', commits: ['abc1234 fix'] };
+    const triage = { tags: [], signals: [], criteria: [], codeWithoutTests: false };
+    const open = (file: string, n: number) => Array.from({ length: n }, (_, i) => ({ fingerprint: `${file}#${i}`, severity: 'medium', file, line: i, title: `Open ${i}`, failure_scenario: 's'.repeat(450) }));
+    const refutations = (file: string, n: number) => Array.from({ length: n }, (_, i) => ({ fingerprint: `${file}~${i}`, file, title: `Refuted ${i}`, reason: 'r'.repeat(1_400) }));
+    // On 17.09.2026 the register held 262 open findings and 97 refutations; here ten times that, all in other files.
+    const register = (elsewhere: number) => ({
+      previousOpen: [...open('lib/own.ts', 2), ...open('lib/old-name.ts', 1), ...open('lib/elsewhere.ts', elsewhere)],
+      refuted: [...refutations('lib/own.ts', 1), ...refutations('lib/elsewhere.ts', elsewhere)],
+    });
+    const small = register(3);
+    const large = register(3_590);
+    const own = { path: 'lib/own.ts', status: 'M', tags: [], diff: '+x', callers: [] };
+    const renamed = { path: 'lib/new-name.ts', oldPath: 'lib/old-name.ts', status: 'R', tags: [], diff: '+y', callers: [] };
+    const delta = (files: unknown[], reg: object) => buildUserMessage({ range, batch: { files }, batchIndex: 0, batchCount: 1, triage, claims: '', ...reg });
+    const full = (files: unknown[], reg: object) => buildFullUserMessage({ head: range.head, batch: { files }, batchIndex: 0, batchCount: 1, map: '', ...reg });
+    // What grows is the digits of a count, nothing else — in the shared part and in a batch.
+    for (const message of [delta, full]) {
+      expect(message([], large).length - message([], small).length).toBeLessThanOrEqual(8);
+      expect(message([own, renamed], large).length - message([own, renamed], small).length).toBeLessThanOrEqual(8);
+    }
+    // A batch still gets everything about its own files — a renamed file answers for its old name — capped per field.
+    const batch = delta([own, renamed], large);
+    for (const fp of ['lib/own.ts#0', 'lib/own.ts#1', 'lib/old-name.ts#0']) expect(batch).toContain(`[${fp}]`);
+    expect(batch).toContain('lib/own.ts · Refuted 0');
+    expect(batch).not.toContain('lib/elsewhere.ts');
+    expect(batch).not.toContain('r'.repeat(CARRIED_LIMITS.text + 1));
+    // A 1,501-character diff did not fit into one call on 17.09.2026. Its register now travels with it and it fits.
+    const file = { path: 'lib/own.ts', status: 'M', tags: [], diff: 'x'.repeat(1_501), callers: [], carriedChars: 0 };
+    file.carriedChars = carriedChars(file, large);
+    expect(file.carriedChars).toBeGreaterThan(2 * 450);
+    const { batches, notReviewed } = packBatches([file], read('docs/qa/reviewer-brief.md').length + delta([], large).length);
+    expect(notReviewed).toEqual([]);
+    expect(batches.map((b: { files: unknown[] }) => b.files.length)).toEqual([1]);
+    for (const src of [read('scripts/qa/review.mjs'), read('scripts/qa/full-review.mjs')]) expect(src).toMatch(/for \(const f of files\) f\.carriedChars = carriedChars\(f, shared\);/);
+  });
+
   test('a file larger than one call is reported, not silently cut from view', async () => {
     const { packBatches } = await lib('pack.mjs');
     const { notReviewed } = packBatches([file('lib/huge.ts', [], 500_000)], 10_000);
@@ -451,7 +491,12 @@ test.describe('the report a maintainer acts on', () => {
     confidence: 0.8,
     ...over,
   });
-  const review = (findings: unknown[], previous_findings: unknown[] = []) => ({ review: { verdict: 'go_with_notes', summary: 's', findings, acceptance: [], test_gaps: [], previous_findings, coverage_notes: '' }, files: ['lib/x.ts'] });
+  // `shown`: the carried findings the batch was given — a batch speaks only for those (report.mjs).
+  const review = (findings: unknown[], previous_findings: { fingerprint: string; status: string; reason: string }[] = []) => ({
+    review: { verdict: 'go_with_notes', summary: 's', findings, acceptance: [], test_gaps: [], previous_findings, coverage_notes: '' },
+    files: ['lib/x.ts'],
+    shown: previous_findings.map((s) => s.fingerprint),
+  });
   const triage = { tags: [], signals: [], codeWithoutTests: false };
   const range = { base: 'b', head: 'h'.repeat(40) };
 
@@ -518,6 +563,66 @@ test.describe('the report a maintainer acts on', () => {
     });
     expect(report.resolved.map((f: { title: string }) => f.title)).toEqual(['Fixed in batch one']);
     expect(report.findings.map((f: { title: string }) => f.title)).toEqual(['Disputed']);
+  });
+
+  test('a carried finding no batch was shown stays open and carried, whatever a batch says about it', async () => {
+    const { buildReport, fingerprint } = await lib('report.mjs');
+    const { carriedFor } = await lib('prompt.mjs');
+    const { reviewBatches } = await lib('full.mjs');
+    const unread = { ...finding({ file: 'lib/unread.ts', title: 'Unread bug' }), fingerprint: fingerprint(finding({ file: 'lib/unread.ts', title: 'Unread bug' })) };
+    const fixed = { ...finding({ title: 'Read and fixed' }), fingerprint: fingerprint(finding({ title: 'Read and fixed' })) };
+    // The batch holds lib/x.ts, so it is given only the finding of lib/x.ts.
+    const shown = carriedFor([{ path: 'lib/x.ts' }], { previousOpen: [unread, fixed], refuted: [] }).open.map((f: { fingerprint: string }) => f.fingerprint);
+    expect(shown).toEqual([fixed.fingerprint]);
+    // The model answers for both, one of which it never saw; lib/unread.ts was not read at all.
+    const statuses = [
+      { fingerprint: unread.fingerprint, status: 'resolved', reason: 'looks fine' },
+      { fingerprint: fixed.fingerprint, status: 'resolved', reason: 'guard added' },
+    ];
+    const report = buildReport({
+      range,
+      results: [{ ...review([], statuses), shown }],
+      previous: { findings: [unread, fixed] },
+      refuted: [],
+      notReviewed: [{ path: 'lib/unread.ts', reason: 'outside the 4-call budget' }],
+      triage,
+      meta: {},
+    });
+    expect(report.resolved.map((f: { fingerprint: string }) => f.fingerprint)).toEqual([fixed.fingerprint]);
+    expect(report.findings).toEqual([expect.objectContaining({ fingerprint: unread.fingerprint, file: 'lib/unread.ts', severity: 'medium', carried: true })]);
+    // Both entry points record what each batch was shown, and the full review passes it through.
+    expect(read('scripts/qa/review.mjs')).toMatch(/shown: carriedFor\(batches\[i\]\.files, shared\)\.open\.map\(\(f\) => f\.fingerprint\)/);
+    expect(read('scripts/qa/full-review.mjs')).toMatch(/shown: carriedFor\(batch\.files, shared\)\.open\.map\(\(f\) => f\.fingerprint\)/);
+    const run = await reviewBatches({ batches: [{ files: [{ path: 'lib/x.ts' }] }], capUsd: 1, messageFor: () => ({ system: 's', user: 'u', shown: [fixed.fingerprint] }), call: async () => ({ review: {}, usage: { cost: 0 } }), fits: () => true, worstCase: () => 0 });
+    expect(run.results[0].shown).toEqual([fixed.fingerprint]);
+  });
+
+  test('a review that read nothing is no_review — never go or go_with_notes — keeps its checkpoint, and the wait does not end green', async () => {
+    const { buildReport, fingerprint, needsAnotherRound, renderText } = await lib('report.mjs');
+    const old = { ...finding(), fingerprint: fingerprint(finding()) };
+    const noModel = { modelCalls: 0 };
+    // The reviews of 9edb37f and c812085: nothing packed, every file named as not reviewed, zero model calls.
+    const nothing = buildReport({ range, results: [], previous: { findings: [old] }, refuted: [], notReviewed: [{ path: 'lib/a.ts', reason: "diff alone exceeds one call's budget (1501 characters)" }], triage, meta: noModel });
+    expect(nothing.verdict).toBe('no_review');
+    expect(nothing.incomplete).toBe(true);
+    expect(nothing.range.checkpoint).toBe(range.base);
+    expect(needsAnotherRound(nothing)).toBe(true);
+    expect(nothing.findings).toEqual([expect.objectContaining({ fingerprint: old.fingerprint, carried: true })]);
+    expect(renderText(nothing)).toMatch(/^QA review \w+ — verdict no_review .*\nNO REVIEW — /);
+    // Neither an empty unread list nor a deterministic result makes a verdict out of reading nothing.
+    const silent = buildReport({ range, results: [], previous: null, refuted: [], notReviewed: [], triage, meta: noModel });
+    expect(silent.verdict).toBe('no_review');
+    expect(silent.range.checkpoint).toBe(range.base);
+    const secretOnly = { review: { verdict: 'no_go', summary: '', findings: [finding({ severity: 'critical', title: 'Possible key committed' })], acceptance: [], test_gaps: [], previous_findings: [], coverage_notes: '' }, files: [] };
+    const secret = buildReport({ range, results: [secretOnly], previous: null, refuted: [], notReviewed: [{ path: 'lib/a.ts', reason: 'outside the $0.5 cost cap' }], triage, meta: noModel });
+    expect(secret.verdict).toBe('no_review');
+    expect(secret.findings.map((f: { severity: string }) => f.severity)).toEqual(['critical']);
+    // Only a delta with nothing to read passes without a model call.
+    const prose = buildReport({ range, results: [], previous: null, refuted: [], notReviewed: [], triage, meta: { ...noModel, skipped: 'no reviewable code in the delta — prose, assets or generated files only' } });
+    expect(prose.verdict).toBe('go');
+    expect(prose.range.checkpoint).toBe(range.head);
+    // The local wait ends with exit 2 on such a report, for the delta review and for the full review.
+    expect(read('scripts/qa/await.mjs').match(/if \(readNothing\((review|full)\)\) \{\r?\n\s+reportNothingRead\([^\r\n]*\);\r?\n\s+return 2;/g)).toHaveLength(2);
   });
 
   test('fingerprints survive a moved line but not a different file', async () => {

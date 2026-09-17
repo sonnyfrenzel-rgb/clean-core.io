@@ -17,7 +17,7 @@ import { seal } from './lib/crypto.mjs';
 import { addedLines, callersOf, changedFiles, chooseBase, commitIdOrNull, commitMessages, fileDiff, git, isAncestor, isClaimSource, isReviewable, mergeBaseWithMain, resolveRange, touchedSymbols } from './lib/git-delta.mjs';
 import { callReviewer } from './lib/openrouter.mjs';
 import { packBatches } from './lib/pack.mjs';
-import { buildUserMessage, loadBrief, REVIEW_SCHEMA } from './lib/prompt.mjs';
+import { buildUserMessage, carriedChars, carriedFor, loadBrief, REVIEW_SCHEMA } from './lib/prompt.mjs';
 import { redactSecrets } from './lib/redact.mjs';
 import { actualCost, buildReport, isSuppressed, publicSummary, renderText } from './lib/report.mjs';
 import { LOCAL_DIR, loadDotEnv, loadRefuted, sealedReports } from './lib/store.mjs';
@@ -89,6 +89,9 @@ async function main() {
   const system = loadBrief();
   const previousOpen = (previous?.findings || []).filter((f) => !isSuppressed(f, refuted));
   const shared = { range, triage, claims: claimText, previousOpen, refuted };
+  // The register goes only to the batch that holds its file (prompt.mjs carriedFor), so it is counted with that
+  // file: the part every batch repeats no longer grows with the number of open findings and refutations.
+  for (const f of files) f.carriedChars = carriedChars(f, shared);
   const baseChars = system.length + buildUserMessage({ ...shared, batch: { files: [] }, batchIndex: 0, batchCount: 1 }).length;
   const { batches, notReviewed, estimatedCostUsd } = packBatches(files, baseChars);
   notReviewed.push(...truncated);
@@ -103,7 +106,9 @@ async function main() {
           changedFiles: all.length,
           reviewable: files.map((f) => `${f.path} [${f.tags.join(',')}] ${f.diff.length}ch callers:${f.callers.length}`),
           triage: { tags: triage.tags, elevated: triage.elevated, signals: triage.signals.length, criteria: triage.criteria.length, codeWithoutTests: triage.codeWithoutTests },
-          batches: batches.map((b) => ({ files: b.files.length, chars: b.chars })),
+          register: { open: previousOpen.length, refuted: refuted.length },
+          baseChars,
+          batches: batches.map((b) => ({ files: b.files.length, chars: b.chars, carriedOpen: carriedFor(b.files, shared).open.length })),
           notReviewed,
           effort,
           estimatedCostUsd,
@@ -131,7 +136,8 @@ async function main() {
     }
     const r = await callReviewer({ apiKey: env.OPENROUTER_API_KEY, system: outgoingSystem, user, schema: REVIEW_SCHEMA, effort });
     spentForCap += typeof r.usage?.cost === 'number' ? r.usage.cost : estimateCostUsd(outgoingSystem.length + user.length, 1);
-    results.push({ ...r, files: batches[i].files.map((f) => f.path) });
+    // `shown`: the carried findings this batch was given — the only ones it may mark resolved (report.mjs).
+    results.push({ ...r, files: batches[i].files.map((f) => f.path), shown: carriedFor(batches[i].files, shared).open.map((f) => f.fingerprint) });
   }
   const modelCalls = results.length;
   const costUsd = actualCost(results.map((r) => r.usage));

@@ -51,13 +51,19 @@ export function buildReport({ range, results, previous, refuted, notReviewed, tr
     }
   }
 
-  // Every batch sees the whole list of open findings but only its own files, so
-  // "not_touched" from one batch must not overwrite what another batch judged.
-  // Between two judgements, "still_open" wins: a fix is confirmed, never assumed.
+  // A batch is shown only the open findings of its own files (prompt.mjs
+  // carriedFor) and speaks only for those it lists in `shown`: a status for any
+  // other fingerprint is ignored, so a finding no batch was shown stays open and
+  // carried — it is never resolved because a model answered for what it did not
+  // see. "not_touched" from one batch must not overwrite what another batch
+  // judged; between two judgements, "still_open" wins: a fix is confirmed, never
+  // assumed.
   const RANK = { not_touched: 0, resolved: 1, still_open: 2 };
   const statuses = new Map();
-  for (const { review } of results) {
+  for (const { review, shown } of results) {
+    const listed = new Set(shown || []);
     for (const s of review.previous_findings || []) {
+      if (!listed.has(s.fingerprint)) continue;
       const seen = statuses.get(s.fingerprint);
       if (!seen || (RANK[s.status] ?? 0) > (RANK[seen.status] ?? 0)) statuses.set(s.fingerprint, s);
     }
@@ -74,10 +80,19 @@ export function buildReport({ range, results, previous, refuted, notReviewed, tr
   const findings = [...byFp.values()].sort((a, b) => SEVERITIES.indexOf(a.severity) - SEVERITIES.indexOf(b.severity) || a.file.localeCompare(b.file));
   const verdict = results.map((r) => r.review.verdict).sort((a, b) => VERDICT_ORDER.indexOf(a) - VERDICT_ORDER.indexOf(b))[0] || 'go';
 
+  // A review that read no file at all has no verdict to give. The reviews of
+  // 5f84bb2, 9edb37f, e3817ce and c812085 made zero model calls and were still
+  // called `go_with_notes` — a verdict over code nobody read, and one a reader
+  // takes for a review with minor notes. Such a report is `no_review`, whatever
+  // else it holds; only a run that declared there was nothing to read
+  // (`meta.skipped`: prose, assets or generated files only) may pass without a
+  // read. A deterministic result (committed credentials) reads nothing either.
+  const nothingRead = results.every((r) => !r.files?.length) && !meta?.skipped;
+
   // Code that was not read is not reviewed. Such a report is incomplete: it
   // cannot be a clean go, and its checkpoint stays at the base, so the next
   // review reads the omitted code again instead of starting past it.
-  const incomplete = notReviewed.length > 0;
+  const incomplete = notReviewed.length > 0 || nothingRead;
   const downgraded = (findings.some((f) => BLOCKING_SEVERITIES.has(f.severity)) || incomplete) && verdict === 'go' ? 'go_with_notes' : verdict;
 
   return {
@@ -86,7 +101,7 @@ export function buildReport({ range, results, previous, refuted, notReviewed, tr
     createdAt,
     meta,
     incomplete,
-    verdict: downgraded,
+    verdict: nothingRead ? 'no_review' : downgraded,
     summary: results.map((r) => r.review.summary).filter(Boolean).join('\n\n'),
     findings,
     resolved,
@@ -132,18 +147,28 @@ export const blocks = (f) => BLOCKING_SEVERITIES.has(f.severity) && !(f.severity
 
 export const isBlocking = (report) => report.findings.some(blocks);
 
-/** The loop stays open for blocking findings and for a review that did not read all of its delta. */
-export const needsAnotherRound = (report) => isBlocking(report) || Boolean(report.incomplete);
+/** The review read none of its code: no verdict on the delta exists, only the carried register. */
+export const readNothing = (report) => report?.verdict === 'no_review';
 
-/** The maintainer's view, printed locally after decryption. Short by design: file:line, what breaks, what to do. */
-export function renderText(report) {
+/** The loop stays open for blocking findings, for a review that did not read all of its delta, and for one that read none of it. */
+export const needsAnotherRound = (report) => isBlocking(report) || Boolean(report.incomplete) || readNothing(report);
+
+/** Verdict, counts and coverage — what decides the next step, without the findings. */
+export function renderHeader(report) {
   const lines = [];
   const counts = severityCounts(report);
   lines.push(
     `QA review ${report.range.head.slice(0, 12)} — verdict ${report.verdict} — ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(', ')} — resolved ${report.resolved.length} — cost $${report.meta?.costUsd ?? 'unknown'} (${report.meta?.modelCalls ?? 0} calls, effort ${report.meta?.effort ?? '—'})`,
   );
+  if (readNothing(report)) lines.push(`NO REVIEW — the model read none of the code this run was to review. Nothing below is a judgement of it: the findings are carried unchanged from earlier reports.`);
   if (report.meta?.skipped) lines.push(`No model call: ${report.meta.skipped}`);
   if (report.coverage.notReviewed.length) lines.push(`INCOMPLETE — checkpoint stays at ${String(report.range.checkpoint || 'main').slice(0, 12)}. NOT REVIEWED: ${report.coverage.notReviewed.map((n) => `${n.path} (${n.reason})`).join('; ')}`);
+  return lines.join('\n');
+}
+
+/** The maintainer's view, printed locally after decryption. Short by design: file:line, what breaks, what to do. */
+export function renderText(report) {
+  const lines = [renderHeader(report)];
   for (const f of report.findings) {
     lines.push('');
     lines.push(`[${f.fingerprint}] ${f.severity.toUpperCase()} ${f.category} · ${f.file}:${f.line}${f.carried ? ' · carried' : ''}${f.reRaisedAfterRefutation ? ' · RE-RAISED after refutation' : ''}${BLOCKING_SEVERITIES.has(f.severity) && !blocks(f) ? ' · non-blocking (agent infrastructure)' : ''} · confidence ${f.confidence}`);

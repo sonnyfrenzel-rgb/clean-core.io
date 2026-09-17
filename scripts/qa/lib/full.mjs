@@ -1,4 +1,5 @@
 import { git, isReviewable } from './git-delta.mjs';
+import { carriedSections } from './prompt.mjs';
 import { riskTags } from './triage.mjs';
 
 /**
@@ -49,7 +50,7 @@ export const projectMap = (files) => files.map((f) => `${f.path} (${f.lines} lin
  * not reviewed, so the report is incomplete, and the call counts at its worst case against the cap — an unknown
  * cost is never a zero. Every message callReviewer throws is fixed text plus numbers, so it may be quoted.
  *
- * @param messageFor (batch, index) => { system, user }  already redacted
+ * @param messageFor (batch, index) => { system, user, shown }  already redacted; `shown` = the carried fingerprints the batch was given
  * @param call       ({ system, user }) => Promise<{ review, usage }>
  * @param fits       (spentUsd, inputChars) => boolean
  * @param worstCase  (inputChars) => number, the estimate for one call
@@ -69,7 +70,7 @@ export async function reviewBatches({ batches, messageFor, call, fits, worstCase
     try {
       const r = await call(message);
       spent += typeof r.usage?.cost === 'number' ? r.usage.cost : worstCase(chars);
-      results.push({ ...r, files: batches[i].files.map((f) => f.path) });
+      results.push({ ...r, files: batches[i].files.map((f) => f.path), shown: message.shown || [] });
     } catch (err) {
       failedCalls++;
       spent += worstCase(chars);
@@ -81,17 +82,15 @@ export async function reviewBatches({ batches, messageFor, call, fits, worstCase
 
 const section = (title, body) => (body && String(body).trim() ? `## ${title}\n\n${String(body).trim()}\n` : '');
 
+/** The register is scoped to the batch's files, as in the delta review (prompt.mjs carriedFor): 504 carried findings made the shared part of every full-review batch 233,423 characters on 17.09.2026. */
 export function buildFullUserMessage({ head, batch, batchIndex, batchCount, map, previousOpen, refuted }) {
-  const previous = previousOpen.length
-    ? previousOpen.map((f) => `- [${f.fingerprint}] ${f.severity} · ${f.file}:${f.line} · ${f.title}\n  scenario: ${f.failure_scenario}`).join('\n')
-    : '';
-  const refutedText = refuted.length ? refuted.map((r) => `- ${r.file} · ${r.title} — refuted: ${r.reason}`).join('\n') : '';
+  const carried = carriedSections(batch.files, { previousOpen, refuted });
   const files = batch.files.map((f) => `### ${f.path} (${f.lines} lines; tags: ${f.tags.join(', ') || '—'})\n\n\`\`\`\n${f.diff}\n\`\`\``).join('\n\n');
   return [
     section('Release', `${head} — full review, batch ${batchIndex + 1} of ${batchCount}`),
     section('Map of every reviewable file', map),
-    section('Findings still open from the previous full review — report a status for each fingerprint whose file is in this batch; `not_touched` for the others', previous),
-    section('Refuted earlier — do not raise again unless the code invalidates the reason', refutedText),
+    section('Findings still open from the previous full review in the files of this batch — report a status for each fingerprint listed', carried.previous),
+    section('Refuted earlier in the files of this batch — do not raise again unless the code invalidates the reason', carried.refuted),
     section('Files in this batch', files),
   ].join('\n');
 }
