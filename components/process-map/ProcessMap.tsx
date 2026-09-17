@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { List, Map as MapIcon } from 'lucide-react';
+import { List, Map as MapIcon, Pencil } from 'lucide-react';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import { useProcessRules } from '@/hooks/useProcessRules';
@@ -23,6 +23,7 @@ import {
   type ProcessSearchHit,
 } from '@/lib/process-navigation';
 import BpmnCanvas from './BpmnCanvas';
+import BpmnEditor from './BpmnEditor';
 import ProcessBreadcrumb from './ProcessBreadcrumb';
 import ProcessCodeCard from './ProcessCodeCard';
 import ProcessFilters, { type PathHighlight } from './ProcessFilters';
@@ -83,6 +84,20 @@ import ProcessStepList from './ProcessStepList';
  * element id>`, and `null` is the top level. 3.1 swaps `BpmnCanvas` for a
  * modeller behind the same two, so a selection survives the switch into editing.
  * Nothing in that contract changed in 2.9.
+ *
+ * ## Roadmap 3.1 — and what editing may not do
+ *
+ * *Edit model* puts `BpmnEditor` where `BpmnCanvas` was, behind exactly those
+ * two props: the element a reader had open is the element the modeller opens
+ * with. The props of this component did not change to make that possible, which
+ * is the point of the paragraph above.
+ *
+ * The draft lives **here**, in `draft`, and never in `model`. Phase 3's
+ * acceptance says the Ist revision is unchanged after editing, so the one way to
+ * be sure of it is that nothing writes to the model at all: the editor is handed
+ * a string and hands a string back, *Discard* forgets the string, and the map
+ * beside it goes on drawing `model.xml`. Whether a draft becomes a revision is
+ * roadmap 3.2 and is not decided in this file.
  */
 export type ProcessMapView = 'map' | 'steps';
 
@@ -160,6 +175,25 @@ export default function ProcessMap({
   const [variantOpen, setVariantOpen] = useState(false);
   const [positions, setPositions] = useState<Map<string, boolean>>(new Map());
   const [found, setFound] = useState<Set<string>>(new Set());
+
+  /**
+   * Editing — roadmap 3.1.
+   *
+   * The draft is a **ref**, and that is the whole design. A state would re-render
+   * this component on every stroke of the modeller, and the modeller is an
+   * effect input: the canvas would be torn down and rebuilt while somebody was
+   * drawing on it. A ref changes nothing on screen and survives the switch to
+   * *Steps* and back, which is all the draft has to do until 3.2 gives it
+   * somewhere to go.
+   *
+   * `session` is what *Discard* bumps: the editor is keyed on it, so throwing a
+   * draft away is a fresh modeller over the reconstruction rather than a
+   * modeller talked into forgetting. Neither of the two ever touches `model` —
+   * the Ist revision after editing is the Ist revision before it.
+   */
+  const [editing, setEditing] = useState(false);
+  const [session, setSession] = useState(0);
+  const draftRef = useRef<string | null>(null);
 
   /**
    * What the tree has open: what the reader opened, plus the way down to the
@@ -249,6 +283,22 @@ export default function ProcessMap({
   );
 
   const selectedElement: ProcessMapElement | null = selected ? (byId.get(selected) ?? null) : null;
+
+  /** Element id → what a reader calls it. The editor names its hints with these. */
+  const labels = useMemo(
+    () => new Map(model.elements.map((element) => [element.id, element.label])),
+    [model],
+  );
+
+  /** What the modeller opens with: the draft if there is one, the reconstruction otherwise. */
+  const openWith = useCallback(() => draftRef.current ?? model.xml, [model]);
+  const keepDraft = useCallback((xml: string) => {
+    draftRef.current = xml;
+  }, []);
+  const discardDraft = useCallback(() => {
+    draftRef.current = null;
+    setSession((token) => token + 1);
+  }, []);
 
   /**
    * Open a step: its level, its selection and the focus, in that order.
@@ -396,15 +446,33 @@ export default function ProcessMap({
             {measuredAt ? ` Measured and kept with this model on ${measuredAt.slice(0, 10)}.` : ''}
           </p>
         </div>
-        <CcSegmentedControl<ProcessMapView>
-          label="Process view"
-          value={view}
-          onChange={setView}
-          segments={[
-            { value: 'map', label: 'Map', icon: <MapIcon size={14} aria-hidden={true} /> },
-            { value: 'steps', label: 'Steps', icon: <List size={14} aria-hidden={true} /> },
-          ]}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <CcSegmentedControl<ProcessMapView>
+            label="Process view"
+            value={view}
+            onChange={setView}
+            segments={[
+              { value: 'map', label: 'Map', icon: <MapIcon size={14} aria-hidden={true} /> },
+              { value: 'steps', label: 'Steps', icon: <List size={14} aria-hidden={true} /> },
+            ]}
+          />
+          {/* Roadmap 3.1. Editing is a mode, not a view: *Map* and *Steps* are
+              two renderings of the same thing, and a modeller is a third state
+              of the first one. The reading view stays reachable at all times. */}
+          <button
+            type="button"
+            data-process-edit-toggle=""
+            aria-pressed={editing}
+            onClick={() => {
+              setView('map');
+              setEditing((was) => !was);
+            }}
+            className="inline-flex items-center gap-1 rounded-cc-row border border-cc-line bg-cc-surface px-2 py-1 text-[12px] font-semibold text-cc-ink-muted hover:text-cc-ink aria-pressed:border-cc-ink aria-pressed:bg-cc-surface-muted aria-pressed:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
+          >
+            <Pencil size={14} aria-hidden={true} />
+            {editing ? 'Stop editing' : 'Edit model'}
+          </button>
+        </div>
       </div>
 
       <ProcessMapLegend
@@ -482,7 +550,21 @@ export default function ProcessMap({
         </div>
 
         <div className="min-w-0">
-          {view === 'map' ? (
+          {view === 'map' && editing ? (
+            <BpmnEditor
+              key={session}
+              openWith={openWith}
+              baseXml={model.xml}
+              fileName={model.fileName}
+              label={`${model.processName}. ${model.overview}`}
+              labels={labels}
+              proposedLanes={model.lanes}
+              selected={selected}
+              onSelectedChange={setSelected}
+              onDraftChange={keepDraft}
+              onDiscard={discardDraft}
+            />
+          ) : view === 'map' ? (
             <BpmnCanvas
               xml={model.xml}
               label={`${model.processName}. ${model.overview}`}
