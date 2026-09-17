@@ -124,6 +124,44 @@ test.describe('a single row whose count cannot be read', () => {
   });
 });
 
+/**
+ * Two cells that were not a measurement and became a measured zero anyway
+ * (full review of a19945ef01dc). Over a declared window of thirteen months a
+ * measured zero is what makes an object dormant, and dormant is what puts it in
+ * front of an architect as a retirement candidate — so both of these produced a
+ * proposal to delete production code out of an empty or invalid cell.
+ */
+test.describe('a cell that says nothing is not a zero', () => {
+  const WINDOW = { window: { from: '2025-01-01', to: '2026-02-08' } };
+
+  test('a call-count cell holding only spaces stays unknown (766ae59f10e4, 5dce9bd7ff9e)', async () => {
+    const report = await parseUsage(csvFile('OBJECT_NAME,CALLS\nZPROG_SPACES,   \nZPROG_REAL,17\n'), WINDOW);
+    expect(report.records.find((r) => r.objectName === 'ZPROG_SPACES')?.callCount).toBeNull();
+    expect(report.records.find((r) => r.objectName === 'ZPROG_REAL')?.callCount).toBe(17);
+
+    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_SPACES']), ROUTE);
+    const spaces = rows.find((r) => r.objectName === 'ZPROG_SPACES');
+    expect(spaces?.usage, 'an empty cell was read as a measured zero').toBe('unknown');
+    expect(spaces?.quadrant).not.toBe('retire-candidate');
+  });
+
+  test('a negative fractional count is quarantined, not rounded to zero (80da84ae34ce)', async () => {
+    const report = await parseUsage(csvFile('OBJECT_NAME,CALLS\nZPROG_NEG,-0.4\nZPROG_REAL,17\n'), WINDOW);
+    expect(report.records.map((r) => r.objectName)).not.toContain('ZPROG_NEG');
+    expect(report.quarantined ?? []).toEqual([
+      { row: 2, objectName: 'ZPROG_NEG', reason: 'negative call count (-0.4)' },
+    ]);
+  });
+
+  test('a whole negative count is still quarantined, and a real zero still counts', async () => {
+    const report = await parseUsage(csvFile('OBJECT_NAME,CALLS\nZPROG_NEG,-3\nZPROG_ZERO,0\n'), WINDOW);
+    expect((report.quarantined ?? []).map((q) => q.reason)).toEqual(['negative call count (-3)']);
+    expect(report.records.find((r) => r.objectName === 'ZPROG_ZERO')?.callCount).toBe(0);
+    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_ZERO']), ROUTE);
+    expect(rows.find((r) => r.objectName === 'ZPROG_ZERO')?.usage, 'a measured zero is still evidence').toBe('dormant');
+  });
+});
+
 test('the coercion itself stays gone', () => {
   const src = fs.readFileSync(
     path.resolve(__dirname, '..', 'lib/abap/usage-parser.ts'),
