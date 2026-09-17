@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import { extractSelects, parseSelect } from '../lib/abap/select-parser';
 import { matchCdsView } from '../lib/abap/cds-catalog';
 import { diffResultSets } from '../lib/abap/result-diff';
+import { detectComplexJoinFindings } from '../lib/abap/complex-join-findings';
+import { tableCount } from '../lib/abap/sql-model';
 
 test.describe('ABAP Open SQL Complex Joins & Quirks Tests', () => {
 
@@ -111,5 +113,71 @@ test.describe('ABAP Open SQL Complex Joins & Quirks Tests', () => {
     expect(report.onlyInTarget).toBe(0);
     expect(report.rowCountAbap).toBe(2);
     expect(report.rowCountTarget).toBe(2);
+  });
+});
+
+/**
+ * Two ways a three-table query was counted as fewer, and so lost the
+ * partial-support finding and the architect's sign-off that come with it
+ * (full review of a19945ef01dc).
+ *
+ *   - **a3b0bfd48551** — a decimal in the first ON condition ended the
+ *     statement. The extractor took the period for a terminator, the text
+ *     stopped at `> 1`, and everything behind it — two joins — was never read.
+ *   - **ed2b52cc2d3f** — ABAP lets the join type be omitted, and `JOIN` on its
+ *     own was not recognised at all: no joins, one table, no finding.
+ *
+ * Both are read through `detectComplexJoinFindings`, which is the surface a
+ * user sees, rather than through the parser alone.
+ */
+test.describe('a three-table query is counted as three', () => {
+  const findings = (code: string) => detectComplexJoinFindings([{ file: 'q.abap', content: code }]);
+
+  test('a decimal in an ON condition does not end the statement (a3b0bfd48551)', () => {
+    const code = [
+      'SELECT a~vbeln b~posnr c~etenr',
+      '  FROM vbak AS a',
+      '  INNER JOIN vbap AS b ON b~vbeln = a~vbeln AND b~netwr > 1.50',
+      '  INNER JOIN vbep AS c ON c~vbeln = b~vbeln',
+      '  INTO TABLE @DATA(lt_rows).',
+    ].join('\n');
+    const selects = extractSelects(code);
+    expect(selects).toHaveLength(1);
+    expect(selects[0].text, 'the statement was cut at the decimal point').toContain('vbep');
+    expect(tableCount(parseSelect(selects[0].text, 'q.abap', 1))).toBe(3);
+    expect(findings(code)).toHaveLength(1);
+    expect(findings(code)[0].requiresSignOff).toBe(true);
+  });
+
+  test('a period that really does end a statement still does', () => {
+    const code = 'SELECT * FROM vbak INTO TABLE @DATA(lt). WRITE lt.';
+    expect(extractSelects(code).map((s) => s.text)).toEqual(['SELECT * FROM vbak INTO TABLE @DATA(lt)']);
+  });
+
+  test('an omitted join type is an inner join, not a missing join (ed2b52cc2d3f)', () => {
+    const code = [
+      'SELECT h~vbeln i~posnr s~etenr',
+      '  FROM vbak AS h',
+      '  JOIN vbap AS i ON i~vbeln = h~vbeln',
+      '  JOIN vbep AS s ON s~vbeln = i~vbeln',
+      '  INTO TABLE @DATA(lt_rows).',
+    ].join('\n');
+    const model = parseSelect(extractSelects(code)[0].text, 'q.abap', 1);
+    expect(model.joins.map((j) => `${j.type} ${j.table.name}`)).toEqual(['inner VBAP', 'inner VBEP']);
+    expect(model.from.name).toBe('VBAK');
+    expect(tableCount(model)).toBe(3);
+    expect(findings(code)).toHaveLength(1);
+  });
+
+  test('the spelled-out types still parse as themselves', () => {
+    // As `extractSelects` hands it on: the terminating period is already gone.
+    const model = parseSelect(
+      'SELECT * FROM vbak AS h INNER JOIN vbap AS i ON i~vbeln = h~vbeln '
+      + 'LEFT OUTER JOIN kna1 AS k ON k~kunnr = h~kunnr CROSS JOIN t001 AS t',
+      'q.abap',
+      1,
+    );
+    expect(model.joins.map((j) => j.type)).toEqual(['inner', 'left-outer', 'cross']);
+    expect(model.joins.map((j) => j.table.alias)).toEqual(['I', 'K', 'T']);
   });
 });

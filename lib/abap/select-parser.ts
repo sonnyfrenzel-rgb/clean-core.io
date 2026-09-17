@@ -2,44 +2,19 @@ import type {
   SelectModel, JoinClause, JoinType, SelectField, SqlTableRef, SqlQuirk,
 } from './sql-model';
 import type { SourceRef } from './class-model';
-import { isAbapCommentLine } from './statement-reader';
+import { maskLiterals, maskNonCode } from './statement-reader';
 
 const up = (s: string) => s.trim().toUpperCase();
-
-/**
- * Clean inline comments from a line, respecting string literals and backticks.
- *
- * `statementOpen` says whether a SELECT is still being buffered. An **indented**
- * asterisk is a continuation there and a comment everywhere else — the rule is
- * `isAbapCommentLine` in `statement-reader.ts`, written down once with the two
- * shipped examples that disagree. `^\s*\*` dropped the continuation of a
- * multi-line arithmetic expression, so the statement never found its period.
- */
-function cleanComments(line: string, statementOpen: boolean): string {
-  if (isAbapCommentLine(line, statementOpen)) return '';
-  let clean = '';
-  let inSingleQuote = false;
-  let inBacktick = false;
-  for (let c = 0; c < line.length; c++) {
-    const ch = line[c];
-    if (ch === "'" && !inBacktick) inSingleQuote = !inSingleQuote;
-    if (ch === "`" && !inSingleQuote) inBacktick = !inBacktick;
-    if (ch === '"' && !inSingleQuote && !inBacktick) {
-      break;
-    }
-    clean += ch;
-  }
-  return clean;
-}
 
 /** Extract all SELECT statements (each terminated by '.') from a source file. */
 /**
  * Does a statement begin with SELECT on this line, outside of any literal?
  *
- * Text literals are removed first — `'...'` and `` `...` `` — so a SELECT that
- * only exists inside one is gone before the question is asked. What remains
- * counts when it opens the line or follows a statement end (`.`) or a chain
- * separator (`:` / `,`), which is where an ABAP statement can start.
+ * Text literals are masked first — all four forms, the string template
+ * included — so a SELECT that only exists inside one is gone before the
+ * question is asked. What remains counts when it opens the line or follows a
+ * statement end (`.`) or a chain separator (`:` / `,`), which is where an ABAP
+ * statement can start.
  */
 export function startsSelectStatement(line: string): boolean {
   return selectStatementStart(line) !== -1;
@@ -57,29 +32,57 @@ export function startsSelectStatement(line: string): boolean {
  * offset in the masked line is the offset in the real one.
  */
 export function selectStatementStart(line: string): number {
-  const masked = line
-    .replace(/'(?:[^']|'')*'/g, (m) => `'${'x'.repeat(Math.max(0, m.length - 2))}'`)
-    .replace(/`(?:[^`]|``)*`/g, (m) => `\`${'x'.repeat(Math.max(0, m.length - 2))}\``);
+  const masked = maskLiterals(line);
   const match = /(?:^|[.:,])\s*SELECT\b/i.exec(masked);
   if (!match) return -1;
   // The match may start at the statement separator; the statement starts at SELECT.
   return match.index + match[0].toUpperCase().indexOf('SELECT');
 }
 
+/**
+ * The offset of the period that ends the statement in `bare`, or -1.
+ *
+ * `bare` is masked code, so every period still in it is code. One is still not
+ * a terminator: a period between two digits is a decimal point.
+ * `… INNER JOIN b ON b~amount > 1.50 INNER JOIN c ON …` was cut at that point,
+ * and `detectComplexJoinFindings` then counted two tables in a three-table
+ * query — no partial-support finding, no architect's sign-off (full review of
+ * a19945ef01dc, a3b0bfd48551). `statement-reader.ts` states the rule and the
+ * argument for it; this is the same rule, one parser over.
+ */
+function terminatorIn(bare: string): number {
+  for (let c = 0; c < bare.length; c++) {
+    if (bare[c] !== '.') continue;
+    if (/\d/.test(bare[c - 1] ?? '') && /\d/.test(bare[c + 1] ?? '')) continue;
+    return c;
+  }
+  return -1;
+}
+
 export function extractSelects(content: string): { text: string; line: number }[] {
-  const lines = content.split(/\r?\n/);
+  const raw = content.split(/\r?\n/);
+  // Comments and literal contents are blanked once, for the whole file, with
+  // every line and every column kept — so an offset in `code` is an offset in
+  // `raw`, and this parser needs no literal bookkeeping of its own. It used to
+  // keep three copies of it, and all three knew `'…'` and `` `…` `` and not the
+  // string template.
+  const code = maskNonCode(content).split(/\r?\n/);
   const out: { text: string; line: number }[] = [];
+  /** What the query says, literals included — this is the text handed on. */
   let buf = '';
+  /** The same characters masked, which is what the parser reads. */
+  let bare = '';
   let start = 0;
   let inSel = false;
-  let inSingleQuote = false;
-  let inBacktick = false;
 
-  for (let i = 0; i < lines.length; i++) {
-    const rawLine = lines[i];
-    const cleanLine = cleanComments(rawLine, inSel);
-    const trimmedClean = cleanLine.trim();
-    if (!trimmedClean) continue;
+  for (let i = 0; i < raw.length; i++) {
+    // Trimmed on the masked line and sliced from both at the same offsets: an
+    // inline comment is already blank there, so the two stay aligned.
+    const from = code[i].length - code[i].trimStart().length;
+    const to = code[i].trimEnd().length;
+    if (to <= from) continue;
+    const lineCode = code[i].slice(from, to);
+    const lineText = raw[i].slice(from, to);
 
     // `WRITE 'SELECT data FROM cache.'.` is not a query. The old condition was
     // "the line contains SELECT", so a literal mentioning the word opened a
@@ -89,51 +92,26 @@ export function extractSelects(content: string): { text: string; line: number }[
     // keyword: outside any literal, and at the start of a statement.
     let openedAt = -1;
     if (!inSel) {
-      openedAt = selectStatementStart(trimmedClean);
-      if (openedAt !== -1) {
-        inSel = true;
-        start = i + 1;
-        buf = '';
-      }
+      openedAt = selectStatementStart(lineCode);
+      if (openedAt === -1) continue;
+      inSel = true;
+      start = i + 1;
+      buf = '';
+      bare = '';
     }
-
-    if (!inSel) continue;
 
     // From the SELECT, not from the start of the line: a statement that shares
     // its line with the one before it would otherwise carry that one's text.
-    const contribution = openedAt !== -1 ? trimmedClean.slice(openedAt) : trimmedClean;
-    buf += (buf ? ' ' : '') + contribution;
+    const at = openedAt === -1 ? 0 : openedAt;
+    buf += (buf ? ' ' : '') + lineText.slice(at);
+    bare += (bare ? ' ' : '') + lineCode.slice(at);
 
-    // Track quotes inside the accumulated buffer
-    let str = false;
-    let bt = false;
-    for (let c = 0; c < buf.length; c++) {
-      const ch = buf[c];
-      if (ch === "'" && !bt) str = !str;
-      if (ch === "`" && !str) bt = !bt;
-    }
-
-    if (buf.includes('.') && !str && !bt) {
-      // Find the terminator '.' outside strings
-      let termIdx = -1;
-      let s = false;
-      let b = false;
-      for (let c = 0; c < buf.length; c++) {
-        const ch = buf[c];
-        if (ch === "'" && !b) s = !s;
-        if (ch === "`" && !s) b = !b;
-        if (ch === '.' && !s && !b) {
-          termIdx = c;
-          break;
-        }
-      }
-      if (termIdx !== -1) {
-        const statement = buf.slice(0, termIdx).replace(/\s+/g, ' ').trim();
-        out.push({ text: statement, line: start });
-        inSel = false;
-        buf = '';
-      }
-    }
+    const termIdx = terminatorIn(bare);
+    if (termIdx === -1) continue;
+    out.push({ text: buf.slice(0, termIdx).replace(/\s+/g, ' ').trim(), line: start });
+    inSel = false;
+    buf = '';
+    bare = '';
   }
   return out;
 }
@@ -148,10 +126,31 @@ function parseFields(seg: string): { star: boolean; fields: SelectField[] } {
   return { star: false, fields };
 }
 
+/**
+ * Where each join begins in the FROM clause, and which type it names.
+ *
+ * **The type is optional**, because ABAP's is: `FROM vbak AS h JOIN vbap AS i
+ * ON … JOIN vbep AS s ON …` is valid and means INNER three times. The parser
+ * required one, so it returned no joins at all and `tableCount` reported one
+ * table — a three-table query with neither the partial-support finding nor the
+ * architect's sign-off it carries (full review of a19945ef01dc, ed2b52cc2d3f).
+ *
+ * Matched rather than split: a lookahead with an optional prefix matches both
+ * at `INNER` and at the `JOIN` behind it, which cuts one join into two pieces
+ * and parses neither. A left-to-right scan takes `INNER JOIN` whole.
+ */
+function joinStarts(fromClause: string): { at: number; after: number; type?: string }[] {
+  const re = /\b(?:(INNER|LEFT(?:\s+OUTER)?|RIGHT(?:\s+OUTER)?|CROSS)\s+)?JOIN\b/gi;
+  return [...fromClause.matchAll(re)].map((m) => ({
+    at: m.index ?? 0,
+    after: (m.index ?? 0) + m[0].length,
+    type: m[1],
+  }));
+}
+
 function parseJoins(fromClause: string): { from: SqlTableRef; joins: JoinClause[] } {
-  // Split on JOIN keywords, keep the type.
-  const joinRe = /\b(INNER|LEFT(?:\s+OUTER)?|RIGHT(?:\s+OUTER)?|CROSS)\s+JOIN\b/i;
-  const firstJoin = fromClause.search(joinRe);
+  const starts = joinStarts(fromClause);
+  const firstJoin = starts.length ? starts[0].at : -1;
   const head = firstJoin === -1 ? fromClause : fromClause.slice(0, firstJoin);
   const fromTok = head.trim().split(/\s+/).filter(Boolean);
   const from: SqlTableRef = {
@@ -160,21 +159,19 @@ function parseJoins(fromClause: string): { from: SqlTableRef; joins: JoinClause[
   };
 
   const joins: JoinClause[] = [];
-  if (firstJoin === -1) return { from, joins };
-
-  const rest = fromClause.slice(firstJoin);
-  const parts = rest.split(/(?=\b(?:INNER|LEFT(?:\s+OUTER)?|RIGHT(?:\s+OUTER)?|CROSS)\s+JOIN\b)/i).filter(Boolean);
-  for (const p of parts) {
-    const m = p.match(/^(INNER|LEFT(?:\s+OUTER)?|RIGHT(?:\s+OUTER)?|CROSS)\s+JOIN\s+(\S+)(?:\s+AS\s+(\S+)|\s+(\S+))?(?:\s+ON\s+(.+))?$/i);
+  for (let k = 0; k < starts.length; k++) {
+    const body = fromClause.slice(starts[k].after, k + 1 < starts.length ? starts[k + 1].at : undefined).trim();
+    const m = body.match(/^(\S+)(?:\s+AS\s+(\S+)|\s+(\S+))?(?:\s+ON\s+(.+))?$/i);
     if (!m) continue;
-    const typeRaw = up(m[1]);
+    // An omitted type is an inner join — SQL's default and ABAP's.
+    const typeRaw = up(starts[k].type ?? 'INNER');
     const type: JoinType = typeRaw.startsWith('LEFT') ? 'left-outer'
       : typeRaw.startsWith('RIGHT') ? 'right-outer'
       : typeRaw === 'CROSS' ? 'cross' : 'inner';
     joins.push({
       type,
-      table: { name: up(m[2]), alias: m[3] ? up(m[3]) : (m[4] ? up(m[4]) : undefined) },
-      on: (m[5] || '').trim(),
+      table: { name: up(m[1]), alias: m[2] ? up(m[2]) : (m[3] ? up(m[3]) : undefined) },
+      on: (m[4] || '').trim(),
     });
   }
   return { from, joins };
