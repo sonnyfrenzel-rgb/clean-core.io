@@ -788,6 +788,8 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 
 **Vollprüfung von 7bdac5e (15.09.2026, 9 Modellaufrufe, 1,36 $):** 86 Befunde, davon 69 bestätigt (1 critical, 14 high, 28 medium, 26 low — Schwere nach Prüfung), 15 widerlegt, 2 zurückgestellt. Die widerlegten betrafen vor allem Komponenten, die nirgends gerendert werden, und Artefakte der Capture-Umgebung.
 
+**Delta-Review von e3817ce (v2.12.0, 17.09.2026, 3 Modellaufrufe, 0,52 $):** zwölf Befunde waren unentschieden, sechs sind bestätigt (UX-102, UX-104, UX-106, UX-107 neu eingeplant; UX-105 und UX-110 auf *low* heruntergestuft), sechs widerlegt. Auffällig ist der Wiederholungsgrad: drei Befunde meldeten dieselbe Token-Liste aus dem Design-Scan (UX-111/112/113) und lasen das bewusst neue `cc`-Vokabular hinter dem Admin-Schalter als Drift — obwohl die Werte in `DESIGN.md` §1.2 und §1.5 beschlossen sind und die `coverage_notes` desselben Berichts das selbst sagen; ein vierter (UX-109) wiederholt UX-106 von der Screenshot-Seite, ein fünfter (UX-108) das bereits behobene UX-092. Nur UX-103 war ein echter Prüffehler: der Leerzustand, dessen Fehlen er belegt, steht im Code.
+
 | ID | Schwere | Befund | Roadmap-Schritt | Status |
 |---|---|---|---|---|
 | UX-002 | critical | Null Befunde als Fully Supported besiegelt | 0.8 | behoben |
@@ -810,6 +812,7 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-088 | high | Clean Core Score ohne Abgrenzung zu SAPs gegenläufigem Score | 0.3 | eingeplant |
 | UX-091 | high | Mail-Warnung verspricht erneuten Versand, Zeile kann ihn nicht | — | behoben |
 | UX-094 | high | Alte Backup-Codes werden ohne Übergang abgewiesen | — | zurückgestellt |
+| UX-102 | high | How-to nennt 6 Phasen, Produkt hat 7 Stufen | 0.2 | eingeplant |
 | UX-005 | medium | Routenwechsel ohne Bestätigung und Undo | 0.7 | eingeplant |
 | UX-006 | medium | Von Befund kein Weg in den Code | 1.5 | eingeplant |
 | UX-012 | medium | Sticky-Header und Tabs verdecken Inhalt auf Phone | 1.4 | eingeplant |
@@ -846,6 +849,9 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-097 | medium | Leere Blueprint-Seite bietet Export von Nichts an | sofort | behoben |
 | UX-098 | medium | Paket-Download scheitert lautlos ohne Hinweis | sofort | behoben |
 | UX-099 | medium | Matrix-Close-Buttons ohne Namen für Screenreader | sofort | behoben |
+| UX-104 | medium | First-Run-Rücksprung führt Abgemeldete hinter Login | 1.4 | eingeplant |
+| UX-106 | medium | NotGenerated nennt Settings, führt aber nicht dorthin | 1.5 | eingeplant |
+| UX-107 | medium | Admin-Button meldet ab statt an | sofort | eingeplant |
 | UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | eingeplant |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |
@@ -874,6 +880,8 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-085 | low | Kleinstlabels in 10px Kapitälchen | 1.5 | eingeplant |
 | UX-100 | low | Filtereintrag mischt Deutsch und Englisch | sofort | behoben |
 | UX-101 | low | 2FA-Schlüssel lässt sich nicht kopieren | sofort | behoben |
+| UX-105 | low | Dark-Entfernung ohne Hinweis an Bestandskonten | 1.6 | eingeplant |
+| UX-110 | low | Badge-Detail nur im Hover-Titel versteckt | 3.0.4 | eingeplant |
 ---
 
 ## 14. QA-Befunde aus der Vollprüfung
