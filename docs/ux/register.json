@@ -188,10 +188,11 @@
       "area": "wissen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.119Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.4",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:45.119Z"
+      "updatedAt": "2026-09-17T09:22:52.514Z",
+      "fixedIn": "6c4f6a4"
     },
     {
       "id": "UX-016",
@@ -1311,9 +1312,10 @@
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
       "createdAt": "2026-09-17T06:39:02.516Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "1.4",
-      "updatedAt": "2026-09-17T06:39:02.516Z"
+      "updatedAt": "2026-09-17T09:22:52.713Z",
+      "fixedIn": "6c4f6a4"
     },
     {
       "id": "UX-105",

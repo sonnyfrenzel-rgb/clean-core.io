@@ -909,14 +909,14 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-097 | medium | Leere Blueprint-Seite bietet Export von Nichts an | sofort | behoben |
 | UX-098 | medium | Paket-Download scheitert lautlos ohne Hinweis | sofort | behoben |
 | UX-099 | medium | Matrix-Close-Buttons ohne Namen für Screenreader | sofort | behoben |
-| UX-104 | medium | First-Run-Rücksprung führt Abgemeldete hinter Login | 1.4 | eingeplant |
+| UX-104 | medium | First-Run-Rücksprung führt Abgemeldete hinter Login | 1.4 | behoben |
 | UX-106 | medium | NotGenerated nennt Settings, führt aber nicht dorthin | 1.5 | eingeplant |
 | UX-107 | medium | Admin-Button meldet ab statt an | sofort | behoben |
 | UX-116 | medium | FREE-Badge verschweigt Erstlauf-Begrenzung | sofort | behoben |
 | UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | behoben |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |
-| UX-015 | low | Zurück-Navigation verhält sich je Seite anders | 1.4 | eingeplant |
+| UX-015 | low | Zurück-Navigation verhält sich je Seite anders | 1.4 | behoben |
 | UX-016 | low | Katalog verliert den Workspace-Kontext | 1.4 | eingeplant |
 | UX-026 | low | Begriffe und Versprechen wechseln je Stufe | 0.2 | behoben |
 | UX-028 | low | LoC-Regler kann echten Wert nicht abbilden | 0.3 | eingeplant |
