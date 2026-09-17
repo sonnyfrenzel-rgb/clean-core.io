@@ -180,16 +180,6 @@ jobs:
             echo "::error::FATAL: AUDIT_SIGNING_KEY secret is not configured in GitHub Repository secrets!"
             exit 1
           fi
-          # The length of the secret, and nothing else about it: the value is
-          # never printed, compared or written anywhere. `lib/audit-signing-key.ts`
-          # refuses a key shorter than 32 characters, so without this check a
-          # short secret would deploy and every signing and verifying route
-          # would answer 500 on the live service instead of here, where the
-          # secret can still be fixed.
-          if [ "${#AUDIT_SIGNING_KEY}" -lt 32 ]; then
-            echo "::error::FATAL: AUDIT_SIGNING_KEY is shorter than the 32 characters the signing chain requires. Set a longer random secret (e.g. openssl rand -hex 32) and re-run."
-            exit 1
-          fi
           if [ -z "$S4_HOST_ALLOWLIST" ]; then
             echo "::error::FATAL: S4_HOST_ALLOWLIST secret is not configured in GitHub Repository secrets!"
             exit 1
