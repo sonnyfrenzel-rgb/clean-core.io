@@ -11,6 +11,7 @@ import {
   starterExampleIsFree,
   type QuotaSubject,
 } from '@/lib/run-quota-rule';
+import { describeStarterExampleCost, starterExampleFootnote } from '@/lib/run-cost';
 import { FileCode2, Play, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -99,7 +100,11 @@ export default function StarterExamples({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-6">
         {STARTER_EXAMPLES.map((example) => {
-          const free = starterExampleIsFree(quota, example.name);
+          // One source for the two badge wordings and the re-run sentence
+          // (`lib/run-cost.ts`), so that "New project" cannot grow a third
+          // spelling of the same rule.
+          const cost = describeStarterExampleCost(quota, example.name);
+          const free = cost.free;
           return (
             <div key={example.file} className="flex flex-col gap-2">
               <button
@@ -147,14 +152,14 @@ export default function StarterExamples({
                           data-testid="starter-example-free"
                           className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border bg-green-50 text-green-700 border-green-200"
                         >
-                          First run free
+                          {cost.badge}
                         </span>
                       ) : (
                         <span
                           data-testid="starter-example-ran-before"
                           className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200"
                         >
-                          Ran before · uses a run
+                          {cost.badge}
                         </span>
                       )}
                     </div>
@@ -176,8 +181,7 @@ export default function StarterExamples({
                 >
                   <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                   <span className="text-xs text-amber-900 font-medium leading-relaxed flex-1 min-w-[12rem]">
-                    You ran this example before. Running it again uses 1 of your {limit} free analysis
-                    runs once the analysis completes.
+                    {cost.rerunWarning}
                   </span>
                   <button
                     type="button"
@@ -201,9 +205,7 @@ export default function StarterExamples({
       </div>
 
       <p className="text-[11px] text-gray-400 font-medium mt-5 leading-relaxed">
-        Free — examples don&rsquo;t use your analysis runs the first time. Starting one again is an
-        ordinary analysis and uses 1 of your {limit} free analysis runs once it completes; everything
-        after the analysis is included either way.
+        {starterExampleFootnote(quota)}
       </p>
     </div>
   );

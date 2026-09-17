@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
@@ -10,6 +10,13 @@ import WorkspaceStatusLine from './StatusLine';
 import WorkspaceLayerBar from './LayerBar';
 import WorkspaceToolBar from './ToolBar';
 import NotDeterminedCard from './NotDeterminedCard';
+import FirstLook from './FirstLook';
+import AskThisCase from './AskThisCase';
+import CoachMarkNote from './CoachMarks';
+import { useCoachMarks } from '@/hooks/useCoachMarks';
+import { preAnsweredQuestion, type PreAnswered } from '@/lib/ask-this-case';
+import type { SourceReading } from '@/lib/first-look';
+import { workflowSteps, workflowSummary } from '@/lib/workflow-steps';
 import {
   LAYERS,
   VIEW_LABELS,
@@ -57,11 +64,20 @@ export default function WorkspaceShell({
   projectId,
   view,
   onViewChange,
+  buildUp = false,
 }: {
   project: Project | null;
   projectId: string;
   view: WorkspaceView;
   onViewChange: (view: WorkspaceView) => void;
+  /**
+   * Whether the first look builds itself up in four stages (`DESIGN.md` §5.2)
+   * or goes straight to its end state. True after an import or an example, and
+   * never on a second visit — *„Ein zweiter Besuch hat keinen Aufbau"*. The
+   * decision is the route's, because it is the route that knows where the
+   * reader came from.
+   */
+  buildUp?: boolean;
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
@@ -72,6 +88,44 @@ export default function WorkspaceShell({
   const layers = useMemo(() => workspaceLayers(project), [project]);
   const tools = useMemo(() => workspaceTools(project), [project]);
   const open = useMemo(() => notDetermined(project), [project]);
+
+  /**
+   * The reading of the source, done once by the first look and handed up here.
+   *
+   * Not read a second time: `readSource` walks every statement of the source,
+   * and a second walk in this component would be a second set of line numbers
+   * for the same `IF` — the thing `lib/abap/process-facts.ts` exists to prevent
+   * — as well as the parse paid for twice.
+   */
+  const [reading, setReading] = useState<SourceReading | null>(null);
+  const onReading = useCallback((next: SourceReading) => setReading(next), []);
+
+  /** Deterministic, from the branches of the code. No model call (§5.3). */
+  const answer: PreAnswered | null = useMemo(
+    () => (reading ? preAnsweredQuestion(reading.skeleton, reading.ruleSet) : null),
+    [reading],
+  );
+
+  const nextPhase = useMemo(() => workflowSummary(workflowSteps(project)).next, [project]);
+
+  // A tip that points at nothing is a claim: "Select the decision" exists only
+  // where the source has one, and that is not known before the reading lands.
+  const marks = useCoachMarks({
+    hasDecision: answer?.kind === 'answered',
+    hasNextStep: Boolean(nextPhase),
+  });
+
+  /**
+   * No tip before the reading has settled.
+   *
+   * Without this the first mark shown is *"This is what we could not
+   * determine"* — because "Select the decision" is not yet known to be
+   * available — and a frame later it is replaced by the decision tip. A tip
+   * that appears and is swapped for another is worse than one that arrives
+   * late.
+   */
+  const marksReady = marks.ready && (answer !== null || !(project?.legacyCode ?? '').trim());
+  const currentMark = marksReady ? marks.current : null;
 
   // The plain-language fold of ADR-026. Derived, not written: the row says how
   // many of the seven facets have anything on record at all, which is a fact
@@ -180,13 +234,64 @@ export default function WorkspaceShell({
 
       <div className="mt-5">
         <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={setLayer} />
+        {/* "Your next step" — the phase `lib/workflow-steps.ts` says comes next
+            for this project, never a fixed one. */}
+        <div className="mt-2">
+          <CoachMarkNote
+            mark={currentMark}
+            slot="next-step"
+            onDismiss={marks.dismiss}
+            onDismissAll={marks.dismissAll}
+          />
+        </div>
       </div>
 
-      {/* The one section this step builds. Everything the engine could not work
-          out, with its reason — the reason to trust the rest of the screen. */}
+      {/* The first look — four stages, then the head of the content (§5.1, §5.5):
+          process name, traceability, the reveal line and the decisions. */}
+      <div className="mt-5">
+        <FirstLook
+          project={project}
+          projectId={projectId}
+          buildUp={buildUp}
+          onReading={onReading}
+        />
+      </div>
+
+      {/* The first ten seconds after it (§5.3): one question already answered,
+          out of the branches of the code and without a model call. */}
+      {answer ? (
+        <div className="mt-5 max-w-3xl">
+          <CoachMarkNote
+            mark={currentMark}
+            slot="decision"
+            onDismiss={marks.dismiss}
+            onDismissAll={marks.dismissAll}
+          />
+          <AskThisCase answer={answer} />
+        </div>
+      ) : null}
+
+      {/* Everything the engine could not work out, with its reason — the reason
+          to trust the rest of the screen (roadmap 1.4). */}
       <div className="mt-5 max-w-3xl">
+        <CoachMarkNote
+          mark={currentMark}
+          slot="not-determined"
+          onDismiss={marks.dismiss}
+          onDismissAll={marks.dismissAll}
+        />
         <NotDeterminedCard data={open} />
       </div>
+
+      {/* "Show tips again", where §6.2 puts it: offered once the tips are gone,
+          and never a button that undoes nothing. */}
+      {marksReady && !marks.anyLeft ? (
+        <div className="mt-4">
+          <CcButton onClick={marks.reset} data-coach-marks-reset="">
+            Show tips again
+          </CcButton>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -398,7 +398,12 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
               <CcButton
                 variant="primary"
                 icon={<Plus size={16} aria-hidden={true} />}
-                onClick={() => router.push('/dashboard')}
+                // Roadmap 2.7 built the screen this invitation was always meant
+                // to open: "New project" explains before it starts (§6.1.1).
+                // Until then it pointed at `/dashboard`, which is the old
+                // product and answers none of the three questions §6.1.1 asks.
+                onClick={() => router.push('/admin/new-project')}
+                data-workspace-new-project=""
               >
                 {t('workspace.newProject')}
               </CcButton>
