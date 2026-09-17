@@ -138,7 +138,7 @@ export function isAbapCommentLine(raw: string, statementOpen: boolean): boolean 
  * right pass. ABAP literals do not span lines; `readStatements` therefore starts
  * a fresh scanner for each line it appends and for each statement it cuts.
  */
-function createLiteralScanner(): (ch: string) => boolean {
+export function createLiteralScanner(): (ch: string) => boolean {
   let quote = false;
   let tick = false;
   let template = false;
