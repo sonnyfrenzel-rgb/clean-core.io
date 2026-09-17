@@ -880,6 +880,37 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-055 | niedrig | P2 | Phase 2 · Datenschutz-Schritt | eingeplant |
 | SEC-2026-065 | niedrig | P3 | Phase 2 · Datenschutz-Schritt | eingeplant |
 | SEC-2026-067 | niedrig | P3 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
+| SEC-2026-073 | mittel | P2 | eigener Schritt, braucht Sonnys Go | eingeplant |
+| SEC-2026-074 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
+| SEC-2026-075 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
+| SEC-2026-076 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
+| SEC-2026-077 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
+| SEC-2026-078 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
+| SEC-2026-079 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
+| SEC-2026-080 | hoch | — | — | behoben |
+| SEC-2026-081 | mittel | — | — | behoben |
+
+**Audit von v2.13.0 (`a7c9e71`, 18.09.2026): 3 kritisch, 1 hoch, 7 mittel, 14 niedrig — 2 behoben,
+7 eingeplant, 16 widerlegt.** Behoben sind der Zip-Slip in der Auslieferung (modellerzeugte Pfade
+gingen ungeprüft ins Archiv; die Prüfung lehnt jetzt ab, statt zu reparieren) und eine SSRF in der
+Egress-Allowlist (`h.endsWith(s)` statt `h.endsWith('.' + s)` — damit passte `evil-sap.com` auf
+`sap.com`; heute unerreichbar, weil der Live-Testmodus gesperrt ist, ab Wiederöffnung echt). Alle
+drei als kritisch gemeldeten waren Fehlalarme desselben Namensmusters.
+
+**Eine Empfehlung des Audits wird ausdrücklich nicht befolgt (SEC-2026-077).** Der Bericht schlägt
+vor, die `AIzaSy`-Ausnahme im Geheimnis-Detektor zu entfernen. Das Finding, das dabei entstünde,
+trägt `snippet: text` — ein echter Schlüssel landete damit **im signierten Audit-Pack**, also genau
+dort, wo er am wenigsten hingehört und am schwersten wieder herauszubekommen ist. Der Schritt
+braucht zuerst einen Redaktor für die Fundstelle, dann die Ausnahme. Wer ihn umgekehrt geht, baut
+das Leck, das er schließen soll.
+
+**Zum Rauschen im Detektor:** das Muster `[A-Z0-9]_KEY` trifft über alle versionierten Dateien
+genau viermal, und alle vier sind Fehlalarme — zwei `localStorage`-Schlüsselnamen, eine öffentliche
+Adresse (`TRUSTED_KEY_URL`) und ein Emulator-Testpasswort. `_URL` in der Ausnahmeliste von
+`scripts/qa/lib/redact.mjs:41` beseitigt davon **einen**; wirksam wäre zusätzlich eine Ausnahme nach
+der **Form des Werts** (eine URL oder ein gepunkteter Kleinbuchstaben-Bezeichner wie
+`cc.workspace.*` ist kein Geheimnis). Beides gehört in einen eigenen Schritt an der
+Agenten-Maschinerie und braucht Sonnys Go.
 
 Erstes Audit: v2.11.0 (16.09.2026), 247 gemeldete Befunde. Der Bericht sagt selbst,
 dass seine Verifikationsstufe nicht zurückkam — die Befunde sind gemeldet, nicht
