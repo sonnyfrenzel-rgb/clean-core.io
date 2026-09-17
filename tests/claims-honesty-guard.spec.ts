@@ -334,3 +334,44 @@ test.describe('UX-026 · the Jira modal promises only what it can do', () => {
     expect(read('components/JiraIntegrationModal.tsx')).toContain('not available yet');
   });
 });
+
+test.describe('UX-107 — a button does what it says', () => {
+  // The approval panel shows "Access Denied" to anyone who is not a platform
+  // administrator. Its only button used to read "Sign In as Admin" and sign the
+  // reader out — the opposite of its label, on the page an operator reaches
+  // exactly when they are in the wrong account. Asserted on the rendered page:
+  // a source check would pass for a button whose label and handler live in two
+  // components that disagree.
+  const EMAIL = `claims-107-${STAMP}@cleancore-test.io`;
+
+  test.beforeAll(async () => {
+    const cred = await createUserWithEmailAndPassword(emulatorAuth(), EMAIL, PASSWORD);
+    await adminSetDoc('users', cred.user.uid, {
+      firstName: 'Not',
+      lastName: 'Admin',
+      email: EMAIL,
+      tier: 'pilot',
+      status: 'approved',
+      transformationsUsed: 0,
+      transformationsLimit: 5,
+      createdAt: new Date(),
+    });
+  });
+
+  test('the switch-account button signs out and opens sign-in, and says so', async ({ page }) => {
+    test.setTimeout(90_000);
+    await signIn(page, EMAIL);
+    await page.goto('/admin/approve-tenant');
+
+    const button = page.getByTestId('approve-tenant-switch-account');
+    await expect(button, 'a non-administrator sees the switch-account button').toBeVisible({ timeout: 20_000 });
+
+    const label = (await button.innerText()).toLowerCase();
+    expect(label, 'the label names the sign-out it performs').toContain('sign out');
+    expect(label, 'no label promises a sign-in the click does not perform').not.toMatch(/^\s*sign in\b/);
+
+    await button.click();
+    await page.waitForURL(/[?&]auth=signin/, { timeout: 20_000 });
+    await expect(page.locator('input[type="email"]'), 'the sign-in dialog is open').toBeVisible({ timeout: 20_000 });
+  });
+});

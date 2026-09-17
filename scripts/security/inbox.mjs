@@ -11,12 +11,12 @@
  * Plaintext stays under .security-audit/ (git-ignored).
  */
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { artifactNames, gh, ghJson, jobsOf, waitForRun } from '../qa/lib/gh.mjs';
 import { containsOrUnknown, git } from '../qa/lib/git-delta.mjs';
 import { loadDotEnv } from '../qa/lib/store.mjs';
-import { auditArtifact, openWith, privateKeyFrom } from './lib/envelope.mjs';
+import { auditArtifact, fetchSealed, openWith, privateKeyFrom } from './lib/envelope.mjs';
 import { renderAuditMail } from './lib/mail.mjs';
 import { loadRegister, untriaged } from './lib/register.mjs';
 
@@ -39,17 +39,9 @@ async function fetchReport(run, privateKey) {
   // Exactly one artifact, chosen by name — never by which of several downloads landed last (finding 4fb3804a2d49).
   const artifact = auditArtifact(artifactNames(run.databaseId), run.headSha);
   if (!artifact) return null;
-  const dir = join(DIR, artifact);
-  rmSync(dir, { recursive: true, force: true });
-  mkdirSync(dir, { recursive: true });
-  try {
-    gh(['run', 'download', String(run.databaseId), '--name', artifact, '-D', dir]);
-  } catch {
-    return null;
-  }
-  const sealedPath = join(dir, 'security-audit.enc.json');
-  if (!existsSync(sealedPath)) return null;
-  const raw = readFileSync(sealedPath, 'utf8');
+  // Its own download directory per invocation: parallel SessionStart hooks shared one and raced (lib/envelope.mjs).
+  const raw = fetchSealed(artifact, (dir) => gh(['run', 'download', String(run.databaseId), '--name', artifact, '-D', dir]), DIR);
+  if (raw === null) return null;
   return { payload: openWith(JSON.parse(raw), privateKey), sealedSha256: createHash('sha256').update(raw).digest('hex') };
 }
 

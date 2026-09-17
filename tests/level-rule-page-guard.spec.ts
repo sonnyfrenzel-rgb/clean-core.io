@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { gradeFromSapStates } from '../lib/abap/abcd-classification';
+import { gradeFromSapStates, gradeFromSapStatesForUse } from '../lib/abap/abcd-classification';
 import { getLevelDerivationCensus, getLevelRuleVersion } from '../lib/abap/catalog-service';
 import {
   enumerateLevelRule,
@@ -60,6 +60,38 @@ test.describe('the published rule matches the code it describes', () => {
       'listed in neither file',
     ]) {
       expect(source, `the rule table lost the "${state}" row`).toContain(`state: '${state}'`);
+    }
+  });
+
+  test('every access row the page states is what the function returns for that access', () => {
+    // Roadmap 2.11: the analysis grades a table for the access the code makes.
+    // The rows are hand-written like the object rows, so they get the same check —
+    // each one executed, and the object-only answer shown to differ, or the row
+    // would be describing nothing.
+    const cases: {
+      row: string;
+      states: Parameters<typeof gradeFromSapStatesForUse>[0];
+      use: 'read' | 'write';
+      grade: string;
+    }[] = [
+      { row: 'notToBeReleased, read', states: { releaseState: 'notToBeReleased', hasSuccessor: true, isSapObject: true }, use: 'read', grade: 'C' },
+      { row: 'notToBeReleased, written', states: { releaseState: 'notToBeReleased', hasSuccessor: true, isSapObject: true }, use: 'write', grade: 'D' },
+      { row: 'customer table, read or written', states: { isSapObject: false, isCustomerObject: true }, use: 'read', grade: 'B' },
+      { row: 'customer table, read or written', states: { isSapObject: false, isCustomerObject: true }, use: 'write', grade: 'B' },
+    ];
+    const source = fs.readFileSync(PAGE, 'utf8');
+    for (const c of cases) {
+      expect(source, `the access table lost the "${c.row}" row`).toContain(`use: '${c.row}'`);
+      expect(
+        gradeFromSapStatesForUse(c.states, c.use).grade,
+        `/method/levels publishes "${c.row} → ${c.grade}" and the function no longer agrees`,
+      ).toBe(c.grade);
+    }
+    expect(gradeFromSapStatesForUse(cases[0].states, 'read').grade).not.toBe(gradeFromSapStates(cases[0].states).grade);
+    expect(gradeFromSapStatesForUse(cases[2].states, 'read').grade).not.toBe(gradeFromSapStates(cases[2].states).grade);
+    // And the page's grade letters for those rows are the ones stated.
+    for (const c of cases) {
+      expect(source).toMatch(new RegExp(`use: '${c.row}',\\s*grade: '${c.grade}'`));
     }
   });
 
@@ -142,10 +174,10 @@ test.describe('the rule page carries the version of the rule', () => {
     // precisely the reading two reviews arrived at and the page argues against.
     const altered = fingerprintLevelRule(
       enumerateLevelRule({
-        grade: (s) =>
+        grade: (s, use) =>
           (s.releaseState || '').toLowerCase() === 'nottobereleased'
             ? { grade: 'B', provenance: 'catalog' }
-            : gradeFromSapStates(s),
+            : gradeFromSapStatesForUse(s, use),
       }),
     );
 
@@ -153,6 +185,18 @@ test.describe('the rule page carries the version of the rule', () => {
       altered,
       'the fingerprint did not move when a branch of the rule changed, so it is not reading the rule',
     ).not.toBe(real);
+
+    // The access half is part of the rule too: grading a read of a table SAP
+    // will not release D again — the rule before roadmap 2.11 — has to move it.
+    const withoutUse = fingerprintLevelRule(
+      enumerateLevelRule({
+        grade: (s, use) =>
+          use === 'read' && (s.releaseState || '').toLowerCase() === 'nottobereleased'
+            ? gradeFromSapStates(s)
+            : gradeFromSapStatesForUse(s, use),
+      }),
+    );
+    expect(withoutUse, 'the fingerprint does not see how the code uses an object').not.toBe(real);
   });
 
   test('the fingerprint does not move when only the order does', () => {

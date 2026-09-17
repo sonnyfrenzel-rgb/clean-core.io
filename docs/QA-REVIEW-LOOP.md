@@ -36,7 +36,7 @@ erst gefragt, wenn die Schleife sauber ist.
 
  Claude Code (lokal) ── node scripts/qa/await.mjs <sha>
                     lädt beide Artefakte, entsiegelt nach .qa-review/ (git-ignoriert)
-                    Exit 0 = go · 3 = Arbeit · 2 = kein Ergebnis
+                    Exit 0 = go · 3 = Arbeit · 2 = kein Ergebnis (auch: nichts gelesen)
                     → prüfen → beheben / widerlegen → push dev → nächste Runde
 
  git push main ── qa-review.yml ── job full (§10)
@@ -51,11 +51,11 @@ erst gefragt, wenn die Schleife sauber ist.
 | Delta | `scripts/qa/lib/git-delta.mjs` | Bereich, geänderte Dateien, Hunks mit 12 Zeilen Kontext, Aufrufer geänderter Symbole außerhalb des Deltas |
 | Vorprüfung | `scripts/qa/lib/triage.mjs` | Risiko-Tags, Test-Schwächungssignale, zitierte Abnahmekriterien, „Code ohne Test" |
 | Schwärzung | `scripts/qa/lib/redact.mjs` | Schlüsselmuster vor dem Versand ersetzen, Treffer als kritischen Befund melden |
-| Packen | `scripts/qa/lib/pack.mjs` | riskanteste Dateien zuerst, höchstens 4 Aufrufe (Vollreview: 14), Rest als „nicht geprüft" benannt; das Kostenbudget greift vor jedem Aufruf |
+| Packen | `scripts/qa/lib/pack.mjs` | riskanteste Dateien zuerst, höchstens 4 Aufrufe (Vollreview: 14), frühere Aufrufe werden aufgefüllt, bevor ein neuer beginnt; ein Diff über 60.000 Zeichen geht in Teilen an Hunk-Grenzen und gilt erst als gelesen, wenn alle Teile gelesen sind; Rest als „nicht geprüft" benannt, je Teil; das Kostenbudget greift vor jedem Aufruf |
 | Vollreview | `scripts/qa/full-review.mjs`, `lib/full.mjs` | alle prüfbaren Dateien des Release-Commits mit Zeilennummern und Dateiübersicht; ein gescheiterter Batch kostet die anderen nicht (§10) |
-| Prompt | `scripts/qa/lib/prompt.mjs` + `docs/qa/reviewer-brief.md` | Antwortschema; Rolle, Prüfliste und Projektregeln als lesbares Dokument |
+| Prompt | `scripts/qa/lib/prompt.mjs` + `docs/qa/reviewer-brief.md` | Antwortschema; Rolle, Prüfliste und Projektregeln als lesbares Dokument; mitgeführte Befunde und Widerlegungen nur für die Dateien des jeweiligen Batches |
 | Modellaufruf | `scripts/qa/lib/openrouter.mjs` | ein Endpunkt, keine Tools, keine Fallback-Modelle, `data_collection: deny`, Retry nur bei 429 — was schon generiert worden sein könnte, wird nie ein zweites Mal bezahlt |
-| Bericht | `scripts/qa/lib/report.mjs` | Fingerabdrücke, Übertrag offener Befunde, widerlegte nicht übertragen (erneut erhobene bleiben, markiert), öffentliche Zeile ohne Inhalt |
+| Bericht | `scripts/qa/lib/report.mjs` | Fingerabdrücke, Übertrag offener Befunde, widerlegte nicht übertragen (erneut erhobene bleiben, markiert), `no_review` für einen Lauf, der nichts gelesen hat, öffentliche Zeile ohne Inhalt |
 | Siegel | `scripts/qa/lib/crypto.mjs`, `lib/store.mjs` | AES-256-GCM unter `QA_REVIEW_KEY` |
 | Einstiege | `scripts/qa/review.mjs`, `smoke.mjs`, `await.mjs`, `refute.mjs` | CI-Review, CI-Smoke, lokales Abholen, Widerlegen |
 | Workflow | `.github/workflows/qa-review.yml` | Auslöser, Rechte, Widerruf, Artefakte |
@@ -104,6 +104,7 @@ kostet mit GPT-5.6 Sol 2 $ / 10 $ (§10).
 | Nur das Delta seit dem letzten *geprüften* Commit — ohne Checkpoint alles, was noch nicht auf `main` ist | kein Vollreview; ein abgebrochener oder gescheiterter Lauf verliert nichts |
 | Kein Modellaufruf ohne Code im Delta | reine Doku-/Asset-Pushes kosten 0 $ |
 | 12 Zeilen Kontext je Hunk, höchstens 15 Symbole × 3 Aufrufer | Kontext statt ganzer Dateien |
+| Mitgeführte Befunde und Widerlegungen gehen nur an den Batch, der ihre Datei enthält (lange Felder gekappt, der Rest als Zählung); ihre Zeichen zählen bei dieser Datei (seit 18.09.2026) | der Teil, den jeder Batch wiederholt, wächst nicht mehr mit dem Register. Vorher trug jeder Batch alle 262 offenen Befunde und 97 Widerlegungen — 201.461 Zeichen gemeinsamer Teil bei 200.000 je Aufruf, also kein Aufruf. Das Register selbst bleibt vollständig: ein Befund, dessen Datei kein Batch enthält, bleibt offen und mitgeführt, und ein Batch kann nur auflösen, was er gezeigt bekam |
 | Reasoning `medium`, nur bei Sicherheit/Trust-Chain/CI `high` | teures Denken dort, wo ein Fehler teuer ist |
 | Höchstens 4 Aufrufe, 200.000 Zeichen und 32.000 Ausgabe-Token (Reasoning eingeschlossen) je Aufruf | Obergrenze der Anfrage. Bis 15.09. waren es 2 Aufrufe bei 2,50 $ — große Deltas kamen unvollständig zurück und kosteten eine weitere Runde |
 | **Budget 0,50 $ je Review — geschätzt, keine harte Grenze.** Ein voller Aufruf schätzt sich auf etwa 0,05 $, das Budget begrenzt also nicht mehr die Abdeckung, sondern fängt Ausreißer. Vor jedem Aufruf: tatsächlich Ausgegebenes + Schätzung dieses Aufrufs (3,5 Zeichen je Token, Antwortschema eingerechnet, volle Ausgabe) | ein Aufruf, der das Budget nach dieser Schätzung reißen würde, findet nicht statt; seine Dateien stehen als „nicht geprüft" im Bericht. Sehr token-dichter Text kann einen einzelnen Aufruf darüber hinaus treiben — **die harte Grenze ist das Kreditlimit am OpenRouter-Schlüssel** |
@@ -153,9 +154,17 @@ Rest steht im Schrittbericht.
 **Drei Regeln, die der Agent aus seinen eigenen Reviews gelernt hat (15.09.2026):**
 
 - **Ein unvollständiger Review ist kein „go".** Blieb Code ungelesen — Kostenbudget,
-  Batch-Grenze, abgeschnittener Diff —, heißt der Bericht `INCOMPLETE`, die Schleife
-  bleibt offen, und der Checkpoint bleibt stehen: Der nächste Review liest den
-  ausgelassenen Code erneut, statt hinter ihm anzufangen.
+  Batch-Grenze, ein ungelesener Teil eines großen Diffs —, heißt der Bericht `INCOMPLETE`,
+  die Schleife bleibt offen, und der Checkpoint bleibt stehen: Der nächste Review liest den
+  ausgelassenen Code erneut, statt hinter ihm anzufangen. Bis 18.09.2026 wurde ein Diff über
+  60.000 Zeichen abgeschnitten; damit blieb jeder Bereich mit einem solchen Commit für immer
+  unvollständig (`b64818a`, `d53530c`), und der Checkpoint kam nicht über `a19945e` hinaus.
+  Seitdem wird er in Teilen gelesen.
+- **Ein Review, der nichts gelesen hat, hat kein Urteil** (seit 18.09.2026). Die Reviews von
+  `5f84bb2`, `9edb37f`, `e3817ce` und `c812085` machten null Modellaufrufe und hießen trotzdem
+  `go_with_notes`. Ein solcher Bericht heißt jetzt `no_review`, der Checkpoint bleibt stehen, und
+  `await.mjs` endet mit Exit 2 und druckt nur Kopf und Ursache, nicht die mitgeführten Befunde.
+  Nur ein Delta ohne prüfbaren Code (reine Doku/Assets) kommt ohne Aufruf aus und bleibt `go`.
 - **Eine Widerlegung gilt für den Befund, über den sie geschrieben wurde** — für die
   Erhebung davor, nicht für eine spätere. Hebt der Reviewer ihn nach einer Regression
   erneut an, bleibt er offen und markiert, bis er behoben oder neu widerlegt ist.
@@ -216,7 +225,7 @@ geschrieben werden.
 
 ```bash
 node scripts/qa/review.mjs --dry                            # Delta, Vorprüfung, Batches, geschätzte Kosten — kein Aufruf
-QA_BASE=<sha> QA_HEAD=<sha> node scripts/qa/review.mjs --dry  # für einen bestimmten Bereich
+QA_BASE_OVERRIDE=<sha> QA_HEAD=<sha> node scripts/qa/review.mjs --dry  # für einen bestimmten Bereich
 node scripts/qa/review.mjs --local                          # echter Review lokal (kostet), Klartext nach .qa-review/out/
 node scripts/qa/await.mjs <sha> --timeout=60                # Ergebnis eines gepushten Commits abholen
 node scripts/qa/refute.mjs <fingerprint> "<Begründung>"     # widerlegten Befund ablegen
@@ -234,6 +243,7 @@ gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>   # Review e
 | Job `review` rot, „QA_REVIEW_KEY is missing" | Secret fehlt | Secret setzen; ohne Schlüssel wird nie unversiegelt geschrieben |
 | Smoke „new revision serving: no" | Deploy lief, aber `/api/health` meldet einen anderen Commit | Cloud-Run-Revision prüfen (`gcloud run services describe clean-core-dev --region=europe-west1 --project=cleancore-491216`) |
 | Bericht nennt „NOT REVIEWED" | Delta über dem Budget | kleiner schneiden oder den Bereich gezielt per `workflow_dispatch` nachprüfen |
+| Verdikt `no_review`, `await.mjs` Exit 2 „Nothing of this delta was read" | kein Batch passte ins Budget, oder jeder Aufruf fiel aus | Bereich mit `--dry` vermessen (§7), dann in Scheiben per `workflow_dispatch` prüfen, älteste zuerst und eine nach der anderen — ein neuer Lauf auf `dev` bricht den laufenden ab. `node scripts/qa/review.mjs --dry` mit `QA_BASE_OVERRIDE`/`QA_HEAD` zeigt vorher, ob eine Scheibe vollständig wird (`notReviewed` leer) |
 | Ein Befund kommt nach Widerlegung wieder | Titel geändert → neuer Fingerabdruck | erneut widerlegen; die Begründung verweist auf den früheren |
 | „no review content (finish_reason=length …)" | Reasoning hat das Ausgabebudget aufgebraucht | am 15.09. beim ersten Lauf passiert (12.000 Token bei `high`); seitdem 32.000 — tritt es wieder auf, `maxOutputTokens` in `config.mjs` als eigener Schritt anheben |
 

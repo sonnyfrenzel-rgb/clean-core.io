@@ -18,7 +18,7 @@ import { buildFullUserMessage, filesAt, fullBrief, numbered, projectMap, reviewB
 import { commitIdOrNull, git } from './lib/git-delta.mjs';
 import { callReviewer } from './lib/openrouter.mjs';
 import { packBatches } from './lib/pack.mjs';
-import { loadBrief, REVIEW_SCHEMA } from './lib/prompt.mjs';
+import { carriedChars, carriedFor, loadBrief, REVIEW_SCHEMA } from './lib/prompt.mjs';
 import { redactSecrets } from './lib/redact.mjs';
 import { actualCost, buildReport, isSuppressed, publicSummary } from './lib/report.mjs';
 import { LOCAL_DIR, loadDotEnv, loadRefuted, sealedReports } from './lib/store.mjs';
@@ -52,6 +52,8 @@ async function main() {
   const system = fullBrief(loadBrief());
   const previousOpen = (previous?.findings || []).filter((f) => !isSuppressed(f, refuted));
   const shared = { head, map, previousOpen, refuted };
+  // As in the delta review: the register travels with its files, not with every batch.
+  for (const f of files) f.carriedChars = carriedChars(f, shared);
   const baseChars = system.length + SCHEMA_CHARS + buildFullUserMessage({ ...shared, batch: { files: [] }, batchIndex: 0, batchCount: 1 }).length;
   const { batches, notReviewed, estimatedCostUsd } = packBatches(files, baseChars, { budget: FULL_BUDGET, price: PRICE });
 
@@ -63,6 +65,8 @@ async function main() {
           model: QA_FULL_MODEL,
           files: files.length,
           chars: files.reduce((n, f) => n + f.diff.length, 0),
+          register: { open: previousOpen.length, refuted: refuted.length },
+          baseChars,
           batches: batches.map((b) => ({ files: b.files.length, chars: b.chars, first: b.files[0]?.path })),
           notReviewed,
           estimatedCostUsd,
@@ -80,7 +84,11 @@ async function main() {
     batches,
     capUsd: FULL_BUDGET.maxCostUsd,
     // Last line of defence before anything leaves the runner, as in the delta review.
-    messageFor: (batch, i) => ({ system: clean('outgoing message', system), user: clean('outgoing message', buildFullUserMessage({ ...shared, batch, batchIndex: i, batchCount: batches.length })) }),
+    messageFor: (batch, i) => ({
+      system: clean('outgoing message', system),
+      user: clean('outgoing message', buildFullUserMessage({ ...shared, batch, batchIndex: i, batchCount: batches.length })),
+      shown: carriedFor(batch.files, shared).open.map((f) => f.fingerprint),
+    }),
     fits: (spent, chars) => withinBudget(spent, chars + SCHEMA_CHARS, { budget: FULL_BUDGET, price: PRICE }),
     worstCase: (chars) => estimateCostUsd(chars + SCHEMA_CHARS, 1, { price: PRICE, maxOutputTokens: FULL_BUDGET.maxOutputTokens }),
     call: ({ system: s, user }) =>

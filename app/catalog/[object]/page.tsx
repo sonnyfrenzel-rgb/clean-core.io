@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { resolveApi, hasNoReleasedApiPath, gradeSapObject } from '@/lib/abap/catalog-service';
+import { resolveApi, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses } from '@/lib/abap/catalog-service';
 import { ABCD_META, CLOUD_VIEW_META, CLASSIC_VIEW_META } from '@/lib/abap/abcd-classification';
 import {
   slugToObject,
@@ -34,7 +34,17 @@ function facts(name: string) {
   const successor = entry?.successors?.[0]?.name || entry?.view;
   const successorType = entry?.type;
   const allSuccessors = entry?.successors?.map((s) => s.name) ?? (successor ? [successor] : []);
-  return { entry, noPath, successor, successorType, allSuccessors, graded: gradeSapObject(name) };
+  return {
+    entry,
+    noPath,
+    successor,
+    successorType,
+    allSuccessors,
+    graded: gradeSapObject(name),
+    // Set only for a table or view whose level depends on the access (KNA1: C to
+    // read, D to write). The page has no code to look at, so it shows both.
+    byUse: gradeSapObjectUses(name),
+  };
 }
 
 export async function generateMetadata({
@@ -50,11 +60,13 @@ export async function generateMetadata({
   const title = successor
     ? `${name} → ${successor} · Released API successor | Clean-Core.io`
     : `${name} · No released API path | Clean-Core.io`;
-  const { graded } = facts(name);
-  const levelPhrase =
-    graded.grade === 'Unknown'
+  const { graded, byUse } = facts(name);
+  const statePhrase = graded.state ? ` (SAP state: ${graded.state})` : '';
+  const levelPhrase = byUse
+    ? ` Clean core level ${byUse.read.grade} to read directly, ${byUse.write.grade} to write directly${statePhrase}.`
+    : graded.grade === 'Unknown'
       ? ''
-      : ` Clean core level ${graded.grade}${graded.state ? ` (SAP state: ${graded.state})` : ''}.`;
+      : ` Clean core level ${graded.grade}${statePhrase}.`;
   const description = successor
     ? `${name} maps to the released S/4HANA successor ${successor}.${levelPhrase} Clean Core readiness reference from the SAP Cloudification Repository.`
     : `${name} has no released API successor in the SAP Cloudification Repository — it requires re-architecture for a Clean Core target.${levelPhrase}`;
@@ -76,7 +88,7 @@ export default async function CatalogObjectPage({
 }) {
   const { object } = await params;
   const name = slugToObject(object);
-  const { entry, noPath, successor, successorType, allSuccessors, graded } = facts(name);
+  const { entry, noPath, successor, successorType, allSuccessors, graded, byUse } = facts(name);
 
   if (!entry && !noPath) notFound();
 
@@ -174,8 +186,47 @@ export default async function CatalogObjectPage({
         pages carry the highest click-through on the site, and the level is the
         first thing an architect wants after the successor. It stays out of the
         signed audit pack.
+
+        For a table or view SAP will not release, the level depends on what the
+        code does with it, and this page has no code to look at — so it shows
+        both answers instead of the stricter one alone. One letter here used to
+        tell everyone who only reads KNA1 to replace code that is conditionally
+        clean (roadmap 2.11).
       */}
-      {graded.grade !== 'Unknown' && (
+      {byUse && (
+        <div className="mb-6 space-y-2" data-level-by-use>
+          <div className="flex flex-wrap items-center gap-2">
+            {([
+              ['read directly', byUse.read.grade],
+              ['written directly', byUse.write.grade],
+            ] as const).map(([access, grade]) => (
+              <span key={access} className="inline-flex items-center gap-2">
+                <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-black border ${ABCD_META[grade].badge}`}>
+                  {grade}
+                </span>
+                <span className="text-sm font-bold text-slate-700">
+                  {access} &mdash; {ABCD_META[grade].short}
+                </span>
+              </span>
+            ))}
+            {graded.state && (
+              <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
+                SAP state: {graded.state}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            The level depends on what your code does with it. Reading an object SAP will not release
+            uses an internal SAP object: level {byUse.read.grade}, with a check against SAP&apos;s
+            changelog before each upgrade. Writing to it directly is level {byUse.write.grade}.
+            {successor && (
+              <> SAP names <span className="font-mono">{successor}</span> as its successor; that says
+              where to look, not that it is a drop-in replacement.</>
+            )}
+          </p>
+        </div>
+      )}
+      {!byUse && graded.grade !== 'Unknown' && (
         <div className="flex flex-wrap items-center gap-2 mb-6">
           <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-black border ${ABCD_META[graded.grade].badge}`}>
             {graded.grade}

@@ -1,4 +1,6 @@
 import { constants, createCipheriv, createDecipheriv, createPrivateKey, privateDecrypt, publicEncrypt, randomBytes } from 'node:crypto';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { latestArtifact } from '../../qa/lib/gh.mjs';
 
 /**
@@ -16,6 +18,44 @@ export const AUDIT_PUBLIC_PEM = 'docs/security/audit-public-key.pem';
 
 /** The artifact holding a run's report: `security-audit-<sha>-<attempt>` of the latest attempt that produced one. */
 export const auditArtifact = (names, sha) => latestArtifact(names, 'security-audit', sha);
+
+const SEALED_NAME = 'security-audit.enc.json';
+
+/**
+ * The sealed report in `artifact`, as text, or null when the download brings none.
+ *
+ * `download(dir)` fetches the artifact into `dir`, and every call gets a directory
+ * of its own. The inbox used to empty and refill one shared directory per artifact,
+ * and `gh run download` refuses to overwrite a file that is already there. Two
+ * invocations at once — the SessionStart hook ran twice when a session was resumed
+ * on 17.09.2026 — then raced: one read the report, the other found the file of the
+ * first in its way and announced "the audit run 35188992683 produced no readable
+ * report" about a report that opened without error.
+ *
+ * The sealed copy is still left at `<inbox>/<artifact>/`, where it always was. It is
+ * a convenience: the report is what this call returns.
+ */
+export function fetchSealed(artifact, download, inbox) {
+  mkdirSync(inbox, { recursive: true });
+  const own = mkdtempSync(join(inbox, `${artifact}.download-`));
+  try {
+    download(own);
+    const path = join(own, SEALED_NAME);
+    if (!existsSync(path)) return null;
+    const raw = readFileSync(path, 'utf8');
+    try {
+      mkdirSync(join(inbox, artifact), { recursive: true });
+      writeFileSync(join(inbox, artifact, SEALED_NAME), raw);
+    } catch {
+      // Another invocation is writing the same bytes; the copy is not what was read.
+    }
+    return raw;
+  } catch {
+    return null;
+  } finally {
+    rmSync(own, { recursive: true, force: true });
+  }
+}
 
 export function sealFor(payload, publicKeyPem) {
   const key = randomBytes(32);

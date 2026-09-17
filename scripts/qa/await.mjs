@@ -9,7 +9,9 @@
  * Exit codes — the loop is driven by these, so they are part of the contract:
  *   0  go: no blocking finding and the smoke check passed (--full: no blocking finding and nothing unread)
  *   3  work to do: blocking findings, or the smoke check did not pass (--full: findings to verify and schedule)
- *   2  no result: the run failed, was superseded, timed out, or the loop is revoked
+ *   2  no result: the run failed, was superseded, timed out, or the loop is revoked — or the review read none of
+ *      its code (verdict `no_review`): a run that read nothing has no result either, however many carried
+ *      findings its report lists
  *
  * The review comes first. On dev the review job finishes a minute or two after
  * the push; the smoke check behind it waits for the Cloud Run deploy, which
@@ -26,7 +28,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { gh, ghJson, jobsOf, waitForJob, waitForRun } from './lib/gh.mjs';
 import { git } from './lib/git-delta.mjs';
-import { isBlocking, needsAnotherRound, renderText } from './lib/report.mjs';
+import { isBlocking, needsAnotherRound, readNothing, renderHeader, renderText } from './lib/report.mjs';
 import { LOCAL_DIR, loadDotEnv, sealedReports } from './lib/store.mjs';
 
 const arg = process.argv.slice(2).find((a) => !a.startsWith('--'));
@@ -39,6 +41,20 @@ function revoked() {
   } catch {
     return false; // variable not set: the loop is on
   }
+}
+
+/**
+ * A review that read nothing is not a list of work: its findings are the carried register, not a judgement of
+ * this commit. Only the header is printed, and what to do about it.
+ */
+function reportNothingRead(report, file, full) {
+  console.log(`\n${renderHeader(report)}`);
+  console.log(`\n${report.findings.length} carried finding(s) unchanged — full report: ${file}`);
+  console.log(
+    full
+      ? 'Nothing of this release was read; the reasons are under NOT REVIEWED above. Fix the cause on dev — the next release gets its full review.'
+      : `Nothing of this delta was read. Review it in slices that fit: gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>, oldest first (docs/QA-REVIEW-LOOP.md §8).`,
+  );
 }
 
 function renderSmoke(s) {
@@ -115,6 +131,10 @@ async function main() {
       return 2;
     }
     writeFileSync(join(LOCAL_DIR, `${short}.full.json`), JSON.stringify(full, null, 2));
+    if (readNothing(full)) {
+      reportNothingRead(full, join(LOCAL_DIR, `${short}.full.json`), true);
+      return 2;
+    }
     console.log(`\n${renderText(full)}`);
     return isBlocking(full) || full.incomplete ? 3 : 0;
   }
@@ -126,6 +146,12 @@ async function main() {
     return 2;
   }
   writeFileSync(join(LOCAL_DIR, `${short}.review.json`), JSON.stringify(review, null, 2));
+
+  // Nothing read, nothing decided: not a go, and not a list of findings to work through either.
+  if (readNothing(review)) {
+    reportNothingRead(review, join(LOCAL_DIR, `${short}.review.json`), false);
+    return 2;
+  }
 
   // Findings first: the smoke check of a commit about to be superseded decides nothing.
   if (run.status !== 'completed' && needsAnotherRound(review)) {
