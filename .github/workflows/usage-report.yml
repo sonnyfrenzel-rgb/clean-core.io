@@ -43,7 +43,11 @@ jobs:
         env:
           # The cron that fired this run, verbatim from the schedule above. Not
           # user input, but passed as an environment variable rather than
-          # interpolated into the script, for the same reason as RECIPIENT below.
+          # interpolated into the script, because a `run:` block that pastes a
+          # `${{ }}` value into its own text is where shell injection comes from
+          # — the rule holds whether or not the value looks controllable.
+          # (It used to say "for the same reason as RECIPIENT below"; RECIPIENT
+          # went away with the free-text address and the reason had to stay.)
           FIRED_BY: ${{ github.event.schedule }}
           EVENT: ${{ github.event_name }}
         run: |

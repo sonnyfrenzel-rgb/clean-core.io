@@ -545,6 +545,52 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     expect(await adminDocExists(`projects/${projectId}/runs`, `pdrun-${uid}`)).toBe(false);
   });
 
+  /**
+   * The same route, from an administrator who is not the owner.
+   *
+   * `decoded.admin === true` used to stand in for ownership, and the only other
+   * gate is `assertMfaSatisfied`, which lets any token through for an account
+   * whose profile does not say `mfaEnabled` — which is exactly the admin
+   * account seeded in `beforeAll` above. So a plain ID token with the claim
+   * erased somebody else's project and every signed run under it, with no
+   * step-up, no mirror check of a withdrawn claim and no audit event (QA full
+   * review of a19945ef01dc, 6a3eea208009). Deleting is now owner-only.
+   */
+  test('an administrator token cannot delete another account’s project', async ({ request }) => {
+    const email = `temp-admindel-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
+    const ownerUid = cred.user.uid;
+    await adminSetDoc('users', ownerUid, {
+      firstName: 'T', lastName: 'AD', email, tier: 'pilot', status: 'approved', isAdmin: false,
+      transformationsUsed: 0, transformationsLimit: 5, maxTeamMembers: 1,
+      s4TenantAccessAllowed: false, s4TenantAccessRequested: false, mfaEnabled: false, createdAt: new Date(),
+    });
+    const projectId = `adproj-${ownerUid}`;
+    await adminSetDoc('projects', projectId, { name: 'AD', status: 'uploaded', userId: ownerUid, createdAt: new Date() });
+    await adminSetDoc(`projects/${projectId}/runs`, `adrun-${ownerUid}`, { runId: `adrun-${ownerUid}`, userId: ownerUid, analysis: '{}', runHash: 'x' });
+    const ownerToken = await cred.user.getIdToken(true);
+
+    // The administrator seeded in beforeAll: `admin: true` on the token, no
+    // second factor on the profile.
+    const adminCred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
+    const adminToken = await adminCred.user.getIdToken(true);
+    const refused = await request.delete(`/api/projects/${projectId}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(refused.status()).toBe(403);
+    // Nothing was destroyed on the way to the refusal — the project and the
+    // immutable run under it both survive.
+    expect(await adminDocExists('projects', projectId)).toBe(true);
+    expect(await adminDocExists(`projects/${projectId}/runs`, `adrun-${ownerUid}`)).toBe(true);
+
+    // And the route is not simply broken: the owner still deletes the same project.
+    const allowed = await request.delete(`/api/projects/${projectId}`, {
+      headers: { Authorization: `Bearer ${ownerToken}` },
+    });
+    expect(allowed.status()).toBe(200);
+    expect(await adminDocExists('projects', projectId)).toBe(false);
+  });
+
   test('F-02: a pending account is blocked at a business API (run-tests → 403)', async ({ request }) => {
     const email = `temp-pending-${branchSuffix}-${Date.now()}@cleancore-test.io`;
     const cred = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
