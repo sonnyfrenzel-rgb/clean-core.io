@@ -159,6 +159,12 @@ export default function DocumentationPage() {
   const [businessDocError, setBusinessDocError] = useState('');
   const [activeTab, setActiveTab] = useState<'technical' | 'business'>('technical');
 
+  // Roadmap 4.4 — the brief. It reads the whole program twice (the rule reader
+  // and the coverage sweep), so the button says it is working and says why when
+  // it could not finish.
+  const [isBuildingBrief, setIsBuildingBrief] = useState(false);
+  const [briefError, setBriefError] = useState('');
+
   const handleNodeClick = (nodeId: string) => {
     setHighlightedTaskId(nodeId);
     if (parsedDoc?.l4_tasks) {
@@ -629,6 +635,78 @@ Structure the JSON exactly like this:
     saveAs(blob, bpmnFileName(`${project?.name || 'Project'}_Process`));
   };
 
+  /**
+   * Roadmap 4.4 — the brief: the process picture, the rules and the open
+   * questions, every statement with its lines, as a PDF, and the `.bpmn` beside
+   * it in one download.
+   *
+   * Everything it needs is already derivable from the source the active run
+   * signed — the map on this page, 2.6's export, 3.4's rules, the coverage
+   * sweep and 3.5's confirmations — so no model is called and nothing is
+   * stored. The brief enters no run and no audit pack; it is a summary.
+   *
+   * The BPMN is taken from the same export the map was built from and put into
+   * the archive unchanged, so the file in the download and the file behind
+   * "Export BPMN" are the same bytes.
+   *
+   * The confirmations are fetched and a failure to read them is not a failure
+   * to write the brief: the third section then says that nothing could be read,
+   * which is true, instead of a document that does not arrive.
+   */
+  const downloadBrief = async () => {
+    if (!signedSource || !processMap.model || isBuildingBrief) return;
+    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
+    setIsBuildingBrief(true);
+    setBriefError('');
+    try {
+      const [exporter, rules, coverage, briefModel, briefPackage, statesClient, statesModel, zipModule] =
+        await Promise.all([
+          import('@/lib/bpmn/export'),
+          import('@/lib/abap/business-rule-set'),
+          import('@/lib/abap/coverage'),
+          import('@/lib/brief/model'),
+          import('@/lib/brief/package'),
+          import('@/lib/process-states-client'),
+          import('@/lib/process-states'),
+          import('jszip'),
+        ]);
+
+      const bpmn = exporter.buildBpmnExportFromSource(signedSource.source, {
+        processName: project?.name || signedSource.fileName,
+        sourceFileName: signedSource.fileName,
+      });
+
+      const view = idStr ? await statesClient.fetchProcessStates(idStr) : null;
+      const states = view
+        ? statesModel.readProcessStates(view.entries, statesModel.subjectIdsOf(view.subjects))
+        : null;
+
+      const brief = briefModel.buildProcessBrief({
+        map: processMap.model,
+        stats: bpmn.stats,
+        rules: rules.deriveBusinessRules(signedSource.source),
+        coverage: coverage.assessCoverage(signedSource.source),
+        states,
+      });
+
+      const pack = briefPackage.buildBriefPackage({
+        brief,
+        bpmnXml: bpmn.xml,
+        name: `${project?.name || 'Project'}_Process`,
+        generatedAt: new Date().toISOString(),
+      });
+
+      const zip = new zipModule.default();
+      for (const file of pack.files) zip.file(file.name, file.data);
+      saveAs(await zip.generateAsync({ type: 'blob' }), pack.name);
+    } catch (err: unknown) {
+      console.error('Brief export failed:', err);
+      setBriefError('The brief could not be written from this source.');
+    } finally {
+      setIsBuildingBrief(false);
+    }
+  };
+
   const downloadConfluenceHTML = () => {
     if (!parsedDoc) return;
 
@@ -875,6 +953,19 @@ Structure the JSON exactly like this:
               Import into SAP Signavio or SAP Build has not been verified yet.
             </span>
           </div>
+
+          {/* Roadmap 4.4. What the second download holds, said before it is
+              asked for: a summary carries no signature, and a reader who takes
+              it for one has been misled by the button rather than by the file. */}
+          <p data-brief-caveat className="mt-2 text-[10px] text-slate-500 font-medium normal-case max-w-xl">
+            The brief is a PDF and the BPMN file in one archive. Every statement in it names the lines it was
+            read from, or says that it is not determined. It is a summary, not a signed audit pack.
+          </p>
+          {briefError && (
+            <p data-brief-error className="mt-1 text-[10px] text-red-600 font-semibold normal-case">
+              {briefError}
+            </p>
+          )}
         </div>
         {/* Nothing to export, and nothing to regenerate, until a blueprint exists.
             The two exports and a green "Regenerate" used to sit above the words
@@ -904,6 +995,21 @@ Structure the JSON exactly like this:
               className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff]"
             >
               <FileCode2 size={16} /> Export BPMN
+            </button>
+          )}
+
+          {/* Roadmap 4.4 — the brief. Offered on the same condition as the BPMN
+              and one more: the map has to be read before there is a process to
+              describe. It waits for no blueprint either, because everything in
+              it comes from the code and from what accounts confirmed. */}
+          {signedSource && processMap.model && (
+            <button
+              onClick={downloadBrief}
+              disabled={isBuildingBrief}
+              data-export-brief
+              className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff] disabled:opacity-50"
+            >
+              <Briefcase size={16} /> {isBuildingBrief ? 'Writing brief…' : 'Export brief'}
             </button>
           )}
 
