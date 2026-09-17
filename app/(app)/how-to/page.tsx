@@ -4,67 +4,45 @@ import { BookOpen, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import HowToClient from '@/components/HowToClient';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+import { HOW_TO_DESCRIPTION, howToSteps } from '@/lib/how-to-content';
 
 // Server-side Metadata configuration for SEO & GEO Crawlers
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP S/4HANA Clean Core Modernization Guide | Clean-Core.io',
-  description: 'Follow our interactive walkthrough to learn how to refactor legacy ABAP structures into modern Node.js and TypeScript BTP applications.',
+  description: HOW_TO_DESCRIPTION,
   alternates: {
     canonical: 'https://clean-core.io/how-to',
   },
   openGraph: {
     title: 'SAP S/4HANA Clean Core Modernization Guide | Clean-Core.io',
-    description: 'Follow our interactive walkthrough to learn how to refactor legacy ABAP structures into modern Node.js and TypeScript BTP applications.',
+    description: HOW_TO_DESCRIPTION,
     url: 'https://clean-core.io/how-to',
     type: 'website',
     siteName: 'Clean-Core.io',
   },
 });
 
-const steps = [
-  {
-    title: "Phase 1: Technical Analytics",
-    text: "Upload custom legacy ABAP source files. The static analysis engine parses custom code and calculates a compliance baseline."
-  },
-  {
-    title: "Phase 2: Solution Design",
-    text: "Design the side-by-side target architecture. Map custom legacy structures to versioned API routes and Node.js BTP applications."
-  },
-  {
-    title: "Phase 3: Code Transformation",
-    text: "Audit the code conversion. The editor translates legacy ABAP statements into modern Node.js CAP TypeScript services."
-  },
-  {
-    title: "Phase 4: Testing & Sandbox",
-    text: "Execute tests against mocks in a restricted test runner. A connected S/4HANA tenant can be checked read-only; running tests against it is locked."
-  },
-  {
-    title: "Phase 5: Process Blueprint",
-    text: "Document business processes. Export BPMN 2.0 XML diagrams (import into SAP Signavio or SAP Build not yet verified)."
-  },
-  {
-    title: "Phase 6: Project Delivery",
-    text: "Download the completed BTP cloud service ZIP bundle including schema definitions, controllers, and tests."
-  }
-];
-
 export default function HowToPage() {
-  // Generate dynamic HowTo JSON-LD schema for crawlers
+  // Roadmap 0.2, UX-102. The steps used to be a list of their own here — six
+  // phases in another order, promising Node.js on both tracks — and search
+  // engines were handed that list as the product's workflow. Order, count and
+  // titles now come from PHASES, the words from lib/how-to-content.ts, and the
+  // walkthrough below reads the same module.
   const howToSchema = {
     "@context": "https://schema.org",
     "@type": "HowTo",
     "name": "SAP S/4HANA Clean Core Modernization Guide",
-    "description": "Learn how to analyze, refactor, and deploy legacy ERP custom code side-by-side on SAP BTP using artificial intelligence.",
-    "step": steps.map((step, idx) => ({
+    "description": HOW_TO_DESCRIPTION,
+    "step": howToSteps().map((step) => ({
       "@type": "HowToStep",
-      "position": idx + 1,
+      "position": step.n,
       "name": step.title,
-      "text": step.text
+      "text": step.summary
     }))
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-300">
+    <div data-how-to-page className="space-y-10 animate-in fade-in duration-300">
       
       {/* HowTo JSON-LD Structured Data */}
       <script
@@ -98,7 +76,7 @@ export default function HowToPage() {
             Clean-Core.io <span className="text-green-400">How-to</span>
           </h1>
           <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
-            Learn how enterprise architects safely analyze, refactor, and deploy legacy ERP custom code side-by-side on SAP BTP using artificial intelligence.
+            {HOW_TO_DESCRIPTION}
           </p>
         </div>
       </div>
