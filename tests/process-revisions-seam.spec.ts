@@ -148,6 +148,12 @@ test('the documentation stage saves a drawn model as a revision and shows it', a
   await expect
     .poll(async () => page.locator('[data-draft-row]').count(), { timeout: 60000 })
     .toBeGreaterThan(1);
+  // The list is built from the draft string and is there before the modeller
+  // is. The palette is not: `add` needs the modeller, and a click that arrives
+  // first is swallowed. So wait for the canvas to have drawn the copy.
+  await expect
+    .poll(async () => page.locator('[data-process-editor-canvas] .djs-shape').count(), { timeout: 60000 })
+    .toBeGreaterThan(2);
   await page.locator('[data-draft-row]').first().click();
   await page.locator('[data-palette-item="user-task"]').click();
   const drawn = page.locator('[data-draft-row][data-drawn="true"]');
