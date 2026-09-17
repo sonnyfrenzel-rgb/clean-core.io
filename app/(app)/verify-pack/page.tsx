@@ -214,8 +214,15 @@ export default function VerifyPackPage() {
                             {f.path}
                           </span>
                           {f.signed === false && f.valid && (
+                            // A pack sealed from manifest version 3 binds the
+                            // bytes of an attested file, so the row can say the
+                            // statement was not rewritten. One sealed before
+                            // that carries no digest, and the label has to keep
+                            // saying so rather than borrow the stronger claim.
                             <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-                              user-attested · not covered by the signature
+                              {f.expectedHash
+                                ? 'user-attested · sealed, not confirmed'
+                                : 'user-attested · not covered by the signature'}
                             </span>
                           )}
                         </div>

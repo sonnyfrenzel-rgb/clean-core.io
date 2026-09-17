@@ -25,9 +25,13 @@ export interface FileVerifyResult {
   valid: boolean;
   found: boolean;
   /**
-   * False for a file the manifest lists as user-attested: its name is bound
-   * into the signature, its contents are not, and `valid` only says it was
-   * there. Absent (true) for every signed file.
+   * False for a file the manifest lists as user-attested — the account holder's
+   * own statement, never server evidence. Absent (true) for every signed file.
+   *
+   * From manifest version 3 such a row carries a real `expectedHash`, and
+   * `valid` means the sealed bytes are the bytes in the archive. On a version-2
+   * pack both hashes are empty and `valid` only says the file was there; the
+   * reader is told so in `errors`, and the page labels the row differently.
    */
   signed?: boolean;
 }
@@ -129,14 +133,33 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       errors.push(`File not covered by the manifest: ${name}`);
     }
 
-    // A user-attested file is listed by name only. Its presence is part of
-    // what was sealed — the name is in the canonical manifest — so a missing
-    // one is an altered archive; its contents are the account holder's own
-    // statement and are reported as exactly that, never as verified.
+    // A user-attested file carries the account holder's own statement, so it is
+    // reported as exactly that and never as server evidence. From manifest
+    // version 3 the issuer also records its SHA-256 and binds it into the
+    // signature: which self-declaration was sealed is a fact about the archive,
+    // and leaving it unbound meant anyone holding a genuine pack could rewrite
+    // "sign-off: not given" into a fabricated board approval and still get
+    // "Authenticity & Integrity Verified" (QA full review of a19945ef01dc).
+    // Packs sealed in version 2 have no digest to check; that limit is said out
+    // loud rather than passed off as a verified file.
     for (const a of attested) {
-      const present = !!zip.file(a.path);
-      fileResults.push({ path: a.path, expectedHash: '', actualHash: '', valid: present, found: present, signed: false });
-      if (!present) errors.push(`Attested file missing from ZIP: ${a.path}`);
+      const file = zip.file(a.path);
+      if (!file) {
+        fileResults.push({ path: a.path, expectedHash: a.sha256 || '', actualHash: '', valid: false, found: false, signed: false });
+        errors.push(`Attested file missing from ZIP: ${a.path}`);
+        continue;
+      }
+      if (!a.sha256) {
+        fileResults.push({ path: a.path, expectedHash: '', actualHash: '', valid: true, found: true, signed: false });
+        errors.push(`Attested file not covered by a digest in this pack's manifest version: ${a.path}. Its presence was sealed, its contents were not.`);
+        continue;
+      }
+      const actualHash = await sha256(await file.async('text'));
+      const valid = actualHash === a.sha256;
+      fileResults.push({ path: a.path, expectedHash: a.sha256, actualHash, valid, found: true, signed: false });
+      if (!valid) {
+        errors.push(`Hash mismatch for attested file ${a.path}: expected ${a.sha256.substring(0, 16)}..., got ${actualHash.substring(0, 16)}...`);
+      }
     }
 
     for (const entry of manifest.files) {
@@ -171,24 +194,41 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
     }
 
     // 4. Verify manifest hash — rebuilt by the same function the issuer used.
-    const canonicalManifest = canonicalAuditManifest({
-      files: manifest.files,
-      attested,
-      projectId: manifest.projectId,
-      runId: manifest.runId,
-      runHash: manifest.runHash,
-      engineVersion: manifest.engineVersion,
-      sapApiCatalogVersion: manifest.sapApiCatalogVersion,
-    });
-    const computedManifestHash = await sha256(canonicalManifest);
-    manifestHashValid = computedManifestHash === manifest.manifestHash;
+    //
+    // The rebuild can refuse: a manifest whose paths carry the separators the
+    // canonical form uses has no single canonical string, and two different
+    // file lists can then hash to the same signed bytes. No issuer ever wrote
+    // such a name, so refusing one is refusing a forgery — including on a pack
+    // sealed in the old format, which is why the hole is closed for packs
+    // already delivered and not only for new ones.
+    let canonicalManifest: string | null = null;
+    try {
+      canonicalManifest = canonicalAuditManifest({
+        files: manifest.files,
+        attested,
+        projectId: manifest.projectId,
+        runId: manifest.runId,
+        runHash: manifest.runHash,
+        engineVersion: manifest.engineVersion,
+        sapApiCatalogVersion: manifest.sapApiCatalogVersion,
+        version: manifest.version,
+        generatedAt: manifest.generatedAt,
+      });
+    } catch (err: any) {
+      errors.push(err?.message || 'This manifest has no unambiguous canonical form.');
+    }
 
-    if (!manifestHashValid) {
-      errors.push(`Manifest hash mismatch: expected ${manifest.manifestHash.substring(0, 16)}..., got ${computedManifestHash.substring(0, 16)}...`);
+    if (canonicalManifest !== null) {
+      const computedManifestHash = await sha256(canonicalManifest);
+      manifestHashValid = computedManifestHash === manifest.manifestHash;
+
+      if (!manifestHashValid) {
+        errors.push(`Manifest hash mismatch: expected ${manifest.manifestHash.substring(0, 16)}..., got ${computedManifestHash.substring(0, 16)}...`);
+      }
     }
 
     // 5. Verify HMAC signature via server
-    if (manifest.signed && manifest.signature) {
+    if (canonicalManifest !== null && manifest.signed && manifest.signature) {
       try {
         const verifyResponse = await fetch('/api/export/verify', {
           method: 'POST',
