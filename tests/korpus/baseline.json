@@ -1240,9 +1240,9 @@
     {
       "case": "CC-036",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte. 2.11, **Folgeänderung** aus objekte (gehört zu Familie (a), Strang C): die frühere Übereinstimmung war ein Zufall — die Engine benotete das Pseudoobjekt (LC_TAB) als Katalogrest mit C. Mit dem aufgelösten KNA1 steht die Katalognote D gegen das C des Falls, und der Fall stützt sein C auf den katalogisierten Nachfolger I_CUSTOMER."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C 2.11: die Übereinstimmung ist zurück, jetzt begründet — das aufgelöste KNA1 (R07, dynamisches FROM über eine Konstante) wird gelesen, und die Note kennt seit 2.11 die Zugriffsart: KNA1 lesen ist C."
     },
     {
       "case": "CC-036",
@@ -1277,7 +1277,7 @@
       "class": "level",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte. 2.11, Folge aus objekte: die Note kommt jetzt von KNA1 als möglichem Ziel statt vom Pseudoobjekt (P_TAB); vergleichbar ist sie weiterhin nicht, weil der Fall „Unknown\" antwortet."
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte. 2.11, Defektfamilie (c): die Engine sieht an diesem Fall jetzt zusätzliche Abhängigkeiten (Typbezug nach R29, aufgelöste oder mögliche dynamische Ziele nach R07/R26); das Urteil dieser Klasse ändert sich dadurch nicht."
     },
     {
       "case": "CC-037",
@@ -1312,7 +1312,7 @@
       "class": "level",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 2 Objekt(e)) Unknown. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte. 2.11, Folge aus objekte: die Engine sieht jetzt zwei Objekte (mögliches Ziel und Typabhängigkeit), beide kundeneigen und ohne Katalogzustand; der Fall antwortet „Unknown\", also bleibt die Klasse unvergleichbar."
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 2 Objekt(e)) B. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte. 2.11, Defektfamilie (c): die Engine sieht an diesem Fall jetzt zusätzliche Abhängigkeiten (Typbezug nach R29, aufgelöste oder mögliche dynamische Ziele nach R07/R26); das Urteil dieser Klasse ändert sich dadurch nicht."
     },
     {
       "case": "CC-038",
@@ -1450,9 +1450,9 @@
     {
       "case": "CC-042",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 2 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER, KNB1 → I_CUSTOMERCOMPANY), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte. 2.11, **Folgeänderung** aus objekte (Familie (a), Strang C): die frühere Übereinstimmung kam vom Pseudoobjekt &1, das als Katalogrest C bekam. Mit KNA1 und KNB1 steht D gegen das C des Falls, das sich auf die katalogisierten Nachfolger stützt."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 2 Objekt(e)) C 2.11: die Übereinstimmung ist zurück, jetzt begründet — KNA1 und KNB1 stehen an den Makroaufrufstellen (R27) und werden gelesen; Lesen ist C."
     },
     {
       "case": "CC-042",
@@ -1625,9 +1625,9 @@
     {
       "case": "CC-047",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte. 2.11, **Folgeänderung** aus objekte (Familie (a), Strang C): mit KNA1 aus der LDB-Bindung benotet die Engine D, wo der Fall C mit dem katalogisierten Nachfolger begründet."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C 2.11: KNA1 wird über die logische Datenbank gelesen (R33); mit der Zugriffsart in der Note ergibt das C wie im Fall."
     },
     {
       "case": "CC-047",
