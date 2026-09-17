@@ -64,7 +64,7 @@ export const BUDGET = {
   /** Symbols whose callers are looked up outside the delta (impact analysis). */
   maxSymbols: 15,
   maxCallersPerSymbol: 3,
-  /** A single file's diff above this is cut and the cut is reported. */
+  /** A single file's diff above this is read in consecutive parts of at most this size (pack.mjs partsOf); the file counts as read only when all of them were. */
   maxFileDiffChars: 60_000,
   requestTimeoutMs: 15 * 60_000,
   retries: 2,
@@ -128,6 +128,16 @@ export const IGNORED_PATHS = [
   // list already covers as prose, and it is the source these files are built
   // from.
   /^tests\/korpus\/cases\//,
+  // Its manifest belongs to the same bundle (18.09.2026): `tests/korpus/manifest.json`
+  // is written by the same converter (`build-bundle.mjs`, `files.set('manifest.json', …)`),
+  // a 72,399-character diff when it arrived in `b64818a`. The same guards cover it:
+  // `--check` compares it byte for byte with a fresh build (`korpus-engine.spec.ts`,
+  // "ein erneuter Lauf des Konverters erzeugt keine Änderung"), and "der
+  // Fallbuch-Hash im Manifest ist der Hash der Datei in docs/korpus/" ties it to
+  // the book. Not `tests/korpus/baseline.json`: that file is judged by hand — a
+  // verdict and a reason per case — and is read like any other code, in parts
+  // when it is large.
+  /^tests\/korpus\/manifest\.json$/,
   /^public\//,
   /^docs\//,
   /^scratch\//,

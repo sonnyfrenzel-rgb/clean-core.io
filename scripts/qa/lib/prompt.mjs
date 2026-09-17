@@ -163,7 +163,9 @@ export function buildUserMessage({ range, batch, batchIndex, batchCount, triage,
       const callers = f.callers?.length
         ? `\nCallers outside the delta:\n${f.callers.map((c) => `  ${c.symbol}: ${c.callers.map((x) => `${x.file}:${x.line} \`${x.text}\``).join(' | ')}`).join('\n')}`
         : '';
-      return `### ${f.path} (${f.status}; tags: ${f.tags.join(', ') || '—'})${f.truncated ? ' — DIFF TRUNCATED' : ''}\n\n\`\`\`diff\n${f.diff}\n\`\`\`${callers}`;
+      // A large diff arrives in parts (pack.mjs partsOf); the heading says which one, and that the rest is read too.
+      const part = f.part ? ` — PART ${f.part.index} OF ${f.part.count}, ${f.part.lines}; the other parts of this file are reviewed in this or another batch` : '';
+      return `### ${f.path} (${f.status}; tags: ${f.tags.join(', ') || '—'})${part}\n\n\`\`\`diff\n${f.diff}\n\`\`\`${callers}`;
     })
     .join('\n\n');
 

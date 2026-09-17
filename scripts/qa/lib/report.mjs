@@ -34,6 +34,16 @@ export function isSuppressed(finding, refuted) {
   return refuted.some((r) => r.fingerprint === finding.fingerprint && (!finding.raisedAt || String(r.refutedAt) >= String(finding.raisedAt)));
 }
 
+/**
+ * What was read. A file counts as reviewed only when nothing of it is in `notReviewed`: a large diff is read in
+ * parts (pack.mjs partsOf), and one unread part keeps the whole file unreviewed and the report incomplete, however
+ * many of its other parts a batch did read.
+ */
+export function coverageOf(results, notReviewed) {
+  const unread = new Set(notReviewed.map((n) => n.path));
+  return { reviewed: [...new Set(results.flatMap((r) => r.files || []))].filter((p) => !unread.has(p)), notReviewed };
+}
+
 export function buildReport({ range, results, previous, refuted, notReviewed, triage, meta }) {
   const refutedSet = new Set(refuted.map((r) => r.fingerprint));
   const createdAt = new Date().toISOString();
@@ -108,8 +118,7 @@ export function buildReport({ range, results, previous, refuted, notReviewed, tr
     acceptance: results.flatMap((r) => r.review.acceptance || []),
     testGaps: results.flatMap((r) => r.review.test_gaps || []),
     coverage: {
-      reviewed: results.flatMap((r) => r.files),
-      notReviewed,
+      ...coverageOf(results, notReviewed),
       notes: results.map((r) => r.review.coverage_notes).filter(Boolean).join(' '),
     },
     triage: { tags: triage.tags, signals: triage.signals, codeWithoutTests: triage.codeWithoutTests },
@@ -162,7 +171,7 @@ export function renderHeader(report) {
   );
   if (readNothing(report)) lines.push(`NO REVIEW — the model read none of the code this run was to review. Nothing below is a judgement of it: the findings are carried unchanged from earlier reports.`);
   if (report.meta?.skipped) lines.push(`No model call: ${report.meta.skipped}`);
-  if (report.coverage.notReviewed.length) lines.push(`INCOMPLETE — checkpoint stays at ${String(report.range.checkpoint || 'main').slice(0, 12)}. NOT REVIEWED: ${report.coverage.notReviewed.map((n) => `${n.path} (${n.reason})`).join('; ')}`);
+  if (report.coverage.notReviewed.length) lines.push(`INCOMPLETE — checkpoint stays at ${String(report.range.checkpoint || 'main').slice(0, 12)}. NOT REVIEWED: ${report.coverage.notReviewed.map((n) => `${n.path}${n.part ? ` part ${n.part}` : ''} (${n.reason})`).join('; ')}`);
   return lines.join('\n');
 }
 

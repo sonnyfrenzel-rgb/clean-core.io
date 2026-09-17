@@ -166,13 +166,15 @@ export function changedFiles(range) {
     });
 }
 
+/**
+ * The whole diff of one file. It is never cut here: a diff above `maxFileDiffChars` is read in consecutive parts
+ * (pack.mjs partsOf), because a cut file stays unread and keeps every range containing its commit incomplete.
+ */
 export function fileDiff(range, path, contextLines = BUDGET.hunkContextLines) {
   const args = range.base
     ? ['diff', `-U${contextLines}`, '-M', range.base, range.head, '--', path]
     : ['show', `-U${contextLines}`, '--format=', '-M', range.head, '--', path];
-  const text = git(args);
-  if (text.length <= BUDGET.maxFileDiffChars) return { text, truncated: false };
-  return { text: `${text.slice(0, BUDGET.maxFileDiffChars)}\n… [diff cut at ${BUDGET.maxFileDiffChars} characters]`, truncated: true };
+  return { text: git(args) };
 }
 
 /** Only the lines a change adds to a prose file — the claims, not the whole CHANGELOG. */

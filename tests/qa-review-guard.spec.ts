@@ -457,6 +457,117 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     for (const src of [read('scripts/qa/review.mjs'), read('scripts/qa/full-review.mjs')]) expect(src).toMatch(/for \(const f of files\) f\.carriedChars = carriedChars\(f, shared\);/);
   });
 
+  // A diff above maxFileDiffChars, as git prints it: 48 hunks of 64 lines, about 152,000 characters.
+  const PREAMBLE = ['diff --git a/lib/big.ts b/lib/big.ts', 'index 1111111..2222222 100644', '--- a/lib/big.ts', '+++ b/lib/big.ts'];
+  const bigDiff = (hunks: number, linesPerHunk: number) => {
+    const out = [...PREAMBLE];
+    let oldLine = 1;
+    let newLine = 1;
+    for (let h = 0; h < hunks; h++) {
+      const body = Array.from({ length: linesPerHunk }, (_, k) => `${k % 2 ? '+' : ' '}const value_${String(h).padStart(4, '0')}_${String(k).padStart(4, '0')} = '${'x'.repeat(20)}';`);
+      const context = body.filter((l) => l[0] === ' ').length;
+      out.push(`@@ -${oldLine},${context} +${newLine},${linesPerHunk} @@ function f${h}() {`, ...body);
+      oldLine += context + 7;
+      newLine += linesPerHunk + 7;
+    }
+    return out.join('\n');
+  };
+  const bodyLines = (text: string) => text.split('\n').filter((l) => !l.startsWith('@@') && !PREAMBLE.includes(l));
+
+  test('a 150,000-character diff is read in three parts, cut between hunks, and the file counts as read only when all three were', async () => {
+    const { partsOf, packBatches, splitDiff } = await lib('pack.mjs');
+    const { BUDGET } = await lib('config.mjs');
+    const { buildUserMessage } = await lib('prompt.mjs');
+    const { buildReport } = await lib('report.mjs');
+    const diff = bigDiff(48, 64);
+    expect(diff.length).toBeGreaterThanOrEqual(150_000);
+    const parts = partsOf({ path: 'lib/big.ts', status: 'M', tags: ['engine'], diff, callers: [{ symbol: 'bigFunction', callers: [{ file: 'lib/user.ts', line: 3, text: 'bigFunction()' }] }], carriedChars: 500 });
+    expect(parts.map((p: { part: { index: number; count: number } }) => `${p.part.index} of ${p.part.count}`)).toEqual(['1 of 3', '2 of 3', '3 of 3']);
+    // Each part fits the unchanged per-file size, starts with the file header, and holds whole hunks; together they hold every line once, in order.
+    for (const p of parts) {
+      expect(p.diff.length).toBeLessThanOrEqual(BUDGET.maxFileDiffChars);
+      expect(p.diff.startsWith(`${PREAMBLE.join('\n')}\n@@ -`)).toBe(true);
+      expect(p.part.lines).toMatch(/^new-file lines \d+–\d+$/);
+    }
+    expect(parts.flatMap((p: { diff: string }) => bodyLines(p.diff))).toEqual(bodyLines(diff));
+    // The register travels with every part, the callers with the first.
+    expect(parts.map((p: { carriedChars: number; callers: unknown[] }) => [p.carriedChars, p.callers.length])).toEqual([[500, 1], [500, 0], [500, 0]]);
+    // A single hunk larger than a part is cut between lines, and every piece is numbered where it continues.
+    const oneHunk = splitDiff(bigDiff(1, 3_200), BUDGET.maxFileDiffChars);
+    expect(oneHunk.length).toBe(3);
+    let newLine = 1;
+    for (const p of oneHunk) {
+      expect(p.text.length).toBeLessThanOrEqual(BUDGET.maxFileDiffChars);
+      const header = p.text.split('\n').find((l: string) => l.startsWith('@@')) as string;
+      expect(Number(header.match(/\+(\d+),/)?.[1])).toBe(newLine);
+      newLine += bodyLines(p.text).filter((l: string) => l[0] === ' ' || l[0] === '+').length;
+    }
+    expect(oneHunk.flatMap((p: { text: string }) => bodyLines(p.text))).toEqual(bodyLines(bigDiff(1, 3_200)));
+    // A single line larger than a part is wrapped, not dropped.
+    const wide = splitDiff(['diff --git a/x.json b/x.json', '@@ -0,0 +1,1 @@', `+${'y'.repeat(130_000)}`].join('\n'), BUDGET.maxFileDiffChars);
+    expect(wide.every((p: { text: string }) => p.text.length <= BUDGET.maxFileDiffChars)).toBe(true);
+    expect(wide.reduce((n: number, p: { text: string }) => n + (p.text.match(/y/g) || []).length, 0)).toBe(130_000);
+    // The reviewer is told which part it holds.
+    expect(buildUserMessage({ range: { base: 'b', head: 'h', baseReason: 'x', commits: [] }, batch: { files: [parts[1]] }, batchIndex: 0, batchCount: 1, triage: { tags: [], signals: [], criteria: [], codeWithoutTests: false }, claims: '', previousOpen: [], refuted: [] })).toContain('### lib/big.ts (M; tags: engine) — PART 2 OF 3, new-file lines');
+    // All three packed and all three read: the file is reviewed and the review complete.
+    const { batches, notReviewed } = packBatches(parts, 30_000);
+    expect(notReviewed).toEqual([]);
+    const results = batches.map((b: { files: { path: string }[] }) => ({ review: { verdict: 'go', summary: '', findings: [], acceptance: [], test_gaps: [], previous_findings: [], coverage_notes: '' }, files: [...new Set(b.files.map((f) => f.path))], shown: [] }));
+    const report = buildReport({ range: { base: 'b'.repeat(40), head: 'h'.repeat(40) }, results, previous: null, refuted: [], notReviewed, triage: { tags: [], signals: [], codeWithoutTests: false }, meta: {} });
+    expect(report.coverage.reviewed).toEqual(['lib/big.ts']);
+    expect(report.incomplete).toBe(false);
+    // In the pipeline: the diff is no longer cut where it is read, and every file is packed as its parts.
+    expect(read('scripts/qa/lib/git-delta.mjs')).not.toMatch(/slice\(0, BUDGET\.maxFileDiffChars\)/);
+    expect(read('scripts/qa/review.mjs')).toMatch(/const entries = files\.flatMap\(\(f\) => partsOf\(f\)\);\s+const \{ batches, notReviewed, estimatedCostUsd \} = packBatches\(entries, baseChars\);/);
+  });
+
+  test('a part that is not read keeps the whole file unreviewed, the review incomplete and the checkpoint where it was', async () => {
+    const { partsOf, packBatches } = await lib('pack.mjs');
+    const { BUDGET } = await lib('config.mjs');
+    const { buildReport, renderText } = await lib('report.mjs');
+    const parts = partsOf({ path: 'lib/big.ts', status: 'M', tags: ['engine'], diff: bigDiff(48, 64), callers: [] });
+    const small = { path: 'lib/small.ts', status: 'M', tags: ['engine'], diff: '+x', callers: [] };
+    // One call of 200,000 characters with a 70,000-character shared part holds two parts and the small file; the third part has no call left.
+    const { batches, notReviewed } = packBatches([...parts, small], 70_000, { budget: { ...BUDGET, maxBatches: 1 } });
+    expect(notReviewed).toEqual([{ path: 'lib/big.ts', part: '3 of 3', reason: 'outside the 1-call budget' }]);
+    // Nothing goes missing: every part is either in a batch or named as not reviewed.
+    expect(batches.flatMap((b: { files: { part?: { index: number } }[] }) => b.files.map((f) => f.part?.index)).filter(Boolean).length + notReviewed.length).toBe(3);
+    const range = { base: 'b'.repeat(40), head: 'h'.repeat(40) };
+    const read1 = { review: { verdict: 'go', summary: '', findings: [], acceptance: [], test_gaps: [], previous_findings: [], coverage_notes: '' }, files: ['lib/big.ts', 'lib/small.ts'], shown: [] };
+    const report = buildReport({ range, results: [read1], previous: null, refuted: [], notReviewed, triage: { tags: [], signals: [], codeWithoutTests: false }, meta: {} });
+    expect(report.coverage.reviewed).toEqual(['lib/small.ts']);
+    expect(report.incomplete).toBe(true);
+    expect(report.verdict).toBe('go_with_notes');
+    expect(report.range.checkpoint).toBe(range.base);
+    expect(renderText(report)).toContain('NOT REVIEWED: lib/big.ts part 3 of 3 (outside the 1-call budget)');
+    // A part the cost cap stops is named with its part too.
+    expect(read('scripts/qa/review.mjs')).toMatch(/notReviewed\.push\(\{ path: f\.path, \.\.\.\(f\.part \? \{ part: partLabel\(f\) \} : \{\}\), reason: `outside the \$\$\{BUDGET\.maxCostUsd\} cost cap` \}\)/);
+  });
+
+  test('packing fills earlier calls first and gives the same batches for the same entries, in whatever order they arrive', async () => {
+    const { packBatches, partsOf } = await lib('pack.mjs');
+    const { BUDGET } = await lib('config.mjs');
+    const two = { budget: { ...BUDGET, maxBatches: 2 } };
+    const sized = (p: string, tags: string[], size: number) => file(p, tags, size - p.length - 64);
+    // Riskiest first: 150,000 opens call 1, 100,000 opens call 2. The 40,000 fills call 1 and the 90,000 fills call 2 —
+    // before 18.09.2026 a new call began as soon as one entry did not fit, and the last file found no call left.
+    const entries = [sized('firestore.rules', ['security'], 150_000), sized('lib/audit-pack-x.ts', ['trust-chain'], 100_000), sized('lib/abap/a.ts', ['engine'], 40_000), sized('app/page.tsx', ['ui'], 90_000)];
+    const { batches, notReviewed } = packBatches(entries, 0, two);
+    expect(notReviewed).toEqual([]);
+    expect(batches.map((b: { files: { path: string }[] }) => b.files.map((f) => f.path))).toEqual([['firestore.rules', 'lib/abap/a.ts'], ['lib/audit-pack-x.ts', 'app/page.tsx']]);
+    // A riskier entry is never displaced: what finds no room is the least risky.
+    const crowded = packBatches([...entries, sized('components/Z.tsx', ['ui'], 30_000)], 0, two);
+    expect(crowded.notReviewed.map((n: { path: string }) => n.path)).toEqual(['components/Z.tsx']);
+    // Deterministic: the same entries in reverse or shuffled order — parts of one file included — give the same batches.
+    const mixed = [...entries, ...partsOf({ path: 'lib/abap/big.ts', status: 'M', tags: ['engine'], diff: bigDiff(48, 64), callers: [] }), file('tests/b.spec.ts', ['tests'], 5_000), file('tests/a.spec.ts', ['tests'], 5_000)];
+    const layout = (list: unknown[]) => JSON.stringify(packBatches(list, 20_000).batches.map((b: { files: { path: string; part?: { index: number } }[] }) => b.files.map((f) => `${f.path}#${f.part?.index ?? 0}`)));
+    const expected = layout(mixed);
+    expect(layout([...mixed].reverse())).toBe(expected);
+    expect(layout([mixed[5], mixed[0], mixed[8], mixed[4], mixed[6], mixed[2], mixed[7], mixed[1], mixed[3]])).toBe(expected);
+    // Code-unit order, so a local dry run and the CI runner agree whatever their locale.
+    expect(read('scripts/qa/lib/pack.mjs')).not.toMatch(/\.localeCompare\(/);
+  });
+
   test('a file larger than one call is reported, not silently cut from view', async () => {
     const { packBatches } = await lib('pack.mjs');
     const { notReviewed } = packBatches([file('lib/huge.ts', [], 500_000)], 10_000);
@@ -466,6 +577,9 @@ test.describe('spend is capped and only the delta is reviewed', () => {
   test('generated, vendored and prose files are not sent as code', async () => {
     const { isReviewable, isClaimSource } = await lib('git-delta.mjs');
     for (const p of ['package-lock.json', 'lib/abap/generated/cloudification-repo.latest.json', 'docs/ROADMAP.md', 'public/og.png']) expect(isReviewable(p)).toBe(false);
+    // The corpus bundle is generated, its manifest included; the baseline is judged by hand and stays reviewable.
+    for (const p of ['tests/korpus/cases/A01/source.abap', 'tests/korpus/manifest.json']) expect(isReviewable(p), p).toBe(false);
+    expect(isReviewable('tests/korpus/baseline.json')).toBe(true);
     for (const p of ['app/api/health/route.ts', 'firestore.rules', '.github/workflows/deploy.yml', 'lib/abap/evidence-model.ts']) expect(isReviewable(p)).toBe(true);
     expect(isClaimSource('CHANGELOG.md')).toBe(true);
   });
