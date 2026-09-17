@@ -1,0 +1,234 @@
+{
+  "answerFields": {
+    "known_worst_level": "unknown — im partiellen Scope ist das Kind nicht geliefert; im erweiterten Scope (beide Dateien) B, siehe unten."
+  },
+  "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert; das Review: „Für einen nativen Test beide separaten Reportobjekte anlegen; keinerlei Lauf behauptet\". SUBMIT prog AND RETURN mit statischem Programmnamen existiert nach Autorenwissen; die LUW-Semantik ist S07 (ABAP 7.52, SAP LUW).",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "caller.abap",
+          "line": 3,
+          "raw": "caller.abap:3",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "caller.abap",
+          "line": 4,
+          "raw": "caller.abap:4",
+          "token": null
+        }
+      ],
+      "id": "CC-065-B01",
+      "text": "Das Kindprogramm wird synchron gestartet; nach seiner normalen Beendigung wird RETURNED ausgegeben. Was das Kind tut, ist im partiellen Scope kein Teil dieses Satzes."
+    }
+  ],
+  "classes": [
+    "K17",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": "Gegenreview CE-05 / REV2-06 (Regelurteil R34 „hält nicht\") und REV2-01/REV2-11 (R25: kein pauschaler impliziter Commit) · Gegenfall zum Regelwortlaut R34@2.0.0 („das Skelett endet an der Grenze\") und zur Knotenbeschriftung „impliziter Commit\" in CC-056; CC-056 selbst zeichnet die Rückkehrkante richtig, das sagt auch das Review · Modellreviews 16.09.: Fable KA-058, GLM A-013, DeepSeek CC-GAP-007 nennen SUBMIT … AND RETURN (mit Listspeicher); kein Modell nannte die Fortsetzung als Gegenfall zum Skelettende.",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "caller.abap",
+        "line": 3,
+        "raw": "caller.abap:3 (sek. :3 Token zce_child, :3 Token AND RETURN)",
+        "token": null
+      },
+      "id": "CC-065-F01",
+      "profiles": null,
+      "rule": "R34",
+      "ruleRaw": "R34@2.1.0 (Fassung nach REV2-06)",
+      "ruleVersion": "2.1.0",
+      "severity": "high",
+      "sources": [
+        "S07",
+        "S06"
+      ],
+      "statement": "Programmübergreifender Aufruf: external_program-Knoten, im partiellen Scope opak (Quelle zurückgehalten), eigener Ausführungskontext und eigene SAP-LUW (S07). An der Grenze endet die Kenntnis der Innenlogik, nicht der Kontrollfluss des Aufrufers: AND RETURN macht die normale Rückkehr modellierbar, und caller.abap:4 wird nach ihr ausgeführt. Nicht normale Ausgänge (Laufzeitfehler, Abbruchmeldung im Kind) sind getrennt und erreichen :4 nicht. Ziel statisch (kein R07-Befund); kundeneigen → Level Unknown im partiellen Scope, nicht C."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "caller.abap",
+        "line": 3,
+        "raw": "caller.abap:3",
+        "token": null
+      },
+      "id": "CC-065-F02",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@2.1.0 (Fassung nach REV2-01)",
+      "ruleVersion": "2.1.0",
+      "severity": "info",
+      "sources": [
+        "S05",
+        "S07",
+        "S08"
+      ],
+      "statement": "Transaktionswirkung nach Achsen statt pauschal: sap_luw = neue SAP-LUW im Kind; db_luw = durch das Statement allein nicht beendet, implizite Commit-Stelle nur bei Dialogschritt im Kind (im gelieferten Kind keiner sichtbar); update_registration/dispatch = keine im Scope; persistence_evidence = keine. Die Kante darf nicht „impliziter Commit\" heißen, solange kein Dialogschritt belegt ist."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "caller.abap",
+        "line": 3,
+        "raw": "caller.abap:3",
+        "token": null
+      },
+      "id": "CC-065-F03",
+      "profiles": null,
+      "rule": "R16",
+      "ruleRaw": "R16@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-LEVEL"
+      ],
+      "statement": "Partieller Scope: die kundeneigene Quelle ZCE_CHILD ist nicht geliefert; Verhalten und Abhängigkeiten des Kindes nicht als bekannt ausgeben; kein erfundenes C. Erweiterter Scope: Befund entfällt, das Kind ist gelesen (keine Ausgabe, kein DB-Zugriff)."
+    }
+  ],
+  "forbiddenConclusions": [
+    "caller.abap:3 — Nicht „das Skelett endet an der Systemgrenze\" (R34@2.0.0-Wortlaut). :4 ist erreichbar und liegt nach der Rückkehr; ein Graph ohne o und done ist falsch.",
+    "caller.abap:3 — Keine Knotenbeschriftung „impliziter Commit\" (R25@2.0.0-Liste, CC-056-Knoten x) ohne belegten Dialogschritt im Kind.",
+    "caller.abap:4 — Kein Fachsatz über das, was das Kind getan hat; RETURNED belegt nur die Rückkehr.",
+    "caller.abap:3 — Kein C und kein D für ein kundeneigenes Ziel; im partiellen Scope Unknown, nicht „kein Befund\".",
+    "caller.abap:3 — Kein Knoten „Kindprogramm setzt Wert 1\" im partiellen Scope; und auch im erweiterten Scope kein Fachsatz „das Kind liefert 1 an den Aufrufer\" — lv_value ist lokal im Kind und mit dessen Ende weg.",
+    "caller.abap:3 — Nicht als opaque_call (FORM/Methode) modellieren: es ist eine Programmgrenze, Knotentyp external_program."
+  ],
+  "id": "CC-065",
+  "independence": [
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "gegenreview · sap-doku",
+  "known_worst_level": "unknown — im partiellen Scope ist das Kind nicht geliefert; im erweiterten Scope (beide Dateien) B, siehe unten.",
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "caller.abap",
+        "line": 3,
+        "raw": "caller.abap:3",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCE_CHILD",
+        "objectType": "PROG",
+        "tadirObjName": "ZCE_CHILD",
+        "tadirObject": "PROG"
+      },
+      "name": "ZCE_CHILD",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable",
+      "successors": null,
+      "usage": "submit_target, child.abap"
+    }
+  ],
+  "openReviewerQuestions": [
+    "P1: Löst SUBMIT … AND RETURN ohne Selektionsbild und ohne Listausgabe im Kind im Zielprofil einen impliziten Datenbank-Commit aus — beim Aufruf, bei der Rückkehr, gar nicht? Der Fall setzt „nicht durch das Statement allein; nur durch einen Dialogschritt\" (REV2-01, S07/S08) und hat es nicht nativ geprüft.",
+    "P2: Wird bei einem Kind ohne WRITE überhaupt eine (leere) Liste angezeigt — und wäre das ein Dialogschritt? Davon hängt P1 ab.",
+    "P3: Soll der Korpus für Zwei-Datei-Fälle den partiellen und den erweiterten Scope als zwei Fälle führen (Fallpaar analog R31) statt als zwei Scopes in einem? Der Autor hat einen Fall gewählt, weil die Aussage (Skelett des Aufrufers ist scopeunabhängig) sonst auf zwei Fälle verteilt wäre.",
+    "P4: Ist Unknown das richtige Level des Aufrufers, wenn dessen eigene Statements keine SAP-Abhängigkeit haben (wie CC-056 Prüferfrage 2)?",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "intentionally_incomplete",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "x"
+      },
+      {
+        "condition": "normale Rückkehr (AND RETURN)",
+        "from": "x",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "o",
+        "to": "done"
+      },
+      {
+        "condition": "always",
+        "from": "cs",
+        "to": "ca"
+      },
+      {
+        "condition": "always",
+        "from": "ca",
+        "to": "cd"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "caller.abap",
+          "line": 2,
+          "raw": "caller.abap:2",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "caller.abap",
+          "line": 3,
+          "raw": "caller.abap:3",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "Kindprogramm ausführen: opak im partiellen Scope; Attribute sap_luw = new, db_luw = not_ended_by_statement, dispatch = none, persistence_evidence = none",
+        "type": "external_program"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "caller.abap",
+          "line": 4,
+          "raw": "caller.abap:4",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "RETURNED melden — nach der Rückkehr, nicht Teil des opaken Knotens",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "caller.abap",
+          "line": 4,
+          "raw": "caller.abap:4",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende (anderer Typ als o, keine Signaturkollision)",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Opakes SUBMIT mit Fortsetzung des Aufrufers: die Grenze beendet die Kenntnis, nicht den Kontrollfluss (Gegenfall zur R34-Fassung, Partner von CC-056)"
+}

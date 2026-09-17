@@ -1,0 +1,423 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Syntax/Objekte: KNA1, I_CUSTOMER, Klassensyntax; Prinzip „Sprachversion ABAP for Cloud beschränkt den Zugriff auf freigegebene Objekte\" — S02) — die exakte Meldungsklasse im Zielsystem ist erinnert, siehe Prüferfragen; dass KNA1 und I_CUSTOMER im BTP ABAP Environment nicht vorhanden sind, ist erinnert",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10+4",
+          "token": 4
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        }
+      ],
+      "id": "CC-057-B01",
+      "text": "Die Methode versucht, für den exakt übergebenen Schlüssel den Länderschlüssel aus KNA1 zu lesen; nur bei Treffer (sy-subrc = 0) wird der gefundene Wert übernommen."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        }
+      ],
+      "id": "CC-057-B02",
+      "text": "Ohne Treffer bleibt der Rückgabewert initial; der sichtbare Code erzeugt keine Fehlermeldung und keinen Abbruch. Nicht abgefangene Datenbank-/Laufzeitfehler sind davon zu unterscheiden (nicht modelliert)."
+    }
+  ],
+  "classes": [
+    "K19",
+    "K01"
+  ],
+  "classic_level": null,
+  "cloud_api_surface": null,
+  "cloud_artefact": null,
+  "convergence": "Grok H-115 · GLM A-004, A-005, A-092 (FM-Zwilling derselben Ursache) · Fable KA-103 · DeepSeek: keiner · Gegenreview REV2-12 (Source-/Targetprozess), REV2-10 (Eingabeformat), REV2-14 (Metadaten)",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": [
+    {
+      "classic_level": "C",
+      "cloud_artefact": "not_activatable (Grund: KNA1; Klassenrahmen wäre zulässig)",
+      "fields": [
+        {
+          "field": "assessment_applicable (Vorschlag REV2-12)",
+          "file": null,
+          "scope": null,
+          "value": "true"
+        },
+        {
+          "field": "classic_extension.level",
+          "file": null,
+          "scope": null,
+          "value": "C"
+        },
+        {
+          "field": "known_worst_level",
+          "file": null,
+          "scope": null,
+          "value": "C (beobachtet: KNA1-Lesen, F01)"
+        },
+        {
+          "field": "completeness",
+          "file": null,
+          "scope": null,
+          "value": "complete_for_declared_slice"
+        },
+        {
+          "field": "cloud_api_surface",
+          "file": null,
+          "scope": null,
+          "value": "not_usable (KNA1)"
+        },
+        {
+          "field": "cloud_artefact",
+          "file": null,
+          "scope": null,
+          "value": "not_activatable (Grund: KNA1; Klassenrahmen wäre zulässig)"
+        },
+        {
+          "field": "source_process",
+          "file": null,
+          "scope": null,
+          "value": "reconstructed (delivered-slice)"
+        },
+        {
+          "field": "target_execution_graph",
+          "file": null,
+          "scope": null,
+          "value": "n/a (kein Zielmodell im Korpus)"
+        },
+        {
+          "field": "sap_level_for_hypothetical_target",
+          "file": null,
+          "scope": null,
+          "value": "null (wie v1 §3)"
+        }
+      ],
+      "findingIds": [
+        "CC-057-F01",
+        "CC-057-F03"
+      ],
+      "header": "Profil 1 (onpremise-s4 · standard)",
+      "known_worst_level": "C (beobachtet: KNA1-Lesen, F01)",
+      "label": "Profil 1"
+    },
+    {
+      "classic_level": "n/a (Artefakt nicht aktivierbar; nicht Unknown — entscheidbar)",
+      "cloud_artefact": "not_activatable (Grund: KNA1 absent_in_target)",
+      "fields": [
+        {
+          "field": "assessment_applicable (Vorschlag REV2-12)",
+          "file": null,
+          "scope": null,
+          "value": "false"
+        },
+        {
+          "field": "classic_extension.level",
+          "file": null,
+          "scope": null,
+          "value": "n/a (Artefakt nicht aktivierbar; nicht Unknown — entscheidbar)"
+        },
+        {
+          "field": "known_worst_level",
+          "file": null,
+          "scope": null,
+          "value": "n/a für das Ziel; der Legacybefund F01 bleibt C"
+        },
+        {
+          "field": "completeness",
+          "file": null,
+          "scope": null,
+          "value": "complete_for_declared_slice"
+        },
+        {
+          "field": "cloud_api_surface",
+          "file": null,
+          "scope": null,
+          "value": "not_usable (KNA1)"
+        },
+        {
+          "field": "cloud_artefact",
+          "file": null,
+          "scope": null,
+          "value": "not_activatable (Grund: KNA1 absent_in_target)"
+        },
+        {
+          "field": "source_process",
+          "file": null,
+          "scope": null,
+          "value": "reconstructed (delivered-slice; target_executable = false)"
+        },
+        {
+          "field": "target_execution_graph",
+          "file": null,
+          "scope": null,
+          "value": "not_applicable"
+        },
+        {
+          "field": "sap_level_for_hypothetical_target",
+          "file": null,
+          "scope": null,
+          "value": "null"
+        }
+      ],
+      "findingIds": [
+        "CC-057-F02"
+      ],
+      "header": "Profil 2 (btp-abap-environment · abap-for-cloud)",
+      "known_worst_level": "n/a für das Ziel; der Legacybefund F01 bleibt C",
+      "label": "Profil 2"
+    }
+  ],
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10+4 (Sekundäranker: source.abap:11, FROM-Zeile)",
+        "token": 4
+      },
+      "id": "CC-057-F01",
+      "profiles": [
+        "Profil 1"
+      ],
+      "rule": "R01",
+      "ruleRaw": "R01@1.1.0",
+      "ruleVersion": "1.1.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22; S01",
+        "S19"
+      ],
+      "statement": "Direkter Lesezugriff auf KNA1 — unter dem stipulierten internen Profil C. CDS-Nachfolger ist I_CUSTOMER, kein bewiesener Drop-in-Ersatz (R17)."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 14,
+        "raw": "source.abap:14",
+        "token": null
+      },
+      "id": "CC-057-F03",
+      "profiles": [
+        "Profil 1"
+      ],
+      "rule": "R19",
+      "ruleRaw": "R19@1.1.0",
+      "ruleVersion": "1.1.0",
+      "severity": "info",
+      "sources": [
+        "SAP-FLOW"
+      ],
+      "statement": "Die Rückgabe wird nur bei sy-subrc = 0 gesetzt; der Aufruf allein ist kein Treffernachweis. Nicht abgefangene Datenbank-/Laufzeitfehler liegen außerhalb der Abstraktionsgrenze."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10+4 (Sekundäranker: source.abap:11)",
+        "token": 4
+      },
+      "id": "CC-057-F02",
+      "profiles": [
+        "Profil 2"
+      ],
+      "rule": "R31",
+      "ruleRaw": "R31@2.0.0",
+      "ruleVersion": "2.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22; S02",
+        "S19"
+      ],
+      "statement": "KNA1 ist im Zielprofil kein zulässiges Objekt: die Verwendbarkeit von Repository-Objekten ist in ABAP for Cloud Teil der Sprach-/Zulassungsprüfung (S02); das Artefakt ist nicht aktivierbar. Ursache hier: absent_in_target (Objekt im BTP ABAP Environment nicht vorhanden — erinnert); im dritten Profil wäre die Ursache not_released. Beide sind not_activatable, der Befundtext trägt den Grund. Kein A–D-Level. Der katalogisierte Nachfolger I_CUSTOMER bleibt als Migrationshinweis (R17), ist aber kein automatisch lokales BTP-Objekt."
+    }
+  ],
+  "forbiddenConclusions": [
+    "Profil 2, source.abap:10+4 — kein Level C melden; kein „C mit Nachfolger I_CUSTOMER\" als Klassifikation. Der Nachfolger ist ein Hinweis, das Level ist n/a.",
+    "Profil 2, source.abap:1 — kein Unknown: die Antwort ist entscheidbar (nicht aktivierbar), nicht unentscheidbar. Unknown ist epistemisch etwas anderes als „nicht anwendbar\" (Fallbogen §7).",
+    "Profil 2 — kein leeres Skelett und kein process = not_applicable für das Source-Modell (REV2-12).",
+    "Profil 1, source.abap:1 — kein B „weil es eine Klasse und kein Report ist\"; der Artefakttyp ändert R01 nicht.",
+    "beide Profile — kein Sicherheitsbefund aus diesem Slice; ein Wechsel zu CDS kann Berechtigungs-/Filtersemantik verändern, was aus dem Nachfolgernamen nicht ableitbar ist (Fallbogen §6)."
+  ],
+  "id": "CC-057",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku (S01, S02 Sprachversion/Zulassung, S15 ALPHA, S19 KNA1-Eintrag und eigener I_CUSTOMER-Eintrag)",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10+4",
+        "token": 4
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNA1",
+        "objectType": "TABL",
+        "tadirObjName": "KNA1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNA1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMER",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "read"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Exakter Meldungstext und -schlüssel im BTP ABAP Environment 2408 („Objekt unbekannt\") und auf S/4HANA 2023 mit Sprachversion ABAP for Cloud („nicht freigegeben\") — nicht ausgeführt.",
+    "Sind KNA1 und I_CUSTOMER im BTP ABAP Environment tatsächlich nicht vorhanden (absent_in_target)? Erinnert, nicht belegt.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad? (B01 nach dieser Fassung: Bestätigung ausstehend.)"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "q"
+      },
+      {
+        "condition": "always",
+        "from": "q",
+        "to": "g"
+      },
+      {
+        "condition": "sy-subrc = 0",
+        "from": "g",
+        "to": "a"
+      },
+      {
+        "condition": "sy-subrc <> 0",
+        "from": "g",
+        "to": "e"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "e"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Methodenstart (trigger = call)",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "q",
+        "meaning": "Land aus KNA1 lesen — Versuch",
+        "type": "read"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Treffer?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "Rückgabe setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "Methodenende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "candidate / not independently signed.",
+  "title": "Profilpaar: SELECT FROM KNA1 in einer globalen Klasse — C mit Nachfolger oder nicht aktivierbar"
+}

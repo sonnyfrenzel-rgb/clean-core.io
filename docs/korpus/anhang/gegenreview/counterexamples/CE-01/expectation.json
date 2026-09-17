@@ -1,0 +1,18 @@
+{
+  "id": "CE-01",
+  "title": "Stringtemplate ruft Funktion mit Seiteneffekt auf",
+  "kind": "constructed_counterexample_not_production_code",
+  "files": [
+    "source.abap"
+  ],
+  "expected": "tick wird bereits bei der Template-Auswertung aufgerufen; kein späterer SQL-/Code-Konsument nötig. Erwartete calls=1 folgt aus Sprachsemantik, wurde hier nicht auf SAP ausgeführt.",
+  "sources": [
+    "S12"
+  ],
+  "related_cases": [
+    "CC-016",
+    "CC-034"
+  ],
+  "native_compile": "NOT_RUN",
+  "native_execution": "NOT_RUN"
+}

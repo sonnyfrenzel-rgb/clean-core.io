@@ -1,0 +1,28 @@
+{
+  "declared_in": "fall",
+  "profiles": [
+    {
+      "abap_language_version": "standard",
+      "catalog_revision": "PCE2022-objectReleaseInfo",
+      "edition": "onpremise-s4",
+      "extra": {},
+      "label": "Profil 1",
+      "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=PCE2022-objectReleaseInfo · rule_revision=v1 1.0.0 + R31 vorl. + R28 vorl.",
+      "release": "S/4HANA 2023",
+      "rule_revision": "v1 1.0.0 + R31 vorl. + R28 vorl.",
+      "runtime_context": null
+    },
+    {
+      "abap_language_version": "abap-for-cloud",
+      "catalog_revision": "n/a",
+      "edition": "btp-abap-environment",
+      "extra": {},
+      "label": "Profil 2",
+      "raw": "edition=btp-abap-environment · abap_language_version=abap-for-cloud · release=BTP ABAP Environment 2408 (stipuliert) · catalog_revision=n/a · rule_revision=v1 1.0.0 + R31 vorl. + R28 vorl.",
+      "release": "BTP ABAP Environment 2408 (stipuliert)",
+      "rule_revision": "v1 1.0.0 + R31 vorl. + R28 vorl.",
+      "runtime_context": null
+    }
+  ],
+  "second_profile": "im Paar enthalten."
+}

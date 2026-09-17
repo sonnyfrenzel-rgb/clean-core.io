@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "PCE2022-objectReleaseInfo",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=PCE2022-objectReleaseInfo · rule_revision=2.1.0-candidate · runtime_context=dialog",
+  "release": "S/4HANA 2023",
+  "rule_revision": "2.1.0-candidate",
+  "runtime_context": "dialog",
+  "second_profile": "btp-abap-environment/abap-for-cloud: cloud_artefact = not_activatable (REPORT, PARAMETERS, WRITE — Artefaktgrund), classic_extension.level = n/a; das As-is-Skelett bleibt (source_process = reconstructed). Die Zielauflösung des MODIFY (target_resolution = unknown, potential_worst_level = D) ist davon unabhängig und ändert sich im Zweitprofil nicht — sie ist nur nicht mehr die Antwort auf die Aktivierbarkeitsfrage. Ob dynamisches MODIFY (…) in der Sprachversion ABAP for Cloud syntaktisch zulässig ist, bleibt Prüferfrage für eine Klassenvariante (Befund-Autor zu REV2-12: die Artefaktursache entscheidet)."
+}

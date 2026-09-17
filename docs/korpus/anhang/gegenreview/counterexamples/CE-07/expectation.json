@@ -1,0 +1,18 @@
+{
+  "id": "CE-07",
+  "title": "ASSERT ohne ID stoppt vor FAE",
+  "kind": "constructed_counterexample_not_production_code",
+  "files": [
+    "source.abap"
+  ],
+  "expected": "Bei leerer keys-Tabelle verhindert das aktive ASSERT die Fortsetzung zur FAE-Abfrage durch Laufzeitfehler. Das ist ein Fail-fast-Guard, kein sanfter Leerfall; ASSERT ID ist ein separater konfigurationsabhängiger Fall.",
+  "sources": [
+    "S13",
+    "S23"
+  ],
+  "related_cases": [
+    "CC-002"
+  ],
+  "native_compile": "NOT_RUN",
+  "native_execution": "NOT_RUN"
+}

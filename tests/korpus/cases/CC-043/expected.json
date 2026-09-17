@@ -1,0 +1,289 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Syntax/Objekte)",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6+1",
+          "token": 1
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6+2",
+          "token": 2
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6+3",
+          "token": 3
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        }
+      ],
+      "id": "CC-043-B01",
+      "text": "Drei Unterprogramme laufen in der Reihenfolge read_hdr, read_items, sum_items; ihre Wirkung, auch auf gv_total, ist im Slice unbekannt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        }
+      ],
+      "id": "CC-043-B02",
+      "text": "write_log läuft nur bei gesetztem Häkchen; seine Wirkung ist unbekannt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6–9",
+          "token": null
+        }
+      ],
+      "id": "CC-043-B03",
+      "text": "DONE und gv_total werden nach Rückkehr aller Aufrufe ausgegeben; der Wert von gv_total ist ohne Include nicht belegbar."
+    }
+  ],
+  "classes": [
+    "K14",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": "Fable KA-002 (L10) · Prüfung F05 (Vergleicher, M15) · Grok — · GLM — · DeepSeek — . Einzelnennung; aufgenommen, weil der Fall die Statementidentität festlegt, ohne die der Graphvergleich (F05) latent falsch bleibt.",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 4,
+        "raw": "source.abap:4",
+        "token": null
+      },
+      "id": "CC-043-F01",
+      "profiles": null,
+      "rule": "R16",
+      "ruleRaw": "R16@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-OO"
+      ],
+      "statement": "Include nicht geliefert; FORM-Signaturen und Verhalten von read_hdr, read_items, sum_items, write_log nicht als bekannt ausgeben (Basisbefund wie CC-021)."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:6 — Nicht ein Knoten und nicht ein Anker für drei Aufrufe. Zwei verschiedene Knoten mit Typ opaque_call und Quelle source.abap:6 ohne Tokenoffset sind eine mehrdeutige Signatur (Prüfung F05) und werden abgewiesen.",
+    "source.abap:6 — Nicht als PERFORM read_hdr mit den Parametern read_items, sum_items lesen.",
+    "source.abap:6, source.abap:8 — Kein R07-Befund (dynamisches Ziel). Die FORM-Namen sind statisch.",
+    "source.abap:6+1 … +3 — Die Reihenfolge ist Teil des Sollvertrags: read_hdr vor read_items vor sum_items. Ein Graph mit anderer Reihenfolge oder mit Selbstschleife auf einem der drei Knoten ist falsch."
+  ],
+  "id": "CC-043",
+  "independence": [
+    "modellreview",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview (regel-ebene) — REVIEW-2.0.1 (16.09.2026), nicht blind; Urteil zu R27 („Tokenisierung normieren; Kettenelement braucht eigene ID\"), Fall selbst nicht gelesen",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 4,
+        "raw": "source.abap:4",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCC_REF_043_FORMS",
+        "objectType": "PROG",
+        "tadirObjName": "ZCC_REF_043_FORMS",
+        "tadirObject": "PROG"
+      },
+      "name": "ZCC_REF_043_FORMS",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": [],
+      "usage": "missing_include"
+    }
+  ],
+  "openReviewerQuestions": [
+    "P1: Ist die Tokenzählung (Schlüsselwort = 0, : und , zählen nicht) die Konvention, die korpusweit gelten soll? Das Briefing nennt den Tokenoffset, definiert ihn aber nicht. Der Zusammenführer muss eine Zählung festlegen; dieser Fall ist dann anzupassen, nicht die Konvention.",
+    "P2: Soll ein Statement, das allein auf seiner Zeile steht, den Offset +0/+1 verpflichtend tragen, oder bleibt source.abap:8 gültig? Beides gleichzeitig zuzulassen ist die KA-004-Inkonsistenz.",
+    "P3: Ist es für den Prüfer akzeptabel, dass der Fall den R16-Basisbefund mitträgt, oder soll die Kette gegen lokal definierte FORMs laufen (dann keine opaken Knoten, sondern eingebettete Rümpfe)?",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "intentionally_incomplete",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "c1"
+      },
+      {
+        "condition": "normal return",
+        "from": "c1",
+        "to": "c2"
+      },
+      {
+        "condition": "normal return",
+        "from": "c2",
+        "to": "c3"
+      },
+      {
+        "condition": "normal return",
+        "from": "c3",
+        "to": "g"
+      },
+      {
+        "condition": "p_log = 'X'",
+        "from": "g",
+        "to": "c4"
+      },
+      {
+        "condition": "p_log <> 'X'",
+        "from": "g",
+        "to": "o"
+      },
+      {
+        "condition": "normal return",
+        "from": "c4",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start bei vollständig aktiviertem System",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6+1",
+          "token": 1
+        },
+        "id": "c1",
+        "meaning": "Unbekannte FORM read_hdr",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6+2",
+          "token": 2
+        },
+        "id": "c2",
+        "meaning": "Unbekannte FORM read_items",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6+3",
+          "token": 3
+        },
+        "id": "c3",
+        "meaning": "Unbekannte FORM sum_items",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Protokoll gewünscht?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "c4",
+        "meaning": "Unbekannte FORM write_log",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "DONE und Summe ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Kettensatz: drei Aufrufe auf einer Zeile, drei Anker, drei Knoten"
+}

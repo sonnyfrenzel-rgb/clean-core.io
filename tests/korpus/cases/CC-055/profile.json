@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "PCE2022-objectReleaseInfo",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=PCE2022-objectReleaseInfo · rule_revision=2.0.0-candidate.1",
+  "release": "S/4HANA 2023",
+  "rule_revision": "2.0.0-candidate.1",
+  "runtime_context": null,
+  "second_profile": "ecc-6: gleiche Befunde, gleiches C, aber XD01 ist dort ausführbar — der Zusatz „im Zielprofil abgelöst\" entfällt. btp-abap-environment: CALL TRANSACTION nicht zulässig — Unknown mit Syntaxbefund."
+}

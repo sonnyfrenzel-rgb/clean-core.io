@@ -1,0 +1,12 @@
+{
+  "method": "markdown-source/hash/numbered-copy; no ABAP execution",
+  "case_count": 60,
+  "extracted_abap_files": 63,
+  "abap_lines": 997,
+  "declared_matching_single_file_hashes": 61,
+  "individual_sources_without_separate_declared_hash": 2,
+  "identical_numbered_copies": 63,
+  "active_reviewed_rules": 35,
+  "errors": [],
+  "passed": true
+}

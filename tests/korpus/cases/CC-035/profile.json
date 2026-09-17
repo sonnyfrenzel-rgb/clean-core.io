@@ -1,0 +1,14 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "PCE2022-objectReleaseInfo",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {
+    "db_connection": "Standardverbindung (stipuliert)"
+  },
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=PCE2022-objectReleaseInfo · rule_revision=2.1.0-candidate · db_connection=Standardverbindung (stipuliert)",
+  "release": "S/4HANA 2023",
+  "rule_revision": "2.1.0-candidate",
+  "runtime_context": null,
+  "second_profile": "btp-abap-environment/abap-for-cloud: cloud_artefact = not_activatable aus zwei Gründen — REPORT mit Selektionsbild und Liste (Artefakttyp) und EXEC SQL ist in der Sprachversion nicht enthalten (Syntax). Kein A–D-Level dort (assessment_applicable = false); das As-is-Skelett bleibt (source_process = reconstructed). Kein Fallpaar nach R31 nötig: die Antwort im Zweitprofil ist entscheidbar und trägt beide Gründe."
+}

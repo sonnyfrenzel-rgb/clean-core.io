@@ -1,0 +1,265 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        }
+      ],
+      "id": "CC-020-B01",
+      "text": "Ein Datenobjekt des zur Laufzeit benannten Typs wird angelegt; es werden keine Datenbankzeilen geladen."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10–12",
+          "token": null
+        }
+      ],
+      "id": "CC-020-B02",
+      "text": "Nur eine erfolgreiche Komponentenbindung führt zur Ausgabe des Feldwerts."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11–14",
+          "token": null
+        }
+      ],
+      "id": "CC-020-B03",
+      "text": "Bei erfolgloser Komponentenbindung wird FIELD_NOT_FOUND ausgegeben, sofern dieser Pfad überhaupt erreicht wird."
+    }
+  ],
+  "classes": [
+    "K10",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 8,
+        "raw": "source.abap:8",
+        "token": null
+      },
+      "id": "CC-020-F01",
+      "profiles": null,
+      "rule": "R15",
+      "ruleRaw": "R15@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-RTTI",
+        "SAP-PCE22"
+      ],
+      "statement": "Laufzeittyp ist extern bestimmt; DDIC-Schema fehlt. Kein fester Wert oder garantierte Struktur behauptbar."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10",
+        "token": null
+      },
+      "id": "CC-020-F02",
+      "profiles": null,
+      "rule": "R15",
+      "ruleRaw": "R15@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-RTTI",
+        "SAP-PCE22"
+      ],
+      "statement": "Dynamische Feldsuche besitzt sy-subrc-Guard; CREATE DATA oder nichtstruktureller Typ können schon vorher fehlschlagen."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-020",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 2,
+        "raw": "source.abap:2",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCCR_PAYLOAD",
+        "objectType": "TABL",
+        "tadirObjName": "ZCCR_PAYLOAD",
+        "tadirObject": "TABL"
+      },
+      "name": "ZCCR_PAYLOAD",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": [],
+      "usage": "default_dynamic_type_not_exhaustive"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Zugelassene Laufzeittypen und Feldnamen inklusive DDIC-Schema beschaffen",
+    "CREATE-DATA-Fehler und Nichtstrukturfall zusätzlich absichern",
+    "ASSIGN-Erfolg/Fehlschlag und initiale Werte verproben",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "partial_missing_type_and_runtime_domain",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "t"
+      },
+      {
+        "condition": "valid structure type and allocation",
+        "from": "t",
+        "to": "a"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "g"
+      },
+      {
+        "condition": "sy-subrc = 0",
+        "from": "g",
+        "to": "v"
+      },
+      {
+        "condition": "sy-subrc <> 0",
+        "from": "g",
+        "to": "x"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "t",
+        "meaning": "Unbekannten Typ instanziieren",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "Feld binden",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Bindung erfolgreich?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "v",
+        "meaning": "Wert ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "Fehlendes Feld melden",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Dynamischer Typ und Feldname aus Eingabe"
+}

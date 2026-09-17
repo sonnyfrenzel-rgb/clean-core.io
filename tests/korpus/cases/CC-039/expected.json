@@ -1,0 +1,342 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Syntax/Objekte) — GENERATE SUBROUTINE POOL itab NAME prog MESSAGE msg, sy-subrc nach GENERATE, PERFORM … IN PROGRAM (prog) IF FOUND, Typ syrepid existieren; die Anweisung ist in ABAP for Cloud Development nicht verfügbar. Die Reihenfolge IF FOUND vor USING/CHANGING ist Prüferfrage.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        }
+      ],
+      "id": "CC-039-B01",
+      "text": "Die Bewertungsregel steht nicht im Programm, sondern in der Eingabe p_rule; das Programm liefert nur den Rahmen (Programmkopf, FORM-Signatur, ENDFORM)."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        }
+      ],
+      "id": "CC-039-B02",
+      "text": "Scheitert die Erzeugung, wird GENERATION_FAILED mit der Meldung ausgegeben und der Block verlassen; keine Routine wird ausgeführt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        }
+      ],
+      "id": "CC-039-B03",
+      "text": "Sonst wird die erzeugte Routine mit dem Betrag aufgerufen und das Ergebnis ausgegeben. Was die Routine mit dem Betrag tut, ist statisch nicht bestimmbar; ein Fachsatz über „Routing\" oder „Grenzwert\" ist nicht tragbar."
+    }
+  ],
+  "classes": [
+    "K13",
+    "K06",
+    "K08",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "Grok H-036 (ausgeschrieben §3) · Fable KA-062 (ausgeschrieben §3.7) · GLM: keine · DeepSeek: keine",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": true
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 13,
+        "raw": "source.abap:13",
+        "token": null
+      },
+      "id": "CC-039-F01",
+      "profiles": null,
+      "rule": "R13b",
+      "ruleRaw": "R13b@2.0.0-draft",
+      "ruleVersion": "2.0.0-draft",
+      "severity": "high",
+      "sources": [
+        "SAP-ABAPDOC",
+        "SAP-LEVEL"
+      ],
+      "statement": "Die Literale der Zeilen 9, 10, 12 und die Eingabe aus Zeile 11 werden durch GENERATE SUBROUTINE POOL zu ausführbarem Code. Der Programmtext ist nur teilweise statisch sichtbar; Level Unknown, known_worst_level D (der Rumpf kann DML auf SAP-Tabellen, Kernel- oder OS-Aufrufe enthalten). Sekundäranker: source.abap:9–12."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 18,
+        "raw": "source.abap:18",
+        "token": null
+      },
+      "id": "CC-039-F02",
+      "profiles": null,
+      "rule": "R07",
+      "ruleRaw": "R07@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-CALL",
+        "SAP-FLOW"
+      ],
+      "statement": "PERFORM in ein zur Laufzeit erzeugtes Programm: das Ziel ist nicht extern unbekannt (CC-012), sondern aus Daten erzeugt. IF FOUND bedeutet nicht, dass die Routine ausgeführt wurde. Knoten call-opaque."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 13,
+        "raw": "source.abap:13",
+        "token": null
+      },
+      "id": "CC-039-F03",
+      "profiles": null,
+      "rule": "R28",
+      "ruleRaw": "R28@2.0.0-draft",
+      "ruleVersion": "2.0.0-draft",
+      "severity": "high",
+      "sources": [
+        "SAP-ABAPDOC"
+      ],
+      "statement": "Aussageklasse security_and_authorization: Codeerzeugung aus Benutzereingabe — beliebiges ABAP wird im Kontext des Benutzers ausführbar. Eigener Befund; verändert das Level nicht."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:9, source.abap:10, source.abap:12 — Nicht „Literal ohne Wirkung\" (R13a); der Konsument ist Zeile 13.",
+    "source.abap:13 — Nicht B „keine SAP-Abhängigkeit sichtbar\". Die Abhängigkeiten stehen im erzeugten Code, den der Analysator nicht sieht.",
+    "source.abap:18 — Nicht als CC-012-Befund „externes Programm unbekannt, Allowlist verlangt\" kodieren; die Allowlist wäre hier eine Allowlist über ABAP-Quelltext.",
+    "source.abap:13 — Nicht als Kernelaufruf (K08 im v1-Sinn, R12) einordnen; die Anweisung ist dokumentierte ABAP-Syntax, ihr Ergebnis ist unbekannt."
+  ],
+  "id": "CC-039",
+  "independence": [
+    "modellreview"
+  ],
+  "independenceRaw": "modellreview",
+  "known_worst_level": null,
+  "objects": [],
+  "openReviewerQuestions": [
+    "Ist known_worst_level D für erzeugten Code die gewünschte Kodierung, oder soll ein eigener Wert „nicht bestimmbar\" eingeführt werden, weil der schlimmste Fall hier kein Level mehr ist (OS-Befehl)?",
+    "Ist die Klauselreihenfolge IN PROGRAM (prog) IF FOUND USING … CHANGING … im Zielrelease korrekt?",
+    "Welche Zahl erzeugter Unterprogrammpools pro interner Sitzung ist im Zielrelease zulässig, und ist das für den Korpus relevant?",
+    "Soll die Variante „Regeltext aus Z-Tabelle\" (Fable KA-062) als eigener Fall folgen, weil die Herkunft dann Customizing und nicht Eingabe ist?",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "partial_runtime_generated_code",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "a"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "gen"
+      },
+      {
+        "condition": "always",
+        "from": "gen",
+        "to": "g"
+      },
+      {
+        "condition": "sy-subrc <> 0",
+        "from": "g",
+        "to": "err"
+      },
+      {
+        "condition": "always",
+        "from": "err",
+        "to": "e1"
+      },
+      {
+        "condition": "sy-subrc = 0",
+        "from": "g",
+        "to": "p"
+      },
+      {
+        "condition": "always",
+        "from": "p",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "o",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "Rahmen und Eingabe zusammensetzen (Zeilen 9–12)",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "gen",
+        "meaning": "GENERATE SUBROUTINE POOL; Inhalt des Ergebnisses unbekannt",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Erzeugung fehlgeschlagen?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "err",
+        "meaning": "GENERATION_FAILED melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        "id": "e1",
+        "meaning": "Block verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18",
+          "token": null
+        },
+        "id": "p",
+        "meaning": "PERFORM in erzeugtes Programm; Ziel zur Laufzeit erzeugt, IF FOUND",
+        "type": "call-opaque"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Ergebnis ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "GENERATE SUBROUTINE POOL: Daten werden Code, jede statische Antwort ist Annahme"
+}

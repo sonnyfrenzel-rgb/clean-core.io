@@ -1,0 +1,17 @@
+{
+  "id": "CE-04",
+  "title": "Gesicherter Returncode statt unmittelbarer sy-subrc-Prüfung",
+  "kind": "constructed_counterexample_not_production_code",
+  "files": [
+    "source.abap"
+  ],
+  "expected": "Der Prüfwert wird gesichert und vor der Folgeaktion geprüft. Abstand zur AUTHORITY-CHECK-Zeile ist allein kein Beleg fehlender Wirksamkeit. Das Beispiel belegt keine angemessene Autorisierung einer anderen Fachoperation.",
+  "sources": [
+    "Direkter Datenfluss des konstruierten Beispiels; kein eigener SAP-Katalogbeleg"
+  ],
+  "related_cases": [
+    "CC-049"
+  ],
+  "native_compile": "NOT_RUN",
+  "native_execution": "NOT_RUN"
+}

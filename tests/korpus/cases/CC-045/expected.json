@@ -1,0 +1,345 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Syntax/Objekte)",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10–17 (kein SELECT)",
+          "token": null
+        }
+      ],
+      "id": "CC-045-B01",
+      "text": "Ist der Kundennummern-Range vom Selektionsbild leer, wird NO_RESTRICTION ausgegeben; eine Datenbankselektion findet im Slice nicht statt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        }
+      ],
+      "id": "CC-045-B02",
+      "text": "Eine lokal gesetzte Kundennummer wird in die um ein Kennzeichen erweiterte Struktur übernommen und mit dem Kennzeichen ausgegeben."
+    }
+  ],
+  "classes": [
+    "K18",
+    "K01"
+  ],
+  "classic_level": "C",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "GLM A-072 · Fable KA-008, KA-009, KA-010, KA-011, KA-012 (L2) · Grok — · DeepSeek",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 2,
+        "raw": "source.abap:2",
+        "token": null
+      },
+      "id": "CC-045-F01",
+      "profiles": null,
+      "rule": "R29",
+      "ruleRaw": "R29@2.0.0-draft + R01@1.0.0",
+      "ruleVersion": "2.0.0-draft",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22"
+      ],
+      "statement": "TABLES: kna1 erzeugt einen globalen Arbeitsbereich vom DDIC-Typ KNA1: Typabhängigkeit auf ein internes SAP-Objekt, ohne ausführendes Statement."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 3,
+        "raw": "source.abap:3",
+        "token": null
+      },
+      "id": "CC-045-F02",
+      "profiles": null,
+      "rule": "R29",
+      "ruleRaw": "R29@2.0.0-draft + R01@1.0.0",
+      "ruleVersion": "2.0.0-draft",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22"
+      ],
+      "statement": "SELECT-OPTIONS … FOR kna1-kunnr typisiert den Range über das Feld KNA1-KUNNR: Typabhängigkeit auf KNA1."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5",
+        "token": null
+      },
+      "id": "CC-045-F03",
+      "profiles": null,
+      "rule": "R29",
+      "ruleRaw": "R29@2.0.0-draft + R01@1.0.0",
+      "ruleVersion": "2.0.0-draft",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22"
+      ],
+      "statement": "INCLUDE STRUCTURE kna1 übernimmt alle Komponenten von KNA1 in den lokalen Typ: Typabhängigkeit auf KNA1. Kein fehlendes Programm-Include."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9",
+        "token": null
+      },
+      "id": "CC-045-F04",
+      "profiles": null,
+      "rule": "R29",
+      "ruleRaw": "R29@2.0.0-draft + R01@1.0.0",
+      "ruleVersion": "2.0.0-draft",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22"
+      ],
+      "statement": "DATA … TYPE kna1: Typabhängigkeit auf KNA1."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:5 — Kein R16-Befund „Include nicht geliefert“. INCLUDE STRUCTURE ist eine Typanweisung, kein Programm-Include.",
+    "source.abap:2, 3, 5, 9 — Kein Lesebefund im Sinn eines ausgeführten SELECT. Es wird nichts gelesen; die Abhängigkeit ist eine Typabhängigkeit.",
+    "source.abap:8 — Kein fünfter Befund. ty_cust ist ein lokaler Typ; die KNA1-Abhängigkeit ist an Zeile 5 deklariert und wird nicht an jeder Verwendung des lokalen Typs wiederholt.",
+    "source.abap:11–13, 17 — Keine Befunde an den Zuweisungen und Ausgaben; sie berühren nur lokale Datenobjekte.",
+    "Kein Nachfolger I_CUSTOMER als Drop-in für eine Typreferenz vorschlagen (R29: ein CDS-Lesemodell ersetzt keinen Strukturtyp).",
+    "source.abap:14 — Nicht behaupten, der Report selektiere „nur die eingegebenen Kunden“. Es gibt keine Selektion."
+  ],
+  "id": "CC-045",
+  "independence": [
+    "modellreview"
+  ],
+  "independenceRaw": "modellreview",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 2,
+        "raw": "source.abap:2, source.abap:3, source.abap:5, source.abap:9",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNA1",
+        "objectType": "TABL",
+        "tadirObjName": "KNA1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNA1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMER",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "type_reference"
+    }
+  ],
+  "openReviewerQuestions": [
+    "P1: Zählt eine reine Typreferenz auf ein internes SAP-Objekt im klassischen Level wie ein Lesezugriff (C), oder bleibt ein Report ohne Zugriff bei B mit Abhängigkeitsvermerk? SAP-LEVEL sagt es nicht ausdrücklich; die ATC-Prüfung auf nicht freigegebene Objekte markiert Typreferenzen — das ist eine Interpretation, keine Zitatstelle.",
+    "P2: Ist INCLUDE STRUCTURE kna1 innerhalb von TYPES BEGIN OF nur zulässig, weil TABLES: kna1 zuvor einen Arbeitsbereich anlegt, oder auch ohne? Für die Sollantwort ist das gleichgültig; für die Beleggradangabe nicht. Die moderne Form INCLUDE TYPE kna1 muss denselben Befund liefern.",
+    "P3: Soll R29 je referenzierender Anweisung einen Befund erzeugen (wie hier, vier) oder einen Befund je Objekt mit Ankerliste? CC-007 in v1 ist je Zeile; KA-004 verlangt eine Konvention.",
+    "P4: Welche Strukturebenen-Nachfolger gibt es für KNA1 im Zielrelease (freigegebene Struktur, Datenelement KUNNR)? Nicht erfunden, weil nicht beobachtet.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "a1"
+      },
+      {
+        "condition": "always",
+        "from": "a1",
+        "to": "a2"
+      },
+      {
+        "condition": "always",
+        "from": "a2",
+        "to": "a3"
+      },
+      {
+        "condition": "always",
+        "from": "a3",
+        "to": "g"
+      },
+      {
+        "condition": "s_kunnr[] IS INITIAL",
+        "from": "g",
+        "to": "n"
+      },
+      {
+        "condition": "always",
+        "from": "n",
+        "to": "o"
+      },
+      {
+        "condition": "s_kunnr[] IS NOT INITIAL",
+        "from": "g",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart nach Selektionsbild",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "a1",
+        "meaning": "Kundennummer lokal setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "a2",
+        "meaning": "In erweiterte Struktur übernehmen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "a3",
+        "meaning": "Kennzeichen setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Range leer?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "n",
+        "meaning": "NO_RESTRICTION melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Nummer und Kennzeichen ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Typabhängigkeit ohne SQL: TABLES, SELECT-OPTIONS FOR, INCLUDE STRUCTURE, TYPE"
+}

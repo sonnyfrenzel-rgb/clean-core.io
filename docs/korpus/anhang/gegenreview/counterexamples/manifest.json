@@ -1,0 +1,143 @@
+[
+  {
+    "id": "CE-01",
+    "title": "Stringtemplate ruft Funktion mit Seiteneffekt auf",
+    "kind": "constructed_counterexample_not_production_code",
+    "files": [
+      "source.abap"
+    ],
+    "expected": "tick wird bereits bei der Template-Auswertung aufgerufen; kein späterer SQL-/Code-Konsument nötig. Erwartete calls=1 folgt aus Sprachsemantik, wurde hier nicht auf SAP ausgeführt.",
+    "sources": [
+      "S12"
+    ],
+    "related_cases": [
+      "CC-016",
+      "CC-034"
+    ],
+    "native_compile": "NOT_RUN",
+    "native_execution": "NOT_RUN"
+  },
+  {
+    "id": "CE-02",
+    "title": "Bekanntes FROM trotz dynamischem WHERE",
+    "kind": "constructed_counterexample_not_production_code",
+    "files": [
+      "source.abap"
+    ],
+    "expected": "Zieltabelle bleibt KNA1. Prädikat ist dynamisch/ungeprüft. Nicht die Tabellenidentität auf Unknown setzen, nur weil ein WHERE unbekannt ist. Syntax-/DB-Verfügbarkeit im Ziel noch nicht nativ geprüft.",
+    "sources": [
+      "S23"
+    ],
+    "related_cases": [
+      "CC-037",
+      "CC-038"
+    ],
+    "native_compile": "NOT_RUN",
+    "native_execution": "NOT_RUN"
+  },
+  {
+    "id": "CE-03",
+    "title": "CLIENT SPECIFIED mit explizitem eigenem Mandanten",
+    "kind": "constructed_counterexample_not_production_code",
+    "files": [
+      "source.abap"
+    ],
+    "expected": "Automatische Mandantenbehandlung ist deaktiviert, der konkrete WHERE-Ausdruck begrenzt aber explizit auf sy-mandt. Keine Aussage, der Zugriff lese deshalb nachweislich andere Mandanten. Technische Eignung/Cloud-Syntax separat.",
+    "sources": [
+      "S14"
+    ],
+    "related_cases": [
+      "CC-050"
+    ],
+    "native_compile": "NOT_RUN",
+    "native_execution": "NOT_RUN"
+  },
+  {
+    "id": "CE-04",
+    "title": "Gesicherter Returncode statt unmittelbarer sy-subrc-Prüfung",
+    "kind": "constructed_counterexample_not_production_code",
+    "files": [
+      "source.abap"
+    ],
+    "expected": "Der Prüfwert wird gesichert und vor der Folgeaktion geprüft. Abstand zur AUTHORITY-CHECK-Zeile ist allein kein Beleg fehlender Wirksamkeit. Das Beispiel belegt keine angemessene Autorisierung einer anderen Fachoperation.",
+    "sources": [
+      "Direkter Datenfluss des konstruierten Beispiels; kein eigener SAP-Katalogbeleg"
+    ],
+    "related_cases": [
+      "CC-049"
+    ],
+    "native_compile": "NOT_RUN",
+    "native_execution": "NOT_RUN"
+  },
+  {
+    "id": "CE-05",
+    "title": "Opakes SUBMIT mit Caller-Fortsetzung",
+    "kind": "constructed_counterexample_not_production_code",
+    "files": [
+      "caller.abap",
+      "child.abap"
+    ],
+    "expected": "Für den partiellen Test child.abap absichtlich zurückhalten: Innenlogik bleibt unbekannt, normale Rückkehr und nachfolgendes WRITE im Caller bleiben modellierbar. Für einen nativen Test beide separaten Reportobjekte anlegen; keinerlei Lauf behauptet.",
+    "sources": [
+      "S07"
+    ],
+    "related_cases": [
+      "CC-056"
+    ],
+    "native_compile": "NOT_RUN",
+    "native_execution": "NOT_RUN"
+  },
+  {
+    "id": "CE-06",
+    "title": "Ein Makroaufruf mit zwei Wirkungsstellen",
+    "kind": "constructed_counterexample_not_production_code",
+    "files": [
+      "source.abap"
+    ],
+    "expected": "Zwei Outputwirkungen teilen dieselbe Aufrufstelle. Anker brauchen callsite plus Expansionsordinal/Definitionsspanne; nicht zu einem Knoten zusammenfallen lassen.",
+    "sources": [
+      "Korpuskonvention"
+    ],
+    "related_cases": [
+      "CC-042",
+      "CC-043"
+    ],
+    "native_compile": "NOT_RUN",
+    "native_execution": "NOT_RUN"
+  },
+  {
+    "id": "CE-07",
+    "title": "ASSERT ohne ID stoppt vor FAE",
+    "kind": "constructed_counterexample_not_production_code",
+    "files": [
+      "source.abap"
+    ],
+    "expected": "Bei leerer keys-Tabelle verhindert das aktive ASSERT die Fortsetzung zur FAE-Abfrage durch Laufzeitfehler. Das ist ein Fail-fast-Guard, kein sanfter Leerfall; ASSERT ID ist ein separater konfigurationsabhängiger Fall.",
+    "sources": [
+      "S13",
+      "S23"
+    ],
+    "related_cases": [
+      "CC-002"
+    ],
+    "native_compile": "NOT_RUN",
+    "native_execution": "NOT_RUN"
+  },
+  {
+    "id": "CE-08",
+    "title": "Gleicher Exittext in kundeneigenem Report",
+    "kind": "constructed_counterexample_not_production_code",
+    "files": [
+      "source.abap"
+    ],
+    "expected": "FORM-Name und Variablenname beweisen keinen SAP-Host und kein Level D. Beim isolierten FORM-Slice fehlt der äußere Kontext; vollständiger Kundencode zeigt den Gegenfall.",
+    "sources": [
+      "S01"
+    ],
+    "related_cases": [
+      "CC-053"
+    ],
+    "native_compile": "NOT_RUN",
+    "native_execution": "NOT_RUN"
+  }
+]

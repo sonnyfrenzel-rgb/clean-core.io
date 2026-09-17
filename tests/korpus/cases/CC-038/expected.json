@@ -1,0 +1,487 @@
+{
+  "answerFields": {
+    "cloud_api_surface": "unknown",
+    "cloud_artefact": "not_activatable (REPORT, PARAMETERS, WRITE)",
+    "known_worst_level": "B (beobachtet: sichtbare Standard-/Eigenmechanik — REPORT, kundeneigene Struktur ZCC_LOG_ROW; R26@2.1.0)",
+    "potential_worst_level": "D (dynamisches DML-Ziel aus Eingabe)",
+    "target_resolution": "unknown",
+    "unresolved_targets": "p_tab (MODIFY Zeile 14; Herkunft: Eingabe Zeile 2)"
+  },
+  "beleggrad": "verifiziert (Syntax/Objekte) — MODIFY (dbtab) FROM @wa mit dynamischem Tabellennamen, sy-subrc nach MODIFY dbtab, COMMIT/ROLLBACK WORK existieren. Die kundeneigenen Objekte ZCC_LOG_ROW/ZCC_LOG_A sind Fixture-Stipulationen.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        }
+      ],
+      "id": "CC-038-B01",
+      "text": "Ohne Schlüssel wird NO_KEY ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        }
+      ],
+      "id": "CC-038-B02",
+      "text": "Nach dem Guard wird eine Arbeitsstruktur aus Mandant, Schlüssel und Text gefüllt und versucht, sie per MODIFY (einfügen oder überschreiben) in die eingegebene Tabelle zu schreiben. Welche Tabelle das ist, entscheidet die Eingabe zur Laufzeit; ob der Versuch gelingt und welchen Zeilenscope er hat, hängt davon ab, dass das Ziel existiert und strukturell verträglich ist — sonst nicht modellierte Laufzeitausnahme."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14–21",
+          "token": null
+        }
+      ],
+      "id": "CC-038-B03",
+      "text": "Bei normalem MODIFY-Abschluss mit sy-subrc = 0 wird mit COMMIT WORK persistiert und SAVED ausgegeben; sonst ROLLBACK WORK und NOT_SAVED. Nicht abgefangene Ausnahmen (nicht existierende oder strukturell abweichende Zieltabelle) erreichen keinen der beiden Zweige."
+    }
+  ],
+  "classes": [
+    "K13",
+    "K01",
+    "K06",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": "not_activatable (REPORT, PARAMETERS, WRITE)",
+  "convergence": "Fable KA-015 · GLM A-042 (DELETE-Variante) · Grok: keine in der zugewiesenen Liste · DeepSeek: keine · Gegenreview REV2-03 (R26), REV2-07 (R28), REV2-12 (Zweitprofil); Abgrenzung CE-02/CC-062",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 14,
+        "raw": "source.abap:14 (Sekundäranker: source.abap:2)",
+        "token": null
+      },
+      "id": "CC-038-F01",
+      "profiles": null,
+      "rule": "R26",
+      "ruleRaw": "R26@2.1.0",
+      "ruleVersion": "2.1.0",
+      "severity": "high",
+      "sources": [
+        "SAP-ABAPDOC",
+        "SAP-LEVEL",
+        "SAP-SQL; S01"
+      ],
+      "statement": "Dynamisches DML-Ziel aus Selektionsbildeingabe: target_resolution = unknown, Level Unknown; unresolved_targets = [p_tab ← Eingabe, Zeile 2]. known_worst_level = B aus dem Beobachteten (sichtbare Standard-/Eigenmechanik); potential_worst_level = D, weil ein dynamisches DML-Ziel eine SAP-Kerntabelle mit verträglicher Struktur benennen kann — eine vorsorgliche Obergrenze, kein beobachteter Befund. DEFAULT 'ZCC_LOG_A' ist keine Allowlist. Der Tabellenname im Literal ist Rolle Identifier (R13b@2.1.0 b), kein Statement."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 14,
+        "raw": "source.abap:14",
+        "token": null
+      },
+      "id": "CC-038-F02",
+      "profiles": null,
+      "rule": "R28",
+      "ruleRaw": "R28@2.1.0 (Fünf-Teile-Struktur)",
+      "ruleVersion": "2.1.0",
+      "severity": "high",
+      "sources": [
+        "SAP-ABAPDOC"
+      ],
+      "statement": "Aussageklasse security_and_authorization — Beobachtung: generischer Schreibzugriff auf eine vom Benutzer benannte Tabelle. Datenfluss: Selektionsbild p_tab (Zeile 2) → MODIFY (p_tab) (Zeile 14); Zeileninhalt aus p_key/p_text als gebundene Werte (keine Textinjektion). Wirksame Schutzmaßnahme: keine sichtbare Allowlist, keine sichtbare fallbezogene Berechtigungsprüfung; der Guard p_key IS INITIAL schützt das Ziel nicht. Verbleibendes Risiko: Schreiben in jede existierende, strukturell verträgliche Tabelle, für die der Benutzer Tabellenberechtigung hat — keine Behauptung, dass jede SAP-Tabelle erfolgreich beschreibbar wäre. policy_decision: Allowlist erzwingen und Berechtigungsprüfung je Ziel (W01, W02) — Projektentscheidung. Ohne erfundenes Berechtigungsobjekt; welches gilt (S_TABU_NAM, S_TABU_DIS, fachlich), hängt vom Konzept ab. Verändert das Level nicht."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 2,
+        "raw": "source.abap:2",
+        "token": null
+      },
+      "id": "CC-038-F03",
+      "profiles": null,
+      "rule": "R07",
+      "ruleRaw": "R07@1.1.0",
+      "ruleVersion": "1.1.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-CALL",
+        "SAP-FLOW; S26"
+      ],
+      "statement": "DEFAULT 'ZCC_LOG_A' ist Vorbelegung, keine Zielmengenbegrenzung: der Datenfluss zu p_tab ist nicht geschlossen (dataflow = open), das Ziel bleibt offen (R26). Kein Level B aus dem Z-Default."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 16,
+        "raw": "source.abap:16",
+        "token": null
+      },
+      "id": "CC-038-F04",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@2.1.0 (Achsen 1, 5)",
+      "ruleVersion": "2.1.0",
+      "severity": "info",
+      "sources": [
+        "SAP-FLOW; S09"
+      ],
+      "statement": "Persistenz im Normalpfad bei sy-subrc = 0 (COMMIT WORK, Stufe *Commit erfolgt*), sonst ROLLBACK WORK. Nicht abgefangene Laufzeitausnahmen bei Ziel-/Strukturproblemen erreichen keinen der beiden Zweige (Abstraktionsgrenze). SAVED ist Programmtext nach dem Commit, kein Beleg für einen fachlich zulässigen Datensatz."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:14 — Nicht B „kundeneigene Tabelle\" aus dem DEFAULT ZCC_LOG_A (R20/CC-024 gilt nur für ein statisch bekanntes Z-Ziel; R07@1.1.0: Vorbelegung ist keine Singleton-Garantie).",
+    "source.abap:14 — Nicht D als Level und nicht D als known_worst_level; D ist potential_worst_level (REV2-03).",
+    "source.abap:14 — Umgekehrt: diese Unknown-Antwort gilt für ein dynamisches Ziel. Ein dynamisches WHERE bei statischem FROM (CE-02, im Korpus CC-062) lässt die Tabellenidentität bekannt — dort ist die Zielmenge nicht Unknown (predicate_resolution = unknown, R26@2.1.0).",
+    "source.abap:12, :13 — Kein Injektionsbefund für p_key/p_text: sie fließen als gebundene Werte in die Arbeitsstruktur, nicht als Text in interpretiertes SQL (R28@2.1.0). Der Sicherheitsbefund F02 betrifft das Ziel, nicht den Inhalt.",
+    "source.abap:5 — Die Typabhängigkeit auf die kundeneigene Struktur ist kein SAP-Befund und kein Ersatz für die fehlende Zielmenge.",
+    "source.abap:16 — COMMIT WORK macht das Ziel nicht bekannter; Persistenz ist bedingt auf sy-subrc = 0."
+  ],
+  "id": "CC-038",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku (S01 Leveldefinition, S02)",
+  "known_worst_level": "B (beobachtet: sichtbare Standard-/Eigenmechanik — REPORT, kundeneigene Struktur ZCC_LOG_ROW; R26@2.1.0)",
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 2,
+        "raw": "source.abap:2",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCC_LOG_A",
+        "objectType": "TABL",
+        "tadirObjName": "ZCC_LOG_A",
+        "tadirObject": "TABL"
+      },
+      "name": "ZCC_LOG_A",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": null,
+      "usage": "default_dynamic_target_not_exhaustive"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCC_LOG_ROW",
+        "objectType": "TABL",
+        "tadirObjName": "ZCC_LOG_ROW",
+        "tadirObject": "TABL"
+      },
+      "name": "ZCC_LOG_ROW",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "unknown",
+      "successors": null,
+      "usage": "type_reference"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Verhält sich MODIFY (p_tab) FROM @ls_row bei strukturell abweichender Zieltabelle mit einer Laufzeitausnahme (Fixture-Annahme) oder mit Konvertierung der Arbeitsstruktur? Das entscheidet über die *erreichbare* Zielmenge; die Sollantwort (Unknown) hängt nicht daran.",
+    "known_worst_level bei rein objektbezogener Aggregation: B (sichtbare Mechanik, R26@2.1.0-Wortlaut) oder none? Der Fall trägt B; der Zusammenführer entscheidet die Konvention einheitlich (Fallbogen §7).",
+    "Ist dynamisches MODIFY (…) in der Sprachversion ABAP for Cloud syntaktisch zulässig? (Klassenvariante, nicht dieser Fall.)"
+  ],
+  "scope": "partial_missing_runtime_targets",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "g1"
+      },
+      {
+        "condition": "p_key IS INITIAL",
+        "from": "g1",
+        "to": "nk"
+      },
+      {
+        "condition": "always",
+        "from": "nk",
+        "to": "e1"
+      },
+      {
+        "condition": "p_key IS NOT INITIAL",
+        "from": "g1",
+        "to": "a"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "w"
+      },
+      {
+        "condition": "always",
+        "from": "w",
+        "to": "g2"
+      },
+      {
+        "condition": "sy-subrc = 0",
+        "from": "g2",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "ok"
+      },
+      {
+        "condition": "always",
+        "from": "ok",
+        "to": "done"
+      },
+      {
+        "condition": "sy-subrc <> 0",
+        "from": "g2",
+        "to": "rb"
+      },
+      {
+        "condition": "always",
+        "from": "rb",
+        "to": "nok"
+      },
+      {
+        "condition": "always",
+        "from": "nok",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart (trigger = dialog)",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "g1",
+        "meaning": "Schlüssel leer?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "nk",
+        "meaning": "NO_KEY melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "e1",
+        "meaning": "Block verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "Zeile füllen (Zeilen 11–13)",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "w",
+        "meaning": "MODIFY — Versuch; target_resolution = unknown, Herkunft Eingabe",
+        "type": "write"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "g2",
+        "meaning": "Schreiben erfolgreich?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "COMMIT WORK",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        "id": "ok",
+        "meaning": "SAVED melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        "id": "rb",
+        "meaning": "ROLLBACK WORK",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 20,
+          "raw": "source.abap:20",
+          "token": null
+        },
+        "id": "nok",
+        "meaning": "NOT_SAVED melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 21,
+          "raw": "source.abap:21",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "candidate / not independently signed.",
+  "title": "Dynamisches Schreibziel: MODIFY (p_tab) — Unknown, schlimmster Fall D, plus Sicherheitsbefund"
+}

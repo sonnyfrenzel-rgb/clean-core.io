@@ -1,0 +1,280 @@
+{
+  "answerFields": {
+    "cloud_api_surface": "unknown",
+    "cloud_artefact": "not_activatable (REPORT, PARAMETERS, WRITE)",
+    "known_worst_level": "B (beobachtet, nur sichtbarer Teil; R16, R03@1.1.0)"
+  },
+  "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        }
+      ],
+      "id": "CC-027-B01",
+      "text": "Der Report registriert den Baustein mit Fall-ID und Route zur Verbuchung."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4–10 (gesamte Scheibe)",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        }
+      ],
+      "id": "CC-027-B02",
+      "text": "In der gelieferten Scheibe wird kein COMMIT WORK ausgeführt und kein Statement mit impliziter COMMIT-WORK-Wirkung erreicht (Vollständigkeitsbeleg: Zeilen 4–10 sind die ganze Scheibe). Innerhalb der Scheibe wird der registrierte Baustein nicht angestoßen und nicht ausgeführt; eine Datenbankänderung findet nicht statt — nicht persistiert (zulässig, weil keine Datenbankänderung vorliegt). REGISTERED und END_OF_REPORT sind Ausgaben, keine Bestätigungen."
+    }
+  ],
+  "classes": [
+    "K12",
+    "K03",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": "not_activatable (REPORT, PARAMETERS, WRITE)",
+  "convergence": "Grok H-023 („ohne COMMIT nie stattfindet\") · GLM A-017 (dasselbe Muster für BAPIs), A-018 · Fable KA-042 · DeepSeek — keiner · Gegenreview REV2-11. Negativkontrolle, absichtlich minimal.",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5",
+        "token": null
+      },
+      "id": "CC-027-F01",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@2.1.0 (Achse 3)",
+      "ruleVersion": "2.1.0",
+      "severity": "high",
+      "sources": [
+        "SAP-CALL",
+        "SAP-FLOW; S05",
+        "S09",
+        "S32"
+      ],
+      "statement": "Registrierung zur Verbuchung (registered) ohne COMMIT WORK in der gelieferten Scheibe. Es gibt keinen Transaktionsknoten, der die Ausführung anstößt; eine fachliche Datenänderung ist innerhalb der Scheibe nicht belegbar. Quelltext und Eigenschaften des Bausteins fehlen."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9",
+        "token": null
+      },
+      "id": "CC-027-F02",
+      "profiles": null,
+      "rule": "R18",
+      "ruleRaw": "R18@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-FLOW"
+      ],
+      "statement": "REGISTERED ist eine berechnete Ausgabe nach der Registrierung, keine Bestätigung einer Datenänderung."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5",
+        "token": null
+      },
+      "id": "CC-027-F03",
+      "profiles": null,
+      "rule": "R06",
+      "ruleRaw": "R06@1.0.0; R03@1.1.0",
+      "ruleVersion": "1.0.0;",
+      "severity": "info",
+      "sources": [
+        "SAP-CALL"
+      ],
+      "statement": "Statisch benannter kundeneigener Baustein; Quelltext nicht geliefert (wie CC-026-F03)."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10 (scope=slice-end; Sekundäranker: source.abap:4–10, gesamte Scheibe)",
+        "token": null
+      },
+      "id": "CC-027-F04",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@2.1.0 (Achsen 1, 3)",
+      "ruleVersion": "2.1.0",
+      "severity": "medium",
+      "sources": [
+        "S07",
+        "S08",
+        "S09",
+        "S32"
+      ],
+      "statement": "Scopeabschluss: Zeile 10 ist das letzte Statement der Scheibe. Das Programmende ist weder COMMIT WORK noch ROLLBACK WORK — der registrierte Baustein wird nicht ausgeführt (orphaned, S32), die Datenbank-LUW endet mit dem Dialogschritt per implizitem Commit (S08), der keine Verbuchung anstößt. Das Ende ist nicht mit dem Löschen der Registrierung durch ROLLBACK WORK gleichzusetzen (discarded). Kein Skelettknoten dafür."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:10 — kein transaction- und kein async-Knoten aus dem Reportende (kein erfundener Dispatch).",
+    "source.abap:10 — kein Knoten und kein Fachsatz „Registrierung durch ROLLBACK verworfen\" (discarded); richtig ist orphaned — nicht ausgeführt (REV2-11).",
+    "source.abap:10 — kein Fachsatz „der implizite Datenbank-Commit am Dialogschrittende führt die Verbuchung aus\": ein Datenbank-Commit ist kein COMMIT WORK (S05, S08, S09).",
+    "source.abap:5 — kein Fachsatz „die Verbuchung läuft nach Programmende\" (kein Träger in der Scheibe).",
+    "source.abap:5 — kein Fehlerbefund „COMMIT WORK fehlt\" ohne Klärung der vorgesehenen Transaktionsverantwortung (Fallbogen §6); W01 klärt das, der Korpus urteilt nicht.",
+    "gesamte Scheibe — kein security_and_authorization-Befund (wie CC-026)."
+  ],
+  "id": "CC-027",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku (S05, S07 SAP-LUW bei Programmaufrufen, S08 Datenbank-Commit, S09 COMMIT WORK; S30, S32 nach Lesung des Regelautors)",
+  "known_worst_level": "B (beobachtet, nur sichtbarer Teil; R16, R03@1.1.0)",
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "Z_CC_DECISION_UPD",
+        "objectType": "FUNC",
+        "tadirObjName": "not_delivered",
+        "tadirObject": "FUGR"
+      },
+      "name": "Z_CC_DECISION_UPD",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": [],
+      "usage": "update_task_registration"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Native Bestätigung von S32 (Löschung der Registrierung beim Programmende ohne COMMIT WORK) im Zielrelease — die Registerlesung ist eine Web-Leseansicht, kein Lauf. Für die Sollantwort unerheblich; für W03 nicht.",
+    "Ist IN UPDATE TASK in ABAP for Cloud syntaktisch ausgeschlossen? (wie CC-026)"
+  ],
+  "scope": "partial_missing_update_module_source",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "u"
+      },
+      {
+        "condition": "always",
+        "from": "u",
+        "to": "o1"
+      },
+      {
+        "condition": "always",
+        "from": "o1",
+        "to": "o2"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start (trigger = dialog, direkter Reportstart)",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "u",
+        "meaning": "Verbuchung registrieren (registered)",
+        "type": "update_task"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "o1",
+        "meaning": "Registriert melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "o2",
+        "meaning": "Reportende melden (Scopeende; kein Transaktionsknoten)",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "candidate / not independently signed.",
+  "title": "Verbuchung ohne COMMIT WORK: angekündigt, nicht persistiert (Negativkontrolle zu CC-026)"
+}

@@ -1,0 +1,18 @@
+{
+  "id": "CE-02",
+  "title": "Bekanntes FROM trotz dynamischem WHERE",
+  "kind": "constructed_counterexample_not_production_code",
+  "files": [
+    "source.abap"
+  ],
+  "expected": "Zieltabelle bleibt KNA1. Prädikat ist dynamisch/ungeprüft. Nicht die Tabellenidentität auf Unknown setzen, nur weil ein WHERE unbekannt ist. Syntax-/DB-Verfügbarkeit im Ziel noch nicht nativ geprüft.",
+  "sources": [
+    "S23"
+  ],
+  "related_cases": [
+    "CC-037",
+    "CC-038"
+  ],
+  "native_compile": "NOT_RUN",
+  "native_execution": "NOT_RUN"
+}

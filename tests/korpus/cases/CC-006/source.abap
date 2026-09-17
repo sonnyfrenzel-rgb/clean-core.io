@@ -1,0 +1,9 @@
+REPORT zcc_ref_006.
+CONSTANTS lc_function TYPE c LENGTH 30 VALUE 'CONVERSION_EXIT_ALPHA_INPUT'.
+PARAMETERS p_id TYPE c LENGTH 10 DEFAULT '4711'.
+DATA lv_result TYPE c LENGTH 10.
+START-OF-SELECTION.
+  CALL FUNCTION lc_function
+    EXPORTING input = p_id
+    IMPORTING output = lv_result.
+  WRITE / lv_result.

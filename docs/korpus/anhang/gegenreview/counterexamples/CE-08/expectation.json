@@ -1,0 +1,17 @@
+{
+  "id": "CE-08",
+  "title": "Gleicher Exittext in kundeneigenem Report",
+  "kind": "constructed_counterexample_not_production_code",
+  "files": [
+    "source.abap"
+  ],
+  "expected": "FORM-Name und Variablenname beweisen keinen SAP-Host und kein Level D. Beim isolierten FORM-Slice fehlt der äußere Kontext; vollständiger Kundencode zeigt den Gegenfall.",
+  "sources": [
+    "S01"
+  ],
+  "related_cases": [
+    "CC-053"
+  ],
+  "native_compile": "NOT_RUN",
+  "native_execution": "NOT_RUN"
+}

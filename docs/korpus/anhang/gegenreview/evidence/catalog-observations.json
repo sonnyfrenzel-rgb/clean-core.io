@@ -1,0 +1,68 @@
+{
+  "status": "manually_transcribed_selected_native_records_observed_in_web_view",
+  "upstream_url": "https://raw.githubusercontent.com/SAP/abap-atc-cr-cv-s4hc/main/src/objectReleaseInfo_PCE2022.json",
+  "observed_date": "2026-09-16",
+  "upstream_commit": null,
+  "full_upstream_bytes_archived": false,
+  "warning": "Lokale Hashes beziehen sich auf diese Abschrift, NICHT auf eine archivierte SAP-Katalogdatei. Keine Behauptung eines S/4HANA-2023- oder BTP-2408-Aktivierungsnachweises.",
+  "records": [
+    {
+      "web_lines": [
+        29313,
+        29322
+      ],
+      "tadirObject": "DDLS",
+      "tadirObjName": "I_CUSTOMER",
+      "objectType": "CDS_STOB",
+      "objectKey": "I_CUSTOMER",
+      "softwareComponent": "SAPSCORE",
+      "applicationComponent": "LO-MD-BP",
+      "state": "released",
+      "successorClassification": ""
+    },
+    {
+      "web_lines": [
+        5173,
+        5182
+      ],
+      "tadirObject": "CLAS",
+      "tadirObjName": "CL_ABAP_BEHAVIOR_HANDLER",
+      "objectType": "CLAS",
+      "objectKey": "CL_ABAP_BEHAVIOR_HANDLER",
+      "softwareComponent": "SAP_BASIS",
+      "state": "released"
+    },
+    {
+      "web_lines": [
+        136428,
+        136446
+      ],
+      "tadirObject": "TABL",
+      "tadirObjName": "KNA1",
+      "objectType": "TABL",
+      "objectKey": "KNA1",
+      "state": "notToBeReleased",
+      "successorClassification": "oneObject",
+      "successors": [
+        {
+          "tadirObject": "DDLS",
+          "tadirObjName": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "objectKey": "I_CUSTOMER"
+        }
+      ]
+    }
+  ],
+  "omitted_fields": "Nicht für jeden Datensatz alle Originalfelder abgeschrieben; kein Anspruch vollständiger nativer JSON-Records.",
+  "negative_searches": {
+    "file": "objectClassifications_SAP.json",
+    "terms": [
+      "MV45AFZZ",
+      "USEREXIT_SAVE_DOCUMENT",
+      "KNA1",
+      "CL_SQL_STATEMENT"
+    ],
+    "observation": "Keine Treffer in gezielter Web-find-Abfrage",
+    "does_not_prove": "Kein Beweis genereller Nichtfreigabe oder Nichtverfügbarkeit; keine eindeutige Regel für den Include-Mechanismus."
+  }
+}

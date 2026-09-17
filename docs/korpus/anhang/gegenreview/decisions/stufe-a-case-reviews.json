@@ -1,0 +1,1345 @@
+[
+  {
+    "id": "CC-026",
+    "title": "Verbuchung: registriert an der Aufrufstelle, ausgeführt beim COMMIT, verworfen beim ROLLBACK",
+    "review_mode": "NONBLIND_AI_COUNTERREVIEW",
+    "scope": "Stufe A: source/profile/oracle desk review",
+    "verdict": "Kernurteil stimmt; Ausführungsmodus und Erfolgsaussagen enger fassen",
+    "source_document_line": 4218,
+    "levels": {
+      "classic_extension.level": "Unknown",
+      "known_worst_level": "B, nur sichtbarer Teil",
+      "cloud_api_surface": "unknown",
+      "cloud_artefact": "not_activatable"
+    },
+    "levels_note": "Die fehlende Implementierung von Z_CC_DECISION_UPD verhindert ein vollständiges technisches Level. B als bekannte sichtbare Standard-ABAP-Mechanik ist eine begrenzte Untergrenze, keine Freigabe der Gesamtwirkung. Der REPORT kann unabhängig vom nicht aufgelösten Baustein nicht als dieses Artefakt in ABAP for Cloud aktiviert werden. Der Kontext muss die nicht lokale Verbuchung ausdrücklich festlegen; V1/V2 und SET UPDATE TASK LOCAL sind keine aus der CALL-Zeile ablesbaren Attribute. [S01, S05, S09]",
+    "findings": [
+      [
+        6,
+        "Registrierung / R25",
+        "high",
+        "Baustein registriert; Implementierung fehlt. Noch keine Ausführung des Funktionsbausteins."
+      ],
+      [
+        12,
+        "ROLLBACK WORK / R25",
+        "medium",
+        "Registrierte Update-Aufrufe dieser SAP-LUW verwerfen; nur den modellierten Abbruchzweig behaupten."
+      ],
+      [
+        15,
+        "COMMIT WORK / R25",
+        "high",
+        "Verbuchung anstoßen; ohne AND WAIT keine Erfolgssynchronisation. Lokalen Modus nicht allein aus der Syntax ausschließen."
+      ],
+      [
+        16,
+        "Fachsatz / R18",
+        "info",
+        "COMMITTED ist die Statusausgabe des Reports, kein Nachweis einer gesicherten Route."
+      ]
+    ],
+    "objects": [
+      [
+        "Z_CC_DECISION_UPD",
+        "FUGR / unbekannte Gruppe; FUNC / Z_CC_DECISION_UPD",
+        "Kundeneigen; keine behauptete SAP-Nachfolgerliste",
+        "nicht beurteilt"
+      ]
+    ],
+    "claims": [
+      [
+        "B01",
+        "stimme zu, präzisieren",
+        "Fall-ID und Route werden als Parameter eines registrierten Update-Aufrufs festgehalten; der Baustein wird an Zeile 6 noch nicht ausgeführt.",
+        "6–9"
+      ],
+      [
+        "B02",
+        "stimme nur unter Bedingung zu",
+        "Ohne Abbruchkennzeichen wird COMMIT WORK aufgerufen. Im stipulierten nicht lokalen Modus stößt dies die Verbuchung an; die folgende Ausgabe prüft keinen fachlichen Erfolg.",
+        "11,15–16"
+      ],
+      [
+        "B03",
+        "stimme zu",
+        "Mit Abbruchkennzeichen wird die Registrierung verworfen und DISCARDED ausgegeben. Im gelieferten Zweig wird der Baustein nicht ausgeführt.",
+        "11–13"
+      ],
+      [
+        "B04",
+        "enger formulieren",
+        "REGISTERED wird vor der Verzweigung ausgegeben und belegt nur das Erreichen dieser Stelle, nicht allgemeine Wirkungslosigkeit aller möglichen Laufzeitaktivitäten.",
+        "6–17"
+      ]
+    ],
+    "process": "start:5 → update_registration:6 → output:10 → gateway:11. Der Abbruchzweig führt zu rollback:12 → output:13. Der andere Zweig führt zu update_dispatch:15 und zur Caller-Fortsetzung output:16. Die opake Verbuchung ist eine separat begründete asynchrone Wirkung bei nicht lokalem Update, kein synchron bereits abgeschlossener Call an Zeile 6. Das ursprüngliche Diagramm ist unter dieser Modusannahme im Kern passend.",
+    "security": "Keine spezifische Schwachstelle aus dem sichtbaren Code bewiesen. Fehlende FM-Quelle umfasst auch die darin möglichen Berechtigungsprüfungen. Ein fehlender sichtbarer Check ist nicht der Nachweis einer im Gesamtsystem fehlenden Kontrolle.",
+    "questions": [
+      [
+        "sy-subrc ohne AND WAIT?",
+        "Nach COMMIT WORK ohne AND WAIT ist sy-subrc kein Verbuchungserfolgsbeleg. Nicht nur fehlende Auswertung, sondern auch die Aussagekraft des Werts selbst erklären. [S09]"
+      ],
+      [
+        "Fehler nur in SM13?",
+        "Zu absolut. Updateadministration/Protokolle sind relevant; SAP dokumentiert zusätzlich Benachrichtigungsmechanismen. Nicht „nur SM13“ als exklusiven Kanal behaupten. [S09]"
+      ],
+      [
+        "V1/V2-Attribut?",
+        "Ändert Reihenfolge und Synchronisationsaussage. AND WAIT bezieht sich auf die synchrone hochprioritäre Verbuchung; nicht pauschal jedes nachgelagerte V2-Ergebnis als bereits geprüft ausgeben. [S05,S09]"
+      ],
+      [
+        "Cloud?",
+        "Der gelieferte REPORT ist bereits ungeeignet. Für ein isoliertes aufrufendes Cloud-Objekt zusätzlich zulässiges Modell statt klassischer Update-Technik prüfen; das ist ein anderer Zielartefaktfall."
+      ],
+      [
+        "Ohne System offen?",
+        "FM-Attribute und -Quelltext, lokaler Update-Modus, konkrete Produktivfehlerbehandlung. Die statische Registrierungsaussage braucht dagegen keinen Systemlauf."
+      ]
+    ],
+    "sources": [
+      "S01",
+      "S05",
+      "S09"
+    ],
+    "production_frequency": "Nicht aus eigener Produktionsverantwortung belegt. Das Muster ist als konstruiertes Prüfbeispiel plausibel; keine Häufigkeitsschätzung und keine behauptete Kundenerfahrung.",
+    "external_human_signoff": false,
+    "native_execution": false,
+    "claim_comparisons": [
+      {
+        "claim_id": "CC-026-B01",
+        "original_text": "Der Baustein wird mit Fall-ID und Route zur Verbuchung registriert; an der Aufrufstelle wird nichts geändert.",
+        "review_verdict": "stimme zu, präzisieren",
+        "proposed_text": "Fall-ID und Route werden als Parameter eines registrierten Update-Aufrufs festgehalten; der Baustein wird an Zeile 6 noch nicht ausgeführt.",
+        "anchor": "6–9"
+      },
+      {
+        "claim_id": "CC-026-B02",
+        "original_text": "Ohne Abbruchkennzeichen löst COMMIT WORK die Ausführung des registrierten Bausteins in einem Verbucherprozess aus. COMMITTED wird ausgegeben, ohne dass der Code den Verbuchungserfolg prüft — angekündigt, nicht als persistiert belegt.",
+        "review_verdict": "stimme nur unter Bedingung zu",
+        "proposed_text": "Ohne Abbruchkennzeichen wird COMMIT WORK aufgerufen. Im stipulierten nicht lokalen Modus stößt dies die Verbuchung an; die folgende Ausgabe prüft keinen fachlichen Erfolg.",
+        "anchor": "11,15–16"
+      },
+      {
+        "claim_id": "CC-026-B03",
+        "original_text": "Mit Abbruchkennzeichen verwirft ROLLBACK WORK die Registrierung, DISCARDED wird ausgegeben; es findet keine Verbuchung statt.",
+        "review_verdict": "stimme zu",
+        "proposed_text": "Mit Abbruchkennzeichen wird die Registrierung verworfen und DISCARDED ausgegeben. Im gelieferten Zweig wird der Baustein nicht ausgeführt.",
+        "anchor": "11–13"
+      },
+      {
+        "claim_id": "CC-026-B04",
+        "original_text": "REGISTERED wird in beiden Zweigen ausgegeben, bevor irgendeine Datenänderung möglich ist.",
+        "review_verdict": "enger formulieren",
+        "proposed_text": "REGISTERED wird vor der Verzweigung ausgegeben und belegt nur das Erreichen dieser Stelle, nicht allgemeine Wirkungslosigkeit aller möglichen Laufzeitaktivitäten.",
+        "anchor": "6–17"
+      }
+    ],
+    "confidence": {
+      "classic_extension.level": "wahrscheinlich",
+      "known_worst_level": "wahrscheinlich",
+      "cloud_api_surface": "wahrscheinlich",
+      "cloud_artefact": "sicher"
+    },
+    "confidence_note": "Sicherheit betrifft die begrenzte Reviewaussage im angegebenen Fixture, nicht eine native Aktivierung oder persönliche Praxisbeobachtung. Bedingte Schlussfolgerungen sind im Text ausdrücklich bezeichnet."
+  },
+  {
+    "id": "CC-027",
+    "title": "Verbuchung ohne COMMIT WORK: angekündigt, nicht persistiert (Negativkontrolle zu CC-026)",
+    "review_mode": "NONBLIND_AI_COUNTERREVIEW",
+    "scope": "Stufe A: source/profile/oracle desk review",
+    "verdict": "Im Slice keine Ausführung belegt; Reportende-/SUBMIT-Erklärung korrigieren",
+    "source_document_line": 4372,
+    "levels": {
+      "classic_extension.level": "Unknown",
+      "known_worst_level": "B, nur sichtbarer Teil",
+      "cloud_api_surface": "unknown",
+      "cloud_artefact": "not_activatable"
+    },
+    "levels_note": "Das fehlende COMMIT WORK rechtfertigt die Aussage, dass dieser Report keinen expliziten Update-Anstoß enthält. Es rechtfertigt keine Gleichsetzung von Registrieren, Nichtausführen und Löschen der Registrierungsdaten. Ein normaler Datenbank-Commit startet nicht automatisch die Update-Verarbeitung. [S05,S07,S09]",
+    "findings": [
+      [
+        5,
+        "Registrierung / R25",
+        "high",
+        "Nur Registrierung; Quelltext und Eigenschaften des Update-Funktionsbausteins fehlen."
+      ],
+      [
+        9,
+        "Status / R18",
+        "info",
+        "REGISTERED ist keine Persistenzbestätigung."
+      ],
+      [
+        10,
+        "Scopeabschluss / R25",
+        "medium",
+        "Keine Update-Ausführung aus dem Reportende ergänzen. Lebenszyklus der Registrierung nicht mit ROLLBACK gleichsetzen."
+      ]
+    ],
+    "objects": [
+      [
+        "Z_CC_DECISION_UPD",
+        "FUGR / unbekannte Gruppe; FUNC / Z_CC_DECISION_UPD",
+        "kundeneigen, Nachfolger nicht anwendbar",
+        "nicht beurteilt"
+      ]
+    ],
+    "claims": [
+      [
+        "B01",
+        "stimme zu",
+        "Der Report registriert den Baustein mit ID und Route.",
+        "5–8"
+      ],
+      [
+        "B02",
+        "stimme nur in enger Fassung zu",
+        "Im gelieferten Ablauf wird kein COMMIT WORK ausgeführt; eine fachliche Datenänderung durch den registrierten Baustein ist nicht belegt. REGISTERED und END_OF_REPORT sind Ausgaben.",
+        "5–10"
+      ]
+    ],
+    "process": "start:4 → update_registration:5 → output:9 → output:10. Kein erfundener Verbuchungs-Dispatch im prozeduralen Slice. Ergänzend darf ein außerhalb der Scheibe liegender Session-/LUW-Lebenszyklus als Kontext notiert werden, nicht als ausgeführter fachlicher Schreibknoten.",
+    "security": "Kein eigenständiger konkreter Sicherheitsbefund. Einen fachlichen Fehler „fehlendes COMMIT“ erst nach Klärung der vorgesehenen Transaktionsverantwortung zuschreiben.",
+    "questions": [
+      [
+        "Wird am Reportende alles verworfen?",
+        "So nicht bestätigen. SAP beschreibt das Ende einer internen Sitzung ohne expliziten SAP-LUW-Abschluss anders als ROLLBACK: Registrierungen können als nicht mehr ausführbare Einträge bestehen bleiben. Keine fachliche Ausführung; aber „gelöscht/verworfen“ ist nicht generell bewiesen. [S07,S09]"
+      ],
+      [
+        "SUBMIT … AND RETURN gemeinsam mit Caller-LUW?",
+        "Die pauschale gemeinsame SAP-LUW ist falsch. Die aufgerufene interne Sitzung hat eine eigene SAP-LUW. Ein späteres Caller-COMMIT darf nicht ohne weiteren Beleg als Dispatcher dieses Reports eingezeichnet werden. Nicht mit externem FORM/normalem Funktionsaufruf verwechseln. [S07]"
+      ],
+      [
+        "Anker/Negativpfad?",
+        "B02 braucht den vollständigen gelieferten Slice als Vollständigkeitsbeleg für das Fehlen eines COMMIT, nicht nur Zeile 10."
+      ],
+      [
+        "Ohne System offen?",
+        "Konkreter Start-/Rückkehrkontext, Update-Verwaltungsdaten im Zielsystem und erwartete fachliche Commit-Verantwortung. Keine allgemeine Laufzeitfreigabe."
+      ]
+    ],
+    "sources": [
+      "S05",
+      "S07",
+      "S09"
+    ],
+    "production_frequency": "Nicht aus eigener Produktionsverantwortung belegt. Das Muster ist als konstruiertes Prüfbeispiel plausibel; keine Häufigkeitsschätzung und keine behauptete Kundenerfahrung.",
+    "external_human_signoff": false,
+    "native_execution": false,
+    "claim_comparisons": [
+      {
+        "claim_id": "CC-027-B01",
+        "original_text": "Der Baustein wird mit Fall-ID und Route zur Verbuchung registriert.",
+        "review_verdict": "stimme zu",
+        "proposed_text": "Der Report registriert den Baustein mit ID und Route.",
+        "anchor": "5–8"
+      },
+      {
+        "claim_id": "CC-027-B02",
+        "original_text": "In der gelieferten Scheibe wird kein COMMIT WORK ausgeführt. Die Registrierung ist angekündigt, nicht persistiert; REGISTERED und END_OF_REPORT belegen nur das Erreichen der Ausgaben.",
+        "review_verdict": "stimme nur in enger Fassung zu",
+        "proposed_text": "Im gelieferten Ablauf wird kein COMMIT WORK ausgeführt; eine fachliche Datenänderung durch den registrierten Baustein ist nicht belegt. REGISTERED und END_OF_REPORT sind Ausgaben.",
+        "anchor": "5–10"
+      }
+    ],
+    "confidence": {
+      "classic_extension.level": "wahrscheinlich",
+      "known_worst_level": "wahrscheinlich",
+      "cloud_api_surface": "wahrscheinlich",
+      "cloud_artefact": "sicher"
+    },
+    "confidence_note": "Sicherheit betrifft die begrenzte Reviewaussage im angegebenen Fixture, nicht eine native Aktivierung oder persönliche Praxisbeobachtung. Bedingte Schlussfolgerungen sind im Text ausdrücklich bezeichnet."
+  },
+  {
+    "id": "CC-034",
+    "title": "ADBC: das Stringtemplate wird als SQL ausgeführt (Gegenstück zu CC-016)",
+    "review_mode": "NONBLIND_AI_COUNTERREVIEW",
+    "scope": "Stufe A: source/profile/oracle desk review",
+    "verdict": "D-Befund bestätigt; unbedingte Kunden-/Mandantenaussage widersprochen",
+    "source_document_line": 5466,
+    "levels": {
+      "classic_extension.level": "D",
+      "known_worst_level": "D, für den belegten nicht unterstützten Schreibweg",
+      "cloud_api_surface": "not_usable",
+      "cloud_artefact": "not_activatable"
+    },
+    "levels_note": "D folgt aus dem expliziten nicht unterstützten KNA1-Schreibzugriff auf der stipulierten Standardverbindung, nicht aus einer geratenen Freigabeklasse von CL_SQL_STATEMENT. Die ungereinigten Eingaben verhindern jedoch die garantierte Begrenzung auf genau den beabsichtigten Kunden/Mandanten. Ein konkreter DB-Fehler oder ein fehlender Datensatz bedeutet außerdem nicht, dass die beabsichtigte Änderung stattfindet. [S01,S10,S11]",
+    "findings": [
+      [
+        11,
+        "Unsicherer Textaufbau / R28",
+        "high",
+        "Benutzereingabe fließt in SQL-Text; Guard auf nichtleeren Schlüssel ist kein Escaping und keine Allowlist."
+      ],
+      [
+        15,
+        "Interpretierender Konsument / R13b",
+        "high",
+        "EXECUTE_UPDATE verarbeitet den konstruierten Text als SQL; kein R13a-Negativfall."
+      ],
+      [
+        15,
+        "SAP-Tabellenschreiben / R02",
+        "high",
+        "Nicht unterstütztes direktes UPDATE KNA1: D im dokumentierten Standardverbindungs-Kontext."
+      ],
+      [
+        16,
+        "Exceptionpfad / R19",
+        "medium",
+        "CX_SQL_EXCEPTION führt zum modellierten Rollback/Abbruch; keine weiteren Exceptions erfinden."
+      ],
+      [
+        26,
+        "Transaktionsabschluss / R25",
+        "medium",
+        "Commit der Standardverbindung im normalen Nichtnull-Pfad; keine Erfolgs-/Scopegarantie allein aus dem Ausgabetext."
+      ]
+    ],
+    "objects": [
+      [
+        "KNA1",
+        "TABL/KNA1; TABL/KNA1",
+        "DDLS/I_CUSTOMER; CDS_STOB/I_CUSTOMER, Lesenachfolger beobachtet [S19]",
+        "nein für UPDATE"
+      ],
+      [
+        "CL_SQL_STATEMENT",
+        "CLAS/CL_SQL_STATEMENT; CLAS/CL_SQL_STATEMENT",
+        "Eigener Nachfolger-/Freigabestatus nicht hinreichend belegt",
+        "offen"
+      ],
+      [
+        "CX_SQL_EXCEPTION",
+        "CLAS/CX_SQL_EXCEPTION; CLAS/CX_SQL_EXCEPTION",
+        "Exceptiontyp an Zeile 16, in der ursprünglichen Objektliste ergänzen; Metadaten separat nachsehen",
+        "nicht beurteilt"
+      ]
+    ],
+    "claims": [
+      [
+        "B01",
+        "stimme zu",
+        "Bei initialem p_kunnr wird NO_KEY ausgegeben und vor dem SQL-Aufbau zurückgekehrt.",
+        "7–10"
+      ],
+      [
+        "B02",
+        "widerspreche",
+        "Der Code baut ein UPDATE mit beabsichtigtem Kunden- und Mandantenfilter. Wegen ungeprüfter Texteinbettung sind diese Filter für beliebige Eingaben nicht garantiert. Bei nicht manipulierten, passend formatierten Werten wird versucht, passende Zeilen zu ändern; ein Treffer ist nicht garantiert.",
+        "11–15 plus 2–3,7"
+      ],
+      [
+        "B03",
+        "stimme nur im DB-Scope zu",
+        "Bei abgefangener SQL-Ausnahme wird die aktuelle Standardverbindung zurückgerollt und DB_ERROR ausgegeben. Daraus folgt keine Aussage über beliebige vorausgegangene, bereits abgeschlossene LUWs.",
+        "16–19"
+      ],
+      [
+        "B04",
+        "stimme mit Präzisierung zu",
+        "Bei null gemeldeten Zeilen folgt Rollback; sonst erfolgt COMMIT WORK und die Statusausgabe. Der Code prüft nicht auf genau eine betroffene Zeile und belegt keine Einhaltung des beabsichtigten Mandantenscopes.",
+        "21–27"
+      ]
+    ],
+    "process": "Der Ablauf mit Schlüsselguard, SQL-Aufbau, DB-Aufruf, abgefangener SQL-Ausnahme, Nullzeilenguard und Commit ist im Normalfluss nachvollziehbar. Den Schreibknoten als „Native SQL ausführen; Ziel KNA1, effektiver Zeilenscope eingabeabhängig“ formulieren. Keine garantierte Ein-Kunden-Aktivität. Der CATCH-Knoten ist Fehlerkante des TRY-Bereichs, keine nach jedem Call zusätzlich ausgeführte technische Prüfung.",
+    "security": "Konkreter Injektionspfad im gelieferten Textaufbau. Ein im isolierten SQLite-Modell getesteter Eingabewert innerhalb der p_name-Länge beseitigt den angehängten WHERE-Filter. Dies ist ein SQL-Gegenmodell, kein HANA-Exploitlauf. Zusätzlich fehlt im sichtbaren Slice ein Berechtigungsnachweis; das belegt nicht das Fehlen jeder Start-/Systemberechtigung.",
+    "questions": [
+      [
+        "Standardverbindung und COMMIT/ROLLBACK?",
+        "Unter der festgelegten Standardverbindung teilen sich Native SQL und ABAP SQL die Datenbanktransaktion; COMMIT WORK/ROLLBACK WORK sind relevante Grenzen. Sekundäre Verbindungen wären ein gesonderter Fall. [S05,S08,S10,S11]"
+      ],
+      [
+        "CL_SQL_STATEMENT freigegeben?",
+        "Keine konkrete aktuelle Objektfreigabe bestätigt; die gezielte Katalogsuche ist kein Abwesenheitsbeweis. D bleibt wegen des belegten SAP-Updates entscheidbar."
+      ],
+      [
+        "Anker 15 oder 11?",
+        "Beide mit verschiedenen Rollen: Konsument primär für Effekt; Eingabefluss/Textaufbau primär für Injektionsbefund. Codeanker im SQL-String sekundär. Eine durchgehende ID verbindet beides."
+      ],
+      [
+        "Injektion eigener Befund?",
+        "Ja. Ein gebundener Platzhalter wäre ein Gegenfall; frei eingebaute Daten und gebundene Parameter nicht unter derselben Taint-Regel ablehnen. [S10]"
+      ],
+      [
+        "Ohne System offen?",
+        "HANA-spezifische Syntax/Exceptions, tatsächliche Datenmenge, Objektmetadaten. Die fehlende garantierte Mandantenbegrenzung folgt bereits aus der unsicheren Konstruktion."
+      ]
+    ],
+    "sources": [
+      "S01",
+      "S05",
+      "S08",
+      "S10",
+      "S11",
+      "S19",
+      "S20"
+    ],
+    "production_frequency": "Nicht aus eigener Produktionsverantwortung belegt. Das Muster ist als konstruiertes Prüfbeispiel plausibel; keine Häufigkeitsschätzung und keine behauptete Kundenerfahrung.",
+    "external_human_signoff": false,
+    "native_execution": false,
+    "claim_comparisons": [
+      {
+        "claim_id": "CC-034-B01",
+        "original_text": "Ohne Kundennummer wird NO_KEY ausgegeben und der Block verlassen; es wird kein SQL gebaut.",
+        "review_verdict": "stimme zu",
+        "proposed_text": "Bei initialem p_kunnr wird NO_KEY ausgegeben und vor dem SQL-Aufbau zurückgekehrt.",
+        "anchor": "7–10"
+      },
+      {
+        "claim_id": "CC-034-B02",
+        "original_text": "Nach dem Guard wird NAME1 des angegebenen Kunden im aktuellen Mandanten per Native SQL geändert; der Mandant steht explizit im SQL-Text, weil Native SQL keinen automatischen Mandantenfilter hat.",
+        "review_verdict": "widerspreche",
+        "proposed_text": "Der Code baut ein UPDATE mit beabsichtigtem Kunden- und Mandantenfilter. Wegen ungeprüfter Texteinbettung sind diese Filter für beliebige Eingaben nicht garantiert. Bei nicht manipulierten, passend formatierten Werten wird versucht, passende Zeilen zu ändern; ein Treffer ist nicht garantiert.",
+        "anchor": "11–15 plus 2–3,7"
+      },
+      {
+        "claim_id": "CC-034-B03",
+        "original_text": "Wirft die Datenbank eine SQL-Ausnahme, wird ROLLBACK WORK ausgeführt, DB_ERROR ausgegeben und abgebrochen; nichts ist persistiert.",
+        "review_verdict": "stimme nur im DB-Scope zu",
+        "proposed_text": "Bei abgefangener SQL-Ausnahme wird die aktuelle Standardverbindung zurückgerollt und DB_ERROR ausgegeben. Daraus folgt keine Aussage über beliebige vorausgegangene, bereits abgeschlossene LUWs.",
+        "anchor": "16–19"
+      },
+      {
+        "claim_id": "CC-034-B04",
+        "original_text": "Sind null Zeilen betroffen, folgt ROLLBACK WORK und NO_UPDATE; sonst wird mit COMMIT WORK (Zeile 26) persistiert und UPDATE_COMMITTED ausgegeben. Dass COMMIT WORK den ADBC-Update auf der Standardverbindung mit einschließt, ist Ausführungsannahme des Fixtures (Prüferfrage 1).",
+        "review_verdict": "stimme mit Präzisierung zu",
+        "proposed_text": "Bei null gemeldeten Zeilen folgt Rollback; sonst erfolgt COMMIT WORK und die Statusausgabe. Der Code prüft nicht auf genau eine betroffene Zeile und belegt keine Einhaltung des beabsichtigten Mandantenscopes.",
+        "anchor": "21–27"
+      }
+    ],
+    "confidence": {
+      "classic_extension.level": "sicher",
+      "known_worst_level": "sicher",
+      "cloud_api_surface": "sicher",
+      "cloud_artefact": "sicher"
+    },
+    "confidence_note": "Sicherheit betrifft die begrenzte Reviewaussage im angegebenen Fixture, nicht eine native Aktivierung oder persönliche Praxisbeobachtung. Bedingte Schlussfolgerungen sind im Text ausdrücklich bezeichnet."
+  },
+  {
+    "id": "CC-035",
+    "title": "EXEC SQL: Native SQL schreibt KNA1, kein Nachfolger, nicht in der Cloud",
+    "review_mode": "NONBLIND_AI_COUNTERREVIEW",
+    "scope": "Stufe A: source/profile/oracle desk review",
+    "verdict": "D und Bindungsunterscheidung bestätigt; Wirkung und Nachfolgerstatus begrenzen",
+    "source_document_line": 5686,
+    "levels": {
+      "classic_extension.level": "D",
+      "known_worst_level": "D",
+      "cloud_api_surface": "not_usable",
+      "cloud_artefact": "not_activatable"
+    },
+    "levels_note": "Direktes nicht unterstütztes Native-SQL-UPDATE auf KNA1 bleibt D. Gebundene Hostvariablen :p_name, :p_kunnr und :lv_mandt sind keine Konkatenation von SQL-Syntax. Das ist der erforderliche Gegenfall zum Injektionspfad in CC-034. Der REPORT plus EXEC-SQL-Technik ist kein geliefertes Cloud-Artefakt. [S01,S11]",
+    "findings": [
+      [
+        11,
+        "Native-SQL-Konsument / R13b",
+        "high",
+        "EXEC SQL verarbeitet den DB-spezifischen SQL-Block; Ziel KNA1 an 12 als Sekundäranker."
+      ],
+      [
+        11,
+        "Direktes Schreiben / R02",
+        "high",
+        "KNA1-Schreiben ist im angegebenen Scope D."
+      ],
+      [
+        15,
+        "Transaktionsabschluss / R25",
+        "medium",
+        "COMMIT ohne vorherige Auswertung, ob tatsächlich ein Datensatz geändert wurde."
+      ],
+      [
+        16,
+        "Erfolgsbehauptung / R18",
+        "medium",
+        "UPDATE_COMMITTED kann auch nach null betroffenen Zeilen erscheinen; kein Gateway erfinden, den der Code nicht enthält."
+      ]
+    ],
+    "objects": [
+      [
+        "KNA1",
+        "TABL/KNA1; TABL/KNA1",
+        "DDLS/I_CUSTOMER; CDS_STOB/I_CUSTOMER [S19]",
+        "nein für UPDATE"
+      ],
+      [
+        "EXEC SQL",
+        "ABAP-Sprachkonstrukt, kein erfundenes TADIR-Objekt",
+        "Kein nachgewiesener 1:1-Nachfolger des Statements; geeignete fachliche API gesondert bestimmen",
+        "nicht anwendbar"
+      ]
+    ],
+    "claims": [
+      [
+        "B01",
+        "stimme zu",
+        "Bei initialem Namen wird vor dem DB-Aufruf abgebrochen.",
+        "6–9"
+      ],
+      [
+        "B02",
+        "enger formulieren",
+        "Es wird versucht, NAME1 für Zeilen mit den gebundenen Mandanten-/Kundenschlüsseln zu ändern. Der Code garantiert weder einen passenden Kunden noch eine positive Trefferzahl.",
+        "10–14"
+      ],
+      [
+        "B03",
+        "stimme zu",
+        "Nach normalem Abschluss von ENDEXEC folgt ohne Trefferprüfung COMMIT WORK und die Ausgabe UPDATE_COMMITTED; bei nicht abgefangenem Fehler wird dieser Normalpfad nicht erreicht.",
+        "11–16"
+      ]
+    ],
+    "process": "start:5 → name_guard:6 → early_return:8 oder client_value:10 → native_write_attempt:11 → commit:15 → output:16. Der Nulltreffer-Fall hat denselben sichtbaren Normalpfad. Eine Fehler-/Trefferabfrage wäre eine empfohlene Änderung, nicht Bestandteil des As-is-Skeletts. Nicht abgefangene native Fehler liegen außerhalb des erklärten Normalflussscope.",
+    "security": "Kein SQL-Textinjektionsbefund allein aus den gebundenen Werten. Native SQL besitzt keine automatische Mandantenbehandlung; der konkrete Block enthält einen expliziten MANDT-Vergleich. Das ist weder ein vollständiger Berechtigungsnachweis noch ein pauschal mandantenübergreifender Zugriff. [S11]",
+    "questions": [
+      [
+        "sy-subrc/sy-dbcnt?",
+        "ENDEXEC setzt sy-subrc und sy-dbcnt. Die gelesene SAP-Dokumentation beschreibt sy-dbcnt als Zahl der im letzten Native-SQL-Statement verarbeiteten Zeilen; ein normal abgeschlossenes Update ohne Treffer hat damit keinen Nachweis einer geänderten Kundenzeile. Aus der allgemeinen 0/4-Tabelle allein leite ich keinen universellen sy-subrc-Wert für jedes DB-spezifische Nulltreffer-UPDATE ab; der genaue Zielsystemwert wurde nicht ausgeführt. Der Code wertet keines der Felder aus. Ein neues Gateway wäre ein Änderungsauftrag, nicht Bestandteil des As-is-Skeletts. [S11]"
+      ],
+      [
+        "K13 oder K08?",
+        "K13 als Native-SQL-Mechanismus ist die präzisere interne Taxonomie. Eine Klassennummer ist Korpuskonvention, kein SAP-Urteil."
+      ],
+      [
+        "Hostvariablen ohne Injektion?",
+        "Ja für die hier gezeigte Bindung. Datenfehler, Berechtigungen oder problematische UPDATE-Semantik werden dadurch nicht beseitigt. [S11]"
+      ],
+      [
+        "Kein Nachfolger?",
+        "„Kein 1:1-Schreibersatz in der beobachteten Katalogbeziehung“ ist gedeckt. „Es existiert keine geeignete fachliche Schreib-API“ wurde nicht belegt."
+      ],
+      [
+        "Zweitprofil?",
+        "Nichtaktivierbarkeit separat vom technischen Urteil über den Legacy-Quellstand ausweisen. Ein targetbezogenes n/a muss explizit im Schema definiert sein."
+      ]
+    ],
+    "sources": [
+      "S01",
+      "S11",
+      "S19"
+    ],
+    "production_frequency": "Nicht aus eigener Produktionsverantwortung belegt. Das Muster ist als konstruiertes Prüfbeispiel plausibel; keine Häufigkeitsschätzung und keine behauptete Kundenerfahrung.",
+    "external_human_signoff": false,
+    "native_execution": false,
+    "claim_comparisons": [
+      {
+        "claim_id": "CC-035-B01",
+        "original_text": "Ohne Namen wird NO_NAME ausgegeben und der Block verlassen; es wird nichts geschrieben.",
+        "review_verdict": "stimme zu",
+        "proposed_text": "Bei initialem Namen wird vor dem DB-Aufruf abgebrochen.",
+        "anchor": "6–9"
+      },
+      {
+        "claim_id": "CC-035-B02",
+        "original_text": "Nach dem Guard wird NAME1 des angegebenen Kunden im aktuellen Mandanten per Native SQL geändert; der Mandant wird in Zeile 10 explizit gesetzt und in Zeile 13 explizit gefiltert.",
+        "review_verdict": "enger formulieren",
+        "proposed_text": "Es wird versucht, NAME1 für Zeilen mit den gebundenen Mandanten-/Kundenschlüsseln zu ändern. Der Code garantiert weder einen passenden Kunden noch eine positive Trefferzahl.",
+        "anchor": "10–14"
+      },
+      {
+        "claim_id": "CC-035-B03",
+        "original_text": "Unmittelbar nach dem Update folgt COMMIT WORK; weder Zeilenzähler noch Fehlerstatus werden ausgewertet. Persistenz wird also auch dann behauptet, wenn kein Kunde zur Nummer existiert.",
+        "review_verdict": "stimme zu",
+        "proposed_text": "Nach normalem Abschluss von ENDEXEC folgt ohne Trefferprüfung COMMIT WORK und die Ausgabe UPDATE_COMMITTED; bei nicht abgefangenem Fehler wird dieser Normalpfad nicht erreicht.",
+        "anchor": "11–16"
+      }
+    ],
+    "confidence": {
+      "classic_extension.level": "sicher",
+      "known_worst_level": "sicher",
+      "cloud_api_surface": "sicher",
+      "cloud_artefact": "sicher"
+    },
+    "confidence_note": "Sicherheit betrifft die begrenzte Reviewaussage im angegebenen Fixture, nicht eine native Aktivierung oder persönliche Praxisbeobachtung. Bedingte Schlussfolgerungen sind im Text ausdrücklich bezeichnet."
+  },
+  {
+    "id": "CC-038",
+    "title": "Dynamisches Schreibziel: MODIFY (p_tab) — Unknown, schlimmster Fall D, plus Sicherheitsbefund",
+    "review_mode": "NONBLIND_AI_COUNTERREVIEW",
+    "scope": "Stufe A: source/profile/oracle desk review",
+    "verdict": "Gesamt-Unknown richtig; known_worst=D und Cloud-Zweitantwort widersprochen",
+    "source_document_line": 6166,
+    "levels": {
+      "classic_extension.level": "Unknown",
+      "known_worst_level": "B für sichtbare eigene/Standard-Mechanik; unbekannte Ziele separat, nicht D als bekannt",
+      "cloud_api_surface": "unknown",
+      "cloud_artefact": "not_activatable"
+    },
+    "levels_note": "Die Eingabe p_tab ist nicht durch die Vorbelegung auf ZCC_LOG_A beschränkt. Ein mögliches unzulässiges Ziel ist kein bekanntes Ziel. Deshalb ist Unknown für die Gesamtbewertung richtig, D als known_worst dagegen ein Kategorienfehler. Eine optionale Risikogrenze darf potential_worst_level heißen, muss aber die tatsächlich mögliche Zielmenge/Strukturverträglichkeit beachten. Das gelieferte REPORT-Artefakt ist im Cloud-Zweitprofil unabhängig vom dynamischen MODIFY nicht aktivierbar. [S01,S02]",
+    "findings": [
+      [
+        2,
+        "Dynamische Eingabe / R07",
+        "medium",
+        "Default ist keine Allowlist, keine Zielmengenbegrenzung."
+      ],
+      [
+        14,
+        "Unaufgelöstes DML-Ziel / R26",
+        "high",
+        "MODIFY trifft ein erst zur Laufzeit bestimmtes Ziel; bekannte und hypothetische Level getrennt ausweisen."
+      ],
+      [
+        14,
+        "Generischer Schreibzugriff / R28",
+        "high",
+        "Keine sichtbare Allowlist oder fallbezogene Berechtigungsprüfung; keine konkrete erfolgreiche Schreibmöglichkeit auf jede SAP-Tabelle behaupten."
+      ],
+      [
+        16,
+        "Commit / R25",
+        "medium",
+        "Persistenz erfolgt im normalen erfolgreichen Pfad; Laufzeitausnahmen bei Ziel-/Strukturproblemen bleiben möglich."
+      ]
+    ],
+    "objects": [
+      [
+        "ZCC_LOG_A",
+        "TABL/ZCC_LOG_A; TABL/ZCC_LOG_A",
+        "kundeneigene Defaulttabelle, nicht erschöpfende Zielmenge",
+        "nicht anwendbar"
+      ],
+      [
+        "ZCC_LOG_ROW",
+        "TABL/ZCC_LOG_ROW; TABL/ZCC_LOG_ROW",
+        "kundeneigene DDIC-Struktur im Kontext, keine Tabelle allein aus Namen ableiten",
+        "nicht anwendbar"
+      ],
+      [
+        "dynamisches Ziel p_tab",
+        "Unresolved target, kein erfundener Objektname",
+        "unknown; erst nach Zielmengenklärung",
+        "nicht bestimmt"
+      ]
+    ],
+    "claims": [
+      [
+        "B01",
+        "stimme zu",
+        "Bei initialem Schlüssel wird vor der Datenbankoperation abgebrochen.",
+        "7–10"
+      ],
+      [
+        "B02",
+        "stimme nur bedingt zu",
+        "Der Code füllt eine Arbeitsstruktur und versucht einen Insert-/Update-artigen MODIFY auf die benannte Tabelle. Erfolg und tatsächlicher Zeilenscope hängen vom existierenden, kompatiblen Ziel ab.",
+        "11–14"
+      ],
+      [
+        "B03",
+        "stimme im Normalfluss zu",
+        "Bei normalem MODIFY-Abschluss und sy-subrc 0 wird committet, sonst zurückgerollt. Nicht abgefangene Ausnahmen erreichen möglicherweise keinen dieser Zweige.",
+        "14–21"
+      ]
+    ],
+    "process": "Das Skelett darf einen write_attempt mit target_resolution=unknown enthalten. Ein unbekanntes Ziel macht den Kontrollfluss nicht leer. Ein nicht modellierter Ausnahmeabgang muss als Scopegrenze erhalten bleiben; SAVED ist der Programmtext nach COMMIT, nicht Beleg für einen fachlich zulässigen Datensatz.",
+    "security": "Befund ohne erfundenes S_TABU_-Objekt ist tragfähig: fehlender sichtbarer Nachweis für autorisierten generischen Schreibscope. Ob S_TABU_NAM, S_TABU_DIS oder eine fachliche Kontrolle erforderlich ist, hängt von Anwendung und Konzept ab. Statische Beobachtung ist keine vollständige Sicherheitsanalyse.",
+    "questions": [
+      [
+        "Ist Default Grund für B?",
+        "Nein. B kann nur den bereits bekannten sichtbaren Teil beschreiben, nicht den Gesamtscope."
+      ],
+      [
+        "Welche known_worst-Antwort?",
+        "B für die deklarierte bekannte Standard-/Eigenobjektmechanik mit offenem Rest oder null bei rein objektbezogener Aggregation. D allenfalls explizit als hypothetische Risikogrenze, nicht known. Die neue Konvention muss einheitlich dokumentiert werden."
+      ],
+      [
+        "DELETE-Variante?",
+        "Eigener Gegenfall sinnvoll, da andere Wirkung, andere Zeilen-/Ergebnissemantik und andere Strukturvoraussetzungen. MODIFY deckt nicht alle DML-Arten ab."
+      ],
+      [
+        "Cloud-Zweitprofil?",
+        "REPORT verhindert Aktivierung. Die Behauptung „weiter nur Unknown“ verwechselt Auflösbarkeit der Operation mit Aktivierbarkeit des gelieferten Artefakts."
+      ],
+      [
+        "Ohne System offen?",
+        "Erlaubte/erreichbare Zielmenge, DDIC-Strukturverträglichkeit, Tabellenschutz, konkrete Berechtigungsarchitektur. Kein Nachfolgername kann diese Unbekannten ersetzen."
+      ]
+    ],
+    "sources": [
+      "S01",
+      "S02"
+    ],
+    "production_frequency": "Nicht aus eigener Produktionsverantwortung belegt. Das Muster ist als konstruiertes Prüfbeispiel plausibel; keine Häufigkeitsschätzung und keine behauptete Kundenerfahrung.",
+    "external_human_signoff": false,
+    "native_execution": false,
+    "claim_comparisons": [
+      {
+        "claim_id": "CC-038-B01",
+        "original_text": "Ohne Schlüssel wird NO_KEY ausgegeben und der Block verlassen; es wird nichts geschrieben.",
+        "review_verdict": "stimme zu",
+        "proposed_text": "Bei initialem Schlüssel wird vor der Datenbankoperation abgebrochen.",
+        "anchor": "7–10"
+      },
+      {
+        "claim_id": "CC-038-B02",
+        "original_text": "Nach dem Guard wird eine Zeile aus Mandant, Schlüssel und Text in die eingegebene Tabelle eingefügt oder überschrieben (MODIFY-Semantik). Welche Tabelle das ist, entscheidet die Eingabe zur Laufzeit.",
+        "review_verdict": "stimme nur bedingt zu",
+        "proposed_text": "Der Code füllt eine Arbeitsstruktur und versucht einen Insert-/Update-artigen MODIFY auf die benannte Tabelle. Erfolg und tatsächlicher Zeilenscope hängen vom existierenden, kompatiblen Ziel ab.",
+        "anchor": "11–14"
+      },
+      {
+        "claim_id": "CC-038-B03",
+        "original_text": "Bei `sy-subrc = 0` wird mit COMMIT WORK persistiert und SAVED ausgegeben; sonst ROLLBACK WORK und NOT_SAVED.",
+        "review_verdict": "stimme im Normalfluss zu",
+        "proposed_text": "Bei normalem MODIFY-Abschluss und sy-subrc 0 wird committet, sonst zurückgerollt. Nicht abgefangene Ausnahmen erreichen möglicherweise keinen dieser Zweige.",
+        "anchor": "14–21"
+      }
+    ],
+    "confidence": {
+      "classic_extension.level": "wahrscheinlich",
+      "known_worst_level": "wahrscheinlich",
+      "cloud_api_surface": "wahrscheinlich",
+      "cloud_artefact": "sicher"
+    },
+    "confidence_note": "Sicherheit betrifft die begrenzte Reviewaussage im angegebenen Fixture, nicht eine native Aktivierung oder persönliche Praxisbeobachtung. Bedingte Schlussfolgerungen sind im Text ausdrücklich bezeichnet."
+  },
+  {
+    "id": "CC-053",
+    "title": "Userexit-Include MV45AFZZ: der Hostkontext steht im Code, nicht im Fixture",
+    "review_mode": "NONBLIND_AI_COUNTERREVIEW",
+    "scope": "Stufe A: source/profile/oracle desk review",
+    "verdict": "Pauschales D und vermeintlich quelltextbewiesener Host zurückweisen",
+    "source_document_line": 8527,
+    "levels": {
+      "classic_extension.level": "Unknown bis Host-/Technologiemetadaten geklärt",
+      "known_worst_level": "nicht abschließend festgelegt; kein belegtes D",
+      "cloud_api_surface": "not_usable unter stipuliertem klassischem SAP-Host, sonst unknown",
+      "cloud_artefact": "not_activatable als isoliertes geliefertes Includefragment"
+    },
+    "levels_note": "Der Code enthält weder den Include-Namen MV45AFZZ noch einen beweisenden Modifikationsnachweis. Repositoryidentität ist externe Metadateninformation, auch wenn sie im Dateimanifest steht. FORM-Name und undeclarierte globale Struktur sind Hinweise. SAPs allgemeine Leveldefinition lässt nominierte klassische Userexits/BAdIs unter B zu. Eine echte Modifikation oder implizite SAP-Erweiterung wäre D; eine fehlende Freigabe kann C/Unknown erfordern. Der konkrete MV45AFZZ-Eintrag samt Kontext ist hier nicht abschließend bestätigt. Daher kein blindes Umdrehen von D nach B. [S01,S20,S25]",
+    "findings": [
+      [
+        1,
+        "Host-Bindung / R32",
+        "high",
+        "FORM-Konvention erkennen, aber Host und Repositoryobjekt nicht aus Bytes beweisen. Korpus verbietet zu Unrecht Unknown bei fehlenden Metadaten."
+      ],
+      [
+        4,
+        "Globale Arbeitsstruktur / R29",
+        "medium",
+        "AUART und NETWR werden aus vbak gelesen; Typ und Währung hängen am Host-/DDIC-Kontext."
+      ],
+      [
+        8,
+        "Speicherzuweisung / R19",
+        "info",
+        "LIFSK in Arbeitsstruktur setzen, kein Datenbank-UPDATE und kein Persistenznachweis."
+      ],
+      [
+        1,
+        "Erweiterungsmechanismus / R10/R32",
+        "high",
+        "Mechanismus nachweisen, bevor D für eine Modifikation/implizite Änderung vergeben wird."
+      ]
+    ],
+    "objects": [
+      [
+        "MV45AFZZ",
+        "PROG/MV45AFZZ; INCL/MV45AFZZ nur nach bestätigtem Repositorymanifest",
+        "Migrations-/Erweiterungsalternative kontextabhängig; kein belegter 1:1-Nachfolger",
+        "offen"
+      ],
+      [
+        "vbak",
+        "Sichtbar zunächst Hostvariable/Struktur; TABL/VBAK als DDIC-Bindung nur mit Deklarations-/Hostnachweis",
+        "Lesenachfolger wäre kein Ersatz für eine änderbare Hostarbeitsstruktur",
+        "nein als allgemeiner Ersatz"
+      ]
+    ],
+    "claims": [
+      [
+        "B01",
+        "stimme zu mit Kontext",
+        "Wenn die gelieferte Arbeitsstruktur AUART=TA und NETWR>20000 enthält, wird lokal der Kandidat 01 gesetzt. Währung und Bedeutung des Sperrcodes sind nicht im Code bewiesen.",
+        "3–6"
+      ],
+      [
+        "B02",
+        "stimme teilweise zu",
+        "Bei nicht initialem Kandidaten wird vbak-lifsk gesetzt. Andernfalls bleibt ein bereits vorhandener LIFSK-Wert unverändert. Dass der Host diese Änderung später tatsächlich speichert, ist aus dem Ausschnitt nicht ableitbar.",
+        "7–9"
+      ]
+    ],
+    "process": "start:FORM1 unter unbekanntem/extern belegtem Aufrufer → CLEAR lokaler Kandidat:3 → Prädikat:4 → ggf. Kandidat setzen:5 → Kandidatprüfung:7 → ggf. Arbeitsstruktur ändern:8 → Rückkehr:10. Den Start nicht ohne Bindungsbeleg als „SAP-Host beim Sichern“ etikettieren. Der Kontrollfluss im FORM ist dagegen entscheidbar. Bestehende Liefersperre auf dem negativen Pfad bleibt bestehen.",
+    "security": "Kein Datenbank-Write-Befund R02. Kein Berechtigungsfehler allein aus fehlendem Check im Exitfragment: Hostkontrollen können außerhalb liegen. Die unveränderte vorhandene Sperre im negativen Zweig ist ein fachlich relevanter Zustand, kein pauschaler Defekt.",
+    "questions": [
+      [
+        "D, C oder B?",
+        "Keine universelle D-Regel für Userexits. SAP listet klassische nominierte Erweiterungspunkte in B; tatsächliche Modifikation/implizite Änderung ist D. Für dieses konkrete Include braucht es belastbaren Mechanismus-/Nominationkontext. [S01]"
+      ],
+      [
+        "Genügt FORM-Name?",
+        "Nein. Derselbe Text kann in einem kundeneigenen Include stehen. Auch eine undeclarierte globale Variable wird nicht dadurch zur SAP-Tabelle."
+      ],
+      [
+        "Darf Dateimetadatum verwendet werden?",
+        "Ja, aber explizit als Kontextbeleg mit Hash/Provenienz. „Kein Fixture nötig“ darf nicht „Metadaten sind plötzlich Syntax“ bedeuten."
+      ],
+      [
+        "Gibt es einen zusätzlichen MV45AFZZ-Hinweis?",
+        "Ein SAP-Community-Beitrag nennt MV45AFZZ als mögliches Level-B-Beispiel und verweist auf Note 3578329. Die Note war nicht lesbar. Das stärkt den Einwand gegen pauschales D, ersetzt aber keinen spezifischen System-/Releasebeleg. [S25]"
+      ],
+      [
+        "Kommt es so produktiv vor?",
+        "Klassische Exitformen sind in SAP dokumentiert. Keine eigene Kundenerfahrung behauptet. Insbesondere die Feldänderung an diesem konkreten Exitzeitpunkt muss durch Hostimplementierung und fachliche Prüfung bestätigt werden."
+      ]
+    ],
+    "sources": [
+      "S01",
+      "S20",
+      "S25"
+    ],
+    "production_frequency": "Nicht aus eigener Produktionsverantwortung belegt. Das Muster ist als konstruiertes Prüfbeispiel plausibel; keine Häufigkeitsschätzung und keine behauptete Kundenerfahrung.",
+    "external_human_signoff": false,
+    "native_execution": false,
+    "claim_comparisons": [
+      {
+        "claim_id": "CC-053-B01",
+        "original_text": "Bei Auftragsart TA und einem Nettowert größer als 20000 (Gleichheit nicht) wird der Sperrkennzeichen-Kandidat 01 ermittelt.",
+        "review_verdict": "stimme zu mit Kontext",
+        "proposed_text": "Wenn die gelieferte Arbeitsstruktur AUART=TA und NETWR>20000 enthält, wird lokal der Kandidat 01 gesetzt. Währung und Bedeutung des Sperrcodes sind nicht im Code bewiesen.",
+        "anchor": "3–6"
+      },
+      {
+        "claim_id": "CC-053-B02",
+        "original_text": "Nur wenn ein Sperrkennzeichen ermittelt wurde, wird es in den Belegkopf der Arbeitsstruktur übernommen — angekündigt, nicht persistiert im Ausschnitt (kein COMMIT; das Sichern übernimmt der Host nach dem FORM).",
+        "review_verdict": "stimme teilweise zu",
+        "proposed_text": "Bei nicht initialem Kandidaten wird vbak-lifsk gesetzt. Andernfalls bleibt ein bereits vorhandener LIFSK-Wert unverändert. Dass der Host diese Änderung später tatsächlich speichert, ist aus dem Ausschnitt nicht ableitbar.",
+        "anchor": "7–9"
+      }
+    ],
+    "confidence": {
+      "classic_extension.level": "wahrscheinlich",
+      "known_worst_level": "wahrscheinlich",
+      "cloud_api_surface": "wahrscheinlich",
+      "cloud_artefact": "sicher"
+    },
+    "confidence_note": "Sicherheit betrifft die begrenzte Reviewaussage im angegebenen Fixture, nicht eine native Aktivierung oder persönliche Praxisbeobachtung. Bedingte Schlussfolgerungen sind im Text ausdrücklich bezeichnet."
+  },
+  {
+    "id": "CC-057",
+    "title": "Profilpaar: SELECT FROM KNA1 in einer globalen Klasse — C mit Nachfolger oder nicht aktivierbar",
+    "review_mode": "NONBLIND_AI_COUNTERREVIEW",
+    "scope": "Stufe A: source/profile/oracle desk review",
+    "verdict": "Profilabhängige Kernaussage bestätigt; Quell- und Zielbeurteilung trennen",
+    "source_document_line": 9132,
+    "levels": {
+      "classic_extension.level": "Profil 1: C unter internem Fixture; Profil 2: nicht anwendbar für target-ausführbare Erweiterung",
+      "known_worst_level": "Profil 1: C; Profil 2: null für Targetlevel, Legacybefund weiter C",
+      "cloud_api_surface": "not_usable im angegebenen Zielkontext",
+      "cloud_artefact": "not_activatable als Cloud-Artefakt"
+    },
+    "levels_note": "Profil 1 stipuliert die interne KNA1-Verwendung und trägt deshalb C. Profil 2 hat ein anderes Produkt/Release und eine andere Sprachversion; KNA1 ist kein zulässiges lokales S/4-Tabellenobjekt im BTP-Ziel. Das ist keine bloße Umklassifikation zu D. Die Legacyanalyse darf trotzdem erhalten bleiben. Ein explizites Feld assessment_applicable=false ist klarer als ein unerklärtes n/a im A–D/Unknown-Enum. [S01,S02,S19]",
+    "findings": [
+      [
+        10,
+        "Interner Lesezugriff / R01",
+        "medium",
+        "Statementbeginn 10, Tabellentoken +4; Sekundäranker 11. C unter angegebenem Legacyprofil."
+      ],
+      [
+        10,
+        "Zielunverträglichkeit / R31",
+        "high",
+        "KNA1 fehlt oder ist im konkreten Cloud-Ziel nicht verwendbar; Existenz und Freigabe als unterschiedliche Ursachen ausweisen."
+      ],
+      [
+        14,
+        "Trefferguard / R19",
+        "info",
+        "Rückgabe wird nur bei SELECT-sy-subrc 0 gesetzt. Kein Treffernachweis allein aus dem Aufruf."
+      ]
+    ],
+    "objects": [
+      [
+        "KNA1",
+        "TABL/KNA1; TABL/KNA1",
+        "DDLS/I_CUSTOMER; CDS_STOB/I_CUSTOMER im beobachteten PCE2022-Katalog",
+        "nicht bewiesen"
+      ],
+      [
+        "I_CUSTOMER",
+        "Nachfolgerhinweis aus S/4-Metadaten; nicht automatisch lokales BTP-Objekt",
+        "Für BTP Datenquelle/Remotezugriff separat entwerfen",
+        "kein automatischer BTP-Ersatz"
+      ]
+    ],
+    "claims": [
+      [
+        "B01",
+        "enger formulieren",
+        "Die Methode versucht für den exakt übergebenen Schlüssel einen Länderschlüssel zu lesen. Nur bei Treffer wird der gefundene Wert übernommen.",
+        "10–15"
+      ],
+      [
+        "B02",
+        "stimme zu",
+        "Ohne Treffer bleibt der Rückgabewert initial; der sichtbare Code erzeugt keine eigene Fehlermeldung. Nicht abgefangene DB-/Laufzeitfehler sind davon zu unterscheiden.",
+        "14–17"
+      ]
+    ],
+    "process": "Quelltextmodell: method_start:9 → read_attempt:10 → match:14 → ggf. assignment:15 → return:17. Dieses As-is-Modell muss für die Migration auch dann verfügbar bleiben, wenn das Zielartefakt nicht aktiviert werden kann. Nur ein ausdrücklich als Target-Ausführungsmodell benannter Graph ist im Profil 2 not_applicable. Die pauschale Abschaltung jedes Prozessskeletts würde gerade den Legacy-Erkenntniswert verlieren.",
+    "security": "Kein eigener Sicherheitsbefund aus diesem Slice. Ein Wechsel zu CDS kann Berechtigungs-/Filtersemantik verändern; vorhandene DCL oder Gleichheit der Ergebnismengen nicht aus dem Nachfolgernamen ableiten.",
+    "questions": [
+      [
+        "Syntaxfehler oder ATC?",
+        "In ABAP for Cloud ist die Verwendbarkeit von Repositoryobjekten Teil der Sprach-/Zulassungsprüfung; bei fehlendem Objekt und nicht freigegebenem Objekt unterscheiden sich Ursachen. Der konkrete Meldungstext und -schlüssel im Zielrelease wurden nicht ausgeführt. [S02]"
+      ],
+      [
+        "Tokenoffset?",
+        "+4 trifft KNA1 in SELECT SINGLE land1 FROM kna1. Die Konvention muss mit dem verwendeten Tokenizer fixiert werden."
+      ],
+      [
+        "n/a zulässig?",
+        "Nur nach expliziter Schemaerweiterung; sonst eigener Anwendbarkeitsstatus und null. Unknown ist epistemisch etwas anderes als nicht anwendbar."
+      ],
+      [
+        "Nur Sprache geändert?",
+        "Nein: hier auch Edition/Release/Katalogkontext. Als realistischer Profilvergleich zulässig, aber kein isolierter Ein-Faktor-Test."
+      ],
+      [
+        "Eingabeformat?",
+        "Generisches TYPE c führt nicht selbst ALPHA aus. Keine generelle Aussage „ohne Nullen kein Treffer“: alphanumerische Schlüssel benötigen nicht dieselbe Nullauffüllung. [S15]"
+      ]
+    ],
+    "sources": [
+      "S01",
+      "S02",
+      "S15",
+      "S19"
+    ],
+    "production_frequency": "Nicht aus eigener Produktionsverantwortung belegt. Das Muster ist als konstruiertes Prüfbeispiel plausibel; keine Häufigkeitsschätzung und keine behauptete Kundenerfahrung.",
+    "external_human_signoff": false,
+    "native_execution": false,
+    "claim_comparisons": [
+      {
+        "claim_id": "CC-057-B01",
+        "original_text": "Für die übergebene Kundennummer wird der Länderschlüssel aus KNA1 gelesen.",
+        "review_verdict": "enger formulieren",
+        "proposed_text": "Die Methode versucht für den exakt übergebenen Schlüssel einen Länderschlüssel zu lesen. Nur bei Treffer wird der gefundene Wert übernommen.",
+        "anchor": "10–15"
+      },
+      {
+        "claim_id": "CC-057-B02",
+        "original_text": "Ohne Treffer bleibt der Rückgabewert initial; es gibt keine Fehlermeldung und keinen Abbruch.",
+        "review_verdict": "stimme zu",
+        "proposed_text": "Ohne Treffer bleibt der Rückgabewert initial; der sichtbare Code erzeugt keine eigene Fehlermeldung. Nicht abgefangene DB-/Laufzeitfehler sind davon zu unterscheiden.",
+        "anchor": "14–17"
+      }
+    ],
+    "confidence": {
+      "classic_extension.level": "wahrscheinlich",
+      "known_worst_level": "wahrscheinlich",
+      "cloud_api_surface": "wahrscheinlich",
+      "cloud_artefact": "sicher"
+    },
+    "confidence_note": "Sicherheit betrifft die begrenzte Reviewaussage im angegebenen Fixture, nicht eine native Aktivierung oder persönliche Praxisbeobachtung. Bedingte Schlussfolgerungen sind im Text ausdrücklich bezeichnet."
+  },
+  {
+    "id": "CC-058",
+    "title": "Profilpaar: SELECT FROM I_CUSTOMER im klassischen REPORT — freigegebenes Lesen ist nicht C, der Report bleibt klassisch",
+    "review_mode": "NONBLIND_AI_COUNTERREVIEW",
+    "scope": "Stufe A: source/profile/oracle desk review",
+    "verdict": "Released-Lesen bestätigt; Status-/Scopekonvention und Nachfolgerbegründung präzisieren",
+    "source_document_line": 9302,
+    "levels": {
+      "classic_extension.level": "Profil 1: B; Profil 2: targetbezogen nicht anwendbar",
+      "known_worst_level": "Profil 1: B; Profil 2: null für Targetlevel",
+      "cloud_api_surface": "usable für beobachtetes I_CUSTOMER-Profil, vorbehaltlich konkretem Release-/Vertragsnachweis",
+      "cloud_artefact": "not_activatable: REPORT/Selektionsbild/Listausgabe"
+    },
+    "levels_note": "Ein eigener I_CUSTOMER-Datensatz wurde in objectReleaseInfo_PCE2022.json gefunden: DDLS/I_CUSTOMER, CDS_STOB/I_CUSTOMER, state released. Damit ist die bisher nur erinnerte Objektfreigabe für diese gelesene Katalogansicht konkret gestützt. Der Datensatz ersetzt noch keinen unveränderlichen Snapshot für das tatsächliche 2023-Ziel und enthält in dieser Form nicht die vollständigen ADT-C1-/Sichtbarkeitsattribute. Der klassische Report wird durch den freigegebenen Read nicht zu einem aktivierbaren Cloud-Report. [S01,S02,S19]",
+    "findings": [
+      [
+        4,
+        "Released Read / R03 statt pauschal R01",
+        "info",
+        "I_CUSTOMER nicht allein wegen SAP-Namens oder Herkunft als internes C melden."
+      ],
+      [
+        1,
+        "Artefakttyp / R31",
+        "high",
+        "Cloud-Ziel: REPORT plus Selektionsbild/Listausgabe ist das Problem; keine ungerechtfertigte Abwertung der SELECT-API."
+      ],
+      [
+        9,
+        "Leerpfad / R19",
+        "info",
+        "Leere Ergebnismenge führt zu NO_MATCH und RETURN; anschließende Schleife nur bei Treffern."
+      ]
+    ],
+    "objects": [
+      [
+        "I_CUSTOMER",
+        "DDLS/I_CUSTOMER; CDS_STOB/I_CUSTOMER",
+        "Eigener state released beobachtet; eigener Nachfolger nicht erhoben, kein semantischer Status „weil selbst Nachfolger kann keiner folgen“",
+        "Nein, Gleichheit mit KNA1 nicht bewiesen"
+      ]
+    ],
+    "claims": [
+      [
+        "B01",
+        "stimme zu im Modellscope",
+        "Es wird nach dem eingegebenen Country-Wert selektiert. Native Gültigkeit der konkreten Felder und DCL des Zielreleases getrennt prüfen.",
+        "4–8"
+      ],
+      [
+        "B02",
+        "stimme zu",
+        "Bei initialer Ergebnistabelle wird NO_MATCH ausgegeben und der Block verlassen.",
+        "9–12"
+      ],
+      [
+        "B03",
+        "stimme zu",
+        "Sonst werden Customer und CustomerName der gelieferten Ergebnismenge ausgegeben. Identität mit der KNA1-Ergebnismenge ist nicht belegt.",
+        "13–15"
+      ]
+    ],
+    "process": "Reportstart:3 → CDS-read:4 → Leerprüfung:9 → no_match:10/return:11 oder iteration:13/output:14 → Ende. Für eine nachweisbezogene Legacydarstellung erhalten; Targetaktivierbarkeit daneben anzeigen. Das Modell ist kein Beweis einer tatsächlich im Ziel ausgeführten Liste.",
+    "security": "DCL-/Berechtigungsumfang nicht aus dem Wort released erschließen. Die Abfrage enthält keinen WITH PRIVILEGED ACCESS. Gegenprobe mit/ohne passende Zugriffsrollen ist eine separate Zielsystemaufgabe, kein erfundener As-is-Befund.",
+    "questions": [
+      [
+        "Eigener released-Eintrag?",
+        "Ja, in der abgefragten PCE2022-Datei vorhanden (Zeilen 29313–29322 der Webansicht). Den vorher nur als Nachfolger belegten Status kann man für diesen Ausschnitt schließen. C1/Use-in-Cloud im exakten Zielsystem weiterhin gesondert nachweisen. [S19]"
+      ],
+      [
+        "Felder sicher 2023?",
+        "Nicht als native 2023-Signatur-/Aktivierungsprüfung bestätigt. Ein neuerer Public-2608-Hinweis ändert ausdrücklich die Herkunft von CustomerName; genau deshalb keine semantische Gleichheit über Releases unterstellen. [S21]"
+      ],
+      [
+        "R05 oder R03?",
+        "R03 ist für Standard-ABAP mit zulässiger API-Menge klarer. Nachfolgersein allein beweist keine eigene Freigabe, und ein Nachfolger kann wiederum abgelöst werden."
+      ],
+      [
+        "Quelle/Target?",
+        "Dasselbe Profilpaar muss Source-Erklärung und Targetkompatibilität getrennt ausgeben. Kein menschlicher Freigabestatus aus beiden Feldern ableiten."
+      ],
+      [
+        "Ohne System offen?",
+        "Feld-/Berechtigungsdetails im festgelegten Support Package, Aktivierung, vollständige API-Vertragsattribute. Der eigene released-Eintrag ist nicht mehr bloß geraten."
+      ]
+    ],
+    "sources": [
+      "S01",
+      "S02",
+      "S19",
+      "S21"
+    ],
+    "production_frequency": "Nicht aus eigener Produktionsverantwortung belegt. Das Muster ist als konstruiertes Prüfbeispiel plausibel; keine Häufigkeitsschätzung und keine behauptete Kundenerfahrung.",
+    "external_human_signoff": false,
+    "native_execution": false,
+    "claim_comparisons": [
+      {
+        "claim_id": "CC-058-B01",
+        "original_text": "Es werden Kunden mit dem eingegebenen Länderschlüssel selektiert.",
+        "review_verdict": "stimme zu im Modellscope",
+        "proposed_text": "Es wird nach dem eingegebenen Country-Wert selektiert. Native Gültigkeit der konkreten Felder und DCL des Zielreleases getrennt prüfen.",
+        "anchor": "4–8"
+      },
+      {
+        "claim_id": "CC-058-B02",
+        "original_text": "Ohne Treffer wird NO_MATCH ausgegeben und der Reportingblock verlassen.",
+        "review_verdict": "stimme zu",
+        "proposed_text": "Bei initialer Ergebnistabelle wird NO_MATCH ausgegeben und der Block verlassen.",
+        "anchor": "9–12"
+      },
+      {
+        "claim_id": "CC-058-B03",
+        "original_text": "Bei Treffern werden Kundennummer und Name als Liste ausgegeben. Ob das Lesemodell dieselbe Menge liefert wie KNA1 in CC-001 (Berechtigungsfilter, Feldsemantik), ist nicht aus dem Code ablesbar.",
+        "review_verdict": "stimme zu",
+        "proposed_text": "Sonst werden Customer und CustomerName der gelieferten Ergebnismenge ausgegeben. Identität mit der KNA1-Ergebnismenge ist nicht belegt.",
+        "anchor": "13–15"
+      }
+    ],
+    "confidence": {
+      "classic_extension.level": "wahrscheinlich",
+      "known_worst_level": "wahrscheinlich",
+      "cloud_api_surface": "wahrscheinlich",
+      "cloud_artefact": "sicher"
+    },
+    "confidence_note": "Sicherheit betrifft die begrenzte Reviewaussage im angegebenen Fixture, nicht eine native Aktivierung oder persönliche Praxisbeobachtung. Bedingte Schlussfolgerungen sind im Text ausdrücklich bezeichnet."
+  },
+  {
+    "id": "CC-060",
+    "title": "Profilpaar mit `release_contract`: kundeneigener Wrapper mit C1-Freigabe liest KNA1 — das Level des Konsumenten stoppt am Vertrag, `known_worst` nicht",
+    "review_mode": "NONBLIND_AI_COUNTERREVIEW",
+    "scope": "Stufe A: source/profile/oracle desk review",
+    "verdict": "Kapselungsidee tragfähig; nur unter explizitem Bewertungsumfang und vollständigem C1-Kontext",
+    "source_document_line": 9641,
+    "levels": {
+      "classic_extension.level": "Wrapper: C; Konsument: B in Profil 1, A-Kandidat in Profil 2; gesamter gelieferten Scope: mindestens C",
+      "known_worst_level": "C im ausdrücklich transitiven Zwei-Dateien-Scope",
+      "cloud_api_surface": "Wrapper not_usable; Konsument usable nur bei gültigem C1-/Sichtbarkeitskontext",
+      "cloud_artefact": "Wrapper not_activatable; Konsument nur bedingt activatable, nicht nativ geprüft"
+    },
+    "levels_note": "C1-Freigabe für klassische kundeneigene Wrapper ist ein zulässiger Architekturweg; die bloße Existenz des Strings C1 genügt aber nicht. Releasezustand, Vertragsnutzung/Sichtbarkeit, Signatur und Zugriffsgrenzen müssen ebenfalls stimmen. Komponenten-A für den Cloud-Konsumenten und C für die betrachtete gesamte Erweiterung sind vereinbar, wenn die Scopes ausdrücklich verschieden heißen. Eine nackte A-Kachel mit verborgenem C-Unterbau wäre irreführend. known_worst=C ist eine Korpusaggregation über beide Dateien, keine automatische SAP-Norm für jede Komponente. [S01,S02,S04]",
+    "findings": [
+      [
+        "wrapper:10",
+        "Interner Read / R01",
+        "medium",
+        "KNA1 im Wrapper unter dem stipulierten internen Profil: C. Nicht vom C1-Label des Wrappers auf eigene Level-A-Implementierung schließen."
+      ],
+      [
+        "consumer:11",
+        "Freigabegrenze / R30",
+        "high",
+        "Vertrag aus vertrauenswürdigem Kontext verifizieren; sonst nur bedingte API-Nutzbarkeit."
+      ],
+      [
+        "consumer:12",
+        "Fachliche Bedingung / R18",
+        "medium",
+        "Name initial ist nicht identisch mit Kunde existiert nicht."
+      ],
+      [
+        "consumer:16",
+        "Anker-/Ausdruckssemantik / R27",
+        "medium",
+        "COND-Gateway und zwei Ergebnisarme auf derselben Zeile brauchen expression_path/Spalten-/Arm-IDs, nicht nur Zeile plus Knotentyp."
+      ]
+    ],
+    "objects": [
+      [
+        "KNA1",
+        "TABL/KNA1; TABL/KNA1",
+        "DDLS/I_CUSTOMER; CDS_STOB/I_CUSTOMER [S19]",
+        "nicht bewiesen"
+      ],
+      [
+        "ZCL_CUSTOMER_API",
+        "CLAS/ZCL_CUSTOMER_API; CLAS/ZCL_CUSTOMER_API",
+        "kundeneigener Wrapper; C1 ist Kontextmetadatum, kein SAP-Katalogeintrag",
+        "nicht anwendbar"
+      ],
+      [
+        "ZCL_ROUTE_SERVICE",
+        "CLAS/ZCL_ROUTE_SERVICE; CLAS/ZCL_ROUTE_SERVICE",
+        "kundeneigener Konsument mit eigener Sprachversion",
+        "nicht anwendbar"
+      ]
+    ],
+    "claims": [
+      [
+        "B01",
+        "stimme in präziser Fassung zu",
+        "Wenn get_name einen initialen String liefert, setzt determine UNKNOWN_CUSTOMER und kehrt zurück. Auch ein existierender Kunde mit initialem NAME1 kann diesen Pfad auslösen.",
+        "consumer:11–15;wrapper:10–16"
+      ],
+      [
+        "B02",
+        "widerspreche der Verkürzung „bekannter Kunde“",
+        "Bei nicht initialem zurückgegebenem Namen wird für iv_amount>10000 MANAGER_ROUTE, sonst AUTO_ROUTE gesetzt. Der Code prüft keine Währung, keine tatsächlich erfolgte Freigabe und keinen unabhängigen Existenzindikator.",
+        "consumer:12–16"
+      ],
+      [
+        "B03",
+        "stimme zu mit Scopehinweis",
+        "Die vorliegende Wrapperimplementierung liest NAME1 aus KNA1. Der Aufrufertext verwendet die Wrapper-API; das gemeinsame Analysepaket enthält gleichwohl beide Quellen und kann den transitiven Bezug darstellen.",
+        "wrapper:10–15;consumer:11"
+      ]
+    ],
+    "process": "determine-start → wrapper-call → KNA1-read → Rückgabewert ggf. setzen → name-empty-guard → UNKNOWN_CUSTOMER/return oder amount-guard → MANAGER_ROUTE/AUTO_ROUTE → return. Die Wrapper-sy-subrc-Prüfung ist entweder als eigener Knoten zu zeigen oder mit einer dokumentierten Abstraktion in den Call-/Read-Knoten aufgenommen. Für COND an consumer:16 armspezifische Anker verwenden. Keine Datenbankpersistenz und keine echte Genehmigung vorhanden.",
+    "security": "C1 ist keine Securityfreigabe und keine automatische Berechtigungsprüfung. Die sichtbare KNA1-Abfrage kann weitere Zugriffskontrollen benötigen, die im Slice nicht nachgewiesen sind. Der Review erfindet weder einen konkreten erforderlichen Berechtigungsobjektnamen noch eine tatsächlich ausnutzbare Lücke.",
+    "questions": [
+      [
+        "Level stoppt am Vertrag, known_worst nicht?",
+        "Als explizite Mehrscope-Konvention zulässig: component_contract_level und extension_transitive_level getrennt. Für ein und denselben behaupteten Gesamtscope wäre A und C widersprüchlich. Alle UI-/Exportlabels müssen den Scope mitführen."
+      ],
+      [
+        "Standard-Wrapper mit C1 aus Cloud nutzbar?",
+        "Ja, als dokumentiertes Wrappermodell, unter tatsächlich freigegebenem Zustand und Cloud-Sichtbarkeit. Nicht alle klassischen Wrapper sind dadurch automatisch A oder generell zulässig. [S02,S04]"
+      ],
+      [
+        "PCE2022 passend für S/4 2023?",
+        "Der Dateiname und Beobachtungsstand sind ein nachvollziehbarer Fixturebezug, aber kein vollständiger exakter 2023-Support-Package-Pin. Nicht stillschweigend aus einem PCE2022-Ausschnitt ein geprüfter 2023-Katalog machen."
+      ],
+      [
+        "Fachsätze und Anker?",
+        "B02 muss „Name nicht initial“ statt „Kunde bekannt“ sagen; B01 benötigt Wrapperbezug. Der Grenzfall genau 10000 geht AUTO. Währung fehlt."
+      ],
+      [
+        "Offene Aktivierung?",
+        "Tatsächlicher Wrapper-Releasezustand, Usage Visibility, Interface-/Packagekontext, Zielsyntax/-Aktivierung und tatsächliche Ergebnisgleichheit nach Ersatz durch I_CUSTOMER."
+      ]
+    ],
+    "sources": [
+      "S01",
+      "S02",
+      "S04",
+      "S15",
+      "S19"
+    ],
+    "production_frequency": "Nicht aus eigener Produktionsverantwortung belegt. Das Muster ist als konstruiertes Prüfbeispiel plausibel; keine Häufigkeitsschätzung und keine behauptete Kundenerfahrung.",
+    "external_human_signoff": false,
+    "native_execution": false,
+    "claim_comparisons": [
+      {
+        "claim_id": "CC-060-B01",
+        "original_text": "Ist zur Kundennummer kein Name ermittelbar, lautet die Route UNKNOWN_CUSTOMER und die Betragsregel wird nicht ausgewertet.",
+        "review_verdict": "stimme in präziser Fassung zu",
+        "proposed_text": "Wenn get_name einen initialen String liefert, setzt determine UNKNOWN_CUSTOMER und kehrt zurück. Auch ein existierender Kunde mit initialem NAME1 kann diesen Pfad auslösen.",
+        "anchor": "consumer:11–15;wrapper:10–16"
+      },
+      {
+        "claim_id": "CC-060-B02",
+        "original_text": "Bei bekanntem Kunden ist die Route MANAGER_ROUTE, wenn der Betrag größer als 10000 ist, sonst AUTO_ROUTE.",
+        "review_verdict": "widerspreche der Verkürzung „bekannter Kunde“",
+        "proposed_text": "Bei nicht initialem zurückgegebenem Namen wird für iv_amount>10000 MANAGER_ROUTE, sonst AUTO_ROUTE gesetzt. Der Code prüft keine Währung, keine tatsächlich erfolgte Freigabe und keinen unabhängigen Existenzindikator.",
+        "anchor": "consumer:12–16"
+      },
+      {
+        "claim_id": "CC-060-B03",
+        "original_text": "Der Name kommt aus KNA1, gelesen durch den Wrapper; der Konsument sieht die Herkunft nicht.",
+        "review_verdict": "stimme zu mit Scopehinweis",
+        "proposed_text": "Die vorliegende Wrapperimplementierung liest NAME1 aus KNA1. Der Aufrufertext verwendet die Wrapper-API; das gemeinsame Analysepaket enthält gleichwohl beide Quellen und kann den transitiven Bezug darstellen.",
+        "anchor": "wrapper:10–15;consumer:11"
+      }
+    ],
+    "confidence": {
+      "classic_extension.level": "wahrscheinlich",
+      "known_worst_level": "wahrscheinlich",
+      "cloud_api_surface": "wahrscheinlich",
+      "cloud_artefact": "wahrscheinlich"
+    },
+    "confidence_note": "Sicherheit betrifft die begrenzte Reviewaussage im angegebenen Fixture, nicht eine native Aktivierung oder persönliche Praxisbeobachtung. Bedingte Schlussfolgerungen sind im Text ausdrücklich bezeichnet.",
+    "anchor_aliases": {
+      "wrapper": "zcl_customer_api.clas.abap",
+      "consumer": "zcl_route_service.clas.abap"
+    }
+  },
+  {
+    "id": "CC-023",
+    "title": "Direktes SAP-UPDATE mit Testmodus: D trotz CDS-Nachfolger",
+    "review_mode": "NONBLIND_AI_COUNTERREVIEW",
+    "scope": "Stufe A: source/profile/oracle desk review",
+    "verdict": "D und Testpfad bestätigt; ursprünglicher und vorgeschlagener Fachsatz zu weit",
+    "source_document_line": 3561,
+    "levels": {
+      "classic_extension.level": "D",
+      "known_worst_level": "D",
+      "cloud_api_surface": "not_usable",
+      "cloud_artefact": "not_activatable"
+    },
+    "levels_note": "Der Testmodus umgeht im gelieferten Slice das direkte UPDATE. Das nimmt dem Programm als Ganzem aber nicht seinen vorhandenen nicht unterstützten SAP-Schreibweg. D bleibt daher als technischer Kandidat korrekt. Die Datenänderung selbst ist von nicht gesetztem Testmodus, passendem Schlüssel und normalem DB-Abschluss abhängig. [S01]",
+    "findings": [
+      [
+        6,
+        "Testmode-Guard / R19",
+        "info",
+        "Bei X keine DB-Änderung im gelieferten Pfad."
+      ],
+      [
+        10,
+        "SAP-Write / R02",
+        "high",
+        "Direktes UPDATE KNA1; CDS-Lesenachfolger ist kein Ersatz."
+      ],
+      [
+        10,
+        "Schlüsselformat / R18",
+        "medium",
+        "p_kunnr ist generisch c(10), keine automatische DDIC-ALPHA-Eingabekonvertierung; Treffer datenabhängig."
+      ],
+      [
+        12,
+        "Commit / R25",
+        "medium",
+        "Nach UPDATE-sy-subrc 0 COMMIT WORK AND WAIT. Die Bedeutung des AND WAIT ist nicht mit zusätzlichem Beweis der fachlichen Richtigkeit gleichzusetzen."
+      ]
+    ],
+    "objects": [
+      [
+        "KNA1",
+        "TABL/KNA1; TABL/KNA1",
+        "DDLS/I_CUSTOMER; CDS_STOB/I_CUSTOMER",
+        "nein für direkte Schreibsemantik"
+      ]
+    ],
+    "claims": [
+      [
+        "B01",
+        "stimme zu",
+        "Im gewählten Testpfad wird SIMULATION_ONLY ausgegeben und vor UPDATE zurückgekehrt. Default X ist Vorbelegung, kein dauerhaftes Schreibverbot.",
+        "4,6–9"
+      ],
+      [
+        "B02",
+        "widerspreche der Unbedingtheit",
+        "Außerhalb des Testpfads wird versucht, NAME1 für den exakt passenden Kundenschlüssel zu ändern. Nur bei Treffer/normalem Abschluss folgt der Commitzweig. Keine implizite ALPHA-Konvertierung; fehlende Nullen sind nur für entsprechend numerisch kodierte Schlüssel ein Problem.",
+        "2,10–13"
+      ],
+      [
+        "B03",
+        "stimme zu",
+        "Nach UPDATE-sy-subrc 0 wird COMMIT WORK AND WAIT aufgerufen, sonst ROLLBACK WORK. Der Code hat keine weitere fachliche Ergebnisprüfung.",
+        "11–17"
+      ]
+    ],
+    "process": "start:5 → test_guard:6 → output SIMULATION_ONLY:7/return:8 oder UPDATE-attempt:10 → sy-subrc:11 → commit:12/output:13 bzw. rollback:15/output:16. Das ursprünglich verdichtete Skelett darf die Testausgabe im Return-Knoten zusammenfassen, sofern der Abstraktionsvertrag dies zulässt; nicht jede fehlende separate Ausgabe ist automatisch ein fachlicher Fehler.",
+    "security": "Direktes SAP-Update ist nicht unterstützt; das ist nicht gleichbedeutend mit einer vollständig geprüften Schwachstelle. Sichtbare Businessberechtigungen fehlen im Slice, aber Start-/Tabellen-/Hostkontext wurde nicht vollständig untersucht.",
+    "questions": [
+      [
+        "ALPHA-Korrektur aus §11 übernehmen?",
+        "Ja zur Bedingung und zum Testfall numerisch 1000 versus 0000001000. Nein zum universellen Satz „ohne führende Nullen kein Treffer“: alphanumerische Schlüssel können korrekt ungefüllt sein. [S15]"
+      ],
+      [
+        "Ist §11 bereits konsolidiert?",
+        "Nein. Der spätere Fallkörper enthält weiterhin die alte unbedingte B02-Fassung. Ein textlicher Vorranghinweis verhindert nicht, dass ein Importer das falsche Soll übernimmt."
+      ],
+      [
+        "Commit-Ergebnis extra prüfen?",
+        "Der Korpus darf die fehlende separate Prüfung beschreiben. Nicht automatisch einen zusätzlichen Fehler behaupten, nur weil COMMIT-sy-subrc nicht geprüft wird: im vorliegenden direkten SQL-Slice wurde keine Update-Task-Registrierung gezeigt."
+      ],
+      [
+        "Ohne System offen?",
+        "Schlüssel-/Datendomäne im konkreten System, geeignete fachliche Schreib-API, Berechtigungs-/Sperr-/Validierungskonzept und native Verprobung. D braucht dagegen keinen beobachteten erfolgreichen Schreibversuch."
+      ]
+    ],
+    "sources": [
+      "S01",
+      "S09",
+      "S15",
+      "S19"
+    ],
+    "production_frequency": "Nicht aus eigener Produktionsverantwortung belegt. Das Muster ist als konstruiertes Prüfbeispiel plausibel; keine Häufigkeitsschätzung und keine behauptete Kundenerfahrung.",
+    "external_human_signoff": false,
+    "native_execution": false,
+    "claim_comparisons": [
+      {
+        "claim_id": "CC-023-B01",
+        "original_text": "Der voreingestellte Testmodus führt keine Datenbankänderung aus.",
+        "review_verdict": "stimme zu",
+        "proposed_text": "Im gewählten Testpfad wird SIMULATION_ONLY ausgegeben und vor UPDATE zurückgekehrt. Default X ist Vorbelegung, kein dauerhaftes Schreibverbot.",
+        "anchor": "4,6–9"
+      },
+      {
+        "claim_id": "CC-023-B02",
+        "original_text": "Außerhalb des Testmodus wird NAME1 des angegebenen Kunden direkt in KNA1 geändert.",
+        "review_verdict": "widerspreche der Unbedingtheit",
+        "proposed_text": "Außerhalb des Testpfads wird versucht, NAME1 für den exakt passenden Kundenschlüssel zu ändern. Nur bei Treffer/normalem Abschluss folgt der Commitzweig. Keine implizite ALPHA-Konvertierung; fehlende Nullen sind nur für entsprechend numerisch kodierte Schlüssel ein Problem.",
+        "anchor": "2,10–13"
+      },
+      {
+        "claim_id": "CC-023-B03",
+        "original_text": "Bei UPDATE-sy-subrc0 wird COMMIT WORK AND WAIT aufgerufen, sonst ROLLBACK WORK. Eine separate Prüfung des Commit-Ergebnisses ist nicht sichtbar.",
+        "review_verdict": "stimme zu",
+        "proposed_text": "Nach UPDATE-sy-subrc 0 wird COMMIT WORK AND WAIT aufgerufen, sonst ROLLBACK WORK. Der Code hat keine weitere fachliche Ergebnisprüfung.",
+        "anchor": "11–17"
+      }
+    ],
+    "confidence": {
+      "classic_extension.level": "sicher",
+      "known_worst_level": "sicher",
+      "cloud_api_surface": "sicher",
+      "cloud_artefact": "sicher"
+    },
+    "confidence_note": "Sicherheit betrifft die begrenzte Reviewaussage im angegebenen Fixture, nicht eine native Aktivierung oder persönliche Praxisbeobachtung. Bedingte Schlussfolgerungen sind im Text ausdrücklich bezeichnet."
+  }
+]

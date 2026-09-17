@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "PCE2022-objectReleaseInfo",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=PCE2022-objectReleaseInfo · rule_revision=2.1.0-candidate.1",
+  "release": "S/4HANA 2023",
+  "rule_revision": "2.1.0-candidate.1",
+  "runtime_context": null,
+  "second_profile": "btp-abap-environment/abap-for-cloud: KNA1 ist nicht freigegeben und REPORT/WRITE sind nicht aktivierbar — not_usable, keine zweite Levelantwort. Ob eine dynamische WHERE-Bedingung dort syntaktisch zulässig ist, ändert daran nichts (Prüferfrage)."
+}

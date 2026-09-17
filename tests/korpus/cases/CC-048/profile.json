@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "n/a",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=n/a · rule_revision=v2-draft (v1-Regeln @1.0.0, R33 @2.0.0-draft)",
+  "release": "S/4HANA 2023",
+  "rule_revision": "v2-draft (v1-Regeln @1.0.0, R33 @2.0.0-draft)",
+  "runtime_context": null,
+  "second_profile": "In allen Profilen dieselbe Antwort; abap-for-cloud übersetzt FORM/PERFORM/WRITE nicht, was keine andere Levelantwort ist."
+}

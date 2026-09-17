@@ -1,0 +1,185 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        }
+      ],
+      "id": "CC-011-B01",
+      "text": "Im gelieferten geradlinigen Code wird genau der zuvor zugewiesene Funktionsbaustein aufgerufen."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        }
+      ],
+      "id": "CC-011-B02",
+      "text": "Das vom Funktionsbaustein zurückgegebene Feld wird ausgegeben."
+    }
+  ],
+  "classes": [
+    "K06"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 7,
+        "raw": "source.abap:7",
+        "token": null
+      },
+      "id": "CC-011-F01",
+      "profiles": null,
+      "rule": "R07",
+      "ruleRaw": "R07@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-CALL",
+        "SAP-FLOW"
+      ],
+      "statement": "Variablenaufruf ist syntaktisch dynamisch; das einzige vorherige Assignment begrenzt das Ziel auf ALPHA_INPUT."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:7 — Nicht unbekanntes Ziel behaupten; syntaktisch trotzdem nicht CONSTANTS-static."
+  ],
+  "id": "CC-011",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6, source.abap:7",
+        "token": null
+      },
+      "classicRawState": "classicAPI",
+      "cloudRawState": "notToBeReleasedStable",
+      "identity": {
+        "objectKey": "CONVERSION_EXIT_ALPHA_INPUT",
+        "objectType": "FUNC",
+        "tadirObjName": "ALFA",
+        "tadirObject": "FUGR"
+      },
+      "name": "CONVERSION_EXIT_ALPHA_INPUT",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_listed_in_observed_record",
+      "successors": [],
+      "usage": "dynamic_call_singleton_proven_by_dataflow"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Einzige Zuweisung und fehlende zwischenliegende Seiteneffekte prüfen",
+    "Dynamische Syntax und aufgelöste Singleton-Zielmenge getrennt dokumentieren",
+    "Zusätzliche alternative Zuweisung als verpflichtende Gegenprobe prüfen",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "a"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "Zielvariable setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "Dynamischer, datenflussaufgelöster Aufruf",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Ausgabe",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Dynamischer FM: Syntax dynamisch, Datenfluss auflösbar"
+}

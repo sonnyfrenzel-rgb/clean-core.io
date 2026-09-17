@@ -1,0 +1,185 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        }
+      ],
+      "id": "CC-004-B01",
+      "text": "Der Wrapper ruft die URL-Escaping-Methode von CL_HTTP_UTILITY auf."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10–11",
+          "token": null
+        }
+      ],
+      "id": "CC-004-B02",
+      "text": "Der Eingabetext wird dem lokalen Wrapper übergeben; der gelieferte Quelltext enthält keinen expliziten HTTP-Request."
+    }
+  ],
+  "classes": [
+    "K02"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10",
+        "token": null
+      },
+      "id": "CC-004-F01",
+      "profiles": null,
+      "rule": "R04",
+      "ruleRaw": "R04@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-OVERLAP",
+        "SAP-CLASSIC"
+      ],
+      "statement": "CL_HTTP_UTILITY ist im dokumentierten PCE2025-Overlap classicAPI und notToBeReleased: klassisch B, nicht D."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:10 — Nicht wegen notToBeReleased allein zu D machen."
+  ],
+  "id": "CC-004",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10",
+        "token": null
+      },
+      "classicRawState": "classicAPI",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "CL_HTTP_UTILITY",
+        "objectType": "CLAS",
+        "tadirObjName": "CL_HTTP_UTILITY",
+        "tadirObject": "CLAS"
+      },
+      "name": "CL_HTTP_UTILITY",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "exists_but_exact_identity_not_captured",
+      "successors": [],
+      "usage": "static_method_call"
+    }
+  ],
+  "openReviewerQuestions": [
+    "PCE2025-Overlap und exakte successor-Identität aus nativem SAP-Snapshot erfassen",
+    "Escaping-Vertrag einschließlich Unicode und reservierter Zeichen vergleichen",
+    "Keine Netzwerk-/Berechtigungsfunktionen aus dem Wrappernamen ableiten",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "w"
+      },
+      {
+        "condition": "always",
+        "from": "w",
+        "to": "e"
+      },
+      {
+        "condition": "always",
+        "from": "e",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "w",
+        "meaning": "Lokalen Wrapper aufrufen",
+        "type": "call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "SAP-Escaping aufrufen",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Ergebnis ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "HTTP-Wrapper: Classic API plus notToBeReleased"
+}

@@ -1,0 +1,197 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        }
+      ],
+      "id": "CC-015-B01",
+      "text": "Ohne explizit gesetztes p_read wird der Kernelaufruf nicht erreicht."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10–12",
+          "token": null
+        }
+      ],
+      "id": "CC-015-B02",
+      "text": "Bei gesetztem Schalter wird der Profilparameter rdisp/myname angefragt; der tatsächliche Rückgabewert ist nicht im Quelltext bekannt."
+    }
+  ],
+  "classes": [
+    "K08"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": true
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10",
+        "token": null
+      },
+      "id": "CC-015-F01",
+      "profiles": null,
+      "rule": "R12",
+      "ruleRaw": "R12@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-KERNEL-EXAMPLE",
+        "SAP-LEVEL"
+      ],
+      "statement": "Kernel-Systemaufruf erkannt. Historischer Syntaxbeleg ersetzt keine aktuelle Freigabe; klassisches Level Unknown statt erfundenem A/B/D."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-015",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [],
+  "openReviewerQuestions": [
+    "Heutige Unterstützung des konkreten Kernelaufrufs mit SAP-Nachweis klären",
+    "Sichere unterstützte Alternative für genau diesen Parameter prüfen",
+    "Nie stillschweigend aus historischem Syntaxbeispiel A-D-Freigabe machen",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "partial_kernel_contract_unverified",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "g"
+      },
+      {
+        "condition": "p_read <> 'X'",
+        "from": "g",
+        "to": "x"
+      },
+      {
+        "condition": "p_read = 'X'",
+        "from": "g",
+        "to": "k"
+      },
+      {
+        "condition": "normal return",
+        "from": "k",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Leseschalter fehlt?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "Nicht ausführen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "k",
+        "meaning": "Kernelparameter anfragen",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Laufzeitwert ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Echter Kernelaufruf: Kenntnisgrenze sichtbar halten"
+}

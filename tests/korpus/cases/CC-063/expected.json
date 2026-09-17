@@ -1,0 +1,227 @@
+{
+  "answerFields": {},
+  "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert. SELECT SINGLE … CLIENT SPECIFIED in nicht strikter Syntax (INTO vor FROM, Hostvariablen ohne @), KNA1 mit MANDT/KUNNR/NAME1 existieren nach Autorenwissen; die Mandantensemantik ist S14 (SAP NetWeaver 7.01, Specifying a Client — historische Sprachdokumentation, keine Cloud-Zulassung).",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        }
+      ],
+      "id": "CC-063-B01",
+      "text": "Der Name des eingegebenen Kunden wird aus dem Anmeldemandanten gelesen; die Mandantenbegrenzung steht ausdrücklich im Prädikat, nicht in der Automatik. Höchstens ein Satz (Schlüssel MANDT, KUNNR)."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        }
+      ],
+      "id": "CC-063-B02",
+      "text": "Der Name wird ausgegeben. Ohne Treffer bleibt lv_name initial und eine leere Zeile erscheint; sy-subrc wird nicht ausgewertet, es gibt keinen Leertreffer-Zweig. Ein leerer oder nicht nullaufgefüllter numerischer Schlüssel verfehlt (Profilannahmen)."
+    }
+  ],
+  "classes": [
+    "K15",
+    "K01"
+  ],
+  "classic_level": "C",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "Gegenreview CE-03 / REV2-07 (Regelurteil R28 „hält nicht\") · Gegenfall zu CC-051 (CLIENT SPECIFIED mit Mandant aus Eingabe) — das Manifest des Reviews nennt CC-050; das ist der PRIVILEGED-ACCESS-Fall, und das belastete Regelstück („CLIENT SPECIFIED = mandantenübergreifend\") steht in CC-051-F02; Zuordnung hier korrigiert · Modellreviews 16.09.: Grok H-016 und Fable KA-022 sind die Quellen von CC-051 (Mandant aus Variable); kein Modell nannte die Variante mit sy-mandt-Filter.",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5 (sek. :5 Token FROM kna1)",
+        "token": null
+      },
+      "id": "CC-063-F01",
+      "profiles": null,
+      "rule": "R01",
+      "ruleRaw": "R01@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22 (S19)"
+      ],
+      "statement": "Direkter Lesezugriff auf KNA1: C. Nachfolger I_CUSTOMER ist gelistet; anders als in CC-051 steht die Mandantenachse einem Umstieg nicht entgegen (gelesen wird der Anmeldemandant, den eine CDS-Entität ebenfalls liest) — Drop-in bleibt trotzdem unbewiesen (Feldabbildung NAME1, Berechtigung; S21 als Warnung vor pauschaler Feldäquivalenz)."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5 (sek. :5 Token CLIENT SPECIFIED, :6 mandt = sy-mandt)",
+        "token": null
+      },
+      "id": "CC-063-F02",
+      "profiles": null,
+      "rule": "R28",
+      "ruleRaw": "R28@2.1.0 (Fassung nach REV2-07)",
+      "ruleVersion": "2.1.0",
+      "severity": "info",
+      "sources": [
+        "S14"
+      ],
+      "statement": "Aussageklasse security_and_authorization. Beobachtung: CLIENT SPECIFIED schaltet die automatische Mandantenbehandlung ab (S14). Datenfluss: der Mandant im Prädikat ist sy-mandt, ein Systemfeld — keine Eingabe, keine Variable. Schutzmaßnahme: das explizite Prädikat begrenzt die Ergebnismenge auf den Anmeldemandanten. Verbleibendes Risiko im Slice: kein mandantenübergreifendes Lesen; Codeänderung am Prädikat würde die Grenze öffnen (deshalb Beobachtung, nicht „kein Befund\"). Befundtext: „Mandantenautomatik deaktiviert; Ergebnismenge durch explizites Prädikat auf sy-mandt begrenzt\" — nicht „mandantenübergreifend\". Policy (ist der Zusatz ohne Bedarf zulässig?) ist Projektsache. Level unverändert C."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:5 — Nicht „mandantenübergreifender Zugriff\" (R28@2.0.0: „CLIENT SPECIFIED = mandantenübergreifend\"; CC-051-F02-Muster). Das Prädikat begrenzt auf sy-mandt; ein Zusatz ist keine Ergebnismenge.",
+    "source.abap:6 — Kein Fachsatz „Kunde aus einem anderen Mandanten\" und kein „Kunde aus Mandant p_mandt\": es gibt keine Mandanteneingabe.",
+    "source.abap:5 — Nicht „kein Befund, weil harmlos\": die Deaktivierung der Mandantenautomatik bleibt Beobachtung (F02, info).",
+    "source.abap:5 — Nicht D (kein Schreiben, keine Modifikation) und nicht B (KNA1 ist intern).",
+    "source.abap:5 — Nicht Unknown für den Mandanten: er ist durch das Prädikat auf den Anmeldemandanten festgelegt.",
+    "source.abap:5 — Den Nachfolger nicht als Drop-in nennen; „Mandantenachse steht nicht entgegen\" ist keine Äquivalenzaussage."
+  ],
+  "id": "CC-063",
+  "independence": [
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "gegenreview · sap-doku",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5 (sek",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNA1",
+        "objectType": "TABL",
+        "tadirObjName": "KNA1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNA1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMER",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "read_client_specified_own_client"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Bestätigt der Prüfer, dass bei CLIENT SPECIFIED mit WHERE mandt = sy-mandt die Ergebnismenge im Zielrelease exakt der des Zugriffs ohne Zusatz entspricht (auch für Pufferung und Mandantentabelle T000-Prüfungen)? S14 ist historische Dokumentation; das Review nennt „technische Eignung/Cloud-Syntax separat\".",
+    "Ist Schwere info für F02 die richtige Korpuspriorität, oder soll ein funktional überflüssiger CLIENT SPECIFIED medium tragen, weil er eine spätere Öffnung vorbereitet?",
+    "Gilt die nicht strikte Syntax (INTO vor FROM, Hostvariablen ohne @) im Zielrelease uneingeschränkt? Nicht nativ geprüft.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "q"
+      },
+      {
+        "condition": "always (kein Treffer-Gateway)",
+        "from": "q",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "o",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "q",
+        "meaning": "Kundenname lesen; Attribut client_handling = explicit_own_client (Automatik aus, Prädikat sy-mandt) — nicht cross_client = true wie in CC-051",
+        "type": "read"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Name ausgeben (auch leer)",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "CLIENT SPECIFIED mit explizitem eigenem Mandanten: Mandantenautomatik aus, Ergebnismenge trotzdem der Anmeldemandant (Gegenfall zu CC-051)"
+}

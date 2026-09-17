@@ -1,0 +1,257 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Syntax/Objekte) — CALL METHOD oref->(name) RECEIVING … mit dynamischem Methodennamen, lokale Klassen mit FINAL, NEW existieren.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 20,
+          "raw": "source.abap:20",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 22,
+          "raw": "source.abap:22",
+          "token": null
+        }
+      ],
+      "id": "CC-041-B01",
+      "text": "Mit gesetztem Kennzeichen wird nach Name gelesen, sonst nach ID; die Wahl fällt vor dem Aufruf und hängt nur vom Kennzeichen ab."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 25,
+          "raw": "source.abap:25",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 27,
+          "raw": "source.abap:27",
+          "token": null
+        }
+      ],
+      "id": "CC-041-B02",
+      "text": "Das Ergebnis der gewählten Methode wird ausgegeben."
+    }
+  ],
+  "classes": [
+    "K13",
+    "K06",
+    "K09"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_applicable",
+  "cloud_artefact": null,
+  "convergence": "Fable KA-038 (Zielmenge > 1) · GLM A-089, A-090 · Grok H-039 · DeepSeek CC-GAP-103 (die drei letzten als Unknown-Variante mit Eingabeherkunft; hier ist der Datenfluss geschlossen)",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": true
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 25,
+        "raw": "source.abap:25",
+        "token": null
+      },
+      "id": "CC-041-F01",
+      "profiles": null,
+      "rule": "R07",
+      "ruleRaw": "R07@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-CALL",
+        "SAP-FLOW",
+        "SAP-OO"
+      ],
+      "statement": "Dynamischer Methodenname; der Datenfluss ist vollständig (Zeilen 19–23, beide Zweige weisen ein Literal zu). Zielmenge {LCL_READER=>GET_BY_NAME, LCL_READER=>GET_BY_ID}, Kardinalität 2, beide lokal und kundeneigen. Die Sollantwort ist die Liste; Singleton und Unknown sind beide falsch. Sekundäranker: source.abap:20, source.abap:22."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:25 — Nicht Unknown (CC-012-Lesart): keine Eingabe fließt in den Namen, nur in die Auswahl.",
+    "source.abap:25 — Nicht Singleton (CC-011-Lesart): das erste Assignment ist nicht das einzige.",
+    "source.abap:25 — Syntaktisch bleibt der Aufruf dynamisch (R06-Trennung); die Bindungsart wird nicht auf „statisch\" umetikettiert.",
+    "source.abap:25 — Kein R14-Befund: Klasse FINAL, keine Redefinition, kein Interface, statischer Typ gleich dynamischem Typ.",
+    "source.abap:20, source.abap:22 — Die Literale sind über den Konsumenten (Zeile 25) Zielnamen (R13b), keine Texte ohne Wirkung."
+  ],
+  "id": "CC-041",
+  "independence": [
+    "modellreview"
+  ],
+  "independenceRaw": "modellreview",
+  "known_worst_level": null,
+  "objects": [],
+  "openReviewerQuestions": [
+    "Ist die JSON-Form der Zielmenge (Liste mit Anker und Bedingung je Element) für den Zusammenführer die gewünschte Kodierung, oder soll sie in das Objektschema von v1 (tadirObject/objectKey) gepresst werden?",
+    "Soll ein Partnerfall mit SAP-Zielen folgen (z. B. CONVERSION_EXIT_ALPHA_INPUT/_OUTPUT in zwei Zweigen, Katalogeinträge aus CC-005), damit auch die Katalogauflösung je Element geprüft wird?",
+    "Soll die familiengebundene Variante (Fable KA-039: 'CONVERSION_EXIT_' && … && '_INPUT') als eigener Fall folgen? Sie braucht eine Regel für „Zielmenge durch Namensmuster\", die v2 noch nicht hat.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "g"
+      },
+      {
+        "condition": "p_byname = 'X'",
+        "from": "g",
+        "to": "a1"
+      },
+      {
+        "condition": "p_byname <> 'X'",
+        "from": "g",
+        "to": "a2"
+      },
+      {
+        "condition": "always",
+        "from": "a1",
+        "to": "n"
+      },
+      {
+        "condition": "always",
+        "from": "a2",
+        "to": "n"
+      },
+      {
+        "condition": "always",
+        "from": "n",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "o",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Nach Name lesen?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 20,
+          "raw": "source.abap:20",
+          "token": null
+        },
+        "id": "a1",
+        "meaning": "Ziel GET_BY_NAME wählen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 22,
+          "raw": "source.abap:22",
+          "token": null
+        },
+        "id": "a2",
+        "meaning": "Ziel GET_BY_ID wählen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 24,
+          "raw": "source.abap:24",
+          "token": null
+        },
+        "id": "n",
+        "meaning": "Leser erzeugen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 25,
+          "raw": "source.abap:25",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "Aufruf; Zielmenge {GET_BY_NAME, GET_BY_ID}, beide im Scope — nicht opak",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 27,
+          "raw": "source.abap:27",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Ergebnis ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 27,
+          "raw": "source.abap:27",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Dynamischer Methodenname mit Zielmenge zwei: die Liste ist die Antwort"
+}

@@ -1,0 +1,12 @@
+REPORT zcc_ref_056.
+PARAMETERS p_land TYPE c LENGTH 3 DEFAULT 'DE'.
+START-OF-SELECTION.
+  IF p_land IS INITIAL.
+    WRITE / 'NO_COUNTRY'.
+    RETURN.
+  ENDIF.
+  WRITE / 'CHILD_START'.
+  SUBMIT zcc_ref_056_child
+    WITH p_land = p_land
+    AND RETURN.
+  WRITE / 'CHILD_DONE'.

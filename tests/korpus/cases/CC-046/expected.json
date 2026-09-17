@@ -1,0 +1,399 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Syntax/Objekte); die Zuordnung der Zeilen 4–5 zum impliziten START-OF-SELECTION ist Prüferfrage P1",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        }
+      ],
+      "id": "CC-046-B01",
+      "text": "Vor dem Selektionsbild werden Land DE und der Listtitel vorbelegt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        }
+      ],
+      "id": "CC-046-B02",
+      "text": "Nach dem Ausführen wird die Eingabe in Großbuchstaben gewandelt; eine Ablehnung der Eingabe gibt es nicht."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        }
+      ],
+      "id": "CC-046-B03",
+      "text": "Die Grundliste besteht aus Land und einer festen Zeile; die erste Ausgabe löst den Seitenkopf mit Titel und Linie aus."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        }
+      ],
+      "id": "CC-046-B04",
+      "text": "Wählt der Benutzer eine Listzeile, wird deren Inhalt als DETAIL in einer Verzweigungsliste ausgegeben; das kann beliebig oft oder nie geschehen."
+    }
+  ],
+  "classes": [
+    "K18",
+    "K02"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "GLM A-075, A-077 · Fable KA-066, KA-068 (L5 b) · DeepSeek CC-GAP-081, CC-GAP-083 · Grok",
+  "declaredEmpty": {
+    "findings": true,
+    "objects": true
+  },
+  "expectedByProfile": null,
+  "findings": [],
+  "forbiddenConclusions": [
+    "source.abap:1–15 — Kein leeres Skelett und kein „kein Kontrollfluss gefunden“, weil START-OF-SELECTION fehlt (R33).",
+    "source.abap:4, 5 — Nicht als „unerreichbar“ oder „Code vor dem ersten Ereignis, wird nicht ausgeführt“ bewerten.",
+    "source.abap:6, 9, 11, 14 — Nicht als vier unabhängige Programme oder vier Startknoten ohne Kanten. Die Ereignisreihenfolge ist Sollvertrag: INITIALIZATION → Selektionsbild → AT SELECTION-SCREEN → implizites START-OF-SELECTION → (TOP-OF-PAGE bei erster Seitenausgabe) → Grundliste → (AT LINE-SELECTION je Zeilenwahl).",
+    "source.abap:15 — Keine TOP-OF-PAGE-Kante aus der Verzweigungsliste. Für Verzweigungslisten gilt TOP-OF-PAGE DURING LINE-SELECTION, das hier fehlt.",
+    "source.abap:14 — Keinen Benutzer, keine Rolle und keine „Prüfung durch Sachbearbeiter“ als Knoten erfinden (R19).",
+    "Kein D und kein R16: es gibt weder SAP-Objekt noch fehlende Quelle."
+  ],
+  "id": "CC-046",
+  "independence": [
+    "modellreview"
+  ],
+  "independenceRaw": "modellreview",
+  "known_worst_level": null,
+  "objects": [],
+  "openReviewerQuestions": [
+    "P1: Bestätigt die Schlüsselwortdokumentation zu START-OF-SELECTION, dass nicht deklarative Anweisungen vor dem ersten expliziten Ereignisschlüsselwort dem impliziten Block START-OF-SELECTION zugeordnet werden, auch wenn danach explizite Ereignisblöcke folgen? Wenn nein, wandert die Grundliste in einen expliziten END-OF-SELECTION-Block und die Anker 4–5 ändern sich; die Sollaussage „vier Ereignisblöcke, kein leeres Skelett“ bleibt.",
+    "P2: Soll ein event_block, der im Slice keinen Auslöser hätte (etwa TOP-OF-PAGE ohne jede Listausgabe), ein Knoten ohne Eingangskante sein oder entfallen? R33 sagt es nicht. Hier hat jeder Block einen Auslöser.",
+    "P3: Ist end der richtige Typ für „Grundliste angezeigt, wartet auf Zeilenwahl“, oder braucht der Vertrag einen eigenen Wartezustand?",
+    "P4: Gilt die Sollantwort unverändert im Batch (kein Dialog: AT LINE-SELECTION nie, TOP-OF-PAGE in die Spool-Liste)? Das Zielprofil sagt Dialog; ein Batchprofil wäre ein eigener Fall (Fable L5 a).",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "ei",
+        "to": "a1"
+      },
+      {
+        "condition": "always",
+        "from": "a1",
+        "to": "a2"
+      },
+      {
+        "condition": "Selektionsbild angezeigt; Benutzer führt aus",
+        "from": "a2",
+        "to": "es"
+      },
+      {
+        "condition": "always",
+        "from": "es",
+        "to": "a3"
+      },
+      {
+        "condition": "Ereignisblock ohne Fehler verlassen",
+        "from": "a3",
+        "to": "em"
+      },
+      {
+        "condition": "always",
+        "from": "em",
+        "to": "o1"
+      },
+      {
+        "condition": "erste Ausgabe auf der Seite",
+        "from": "o1",
+        "to": "et"
+      },
+      {
+        "condition": "always",
+        "from": "et",
+        "to": "o3"
+      },
+      {
+        "condition": "always",
+        "from": "o3",
+        "to": "o4"
+      },
+      {
+        "condition": "Seitenkopf fertig; Ausgabe fortgesetzt",
+        "from": "o4",
+        "to": "o2"
+      },
+      {
+        "condition": "Block beendet",
+        "from": "o2",
+        "to": "le"
+      },
+      {
+        "condition": "Benutzer wählt Listzeile (0..n)",
+        "from": "le",
+        "to": "el"
+      },
+      {
+        "condition": "always",
+        "from": "el",
+        "to": "o5"
+      },
+      {
+        "condition": "Verzweigungsliste angezeigt; zurück",
+        "from": "o5",
+        "to": "le"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "ei",
+        "meaning": "INITIALIZATION",
+        "type": "event_block"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "a1",
+        "meaning": "Land vorbelegen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "a2",
+        "meaning": "Titel vorbelegen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "es",
+        "meaning": "AT SELECTION-SCREEN",
+        "type": "event_block"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "a3",
+        "meaning": "Eingabe in Großschrift",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "em",
+        "meaning": "START-OF-SELECTION (implizit; Anker = erste Anweisung)",
+        "type": "event_block"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "o1",
+        "meaning": "Land ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "et",
+        "meaning": "TOP-OF-PAGE",
+        "type": "event_block"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "o3",
+        "meaning": "Titel ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "o4",
+        "meaning": "Linie ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "o2",
+        "meaning": "ROW_1 ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "le",
+        "meaning": "Grundliste angezeigt",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "el",
+        "meaning": "AT LINE-SELECTION",
+        "type": "event_block"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "o5",
+        "meaning": "DETAIL ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Klassischer Report ohne START-OF-SELECTION: vier Ereignisblöcke, kein leeres Skelett"
+}

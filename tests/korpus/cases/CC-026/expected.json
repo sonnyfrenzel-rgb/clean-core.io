@@ -1,0 +1,428 @@
+{
+  "answerFields": {
+    "cloud_api_surface": "unknown",
+    "cloud_artefact": "not_activatable (REPORT, PARAMETERS, WRITE)",
+    "known_worst_level": "B (beobachtet, nur sichtbarer Teil; R16, R03@1.1.0)"
+  },
+  "beleggrad": "konstruiert (Muster aus realem Verbuchungscode). Verifiziert: die Syntax IN UPDATE TASK, COMMIT WORK, ROLLBACK WORK und ihr dokumentiertes Verhalten (S05, S09; S32 laut Regelregister v2.1).",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        }
+      ],
+      "id": "CC-026-B01",
+      "text": "Fall-ID und Route werden als Parameter eines zur Verbuchung registrierten Aufrufs festgehalten; der Baustein wird an Zeile 6 nicht ausgeführt, an der Aufrufstelle wird nichts geändert."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        }
+      ],
+      "id": "CC-026-B02",
+      "text": "Ohne Abbruchkennzeichen wird COMMIT WORK aufgerufen. Im stipulierten nicht lokalen Modus stößt das die Ausführung des registrierten Bausteins in einem Verbucherprozess an. COMMITTED wird ausgegeben, ohne dass der Code den Verbuchungserfolg prüft — angestoßen, nicht als ausgeführt oder persistiert belegt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        }
+      ],
+      "id": "CC-026-B03",
+      "text": "Mit Abbruchkennzeichen löscht ROLLBACK WORK die Registrierung, DISCARDED wird ausgegeben; im gelieferten Zweig wird der Baustein nicht ausgeführt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6–17",
+          "token": null
+        }
+      ],
+      "id": "CC-026-B04",
+      "text": "REGISTERED wird vor der Verzweigung (Zeile 11) in beiden Zweigen ausgegeben und belegt nur das Erreichen dieser Stelle. In der gelieferten Scheibe liegt vor Zeile 10 keine Operation, die Daten ändern kann — die Registrierung in Zeile 6 ändert nichts (F01)."
+    }
+  ],
+  "classes": [
+    "K12",
+    "K03",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": "not_activatable (REPORT, PARAMETERS, WRITE)",
+  "convergence": "Grok H-023 · GLM A-018 · Fable KA-042, KA-088 · DeepSeek CC-GAP-004, CC-GAP-005 (DeepSeek schreibt IN BACKGROUND TASK, meint aber laut Abschnitt 3 „Verbuchung\" — Zuordnung mit Vorbehalt) · Gegenreview REV2-01",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6",
+        "token": null
+      },
+      "id": "CC-026-F01",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@2.1.0 (Achse 3)",
+      "ruleVersion": "2.1.0",
+      "severity": "high",
+      "sources": [
+        "SAP-CALL",
+        "SAP-FLOW; S05",
+        "S09",
+        "S32"
+      ],
+      "statement": "IN UPDATE TASK registriert den Baustein nur (registered). An dieser Stelle wird der Baustein nicht ausgeführt und nichts geschrieben; seine Implementierung ist nicht geliefert. Die Ausführung erfolgt erst nach COMMIT WORK (Zeile 15, F05), im stipulierten nicht lokalen Modus in einem Verbucherprozess, ohne AND WAIT asynchron zum weiteren Ablauf."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 12,
+        "raw": "source.abap:12",
+        "token": null
+      },
+      "id": "CC-026-F02",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@2.1.0 (Achse 3)",
+      "ruleVersion": "2.1.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-FLOW; S09",
+        "S32"
+      ],
+      "statement": "ROLLBACK WORK löscht die in dieser SAP-LUW registrierten Verbuchungsaufrufe (discarded), also die Registrierung aus Zeile 6. In diesem Zweig wird der Baustein nicht ausgeführt. Behauptet wird nur der modellierte Abbruchzweig."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6",
+        "token": null
+      },
+      "id": "CC-026-F03",
+      "profiles": null,
+      "rule": "R06",
+      "ruleRaw": "R06@1.0.0; R03@1.1.0",
+      "ruleVersion": "1.0.0;",
+      "severity": "info",
+      "sources": [
+        "SAP-CALL"
+      ],
+      "statement": "Statisch benannter kundeneigener Baustein; Quelltext nicht geliefert. Level für die Gesamtscheibe Unknown, known_worst_level B für den sichtbaren Teil (R16) — „B für die Scheibe\" und „Unknown für die Kette\" sind zwei Aussagen mit zwei Scopes (R03@1.1.0)."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 16,
+        "raw": "source.abap:16",
+        "token": null
+      },
+      "id": "CC-026-F04",
+      "profiles": null,
+      "rule": "R18",
+      "ruleRaw": "R18@1.0.0; R25@2.1.0 (Achse 4)",
+      "ruleVersion": "1.0.0;",
+      "severity": "info",
+      "sources": [
+        "SAP-FLOW; S09"
+      ],
+      "statement": "COMMITTED belegt den Commit-Aufruf, nicht den Verbuchungserfolg: kein AND WAIT, keine Auswertung von sy-subrc, kein Fehlerpfad im Code. Und: ohne AND WAIT ist sy-subrc nach COMMIT WORK immer 0 (S09) — nicht nur die Auswertung fehlt, der Wert selbst wäre kein Beleg."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 15,
+        "raw": "source.abap:15",
+        "token": null
+      },
+      "id": "CC-026-F05",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@2.1.0 (Achsen 2, 4)",
+      "ruleVersion": "2.1.0",
+      "severity": "high",
+      "sources": [
+        "SAP-FLOW; S05",
+        "S09"
+      ],
+      "statement": "COMMIT WORK stößt die Verbuchung an (dispatched) und beendet Datenbank- und SAP-LUW. Ohne AND WAIT keine Synchronisation mit dem Verbuchungsergebnis; der Aufrufer läuft weiter (Zeile 16). Dass die Ausführung in einem Verbucherprozess und nicht lokal stattfindet, ist Kontextfestlegung (Profilannahmen), nicht Syntax."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:6 — kein synchroner call-opaque mit Kante „und damit erledigt\" (CC-005-Form; Grok H-023, GLM A-018).",
+    "source.abap:16 — kein Fachsatz „Route gespeichert\" (siehe „Nicht tragbar\").",
+    "source.abap:6 — kein Level B für die Gesamtscheibe aus „Standard-ABAP-Mechanik\"; B beschreibt nur den sichtbaren Teil (R16, R03@1.1.0, Fallbogen §1).",
+    "gesamte Scheibe — kein security_and_authorization-Befund „Berechtigungsprüfung fehlt\": die fehlende Bausteinquelle umfasst auch die dort möglichen Prüfungen; ein fehlender sichtbarer Check ist keine Beobachtung im Sinne von R28@2.1.0."
+  ],
+  "id": "CC-026",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku (S05 LUW-Konzept, S09 COMMIT WORK/AND WAIT/sy-subrc; S32 nach Lesung des Regelautors)",
+  "known_worst_level": "B (beobachtet, nur sichtbarer Teil; R16, R03@1.1.0)",
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "Z_CC_DECISION_UPD",
+        "objectType": "FUNC",
+        "tadirObjName": "not_delivered",
+        "tadirObject": "FUGR"
+      },
+      "name": "Z_CC_DECISION_UPD",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": [],
+      "usage": "update_task_registration"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Ist CALL FUNCTION … IN UPDATE TASK in der Sprachversion ABAP for Cloud syntaktisch ausgeschlossen oder nur nicht freigegeben? Vom Review nicht beantwortet; entscheidet über den Befundtyp in einem Klassen-Zweitprofil, nicht über diesen Fall.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad? (Für B02 und B04 nach dieser Fassung: ja; Bestätigung ausstehend.)"
+  ],
+  "scope": "partial_missing_update_module_source",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "u"
+      },
+      {
+        "condition": "always",
+        "from": "u",
+        "to": "o1"
+      },
+      {
+        "condition": "always",
+        "from": "o1",
+        "to": "g"
+      },
+      {
+        "condition": "p_abort = 'X'",
+        "from": "g",
+        "to": "r"
+      },
+      {
+        "condition": "always",
+        "from": "r",
+        "to": "o2"
+      },
+      {
+        "condition": "p_abort <> 'X'",
+        "from": "g",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "o3"
+      },
+      {
+        "condition": "asynchron, anderer Workprozess; Zeitpunkt nicht im Code",
+        "from": "c",
+        "to": "x"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start (trigger = dialog, direkter Reportstart)",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "u",
+        "meaning": "Verbuchung registrieren (registered)",
+        "type": "update_task"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "o1",
+        "meaning": "Registriert melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Abbruch?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "r",
+        "meaning": "ROLLBACK WORK: Registrierung löschen (discarded)",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "o2",
+        "meaning": "Verworfen melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "COMMIT WORK: Verbuchung anstoßen (dispatched)",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        "id": "o3",
+        "meaning": "Commit melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "Baustein läuft im Verbucher (opak); Modus nicht lokal aus Profilannahmen; Sekundäranker source.abap:6",
+        "type": "async"
+      }
+    ]
+  },
+  "status": "candidate / not independently signed.",
+  "title": "Verbuchung: registriert an der Aufrufstelle, ausgeführt beim COMMIT, verworfen beim ROLLBACK"
+}

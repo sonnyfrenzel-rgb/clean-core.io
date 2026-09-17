@@ -1,0 +1,291 @@
+{
+  "answerFields": {
+    "potential_worst_level": "C — ein dynamisches Leseziel ist nach R01 höchstens C; D setzt nach R02 einen Schreibzugriff voraus, den dieser Fall nicht hat (Register R26: „C für dynamisches Lesen\")",
+    "target_resolution": "unknown",
+    "unresolved_targets": "p_tab (Herkunft: Eingabe, source.abap:2)"
+  },
+  "beleggrad": "verifiziert (Syntax/Objekte) — dynamisches FROM (name), SELECT COUNT(*) … INTO @lv, Selektionsbildparameter mit DEFAULT existieren. Die Berechtigungsobjekte S_TABU_DIS/S_TABU_NAM sind als Beispiele genannt und existieren; welches davon hier fachlich verlangt wäre, ist Prüferfrage.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        }
+      ],
+      "id": "CC-037-B01",
+      "text": "Ohne Tabellennamen wird NO_TABLE ausgegeben und der Block verlassen."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        }
+      ],
+      "id": "CC-037-B02",
+      "text": "Nach dem Guard wird die Zeilenzahl der eingegebenen Tabelle gezählt und mit dem Namen ausgegeben. Welche Tabelle das ist, entscheidet die Eingabe zur Laufzeit; ein Fachsatz über „Kunden\" ist hier nicht tragbar."
+    }
+  ],
+  "classes": [
+    "K13",
+    "K01",
+    "K06",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": "GLM A-041 (ausgeschrieben Fall 3) · Fable KA-016, KA-019 · Grok H-010 (WHERE-Variante) · DeepSeek: keine",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9",
+        "token": null
+      },
+      "id": "CC-037-F01",
+      "profiles": null,
+      "rule": "R26",
+      "ruleRaw": "R26@2.0.0-draft",
+      "ruleVersion": "2.0.0-draft",
+      "severity": "high",
+      "sources": [
+        "SAP-ABAPDOC",
+        "SAP-CALL",
+        "SAP-FLOW"
+      ],
+      "statement": "Dynamisches FROM aus Selektionsbildeingabe: Zielmenge Unknown; known_worst_level D, weil jede Tabelle des Systems einschließlich SAP-Kern- und Benutzertabellen Ziel sein kann. Herkunft der Variable: Eingabe (Zeile 2); DEFAULT 'KNA1' ist kein Ziel. Sekundäranker: source.abap:10 (FROM-Token), source.abap:2."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9",
+        "token": null
+      },
+      "id": "CC-037-F02",
+      "profiles": null,
+      "rule": "R28",
+      "ruleRaw": "R28@2.0.0-draft",
+      "ruleVersion": "2.0.0-draft",
+      "severity": "high",
+      "sources": [
+        "SAP-ABAPDOC"
+      ],
+      "statement": "Aussageklasse security_and_authorization: generischer Tabellenzugriff ohne Allowlist und ohne sichtbare Berechtigungsprüfung (z. B. S_TABU_NAM/S_TABU_DIS). Eigener Befund; verändert das Level nicht — Unknown bleibt Unknown."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:9 — Kein C-Befund auf KNA1 aus dem DEFAULT (default_dynamic_target_not_exhaustive).",
+    "source.abap:9 — Nicht B, weil „kein SAP-Objekt sichtbar\". Unsichtbar ist nicht abwesend.",
+    "source.abap:9 — Nicht D als Level. D ist known_worst_level, das Level ist Unknown.",
+    "source.abap:9 — Den Sicherheitsbefund nicht in das Level hineinrechnen (kein „Unknown, aber eigentlich D wegen Security\")."
+  ],
+  "id": "CC-037",
+  "independence": [
+    "modellreview",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview — REVIEW-2.0.1 (16.09.2026), nicht blind; Fall in §7 des Reviews inhaltlich gelesen (Default ≠ Zielmenge; unbekannt ≠ known-D), Regeln R26/R28 beurteilt",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 2,
+        "raw": "source.abap:2",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNA1",
+        "objectType": "TABL",
+        "tadirObjName": "KNA1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNA1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMER",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "default_dynamic_target_not_exhaustive"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Ist known_worst_level D die richtige Kodierung für ein dynamisches Leseziel, oder verlangt der Prüfer C als schlimmsten Lesefall und D nur für DML (vgl. CC-038)? Der Autor hat D gewählt, weil ein generischer Leser auch Tabellen trifft, deren Lesen nicht unter R01 fällt.",
+    "Welche Berechtigungsobjekte wären hier fachlich verlangt (S_TABU_DIS, S_TABU_NAM, beides)?",
+    "Weist die ABAP-Cloud-Laufzeit dynamische Zugriffe auf nicht freigegebene Tabellen ab? (Beleggrad erinnert.)",
+    "Soll die TVARVC-Variante (Fable KA-019: Ziel aus Customizing) als eigener Fall folgen, oder genügt „Herkunft: Eingabe\" als Vertreter aller nicht konstanten Herkünfte?",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "partial_missing_runtime_targets",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "g"
+      },
+      {
+        "condition": "p_tab IS INITIAL",
+        "from": "g",
+        "to": "nt"
+      },
+      {
+        "condition": "always",
+        "from": "nt",
+        "to": "e1"
+      },
+      {
+        "condition": "p_tab IS NOT INITIAL",
+        "from": "g",
+        "to": "q"
+      },
+      {
+        "condition": "always",
+        "from": "q",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "o",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Tabellenname leer?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "nt",
+        "meaning": "NO_TABLE melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "e1",
+        "meaning": "Block verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "q",
+        "meaning": "Zeilen zählen; Ziel Unknown, Herkunft Eingabe",
+        "type": "read"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Name und Zahl ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Dynamisches FROM aus Eingabe: Zielmenge Unknown, schlimmster Fall D (Fallpaar B)"
+}

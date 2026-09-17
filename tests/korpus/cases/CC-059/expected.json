@@ -1,0 +1,367 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Syntax/Objekte: EML READ/MODIFY ENTITIES … IN LOCAL MODE, FOR DETERMINE ON MODIFY, %tky, cl_abap_behavior_handler; dokumentiertes Verhalten: LOCAL MODE ist nur in der Verhaltensimplementierung desselben BO zulässig und führt Berechtigungsprüfung und Feature-Kontrolle des BO nicht aus) — die vollständige Liste dessen, was LOCAL MODE überspringt, und die Freigabe von cl_abap_behavior_handler im Katalog sind erinnert, siehe Prüferfragen",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18 (Sekundäranker, Bedingungszeile)",
+          "token": null
+        }
+      ],
+      "id": "CC-059-B01",
+      "text": "Bei Anlage oder Änderung eines Auftrags wird status auf M gesetzt, wenn der Nettobetrag größer als 10000 ist, sonst auf A."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18",
+          "token": null
+        }
+      ],
+      "id": "CC-059-B02",
+      "text": "Die Ableitung ist kein Genehmigungsschritt: es wird ein Statuswert geschrieben; kein Workflow, keine Person, keine Benachrichtigung."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 20,
+          "raw": "source.abap:20",
+          "token": null
+        }
+      ],
+      "id": "CC-059-B03",
+      "text": "Persistenz: angekündigt, nicht persistiert. Der MODIFY wirkt auf den RAP-Transaktionspuffer; gespeichert wird erst beim SAVE der RAP-LUW durch den Aufrufer (COMMIT ENTITIES), der in dieser Scheibe nicht enthalten ist."
+    }
+  ],
+  "classes": [
+    "K19 (RAP/EML hat keine v1-Klasse — Zusammenführer)"
+  ],
+  "classic_level": null,
+  "cloud_api_surface": null,
+  "cloud_artefact": null,
+  "convergence": "Grok H-045, H-046 · Fable KA-021 (PRIVILEGED-Variante auf CDS), KA-105 („modern ist kein Level\") · GLM A-092 (Sprachversion entscheidet) · DeepSeek: keiner",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": [
+    {
+      "classic_level": "B",
+      "cloud_artefact": "activatable (Kandidat: keine cloud-fremde Syntax, keine nicht freigegebenen Objekte)",
+      "fields": [
+        {
+          "field": "classic_extension.level",
+          "file": null,
+          "scope": null,
+          "value": "B"
+        },
+        {
+          "field": "known_worst_level",
+          "file": null,
+          "scope": null,
+          "value": "B"
+        },
+        {
+          "field": "completeness",
+          "file": null,
+          "scope": null,
+          "value": "complete_for_declared_slice"
+        },
+        {
+          "field": "cloud_api_surface",
+          "file": null,
+          "scope": null,
+          "value": "usable (nur eigenes BO und released Basisklasse)"
+        },
+        {
+          "field": "cloud_artefact",
+          "file": null,
+          "scope": null,
+          "value": "activatable (Kandidat: keine cloud-fremde Syntax, keine nicht freigegebenen Objekte)"
+        },
+        {
+          "field": "security_and_authorization",
+          "file": null,
+          "scope": null,
+          "value": "S01 (siehe unten)"
+        }
+      ],
+      "findingIds": [
+        "CC-059-F01",
+        "CC-059-S01"
+      ],
+      "header": "Profil 1 (onpremise-s4 · standard)",
+      "known_worst_level": "B",
+      "label": "Profil 1"
+    },
+    {
+      "classic_level": "A (Kandidat)",
+      "cloud_artefact": "activatable",
+      "fields": [
+        {
+          "field": "classic_extension.level",
+          "file": null,
+          "scope": null,
+          "value": "A (Kandidat)"
+        },
+        {
+          "field": "known_worst_level",
+          "file": null,
+          "scope": null,
+          "value": "A"
+        },
+        {
+          "field": "completeness",
+          "file": null,
+          "scope": null,
+          "value": "complete_for_declared_slice"
+        },
+        {
+          "field": "cloud_api_surface",
+          "file": null,
+          "scope": null,
+          "value": "usable"
+        },
+        {
+          "field": "cloud_artefact",
+          "file": null,
+          "scope": null,
+          "value": "activatable"
+        },
+        {
+          "field": "security_and_authorization",
+          "file": null,
+          "scope": null,
+          "value": "S01 — identisch"
+        }
+      ],
+      "findingIds": [
+        "CC-059-F01",
+        "CC-059-S01"
+      ],
+      "header": "Profil 2 (btp-abap-environment · abap-for-cloud)",
+      "known_worst_level": "A",
+      "label": "Profil 2"
+    }
+  ],
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 1,
+        "raw": "source.abap:1 (scope=artefact)",
+        "token": null
+      },
+      "id": "CC-059-F01",
+      "profiles": [
+        "Profil 1",
+        "Profil 2"
+      ],
+      "rule": "R03",
+      "ruleRaw": "R03@1.0.0 (Profil 1) / R31@v2-vorl. (Profil 2)",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-LEVEL"
+      ],
+      "statement": "Nur eigenes RAP-BO und freigegebene Basisklasse. Profil 1: Standard-Sprachversion → B. Profil 2: ABAP for Cloud → A-Kandidat. Für A gibt es im v1-Register keinen Eintrag (v1 §3 hat A-Primärfälle bewusst ausgespart); R31 trägt die Profilabhängigkeit, ein A-Regeleintrag ist Registerfrage."
+    }
+  ],
+  "forbiddenConclusions": [
+    "Profil 2, source.abap:1 — kein A ohne S01 (False Green); kein B/C/D wegen S01 (Briefing Regel 7).",
+    "Profil 1, source.abap:1 — kein A „weil RAP\"; die Sprachversion ist standard.",
+    "source.abap:13 — kein write-Befund nach R02 (EML MODIFY ist kein Datenbank-UPDATE auf eine SAP-Tabelle; das BO ist kundeneigen).",
+    "source.abap:13 — kein transaction-Knoten: die Determination persistiert nichts (siehe B03)."
+  ],
+  "id": "CC-059",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku — REVIEW-2.0.1 (16.09.2026), nicht blind; Fall in §7 des Reviews inhaltlich gelesen (LOCAL MODE als dokumentiertes Muster; Katalogbeobachtung CL_ABAP_BEHAVIOR_HANDLER), Regeln R28/R31 beurteilt; sap-doku: S17, S18 (LOCAL MODE im eigenen Behavior-Pool, Determination-Muster), S19 (CL_ABAP_BEHAVIOR_HANDLER released, Webabruf ohne Commit-Pin)",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9+3, source.abap:13+3",
+        "token": 3
+      },
+      "classicRawState": null,
+      "cloudRawState": "not_applicable_customer_object",
+      "identity": {
+        "objectKey": "ZI_ORDER",
+        "objectType": "BDEF",
+        "tadirObjName": "ZI_ORDER",
+        "tadirObject": "BDEF"
+      },
+      "name": "ZI_ORDER",
+      "owner": "Kunde",
+      "releaseContract": null,
+      "successorStatus": "not_applicable",
+      "successors": null,
+      "usage": "eml_read, eml_modify"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 1,
+        "raw": "source.abap:1+4",
+        "token": 4
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "released",
+      "identity": {
+        "objectKey": "CL_ABAP_BEHAVIOR_HANDLER",
+        "objectType": "CLAS",
+        "tadirObjName": "CL_ABAP_BEHAVIOR_HANDLER",
+        "tadirObject": "CLAS"
+      },
+      "name": "CL_ABAP_BEHAVIOR_HANDLER",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_applicable",
+      "successors": [],
+      "usage": "inheritance"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Welche Kontrollen überspringt IN LOCAL MODE im Zielrelease genau — Berechtigungsprüfung und Feature-Kontrolle sind dokumentiert; gilt das auch für Validierungen, Vorprüfungen (precheck) und Sperren?",
+    "Ist der Statuswechsel nach M fachlich ein berechtigungspflichtiger Schritt? (Entscheidet, ob S01 info oder medium ist; das Level bleibt in beiden Fällen.)",
+    "Ist CL_ABAP_BEHAVIOR_HANDLER im Katalog PCE2022-objectReleaseInfo als released geführt?",
+    "Variante PRIVILEGED (EML außerhalb des BO; Grok H-046): welche BDEF-Voraussetzung (with privileged mode …) und welche Aufruferbedingung gelten im Zielrelease? Ich habe diese Variante wegen unsicherer Syntaxvoraussetzungen nicht gebaut; sie gehört als eigener Fall in diese Klasse, sobald ein Architekt die Voraussetzungen bestätigt.",
+    "Ist R28 (v2-vorläufig) die richtige Regelnummer für S01, oder vergibt der Zusammenführer eine andere? (Nicht in meinem Auftrag; Briefing Regel 7 erzwingt die Aussageklasse.)",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 13,
+        "raw": "source.abap:13+4 (Token IN LOCAL MODE; Sekundäranker: source.abap:9+4 für den READ)",
+        "token": 4
+      },
+      "id": "CC-059-S01",
+      "profiles": [
+        "Profil 1",
+        "Profil 2"
+      ],
+      "rule": "R28",
+      "ruleRaw": "R28@v2-vorl.",
+      "ruleVersion": "v2-vorl",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL"
+      ],
+      "statement": "Der Statuswechsel wird im LOCAL MODE geschrieben: Berechtigungsprüfung (authorization master ( instance )) und Feature-Kontrolle des BO werden für diesen UPDATE nicht ausgeführt — dokumentiertes Verhalten und für Determinations der vorgesehene Weg. Der Befund sagt nur, dass die Ableitung ohne BO-Berechtigungsprüfung stattfindet; ob eine solche Prüfung fachlich nötig wäre (Status M als Freigabestufe?), ist Prüferfrage 2. Verändert das Level nicht."
+    }
+  ],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "r"
+      },
+      {
+        "condition": "always",
+        "from": "r",
+        "to": "w"
+      },
+      {
+        "condition": "always",
+        "from": "w",
+        "to": "e"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Determination ON MODIFY (RAP-Laufzeit)",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "r",
+        "meaning": "Nettobetrag lesen (EML, LOCAL MODE)",
+        "type": "read"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "w",
+        "meaning": "Status setzen (EML auf Transaktionspuffer, LOCAL MODE; nicht persistiert)",
+        "type": "write"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 21,
+          "raw": "source.abap:21",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "Determination beendet",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "candidate / not independently signed.",
+  "title": "Profilpaar: RAP/EML MODIFY ENTITIES … IN LOCAL MODE — sieht aus wie A, das Level hängt an der Sprachversion, der Sicherheitsbefund an keiner"
+}

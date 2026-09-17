@@ -1,0 +1,2389 @@
+{
+  "book": {
+    "path": "docs/korpus/referenzkorpus-v2.1.md",
+    "sha256": "9b1ed17256d04a3990335ff9e1a54f2151bccfd44e43190cc40fead2c0d0b288"
+  },
+  "written": "2026-09-17",
+  "entries": [
+    {
+      "case": "CC-001",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "korpus-offen",
+      "reason": "1 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 1 nur in derselben Anweisung, 0 verfehlt. Die Engine sieht das Konstrukt, verankert es aber am Anweisungsbeginn: CC-001-F01 R01@1.0.0@source.abap:5 → Engine standard-table-read@source.abap:4. R27 legt genau das als Primäranker fest; diese Fälle verankern stattdessen die Zeile, auf der das Objekt genannt wird. Das ist der Widerspruch zwischen v1-Ankerkonvention und R27, den das Fallbuch selbst benennt — die Sollangabe bleibt unverändert, die Frage geht an die Fallautoren."
+    },
+    {
+      "case": "CC-001",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+    },
+    {
+      "case": "CC-001",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-001",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 8 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 6 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:3, q/read@source.abap:5, no/output@source.abap:10, e/end@source.abap:11 … (+2)."
+    },
+    {
+      "case": "CC-001",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-002",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "korpus-offen",
+      "reason": "1 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 1 nur in derselben Anweisung, 0 verfehlt. Die Engine sieht das Konstrukt, verankert es aber am Anweisungsbeginn: CC-002-F01 R01@1.0.0@source.abap:14 → Engine standard-table-read@source.abap:13. R27 legt genau das als Primäranker fest; diese Fälle verankern stattdessen die Zeile, auf der das Objekt genannt wird. Das ist der Widerspruch zwischen v1-Ankerkonvention und R27, den das Fallbuch selbst benennt — die Sollangabe bleibt unverändert, die Frage geht an die Fallautoren."
+    },
+    {
+      "case": "CC-002",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNB1 → I_CUSTOMERCOMPANY), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+    },
+    {
+      "case": "CC-002",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNB1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-002",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 7 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 5 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, a/action@source.abap:7, x/end@source.abap:11, q/read@source.abap:14 … (+1)."
+    },
+    {
+      "case": "CC-002",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-003",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Negativkontrolle: der Fall erklärt „keine Findings im endlichen Regelvertrag\". Die Engine meldet 0 Befund(e) einer zugeordneten Marke: —."
+    },
+    {
+      "case": "CC-003",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-003",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Der Fall erklärt „keine explizite externe SAP-Repository-Identität\". Die Engine meldet 0 Tabelle(n): —."
+    },
+    {
+      "case": "CC-003",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 8 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 6 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:19, c/call@source.abap:20, x/action@source.abap:10, a/action@source.abap:12 … (+2)."
+    },
+    {
+      "case": "CC-003",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-004",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-004-F01 R04@1.0.0@source.abap:10 — keine Brücke für R04."
+    },
+    {
+      "case": "CC-004",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-004",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — CL_HTTP_UTILITY/CLAS. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-004",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "4 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:13, w/call@source.abap:14, e/opaque_call@source.abap:10, o/output@source.abap:15."
+    },
+    {
+      "case": "CC-004",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-005",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-005-F01 R06@1.0.0@source.abap:6 — keine Brücke für R06, CC-005-F02 R06@1.0.0@source.abap:9 — keine Brücke für R06."
+    },
+    {
+      "case": "CC-005",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-005",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "2 Sollobjekt(e), keines vom Typ TABL — CONVERSION_EXIT_ALPHA_INPUT/FUNC, CONVERSION_EXIT_ALPHA_OUTPUT/FUNC. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-005",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "4 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, i/opaque_call@source.abap:6, o/opaque_call@source.abap:9, e/output@source.abap:12."
+    },
+    {
+      "case": "CC-005",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-006",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-006-F01 R06@1.0.0@source.abap:6 — keine Brücke für R06."
+    },
+    {
+      "case": "CC-006",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-006",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — CONVERSION_EXIT_ALPHA_INPUT/FUNC. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-006",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "3 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 3 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, f/opaque_call@source.abap:6, o/output@source.abap:9."
+    },
+    {
+      "case": "CC-006",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-007",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "korpus-offen",
+      "reason": "3 von 4 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 3 nur in derselben Anweisung, 0 verfehlt. Die Engine sieht das Konstrukt, verankert es aber am Anweisungsbeginn: CC-007-F01 R01@1.0.0@source.abap:5 → Engine standard-table-read@source.abap:4, CC-007-F02 R01@1.0.0@source.abap:6 → Engine standard-table-read@source.abap:4, CC-007-F03 R01@1.0.0@source.abap:7 → Engine standard-table-read@source.abap:4. R27 legt genau das als Primäranker fest; diese Fälle verankern stattdessen die Zeile, auf der das Objekt genannt wird. Das ist der Widerspruch zwischen v1-Ankerkonvention und R27, den das Fallbuch selbst benennt — die Sollangabe bleibt unverändert, die Frage geht an die Fallautoren. Ohne Gegenstück: CC-007-F04 R08@1.0.0@source.abap:4–8 — keine Brücke für R08."
+    },
+    {
+      "case": "CC-007",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 3 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER, KNB1 → I_CUSTOMERCOMPANY, KNVV → I_CUSTOMERSALESAREA), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+    },
+    {
+      "case": "CC-007",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Tabellenobjekt(e) im Fall; Engine sieht 3: KNA1, KNB1, KNVV. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-007",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 5 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:3, j/read@source.abap:4–9, o/output@source.abap:11, e/end@source.abap:13."
+    },
+    {
+      "case": "CC-007",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-008",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "korpus-offen",
+      "reason": "3 von 4 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 3 nur in derselben Anweisung, 0 verfehlt. Die Engine sieht das Konstrukt, verankert es aber am Anweisungsbeginn: CC-008-F01 R01@1.0.0@source.abap:5 → Engine standard-table-read@source.abap:4, CC-008-F02 R01@1.0.0@source.abap:6 → Engine standard-table-read@source.abap:4, CC-008-F03 R01@1.0.0@source.abap:7 → Engine standard-table-read@source.abap:4. R27 legt genau das als Primäranker fest; diese Fälle verankern stattdessen die Zeile, auf der das Objekt genannt wird. Das ist der Widerspruch zwischen v1-Ankerkonvention und R27, den das Fallbuch selbst benennt — die Sollangabe bleibt unverändert, die Frage geht an die Fallautoren. Ohne Gegenstück: CC-008-F04 R08@1.0.0@source.abap:8 — keine Brücke für R08."
+    },
+    {
+      "case": "CC-008",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 3 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER, KNB1 → I_CUSTOMERCOMPANY, KNVV → I_CUSTOMERSALESAREA), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+    },
+    {
+      "case": "CC-008",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Tabellenobjekt(e) im Fall; Engine sieht 3: KNA1, KNB1, KNVV. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-008",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "3 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 3 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:3, j/read@source.abap:4–9, o/output@source.abap:11."
+    },
+    {
+      "case": "CC-008",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-009",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:6 enhancement, source.abap:7 enhancement. Ohne Gegenstück: CC-009-F01 R24@1.0.0@source.abap:6 — keine Brücke für R24."
+    },
+    {
+      "case": "CC-009",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Die Engine urteilt strenger, und der Fall stützt sein Level nicht auf einen katalogisierten Nachfolger. Der Korpus vergibt ein Level je Artefakt unter einem Regelvertrag, die Engine eine Katalognote je Objekt; ein Artefaktlevel gibt es in lib/abap/ nicht."
+    },
+    {
+      "case": "CC-009",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "4 Sollobjekt(e), keines vom Typ TABL — ZBADI_CC_ROUTE/BADI_DEF, IF_BADI_INTERFACE/INTF, ZIF_CC_ROUTE/INTF, ZCL_CC_ROUTE_IMPL/CLAS. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-009",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 7 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 6 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, b/call@source.abap:6, c/call@source.abap:7, o/output@source.abap:10 … (+2)."
+    },
+    {
+      "case": "CC-009",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-010",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-010-F01 R10@1.0.0@source.abap:10–11 — keine Brücke für R10."
+    },
+    {
+      "case": "CC-010",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus D · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-010",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Der Fall erklärt „keine explizite externe SAP-Repository-Identität\". Die Engine meldet 0 Tabelle(n): —."
+    },
+    {
+      "case": "CC-010",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 6 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 5 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:4, h/call@source.abap:5, d/action@source.abap:8, y/action@source.abap:11 … (+1)."
+    },
+    {
+      "case": "CC-010",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-011",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-011-F01 R07@1.0.0@source.abap:7 — keine Brücke für R07."
+    },
+    {
+      "case": "CC-011",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-011",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — CONVERSION_EXIT_ALPHA_INPUT/FUNC. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-011",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "4 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, a/action@source.abap:6, c/opaque_call@source.abap:7, o/output@source.abap:10."
+    },
+    {
+      "case": "CC-011",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-012",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-012-F01 R07@1.0.0@source.abap:9 — keine Brücke für R07, CC-012-F02 R07@1.0.0@source.abap:14 — keine Brücke für R07."
+    },
+    {
+      "case": "CC-012",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-012",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Der Fall erklärt „keine explizite externe SAP-Repository-Identität\". Die Engine meldet 0 Tabelle(n): —."
+    },
+    {
+      "case": "CC-012",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 6 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:7, f/opaque_call@source.abap:9, p/opaque_call@source.abap:14, o/output@source.abap:16."
+    },
+    {
+      "case": "CC-012",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-013",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-013-F01 R11@1.0.0@source.abap:1 — keine Brücke für R11."
+    },
+    {
+      "case": "CC-013",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-013",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Der Fall erklärt „keine explizite externe SAP-Repository-Identität\". Die Engine meldet 0 Tabelle(n): —."
+    },
+    {
+      "case": "CC-013",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 9 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 7 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, p/action@source.abap:6, i/event@source.abap:8, m/action@source.abap:12 … (+3)."
+    },
+    {
+      "case": "CC-013",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-014",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-014-F01 R11@1.0.0@source.abap:4 — keine Brücke für R11."
+    },
+    {
+      "case": "CC-014",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-014",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Der Fall erklärt „keine explizite externe SAP-Repository-Identität\". Die Engine meldet 0 Tabelle(n): —."
+    },
+    {
+      "case": "CC-014",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "3 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 3 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:3, d/opaque_call@source.abap:4, o/output@source.abap:5."
+    },
+    {
+      "case": "CC-014",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-015",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-015-F01 R12@1.0.0@source.abap:10 — keine Brücke für R12."
+    },
+    {
+      "case": "CC-015",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-015",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Der Fall erklärt „keine explizite externe SAP-Repository-Identität\". Die Engine meldet 0 Tabelle(n): —."
+    },
+    {
+      "case": "CC-015",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 5 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, x/end@source.abap:8, k/opaque_call@source.abap:10, o/output@source.abap:13."
+    },
+    {
+      "case": "CC-015",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-016",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Negativkontrolle: der Fall erklärt „keine Findings im endlichen Regelvertrag\". Die Engine meldet 0 Befund(e) einer zugeordneten Marke: —."
+    },
+    {
+      "case": "CC-016",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-016",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Der Fall erklärt „keine explizite externe SAP-Repository-Identität\". Die Engine meldet 0 Tabelle(n): —."
+    },
+    {
+      "case": "CC-016",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "4 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:3, a/action@source.abap:6, b/action@source.abap:7, o/output@source.abap:8."
+    },
+    {
+      "case": "CC-016",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-017",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-017-F01 R14@1.0.0@source.abap:17 — keine Brücke für R14."
+    },
+    {
+      "case": "CC-017",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-017",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Der Fall erklärt „keine explizite externe SAP-Repository-Identität\". Die Engine meldet 0 Tabelle(n): —."
+    },
+    {
+      "case": "CC-017",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 9 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 7 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:30, c/call@source.abap:33, x/return@source.abap:25, b/call@source.abap:27 … (+3)."
+    },
+    {
+      "case": "CC-017",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-018",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-018-F01 R16@1.0.0@source.abap:2 — keine Brücke für R16, CC-018-F02 R14@1.0.0@source.abap:8 — keine Brücke für R14."
+    },
+    {
+      "case": "CC-018",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-018",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — ZCL_CC_MISSING_BASE/CLAS. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-018",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "3 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 3 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:11, c/call@source.abap:13, b/opaque_call@source.abap:8."
+    },
+    {
+      "case": "CC-018",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-019",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-019-F01 R15@1.0.0@source.abap:9 — keine Brücke für R15."
+    },
+    {
+      "case": "CC-019",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-019",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "2 Sollobjekt(e), keines vom Typ TABL — CL_ABAP_STRUCTDESCR/CLAS, CL_ABAP_TYPEDESCR/CLAS. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-019",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 6 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 5 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:8, d/call@source.abap:9, c/call@source.abap:10, o/output@source.abap:12 … (+1)."
+    },
+    {
+      "case": "CC-019",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-020",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-020-F01 R15@1.0.0@source.abap:8 — keine Brücke für R15, CC-020-F02 R15@1.0.0@source.abap:10 — keine Brücke für R15."
+    },
+    {
+      "case": "CC-020",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-020",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 0: —. Fehlend: ZCCR_PAYLOAD (default_dynamic_type_not_exhaustive). Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-020",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 6 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 5 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:7, t/opaque_call@source.abap:8, a/action@source.abap:10, v/output@source.abap:12 … (+1)."
+    },
+    {
+      "case": "CC-020",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-021",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-021-F01 R16@1.0.0@source.abap:4 — keine Brücke für R16."
+    },
+    {
+      "case": "CC-021",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-021",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — ZCC_REF_021_RULES/PROG. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-021",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "3 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 3 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, p/opaque_call@source.abap:6, o/output@source.abap:7."
+    },
+    {
+      "case": "CC-021",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-022",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-022-F01 R16@1.0.0@source.abap:4 — keine Brücke für R16."
+    },
+    {
+      "case": "CC-022",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-022",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — /ACME/CL_ROUTE/CLAS. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-022",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "3 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 3 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:3, p/opaque_call@source.abap:4, o/output@source.abap:5."
+    },
+    {
+      "case": "CC-022",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-023",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 3 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-023-F02 R19@1.1.0; R25@2.1.0 (Achsen 1, 4)@source.abap:12 — keine Brücke für R19, CC-023-F03 R18@1.0.0 (Regelträger vorläufig — siehe Offene Prüferfragen)@source.abap:2 (Sekundäranker: source.abap:10+9, Token @p_kunnr) — keine Brücke für R18."
+    },
+    {
+      "case": "CC-023",
+      "class": "level",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus D · Engine (schlechteste Katalognote über 1 Objekt(e)) D"
+    },
+    {
+      "case": "CC-023",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-023",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 10 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 8 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, so/output@source.abap:7, x/end@source.abap:8, u/write@source.abap:10 … (+4)."
+    },
+    {
+      "case": "CC-023",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-024",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:12 commit-work. Ohne Gegenstück: CC-024-F01 R20@1.0.0@source.abap:10 — keine Brücke für R20, CC-024-F02 R19@1.0.0@source.abap:12 — keine Brücke für R19."
+    },
+    {
+      "case": "CC-024",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) Unknown. Die Engine urteilt milder als der Fall — ein falsches Grün ist die eine Richtung, in der ein Levelunterschied gefährlich ist."
+    },
+    {
+      "case": "CC-024",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: ZCC_DECISION. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-024",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 9 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 7 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, x/end@source.abap:8, u/write@source.abap:10, c/transaction@source.abap:12 … (+3)."
+    },
+    {
+      "case": "CC-024",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-025",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Negativkontrolle: der Fall erklärt „keine Findings im endlichen Regelvertrag\". Die Engine meldet 0 Befund(e) einer zugeordneten Marke: —."
+    },
+    {
+      "case": "CC-025",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-025",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Der Fall erklärt „keine explizite externe SAP-Repository-Identität\". Die Engine meldet 0 Tabelle(n): —."
+    },
+    {
+      "case": "CC-025",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "5 von 13 Knoten vergleichbar; 5 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 8 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:8, i/action@source.abap:10, c/action@source.abap:12, d/action@source.abap:15 … (+4)."
+    },
+    {
+      "case": "CC-025",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "5 Fachsatz/Fachsätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-026",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 5 Sollbefunden vergleichbar; 2 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-026-F02 R25@2.1.0 (Achse 3)@source.abap:12 — R25 ohne Gegenstück an „ROLLBACK WORK\", CC-026-F03 R06@1.0.0; R03@1.1.0@source.abap:6 — keine Brücke für R06, CC-026-F04 R18@1.0.0; R25@2.1.0 (Achse 4)@source.abap:16 — keine Brücke für R18."
+    },
+    {
+      "case": "CC-026",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-026",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — Z_CC_DECISION_UPD/FUNC. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-026",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 9 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 8 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, u/update_task@source.abap:6, o1/output@source.abap:10, r/transaction@source.abap:12 … (+4)."
+    },
+    {
+      "case": "CC-026",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "4 Fachsatz/Fachsätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-027",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 4 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-027-F02 R18@1.0.0@source.abap:9 — keine Brücke für R18, CC-027-F03 R06@1.0.0; R03@1.1.0@source.abap:5 — keine Brücke für R06, CC-027-F04 R25@2.1.0 (Achsen 1, 3)@source.abap:10 (scope=slice-end; Sekundäranker: source.abap:4–10, gesamte Scheibe) — R25 ohne Gegenstück an „WRITE / 'END_OF_REPORT'\"."
+    },
+    {
+      "case": "CC-027",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-027",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — Z_CC_DECISION_UPD/FUNC. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-027",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "4 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:4, u/update_task@source.abap:5, o1/output@source.abap:9, o2/output@source.abap:10."
+    },
+    {
+      "case": "CC-027",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-028",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 4 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-028-F01 R25@v2-draft@source.abap:11 — R25 ohne Gegenstück an „CALL FUNCTION 'BAPI_SALESORDER_CREATEFROMDAT2' E\", CC-028-F02 R25@v2-draft@source.abap:16 — R25 ohne Gegenstück an „IF line_exists( lt_return[ type = 'E' ] )\", CC-028-F03 R18@1.0.0@source.abap:22 — keine Brücke für R18, CC-028-F04 R06@1.0.0@source.abap:11 — keine Brücke für R06."
+    },
+    {
+      "case": "CC-028",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-028",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "2 Sollobjekt(e), keines vom Typ TABL — BAPI_SALESORDER_CREATEFROMDAT2/FUNC, BAPI_TRANSACTION_COMMIT/FUNC. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-028",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 8 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 7 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:8, p/write@source.abap:9, b/opaque_call@source.abap:11, o1/output@source.abap:17 … (+3)."
+    },
+    {
+      "case": "CC-028",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 10 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-029",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 5 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:16 commit-work. Ohne Gegenstück: CC-029-F01 R19@1.0.0@source.abap:5 — keine Brücke für R19, CC-029-F02 R19@1.0.0@source.abap:20 — keine Brücke für R19, CC-029-F03 R23@1.0.0@source.abap:10 — keine Brücke für R23, CC-029-F04 R06@1.0.0@source.abap:5 — keine Brücke für R06 … (+1)."
+    },
+    {
+      "case": "CC-029",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) Unknown. Die Engine urteilt milder als der Fall — ein falsches Grün ist die eine Richtung, in der ein Levelunterschied gefährlich ist."
+    },
+    {
+      "case": "CC-029",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: ZCC_DECISION. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-029",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 11 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 9 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:4, l1/lock@source.abap:5, o1/output@source.abap:11, e/end@source.abap:12 … (+5)."
+    },
+    {
+      "case": "CC-029",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-030",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 4 Sollbefunden vergleichbar; 2 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-030-F02 R19@1.0.0@source.abap:4 — keine Brücke für R19, CC-030-F04 R20@1.0.0@source.abap:8 — keine Brücke für R20."
+    },
+    {
+      "case": "CC-030",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) Unknown. Die Engine urteilt milder als der Fall — ein falsches Grün ist die eine Richtung, in der ein Levelunterschied gefährlich ist."
+    },
+    {
+      "case": "CC-030",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: ZCC_DECISION. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-030",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 7 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 5 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:3, w/write@source.abap:8, c/transaction@source.abap:10, x/end@source.abap:4 … (+1)."
+    },
+    {
+      "case": "CC-030",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-031",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 5 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-031-F02 R25@v2-draft@source.abap:11 — R25 ohne Gegenstück an „CALL FUNCTION 'Z_CC_NOTIFY' DESTINATION p_dest E\", CC-031-F03 R25@v2-draft@source.abap:18 — R25 ohne Gegenstück an „ROLLBACK WORK\", CC-031-F04 R07@1.0.0@source.abap:12 — keine Brücke für R07, CC-031-F05 R20@1.0.0@source.abap:6 — keine Brücke für R20."
+    },
+    {
+      "case": "CC-031",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 2 Objekt(e)) Unknown. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte."
+    },
+    {
+      "case": "CC-031",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: ZCC_DECISION. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-031",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 13 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 11 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, w/write@source.abap:6, o1/output@source.abap:8, e1/end@source.abap:9 … (+7)."
+    },
+    {
+      "case": "CC-031",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "4 Fachsatz/Fachsätze mit 13 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-032",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 5 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-032-F01 R25@v2-draft@source.abap:6 — R25 ohne Gegenstück an „CALL FUNCTION 'Z_CC_ROUTE_CALC' STARTING NEW TAS\", CC-032-F02 R19@1.0.0@source.abap:8 — keine Brücke für R19, CC-032-F03 R18@1.0.0@source.abap:17 — keine Brücke für R18, CC-032-F04 R06@1.0.0@source.abap:6 — keine Brücke für R06 … (+1)."
+    },
+    {
+      "case": "CC-032",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-032",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — Z_CC_ROUTE_CALC/FUNC. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-032",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 8 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 7 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, a/async@source.abap:6, o1/output@source.abap:14, e/end@source.abap:15 … (+3)."
+    },
+    {
+      "case": "CC-032",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-033",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 4 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:14 commit-work. Ohne Gegenstück: CC-033-F01 R25@v2-draft@source.abap:12 — R25 ohne Gegenstück an „MESSAGE e001(zcc) WITH p_id\", CC-033-F02 R19@1.0.0@source.abap:12 — keine Brücke für R19, CC-033-F03 R18@1.0.0@source.abap:15 — keine Brücke für R18, CC-033-F04 R20@1.0.0@source.abap:5 — keine Brücke für R20."
+    },
+    {
+      "case": "CC-033",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 2 Objekt(e)) Unknown. Die Engine urteilt milder als der Fall — ein falsches Grün ist die eine Richtung, in der ein Levelunterschied gefährlich ist."
+    },
+    {
+      "case": "CC-033",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Tabellenobjekt(e) im Fall; Engine sieht 2: ZCC_CASE, ZCC_DECISION. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-033",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 10 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 8 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:4, w1/write@source.abap:5, o1/output@source.abap:7, e1/end@source.abap:8 … (+4)."
+    },
+    {
+      "case": "CC-033",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-034",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "2 von 5 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 1 verfehlt. Verfehlt: CC-034-F01 R13b@2.1.0 (Rolle a: interpretiertes SQL)@source.abap:15 erwartet native-sql in source.abap:15–15. Engine an diesem Fall: source.abap:26 commit-work. Ohne Gegenstück: CC-034-F02 R02@1.0.0@source.abap:15 — R02 ohne Gegenstück an „lv_rows = lo_stmt->execute_update( lv_sql )\", CC-034-F03 R28@2.1.0 (Fünf-Teile-Struktur; Injektion = Eingabe als Text in interpretiertem SQL)@source.abap:11 (Textaufbau, Eingabefluss; Sekundäranker: source.abap:2, :3, :15) — R28 ohne Gegenstück an „lv_sql = |UPDATE KNA1 SET NAME1 = '{ p_name }' |\", CC-034-F04 R19@1.1.0@source.abap:16 — keine Brücke für R19."
+    },
+    {
+      "case": "CC-034",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus D · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-034",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 0: —. Fehlend: KNA1 (write_native_sql_via_adbc). Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-034",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 17 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 15 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:6, nk/output@source.abap:8, e1/end@source.abap:9, b/action@source.abap:11 … (+11)."
+    },
+    {
+      "case": "CC-034",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "4 Fachsatz/Fachsätze mit 16 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-035",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 4 Sollbefunden vergleichbar; 2 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-035-F02 R02@1.0.0@source.abap:11 — R02 ohne Gegenstück an „EXEC SQL\", CC-035-F04 R18@1.0.0@source.abap:16 — keine Brücke für R18."
+    },
+    {
+      "case": "CC-035",
+      "class": "level",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus D · Engine (schlechteste Katalognote über 1 Objekt(e)) D"
+    },
+    {
+      "case": "CC-035",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-035",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 9 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 8 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, nn/output@source.abap:7, e1/end@source.abap:8, m/action@source.abap:10 … (+4)."
+    },
+    {
+      "case": "CC-035",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-036",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 2 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-036-F01 R07@1.0.0@source.abap:10 — keine Brücke für R07."
+    },
+    {
+      "case": "CC-036",
+      "class": "level",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C"
+    },
+    {
+      "case": "CC-036",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: (LC_TAB). Fehlend: KNA1 (read_via_dynamic_from_constant_singleton). Zugriffsart abweichend: —. Vom Fall nicht geführt: (LC_TAB)."
+    },
+    {
+      "case": "CC-036",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 8 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 6 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:9, q/read@source.abap:10, no/output@source.abap:16, e/end@source.abap:17 … (+2)."
+    },
+    {
+      "case": "CC-036",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-037",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:9 standard-table-read. Ohne Gegenstück: CC-037-F01 R26@2.0.0-draft@source.abap:9 — keine Brücke für R26, CC-037-F02 R28@2.0.0-draft@source.abap:9 — R28 ohne Gegenstück an „SELECT COUNT(*) FROM (p_tab) INTO @lv_count\"."
+    },
+    {
+      "case": "CC-037",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte."
+    },
+    {
+      "case": "CC-037",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: (P_TAB). Fehlend: KNA1 (default_dynamic_target_not_exhaustive). Zugriffsart abweichend: —. Vom Fall nicht geführt: (P_TAB)."
+    },
+    {
+      "case": "CC-037",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 7 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 6 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:4, nt/output@source.abap:6, e1/end@source.abap:7, q/read@source.abap:9 … (+2)."
+    },
+    {
+      "case": "CC-037",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-038",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 4 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-038-F01 R26@2.1.0@source.abap:14 (Sekundäranker: source.abap:2) — keine Brücke für R26, CC-038-F02 R28@2.1.0 (Fünf-Teile-Struktur)@source.abap:14 — R28 ohne Gegenstück an „MODIFY (p_tab) FROM @ls_row\", CC-038-F03 R07@1.1.0@source.abap:2 — keine Brücke für R07."
+    },
+    {
+      "case": "CC-038",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-038",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "2 Tabellenobjekt(e) im Fall; Engine sieht 0: —. Fehlend: ZCC_LOG_A (default_dynamic_target_not_exhaustive), ZCC_LOG_ROW (type_reference). Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-038",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 12 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 10 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:6, nk/output@source.abap:8, e1/end@source.abap:9, a/action@source.abap:11 … (+6)."
+    },
+    {
+      "case": "CC-038",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-039",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 3 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-039-F01 R13b@2.0.0-draft@source.abap:13 — R13b ohne Gegenstück an „GENERATE SUBROUTINE POOL lt_src NAME lv_prog MES\", CC-039-F02 R07@1.0.0@source.abap:18 — keine Brücke für R07, CC-039-F03 R28@2.0.0-draft@source.abap:13 — R28 ohne Gegenstück an „GENERATE SUBROUTINE POOL lt_src NAME lv_prog MES\"."
+    },
+    {
+      "case": "CC-039",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-039",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Der Fall erklärt „keine explizite externe SAP-Repository-Identität\". Die Engine meldet 0 Tabelle(n): —."
+    },
+    {
+      "case": "CC-039",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 9 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 8 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:8, a/action@source.abap:9, gen/action@source.abap:13, err/output@source.abap:15 … (+4)."
+    },
+    {
+      "case": "CC-039",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-040",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-040-F01 R13b@2.0.0-draft@source.abap:9 — R13b ohne Gegenstück an „ASSIGN ('(SAPMV45A)VBAK-VBELN') TO <lv_vbeln>\", CC-040-F02 R12@1.0.0@source.abap:9 — keine Brücke für R12."
+    },
+    {
+      "case": "CC-040",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-040",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 0: —. Fehlend: VBAK (program_global_field_read_via_literal). Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-040",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 7 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 6 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:7, r/read@source.abap:9, cl/action@source.abap:11, e1/end@source.abap:12 … (+2)."
+    },
+    {
+      "case": "CC-040",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-041",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-041-F01 R07@1.0.0@source.abap:25 — keine Brücke für R07."
+    },
+    {
+      "case": "CC-041",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-041",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Der Fall erklärt „keine explizite externe SAP-Repository-Identität\". Die Engine meldet 0 Tabelle(n): —."
+    },
+    {
+      "case": "CC-041",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 8 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 7 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:18, a1/action@source.abap:20, a2/action@source.abap:22, n/action@source.abap:24 … (+3)."
+    },
+    {
+      "case": "CC-041",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-042",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:4 standard-table-read. Ohne Gegenstück: CC-042-F01 R01@1.0.0 + R27@2.0.0-draft@source.abap:7 — R01 ohne Gegenstück an „count_rows kna1\", CC-042-F02 R01@1.0.0 + R27@2.0.0-draft@source.abap:9 — R01 ohne Gegenstück an „count_rows knb1\"."
+    },
+    {
+      "case": "CC-042",
+      "class": "level",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C"
+    },
+    {
+      "case": "CC-042",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "2 Tabellenobjekt(e) im Fall; Engine sieht 1: &1. Fehlend: KNA1 (read), KNB1 (read). Zugriffsart abweichend: —. Vom Fall nicht geführt: &1."
+    },
+    {
+      "case": "CC-042",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "5 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 5 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:6, q1/read@source.abap:7 (sekundär :4), o1/output@source.abap:8, q2/read@source.abap:9 (sekundär :4) … (+1)."
+    },
+    {
+      "case": "CC-042",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-043",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-043-F01 R16@1.0.0@source.abap:4 — keine Brücke für R16."
+    },
+    {
+      "case": "CC-043",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-043",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — ZCC_REF_043_FORMS/PROG. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-043",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 7 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 6 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, c1/opaque_call@source.abap:6+1, c2/opaque_call@source.abap:6+2, c3/opaque_call@source.abap:6+3 … (+2)."
+    },
+    {
+      "case": "CC-043",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-044",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-044-F01 R06@1.0.0@source.abap:9 — keine Brücke für R06."
+    },
+    {
+      "case": "CC-044",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-044",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — CONVERSION_EXIT_ALPHA_INPUT/FUNC. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-044",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 6 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 5 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:4, no/output@source.abap:6, e/end@source.abap:7, f/opaque_call@source.abap:9 … (+1)."
+    },
+    {
+      "case": "CC-044",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-045",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 4 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-045-F01 R29@2.0.0-draft + R01@1.0.0@source.abap:2 — keine Brücke für R29, CC-045-F02 R29@2.0.0-draft + R01@1.0.0@source.abap:3 — keine Brücke für R29, CC-045-F03 R29@2.0.0-draft + R01@1.0.0@source.abap:5 — keine Brücke für R29, CC-045-F04 R29@2.0.0-draft + R01@1.0.0@source.abap:9 — keine Brücke für R29."
+    },
+    {
+      "case": "CC-045",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-045",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 0: —. Fehlend: KNA1 (type_reference). Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-045",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 7 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 6 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:10, a1/action@source.abap:11, a2/action@source.abap:12, a3/action@source.abap:13 … (+2)."
+    },
+    {
+      "case": "CC-045",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-046",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Negativkontrolle: der Fall erklärt „keine Findings im endlichen Regelvertrag\". Die Engine meldet 0 Befund(e) einer zugeordneten Marke: —."
+    },
+    {
+      "case": "CC-046",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-046",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Der Fall erklärt „keine explizite externe SAP-Repository-Identität\". Die Engine meldet 0 Tabelle(n): —."
+    },
+    {
+      "case": "CC-046",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "14 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 14 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. ei/event_block@source.abap:6, a1/action@source.abap:7, a2/action@source.abap:8, es/event_block@source.abap:9 … (+10)."
+    },
+    {
+      "case": "CC-046",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "4 Fachsatz/Fachsätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-047",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-047-F01 R29@2.0.0-draft@source.abap:2 — keine Brücke für R29, CC-047-F02 R01@1.0.0 + R33@2.0.0-draft@source.abap:6 — R01 ohne Gegenstück an „GET kna1\"."
+    },
+    {
+      "case": "CC-047",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-047",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 0: —. Fehlend: KNA1 (ldb_read). Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-047",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "8 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 8 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:4, a0/action@source.abap:5, ldb/opaque_call@source.abap:2 (Kontext: Attribut DDF), eg/event_block@source.abap:6 … (+4)."
+    },
+    {
+      "case": "CC-047",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-048",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Negativkontrolle: der Fall erklärt „keine Findings im endlichen Regelvertrag\". Die Engine meldet 0 Befund(e) einer zugeordneten Marke: —."
+    },
+    {
+      "case": "CC-048",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-048",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Der Fall erklärt „keine explizite externe SAP-Repository-Identität\". Die Engine meldet 0 Tabelle(n): —."
+    },
+    {
+      "case": "CC-048",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 12 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 11 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:5, a0/action@source.abap:6, g1/gateway@source.abap:7 (Anweisung „CHECK\" ist keine Verzweigung des Lesers), g2/gateway@source.abap:9 (Anweisung „CHECK\" ist keine Verzweigung des Lesers) … (+7)."
+    },
+    {
+      "case": "CC-048",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "4 Fachsatz/Fachsätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-049",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 von 3 Sollbefunden vergleichbar; 3 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt."
+    },
+    {
+      "case": "CC-049",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNB1 → I_CUSTOMERCOMPANY), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+    },
+    {
+      "case": "CC-049",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNB1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-049",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 10 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 8 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:3, a1/authorization@source.abap:4, no/output@source.abap:8, e/end@source.abap:9 … (+4)."
+    },
+    {
+      "case": "CC-049",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-050",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-050-F01 R28@2.0.0-candidate.1@source.abap:4 (sek. :5+2 WITH PRIVILEGED ACCESS) — R28 ohne Gegenstück an „SELECT customer, customername, country FROM i_cu\"."
+    },
+    {
+      "case": "CC-050",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) A. Die Engine urteilt milder als der Fall — ein falsches Grün ist die eine Richtung, in der ein Levelunterschied gefährlich ist."
+    },
+    {
+      "case": "CC-050",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — I_CUSTOMER/CDS_STOB. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-050",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 8 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 6 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:3, q/read@source.abap:4, no/output@source.abap:10, e/end@source.abap:11 … (+2)."
+    },
+    {
+      "case": "CC-050",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-051",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 2 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-051-F02 R28@2.0.0-candidate.1@source.abap:5 (sek. :6+2 CLIENT SPECIFIED, :7 mandt =) — R28 ohne Gegenstück an „SELECT SINGLE mandt, kunnr, name1 FROM kna1 CLIE\"."
+    },
+    {
+      "case": "CC-051",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+    },
+    {
+      "case": "CC-051",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-051",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 6 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 5 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:4, q/read@source.abap:5, no/output@source.abap:11, e/end@source.abap:12 … (+1)."
+    },
+    {
+      "case": "CC-051",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-052",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 2 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-052-F02 R28@2.0.0-candidate.1@source.abap:4 (sek. :4+3 bcode; :13 Ausgabe) — R28 ohne Gegenstück an „SELECT SINGLE bname, bcode, uflag FROM usr02 WHE\"."
+    },
+    {
+      "case": "CC-052",
+      "class": "level",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C"
+    },
+    {
+      "case": "CC-052",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: USR02. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-052",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 7 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 6 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:3, q/read@source.abap:4, no/output@source.abap:9, e/end@source.abap:10 … (+2)."
+    },
+    {
+      "case": "CC-052",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-053",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 4 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-053-F01 R32@2.1.0@source.abap:1 (Sekundäranker: source.abap:4+1 vbak-auart, source.abap:8 vbak-lifsk) — R32 ohne Gegenstück an „FORM userexit_save_document\", CC-053-F02 R10@1.0.0; R32@2.1.0@source.abap:1 (scope=artefact; Sekundäranker: Bereich :1–10) — keine Brücke für R10, CC-053-F03 R29@2.1.0@source.abap:4 (Sekundäranker: source.abap:4+1, :4+6) — keine Brücke für R29, CC-053-F04 R19@1.1.0@source.abap:8 — keine Brücke für R19."
+    },
+    {
+      "case": "CC-053",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Fallpaar: die Antwort hängt am Zielprofil, und der Evidenzbericht der Engine trägt kein Profil im Schlüssel (R31)."
+    },
+    {
+      "case": "CC-053",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — MV45AFZZ/INCL. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-053",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 7 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 5 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:1, i/action@source.abap:3, a/action@source.abap:5, w/action@source.abap:8 … (+1)."
+    },
+    {
+      "case": "CC-053",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-054",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-054-F01 R13b@2.0.0-candidate.1@source.abap:14 (sek. :17 Literal 'USER_COMMAND', :16 sy-repid) — R13b ohne Gegenstück an „CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY' EXPORTING\", CC-054-F02 R11@1.0.0@source.abap:14 — keine Brücke für R11."
+    },
+    {
+      "case": "CC-054",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-054",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — REUSE_ALV_GRID_DISPLAY/FUNC. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-054",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 9 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 8 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:9, d/action@source.abap:10, f/action@source.abap:12, alv/opaque_call@source.abap:14 … (+4)."
+    },
+    {
+      "case": "CC-054",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-055",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 2 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-055-F02 R13b@2.0.0-candidate.1@source.abap:7 (sek. :8 'SAPMF02D', '0100'; :9 'RF02D-KUNNR'; :11 '0110'; :12 'KNA1-NAME1'; :13 '=UPDA') — R13b ohne Gegenstück an „gt_bdc = VALUE #( ( program = 'SAPMF02D' dynpro \"."
+    },
+    {
+      "case": "CC-055",
+      "class": "level",
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C"
+    },
+    {
+      "case": "CC-055",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "2 Sollobjekt(e), keines vom Typ TABL — XD01/TRAN, SAPMF02D/PROG. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-055",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 8 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 7 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:6, b/action@source.abap:7, x/external_program@source.abap:14, r/action@source.abap:17 … (+3)."
+    },
+    {
+      "case": "CC-055",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-056",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 2 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-056-F02 R19@1.0.0@source.abap:4 — keine Brücke für R19."
+    },
+    {
+      "case": "CC-056",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-056",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — ZCC_REF_056_CHILD/PROG. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-056",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 8 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 7 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:3, no/output@source.abap:5, e/end@source.abap:6, o1/output@source.abap:8 … (+3)."
+    },
+    {
+      "case": "CC-056",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-057",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 3 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-057-F03 R19@1.1.0@source.abap:14 — keine Brücke für R19, CC-057-F02 R31@2.0.0@source.abap:10+4 (Sekundäranker: source.abap:11) — keine Brücke für R31."
+    },
+    {
+      "case": "CC-057",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus (Paar) · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Fallpaar: die Antwort hängt am Zielprofil, und der Evidenzbericht der Engine trägt kein Profil im Schlüssel (R31)."
+    },
+    {
+      "case": "CC-057",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-057",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 5 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:9, q/read@source.abap:10, a/action@source.abap:15, e/end@source.abap:17."
+    },
+    {
+      "case": "CC-057",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-058",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 4 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-058-F01 R03@1.1.0 (R05@1.1.0 nur für „Ende der Unterstützung separat prüfen\")@source.abap:4+5 (Sekundäranker: source.abap:5) — keine Brücke für R03, CC-058-F04 R19@1.1.0@source.abap:9 — keine Brücke für R19, CC-058-F02 R31@2.0.0@source.abap:1 (scope=artefact; Sekundäranker: source.abap:2 PARAMETERS, source.abap:10 und :14 WRITE) — keine Brücke für R31, CC-058-F03 R03@1.1.0@source.abap:4+5 (Sekundäranker: source.abap:5) — keine Brücke für R03."
+    },
+    {
+      "case": "CC-058",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus (Paar) · Engine (schlechteste Katalognote über 1 Objekt(e)) A. Fallpaar: die Antwort hängt am Zielprofil, und der Evidenzbericht der Engine trägt kein Profil im Schlüssel (R31)."
+    },
+    {
+      "case": "CC-058",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — I_CUSTOMER/CDS_STOB. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-058",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 8 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 6 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:3, q/read@source.abap:4, no/output@source.abap:10, e/end@source.abap:11 … (+2)."
+    },
+    {
+      "case": "CC-058",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-059",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:13 standard-table-write. Ohne Gegenstück: CC-059-F01 R03@1.0.0 (Profil 1) / R31@v2-vorl. (Profil 2)@source.abap:1 (scope=artefact) — keine Brücke für R03, CC-059-S01 R28@v2-vorl.@source.abap:13+4 (Token IN LOCAL MODE; Sekundäranker: source.abap:9+4 für den READ) — R28 ohne Gegenstück an „MODIFY ENTITIES OF zi_order IN LOCAL MODE ENTITY\"."
+    },
+    {
+      "case": "CC-059",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus (Paar) · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Fallpaar: die Antwort hängt am Zielprofil, und der Evidenzbericht der Engine trägt kein Profil im Schlüssel (R31)."
+    },
+    {
+      "case": "CC-059",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "2 Sollobjekt(e), keines vom Typ TABL — ZI_ORDER/BDEF, CL_ABAP_BEHAVIOR_HANDLER/CLAS. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-059",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "4 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:8, r/read@source.abap:9, w/write@source.abap:13, e/end@source.abap:21."
+    },
+    {
+      "case": "CC-059",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-060",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 5 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-060-F02 R30@2.1.0@zcl_route_service.clas.abap:11 — keine Brücke für R30, CC-060-F04 R18@1.0.0@zcl_route_service.clas.abap:12 — keine Brücke für R18, CC-060-F05 R27@2.1.0@zcl_route_service.clas.abap:16 (expression_path: #cond, #arm1, #arm2 — Notation als Vorschlag) — keine Brücke für R27, CC-060-F03 R31@2.0.0@zcl_route_service.clas.abap:1 (scope=artefact) — keine Brücke für R31."
+    },
+    {
+      "case": "CC-060",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus (Paar) · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Fallpaar: die Antwort hängt am Zielprofil, und der Evidenzbericht der Engine trägt kein Profil im Schlüssel (R31)."
+    },
+    {
+      "case": "CC-060",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-060",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 12 Knoten vergleichbar; 2 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 10 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@zcl_route_service.clas.abap:10, c/action@zcl_route_service.clas.abap:11, q/read@zcl_customer_api.clas.abap:10, wa/action@zcl_customer_api.clas.abap:15 … (+6)."
+    },
+    {
+      "case": "CC-060",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "3 Fachsatz/Fachsätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-061",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-061-F01 R13a@2.1.0 (Fassung nach REV2-05)@source.abap:14 (sek. :14 eingebetteter Ausdruck { lcl_counter=>tick( ) }; Rumpf :8–11; Seiteneffekt :9) — keine Brücke für R13a."
+    },
+    {
+      "case": "CC-061",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-061",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 Sollobjekt(e), keines vom Typ TABL — —. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-061",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "6 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 6 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:13, t/call@source.abap:14, a/action@source.abap:9, r/action@source.abap:10 … (+2)."
+    },
+    {
+      "case": "CC-061",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-062",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 3 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-062-F02 R26@2.1.0 (Fassung nach REV2-03)@source.abap:5 (sek. :5 Token (p_where); Herkunft :2) — keine Brücke für R26, CC-062-F03 R28@2.1.0 (Fassung nach REV2-07)@source.abap:5 (sek. :2) — R28 ohne Gegenstück an „SELECT COUNT(*) FROM kna1 WHERE (p_where) INTO @\"."
+    },
+    {
+      "case": "CC-062",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+    },
+    {
+      "case": "CC-062",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-062",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "4 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:4, q/read@source.abap:5, o/output@source.abap:6, done/end@source.abap:6."
+    },
+    {
+      "case": "CC-062",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-063",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 2 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-063-F02 R28@2.1.0 (Fassung nach REV2-07)@source.abap:5 (sek. :5 Token CLIENT SPECIFIED, :6 mandt = sy-mandt) — R28 ohne Gegenstück an „SELECT SINGLE name1 INTO lv_name FROM kna1 CLIEN\"."
+    },
+    {
+      "case": "CC-063",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+    },
+    {
+      "case": "CC-063",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-063",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "4 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:4, q/read@source.abap:5, o/output@source.abap:7, done/end@source.abap:7."
+    },
+    {
+      "case": "CC-063",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-064",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 1 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt."
+    },
+    {
+      "case": "CC-064",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-064",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — S_TCODE/SUSO. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-064",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 8 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 7 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:2, a1/authorization@source.abap:3, k/action@source.abap:4, t/action@source.abap:5 … (+3)."
+    },
+    {
+      "case": "CC-064",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-065",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 3 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-065-F02 R25@2.1.0 (Fassung nach REV2-01)@caller.abap:3 — R25 ohne Gegenstück an „SUBMIT zce_child AND RETURN\", CC-065-F03 R16@1.0.0@caller.abap:3 — keine Brücke für R16."
+    },
+    {
+      "case": "CC-065",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-065",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "1 Sollobjekt(e), keines vom Typ TABL — ZCE_CHILD/PROG. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-065",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "4 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@caller.abap:2, x/external_program@caller.abap:3, o/output@caller.abap:4, done/end@caller.abap:4."
+    },
+    {
+      "case": "CC-065",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-066",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-066-F01 R27@2.1.0 (Fassung nach REV2-13)@source.abap:7#e1 und source.abap:7#e2 (Herkunft :3 bzw. :4 als Sekundäranker) — keine Brücke für R27."
+    },
+    {
+      "case": "CC-066",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-066",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 Sollobjekt(e), keines vom Typ TABL — —. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-066",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "4 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:6, o1/output@source.abap:7#e1 (Herkunft :3), o2/output@source.abap:7#e2 (Herkunft :4), done/end@source.abap:7."
+    },
+    {
+      "case": "CC-066",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-067",
+      "class": "befunde",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 2 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-067-F01 R09@1.1.0 (Fassung nach Regelurteil R09)@source.abap:5 (Schutzobjekt :6, sek. :7 FOR ALL ENTRIES) — keine Brücke für R09."
+    },
+    {
+      "case": "CC-067",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+    },
+    {
+      "case": "CC-067",
+      "class": "objekte",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+    },
+    {
+      "case": "CC-067",
+      "class": "skelett",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "5 Skelettknoten, keiner an einem Konstrukt, das der Leser führt. Nicht vergleichbar: 5 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:4, g/gateway@source.abap:5 (Anweisung „ASSERT\" ist keine Verzweigung des Lesers), x/end@source.abap:5, q/read@source.abap:6 … (+1)."
+    },
+    {
+      "case": "CC-067",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    },
+    {
+      "case": "CC-068",
+      "class": "befunde",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-068-F01 R32@2.1.0 (Fassung nach REV2-02)@source.abap:10 (Gegenbelege :1, :7, :9; sek. :11, :12) — R32 ohne Gegenstück an „FORM userexit_save_document\"."
+    },
+    {
+      "case": "CC-068",
+      "class": "level",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+    },
+    {
+      "case": "CC-068",
+      "class": "objekte",
+      "state": "disagree",
+      "verdict": "nicht-vergleichbar",
+      "reason": "0 Sollobjekt(e), keines vom Typ TABL — —. Die Datenkopplung der Engine führt nur Tabellen; Bausteine, BAdIs und Programme stehen dort nicht."
+    },
+    {
+      "case": "CC-068",
+      "class": "skelett",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 5 Knoten vergleichbar; 1 getroffen, 0 ohne Entsprechung: —. Nicht vergleichbar: 4 Knoten — die Engine baut kein Prozessskelett, buildProcessFacts liefert Anweisungen, Blöcke, Verzweigungen und einen Aufrufgraphen. s/start@source.abap:8, c/call@source.abap:9, a/action@source.abap:12, e/end@source.abap:14."
+    },
+    {
+      "case": "CC-068",
+      "class": "fachsaetze",
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Mehr ist hier nicht zu prüfen: die Engine erzeugt keine Fachsätze."
+    }
+  ]
+}

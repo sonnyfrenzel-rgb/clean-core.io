@@ -1,0 +1,17 @@
+REPORT zcc_ref_023.
+PARAMETERS p_kunnr TYPE c LENGTH 10.
+PARAMETERS p_name TYPE c LENGTH 35 LOWER CASE.
+PARAMETERS p_test AS CHECKBOX DEFAULT 'X'.
+START-OF-SELECTION.
+  IF p_test = 'X'.
+    WRITE / 'SIMULATION_ONLY'.
+    RETURN.
+  ENDIF.
+  UPDATE kna1 SET name1 = @p_name WHERE kunnr = @p_kunnr.
+  IF sy-subrc = 0.
+    COMMIT WORK AND WAIT.
+    WRITE / 'UPDATE_COMMITTED'.
+  ELSE.
+    ROLLBACK WORK.
+    WRITE / 'NO_UPDATE'.
+  ENDIF.

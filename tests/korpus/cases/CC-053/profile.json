@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "PCE2022-objectReleaseInfo",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=PCE2022-objectReleaseInfo · rule_revision=2.1.0-candidate · runtime_context=dialog (Hosthypothese: Sichern des Verkaufsbelegs)",
+  "release": "S/4HANA 2023",
+  "rule_revision": "2.1.0-candidate",
+  "runtime_context": "dialog (Hosthypothese: Sichern des Verkaufsbelegs)",
+  "second_profile": "private-cloud und ecc-6: gleiche Antworten wie oben; btp-abap-environment: der Host existiert nicht, gegenstandslos."
+}

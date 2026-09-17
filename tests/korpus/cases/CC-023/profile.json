@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "PCE2022-objectReleaseInfo",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 (v1: „S/4HANA, PCE2022-Katalog\") · catalog_revision=PCE2022-objectReleaseInfo · rule_revision=2.1.0-candidate",
+  "release": "S/4HANA 2023 (v1: „S/4HANA, PCE2022-Katalog\")",
+  "rule_revision": "2.1.0-candidate",
+  "runtime_context": null,
+  "second_profile": "onpremise-s4 · abap-for-cloud: cloud_artefact = not_activatable — ausführbares Programm mit Selektionsbild und Listausgabe, zusätzlich UPDATE auf ein nicht freigegebenes Objekt. Kein A–D-Level dort (assessment_applicable = false). Das As-is-Skelett bleibt in beiden Profilen gültig (source_process = reconstructed, REV2-12)."
+}

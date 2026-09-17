@@ -1,0 +1,245 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9–10",
+          "token": null
+        }
+      ],
+      "id": "CC-003-B01",
+      "text": "Negative Beträge werden als INVALID eingeordnet."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        }
+      ],
+      "id": "CC-003-B02",
+      "text": "Nicht negative Beträge bis einschließlich 10000 erhalten AUTO_ROUTE."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9–14",
+          "token": null
+        }
+      ],
+      "id": "CC-003-B03",
+      "text": "Für größere Beträge wird MANAGER_ROUTE zurückgegeben; der Code führt keine menschliche Genehmigung aus."
+    }
+  ],
+  "classes": [
+    "K02"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_applicable",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": true,
+    "objects": true
+  },
+  "expectedByProfile": null,
+  "findings": [],
+  "forbiddenConclusions": [
+    "source.abap:14 — Kein realer Manager-Task, keine Bestellung oder tatsächliche Genehmigung belegt."
+  ],
+  "id": "CC-003",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [],
+  "openReviewerQuestions": [
+    "Grenzen -0.01/0/10000/10000.01 gegen Fachsätze abgleichen",
+    "Routentext von tatsächlicher Genehmigung trennen",
+    "Wrapper im gewählten Laufzeitmodell aktivieren und testen",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "g"
+      },
+      {
+        "condition": "iv_amount < 0",
+        "from": "g",
+        "to": "x"
+      },
+      {
+        "condition": "iv_amount >= 0",
+        "from": "g",
+        "to": "h"
+      },
+      {
+        "condition": "iv_amount <= 10000",
+        "from": "h",
+        "to": "a"
+      },
+      {
+        "condition": "iv_amount > 10000",
+        "from": "h",
+        "to": "m"
+      },
+      {
+        "condition": "always",
+        "from": "x",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "m",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 20,
+          "raw": "source.abap:20",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "Lokale Regel aufrufen",
+        "type": "call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Betrag negativ?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "INVALID setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "h",
+        "meaning": "Betrag bis 10000?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "AUTO_ROUTE setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "m",
+        "meaning": "MANAGER_ROUTE setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 21,
+          "raw": "source.abap:21",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Routencode ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Lokaler Regel-Wrapper: Standard-ABAP B und keine echte Freigabe"
+}

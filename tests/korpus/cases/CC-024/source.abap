@@ -1,0 +1,17 @@
+REPORT zcc_ref_024.
+PARAMETERS p_id TYPE c LENGTH 10.
+PARAMETERS p_route TYPE c LENGTH 20.
+PARAMETERS p_test AS CHECKBOX DEFAULT 'X'.
+START-OF-SELECTION.
+  IF p_test = 'X'.
+    WRITE / 'SIMULATION_ONLY'.
+    RETURN.
+  ENDIF.
+  UPDATE zcc_decision SET route = @p_route WHERE case_id = @p_id.
+  IF sy-subrc = 0.
+    COMMIT WORK AND WAIT.
+    WRITE / 'RECORDED'.
+  ELSE.
+    ROLLBACK WORK.
+    WRITE / 'MISSING_CASE'.
+  ENDIF.

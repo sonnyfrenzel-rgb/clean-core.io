@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "n/a",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=n/a · rule_revision=2.1.0-candidate.1",
+  "release": "S/4HANA 2023",
+  "rule_revision": "2.1.0-candidate.1",
+  "runtime_context": null,
+  "second_profile": "btp-abap-environment: REPORT/WRITE nicht aktivierbar; ob DEFINE dort zulässig ist, bleibt Prüferfrage P3 aus CC-042 — keine zweite Levelantwort."
+}

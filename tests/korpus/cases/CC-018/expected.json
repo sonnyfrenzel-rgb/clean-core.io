@@ -1,0 +1,179 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 2,
+          "raw": "source.abap:2",
+          "token": null
+        }
+      ],
+      "id": "CC-018-B01",
+      "text": "Die lokale Kindklasse erbt von einer nicht gelieferten kundeneigenen Klasse."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        }
+      ],
+      "id": "CC-018-B02",
+      "text": "Der Override delegiert an eine unbekannte Basismethode; ihr fachliches Verhalten ist nicht belegt."
+    }
+  ],
+  "classes": [
+    "K09",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 2,
+        "raw": "source.abap:2",
+        "token": null
+      },
+      "id": "CC-018-F01",
+      "profiles": null,
+      "rule": "R16",
+      "ruleRaw": "R16@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-OO"
+      ],
+      "statement": "Basisklassenquelle und Vertrag fehlen. Keine erfundene Basislogik oder Complete-Analyse."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 8,
+        "raw": "source.abap:8",
+        "token": null
+      },
+      "id": "CC-018-F02",
+      "profiles": null,
+      "rule": "R14",
+      "ruleRaw": "R14@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-OO"
+      ],
+      "statement": "Super-Aufruf bleibt opak, selbst wenn der Override sichtbar ist."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-018",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 2,
+        "raw": "source.abap:2",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCL_CC_MISSING_BASE",
+        "objectType": "CLAS",
+        "tadirObjName": "ZCL_CC_MISSING_BASE",
+        "tadirObject": "CLAS"
+      },
+      "name": "ZCL_CC_MISSING_BASE",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": [],
+      "usage": "missing_superclass"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Globale Basisklasse einschließlich Interfaces/Abhängigkeiten beschaffen",
+    "Super-Signatur und fachliche Seiteneffekte prüfen",
+    "Unknown erst nach nachvollziehbarer Quellenauflösung ersetzen",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "intentionally_incomplete",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "b"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "Kindmethode aufrufen",
+        "type": "call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "b",
+        "meaning": "Fehlende Basismethode",
+        "type": "opaque_call"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "OO: fehlende globale Basisklasse"
+}

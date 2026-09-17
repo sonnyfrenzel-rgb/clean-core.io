@@ -1,0 +1,355 @@
+{
+  "answerFields": {},
+  "beleggrad": "erinnert — Syntax verifiziert; dass ein Datenbank-Commit den offenen SELECT-Cursor schließt und die Schleife danach mit Laufzeitfehler abbricht, ist SAP-dokumentiert nach Erinnerung des Autors. Nicht behauptet: der exakte Name des Laufzeitfehlers und ob er beim zweiten Satz oder erst beim Nachladen des nächsten Pakets vom Datenbankcursor eintritt.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        }
+      ],
+      "id": "CC-030-B01",
+      "text": "Für jeden offenen Fall wird die Route auf den eingegebenen Wert gesetzt und sofort committet — eine LUW je Zeile."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4–12",
+          "token": null
+        }
+      ],
+      "id": "CC-030-B02",
+      "text": "Gibt es mehr als eine offene Zeile, bricht der Report nach dem ersten Commit beim Weiterlesen vom geschlossenen Cursor mit einem Laufzeitfehler ab; die bis dahin committeten Änderungen bleiben. DONE wird nicht erreicht."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        }
+      ],
+      "id": "CC-030-B03",
+      "text": "Bei höchstens einer offenen Zeile wird die Schleife regulär beendet und DONE ausgegeben. Der Fehler ist datenabhängig, nicht codeabhängig sichtbar."
+    }
+  ],
+  "classes": [
+    "K12",
+    "K02"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": "Fable KA-023 (einziges Modell; kritisch, weil der Fehler erst mit Datenmenge auftritt und kein Level ihn anzeigt) · verwandt, nicht deckungsgleich: Fable KA-087 (Commit je Schleifendurchlauf über eine interne Tabelle), Fable KA-032 (OPEN CURSOR WITH HOLD als Gegenkonstrukt)",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10",
+        "token": null
+      },
+      "id": "CC-030-F01",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@v2-draft",
+      "ruleVersion": "v2-draft",
+      "severity": "high",
+      "sources": [
+        "SAP-SQL",
+        "SAP-FLOW"
+      ],
+      "statement": "COMMIT WORK innerhalb der SELECT-Schleife (Zeile 4–12): Der Datenbank-Commit schließt den offenen Cursor. Sobald die Schleife danach weitere Zeilen vom Cursor benötigt, bricht der Report mit einem Laufzeitfehler ab. Das ist die Sollantwort — ein Level ändert sich nicht."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 4,
+        "raw": "source.abap:4",
+        "token": null
+      },
+      "id": "CC-030-F02",
+      "profiles": null,
+      "rule": "R19",
+      "ruleRaw": "R19@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-FLOW"
+      ],
+      "statement": "Die Schleife ist ein loop-Knoten über einen Datenbankcursor. DONE (Zeile 13) ist nur erreichbar, wenn nach dem ersten Commit keine weitere Zeile mehr vom Cursor geholt werden muss."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10",
+        "token": null
+      },
+      "id": "CC-030-F03",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@v2-draft",
+      "ruleVersion": "v2-draft",
+      "severity": "medium",
+      "sources": [
+        "SAP-FLOW"
+      ],
+      "statement": "Commit je Zeile: jede geänderte Route ist beim Abbruch bereits persistiert; „alles oder nichts\" gilt nicht."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 8,
+        "raw": "source.abap:8",
+        "token": null
+      },
+      "id": "CC-030-F04",
+      "profiles": null,
+      "rule": "R20",
+      "ruleRaw": "R20@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-SQL"
+      ],
+      "statement": "Schreibzugriff auf kundeneigene Tabelle innerhalb der Leseschleife auf dieselbe Tabelle; kein SAP-Standardtabellen-D."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-030",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku — REVIEW-2.0.1 (16.09.2026), nicht blind; Fall in §7 des Reviews inhaltlich gelesen (Fetch statt Zeilenzahl), Regel R25 beurteilt; sap-doku: S08/S09 (Datenbank-Commit schließt offene Cursor, Weiterlesen löst eine nicht behandelbare Ausnahme aus) nach Lesung des Regelautors",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5, source.abap:8",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCC_DECISION",
+        "objectType": "TABL",
+        "tadirObjName": "ZCC_DECISION",
+        "tadirObject": "TABL"
+      },
+      "name": "ZCC_DECISION",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": [],
+      "usage": "customer_table_write, read"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Bestätigen und benennen: Welcher Laufzeitfehler tritt auf, und tritt er beim nächsten Schleifendurchlauf oder erst auf, wenn die Datenbankschnittstelle das nächste Paket vom Cursor nachladen muss? Davon hängt die Formulierung von B02 („mehr als eine Zeile\" versus „mehr als ein Paket\") ab.",
+    "Bestätigen: Der COMMIT WORK schließt Cursor unabhängig von der Datenbankplattform (SAP HANA eingeschlossen); Plattformabhängigkeit wäre ein zweites Profil.",
+    "Fehlende Regel: R25 spricht von LUW-Zeitpunkten, nicht von Cursor-Invalidierung. F01 dehnt R25; der Zusammenführer entscheidet, ob eine R25a „Commit schließt Datenbankcursor\" eingeführt wird.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "l"
+      },
+      {
+        "condition": "next row",
+        "from": "l",
+        "to": "w"
+      },
+      {
+        "condition": "always",
+        "from": "w",
+        "to": "g"
+      },
+      {
+        "condition": "sy-subrc = 0",
+        "from": "g",
+        "to": "c"
+      },
+      {
+        "condition": "sy-subrc <> 0",
+        "from": "g",
+        "to": "l"
+      },
+      {
+        "condition": "weitere Zeile vom Cursor benötigt",
+        "from": "c",
+        "to": "x"
+      },
+      {
+        "condition": "keine weitere Zeile benötigt",
+        "from": "c",
+        "to": "l"
+      },
+      {
+        "condition": "no more rows",
+        "from": "l",
+        "to": "d"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "l",
+        "meaning": "Offene Fälle per Cursor lesen",
+        "type": "loop"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "w",
+        "meaning": "Route setzen",
+        "type": "write"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Zeile geändert?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "Commit (schließt Cursor)",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "Laufzeitfehler: Cursor ungültig; Sekundäranker source.abap:10",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "d",
+        "meaning": "Fertig melden",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "COMMIT WORK in SELECT … ENDSELECT: der Befund ist ein Laufzeitfehler, kein Level"
+}

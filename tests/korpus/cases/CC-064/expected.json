@@ -1,0 +1,284 @@
+{
+  "answerFields": {
+    "known_worst_level": "B — unter der Profilannahme zu S_TCODE (unten)."
+  },
+  "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert. AUTHORITY-CHECK OBJECT … ID … FIELD, Berechtigungsobjekt S_TCODE mit Feld TCD, Inline-Deklaration aus sy-subrc existieren nach Autorenwissen. Das Review nennt als Quelle nur den „direkten Datenfluss des konstruierten Beispiels; kein eigener SAP-Katalogbeleg\".",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        }
+      ],
+      "id": "CC-064-B01",
+      "text": "Ohne Berechtigung auf S_TCODE mit Transaktionscode SE38 wird der Block ohne Ausgabe verlassen."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        }
+      ],
+      "id": "CC-064-B02",
+      "text": "Mit dieser Berechtigung wird der Text „Guarded output\" ausgegeben."
+    }
+  ],
+  "classes": [
+    "K15",
+    "K02"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "Gegenreview CE-04 / REV2-07 (Regelurteil R28 „hält nicht\": „gespeicherter sy-subrc kann später wirksam geprüft werden\") · Gegenfall zu CC-049-F03 („geprüft ohne Wirkung\"); CC-049 hat genau diesen Datenflussfall in seiner Prüferfrage 2 offengelassen · Modellreviews 16.09.: DeepSeek CC-GAP-071 nennt dasselbe Berechtigungsobjekt S_TCODE (mit Variable), Fable KA-090 das Direktmuster IF sy-subrc <> 0, Grok H-068 die Gegenrichtung (sy-subrc ignoriert); kein Modell nannte den gesicherten Rückgabewert.",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 3,
+        "raw": "source.abap:3 (Auswertung :6 über den in :4 gesicherten Wert; Abbruch :7)",
+        "token": null
+      },
+      "id": "CC-064-F01",
+      "profiles": null,
+      "rule": "R28",
+      "ruleRaw": "R28@2.1.0 (Fassung nach REV2-07)",
+      "ruleVersion": "2.1.0",
+      "severity": "medium",
+      "sources": [
+        "Datenfluss des Beispiels (Review); ABAP-KEYDOC (AUTHORITY-CHECK",
+        "sy-subrc — im Review-Register nicht geführt)"
+      ],
+      "statement": "Aussageklasse security_and_authorization. Beobachtung: AUTHORITY-CHECK auf S_TCODE (TCD = SE38) mit Wirkung. Datenfluss: sy-subrc (:3) → lv_auth_result (:4) → Bedingung (:6) → RETURN (:7); dazwischen keine Operation, die sy-subrc setzt oder die Variable verändert (:5 ist eine Literalzuweisung). Ergebnis: Berechtigungsgateway mit Abbruchpfad — „geprüft mit Wirkung\", obwohl kein IF sy-subrc unmittelbar folgt; Abstand zur Prüfzeile ist kein Beleg fehlender Wirksamkeit. Schutzmaßnahme: der Abbruch ohne Ausgabe. Verbleibendes Risiko: keins bezüglich der Ausgabe; ob S_TCODE/SE38 die angemessene Prüfung ist, ist Policy, kein Befund. Level unverändert."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:3 — Nicht „geprüft ohne Wirkung\" (R28@2.0.0: „AUTHORITY-CHECK ohne Auswertung von sy-subrc\"; CC-049-F03-Muster, das nur das Direktmuster verlangte). Die Auswertung geschieht über den gesicherten Wert; die Regel muss den Datenfluss verlangen, nicht das Token sy-subrc in der nächsten Zeile.",
+    "source.abap:5 — Nicht: die Zuweisung in :5 „verbraucht\" oder überschreibt sy-subrc. Zuweisungen setzen sy-subrc nicht; und geprüft wird ohnehin lv_auth_result.",
+    "source.abap:4 — lv_auth_result nicht als unbenutzte Kopie verwerfen: :6 liest sie.",
+    "source.abap:3 — Kein Fachsatz, die Prüfung sei fachlich angemessen oder hinreichend für irgendeine andere Operation (expectation.json: „belegt keine angemessene Autorisierung einer anderen Fachoperation\").",
+    "source.abap:3 — Das Level nicht verändern: weder „B, weil geprüft\" noch „D, weil Berechtigungsobjekt\".",
+    "source.abap:7 — Kein Fachsatz „NO_AUTH wird gemeldet\": der Abbruch ist stumm."
+  ],
+  "id": "CC-064",
+  "independence": [
+    "gegenreview"
+  ],
+  "independenceRaw": "gegenreview",
+  "known_worst_level": "B — unter der Profilannahme zu S_TCODE (unten).",
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 3,
+        "raw": "source.abap:3 (Auswertung :6)",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "not_observed_in_extract",
+      "identity": {
+        "objectKey": "S_TCODE",
+        "objectType": "SUSO",
+        "tadirObjName": "S_TCODE",
+        "tadirObject": "SUSO"
+      },
+      "name": "S_TCODE",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_applicable",
+      "successors": [],
+      "usage": "authority_check_with_effect_via_saved_result"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Welche Bedingung soll R28@2.1.0 für „mit Wirkung\" tragen? Vorschlag dieses Falls: Auswertung von sy-subrc oder eines daraus abgeleiteten Werts, mit Wirkung auf den Kontrollfluss, wobei zwischen Prüfung und Auswertung keine sy-subrc-setzende Operation und keine Änderung des abgeleiteten Werts liegt. Ohne diese Bedingung wäre ein späteres, aber inzwischen überschriebenes Ergebnis ebenfalls „wirksam\" — das wäre falsch.",
+    "Ist S_TCODE im Zielprofil als klassisch zulässig belegt, und ist es in ABAP Cloud nicht freigegeben? Beides ist hier Annahme; Katalog nicht beobachtet.",
+    "Bestätigt der Prüfer, dass eine AUTHORITY-CHECK-Prüfung auf S_TCODE innerhalb eines Reports (statt der Kernelprüfung beim Transaktionsstart) semantisch dasselbe prüft? Für die Sollantwort unerheblich, für W01 nicht.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "a1"
+      },
+      {
+        "condition": "always",
+        "from": "a1",
+        "to": "k"
+      },
+      {
+        "condition": "always",
+        "from": "k",
+        "to": "t"
+      },
+      {
+        "condition": "always",
+        "from": "t",
+        "to": "g"
+      },
+      {
+        "condition": "lv_auth_result <> 0",
+        "from": "g",
+        "to": "e"
+      },
+      {
+        "condition": "lv_auth_result = 0",
+        "from": "g",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "o",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 2,
+          "raw": "source.abap:2",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3",
+          "token": null
+        },
+        "id": "a1",
+        "meaning": "Berechtigung S_TCODE/SE38 prüfen — mit Wirkung über k und g",
+        "type": "authorization"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "k",
+        "meaning": "Prüfwert sichern (sy-subrc → lv_auth_result)",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "t",
+        "meaning": "Text setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Berechtigung fehlt?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "Block verlassen, keine Ausgabe",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Text ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Gesicherter Rückgabewert statt unmittelbarer sy-subrc-Prüfung: die Berechtigungsprüfung wirkt (Gegenfall zu CC-049-F03)"
+}

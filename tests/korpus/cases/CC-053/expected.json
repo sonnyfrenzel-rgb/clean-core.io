@@ -1,0 +1,442 @@
+{
+  "answerFields": {
+    "cloud_api_surface": "unknown (ohne Host); not_usable bei belegtem klassischem Host",
+    "cloud_artefact": "not_activatable (Include-Fragment ohne Programmrahmen)",
+    "host_context": "suspected:userexit-include",
+    "known_worst_level": "B (beobachtet: Standard-ABAP-Kontrollfluss; kein SAP-Objekt beobachtet — vbak ist unaufgelöst)",
+    "potential_worst_level": "D (falls Modifikation eines SAP-Includes)"
+  },
+  "beleggrad": "verifiziert (Existenz): Include MV45AFZZ des Programms SAPMV45A mit FORM USEREXIT_SAVE_DOCUMENT und die Struktur VBAK mit den Feldern AUART, NETWR, LIFSK existieren. Nicht verifiziert: dass *diese* Quelle MV45AFZZ ist — das ist ein Liefermetadatum (Dateiname des Fallbündels), im Quelltext steht es nicht. Auftragsart, Grenzwert und Sperrkennzeichen konstruiert.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        }
+      ],
+      "id": "CC-053-B01",
+      "text": "Enthält die Arbeitsstruktur vbak bei Aufruf die Auftragsart TA und einen Nettowert größer als 20000 (Gleichheit nicht), wird lokal der Sperrkennzeichen-Kandidat 01 ermittelt. Währung des Nettowerts und Bedeutung des Sperrcodes sind im Code nicht belegt; der Typ von NETWR hängt am Hostkontext (F03)."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        }
+      ],
+      "id": "CC-053-B02",
+      "text": "Nur wenn ein Sperrkennzeichen-Kandidat ermittelt wurde, wird er in das Feld LIFSK der Struktur vbak übernommen — ein vorhandener anderer Wert wird dabei überschrieben. Andernfalls bleibt ein bereits vorhandener LIFSK-Wert unverändert (negativer Pfad). Angekündigt, nicht persistiert im Ausschnitt: kein COMMIT, kein Datenbankzugriff; ob und wann ein Host den Wert speichert, ist aus dem Ausschnitt nicht ableitbar."
+    }
+  ],
+  "classes": [
+    "K16",
+    "K05"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown (ohne Host); not_usable bei belegtem klassischem Host",
+  "cloud_artefact": "not_activatable (Include-Fragment ohne Programmrahmen)",
+  "convergence": "Grok H-058, H-063 („B oder D je Fixture\") · Fable KA-052 (D „namentlich erkennbar ohne Metadaten\" — die Lesart, die dieser Fall jetzt zurückweist), KA-053 · Fable-Lücke L3 · Gegenreview REV2-02, CE-08 (im Korpus CC-068)",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": [
+    {
+      "classic_level": "Unknown",
+      "cloud_artefact": "not_activatable (Include-Fragment)",
+      "fields": [
+        {
+          "field": "host_context",
+          "file": null,
+          "scope": null,
+          "value": "suspected:userexit-include"
+        },
+        {
+          "field": "classic_extension.level",
+          "file": null,
+          "scope": null,
+          "value": "Unknown"
+        },
+        {
+          "field": "known_worst_level",
+          "file": null,
+          "scope": null,
+          "value": "B (Standardmechanik; kein SAP-Objekt beobachtet)"
+        },
+        {
+          "field": "potential_worst_level",
+          "file": null,
+          "scope": null,
+          "value": "D"
+        },
+        {
+          "field": "cloud_api_surface",
+          "file": null,
+          "scope": null,
+          "value": "unknown"
+        },
+        {
+          "field": "cloud_artefact",
+          "file": null,
+          "scope": null,
+          "value": "not_activatable (Include-Fragment)"
+        },
+        {
+          "field": "source_process",
+          "file": null,
+          "scope": null,
+          "value": "reconstructed (Kontrollfluss im FORM ist entscheidbar)"
+        }
+      ],
+      "findingIds": [
+        "CC-053-F01",
+        "CC-053-F02",
+        "CC-053-F03",
+        "CC-053-F04"
+      ],
+      "header": "Variante 1: nur die Datei (Sollantwort dieses Falls)",
+      "known_worst_level": "B (Standardmechanik; kein SAP-Objekt beobachtet)",
+      "label": "Variante 1"
+    },
+    {
+      "classic_level": "B-Kandidat: nominierter klassischer Userexit-Include (R32@2.1.0, S01) — nicht D, solange kein Modifikationsnachweis vorliegt (W01); Vorbehalt VBAK, siehe Offene Prüferfragen",
+      "cloud_artefact": "not_activatable (klassischer Host)",
+      "fields": [
+        {
+          "field": "host_context",
+          "file": null,
+          "scope": null,
+          "value": "confirmed:userexit-include (SAPMV45A / MV45AFZZ)"
+        },
+        {
+          "field": "classic_extension.level",
+          "file": null,
+          "scope": null,
+          "value": "B-Kandidat: nominierter klassischer Userexit-Include (R32@2.1.0, S01) — nicht D, solange kein Modifikationsnachweis vorliegt (W01); Vorbehalt VBAK, siehe Offene Prüferfragen"
+        },
+        {
+          "field": "known_worst_level",
+          "file": null,
+          "scope": null,
+          "value": "B; C, falls die Arbeitsstruktur vbak als DDIC-Abhängigkeit auf ein internes Objekt zu werten ist (R29@2.1.0 → R01; Katalogzustand von VBAK nicht beobachtet)"
+        },
+        {
+          "field": "potential_worst_level",
+          "file": null,
+          "scope": null,
+          "value": "D (Modifikation nicht ausgeschlossen, bis W01 sie ausschließt)"
+        },
+        {
+          "field": "cloud_api_surface",
+          "file": null,
+          "scope": null,
+          "value": "not_usable (klassischer Host, klassische Arbeitsstruktur)"
+        },
+        {
+          "field": "cloud_artefact",
+          "file": null,
+          "scope": null,
+          "value": "not_activatable (klassischer Host)"
+        },
+        {
+          "field": "source_process",
+          "file": null,
+          "scope": null,
+          "value": "reconstructed"
+        }
+      ],
+      "findingIds": [
+        "CC-053-F01",
+        "CC-053-F02",
+        "CC-053-F03",
+        "CC-053-F04"
+      ],
+      "header": "Variante 2: mit Kontextbeleg (context.json, Provenienz)",
+      "known_worst_level": "B; C, falls die Arbeitsstruktur vbak als DDIC-Abhängigkeit auf ein internes Objekt zu werten ist (R29@2.1.0 → R01; Katalogzustand von VBAK nicht beobachtet)",
+      "label": "Variante 2"
+    }
+  ],
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 1,
+        "raw": "source.abap:1 (Sekundäranker: source.abap:4+1 vbak-auart, source.abap:8 vbak-lifsk)",
+        "token": null
+      },
+      "id": "CC-053-F01",
+      "profiles": null,
+      "rule": "R32",
+      "ruleRaw": "R32@2.1.0",
+      "ruleVersion": "2.1.0",
+      "severity": "high",
+      "sources": [
+        "SAP-USEREXIT-SD",
+        "ABAP-KEYDOC (FORM); S01"
+      ],
+      "statement": "Hostkontext vermutet, Mechanismus nicht belegt (host_context = suspected:userexit-include): FORM-Name in der SD-Userexit-Konvention, nicht deklarierte Globale vbak, kein Programm-Statement. Das sind Marker, kein Beweis: derselbe Text steht in CC-068 in einem kundeneigenen Report mit eigener Struktur vbak — dort kein Host, Level B. Der Name MV45AFZZ steht nicht im Quelltext; er ist Repository-Metadatum der Lieferung und als Kontextbeleg mit Provenienz zu führen, nicht als Syntaxmerkmal. Kein Level aus F01."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 1,
+        "raw": "source.abap:1 (scope=artefact; Sekundäranker: Bereich :1–10)",
+        "token": null
+      },
+      "id": "CC-053-F02",
+      "profiles": null,
+      "rule": "R10",
+      "ruleRaw": "R10@1.0.0; R32@2.1.0",
+      "ruleVersion": "1.0.0;",
+      "severity": "high",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-USEREXIT-SD; S01",
+        "S25"
+      ],
+      "statement": "Level: Unknown ohne Kontextbeleg; potential_worst_level = D. Mit belegtem Mechanismus hängt das Level daran: nominierter klassischer Userexit-Include → B (R32@2.1.0; S01: Userexits/BAdIs nicht pauschal D; S25 nennt MV45AFZZ als mögliches B-Muster, Note 3578329 nicht lesbar); Modifikation mit Objektschlüssel oder impliziter Eingriff → D (R10). Der Korpus rät nicht; die SAP-Einordnung von MV45AFZZ im Zielrelease ist Prüferfrage 1."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 4,
+        "raw": "source.abap:4 (Sekundäranker: source.abap:4+1, :4+6)",
+        "token": null
+      },
+      "id": "CC-053-F03",
+      "profiles": null,
+      "rule": "R29",
+      "ruleRaw": "R29@2.1.0",
+      "ruleVersion": "2.1.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-PCE22 (Strukturen sind eigene Objekte); S19"
+      ],
+      "statement": "AUART und NETWR werden aus der nicht deklarierten Globalen vbak gelesen. Ob vbak die DDIC-Struktur VBAK ist (TABLES-Deklaration des Hosts), ist ohne Host nicht belegt: eine Abhängigkeit als Hypothese, noch kein Level. Typ und Währung von NETWR hängen daran (R23: kein EUR-Satz ohne Währung)."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 8,
+        "raw": "source.abap:8",
+        "token": null
+      },
+      "id": "CC-053-F04",
+      "profiles": null,
+      "rule": "R19",
+      "ruleRaw": "R19@1.1.0",
+      "ruleVersion": "1.1.0",
+      "severity": "info",
+      "sources": [
+        "SAP-FLOW"
+      ],
+      "statement": "vbak-lifsk = lv_block ist eine Zuweisung an eine Arbeitsstruktur — kein Datenbank-UPDATE (kein R02), kein write-Knoten, kein Persistenznachweis."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:1 — Kein D aus dem FORM-Namen und kein D aus dem Dateinamen MV45AFZZ (Fable KA-052-Lesart; v2-Fassung dieses Falls). Der Name ist ein Hinweis (F01), das Level braucht den Mechanismus (F02).",
+    "source.abap:1 — Kein B „Standard-ABAP ohne SAP-Abhängigkeit\": vbak ist unaufgelöst; ohne Host oder eigene Deklaration ist die Abhängigkeit offen (Unterschied zu CC-068, wo REPORT, eigene Deklaration und eigener PERFORM die Hypothese widerlegen).",
+    "source.abap:1 — Unknown ist hier die richtige Antwort. Die v2-Zeile „Kein Unknown ‚Hostmetadaten fehlen': CC-010 verlangt ein Fixture für einen Z-Report; hier ist der Host im Code\" ist zurückgenommen (REV2-02).",
+    "source.abap:8 — vbak-lifsk = lv_block ist eine Zuweisung an die Arbeitsstruktur, kein Datenbank-UPDATE: kein R02-Befund, kein write-Knoten.",
+    "source.abap:4 — vbak ist ohne Beleg keine SAP-Tabelle; keine R01-Abhängigkeit auf TABL/VBAK behaupten (Fallbogen §7: „eine undeklarierte globale Variable wird nicht dadurch zur SAP-Tabelle\").",
+    "Kein Fachsatz „die Liefersperre wird gespeichert\": angekündigt, nicht persistiert im Ausschnitt; ob ein Host sie speichert, ist nicht ableitbar.",
+    "gesamte Scheibe — kein Berechtigungsbefund allein aus dem fehlenden Check im Exitfragment: Hostkontrollen können außerhalb liegen (R28@2.1.0: keine Beobachtung)."
+  ],
+  "id": "CC-053",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku (S01 Leveldefinition — Userexits/BAdIs nicht pauschal D; S20 negative Katalogsuche, kein Beleg; S25 SAP-Community-Beitrag, nur nach Lesart des Reviews — nicht lesbar für Review und Regelautor)",
+  "known_worst_level": "B (beobachtet: Standard-ABAP-Kontrollfluss; kein SAP-Objekt beobachtet — vbak ist unaufgelöst)",
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 1,
+        "raw": "source.abap:1",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "not_observed_in_extract",
+      "identity": {
+        "objectKey": "MV45AFZZ",
+        "objectType": "INCL",
+        "tadirObjName": "MV45AFZZ",
+        "tadirObject": "PROG"
+      },
+      "name": "MV45AFZZ",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "unknown_not_collected",
+      "successors": null,
+      "usage": "host_include_hypothesis"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Wie ordnet SAP das Include MV45AFZZ im Zielrelease S/4HANA 2023 ein — nominierter Userexit (B) oder modifikationspflichtiges SAP-Objekt (D)? Note 3578329 (laut S25) war weder für das Review noch für den Regelautor lesbar. Variante 2 hängt daran.",
+    "Ist in Variante 2 die Arbeitsstruktur vbak (TABLES-Arbeitsbereich des Hosts) als DDIC-Abhängigkeit auf ein internes Objekt zu werten (R29@2.1.0 → R01 → C), oder ist der Zugriff auf die Host-Arbeitsstruktur die vorgesehene Schnittstelle des nominierten Exits (→ B)? Der Katalogzustand von VBAK ist nicht beobachtet.",
+    "known_worst_level in Variante 1: B (Standardmechanik) oder none — dieselbe Konventionsfrage wie in CC-038."
+  ],
+  "scope": "complete_for_declared_slice (die Datei)",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "i"
+      },
+      {
+        "condition": "always",
+        "from": "i",
+        "to": "g"
+      },
+      {
+        "condition": "vbak-auart = 'TA' AND vbak-netwr > 20000",
+        "from": "g",
+        "to": "a"
+      },
+      {
+        "condition": "sonst",
+        "from": "g",
+        "to": "h"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "h"
+      },
+      {
+        "condition": "lv_block IS NOT INITIAL",
+        "from": "h",
+        "to": "w"
+      },
+      {
+        "condition": "lv_block IS INITIAL",
+        "from": "h",
+        "to": "e"
+      },
+      {
+        "condition": "always",
+        "from": "w",
+        "to": "e"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 1,
+          "raw": "source.abap:1",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Aufruf durch unbekannten Aufrufer (trigger = external; Hosthypothese aus F01; „SAP-Host beim Sichern\" nur mit Kontextbeleg)",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3",
+          "token": null
+        },
+        "id": "i",
+        "meaning": "Sperrkandidat leeren",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Auftragsart TA und Nettowert größer 20000?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "Sperrkandidat 01 setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "h",
+        "meaning": "Sperrkandidat ermittelt?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "w",
+        "meaning": "LIFSK in Arbeitsstruktur übernehmen (kein DB-Write; überschreibt vorhandenen Wert)",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "Rückkehr an den Aufrufer",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "candidate / not independently signed.",
+  "title": "Userexit-FORM userexit_save_document: Marker im Code sind eine Hosthypothese, das Level braucht den Kontextbeleg"
+}

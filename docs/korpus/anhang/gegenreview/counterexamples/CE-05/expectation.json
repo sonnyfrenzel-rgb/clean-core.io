@@ -1,0 +1,18 @@
+{
+  "id": "CE-05",
+  "title": "Opakes SUBMIT mit Caller-Fortsetzung",
+  "kind": "constructed_counterexample_not_production_code",
+  "files": [
+    "caller.abap",
+    "child.abap"
+  ],
+  "expected": "Für den partiellen Test child.abap absichtlich zurückhalten: Innenlogik bleibt unbekannt, normale Rückkehr und nachfolgendes WRITE im Caller bleiben modellierbar. Für einen nativen Test beide separaten Reportobjekte anlegen; keinerlei Lauf behauptet.",
+  "sources": [
+    "S07"
+  ],
+  "related_cases": [
+    "CC-056"
+  ],
+  "native_compile": "NOT_RUN",
+  "native_execution": "NOT_RUN"
+}

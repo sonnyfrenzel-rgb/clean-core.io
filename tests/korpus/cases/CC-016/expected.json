@@ -1,0 +1,144 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        }
+      ],
+      "id": "CC-016-B01",
+      "text": "Ein Text mit ABAP-ähnlichen Schlüsselwörtern wird in eine Stringvariable geschrieben."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3–8",
+          "token": null
+        }
+      ],
+      "id": "CC-016-B02",
+      "text": "Der Text wird ausgegeben; der sichtbare Code führt weder Kernelaufruf noch Datenbankänderung aus."
+    }
+  ],
+  "classes": [
+    "K08",
+    "K02"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_applicable",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": true,
+    "objects": true
+  },
+  "expectedByProfile": null,
+  "findings": [],
+  "forbiddenConclusions": [
+    "source.abap:4 — Kommentar ist kein Kernelaufruf.",
+    "source.abap:5 — Kommentar ist kein SELECT.",
+    "source.abap:6 — Stringliteral ist kein UPDATE.",
+    "source.abap:7 — Stringtemplate enthält keinen ausgeführten Funktionsbausteinaufruf."
+  ],
+  "id": "CC-016",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [],
+  "openReviewerQuestions": [
+    "Kommentare, Backticks und Stringtemplate lexikalisch prüfen",
+    "Keine Phantom-Objekte aus BAPI-/KNA1-Texten erzeugen",
+    "Negativkontrolle mit echter Statement-Einfügung verproben",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "a"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "b"
+      },
+      {
+        "condition": "always",
+        "from": "b",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "Text setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "b",
+        "meaning": "Text ergänzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Text ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Lexikalische Falle: SQL und Kernel nur in Texten"
+}

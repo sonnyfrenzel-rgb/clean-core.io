@@ -1,0 +1,392 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9–10",
+          "token": null
+        }
+      ],
+      "id": "CC-025-B01",
+      "text": "Negative Beträge werden vor allen anderen Prüfungen als ungültig eingeordnet."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9–12",
+          "token": null
+        }
+      ],
+      "id": "CC-025-B02",
+      "text": "Nicht negative Nicht-EUR-Fälle werden zur Währungsprüfung geroutet; der Code rechnet keine Währung um."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9–17",
+          "token": null
+        }
+      ],
+      "id": "CC-025-B03",
+      "text": "Ein nicht negativer dringender EUR-Fall bis einschließlich50000 erhält nachts ohne gesetzte Vertretungsmarkierung DELEGATE_REQUIRED; sonst EMERGENCY_ROUTE."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        }
+      ],
+      "id": "CC-025-B04",
+      "text": "EMERGENCY_ROUTE ist ein berechneter Text. Es findet weder Bestellung, Auszahlung noch reale Freigabe statt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9–22",
+          "token": null
+        }
+      ],
+      "id": "CC-025-B05",
+      "text": "Bei nicht negativen EUR-Fällen außerhalb des priorisierten Notfallzweigs führen Beträge größer10000 zu MANAGER_ROUTE, kleinere oder gleiche zu AUTO_ROUTE."
+    }
+  ],
+  "classes": [
+    "K02"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_applicable",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": true,
+    "objects": true
+  },
+  "expectedByProfile": null,
+  "findings": [],
+  "forbiddenConclusions": [
+    "source.abap:17 — Keine tatsächlich erfolgte Genehmigung, kein belegter Standard-Fit, keine Einsparung aus diesem Satz ableiten."
+  ],
+  "id": "CC-025",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [],
+  "openReviewerQuestions": [
+    "Jeden fachlichen Satz an vollständige Kontrollflussbedingungen binden",
+    "Negativbetrag, EUR-Abgrenzung und Grenzwerte im Fachreview prüfen",
+    "Nacht/Vertretung als Routingsignal statt echte delegierte Berechtigung behandeln",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "g1"
+      },
+      {
+        "condition": "p_amount < 0",
+        "from": "g1",
+        "to": "i"
+      },
+      {
+        "condition": "p_amount >= 0",
+        "from": "g1",
+        "to": "g2"
+      },
+      {
+        "condition": "p_curr <> 'EUR'",
+        "from": "g2",
+        "to": "c"
+      },
+      {
+        "condition": "p_curr = 'EUR'",
+        "from": "g2",
+        "to": "g3"
+      },
+      {
+        "condition": "p_urgent = 'X' AND p_amount <= 50000",
+        "from": "g3",
+        "to": "g4"
+      },
+      {
+        "condition": "NOT (urgent AND amount <= 50000)",
+        "from": "g3",
+        "to": "g5"
+      },
+      {
+        "condition": "p_night = 'X' AND p_deleg <> 'X'",
+        "from": "g4",
+        "to": "d"
+      },
+      {
+        "condition": "NOT (night AND NOT delegate)",
+        "from": "g4",
+        "to": "e"
+      },
+      {
+        "condition": "p_amount > 10000",
+        "from": "g5",
+        "to": "m"
+      },
+      {
+        "condition": "p_amount <= 10000",
+        "from": "g5",
+        "to": "a"
+      },
+      {
+        "condition": "always",
+        "from": "i",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "d",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "e",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "m",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "g1",
+        "meaning": "Betrag negativ?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "i",
+        "meaning": "INVALID_AMOUNT",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "g2",
+        "meaning": "Fremdwährung?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "CURRENCY_REVIEW",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "g3",
+        "meaning": "Dringend und bis50000?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "g4",
+        "meaning": "Nachts ohne Vertretung?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "d",
+        "meaning": "DELEGATE_REQUIRED",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "EMERGENCY_ROUTE",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        "id": "g5",
+        "meaning": "Größer10000?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 20,
+          "raw": "source.abap:20",
+          "token": null
+        },
+        "id": "m",
+        "meaning": "MANAGER_ROUTE",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 22,
+          "raw": "source.abap:22",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "AUTO_ROUTE",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 24,
+          "raw": "source.abap:24",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Routentext ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Business-Gegenprobe: Währung, Nachtregel, Grenzen und nur Routing"
+}

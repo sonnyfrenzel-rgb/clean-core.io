@@ -1,0 +1,17 @@
+{
+  "id": "CE-03",
+  "title": "CLIENT SPECIFIED mit explizitem eigenem Mandanten",
+  "kind": "constructed_counterexample_not_production_code",
+  "files": [
+    "source.abap"
+  ],
+  "expected": "Automatische Mandantenbehandlung ist deaktiviert, der konkrete WHERE-Ausdruck begrenzt aber explizit auf sy-mandt. Keine Aussage, der Zugriff lese deshalb nachweislich andere Mandanten. Technische Eignung/Cloud-Syntax separat.",
+  "sources": [
+    "S14"
+  ],
+  "related_cases": [
+    "CC-050"
+  ],
+  "native_compile": "NOT_RUN",
+  "native_execution": "NOT_RUN"
+}

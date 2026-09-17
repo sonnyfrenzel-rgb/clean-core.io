@@ -1,0 +1,18 @@
+{
+  "id": "CE-06",
+  "title": "Ein Makroaufruf mit zwei Wirkungsstellen",
+  "kind": "constructed_counterexample_not_production_code",
+  "files": [
+    "source.abap"
+  ],
+  "expected": "Zwei Outputwirkungen teilen dieselbe Aufrufstelle. Anker brauchen callsite plus Expansionsordinal/Definitionsspanne; nicht zu einem Knoten zusammenfallen lassen.",
+  "sources": [
+    "Korpuskonvention"
+  ],
+  "related_cases": [
+    "CC-042",
+    "CC-043"
+  ],
+  "native_compile": "NOT_RUN",
+  "native_execution": "NOT_RUN"
+}

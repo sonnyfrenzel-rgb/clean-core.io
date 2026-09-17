@@ -1,0 +1,14 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "n/a",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {
+    "update_mode": "nicht lokal (siehe Profilannahmen)"
+  },
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=n/a · rule_revision=2.1.0-candidate · runtime_context=dialog (direkter Start) · update_mode=nicht lokal (siehe Profilannahmen)",
+  "release": "S/4HANA 2023",
+  "rule_revision": "2.1.0-candidate",
+  "runtime_context": "dialog (direkter Start)",
+  "second_profile": "abap_language_version=abap-for-cloud: cloud_artefact = not_activatable — der Artefaktgrund (REPORT mit Selektionsbild und Liste) gilt unabhängig vom IN UPDATE TASK; classic_extension.level = n/a dort, das As-is-Skelett bleibt (source_process = reconstructed, REV2-12). Ob CALL FUNCTION … IN UPDATE TASK in ABAP for Cloud syntaktisch zulässig ist, bleibt Prüferfrage; für ein isoliertes aufrufendes Cloud-Objekt wäre es ein anderer Zielartefaktfall (Fallbogen §7)."
+}

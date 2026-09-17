@@ -1,0 +1,322 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Funktionsbaustein REUSE_ALV_GRID_DISPLAY mit Parametern I_CALLBACK_PROGRAM, I_CALLBACK_USER_COMMAND, IT_FIELDCAT, T_OUTTAB; Typen SLIS_T_FIELDCAT_ALV, SLIS_SELFIELD; Funktionscode &IC1 für Doppelklick). Daten konstruiert.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        }
+      ],
+      "id": "CC-054-B01",
+      "text": "Zwei fest hinterlegte Zeilen (Kundennummer, Name) werden in einem ALV-Grid angezeigt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 23,
+          "raw": "source.abap:23",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 24,
+          "raw": "source.abap:24",
+          "token": null
+        }
+      ],
+      "id": "CC-054-B02",
+      "text": "Bei Doppelklick auf eine Zelle wird deren Wert als Informationsmeldung angezeigt; jedes andere Benutzerkommando bleibt ohne Reaktion."
+    }
+  ],
+  "classes": [
+    "K17",
+    "K16",
+    "K07"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "Fable KA-064, KA-106 · DeepSeek CC-GAP-091, CC-GAP-098, CC-GAP-090 · Gegenprobe: Fable KA-055 (Keyword-Überreaktion), GLM A-084 (verwandt), v1 CC-016",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 14,
+        "raw": "source.abap:14 (sek. :17 Literal 'USER_COMMAND', :16 sy-repid)",
+        "token": null
+      },
+      "id": "CC-054-F01",
+      "profiles": null,
+      "rule": "R13b",
+      "ruleRaw": "R13b@2.0.0-candidate.1",
+      "ruleVersion": "2.0.0-candidate.1",
+      "severity": "high",
+      "sources": [
+        "ABAP-KEYDOC (CALL FUNCTION",
+        "PERFORM IN PROGRAM)",
+        "SAP-CALL"
+      ],
+      "statement": "Literal mit Konsument: das ALV-Framework ruft das FORM des Namens im Programm sy-repid bei Benutzerereignissen auf. FORM user_command (:21) ist erreichbar, kein toter Code; die Callback-Konvention ist eine Abhängigkeit."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 14,
+        "raw": "source.abap:14",
+        "token": null
+      },
+      "id": "CC-054-F02",
+      "profiles": null,
+      "rule": "R11",
+      "ruleRaw": "R11@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-SCREEN"
+      ],
+      "statement": "Klassisches ALV-Grid (SAP GUI): Classic B, nicht D. Cloud not_usable: UI-Rehosting nötig, kein Objektnachfolger."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:2 — Kommentar ist kein Enhancement, kein Userexit und kein Hostkontext: kein D, kein R32-Marker, kein R10 (R13a).",
+    "source.abap:21 — Das FORM darf nicht als unerreichbar oder überflüssig gemeldet werden.",
+    "source.abap:24 — Die Informationsmeldung ist kein Persistenzsatz; kein Transaktionsknoten.",
+    "source.abap:14 — Kein D wegen SAP-GUI-Technik (R11); kein A wegen fehlender SQL."
+  ],
+  "id": "CC-054",
+  "independence": [
+    "modellreview"
+  ],
+  "independenceRaw": "modellreview",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 14,
+        "raw": "source.abap:14",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "not_observed_in_extract",
+      "identity": {
+        "objectKey": "REUSE_ALV_GRID_DISPLAY",
+        "objectType": "FUNC",
+        "tadirObjName": "SALV",
+        "tadirObject": "FUGR"
+      },
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_listed_in_observed_record",
+      "successors": [],
+      "usage": "static_function_call_with_callback"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Funktionsgruppe von REUSE_ALV_GRID_DISPLAY: SALV? Erinnert, nicht belegt; die TADIR-Identität ist zu bestätigen.",
+    "Ist der Callback-Mechanismus (PERFORM im Programm i_callback_program mit dem Namen aus i_callback_user_command) in der ABAP-Schlüsselwortdokumentation oder nur in der Baustein-Dokumentation belegt? Für R13b muss der Konsument benannt sein.",
+    "Ist die Zusammenlegung von Gegenprobe (:2) und Callback (:14/:17) in einem Fall für den Vergleicher tragbar, oder sind es zwei Fälle? Der Autor hält die Achse für eine; bei freien Slots teilen.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "d"
+      },
+      {
+        "condition": "always",
+        "from": "d",
+        "to": "f"
+      },
+      {
+        "condition": "always",
+        "from": "f",
+        "to": "alv"
+      },
+      {
+        "condition": "Benutzerereignis (Callback 'USER_COMMAND')",
+        "from": "alv",
+        "to": "ev"
+      },
+      {
+        "condition": "always",
+        "from": "ev",
+        "to": "g"
+      },
+      {
+        "condition": "iv_ucomm = '&IC1'",
+        "from": "g",
+        "to": "m"
+      },
+      {
+        "condition": "sonst",
+        "from": "g",
+        "to": "r"
+      },
+      {
+        "condition": "always",
+        "from": "m",
+        "to": "r"
+      },
+      {
+        "condition": "always",
+        "from": "r",
+        "to": "alv"
+      },
+      {
+        "condition": "Benutzer verlässt das ALV",
+        "from": "alv",
+        "to": "x"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "d",
+        "meaning": "Zeilen bereitstellen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "f",
+        "meaning": "Feldkatalog bereitstellen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "alv",
+        "meaning": "ALV-Grid anzeigen (SAP GUI, opak)",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 21,
+          "raw": "source.abap:21",
+          "token": null
+        },
+        "id": "ev",
+        "meaning": "Benutzerkommando über Callback (erreichbar durch F01)",
+        "type": "event"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 23,
+          "raw": "source.abap:23",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Doppelklick?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 24,
+          "raw": "source.abap:24",
+          "token": null
+        },
+        "id": "m",
+        "meaning": "Zellwert als Meldung anzeigen",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 26,
+          "raw": "source.abap:26",
+          "token": null
+        },
+        "id": "r",
+        "meaning": "Rückkehr in das ALV (Callback endet)",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "ALV verlassen, Aufruf kehrt zurück",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Der Konsument entscheidet: ALV-Callback im Literal wirkt, ENHANCEMENT im Kommentar nicht"
+}

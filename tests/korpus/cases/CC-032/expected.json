@@ -1,0 +1,397 @@
+{
+  "answerFields": {},
+  "beleggrad": "erinnert — Syntax STARTING NEW TASK … PERFORMING form ON END OF TASK und RECEIVE RESULTS FROM FUNCTION sind verifiziert; der Zeitpunkt, zu dem der Callback im rufenden Programm ausgeführt wird (nach Erinnerung des Autors erst bei WAIT oder beim nächsten Dialogschrittwechsel), und ob der aRFC-Start im Rufer einen impliziten Datenbank-Commit auslöst, sind Erinnerung.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        }
+      ],
+      "id": "CC-032-B01",
+      "text": "Die Routenberechnung für den Fall wird asynchron in einer eigenen Task gestartet. Scheitert der Start (Kommunikation, System, Ressourcen), wird NOT_STARTED ausgegeben und der Block verlassen."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        }
+      ],
+      "id": "CC-032-B02",
+      "text": "Gelingt der Start, wird STARTED ausgegeben; ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 20,
+          "raw": "source.abap:20",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 21,
+          "raw": "source.abap:21",
+          "token": null
+        }
+      ],
+      "id": "CC-032-B03",
+      "text": "Das Ergebnis trifft ausschließlich im Callback ein und wird dort nach gv_route übernommen; der Zeitpunkt steht nicht im Code. In dieser Scheibe wird gv_route nirgends ausgegeben oder weiterverwendet."
+    }
+  ],
+  "classes": [
+    "K12",
+    "K03",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": "Grok H-025 · GLM A-023, A-024 · Fable KA-043 · DeepSeek CC-GAP-047",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6",
+        "token": null
+      },
+      "id": "CC-032-F01",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@v2-draft",
+      "ruleVersion": "v2-draft",
+      "severity": "high",
+      "sources": [
+        "SAP-CALL",
+        "SAP-FLOW"
+      ],
+      "statement": "Asynchroner RFC: Der Baustein läuft in einer eigenen Task parallel zum Rufer. Die Rückkehr der Anweisung bedeutet „gestartet\", nicht „ausgeführt\"; sy-subrc in Zeile 13 bewertet nur den Start. Knoten vom Typ async."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 8,
+        "raw": "source.abap:8",
+        "token": null
+      },
+      "id": "CC-032-F02",
+      "profiles": null,
+      "rule": "R19",
+      "ruleRaw": "R19@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-CALL",
+        "SAP-FLOW"
+      ],
+      "statement": "Der Callback ist statisch benannt; sein Anker ist Zeile 18. Er wird vom Laufzeitsystem aufgerufen, nicht von einer Anweisung der Scheibe; der Zeitpunkt steht nicht im Code."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 17,
+        "raw": "source.abap:17",
+        "token": null
+      },
+      "id": "CC-032-F03",
+      "profiles": null,
+      "rule": "R18",
+      "ruleRaw": "R18@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-FLOW"
+      ],
+      "statement": "STARTED belegt den Start der Task, nicht das Vorliegen eines Ergebnisses."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6",
+        "token": null
+      },
+      "id": "CC-032-F04",
+      "profiles": null,
+      "rule": "R06",
+      "ruleRaw": "R06@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-CALL"
+      ],
+      "statement": "Statisch benannter kundeneigener Baustein (auch Zeile 19); Quelltext nicht geliefert; Level der Gesamtscheibe Unknown, known_worst_level B."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6",
+        "token": null
+      },
+      "id": "CC-032-F05",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@v2-draft",
+      "ruleVersion": "v2-draft",
+      "severity": "info",
+      "sources": [
+        "SAP-FLOW"
+      ],
+      "statement": "Der aRFC-Start zählt nach R25 zu den impliziten Datenbank-Commits im Rufer. In dieser Scheibe gibt es nichts zu committen; der Befund ist inert und steht hier, damit ein Skelett ihn in Fällen mit vorherigem Schreiben nicht auslässt. Beleggrad erinnert."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-032",
+  "independence": [
+    "modellreview"
+  ],
+  "independenceRaw": "modellreview",
+  "known_worst_level": "B",
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6 (Ergebnisempfang: source.abap:19)",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "Z_CC_ROUTE_CALC",
+        "objectType": "FUNC",
+        "tadirObjName": "not_delivered",
+        "tadirObject": "FUGR"
+      },
+      "name": "Z_CC_ROUTE_CALC",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": [],
+      "usage": "asynchronous_rfc_with_callback"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Bestätigen: Wann wird on_end im rufenden Programm ausgeführt — nur bei WAIT oder beim nächsten Dialogschrittwechsel (hier: Listenausgabe nach START-OF-SELECTION)? Wird er nie erreicht, wenn das Programm vorher endet?",
+    "Bestätigen: Ohne DESTINATION läuft die Task auf dem aktuellen Anwendungsserver; welche Destination gilt implizit?",
+    "Bestätigen: Löst der Start eines aRFC im Rufer einen impliziten Datenbank-Commit aus (F05)? Falls nein, ist F05 zu streichen und R25 zu präzisieren („synchroner RFC\").",
+    "Zweites Profil: Ist STARTING NEW TASK in ABAP for Cloud zulässig?",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "partial_missing_function_module_source",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "a"
+      },
+      {
+        "condition": "call returns",
+        "from": "a",
+        "to": "g"
+      },
+      {
+        "condition": "sy-subrc <> 0",
+        "from": "g",
+        "to": "o1"
+      },
+      {
+        "condition": "always",
+        "from": "o1",
+        "to": "e"
+      },
+      {
+        "condition": "sy-subrc = 0",
+        "from": "g",
+        "to": "o2"
+      },
+      {
+        "condition": "always",
+        "from": "cb",
+        "to": "rr"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "Routenberechnung asynchron starten (Task 'ROUTE1', Sekundäranker source.abap:7)",
+        "type": "async"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Start gelungen?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "o1",
+        "meaning": "Nicht gestartet melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "Block verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        "id": "o2",
+        "meaning": "Gestartet melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18",
+          "token": null
+        },
+        "id": "cb",
+        "meaning": "Callback-Einstieg (Ereignisbindung source.abap:8)",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        "id": "rr",
+        "meaning": "Ergebnis empfangen; setzt gv_route und gv_done (Sekundäranker source.abap:21)",
+        "type": "rfc"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Asynchroner RFC: paralleler Zweig, Callback-Handler als Anker, Ergebnis ohne Konsument"
+}

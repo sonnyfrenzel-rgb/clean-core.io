@@ -1,0 +1,251 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8–11",
+          "token": null
+        }
+      ],
+      "id": "CC-012-B01",
+      "text": "Ein Funktionsbaustein wird nur bei nicht leerem Namen aufgerufen."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        }
+      ],
+      "id": "CC-012-B02",
+      "text": "Das externe Unterprogramm wird bei beiden ausgefüllten Namensfeldern gesucht und nur bei Existenz ausgeführt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8–16",
+          "token": null
+        }
+      ],
+      "id": "CC-012-B03",
+      "text": "DISPATCH_RETURNED belegt nur das Erreichen der Ausgabe nach zurückgekehrten oder übersprungenen Aufrufen."
+    }
+  ],
+  "classes": [
+    "K06",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": true
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9",
+        "token": null
+      },
+      "id": "CC-012-F01",
+      "profiles": null,
+      "rule": "R07",
+      "ruleRaw": "R07@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-CALL",
+        "SAP-FLOW"
+      ],
+      "statement": "Unvalidierter externer Funktionsname; Ziel und Interfaces unbekannt, Laufzeitfehler möglich."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 14,
+        "raw": "source.abap:14",
+        "token": null
+      },
+      "id": "CC-012-F02",
+      "profiles": null,
+      "rule": "R07",
+      "ruleRaw": "R07@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-CALL",
+        "SAP-FLOW"
+      ],
+      "statement": "Externe Programm-/FORM-Auswahl unbekannt. IF FOUND bedeutet nicht, dass das Ziel ausgeführt wurde."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-012",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [],
+  "openReviewerQuestions": [
+    "Erlaubte FM-/FORM-Zielmengen und Interfaces vom Verantwortlichen beschaffen",
+    "Allowlist und Fehlerbehandlung konzipieren; unbekannte Ziele nicht ausführen",
+    "Nach Zielaufklärung relevante Implementierungen separat analysieren",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "partial_missing_runtime_targets",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "g"
+      },
+      {
+        "condition": "p_func IS NOT INITIAL",
+        "from": "g",
+        "to": "f"
+      },
+      {
+        "condition": "p_func IS INITIAL",
+        "from": "g",
+        "to": "h"
+      },
+      {
+        "condition": "call returns normally",
+        "from": "f",
+        "to": "h"
+      },
+      {
+        "condition": "both names noninitial",
+        "from": "h",
+        "to": "p"
+      },
+      {
+        "condition": "one name initial",
+        "from": "h",
+        "to": "o"
+      },
+      {
+        "condition": "not found or returns normally",
+        "from": "p",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "FM-Name vorhanden?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "f",
+        "meaning": "Unbekannten FM aufrufen",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "h",
+        "meaning": "Programm und FORM vorhanden?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "p",
+        "meaning": "FORM optional suchen/ausführen",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Zurückgekehrt melden",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Externer dynamischer Aufruf und PERFORM: bewusst unaufgelöst"
+}
