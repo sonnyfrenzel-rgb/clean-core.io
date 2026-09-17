@@ -458,6 +458,7 @@ export function recommendArchitecture(
   const known = dataCoupling.filter((d) => !d.possibleTargetOf?.length);
   const customTableWrites = known.filter((d) => d.isCustom && (d.accessType === 'Write' || d.accessType === 'Read/Write')).length;
   const standardTableReads = known.filter((d) => !d.isCustom && d.accessType === 'Read').length;
+  const standardTableWrites = known.filter((d) => !d.isCustom && (d.accessType === 'Write' || d.accessType === 'Read/Write')).length;
   const hasRfcIdoc = /\bIDOC\b/.test(upper) || calledFunctionModules(code).some(isRfcOrIdocModule);
   const hasEventPattern = /\b(EVENT\s+RAISED|RAISE\s+EVENT|PUBLISH)\b/i.test(upper);
   const loc = code.split(/\r?\n/).filter((l) => l.trim().length > 0).length;
@@ -490,7 +491,25 @@ export function recommendArchitecture(
     };
   }
 
-  if (loc < 30 && codeInventory.every((i) => i.criticality === 'Low')) {
+  // Retirement is the one recommendation that says "this can go", so it may not
+  // be reached by an argument that is empty. Two ways it was:
+  //
+  //   - **`every` on an empty array is true.** A snippet with no REPORT, no
+  //     class and no FORM produces no inventory at all, and "no custom business
+  //     logic" was then concluded from *having recognised nothing* rather than
+  //     from having looked and found nothing.
+  //   - **Nothing asked what the code writes.** `UPDATE vbak` on its own, well
+  //     under thirty lines, came back as "Small, low-criticality code with no
+  //     custom business logic. Candidate for retirement" — a destructive write
+  //     to an SAP standard table, proposed for deletion (full review of
+  //     a19945ef01dc, 052d2fe8f51c). A custom-table write already returns above;
+  //     a standard one fell through to here.
+  if (
+    loc < 30 &&
+    codeInventory.length > 0 &&
+    standardTableWrites === 0 &&
+    codeInventory.every((i) => i.criticality === 'Low')
+  ) {
     return {
       architecture: 'retire',
       confidence: 65,

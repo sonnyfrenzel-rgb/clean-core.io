@@ -17,6 +17,7 @@
 import { test, expect } from '@playwright/test';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
+import { extractCodeInventory, extractDataCoupling, recommendArchitecture } from '../lib/abap/code-assessment';
 
 /** A program whose only notable act is writing to its own Z-table. */
 const CUSTOM_WRITE_ONLY = [
@@ -91,6 +92,41 @@ test.describe('the symptoms that legitimately still force Side-by-Side', () => {
       expect(route(c.code, 'private').recommendedRoute).toBe('Side-by-Side (SAP BTP)');
     });
   }
+});
+
+/**
+ * Retirement is the one recommendation that says "this code can go", and it was
+ * reachable by an argument that is empty (052d2fe8f51c).
+ *
+ * `codeInventory.every(i => i.criticality === 'Low')` is true for an empty
+ * array, and a snippet without a REPORT, a class or a FORM produces no
+ * inventory at all — so "no custom business logic" was concluded from having
+ * recognised nothing rather than from having looked. Nothing asked what the
+ * code writes either, and a custom-table write returns earlier while a standard
+ * one fell through: `UPDATE vbak`, twelve lines, came back as a candidate for
+ * retirement.
+ */
+test.describe('no retirement verdict from an empty argument', () => {
+  const architecture = (code: string) =>
+    recommendArchitecture(code, extractCodeInventory(code), extractDataCoupling(code));
+
+  test('a destructive write to an SAP standard table is never proposed for retirement', () => {
+    const code = ['UPDATE vbak SET erdat = sy-datum WHERE vbeln = lv_vbeln.'].join('\n');
+    expect(architecture(code).architecture, 'a write to VBAK proposed for deletion').not.toBe('retire');
+  });
+
+  test('a snippet the parser recognises nothing in is not "no custom business logic"', () => {
+    const code = ['lv_a = 1.', 'lv_b = lv_a + 2.'].join('\n');
+    expect(extractCodeInventory(code), 'the premise of the test: no inventory at all').toHaveLength(0);
+    expect(architecture(code).architecture).not.toBe('retire');
+  });
+
+  test('a small low-criticality routine that touches nothing still is', () => {
+    // The guard removes an unearned verdict, not the verdict.
+    const code = ['FORM add_two.', '  lv_a = lv_a + 2.', 'ENDFORM.'].join('\n');
+    expect(extractCodeInventory(code).map((i) => i.criticality)).toEqual(['Low']);
+    expect(architecture(code).architecture).toBe('retire');
+  });
 });
 
 test.describe('the architecture panel agrees with the router', () => {
