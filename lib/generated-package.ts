@@ -153,6 +153,74 @@ export function repairTarget(opts: {
   return blamesSuite ? { kind: 'test' } : { kind: 'module' };
 }
 
+/* ------------------------------------------------------------------ */
+
+/**
+ * Why this entry must not become a file, or `null` when it may.
+ *
+ * The paths in a generated package are **model output**. The bundle built from
+ * them is downloaded and unpacked on the reader's own machine, by abapGit, by
+ * `unzip`, by an IDE — and an entry name is only ever a *suggestion* to the
+ * unpacker. One that resolves outside the target directory is a write the
+ * reader did not ask for, in a place they did not choose.
+ *
+ * The answer is a refusal, not a repair. A path that climbs out of its own
+ * archive is a sign that the generation run produced something it should not
+ * have; silently rewriting it to `x` would hide that and hand over a bundle
+ * whose file names no longer match the code inside it. So every rule here names
+ * what is wrong in words the reader can act on.
+ *
+ * The list is the union of what unpackers disagree about: `..` segments,
+ * anything anchored at a root, Windows drive letters, backslashes (a separator
+ * for some unpackers and a legal file-name character for others) and control
+ * characters, which cut the name short in a shell.
+ */
+export function unsafeBundlePath(entry: unknown): string | null {
+  if (typeof entry !== 'string' || entry.trim() === '') return 'the entry has no name';
+  for (let i = 0; i < entry.length; i++) {
+    if (entry.charCodeAt(i) < 0x20 || entry.charCodeAt(i) === 0x7f) return 'the name carries a control character';
+  }
+  if (entry.includes('\\')) return 'the name carries a backslash, which some unpackers read as a directory separator';
+  if (/^[A-Za-z]:/.test(entry)) return 'the name starts with a drive letter, so it is an absolute path';
+  if (entry.startsWith('/')) return 'the name starts at the file-system root';
+  if (entry.split('/').some((segment) => segment === '..')) return 'the name leaves the archive through a ".." segment';
+  return null;
+}
+
+/** An entry the bundle refuses, with the sentence the page shows for it. */
+export interface RejectedBundlePath {
+  path: string;
+  reason: string;
+}
+
+/**
+ * What the delivery bundle should be built from: the generated package, the flat
+ * legacy source, or nothing at all because an entry would not stay inside the
+ * archive.
+ *
+ * A pure function rather than three branches in the click handler, so the
+ * refusal can be asserted without a browser, a project and a model call — the
+ * same reason the rest of this module exists.
+ */
+export type BundleSource =
+  | { kind: 'package'; files: GeneratedFile[] }
+  | { kind: 'flat' }
+  | { kind: 'rejected'; rejected: RejectedBundlePath[] };
+
+export function bundleSource(code: string | undefined | null): BundleSource {
+  const files = parseGeneratedPackage(code);
+  if (!files) return { kind: 'flat' };
+  const rejected: RejectedBundlePath[] = [];
+  for (const file of files) {
+    const reason = unsafeBundlePath(file.path);
+    if (reason) rejected.push({ path: file.path, reason });
+  }
+  // All or nothing: a package with one bad entry is a package whose generation
+  // went wrong, and shipping the rest of it would be handing over an artefact
+  // that quietly lost a file.
+  return rejected.length ? { kind: 'rejected', rejected } : { kind: 'package', files };
+}
+
 /**
  * The package with exactly one file's content replaced, serialised the way it is
  * stored. Paths, order and every other file come through untouched.

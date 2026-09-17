@@ -21,6 +21,7 @@ import { Download, CheckCircle2, FileCode2, ArrowLeft, Home, RefreshCw, X, Rocke
 import NavigationButtons from '@/components/NavigationButtons';
 import JSZip from 'jszip';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
+import { bundleSource, type RejectedBundlePath } from '@/lib/generated-package';
 
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { saveAs } from '@/lib/fileSaver';
@@ -121,6 +122,10 @@ export default function DeliveryPage() {
       : undefined;
   const [loading, setLoading] = useState(true);
   const [documentation, setDocumentation] = useState('');
+  // Entry names of the generated package that would not have stayed inside the
+  // archive. Held rather than thrown away, because the reader is the one who has
+  // to decide what to do about a generation run that produced them.
+  const [rejectedPaths, setRejectedPaths] = useState<RejectedBundlePath[] | null>(null);
   const router = useRouter();
   const projectRef = useRef(project);
 
@@ -214,24 +219,27 @@ export default function DeliveryPage() {
 
   const downloadZip = async () => {
     if (!project || handoverBlocked) return;
+    setRejectedPaths(null);
     try {
       const zip = new JSZip();
       const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
 
-      let isModular = false;
-      if (project.generatedCode) {
-        try {
-          const parsed = JSON.parse(project.generatedCode);
-          if (Array.isArray(parsed) && parsed.every(f => typeof f.path === 'string' && typeof f.content === 'string')) {
-            isModular = true;
-            parsed.forEach(file => {
-              zip.file(file.path, file.content);
-            });
-            console.log(`[ZIP Handover] Successfully bundled ${parsed.length} modular project files.`);
-          }
-        } catch (e) {
-          // Not modular JSON - fallback to monolithic app
-        }
+      // The entry names of a generated package come from the model, and the
+      // archive is unpacked on the reader's machine. `bundleSource` decides
+      // whether they may become files; a name that would not stay inside the
+      // archive stops the download here, with the name on screen, rather than
+      // being quietly rewritten into something that no longer matches the code.
+      const source = bundleSource(project.generatedCode);
+      if (source.kind === 'rejected') {
+        setRejectedPaths(source.rejected);
+        return;
+      }
+      const isModular = source.kind === 'package';
+      if (source.kind === 'package') {
+        source.files.forEach((file) => {
+          zip.file(file.path, file.content);
+        });
+        console.log(`[ZIP Handover] Successfully bundled ${source.files.length} modular project files.`);
       }
 
       // Bundle structure README.md
@@ -510,6 +518,27 @@ jobs:
                 <Download size={20} /> {handoverBlocked ? 'Blocked — see above' : 'Download Bundle'}
               </button>
             </div>
+            {rejectedPaths && (
+              <div
+                data-bundle-rejected
+                role="alert"
+                className="w-full mt-4 text-left rounded-2xl border border-red-200 bg-red-50 p-4 text-xs leading-relaxed text-red-800"
+              >
+                <p className="font-bold uppercase tracking-widest text-[11px] mb-2">Bundle refused</p>
+                <p className="mb-2">
+                  The generated package names {rejectedPaths.length === 1 ? 'a file' : `${rejectedPaths.length} files`} that would
+                  be written outside the archive when it is unpacked. Nothing was downloaded. Run the transformation again and
+                  check the source it was generated from.
+                </p>
+                <ul className="list-disc pl-4 space-y-1">
+                  {rejectedPaths.map((r) => (
+                    <li key={r.path}>
+                      <code className="font-mono break-all">{r.path}</code> — {r.reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* Executive Presentation */}

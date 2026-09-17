@@ -92,9 +92,39 @@ test.describe('the network guard is never removed', () => {
     expect(src).toContain('ALLOWED_SUFFIXES');
     expect(src).toContain('function allowed(host)');
     expect(
-      src.includes('h.endsWith(s)'),
-      'the allowlist must match host suffixes, so a bare IP address never qualifies',
+      src.includes("h.endsWith('.' + s)"),
+      'the allowlist must match host suffixes at a label boundary, so a bare IP address never qualifies',
     ).toBe(true);
+  });
+
+  /**
+   * The suffix match, executed rather than read.
+   *
+   * `h.endsWith(s)` is a *string* suffix, and the allowlist holds domains. With
+   * `sap.com` on the list, `evil-sap.com` — a name anyone can register — ended
+   * in those five characters and the gate opened. The one process that reaches
+   * this gate is the one holding decrypted tenant credentials, so the
+   * difference between a string suffix and a domain suffix is the difference
+   * between a closed door and an exfiltration target.
+   *
+   * The function is lifted out of the guard the route actually writes, so this
+   * measures the shipped text and not a copy of it.
+   */
+  test('the allowlist matches whole labels, not string suffixes', () => {
+    const src = routeSource();
+    const body = src.match(/function allowed\(host\) \{[\s\S]*?\n\}/);
+    expect(body, 'the allowed() gate was not found in the guard the route writes').not.toBeNull();
+
+    // Built from the shipped text on purpose: a copy of the gate here could
+    // drift from the one the route writes, which is the only one that matters.
+    const allowed = new Function('ALLOWED_SUFFIXES', `${body![0]}\nreturn allowed;`)(['sap.com', 'my-tenant.s4hana.ondemand.com']);
+
+    for (const host of ['sap.com', 'x.sap.com', 'a.b.sap.com', 'my-tenant.s4hana.ondemand.com', 'SAP.COM']) {
+      expect(allowed(host), `${host} is on the allowlist and was refused`).toBe(true);
+    }
+    for (const host of ['evil-sap.com', 'notsap.com', 'sap.com.attacker.net', '169.254.169.254', 'ondemand.com', '']) {
+      expect(allowed(host), `${host} is not on the allowlist and was let through`).toBe(false);
+    }
   });
 
   test('the allowlist is empty unless the live run was actually attested', () => {
