@@ -13,7 +13,7 @@
     "verifiedAgainstCommit": "9edb37f366525a104598be8c0d7168ffe119df44",
     "verifiedAgainstBranch": "origin/dev",
     "verifiedOn": "2026-09-16",
-    "appVersion": "v2.12.0",
+    "appVersion": "v2.13.0",
     "phaseContract": "lib/workflow-steps.ts",
     "hydration": "lib/project-loader.ts",
     "runGuard": "lib/run-guard.ts",

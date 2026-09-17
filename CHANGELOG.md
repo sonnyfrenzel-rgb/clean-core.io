@@ -10,6 +10,151 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.13.0] — 2026-09-18
+
+### Der Prozess kommt jetzt aus dem Code heraus — als BPMN, benannt, navigierbar, und mit einem statt vierundzwanzig Engine-Defekten
+
+**Phase 2 ist vollständig.** Elf Schritte, vier davon an diesem Tag: die fachliche
+Benennung, die BPMN-Ansicht, der Export und der erste Blick — dazu die Navigation
+großer Prozesse und die Arbeit an dem, was der Referenzkorpus an der Engine
+gefunden hat.
+
+**Große Prozesse navigieren (2.9).** Die Prozesskarte trägt jetzt Programme in der
+Größe echter Legacy-Reports. Die Übersicht öffnet mit eingeklappten Teilprozessen,
+jeder mit Zeilenbereich, Zählern (Entscheidungen · hard-coded · nicht bestimmt) und
+einer Problemzeile im Klartext; darunter Pfadzeile, Gliederungsbaum mit stabiler
+Nummer je Schritt, Minikarte über alle Ebenen, „Main path" und „Show paths to here",
+Overlays als Filter, Laufvarianten aus den Selektionsschaltern und eine Suche über
+alle Ebenen. Ebene und Auswahl stehen im URL-Fragment: ein geteilter Link öffnet
+dieselbe Stelle, Zurück und Vorwärts tun das Erwartbare. **Die Abnahme ist gemessen,
+über alle 65 Knoten einzeln statt an Stichproben:** am 1.000-Zeilen-Beispiel ist
+jeder Schritt mit der Maus in höchstens 2 und mit der Tastatur in genau 3 Aktionen
+erreichbar (`Ctrl+K`, Gliederungsnummer, `Enter`). Die Nummer gibt es, weil Namen
+nicht eindeutig sind — 65 Elemente tragen 42 verschiedene Labels.
+
+Dabei fiel auf, dass **ein Wächter keine Verzweigung ist**: ein führendes
+`CHECK p_rfc = abap_true.` wird in der BPMN als bedingter Fluss ohne Umgehungskante
+gezeichnet. Wer ihm wie einer Verzweigung folgt, behauptet, das Programm ende am
+Schalter — „31 von 65 Schritten laufen nicht", wo es 59 sind. Die Navigation
+unterscheidet beides; die saubere Lösung in `lib/bpmn` ist als Nachzieher an 2.6
+vermerkt.
+
+**BPMN-Export aus dem Skelett des signierten Laufs (2.6).** Der Export entsteht aus
+dem Code, nicht aus einem Modellfluss: gültiges XML mit Escaping, stabile IDs,
+Bedingungen an den Kanten, eigenes Layout, Anker und Zustand in einem eigenen
+Namensraum unter `extensionElements`
+(`https://clean-core.io/schema/bpmn/reconstruction/1`). Eingeklappte Teilprozesse
+sind echte BPMN-Teilprozesse, Fremdsysteme ein Pool mit Nachrichtenfluss. Die
+Schemaprüfung läuft im Test.
+
+**Fachliche Benennung (2.4).** Das Modell bekommt Knoten-ID, Art, technisches Label,
+die Bedingungstexte der Kanten und die AUTHORITY-CHECK-Objekte — keinen Quelltext,
+keine Feldwerte — und darf genau zwei Dinge zurückgeben: Namen zu Knoten-IDs und
+Lane-Vorschläge. Was nicht passt, wird verworfen und gezählt, nicht repariert: 20
+Regeln, von „unbekannte ID" und „Knoten zweimal benannt" über „neue Knoten/Kanten"
+bis zur Lane namens „CFO". Der technische Name bleibt stehen, der fachliche daneben,
+der Anker bewegt sich nie, und ein Element ohne Anker heißt „Unanchored", auch mit
+schönem Namen. Lanes tragen den Satz *„Reconstructed from AUTHORITY-CHECK and
+naming, not an organisational statement"*. Gespeichert wird eine Benennung nur mit
+gültiger Quittung; ohne Schlüssel oder mit abgeschalteter Stufe erscheint das
+vollständige Skelett mit technischen Namen und einem Satz, der sagt warum.
+
+**Abhängigkeiten, die die Engine nicht sah (2.11, Familie c).** Neun Korpusfälle, an
+denen nichts gemeldet wurde oder etwas Erfundenes. Das Stringtemplate eines
+ADBC-Aufrufs *ist* SQL; der Makroplatzhalter `&1` ist nie ein Objekt, die Wirkung
+steht an der Aufrufstelle; `(LC_TAB)` war nie ein Tabellenname, die Konstante daneben
+nennt KNA1; und `(P_TAB)` stand da, wo die Quelle überhaupt kein Ziel schließt — ein
+ungelöstes Ziel ist jetzt die Coverage-Klasse `dynamic-target` („Nicht bestimmt"),
+und der Wert daneben ein *mögliches* Ziel, markiert und nie als bekannt. `TABLES:`,
+`TYPE kna1`, `INCLUDE STRUCTURE`, `NODES`/`GET` und `ASSIGN ('(SAPMV45A)VBAK-VBELN')`
+sind Abhängigkeiten mit eigener Verwendung (`Reference`), kein Lesezugriff. Beide
+Engines lesen das aus **einer** Datei (`lib/abap/table-dependencies.ts`) statt aus
+zwei Kopien desselben Musters, und dieselbe Datei fragt die Deklarationen — weshalb
+`MODIFY gt_bp_data FROM gs_bp_data` keine erfundene Datenbankkopplung mehr ist.
+
+**Die Grundlinie, nachgemessen.** 340 Paare, **205** Übereinstimmungen statt 178, **ein
+Engine-Defekt statt 24**. Nicht durch eine nachgiebigere Messung: die Vergleichsschicht
+hat genau *eine* neue Brücke bekommen, und zwar dort, wo die Engine die Aussage
+tatsächlich führt; vier Fälle sind von „nicht vergleichbar" zu einem sichtbaren Urteil
+gewandert, weil die Engine die Aussageklasse jetzt überhaupt produziert. Bewusst keine
+Brücke für R29, R15, R26, R12 und R13b: dort führt die Engine keine Befundmarke, und eine
+Brücke hätte „verfehlt" gezählt, wo nichts behauptet wird.
+
+### Security
+
+**SEC-2026-025 — Dateileseloch in der Testlauf-Sandbox (kritisch nach Prüfung).**
+Der esbuild-Bundler im Elternprozess wies nur relative `.js`-Traversal ab. Zwei
+Plugins teilten sich die Fälle und ließen dazwischen eine Lücke: absolute Pfade und
+relative Importe jeder anderen Endung wurden unverändert an esbuilds Default-Resolver
+gereicht, der direkt vom Dateisystem liest. Ein eingereichter Test konnte damit
+Service-Account-JSON und Anwendungsquelltext ins Bundle ziehen und im Antwortfeld
+zurückbekommen; Voraussetzung war nur ein bestätigtes Eigentümerkonto. Jetzt besitzt
+ein einziges `onResolve`-Plugin die ganze Import-Fläche: alles Relative wie Absolute
+muss in `testDir` auflösen, bevor der Default-Resolver den Pfad überhaupt sieht. Die
+Ablehnung ist fest und pfadfrei, und der 500er-Zweig gibt keine internen
+Fehlermeldungen mehr preis.
+
+### UX
+
+**UX-102 — die How-to-Seite beschreibt das Produkt, das es gibt.** Sie führte zwei
+eigene Phasenlisten — eine fürs `HowTo`-JSON-LD, eine für den Rundgang — mit sechs
+statt sieben Phasen, Testing vor Documentation und Node.js/TypeScript/XSUAA auf
+beiden Tracks. Beide leiten Anzahl, Reihenfolge und Titel jetzt aus `PHASES` ab; die
+Texte stehen je `PhaseKey` in `lib/how-to-content.ts`, sodass eine achte Phase ohne
+Text nicht kompiliert. Entfernt statt umformuliert: die sechs Screenshots vom Juli
+samt ihrer Hotspots, der Sprechertext und die drei Konzeptkarten unter „SAP Verified
+Strategy" — ein korrigierter Satz neben einem widersprechenden Bild bleibt ein
+Widerspruch. Jede Folie verlinkt stattdessen dieselbe Phase im Demo-Projekt.
+Miterledigt: **UX-008** (Slideshow-Steuerung ohne Namen, gekaperte Pfeiltasten).
+
+### QA
+
+Vier als `high` gemeldete Befunde der Review von `13d1ffa` widerlegt — alle vier
+dieselbe Fehllesung: der Prüfer sah im Diff die gelöschte einzeilige Zusicherung und
+nicht die mehrzeilige schärfere, die an ihre Stelle trat. `expect(manifest.attested)`
+bindet seit `c69be3e` zusätzlich die SHA-256 der versiegelten Bytes; der
+Provenance-Satz lautet jetzt „user-attested — nobody vouches for what it says."
+statt „— not covered by the signature.", weil Manifestversion 3 die Bytes sehr wohl
+bindet und der alte Satz damit falsch geworden wäre.
+
+
+**Die letzte Wurzel von 2.11 Familie (a).** Eine DDIC-Typabhängigkeit (`TABLES`, `TYPE`,
+`INCLUDE STRUCTURE`, `SELECT-OPTIONS … FOR`) ist jetzt eine eigene Verwendung und wird
+nach dem Zustand des Objekts benotet: **C** für eine Tabelle, die SAP nicht freigibt,
+statt der Namensnote **D**, die dem Programm vorwarf, an der Anwendung vorbeizugreifen,
+obwohl es keine Zeile anfasst. Eine Typreferenz auf einen *eigenen* Namen bleibt bewusst
+`Unknown`. Dazu eine zweite Regelbrücke für das Lesen über eine logische Datenbank am
+`GET`-Ereignis. **Von 24 Engine-Defekten der Grundlinie vom 17.09. bleibt einer** —
+CC-050, und der ist kein Fehler der Objektnote, sondern die fehlende Antwort „Level je
+Artefakt": eine Produktentscheidung, kein Bugfix.
+
+**Drei Stellen erzählten noch vom Produkt vom Juli (UX-015, UX-104).** Der Chatbot
+erzeugte seinen `/how-to`-Rundgang aus einer handgeschriebenen Liste mit sechs falschen
+Phasen und nannte Karten und Exporte, die es in Delivery, Documentation und Design nicht
+gibt — er liest jetzt dieselbe Quelle wie die Seite. Die Landingpage zeigte dieselben
+sechs Juli-Screenshots, die von `/how-to` geflogen sind; sie sind **gelöscht, nicht
+ersetzt** (handverlesene Bilder von heute sind im Januar wieder Juli-Bilder, und Roadmap
+3.0.6 besitzt diese Entscheidung bereits), an ihrer Stelle sieben Karten aus derselben
+Phasenquelle, jede mit Link ins Demo-Projekt, als Serverkomponente. Das Sitemap-Datum
+einer Route wird jetzt aus allem gelesen, was sie rendert — zwölf Routen meldeten ein
+Datum, das keine Inhaltsänderung bewegen konnte. Und elf öffentliche Seiten hatten vier
+Antworten auf die Frage nach dem Rückweg; eine davon, `router.back()`, tat für einen
+Leser aus der Suche gar nichts und schickte Abgemeldete hinter den Login.
+
+**Der QA-Prüfer liest wieder vollständig.** Das Aufrufbudget einer Delta-Review steigt von
+vier auf zehn. Vier waren keine Grenze mehr, sondern eine Sackgasse: eine unvollständige
+Review lässt den Prüfpunkt auf ihrer Basis stehen, also kam das ungelesene Delta wieder —
+plus alles, was seither gepusht wurde. Geld war nie die bindende Grenze (0,1031 $ gegen
+eine Obergrenze von 0,50 $), und die Obergrenze bleibt echt: zehn volle Aufrufe schätzen
+auf 0,4983 $, der elfte wird abgewiesen.
+
+**Die Vollprüfung von `a19945ef01dc` ist abgeschlossen triagiert.** Von 504 gemeldeten
+Befunden sind alle 30 kritischen und alle 94 hohen entschieden — bei den hohen: 15
+bekannt, 14 mit Beleg widerlegt, 62 bestätigt (39 eigenständige Defekte), 3 unklar. 21
+davon sind am laufenden Code nachgestellt. Das Muster hinter den Widerlegungen: **der
+Prüfer liest einen Rückwärtskompatibilitäts-Test als eingefrorenen Defekt** — sechs von
+vierzehn sind dieser eine Denkfehler.
+
 ## [v2.12.0] — 2026-09-17
 
 ### Eine signierte Beweismappe war fälschbar. Der Referenzkorpus liegt jetzt im Repository und prüft die Engine. Und neun Versprechen, die nichts hielten, sind weg — vier davon ersatzlos
