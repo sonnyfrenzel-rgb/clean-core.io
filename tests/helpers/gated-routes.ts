@@ -73,6 +73,12 @@ export const GATED_ROUTES: GatedRoute[] = [
   // said about it; a token from before the second factor reaches neither.
   { file: 'app/api/projects/[projectId]/process-naming/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/process-naming` },
   { file: 'app/api/projects/[projectId]/process-naming/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/process-naming`, body: { digest: 'nm1-0', text: '{}', receipt: null } },
+  // Roadmap 2.5 — the traceability quote of a project's process map. Both verbs
+  // read the project's code: GET hands out a measurement of it, POST rebuilds
+  // the skeleton and the BPMN from it. A token from before the second factor
+  // reaches neither.
+  { file: 'app/api/projects/[projectId]/process-map/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/process-map` },
+  { file: 'app/api/projects/[projectId]/process-map/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/process-map` },
 ];
 
 /**

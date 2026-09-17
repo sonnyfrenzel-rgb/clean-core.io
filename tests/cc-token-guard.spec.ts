@@ -42,6 +42,10 @@ const CC_DIRS = [
   'app/(app)/admin/design-system',
   'components/workspace',
   'app/(app)/project/[projectId]/page.tsx',
+  // Roadmap 2.5. The process map sits inside a stage page of the old product,
+  // where `#0b1c30` and `text-gray-500` are still everywhere; a new component
+  // that copied its neighbours would be the first leak in the namespace.
+  'components/process-map',
 ];
 
 function collect(dirRel: string): { rel: string; text: string }[] {

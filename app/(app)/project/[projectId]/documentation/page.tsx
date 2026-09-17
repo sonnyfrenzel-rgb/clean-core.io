@@ -25,6 +25,7 @@ import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { escapeHtml } from '@/lib/utils';
 import { sha256Hex } from '@/lib/artefact-digest';
+import { useProcessMap } from '@/hooks/useProcessMap';
 
 const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
   let files: Array<{ path: string, content: string }> = [];
@@ -54,6 +55,16 @@ const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath:
 
 // Dynamically import ProcessFlow to avoid SSR issues
 const ProcessFlow = dynamic(() => import('@/components/ProcessFlow'), { ssr: false });
+
+/**
+ * Roadmap 2.5 — the reading BPMN view of the process the engine reconstructed.
+ *
+ * Client only, and loaded on demand: it pulls bpmn-js and the ABAP reader, and
+ * neither belongs in the bundle of a reader who never opens this stage. It
+ * draws the same file the "Export BPMN" button downloads, so what is on the
+ * screen and what leaves the building are the same process.
+ */
+const ProcessMap = dynamic(() => import('@/components/process-map/ProcessMap'), { ssr: false });
 
 // Robust JSON Extractor
 const extractJSON = (text: string) => {
@@ -410,6 +421,17 @@ Structure the JSON exactly like this:
     return { source, fileName: signed.fileName || 'source.abap' };
   }, [project]);
 
+  /**
+   * Roadmap 2.5 — the reading map, built from exactly the source the export
+   * below writes out. One reading of the code, two ways out of the building.
+   */
+  const processMap = useProcessMap(
+    (Array.isArray(projectId) ? projectId[0] : projectId) ?? null,
+    signedSource,
+    project?.name || '',
+    modelAvailability,
+  );
+
   const downloadBPMN = async () => {
     if (!signedSource) return;
     // Loaded on the click: the reader of this stage pays for the ABAP reader
@@ -721,6 +743,29 @@ Structure the JSON exactly like this:
           </div>
         </div>
       </div>
+
+      {/* Roadmap 2.5 — the process as the engine read it, above everything a
+          model wrote. It exists as soon as the run does: no blueprint, no key
+          and no naming are needed for it, because it is the code. The blueprint
+          below it is a model's account of the same program and is marked as
+          one; putting the evidence first is the order `DESIGN.md` §5 asks for. */}
+      {signedSource && (
+        <div data-process-map-section className="mb-10 rounded-[2rem] border border-gray-100 bg-white p-6 md:p-8 shadow-sm">
+          {processMap.model ? (
+            <ProcessMap
+              model={processMap.model}
+              source={signedSource.source}
+              measuredAt={processMap.measuredAt}
+            />
+          ) : (
+            <p className="text-sm font-medium text-gray-500">
+              {processMap.status === 'failed'
+                ? processMap.reason
+                : 'Reading the process out of the source…'}
+            </p>
+          )}
+        </div>
+      )}
 
       {docError && (
         <div className="bg-red-50 border border-red-200 text-red-800 p-6 rounded-[2rem] mb-10 flex items-start gap-4 shadow-sm">
