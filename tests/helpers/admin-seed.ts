@@ -54,6 +54,18 @@ export async function adminSetCustomClaim(uid: string, claims: Record<string, an
   await callSeedApi({ action: 'setCustomClaim', uid, claims });
 }
 
+/**
+ * Marks an account's address confirmed, or takes the confirmation away.
+ *
+ * Roadmap 5.3 turns on exactly this bit, and the Auth emulator has no mailbox
+ * to confirm one from. `email_verified` travels inside the ID token, so a
+ * caller must re-mint it (`user.getIdToken(true)`) before the change is visible
+ * to a route.
+ */
+export async function adminSetEmailVerified(uid: string, emailVerified: boolean) {
+  await callSeedApi({ action: 'setEmailVerified', uid, emailVerified });
+}
+
 /** Server-side existence check — for collections client SDKs cannot read (user_secrets, mfa_*, s4_credentials). */
 export async function adminDocExists(collectionPath: string, docId: string): Promise<boolean> {
   const response = await fetch(`${BASE_URL}/api/test/seed`, {
@@ -63,4 +75,20 @@ export async function adminDocExists(collectionPath: string, docId: string): Pro
   });
   if (!response.ok) throw new Error(`existsDoc failed: ${await response.text()}`);
   return (await response.json()).exists === true;
+}
+
+/**
+ * Server-side read-back — what a route actually stored, not what it answered.
+ *
+ * For the stores no client SDK can reach: `projects/{id}/invitations/{id}` has
+ * no match in `firestore.rules`, and `projects/{id}.readers` is Admin-SDK-only.
+ */
+export async function adminGetDoc(collectionPath: string, docId: string): Promise<Record<string, any> | null> {
+  const response = await fetch(`${BASE_URL}/api/test/seed`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-test-seed-token': process.env.PILOT_APPROVAL_SECRET || '' },
+    body: JSON.stringify({ action: 'getDoc', collectionPath, docId }),
+  });
+  if (!response.ok) throw new Error(`getDoc failed: ${await response.text()}`);
+  return (await response.json()).data ?? null;
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminDb, setAdminClaim } from '@/lib/firebase-admin';
+import { getAdminAuth, getAdminDb, setAdminClaim } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   // F-15: Defense-in-Depth — THREE independent gates must ALL pass.
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { action, collectionPath, docId, data, uid, claims } = await req.json();
+    const { action, collectionPath, docId, data, uid, claims, emailVerified } = await req.json();
     const { db } = await getAdminDb();
 
     if (action === 'setDoc') {
@@ -31,6 +31,16 @@ export async function POST(req: NextRequest) {
 
     if (action === 'mergeDoc') {
       await db.collection(collectionPath).doc(docId).set(data, { merge: true });
+      return NextResponse.json({ success: true });
+    }
+
+    // Roadmap 5.3 turns on whether an address is confirmed, and the Auth
+    // emulator has no mailbox to confirm one from. The Admin SDK is how a spec
+    // builds the two accounts that step distinguishes: one whose address is
+    // confirmed and one whose is not. The caller has to re-mint its ID token
+    // (`getIdToken(true)`) afterwards — `email_verified` travels in the token.
+    if (action === 'setEmailVerified') {
+      await (await getAdminAuth()).updateUser(uid, { emailVerified: emailVerified === true });
       return NextResponse.json({ success: true });
     }
 
@@ -44,6 +54,16 @@ export async function POST(req: NextRequest) {
     if (action === 'existsDoc') {
       const snap = await db.collection(collectionPath).doc(docId).get();
       return NextResponse.json({ exists: snap.exists });
+    }
+
+    // Read-back of what a route actually wrote, for stores no client SDK can
+    // read: `projects/{id}/invitations/{id}` has no match in firestore.rules,
+    // and `projects/{id}.readers` is written by the Admin SDK only. A spec that
+    // could only assert on a route's own response would be taking that route's
+    // word for what it stored.
+    if (action === 'getDoc') {
+      const snap = await db.collection(collectionPath).doc(docId).get();
+      return NextResponse.json({ exists: snap.exists, data: snap.exists ? snap.data() : null });
     }
 
     return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });

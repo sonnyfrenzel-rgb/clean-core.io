@@ -38,6 +38,7 @@ import { COMMUNITY_QUOTA } from '@/lib/constants';
 import { finishRegistration } from '@/hooks/useUserProfile';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import MaintenanceNotice from '@/components/MaintenanceNotice';
+import { safeReturnPath } from '@/lib/return-path';
 
 export default function LandingModals() {
   const auth = getAuth();
@@ -47,6 +48,23 @@ export default function LandingModals() {
   // Modal open states based on search parameters
   const authParam = searchParams.get('auth');
   const legalParam = searchParams.get('legal');
+
+  /**
+   * Where a finished sign-in lands — roadmap 5.1.
+   *
+   * The dashboard, as it always was, unless the visitor arrived from one of our
+   * own pages that wants them back: an invitation link is useless if opening it
+   * signed out drops the reader on somebody's workspace with the link spent.
+   *
+   * **Nothing about signing in or registering changes** — not a field, not a
+   * step, not an order. The destination does, and only to a path
+   * `safeReturnPath` recognises as one of ours. A `next` it does not recognise
+   * is discarded, not repaired: that parameter travels in a URL anybody can
+   * write and mail, and a login that hands the visitor on to an arbitrary
+   * target is the credible first half of a phishing flow — they sign in on the
+   * real site and end up somewhere else still believing they are here.
+   */
+  const afterSignIn = safeReturnPath(searchParams.get('next')) ?? '/dashboard';
 
   // Local state mirroring
   const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'forgot' | 'mfa' | 'success'>('signin');
@@ -120,13 +138,13 @@ export default function LandingModals() {
       .then((result) => {
         if (!result?.user) return;
         setIsNavigating(true);
-        router.push('/dashboard');
+        router.push(afterSignIn);
       })
       .catch((err) => {
         if (interceptSecondFactor(err)) return;
         console.error('[getRedirectResult] Error:', err);
       });
-  }, [auth, router]);
+  }, [auth, router, afterSignIn]);
 
   const closeAuthModal = async () => {
     setMfaResolver(null);
@@ -163,7 +181,7 @@ export default function LandingModals() {
 
       setIsNavigating(true);
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push(afterSignIn);
       }, 850);
     } catch (error: any) {
       if (interceptSecondFactor(error)) return;
@@ -193,7 +211,7 @@ export default function LandingModals() {
 
       setIsNavigating(true);
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push(afterSignIn);
       }, 850);
     } catch (error: any) {
       if (interceptSecondFactor(error)) {
@@ -291,7 +309,7 @@ export default function LandingModals() {
 
       setIsNavigating(true);
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push(afterSignIn);
       }, 850);
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -342,7 +360,7 @@ export default function LandingModals() {
       setMfaResolver(null);
       setIsNavigating(true);
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push(afterSignIn);
       }, 850);
     } catch (error: any) {
       console.error('MFA validation error:', error?.code);
