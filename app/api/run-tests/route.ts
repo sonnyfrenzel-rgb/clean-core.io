@@ -115,6 +115,76 @@ function buildStubModule(namedExports: string[]): string {
   return `${UNIVERSAL_STUB}\n${assigns}`;
 }
 
+/**
+ * The single esbuild resolver plugin for the sandbox bundle. It owns the whole
+ * import surface of the untrusted test/app code so no specifier can slip past
+ * the sandbox boundary between two plugins. Every resolution is one of four
+ * cases, decided in this order:
+ *
+ *   1. entry point            → left to esbuild.
+ *   2. Node built-in          → external (node:test/node:assert stay real).
+ *   3. bare npm import        → the hermetic universal stub, inlined.
+ *   4. relative OR absolute   → resolved against the importer and required to
+ *      land INSIDE `testDir`; anything that resolves outside is rejected with a
+ *      fixed message. Only after the boundary holds is the tsx-style
+ *      `./x.js → ./x.ts` rewrite applied; everything else falls through to the
+ *      default resolver, which now only ever sees paths inside the sandbox.
+ *
+ * The boundary must be enforced HERE, before the default resolver ever runs,
+ * because the default resolver reads whatever path it is handed straight from
+ * the server filesystem and inlines it into the bundle that is returned to the
+ * caller. Case 4 therefore covers every extension and both relative and
+ * absolute forms — not just `.js`.
+ */
+function createSandboxResolvePlugin(opts: {
+  testDir: string;
+  stubModuleSource: string;
+  stubbedPackages: Set<string>;
+}) {
+  const { testDir, stubModuleSource, stubbedPackages } = opts;
+  const insideSandbox = (abs: string) =>
+    abs === testDir || abs.startsWith(testDir + path.sep);
+
+  return {
+    name: 'cc-sandbox-resolve',
+    setup(build: any) {
+      build.onResolve({ filter: /.*/ }, (args: any) => {
+        const p: string = args.path;
+        if (args.kind === 'entry-point') return undefined;
+
+        // Node built-ins stay external (real node:test / node:assert).
+        if (p.startsWith('node:') || isBuiltin(p)) return { external: true };
+
+        // Bare npm import (neither relative nor absolute) → universal stub.
+        if (!p.startsWith('.') && !path.isAbsolute(p)) {
+          stubbedPackages.add(packageNameOf(p));
+          return { path: p, namespace: 'cc-stub' };
+        }
+
+        // Relative or absolute → must resolve INSIDE testDir, any extension.
+        // A fixed error text is returned on rejection so the checked path is
+        // never echoed back to the caller.
+        const base = path.resolve(args.resolveDir || testDir, p);
+        if (!insideSandbox(base)) {
+          return { errors: [{ text: 'Path outside sandbox rejected.' }] };
+        }
+
+        // Inside the sandbox: mirror tsx/Node resolution "./x.js → ./x.ts".
+        const tsCandidate = base.replace(/\.js$/, '.ts');
+        if (tsCandidate !== base && fssync.existsSync(tsCandidate)) {
+          return { path: tsCandidate };
+        }
+        return undefined; // inside sandbox → default resolver
+      });
+
+      build.onLoad({ filter: /.*/, namespace: 'cc-stub' }, () => ({
+        contents: stubModuleSource,
+        loader: 'js',
+      }));
+    },
+  };
+}
+
 // The TAP parser lives in lib/test-verdicts.ts (E07-F01): SKIP and TODO are
 // their own states there, and the tests call it directly.
 
@@ -319,57 +389,20 @@ export async function POST(req: Request) {
 
     const stubModuleSource = buildStubModule(collectNamedImports(sourceTexts));
 
-    // ── 2) Bundle in the parent: relative .ts/.js inlined, npm packages external ─
-    // Plugin mirrors the tsx/Node resolution "import './x.js' → ./x.ts".
-    const tsJsResolve = {
-      name: 'ts-js-resolve',
-      setup(build: any) {
-        build.onResolve({ filter: /\.js$/ }, (args: any) => {
-          if (args.kind === 'entry-point' || !args.path.startsWith('.')) return;
-          const base = path.resolve(args.resolveDir, args.path);
-          
-          // Prevent directory traversal out of testDir
-          if (!base.startsWith(testDir + path.sep) && base !== testDir) {
-            return { errors: [{ text: 'Path traversal detected.' }] };
-          }
-
-          const tsCandidate = base.replace(/\.js$/, '.ts');
-          if (fssync.existsSync(tsCandidate)) return { path: tsCandidate };
-          return undefined;
-        });
-      },
-    };
-
-    // Make the sandbox hermetic: every bare npm import from the generated code
-    // (express, pino, pino-pretty, typeorm, @sap-cloud-sdk/*, @sap/xssec, passport, …)
-    // is replaced with the universal stub and inlined into the bundle. The suite only
-    // needs Node built-ins (node:test / node:assert), and business-logic unit tests
-    // never need real infra libraries — so stubbing unconditionally guarantees the
-    // module under test loads identically in dev and in the pruned production image,
-    // instead of crashing the whole suite with "Cannot find module 'express'".
-    // Relative paths use the default resolver; Node built-ins stay external.
-    // Every package the stub stands in for, named in the response (CR-14). The
-    // stub makes a module load; it does not make a library work. A pass against
-    // a stubbed `express` says the logic ran — not that it runs with express —
-    // and until now nothing said which packages had been replaced.
+    // ── 2) Bundle in the parent: relative/absolute inlined ONLY from inside the
+    //       sandbox dir, bare npm packages stubbed, Node built-ins external ─────
+    // One resolver plugin owns the whole import surface so no specifier can slip
+    // past the sandbox boundary between two plugins: every relative OR absolute
+    // import, of every extension, must resolve inside `testDir` or it is rejected
+    // with a fixed message before the default resolver — which reads straight
+    // from the server filesystem — ever sees it. Bare imports (express, pino,
+    // typeorm, @sap-cloud-sdk/*, @sap/xssec, passport, …) are replaced by the
+    // universal stub and inlined, so business-logic unit tests load identically
+    // in dev and in the pruned production image instead of crashing with
+    // "Cannot find module 'express'"; each stubbed package is named in the
+    // response (CR-14). See createSandboxResolvePlugin above.
     const stubbedPackages = new Set<string>();
-    const stubMissingPackages = {
-      name: 'stub-missing-packages',
-      setup(build: any) {
-        build.onResolve({ filter: /.*/ }, (args: any) => {
-          const p: string = args.path;
-          if (args.kind === 'entry-point') return undefined;
-          if (p.startsWith('.') || path.isAbsolute(p)) return undefined; // relative → default resolver
-          if (p.startsWith('node:') || isBuiltin(p)) return { external: true };
-          stubbedPackages.add(packageNameOf(p));
-          return { path: p, namespace: 'cc-stub' }; // any other bare import → universal stub, inlined
-        });
-        build.onLoad({ filter: /.*/, namespace: 'cc-stub' }, () => ({
-          contents: stubModuleSource,
-          loader: 'js',
-        }));
-      },
-    };
+    const resolvePlugin = createSandboxResolvePlugin({ testDir, stubModuleSource, stubbedPackages });
 
     const bundlePath = path.join(testDir, '__sandbox_bundle.cjs');
     try {
@@ -385,7 +418,7 @@ export async function POST(req: Request) {
         resolveExtensions: ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.json'],
         // Enable TS decorators so typeorm-style entities (@Entity/@Column/…) compile.
         tsconfigRaw: { compilerOptions: { experimentalDecorators: true } },
-        plugins: [tsJsResolve, stubMissingPackages],
+        plugins: [resolvePlugin],
         loader: { '.ts': 'ts', '.tsx': 'tsx' },
       });
     } catch (buildErr: any) {
@@ -607,9 +640,11 @@ if (ALLOWED_SUFFIXES.length === 0) {
 
     const testResults = parseTapOutput(stdout);
     return NextResponse.json({ output: stdout, error: stderr, exitCode, testResults, stubbedPackages: [...stubbedPackages].sort() });
-  } catch (err: any) {
+  } catch {
+    // A fixed message: an internal error's own text can carry filesystem paths
+    // or other server detail, so it is logged, never returned to the caller.
     return NextResponse.json(
-      { output: '', error: err?.message || 'Internal Server Error during test execution', exitCode: 1 },
+      { output: '', error: 'Internal Server Error during test execution.', exitCode: 1 },
       { status: 500 },
     );
   } finally {
