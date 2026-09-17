@@ -1,5 +1,5 @@
 import { tokenize } from './declaration-parser';
-import { createLiteralScanner } from './statement-reader';
+import { createLiteralScanner, maskNonCode } from './statement-reader';
 import { databaseWriteIn, isInternalTableOperation } from './open-sql-discrimination';
 import { readConstantDeclarations } from './business-rules';
 
@@ -175,8 +175,22 @@ const SYSTEM_STRUCTURES = new Set(['SY', 'SYST', 'SCREEN', 'TEXT']);
  *
  * Approximate by design: an unknown name is still treated as a table, so a real
  * database write is never missed. What this removes is the noise.
+ *
+ * **It reads code, not text.** The patterns below used to run over the raw
+ * source, and a suppression list built from raw source is the one place where a
+ * comment can delete a finding rather than add one: a single line
+ *
+ *     * DATA vbak TYPE ztab.      "an old declaration, commented out
+ *
+ * registered VBAK as a local data object, and the real `UPDATE vbak` below it
+ * left `Sink.table` without a word — no Critical finding, no data coupling, a
+ * Clean Core score computed as if the statement were not there (full review of
+ * a19945ef01dc, f4383c553eaa). A literal does the same: `WRITE 'DATA kna1'.`
+ * would have suppressed KNA1. `maskNonCode` removes both before the first
+ * pattern is asked.
  */
-export function collectLocalDataObjects(code: string): Set<string> {
+export function collectLocalDataObjects(source: string): Set<string> {
+  const code = maskNonCode(source);
   const names = new Set<string>();
   const add = (n?: string) => {
     const v = (n || '').toUpperCase().replace(/[<>]/g, '').trim();

@@ -17,6 +17,8 @@
  * never missed. What this removes is the noise.
  */
 
+import { maskLiterals } from './statement-reader';
+
 /**
  * Clauses that only ever appear on the internal-table form.
  *
@@ -48,67 +50,56 @@ export interface SqlWrite {
  * operation, a screen statement, or nothing of the sort.
  */
 /**
- * The statement with its text literals blanked, keeping every offset.
+ * The clause test and the shapes below run over the whole statement, so a
+ * literal containing one of those words — `DELETE FROM zlog WHERE reason =
+ * 'assigning'` — would offer it to the test as if it were syntax. Sixteen
+ * adversarial statements were measured before the masking was added (QA review
+ * of cf0f2244eda4), and none of them reached a wrong answer, because each
+ * branch decides on its own structure and not on the flag alone.
  *
- * The clause test below runs over the whole statement, so a literal containing
- * one of those words — `DELETE FROM zlog WHERE reason = 'assigning'` — would
- * offer it to the test as if it were syntax. No input actually reaches a wrong
- * answer through that today, because each branch decides on its own structure
- * and not on the flag alone; sixteen adversarial statements were measured
- * before this was written (QA review of cf0f2244eda4). It is closed anyway:
- * the next branch that leans on the flag would inherit the hole, and
- * `lib/abap/select-parser.ts` already established that a keyword inside a
- * literal is not a keyword.
+ * A private copy of the rule was written here, and it knew `'…'` and `` `…` ``
+ * and not the string template. That is the hole the full review of a19945ef01dc
+ * found: `INSERT zlog FROM @( VALUE zlog( message = |INDEX| ) )` handed `INDEX`
+ * to the clause test as syntax, the helper answered "internal table", and a real
+ * write to a custom table produced no finding on any surface. So the rule is not
+ * restated here any more; `maskLiterals` in `statement-reader.ts` is asked, the
+ * same pre-stage every other detector runs.
  */
-function withoutLiterals(text: string): string {
-  let out = '';
-  let quote: string | null = null;
-  for (const ch of text) {
-    if (quote) {
-      out += ch === quote ? ch : ' ';
-      if (ch === quote) quote = null;
-      continue;
-    }
-    if (ch === "'" || ch === '`') {
-      quote = ch;
-      out += ch;
-      continue;
-    }
-    out += ch;
-  }
-  return out;
-}
 
 export function databaseWriteIn(text: string): SqlWrite | null {
-  const isInternalTableOp = INTERNAL_TABLE_CLAUSE.test(withoutLiterals(text));
+  // Every test below reads the masked form, so a keyword inside a literal is
+  // never syntax — the name a branch captures is an identifier and therefore
+  // stands unchanged in both.
+  const bare = maskLiterals(text);
+  const isInternalTableOp = INTERNAL_TABLE_CLAUSE.test(bare);
 
   // INSERT — the database form is `INSERT tab FROM …` or `INSERT INTO tab VALUES …`.
   // `INSERT <wa> INTO <itab>` is the internal form and carries none of the
   // clauses above, so the discriminator is where INTO sits: after a name it is
   // internal, immediately after INSERT it is Open SQL.
-  const insertIntoItab = /^INSERT\s+[\w/]+(?:-[\w]+)*\s+INTO\b/i.test(text);
-  const insert = text.match(/^INSERT\s+(?:INTO\s+)?([\w/]+)/i);
+  const insertIntoItab = /^INSERT\s+[\w/]+(?:-[\w]+)*\s+INTO\b/i.test(bare);
+  const insert = bare.match(/^INSERT\s+(?:INTO\s+)?([\w/]+)/i);
   if (insert && !isInternalTableOp && !insertIntoItab && !NOT_A_TABLE.has(insert[1].toUpperCase())) {
     return { table: insert[1], keyword: 'INSERT' };
   }
 
   // UPDATE — no internal-table form, so no guard is needed.
-  const update = text.match(/^UPDATE\s+([\w/]+)/i);
+  const update = bare.match(/^UPDATE\s+([\w/]+)/i);
   if (update && !NOT_A_TABLE.has(update[1].toUpperCase())) {
     return { table: update[1], keyword: 'UPDATE' };
   }
 
   // MODIFY — `MODIFY TABLE itab`, `MODIFY itab … INDEX n` and TRANSPORTING are internal.
-  const modify = text.match(/^MODIFY\s+([\w/]+)/i);
+  const modify = bare.match(/^MODIFY\s+([\w/]+)/i);
   if (modify && !isInternalTableOp && !NOT_A_TABLE.has(modify[1].toUpperCase())) {
     return { table: modify[1], keyword: 'MODIFY' };
   }
 
   // DELETE — the database form is `DELETE FROM tab WHERE …` or `DELETE tab FROM …`;
   // `DELETE itab WHERE …` without FROM exists only for internal tables.
-  const del = text.match(/^DELETE\s+(?:FROM\s+)?([\w/]+)/i);
-  const isDbDelete = /^DELETE\s+FROM\b/i.test(text) || /^DELETE\s+[\w/]+\s+FROM\b/i.test(text);
-  const isInternalDelete = !isDbDelete && /^DELETE\s+[\w/]+\s+WHERE\b/i.test(text);
+  const del = bare.match(/^DELETE\s+(?:FROM\s+)?([\w/]+)/i);
+  const isDbDelete = /^DELETE\s+FROM\b/i.test(bare) || /^DELETE\s+[\w/]+\s+FROM\b/i.test(bare);
+  const isInternalDelete = !isDbDelete && /^DELETE\s+[\w/]+\s+WHERE\b/i.test(bare);
   if (del && !isInternalDelete && (isDbDelete || !isInternalTableOp) && !NOT_A_TABLE.has(del[1].toUpperCase())) {
     return { table: del[1], keyword: 'DELETE' };
   }
@@ -118,5 +109,6 @@ export function databaseWriteIn(text: string): SqlWrite | null {
 
 /** True when the statement is an internal-table operation wearing a database keyword. */
 export function isInternalTableOperation(text: string): boolean {
-  return INTERNAL_TABLE_CLAUSE.test(text) || /^INSERT\s+[\w/]+(?:-[\w]+)*\s+INTO\b/i.test(text);
+  const bare = maskLiterals(text);
+  return INTERNAL_TABLE_CLAUSE.test(bare) || /^INSERT\s+[\w/]+(?:-[\w]+)*\s+INTO\b/i.test(bare);
 }

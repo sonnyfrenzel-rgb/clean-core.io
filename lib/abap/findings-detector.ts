@@ -4,6 +4,7 @@ import {
   type ConstructType, type SupportLevel,
 } from './support-matrix';
 import { detectComplexJoinFindings } from './complex-join-findings';
+import { maskNonCode } from './statement-reader';
 
 /**
  * Findings detector — turns the resolved IR + raw ABAP source into SupportFinding[].
@@ -69,27 +70,6 @@ const BODY_PATTERNS: { construct: ConstructType; re: RegExp; why: string }[] = [
   },
 ];
 
-/** Helper to clean comments from a raw source line to prevent false positives. */
-function cleanComments(line: string): string {
-  // Full-line comment starting with '*'
-  if (/^\s*\*/.test(line)) return '';
-  
-  // Strip inline comments starting with '"' (respecting single quotes and backticks)
-  let clean = '';
-  let inSingleQuote = false;
-  let inBacktick = false;
-  for (let c = 0; c < line.length; c++) {
-    const ch = line[c];
-    if (ch === "'" && !inBacktick) inSingleQuote = !inSingleQuote;
-    if (ch === "`" && !inSingleQuote) inBacktick = !inBacktick;
-    if (ch === '"' && !inSingleQuote && !inBacktick) {
-      break; // rest is comment
-    }
-    clean += ch;
-  }
-  return clean;
-}
-
 /** Structural findings derived directly from the resolved IR. */
 function detectStructural(model: ClassModel): SupportFinding[] {
   const findings: SupportFinding[] = [];
@@ -128,10 +108,21 @@ export function detectFindings(model: ClassModel, sources: SourceFile[]): Suppor
   const findings: SupportFinding[] = [...detectStructural(model)];
 
   for (const src of sources) {
-    const lines = src.content.split(/\r?\n/);
+    // Comments and literal contents are blanked before a single body pattern is
+    // asked, and the masking keeps the line and column of everything that is
+    // left, so `location.line` is still the line in the file the user uploaded.
+    //
+    // This detector used to carry its own half of the rule: it knew `'…'` and
+    // `` `…` `` and not the string template, so `DATA(message) = |CALL SCREEN
+    // 100|.` produced a Dynpro finding — level "not supported", sign-off
+    // required — on a program that calls no screen (full review of a19945ef01dc,
+    // 19bdc218308b). The same text could fabricate a dynamic-call, kernel-call
+    // or RTTI finding. `maskNonCode` keeps the literal's delimiters, which the
+    // dynamic-call pattern below needs: `CALL FUNCTION 'name'` is a resolvable
+    // call and `CALL FUNCTION lv_name` is not, and the quote is the difference.
+    const lines = maskNonCode(src.content).split(/\r?\n/);
     for (let i = 0; i < lines.length; i++) {
-      const rawLine = lines[i];
-      const line = cleanComments(rawLine);
+      const line = lines[i];
       if (!line.trim()) continue;
 
       for (const p of BODY_PATTERNS) {

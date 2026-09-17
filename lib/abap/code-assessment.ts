@@ -7,6 +7,7 @@
 
 import type { CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import { readTableDependencies, type DependencyRoute } from './table-dependencies';
+import { maskComments, maskNonCode } from './statement-reader';
 
 // Well-known SAP standard tables and their recommended API/CDS replacements
 const STANDARD_TABLE_MAP: Record<string, string> = {
@@ -397,6 +398,44 @@ export function computeCriticalityScore(code: string): number {
 }
 
 /**
+ * The function modules a source calls by name, upper-cased.
+ *
+ * A function module's name stands in a literal, and that literal is the call
+ * target rather than prose — the same exception `table-dependencies.ts` makes
+ * for the SQL text of an ADBC call. So this reader takes the comment-free form,
+ * which still carries its literals, rather than the fully masked one: a
+ * commented-out call is not a call, but `CALL FUNCTION 'MASTER_IDOC_DISTRIBUTE'`
+ * is an IDoc call and not a sentence about one.
+ */
+function calledFunctionModules(code: string): string[] {
+  const source = maskComments(code).toUpperCase();
+  return [...source.matchAll(/\bCALL\s+FUNCTION\s+'([\w/]+)'/g)].map((m) => m[1]);
+}
+
+/**
+ * Is this function module an RFC or IDoc one, by its name?
+ *
+ * `RFC_READ_TABLE` and `IDOC_INPUT_ORDERS` are the two families the routing
+ * below has always meant. It could never see either: the pattern was
+ * `/\b(CALL\s+FUNCTION\s+'RFC|IDOC|BAPI_)\b/`, and the closing `\b` sits after
+ * `RFC` and after the underscore of `BAPI_`, where the next character of a real
+ * module name is a word character and no boundary exists (full review of
+ * a19945ef01dc, 359639c30d77). The only alternative that ever matched was the
+ * bare word `IDOC`, and the place a bare `IDOC` actually occurs is a comment.
+ *
+ * **`BAPI_` is deliberately not repaired into a match.** A local BAPI call is
+ * not remote communication, and this engine says so where it says anything:
+ * `coverage.ts` records "Only CALL FUNCTION with DESTINATION is assessed, as an
+ * RFC. A local call — a BAPI among them — is not looked at." Making every
+ * program that calls a BAPI locally route to Integration Suite would be a new
+ * claim about those programs, decided in a regex. It belongs on the roadmap with
+ * an argument, not here.
+ */
+function isRfcOrIdocModule(name: string): boolean {
+  return /^RFC_/.test(name) || /(?:^|_)IDOC(?:_|$)/.test(name);
+}
+
+/**
  * Determine target architecture recommendation based on code analysis.
  */
 export function recommendArchitecture(
@@ -405,7 +444,12 @@ export function recommendArchitecture(
   dataCoupling: DataCouplingEntry[],
   extensibilityRoute?: string
 ): { architecture: 'rap' | 'cap' | 'integration' | 'event' | 'retire'; confidence: number; justification: string } {
-  const upper = code.toUpperCase();
+  // The architecture is decided from what the program *executes*, so comments
+  // and literal contents are blanked first. `IDOC` written in a comment — a
+  // developer's note about the interface a report replaced — matched the raw
+  // source and routed the whole analysis to Integration with 80 % confidence
+  // (full review of a19945ef01dc, 359639c30d77).
+  const upper = maskNonCode(code).toUpperCase();
 
   // Scoring factors
   // A type reference is no write, and a possible target of an unresolved
@@ -414,7 +458,7 @@ export function recommendArchitecture(
   const known = dataCoupling.filter((d) => !d.possibleTargetOf?.length);
   const customTableWrites = known.filter((d) => d.isCustom && (d.accessType === 'Write' || d.accessType === 'Read/Write')).length;
   const standardTableReads = known.filter((d) => !d.isCustom && d.accessType === 'Read').length;
-  const hasRfcIdoc = /\b(CALL\s+FUNCTION\s+'RFC|IDOC|BAPI_)\b/i.test(upper);
+  const hasRfcIdoc = /\bIDOC\b/.test(upper) || calledFunctionModules(code).some(isRfcOrIdocModule);
   const hasEventPattern = /\b(EVENT\s+RAISED|RAISE\s+EVENT|PUBLISH)\b/i.test(upper);
   const loc = code.split(/\r?\n/).filter((l) => l.trim().length > 0).length;
 
