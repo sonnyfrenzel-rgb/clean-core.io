@@ -24,6 +24,7 @@ import StageHeader from '@/components/StageHeader';
 import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { escapeHtml } from '@/lib/utils';
+import { sha256Hex } from '@/lib/artefact-digest';
 
 const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
   let files: Array<{ path: string, content: string }> = [];
@@ -76,179 +77,30 @@ const extractJSON = (text: string) => {
   }
 };
 
-const escapeXML = (str: string) => {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-};
-
-// Enterprise BPMN 2.0 XML Generator for SAP Signavio & SAP Build
-const generateBPMN = (flow: any[], businessDoc?: any) => {
-  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-  xml += `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"\n`;
-  xml += `                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"\n`;
-  xml += `                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"\n`;
-  xml += `                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"\n`;
-  xml += `                  id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">\n`;
-  
-  xml += `  <bpmn:collaboration id="Collaboration_1">\n`;
-  xml += `    <bpmn:participant id="Participant_1" name="Modernized Clean Core Process Flow" processRef="Process_1" />\n`;
-  xml += `  </bpmn:collaboration>\n`;
-
-  xml += `  <bpmn:process id="Process_1" isExecutable="false">\n`;
-  
-  const sequenceFlows: {id: string, source: string, target: string}[] = [];
-  
-  if (Array.isArray(flow)) {
-    // 1. Gather all unique roles for lanes mapping
-    const roles = Array.from(new Set(flow.map(node => node.role || 'System').filter(Boolean)));
-    
-    // 2. Generate LaneSet & Lanes
-    if (roles.length > 0) {
-      xml += `    <bpmn:laneSet id="LaneSet_1">\n`;
-      roles.forEach((role, rIdx) => {
-        xml += `      <bpmn:lane id="Lane_${rIdx}" name="${role}">\n`;
-        flow.forEach(node => {
-          const nodeRole = node.role || 'System';
-          if (nodeRole === role) {
-            xml += `        <bpmn:flowNodeRef>${node.id}</bpmn:flowNodeRef>\n`;
-          }
-        });
-        xml += `      </bpmn:lane>\n`;
-      });
-      xml += `    </bpmn:laneSet>\n`;
-    }
-
-    // 3. Generate Flow Nodes
-    flow.forEach((node) => {
-      const type = node.type === 'startEvent' ? 'bpmn:startEvent' :
-                   node.type === 'endEvent' ? 'bpmn:endEvent' :
-                   node.type === 'gateway' || node.type === 'exclusiveGateway' ? 'bpmn:exclusiveGateway' :
-                   node.type === 'serviceTask' ? 'bpmn:serviceTask' :
-                   node.type === 'userTask' ? 'bpmn:userTask' :
-                   node.type === 'sendTask' ? 'bpmn:sendTask' :
-                   node.type === 'receiveTask' ? 'bpmn:receiveTask' : 'bpmn:task';
-                   
-      let documentationText = '';
-      if (businessDoc) {
-        const sop = businessDoc.sop_details?.find((s: any) => s.stepId === node.id);
-        const raci = businessDoc.raci_matrix?.find((r: any) => r.stepId === node.id);
-        if (sop) {
-          documentationText += `SOP narrative: ${sop.narrative}\nKPI target: ${sop.kpiTarget}\nException fallback: ${sop.businessException}\n\n`;
-        }
-        if (raci) {
-          documentationText += `RACI assignments: R=${raci.r}, A=${raci.a}, C=${raci.c}, I=${raci.i}\n`;
-        }
-      }
-
-      xml += `    <${type} id="${node.id}" name="${node.name || node.id}">\n`;
-      if (documentationText) {
-        xml += `      <bpmn:documentation>${escapeXML(documentationText)}</bpmn:documentation>\n`;
-      }
-      if (node.next && Array.isArray(node.next)) {
-        node.next.forEach((targetId: string, i: number) => {
-          const flowId = `Flow_${node.id}_${targetId}_${i}`;
-          xml += `      <bpmn:outgoing>${flowId}</bpmn:outgoing>\n`;
-          sequenceFlows.push({
-            id: flowId,
-            source: node.id,
-            target: targetId
-          });
-        });
-      }
-      xml += `    </${type}>\n`;
-    });
-
-    // 4. Generate Sequence Flows
-    sequenceFlows.forEach(f => {
-      xml += `    <bpmn:sequenceFlow id="${f.id}" sourceRef="${f.source}" targetRef="${f.target}" />\n`;
-    });
-  }
-  
-  xml += `  </bpmn:process>\n`;
-
-  // 5. Generate BPMN Diagram Interchange (BPMNDI) for visual layout rendering in Signavio
-  if (Array.isArray(flow)) {
-    const roles = Array.from(new Set(flow.map(node => node.role || 'System').filter(Boolean)));
-    const totalWidth = flow.length * 200 + 150;
-    const totalHeight = Math.max(200, roles.length * 160 + 60);
-
-    xml += `  <bpmndi:BPMNDiagram id="BPMNDiagram_1">\n`;
-    xml += `    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1">\n`;
-    
-    // Participant Pool Bounds
-    xml += `      <bpmndi:BPMNShape id="Participant_1_di" bpmnElement="Participant_1" isHorizontal="true">\n`;
-    xml += `        <dc:Bounds x="80" y="40" width="${totalWidth}" height="${totalHeight}" />\n`;
-    xml += `      </bpmndi:BPMNShape>\n`;
-
-    // Lanes Bounds
-    roles.forEach((role, rIdx) => {
-      xml += `      <bpmndi:BPMNShape id="Lane_${rIdx}_di" bpmnElement="Lane_${rIdx}" isHorizontal="true">\n`;
-      xml += `        <dc:Bounds x="110" y="${rIdx * 160 + 40}" width="${totalWidth - 30}" height="160" />\n`;
-      xml += `      </bpmndi:BPMNShape>\n`;
-    });
-
-    // Nodes Bounds (Grid placement coordinates)
-    flow.forEach((node, idx) => {
-      const role = node.role || 'System';
-      const rIdx = roles.indexOf(role);
-      const yPos = rIdx * 160 + 80;
-      const xPos = idx * 200 + 160;
-      
-      let width = 120;
-      let height = 80;
-      let offset = 0; // Center offset for circular events
-      if (node.type === 'startEvent' || node.type === 'endEvent') {
-        width = 36;
-        height = 36;
-        offset = 22;
-      } else if (node.type === 'gateway' || node.type === 'exclusiveGateway') {
-        width = 50;
-        height = 50;
-        offset = 15;
-      }
-
-      xml += `      <bpmndi:BPMNShape id="${node.id}_di" bpmnElement="${node.id}">\n`;
-      xml += `        <dc:Bounds x="${xPos}" y="${yPos + offset}" width="${width}" height="${height}" />\n`;
-      xml += `      </bpmndi:BPMNShape>\n`;
-    });
-
-    // Connections Edges (Sequence Flows Waypoints)
-    sequenceFlows.forEach(f => {
-      const sourceNode = flow.find(n => n.id === f.source);
-      const targetNode = flow.find(n => n.id === f.target);
-      if (sourceNode && targetNode) {
-        const sourceRole = sourceNode.role || 'System';
-        const targetRole = targetNode.role || 'System';
-        const sIdx = flow.indexOf(sourceNode);
-        const tIdx = flow.indexOf(targetNode);
-        
-        const srIdx = roles.indexOf(sourceRole);
-        const trIdx = roles.indexOf(targetRole);
-
-        const sX = sIdx * 200 + 160 + (sourceNode.type === 'startEvent' || sourceNode.type === 'endEvent' ? 36 : sourceNode.type === 'gateway' || sourceNode.type === 'exclusiveGateway' ? 50 : 120);
-        const sY = srIdx * 160 + 80 + (sourceNode.type === 'startEvent' || sourceNode.type === 'endEvent' ? 40 : sourceNode.type === 'gateway' || sourceNode.type === 'exclusiveGateway' ? 40 : 40);
-
-        const tX = tIdx * 200 + 160;
-        const tY = trIdx * 160 + 80 + (targetNode.type === 'startEvent' || targetNode.type === 'endEvent' ? 40 : targetNode.type === 'gateway' || targetNode.type === 'exclusiveGateway' ? 40 : 40);
-
-        xml += `      <bpmndi:BPMNEdge id="${f.id}_di" bpmnElement="${f.id}">\n`;
-        xml += `        <di:waypoint x="${sX}" y="${sY}" />\n`;
-        xml += `        <di:waypoint x="${tX}" y="${tY}" />\n`;
-        xml += `      </bpmndi:BPMNEdge>\n`;
-      }
-    });
-
-    xml += `    </bpmndi:BPMNPlane>\n`;
-    xml += `  </bpmndi:BPMNDiagram>\n`;
-  }
-
-  xml += `</bpmn:definitions>`;
-  return xml;
-};
+/**
+ * Roadmap 2.6 replaced the BPMN generator that stood here.
+ *
+ * It built the file out of `l3_flow` — a flow a language model had written from
+ * a 1.000-character slice of the source — and hung the model's SOP narrative and
+ * its RACI roles on every task as `bpmn:documentation`. Three things were wrong
+ * with that, and none of them was the XML:
+ *
+ * - the process in the file was not the process in the code. Nothing in it
+ *   carried a line of ABAP, so nothing in it could be checked;
+ * - the lanes were the model's invented roles ("Finance Analyst", "CISO"),
+ *   which `docs/ROADMAP.md` §6 forbids: a lane is a reconstruction, never an
+ *   organisational statement, and 2.4 proposes lanes with a provenance chip;
+ * - RACI and SOP text rode along inside a process file as if they were facts
+ *   about the process. They are model proposals, they are shown as such on the
+ *   Business tab and in the Confluence export, and they have no place in an
+ *   exchange format where the chip that qualifies them does not travel.
+ *
+ * It also interpolated every name straight into the XML (CR-21): one ampersand
+ * in a project name and no parser would open the file.
+ *
+ * What ships instead is `lib/bpmn/` — the skeleton of the signed run, escaped,
+ * laid out and traceable to the line. See `downloadBPMN` below.
+ */
 
 export default function DocumentationPage() {
   const { projectId } = useParams();
@@ -539,12 +391,36 @@ Structure the JSON exactly like this:
     }
   }, [projectId, project, documentation, profile?.byokConfigured]);
 
-  const downloadBPMN = () => {
-    if (!parsedDoc?.l3_flow) return;
-    const xml = generateBPMN(parsedDoc.l3_flow, parsedBusinessDoc);
-    const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
-    const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
-    saveAs(blob, `${fileName}_Process.bpmn`);
+  /**
+   * Roadmap 2.6 — the source the active run signed, and nothing else.
+   *
+   * The run does not store the source; it stores the SHA-256 of it, inside the
+   * signature. So the export is offered only while the source on the project
+   * still hashes to the digest the run signed — the same comparison
+   * `lib/workflow-steps.ts` makes for staleness. A file drawn from source the
+   * run never saw would carry line anchors that point at other lines, which is
+   * worse than no export.
+   */
+  const signedSource = useMemo(() => {
+    const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
+    if (!project?.activeRunId || !source.trim()) return null;
+    const signed = (project as { inputFingerprint?: { sha256?: string; fileName?: string } }).inputFingerprint
+      ?? project.auditMetadata?.inputFingerprint;
+    if (!signed?.sha256 || sha256Hex(source) !== signed.sha256) return null;
+    return { source, fileName: signed.fileName || 'source.abap' };
+  }, [project]);
+
+  const downloadBPMN = async () => {
+    if (!signedSource) return;
+    // Loaded on the click: the reader of this stage pays for the ABAP reader
+    // only when they ask for the file.
+    const { buildBpmnExportFromSource, bpmnFileName } = await import('@/lib/bpmn/export');
+    const { xml } = buildBpmnExportFromSource(signedSource.source, {
+      processName: project?.name || signedSource.fileName,
+      sourceFileName: signedSource.fileName,
+    });
+    const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
+    saveAs(blob, bpmnFileName(`${project?.name || 'Project'}_Process`));
   };
 
   const downloadConfluenceHTML = () => {
@@ -808,31 +684,41 @@ Structure the JSON exactly like this:
             with two exports above them (UX review of 52f171091948, 5bf7552894e5;
             visible in screenshot 07-documentation-desktop-s1). Two conditions
             for one question is how a screen ends up contradicting itself. */}
-        <div className={`flex flex-wrap gap-3 ${parsedDoc ? '' : 'hidden'}`}>
-          <button
-            onClick={downloadBPMN}
-            disabled={!parsedDoc?.l3_flow || isGeneratingDoc}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff] opacity-100 disabled:opacity-50"
-          >
-            <FileCode2 size={16} /> Export BPMN
-          </button>
+        <div className="flex flex-wrap gap-3">
+          {/* Roadmap 2.6 — the one export here that does not wait for the
+              blueprint. It is drawn from the skeleton of the signed run, so it
+              exists as soon as the run does, and it says nothing the code does
+              not: every task and gateway carries its line range. Without an
+              active run, or after the source moved on from the one the run
+              signed, there is nothing true to export and no button. */}
+          {signedSource && (
+            <button
+              onClick={downloadBPMN}
+              data-export-bpmn
+              className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff]"
+            >
+              <FileCode2 size={16} /> Export BPMN
+            </button>
+          )}
 
-          <button
-            onClick={downloadConfluenceHTML}
-            disabled={!parsedDoc || isGeneratingDoc}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff] opacity-100 disabled:opacity-50"
-          >
-            <Download size={16} /> Export Confluence
-          </button>
+          <div className={`flex flex-wrap gap-3 ${parsedDoc ? '' : 'hidden'}`}>
+            <button
+              onClick={downloadConfluenceHTML}
+              disabled={!parsedDoc || isGeneratingDoc}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff] opacity-100 disabled:opacity-50"
+            >
+              <Download size={16} /> Export Confluence
+            </button>
 
-          <button 
-            onClick={generateDocumentation}
-            disabled={isGeneratingDoc || isGeneratingBusinessDoc}
-            className="flex items-center gap-2 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all font-bold text-xs md:text-sm uppercase tracking-widest disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${isGeneratingDoc ? 'animate-spin' : ''}`} /> 
-            {documentation ? 'Regenerate' : 'Generate Blueprint'}
-          </button>
+            <button
+              onClick={generateDocumentation}
+              disabled={isGeneratingDoc || isGeneratingBusinessDoc}
+              className="flex items-center gap-2 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all font-bold text-xs md:text-sm uppercase tracking-widest disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isGeneratingDoc ? 'animate-spin' : ''}`} />
+              {documentation ? 'Regenerate' : 'Generate Blueprint'}
+            </button>
+          </div>
         </div>
       </div>
 
