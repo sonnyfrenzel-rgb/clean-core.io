@@ -19,7 +19,7 @@
  * Pure: no Firestore, no Admin SDK, no `window`. The callers do the I/O.
  */
 
-import type { Invitation } from './invitation-types';
+import type { Invitation } from './invitations';
 
 /** The one field `firestore.rules` reads. Named once, so a rename is one edit. */
 export const PROJECT_READERS_FIELD = 'readers';

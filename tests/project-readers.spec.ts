@@ -19,7 +19,7 @@ import {
   parseProjectReadRule,
   type RulesDeploymentRecord,
 } from '../lib/firestore-rules-contract';
-import type { Invitation } from '../lib/invitation-types';
+import type { Invitation } from '../lib/invitations';
 
 /**
  * Roadmap 5.4/5.5, the half that needs no emulator: the one field the rule

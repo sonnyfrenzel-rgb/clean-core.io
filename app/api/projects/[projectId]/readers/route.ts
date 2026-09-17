@@ -9,7 +9,7 @@ import {
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { projectReaderOverview, readersAfterRevoke, isProjectOwner } from '@/lib/project-readers';
-import type { Invitation, InvitationStatus } from '@/lib/invitation-types';
+import type { Invitation, InvitationStatus } from '@/lib/invitations';
 
 /**
  * Roadmap 5.5 — Übersicht und Widerruf.
