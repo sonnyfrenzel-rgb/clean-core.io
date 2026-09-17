@@ -68,6 +68,11 @@ export const GATED_ROUTES: GatedRoute[] = [
   // quota may be spent on. Both sit behind the factor.
   { file: 'app/api/model-stages/route.ts', method: 'GET', path: () => '/api/model-stages' },
   { file: 'app/api/model-stages/route.ts', method: 'POST', path: () => '/api/model-stages', body: { stages: { design: false } } },
+  // Roadmap 2.4 — the business names of a project's process. Both verbs read
+  // the project's code to rebuild its skeleton, and POST stores what a model
+  // said about it; a token from before the second factor reaches neither.
+  { file: 'app/api/projects/[projectId]/process-naming/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/process-naming` },
+  { file: 'app/api/projects/[projectId]/process-naming/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/process-naming`, body: { digest: 'nm1-0', text: '{}', receipt: null } },
 ];
 
 /**

@@ -7,7 +7,7 @@
  *
  * Three facts live here, and nothing else does:
  *
- *   1. the five stages that call a model, by name, so the server route, the
+ *   1. the stages that call a model, by name, so the server route, the
  *      settings screen and every stage read the same list;
  *   2. whether a given account has a stage switched on — the map is written
  *      only by the Admin SDK (`POST /api/model-stages`), never by the browser,
@@ -27,14 +27,44 @@
  * the account-state gate and the rate limit, all of which still run.
  */
 
-/** The stages that send a prompt. Order is the workflow's order. */
-export const MODEL_STAGES = ['analyze', 'design', 'transformation', 'documentation', 'testing'] as const;
+/**
+ * The stages that send a prompt. Order is the workflow's order.
+ *
+ * `naming` (roadmap 2.4) is a stage of its own rather than part of `analyze` or
+ * `documentation`, for three reasons that each decide it alone:
+ *
+ *   - the mockup's "Where a model is called" lists *Business names* as its own
+ *     call, with its own "without a model call" line and its own switch;
+ *   - `analyze` feeds the signed run and `documentation` is prose on a stage
+ *     page. Switching either off must not take the names off the process map,
+ *     and switching the names off must not take the narrative away — one
+ *     switch for two consents is the thing this list exists to prevent;
+ *   - the names never reach a signature. A stage whose output does is a
+ *     different kind of stage, and its receipt means something else.
+ */
+export const MODEL_STAGES = ['analyze', 'naming', 'design', 'transformation', 'documentation', 'testing'] as const;
 
 export type ModelStage = (typeof MODEL_STAGES)[number];
+
+/**
+ * Stages that belong to the new workspace and are offered only where it is on.
+ *
+ * The switch is honoured by the server for every account — `/api/gemini` does
+ * not know about previews and should not. What waits for 3.0 is the *offer*:
+ * a settings row for a process map the account cannot open would be the half
+ * of a rebuild `docs/ROADMAP.md` §4 promises nobody sees.
+ */
+export const PREVIEW_MODEL_STAGES: readonly ModelStage[] = Object.freeze(['naming'] as ModelStage[]);
+
+/** The stages a settings screen offers, in order. */
+export function offeredModelStages(showPreview: boolean): ModelStage[] {
+  return MODEL_STAGES.filter((stage) => showPreview || !PREVIEW_MODEL_STAGES.includes(stage));
+}
 
 /** What each stage asks the model for — the sentence the settings screen shows. */
 export const MODEL_STAGE_LABELS: Record<ModelStage, string> = {
   analyze: 'Analysis narrative',
+  naming: 'Business names',
   design: 'Solution design blueprint',
   transformation: 'Transformed code',
   documentation: 'Documentation and business blueprint',
@@ -44,6 +74,8 @@ export const MODEL_STAGE_LABELS: Record<ModelStage, string> = {
 export const MODEL_STAGE_DESCRIPTIONS: Record<ModelStage, string> = {
   analyze:
     'The prose around the evidence: summary, gaps, standardisation fit. The findings, the route and the Clean Core Score are computed without a model and are unaffected.',
+  naming:
+    'Proposed business names for the steps and lanes of the process reconstructed from the code. The process, its technical names and every line anchor are computed without a model and stay as they are.',
   design: 'The target architecture blueprint and the non-functional requirements.',
   transformation: 'The ABAP Cloud or CAP code proposal.',
   documentation: 'The technical documentation and the business blueprint.',

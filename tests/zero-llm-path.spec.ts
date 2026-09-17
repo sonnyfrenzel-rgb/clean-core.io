@@ -6,7 +6,7 @@ import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
-import { MODEL_STAGES, NOT_GENERATED, STAGE_DISABLED_CODE } from '../lib/model-stages';
+import { MODEL_STAGES, NOT_GENERATED, STAGE_DISABLED_CODE, offeredModelStages } from '../lib/model-stages';
 
 /**
  * Roadmap 1.2 — the zero-LLM lock path, observed rather than grepped.
@@ -260,8 +260,14 @@ test('the settings screen offers one switch per stage and the click sticks', asy
   await signIn(page);
   await page.goto('/settings', { waitUntil: 'domcontentloaded' });
 
+  // One switch per stage this account can use. Roadmap 2.4's `naming` names a
+  // process map that only the workspace preview shows, so an account without
+  // the preview — this one — is offered the five it had, and not a sixth for a
+  // screen it cannot open.
   const rows = page.locator('[data-model-stage]');
-  await expect(rows).toHaveCount(MODEL_STAGES.length, { timeout: 60000 });
+  await expect(rows).toHaveCount(offeredModelStages(false).length, { timeout: 60000 });
+  await expect(page.locator('[data-model-stage="naming"]'), 'a preview stage was offered outside the preview')
+    .toHaveCount(0);
 
   const documentation = page.locator('[data-model-stage="documentation"]');
   await expect(documentation).toHaveAttribute('data-model-stage-on', 'true');

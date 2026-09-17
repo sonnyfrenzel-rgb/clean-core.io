@@ -5,15 +5,18 @@ import { Cpu, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
 import { getAuth } from '@/lib/firebase';
 import {
-  MODEL_STAGES,
   MODEL_STAGE_LABELS,
   MODEL_STAGE_DESCRIPTIONS,
+  offeredModelStages,
   type ModelStage,
 } from '@/lib/model-stages';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 
+/** Spelled out, because the sentence starts with it. */
+const COUNT_WORDS: Record<number, string> = { 5: 'Five', 6: 'Six', 7: 'Seven' };
+
 /**
- * The five model stages, switchable one at a time — roadmap 1.2.
+ * The model stages, switchable one at a time — roadmap 1.2.
  *
  * All five were previously one decision: either a key existed and every stage
  * called the model, or none did and the workflow stopped at the first one. An
@@ -29,9 +32,14 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
  * Turning a stage off never affects the Analyze stage's evidence: findings, the
  * extensibility route and the Clean Core Score are computed by the deterministic
  * engine and the run is signed either way.
+ *
+ * `showPreviewStages` adds the stages of the new workspace (roadmap 2.4's
+ * business names). The settings page passes it only for an account whose
+ * workspace preview is on; everybody else sees the five rows they saw before.
  */
-export default function ModelStagesCard() {
+export default function ModelStagesCard({ showPreviewStages = false }: { showPreviewStages?: boolean }) {
   const model = useModelAvailability();
+  const stages = offeredModelStages(showPreviewStages);
   const [saving, setSaving] = useState<ModelStage | null>(null);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState<ModelStage | null>(null);
@@ -82,7 +90,7 @@ export default function ModelStagesCard() {
       </div>
 
       <p className="text-gray-600 font-medium mb-8 text-sm md:text-base leading-relaxed">
-        Five stages of the workflow send a prompt to Google Gemini. Switch any of them off and that stage says
+        {COUNT_WORDS[stages.length] ?? stages.length} stages send a prompt to Google Gemini. Switch any of them off and that stage says
         &ldquo;not generated&rdquo; instead of asking for a key. The Analyze stage&rsquo;s evidence — the findings, the
         extensibility route and the Clean Core Score — is computed without a model, and the analysis run is signed
         either way.
@@ -96,7 +104,7 @@ export default function ModelStagesCard() {
       )}
 
       <ul className="space-y-3">
-        {MODEL_STAGES.map((stage) => {
+        {stages.map((stage) => {
           const on = model.stages[stage];
           return (
             <li
