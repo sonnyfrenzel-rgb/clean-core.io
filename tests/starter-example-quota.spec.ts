@@ -466,6 +466,14 @@ test.describe('the screen says what the click costs, before the click', () => {
     await expect(panel.getByTestId('starter-example-ran-before')).toHaveCount(1);
     await expect(panel.getByTestId('starter-example-free')).toHaveCount(STARTER_EXAMPLES.length - 1);
 
+    // UX-116: and each badge says the whole rule, not half of it. "Free" alone
+    // read as "always free"; the second start of an example costs a run, and the
+    // badge is where that choice is made.
+    await expect(panel.getByTestId('starter-example-free').first(), 'the free badge says it is the first run')
+      .toHaveText(/first run/i);
+    await expect(panel.getByTestId('starter-example-ran-before'), 'the ran-before badge says a further run costs one')
+      .toHaveText(/uses a run/i);
+
     await panel.getByTestId('starter-example-name').filter({ hasText: /^Z_MATERIAL_STOCK_CALC$/ }).click();
 
     const warning = panel.getByTestId('starter-example-rerun-warning');

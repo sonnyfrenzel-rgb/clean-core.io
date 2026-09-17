@@ -137,18 +137,24 @@ export default function StarterExamples({
                         {example.lines.toLocaleString()} lines
                       </span>
                       {free ? (
+                        // UX-116: the badge used to say only "Free", and a reader could
+                        // not tell that it meant *this once*. The rule is the one the
+                        // terms, the welcome mail and the quota panel state (roadmap
+                        // 0.9): each example's first run is free, every later one uses
+                        // one of the five runs. Both halves are said where the choice
+                        // is made.
                         <span
                           data-testid="starter-example-free"
                           className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border bg-green-50 text-green-700 border-green-200"
                         >
-                          Free
+                          First run free
                         </span>
                       ) : (
                         <span
                           data-testid="starter-example-ran-before"
                           className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200"
                         >
-                          Ran before
+                          Ran before · uses a run
                         </span>
                       )}
                     </div>
