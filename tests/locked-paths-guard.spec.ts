@@ -82,6 +82,12 @@ test.describe('the lock holds in code', () => {
 });
 
 // ── The lock, observed rather than read (needs the emulators and the dev server) ──────────────────────────
+const SUITE = [
+  "import { test } from 'node:test';",
+  "import assert from 'node:assert';",
+  "test('TC_01: runs', () => { assert.ok(true); });",
+].join('\n');
+
 test.describe('the lock holds when used', () => {
   const EMAIL = `lock-${Date.now()}@cleancore-test.io`;
   const PASSWORD = 'LockGuard123!';
@@ -110,6 +116,9 @@ test.describe('the lock holds when used', () => {
       analysis: JSON.stringify({ cleanCoreScore: 62, standardFit: { potential: 'Medium' } }), cleanCoreScore: 62,
       solutionDesign: '# Target architecture\n\nSide-by-side on BTP.\n', generatedCode: 'export const ok = true;\n',
       testCases: [{ id: 'TC_01', name: 'Case', category: 'Unit', status: 'Pending' }],
+      // The suite lives on the project: `/api/run-tests` executes the project's
+      // own artefacts rather than a body (QA full review of a19945ef01dc).
+      testSuite: { code: SUITE },
       documentation: '# Blueprint\n\nLevel 1.\n',
       activeRunId: RUN_ID,
     });
@@ -120,11 +129,9 @@ test.describe('the lock holds when used', () => {
     });
   });
 
-  const suite = ["import { test } from 'node:test';", "import assert from 'node:assert';", "test('TC_01: runs', () => { assert.ok(true); });"].join('\n');
-
   test('POST /api/run-tests with a live environment is refused with the notice; the same request on mocks is not', async ({ request }) => {
     test.setTimeout(90 * 1000);
-    const data = { projectId: PROJECT_ID, tests: { code: suite }, code: '', selectedTestIds: ['TC_01'] };
+    const data = { projectId: PROJECT_ID, selectedTestIds: ['TC_01'] };
     const live = await request.post('/api/run-tests', { headers: { Authorization: `Bearer ${token}` }, data: { ...data, s4Environment: 'live' } });
     expect(live.status()).toBe(403);
     const refused = await live.json();

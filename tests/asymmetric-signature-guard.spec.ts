@@ -5,6 +5,7 @@ import {
   verifyEd25519,
   getSigningKeypair,
   getPublishedPublicKey,
+  getPublishedKeyring,
   publicKeyFromBase64,
   resetSigningKeypairCache,
 } from '../lib/audit-signing-keypair';
@@ -96,6 +97,84 @@ test.describe('an audit pack can be verified without our secret', () => {
     withKey(generateKeyBase64(), () => {
       // A rotation is visible in every pack the new key signs.
       expect(getSigningKeypair()!.keyId).not.toBe(idA);
+    });
+  });
+});
+
+/**
+ * Rotation must not retire the packs, only the key.
+ *
+ * `/.well-known/…` published the current key and nothing else, so the first
+ * rotation would have made every pack already issued unverifiable: the signature
+ * stays valid and there is no longer a key to check it against. An auditor is
+ * then told "does not verify" about a document nobody touched, which is the one
+ * answer a genuine pack must never get.
+ */
+test.describe('a rotation does not take the old packs with it', () => {
+  const RETIRED_ENV = 'AUDIT_SIGNING_PUBLIC_KEYS_RETIRED';
+
+  function withRetired(value: string | undefined, fn: () => void) {
+    const previous = process.env[RETIRED_ENV];
+    if (value === undefined) delete process.env[RETIRED_ENV];
+    else process.env[RETIRED_ENV] = value;
+    try {
+      fn();
+    } finally {
+      if (previous === undefined) delete process.env[RETIRED_ENV];
+      else process.env[RETIRED_ENV] = previous;
+    }
+  }
+
+  test('the keyring publishes the active key and the retired ones, and a pack of either still checks', () => {
+    // Key A signs a pack. Then A is rotated out for B, and A's public half is
+    // kept in the retired list.
+    const keyA = generateKeyBase64();
+    let signedByA = '';
+    let idA = '';
+    let rawA = '';
+    withKey(keyA, () => {
+      signedByA = signEd25519('a'.repeat(64))!.signature;
+      idA = getSigningKeypair()!.keyId;
+      rawA = getPublishedPublicKey()!.publicKey;
+    });
+
+    withKey(generateKeyBase64(), () => {
+      withRetired(rawA, () => {
+        const ring = getPublishedKeyring();
+        expect(ring).toHaveLength(2);
+        expect(ring[0].status, 'the signing key is not the active entry').toBe('active');
+        const retired = ring.find((k) => k.keyId === idA);
+        expect(retired, 'the key that signed yesterday\'s packs is not published').toBeTruthy();
+        expect(retired!.status).toBe('retired');
+
+        // And it still does the one job it is published for.
+        const key = publicKeyFromBase64(retired!.publicKey)!;
+        expect(verifyEd25519('a'.repeat(64), signedByA, key)).toBe(true);
+      });
+
+      // Revocation is removal from the list, not rotation: with A gone, nothing
+      // here can confirm a pack A signed. That is the intended cost.
+      withRetired(undefined, () => {
+        expect(getPublishedKeyring().map((k) => k.keyId)).not.toContain(idA);
+      });
+    });
+  });
+
+  test('the active key is never also listed as retired, and rubbish in the list is skipped', () => {
+    const key = generateKeyBase64();
+    withKey(key, () => {
+      const active = getPublishedPublicKey()!;
+      withRetired(`${active.publicKey}, not-a-key, ${active.publicKey}`, () => {
+        const ring = getPublishedKeyring();
+        expect(ring).toHaveLength(1);
+        expect(ring[0].status).toBe('active');
+      });
+    });
+  });
+
+  test('with no key at all the ring is empty rather than a fabricated entry', () => {
+    withKey(undefined, () => {
+      withRetired(undefined, () => expect(getPublishedKeyring()).toEqual([]));
     });
   });
 });

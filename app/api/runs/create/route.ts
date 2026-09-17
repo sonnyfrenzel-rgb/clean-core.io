@@ -14,6 +14,7 @@ import { buildSourceChangeRecord } from '@/lib/artefact-digest';
 import { analysisRunInputs, buildInputManifest } from '@/lib/input-manifest';
 import type { ModelParticipation } from '@/lib/model-stages';
 import { verifyModelReceipt } from '@/lib/model-receipt';
+import { looksLikeAbap } from '@/lib/abap-input-check';
 
 // The canonicaliser moved to lib/run-signature.ts so the route that verifies a
 // run uses the same one that produced it. Two implementations of "canonical"
@@ -78,9 +79,29 @@ export async function POST(req: NextRequest) {
 
     const projectData = projectDoc.data();
     const isAdmin = decodedToken.admin === true;
+    // Owner only. The administrator claim does not open this door either.
+    //
+    // The same shape as `DELETE /api/projects/{id}` before f8bc33b: `admin ===
+    // true` stood in for ownership, and the only gate behind it is
+    // `assertMfaSatisfied`, which lets any token through for an account whose
+    // profile does not say `mfaEnabled` (`mfaSatisfied` in lib/mfa-gate.ts
+    // returns null for such an account). An administrator who never enrolled a
+    // second factor could therefore mint a signed run *inside somebody else's
+    // project* from a plain ID token — writing `legacyCode`, `activeRunId` and
+    // `auditMetadata` onto a stranger's document, spending a unit of their own
+    // quota on it, and attributing the run to their own uid. That is not reading
+    // a customer's ABAP; it is writing into the chain that is supposed to prove
+    // where the customer's evidence came from.
+    //
+    // Nothing loses a function. The only caller is the owner's own analyze stage,
+    // and `firestore.rules` took the operator's read of a project away on
+    // 16.09.2026 — an administrator cannot open somebody else's project at all,
+    // so a route that let them add signed evidence to one had no way to be
+    // reached on purpose. `isAdminClaim` below is a different question and stays:
+    // it relaxes the approval and Terms gates on the caller's **own** account,
+    // and decides nothing about whose project this is.
     const isOwner = projectData?.userId === decodedToken.uid;
-
-    if (!isOwner && !isAdmin) {
+    if (!isOwner) {
       return NextResponse.json({ error: 'Unauthorized to write to this project.' }, { status: 403 });
     }
 
@@ -95,6 +116,29 @@ export async function POST(req: NextRequest) {
     let legacyCode = body.legacyCode || projectData?.legacyCode || '';
     if (!legacyCode) {
       return NextResponse.json({ error: 'Project does not contain ABAP source code to analyze.' }, { status: 400 });
+    }
+    // The same gate the analyze stage applies, applied where the run is signed.
+    //
+    // `looksLikeAbap` existed and ran only in the browser, so the check that
+    // stops a pasted e-mail becoming a signed ABAP analysis was on the side that
+    // does not decide. Posting prose straight here passed the truthiness test
+    // above, fell through `detectObjectType` to the catch-all `ABAP Source`, cost
+    // a unit of the community quota and produced a run with `status: 'completed'`
+    // — a completed analysis of something that contains no ABAP construct.
+    //
+    // Refused before the quota is reserved, so an input the engine cannot read
+    // costs nothing. The gate is the same module the page imports, not a second
+    // copy of its idea: two implementations of "is this ABAP" drift, and the one
+    // that drifts is the one nobody looks at.
+    if (!looksLikeAbap(legacyCode)) {
+      return NextResponse.json(
+        {
+          error:
+            'That does not look like ABAP. A run is signed as an ABAP analysis, so it needs at least one ABAP construct — a REPORT, CLASS, FORM, FUNCTION, METHOD, a declaration or a SELECT.',
+          code: 'not-abap',
+        },
+        { status: 400 },
+      );
     }
 
     let targetDeployment = body.s4Deployment || projectData?.s4Deployment || 'public';

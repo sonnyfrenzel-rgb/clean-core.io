@@ -142,21 +142,110 @@ export function publicKeyFromBase64(rawB64: string): KeyObject | null {
   }
 }
 
-/** What `/.well-known/clean-core-io-signing.json` publishes. Null without a key. */
-export function getPublishedPublicKey(): {
+export interface PublishedKey {
   keyId: string;
   algorithm: 'Ed25519';
   publicKey: string;
   publicKeyPem: string;
-} | null {
+  /** `active` signs new packs; `retired` only verifies packs it signed before. */
+  status: 'active' | 'retired';
+}
+
+function describe(publicKey: KeyObject, status: 'active' | 'retired'): PublishedKey {
+  return {
+    keyId: deriveKeyId(publicKey),
+    algorithm: 'Ed25519',
+    publicKey: rawPublicKey(publicKey).toString('base64'),
+    publicKeyPem: (publicKey.export({ format: 'pem', type: 'spki' }) as string).trim(),
+    status,
+  };
+}
+
+/** The key that signs new packs. Null without one. */
+export function getPublishedPublicKey(): Omit<PublishedKey, 'status'> | null {
   const pair = load();
   if (!pair) return null;
-  return {
-    keyId: pair.keyId,
-    algorithm: 'Ed25519',
-    publicKey: rawPublicKey(pair.publicKey).toString('base64'),
-    publicKeyPem: (pair.publicKey.export({ format: 'pem', type: 'spki' }) as string).trim(),
-  };
+  const entry = describe(pair.publicKey, 'active');
+  return { keyId: entry.keyId, algorithm: entry.algorithm, publicKey: entry.publicKey, publicKeyPem: entry.publicKeyPem };
+}
+
+/**
+ * Every key a verifier may need: the active one, and the public halves of the
+ * keys that signed packs before it.
+ *
+ * **Why retired keys have to stay published.** A signature is only as good as
+ * the ability to find the key that made it. `/.well-known/…` published exactly
+ * one key — the current one — so the first rotation would have turned every pack
+ * ever issued into an archive nobody could check: the signature is still valid,
+ * and there is no key to check it against. Silently, too. The verifier would not
+ * report a forgery, it would report "does not verify", which reads to an auditor
+ * like the worst possible answer for a document that is in fact genuine.
+ *
+ * **What publishing an old public key gives an attacker.** By itself: nothing it
+ * did not already have. An Ed25519 *public* key is public — it was served from
+ * this endpoint every day it was active, and anyone who cared kept a copy. It
+ * does not help forge a signature, and it does not reveal anything about the
+ * private half.
+ *
+ * What it does change is the meaning of rotation. Rotating away from a
+ * **compromised** key no longer ends that key's power, because a verifier still
+ * accepts packs naming it. So revocation is not rotation: a compromised key is
+ * **removed from `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED`**, at which point every pack
+ * it signed stops verifying — which is the honest outcome, since nobody can tell
+ * that key's genuine packs from the forged ones any more. The list is therefore
+ * "keys we still vouch for", not "keys we once used", and it is an operator's
+ * decision either way. Set from the environment rather than derived, for the same
+ * reason: the runtime cannot know whether a key it no longer holds was retired
+ * or stolen.
+ *
+ * Format: `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED` holds one or more **public** keys,
+ * separated by commas or newlines, each either raw base64 (32 bytes) or a PEM
+ * (with real newlines or the two characters \ and n). A private key here would
+ * be a mistake; only the public half is read, and anything unparseable is
+ * dropped with a line in the log rather than taking the endpoint down.
+ */
+export function getPublishedKeyring(): PublishedKey[] {
+  const out: PublishedKey[] = [];
+  const seen = new Set<string>();
+
+  const pair = load();
+  if (pair) {
+    const active = describe(pair.publicKey, 'active');
+    out.push(active);
+    seen.add(active.keyId);
+  }
+
+  const raw = process.env.AUDIT_SIGNING_PUBLIC_KEYS_RETIRED;
+  if (raw && raw.trim()) {
+    for (const piece of raw.split(/[,\n]+/).map((s) => s.trim()).filter(Boolean)) {
+      const key = parsePublicKey(piece);
+      if (!key) {
+        console.error('AUDIT_SIGNING_PUBLIC_KEYS_RETIRED contains an entry that is not an Ed25519 public key — skipped.');
+        continue;
+      }
+      const entry = describe(key, 'retired');
+      // The active key cannot also be retired, and a duplicate would publish the
+      // same key twice with two statuses — a verifier would then have to guess.
+      if (seen.has(entry.keyId)) continue;
+      seen.add(entry.keyId);
+      out.push(entry);
+    }
+  }
+
+  return out;
+}
+
+/** A published key in any of the shapes an operator is likely to paste. */
+function parsePublicKey(text: string): KeyObject | null {
+  try {
+    if (text.includes('BEGIN')) {
+      const key = crypto.createPublicKey(text.replace(/\\n/g, '\n'));
+      return key.asymmetricKeyType === 'ed25519' ? key : null;
+    }
+    return publicKeyFromBase64(text);
+  } catch {
+    return null;
+  }
 }
 
 /** Test seam: forget the cached key so a changed environment is picked up. */

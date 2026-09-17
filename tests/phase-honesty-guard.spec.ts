@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
+import { receiptFor } from './helpers/test-receipt';
 import firebaseConfig from '../firebase-config.json';
 import { PHASE_TONE_CLASS, phaseTone, workflowSteps, type RailStep } from '../lib/workflow-steps';
 import type { Project, TestCase } from '../lib/types';
@@ -46,6 +47,8 @@ const draft: TestCase[] = [
   { id: 't2', name: 'Rounding', category: 'Unit', description: 'd', priority: 'Medium' },
 ];
 
+const SUITE = { code: "import { test } from 'node:test';\ntest('t1', () => {});\n" };
+
 const project = (over: Partial<Project> = {}): Project => ({
   name: 'Honesty',
   legacyCode: 'REPORT z_x.\n',
@@ -57,14 +60,30 @@ const project = (over: Partial<Project> = {}): Project => ({
   generatedCode: 'export const ok = true;\n',
   documentation: '{"l1":{}}',
   testCases: draft,
+  testSuite: SUITE,
   ...over,
 });
+
+/**
+ * The same project after the suite actually ran: every case passed **and** the
+ * server wrote the receipt that says so.
+ *
+ * Both halves are needed since the QA full review of a19945ef01dc. `Passed`
+ * strings on `testCases` are in the client allowlist of `firestore.rules` and
+ * nothing in the product writes them, so they are a self-report; the receipt is
+ * `/api/run-tests`'s own record, bound to the run and to the digests of the
+ * code, the suite and the case list.
+ */
+const ran = (over: Partial<Project> = {}): Project => {
+  const withPasses = project({ ...over, testCases: draft.map((t) => ({ ...t, status: 'Passed' as const })) });
+  return { ...withPasses, testRunReceipt: receiptFor(withPasses) };
+};
 
 const byKey = (p: Project | null) => Object.fromEntries(workflowSteps(p).map((s) => [s.key, s])) as Record<string, RailStep>;
 
 test.describe('what green is allowed to mean', () => {
   test('a signed run and an executed pass are proven; everything a model wrote is not', () => {
-    const s = byKey(project({ testCases: draft.map((t) => ({ ...t, status: 'Passed' as const })) }));
+    const s = byKey(ran());
 
     // Proven — server-written, or the result of an execution.
     expect(s.analyze).toMatchObject({ state: 'done', proven: true });
@@ -106,11 +125,52 @@ test.describe('what green is allowed to mean', () => {
     expect(phaseTone(stale)).toBe('stale');
   });
 
+  test('a row of Passed strings nobody executed is done, and never green', () => {
+    // QA24-A17 — a fingerprint without a confirmation is not a green status.
+    // `firestore.rules` lets the owner write `testCases`, and this is what that
+    // write used to buy: Testing green, Delivery "Ready", and the sentence "a
+    // passing test run is on record" under both.
+    const selfReported = project({ testCases: draft.map((t) => ({ ...t, status: 'Passed' as const })) });
+    const s = byKey(selfReported);
+    expect(s.testing).toMatchObject({ state: 'done', proven: false, badge: 'Self-reported' });
+    expect(s.delivery).toMatchObject({ state: 'done', proven: false });
+    expect(phaseTone(s.testing)).toBe('unproven');
+    expect(phaseTone(s.delivery)).toBe('unproven');
+    expect(s.delivery.detail).not.toContain('a passing test run');
+
+    // And the receipt is what changes it — the same project, with the server's
+    // record of the run that produced those verdicts.
+    const executed = byKey({ ...selfReported, testRunReceipt: receiptFor(selfReported) });
+    expect(executed.testing).toMatchObject({ state: 'done', proven: true });
+    expect(executed.delivery).toMatchObject({ state: 'done', proven: true });
+  });
+
+  test('a receipt for other code, another run or another suite does not count', () => {
+    const base = project({ testCases: draft.map((t) => ({ ...t, status: 'Passed' as const })) });
+    const good = receiptFor(base);
+    expect(byKey({ ...base, testRunReceipt: good }).testing.proven).toBe(true);
+
+    // The code was rewritten after the run…
+    expect(byKey({ ...base, generatedCode: 'export const ok = false;\n', testRunReceipt: good }).testing.proven).toBe(false);
+    // …the suite was regenerated…
+    expect(byKey({ ...base, testSuite: { code: 'other' }, testRunReceipt: good }).testing.proven).toBe(false);
+    // …a case was added…
+    expect(
+      byKey({ ...base, testCases: [...base.testCases!, { id: 't3', name: 'New', category: 'Unit', description: 'd', priority: 'Low' as const }], testRunReceipt: good })
+        .testing.proven,
+    ).toBe(false);
+    // …a new analysis run replaced the one it was taken under…
+    expect(byKey({ ...base, activeRunId: 'run-2', testRunReceipt: good }).testing.proven).toBe(false);
+    // …and one case the runner never reported on is not a pass.
+    expect(byKey({ ...base, testRunReceipt: receiptFor(base, [{ id: 't1', status: 'Passed' }]) }).testing.proven).toBe(false);
+  });
+
   test('`proven` cannot be true without `done`, on any project the contract can produce', () => {
     const shapes: Project[] = [
       project(),
       project({ approvedByArchitect: false }),
       project({ testCases: draft.map((t) => ({ ...t, status: 'Passed' as const })) }),
+      ran(),
       project({ testCases: [] }),
       project({ generatedCode: '', documentation: '' }),
       { name: 'Empty' } as Project,
@@ -170,6 +230,16 @@ test.describe('the stepper and the rail say the same thing about the same phase'
     // design and generated code and a generated blueprint (done, unproven), and
     // Economics (partial). If every phase looked the same the comparison below
     // would be vacuous.
+    // The executed half of the fixture: passing verdicts *and* the receipt
+    // `/api/run-tests` writes beside them. Without the receipt Testing is
+    // `Self-reported` and the PROVEN list below would be wrong.
+    const executed = {
+      activeRunId: RUN_ID,
+      generatedCode: 'export const ok = true;\n',
+      testSuite: SUITE,
+      testCases: draft.map((t) => ({ ...t, status: 'Passed' as const })),
+    };
+
     await adminSetDoc('projects', PROJECT_ID, {
       name: 'Phase honesty fixture',
       userId: uid,
@@ -181,10 +251,9 @@ test.describe('the stepper and the rail say the same thing about the same phase'
       solutionDesign: '# Target architecture\n\nSide-by-side on BTP.\n',
       approvedByArchitect: true,
       approvedBy: EMAIL,
-      generatedCode: 'export const ok = true;\n',
-      testCases: draft.map((t) => ({ ...t, status: 'Passed' })),
       documentation: '# Blueprint\n\nLevel 1.\n',
-      activeRunId: RUN_ID,
+      ...executed,
+      testRunReceipt: receiptFor(executed),
     });
 
     await adminSetDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, {

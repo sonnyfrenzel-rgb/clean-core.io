@@ -7,6 +7,7 @@ import {
   unverifiedInputs,
   type UnverifiedInput,
 } from './input-manifest';
+import { coveringTestRunReceipt, executedPasses } from './test-receipt';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -138,6 +139,17 @@ export interface TestEvidence {
   connectivity: number;
   /** Generated cases that carry no executed verdict: never run, skipped, todo, pending, errored. */
   withoutVerdict: number;
+  /**
+   * How many cases an attributable execution reports as passed — counted from
+   * the server-written receipt of `/api/run-tests`, never from the project's own
+   * `status` strings (QA full review of a19945ef01dc, E07-F02).
+   *
+   * `passed` above is what the *screen* shows, and `firestore.rules` lets the
+   * owner write it. This is what the phase contract is allowed to call proven.
+   * It is `0` on every project without a receipt that still fits what is on it,
+   * which is the conservative direction: no record, no execution.
+   */
+  attestedPasses: number;
 }
 
 /**
@@ -159,6 +171,10 @@ export function testEvidence(project: Project | null): TestEvidence {
     simulated,
     connectivity,
     withoutVerdict: cases.length - passed - failed - simulated - connectivity,
+    attestedPasses: executedPasses(
+      coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]),
+      cases.map((t) => String(t?.id ?? '')),
+    ),
   };
 }
 
@@ -415,21 +431,38 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // Generated is not tested. The acceptance for E01-F01-US01 names exactly this
   // case: generated, never-executed tests must read as a draft in every view.
   //
-  // "On record" is meant literally. The testing page shows a run's verdicts on
-  // screen but does not store them, so a run that happened in someone's browser
-  // tab is not evidence the next view can read — and this contract reports what
-  // the next view can read. A recorded, attributable run is E07-F02's receipt.
+  // "On record" is meant literally, and since the QA full review of a19945ef01dc
+  // it is meant about a record a client cannot write. `testCases[].status` is in
+  // the client allowlist of `firestore.rules`, and nothing in the product writes
+  // `Passed` into it — the testing page shows a run's verdicts on screen and
+  // stores none of them. A stored `Passed` therefore came from a browser or from
+  // a model that invented the key, and it used to be enough to paint Testing
+  // green and unlock Delivery. The verdict that counts is `/api/run-tests`'s
+  // receipt (E07-F02, `lib/test-receipt.ts`): server-written, bound to the
+  // active run and to the digests of the code, the suite and the case list.
   let testing: RailStep;
   if (tests.total === 0) {
     testing = phase('testing', { state: 'empty', badge: 'Not started', detail: 'No test suite generated.' });
-  } else if (tests.passed === tests.total) {
-    // Proven: every case carries a verdict that is the result of an execution.
-    // `testEvidence` refuses to count `Simulated` or `Connectivity` as one.
+  } else if (tests.passed === tests.total && tests.attestedPasses === tests.total) {
+    // Proven: every case carries a verdict that is the result of an execution,
+    // and an attributable run reported that execution. `testEvidence` refuses to
+    // count `Simulated` or `Connectivity` as one.
     testing = phase('testing', {
       state: 'done',
       proven: true,
       badge: 'Passed',
-      detail: `All ${plural(tests.total, 'test case')} returned a pass.`,
+      detail: `All ${plural(tests.total, 'test case')} returned a pass in a recorded run.`,
+    });
+  } else if (tests.passed === tests.total) {
+    // Every case says it passed, and no execution on record says so. Still
+    // `done` — a verdict is on the project and the phase's own output exists —
+    // and never green: `proven` is what "something checked it" means here.
+    testing = phase('testing', {
+      state: 'done',
+      badge: 'Self-reported',
+      detail:
+        `All ${plural(tests.total, 'test case')} are marked as passed, and no test run is on record for this code. ` +
+        'Run the suite in stage 5 to record one.',
     });
   } else if (executed === 0) {
     testing = phase('testing', {
@@ -479,12 +512,22 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // The one place where generated work earns green, and only because something
   // checked it: `gaps` is empty exactly when every generated case carries an
   // executed pass over the generated code. Transformation on its own never does.
+  //
+  // Green here is `testing.proven`, not `testing.done`. Delivery used to read
+  // `gaps`, `gaps` read `testing.state`, and `testing.state` was `done` on
+  // client-written verdicts — so a row of `Passed` strings a browser put on the
+  // project produced "Ready", in green, under the sentence "a passing test run
+  // is on record" (QA full review of a19945ef01dc). The material can be complete
+  // and the run still not have happened; those are two statements and they now
+  // read as two.
   const delivery = gaps.length === 0
     ? phase('delivery', {
         state: 'done',
-        proven: true,
-        badge: 'Ready',
-        detail: 'Code, documentation and a passing test run are on record. Whether to deploy remains an architect’s decision.',
+        proven: testing.proven,
+        badge: testing.proven ? 'Ready' : 'Unverified',
+        detail: testing.proven
+          ? 'Code, documentation and a passing test run are on record. Whether to deploy remains an architect’s decision.'
+          : 'Code, documentation and test verdicts are on record — no test run is on record behind the verdicts. Run the suite in stage 5 before handing this over.',
       })
     : !hasGenerated && tests.total === 0 && !hasDocs
       ? phase('delivery', {

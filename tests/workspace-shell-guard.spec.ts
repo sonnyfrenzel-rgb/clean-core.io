@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { initializeFirestore, doc, updateDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
+import { receiptFor } from './helpers/test-receipt';
 import firebaseConfig from '../firebase-config.json';
 import { workspaceShellEligible, workspaceShellEnabled } from '../lib/workspace-shell';
 import {
@@ -61,19 +62,32 @@ const draft: TestCase[] = [
   { id: 't2', name: 'Rounding', category: 'Unit', description: 'd', priority: 'Medium' },
 ];
 
-const populated = (over: Partial<Project> = {}): Project => ({
-  name: 'Shell fixture',
-  legacyCode: 'REPORT z_x.\nCALL FUNCTION \'Z_LOCAL\'.\n',
-  activeRunId: 'run-1',
-  cleanCoreScore: 62,
-  solutionDesign: '{"architectureOverview":{}}',
-  approvedByArchitect: true,
-  approvedBy: 'architect@example.com',
-  generatedCode: 'export const ok = true;\n',
-  documentation: '{"l1":{}}',
-  testCases: draft.map((t) => ({ ...t, status: 'Passed' as const })),
-  ...over,
-});
+const SUITE = { code: "import { test } from 'node:test';\ntest('t1', () => {});\n" };
+
+/**
+ * A project where every phase that can have something on it has something on it
+ * — including an executed suite, which since the QA full review of a19945ef01dc
+ * means passing verdicts **and** the receipt `/api/run-tests` writes beside
+ * them. `testCases[].status` alone is a self-report, and Execution reads
+ * `draft`, not `done`, on one.
+ */
+const populated = (over: Partial<Project> = {}): Project => {
+  const base: Project = {
+    name: 'Shell fixture',
+    legacyCode: 'REPORT z_x.\nCALL FUNCTION \'Z_LOCAL\'.\n',
+    activeRunId: 'run-1',
+    cleanCoreScore: 62,
+    solutionDesign: '{"architectureOverview":{}}',
+    approvedByArchitect: true,
+    approvedBy: 'architect@example.com',
+    generatedCode: 'export const ok = true;\n',
+    documentation: '{"l1":{}}',
+    testCases: draft.map((t) => ({ ...t, status: 'Passed' as const })),
+    testSuite: SUITE,
+    ...over,
+  };
+  return { ...base, testRunReceipt: receiptFor(base), ...over };
+};
 
 const facetStatus = (project: Project | null) =>
   Object.fromEntries(workspaceStatusLine(project).map((s) => [s.facet, s.status])) as Record<string, string>;
@@ -534,6 +548,13 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
 
     // And one with a signed run, a signed-off design, generated code and docs,
     // and a passing suite — so that the comparison below is not vacuous.
+    // The executed suite: verdicts and the server-written receipt behind them.
+    const executed = {
+      activeRunId: RUN_ID,
+      generatedCode: 'export const ok = true;\n',
+      testSuite: SUITE,
+      testCases: draft.map((t) => ({ ...t, status: 'Passed' as const })),
+    };
     await adminSetDoc('projects', FULL_ID, {
       name: 'Emergency purchase approval', userId: adminUid,
       createdAt: new Date(), status: 'completed',
@@ -543,10 +564,9 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
       solutionDesign: '# Target architecture\n',
       approvedByArchitect: true,
       approvedBy: ADMIN,
-      generatedCode: 'export const ok = true;\n',
       documentation: '# Blueprint\n',
-      testCases: draft.map((t) => ({ ...t, status: 'Passed' })),
-      activeRunId: RUN_ID,
+      ...executed,
+      testRunReceipt: receiptFor(executed),
     });
     await adminSetDoc(`projects/${FULL_ID}/runs`, RUN_ID, {
       runId: RUN_ID, projectId: FULL_ID, userId: adminUid,

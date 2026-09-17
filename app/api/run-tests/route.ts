@@ -12,6 +12,8 @@ import { assertRateLimit } from '@/lib/rate-limit';
 import { liveRunnerPermitted } from '@/lib/runner-egress-attestation';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import { parseTapOutput, packageNameOf } from '@/lib/test-verdicts';
+import { testRunSubject, TEST_RUN_RECEIPT_VERSION, type TestRunReceipt } from '@/lib/test-receipt';
+import { logger, errMessage } from '@/lib/logger';
 
 /**
  * POST /api/run-tests
@@ -242,7 +244,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const { tests, projectId, code, selectedTestIds, s4Environment } = await req.json();
+  // `tests` and `code` are deliberately not read out of the body any more — see
+  // the ownership block below. What is left is which project, which of its cases
+  // and which environment; all three are checked before anything runs.
+  const { projectId, selectedTestIds, s4Environment } = await req.json();
 
   // The documented lock (lib/locked-paths.ts, G0:R0) refuses a live run before any work:
   // nothing is written, bundled, probed or loaded for a path that is closed.
@@ -275,6 +280,16 @@ export async function POST(req: Request) {
   // Ownership: the runner may only execute against a project the caller owns.
   // (`projectId` was previously only sanitised for the temp-dir name, so any approved
   // account could run against an arbitrary id — Audit F-01 sub-finding.)
+  //
+  // The snapshot is kept, because it is also the source of what gets executed.
+  // The route used to take `code` and `tests` from the request body and report
+  // the outcome as the project's test result, so a caller could post a trivial
+  // passing suite, or the project's own suite against different code, and have
+  // the answer attributed to the project (QA full review of a19945ef01dc). What
+  // runs is now what the project stores. The body's copies are ignored: the
+  // client sends `project.generatedCode` and `project.testSuite`, which is the
+  // same thing on every honest call and a different thing on the dishonest one.
+  let projectData: Record<string, unknown> = {};
   try {
     const { db } = await getAdminDb();
     const snap = await db.collection('projects').doc(sanitizedProjectId).get();
@@ -284,7 +299,16 @@ export async function POST(req: Request) {
         { status: 404 },
       );
     }
-    if (snap.data()?.userId !== decodedToken.uid && decodedToken.admin !== true) {
+    projectData = (snap.data() || {}) as Record<string, unknown>;
+    // Owner only, and the administrator claim is not an owner — the same form
+    // f8bc33b gave `DELETE /api/projects/{id}`. It matters more here than it did
+    // when this route only returned TAP: the run now writes an execution receipt
+    // onto the project, and that receipt is what turns Testing and Delivery
+    // green. A claim that stood in for ownership would let an operator put a
+    // passing verdict on a stranger's evidence — and `assertMfaSatisfied` is no
+    // second gate, because it lets every token through for an account whose
+    // profile does not say `mfaEnabled` (lib/mfa-gate.ts).
+    if (projectData.userId !== decodedToken.uid) {
       return NextResponse.json(
         { output: '', error: 'You are not authorized to run tests for this project.', exitCode: 1 },
         { status: 403 },
@@ -297,7 +321,14 @@ export async function POST(req: Request) {
     );
   }
 
-  const testCode = (tests && tests.code) ? tests.code : (tests && tests.spec) ? tests.spec : null;
+  const storedSuite = projectData.testSuite as { code?: unknown; spec?: unknown } | undefined;
+  const testCode =
+    storedSuite && typeof storedSuite.code === 'string' && storedSuite.code
+      ? storedSuite.code
+      : storedSuite && typeof storedSuite.spec === 'string' && storedSuite.spec
+        ? storedSuite.spec
+        : null;
+  const code = typeof projectData.generatedCode === 'string' ? projectData.generatedCode : '';
   if (!testCode) {
     return NextResponse.json(
       { output: '', error: "No test code provided. Please click 'Regenerate Tests' to create a Node.js test suite.", exitCode: 1 },
@@ -639,6 +670,58 @@ if (ALLOWED_SUFFIXES.length === 0) {
     const { stdout, stderr, exitCode } = await runSandboxed(args, testDir, childEnv);
 
     const testResults = parseTapOutput(stdout);
+
+    // ── 6) The receipt: the server's own record that this ran ────────────────
+    //
+    // Written with the Admin SDK onto the project, under a key the client update
+    // allowlist of `firestore.rules` does not contain — so a browser cannot
+    // produce one and the rules need no change to say so. Until it existed, the
+    // phase contract read `project.testCases[].status`, which the owner may
+    // write and which nothing in the product ever wrote: a row of `Passed`
+    // strings unlocked Testing and Delivery, in green, with no execution behind
+    // them (QA full review of a19945ef01dc, E07-F02).
+    //
+    // Bound to what was executed — the active run, and the digests of the code,
+    // the suite and the case list — so regenerating any of them retires the
+    // receipt instead of leaving it vouching for something else.
+    //
+    // Only the runner's own verdicts go in, and only for cases the project
+    // actually holds: a suite that names a case the project does not have would
+    // otherwise write a verdict for a case no reader can see.
+    const subject = testRunSubject(projectData);
+    const known = new Set(
+      (Array.isArray(projectData.testCases) ? projectData.testCases : [])
+        .map((t) => (t && typeof t === 'object' ? String((t as { id?: unknown }).id ?? '') : ''))
+        .filter(Boolean),
+    );
+    const receipt: TestRunReceipt = {
+      v: TEST_RUN_RECEIPT_VERSION,
+      runId: subject.runId,
+      codeDigest: subject.codeDigest,
+      suiteDigest: subject.suiteDigest,
+      casesDigest: subject.casesDigest,
+      environment: 'mock',
+      executedAt: new Date().toISOString(),
+      executedBy: decodedToken.uid,
+      exitCode,
+      verdicts: testResults
+        .filter((r) => known.has(r.id))
+        .map((r) => ({ id: r.id, status: r.status as TestRunReceipt['verdicts'][number]['status'] })),
+    };
+    try {
+      const { db } = await getAdminDb();
+      await db.collection('projects').doc(sanitizedProjectId).set({ testRunReceipt: receipt }, { merge: true });
+    } catch (receiptErr) {
+      // The run happened; the record of it did not. Reported rather than
+      // swallowed into a green screen: without the receipt the phase contract
+      // will read the suite as self-reported, which is the honest outcome.
+      logger.error('run-tests: the execution receipt could not be written', {
+        route: 'api/run-tests',
+        projectId: sanitizedProjectId,
+        error: errMessage(receiptErr),
+      });
+    }
+
     return NextResponse.json({ output: stdout, error: stderr, exitCode, testResults, stubbedPackages: [...stubbedPackages].sort() });
   } catch {
     // A fixed message: an internal error's own text can carry filesystem paths
