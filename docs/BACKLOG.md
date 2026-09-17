@@ -3,6 +3,82 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+**Feierabend 17.09.2026 — v2.12.0 ist auf `main` (`e3817ce`).** Der Tag hatte drei Themen: zwei
+Sicherheitslöcher, den Referenzkorpus, und den Beginn von Phase 2. Sechs Stränge liefen
+parallel, jeder in eigener Worktree.
+
+**Zwei echte Löcher, beide vor dem Fix nachgestellt.** Eine signierte Beweismappe war
+fälschbar: der Dateiname durfte das Trennzeichen der kanonischen Form tragen, also ließen
+sich zwei signierte Beweisdateien zu einer zusammenziehen — gleiche Bytes, gültige Signatur,
+eine Beweisdatei weniger, und `verify-pack` sagte „Verified." mit Exit 0. Dazu prüfte die
+Attestation nur die *Existenz* der Datei, nicht ihren Inhalt, und Ausgabedatum wie
+Formatversion waren gar nicht gebunden. Und: ein Administrator ohne eingerichteten zweiten
+Faktor konnte aus einem gewöhnlichen ID-Token jedes fremde Projekt samt signierter Runs
+löschen, weil `decoded.admin === true` als Eigentümerschaft galt und der MFA-Gate jedes
+Token durchlässt, wenn das Konto keinen Faktor aktiviert hat. Beide behoben; alte Mappen
+verifizieren byte-identisch weiter.
+
+**Der Referenzkorpus liegt im Repository und prüft die Engine** (Schritt 2.10). 68 Fälle als
+Fallbuch unter `docs/korpus/`, 209 generierte Dateien unter `tests/korpus/cases/`, eine
+Ratsche in `tests/korpus-engine.spec.ts`. Die Grundlinie ist die eigentliche Neuigkeit: 340
+Fall-und-Klassen, 178 übereinstimmend, **24 Engine-Defekte**, 4 Fälle, in denen der Korpus
+selbst unrecht hat, 134 Aussageklassen, die die Engine noch nicht produziert. Die drei
+Defektfamilien stehen als Schritt **2.11** in der Roadmap — neun Fälle bekommen D statt C,
+weil die Note Zugriffsart und Nachfolger ignoriert; fünf urteilen milder als erlaubt
+(darunter A für `WITH PRIVILEGED ACCESS`); neun sehen eine Abhängigkeit gar nicht oder die
+falsche. Der Weg dahin: vier Modelle haben v1 einstimmig abgelehnt, ein Gegenreview hat 35
+Regeln beurteilt (sechs hielten nicht), fünf Autoren haben v2.1 daraus gebaut, und ein
+Durchgang durch öffentliche Repositories hat für neun Fälle belegt, dass ihr Konstrukt real
+vorkommt — ohne einen einzigen Zeiger im Repository, weil vierzehn der fünfzehn Quellen keine
+Lizenz tragen und die tragenden nach allen Indizien unautorisiert hochgeladene
+Arbeitgeberbestände sind.
+
+**Phase 2 ist sichtbar begonnen:** 2.3 baut das Prozessskelett deterministisch aus Code
+(`Z_ORDER_INTEGRITY_CHECK` bekommt 0 Knoten und eine Notiz statt eines erfundenen Starts),
+2.8 findet 140 versteckte Geschäftsregeln mit Anker. Beide tragen die Korpusregeln.
+
+**Neun UX-Befunde, vier Versprechen ersatzlos entfernt** (Schritt 0.2): der
+Remediation-Schalter schaltete Text statt Code, die „Transformation Insights" waren für jedes
+Projekt dieselben, das SAP-Build-Badge versprach einen Export ohne Gegenstück, und das Forum
+meldete Erfolg, nachdem es in `useState` geschrieben hatte.
+
+**Die vier Schleifen nach dem Release:** Produktion liefert v2.12.0 (`e3817ce`, 06:38Z).
+Das UX-Review nennt den Schnitt „ehrlicher — Schein-Forum, falsche TCO-Versprechen und
+doppelte Quota-Regeln sind weg"; seine zwölf offenen Befunde sind triagiert, sechs
+angenommen, sechs widerlegt (fünf davon Dubletten, dreimal dieselbe Token-Liste, die in
+`DESIGN.md` §1.2/§1.5 beschlossene Skala). Zwei davon sind es wert, morgen zuerst angefasst
+zu werden: **UX-107** — ein Knopf auf dem Admin-Pfad sagt „Sign In as Admin" und ruft
+`auth.signOut()` (selbst nachgesehen, steht wörtlich so da, S-Aufwand) — und **UX-102**, die
+How-to-Seite verspricht sechs Phasen, während das Produkt sieben hat; das liest ein Architekt
+*vor* dem ersten Lauf. Security-Audit und Vollprüfung von v2.12.0 liefen beim Herunterfahren
+noch; ihre Befunde sind der erste Griff am nächsten Tag.
+
+### Was offen ist und warum
+
+1. **Der QA-Agent liest nicht mehr — und meldet trotzdem grün.** Das ist der dringendste
+   Punkt. Ein Review über `5f84bb2` und eines über `9edb37f` machten **null Modellaufrufe**
+   und gaben `go_with_notes` zurück; ein grünes Häkchen über ungelesenem Code ist schlimmer
+   als ein rotes. Zwei Ursachen, eine behoben: das Korpus-Bündel hatte das Delta auf 3,3 MB
+   getrieben (`tests/korpus/cases/**` steht jetzt in der Ausschlussliste, Ratsche und
+   Konverter bleiben geprüft) — aber **262 mitgeführte Befunde mit 288.335 Zeichen** gehen in
+   jede Anfrage, bevor eine Datei dazukommt, und sprengen das Budget allein. Der Checkpoint
+   hängt seit `a19945e`. Zwei Wege: den Bestand triagieren (die 222 Medium sind großenteils
+   Design-System-Galerie und Arbeitsraum, also Roadmap-Arbeit) oder nur die *neuen* Befunde
+   mitgeben. Beides ändert die Agentenmaschinerie.
+2. **Entscheidungen 7 bis 13 in ROADMAP §9** — Secret-Rotation, CSP ohne `unsafe-inline`,
+   S/4-Credential-Proxy, das fehlerhafte ABAP im ausgelieferten 1000-Zeilen-Beispiel, die
+   nachsichtige Dezimalregel, Kommentarzeilen in der Komplexität, das Review-Budget.
+3. **Bleibt das Forum?** Die Schreibhälfte ist weg, die Ankündigungen sind lesbar und als
+   read-only benannt. Ob das Board als Ganzes bleibt, ist nicht entschieden.
+4. **Schritt 0.2 ist nicht fertig:** Facts-Service und Copy-CI stehen aus, und §14 plant rund
+   dreißig QA-Befunde in denselben Schritt.
+5. **Die 80 hohen Befunde der Vollprüfung** von v2.11.1 sind die nächste Triage; die 30
+   kritischen sind alle entschieden.
+6. **Der Korpus braucht noch:** jede `source.abap` durch abaplint und die metamorphen
+   Eigenschaften ziehen (dann tragen die Fälle diese Stufen), die vier Fälle korrigieren, in
+   denen er sich selbst widerspricht, und das maschinenlesbare Fallbündel mit Kontexthash.
+   `architekt` bleibt für jeden Fall 0 — das ist die Einschränkung, mit der er lebt.
+
 **Stand 16.09.2026, spät — v2.11.1 ist um 21:53Z auf `main` gegangen (`a19945e`, 90 Commits seit
 v2.11.0, Fast-Forward, CI grün, Regeln um 20:25Z vorher ausgerollt). Phase 0 und Phase 1 sind
 abgeschlossen, Phase 2 hat begonnen.** Phase 0 zu Ende gebracht mit 0.5 und 0.6 (Eingabemanifest im
