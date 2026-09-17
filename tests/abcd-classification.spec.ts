@@ -190,8 +190,15 @@ test.describe('catalog-backed A/B/C/D grading (SAP published data)', () => {
  * table SAP will not release is using an internal object (C, corpus R01);
  * writing to it directly is D (R02); the customer's own table is classic ABAP
  * working on its own data (B, R20/R03).
+ *
+ * The last root of family (a) was a third access. CC-045 names KNA1 four times
+ * as a *type* — TABLES, SELECT-OPTIONS … FOR, INCLUDE STRUCTURE, DATA … TYPE —
+ * and never reads a row; the grade knew only read and write, found neither, and
+ * fell back to the name: D, where the corpus answers C. R29 settles it — a type
+ * dependency is "eine Abhängigkeit, noch kein Level", and the level then follows
+ * the object's state in the target profile (R01, internal, C).
  */
-test.describe('the level of a use: read, write, own table', () => {
+test.describe('the level of a use: read, write, type reference, own table', () => {
   test('a table SAP will not release is C to read and D to write', () => {
     const states = { releaseState: 'notToBeReleased', hasSuccessor: true, isSapObject: true };
     expect(gradeFromSapStatesForUse(states, 'read')).toMatchObject({
@@ -207,6 +214,27 @@ test.describe('the level of a use: read, write, own table', () => {
     expect(gradeFromSapStatesForUse(states, null)).toEqual(gradeFromSapStates(states));
     // The successor does not decide it — R01 is about the state, not about a named replacement.
     expect(gradeFromSapStatesForUse({ ...states, hasSuccessor: false }, 'read').grade).toBe('C');
+  });
+
+  test('a table SAP will not release is C when the code only depends on its type', () => {
+    // Corpus CC-045: `TABLES: kna1`, `SELECT-OPTIONS … FOR kna1-kunnr`,
+    // `INCLUDE STRUCTURE kna1`, `DATA … TYPE kna1`. Nothing is read and nothing
+    // is written, and the corpus answers C. R29 puts it plainly: a type
+    // dependency is "eine Abhängigkeit, noch kein Level" and the level then
+    // follows the object's state in the target profile — R01, internal, C.
+    // Before this the access was unknown to the grade, so it fell back to the
+    // name and published D: "you bypassed the application that owns the rows"
+    // about a program that never touches a row.
+    const states = { releaseState: 'notToBeReleased', hasSuccessor: true, isSapObject: true };
+    expect(gradeFromSapStatesForUse(states, 'reference')).toMatchObject({
+      grade: 'C',
+      provenance: 'catalog',
+      state: 'notToBeReleased',
+      use: 'reference',
+      objectGrade: 'D',
+    });
+    // A write is still D: direction is what the two share, not the statement.
+    expect(gradeFromSapStatesForUse(states, 'write').grade).toBe('D');
   });
 
   test('the classic file still decides where it speaks', () => {
@@ -226,6 +254,11 @@ test.describe('the level of a use: read, write, own table', () => {
     expect(gradeFromSapStatesForUse(own, 'read')).toMatchObject({ grade: 'B', provenance: 'own-object', use: 'read' });
     // A customer object the code only calls has an implementation nobody read.
     expect(gradeFromSapStatesForUse(own, null)).toMatchObject({ grade: 'Unknown', provenance: 'heuristic' });
+    // Nor does a type reference to an own name reach B: `DATA row TYPE
+    // zcc_log_row` names a structure whose definition is not in the slice, so
+    // "the analysis has seen the whole dependency" — the premise of the B — is
+    // not true. Corpus CC-020 and CC-038 answer Unknown for exactly that.
+    expect(gradeFromSapStatesForUse(own, 'reference')).toMatchObject({ grade: 'Unknown', provenance: 'heuristic' });
     // A namespaced object SAP does not list is not assumed to be the customer's.
     expect(gradeFromSapStatesForUse({ isSapObject: false, isCustomerObject: false }, 'write')).toMatchObject({
       grade: 'Unknown',
@@ -255,9 +288,11 @@ test.describe('the level of a use: read, write, own table', () => {
     expect(objectUseFromAccess('Read')).toBe('read');
     expect(objectUseFromAccess('Write')).toBe('write');
     expect(objectUseFromAccess('Read/Write')).toBe('write');
+    expect(objectUseFromAccess('Reference')).toBe('reference');
     expect(objectUseFromAccess(undefined)).toBeNull();
     expect(objectUseFromAccess('call')).toBeNull();
     expect(gradeKey(' kna1 ', 'read')).toBe('KNA1@read');
+    expect(gradeKey('kna1', 'reference')).toBe('KNA1@reference');
     expect(gradeKey('kna1', null)).toBe('KNA1');
   });
 

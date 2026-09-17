@@ -199,16 +199,24 @@ export type GradeProvenance = 'catalog' | 'catalog-residual' | 'own-object' | 'h
  * record to replace code that is conditionally clean.
  *
  * Only what the engine actually knows is modelled: `extractDataCoupling` sees
- * reads and writes. A type reference or a call has no use here yet, and gets the
- * object's own grade.
+ * reads, writes and — since roadmap 2.11 — type references (`TABLES`, `TYPE`,
+ * `INCLUDE STRUCTURE`, `SELECT-OPTIONS … FOR`, a logical-database node). A call
+ * still has no use here and gets the object's own grade.
+ *
+ * `reference` is a use of its own and not a read: no row is fetched. What it
+ * shares with a read is the direction — nothing is written — and that is what
+ * decides the level. A program that only names KNA1 as a type depends on SAP's
+ * internal data model exactly as a reader does, and grading it D said it
+ * bypassed the application that owns the rows, which it does not.
  */
-export type ObjectUse = 'read' | 'write';
+export type ObjectUse = 'read' | 'write' | 'reference';
 
 /** The data-coupling access type as a use. A mixed access counts as a write. */
 export function objectUseFromAccess(accessType?: string | null): ObjectUse | null {
   const access = (accessType || '').trim().toLowerCase();
   if (access === 'read') return 'read';
   if (access === 'write' || access === 'read/write') return 'write';
+  if (access === 'reference') return 'reference';
   return null;
 }
 
@@ -371,19 +379,25 @@ export function gradeFromSapStates(s: SapObjectStates): GradedObject {
  *
  *   1. A table SAP will not release, and that the classic file does not name —
  *      KNA1, VBAK, BSEG and the other tables and views in that position.
- *      Read directly, it is an internal SAP object: level C. Written directly,
- *      it stays D. The successor SAP names (I_CUSTOMER for KNA1) is where a read
- *      can be re-pointed; it is not a claim that the successor is a drop-in
- *      replacement, and nothing here reads it as one. An object the classic file
- *      does name keeps its own grade: `classicAPI` beside `notToBeReleased` is
- *      the contested overlap `/method/levels` argues through, and `noAPI` says
- *      not for customer use whatever the access.
+ *      Read directly, or depended on as a type, it is an internal SAP object:
+ *      level C. Written directly, it stays D. The successor SAP names
+ *      (I_CUSTOMER for KNA1) is where a read can be re-pointed; it is not a
+ *      claim that the successor is a drop-in replacement, and nothing here reads
+ *      it as one — least of all for a type reference, where a read model is no
+ *      substitute for a structure. An object the classic file does name keeps
+ *      its own grade: `classicAPI` beside `notToBeReleased` is the contested
+ *      overlap `/method/levels` argues through, and `noAPI` says not for
+ *      customer use whatever the access.
  *
  *   2. The customer's own table or view (Z, Y), read or written: level B, as
  *      classic ABAP working on its own data — not Unknown, because the engine
  *      saw the whole dependency, and not the risk heuristic, which graded every
  *      write to an own table D. A namespaced object SAP does not list is not
- *      assumed to be the customer's and is left alone.
+ *      assumed to be the customer's and is left alone. A *type reference* to an
+ *      own name is deliberately not in this row: `DATA row TYPE zcc_log_row`
+ *      names a structure whose definition the analysis has not seen, so "the
+ *      whole dependency" — the premise of the B — does not hold, and the answer
+ *      stays Unknown.
  *
  * Without a use this is `gradeFromSapStates` unchanged, so the catalog pages and
  * the published census keep the answer for the name.
@@ -396,9 +410,10 @@ export function gradeFromSapStatesForUse(s: SapObjectStates, use: ObjectUse | nu
   const classification = (s.classificationState || '').toLowerCase();
 
   if (s.isCustomerObject && !release && !classification) {
+    if (use === 'reference') return { ...object, use };
     return { ...object, grade: 'B', provenance: 'own-object', use, objectGrade: object.grade };
   }
-  if (release === 'nottobereleased' && !classification && use === 'read') {
+  if (release === 'nottobereleased' && !classification && (use === 'read' || use === 'reference')) {
     return { ...object, grade: 'C', use, objectGrade: object.grade };
   }
   return { ...object, use };

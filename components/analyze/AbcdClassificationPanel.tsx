@@ -58,7 +58,7 @@ export default function AbcdClassificationPanel({
   ];
 
   // One key per lookup, in the shape the route answers with: the name, or
-  // NAME@use for a table the code reads or writes.
+  // NAME@use for a table the code reads, writes, or depends on as a type.
   const lookupKey = heuristicItems
     .filter((i) => i.name)
     .map((i) => gradeKey(i.name, i.use))

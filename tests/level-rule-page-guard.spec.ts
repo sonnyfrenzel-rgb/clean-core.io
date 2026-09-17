@@ -71,11 +71,12 @@ test.describe('the published rule matches the code it describes', () => {
     const cases: {
       row: string;
       states: Parameters<typeof gradeFromSapStatesForUse>[0];
-      use: 'read' | 'write';
+      use: 'read' | 'write' | 'reference';
       grade: string;
     }[] = [
       { row: 'notToBeReleased, read', states: { releaseState: 'notToBeReleased', hasSuccessor: true, isSapObject: true }, use: 'read', grade: 'C' },
       { row: 'notToBeReleased, written', states: { releaseState: 'notToBeReleased', hasSuccessor: true, isSapObject: true }, use: 'write', grade: 'D' },
+      { row: 'notToBeReleased, referenced as a type', states: { releaseState: 'notToBeReleased', hasSuccessor: true, isSapObject: true }, use: 'reference', grade: 'C' },
       { row: 'customer table, read or written', states: { isSapObject: false, isCustomerObject: true }, use: 'read', grade: 'B' },
       { row: 'customer table, read or written', states: { isSapObject: false, isCustomerObject: true }, use: 'write', grade: 'B' },
     ];
@@ -87,8 +88,16 @@ test.describe('the published rule matches the code it describes', () => {
         `/method/levels publishes "${c.row} → ${c.grade}" and the function no longer agrees`,
       ).toBe(c.grade);
     }
-    expect(gradeFromSapStatesForUse(cases[0].states, 'read').grade).not.toBe(gradeFromSapStates(cases[0].states).grade);
-    expect(gradeFromSapStatesForUse(cases[2].states, 'read').grade).not.toBe(gradeFromSapStates(cases[2].states).grade);
+    // Each row has to move the answer away from the object-only grade, or it is
+    // describing nothing. Looked up by row, not by index: a new row between them
+    // must not silently re-point these two at something else.
+    for (const row of ['notToBeReleased, read', 'notToBeReleased, referenced as a type', 'customer table, read or written']) {
+      const c = cases.find((entry) => entry.row === row)!;
+      expect(
+        gradeFromSapStatesForUse(c.states, c.use).grade,
+        `"${row}" grades the same as the object's own name, so the row states no rule`,
+      ).not.toBe(gradeFromSapStates(c.states).grade);
+    }
     // And the page's grade letters for those rows are the ones stated.
     for (const c of cases) {
       expect(source).toMatch(new RegExp(`use: '${c.row}',\\s*grade: '${c.grade}'`));

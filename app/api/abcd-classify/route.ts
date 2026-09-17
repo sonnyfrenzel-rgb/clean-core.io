@@ -8,8 +8,9 @@ import { gradeKey, objectUseFromAccess, type GradedObject, type ObjectUse } from
  *
  * An entry is either a name — graded from the name alone, keyed by the name, as
  * this route has always answered — or `{ name, use }` for a table the code
- * reads or writes, graded for that use and keyed `NAME@use` (`gradeKey`). The
- * use changes the answer for a table like KNA1: C to read it, D to write it.
+ * reads, writes, or depends on as a type, graded for that use and keyed
+ * `NAME@use` (`gradeKey`). The use changes the answer for a table like KNA1: C
+ * to read it or to name it as a type, D to write it.
  *
  * Why a route at all: the grade is a lookup against ~4 MB of generated catalog
  * artifacts. The analyze view that needs it is a client component, so importing

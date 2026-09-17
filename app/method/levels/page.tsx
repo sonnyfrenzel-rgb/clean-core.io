@@ -263,9 +263,10 @@ export default function LevelDerivationPage() {
         </h2>
         <p className="text-gray-600 leading-relaxed max-w-3xl">
           The table above grades an object by its name. An analysis also knows what the code does
-          with a table — reads it or writes to it — and in the cases below that decides the level
-          it shows. Everywhere else the access changes nothing, and the object keeps the level
-          above. These rows are part of the rule version at the top of this page.
+          with a table — reads it, writes to it, or depends on its type without touching a row —
+          and in the cases below that decides the level it shows. Everywhere else the access
+          changes nothing, and the object keeps the level above. These rows are part of the rule
+          version at the top of this page.
         </p>
 
         <div className="overflow-x-auto rounded-2xl border border-gray-200">
@@ -526,6 +527,11 @@ const USE_RULES: { use: string; grade: CloudReadinessGrade; why: string }[] = [
     use: 'notToBeReleased, written',
     grade: 'D',
     why: 'Writing to it directly bypasses the application that owns the data. The level stays D, and a read successor is no write path.',
+  },
+  {
+    use: 'notToBeReleased, referenced as a type',
+    grade: 'C',
+    why: 'TABLES kna1, DATA … TYPE kna1, INCLUDE STRUCTURE kna1, SELECT-OPTIONS … FOR kna1-kunnr: the code depends on SAP’s internal structure without reading or writing a row. That is the same dependency on an internal object a read has, so it is the same level — not D, which says the application that owns the rows was bypassed. The read successor is no answer here: a CDS view does not replace a structure type.',
   },
   {
     use: 'customer table, read or written',

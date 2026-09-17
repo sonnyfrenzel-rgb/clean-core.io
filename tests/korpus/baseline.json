@@ -1382,7 +1382,7 @@
       "class": "level",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte. 2.11, Folge aus objekte: VBAK ist jetzt ein gesehenes Objekt; der Fall antwortet „Unknown\", die Klasse bleibt unvergleichbar."
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte. 2.11, Folge aus der Restwurzel der Familie (a): VBAK steht als Typabhängigkeit (Reference) und bekommt damit C statt der Namensnote D. Die Klasse bleibt unvergleichbar, weil der Fall Unknown antwortet."
     },
     {
       "case": "CC-040",
@@ -1555,9 +1555,9 @@
     {
       "case": "CC-045",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte. 2.11, **Folgeänderung** aus objekte (Familie (a), Strang C): vorher sah die Engine kein Objekt, jetzt KNA1 aus der Typabhängigkeit — und benotet es mit D, wo der Fall C mit dem katalogisierten Nachfolger begründet."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C. 2.11, Restwurzel der Familie (a): die Typabhängigkeit auf KNA1 (TABLES, SELECT-OPTIONS … FOR, INCLUDE STRUCTURE, DATA … TYPE) hat die Zugriffsart Reference; die Note kannte nur read und write und fiel deshalb auf die Namensnote D zurück. R29 sagt, dass eine Typabhängigkeit „eine Abhängigkeit, noch kein Level\" ist und das Level dem Zustand des Objekts im Zielprofil folgt — R01, intern, C. Reference ist jetzt eine eigene Verwendung mit derselben Richtung wie ein Lesezugriff, und die Engine antwortet C wie der Fall."
     },
     {
       "case": "CC-045",
@@ -1618,9 +1618,9 @@
     {
       "case": "CC-047",
       "class": "befunde",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
-      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:6 standard-table-read. Ohne Gegenstück: CC-047-F01 R29@2.0.0-draft@source.abap:2 — keine Brücke für R29, CC-047-F02 R01@1.0.0 + R33@2.0.0-draft@source.abap:6 — R01 ohne Gegenstück an „GET kna1\". 2.11, Folge aus (c): die Engine meldet den LDB-Lesezugriff auf KNA1 jetzt am GET-Ereignis (Zeile 6). Die Brücke R01 verlangt ein SELECT in der Anweisung am Anker, deshalb bleibt der Fall unvergleichbar."
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 von 2 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-047-F01 R29@2.0.0-draft@source.abap:2 — keine Brücke für R29. 2.11: die Brücke R01 verlangte ein SELECT in der Anweisung am Anker und ließ damit das LDB-Lesen liegen, das die Engine seit Strang D am GET-Ereignis meldet. R01 Bedingung (c) verweist LDB-Lesen an R33, und R33 sagt, dass der SELECT in der logischen Datenbank läuft — die zweite Brücke unter R01 nennt genau dieses Konstrukt, und der Befund trifft die Ankerzeile 6. Für R29 (NODES: kna1, Zeile 2) führt die Engine keine Aussage; der Sollbefund bleibt gezählt, nicht verfehlt."
     },
     {
       "case": "CC-047",
@@ -1732,7 +1732,7 @@
       "class": "level",
       "state": "disagree",
       "verdict": "engine-defekt",
-      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) A. Die Engine urteilt milder als der Fall — ein falsches Grün ist die eine Richtung, in der ein Levelunterschied gefährlich ist."
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) A. Die Engine urteilt milder als der Fall — ein falsches Grün ist die eine Richtung, in der ein Levelunterschied gefährlich ist. 2.11, geprüft und neu begründet: die Roadmap führte dieses A auf WITH PRIVILEGED ACCESS zurück. Das ist nach R28 falsch — die Aussageklasse security_and_authorization trägt „eigene Befunde, die das A–D-Level **nie** verändern\", und der Sollbefund CC-050-F01 sagt es selbst: „Level unverändert B; … Compliance-Befund, kein Levelbefund.\" Das A kommt aus I_CUSTOMER, das released ist; als Objektnote ist es richtig, und der Fall bestätigt sie mit cloud_api_surface = usable. Das B des Falls ist ein Artefaktlevel nach R03 (Standard-Sprachversion mit ausschließlich released/eigenen/classic Abhängigkeiten = B) und steht wörtlich in seiner Ausschlussliste: „Kein A: der REPORT mit WRITE-Liste ist klassisches ABAP; usable bezeichnet die API-Oberfläche, nicht die Implementierung.\" CC-058 Profil 1 (onpremise-s4 · standard) gibt derselben Quelle ohne den Zusatz dieselbe Antwort B. Der Defekt bleibt deshalb stehen und ist richtig gemessen: was die Engine nicht sieht, ist nicht der Zusatz, sondern die Sprachversion — lib/abap/ vergibt eine Katalognote je Objekt und kein Level je Artefakt. Der Fix gehört dorthin, nicht in die Objektnote: ein Artefaktlevel unter einem Regelvertrag, den /method/levels heute ausdrücklich verweigert („There is no level here for a program as a whole\"). Solange es ihn nicht gibt, ist CC-050 der einzige Fall im Korpus, an dem der Unterschied sichtbar wird."
     },
     {
       "case": "CC-050",
