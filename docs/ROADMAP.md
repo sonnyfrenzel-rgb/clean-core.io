@@ -896,6 +896,43 @@ authentifiziert) und `scripts/verify-pack.mjs:212–269`. Von den 94 hohen sind 
 den kritischen. Fingerabdrücke sind weiterhin instabil (`5c7ab85b9493` ist ein Zwilling von `cfafefac08ec`).
 Volltext nur lokal unter `.qa-review/a19945ef01dc.full.json`.
 
+**Ergebnis der Triage vom 17.09.2026, Vormittag:** Von den 30 kritischen sind damit
+**alle entschieden** — 6 waren bekannt, 13 mit Beleg widerlegt, **11 bestätigt und behoben**
+(eine Zeile je Fingerabdruck in der Tabelle unten). Die elf waren drei Defekte in der
+Vertrauenskette, und der erste ist der schwerste des Tages:
+
+- **Die Signatur deckte nicht, was sie zu decken vorgab.** Ein Dateiname durfte das
+  Trennzeichen der kanonischen Form tragen, also ließen sich zwei signierte Beweisdateien
+  zu einer zusammenziehen: gleiche kanonische Bytes, gültige Signatur, eine Beweisdatei
+  weniger im Archiv — `verify-pack` antwortete „Verified" mit Exit 0. Unabhängig
+  nachgestellt, bevor der Fix gebaut wurde.
+- **Die Attestation ließ sich nach dem Versiegeln umschreiben:** `lib/audit-pack-verify.ts`
+  prüfte nur, *ob* die Datei im Archiv liegt, nicht ihren Inhalt. `07-user-attested.md`
+  von „sign-off: not given" auf eine erfundene Freigabe geändert — beide Verifier grün.
+- **Ausgabedatum und Formatversion waren nicht gebunden;** ein auf 2019 gesetztes Datum
+  wurde vom CLI gedruckt und als bestätigt ausgewiesen.
+
+Behoben in `2269c2f` (Format 3 der kanonischen Form, Eindeutigkeitsprüfung, Digest je
+attestierter Datei, Ausgabeabschnitt vor dem Hash). **Alte Mappen verifizieren
+byte-identisch weiter** — ohne `version` oder unter Format 3 ist die kanonische
+Zeichenkette unverändert, und die Trennzeichenprüfung schließt das Loch rückwirkend auch
+auf ihnen. Eine Falle unterwegs: eine breitere erste Regel hat die Ausstellerroute mit 500
+abgeschossen, weil der echte Katalogstand Doppelpunkt *und* Komma enthält und mit diesem
+Wert jede bisherige Mappe signiert ist; die Laufbindungsfelder halten deshalb nur das
+Abschnittszeichen frei, ab Format 3 wird maskiert, und ein Spec hält den Livewert fest.
+
+Widerlegt wurden unter anderem: `vercel.json` und die beiden Survey-Workflows existieren am
+geprüften Commit nicht; drei „secret-named literal"-Treffer meinen den öffentlichen
+Verifier und den dokumentierten Testschlüssel; die vier Befunde zu client-schreibbaren
+Artefakten in signierten Packs hat Schritt 0.12 bereits geschlossen. Von den 94 hohen sind
+14 bekannt; die übrigen 80 sind die nächste Triage.
+
+| Fundstelle | Fingerabdrücke | Status |
+|---|---|---|
+| `lib/audit-pack-canonical.ts` | 5c21559e33f1, ed6cf1966ae3, ac87d7b88177 | behoben (dev) |
+| `scripts/verify-pack.mjs` | 22f63fdbc2aa, f3c3f9e6707a, 79fcd214a0a5 | behoben (dev) |
+| `lib/audit-pack-verify.ts` | 906a1b09ed21, f205740a59d0, 6ea54787de01, 426849c4fc04, c20756cda847 | behoben (dev) |
+
 **Vollprüfung von 44f3efb8b007 (v2.10.8, 16.09.2026, `openai/gpt-5.6-sol`, 452 Dateien):** 279 Befunde,
 Verdikt `no_go`, Bericht als **INCOMPLETE** markiert. 128 Fingerabdrücke sind identisch mit der Prüfung von
 v2.10.7 und stehen bereits in der Tabelle unten; 151 sind neu, davon 6 kritisch, 31 hoch, 113 mittel, 1 niedrig.
