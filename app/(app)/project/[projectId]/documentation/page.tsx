@@ -26,6 +26,8 @@ import StaleNotice from '@/components/StaleNotice';
 import { escapeHtml } from '@/lib/utils';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { useProcessMap } from '@/hooks/useProcessMap';
+import { useProcessMapAddress } from '@/hooks/useProcessMapAddress';
+import { buildNavigation, levelOf, resolveMapAddress } from '@/lib/process-navigation';
 
 const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
   let files: Array<{ path: string, content: string }> = [];
@@ -432,6 +434,62 @@ Structure the JSON exactly like this:
     modelAvailability,
   );
 
+  /**
+   * Roadmap 2.9 — the open level and the selection live in the URL.
+   *
+   * `#map=<plane>&node=<element>`. A link opens exactly there, Back and Forward
+   * do the ordinary thing, and the page is the owner of the address rather than
+   * the map: the map takes `plane` and `selected` as controlled props and says
+   * when they should change, which is the contract roadmap 3.1 inherits along
+   * with everything else in `ProcessMapProps`.
+   *
+   * The address is resolved against the model before it is used. A shared link
+   * outlives the source it was made on, and an element id from a previous
+   * revision must open the top level rather than an empty one.
+   */
+  const address = useProcessMapAddress();
+  const mapNav = useMemo(
+    () => (processMap.model ? buildNavigation(processMap.model) : null),
+    [processMap.model],
+  );
+  const resolved = useMemo(
+    () => (mapNav
+      ? resolveMapAddress(mapNav, { plane: address.plane, node: address.node })
+      : { plane: null as string | null, node: null as string | null }),
+    [mapNav, address.plane, address.node],
+  );
+
+  const { replace: replaceAddress, go: goToAddress } = address;
+
+  // Written back without a history entry: normalising what arrived is not a
+  // navigation, and Back must leave the page rather than undo a tidy-up.
+  useEffect(() => {
+    if (!mapNav) return;
+    if (resolved.plane === address.plane && resolved.node === address.node) return;
+    replaceAddress(resolved);
+  }, [mapNav, resolved, address.plane, address.node, replaceAddress]);
+
+  /**
+   * A level the reader opens keeps the selection only when the selection is on
+   * it. Without that, walking up with a crumb would be undone at once: the
+   * address resolves an element before a level, so a selection left behind on
+   * the level below would pull the view straight back down into it.
+   */
+  const openPlane = useCallback((next: string | null) => {
+    goToAddress((current) => ({
+      plane: next,
+      node: current.node && mapNav && levelOf(mapNav, current.node) === next ? current.node : null,
+    }));
+  }, [goToAddress, mapNav]);
+
+  /** Selecting an element is one move: its level and its selection, one entry. */
+  const selectElement = useCallback((next: string | null) => {
+    goToAddress((current) => ({
+      plane: next && mapNav ? levelOf(mapNav, next) : current.plane,
+      node: next,
+    }));
+  }, [goToAddress, mapNav]);
+
   const downloadBPMN = async () => {
     if (!signedSource) return;
     // Loaded on the click: the reader of this stage pays for the ABAP reader
@@ -756,6 +814,10 @@ Structure the JSON exactly like this:
               model={processMap.model}
               source={signedSource.source}
               measuredAt={processMap.measuredAt}
+              plane={resolved.plane}
+              onPlaneChange={openPlane}
+              selected={resolved.node}
+              onSelectedChange={selectElement}
             />
           ) : (
             <p className="text-sm font-medium text-gray-500">

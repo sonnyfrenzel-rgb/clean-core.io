@@ -77,9 +77,108 @@
   stroke-dasharray: 5 3;
 }
 
+/*
+ * Roadmap 2.9 — the path highlight and the run variant on the diagram.
+ *
+ * `DESIGN.md` §5.9 item 6 is explicit about how a thing steps back: lines and
+ * areas in `--cc-line`, labels in `--cc-ink-muted` (7,6 : 1) — **never**
+ * transparency, which would push text under 4,5 : 1 and make the part a reader
+ * has filtered away unreadable rather than quiet. So nothing here is an
+ * `opacity`, and what steps back keeps its full contrast against the surface.
+ */
+.cc-map-canvas .cc-dim .djs-visual > :not(text) {
+  stroke: var(--cc-line);
+}
+
+.cc-map-canvas .cc-dim .djs-visual text {
+  fill: var(--cc-ink-muted);
+}
+
+/* Out of this run: the shape keeps its outline and takes the dashed form the
+   product already uses for "the code does not establish this". */
+.cc-map-canvas .cc-out .djs-visual > :first-child {
+  stroke-dasharray: 2 3;
+  stroke: var(--cc-neutral);
+}
+
+/*
+ * The mini map — one cell per step, one row per level.
+ *
+ * Six states and every one of them differs in shape or fill as well as in
+ * colour, because a map made only of hues says nothing on a printout or to a
+ * reader who cannot tell two of them apart. The cell is 8 px and is never the
+ * only way to a step: everything it can reach, the outline beside it can reach
+ * too.
+ */
+.cc-minimap-cell {
+  display: block;
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 1px solid var(--cc-line);
+  border-radius: 2px;
+  background: var(--cc-surface);
+  cursor: pointer;
+}
+
+.cc-minimap-cell[data-state='step'] {
+  background: var(--cc-line);
+}
+
+.cc-minimap-cell[data-state='decision'] {
+  background: var(--cc-surface);
+  border-color: var(--cc-ink-muted);
+  transform: rotate(45deg);
+}
+
+.cc-minimap-cell[data-state='unanchored'] {
+  border-style: dashed;
+  border-color: var(--cc-neutral);
+}
+
+.cc-minimap-cell[data-state='out'] {
+  background: var(--cc-surface);
+  border-color: var(--cc-neutral-border);
+}
+
+.cc-minimap-cell[data-state='found'] {
+  background: var(--cc-information);
+  border-color: var(--cc-information);
+}
+
+.cc-minimap-cell[data-state='selected'] {
+  background: var(--cc-ink);
+  border-color: var(--cc-ink);
+}
+
+.cc-minimap-cell:focus-visible {
+  outline: 2px solid var(--cc-focus);
+  outline-offset: 1px;
+}
+
+/*
+ * A row of the outline that a filter has put behind: the ink drops to
+ * `--cc-ink-muted` and nothing else changes. Same rule as the diagram above,
+ * and for the same reason.
+ */
+[data-tree-node][data-lit='off'] .cc-outline-label,
+[data-tree-node][data-variant='out'] .cc-outline-label {
+  color: var(--cc-ink-muted);
+}
+
 @media (forced-colors: active) {
   .cc-map-node:focus-visible,
   .cc-map-node[data-selected='true'] {
     outline: 2px solid CanvasText;
+  }
+
+  .cc-minimap-cell {
+    border-color: CanvasText;
+  }
+
+  .cc-minimap-cell[data-state='selected'],
+  .cc-minimap-cell[data-state='found'] {
+    background: Highlight;
   }
 }

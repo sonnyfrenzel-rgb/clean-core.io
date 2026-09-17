@@ -64,12 +64,24 @@ export interface BpmnCanvasProps {
   focusToken: number;
   /** Arrow keys, Enter, Escape — handled by the parent for map and step list alike. */
   onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void;
+  /**
+   * Roadmap 2.9, `DESIGN.md` §5.9 item 6. The elements a path highlight leaves
+   * lit; null when no highlight is on. Everything else **steps back** — a
+   * colour of the line token, never transparency that pushes text under 4.5 : 1.
+   */
+  lit?: ReadonlySet<string> | null;
+  /**
+   * Roadmap 2.9, item 7. Elements that do not run in the chosen run variant.
+   * The outline says so in words beside the mark; this is the mark.
+   */
+  excluded?: ReadonlySet<string>;
 }
 
 interface CanvasService {
   zoom(level: string | number): void;
   getContainer(): HTMLElement;
   addMarker(element: string, marker: string): void;
+  removeMarker(element: string, marker: string): void;
   setRootElement(element: object): void;
   findRoot(id: string): object | undefined;
   getRootElement(): { id: string } | null;
@@ -159,6 +171,8 @@ export default function BpmnCanvas({
   onActiveChange,
   focusToken,
   onKeyDown,
+  lit = null,
+  excluded,
 }: BpmnCanvasProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<ViewerLike | null>(null);
@@ -279,6 +293,38 @@ export default function BpmnCanvas({
     const host = hostRef.current;
     if (host) applyRovingTabIndex(host, active);
   }, [active, xml, nodes, plane, focusToken]);
+
+  /**
+   * The path highlight and the run variant — roadmap 2.9.
+   *
+   * Markers rather than a second drawing: bpmn-js already owns the shapes, and
+   * a class on the shape is the one way to change how it reads without two
+   * pictures of the same process. Toggled on every change rather than added
+   * once, because a highlight that could only be switched on is a filter row
+   * with no way back.
+   */
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer) return;
+    let canvas: CanvasService;
+    try {
+      canvas = viewer.get('canvas');
+    } catch {
+      return;
+    }
+    for (const id of nodes.keys()) {
+      const dim = lit !== null && !lit.has(id);
+      const out = excluded?.has(id) ?? false;
+      try {
+        if (dim) canvas.addMarker(id, 'cc-dim');
+        else canvas.removeMarker(id, 'cc-dim');
+        if (out) canvas.addMarker(id, 'cc-out');
+        else canvas.removeMarker(id, 'cc-out');
+      } catch {
+        // An element of another plane is not in the registry of this one.
+      }
+    }
+  }, [lit, excluded, nodes, plane, xml]);
 
   /** Move the focus only when the parent asks for it — never on first paint. */
   useEffect(() => {
