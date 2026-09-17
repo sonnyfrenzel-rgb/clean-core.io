@@ -7,9 +7,23 @@ on:
       - release
       - main
 
+# Read-only by default, and deliberately WITHOUT `id-token`.
+#
+# `id-token: write` is not a permission a step asks for when it needs a token —
+# it hands every step in the job the two variables (`ACTIONS_ID_TOKEN_REQUEST_URL`
+# and `…_TOKEN`) with which anything can mint one. `validate` runs
+# `npm ci --foreground-scripts`, which executes the install scripts of every
+# transitive dependency. At workflow level, a single malicious package in that
+# tree could therefore mint an OIDC token — and the Workload Identity provider
+# accepts it on one condition, `attribute.repository`, with no ref and no
+# workflow, for a service account holding `roles/editor`, `run.admin` and
+# `storage.admin`.
+#
+# So the permission lives where the token is used and nowhere else: in `deploy`,
+# which runs no install scripts. `validate` and `security` keep `contents: read`.
+# Narrowing the provider condition itself is the other half and needs gcloud.
 permissions:
   contents: read
-  id-token: write # Required for Workload Identity Federation OIDC
 
 jobs:
   # Job 1: Build, Lint & Test (Quality Gate)
@@ -115,6 +129,12 @@ jobs:
   deploy:
     needs: [validate, security]
     runs-on: ubuntu-latest
+    # The one job that authenticates to Google Cloud, and the only one that may
+    # mint an OIDC token. It installs nothing, so no dependency's install script
+    # runs beside it.
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5

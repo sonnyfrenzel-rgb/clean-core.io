@@ -86,7 +86,23 @@ jobs:
 
       - name: Install Dependencies
         if: steps.clock.outputs.proceed == 'true'
-        run: npm ci --foreground-scripts
+        # `--ignore-scripts`, unlike everywhere a build happens, because this job
+        # cannot put its OIDC permission somewhere else.
+        #
+        # `id-token: write` hands every step in the job the variables with which
+        # anything can mint a token, and the Workload Identity provider accepts
+        # it on one condition — `attribute.repository`, no ref, no workflow —
+        # for a service account holding `roles/editor`. This job has exactly one
+        # job, so the permission cannot be narrowed to a later step; what can be
+        # narrowed is what runs beside it. Install scripts of every transitive
+        # dependency are the one thing here nobody in this repository wrote.
+        #
+        # The report needs `firebase-admin` and `tsx` at runtime, neither of
+        # which depends on an install script; `security-ci.yml` installs the same
+        # way in three places. If a future dependency does need one, this step
+        # fails loudly on a Friday rather than quietly — which is the right way
+        # round for a job that mails production numbers.
+        run: npm ci --ignore-scripts
 
       - name: Authenticate with Google Cloud
         if: steps.clock.outputs.proceed == 'true'
