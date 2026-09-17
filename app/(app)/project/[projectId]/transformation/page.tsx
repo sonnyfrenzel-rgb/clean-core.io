@@ -9,7 +9,7 @@ import { getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import Stepper from '@/components/Stepper';
-import { Code2, ArrowRight, ArrowLeft, RefreshCw, FileCode2, Terminal, AlertCircle, CheckCircle2, Cpu, Zap, Copy, Check, X, Folder, Lock, Unlock, Activity, Shield, Layers, Sparkles } from 'lucide-react';
+import { Code2, ArrowRight, ArrowLeft, RefreshCw, FileCode2, Terminal, AlertCircle, CheckCircle2, Cpu, Copy, Check, X, Folder, Lock, Unlock, Activity, Shield, Layers, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
 import { DocumentSkeleton } from '@/components/Skeleton';
 import NavigationButtons from '@/components/NavigationButtons';
@@ -26,6 +26,7 @@ import { extractSelects, parseSelect } from '@/lib/abap/select-parser';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
+import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
 import StaleNotice from '@/components/StaleNotice';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
@@ -68,13 +69,11 @@ export default function TransformationPage() {
   const [progress, setProgress] = useState(0);
   const [isProceeding, setIsProceeding] = useState(false);
   const [showCopyDialog, setShowCopyDialog] = useState(false);
-  const [insightOverlay, setInsightOverlay] = useState<{ title: string, content: string } | null>(null);
   const router = useRouter();
   const { profile } = useUserProfile();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [signedOffIds, setSignedOffIds] = useState<Set<string>>(new Set());
-  const [remediationMode, setRemediationMode] = useState<'strict' | 'clean'>('strict');
   const [findings, setFindings] = useState<SupportFinding[]>([]);
 
   useEffect(() => {
@@ -428,26 +427,21 @@ CMD ["node", "srv/service.js"]`
     setTimeout(() => setShowCopyDialog(false), 2000);
   };
 
-  const insights = [
-    {
-      id: 'architecture',
-      title: 'Event-driven Microservices',
-      short: 'Converted monolithic procedural logic into modular, event-driven microservices using Express.js and SAP Cloud SDK.',
-      long: 'In the legacy environment, logic was often monolithic and synchronous. Our transformation engine transforms these processes into independent microservices. By using an event-driven approach (e.g., via SAP Event Mesh or similar), services can react to data changes asynchronously, improving system resilience and scalability. This allows for independent deployment and scaling of business functions.'
-    },
-    {
-      id: 'data',
-      title: 'TypeORM & HDI Integration',
-      short: 'Mapped SAP HANA tables to TypeORM entities with automated HDI container binding and XSUAA security integration.',
-      long: 'TypeORM is a modern Object-Relational Mapper (ORM) for TypeScript. We transform legacy table definitions into TypeORM entities, allowing developers to interact with the database using strongly-typed objects. The integration with HDI (HANA Deployment Infrastructure) ensures that the application can seamlessly manage its own database schema within the SAP HANA Cloud environment, while XSUAA ensures that data access is always authenticated.'
-    },
-    {
-      id: 'security',
-      title: 'XSUAA Security Pattern',
-      short: 'Implemented JWT-based authentication via SAP @sap/xssec, replacing legacy SAP GUI authorization objects.',
-      long: 'XSUAA (Extended Services for User Authentication and Authorization) is the standard security service for SAP BTP. We replace legacy ABAP authority checks with modern JWT (JSON Web Token) validation. This ensures that every request to your Node.js service is verified against the central identity provider. It supports fine-grained scopes and attributes, allowing for robust role-based access control (RBAC) that meets modern enterprise security standards.'
-    }
-  ];
+  /**
+   * Roadmap 0.2 (UX-040). Three "Transformation Insights" cards used to sit
+   * under the generated code — "Event-driven Microservices", "TypeORM & HDI
+   * Integration", "XSUAA Security Pattern" — written in the first person
+   * ("we replace", "our transformation engine transforms") and identical for
+   * every project. They were not derived from the findings, from the code or
+   * from the route: a RAP project got three paragraphs about Express.js and
+   * TypeORM. Generic copy under a reader's own output reads as analysis of it,
+   * so the cards are gone rather than rephrased. The findings list, the target
+   * pane and the sign-off drawer are what this stage actually knows.
+   */
+
+  /** What this project's track is called wherever the stage names it (UX-037). */
+  const isAbapCloud = isAbapCloudTrack(project?.extensibilityRoute);
+  const track = trackCopy(isAbapCloud);
 
   const generateTransformation = useCallback(async (legacyCode: string, design: string, analysis: string) => {
     if (generationInFlight.current) return;
@@ -459,7 +453,7 @@ CMD ["node", "srv/service.js"]`
     try {
       const projData = await loadProjectAndHydrate(projectId as string);
       const route = projData?.extensibilityRoute || 'Side-by-Side (SAP BTP)';
-      const isAbapCloud = !route.includes('BTP');
+      const isAbapCloud = isAbapCloudTrack(route);
 
       setTransformationLog([
         'Initializing transformation engine...',
@@ -748,7 +742,7 @@ CMD ["node", "srv/service.js"]`
               </div>
               <h2 className="text-3xl font-black tracking-tight">AI Transformation Engine</h2>
             </div>
-            <p className="text-gray-400 max-w-md">Modernizing legacy ABAP logic into high-performance Node.js microservices...</p>
+            <p className="text-gray-400 max-w-md" data-track-loading>{track.loading}</p>
             
             <div className="mt-8 space-y-4">
               <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -792,7 +786,10 @@ CMD ["node", "srv/service.js"]`
             "1 / 5 Transformations", used-of-total. The header carries it once. */}
         <div className="flex-1 min-w-0">
           <StageHeader title="Code Transformation">
-            Legacy ABAP to Modern Node.js (TypeScript) Conversion
+            {/* The track decides the words (roadmap 0.2, UX-037): the in-app
+                track generates RAP artefacts, and the lead used to promise
+                Node.js over them anyway. */}
+            <span data-track-lead>{track.lead}</span>
           </StageHeader>
         </div>
 
@@ -930,7 +927,7 @@ CMD ["node", "srv/service.js"]`
           <div className="bg-green-50 px-4 py-2 rounded-t-xl border-x border-t flex items-center justify-between border-green-100">
             <div className="flex items-center gap-2">
               <FileCode2 size={14} className="text-green-600" />
-              <span className="text-xs font-bold uppercase tracking-widest text-green-700">Modernized Target (Node.js/TS)</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-green-700" data-track-pane>{track.pane}</span>
             </div>
             <div className="flex items-center gap-1">
               {/* "AI Verified" was unconditional. No compiler, no test runner and
@@ -959,20 +956,26 @@ CMD ["node", "srv/service.js"]`
               </div>
             </div>
             
-            {/* Code Viewer Area with remediation header & minimap */}
+            {/* Code Viewer Area with minimap */}
             <div className="flex-1 flex flex-col overflow-hidden relative">
-              {/* Remediation Mode Banner */}
-              {remediationMode === 'clean' ? (
-                <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-2 text-[11px] text-emerald-400 flex items-center gap-2 shrink-0">
-                  <Shield size={12} className="animate-pulse" />
-                  <span><strong>Clean Core Refactored Mode:</strong> Legacy ABAP SQL quirks remediated to standard Cloud APIs.</span>
-                </div>
-              ) : (
-                <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-[11px] text-amber-400 flex items-center gap-2 shrink-0">
-                  <AlertCircle size={12} />
-                  <span><strong>Strict Legacy Mode:</strong> Exact ABAP SQL query quirk behaviors emulated for parity.</span>
-                </div>
-              )}
+              {/* Roadmap 0.2 (UX-038). A banner used to sit here saying
+                  either "Clean Core Refactored Mode: Legacy ABAP SQL quirks
+                  remediated to standard Cloud APIs" or "Strict Legacy Mode:
+                  Exact ABAP SQL query quirk behaviors emulated for parity",
+                  switched by a toggle in the drawer. Neither sentence was true
+                  of the code below it: the generation prompt never mentions a
+                  mode, nothing is regenerated when the toggle moves, and the
+                  bytes in the pane are identical either way. A reader could
+                  flip to "Clean Core Refactored", copy the code, and carry away
+                  SQL semantics nobody had changed.
+
+                  Both the banner and the toggle are gone rather than reworded.
+                  Making the switch real means a second, mode-specific
+                  generation — a paid model call, a stored variant per mode, and
+                  a diff between them — which is transformation-engine work for
+                  a later phase, not a Phase 0 correction. Until that exists,
+                  the honest thing this stage can say about quirk handling is
+                  nothing. */}
 
               {/* Code Viewer Scroll Container */}
               <div
@@ -1043,52 +1046,6 @@ CMD ["node", "srv/service.js"]`
         </div>
       </div>
 
-      {/* Transformation Insights */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-8 mb-12 shadow-sm">
-        <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-          <Zap className="w-5 h-5 text-yellow-500" /> Transformation Insights
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {insights.map(insight => (
-            <div 
-              key={insight.id} 
-              className="space-y-2 p-4 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors border border-transparent hover:border-gray-100 group"
-              onClick={() => setInsightOverlay({ title: insight.title, content: insight.long })}
-            >
-              <h4 className="text-sm font-black text-gray-400 uppercase tracking-tighter group-hover:text-green-600 transition-colors">{insight.title}</h4>
-              <p className="text-sm text-gray-700 leading-relaxed">{insight.short}</p>
-              <div className="text-[10px] font-bold text-green-600 uppercase tracking-widest pt-2 flex items-center gap-1">
-                Read More <ArrowRight size={10} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Insight Overlay Modal */}
-      {insightOverlay && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-          <div className="bg-white rounded-[2rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="bg-gray-900 p-8 text-white flex justify-between items-center">
-              <h3 className="text-2xl font-black tracking-tight">{insightOverlay.title}</h3>
-              <button onClick={() => setInsightOverlay(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                <X size={24} />
-              </button>
-            </div>
-            <div className="p-8 md:p-12">
-              <p className="text-gray-700 text-lg leading-relaxed mb-8">
-                {insightOverlay.content}
-              </p>
-              <button 
-                onClick={() => setInsightOverlay(null)}
-                className="w-full bg-green-600 text-white py-4 rounded-xl font-bold hover:bg-green-700 transition-colors"
-              >
-                Got it
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Sliding Grounded Audit Panel (Drawer) */}
       {drawerOpen && (
@@ -1161,46 +1118,6 @@ CMD ["node", "srv/service.js"]`
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     {signedOffIds.size} of {findings.filter(f => f.requiresSignOff).length} manual findings signed off.
-                  </p>
-                </div>
-              </div>
-
-              {/* Section 2: Quirk Configuration Modus */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                  <Cpu size={14} className="text-green-400" />
-                  <span>Quirk Remediation Mode</span>
-                </h4>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
-                  <div className="flex justify-between items-center bg-slate-950 p-1 rounded-xl border border-white/5">
-                    <button
-                      onClick={() => setRemediationMode('strict')}
-                      className={clsx(
-                        "flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all",
-                        remediationMode === 'strict'
-                          ? "bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse"
-                          : "text-gray-400 hover:text-white"
-                      )}
-                    >
-                      Strict Legacy Mode
-                    </button>
-                    <button
-                      onClick={() => setRemediationMode('clean')}
-                      className={clsx(
-                        "flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all",
-                        remediationMode === 'clean'
-                          ? "bg-green-500/20 text-green-300 border border-green-500/30 animate-pulse"
-                          : "text-gray-400 hover:text-white"
-                      )}
-                    >
-                      Clean Core Refactored
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-400 leading-relaxed">
-                    {remediationMode === 'clean' 
-                      ? 'Modernizes Open SQL syntax quirks (e.g., empty FOR ALL ENTRIES returns an empty array immediately) for standard cloud readiness.'
-                      : 'Emulates exact ABAP database behaviors (e.g., empty FOR ALL ENTRIES selects all rows from target database) for high-fidelity bug-for-bug compatibility.'
-                    }
                   </p>
                 </div>
               </div>

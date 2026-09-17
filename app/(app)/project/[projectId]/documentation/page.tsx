@@ -770,25 +770,28 @@ Structure the JSON exactly like this:
             Business Architecture &amp; BPMN Map
           </StageHeader>
           
-          {/* SAP Compatibility Badges */}
+          {/* Roadmap 0.2 (UX-029). Two badges used to stand here —
+              "BPMN-Compatible" and "SAP Build-Compatible" — and the only thing
+              that qualified either of them was a hover tooltip, which a phone
+              or a tablet never shows. "Compatible" is a claim about a target
+              system nobody has run this file through.
+
+              What is true is what the button beside it does: it writes BPMN 2.0
+              XML. That is stated plainly now, and the part that is not
+              established — whether the file lands in Signavio or SAP Build,
+              which nobody here has tried — is stated in the same breath rather
+              than on hover. The SAP Build badge is gone
+              rather than reworded: there is no SAP Build export on this page,
+              so there was nothing for a second badge to describe. Step 4.3
+              proves the round trip; this line changes when it does. */}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Integrations:</span>
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded text-[9px] font-black uppercase tracking-tight shadow-sm cursor-help group/signavio relative">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>BPMN-Compatible</span>
-              <div className="absolute top-full left-0 mt-1 w-64 p-3 bg-slate-900 border border-slate-800 text-[10px] rounded-xl shadow-xl opacity-0 pointer-events-none group-hover/signavio:opacity-100 transition-opacity duration-200 text-left leading-relaxed text-slate-300 z-50 normal-case">
-                <div className="font-extrabold text-emerald-400 mb-1 uppercase tracking-wider text-[9px]">BPMN 2.0 XML</div>
-                Standard BPMN 2.0 XML. Import into SAP Signavio has not been verified yet — that round trip is a roadmap step of its own.
-              </div>
-            </div>
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 rounded text-[9px] font-black uppercase tracking-tight shadow-sm cursor-help group/sapbuild relative">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span>
-              <span>SAP Build-Compatible</span>
-              <div className="absolute top-full left-0 mt-1 w-64 p-3 bg-slate-900 border border-slate-800 text-[10px] rounded-xl shadow-xl opacity-0 pointer-events-none group-hover/sapbuild:opacity-100 transition-opacity duration-200 text-left leading-relaxed text-slate-300 z-50 normal-case">
-                <div className="font-extrabold text-cyan-400 mb-1 uppercase tracking-wider text-[9px]">SAP Build-Compatible</div>
-                Process flow structures mapped for compatibility with SAP Build Process Automation pipelines. Not an official SAP certification.
-              </div>
-            </div>
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Export format:</span>
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded text-[9px] font-black uppercase tracking-tight shadow-sm">
+              BPMN 2.0 XML
+            </span>
+            <span data-export-caveat className="text-[10px] text-slate-500 font-medium normal-case">
+              Import into SAP Signavio or SAP Build has not been verified yet.
+            </span>
           </div>
         </div>
         {/* Nothing to export, and nothing to regenerate, until a blueprint exists.
