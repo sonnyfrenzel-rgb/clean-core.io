@@ -831,16 +831,21 @@ außerhalb der 14 Aufrufe). Erste Sichtung in der Nacht: 6 der 30 kritischen ste
 unten (fünf „behoben (dev)", darunter `cfafefac08ec` via 0.13 und `1b75f0d332da`), 8 sind mit Beleg
 widerlegt — `vercel.json` und die beiden Survey-Workflows existieren am geprüften Commit nicht
 (`git cat-file -e` schlägt fehl, kein Workflow ruft `scripts/send-survey*.ts`), drei Muster-Treffer
-„secret-named literal" meinen den öffentlichen Verifier und den dokumentierten Testschlüssel. **Offen und
-zuerst zu prüfen (17.09.):** die Familie um die Audit-Pack-Kanonisierung — elf Befunde zu
+„secret-named literal" meinen den öffentlichen Verifier und den dokumentierten Testschlüssel. **Am 17.09.
+geprüft — sechs von ihnen, fünf widerlegt und einer behoben:** die vier Befunde „client-schreibbare
+Artefakte gelangen in server-signierte Packs" (`design/documentation/transformation/page.tsx`,
+`firestore.rules:169`) beschreiben eine Allowlist, die es gibt, und einen Weg von dort in eine signierte
+Datei, den es seit 0.12 nicht mehr gibt: `lib/audit-pack-build.ts` baut den Eingang der signierten
+Generatoren aus benannten Feldern des unveränderlichen Runs, die Aussagen des Kontoinhabers stehen in
+`07-user-attested.md`, das die Signatur ausdrücklich nicht deckt, und `tests/audit-pack-signed-input.spec.ts`
+misst beides. Der Workflow-Befund (`usage-report.yml:27`) ist ein übertragener Befund einer älteren
+Prüfung und war am geprüften Commit bereits erledigt — die Empfängerangabe ist seit `b2eceeb` weg,
+`tests/no-fabricated-figures.spec.ts` hält sie weg. Bestätigt und behoben ist `6a3eea208009`
+(`app/api/projects/[projectId]/route.ts`, Tabelle unten). **Weiter offen und als Nächstes zu prüfen:** die
+Familie um die Audit-Pack-Kanonisierung — elf Befunde zu
 `lib/audit-pack-canonical.ts:46` (Delimiter-Kollisionen in der signierten Dateiliste),
 `lib/audit-pack-verify.ts:136/174` (Attestation nach Versiegelung änderbar, Manifest-Metadaten nicht
-authentifiziert) und `scripts/verify-pack.mjs:212–269` —, dazu vier Befunde „client-schreibbare
-Artefakte gelangen in server-signierte Packs" (`design/documentation/transformation/page.tsx`,
-`firestore.rules:169`), einer zum Admin-Step-up bei rekursiver Projektlöschung
-(`app/api/projects/[projectId]/route.ts:50`) und einer zum `workflow_dispatch` des Nutzungsberichts
-(`usage-report.yml:27`, der Workflow ist aktiv). Diese sind Hypothesen über den Kern der Vertrauenskette;
-sie werden am Code geprüft, nicht nachts entschieden. Von den 94 hohen sind 14 bekannt, 80 neu — Triage nach
+authentifiziert) und `scripts/verify-pack.mjs:212–269`. Von den 94 hohen sind 14 bekannt, 80 neu — Triage nach
 den kritischen. Fingerabdrücke sind weiterhin instabil (`5c7ab85b9493` ist ein Zwilling von `cfafefac08ec`).
 Volltext nur lokal unter `.qa-review/a19945ef01dc.full.json`.
 
@@ -874,6 +879,7 @@ werden, und Schutzmaßnahmen an anderer Stelle (Server-Guard, Emulator-Ausnahme,
 | 33e463a6876e | critical | scripts/verify-pack.mjs | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | — | behoben (dev) |
 | 4a4afa88c231 | critical | scripts/verify-pack.mjs | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | — | behoben (dev) |
 | 4a593e8bd77b | critical | scripts/send-survey-digest.ts | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | — | behoben (dev); Workflow bleibt aus bis `main` |
+| 6a3eea208009 | critical | app/api/projects/[projectId]/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | — | behoben (dev) — Vollprüfung a19945ef01dc |
 | 70c8917150e7 | critical | app/api/audit-pack/create/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.12 | behoben (dev) |
 | c5eeaff9124a | critical | lib/audit-pack-verify.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.5 | teilweise behoben (dev) — Archiv vollständig; Manifestfelder in 0.5 |
 | cfafefac08ec | critical | components/LandingModals.tsx | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.13 | behoben (dev) — 0.13, Firebase-MFA |

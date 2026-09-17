@@ -47,16 +47,37 @@ export async function DELETE(
       return NextResponse.json({ ok: true, alreadyDeleted: true });
     }
 
-    const isAdmin = decoded.admin === true;
+    // Owner only. The administrator claim does not open this door.
+    //
+    // It used to: `decoded.admin === true` stood in for ownership, and the only
+    // other gate on the route is `assertMfaSatisfied`, which lets any token
+    // through for an account whose profile does not say `mfaEnabled`
+    // (`mfaSatisfied` in lib/mfa-gate.ts returns null for such an account). An
+    // administrator who never enrolled a second factor could therefore erase
+    // anyone's project and every signed run under it from a plain ID token —
+    // without the step-up the admin routes require (`assertAdminStepUp`),
+    // without the withdrawn-claim mirror check `verifyAdminRequest` does, and
+    // without an audit event (QA full review of a19945ef01dc, 6a3eea208009).
+    //
+    // Nothing loses a function. The only caller is the owner's own dashboard
+    // (app/(app)/dashboard/page.tsx), and `firestore.rules` took the operator's
+    // read of a project away on 16.09.2026 — an administrator cannot list or
+    // open somebody else's project at all, so a route that let them destroy one
+    // was the loudest of the three permissions and the only one left. An
+    // emergency stays what that rule says it is: a deliberate Admin SDK act
+    // with a record, not an endpoint anyone holding the claim can call.
     const isOwner = snap.data()?.userId === decoded.uid;
-    if (!isOwner && !isAdmin) {
+    if (!isOwner) {
       return NextResponse.json({ error: 'Unauthorized to delete this project.' }, { status: 403 });
     }
 
     // Deleting your own data must stay possible even while pending, so we do NOT
     // requireApproved here — assertAccountActive only blocks hard-suspended accounts.
+    // No `isAdminClaim` either: it only relaxes `requireApproved` and
+    // `requireCurrentTerms`, neither of which is asked for here, so it never
+    // decided anything on this route.
     try {
-      await assertAccountActive(decoded.uid, { isAdminClaim: isAdmin });
+      await assertAccountActive(decoded.uid);
     } catch (gateErr: any) {
       if (gateErr instanceof QuotaError) return NextResponse.json({ error: gateErr.message }, { status: gateErr.status });
       throw gateErr;
