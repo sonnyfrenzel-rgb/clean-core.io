@@ -11,7 +11,7 @@ import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { liveRunnerPermitted } from '@/lib/runner-egress-attestation';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
-import { parseTapOutput, packageNameOf } from '@/lib/test-verdicts';
+import { parseTapOutput, packageNameOf, applyRunnerVerdicts } from '@/lib/test-verdicts';
 import { testRunSubject, TEST_RUN_RECEIPT_VERSION, type TestRunReceipt } from '@/lib/test-receipt';
 import { logger, errMessage } from '@/lib/logger';
 
@@ -671,15 +671,36 @@ if (ALLOWED_SUFFIXES.length === 0) {
 
     const testResults = parseTapOutput(stdout);
 
-    // ── 6) The receipt: the server's own record that this ran ────────────────
+    // ── 6) The verdicts and the receipt: what the server saw, the server writes ─
     //
-    // Written with the Admin SDK onto the project, under a key the client update
-    // allowlist of `firestore.rules` does not contain — so a browser cannot
-    // produce one and the rules need no change to say so. Until it existed, the
-    // phase contract read `project.testCases[].status`, which the owner may
+    // The receipt is written with the Admin SDK onto the project, under a key the
+    // client update allowlist of `firestore.rules` does not contain — so a browser
+    // cannot produce one and the rules need no change to say so. Until it existed,
+    // the phase contract read `project.testCases[].status`, which the owner may
     // write and which nothing in the product ever wrote: a row of `Passed`
     // strings unlocked Testing and Delivery, in green, with no execution behind
     // them (QA full review of a19945ef01dc, E07-F02).
+    //
+    // The verdicts go down beside it, in the same write, because the receipt
+    // alone left the honest path leading nowhere (QA 6c38e0c7c620). The testing
+    // page had never stored the verdicts it displayed, so after E07-F02 a real
+    // server run could no longer make Testing or Delivery green either: the
+    // contract wants a verdict *and* a receipt, and nothing produced the first
+    // half. Asking the browser to write it back would have put the claim in the
+    // one place a browser can forge. The run is observed here, so it is recorded
+    // here — one `set`, so a reader never finds a receipt without the verdicts it
+    // vouches for or verdicts without the receipt that earns them.
+    //
+    // This does not make `testCases[].status` trustworthy and is not meant to:
+    // the owner can still write `Passed` into it, and that still reads as
+    // `Self-reported` because `attestedPasses` is counted from the receipt below
+    // and from nothing else. What changed is that an execution now leaves its
+    // result where the reader and the contract both look.
+    //
+    // Writing them does not retire the receipt: `artefactDigest('testCases', …)`
+    // hashes the case list without `status` and `message`, exactly so that
+    // running a suite cannot freshen it and flipping a verdict cannot invalidate
+    // it.
     //
     // Bound to what was executed — the active run, and the digests of the code,
     // the suite and the case list — so regenerating any of them retires the
@@ -689,11 +710,15 @@ if (ALLOWED_SUFFIXES.length === 0) {
     // actually holds: a suite that names a case the project does not have would
     // otherwise write a verdict for a case no reader can see.
     const subject = testRunSubject(projectData);
-    const known = new Set(
-      (Array.isArray(projectData.testCases) ? projectData.testCases : [])
-        .map((t) => (t && typeof t === 'object' ? String((t as { id?: unknown }).id ?? '') : ''))
-        .filter(Boolean),
+    const storedCases = (Array.isArray(projectData.testCases) ? projectData.testCases : []).filter(
+      (t): t is Record<string, unknown> => !!t && typeof t === 'object',
     );
+    const known = new Set(storedCases.map((t) => String(t.id ?? '')).filter(Boolean));
+    // Every stored case, carrying this run's verdict — or `Not run` where the
+    // runner said nothing about it, which is what an unselected or unreported
+    // case is. A case keeps no verdict from an earlier run: the receipt beside
+    // it only covers this one, and the two have to describe the same run.
+    const executedCases = applyRunnerVerdicts(storedCases, testResults, exitCode);
     const receipt: TestRunReceipt = {
       v: TEST_RUN_RECEIPT_VERSION,
       runId: subject.runId,
@@ -708,9 +733,19 @@ if (ALLOWED_SUFFIXES.length === 0) {
         .filter((r) => known.has(r.id))
         .map((r) => ({ id: r.id, status: r.status as TestRunReceipt['verdicts'][number]['status'] })),
     };
+    let recorded = false;
     try {
       const { db } = await getAdminDb();
-      await db.collection('projects').doc(sanitizedProjectId).set({ testRunReceipt: receipt }, { merge: true });
+      await db
+        .collection('projects')
+        .doc(sanitizedProjectId)
+        .set(
+          storedCases.length > 0
+            ? { testCases: executedCases, testRunReceipt: receipt }
+            : { testRunReceipt: receipt },
+          { merge: true },
+        );
+      recorded = true;
     } catch (receiptErr) {
       // The run happened; the record of it did not. Reported rather than
       // swallowed into a green screen: without the receipt the phase contract
@@ -722,7 +757,19 @@ if (ALLOWED_SUFFIXES.length === 0) {
       });
     }
 
-    return NextResponse.json({ output: stdout, error: stderr, exitCode, testResults, stubbedPackages: [...stubbedPackages].sort() });
+    // The receipt travels back so the page the reader is looking at can show the
+    // run it just watched without a reload. It is a copy of what was stored, not
+    // a second source: `null` when the write failed, because a client that
+    // painted itself green off an unstored receipt would be claiming exactly the
+    // thing the receipt exists to stop.
+    return NextResponse.json({
+      output: stdout,
+      error: stderr,
+      exitCode,
+      testResults,
+      stubbedPackages: [...stubbedPackages].sort(),
+      receipt: recorded ? receipt : null,
+    });
   } catch {
     // A fixed message: an internal error's own text can carry filesystem paths
     // or other server detail, so it is logged, never returned to the caller.

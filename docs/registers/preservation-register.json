@@ -239,9 +239,9 @@
     {
       "id": "L-01",
       "subject": "testing",
-      "statement": "No code path writes a verdict back onto project.testCases[].status. The testing page shows a run's verdicts on screen only.",
-      "consequence": "PhaseState 'done' for Testing — and therefore for Delivery — is unreachable through the product. Both stay 'partial'.",
-      "evidence": "hooks/useTestExecution.ts writes only generatedCode and testSuite; hooks/useTestGeneration.ts writes testCases without a status field."
+      "statement": "No client path writes a verdict onto project.testCases[].status. POST /api/run-tests writes the verdicts it observed, with the Admin SDK, in the same write as testRunReceipt; the testing page only mirrors that answer into its own state.",
+      "consequence": "Testing — and therefore Delivery — is reachable by running the suite, and green only behind the receipt: a row of owner-written Passed strings is 'done' and 'Self-reported', never proven. Before 2026-09-17 nothing stored the verdicts, so the honest path could not reach 'done' at all (QA 6c38e0c7c620).",
+      "evidence": "app/api/run-tests/route.ts sets { testCases, testRunReceipt } in one merge; hooks/useTestExecution.ts writes only generatedCode and testSuite to Firestore and mirrors the rest through setProject; hooks/useTestGeneration.ts writes testCases without a status field."
     },
     {
       "id": "L-02",
@@ -1013,6 +1013,7 @@
           "via": "POST /api/s4-credentials, POST /api/run-tests",
           "creates": "s4_credentials/{uid} (AES-256-GCM, server-only collection)",
           "project": [
+            "testCases",
             "testRunReceipt"
           ]
         },
@@ -1024,7 +1025,7 @@
           "coverageEstimate",
           "testRunReceipt"
         ],
-        "note": "The page still does not store the verdicts it shows; what is stored is the server's own record of the run. POST /api/run-tests writes testRunReceipt with the Admin SDK — outside the client allowlist of firestore.rules — bound to the active run and to the digests of generatedCode, testSuite and testCases. lib/workflow-steps.ts reads it: a row of client-written Passed strings is 'done' and never proven without it. generatedCode and testSuite are rewritten only by the auto-heal path in useTestExecution."
+        "note": "The page does not store the verdicts it shows and no client path writes one. POST /api/run-tests writes the verdicts it observed together with testRunReceipt, in one Admin-SDK write — what the server saw, the server records — bound to the active run and to the digests of generatedCode, testSuite and testCases (the case digest ignores status and message, so storing a verdict cannot freshen or retire a receipt). testRunReceipt is outside the client allowlist of firestore.rules; testCases is inside it, which is why lib/workflow-steps.ts counts passes for `proven` from the receipt and reads client-written Passed strings as 'Self-reported'. generatedCode and testSuite are rewritten only by the auto-heal path in useTestExecution, which repairs the one file repairTarget() names."
       },
       "preconditions": {
         "enforceActiveRun": true,

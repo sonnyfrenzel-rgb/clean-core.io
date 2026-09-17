@@ -826,10 +826,34 @@ test.describe('the register matches the code', () => {
   test('the known limits still hold — a fix has to update the register', () => {
     const limit = (id: string) => register.knownLimits.find((l) => l.id === id)!;
 
-    // L-01: nothing writes a verdict back onto testCases.
+    // L-01: a verdict is written by the server or by nobody.
+    //
+    // The old form of this line read "nothing writes a verdict back onto
+    // testCases", which was true and was the defect: after E07-F02 the contract
+    // wanted a verdict *and* a receipt, and no code path produced the first half,
+    // so a real run could not make Testing green either (QA 6c38e0c7c620). The
+    // half that has to keep holding is that no *client* writes one — that is what
+    // keeps `Self-reported` meaningful — so the client half is asserted
+    // unchanged and the server half is asserted beside it.
     expect(limit('L-01').subject).toBe('testing');
     expect(sorted(firestoreWriteKeys(src('hooks/useTestExecution.ts')))).not.toContain('testCases');
     expect(src('hooks/useTestGeneration.ts')).not.toMatch(/status:\s*'(Passed|Failed|Not run|Simulated)'/);
+    // And the server writes both in one go: a receipt without the verdicts it
+    // vouches for, or verdicts without the receipt that earns them, is a project
+    // the phase contract cannot read honestly.
+    //
+    // Comments dropped line by line rather than through `src()`: the runner's
+    // own prose contains `@sap-cloud-sdk/*` inside a `//` comment, and the
+    // block-comment pass reads that `/*` as an opening and swallows the rest of
+    // the file. A guard on a source it cannot see is a guard that passes for the
+    // wrong reason.
+    const runner = raw('app/api/run-tests/route.ts')
+      .split('\n')
+      .filter((line) => !/^\s*(\/\/|\/?\*)/.test(line))
+      .join('\n');
+    expect(runner, 'the runner no longer records the verdicts it observed').toContain(
+      '{ testCases: executedCases, testRunReceipt: receipt }',
+    );
 
     // L-02: a missing sign-off is not a delivery gap.
     const contract = src('lib/workflow-steps.ts');

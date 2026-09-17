@@ -4,6 +4,8 @@ import path from 'path';
 import {
   parseGeneratedPackage,
   failingFileIndex,
+  namedFileIndex,
+  repairTarget,
   replaceFileContent,
   type GeneratedFile,
 } from '../lib/generated-package';
@@ -86,6 +88,104 @@ test('the flat legacy artefact is not mistaken for a package', () => {
 test('replacing a file outside the package is refused, not silently ignored', () => {
   expect(() => replaceFileContent(PACKAGE, 9, 'x')).toThrow(/no file at index/);
   expect(() => replaceFileContent(PACKAGE, -1, 'x')).toThrow(/no file at index/);
+});
+
+/**
+ * Which artefact a repair is aimed at (QA 1c8234b64f35).
+ *
+ * The whole decision used to be `/app\.ts/.test(errorText) || !suite`. A
+ * generated CAP package contains `srv/service.cds`, `db/schema.cds`,
+ * `srv/handlers/order.ts` and whatever else the model wrote; an error in any of
+ * them matches no `app.ts`, and because a suite existed the repair went at the
+ * **test suite**. The model was asked to fix code that was not broken, the
+ * broken package went into the retry unchanged, and the patch the run would have
+ * left behind was on the suite.
+ *
+ * The rule is now: the package, unless the error demonstrably belongs to the
+ * suite. The suite is the sandbox's `test.ts`, so that is what "demonstrably"
+ * means here.
+ */
+test.describe('the repair aims at the file the compiler named', () => {
+  const SUITE = "import { test } from 'node:test';\ntest('TC_01', () => {});\n";
+  const stored = JSON.stringify(PACKAGE);
+
+  test('a package error outside app.ts repairs that file, not the suite', () => {
+    // The exact shape the old regex missed: a .cds file, with a suite present.
+    const t = repairTarget({
+      code: stored,
+      suite: SUITE,
+      errorText: 'srv/service.cds:1:14: ERROR: Expected "}" but found "entity"',
+    });
+    expect(t, 'the .cds error was blamed on something else').toEqual({ kind: 'package', index: 0 });
+    expect(PACKAGE[0].path, 'index 0 is not the file the error named').toBe('srv/service.cds');
+
+    // And the other paths a generated package carries.
+    for (const [path, index] of [['db/schema.cds', 2], ['package.json', 3], ['srv/app.ts', 1]] as const) {
+      expect(
+        repairTarget({ code: stored, suite: SUITE, errorText: `${path}:2:1: ERROR: Unexpected "!"` }),
+        `${path} was not chosen`,
+      ).toEqual({ kind: 'package', index });
+    }
+  });
+
+  test('the suite is chosen only when the error names it', () => {
+    expect(
+      repairTarget({ code: stored, suite: SUITE, errorText: '/tmp/cc-tests-x/test.ts:2:9: ERROR: Expected ";"' }),
+    ).toEqual({ kind: 'test' });
+    // Windows separators reach the same answer.
+    expect(
+      repairTarget({ code: stored, suite: SUITE, errorText: 'C:\\Temp\\cc-tests-x\\test.ts:2:9: ERROR: Expected ";"' }),
+    ).toEqual({ kind: 'test' });
+    // A package file whose name merely ends in `test.ts` is not the suite.
+    const pkg = JSON.stringify([{ path: 'srv/smoketest.ts', content: 'x' }]);
+    expect(
+      repairTarget({ code: pkg, suite: SUITE, errorText: 'srv/smoketest.ts:1:1: ERROR: Unexpected "x"' }),
+    ).toEqual({ kind: 'package', index: 0 });
+  });
+
+  test('an error that names nothing stays with the package, which is the artefact under test', () => {
+    expect(repairTarget({ code: stored, suite: SUITE, errorText: 'Build failed with 1 error' })).toEqual({
+      kind: 'package',
+      index: 1,
+    });
+    // A package with nothing the bundler could have compiled: the suite is then
+    // the only candidate left, and that is a deduction rather than a guess.
+    const dataOnly = JSON.stringify([{ path: 'db/schema.cds', content: 'entity Order {}' }]);
+    expect(repairTarget({ code: dataOnly, suite: SUITE, errorText: 'Build failed with 1 error' })).toEqual({
+      kind: 'test',
+    });
+    expect(repairTarget({ code: dataOnly, suite: '', errorText: 'Build failed' })).toMatchObject({ kind: 'none' });
+  });
+
+  test('the flat legacy source is still repaired as one module', () => {
+    const flat = 'export const total = (xs: number[]) => xs.reduce((a, b) => a + b, 0);';
+    expect(repairTarget({ code: flat, suite: SUITE, errorText: 'app.ts:1:22: ERROR: Expected identifier' })).toEqual({
+      kind: 'module',
+    });
+    expect(repairTarget({ code: flat, suite: SUITE, errorText: 'test.ts:1:1: ERROR: Expected ";"' })).toEqual({
+      kind: 'test',
+    });
+    expect(repairTarget({ code: '', suite: SUITE, errorText: 'Build failed' })).toEqual({ kind: 'test' });
+    expect(repairTarget({ code: '', suite: '', errorText: 'Build failed' })).toMatchObject({ kind: 'none' });
+  });
+
+  test('naming a file and falling back to one are two questions', () => {
+    // `failingFileIndex` guesses when nothing is named — which is right once the
+    // package is known to be the subject, and wrong while that is what is being
+    // decided. `namedFileIndex` is the half that does not guess.
+    expect(namedFileIndex(PACKAGE, 'Build failed with 1 error')).toBe(-1);
+    expect(failingFileIndex(PACKAGE, 'Build failed with 1 error')).toBe(1);
+    expect(namedFileIndex(PACKAGE, 'db/schema.cds:1:1: ERROR')).toBe(2);
+  });
+
+  test('the hook takes its target from that decision and from no regex of its own', () => {
+    const src = hookSource();
+    expect(src, 'the repair target is decided in the hook again').toContain('repairTarget({');
+    expect(
+      src.replace(/^\s*\/\/.*$/gm, ''),
+      'the single-filename target test is back — a package holds arbitrary paths',
+    ).not.toMatch(/targetsModule/);
+  });
 });
 
 test('nothing is written to the project until a run compiles', () => {

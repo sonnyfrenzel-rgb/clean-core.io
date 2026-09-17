@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp as initAdminApp, getApps as getAdminApps } from 'firebase-admin/app';
@@ -221,28 +223,62 @@ test.describe('a test result belongs to the project it is reported for', () => {
     );
   });
 
-  test('the receipt is what makes Testing and Delivery green, and it retires with the code', async () => {
+  test('a run the server performed makes Testing and Delivery green by itself', async () => {
+    // The honest path, end to end and with nothing added by this test: the suite
+    // ran through the real route above, and the project as it now stands is read
+    // straight into the phase contract.
+    //
+    // It did not work until 2026-09-17 (QA 6c38e0c7c620). `proven` needs a
+    // verdict *and* a receipt, the receipt arrived with E07-F02 — and the
+    // testing page had never stored the verdicts it displayed, so the first half
+    // had no writer at all. A user who did everything right could no longer
+    // reach green; only a browser writing `Passed` by hand could, and that was
+    // the write the receipt exists to disqualify. The run now records the
+    // verdicts it observed beside its receipt, which is why the fabrication this
+    // test used to perform is gone.
     const stored = (await read(`projects/${PROJECT_ID}`)) as Project;
     const evidence = testEvidence(stored);
     expect(evidence.total).toBe(2);
     expect(evidence.attestedPasses, 'the run did not report both cases as passed').toBe(2);
+    expect(
+      (stored.testCases || []).map((c) => c.status),
+      'the run did not store the verdicts it observed — nothing can make Testing green',
+    ).toEqual(['Passed', 'Passed']);
 
-    // The project as stored carries no `status` on its cases — the executed
-    // verdicts live in the receipt. The screen's own copy is what the testing
-    // page writes; the phase contract reads both and needs both.
-    const withVerdicts: Project = {
-      ...stored,
-      testCases: (stored.testCases || []).map((c) => ({ ...c, status: 'Passed' as const })),
-    };
-    const byKey = Object.fromEntries(workflowSteps(withVerdicts).map((s) => [s.key, s]));
-    expect(byKey.testing).toMatchObject({ state: 'done', proven: true });
-    expect(byKey.delivery).toMatchObject({ state: 'done', proven: true });
+    const byKey = Object.fromEntries(workflowSteps(stored).map((s) => [s.key, s]));
+    expect(byKey.testing).toMatchObject({ state: 'done', proven: true, badge: 'Passed' });
+    expect(byKey.delivery).toMatchObject({ state: 'done', proven: true, badge: 'Ready' });
 
     // Rewrite the code the receipt was taken over and the green goes with it —
     // the verdicts are still there and they are no longer about this code.
-    const rewritten: Project = { ...withVerdicts, generatedCode: '[{"path":"app.ts","content":"export const total = () => 99;"}]' };
+    const rewritten: Project = { ...stored, generatedCode: '[{"path":"app.ts","content":"export const total = () => 99;"}]' };
     const after = Object.fromEntries(workflowSteps(rewritten).map((s) => [s.key, s]));
     expect(after.testing.proven).toBe(false);
     expect(after.delivery.proven).toBe(false);
+  });
+
+  test('the same verdicts without the run behind them are Self-reported, and stay that way', async () => {
+    // The other half of the pair, on the same stored project: the verdicts the
+    // server wrote, with the server's record of the run taken away. That is
+    // exactly the shape an owner can produce through `firestore.rules`, which
+    // lets a client update `testCases` and not `testRunReceipt`.
+    const stored = (await read(`projects/${PROJECT_ID}`)) as Project;
+    const selfReported: Project = { ...stored, testRunReceipt: undefined };
+    const byKey = Object.fromEntries(workflowSteps(selfReported).map((s) => [s.key, s]));
+    expect(testEvidence(selfReported).attestedPasses).toBe(0);
+    expect(byKey.testing).toMatchObject({ state: 'done', proven: false, badge: 'Self-reported' });
+    expect(byKey.delivery).toMatchObject({ state: 'done', proven: false, badge: 'Unverified' });
+    expect(byKey.delivery.detail).not.toContain('a passing test run');
+
+    // And the asymmetry that keeps the two apart is in the rules: an owner may
+    // update `testCases`, and no client may touch `testRunReceipt`. If that ever
+    // changed, `Self-reported` would be a label a browser could take off itself.
+    const allowlist = readFileSync(resolve(__dirname, '..', 'firestore.rules'), 'utf8');
+    const projectUpdate = allowlist.slice(
+      allowlist.indexOf("'status', 'legacyCode'"),
+      allowlist.indexOf('])', allowlist.indexOf("'status', 'legacyCode'")),
+    );
+    expect(projectUpdate, 'the project update allowlist moved — this guard names it').toContain("'testCases'");
+    expect(projectUpdate, 'a client may write an execution receipt now').not.toContain('testRunReceipt');
   });
 });
