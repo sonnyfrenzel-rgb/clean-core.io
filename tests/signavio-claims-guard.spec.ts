@@ -27,7 +27,7 @@ function files(dir: string, out: string[] = []): string[] {
 }
 
 /** Every file whose text a visitor, a user or a crawler can read. */
-const SURFACES = [...files('app'), ...files('components'), 'lib/features-content.ts', 'lib/clean-core-capabilities.ts', 'lib/chatbot-knowledge.ts', 'public/linkedin-whitepaper-template.html', 'README.md'];
+const SURFACES = [...files('app'), ...files('components'), 'lib/features-content.ts', 'lib/how-to-content.ts', 'lib/clean-core-capabilities.ts', 'lib/chatbot-knowledge.ts', 'public/linkedin-whitepaper-template.html', 'README.md'];
 
 /** The promises that were there on 15.09.2026. */
 const PROMISES = [
