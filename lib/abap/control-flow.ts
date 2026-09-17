@@ -44,6 +44,14 @@ export interface BranchArm extends SourceRange {
   /** The range of the arm's own statement — `IF …`, `ELSEIF …`, `WHEN …`. */
   header: SourceRange;
   /**
+   * Index of the arm's own statement in the statement list.
+   *
+   * A line is not an identity: `IF sy-subrc = 0. x = 1. ENDIF.` puts three
+   * statements on one line, and the skeleton of 2.3 has to walk an arm's body by
+   * statement rather than by line to keep them apart.
+   */
+  headerIndex: number;
+  /**
    * `lineStart`/`lineEnd` cover the arm *including* its header, up to the line
    * before the next arm or the closing statement. An arm with no body has
    * `lineEnd` equal to the header's last line.
@@ -59,6 +67,16 @@ export interface Branch extends SourceRange {
    * for `CASE TYPE OF`. Undefined for `IF`.
    */
   selector?: string;
+  /**
+   * Index of the opening and of the closing statement in the statement list.
+   *
+   * The seam 2.3 builds the gateway on: it has to walk the arms of *this*
+   * construct by statement index, and re-deriving which block a `BR-0nn` came
+   * from by comparing line numbers would put two `IF`s written on one line into
+   * one gateway.
+   */
+  openIndex: number;
+  closeIndex: number;
   arms: BranchArm[];
   /** Blocks around this one, outermost first — the nesting, not a depth number. */
   enclosing: Array<{ kind: BlockKind; lineStart: number }>;
@@ -134,6 +152,7 @@ function armsOf(
       kind,
       condition: armCondition(header, kind),
       header: { lineStart: header.lineStart, lineEnd: header.lineEnd },
+      headerIndex: headerIndexes[a],
       lineStart: header.lineStart,
       lineEnd: Math.max(header.lineEnd, boundary - 1),
     });
@@ -199,6 +218,8 @@ export function readControlFlowFrom(
       id,
       kind: block.kind === 'if' ? 'if' : 'case',
       selector: block.kind === 'case' ? caseSelector(opener) : undefined,
+      openIndex: block.openIndex,
+      closeIndex: block.closeIndex,
       arms: armsOf(statements, structure, block),
       enclosing: enclosing.map((b) => ({ kind: b.kind, lineStart: b.lineStart })),
       parentId: parentBlock ? idOfBlock.get(parentBlock) : undefined,

@@ -1,0 +1,1648 @@
+import { afterKeyword, type AbapStatement, type SourceRange } from './statement-reader';
+import { type Block, type BlockStructure } from './block-structure';
+import { type Branch, type ControlFlowReport } from './control-flow';
+import { type CallGraphReport } from './call-graph';
+import { databaseWriteIn } from './open-sql-discrimination';
+import { buildProcessFacts, type ProcessFacts } from './process-facts';
+
+/**
+ * The process skeleton — roadmap 2.3.
+ *
+ * Steps, decisions, starts and ends, read out of the branches of 2.1 and the
+ * calls of 2.2. No model is asked anything: without an API key this is the whole
+ * process map, in the technical names the code itself uses. The palette is the
+ * one in `DESIGN.md` §5.8 and nothing beyond it — a kind that no row of that
+ * table names is a kind this file does not emit.
+ *
+ * Seven rules carry it. They came out of the reference corpus and each of them
+ * costs work, so each is named where it is implemented:
+ *
+ * 1. **Every node carries a line range, or says it has none.** `anchor` is
+ *    `null` exactly when the source does not support one, and `unanchoredReason`
+ *    then says why in words. `anchoredNodes`/`unanchoredNodes` is the quote the
+ *    acceptance of Phase 2 asks for (V25-A01).
+ * 2. **The anchor is a statement, plus a token offset where one node of several
+ *    sits inside one statement.** Chains are already separate statements, so
+ *    `PERFORM: a, b, c.` is three nodes and not one. A macro is the exception the
+ *    other way round: its effect belongs to the **call site**, and the body it
+ *    came from is a `secondary` anchor, never the anchor itself.
+ * 3. **An opaque call stays opaque, and the caller goes on.** A `PERFORM` into a
+ *    program this source does not contain is a `call-opaque` node — and the flow
+ *    continues after it, because `CALL TRANSACTION`, a synchronous RFC and
+ *    `SUBMIT … AND RETURN` all come back. Only `SUBMIT` without `AND RETURN` and
+ *    `LEAVE TO TRANSACTION` do not, and those two end the flow.
+ * 4. **The classic event blocks are the starts**, in the order they run and not
+ *    in the order they are written. A report without `START-OF-SELECTION` still
+ *    has a skeleton: its program-level statements are the implicit one.
+ * 5. **`CHECK` has three different targets.** In an event block it leaves the
+ *    block, in a `LOOP` it ends the iteration, in a `FORM` it leaves the routine
+ *    — three edges with three reasons, not one edge with three meanings.
+ * 6. **Nothing is invented.** Every label is a token out of the source: a
+ *    routine name, a function module, a table, a transaction code, an event
+ *    keyword. No people, no approval step read off a status field, no activity
+ *    that is not written down.
+ * 7. **Two nodes never collide.** Identity is the **statement index plus a
+ *    slot**, never the pair of kind and line: `IF sy-subrc = 0. x = 1. ENDIF.`
+ *    is three statements on one line, and a `CALL FUNCTION … EXCEPTIONS` is two
+ *    nodes — the service task and its error boundary — inside one statement.
+ *    Kind and line cannot tell either pair apart; `<statementIndex>-<slot>` can.
+ *
+ * What this file does **not** do: draw anything. 2.3 is the reconstruction; the
+ * BPMN view is 2.5 and the export 2.6. Neither is imported here, and nothing
+ * here reaches the signed run.
+ */
+
+/**
+ * The palette of `DESIGN.md` §5.8, restricted to what this reader can prove from
+ * the code alone. Inclusive, complex and event-based gateways, compensation,
+ * escalation and choreography are deliberately absent from that table too.
+ *
+ * Parallel gateways, timer and message intermediate events, pools, data stores
+ * and lanes are in the table but not here: a pool needs the message flows of
+ * 2.5, and a lane is a *proposal* that 2.4 makes with a model. This file emits
+ * only what a statement proves.
+ */
+export type SkeletonNodeKind =
+  /** Start event — a classic event block, or the implicit `START-OF-SELECTION`. */
+  | 'start'
+  /** End event — the normal end of an entry or of a sub-process. */
+  | 'end'
+  /** Error end event — `MESSAGE … TYPE 'E'/'A'/'X'`, `RAISE`, `LEAVE PROGRAM`. */
+  | 'end-error'
+  /** Exclusive gateway — `IF`, `CASE`, and a `CHECK` that is not a run switch. */
+  | 'gateway'
+  /** Multi-instance (`LOOP AT`) or standard loop (`DO`, `WHILE`). */
+  | 'loop'
+  /** Collapsed sub-process — a `FORM` with an effect of its own. */
+  | 'sub-process'
+  /** Call activity — `SUBMIT`, a `PERFORM` into another program. */
+  | 'call-activity'
+  /** Call activity whose called element is a transaction — `CALL TRANSACTION`. */
+  | 'transaction'
+  /** A call whose source this reader does not have, and will not guess at. */
+  | 'call-opaque'
+  /** A step with an effect and no type of its own. */
+  | 'task'
+  /** Service task — `CALL FUNCTION`, local or remote. */
+  | 'service-task'
+  /** Send task — mail, IDoc outbound, workflow event. */
+  | 'send-task'
+  /** User task — a human acts: `CALL SCREEN`, a popup, an ALV list. */
+  | 'user-task'
+  /** Business rule task — a routine that classifies or scores from literals. */
+  | 'business-rule-task'
+  /** Data store, read — Open SQL `SELECT`. */
+  | 'read'
+  /** Data store, written — Open SQL `INSERT`/`UPDATE`/`MODIFY`/`DELETE`. */
+  | 'write'
+  /** Data object — a file, or the result list. */
+  | 'output'
+  /** Error boundary event — a handled exception on the activity it hangs on. */
+  | 'error-boundary';
+
+export interface NodeAnchor extends SourceRange {
+  /** The statement this node was read from. Half of the node's identity. */
+  statementIndex: number;
+  /**
+   * 0-based index of the token inside that statement where the evidence begins.
+   * 0 for a node that is the whole statement; the `EXCEPTIONS` token for an
+   * error boundary; the table name for a read or a write.
+   */
+  tokenOffset: number;
+  /**
+   * Where the text that produced this node is written, when that is not where it
+   * takes effect. Set for a macro — the effect is at the call site (rule 2) and
+   * the `DEFINE` body is this — and for a `PERFORM`, whose anchor is the call and
+   * whose routine is this.
+   */
+  secondary?: SourceRange & { reason: 'macro-definition' | 'routine-definition' };
+}
+
+export interface SkeletonNode {
+  /**
+   * `nd-<statementIndex>-<slot>`, or `nd-x-<n>` for a node with no anchor.
+   *
+   * Rule 7: the identity is the statement and the slot inside it. Kind and line
+   * are not an identity — `COND #( … )` puts two arms on one line, a chain puts
+   * several statements on one, and `CALL FUNCTION … EXCEPTIONS` puts two nodes
+   * inside one statement.
+   */
+  id: string;
+  kind: SkeletonNodeKind;
+  /** A token out of the source. Never a phrase this engine made up (rule 6). */
+  label: string;
+  /** `null` exactly when the source supports no range (rule 1). */
+  anchor: NodeAnchor | null;
+  /** Why there is no anchor. Set exactly when `anchor` is null. */
+  unanchoredReason?: string;
+  /** The region this node belongs to — an entry, or a sub-process. */
+  region: string;
+  /** Upper-cased routine or event block the statement sits in. */
+  container: string | null;
+  /** The region a call-site node opens, when it opens one. */
+  expandsTo?: string;
+  /**
+   * True for a sub-process small enough to be one step: `DESIGN.md` §5.8 draws a
+   * `FORM` as a collapsed sub-process only above three elements. Below that the
+   * call site takes the kind of the one thing the routine does, and the region
+   * stays readable underneath it.
+   */
+  collapsed?: boolean;
+  /** Everything else this node proves, all of it read off the statement. */
+  detail?: Record<string, string | number | boolean | string[]>;
+}
+
+export type SkeletonEdgeKind =
+  | 'sequence'
+  | 'conditional'
+  | 'default'
+  | 'loop-back'
+  | 'boundary';
+
+/**
+ * Why a flow leaves where it leaves. The three `check-*` reasons are rule 5: the
+ * same keyword with three different targets is three different edges.
+ */
+export type SkeletonEdgeReason =
+  | 'check-leaves-event'
+  | 'check-leaves-loop'
+  | 'check-leaves-form'
+  | 'exit-loop'
+  | 'continue-loop'
+  | 'return'
+  | 'stop'
+  | 'no-return'
+  | 'abort';
+
+export interface SkeletonEdge {
+  from: string;
+  to: string;
+  kind: SkeletonEdgeKind;
+  /** The condition as the source writes it. Empty for an unconditional flow. */
+  condition: string;
+  reason?: SkeletonEdgeReason;
+}
+
+export type RegionKind = 'entry' | 'sub-process';
+
+export interface SkeletonRegion {
+  /** `entry:START-OF-SELECTION@161` or `form:DECIDE_ACTIONS`. */
+  key: string;
+  kind: RegionKind;
+  /** The event keyword or the routine name, as the source writes it. */
+  label: string;
+  anchor: NodeAnchor | null;
+  /** Runtime rank for an entry — the order ABAP runs the event blocks in. */
+  runtimeRank?: number;
+  /** The node every path in this region ends at. */
+  endNodeId: string;
+  /** The first node of the region, when it has one. */
+  entryNodeId: string | null;
+  /**
+   * A leading `CHECK` on selection-screen switches only. `DESIGN.md` §5.8 draws
+   * it as a **conditional flow** into the region, not as a gateway of its own.
+   */
+  guard?: { condition: string; anchor: NodeAnchor };
+  /** Effects that make this routine a step rather than a technical helper. */
+  effects?: FormEffect[];
+}
+
+export type FormEffect =
+  | 'write'
+  | 'read'
+  | 'call'
+  | 'human'
+  | 'file'
+  | 'error'
+  | 'authority'
+  | 'business-rule';
+
+export interface FoldedForm {
+  name: string;
+  lineStart: number;
+  lineEnd: number;
+  /** How many `PERFORM`s named it. */
+  callSites: number;
+}
+
+export interface CloneGroup {
+  /** The routines built the same way, in source order. */
+  names: string[];
+  lineStart: number;
+  lineEnd: number;
+  /** What the group has in common, in one line of technical description. */
+  shape: string;
+}
+
+export interface UnreachedRegion {
+  name: string;
+  kind: 'form' | 'module';
+  lineStart: number;
+  lineEnd: number;
+}
+
+export type SkeletonNoteReason =
+  | 'include-not-read'
+  | 'native-sql'
+  | 'macro-call'
+  | 'dynamic-call'
+  | 'chained-branch'
+  | 'unterminated-container'
+  | 'unreachable-after-abort'
+  | 'commit-boundary'
+  | 'no-entry-point';
+
+export interface SkeletonNote extends SourceRange {
+  reason: SkeletonNoteReason;
+  detail: string;
+  snippet: string;
+}
+
+export interface ProcessSkeleton {
+  nodes: SkeletonNode[];
+  edges: SkeletonEdge[];
+  regions: SkeletonRegion[];
+  /** Entry region keys in **runtime** order, which is not source order (rule 4). */
+  entries: string[];
+  /** What §5.8 says instead of drawing it. */
+  notDrawn: {
+    unreached: UnreachedRegion[];
+    unreachedLines: number;
+    technicalHelpers: FoldedForm[];
+    clones: CloneGroup[];
+  };
+  /** Nodes with a line range, and nodes visibly without one (rule 1). */
+  anchoredNodes: number;
+  unanchoredNodes: number;
+  /** What the reader saw and would not guess at. */
+  notes: SkeletonNote[];
+}
+
+/* ------------------------------------------------------------------ *
+ * Keyword tables. Every one of them decides a kind out of §5.8, and
+ * every one is a list of words the source may contain — never a guess
+ * about what the program means.
+ * ------------------------------------------------------------------ */
+
+/** The classic event blocks, in the order ABAP runs them (rule 4). */
+const RUNTIME_ORDER: Array<{ test: RegExp; rank: number }> = [
+  { test: /^LOAD-OF-PROGRAM$/i, rank: 0 },
+  { test: /^INITIALIZATION$/i, rank: 1 },
+  { test: /^AT\s+SELECTION-SCREEN\s+OUTPUT\b/i, rank: 2 },
+  { test: /^AT\s+SELECTION-SCREEN\s+ON\b/i, rank: 3 },
+  { test: /^AT\s+SELECTION-SCREEN\b/i, rank: 4 },
+  { test: /^START-OF-SELECTION$/i, rank: 5 },
+  { test: /^GET\b/i, rank: 6 },
+  { test: /^END-OF-SELECTION$/i, rank: 7 },
+  { test: /^TOP-OF-PAGE\b/i, rank: 8 },
+  { test: /^END-OF-PAGE$/i, rank: 9 },
+  { test: /^AT\s+LINE-SELECTION$/i, rank: 10 },
+  { test: /^AT\s+USER-COMMAND$/i, rank: 11 },
+  { test: /^AT\s+PF\d/i, rank: 12 },
+];
+
+/**
+ * `GET` is the one event keyword that is also an ordinary statement.
+ * `GET TIME.` reads exactly like `GET <node>.`, so the second word decides.
+ */
+const GET_NOT_AN_EVENT = new Set([
+  'TIME', 'PARAMETER', 'BADI', 'REFERENCE', 'BIT', 'RUN', 'LOCALE',
+  'PF-STATUS', 'PROPERTY', 'CURSOR', 'DATASET', 'PERMISSIONS',
+]);
+
+const EVENT_WORDS = new Set([
+  'INITIALIZATION', 'START-OF-SELECTION', 'END-OF-SELECTION', 'LOAD-OF-PROGRAM',
+  'TOP-OF-PAGE', 'END-OF-PAGE',
+]);
+
+const AT_EVENT = /^AT\s+(?:SELECTION-SCREEN\b|LINE-SELECTION\b|USER-COMMAND\b|PF\d)/i;
+
+/** Statements that declare rather than do. None of them is a step. */
+const DECLARATIVE = new Set([
+  'REPORT', 'PROGRAM', 'FUNCTION-POOL', 'TABLES', 'TYPES', 'DATA', 'CONSTANTS',
+  'FIELD-SYMBOLS', 'PARAMETERS', 'SELECT-OPTIONS', 'SELECTION-SCREEN', 'RANGES',
+  'STATICS', 'CLASS-DATA', 'TYPE-POOLS', 'INFOTYPES', 'NODES', 'INCLUDE',
+  'DEFINE', 'END-OF-DEFINITION', 'ENDFORM', 'ENDMODULE', 'ENDMETHOD',
+  'ENDCLASS', 'ENDINTERFACE', 'CONTROLS', 'TYPE-POOL',
+]);
+
+/** Function modules that send something out of the system — §5.8 Send-Task. */
+const SEND_FUNCTIONS = new Set([
+  'SO_NEW_DOCUMENT_SEND_API1', 'SO_NEW_DOCUMENT_ATT_SEND_API1',
+  'SO_DOCUMENT_SEND_API1', 'MASTER_IDOC_DISTRIBUTE', 'EDI_DOCUMENT_CLOSE_PROCESS',
+  'SAP_WAPI_CREATE_EVENT', 'SWE_EVENT_CREATE', 'SWE_EVENT_CREATE_FOR_UPD_TASK',
+]);
+
+/** Function modules a person looks at or answers — §5.8 User-Task. */
+const USER_FUNCTION = /^(?:REUSE_ALV_(?:GRID|LIST|HIERSEQ|BLOCK)_[A-Z_]*DISPLAY|POPUP_[A-Z_0-9]+|F4IF_[A-Z_0-9]+)$/;
+
+/** Function modules that move a file — §5.8 Datenobjekt. */
+const FILE_FUNCTIONS = new Set(['GUI_DOWNLOAD', 'GUI_UPLOAD', 'WS_DOWNLOAD', 'WS_UPLOAD']);
+
+/** List output. `WRITE x TO y` is an assignment and is not in this set. */
+const LIST_OUTPUT = new Set(['WRITE', 'ULINE', 'SKIP', 'NEW-LINE', 'NEW-PAGE', 'FORMAT']);
+
+/** Constants a run switch may be compared against without ceasing to be one. */
+const SWITCH_CONSTANTS = new Set([
+  'ABAP_TRUE', 'ABAP_FALSE', 'ABAP_ON', 'ABAP_OFF', 'ABAP_UNDEFINED',
+  'SPACE', 'IS', 'NOT', 'INITIAL', 'AND', 'OR', 'EQ', 'NE', 'X',
+]);
+
+/** Blocks the walker descends into. Containers and macro bodies are not among them. */
+const FLOW_BLOCKS = new Set(['if', 'case', 'loop', 'do', 'while', 'select', 'try', 'at', 'provide']);
+
+/**
+ * When a routine collapses to one step, this is which of its steps it becomes.
+ *
+ * Only activities and data are in the list. A gateway, a loop, an end event and
+ * a boundary event are not steps, so a routine whose whole content is a decision
+ * stays a sub-process with that decision inside it rather than turning into a
+ * diamond with a routine's name on it.
+ */
+const DOMINANT_ORDER: SkeletonNodeKind[] = [
+  'transaction', 'call-activity', 'call-opaque', 'send-task', 'user-task',
+  'service-task', 'write', 'output', 'read', 'business-rule-task', 'task',
+  'sub-process',
+];
+
+/* ------------------------------------------------------------------ *
+ * Small readers over one statement.
+ * ------------------------------------------------------------------ */
+
+function snippet(text: string): string {
+  return text.length > 160 ? `${text.slice(0, 157)}...` : text;
+}
+
+/**
+ * The statements inside a block, first and last, both inclusive.
+ *
+ * A block nothing closed has its last statement *as* its `closeIndex` rather
+ * than one past it, and reading it with the terminated formula silently drops
+ * the last statement of the routine — which for an unterminated `FORM` is the
+ * one statement that made it a step at all.
+ */
+function bodyRange(block: Block): [number, number] {
+  return [block.openIndex + 1, block.terminated ? block.closeIndex - 1 : block.closeIndex];
+}
+
+/** 0-based index of the first token equal to `word`, or 0 when there is none. */
+function tokenIndexOf(statement: AbapStatement, word: RegExp): number {
+  const tokens = statement.text.split(' ');
+  const at = tokens.findIndex((t) => word.test(t));
+  return at < 0 ? 0 : at;
+}
+
+function anchorOf(statement: AbapStatement, tokenOffset = 0): NodeAnchor {
+  return {
+    statementIndex: statement.index,
+    tokenOffset,
+    lineStart: statement.lineStart,
+    lineEnd: statement.lineEnd,
+  };
+}
+
+/** `MESSAGE e001 …`, `MESSAGE '…' TYPE 'E'` — the types that end the process. */
+function isErrorMessage(text: string): boolean {
+  if (/^MESSAGE\s+[eaxEAX]\d/.test(text)) return true;
+  return /^MESSAGE\b[\s\S]*\bTYPE\s+'[EAXeax]'/.test(text);
+}
+
+/** The Open SQL tables a `SELECT` reads, first one first. */
+function selectTables(text: string): string[] {
+  const out: string[] = [];
+  const from = /\bFROM\s+(?!TABLE\b|@)([\w/]+)/i.exec(text);
+  if (from) out.push(from[1].toUpperCase());
+  const join = /\bJOIN\s+([\w/]+)/gi;
+  let m: RegExpExecArray | null;
+  while ((m = join.exec(text))) out.push(m[1].toUpperCase());
+  return [...new Set(out)];
+}
+
+/** True for `WRITE …` that puts something on the list rather than into a field. */
+function isListOutput(statement: AbapStatement): boolean {
+  if (!LIST_OUTPUT.has(statement.keyword)) return false;
+  if (statement.keyword !== 'WRITE') return true;
+  return !/\bTO\b/i.test(statement.text);
+}
+
+function isFileOutput(statement: AbapStatement): boolean {
+  if (statement.keyword === 'TRANSFER') return true;
+  return statement.keyword === 'OPEN' && /^OPEN\s+DATASET\b/i.test(statement.text);
+}
+
+/** The kind of task a `CALL FUNCTION` is, by the module it names (§5.8). */
+function functionTaskKind(name: string | undefined): SkeletonNodeKind {
+  if (!name) return 'service-task';
+  const bare = name.replace(/^\/[^/]+\//, '');
+  if (SEND_FUNCTIONS.has(bare)) return 'send-task';
+  if (USER_FUNCTION.test(bare)) return 'user-task';
+  if (FILE_FUNCTIONS.has(bare)) return 'output';
+  return 'service-task';
+}
+
+/* ------------------------------------------------------------------ *
+ * The build.
+ * ------------------------------------------------------------------ */
+
+export function buildProcessSkeleton(source: string): ProcessSkeleton {
+  return buildProcessSkeletonFrom(buildProcessFacts(source));
+}
+
+/**
+ * The same build, for a caller that already holds the facts of 2.1 and 2.2.
+ *
+ * The seam matters: branches, calls and blocks have to come from **one** reading
+ * of the source, or the gateway and the task drawn from the same `IF` carry two
+ * different line numbers (`process-facts.ts`).
+ */
+export function buildProcessSkeletonFrom(facts: ProcessFacts): ProcessSkeleton {
+  return new SkeletonBuilder(
+    facts.statements,
+    facts.structure,
+    facts.control,
+    facts.calls,
+  ).build();
+}
+
+interface Exit {
+  from: string;
+  condition: string;
+  kind: SkeletonEdgeKind;
+  reason?: SkeletonEdgeReason;
+}
+
+interface WalkContext {
+  region: SkeletonRegion;
+  container: string | null;
+  /** Ids of the enclosing loop nodes of this region, innermost last. */
+  loops: string[];
+  /** Exits that leave each enclosing loop early, innermost last. */
+  loopBreaks: Exit[][];
+}
+
+interface EntryPoint {
+  statement: AbapStatement;
+  lastIndex: number;
+  label: string;
+  rank: number;
+  implicit: boolean;
+}
+
+class SkeletonBuilder {
+  private nodes: SkeletonNode[] = [];
+  private edges: SkeletonEdge[] = [];
+  private regions: SkeletonRegion[] = [];
+  private notes: SkeletonNote[] = [];
+  /** Next free slot per statement — the second half of a node's identity. */
+  private slots = new Map<number, number>();
+  private unanchoredCount = 0;
+  private blockAt = new Map<number, Block>();
+  private branchAt = new Map<number, Branch>();
+  private formBlocks = new Map<string, Block>();
+  private effects = new Map<string, Set<FormEffect>>();
+  private helpers = new Set<string>();
+  private regionOfForm = new Map<string, SkeletonRegion>();
+  private macros = new Map<string, { block: Block }>();
+  private selectionNames = new Set<string>();
+  private performedFrom = new Map<string, string[]>();
+
+  constructor(
+    private statements: AbapStatement[],
+    private structure: BlockStructure,
+    private control: ControlFlowReport,
+    private calls: CallGraphReport,
+  ) {}
+
+  build(): ProcessSkeleton {
+    for (const block of this.structure.blocks) this.blockAt.set(block.openIndex, block);
+    for (const branch of this.control.branches) this.branchAt.set(branch.openIndex, branch);
+    for (const block of this.structure.blocks) {
+      if (block.kind === 'define') {
+        const name = /^DEFINE\s+([\w/]+)/i.exec(this.statements[block.openIndex].text);
+        if (name) this.macros.set(name[1].toUpperCase(), { block });
+      }
+      if (block.kind !== 'form') continue;
+      const m = /^FORM\s+([\w/]+)/i.exec(this.statements[block.openIndex].text);
+      if (m) this.formBlocks.set(m[1].toUpperCase(), block);
+    }
+    this.readSelectionScreen();
+    this.readEffects();
+    this.noteWhatIsNotRead();
+
+    const entries = this.readEntryPoints();
+    for (const entry of entries) this.buildEntryRegion(entry);
+    this.collapseSmallRegions();
+    this.applyGuards();
+    this.noteUnreachableSteps();
+
+    return {
+      nodes: this.nodes,
+      edges: this.edges,
+      regions: this.regions,
+      entries: this.regions
+        .filter((r) => r.kind === 'entry')
+        .sort((a, b) => (a.runtimeRank ?? 0) - (b.runtimeRank ?? 0)
+          || (a.anchor?.lineStart ?? 0) - (b.anchor?.lineStart ?? 0))
+        .map((r) => r.key),
+      notDrawn: {
+        unreached: this.unreached(),
+        unreachedLines: this.unreachedLines(),
+        technicalHelpers: this.technicalHelpers(),
+        clones: this.clones(),
+      },
+      anchoredNodes: this.nodes.length - this.unanchoredCount,
+      unanchoredNodes: this.unanchoredCount,
+      notes: this.notes,
+    };
+  }
+
+  /* ---------------- nodes and edges ---------------- */
+
+  /**
+   * Rule 7. The slot counts up per statement, so a statement that yields two
+   * nodes yields two identities. A node with no statement gets `nd-x-<n>`, which
+   * cannot collide with an anchored one either.
+   */
+  private addNode(
+    kind: SkeletonNodeKind,
+    label: string,
+    anchor: NodeAnchor | null,
+    region: SkeletonRegion,
+    container: string | null,
+    extra: Partial<SkeletonNode> = {},
+  ): SkeletonNode {
+    let id: string;
+    if (anchor) {
+      const slot = this.slots.get(anchor.statementIndex) ?? 0;
+      this.slots.set(anchor.statementIndex, slot + 1);
+      id = `nd-${anchor.statementIndex}-${slot}`;
+    } else {
+      this.unanchoredCount += 1;
+      id = `nd-x-${this.unanchoredCount}`;
+    }
+    const node: SkeletonNode = {
+      id,
+      kind,
+      label,
+      anchor,
+      region: region.key,
+      container,
+      ...extra,
+    };
+    this.nodes.push(node);
+    return node;
+  }
+
+  private connect(from: Exit[], to: string): void {
+    for (const exit of from) {
+      this.edges.push({
+        from: exit.from,
+        to,
+        kind: exit.kind,
+        condition: exit.condition,
+        ...(exit.reason ? { reason: exit.reason } : {}),
+      });
+    }
+  }
+
+  private note(reason: SkeletonNoteReason, statement: AbapStatement, detail: string): void {
+    this.notes.push({
+      reason,
+      detail,
+      snippet: snippet(statement.text),
+      lineStart: statement.lineStart,
+      lineEnd: statement.lineEnd,
+    });
+  }
+
+  /* ---------------- what the source declares ---------------- */
+
+  private readSelectionScreen(): void {
+    for (const statement of this.statements) {
+      if (statement.keyword !== 'PARAMETERS' && statement.keyword !== 'SELECT-OPTIONS') continue;
+      const m = /^(?:PARAMETERS|SELECT-OPTIONS)\s+([\w/]+)/i.exec(statement.text);
+      if (m) this.selectionNames.add(m[1].toUpperCase());
+    }
+  }
+
+  private noteWhatIsNotRead(): void {
+    for (const statement of this.statements) {
+      if (statement.keyword === 'INCLUDE' && !/^INCLUDE\s+STRUCTURE\b/i.test(statement.text)) {
+        this.note('include-not-read', statement,
+          'The text of an INCLUDE is not part of this source, so whatever it contributes to the process is not in this skeleton.');
+      }
+      if (statement.nativeSql) {
+        this.note('native-sql', statement,
+          'Native SQL is passed through to the database unread. What it touches is not drawn.');
+      }
+      if (statement.keyword === 'COMMIT' || statement.keyword === 'ROLLBACK') {
+        this.note('commit-boundary', statement,
+          'A commit boundary is IT knowledge and belongs in the Technical overlay (DESIGN.md §5.8), not in the flow.');
+      }
+    }
+    for (const branch of this.control.notHandled) {
+      if (branch.reason !== 'chained-branch') continue;
+      this.notes.push({ ...branch, reason: 'chained-branch' });
+    }
+    for (const open of this.structure.unterminated) {
+      const statement = this.statements.find((s) => s.lineStart === open.lineStart);
+      if (!statement) continue;
+      this.note('unterminated-container', statement,
+        `No closing statement ends this ${open.kind}. Everything read inside it runs to the end of the file and is a guess, not an anchor.`);
+    }
+    for (const perform of this.calls.performs) {
+      if (!perform.dynamic) continue;
+      const statement = this.statements.find(
+        (s) => s.lineStart === perform.lineStart && s.text === perform.text,
+      );
+      if (statement) {
+        this.note('dynamic-call', statement,
+          'The name of the routine is computed at run time. The call is drawn, its target is not claimed.');
+      }
+    }
+  }
+
+  /* ---------------- which routines are steps ---------------- */
+
+  /**
+   * A routine is a step only when it writes, reads, calls another system,
+   * involves a person, ends the process with an error, checks an authorization,
+   * or classifies from literals (`DESIGN.md` §5.8). Everything else is a
+   * technical helper and is folded into its caller.
+   *
+   * The effect travels along `PERFORM`: `process_actions` does nothing itself
+   * and performs three routines that all do something, so it is a step. Without
+   * the closure the phase of the process with the most effect in it would be the
+   * one that disappears.
+   */
+  private readEffects(): void {
+    for (const [name, block] of this.formBlocks) {
+      this.effects.set(name, this.directEffects(block));
+      this.performedFrom.set(name, []);
+    }
+    for (const [name, block] of this.formBlocks) {
+      const performed: string[] = [];
+      const [from, to] = bodyRange(block);
+      for (let i = from; i <= to; i++) {
+        const statement = this.statements[i];
+        if (statement.keyword !== 'PERFORM') continue;
+        const m = /^PERFORM\s+([\w/]+)/i.exec(statement.text);
+        if (m && this.formBlocks.has(m[1].toUpperCase())) performed.push(m[1].toUpperCase());
+      }
+      this.performedFrom.set(name, performed);
+    }
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const [name, performed] of this.performedFrom) {
+        const own = this.effects.get(name) as Set<FormEffect>;
+        for (const target of performed) {
+          for (const effect of this.effects.get(target) ?? []) {
+            if (own.has(effect)) continue;
+            own.add(effect);
+            changed = true;
+          }
+        }
+      }
+    }
+    for (const [name, set] of this.effects) if (set.size === 0) this.helpers.add(name);
+  }
+
+  private directEffects(block: Block): Set<FormEffect> {
+    const out = new Set<FormEffect>();
+    const [from, to] = bodyRange(block);
+    for (let i = from; i <= to; i++) {
+      const statement = this.statements[i];
+      if (statement.nativeSql) continue;
+      // Rule 2: the effect of a macro belongs to the routine that uses it, so
+      // the body is read here as if it stood at the call site.
+      const macro = this.macros.get(statement.keyword);
+      if (macro) {
+        for (const effect of this.directEffects(macro.block)) out.add(effect);
+        continue;
+      }
+      const text = statement.text;
+      if (statement.keyword === 'SELECT' && selectTables(text).length) out.add('read');
+      if (databaseWriteIn(text)) out.add('write');
+      if (/^CALL\s+FUNCTION\b/i.test(text)) {
+        const kind = functionTaskKind(/^CALL\s+FUNCTION\s+'([^']+)'/i.exec(text)?.[1]?.toUpperCase());
+        if (kind === 'user-task') out.add('human');
+        else if (kind === 'output') out.add('file');
+        else out.add('call');
+      }
+      if (/^CALL\s+TRANSACTION\b/i.test(text) || statement.keyword === 'SUBMIT') out.add('call');
+      if (/^CALL\s+SCREEN\b/i.test(text)) out.add('human');
+      if (isListOutput(statement) || isFileOutput(statement)) out.add('file');
+      if (isErrorMessage(text) || statement.keyword === 'RAISE') out.add('error');
+      if (/^LEAVE\s+PROGRAM\b/i.test(text)) out.add('error');
+      if (statement.keyword === 'AUTHORITY-CHECK') out.add('authority');
+      const perform = /^PERFORM\s+([\w/]+)/i.exec(text);
+      if (perform && !this.formBlocks.has(perform[1].toUpperCase())) out.add('call');
+    }
+    if (out.size === 0 && this.classifiesFromLiterals(block)) out.add('business-rule');
+    return out;
+  }
+
+  /**
+   * Does this routine classify or score from literals — §5.8's Business-Rule-Task?
+   *
+   * The discriminator is a **structure component**. `derive_customer_risk` tests
+   * `cs_customer-sperr = 'X'` and `decide_actions` writes
+   * `<fs_order>-action = 'SET_DELIVERY_BLOCK'`: a field of a business object
+   * against a literal. `add_log` tests its own flat parameter `iv_level` against
+   * `'WARN'` and counts up a global, and §5.8 names it as a technical helper —
+   * so a flat name against a literal is deliberately not enough.
+   */
+  private classifiesFromLiterals(block: Block): boolean {
+    const component = /[\w<>]+-[\w]+/;
+    const literal = /'[^']*'/;
+    for (const branch of this.control.branches) {
+      if (branch.openIndex <= block.openIndex || branch.closeIndex >= block.closeIndex) continue;
+      for (const arm of branch.arms) {
+        if (component.test(arm.condition) && literal.test(arm.condition)) return true;
+      }
+      for (let i = branch.openIndex + 1; i < branch.closeIndex; i++) {
+        if (/^[\w<>/]+-[\w-]+\s*=\s*'/.test(this.statements[i].text)) return true;
+      }
+    }
+    return false;
+  }
+
+  /* ---------------- rule 4: the entry points ---------------- */
+
+  private isEventStatement(statement: AbapStatement): boolean {
+    if (EVENT_WORDS.has(statement.keyword)) return true;
+    if (statement.keyword === 'AT') return AT_EVENT.test(statement.text);
+    if (statement.keyword !== 'GET') return false;
+    const second = /^GET\s+([\w/-]+)/i.exec(statement.text);
+    return second !== null && !GET_NOT_AN_EVENT.has(second[1].toUpperCase());
+  }
+
+  private runtimeRank(text: string): number {
+    for (const row of RUNTIME_ORDER) if (row.test.test(text)) return row.rank;
+    return RUNTIME_ORDER.length;
+  }
+
+  /**
+   * Rule 4. The event blocks, and — when the program has no `START-OF-SELECTION`
+   * — the statements it writes at program level, which ABAP runs as the implicit
+   * one. A report without the keyword still has a skeleton.
+   */
+  private readEntryPoints(): EntryPoint[] {
+    const out: EntryPoint[] = [];
+    const isBoundary = (i: number) => {
+      const block = this.blockAt.get(i);
+      return this.isEventStatement(this.statements[i])
+        || (block !== undefined
+          && (block.kind === 'form' || block.kind === 'module' || block.kind === 'class'
+            || block.kind === 'interface' || block.kind === 'define'));
+    };
+
+    for (let i = 0; i < this.statements.length; i++) {
+      if (!this.isEventStatement(this.statements[i])) continue;
+      let last = this.statements.length - 1;
+      for (let j = i + 1; j < this.statements.length; j++) {
+        if (isBoundary(j)) { last = j - 1; break; }
+      }
+      out.push({
+        statement: this.statements[i],
+        lastIndex: Math.max(i, last),
+        label: this.statements[i].text,
+        rank: this.runtimeRank(this.statements[i].text),
+        implicit: false,
+      });
+    }
+
+    if (!out.some((e) => /^START-OF-SELECTION$/i.test(e.label))) {
+      const free = this.programLevelStatements();
+      if (free.length) {
+        out.push({
+          statement: free[0],
+          lastIndex: free[free.length - 1].index,
+          label: 'START-OF-SELECTION',
+          rank: 5,
+          implicit: true,
+        });
+      } else if (out.length === 0) {
+        this.notes.push({
+          reason: 'no-entry-point',
+          detail:
+            'This source names no event block and writes no statement at program level, so nothing here says where the process begins. Every routine it defines is listed as not reached.',
+          snippet: '',
+          lineStart: 1,
+          lineEnd: Math.max(1, this.statements[this.statements.length - 1]?.lineEnd ?? 1),
+        });
+      }
+    }
+    return out;
+  }
+
+  /** Executable statements outside every block and outside every event block. */
+  private programLevelStatements(): AbapStatement[] {
+    const inEvent = new Set<number>();
+    for (let i = 0; i < this.statements.length; i++) {
+      if (!this.isEventStatement(this.statements[i])) continue;
+      for (let j = i; j < this.statements.length; j++) {
+        const block = this.blockAt.get(j);
+        const boundary = j > i && (this.isEventStatement(this.statements[j])
+          || (block !== undefined && (block.kind === 'form' || block.kind === 'module'
+            || block.kind === 'class' || block.kind === 'interface' || block.kind === 'define')));
+        if (boundary) break;
+        inEvent.add(j);
+      }
+    }
+    const out: AbapStatement[] = [];
+    for (let i = 0; i < this.statements.length; i++) {
+      const statement = this.statements[i];
+      if (inEvent.has(i)) continue;
+      if (this.structure.enclosing[i].length) continue;
+      if (this.blockAt.has(i)) continue;
+      if (DECLARATIVE.has(statement.keyword)) continue;
+      if (statement.nativeSql) continue;
+      out.push(statement);
+    }
+    return out;
+  }
+
+  /* ---------------- the regions ---------------- */
+
+  private buildEntryRegion(entry: EntryPoint): void {
+    const key = `entry:${entry.label}@${entry.statement.lineStart}`;
+    if (this.regions.some((r) => r.key === key)) return;
+    const region: SkeletonRegion = {
+      key,
+      kind: 'entry',
+      label: entry.label,
+      anchor: anchorOf(entry.statement),
+      runtimeRank: entry.rank,
+      endNodeId: '',
+      entryNodeId: null,
+    };
+    this.regions.push(region);
+
+    const container = entry.implicit ? null : entry.label;
+    const start = this.addNode('start', entry.label, anchorOf(entry.statement), region, container, {
+      detail: { implicit: entry.implicit, runtimeRank: entry.rank },
+    });
+    const last = this.statements[entry.lastIndex];
+    const end = this.addNode('end', entry.label, anchorOf(last), region, container);
+    region.endNodeId = end.id;
+
+    const from = entry.implicit ? entry.statement.index : entry.statement.index + 1;
+    const exits = this.walkRange(from, entry.lastIndex, {
+      region, container, loops: [], loopBreaks: [],
+    }, [{ from: start.id, condition: '', kind: 'sequence' }]);
+    region.entryNodeId = start.id;
+    this.connect(exits, end.id);
+  }
+
+  /** The region a `FORM` opens, built once however often the routine is performed. */
+  private formRegion(name: string): SkeletonRegion | null {
+    const known = this.regionOfForm.get(name);
+    if (known) return known;
+    const block = this.formBlocks.get(name);
+    if (!block) return null;
+
+    const opener = this.statements[block.openIndex];
+    const region: SkeletonRegion = {
+      key: `form:${name}`,
+      kind: 'sub-process',
+      label: name,
+      anchor: anchorOf(opener),
+      endNodeId: '',
+      entryNodeId: null,
+      effects: [...(this.effects.get(name) ?? [])],
+    };
+    this.regions.push(region);
+    this.regionOfForm.set(name, region);
+
+    const closer = this.statements[block.closeIndex];
+    const end = block.terminated
+      ? this.addNode('end', name, anchorOf(closer), region, name)
+      // Rule 1: nothing closed this routine, so where it ends is a guess. A node
+      // that says so must not look like a node that carries a range.
+      : this.addNode('end', name, null, region, name, {
+        unanchoredReason: `FORM ${name} is not closed by ENDFORM in this source, so it has no end to anchor to.`,
+      });
+    region.endNodeId = end.id;
+
+    const [from, to] = bodyRange(block);
+    const guarded = this.readGuard(from, to, region);
+    const before = this.nodes.length;
+    const exits = this.walkRange(guarded, to, {
+      region, container: name, loops: [], loopBreaks: [],
+    }, []);
+    // A sub-process has no start event of its own — the call site is where it
+    // begins — so its first node is the one nothing inside the region points at.
+    // It is looked up by region and not by position: a `PERFORM` inside this
+    // routine builds the region it opens *before* it adds its own call site, so
+    // the node at `before` can belong to a routine one level down.
+    region.entryNodeId = this.nodes.slice(before).find((n) => n.region === region.key)?.id ?? null;
+    this.connect(exits, end.id);
+    return region;
+  }
+
+  /**
+   * A leading `CHECK` on nothing but selection-screen switches.
+   *
+   * `DESIGN.md` §5.8 draws it as a **conditional flow** into the routine rather
+   * than as a gateway: `CHECK p_mail = abap_true.` is the switch "Mail" of the
+   * run, not a decision the process takes. Returns the index the walk starts at.
+   */
+  private readGuard(from: number, to: number, region: SkeletonRegion): number {
+    for (let i = from; i <= to; i++) {
+      const statement = this.statements[i];
+      if (DECLARATIVE.has(statement.keyword)) continue;
+      if (statement.keyword !== 'CHECK') return from;
+      const condition = afterKeyword(statement);
+      if (!this.isRunSwitch(condition)) return from;
+      region.guard = { condition, anchor: anchorOf(statement) };
+      return i + 1;
+    }
+    return from;
+  }
+
+  /** True when every name in the condition is a selection-screen name. */
+  private isRunSwitch(condition: string): boolean {
+    const names = condition.match(/[A-Za-z_/][\w/]*/g) ?? [];
+    if (!names.length) return false;
+    let seenSwitch = false;
+    for (const raw of names) {
+      const name = raw.toUpperCase();
+      if (this.selectionNames.has(name)) { seenSwitch = true; continue; }
+      if (SWITCH_CONSTANTS.has(name)) continue;
+      return false;
+    }
+    return seenSwitch;
+  }
+
+  /* ---------------- the walk ---------------- */
+
+  private walkRange(from: number, to: number, ctx: WalkContext, incoming: Exit[]): Exit[] {
+    let live = incoming;
+    /** The output node a run of list statements is being folded into. */
+    let outputRun: SkeletonNode | null = null;
+    let i = from;
+
+    while (i <= to) {
+      const statement = this.statements[i];
+      const block = this.blockAt.get(i);
+
+      if (block) {
+        outputRun = null;
+        if (FLOW_BLOCKS.has(block.kind) && block.closeIndex <= to) {
+          if (block.kind === 'if' || block.kind === 'case') live = this.walkBranch(block, ctx, live);
+          else if (block.kind === 'try') live = this.walkTry(block, ctx, live);
+          else if (block.kind === 'at') live = this.walkGroupChange(block, ctx, live);
+          else live = this.walkLoop(block, ctx, live);
+          i = block.closeIndex + 1;
+          continue;
+        }
+        // A container, a macro body, or a construct that runs past this range:
+        // not a flow of this region, so it is stepped over rather than opened.
+        i = Math.max(i + 1, Math.min(block.closeIndex + 1, to + 1));
+        continue;
+      }
+
+      const produced = this.walkStatement(statement, ctx, live, outputRun);
+      outputRun = produced.outputRun;
+      live = produced.exits;
+      i += 1;
+    }
+    return live;
+  }
+
+  private walkBranch(block: Block, ctx: WalkContext, incoming: Exit[]): Exit[] {
+    const branch = this.branchAt.get(block.openIndex);
+    const opener = this.statements[block.openIndex];
+    if (!branch) {
+      // 2.1 refused to read this construct (a chained IF, a macro body). The
+      // skeleton refuses the gateway too and walks the body as a sequence, so
+      // nothing inside it is lost.
+      return this.walkRange(block.openIndex + 1, block.closeIndex - 1, ctx, incoming);
+    }
+
+    const label = branch.kind === 'case' ? (branch.selector ?? 'CASE') : snippet(opener.text);
+    const gateway = this.addNode('gateway', label, anchorOf(opener), ctx.region, ctx.container, {
+      detail: { branchId: branch.id, branchKind: branch.kind, arms: branch.arms.length },
+    });
+    this.connect(incoming, gateway.id);
+
+    const exits: Exit[] = [];
+    let hasDefault = false;
+    for (let a = 0; a < branch.arms.length; a++) {
+      const arm = branch.arms[a];
+      const next = branch.arms[a + 1];
+      const bodyFrom = arm.headerIndex + 1;
+      const bodyTo = (next ? next.headerIndex : block.closeIndex) - 1;
+      const isDefault = arm.kind === 'else' || arm.kind === 'when-others';
+      if (isDefault) hasDefault = true;
+      const armExits = this.walkRange(bodyFrom, bodyTo, ctx, [{
+        from: gateway.id,
+        condition: arm.condition,
+        kind: isDefault ? 'default' : 'conditional',
+      }]);
+      exits.push(...armExits);
+    }
+    // No ELSE and no WHEN OTHERS: the gateway itself is the way past it.
+    if (!hasDefault) exits.push({ from: gateway.id, condition: '', kind: 'default' });
+    return exits;
+  }
+
+  /**
+   * `AT NEW kunnr … ENDAT` — a group change inside a `LOOP`.
+   *
+   * 2.1 leaves it to the skeleton deliberately (`control-flow.ts`): it is not a
+   * branch, it is a condition on the iteration. It is an exclusive gateway whose
+   * condition is the words the source uses, and whose other way round is the
+   * iteration that is not the first of its group — not a loop, which is what
+   * reading `AT` as an opener without looking at it makes of it.
+   */
+  private walkGroupChange(block: Block, ctx: WalkContext, incoming: Exit[]): Exit[] {
+    const opener = this.statements[block.openIndex];
+    const condition = afterKeyword(opener);
+    const gateway = this.addNode('gateway', snippet(opener.text), anchorOf(opener),
+      ctx.region, ctx.container, { detail: { source: 'AT', condition } });
+    this.connect(incoming, gateway.id);
+    const body = this.walkRange(block.openIndex + 1, block.closeIndex - 1, ctx,
+      [{ from: gateway.id, condition, kind: 'conditional' }]);
+    return [...body, { from: gateway.id, condition: '', kind: 'default' }];
+  }
+
+  private walkLoop(block: Block, ctx: WalkContext, incoming: Exit[]): Exit[] {
+    const opener = this.statements[block.openIndex];
+    const table = /^LOOP\s+AT\s+([\w/<>]+)/i.exec(opener.text)?.[1];
+    const isSelect = block.kind === 'select';
+    const tables = isSelect ? selectTables(opener.text) : [];
+    const node = isSelect && tables.length
+      ? this.addNode('read', tables[0], anchorOf(opener, tokenIndexOf(opener, /^FROM$/i) + 1),
+        ctx.region, ctx.container, {
+          detail: { tables, iterates: true, loopKind: 'multi-instance' },
+        })
+      : this.addNode('loop', table ?? opener.keyword, anchorOf(opener), ctx.region, ctx.container, {
+        detail: {
+          loopKind: block.kind === 'loop' ? 'multi-instance' : 'standard',
+          ...(table ? { over: table.toUpperCase() } : {}),
+        },
+      });
+    this.connect(incoming, node.id);
+
+    const breaks: Exit[] = [];
+    const bodyExits = this.walkRange(block.openIndex + 1, block.closeIndex - 1, {
+      ...ctx,
+      loops: [...ctx.loops, node.id],
+      loopBreaks: [...ctx.loopBreaks, breaks],
+    }, [{ from: node.id, condition: '', kind: 'sequence' }]);
+    for (const exit of bodyExits) {
+      this.edges.push({ from: exit.from, to: node.id, kind: 'loop-back', condition: exit.condition });
+    }
+    return [{ from: node.id, condition: '', kind: 'sequence' }, ...breaks];
+  }
+
+  /**
+   * `TRY … CATCH … ENDTRY` — §5.8's error boundary event.
+   *
+   * The protected part is the flow; every `CATCH` is a boundary event on the
+   * first node of that part, and its handler joins the flow after the construct.
+   */
+  private walkTry(block: Block, ctx: WalkContext, incoming: Exit[]): Exit[] {
+    const handlers: number[] = [];
+    for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
+      const enclosing = this.structure.enclosing[i];
+      if (enclosing[enclosing.length - 1] !== block) continue;
+      if (this.statements[i].keyword === 'CATCH' || this.statements[i].keyword === 'CLEANUP') {
+        handlers.push(i);
+      }
+    }
+    const protectedTo = (handlers[0] ?? block.closeIndex) - 1;
+    const beforeProtected = this.nodes.length;
+    const exits = this.walkRange(block.openIndex + 1, protectedTo, ctx, incoming);
+    const attachedTo = this.nodes.slice(beforeProtected).find((n) => n.region === ctx.region.key) ?? null;
+
+    const out = [...exits];
+    for (let h = 0; h < handlers.length; h++) {
+      const header = this.statements[handlers[h]];
+      const boundary = this.addNode('error-boundary', afterKeyword(header) || header.keyword,
+        anchorOf(header), ctx.region, ctx.container, {
+          detail: { attachedTo: attachedTo?.id ?? '', source: header.keyword },
+        });
+      if (attachedTo) {
+        this.edges.push({ from: attachedTo.id, to: boundary.id, kind: 'boundary', condition: '' });
+      }
+      const to = (handlers[h + 1] ?? block.closeIndex) - 1;
+      out.push(...this.walkRange(handlers[h] + 1, to, ctx,
+        [{ from: boundary.id, condition: '', kind: 'sequence' }]));
+    }
+    return out;
+  }
+
+  /* ---------------- one statement ---------------- */
+
+  private walkStatement(
+    statement: AbapStatement,
+    ctx: WalkContext,
+    incoming: Exit[],
+    outputRun: SkeletonNode | null,
+  ): { exits: Exit[]; outputRun: SkeletonNode | null } {
+    const text = statement.text;
+    const keep = (node: SkeletonNode): { exits: Exit[]; outputRun: null } => {
+      this.connect(incoming, node.id);
+      return { exits: [{ from: node.id, condition: '', kind: 'sequence' }], outputRun: null };
+    };
+
+    if (statement.nativeSql || DECLARATIVE.has(statement.keyword)) {
+      return { exits: incoming, outputRun: null };
+    }
+
+    /* Rule 5 — one keyword, three targets. */
+    if (statement.keyword === 'CHECK') return { ...this.walkCheck(statement, ctx, incoming), outputRun: null };
+    if (statement.keyword === 'CONTINUE' && ctx.loops.length) {
+      this.leaveTo(incoming, ctx.loops[ctx.loops.length - 1], 'loop-back', 'continue-loop');
+      return { exits: [], outputRun: null };
+    }
+    if (statement.keyword === 'EXIT' && ctx.loops.length) {
+      ctx.loopBreaks[ctx.loopBreaks.length - 1].push(...incoming.map((e) => ({ ...e, reason: 'exit-loop' as const })));
+      return { exits: [], outputRun: null };
+    }
+    if (statement.keyword === 'RETURN' || statement.keyword === 'EXIT' || statement.keyword === 'STOP') {
+      const reason: SkeletonEdgeReason = statement.keyword === 'STOP' ? 'stop' : 'return';
+      this.leaveTo(incoming, ctx.region.endNodeId, 'sequence', reason);
+      return { exits: [], outputRun: null };
+    }
+
+    /* Rule 3 — what comes back, and what does not. */
+    if (statement.keyword === 'SUBMIT') {
+      const returns = /\bAND\s+RETURN\b/i.test(text) || /\bVIA\s+JOB\b/i.test(text);
+      const program = /^SUBMIT\s+(?:\(\s*([\w/]+)\s*\)|'([^']*)'|([\w/]+))/i.exec(text);
+      const node = this.addNode('call-activity',
+        (program?.[2] ?? program?.[3] ?? program?.[1] ?? 'SUBMIT').toUpperCase(),
+        anchorOf(statement, 1), ctx.region, ctx.container, {
+          detail: { returns, viaJob: /\bVIA\s+JOB\b/i.test(text), dynamic: Boolean(program?.[1]) },
+        });
+      this.connect(incoming, node.id);
+      if (returns) return { exits: [{ from: node.id, condition: '', kind: 'sequence' }], outputRun: null };
+      this.edges.push({ from: node.id, to: ctx.region.endNodeId, kind: 'sequence', condition: '', reason: 'no-return' });
+      return { exits: [], outputRun: null };
+    }
+    if (/^LEAVE\s+TO\s+TRANSACTION\b/i.test(text)) {
+      const code = /TRANSACTION\s+'([^']*)'/i.exec(text)?.[1]?.toUpperCase();
+      const node = this.addNode('call-activity', code ?? 'LEAVE TO TRANSACTION',
+        anchorOf(statement), ctx.region, ctx.container, { detail: { returns: false } });
+      this.connect(incoming, node.id);
+      this.edges.push({ from: node.id, to: ctx.region.endNodeId, kind: 'sequence', condition: '', reason: 'no-return' });
+      return { exits: [], outputRun: null };
+    }
+    if (/^LEAVE\s+PROGRAM\b/i.test(text) || isErrorMessage(text) || statement.keyword === 'RAISE') {
+      const node = this.addNode('end-error', this.errorLabel(statement), anchorOf(statement),
+        ctx.region, ctx.container);
+      this.connect(incoming, node.id);
+      return { exits: [], outputRun: null };
+    }
+
+    if (statement.keyword === 'PERFORM') return { ...this.walkPerform(statement, ctx, incoming), outputRun: null };
+
+    if (/^CALL\s+FUNCTION\b/i.test(text)) return { ...this.walkFunction(statement, ctx, incoming), outputRun: null };
+
+    if (/^CALL\s+TRANSACTION\b/i.test(text)) {
+      const call = this.calls.transactions.find((t) => t.lineStart === statement.lineStart);
+      const node = this.addNode('transaction', call?.code ?? call?.codeExpression ?? 'CALL TRANSACTION',
+        anchorOf(statement, 2), ctx.region, ctx.container, {
+          detail: {
+            batchInput: call?.batchInput ?? false,
+            dynamic: call?.dynamic ?? true,
+            // Rule 3: batch input returns, and the caller goes on.
+            returns: true,
+          },
+        });
+      return keep(node);
+    }
+    if (/^CALL\s+SCREEN\b/i.test(text)) {
+      const screen = /^CALL\s+SCREEN\s+([\w/]+)/i.exec(text)?.[1] ?? 'CALL SCREEN';
+      return keep(this.addNode('user-task', screen, anchorOf(statement, 2), ctx.region, ctx.container));
+    }
+
+    if (statement.keyword === 'SELECT') {
+      const tables = selectTables(text);
+      if (tables.length) {
+        return keep(this.addNode('read', tables[0],
+          anchorOf(statement, tokenIndexOf(statement, /^FROM$/i) + 1), ctx.region, ctx.container, {
+            detail: { tables, single: /^SELECT\s+SINGLE\b/i.test(text) },
+          }));
+      }
+      return { exits: incoming, outputRun: null };
+    }
+    const write = databaseWriteIn(text);
+    if (write) {
+      return keep(this.addNode('write', write.table.toUpperCase(),
+        anchorOf(statement, tokenIndexOf(statement, new RegExp(`^${write.table}$`, 'i'))),
+        ctx.region, ctx.container, { detail: { operation: write.keyword } }));
+    }
+
+    if (isListOutput(statement) || isFileOutput(statement)) {
+      const target = isFileOutput(statement) ? 'file' : 'list';
+      if (outputRun && outputRun.detail?.target === target && outputRun.anchor) {
+        // A run of `WRITE` is one result list, not eight data objects. The run
+        // keeps the anchor of its first statement (rule 2) and grows its range.
+        outputRun.anchor.lineEnd = statement.lineEnd;
+        const detail = outputRun.detail as { statements: number };
+        detail.statements += 1;
+        return { exits: incoming, outputRun };
+      }
+      const node = this.addNode('output', statement.keyword, anchorOf(statement), ctx.region,
+        ctx.container, { detail: { statements: 1, target } });
+      this.connect(incoming, node.id);
+      return { exits: [{ from: node.id, condition: '', kind: 'sequence' }], outputRun: node };
+    }
+
+    if (this.macros.has(statement.keyword)) {
+      return { ...this.walkMacroCall(statement, ctx, incoming), outputRun: null };
+    }
+
+    // Everything else is a move, a calculation or a commit boundary, and §5.8
+    // gives none of them a BPMN element. `AUTHORITY-CHECK` is the deliberate one:
+    // it is evidence for a lane, which 2.4 proposes with a model, not a step.
+    return { exits: incoming, outputRun: null };
+  }
+
+  private errorLabel(statement: AbapStatement): string {
+    const id = /^MESSAGE\s+([\w-]+)/i.exec(statement.text)?.[1];
+    if (id) return id.toUpperCase();
+    const raised = /^RAISE\s+(?:EXCEPTION\s+TYPE\s+)?([\w/]+)/i.exec(statement.text)?.[1];
+    return (raised ?? statement.keyword).toUpperCase();
+  }
+
+  private leaveTo(
+    incoming: Exit[],
+    to: string,
+    kind: SkeletonEdgeKind,
+    reason: SkeletonEdgeReason,
+  ): void {
+    for (const exit of incoming) {
+      this.edges.push({ from: exit.from, to, kind, condition: exit.condition, reason });
+    }
+  }
+
+  /**
+   * Rule 5. `CHECK` is not one edge with three meanings.
+   *
+   * Inside a `LOOP` the false path ends the iteration; inside a `FORM` it leaves
+   * the routine; in an event block it leaves the block. The three are three
+   * different edges with three different reasons, and a reader who clicks the
+   * gateway has to be told which one this is.
+   */
+  private walkCheck(statement: AbapStatement, ctx: WalkContext, incoming: Exit[]): { exits: Exit[] } {
+    const condition = afterKeyword(statement);
+    const gateway = this.addNode('gateway', snippet(statement.text), anchorOf(statement, 1),
+      ctx.region, ctx.container, { detail: { source: 'CHECK', condition } });
+    this.connect(incoming, gateway.id);
+
+    const falsePath: Exit[] = [{ from: gateway.id, condition: `NOT ( ${condition} )`, kind: 'conditional' }];
+    if (ctx.loops.length) {
+      this.leaveTo(falsePath, ctx.loops[ctx.loops.length - 1], 'loop-back', 'check-leaves-loop');
+    } else if (ctx.region.kind === 'sub-process') {
+      this.leaveTo(falsePath, ctx.region.endNodeId, 'conditional', 'check-leaves-form');
+    } else {
+      this.leaveTo(falsePath, ctx.region.endNodeId, 'conditional', 'check-leaves-event');
+    }
+    return { exits: [{ from: gateway.id, condition, kind: 'conditional' }] };
+  }
+
+  /**
+   * Rule 3. A `PERFORM` this source can follow opens a sub-process; one it
+   * cannot is a `call-opaque` node — and the caller carries on after it, because
+   * the routine returns.
+   */
+  private walkPerform(statement: AbapStatement, ctx: WalkContext, incoming: Exit[]): { exits: Exit[] } {
+    const call = this.calls.performs.find(
+      (p) => p.lineStart === statement.lineStart && p.text === statement.text,
+    );
+    const target = call?.target;
+    const local = target && !call?.program && this.formBlocks.has(target);
+
+    if (!local) {
+      const node = this.addNode('call-opaque',
+        target ?? call?.text ?? 'PERFORM', anchorOf(statement, 1), ctx.region, ctx.container, {
+          detail: {
+            dynamic: call?.dynamic ?? false,
+            ...(call?.program ? { program: call.program } : {}),
+            // The source of the routine is not here. The flow still returns.
+            returns: true,
+          },
+        });
+      this.connect(incoming, node.id);
+      return { exits: [{ from: node.id, condition: '', kind: 'sequence' }] };
+    }
+
+    if (this.helpers.has(target)) {
+      // §5.8: a routine without an effect of its own is part of its caller.
+      return { exits: incoming };
+    }
+
+    const region = this.formRegion(target);
+    const block = this.formBlocks.get(target);
+    const effects = this.effects.get(target) ?? new Set<FormEffect>();
+    const onlyRule = effects.size === 1 && effects.has('business-rule');
+    // Rule 2: the anchor of the call is the call, not the routine. The routine's
+    // own range travels alongside it as the secondary one, so a reader can jump
+    // to the definition without the node pretending to live there.
+    const anchor: NodeAnchor = {
+      ...anchorOf(statement, 1),
+      ...(block
+        ? { secondary: { lineStart: block.lineStart, lineEnd: block.lineEnd, reason: 'routine-definition' as const } }
+        : {}),
+    };
+    const node = this.addNode(onlyRule ? 'business-rule-task' : 'sub-process', target,
+      anchor, ctx.region, ctx.container, {
+        ...(region ? { expandsTo: region.key } : {}),
+        detail: { effects: [...effects] },
+      });
+    this.connect(incoming, node.id);
+    return { exits: [{ from: node.id, condition: '', kind: 'sequence' }] };
+  }
+
+  /**
+   * `CALL FUNCTION` — a service, send, user or file task by the module it names,
+   * plus §5.8's error boundary when the call declares `EXCEPTIONS` and the code
+   * right after it branches on `sy-subrc`.
+   *
+   * Rule 7 in one statement: those are two nodes on the same lines, told apart
+   * by their slot and by the token the anchor points at.
+   */
+  private walkFunction(statement: AbapStatement, ctx: WalkContext, incoming: Exit[]): { exits: Exit[] } {
+    const call = this.calls.functionModules.find(
+      (f) => f.lineStart === statement.lineStart && f.text === statement.text,
+    );
+    const kind = functionTaskKind(call?.name);
+    const label = call?.name
+      ?? /^CALL\s+FUNCTION\s+([\w/-]+)/i.exec(statement.text)?.[1]?.toUpperCase()
+      ?? 'CALL FUNCTION';
+    const node = this.addNode(kind, label, anchorOf(statement, 2), ctx.region, ctx.container, {
+      detail: {
+        bapi: call?.bapi ?? false,
+        dynamic: call?.dynamic ?? false,
+        ...(call?.destination ? { destination: call.destination } : {}),
+        inUpdateTask: call?.inUpdateTask ?? false,
+        startingNewTask: call?.startingNewTask ?? false,
+        // Rule 3: a synchronous RFC comes back. Only an asynchronous one does not
+        // hold the caller, and it still returns to the next statement.
+        returns: true,
+      },
+    });
+    this.connect(incoming, node.id);
+    const exits: Exit[] = [{ from: node.id, condition: '', kind: 'sequence' }];
+
+    if (/\bEXCEPTIONS\b/i.test(statement.text) && this.handlesSubrcAfter(statement.index)) {
+      const boundary = this.addNode('error-boundary', label,
+        anchorOf(statement, tokenIndexOf(statement, /^EXCEPTIONS$/i)), ctx.region, ctx.container, {
+          detail: { attachedTo: node.id, exceptions: this.exceptionNames(statement.text) },
+        });
+      this.edges.push({ from: node.id, to: boundary.id, kind: 'boundary', condition: '' });
+      exits.push({ from: boundary.id, condition: '', kind: 'sequence' });
+    }
+    return { exits };
+  }
+
+  /** Does the statement right after this one read `sy-subrc`? §5.8 asks for it. */
+  private handlesSubrcAfter(index: number): boolean {
+    for (let i = index + 1; i <= index + 2 && i < this.statements.length; i++) {
+      const next = this.statements[i];
+      if (!['IF', 'CASE', 'CHECK'].includes(next.keyword)) continue;
+      if (/\bsy-subrc\b/i.test(next.text)) return true;
+    }
+    return false;
+  }
+
+  private exceptionNames(text: string): string[] {
+    const tail = /\bEXCEPTIONS\b([\s\S]*)$/i.exec(text)?.[1] ?? '';
+    return [...tail.matchAll(/([\w_]+)\s*=\s*\d+/g)].map((m) => m[1].toUpperCase());
+  }
+
+  /**
+   * Rule 2. A macro takes effect where it is used, not where it is written.
+   *
+   * The body is expanded by the compiler, so every node it produces is anchored
+   * at the **call site**; the line range inside the `DEFINE` travels as a
+   * secondary anchor. Only the leaf effects of the body are read — a branch
+   * inside a macro is what 2.1 already refuses to draw, and drawing a gateway
+   * whose condition contains `&1` would be inventing the argument.
+   */
+  private walkMacroCall(statement: AbapStatement, ctx: WalkContext, incoming: Exit[]): { exits: Exit[] } {
+    const macro = this.macros.get(statement.keyword);
+    if (!macro) return { exits: incoming };
+    this.note('macro-call', statement,
+      `The body of macro ${statement.keyword} is expanded here by the compiler. Its effects are anchored at this call site; the definition is a secondary range.`);
+
+    let live = incoming;
+    for (let i = macro.block.openIndex + 1; i < macro.block.closeIndex; i++) {
+      const body = this.statements[i];
+      const node = this.macroEffectNode(body, statement, ctx);
+      if (!node) continue;
+      this.connect(live, node.id);
+      live = [{ from: node.id, condition: '', kind: 'sequence' }];
+    }
+    return { exits: live };
+  }
+
+  private macroEffectNode(
+    body: AbapStatement,
+    site: AbapStatement,
+    ctx: WalkContext,
+  ): SkeletonNode | null {
+    const at = (kind: SkeletonNodeKind, label: string, detail?: SkeletonNode['detail']) =>
+      this.addNode(kind, label, {
+        ...anchorOf(site),
+        secondary: { lineStart: body.lineStart, lineEnd: body.lineEnd, reason: 'macro-definition' },
+      }, ctx.region, ctx.container, { detail: { ...(detail ?? {}), fromMacro: site.keyword } });
+
+    const write = databaseWriteIn(body.text);
+    if (write) return at('write', write.table.toUpperCase(), { operation: write.keyword });
+    if (body.keyword === 'SELECT') {
+      const tables = selectTables(body.text);
+      if (tables.length) return at('read', tables[0], { tables });
+    }
+    const fm = /^CALL\s+FUNCTION\s+'([^']+)'/i.exec(body.text);
+    if (fm) {
+      const name = fm[1].toUpperCase();
+      return at(functionTaskKind(name), name);
+    }
+    if (isErrorMessage(body.text)) return at('end-error', this.errorLabel(body));
+    if (isListOutput(body) || isFileOutput(body)) {
+      return at('output', body.keyword, { statements: 1, target: isFileOutput(body) ? 'file' : 'list' });
+    }
+    return null;
+  }
+
+  /* ---------------- after the walk ---------------- */
+
+  /**
+   * §5.8: a `FORM` is a collapsed sub-process above three elements. Below that
+   * the call site becomes the one thing the routine does — which is why
+   * `send_summary_mail` is a send task and `display_alv` a user task rather than
+   * two boxes each. A routine that classifies stays a business rule task at any
+   * size: `calculate_risk_scores` is 60 lines and still one decision table.
+   */
+  private collapseSmallRegions(): void {
+    // A routine that collapses changes the kind of the call site inside the
+    // routine above it, so one pass settles the innermost level only: `reject`
+    // performs `log_approval`, and until `log_approval` is a write, `reject`
+    // sees a sub-process and stays one. Repeat until nothing moves — bounded by
+    // the number of regions, which is what a chain of them can be at most.
+    for (let pass = 0; pass <= this.regions.length; pass++) {
+      let changed = false;
+      for (const region of this.regions) {
+        if (region.kind !== 'sub-process') continue;
+        const inner = this.nodes.filter((n) => n.region === region.key && n.id !== region.endNodeId);
+        const callers = this.nodes.filter((n) => n.expandsTo === region.key);
+        if (!callers.length) continue;
+        if (callers[0].kind === 'business-rule-task') {
+          for (const caller of callers) caller.collapsed = inner.length <= 3;
+          continue;
+        }
+        const steps = inner.filter((n) => DOMINANT_ORDER.includes(n.kind));
+        if (!inner.length || inner.length > 3 || !steps.length) {
+          for (const caller of callers) caller.collapsed = false;
+          continue;
+        }
+        const dominant = [...steps].sort(
+          (a, b) => DOMINANT_ORDER.indexOf(a.kind) - DOMINANT_ORDER.indexOf(b.kind),
+        )[0];
+        for (const caller of callers) {
+          if (caller.kind !== dominant.kind) changed = true;
+          caller.kind = dominant.kind;
+          caller.collapsed = true;
+          caller.detail = { ...(caller.detail ?? {}), collapsedFrom: dominant.label };
+        }
+      }
+      if (!changed) break;
+    }
+  }
+
+  /**
+   * A step nothing can reach, because what stands before it never comes back.
+   *
+   * `SUBMIT` without `AND RETURN`, `LEAVE PROGRAM`, `MESSAGE … TYPE 'E'`: the
+   * statements written after one of those are still read and still anchored —
+   * dropping them would cost the reader the lines — but they hang off no flow,
+   * and a node with no way in is said out loud rather than drawn as if
+   * something led to it.
+   */
+  private noteUnreachableSteps(): void {
+    const reached = new Set(this.edges.map((e) => e.to));
+    const entryNodes = new Set(this.regions.map((r) => r.entryNodeId));
+    for (const node of this.nodes) {
+      if (reached.has(node.id) || entryNodes.has(node.id) || node.kind === 'start') continue;
+      const statement = node.anchor ? this.statements[node.anchor.statementIndex] : undefined;
+      this.notes.push({
+        reason: 'unreachable-after-abort',
+        detail: `Nothing in this source leads to ${node.kind} "${node.label}": what stands before it in ${node.container ?? 'the program'} does not come back.`,
+        snippet: statement ? snippet(statement.text) : node.label,
+        lineStart: node.anchor?.lineStart ?? 0,
+        lineEnd: node.anchor?.lineEnd ?? 0,
+      });
+    }
+  }
+
+  /**
+   * §5.8's conditional flow: the run switch sits on the edge, not on a gateway.
+   *
+   * An edge that already carries a condition keeps it — an `IF` around the call
+   * said something the switch does not, and joining the two with an `AND` this
+   * engine wrote would be a condition nobody put in the source (rule 6). The
+   * switch is on the node either way.
+   */
+  private applyGuards(): void {
+    for (const region of this.regions) {
+      const guard = region.guard;
+      if (!guard) continue;
+      const callers = this.nodes.filter((n) => n.expandsTo === region.key);
+      const ids = new Set(callers.map((n) => n.id));
+      for (const caller of callers) {
+        caller.detail = { ...(caller.detail ?? {}), guard: guard.condition };
+      }
+      for (const edge of this.edges) {
+        if (!ids.has(edge.to) || edge.condition) continue;
+        edge.kind = 'conditional';
+        edge.condition = guard.condition;
+      }
+    }
+  }
+
+  private unreached(): UnreachedRegion[] {
+    const out: UnreachedRegion[] = [];
+    for (const name of this.calls.unreachable) {
+      const block = this.formBlocks.get(name);
+      if (block) out.push({ name, kind: 'form', lineStart: block.lineStart, lineEnd: block.lineEnd });
+    }
+    // A screen module runs from a dynpro, and a dynpro is not in this source: no
+    // entry point here reaches one, so §5.8 counts them with the unreached code
+    // rather than drawing a start event nothing proves.
+    for (const block of this.structure.blocks) {
+      if (block.kind !== 'module') continue;
+      const name = /^MODULE\s+([\w/]+)/i.exec(this.statements[block.openIndex].text)?.[1];
+      if (name) {
+        out.push({ name: name.toUpperCase(), kind: 'module', lineStart: block.lineStart, lineEnd: block.lineEnd });
+      }
+    }
+    return out.sort((a, b) => a.lineStart - b.lineStart);
+  }
+
+  private unreachedLines(): number {
+    return this.unreached().reduce((sum, r) => sum + (r.lineEnd - r.lineStart + 1), 0);
+  }
+
+  private technicalHelpers(): FoldedForm[] {
+    const out: FoldedForm[] = [];
+    for (const name of this.helpers) {
+      if (this.calls.unreachable.includes(name)) continue;
+      const block = this.formBlocks.get(name);
+      if (!block) continue;
+      out.push({
+        name,
+        lineStart: block.lineStart,
+        lineEnd: block.lineEnd,
+        // Counted off 2.2's call graph, not off the walk: a helper performed
+        // only by another helper is never walked and would otherwise read as
+        // called from nowhere.
+        callSites: this.calls.performs.filter((p) => p.target === name).length,
+      });
+    }
+    return out.sort((a, b) => a.lineStart - b.lineStart);
+  }
+
+  /**
+   * §5.8: *"14 forms identical except the rule number"*.
+   *
+   * Two routines are the same shape when their bodies match once every number is
+   * replaced by `#` and every occurrence of their own name is removed — which is
+   * exactly what the fourteen rule routines of the reference case differ by.
+   */
+  private clones(): CloneGroup[] {
+    const groups = new Map<string, string[]>();
+    for (const [name, block] of this.formBlocks) {
+      const body: string[] = [];
+      // The `FORM` header is part of the shape: two routines with the same body
+      // and different parameters are not the same routine.
+      for (let i = block.openIndex; i <= bodyRange(block)[1]; i++) {
+        body.push(this.statements[i].text.toUpperCase().replace(/\d+/g, '#'));
+      }
+      const shape = body.join(' | ').split(name.toUpperCase()).join('<SELF>');
+      groups.set(shape, [...(groups.get(shape) ?? []), name]);
+    }
+    const out: CloneGroup[] = [];
+    for (const [shape, names] of groups) {
+      if (names.length < 2) continue;
+      const blocks = names
+        .map((n) => this.formBlocks.get(n))
+        .filter((b): b is Block => b !== undefined);
+      if (!blocks.length) continue;
+      out.push({
+        names: names.sort(),
+        lineStart: Math.min(...blocks.map((b) => b.lineStart)),
+        lineEnd: Math.max(...blocks.map((b) => b.lineEnd)),
+        shape: snippet(shape),
+      });
+    }
+    return out.sort((a, b) => a.lineStart - b.lineStart);
+  }
+}
+
