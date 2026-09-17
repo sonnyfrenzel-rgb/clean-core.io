@@ -392,7 +392,7 @@ Export. Was hier steht, ist deshalb das, was wir selbst belegen können.
 
 | # | Schritt | Größe |
 |---|---|---|
-| 4.3 | **Signavio-Export geprüft:** Export → Import in SAP Signavio Process Manager, im Workspace eines Mitglieds mit Lizenz. Protokoll, was überlebt (Namensraum-Erweiterungen, Lanes, Layout) und was nicht. Erst danach darf eine Seite „getestet mit SAP Signavio Process Manager" sagen — mit Datum, und ausdrücklich nur für diese eine Richtung | S, extern |
+| 4.3 | **Signavio-Export geprüft — zurückgestellt, Sonny führt es vor dem 3.0-Release durch (Entscheidung 18.09.2026):** Export → Import in SAP Signavio Process Manager, im Workspace eines Mitglieds mit Lizenz. Protokoll, was überlebt (Namensraum-Erweiterungen, Lanes, Layout) und was nicht. Erst danach darf eine Seite „getestet mit SAP Signavio Process Manager" sagen — mit Datum, und ausdrücklich nur für diese eine Richtung | S, extern |
 | 4.4 | **Kurzbrief:** Prozessbild, Regeln, offene Fragen — jede Aussage mit Anker; PDF und `.bpmn` in einem Download | M |
 
 Die Nummern 4.1 und 4.2 bleiben unbesetzt: sie trugen den BPMN-Import und den
@@ -502,7 +502,12 @@ ganzen Fluss durchläuft und die Copy-CI grün ist — **und die neue Landingpag
 echten Produktansichten live ist**: kein Mockup-Bild auf einer öffentlichen Seite,
 Anmeldung wie heute erreichbar, Landing-Guards und Signavio-/Geld-Guards grün,
 JSON-LD und sichtbares FAQ deckungsgleich. 3.0 wird nicht ohne die neue Startseite
-veröffentlicht — **und nicht ohne die Management-Sicht aus 3.0.10**: ihre Frage in
+veröffentlicht — **und nicht ohne den geprüften Signavio-Export aus 4.3**
+(Entscheidung Sonny, 18.09.2026): er öffnet einen eigenen Export in SAP Signavio
+Process Manager, im Workspace eines Mitglieds mit Lizenz, und legt das Protokoll
+mit Datum ins Repository. Bis dahin sagt keine Seite „getestet mit SAP Signavio
+Process Manager". Der Schritt ist von der Phase 4 an diese Stelle gerückt, weil er
+nicht gebaut, sondern durchgeführt wird — **und nicht ohne die Management-Sicht aus 3.0.10**: ihre Frage in
 einem Satz beantwortet, die vier Töpfe und der Readiness-Verlauf als Diagramm, „nicht
 bestimmt" in jedem davon als eigene Fläche, jede Zahl mit ihrer Abdeckung und als Text
 erreichbar, Kosten nur als Simulation mit Annahmenrevision.
