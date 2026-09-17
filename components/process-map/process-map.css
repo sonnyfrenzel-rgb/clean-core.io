@@ -1,0 +1,85 @@
+/*
+ * The process map — roadmap 2.5.
+ *
+ * bpmn-js draws into an SVG of its own, so the three things this view adds to
+ * it have to be written here rather than as utility classes: the focusable node
+ * buttons that sit over the diagram, the mark on the selected node, and the
+ * dashed outline of an element the code does not anchor.
+ *
+ * Every colour is a token of `DESIGN.md` §1. Nothing here is a literal.
+ */
+
+.cc-map-canvas {
+  background: var(--cc-surface);
+}
+
+/* The diagram's own keyboard handling would fight the roving focus below. */
+.cc-map-canvas .djs-container {
+  outline: none;
+}
+
+/*
+ * One button per flow node, transparent and exactly the size of the element it
+ * sits on. It is the click target (a click opens the code card) and the focus
+ * target (a focused node marks its lines like a hovered one, DESIGN.md §5.7).
+ * Focus is visible *on the node*, which is the only place it means anything.
+ */
+.cc-map-node {
+  display: block;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+}
+
+.cc-map-node:focus-visible {
+  outline: 2px solid var(--cc-focus);
+  outline-offset: 2px;
+}
+
+/* Selected is `--cc-ink` and never green: in the workspace green is a proof. */
+.cc-map-node[data-selected='true'] {
+  outline: 2px solid var(--cc-ink);
+  outline-offset: 2px;
+}
+
+.cc-map-node:hover {
+  background: color-mix(in srgb, var(--cc-ink) 6%, transparent);
+}
+
+/*
+ * An element the code does not anchor says so in words, under the shape, and
+ * carries a dashed outline. Colour alone would be invisible in a high-contrast
+ * theme and on a printout, and this is the one state a reader must not miss.
+ */
+.cc-map-unanchored-badge {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 2px;
+  display: inline-block;
+  border: 1px solid var(--cc-neutral-border);
+  border-radius: 4px;
+  background: var(--cc-surface);
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  color: var(--cc-neutral);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.cc-map-canvas .cc-unanchored .djs-visual > :first-child {
+  stroke-dasharray: 5 3;
+}
+
+@media (forced-colors: active) {
+  .cc-map-node:focus-visible,
+  .cc-map-node[data-selected='true'] {
+    outline: 2px solid CanvasText;
+  }
+}

@@ -35,7 +35,16 @@ const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
  * it. The shell is the first screen that states provenance about a real
  * project, so it is the first place a freehand badge would actually be read.
  */
-const CC_SOURCE_DIRS = ['components/cc', 'app/(app)/admin/design-system', 'components/workspace'];
+const CC_SOURCE_DIRS = [
+  'components/cc',
+  'app/(app)/admin/design-system',
+  'components/workspace',
+  // Roadmap 2.5: the process map is the second screen built on these
+  // components, and its legend is a provenance legend — the one place where a
+  // freehand word for "reconstructed" would be read as the definition of the
+  // vocabulary rather than a use of it.
+  'components/process-map',
+];
 
 function ccSources(): { rel: string; text: string }[] {
   const out: { rel: string; text: string }[] = [];
