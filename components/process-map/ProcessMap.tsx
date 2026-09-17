@@ -213,37 +213,33 @@ export default function ProcessMap({
    */
   const [editing, setEditing] = useState(false);
   const [session, setSession] = useState(0);
-  const draftRef = useRef<string | null>(null);
 
   /**
-   * A draft belongs to the source it was drawn on, and to nothing else.
+   * A draft belongs to the source it was drawn on, and carries it.
    *
-   * `openWith` hands the modeller `draftRef.current ?? model.xml` — the draft
-   * wins, which is right while the reader is working on one process and wrong
-   * the moment this instance is handed another. React keeps a component at the
-   * same position in the tree alive across a route change, so moving from one
-   * project to the next leaves the ref full of the last one's drawing. On its
-   * own that was a display fault. Since the save path arrived it is worse than
-   * that: *Save* would send the first project's XML under the second project's
-   * id and write it as an edited revision there.
+   * `openWith` prefers the draft over `model.xml`, which is right while the
+   * reader works on one process and wrong the moment this instance is handed
+   * another. React keeps a component at the same position in the tree alive
+   * across a route change, so moving from one project to the next would leave a
+   * bare `string` ref full of the last one's drawing. On its own that was a
+   * display fault. Since the save path arrived it is worse: *Save* would send the
+   * first project's XML under the second project's id and write it there as an
+   * edited revision.
    *
-   * So the draft is tied to the source it came from and thrown away when that
-   * changes, during the render that brings the new one, before anything is
-   * painted (React's "adjusting state when a prop changes"). Bumping `session`
-   * in the same breath remounts the modeller, so there is no instance left
-   * holding the old drawing. `model` is untouched either way — the Ist revision
-   * after editing is the Ist revision before it.
+   * The first attempt cleared the ref during render. That reads like React's
+   * "adjusting state when a prop changes", but it is not: mutating a ref while
+   * rendering is exactly what `react-hooks/refs` forbids, and rightly — a render
+   * can be thrown away and run again, and the lost draft does not come back.
    *
-   * The comparison is `!==` on the prop, so an unchanged source is one pointer
-   * check; the full string comparison only happens when there is genuinely a
-   * new source, which is exactly when the draft has to go.
+   * So the draft carries its own identity instead. `openWith` hands over a
+   * drawing only when it was drawn on the source now on screen; anything else is
+   * simply not this process's draft, and no clearing step has to remember to
+   * run. The editor is keyed on the source as well as on `session`, so a new
+   * source builds a new modeller rather than leaving one alive with the old
+   * drawing inside it. `model` is untouched either way — the Ist revision after
+   * editing is the Ist revision before it.
    */
-  const [drawnOn, setDrawnOn] = useState(source);
-  if (drawnOn !== source) {
-    setDrawnOn(source);
-    draftRef.current = null;
-    setSession((n) => n + 1);
-  }
+  const draftRef = useRef<{ source: string; xml: string } | null>(null);
 
   /**
    * What the tree has open: what the reader opened, plus the way down to the
@@ -340,11 +336,18 @@ export default function ProcessMap({
     [model],
   );
 
-  /** What the modeller opens with: the draft if there is one, the reconstruction otherwise. */
-  const openWith = useCallback(() => draftRef.current ?? model.xml, [model]);
+  /**
+   * What the modeller opens with: this source's draft if there is one, the
+   * reconstruction otherwise. A drawing made on another source is not a draft
+   * here — it is somebody else's process, and it is dropped by not matching.
+   */
+  const openWith = useCallback(
+    () => (draftRef.current?.source === source ? draftRef.current.xml : model.xml),
+    [model, source],
+  );
   const keepDraft = useCallback((xml: string) => {
-    draftRef.current = xml;
-  }, []);
+    draftRef.current = { source, xml };
+  }, [source]);
   const discardDraft = useCallback(() => {
     draftRef.current = null;
     setSession((token) => token + 1);
@@ -602,7 +605,11 @@ export default function ProcessMap({
         <div className="min-w-0">
           {view === 'map' && editing ? (
             <BpmnEditor
-              key={session}
+              // `session` is what *Discard* bumps; `source` is what a different
+              // process changes. Either one has to build a new modeller: keeping
+              // the old instance would keep the old drawing inside it, whatever
+              // `openWith` now returns.
+              key={`${session}|${source}`}
               openWith={openWith}
               baseXml={model.xml}
               fileName={model.fileName}
