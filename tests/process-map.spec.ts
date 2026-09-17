@@ -351,10 +351,30 @@ test.describe('the map on the page, without a mouse', () => {
     expect(await stops(), 'the map is not exactly one tab stop').toBe(1);
 
     // Tab into the map from the segmented control above it.
+    //
+    // Roadmap 2.9 put the navigator between the two — the path line, the filter
+    // row, the search field and the outline — so the map is no longer the very
+    // next stop. What 2.5 holds is unchanged and is checked here in full: the
+    // map is reachable from the keyboard, it is **one** stop, and every stop on
+    // the way to it announces itself. A count of Tab presses was never the
+    // claim; a reader who cannot name the control they have landed on is.
     await page.locator('[data-cc-segmented] [data-cc-segment="on"]').focus();
-    await page.keyboard.press('Tab');
-    const firstFocused = await page.evaluate(() => document.activeElement?.getAttribute('data-map-node'));
-    expect(firstFocused, 'Tab did not land on a node of the map').toBeTruthy();
+    let firstFocused: string | null = null;
+    const onTheWay: string[] = [];
+    for (let press = 0; press < 25 && !firstFocused; press += 1) {
+      await page.keyboard.press('Tab');
+      const stop = await page.evaluate(() => {
+        const element = document.activeElement as HTMLElement | null;
+        return {
+          node: element?.getAttribute('data-map-node') ?? null,
+          name: (element?.getAttribute('aria-label') || element?.textContent || '').trim(),
+        };
+      });
+      if (stop.node) firstFocused = stop.node;
+      else onTheWay.push(stop.name);
+    }
+    expect(firstFocused, 'Tab never reached a node of the map').toBeTruthy();
+    expect(onTheWay.filter((name) => !name), 'a tab stop on the way to the map announces nothing').toEqual([]);
 
     // --- the arrow keys move along the flow, and Enter opens the code -----
     await page.keyboard.press('ArrowRight');
