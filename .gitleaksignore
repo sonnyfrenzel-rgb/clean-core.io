@@ -6,3 +6,13 @@
 # v2.9.15; this entry keeps the full-history scheduled scan from re-reporting the
 # old commit.
 c1f86075617b9757a45cad10c0ab2d900fa83f7f:scripts/qa/lib/redact.mjs:generic-api-key:25
+
+# f1e0bab (18.09.2026): the `key` field of the sealed security register. It is the
+# per-report AES-256 key *wrapped with RSA-OAEP-SHA256* against the audit public key
+# (scripts/security/lib/envelope.mjs:65) — only the holder of SECURITY_AUDIT_PRIVATE_KEY
+# can unwrap it, which is the entire point of committing the register at all. The whole
+# file is base64 produced by that one function: `v`, `alg`, `key`, `iv`, `tag`, `data`
+# and nothing else, so there is no plaintext in it to leak. The wrapped key is fresh
+# random bytes per report, so its entropy drifts across the generic-api-key threshold
+# from one write to the next — this is the first write that crossed it.
+f1e0babd37556141577638dfe9604388290189ce:docs/security/register.enc.json:generic-api-key:1
