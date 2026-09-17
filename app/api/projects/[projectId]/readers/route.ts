@@ -1,0 +1,224 @@
+import { NextRequest, NextResponse } from 'next/server';
+import {
+  verifyRequestAuth,
+  getAdminDb,
+  assertAccountActive,
+  assertMfaSatisfied,
+  auditActorEmail,
+  QuotaError,
+} from '@/lib/firebase-admin';
+import { assertRateLimit } from '@/lib/rate-limit';
+import { projectReaderOverview, readersAfterRevoke, isProjectOwner } from '@/lib/project-readers';
+import type { Invitation, InvitationStatus } from '@/lib/invitation-types';
+
+/**
+ * Roadmap 5.5 — Übersicht und Widerruf.
+ *
+ * GET    → who has Einsicht into this project, and since when.
+ * DELETE → take it away. Effective immediately, and at the rules.
+ *
+ * Both are the owner's, and only the owner's. An administrator does not
+ * qualify: `firestore.rules` stopped letting one read a project on 16.09.2026,
+ * and a route that let one read — or change — the list of who else may would
+ * hand that back through the side door.
+ *
+ * "Wer seit wann" comes off the server's own record. The name and the address
+ * are on the invitation, written by the Admin SDK when it was accepted; the
+ * timestamp is the server clock at that moment. Nothing on this page was ever
+ * typed by a browser.
+ *
+ * The revocation is a single write to a single field on a single document —
+ * `projects/{projectId}.readers` — because that is the only fact the read rule
+ * consults. There is no second copy to miss: after this returns, a client
+ * `getDoc` on the project fails with `permission-denied`, and
+ * `GET /api/projects/{projectId}` stops handing out the run, both because they
+ * read the same list. The invitation is marked `revoked` in the same
+ * transaction so the overview and the register agree, but the invitation is the
+ * record, not the permission.
+ */
+
+type AdminDb = Awaited<ReturnType<typeof getAdminDb>>['db'];
+
+/** The Admin SDK is reached through a dynamic import, so its handles arrive untyped. */
+interface InviteDoc {
+  id: string;
+  ref: unknown;
+  data: () => Record<string, unknown>;
+}
+interface Tx {
+  get: (r: unknown) => Promise<{ exists: boolean; data: () => Record<string, unknown> | undefined }>;
+  set: (r: unknown, data: Record<string, unknown>, opts?: { merge: boolean }) => void;
+}
+
+/** A Firestore Timestamp, a Date or an ISO string, as ISO. Never a browser's word. */
+function isoOf(value: unknown): string | null {
+  if (typeof value === 'string') return value;
+  if (value instanceof Date) return value.toISOString();
+  const maybe = value as { toDate?: () => Date } | null;
+  if (maybe && typeof maybe.toDate === 'function') return maybe.toDate().toISOString();
+  return null;
+}
+
+function invitationOf(id: string, data: Record<string, unknown>, projectId: string): Invitation {
+  const invitedBy = (data.invitedBy || {}) as { uid?: string; name?: string };
+  const acceptedBy = data.acceptedBy as { uid?: string; email?: string } | null | undefined;
+  return {
+    id,
+    projectId,
+    email: typeof data.email === 'string' ? data.email : '',
+    invitedBy: { uid: invitedBy.uid ?? '', name: invitedBy.name ?? '' },
+    invitedAt: isoOf(data.invitedAt) ?? '',
+    expiresAt: isoOf(data.expiresAt) ?? '',
+    status: (data.status as InvitationStatus) ?? 'pending',
+    acceptedBy: acceptedBy?.uid ? { uid: acceptedBy.uid, email: acceptedBy.email ?? '' } : null,
+    acceptedAt: isoOf(data.acceptedAt),
+    revokedAt: isoOf(data.revokedAt),
+  };
+}
+
+async function openAsOwner(
+  req: NextRequest,
+  params: Promise<{ projectId: string }>,
+  mutating: boolean,
+): Promise<
+  | { ok: true; uid: string; projectId: string; db: AdminDb; project: Record<string, unknown> }
+  | { ok: false; response: NextResponse }
+> {
+  const decoded = await verifyRequestAuth(req);
+  if (!decoded) {
+    return { ok: false, response: NextResponse.json({ error: 'Authentication required.' }, { status: 401 }) };
+  }
+
+  try {
+    await assertMfaSatisfied(req, decoded);
+  } catch (mfaErr: unknown) {
+    const q = mfaErr as { message?: string; status?: number };
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: q?.message || 'Multi-factor authentication required.' },
+        { status: q?.status || 403 },
+      ),
+    };
+  }
+
+  if (mutating) {
+    try {
+      await assertRateLimit(`project-readers:${decoded.uid}`, 60, 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      const q = rateErr as { message?: string; status?: number };
+      return {
+        ok: false,
+        response: NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 }),
+      };
+    }
+    // Revoking is how an owner stops a mistake, so it is not gated on the terms
+    // version or on approval — only a hard-suspended account is refused.
+    try {
+      await assertAccountActive(decoded.uid);
+    } catch (gateErr: unknown) {
+      if (gateErr instanceof QuotaError) {
+        return { ok: false, response: NextResponse.json({ error: gateErr.message }, { status: gateErr.status }) };
+      }
+      throw gateErr;
+    }
+  }
+
+  const { projectId } = await params;
+  if (!projectId || typeof projectId !== 'string') {
+    return { ok: false, response: NextResponse.json({ error: 'Missing project id.' }, { status: 400 }) };
+  }
+
+  const { db } = await getAdminDb();
+  const snap = await db.collection('projects').doc(projectId).get();
+  // "Not yours" and "not there" answer the same, so that this route cannot be
+  // used to find out which project ids exist.
+  if (!snap.exists) {
+    return { ok: false, response: NextResponse.json({ error: 'Project not found.' }, { status: 404 }) };
+  }
+  const project = (snap.data() || {}) as Record<string, unknown>;
+  if (!isProjectOwner(project, decoded.uid)) {
+    return { ok: false, response: NextResponse.json({ error: 'Project not found.' }, { status: 404 }) };
+  }
+  return { ok: true, uid: decoded.uid, projectId, db, project };
+}
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
+  try {
+    const gate = await openAsOwner(req, params, false);
+    if (!gate.ok) return gate.response;
+
+    const invitesSnap = await gate.db
+      .collection('projects').doc(gate.projectId)
+      .collection('invitations')
+      .get();
+    const invitations = invitesSnap.docs.map((d: InviteDoc) =>
+      invitationOf(d.id, d.data() as Record<string, unknown>, gate.projectId));
+
+    // Only the accepted ones, and only their uid, address and date — the
+    // pending invitations, with the addresses of people who have not answered,
+    // are not what this endpoint is for.
+    const { entries, unaccountedUids } = projectReaderOverview(gate.project, invitations);
+    return NextResponse.json({ entries, unaccountedUids });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to read the access list.';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
+  try {
+    const gate = await openAsOwner(req, params, true);
+    if (!gate.ok) return gate.response;
+
+    let body: { uid?: unknown } = {};
+    try {
+      body = (await req.json()) as { uid?: unknown };
+    } catch {
+      body = {};
+    }
+    const uid = typeof body.uid === 'string' ? body.uid.trim() : '';
+    if (!uid) {
+      return NextResponse.json({ error: 'Missing uid.' }, { status: 400 });
+    }
+    if (uid === gate.uid) {
+      // An owner cannot revoke themselves out of their own project: the read
+      // rule answers on `userId`, so it would change nothing and only look as
+      // if it had.
+      return NextResponse.json({ error: 'The owner cannot be revoked.' }, { status: 400 });
+    }
+
+    const actorEmail = await auditActorEmail(gate.db, gate.uid);
+    const projectRef = gate.db.collection('projects').doc(gate.projectId);
+    const invitesSnap = await projectRef.collection('invitations').get();
+    const affected = invitesSnap.docs.filter((d: InviteDoc) => {
+      const data = d.data() as Record<string, unknown>;
+      const acceptedBy = data.acceptedBy as { uid?: string } | null | undefined;
+      return acceptedBy?.uid === uid && data.status === 'accepted';
+    });
+
+    const revokedAt = new Date().toISOString();
+    await gate.db.runTransaction(async (tx: Tx) => {
+      const fresh = await tx.get(projectRef);
+      const project = (fresh.data() || {}) as Record<string, unknown>;
+      // The list is recomputed inside the transaction, so two revocations at
+      // once cannot put back what the other took away.
+      tx.set(projectRef, { readers: readersAfterRevoke(project, uid) }, { merge: true });
+      for (const invite of affected) {
+        tx.set(invite.ref, { status: 'revoked', revokedAt }, { merge: true });
+      }
+      tx.set(gate.db.collection('audit_events').doc(), {
+        actorUid: gate.uid,
+        actorEmail,
+        action: `project.reader.revoke:${gate.projectId}`,
+        targetUid: uid,
+        timestamp: new Date(),
+      });
+    });
+
+    return NextResponse.json({ ok: true, uid, revokedAt, invitationsRevoked: affected.length });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to revoke access.';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

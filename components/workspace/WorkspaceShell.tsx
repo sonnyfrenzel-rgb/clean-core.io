@@ -13,6 +13,7 @@ import NotDeterminedCard from './NotDeterminedCard';
 import FirstLook from './FirstLook';
 import AskThisCase from './AskThisCase';
 import CoachMarkNote from './CoachMarks';
+import WorkspaceAccessList from './AccessList';
 import { useCoachMarks } from '@/hooks/useCoachMarks';
 import { preAnsweredQuestion, type PreAnswered } from '@/lib/ask-this-case';
 import type { SourceReading } from '@/lib/first-look';
@@ -281,6 +282,14 @@ export default function WorkspaceShell({
           onDismissAll={marks.dismissAll}
         />
         <NotDeterminedCard data={open} />
+      </div>
+
+      {/* Roadmap 5.5 — "Members on this case" (mockup screen 1/4): who has read
+          access, since when, and the revocation. Owner only, and not by hiding
+          it: the route behind it answers nobody else, so for a reader the
+          section is not rendered at all. */}
+      <div className="mt-5 max-w-3xl">
+        <WorkspaceAccessList projectId={projectId} />
       </div>
 
       {/* "Show tips again", where §6.2 puts it: offered once the tips are gone,

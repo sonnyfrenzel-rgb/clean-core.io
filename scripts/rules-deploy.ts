@@ -39,6 +39,7 @@ import {
   checkRulesDeployment,
   normaliseRulesText,
   parseClientWritableProjectFields,
+  parseProjectReadRule,
   type RulesDeploymentRecord,
 } from '../lib/firestore-rules-contract';
 
@@ -145,7 +146,15 @@ function check(): number {
     console.log(`  for:     ${pending.recordedFor}`);
     console.log(`  removes: ${pending.removesFromClient.join(', ') || '—'}`);
     console.log(`  adds:    ${pending.addsToClient.join(', ') || '—'}`);
-    console.log('  Nothing in the app depends on them, so this is not an error. Deploy with `npm run deploy:rules`.');
+    if (verdict.readRuleChanged) {
+      // The one line that must not be missed: a widened read is not visible in
+      // the two field lists above, and an app half that depends on one is
+      // broken in production until the deploy.
+      console.log(`  READ RULE CHANGED on /projects/{projectId}: ${pending.projectDocumentReadRule}`);
+      console.log('  If the app depends on that read, DEPLOY FIRST — `npm run deploy:rules` — then ship the app.');
+    } else {
+      console.log('  Nothing in the app depends on them, so this is not an error. Deploy with `npm run deploy:rules`.');
+    }
     return 0;
   }
   console.error(`FAILED (${verdict.direction}) — ${RULES_DEPLOYMENT_RECORD} and ${RULES_FILE} do not agree:`);
@@ -162,6 +171,7 @@ function recordDeployed(): number {
     sha256OfLfNormalisedText: sha256(rules),
     deployedAt: today(),
     clientWritableProjectFields: parseClientWritableProjectFields(rules),
+    projectDocumentReadRule: parseProjectReadRule(rules),
   };
   delete record.pending;
   writeRecord(record);
@@ -188,6 +198,7 @@ function recordPending(reason: string): number {
     recordedFor: reason,
     addsToClient: now.filter((f) => !deployed.has(f)).sort(),
     removesFromClient: [...deployed].filter((f) => !now.includes(f)).sort(),
+    projectDocumentReadRule: parseProjectReadRule(rules),
     note: record.pending?.note
       ?? 'Bis zum Deploy sind die alten Regeln live. `npm run deploy:rules` rollt aus und loescht diesen Block.',
   };

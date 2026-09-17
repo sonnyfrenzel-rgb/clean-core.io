@@ -37,6 +37,16 @@
       "testSuite",
       "updatedAt",
       "worklist"
-    ]
+    ],
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && resource.data.userId == request.auth.uid;"
+  },
+  "pending": {
+    "sha256OfLfNormalisedText": "88b5fe431436d64e9b78577f35ad14aafe4298bc1a6050223a19ae1d09f38d6d",
+    "recordedAt": "2026-09-17",
+    "recordedFor": "Roadmap 5.4 Einsicht: lesen darf ausser dem Besitzer, wer eine Einladung angenommen hat (projects/{projectId}.readers). Dazu ein ausdrueckliches read/write-Verbot auf projects/{projectId}/invitations/**, weil dort die E-Mail-Adressen anderer Personen stehen.",
+    "addsToClient": [],
+    "removesFromClient": [],
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && (resource.data.userId == request.auth.uid || invitedReader(resource.data));",
+    "note": "Kein Feld wird client-schreibbar — `readers` steht bewusst in keiner der beiden Client-Allowlists. Geaendert hat sich die LESE-Regel, und genau darauf stuetzt sich die App-Haelfte von 5.4: solange die alten Regeln live sind, bekommt eine eingeladene Person `permission-denied` auf das Projektdokument. **Regel-Deploy vor der App** (docs/ROADMAP.md Phase 5, Risiko 6). `npm run deploy:rules` rollt aus und loescht diesen Block."
   }
 }

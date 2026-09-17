@@ -1,5 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { isProjectOwner, mayReadProject } from '@/lib/project-readers';
+
+/**
+ * GET /api/projects/{projectId}  — roadmap 5.4
+ *
+ * The active run of a project, for somebody who may read that project.
+ *
+ * `firestore.rules` lets an invited reader read the project document itself —
+ * the ABAP source is on it — but leaves `projects/{id}/runs/{runId}` owner-only.
+ * A rule there could only answer without a `get()` if every run document
+ * carried its own copy of `readers`, and then a revocation would have to land
+ * in as many documents as the project has runs. A revocation that must succeed
+ * everywhere is weaker than one that succeeds in a single place, so the run
+ * comes through here instead, and this route re-reads `readers` off the one
+ * project document on every request. The moment the owner revokes, the rule and
+ * this route stop answering from the same fact, in the same instant.
+ *
+ * Read only. It returns the stored run and nothing computed, it takes no body,
+ * and it grants nobody a write of any kind. `role` is what the caller is, not
+ * what they asked to be: the client uses it to know that generating,
+ * confirming, signing and exporting are not theirs.
+ */
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ projectId: string }> },
+) {
+  try {
+    const decoded = await verifyRequestAuth(req);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+
+    // The subject is a project's evidence, so a token from before the second
+    // factor reads it here no more than it does anywhere else.
+    try {
+      await assertMfaSatisfied(req, decoded);
+    } catch (mfaErr: unknown) {
+      const q = mfaErr as { message?: string; status?: number };
+      return NextResponse.json(
+        { error: q?.message || 'Multi-factor authentication required.' },
+        { status: q?.status || 403 },
+      );
+    }
+
+    const { projectId } = await params;
+    if (!projectId || typeof projectId !== 'string') {
+      return NextResponse.json({ error: 'Missing project id.' }, { status: 400 });
+    }
+
+    const { db } = await getAdminDb();
+    const ref = db.collection('projects').doc(projectId);
+    const snap = await ref.get();
+    // Same answer for "no such project" and "not yours": a 404 that only
+    // appears for projects that exist is a way to ask whether one does.
+    if (!snap.exists) {
+      return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
+    }
+    const project = snap.data() || {};
+    if (!mayReadProject(project, decoded.uid)) {
+      return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
+    }
+
+    const activeRunId = typeof project.activeRunId === 'string' ? project.activeRunId : null;
+    let run: Record<string, unknown> | null = null;
+    if (activeRunId) {
+      const runSnap = await ref.collection('runs').doc(activeRunId).get();
+      run = runSnap.exists ? (runSnap.data() as Record<string, unknown>) : null;
+    }
+
+    return NextResponse.json({
+      role: isProjectOwner(project, decoded.uid) ? 'owner' : 'reader',
+      activeRunId,
+      run,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to read project.';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
 
 /**
  * DELETE /api/projects/{projectId}
