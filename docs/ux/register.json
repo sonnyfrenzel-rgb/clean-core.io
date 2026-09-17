@@ -1422,6 +1422,44 @@
       "status": "widerlegt",
       "reason": "Dublette zu [774b8eb5bbac] / UX-111 und [76fa16657ade] / UX-112 - dieselben vier Schriftgroessen ein drittes Mal. Widerlegt wie dort: text-[22px] und text-[15px] sind die in DESIGN.md §1.2 beschlossene Arbeitsraum-Skala, text-[0.85em] ist bewusst em-relativer Inline-Code (components/PresentationViewer.tsx:49). Der Befund raeumt violet-400 bereits als bewusst ein und haette denselben Schluss auch fuer die uebrigen Werte ziehen koennen; die coverage_notes desselben Berichts tun es.",
       "updatedAt": "2026-09-17T06:40:03.892Z"
+    },
+    {
+      "id": "UX-114",
+      "fingerprint": "e93a7029a670",
+      "title": "Dark-Bestand ohne Rückweg nach Entfernung des Schalters",
+      "severity": "high",
+      "area": "release",
+      "firstSeenHead": "a19945ef01dcf402d3c4083855f839fb2b96d8d5",
+      "createdAt": "2026-09-17T07:23:37.261Z",
+      "status": "widerlegt",
+      "reason": "Refuted: a stored dark value is inert. No code in app/, components/, hooks/ or lib/ adds or toggles the 'dark' class or reads profile.theme (grep over all .ts/.tsx finds none), and tests/dark-mode-guard.spec.ts holds that line from four sides: no dark: variant anywhere (:77), no .dark rule in any stylesheet (:89), nothing wires a theme up again (:97), and on the rendered page 'forcing class=\"dark\" onto the document changes no colour' (:137). A user with theme=dark on their profile sees exactly the light product; there is nothing to be trapped in.",
+      "updatedAt": "2026-09-17T07:23:37.261Z"
+    },
+    {
+      "id": "UX-115",
+      "fingerprint": "3ccb3a03cdd2",
+      "title": "Demo verspricht sieben Stufen ohne Mitnahme",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "a19945ef01dcf402d3c4083855f839fb2b96d8d5",
+      "createdAt": "2026-09-17T07:23:37.374Z",
+      "status": "eingeplant",
+      "step": "0.2",
+      "reportedSeverity": "high",
+      "updatedAt": "2026-09-17T07:23:37.374Z"
+    },
+    {
+      "id": "UX-116",
+      "fingerprint": "4c23ab0eef56",
+      "title": "FREE-Badge verschweigt Erstlauf-Begrenzung",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "a19945ef01dcf402d3c4083855f839fb2b96d8d5",
+      "createdAt": "2026-09-17T07:23:37.498Z",
+      "status": "behoben",
+      "step": "sofort",
+      "updatedAt": "2026-09-17T07:26:21.041Z",
+      "fixedIn": "2ee0c77"
     }
   ]
 }
