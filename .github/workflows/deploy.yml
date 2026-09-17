@@ -224,6 +224,7 @@ jobs:
             S4_HOST_ALLOWLIST=${{ secrets.S4_HOST_ALLOWLIST }}
             AUDIT_SIGNING_KEY=${{ secrets.AUDIT_SIGNING_KEY }}
             AUDIT_SIGNING_PRIVATE_KEY=${{ secrets.AUDIT_SIGNING_PRIVATE_KEY }}
+            AUDIT_SIGNING_PUBLIC_KEYS_RETIRED=${{ secrets.AUDIT_SIGNING_PUBLIC_KEYS_RETIRED }}
             MFA_BACKUP_CODE_PEPPER=${{ secrets.MFA_BACKUP_CODE_PEPPER }}
             PILOT_APPROVAL_SECRET=${{ secrets.PILOT_APPROVAL_SECRET }}
             NODE_OPTIONS=--max-old-space-size=4096
