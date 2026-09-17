@@ -42,6 +42,15 @@ import { ncName } from './xml';
  *    routine that performs itself is a call activity at the point of recursion,
  *    and the expansion stops at `MAX_NODES` so a crafted source cannot make the
  *    browser build an exponential file.
+ * 7. **A guard gets a way past it.** A routine that opens with
+ *    `CHECK p_rfc = abap_true.` is drawn by `DESIGN.md` §5.8 as a conditional
+ *    flow *into* the routine rather than as a gateway, and the skeleton folds
+ *    the `CHECK` onto that flow for it. Without a second flow beside it, the
+ *    only way on from the caller is a condition — and a reader that follows the
+ *    file has to conclude the program ends at the switch. It does not: the
+ *    `CHECK` leaves the routine and the caller carries on. So every folded
+ *    guard gets a **bypass flow** around the step it guards, carrying the
+ *    negated condition. See `bypassGuard`.
  */
 
 export type BpmnTag =
@@ -97,6 +106,12 @@ export interface ExportFlow {
   edge: SkeletonEdge;
   /** A loop-back: drawn over the top, ignored when ranking. */
   back: boolean;
+  /**
+   * Decision 7: the id of the guarded element this flow goes around. Set only
+   * on a bypass flow, and written into its trace so a reader of the file can
+   * tell a way past a switch from a branch of the process.
+   */
+  bypassOf?: string;
 }
 
 export interface ExportBand {
@@ -193,6 +208,15 @@ function tagOf(kind: SkeletonNode['kind']): BpmnTag {
     case 'error-boundary': return 'boundaryEvent';
     default: return 'task';
   }
+}
+
+/**
+ * The run switch the skeleton folded onto the way into this element, when there
+ * is one — `applyGuards` writes it on the call site as well as on the flow.
+ */
+function guardOf(node: ExportNode): string | null {
+  const guard = node.source.detail?.guard;
+  return typeof guard === 'string' && guard ? guard : null;
 }
 
 /** The visible name. Only source tokens, joined to a statement where one token alone says too little. */
@@ -411,6 +435,99 @@ class ModelBuilder {
         node.fallback = 'unattached-handler';
       }
       if (node.tag === 'exclusiveGateway') node.defaultFlow = this.defaultFlowOf(node, into);
+    }
+    // After the defaults, so a bypass can never be read as a gateway's default
+    // arm — it carries a condition of its own and is not one.
+    for (const node of local.values()) this.bypassGuard(node, into);
+  }
+
+  /**
+   * Decision 7 — the way past a folded guard.
+   *
+   * `applyGuards` in the skeleton takes a routine that opens with
+   * `CHECK p_rfc = abap_true.`, drops the gateway, and writes the condition onto
+   * the flow *into* the call site (`DESIGN.md` §5.8: the run switch is a
+   * condition on the flow, not a decision of the process). What it cannot write
+   * is the other half of that `CHECK`: with the switch off the routine returns
+   * at its first line and **the caller goes on**. The file then has one way
+   * forward and a condition on it, and anything that walks it — this product's
+   * own run variants, or any modeller somebody opens the `.bpmn` in — concludes
+   * that the program stops at the switch. On the 1.000-line example that reads
+   * as *"31 of 65 steps are not reached"* with `p_rfc` off; 59 of them run.
+   *
+   * So each flow that carries a folded guard gets a second one beside it, from
+   * the same source to where the guarded step leads, carrying `NOT ( … )` — the
+   * same negation the skeleton writes for a `CHECK` it did **not** fold. No
+   * gateway is added and no condition is invented: both flows say a thing the
+   * source writes, and the pair is exactly BPMN's conditional flow with its
+   * alternative.
+   *
+   * **Why here and not in `lib/abap/process-skeleton.ts`.** The bypass is not a
+   * transfer of control any statement writes — it is what the *absence* of an
+   * effect looks like once §5.8 has folded a routine's first line onto its call.
+   * The skeleton's edges are read elsewhere as the decisions of the program:
+   * `first-look.ts` counts the arms of every gateway, `ask-this-case.ts` answers
+   * a question from them, and `process-naming.ts` hands every condition on a
+   * node to the naming model. A synthetic arm there would add a decision the
+   * code does not take, and a phrase for the model to name that no line of ABAP
+   * stands behind. The reader that has the problem, on the other hand, reads the
+   * **file**: `process-map.ts` parses the exported BPMN and `process-navigation.ts`
+   * walks what it parsed — so the file is where the truth has to be, and where a
+   * foreign tool will find it too.
+   *
+   * **Two guarded steps in a row**, which the 1.000-line example has —
+   * `DOWNLOAD_RESULT_FILE` on `p_down`, then `SEND_SUMMARY_MAIL` on `p_mail`.
+   * A bypass that lands on a guarded step cannot carry `NOT ( … )` of the step
+   * it skipped *and* the switch of the step it arrives at; two conditions joined
+   * by an `AND` this engine wrote would be a phrase no line of the source
+   * writes. So the invariant `applyGuards` establishes is kept instead: **every
+   * way into a guarded step carries that step's switch**, a bypass included.
+   * The bypass of the *second* step then finds the new flow among its own ways
+   * in and starts there too, and the pair comes out exact for all four positions
+   * of the two switches. Guarded steps are walked in source order, which is what
+   * makes that one pass enough.
+   */
+  private bypassGuard(node: ExportNode, container: ExportContainer): void {
+    const guard = guardOf(node);
+    if (!guard) return;
+    // Only where the guard was really folded onto the way in. A call site the
+    // skeleton reached through a condition of its own keeps that condition
+    // (`applyGuards` never overwrites one), and nothing was lost there.
+    const ins = container.flows.filter((f) => f.targetId === node.id && f.condition === guard && !f.back);
+    // A loop-back counts as a way on: the last step of a loop body is guarded
+    // often enough, and without this the file says the body dead-ends there.
+    const outs = container.flows.filter((f) => f.sourceId === node.id);
+    if (!ins.length || !outs.length) return;
+
+    const byId = new Map(container.nodes.map((n) => [n.id, n]));
+    for (const into of ins) {
+      for (const out of outs) {
+        if (into.sourceId === out.targetId) continue;
+        if (container.flows.some((f) => f.sourceId === into.sourceId && f.targetId === out.targetId)) continue;
+        const from = byId.get(into.sourceId);
+        const to = byId.get(out.targetId);
+        if (!from || !to) continue;
+        // The condition the step it arrives at demands: its own switch when it
+        // is guarded too, and otherwise the negation of the switch just skipped.
+        const condition = guardOf(to) ?? `NOT ( ${guard} )`;
+        const flow: ExportFlow = {
+          id: `bp-${into.sourceId}-${out.targetId}`,
+          sourceId: into.sourceId,
+          targetId: out.targetId,
+          condition,
+          edge: {
+            from: into.sourceId,
+            to: out.targetId,
+            kind: out.back ? 'loop-back' : 'conditional',
+            condition,
+          },
+          back: out.back,
+          bypassOf: node.id,
+        };
+        container.flows.push(flow);
+        from.outgoing.push(flow.id);
+        to.incoming.push(flow.id);
+      }
     }
   }
 

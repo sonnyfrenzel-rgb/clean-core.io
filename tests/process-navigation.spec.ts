@@ -6,7 +6,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { sha256Hex } from '../lib/artefact-digest';
-import { buildBpmnExportFromSource } from '../lib/bpmn/export';
+import { buildBpmnExportFromSource, CC_NAMESPACE } from '../lib/bpmn/export';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { buildProcessMapModel, type ProcessMapModel } from '../lib/process-map';
 import { deriveBusinessRules, rulesForElement } from '../lib/abap/business-rule-set';
@@ -327,6 +327,87 @@ test.describe('the parts of the navigation say what the file says', () => {
     expect([...asDeclared.excluded].map((id) => nav.entries.get(id)?.outline).sort())
       .toEqual(['16.5', '19', '7.4', '7.5']);
     expect(asDeclared.sentence).toContain('the run the code declares');
+  });
+
+  /**
+   * A step is out of a run because of **its own** ways in — never because of
+   * the flows leaving another element.
+   *
+   * `runVariant` used to carry an exception to that: a blocked flow that was
+   * its source's only way on was walked past and its target struck out by hand,
+   * which bought the right answer for a guard in a file that had no way past
+   * one. It struck the target out *before* the fixpoint ran and nothing took it
+   * back, so a step that a second, running branch reached was shown as not
+   * running, together with the level under it (QA `00a4a41e73ac`). Since 2.6
+   * writes the bypass into the file, the plain rule gets the guard right on its
+   * own and the exception is gone.
+   *
+   * The file below is the smallest one that tells the two apart: `WRITE_LOG` is
+   * reached through a switched-off flow from one branch and through a plain flow
+   * from the other. It is written here rather than read out of an example
+   * because the rule has to hold for **any** file a modeller hands back, not
+   * only for the ones this engine writes today.
+   */
+  const twoWaysIn = (secondWayIn: boolean): string => [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"'
+      + ` xmlns:cc="${CC_NAMESPACE}" id="definitions">`,
+    '  <bpmn:process id="process" name="Two ways in" isExecutable="false">',
+    '    <bpmn:startEvent id="s" name="START-OF-SELECTION" />',
+    '    <bpmn:exclusiveGateway id="g" name="gv_mode" />',
+    '    <bpmn:task id="t1" name="PREPARE_LOG" />',
+    '    <bpmn:task id="t2" name="PREPARE_PLAIN" />',
+    '    <bpmn:task id="j" name="WRITE_LOG" />',
+    '    <bpmn:endEvent id="e" name="START-OF-SELECTION" />',
+    '    <bpmn:sequenceFlow id="f1" sourceRef="s" targetRef="g" />',
+    '    <bpmn:sequenceFlow id="f2" sourceRef="g" targetRef="t1" name="gv_mode = &apos;A&apos;" />',
+    '    <bpmn:sequenceFlow id="f3" sourceRef="g" targetRef="t2" />',
+    // The only way on from `t1`, and a switch decides it.
+    '    <bpmn:sequenceFlow id="f4" sourceRef="t1" targetRef="j" name="p_log = abap_true" />',
+    `    <bpmn:sequenceFlow id="f5" sourceRef="t2" targetRef="${secondWayIn ? 'j' : 'e'}" />`,
+    '    <bpmn:sequenceFlow id="f6" sourceRef="j" targetRef="e" />',
+    '  </bpmn:process>',
+    '</bpmn:definitions>',
+  ].join('\n');
+
+  const TWO_WAYS_SOURCE = [
+    'REPORT ztwoways.',
+    "PARAMETERS p_log AS CHECKBOX DEFAULT 'X'.",
+  ].join('\n');
+
+  const twoWaysModel = (secondWayIn: boolean): ProcessMapModel => buildProcessMapModel({
+    bpmn: {
+      xml: twoWaysIn(secondWayIn),
+      elementNode: {},
+      stats: {
+        flowNodes: 6, sequenceFlows: 6, subProcesses: 0, planes: 1, dataStores: 0,
+        pools: 0, messageFlows: 0, guardBypasses: 0, anchored: 0, unanchored: 6,
+      },
+    },
+    named: applyNaming(namingContextOf(TWO_WAYS_SOURCE), null, 'no-key'),
+    fileName: 'ztwoways.abap',
+  });
+
+  test('a step another branch reaches keeps running when a switch closes one way in', () => {
+    const model = twoWaysModel(true);
+    const nav = buildNavigation(model);
+    const switches = readRunSwitches(TWO_WAYS_SOURCE, model);
+    expect(switches.map((entry) => entry.name), 'the fixture declares one switch a flow names').toEqual(['p_log']);
+
+    const off = runVariant(model, nav, switches, new Map([['p_log', false]]));
+    expect([...off.excluded], 'WRITE_LOG is reached from the other branch').toEqual([]);
+    expect(off.sentence).toContain('every step runs');
+  });
+
+  test('and is out of the run when that flow is the only way in', () => {
+    const model = twoWaysModel(false);
+    const nav = buildNavigation(model);
+    const switches = readRunSwitches(TWO_WAYS_SOURCE, model);
+
+    const off = runVariant(model, nav, switches, new Map([['p_log', false]]));
+    expect([...off.excluded].map((id) => model.elements.find((e) => e.id === id)?.technicalName))
+      .toEqual(['WRITE_LOG']);
+    expect(off.sentence).toContain('1 of 6 steps do not run');
   });
 
   test('an overlay marks with a text identifier and changes no flow', () => {

@@ -54,15 +54,36 @@ export interface BpmnExportStats {
   dataStores: number;
   pools: number;
   messageFlows: number;
+  /** Sequence flows that go around a folded run switch (`model.ts` decision 7). */
+  guardBypasses: number;
   /** Flow nodes with a line range, and flow nodes visibly without one. */
   anchored: number;
   unanchored: number;
+}
+
+/** The tables one element reads and writes, upper-cased, in the order the model holds them. */
+export interface ElementData {
+  reads: string[];
+  writes: string[];
 }
 
 export interface BpmnExport {
   xml: string;
   /** Element id in the XML → the skeleton node it was drawn from. For 2.5's click-to-code. */
   elementNode: Record<string, string>;
+  /**
+   * Element id in the XML → the tables it reads and writes.
+   *
+   * The same source the `dataStore`s and their associations in the file come
+   * from — `ExportNode.reads`/`writes`, which `model.ts` follows down a chain of
+   * collapsed call sites to the statement. It is here because the association
+   * itself does not survive a reader: in BPMN a `dataInputAssociation` points at
+   * a `dataStoreReference` by id, through a `<bpmn:sourceRef>` that holds text,
+   * so a screen that wants "what does this step touch" would have to parse the
+   * XML a second time to find out. An entry exists only for an element that
+   * touches at least one table.
+   */
+  dataByElement: Record<string, ElementData>;
   stats: BpmnExportStats;
 }
 
@@ -78,7 +99,13 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
   const layout = layoutModel(model);
 
   const elementNode: Record<string, string> = {};
-  for (const node of nodes) elementNode[node.id] = node.source.id;
+  const dataByElement: Record<string, ElementData> = {};
+  for (const node of nodes) {
+    elementNode[node.id] = node.source.id;
+    if (node.reads.length || node.writes.length) {
+      dataByElement[node.id] = { reads: [...node.reads], writes: [...node.writes] };
+    }
+  }
 
   const collaboration = model.pools.length
     ? el('bpmn:collaboration', [['id', 'collaboration']], [
@@ -136,6 +163,7 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
   return {
     xml: serialize(definitions),
     elementNode,
+    dataByElement,
     stats: {
       flowNodes: nodes.length,
       sequenceFlows: model.containers.reduce((n, c) => n + c.flows.length, 0),
@@ -144,6 +172,7 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
       dataStores: model.stores.length,
       pools: model.pools.length,
       messageFlows: model.messages.length,
+      guardBypasses: model.containers.reduce((n, c) => n + c.flows.filter((f) => f.bypassOf).length, 0),
       anchored,
       unanchored: nodes.length - anchored,
     },
@@ -272,7 +301,11 @@ function containerContent(container: ExportContainer, options: BpmnExportOptions
       ['sourceRef', flow.sourceId],
       ['targetRef', flow.targetId],
     ], [
-      el('bpmn:extensionElements', [], [trace({ kind: flow.edge.kind, reason: flow.edge.reason })]),
+      el('bpmn:extensionElements', [], [trace({
+        kind: flow.edge.kind,
+        reason: flow.bypassOf ? 'guard-bypass' : flow.edge.reason,
+        bypasses: flow.bypassOf,
+      })]),
       ...(conditional
         ? [textEl('bpmn:conditionExpression', flow.condition, [['xsi:type', 'bpmn:tFormalExpression']])]
         : []),
