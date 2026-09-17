@@ -173,6 +173,132 @@ export function createLiteralScanner(): LiteralScanner {
   return scan;
 }
 
+/** Every character but the line break, replaced by a space — offsets kept. */
+function blank(text: string): string {
+  return text.replace(/[^\r\n]/g, ' ');
+}
+
+/**
+ * The text with every literal's *content* blanked and its delimiters kept.
+ *
+ * This is the pre-stage every construct detector runs first, and the rule it
+ * applies is `createLiteralScanner`'s rather than a fifth private copy of it.
+ * Four detectors carried their own half of it and each was missing the string
+ * template (`full review of a19945ef01dc`):
+ *
+ *     DATA(message) = |CALL SCREEN 100|.      a Dynpro finding requiring an
+ *                                             architect's sign-off, on a program
+ *                                             that calls no screen
+ *     INSERT zlog FROM @( VALUE zlog(
+ *       message = |INDEX| ) )                 `INDEX` read as the internal-table
+ *                                             clause, so a real write to a custom
+ *                                             table produced no finding at all
+ *
+ * **The delimiters stay**, because their presence is syntax: `findings-detector`
+ * tells `CALL FUNCTION 'name'` from `CALL FUNCTION lv_name` by the quote alone,
+ * and blanking it would turn every literal call into a dynamic one. What goes is
+ * only what a reader of ABAP would call text — and a template's embedded
+ * `{ … }` with it, because an expression evaluated before the text exists is not
+ * a clause of the statement that carries it.
+ *
+ * Offsets are preserved character for character, so an offset in the masked text
+ * is an offset in the real one.
+ */
+export function maskLiterals(text: string): string {
+  const scan = createLiteralScanner();
+  let out = '';
+  for (let i = 0; i < text.length; i++) {
+    // Asking about a space reads the state without changing it: no literal form
+    // opens or closes on one. A character that is not code is kept only when it
+    // is the delimiter that opened the literal or the one that closed it.
+    const wasCode = scan(' ');
+    scan(text[i]);
+    out += wasCode || scan(' ') ? text[i] : ' ';
+  }
+  return out;
+}
+
+/**
+ * Does a statement remain open after this line of masked code?
+ *
+ * Read over a line whose literals are already blanked, so every period left in
+ * it is code. A period between two digits is a decimal point and not a statement
+ * end — the same rule `readStatements` applies below, for the same reason.
+ */
+function stillOpen(line: string, open: boolean): boolean {
+  let result = open;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (/\s/.test(ch)) continue;
+    const decimal = /\d/.test(line[i - 1] ?? '') && /\d/.test(line[i + 1] ?? '');
+    result = ch === '.' && !decimal ? false : true;
+  }
+  return result;
+}
+
+/**
+ * A whole source with everything that is not code blanked: comment lines, inline
+ * comments, and the contents of every literal. Lines, columns and length are
+ * kept, so line `n` of the result is line `n` of the source and an offset in one
+ * is an offset in the other.
+ *
+ * **The rule this keeps.** A comment and a literal are text, not code, and a
+ * detector looking for an ABAP construct must not find one in either. Thirteen
+ * defects of one release shared that root, and the two that cost most did not
+ * fabricate a finding but *erased* one: a commented-out `* DATA vbak TYPE ztab.`
+ * registered VBAK as a local variable, and the real `UPDATE vbak` three lines
+ * down then produced no Critical finding at all.
+ *
+ * **The one exception, and where it lives.** The SQL text of an ADBC call *is*
+ * SQL — the database executes it — so `table-dependencies.ts` reads inside that
+ * literal on purpose (R13a), as it reads a constant that closes a dynamic table
+ * name and the literal that names another program's global field. Those readers
+ * take the literal from the unmasked statement and say so at the line where they
+ * do it. This function is for the other question: whether the *source* contains
+ * an ABAP construct.
+ */
+export function maskNonCode(source: string): string {
+  return maskLines(source, true);
+}
+
+/**
+ * The same, with the literals left standing: only comments are blanked.
+ *
+ * This is the form for a reader that is *supposed* to look inside a literal,
+ * and there are three of them in this engine. The SQL text of an ADBC call is
+ * executed by the database (R13a); a constant's value closes a dynamic table
+ * name (R07); `ASSIGN ('(SAPMV45A)VBAK-VBELN')` names another program's field
+ * in a literal (R13b b). A fourth is the name of a called function module:
+ * `CALL FUNCTION 'MASTER_IDOC_DISTRIBUTE'` is an IDoc call, not prose about one.
+ *
+ * For all of them the comment still is not code — a commented-out call is not a
+ * call — so the choice is never "mask or do not mask", it is which of the two
+ * questions is being asked.
+ */
+export function maskComments(source: string): string {
+  return maskLines(source, false);
+}
+
+function maskLines(source: string, literals: boolean): string {
+  const out: string[] = [];
+  let open = false;
+  for (const raw of source.split('\n')) {
+    if (isAbapCommentLine(raw, open)) {
+      out.push(blank(raw));
+      continue;
+    }
+    // Literals first: a `"` inside one does not open a comment, and after the
+    // masking every `"` that is left is code.
+    const masked = maskLiterals(raw);
+    const comment = masked.indexOf('"');
+    const body = comment === -1 ? masked : masked.slice(0, comment);
+    open = stillOpen(body, open);
+    const kept = literals ? masked : raw;
+    out.push(comment === -1 ? kept : kept.slice(0, comment) + blank(kept.slice(comment)));
+  }
+  return out.join('\n');
+}
+
 /**
  * Remove the inline comment from a line: a `"` that is not inside a literal.
  * A literal cannot span lines in ABAP, so the quote state starts fresh here.

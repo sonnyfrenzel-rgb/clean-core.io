@@ -445,10 +445,25 @@ function normalizeObjectName(name: string): string {
  *   - "1 234"   → 1234 (space thousand sep)
  *   - "1.234,00" → 1234 (DE decimal format)
  *   - "1,234.00" → 1234 (EN decimal format)
+ *
+ * Two shapes reached "a measured zero" without a measurement behind them, and a
+ * measured zero over a long enough window is what marks an object dormant and
+ * proposes it for retirement (full review of a19945ef01dc):
+ *
+ *   - **a cell holding only spaces** (766ae59f10e4, 5dce9bd7ff9e). The absence
+ *     check ran before the trimming, `"   " !== ''`, and `Number('')` is 0.
+ *   - **a negative fraction** (80da84ae34ce). `Math.round(-0.4)` is `-0`, and
+ *     `-0 < 0` is false, so the caller's guard against negative counts let it
+ *     through as zero.
+ *
+ * An unreadable cell is `undefined`, which the caller stores as `null`: absence
+ * of a measurement is not a measurement.
  */
 function parseCallCount(raw: unknown): number | undefined {
-  if (raw === null || raw === undefined || raw === '') return undefined;
+  if (raw === null || raw === undefined) return undefined;
   let str = String(raw).trim().replace(/\s/g, '');
+  // After the trimming, not before it: a cell of spaces says nothing.
+  if (str === '') return undefined;
 
   // Detect DE format: "1.234,56" → dots are thousands, comma is decimal
   if (/\.\d{3},/.test(str)) {
@@ -469,7 +484,10 @@ function parseCallCount(raw: unknown): number | undefined {
   // Dot as decimal: "1.5" → keep as-is (will be rounded below)
 
   const num = Number(str);
-  return isNaN(num) ? undefined : Math.round(num);
+  if (isNaN(num)) return undefined;
+  // Handed back unrounded when it is negative, so the caller's `< 0` guard sees
+  // the sign and quarantines the row with the value the export actually held.
+  return num < 0 ? num : Math.round(num);
 }
 
 const pad2 = (n: number) => String(n).padStart(2, '0');

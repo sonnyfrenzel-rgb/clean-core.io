@@ -150,6 +150,38 @@ test.describe('the false positives the roadmap names do not appear', () => {
   });
 });
 
+/**
+ * A dynamic call whose target no static analysis can name (fd3e6ec4d394).
+ *
+ * The rule recognised the parenthesis only where it stands immediately after
+ * METHOD — `CALL METHOD (class)=>(meth)`. The ordinary instance form,
+ * `CALL METHOD lo_service->(lv_method)`, puts an object reference in front of
+ * it and went unseen: no finding, `coverage.complete = true`, and
+ * `routeExtensibility` free to score the extension 100 and call it trivial on a
+ * program whose runtime target was never resolved.
+ */
+test.describe('a dynamic method call is recorded whichever selector carries it', () => {
+  const dynamic: Array<[string, string]> = [
+    ['an instance reference', 'CALL METHOD lo_service->(lv_method).'],
+    ['a class reference', 'CALL METHOD zcl_service=>(lv_method).'],
+    ['a dynamic class', 'CALL METHOD (lv_class)=>(lv_method).'],
+    ['a dynamic class with a static method', 'CALL METHOD (lv_class)=>process.'],
+  ];
+
+  for (const [label, statement] of dynamic) {
+    test(`${label}: ${statement}`, () => {
+      const report = assessCoverage(['REPORT z_dyn.', statement].join('\n'));
+      expect(report.gaps.map((g) => g.gap), statement).toContain('dynamic-invocation');
+      expect(report.complete, 'a call nobody can resolve is not complete coverage').toBe(false);
+    });
+  }
+
+  test('a static method call is not a gap — the rule removes silence, not coverage', () => {
+    const report = assessCoverage(['REPORT z_static.', 'CALL METHOD lo_service->process.'].join('\n'));
+    expect(report.gaps.map((g) => g.gap)).not.toContain('dynamic-invocation');
+  });
+});
+
 test.describe('the caveat says the honest thing', () => {
   test('complete coverage produces no reassurance', () => {
     const code = ['REPORT z_plain.', 'DATA lv_x TYPE i.', 'lv_x = 1.'].join('\n');
