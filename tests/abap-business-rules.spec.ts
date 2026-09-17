@@ -201,7 +201,13 @@ test.describe('a rule outside the first 1,000 characters (QA24-A10)', () => {
     expect(last.lineStart).toBe(990);
     expect(last.container).toBe('LEGACY_BUSINESS_RULE_014');
     expect(offsetOfLine(source, 990)).toBe(35968);
-    expect(source.length).toBe(37551);
+    // Measured on the line-feed form, like every offset above it. The shipped
+    // example is checked out with the platform's line endings — 37,551
+    // characters on Windows, 36,551 on Linux — so a raw length pins the machine
+    // rather than the file, and this assertion went red in CI while passing
+    // here. What the acceptance asks (QA24-A10) is how far into the file a rule
+    // still appears, and that distance is the same on both.
+    expect(source.replace(/\r\n/g, '\n').length).toBe(36551);
   });
 
   test('the fourteen copied FORMs state twenty rules, and say which are repeats', () => {

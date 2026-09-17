@@ -10,10 +10,10 @@
   "humanDocument": "docs/PRESERVATION-REGISTER.md",
   "guard": "tests/preservation-register.spec.ts",
   "baseline": {
-    "verifiedAgainstCommit": "ea6f1426c24084693235a568cf02e4237477217a",
+    "verifiedAgainstCommit": "9edb37f366525a104598be8c0d7168ffe119df44",
     "verifiedAgainstBranch": "origin/dev",
     "verifiedOn": "2026-09-16",
-    "appVersion": "v2.11.1",
+    "appVersion": "v2.12.0",
     "phaseContract": "lib/workflow-steps.ts",
     "hydration": "lib/project-loader.ts",
     "runGuard": "lib/run-guard.ts",
