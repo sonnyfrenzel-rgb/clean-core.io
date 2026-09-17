@@ -326,10 +326,11 @@
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.766Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.2",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:45.766Z"
+      "updatedAt": "2026-09-17T04:40:45.632Z",
+      "fixedIn": "6c2f73e1ca31ff52dbcf31349559322a8aef9227"
     },
     {
       "id": "UX-027",
@@ -339,10 +340,11 @@
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.824Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.2",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:45.824Z"
+      "updatedAt": "2026-09-17T04:40:45.376Z",
+      "fixedIn": "6c2f73e1ca31ff52dbcf31349559322a8aef9227"
     },
     {
       "id": "UX-028",
@@ -365,10 +367,11 @@
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:45.931Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.2",
       "reportedSeverity": "high",
-      "updatedAt": "2026-09-15T10:32:45.931Z"
+      "updatedAt": "2026-09-17T04:40:45.463Z",
+      "fixedIn": "6c2f73e1ca31ff52dbcf31349559322a8aef9227"
     },
     {
       "id": "UX-030",
@@ -465,9 +468,10 @@
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.350Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.2",
-      "updatedAt": "2026-09-15T10:32:46.350Z"
+      "updatedAt": "2026-09-17T04:40:45.013Z",
+      "fixedIn": "6c2f73e1ca31ff52dbcf31349559322a8aef9227"
     },
     {
       "id": "UX-038",
@@ -477,9 +481,10 @@
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.405Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.2",
-      "updatedAt": "2026-09-15T10:32:46.405Z"
+      "updatedAt": "2026-09-17T04:40:45.110Z",
+      "fixedIn": "6c2f73e1ca31ff52dbcf31349559322a8aef9227"
     },
     {
       "id": "UX-039",
@@ -502,9 +507,10 @@
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:46.518Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.2",
-      "updatedAt": "2026-09-15T10:32:46.518Z"
+      "updatedAt": "2026-09-17T04:40:45.200Z",
+      "fixedIn": "6c2f73e1ca31ff52dbcf31349559322a8aef9227"
     },
     {
       "id": "UX-041",
@@ -736,9 +742,10 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:47.538Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.2",
-      "updatedAt": "2026-09-15T10:32:47.538Z"
+      "updatedAt": "2026-09-17T04:40:45.287Z",
+      "fixedIn": "6c2f73e1ca31ff52dbcf31349559322a8aef9227"
     },
     {
       "id": "UX-060",
@@ -951,9 +958,10 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.439Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.2",
-      "updatedAt": "2026-09-15T10:32:48.439Z"
+      "updatedAt": "2026-09-17T04:40:45.540Z",
+      "fixedIn": "6c2f73e1ca31ff52dbcf31349559322a8aef9227"
     },
     {
       "id": "UX-077",
@@ -1053,9 +1061,10 @@
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.881Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "0.2",
-      "updatedAt": "2026-09-15T10:32:48.881Z"
+      "updatedAt": "2026-09-17T04:40:45.726Z",
+      "fixedIn": "6c2f73e1ca31ff52dbcf31349559322a8aef9227"
     },
     {
       "id": "UX-085",

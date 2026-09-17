@@ -580,6 +580,24 @@ sowie die neun UX-Befunde, die das Register weiter in Schritt **0.2** einplant
 Posten blockiert ein Release; sie stehen hier, damit sie morgen nicht neu
 gesucht werden müssen.
 
+**Die neun UX-Befunde sind am 17.09.2026 erledigt** (`dev`, §13 auf „behoben").
+Alle neun standen noch so da wie zitiert — keiner war durch v2.10.x oder
+v2.11.x veraltet —, und alle neun sind in dieselbe Richtung geschlossen:
+weniger behauptet, nicht schöner behauptet. Vier Versprechen sind dabei
+entfernt statt umformuliert worden, weil es für sie nichts Wahres zu sagen
+gab: der Quirk-Remediation-Schalter (er schaltete Text, nie Code — echtes
+Umschalten ist ein zweiter, modusabhängiger Modellaufruf und damit
+Engine-Arbeit einer späteren Phase), die drei statischen „Transformation
+Insights", das SAP-Build-Badge (es gibt keinen SAP-Build-Export) und die
+Schreibhälfte des Forums samt Likes und Kommentaren (sie schrieb in
+`useState`, es gibt kein Backend, an das sie zu binden wäre; die
+Ankündigungen bleiben lesbar, als read-only benannt, neben der
+Administratoradresse). Gehalten von `tests/claims-honesty-guard.spec.ts`:
+acht der neun am gerenderten Bildschirm, der neunte — das Jira-Modal — aus
+der Quelle, weil ihn nichts einhängt und kein Browser ihn erreicht.
+**Schritt 0.2 ist damit nicht fertig:** Facts-Service und Copy-CI stehen
+noch aus, und §14 plant rund dreißig QA-Befunde in denselben Schritt ein.
+
 Zu **1** (Referenzkorpus): am 16.09.2026 abends an vier Modelle über OpenRouter
 gegeben — Grok 4.6, GLM 5.3, Claude Fable 5.1 und DeepSeek v4 Pro, alle mit
 identischer Ausgangslage, jedes mit dem Auftrag, den Korpus mit mindestens 100
@@ -677,11 +695,11 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-020 | high | Kernpfade per Tastatur und Screenreader blockiert | 3.0 | eingeplant |
 | UX-023 | high | Dark Mode bricht an zentralen Flächen | 1.6 | behoben |
 | UX-024 | high | Orientierung bricht zwischen den Bereichen | — | zurückgestellt |
-| UX-037 | high | Transformation verspricht Node.js auch im RAP-Track | 0.2 | eingeplant |
-| UX-038 | high | Remediation-Modus schaltet nur Text, nicht Code | 0.2 | eingeplant |
-| UX-040 | high | Transformation Insights sind statisch und track-falsch | 0.2 | eingeplant |
+| UX-037 | high | Transformation verspricht Node.js auch im RAP-Track | 0.2 | behoben |
+| UX-038 | high | Remediation-Modus schaltet nur Text, nicht Code | 0.2 | behoben |
+| UX-040 | high | Transformation Insights sind statisch und track-falsch | 0.2 | behoben |
 | UX-044 | high | Dark Mode bricht an Projektzeile und Stepper | 1.6 | eingeplant |
-| UX-059 | high | Forum täuscht öffentlichen Post vor, speichert nur lokal | 0.2 | eingeplant |
+| UX-059 | high | Forum täuscht öffentlichen Post vor, speichert nur lokal | 0.2 | behoben |
 | UX-061 | high | Dashboard ohne Dark-Parität, Projektzeile kaum lesbar | 1.6 | eingeplant |
 | UX-062 | high | Dashboard-Tabelle bleibt im Dark Mode weiß | 1.6 | eingeplant |
 | UX-087 | high | Fehlender Debt-Status erscheint in Erfolgsgrün statt neutral | 0.8 | eingeplant |
@@ -694,8 +712,8 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-017 | medium | Sehr kleine Schrift erschwert das Lesen | 1.5 | eingeplant |
 | UX-022 | medium | 78 Button-Stile statt einer gemeinsamen Sprache | 1.5 | eingeplant |
 | UX-025 | medium | Generierung und Fehler ohne Ausweg und Undo | 1.5 | eingeplant |
-| UX-027 | medium | Grüner Haken für ungeprüften Code | 0.2 | eingeplant |
-| UX-029 | medium | Kompatibilität behauptet, aber nicht belegt | 0.2 | eingeplant |
+| UX-027 | medium | Grüner Haken für ungeprüften Code | 0.2 | behoben |
+| UX-029 | medium | Kompatibilität behauptet, aber nicht belegt | 0.2 | behoben |
 | UX-030 | medium | Phone verdeckt Inhalt und schluckt Aktionen | 1.4 | eingeplant |
 | UX-032 | medium | Ausdruck ohne eigene Kostenfiguren | 0.3 | eingeplant |
 | UX-034 | medium | Task-Drawer fängt Tastatur nicht ein | 3.0.4 | eingeplant |
@@ -716,7 +734,7 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-070 | medium | Kleinstschrift an tragenden Stellen kaum lesbar | 1.5 | eingeplant |
 | UX-073 | medium | Kleinstschrift 9-10px für Badges und Banner | 1.5 | eingeplant |
 | UX-075 | medium | Auge-Buttons ohne zugänglichen Namen | 3.0.4 | eingeplant |
-| UX-076 | medium | Onboarding-Abbruch mit Schuld-Formulierung | 0.2 | eingeplant |
+| UX-076 | medium | Onboarding-Abbruch mit Schuld-Formulierung | 0.2 | behoben |
 | UX-089 | medium | Vier Begriffe für einen Wert: Audit, Valuation, Asset Value, IP Score | 1.5 | eingeplant |
 | UX-090 | medium | Deck-Fehler zeigt Roh-Techniktext ohne nächsten Schritt | 0.8 | behoben |
 | UX-092 | medium | Start-Button durch Scan blockiert ohne Grund am Button | — | behoben |
@@ -729,7 +747,7 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |
 | UX-015 | low | Zurück-Navigation verhält sich je Seite anders | 1.4 | eingeplant |
 | UX-016 | low | Katalog verliert den Workspace-Kontext | 1.4 | eingeplant |
-| UX-026 | low | Begriffe und Versprechen wechseln je Stufe | 0.2 | eingeplant |
+| UX-026 | low | Begriffe und Versprechen wechseln je Stufe | 0.2 | behoben |
 | UX-028 | low | LoC-Regler kann echten Wert nicht abbilden | 0.3 | eingeplant |
 | UX-031 | low | SOP-Weiterweg nur im Hover-Tooltip | 1.2 | eingeplant |
 | UX-033 | low | Folienschalter ohne Namen | 3.0.4 | eingeplant |
@@ -748,7 +766,7 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-081 | low | Autoplay ignoriert reduzierte Bewegung | 3.0.4 | eingeplant |
 | UX-082 | low | Zwei Header-Muster auf öffentlichen Seiten | 3.0.6 | eingeplant |
 | UX-083 | low | Download-Fehler bleibt unsichtbar | 3.0 | eingeplant |
-| UX-084 | low | First-Run nennt Quote anders als der Header | 0.2 | eingeplant |
+| UX-084 | low | First-Run nennt Quote anders als der Header | 0.2 | behoben |
 | UX-085 | low | Kleinstlabels in 10px Kapitälchen | 1.5 | eingeplant |
 | UX-100 | low | Filtereintrag mischt Deutsch und Englisch | sofort | behoben |
 | UX-101 | low | 2FA-Schlüssel lässt sich nicht kopieren | sofort | behoben |
@@ -857,7 +875,7 @@ werden, und Schutzmaßnahmen an anderer Stelle (Server-Guard, Emulator-Ausnahme,
 | 2217e46dd75a | medium | app/method/levels/page.tsx | Hard-coded disagreement count can drift from the generated census | 0.2 | eingeplant |
 | 230989f67624 | medium | lib/usage-report-email.ts | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.16 | eingeplant |
 | 25c80cb2df6f | medium | components/analyze/ConstructFindings.tsx | The UI labels findings “Signed Off” without recording any sign-off | 0.7 | eingeplant |
-| 288aeb937b18 | medium | app/(app)/dashboard/page.tsx | The advertised public forum exists only in local component state | 0.2 | eingeplant (= UX-059) |
+| 288aeb937b18 | medium | app/(app)/dashboard/page.tsx | The advertised public forum exists only in local component state | 0.2 | behoben (dev) — derselbe Defekt wie UX-059 |
 | 2954ffcda441 | medium | components/design/CloudServiceIntegrations.tsx | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.2 | eingeplant |
 | 297e73fb33a7 | medium | lib/abap/result-diff.ts | Ordered value mismatches report zero rows on both sides | 0.18 | eingeplant |
 | 2b0cacd91960 | medium | scripts/send-survey.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.16 | eingeplant |
@@ -910,14 +928,14 @@ werden, und Schutzmaßnahmen an anderer Stelle (Server-Guard, Emulator-Ausnahme,
 | ad567beae4a0 | medium | components/VerificationRail.tsx | The current phase always appears green even when workflowSteps marks it stale or partial | 1.7 | eingeplant |
 | b0b3150a1974 | medium | components/UserOnboarding.tsx | The mandatory onboarding overlay lacks dialog focus management and semantic labeling | 3.0.4 | eingeplant |
 | b18d35df575f | medium | scripts/qa/refute.mjs | Full-review findings cannot be selected by the refutation command | — | behoben (dev) |
-| b43997202535 | medium | app/(app)/project/[projectId]/transformation/page.tsx | ABAP Cloud transformations are presented as Node.js output | 0.2 | eingeplant (= UX-037) |
+| b43997202535 | medium | app/(app)/project/[projectId]/transformation/page.tsx | ABAP Cloud transformations are presented as Node.js output | 0.2 | behoben (dev) — derselbe Defekt wie UX-037 |
 | ba5757ea1a85 | medium | lib/abap/narrative-anchors.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.18 | eingeplant |
 | c217cf83fa3c | medium | app/(app)/project/[projectId]/tco/page.tsx | TCO range controls have no accessible names | 1.5 | eingeplant |
 | c2923dfd70ab | medium | app/(app)/settings/page.tsx | Settings form controls lack programmatic labels and switch state | 3.0.4 | eingeplant |
 | c47eaa19b11d | medium | app/api/v1/purchase-orders/mass-create/route.ts | Mock purchase orders are returned as completed successes without simulation labeling | 0.2 | eingeplant |
 | c4c4f5112a00 | medium | components/LandingModals.tsx | The advertised MFA recovery-code path cannot accept recovery codes | 0.13 | gegenstandslos (dev) — keine Wiederherstellungscodes mehr, 0.13 |
 | c50ddb41f588 | medium | components/SectionBoundary.tsx | Every section crash is attributed to an older analysis run without evidence | 0.2 | eingeplant |
-| c7466a7f2570 | medium | app/(app)/project/[projectId]/transformation/page.tsx | Remediation mode claims code changes but only changes banner text | 0.2 | eingeplant (= UX-038) |
+| c7466a7f2570 | medium | app/(app)/project/[projectId]/transformation/page.tsx | Remediation mode claims code changes but only changes banner text | 0.2 | behoben (dev) — derselbe Defekt wie UX-038 |
 | ce37b706107d | medium | app/(app)/project/[projectId]/transformation/page.tsx | Successful generation does not update the project used by the workflow UI | 0.15 | eingeplant |
 | cff3ec1639d4 | medium | app/(app)/tenant-security/page.tsx | Documented admin review claims connection details that the request never collects | 0.2 | eingeplant |
 | d163622eab8e | medium | tests/reference-analysis.spec.ts | Settled-count assertion does not prove which findings have provenance | 0.17 | eingeplant |
