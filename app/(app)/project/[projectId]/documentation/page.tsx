@@ -547,6 +547,12 @@ Structure the JSON exactly like this:
    */
   useEffect(() => {
     const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
+    // The number belongs to the project it was read from. This page survives a
+    // move from one project to the next, so the ref is cleared before the new
+    // baseline is asked for and not after it arrives: between the two there is a
+    // moment where a save would otherwise carry the previous project's revision
+    // number, and `saveProcessRevision` would read it as "your base is current".
+    baseRevision.current = null;
     if (!idStr || !signedSource) return;
     let cancelled = false;
     void ensureProcessBaseline(idStr).then((outcome) => {

@@ -216,6 +216,36 @@ export default function ProcessMap({
   const draftRef = useRef<string | null>(null);
 
   /**
+   * A draft belongs to the source it was drawn on, and to nothing else.
+   *
+   * `openWith` hands the modeller `draftRef.current ?? model.xml` — the draft
+   * wins, which is right while the reader is working on one process and wrong
+   * the moment this instance is handed another. React keeps a component at the
+   * same position in the tree alive across a route change, so moving from one
+   * project to the next leaves the ref full of the last one's drawing. On its
+   * own that was a display fault. Since the save path arrived it is worse than
+   * that: *Save* would send the first project's XML under the second project's
+   * id and write it as an edited revision there.
+   *
+   * So the draft is tied to the source it came from and thrown away when that
+   * changes, during the render that brings the new one, before anything is
+   * painted (React's "adjusting state when a prop changes"). Bumping `session`
+   * in the same breath remounts the modeller, so there is no instance left
+   * holding the old drawing. `model` is untouched either way — the Ist revision
+   * after editing is the Ist revision before it.
+   *
+   * The comparison is `!==` on the prop, so an unchanged source is one pointer
+   * check; the full string comparison only happens when there is genuinely a
+   * new source, which is exactly when the draft has to go.
+   */
+  const [drawnOn, setDrawnOn] = useState(source);
+  if (drawnOn !== source) {
+    setDrawnOn(source);
+    draftRef.current = null;
+    setSession((n) => n + 1);
+  }
+
+  /**
    * What the tree has open: what the reader opened, plus the way down to the
    * level on show.
    *
