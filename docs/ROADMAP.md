@@ -205,7 +205,7 @@ Code-Karte darunter.
 | 2.9 | **Große Prozesse navigieren** (`DESIGN.md` §5.9): Übersicht der Phasen als eingeklappte Teilprozesse, Ebenen mit Pfadzeile, Gliederungsbaum statt flacher Schrittliste, Problemzeile je Teilprozess, Minikarte, „Show paths to here" und „Main path", Laufvarianten aus den Selektionsschaltern, Overlays als Filter, Suche öffnet die Ebene des Treffers, stabile Anordnung, Ebene und Auswahl in der URL. Abnahme am 1.000-Zeilen-Beispiel: jeder Schritt in höchstens drei Aktionen erreichbar, per Tastatur wie per Maus | L |
 | 2.10 | **Referenzkorpus v2.1 im Repository:** `docs/korpus/referenzkorpus-v2.1.md` (das Fallbuch mit Rahmen, Regelregister, Negativliste, Gegenreview, Autorenberichten) und `tests/korpus/cases/CC-nnn/` mit `source.abap`, `profile.json`, `expected.json` je Fall, erzeugt aus dem Fallbuch durch `scripts/korpus/build-bundle.mjs` (deterministisch, Quellenhashes geprüft). `tests/korpus-engine.spec.ts` lässt die Engine gegen alle 68 Fälle laufen und vergleicht Befunde, Level, Objekte, Skelettknoten; **Ratsche** wie bei abaplint: `tests/korpus/baseline.json` führt jede Abweichung mit Urteil (`engine-defekt` · `korpus-offen` · `nicht-vergleichbar`) und Grund, ein Fall, der übereinstimmte und es nicht mehr tut, macht den Lauf rot, eine still verschwundene Abweichung ebenfalls. Fundstellen aus öffentlichen Repositories stehen im Repository nur als URL, Commit, Pfad, Zeilen und SHA-256 des Ausschnitts — **kein fremder Code**, elf von zwölf Quellen sind ohne Lizenz. Der Korpus wird nie als Prompt- oder Trainingsmaterial des Modells verwendet, das er prüft | M |
 
-| 2.11 | **Was der Korpus an der Engine findet** (Grundlinie vom 17.09.2026, `tests/korpus/baseline.json`): 24 Engine-Defekte in drei Familien, dazu 134 Aussageklassen, die die Engine noch gar nicht produziert. Die Familien, nicht die Einzelfälle, sind die Arbeit. **Stand 18.09.2026: 2 Defekte übrig** (CC-045 · level, CC-050 · level), 131 Aussageklassen noch nicht produziert — siehe unten | L |
+| 2.11 | **Was der Korpus an der Engine findet** (Grundlinie vom 17.09.2026, `tests/korpus/baseline.json`): 24 Engine-Defekte in drei Familien, dazu 134 Aussageklassen, die die Engine noch gar nicht produziert. Die Familien, nicht die Einzelfälle, sind die Arbeit. **Stand 18.09.2026: 1 Defekt übrig** (CC-050 · level — eine Produktentscheidung, kein Bugfix), 130 Aussageklassen noch nicht produziert — siehe unten | L |
 **Fertig, wenn**
 - jeder Task, jedes Gateway und jede Lane einen Zeilenanker trägt oder sichtbar
   „unbelegt" ist, und die Quote angezeigt wird (V25-A01);
@@ -223,34 +223,61 @@ stimmten 178 überein; von den 162 Abweichungen waren 134 **nicht vergleichbar**
 Engine kennt die Aussageklasse nicht — Fachsätze durchweg, Level und Objekte bei den
 neuen Klassen), 4 **korpus-offen** und **24 Engine-Defekte** in drei Familien.
 
-Am **18.09.2026**, nach den Strängen C (Familien a und b) und D (Familie c), stimmen
-**203** Paare überein, 131 sind nicht vergleichbar, 4 korpus-offen — und **2**
-Engine-Defekte sind übrig. Die 25 neuen Übereinstimmungen sind nicht durch eine
-nachgiebigere Messung entstanden: die Vergleichsschicht `tests/helpers/korpus-comparison.ts`
-ist unverändert, und drei Fälle sind von „nicht vergleichbar" zu einem *sichtbaren*
-Urteil gewandert, weil die Engine die Aussageklasse jetzt überhaupt produziert.
+Am **18.09.2026**, nach den Strängen C (Familien a und b), D (Familie c) und K (die
+Restwurzel von a), stimmen **205** Paare überein, 130 sind nicht vergleichbar, 4
+korpus-offen — und **ein** Engine-Defekt ist übrig. Die 27 neuen Übereinstimmungen sind
+nicht durch eine nachgiebigere Messung entstanden. Die Vergleichsschicht
+`tests/helpers/korpus-comparison.ts` hat genau **eine** neue Brücke bekommen (R01(c) →
+R33, das Lesen über eine logische Datenbank am `GET`-Ereignis), und zwar dort, wo die
+Engine die Aussage tatsächlich führt; vier Fälle sind von „nicht vergleichbar" zu einem
+*sichtbaren* Urteil gewandert, weil die Engine die Aussageklasse jetzt überhaupt
+produziert. Bewusst **keine** Brücke für R29, R15, R26, R12 und R13b: dort führt die
+Engine keine Befundmarke, und eine Brücke hätte „verfehlt" gezählt, wo nichts behauptet
+wird. Der nächste ehrliche Schritt dort ist eine Befundmarke für die Typabhängigkeit
+(R29) — dann wird CC-045 · befunde zu einem echten Vergleich statt zu einem Schweigen.
 
-**(a) Die Note las den Katalogeintrag zur Hälfte — 9 Fälle, geschlossen bis auf einen.**
+**(a) Die Note las den Katalogeintrag zur Hälfte — 9 Fälle, geschlossen.**
 CC-001, CC-002, CC-007, CC-008, CC-049, CC-051, CC-062, CC-063, CC-067 wurden als **D**
 benotet, wo der Korpus **C** sagt. Die Wurzel: die Engine nahm die schlechteste
 Katalognote über alle Objekte und ignorierte dabei die **Zugriffsart** und den
 **katalogisierten Nachfolger**. KNA1 zu *lesen* ist C mit Nachfolger `I_CUSTOMER` (R01);
 nur ein nicht unterstützter *Schreibzugriff* ist D (R02). Beide Angaben stehen in
-derselben Katalogquelle. **Offen: CC-045 · level.** Eine Typabhängigkeit (`TYPE kna1`,
-`TABLES:`) trägt die Verwendung `Reference` und damit keine Zugriffsart im Sinne der
-Benotung, weshalb `gradeSapObjectUse` auf die Namensnote D zurückfällt, wo R29 die Note
-aus dem Objektzustand verlangt. Der Fall wurde erst dadurch sichtbar, dass die Engine das
-Objekt seit Familie (c) überhaupt sieht — ein Fortschritt, der einen Defekt freilegt.
+derselben Katalogquelle. Die Restwurzel war **CC-045 · level**, erst sichtbar geworden,
+als die Engine das Objekt dank Familie (c) überhaupt sah: eine Typabhängigkeit
+(`TABLES`, `TYPE`, `INCLUDE STRUCTURE`, `SELECT-OPTIONS … FOR`) trug keine Zugriffsart im
+Sinne der Benotung, also fiel `gradeSapObjectUse` auf die Namensnote D zurück, wo R29 die
+Note aus dem Objektzustand verlangt. Sie ist jetzt eine **eigene Verwendung**
+(`reference`) und wird nach dem Zustand des Objekts benotet — C für eine Tabelle, die SAP
+nicht freigibt, statt eines D, das dem Programm vorwarf, an der Anwendung vorbeizugreifen,
+obwohl es keine Zeile anfasst. Eine Typreferenz auf einen *eigenen* Namen bleibt bewusst
+`Unknown`; CC-020 und CC-038 antworten genau das.
 
 **(b) Die Engine urteilte milder, als sie darf — 5 Fälle, vier geschlossen.** CC-024,
-CC-029, CC-030 und CC-033 lieferten **Unknown** statt B. **Offen: CC-050 · level** — die
+CC-029, CC-030 und CC-033 lieferten **Unknown** statt B.
+
+**Der eine übrige Defekt: CC-050 · level — und er gehört nicht in die Objektnote.** Die
 Engine sagt **A**, der Korpus **B**. Die frühere Begründung an dieser Stelle (`SELECT …
 WITH PRIVILEGED ACCESS` umgehe die DCL-Prüfung und die Engine sehe darin nichts) ist
-**falsch** und hier nur noch als korrigierter Irrtum vermerkt: nach **R28** ändert
-`WITH PRIVILEGED ACCESS` das Level nicht, und das A der Engine stammt aus dem
-freigegebenen `I_CUSTOMER`. Womit der Fall sein B tatsächlich begründet, ist am Fallbuch
-zu prüfen — es entscheidet sich daran, ob dies ein Engine-Defekt oder ein
-`korpus-offen` ist. Ein falsches Gut bleibt teurer als ein falsches Schlecht.
+**falsch** und steht hier nur noch als korrigierter Irrtum: **R28** sagt wörtlich „Eigene
+Befunde, die das A–D-Level **nie** verändern", und der Sollbefund CC-050-F01 sagt es
+selbst — „Level unverändert B; … Compliance-Befund, kein Levelbefund."
+
+Am Fallbuch nachgeprüft (18.09.2026): das B des Falls steht in seiner eigenen
+Ausschlussliste — *„Kein A: der REPORT mit WRITE-Liste ist klassisches ABAP; usable
+bezeichnet die API-Oberfläche, nicht die Implementierung"*. Das ist **R03**:
+Standard-Sprachversion plus freigegebene Abhängigkeit ergibt B. Gegenprobe: **CC-058,
+Profil 1** — dieselbe Quelle ohne den Zusatz — antwortet ebenfalls B. Die Sollantwort
+hält also; dies ist **kein** `korpus-offen`.
+
+Das A der Engine ist die Note des freigegebenen `I_CUSTOMER` und als Objektnote richtig;
+der Fall bestätigt sie mit `cloud_api_surface: usable`. Was die Engine nicht sieht, ist
+die **Sprachversion**. Die Antwort darauf wäre ein **Level je Artefakt**, das
+`/method/levels` heute ausdrücklich verweigert („There is no level here for a program as a
+whole"). Das ist eine **Produktentscheidung und kein Bugfix** — sie ändert eine öffentlich
+zugesagte Aussage und braucht Sonnys Entscheidung. Bis dahin bleibt der Defekt stehen:
+richtig gemessen, mit seinem Grund in der Ratsche. CC-050 ist der einzige Fall, an dem der
+Unterschied überhaupt sichtbar wird — alle anderen Soll-B-Fälle mit Engine-A haben null
+gesehene Objekte.
 
 **(c) Abhängigkeiten, die niemand sah — 9 Fälle, ein Befund. Geschlossen.** Die Engine
 meldete an diesen Stellen nichts oder Erfundenes: **ADBC** (CC-034) — das Stringtemplate
