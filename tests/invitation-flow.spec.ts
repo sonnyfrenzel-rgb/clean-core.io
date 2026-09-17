@@ -350,7 +350,26 @@ test('the invitation subcollection is not client-readable and `readers` is not c
   // `readers` is the field 5.4's read rule will hang on. A browser that could
   // write it could invite itself, which is the whole grant.
   expect(parseClientWritableProjectFields(rules)).not.toContain(PROJECT_READERS_FIELD);
-  // No match block for the subcollection at all — the same shape 3.2 uses for
-  // process revisions, and the reason this step needs no rules deploy.
-  expect(rules).not.toContain(`/${INVITATION_COLLECTION}/`);
+  // The subcollection is denied, and it is denied *out loud*.
+  //
+  // 5.1–5.3 left it to the default: no match block, therefore no access, and
+  // therefore no rules deploy for this step. That is sound, and it was the right
+  // call while nothing else in the rules moved. 5.4 changed the surrounding
+  // picture — it adds a read path to the project document — and a denial that
+  // exists only as an absence is invisible to whoever reads the rules next. A
+  // single `match /projects/{p}/{document=**}` added later in good faith would
+  // open it, and nothing in the file would have said not to.
+  //
+  // So the assertion moved from "there is no rule" to "there is a rule, and it
+  // refuses" — strictly the stronger of the two, because absence cannot be
+  // asserted against a future edit and a written `if false` can. The addresses of
+  // other invited people are the thing being protected.
+  const block = new RegExp(
+    `match\\s+/projects/\\{[^}]+\\}/${INVITATION_COLLECTION}/\\{[^}]+\\}\\s*\\{\\s*allow\\s+read\\s*,\\s*write\\s*:\\s*if\\s+false\\s*;`,
+  );
+  expect(
+    rules,
+    'the invitation subcollection has no rule that refuses it out loud — it carries the e-mail ' +
+      'addresses of other invited people, and a later catch-all match would open it silently',
+  ).toMatch(block);
 });
