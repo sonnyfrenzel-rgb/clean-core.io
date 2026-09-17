@@ -7,7 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, deleteDoc, doc, getDocs, limit } from 'firebase/firestore';
-import { Plus, Trash2, ArrowRight, FolderOpen, Folder, ChevronRight, ChevronDown, ChevronUp, FileText, FileCode2, Download, Copy, Eye, X, Activity, Clock, CheckCircle2, RefreshCw, AlertCircle, BookOpen, Shield, ShieldAlert, MessageSquare, Crown, ShieldCheck, HelpCircle, Send } from 'lucide-react';
+import { Plus, Trash2, ArrowRight, FolderOpen, Folder, ChevronRight, ChevronDown, ChevronUp, FileText, FileCode2, Download, Copy, Eye, X, Activity, Clock, CheckCircle2, RefreshCw, AlertCircle, BookOpen, Shield, ShieldAlert, MessageSquare, Crown, ShieldCheck, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import nextDynamic from 'next/dynamic';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -547,18 +547,26 @@ export default function Dashboard() {
     router.push(`/project/${project.id}/${next.path}`);
   };
 
-  const [forumTitle, setForumTitle] = useState('');
-  const [forumMessage, setForumMessage] = useState('');
-  const [forumAuthor, setForumAuthor] = useState('');
-  const [forumSending, setForumSending] = useState(false);
-  const [forumSent, setForumSent] = useState(false);
-  const [forumError, setForumError] = useState<string | null>(null);
-  const [lastPostTime, setLastPostTime] = useState<number | null>(null);
+  /**
+   * Roadmap 0.2 (UX-059). The board below used to carry a "Post to Forum" form,
+   * a "Like Post" button and a comment box. None of them reached a server:
+   * `handleCreateForumPost` waited 800ms on a timer, pushed the thread into
+   * this component's `useState`, and rendered "Thread Posted Successfully! —
+   * Thank you for contributing to our developer community". One reload and the
+   * question was gone, and nobody had ever seen it. The same was true of every
+   * like and every comment.
+   *
+   * Written questions about somebody's own ABAP are the last thing this product
+   * should take and silently drop, so the write half is removed rather than
+   * relabelled — there is no forum backend to bind it to, and building one is
+   * not a Phase 0 correction. What remains is what was always real: the
+   * announcements the administrator ships with the app, readable, searchable,
+   * and said to be read-only in as many words, next to the address that does
+   * reach a person.
+   */
   const [activePost, setActivePost] = useState<any | null>(null);
-  const [newCommentText, setNewCommentText] = useState('');
   const [forumFilter, setForumFilter] = useState<'all' | 'announcements' | 'technical' | 'general'>('all');
   const [forumSearch, setForumSearch] = useState('');
-  const [forumCategory, setForumCategory] = useState<'technical' | 'general'>('technical');
   const [selectedExampleCategory, setSelectedExampleCategory] = useState<string>('all');
   const [exampleSearch, setExampleSearch] = useState('');
 
@@ -587,115 +595,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleAddComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCommentText.trim() || !activePost) return;
-
-    const newComment = {
-      // Called from a submit handler, not from render. The purity rule reads the
-      // whole component body as render because it cannot prove where this
-      // function is invoked; a clock read in an event handler is fine.
-      // eslint-disable-next-line react-hooks/purity
-      id: `comment-${Date.now()}`,
-      author: profile ? `${profile.firstName} ${profile.lastName}` : 'Community Member',
-      message: newCommentText.trim(),
-      createdAt: 'Just now',
-      likes: 0
-    };
-
-    const updatedActivePost = {
-      ...activePost,
-      comments: (activePost.comments || 0) + 1,
-      commentsList: [...(activePost.commentsList || []), newComment]
-    };
-    setActivePost(updatedActivePost);
-
-    setForumPosts(prev => prev.map(post => 
-      post.id === activePost.id 
-        ? { 
-            ...post, 
-            comments: post.comments + 1, 
-            commentsList: [...(post.commentsList || []), newComment] 
-          }
-        : post
-    ));
-
-    setNewCommentText('');
-  };
-
-  const handleLikeActivePost = () => {
-    if (!activePost) return;
-    setActivePost((prev: any) => ({ ...prev, likes: (prev.likes || 0) + 1 }));
-    setForumPosts(prev => prev.map(p => p.id === activePost.id ? { ...p, likes: p.likes + 1 } : p));
-  };
-
-  const handleLikeComment = (commentId: string) => {
-    if (!activePost) return;
-    
-    const updatedComments = (activePost.commentsList || []).map((c: any) => 
-      c.id === commentId ? { ...c, likes: (c.likes || 0) + 1 } : c
-    );
-    
-    const updatedActivePost = {
-      ...activePost,
-      commentsList: updatedComments
-    };
-    
-    setActivePost(updatedActivePost);
-    
-    setForumPosts(prev => prev.map(p => 
-      p.id === activePost.id 
-        ? { ...p, commentsList: updatedComments } 
-        : p
-    ));
-  };
-
-  const validateAndModerateContent = (title: string, message: string): string | null => {
-    const combined = `${title} ${message}`.toLowerCase();
-
-    // 1. Script & HTML Injection Checks (XSS)
-    const scriptPatterns = [
-      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-      /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
-      /javascript:/i,
-      /onload\s*=/i,
-      /onerror\s*=/i,
-      /onclick\s*=/i
-    ];
-    for (const pattern of scriptPatterns) {
-      if (pattern.test(combined)) {
-        return "Security Policy Violation: Script or HTML tag injection detected. Raw iframe or script elements are blocked for user session protection.";
-      }
-    }
-
-    // 2. Sensitive Database Credentials & SAP Secrets Check
-    const secretKeywords = [
-      "sap_pass", "db_password", "client_secret", "api_key",
-      "begin private key", "-----begin", "client-secret",
-      "master_password", "db_pass", "passwort123"
-    ];
-    for (const word of secretKeywords) {
-      if (combined.includes(word)) {
-        return "Security Policy Violation: Sensitive credentials or SAP system secrets leak detected. Plaintext master passwords or private keys cannot be published to prevent corporate data breaches.";
-      }
-    }
-
-    // 3. Illegal & Infringing Content Checks
-    const illegalKeywords = [
-      "crack", "keygen", "serial key", "warez", "torrent", "null-route",
-      "casino", "gambling", "porn", "viagra", "hack", "pirated", "adult link",
-      "poker online", "betting site", "explicit content", "free downloads crack"
-    ];
-    for (const keyword of illegalKeywords) {
-      if (combined.includes(keyword)) {
-        return `Security Policy Violation: The term "${keyword}" is blacklisted under Clean-Core.io's Safety standard (blocks illegal warez, keygens, casinos, and explicit references).`;
-      }
-    }
-
-    return null;
-  };
-
-  const [forumPosts, setForumPosts] = useState<any[]>([
+  const [forumPosts] = useState<any[]>([
     {
       id: 'post-pinned',
       title: '📌 Welcome to the Clean-Core.io Community Forum & Tech Escalations',
@@ -787,55 +687,6 @@ export default function Dashboard() {
         part
       )
     );
-
-  const handleCreateForumPost = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!forumTitle.trim() || !forumMessage.trim()) return;
-
-    // 1. Rate Limiting Check (60 seconds)
-    // Same as in handleAddComment: a submit handler, not render.
-    // eslint-disable-next-line react-hooks/purity
-    const now = Date.now();
-    if (lastPostTime && now - lastPostTime < 60000) {
-      const remainingSeconds = Math.ceil((60000 - (now - lastPostTime)) / 1000);
-      setForumError(`Rate limit triggered. Please wait ${remainingSeconds} seconds before posting another thread to prevent spam flooding.`);
-      return;
-    }
-
-    // 2. Automated Moderation & Injection Blocking
-    const moderationViolation = validateAndModerateContent(forumTitle, forumMessage);
-    if (moderationViolation) {
-      setForumError(moderationViolation);
-      return;
-    }
-
-    setForumError(null);
-    setForumSending(true);
-    setTimeout(() => {
-      const isAdminUser = profile?.isAdmin === true;
-      const newPost = {
-        id: `post-${Date.now()}`,
-        title: forumTitle,
-        category: forumCategory,
-        author: isAdminUser ? 'Clean-Core Admin' : (forumAuthor.trim() || (profile ? `${profile.firstName} ${profile.lastName}` : 'Community Member')),
-        authorEmail: isAdminUser ? 'admin@clean-core.io' : (profile?.email || 'anonymous'),
-        isAdmin: isAdminUser,
-        message: forumMessage,
-        createdAt: 'Just now',
-        likes: 0,
-        comments: 0,
-        commentsList: []
-      };
-      setForumPosts(prev => [newPost, ...prev]);
-      setForumTitle('');
-      setForumMessage('');
-      setForumAuthor('');
-      setLastPostTime(Date.now());
-      setForumSending(false);
-      setForumSent(true);
-      setTimeout(() => setForumSent(false), 4000);
-    }, 800);
-  };
 
   const downloadFile = async (content: string, filename: string, type: string = 'text/plain') => {
     const blob = new Blob([content], { type });
@@ -1651,10 +1502,10 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 border-b border-gray-100 pb-5">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-55 text-[#006b2c] rounded-full text-xs font-bold uppercase tracking-widest mb-3 border border-green-100">
-                <MessageSquare size={13} strokeWidth={2.5} /> Community Forum
+                <MessageSquare size={13} strokeWidth={2.5} /> Announcements
               </div>
-              <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight uppercase">Clean-Core.io Developer Forum</h2>
-              <p className="text-gray-500 font-medium text-sm md:text-base mt-1">Discuss modernization patterns, ask questions, and share insights with other SAP Clean-Core practitioners.</p>
+              <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight uppercase">Clean-Core.io Announcements</h2>
+              <p className="text-gray-500 font-medium text-sm md:text-base mt-1">Release notes and background from the people who build this. Read-only for now — there is no forum server behind it, so nothing written here would reach anyone.</p>
             </div>
             
             <button 
@@ -1662,7 +1513,7 @@ export default function Dashboard() {
               onClick={() => setShowForum(!showForum)}
               className="flex items-center gap-2 bg-[#0b1c30] text-white hover:bg-green-600 px-5 py-3 rounded-2xl transition-all shadow-md font-bold text-xs uppercase tracking-wider self-start sm:self-auto shrink-0"
             >
-              {showForum ? 'Close Forum' : 'Open Developer Forum'}
+              {showForum ? 'Close announcements' : 'Open announcements'}
               {showForum ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
           </div>
@@ -1683,7 +1534,6 @@ export default function Dashboard() {
               return true;
             });
 
-            const isAdminUser = profile?.isAdmin === true;
 
             return (
               <div className="space-y-6">
@@ -1790,21 +1640,16 @@ export default function Dashboard() {
                                   By <span className="text-slate-600 font-bold">@{post.author}</span> • {format(new Date(post.createdAt?.seconds * 1000 || Date.now()), 'MMM d, yyyy')}
                                 </p>
                               </div>
+                              {/* The like and comment counters used to stand
+                                  here. Both counted a number this browser had
+                                  made up a moment earlier, and both went back
+                                  to zero on reload (roadmap 0.2, UX-059). */}
                               <div className="flex items-center gap-4 text-xs font-bold text-slate-450 uppercase shrink-0">
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setForumPosts(prev => prev.map(p => p.id === post.id ? { ...p, likes: p.likes + 1 } : p));
-                                  }}
-                                  className="flex items-center gap-1.5 hover:text-green-600 transition-colors p-1.5 hover:bg-slate-100 rounded-lg"
-                                >
-                                  👍 {post.likes}
-                                </button>
                                 <button 
                                   onClick={() => setActivePost(post)}
                                   className="flex items-center gap-1.5 hover:text-green-600 transition-colors p-1.5 hover:bg-slate-100 rounded-lg"
                                 >
-                                  💬 {post.commentsList?.length || 0}
+                                  Read
                                 </button>
                               </div>
                             </div>
@@ -1816,7 +1661,7 @@ export default function Dashboard() {
                     )}
                   </div>
 
-                  {/* Right Column: Start Discussion Form & Admin Contact */}
+                  {/* Right Column: how to reach a person, and why the board is read-only */}
                   <div className="space-y-6">
                     {/* Admin contact information card */}
                     <div className="bg-slate-900 text-slate-100 p-6 rounded-[2rem] border border-slate-800 shadow-xl relative overflow-hidden group">
@@ -1833,7 +1678,7 @@ export default function Dashboard() {
                       </div>
                       
                       <p className="text-slate-400 text-xs leading-relaxed font-semibold mb-6">
-                        Our admin team handles account approvals, admin-gated S/4HANA sandbox access, and platform questions. Post publicly below, or email us for anything account-related.
+                        Our admin team handles account approvals, admin-gated S/4HANA sandbox access, and platform questions. Email is the way to reach them.
                       </p>
                       
                       <div className="flex items-center justify-between gap-3 bg-slate-950/60 border border-slate-800/80 px-4 py-2.5 rounded-xl min-w-0">
@@ -1847,85 +1692,18 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    <div className="bg-white p-6 rounded-[2rem] border border-gray-200/70 shadow-sm space-y-5">
-                      <div>
-                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Start Discussion</h3>
-                        <p className="text-[11px] text-gray-400 font-medium mt-1.5 leading-relaxed">Ask a question or share a learning — it posts publicly to the board. Free to use; just add a title, pick a category, and write your message.</p>
-                      </div>
-
-                      {forumSent ? (
-                        <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl text-center text-xs font-semibold leading-relaxed animate-in zoom-in-95 duration-200">
-                          <CheckCircle2 className="mx-auto text-green-600 mb-2" size={24} />
-                          <p className="font-bold">Thread Posted Successfully!</p>
-                          <p className="mt-1 text-green-700/90">Thank you for contributing to our developer community.</p>
-                        </div>
-                      ) : (
-                        <form onSubmit={handleCreateForumPost} className="space-y-4">
-                          {forumError && (
-                            <div className="bg-red-50 border border-red-150 text-red-800 p-3 rounded-xl text-xs flex items-start gap-2.5">
-                              <AlertCircle size={16} className="text-red-600 shrink-0 mt-0.5" />
-                              <p className="leading-relaxed font-medium">{forumError}</p>
-                            </div>
-                          )}
-
-                          <div>
-                            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Topic Title</label>
-                            <input 
-                              type="text" 
-                              required
-                              value={forumTitle}
-                              onChange={(e) => { setForumTitle(e.target.value); setForumError(null); }}
-                              placeholder="e.g., Transforming BAPI_ACC_DOCUMENT_POST"
-                              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:ring-2 focus:ring-green-500 outline-none transition-all font-sans"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Topic Category</label>
-                            <select 
-                              value={forumCategory}
-                              onChange={(e) => setForumCategory(e.target.value as any)}
-                              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:ring-2 focus:ring-green-500 outline-none transition-all cursor-pointer font-sans"
-                            >
-                              <option value="technical">⚙️ Technical Q&A</option>
-                              <option value="general">💬 General Discussion</option>
-                              {isAdminUser && <option value="announcements">📢 Announcement (Admin Only)</option>}
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Your Username</label>
-                            <input 
-                              type="text" 
-                              value={forumAuthor}
-                              onChange={(e) => setForumAuthor(e.target.value)}
-                              placeholder={profile?.isAdmin ? "Clean-Core Admin" : "Your alias (e.g., SAP_Guru)"}
-                              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:ring-2 focus:ring-green-500 outline-none transition-all font-sans"
-                              disabled={profile?.isAdmin === true}
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Message Content</label>
-                            <textarea 
-                              value={forumMessage}
-                              onChange={(e) => { setForumMessage(e.target.value); setForumError(null); }}
-                              placeholder="Describe your question, or share a lesson learned — code snippets welcome. Be specific so others can help."
-                              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 min-h-[100px] resize-none text-sm font-medium text-gray-900 focus:ring-2 focus:ring-green-500 outline-none transition-all font-sans"
-                              required
-                            ></textarea>
-                          </div>
-
-                          <button 
-                            type="submit"
-                            disabled={forumSending || !forumTitle.trim() || !forumMessage.trim()}
-                            className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-gray-300 text-white rounded-xl py-2.5 text-xs font-black tracking-wider uppercase transition-all shadow-md flex justify-center items-center gap-1.5"
-                          >
-                            {forumSending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <MessageSquare size={14} />}
-                            {forumSending ? 'Posting...' : 'Post to Forum'}
-                          </button>
-                        </form>
-                      )}
+                    <div className="bg-white p-6 rounded-[2rem] border border-gray-200/70 shadow-sm space-y-3" data-forum-readonly>
+                      <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">This board is read-only</h3>
+                      <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                        There is no forum server behind this page yet, so there is nowhere for a post to go. Until there is,
+                        the board carries the administrator&apos;s announcements and nothing else — no posting, no comments,
+                        no likes.
+                      </p>
+                      <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                        A question, a finding that looks wrong, an edge case worth reporting: write to{' '}
+                        <a href="mailto:admin@clean-core.io" className="font-bold text-green-700 hover:underline">admin@clean-core.io</a>{' '}
+                        and a person reads it.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1995,83 +1773,14 @@ export default function Dashboard() {
                 </p>
               </div>
 
-              {/* Likes counter & Action */}
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={handleLikeActivePost}
-                  className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-green-600 transition-colors bg-slate-100 hover:bg-emerald-50 px-4 py-2 rounded-2xl border border-slate-200/60 hover:border-emerald-250 shadow-sm"
-                >
-                  👍 Like Post ({activePost.likes || 0})
-                </button>
-              </div>
-
-              <div className="border-t border-slate-100 pt-6">
-                <h4 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-4">
-                  Discussions ({activePost.commentsList?.length || 0})
-                </h4>
-
-                {/* Comments List */}
-                <div className="space-y-4">
-                  {(!activePost.commentsList || activePost.commentsList.length === 0) ? (
-                    <p className="text-slate-400 text-xs italic font-medium py-2">No comments published yet. Be the first to share your thoughts!</p>
-                  ) : (
-                    activePost.commentsList.map((comment: any) => {
-                      const isCommentAdmin = comment.author === 'Clean-Core Admin' || comment.isAdmin;
-                      return (
-                        <div key={comment.id} className="flex gap-3 bg-slate-50/30 p-4 rounded-2xl border border-slate-100/60 relative group hover:bg-slate-50 transition-colors">
-                          <div className={`w-9 h-9 rounded-xl ${
-                            isCommentAdmin ? 'bg-red-50 text-red-700 border-red-150' : 'bg-slate-100 text-slate-700 border-slate-200'
-                          } font-black flex items-center justify-center text-xs shrink-0 border uppercase font-mono shadow-sm`}>
-                            {comment.author.substring(0, 2).toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-xs font-extrabold text-slate-800">@{comment.author}</span>
-                              {isCommentAdmin && (
-                                <span className="bg-red-50 text-red-700 border border-red-150 px-1.5 py-0.25 rounded text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5 select-none">
-                                  <Crown size={8} className="text-red-500" /> Admin
-                                </span>
-                              )}
-                              <span className="text-[9px] text-slate-400 font-semibold">• {comment.createdAt}</span>
-                            </div>
-                            <p className="text-slate-650 text-xs mt-1.5 leading-relaxed whitespace-pre-line">{comment.message}</p>
-                            
-                            {/* Like Comment button */}
-                            <div className="flex items-center gap-2 mt-2">
-                              <button
-                                onClick={() => handleLikeComment(comment.id)}
-                                className="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-green-600 bg-slate-100/60 hover:bg-emerald-50/50 px-2 py-1 rounded-lg border border-slate-200/40 hover:border-emerald-200/50 transition-colors"
-                              >
-                                👍 {comment.likes || 0}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
+              {/* Roadmap 0.2 (UX-059). A "Like Post" counter, a per-comment
+                  like button and a comment box used to sit here. All three
+                  wrote to this component's state and nowhere else, so the reply
+                  a reader typed was visible to exactly one person for exactly
+                  as long as the tab stayed open. They are gone with the posting
+                  form: an announcement is something to read, and the address in
+                  the card beside it is the one that reaches somebody. */}
             </div>
-
-            {/* Comment Input Form Footer */}
-            <form onSubmit={handleAddComment} className="p-4 border-t border-slate-100 bg-slate-50/30 flex gap-2.5 items-center">
-              <input 
-                type="text"
-                value={newCommentText}
-                onChange={(e) => setNewCommentText(e.target.value)}
-                placeholder="Write a highly technical response or question..."
-                className="flex-1 bg-white border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-green-500 outline-none transition-all"
-                required
-              />
-              <button 
-                type="submit"
-                disabled={!newCommentText.trim()}
-                className="bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 text-white p-2.5 rounded-2xl transition-all shadow-sm flex items-center justify-center shrink-0 disabled:text-slate-400"
-              >
-                <Send size={16} />
-              </button>
-            </form>
 
           </div>
         </div>

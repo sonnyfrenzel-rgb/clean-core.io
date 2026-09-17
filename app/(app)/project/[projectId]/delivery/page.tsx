@@ -612,13 +612,19 @@ jobs:
             <h2 className="text-xl md:text-2xl font-black text-white mb-3 tracking-tight uppercase">Integrity Report</h2>
             <ul className="space-y-4 mb-8 md:mb-10 flex-grow w-full">
               <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
-                {/* Green only when there is generated code to package. The tick
-                    used to be unconditional, so an empty project got the same
-                    report as a finished one. */}
+                {/* Roadmap 0.2 (UX-027). This row reported generated code with
+                    the same green tick the rows below use for tests that
+                    actually passed — while its own subtitle said "not compiled
+                    or tested". Existence is not verification, and an Integrity
+                    Report is exactly the screenshot that ends up in a steering
+                    committee. The tick used to be unconditional before that, so
+                    an empty project got the same report as a finished one; the
+                    amber for "nothing there" stays, and mere existence is now
+                    neutral rather than green. */}
                 {hasGeneratedCode && !codeStale ? (
-                  <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                  <FileCode2 size={18} data-integrity-icon="present" className="text-slate-400 mt-0.5 shrink-0" />
                 ) : (
-                  <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
+                  <AlertCircle size={18} data-integrity-icon="missing" className="text-amber-400 mt-0.5 shrink-0" />
                 )}
                 <div>
                   <span data-stage-output={hasGeneratedCode ? 'generatedCode' : undefined} className="text-white block font-bold">

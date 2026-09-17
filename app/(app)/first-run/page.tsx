@@ -48,7 +48,14 @@ const STEPS: Step[] = [
     action: 'Sign in with the account you registered',
     detail:
       'Use "Get Free Access" in the top right. Registering activates the account immediately — there is nothing to approve and no waiting list — and you land on the dashboard.',
-    see: 'The dashboard, with your transformation balance shown in the header — "0 / 5 Transformations" on a fresh account.',
+    // Roadmap 0.2 (UX-084). This line quoted the header as "0 / 5
+    // Transformations" — used-of-total — while the header itself has said
+    // remaining-of-total since the dashboard and the transformation stage were
+    // reconciled. Same number, opposite direction, on the one screen where a
+    // reader is working out what the thing costs. The wording is the header's
+    // own, and `tests/claims-honesty-guard.spec.ts` reads both from the
+    // rendered pages so the two cannot drift apart again.
+    see: 'The dashboard, with your transformation balance shown in the header — "5 of 5 left" on a fresh account.',
   },
   {
     n: 2,

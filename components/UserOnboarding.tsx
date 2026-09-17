@@ -58,36 +58,39 @@ export default function UserOnboarding() {
             <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6 shadow-inner text-red-600">
               <ShieldCheck className="w-8 h-8 rotate-180" />
             </div>
-            <h2 className="text-2xl font-black mb-3 text-gray-900 tracking-tight uppercase">Are you sure you want to cancel?</h2>
+            {/* Roadmap 0.2 (UX-076). This dialog used to read "you will lose
+                access to our advanced Generative AI modernization tools and
+                fail to modernise your ERP core", over a list headed "What you
+                will miss" whose fourth entry promised a "Developer Community
+                Forum" that posted nothing anywhere. Telling somebody who is
+                closing a sign-up form that they will fail is a guilt trip, and
+                it sat in the one product that positions itself on saying only
+                what it can show. The list keeps the three things the free
+                workspace actually does, and says so in the present tense. */}
+            <h2 className="text-2xl font-black mb-3 text-gray-900 tracking-tight uppercase">Leave the sign-up?</h2>
             <p className="text-gray-500 font-medium text-sm mb-6 leading-relaxed">
-              If you leave now, you will lose access to our advanced Generative AI modernization tools and fail to modernise your ERP core.
+              Nothing is saved: no workspace is created and what you typed here is discarded. You can sign up again at any time.
             </p>
-            
+
             <div className="w-full bg-slate-50 border border-slate-150 rounded-2xl p-5 text-left mb-8 space-y-3.5">
-              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">What you will miss:</h4>
+              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">What the free workspace includes:</h4>
               <ul className="space-y-2.5 text-xs text-gray-700 font-medium">
                 <li className="flex items-start gap-2.5">
                   <span className="text-green-600 font-bold">✓</span>
                   <div>
-                    <strong className="text-gray-900">5 Free transformations</strong>: Modernize monolithic legacy ABAP logic into modular side-by-side Node.js applications.
+                    <strong className="text-gray-900">5 free analyses</strong>: the seven-stage workflow on your own ABAP, or on a starter example — each example is free the first time you run it.
                   </div>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <span className="text-green-600 font-bold">✓</span>
                   <div>
-                    <strong className="text-gray-900">Process Blueprinting</strong>: Map business domains to Levels 1-4 with professional BPMN 2.0 XML exports.
+                    <strong className="text-gray-900">Process Blueprinting</strong>: the process reconstructed from the code, with a BPMN 2.0 XML export.
                   </div>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <span className="text-green-600 font-bold">✓</span>
                   <div>
-                    <strong className="text-gray-900">Stakeholder Presentations</strong>: Generate management-ready executive briefs from the measured findings — no ROI is estimated.
-                  </div>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <div>
-                    <strong className="text-gray-900">Developer Community Forum</strong>: Share modernization insights and edge cases with SAP Clean Core practitioners.
+                    <strong className="text-gray-900">Stakeholder Presentations</strong>: management-ready briefs built from the measured findings — no ROI is estimated.
                   </div>
                 </li>
               </ul>
@@ -98,7 +101,7 @@ export default function UserOnboarding() {
                 onClick={() => setShowCancelConfirmation(false)}
                 className="flex-1 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white py-3.5 rounded-xl font-black text-sm uppercase tracking-wider transition-all shadow-md hover:shadow-lg active:scale-95"
               >
-                Stay & Claim Access
+                Back to sign-up
               </button>
               <button 
                 onClick={async () => {

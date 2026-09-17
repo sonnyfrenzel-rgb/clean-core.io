@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, CheckCircle2, AlertCircle, RefreshCw, Layers } from 'lucide-react';
+import { X, AlertCircle, RefreshCw, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface JiraIntegrationModalProps {
@@ -12,9 +12,8 @@ interface JiraIntegrationModalProps {
 }
 
 export default function JiraIntegrationModal({ isOpen, onClose, solutionDesign, projectId }: JiraIntegrationModalProps) {
-  const [step, setStep] = useState<'connect' | 'connecting' | 'configure' | 'syncing' | 'success'>('connect');
+  const [step, setStep] = useState<'connect' | 'connecting' | 'configure'>('connect');
   const [syncError, setSyncError] = useState<string | null>(null);
-  const [jiraProject, setJiraProject] = useState('TRANSFORM-1');
   
   useEffect(() => {
     if (!isOpen) {
@@ -107,8 +106,15 @@ export default function JiraIntegrationModal({ isOpen, onClose, solutionDesign, 
               <div className="text-center">
                 <Layers className="w-16 h-16 text-[#0052CC] mx-auto mb-4 opacity-80" />
                 <h4 className="text-xl font-bold text-gray-900 mb-2">Connect to Jira Cloud</h4>
+                {/* Roadmap 0.2 (UX-026). This said "We need your permission to
+                    create Epics and User Stories in your Jira instance
+                    automatically" — a capability that does not exist: the
+                    callback cannot store the tokens, so nothing is ever written
+                    to a board. Authorising is all this screen does today, and
+                    that is now what it says. */}
                 <p className="text-gray-500 mb-8 text-sm">
-                  We need your permission to create Epics and User Stories in your Jira instance automatically.
+                  Authorisation only. Nothing is written to your board yet: the server does not keep the
+                  Jira tokens, so no Epic and no User Story is created.
                 </p>
                 <button
                   onClick={handleConnect}
@@ -129,23 +135,19 @@ export default function JiraIntegrationModal({ isOpen, onClose, solutionDesign, 
 
             {step === 'configure' && (
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Select Target Project</label>
-                  <select 
-                    value={jiraProject}
-                    onChange={(e) => setJiraProject(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-[#0052CC] focus:border-[#0052CC] block p-3"
-                  >
-                    <option value="TRANSFORM-1">S/4HANA Core Team (S4CT)</option>
-                    <option value="BTP-03">BTP Innovation Hub (BTP)</option>
-                    <option value="LEGACY">Legacy Decommissioning (LEG)</option>
-                  </select>
-                </div>
-                
-                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3 text-blue-900">
+                {/* Roadmap 0.2 (UX-026). A target-project dropdown used to
+                    stand here offering "S/4HANA Core Team (S4CT)", "BTP
+                    Innovation Hub (BTP)" and "Legacy Decommissioning (LEG)" —
+                    three invented boards, not a list read from anybody's Jira —
+                    over a blue panel promising "Will create 1 Master Epic, ~12
+                    User Stories, and attach the Solution Design document
+                    automatically". No board is ever read and nothing is ever
+                    created. */}
+                <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 flex gap-3 text-amber-900">
                   <AlertCircle className="w-5 h-5 shrink-0" />
                   <p className="text-sm">
-                    <strong>Sync profile active:</strong> Will create 1 Master Epic, ~12 User Stories, and attach the Solution Design document automatically.
+                    <strong>Not available yet:</strong> the server does not persist the Jira tokens, so this
+                    workspace cannot list your projects or write an issue to them.
                   </p>
                 </div>
 
@@ -160,35 +162,21 @@ export default function JiraIntegrationModal({ isOpen, onClose, solutionDesign, 
                     onClick={handleSync}
                     className="w-full bg-gray-950 hover:bg-black text-white font-bold py-3 px-4 rounded-xl transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-2"
                   >
-                    <CheckCircle2 size={18} /> Push to Jira
+                    <AlertCircle size={18} /> Why not yet?
                   </button>
                 </div>
               </div>
             )}
 
-            {step === 'syncing' && (
-              <div className="text-center py-10">
-                <RefreshCw className="w-10 h-10 animate-spin mx-auto mb-4 text-purple-600" />
-                <p className="font-bold text-gray-900">Synchronizing Work Packages...</p>
-                <p className="text-sm text-gray-500 mt-2">Writing to {jiraProject}</p>
-              </div>
-            )}
-
-            {step === 'success' && (
-              <div className="text-center py-6 text-green-600">
-                <CheckCircle2 className="w-16 h-16 mx-auto mb-4" />
-                <h4 className="text-xl font-bold text-gray-900 mb-2">Sync Complete!</h4>
-                <p className="text-gray-500 mb-8 text-sm text-balance">
-                  Your Solution Design has been transformed into detailed Epics and User stories in Jira.
-                </p>
-                <button
-                  onClick={onClose}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2.5 px-6 rounded-xl transition-all"
-                >
-                  Close Window
-                </button>
-              </div>
-            )}
+            {/* Roadmap 0.2 (UX-026). Two more screens lived here: a spinner
+                over "Synchronizing Work Packages... Writing to TRANSFORM-1",
+                and a green "Sync Complete! Your Solution Design has been
+                transformed into detailed Epics and User stories in Jira."
+                Neither was reachable — `handleSync` only reports why the sync
+                cannot run — and neither described anything that happens. A
+                success screen for work that was never done is the failure this
+                phase exists to remove, so both are gone rather than hidden
+                behind a flag. */}
           </div>
         </motion.div>
       </div>
