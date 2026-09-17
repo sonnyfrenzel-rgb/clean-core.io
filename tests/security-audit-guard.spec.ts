@@ -119,6 +119,58 @@ test.describe('three jobs, three trust levels', () => {
     expect(read('scripts/security/inbox.mjs')).not.toMatch(/mtimeMs|--pattern/);
   });
 
+  test('inboxes running at once each read the report, because every download gets its own directory', async () => {
+    // A resumed session ran the SessionStart hook `inbox.mjs --brief` twice at once
+    // (17.09.2026). Both emptied and refilled one directory per artifact, `gh run
+    // download` refuses to overwrite a file that is there, and the loser announced
+    // "the audit run 35188992683 produced no readable report" about a report that
+    // opened without error. The download below refuses to overwrite the same way,
+    // and lets no invocation write before every one of them has started downloading.
+    const { spawn } = require('child_process') as typeof import('child_process');
+    const os = require('os') as typeof import('os');
+    const { pathToFileURL } = require('url') as typeof import('url');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sec-inbox-'));
+    const parallel = 4;
+    try {
+      fs.mkdirSync(path.join(dir, 'gate'));
+      const moduleUrl = pathToFileURL(path.resolve(ROOT, 'scripts/security/lib/envelope.mjs')).href;
+      const script = (i: number) =>
+        [
+          "import fs from 'node:fs';",
+          "import { join } from 'node:path';",
+          `import { fetchSealed } from ${JSON.stringify(moduleUrl)};`,
+          'const nap = () => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);',
+          "const raw = fetchSealed('security-audit-abc-1', (to) => {",
+          `  fs.writeFileSync(join('gate', 'ready-${i}'), '');`,
+          "  while (!fs.existsSync(join('gate', 'go'))) nap();",
+          "  fs.writeFileSync(join(to, 'security-audit.enc.json'), 'sealed', { flag: 'wx' });",
+          "}, 'inbox');",
+          'console.log(String(raw));',
+        ].join('\n');
+      const runs = Array.from({ length: parallel }, (_, i) =>
+        new Promise<string>((resolve, reject) => {
+          const child = spawn(process.execPath, ['--input-type=module', '-e', script(i)], { cwd: dir });
+          let out = '';
+          child.stdout.on('data', (d) => (out += d));
+          child.stderr.on('data', (d) => (out += d));
+          child.on('error', reject);
+          child.on('close', () => resolve(out.trim()));
+        }),
+      );
+      await expect.poll(() => fs.readdirSync(path.join(dir, 'gate')).length, { timeout: 20_000 }).toBe(parallel);
+      fs.writeFileSync(path.join(dir, 'gate', 'go'), '');
+      expect(await Promise.all(runs)).toEqual(Array(parallel).fill('sealed'));
+      // Nothing is left behind but the sealed copy where it always was.
+      expect(fs.readdirSync(path.join(dir, 'inbox'))).toEqual(['security-audit-abc-1']);
+      expect(fs.readFileSync(path.join(dir, 'inbox', 'security-audit-abc-1', 'security-audit.enc.json'), 'utf8')).toBe('sealed');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+    const inbox = read('scripts/security/inbox.mjs');
+    expect(inbox).toMatch(/fetchSealed\(artifact, \(dir\) => gh\(\['run', 'download', String\(run\.databaseId\), '--name', artifact, '-D', dir\]\), DIR\)/);
+    expect(inbox).not.toMatch(/rmSync|'run', 'download'[^\n]*join\(DIR/);
+  });
+
   test('the audit job holds the model key only; the deliver job holds the private key and runs no model', () => {
     const audit = job('audit');
     expect(audit).toContain('OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}');
