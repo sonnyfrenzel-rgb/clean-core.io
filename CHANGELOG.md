@@ -10,6 +10,101 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.12.0] — 2026-09-17
+
+### Eine signierte Beweismappe war fälschbar. Der Referenzkorpus liegt jetzt im Repository und prüft die Engine. Und neun Versprechen, die nichts hielten, sind weg — vier davon ersatzlos
+
+**Das Wichtigste zuerst, weil es die Kernaussage des Produkts betraf:** Eine signierte
+Beweismappe ließ sich fälschen. Der Dateiname durfte das Trennzeichen der kanonischen Form
+tragen, also ließen sich zwei signierte Beweisdateien zu einer zusammenziehen — gleiche
+kanonische Bytes, gültige Signatur, eine Beweisdatei weniger im Archiv, und
+`scripts/verify-pack.mjs` antwortete „Verified." mit Exit 0. Nachgestellt, bevor irgendetwas
+repariert wurde: zwei verschiedene Dateilisten, byteidentische kanonische Zeichenkette.
+Dazu band die Prüfung der attestierten Dateien nur deren *Existenz*
+(`lib/audit-pack-verify.ts` fragte `!!zip.file(path)`): `07-user-attested.md` ließ sich von
+„sign-off: not given" auf eine erfundene Freigabe umschreiben, und beide Verifier blieben
+grün. Und Ausgabedatum wie Formatversion waren überhaupt nicht gebunden — ein auf 2019
+gesetztes Datum druckte das CLI als bestätigt.
+
+Behoben mit Format 3 der kanonischen Form: Eindeutigkeitsprüfung, ein Digest je attestierter
+Datei, der Ausgabeabschnitt vor dem Hash. **Alle bisher ausgelieferten Mappen verifizieren
+byte-identisch weiter** — ohne `version` oder unter Format 3 ist die kanonische Zeichenkette
+unverändert, und die Trennzeichenprüfung schließt das Loch rückwirkend auch auf ihnen. Eine
+Falle unterwegs, die zählt: die erste, breitere Regel hat die Ausstellerroute mit 500
+abgeschossen, weil der echte Katalogstand Doppelpunkt *und* Komma enthält und mit genau
+diesem Wert jede bisherige Mappe signiert ist. Die Laufbindungsfelder halten deshalb nur das
+Abschnittszeichen frei, ab Format 3 wird maskiert, und ein Spec hält den Livewert fest.
+
+**Ein Administrator konnte jedes fremde Projekt löschen.** `DELETE /api/projects/{id}` ließ
+`decoded.admin === true` als Eigentümerschaft gelten, und die einzige weitere Hürde — der
+MFA-Gate — lässt jedes Token durch, wenn das Konto keinen zweiten Faktor *aktiviert* hat
+(`lib/mfa-gate.ts`: `if (!mfaEnabled) return null`). Ein Administrator ohne eingerichteten
+zweiten Faktor löschte damit aus einem gewöhnlichen ID-Token fremde Projekte samt signierter
+Runs — ohne Step-up, ohne Spiegelprüfung, ohne Journaleintrag. Jetzt: nur der Eigentümer.
+Niemand verliert eine Funktion, denn das *Lesen* fremder Projekte hat `firestore.rules` dem
+Betreiber am 16.09. bereits genommen.
+
+- **Roadmap 2.10 — der Referenzkorpus liegt im Repository und prüft die Engine.**
+  `docs/korpus/referenzkorpus-v2.1.md` ist das Fallbuch (68 Fälle), `tests/korpus/cases/` das
+  daraus deterministisch erzeugte Bündel (209 Dateien, jede Quelldatei gegen den im Fallbuch
+  deklarierten Hash geprüft), `tests/korpus-engine.spec.ts` die Ratsche. Die Grundlinie sagt
+  zum ersten Mal in Zahlen, wie weit die Engine vom Korpus entfernt ist: 340 Fall-und-Klassen,
+  178 übereinstimmend, **24 Engine-Defekte**, 4 Fälle, in denen der Korpus selbst unrecht hat,
+  und 134 Aussageklassen, die die Engine noch gar nicht produziert. Die 134 sind keine
+  Schwäche des Korpus — das ist der gemessene Stand von Phase 2. Der teuerste Defekt: ein
+  `UPDATE KNA1` per ADBC ergibt genau einen Befund (`commit-work`), keine Datenkopplung, und
+  das Wort KNA1 kommt in der ganzen Ausgabe nicht vor. Die drei Defektfamilien stehen als
+  Schritt **2.11** in der Roadmap. Kein fremder Code im Repository: die Fundstellen tragen
+  Klasse, Zeilen und Hash, keinen Zeiger, und ein Test wird rot, sobald ein Hostname oder eine
+  vierzigstellige Commit-ID nach `docs/korpus/` gerät.
+- **Roadmap 2.3 — das Prozessskelett entsteht aus dem Code.** `lib/abap/process-skeleton.ts`
+  baut aus Verzweigungen und Aufrufen in *einer* Lesung Knoten, Kanten mit wörtlichem
+  Bedingungstext, Regionen und Einstiege in Laufzeitreihenfolge; Palette genau nach
+  `DESIGN.md` §5.8, ohne Modellaufruf. Jeder Knoten trägt einen Anker oder einen Grund, warum
+  nicht. Opake Aufrufe beenden den Fluss des Rufers nicht — außer `SUBMIT` ohne `AND RETURN`
+  und `LEAVE TO TRANSACTION`. Ereignisblöcke sind Einstiege, auch ohne `START-OF-SELECTION`.
+  `CHECK` bekommt drei verschiedene Kanten. `Z_ORDER_INTEGRITY_CHECK` bekommt **0 Knoten und
+  eine Notiz** statt eines erfundenen Starts: die Datei hat keinen Einstieg.
+- **Roadmap 2.8 — versteckte Geschäftsregeln.** `lib/abap/business-rules.ts` findet Literale
+  in Bedingungen als Regelkandidaten mit Anker: 140 auf den acht Beispielen. Die Preistoleranz
+  `lv_dev_pct > 5` in `Z_MM_PO_APPROVAL.abap:412` ist so ein Fall — eine Fünf im Code, die in
+  Wahrheit eine Geschäftsregel ist, die nie jemand aufgeschrieben hat. Wo eine Zahl nach
+  Geldgrenze aussieht, steht „Betrag, Währung nicht aus dem Code ableitbar" statt einer
+  Euro-Aussage. 66 Fehlalarme sind ausgeschlossen, jeder mit Grund im Auswurf statt
+  stillschweigend.
+- **Roadmap 0.2 — neun UX-Befunde, vier Versprechen ersatzlos entfernt.** Der
+  Remediation-Schalter schaltete Text, nie Code: der erzeugte Code war in beiden Stellungen
+  byte-gleich, der Prompt kannte den Modus gar nicht. Die drei „Transformation Insights" waren
+  für jedes Projekt dieselben und nannten Express und TypeORM auch im RAP-Track. Das
+  SAP-Build-Badge versprach einen Export, den es nicht gibt. Und das Forum meldete „Thread
+  Posted Successfully!", nachdem es in `useState` geschrieben hatte — die Schreibhälfte ist
+  weg, die Ankündigungen bleiben lesbar und sind als read-only benannt. Dazu: der grüne Haken
+  steht nur noch für Geprüftes, die Kompatibilitätsaussage trägt einen dauerhaft sichtbaren
+  Vorbehalt statt eines Hover-Tooltips, der Abbruch im Onboarding gibt niemandem die Schuld,
+  das Jira-Modal erfindet keine Epics und keine Boards, und der First-Run zitiert das
+  Kontingent wie der Header. **Schritt 0.2 ist damit nicht fertig** — Facts-Service und
+  Copy-CI stehen aus, und §14 plant rund dreißig QA-Befunde in denselben Schritt.
+- **Zwei Prüfungen über der Engine, die keine Sollantwort brauchen.** `@abaplint/core` liest
+  seit diesem Release als zweiter, fremder Parser mit; neun Abweichungen stehen mit Urteil und
+  Begründung im Register, und „wir haben recht" ist dort verboten. Dazu fünf metamorphe
+  Eigenschaften (98 Tests): Umbenennen ist unsichtbar, Formatieren verschiebt Anker und sonst
+  nichts, ein Kommentar ändert nichts, Aneinanderhängen ist Vereinigung, jeder Anker zeigt auf
+  sein Konstrukt. Beide haben am ersten Tag Defekte gefunden, die kein Testfall gesehen hätte:
+  `IF lv = |Status: ok|.` ließ ein Gateway aus dem Diagramm verschwinden, und `ENDIF. " done`
+  zählte nicht als Schließer — ein Programm galt als komplexer, weil es kommentiert war.
+- **Der QA-Agent liest wieder.** Das Korpus-Bündel hatte das aufgelaufene Delta auf 3,3 MB
+  getrieben, davon 80 % generierte Fixtures; der Checkpoint konnte nicht mehr vorrücken, und
+  das Review von `5f84bb2` machte **null Modellaufrufe** — und meldete trotzdem
+  `go_with_notes`. Ein grünes Häkchen über ungelesenem Code ist schlimmer als ein rotes.
+  `tests/korpus/cases/**` steht jetzt in derselben Ausschlussliste wie die anderen generierten
+  Pfade; Ratsche, Manifest, Spec und Konverter bleiben geprüft.
+
+**Die Vollprüfung von v2.11.1 ist abgeschlossen:** alle 30 kritischen Befunde entschieden —
+6 waren bekannt, 13 mit Beleg widerlegt, 11 bestätigt und behoben. Widerlegt wurden unter
+anderem `vercel.json` und zwei Survey-Workflows, die am geprüften Commit gar nicht
+existieren, und drei „secret-named literal"-Treffer, die den öffentlichen Verifier und einen
+dokumentierten Testschlüssel meinen.
+
 ## [v2.11.1] — 2026-09-16
 
 ### Phase 1 ist abgeschlossen, Phase 0 bis auf einen Schritt, Phase 2 beginnt — und vier Stellen, die einen Beleg behaupteten, den niemand geprüft hatte

@@ -109,6 +109,25 @@ export const IGNORED_PATHS = [
   /^package-lock\.json$/,
   /(^|\/)node_modules\//,
   /^lib\/abap\/generated\//,
+  // The reference corpus bundle: 209 ABAP fixtures and their expectations,
+  // generated from `docs/korpus/referenzkorpus-v2.1.md` by
+  // `scripts/korpus/build-bundle.mjs`. Nobody writes these by hand, so there is
+  // nothing here a code review can find — but there is a great deal of it, and
+  // that is the problem it caused. Adding the corpus on 17.09.2026 put 2.7 MB
+  // of fixtures into the delta; the checkpoint could no longer advance, the
+  // delta grew with every push, and the review of `5f84bb2` made **zero model
+  // calls** while still reporting `go_with_notes` — a green tick over code
+  // nobody read, which is worse than a red one. The trust-chain fix of the same
+  // day went unreviewed for exactly this reason.
+  //
+  // What still guards the bundle, so that excluding it costs nothing: the
+  // converter is deterministic and its idempotence is asserted, every source
+  // file is checked against the hash the case book declares for it, and
+  // `tests/korpus-engine.spec.ts` turns red the moment bundle and book drift
+  // apart. The book itself stays reviewable — it is under `docs/`, which this
+  // list already covers as prose, and it is the source these files are built
+  // from.
+  /^tests\/korpus\/cases\//,
   /^public\//,
   /^docs\//,
   /^scratch\//,
