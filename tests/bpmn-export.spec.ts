@@ -132,7 +132,8 @@ const OPTIONS = (file: string) => ({ processName: file.replace(/\.\w+$/, ''), so
 
 /** file, flow nodes, sequence flows, sub-processes, planes, data stores, pools, message flows — counted from the XML. */
 const SHIPPED: Array<[string, number, number, number, number, number, number, number]> = [
-  [LEGACY, 65, 71, 7, 8, 8, 1, 1],
+  // 76 flows, not 71: five of them go around a folded run switch (decision 7).
+  [LEGACY, 65, 76, 7, 8, 8, 1, 1],
   ['Z_BUSINESS_PARTNER_SYNC.txt', 17, 16, 2, 3, 3, 0, 0],
   ['Z_EMPLOYEE_EXPENSE_VAL.txt', 12, 13, 1, 2, 0, 0, 0],
   ['Z_INVOICE_EXTRACTOR.txt', 12, 11, 1, 2, 2, 0, 0],
@@ -425,6 +426,178 @@ test.describe('the palette, as BPMN', () => {
       expect(d.conditionExpression, `default of ${g.id}`).toBeUndefined();
     }
   });
+
+  /* ---------------------------------------------------------------- *
+   * The way past a run switch — `model.ts` decision 7
+   * ---------------------------------------------------------------- */
+
+  test(`${LEGACY} — every folded run switch has a flow that goes around it`, async () => {
+    const parsed = await (await moddle()).fromXML(buildBpmnExportFromSource(read(LEGACY), OPTIONS(LEGACY)).xml);
+    const { elements } = countOf(parsed.rootElement);
+    const bypasses = elements.filter((e) => e.$type === 'bpmn:SequenceFlow' && traceOf(e)?.reason === 'guard-bypass');
+
+    // Four routines of the example open with a `CHECK` on a selection-screen
+    // switch. `SEND_SUMMARY_MAIL` gets two ways past it, because the step before
+    // it is guarded too and a reader coming round that one has to be able to
+    // skip this one as well.
+    expect(bypasses.map((f) => [
+      (f.sourceRef as ModdleElement).id,
+      (f.targetRef as ModdleElement).id,
+      (f.conditionExpression as { body: string }).body,
+      traceOf(f)?.bypasses,
+    ])).toEqual([
+      ['nd-157-0', 'nd-159-0', 'NOT ( p_rfc = abap_true )', 'nd-158-0'],
+      ['nd-161-0', 'nd-163-1', 'p_mail = abap_true', 'nd-162-0'],
+      ['nd-162-0', 'nd-163-0', 'NOT ( p_mail = abap_true )', 'nd-163-1'],
+      ['nd-161-0', 'nd-163-0', 'NOT ( p_mail = abap_true )', 'nd-163-1'],
+      ['nd-164-0', 'nd-167-0', 'NOT ( p_alv = abap_true )', 'nd-166-0'],
+    ]);
+
+    // Every one of them starts where the guarded flow starts and ends where the
+    // guarded step leads: a way round the step, not a way out of the process.
+    for (const flow of bypasses) {
+      const around = elements.find((e) => e.id === traceOf(flow)?.bypasses) as ModdleElement;
+      const source = (flow.sourceRef as ModdleElement).id;
+      expect(list<ModdleElement>(around.incoming).map((f) => (f.sourceRef as ModdleElement).id)).toContain(source);
+      expect(list<ModdleElement>(around.outgoing).map((f) => (f.targetRef as ModdleElement).id))
+        .toContain((flow.targetRef as ModdleElement).id);
+      expect(flow.name).toBe((flow.conditionExpression as { body: string }).body);
+    }
+  });
+
+  test(`${LEGACY} — with a switch off the file still leads to the end, and skips exactly one step`, async () => {
+    const parsed = await (await moddle()).fromXML(buildBpmnExportFromSource(read(LEGACY), OPTIONS(LEGACY)).xml);
+    const roots = list<ModdleElement>(parsed.rootElement.rootElements);
+    const process = roots.find((r) => r.$type === 'bpmn:Process') as ModdleElement;
+    const elements = list<ModdleElement>(process.flowElements);
+    const nodes = elements.filter((e) => e.$instanceOf('bpmn:FlowNode'));
+    const flows = elements.filter((e) => e.$type === 'bpmn:SequenceFlow');
+
+    /**
+     * What a reader that has only the file reaches, with these switches off.
+     *
+     * The rule is the one any modeller applies: a flow whose condition asserts a
+     * switch that is off cannot be taken, and the negation of such a condition
+     * is the way the run takes instead. Nothing here knows about `CHECK`,
+     * guards, or this product's own navigation — the point of the test is that
+     * the **file** answers, not that our reader is clever.
+     */
+    const reached = (off: string[]): Set<string> => {
+      const asserts = (body: string, name: string) =>
+        new RegExp(`(^|[^\\w/])${name}\\s*=\\s*abap_true`, 'i').test(body);
+      const onward = new Map<string, ModdleElement[]>();
+      for (const flow of flows) {
+        const body = (flow.conditionExpression as { body?: string } | undefined)?.body ?? '';
+        const negated = /^NOT\s*\(/i.test(body.trim());
+        if (body && !off.every((name) => !asserts(body, name) || negated)) continue;
+        const from = (flow.sourceRef as ModdleElement).id as string;
+        onward.set(from, [...(onward.get(from) ?? []), flow]);
+      }
+      const seen = new Set<string>(nodes.filter((e) => e.$type === 'bpmn:StartEvent').map((e) => e.id as string));
+      const stack = [...seen];
+      while (stack.length) {
+        const id = stack.pop() as string;
+        for (const flow of onward.get(id) ?? []) {
+          const to = (flow.targetRef as ModdleElement).id as string;
+          if (seen.has(to)) continue;
+          seen.add(to);
+          stack.push(to);
+        }
+      }
+      return seen;
+    };
+
+    const notReached = (off: string[]) =>
+      nodes.filter((n) => !reached(off).has(n.id as string)).map((n) => n.name).sort();
+
+    expect(nodes).toHaveLength(23);
+    expect(notReached([]), 'with every switch as the source sets it, the file leads everywhere').toEqual([]);
+    // The finding this test exists for: `p_rfc` off used to leave everything
+    // after `REMOTE_CREDIT_CHECK` with no way in at all — 31 of the 65 elements
+    // of this example, where the program runs 59 of them. One step is skipped.
+    expect(notReached(['p_rfc'])).toEqual(['REMOTE_CREDIT_CHECK']);
+    expect(notReached(['p_down'])).toEqual(['DOWNLOAD_RESULT_FILE']);
+    expect(notReached(['p_alv'])).toEqual(['DISPLAY_ALV']);
+    // Two guarded steps in a row, in all four positions of their switches.
+    expect(notReached(['p_mail'])).toEqual(['SEND_SUMMARY_MAIL']);
+    expect(notReached(['p_down', 'p_mail'])).toEqual(['DOWNLOAD_RESULT_FILE', 'SEND_SUMMARY_MAIL']);
+  });
+
+  test('a guarded step at the end of a loop body is skipped back to the loop, not into a dead end', async () => {
+    // None of the eight programs has this shape, and it is the one where the
+    // way past the switch is a loop-back rather than a forward flow.
+    const source = [
+      'REPORT zloopguard.',
+      "PARAMETERS p_log AS CHECKBOX DEFAULT 'X'.",
+      'DATA gt TYPE TABLE OF vbak.',
+      'START-OF-SELECTION.',
+      '  SELECT * FROM vbak INTO TABLE gt.',
+      '  LOOP AT gt INTO vbak.',
+      '    PERFORM enrich.',
+      '    PERFORM write_log.',
+      '  ENDLOOP.',
+      '',
+      'FORM enrich.',
+      '  UPDATE vbak SET erdat = sy-datum.',
+      'ENDFORM.',
+      '',
+      'FORM write_log.',
+      '  CHECK p_log = abap_true.',
+      '  INSERT zlog FROM vbak.',
+      '  UPDATE zlog2 SET a = 1.',
+      'ENDFORM.',
+    ].join('\n');
+    const exported = buildBpmnExportFromSource(source, { processName: 'Loop guard', sourceFileName: 'z.abap' });
+    const parsed = await (await moddle()).fromXML(exported.xml);
+    expect(parsed.warnings.map((w) => w.message)).toEqual([]);
+    const { elements } = countOf(parsed.rootElement);
+
+    const guarded = elements.find((e) => e.name === 'WRITE_LOG') as ModdleElement;
+    const into = list<ModdleElement>(guarded.incoming)[0];
+    expect((into.conditionExpression as { body: string }).body).toBe('p_log = abap_true');
+    const loop = (list<ModdleElement>(guarded.outgoing)[0].targetRef as ModdleElement);
+    expect(loop.name).toBe('LOOP AT gt');
+
+    const bypass = elements.find((e) => e.$type === 'bpmn:SequenceFlow' && traceOf(e)?.reason === 'guard-bypass') as ModdleElement;
+    expect((bypass.sourceRef as ModdleElement).id).toBe((into.sourceRef as ModdleElement).id);
+    expect((bypass.targetRef as ModdleElement).id).toBe(loop.id);
+    expect((bypass.conditionExpression as { body: string }).body).toBe('NOT ( p_log = abap_true )');
+    expect(traceOf(bypass)).toMatchObject({ kind: 'loop-back', bypasses: guarded.id as string });
+    expect(exported.stats.guardBypasses).toBe(1);
+  });
+
+  /* ---------------------------------------------------------------- *
+   * `dataByElement` — the associations, without a second parser
+   * ---------------------------------------------------------------- */
+
+  for (const file of [LEGACY, PO]) {
+    test(`${file} — dataByElement says exactly what the data associations in the file say`, async () => {
+      const exported = buildBpmnExportFromSource(read(file), OPTIONS(file));
+      const parsed = await (await moddle()).fromXML(exported.xml);
+      const { elements } = countOf(parsed.rootElement);
+
+      /** The table behind a `dataStoreReference`, the way a reader of the XML has to find it. */
+      const tableOf = (ref: ModdleElement | undefined) => (ref?.dataStoreRef as ModdleElement | undefined)?.name;
+      const fromFile: Record<string, { reads: string[]; writes: string[] }> = {};
+      for (const element of elements) {
+        const reads = list<ModdleElement>(element.dataInputAssociations)
+          .map((a) => tableOf(list<ModdleElement>(a.sourceRef)[0])).filter(Boolean) as string[];
+        const writes = list<ModdleElement>(element.dataOutputAssociations)
+          .map((a) => tableOf(a.targetRef as ModdleElement)).filter(Boolean) as string[];
+        if (reads.length || writes.length) fromFile[element.id as string] = { reads, writes };
+      }
+
+      expect(Object.keys(fromFile).length, 'the file has no data association at all').toBeGreaterThan(0);
+      expect(exported.dataByElement).toEqual(fromFile);
+      // Every id is an element of the file, and every table an exported store.
+      const stores = new Set(list<ModdleElement>(parsed.rootElement.rootElements)
+        .filter((r) => r.$type === 'bpmn:DataStore').map((r) => r.name as string));
+      for (const [id, data] of Object.entries(exported.dataByElement)) {
+        expect(exported.elementNode[id], `${id} is not a flow node of the file`).toBeDefined();
+        for (const table of [...data.reads, ...data.writes]) expect(stores).toContain(table);
+      }
+    });
+  }
 
   test(`${LEGACY} — error boundary, loop, data stores and the other system`, async () => {
     const parsed = await (await moddle()).fromXML(buildBpmnExportFromSource(read(LEGACY), OPTIONS(LEGACY)).xml);

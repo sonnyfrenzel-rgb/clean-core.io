@@ -706,6 +706,27 @@ const TRUE_FORMS = ['abap_true', "'x'"];
 const FALSE_FORMS = ['abap_false', "' '", "''"];
 
 /**
+ * `NOT ( … )` around the whole condition, or `null` when that is not its shape.
+ *
+ * The parenthesis has to close at the very end, or `NOT ( a ) AND b` would be
+ * read as the negation of `a ) AND b`.
+ */
+function unwrapNot(condition: string): string | null {
+  const text = condition.trim();
+  const open = /^NOT\s*\(/i.exec(text);
+  if (!open) return null;
+  let depth = 0;
+  for (let i = open[0].length - 1; i < text.length; i += 1) {
+    if (text[i] === '(') depth += 1;
+    else if (text[i] === ')') {
+      depth -= 1;
+      if (depth === 0) return i === text.length - 1 ? text.slice(open[0].length, i) : null;
+    }
+  }
+  return null;
+}
+
+/**
  * True when the condition can only hold with this switch in this position.
  *
  * Deliberately narrow: an equality against one of the two literals ABAP writes
@@ -713,8 +734,17 @@ const FALSE_FORMS = ['abap_false', "' '", "''"];
  * `OR` may hold without this switch, so claiming the branch cannot run would be
  * a claim the code does not make — and the whole of `DESIGN.md` §5.9 item 7 is
  * that a variant says what the code says.
+ *
+ * `NOT ( … )` is turned round rather than matched through. The engine writes
+ * that form itself — for the false arm of a `CHECK` it did not fold, and for
+ * the flow that goes around one it did (2.6, `bpmn/model.ts` decision 7) — and
+ * read literally it would say the opposite of what it means: the way *past* a
+ * switch would be blocked exactly when the switch is off, which is the one
+ * position in which it is the way the run takes.
  */
 function conditionNeeds(condition: string, name: string, on: boolean): boolean {
+  const inner = unwrapNot(condition);
+  if (inner !== null) return conditionNeeds(inner, name, !on);
   if (/\bOR\b/i.test(condition)) return false;
   const literals = [...TRUE_FORMS, ...FALSE_FORMS].map(escapeRegExp).join('|');
   const positive = new RegExp(`(^|[^\\w/])${escapeRegExp(name)}\\s*=\\s*(${literals})`, 'i');
@@ -737,24 +767,30 @@ export interface RunVariant {
 /**
  * The run a set of switch positions draws.
  *
- * Two shapes of blocked flow, and telling them apart is the whole honesty of
- * this function:
+ * **One rule, and it is the flows.** An element is out of the run when it has a
+ * way in at all and every one of them is either blocked by a switch or comes
+ * from an element that is itself out. Nothing else decides it: no element is
+ * marked out because of the flows leaving *another* one.
  *
- *   - **a fork** — the source has other outgoing flows, so the run really does
- *     take one of them instead. What nothing then reaches is out of this run.
- *   - **a guard** — the conditional flow is the source's *only* outgoing flow.
- *     `DESIGN.md` §5.8 draws a leading `CHECK p_rfc = abap_true.` that way: as a
- *     conditional flow into the routine rather than as a gateway, with **no
- *     bypass edge beside it**. In the code that `CHECK` skips one routine and
- *     the caller goes on; in the file the arrow is the only way forward. Walking
- *     it as a fork claims the program stops at the switch — turning `p_rfc` off
- *     on the 1.000-line example would have read *"31 of 65 steps are not
- *     reached"*, and the program runs 59 of them. So a guard dims its own step
- *     and the level that step opens, and nothing after it.
+ * That single rule used to have an exception, and the exception was the bug it
+ * was written to avoid. `DESIGN.md` §5.8 draws a leading `CHECK p_rfc =
+ * abap_true.` as a conditional flow into the routine rather than as a gateway,
+ * and the file had no way past it — so walking it plainly claimed the program
+ * stops at the switch: *"31 of 65 steps are not reached"* on the 1.000-line
+ * example, where the program runs 59 of them. The exception was to treat a
+ * blocked flow that is its source's only way on as passable and to strike out
+ * its target by hand. It bought the right number for that case and paid for it
+ * twice: the target was struck out **before** the fixpoint ran and nothing ever
+ * took it back, so a step a second, running branch reached was still shown as
+ * not running, together with the whole level under it (QA `00a4a41e73ac`); and
+ * a special case here is a second opinion about a file that should say what it
+ * means.
  *
- * The narrower claim is the true one. That the file has no bypass edge for a
- * guard is 2.6's business, and it is named in this step's report rather than
- * papered over here.
+ * Since 2.6 it does: `bpmn/model.ts` decision 7 writes a bypass flow beside
+ * every folded run switch, and the plain rule gets the guard case right on its
+ * own. The model is rebuilt from the signed source on every read — only the
+ * traceability quote is stored — so there is no older file to keep the
+ * exception for.
  */
 export function runVariant(
   model: ProcessMapModel,
@@ -785,14 +821,9 @@ export function runVariant(
     const inbound = new Map<string, Array<{ from: string; passable: boolean }>>();
     for (const id of ids) {
       const branches = (byId.get(id)?.branches ?? []).filter((branch) => inPlane.has(branch.to));
-      const forward = branches.filter((branch) => branch.to !== id);
       for (const branch of branches) {
         if (branch.to === id) continue;
-        const isBlocked = blocked(branch.condition);
-        // A blocked *guard* — the only way on from its source — is still walked
-        // past: the `CHECK` skips its own step and the caller goes on.
-        const passable = !isBlocked || forward.length === 1;
-        if (isBlocked && forward.length === 1) excluded.add(branch.to);
+        const passable = !blocked(branch.condition);
         const held = inbound.get(branch.to);
         if (held) held.push({ from: id, passable });
         else inbound.set(branch.to, [{ from: id, passable }]);
