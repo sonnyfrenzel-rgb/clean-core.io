@@ -16,8 +16,8 @@ import { BUDGET, EFFORT, estimateCostUsd, QA_MODEL, withinBudget } from './lib/c
 import { seal } from './lib/crypto.mjs';
 import { addedLines, callersOf, changedFiles, chooseBase, commitIdOrNull, commitMessages, fileDiff, git, isAncestor, isClaimSource, isReviewable, mergeBaseWithMain, resolveRange, touchedSymbols } from './lib/git-delta.mjs';
 import { callReviewer } from './lib/openrouter.mjs';
-import { packBatches } from './lib/pack.mjs';
-import { buildUserMessage, loadBrief, REVIEW_SCHEMA } from './lib/prompt.mjs';
+import { packBatches, partLabel, partsOf } from './lib/pack.mjs';
+import { buildUserMessage, carriedChars, carriedFor, loadBrief, REVIEW_SCHEMA } from './lib/prompt.mjs';
 import { redactSecrets } from './lib/redact.mjs';
 import { actualCost, buildReport, isSuppressed, publicSummary, renderText } from './lib/report.mjs';
 import { LOCAL_DIR, loadDotEnv, loadRefuted, sealedReports } from './lib/store.mjs';
@@ -71,13 +71,11 @@ async function main() {
     .filter((f) => isReviewable(f.path))
     .map((f) => {
       // Deletions get their diff too: the removed assertions and exports are the evidence.
-      const d = fileDiff(range, f.path);
-      const diff = clean(f.path, d.text);
+      // Redacted whole, before a large diff is cut into parts, so no credential can straddle a cut.
+      const diff = clean(f.path, fileDiff(range, f.path).text);
       diffs.set(f.path, diff);
-      return { ...f, diff, truncated: d.truncated };
+      return { ...f, diff };
     });
-  // A cut diff was only partly read: it counts as not reviewed, so the review is incomplete and the checkpoint stays.
-  const truncated = files.filter((f) => f.truncated).map((f) => ({ path: f.path, reason: 'diff cut at the per-file limit — only its beginning was reviewed' }));
 
   const triage = runTriage(files, diffs, claimText);
   const tags = new Map(triage.files.map((f) => [f.path, f.tags]));
@@ -89,9 +87,13 @@ async function main() {
   const system = loadBrief();
   const previousOpen = (previous?.findings || []).filter((f) => !isSuppressed(f, refuted));
   const shared = { range, triage, claims: claimText, previousOpen, refuted };
+  // The register goes only to the batch that holds its file (prompt.mjs carriedFor), so it is counted with that
+  // file: the part every batch repeats no longer grows with the number of open findings and refutations.
+  for (const f of files) f.carriedChars = carriedChars(f, shared);
   const baseChars = system.length + buildUserMessage({ ...shared, batch: { files: [] }, batchIndex: 0, batchCount: 1 }).length;
-  const { batches, notReviewed, estimatedCostUsd } = packBatches(files, baseChars);
-  notReviewed.push(...truncated);
+  // A diff above maxFileDiffChars is packed as consecutive parts; a file counts as read only when all of them were.
+  const entries = files.flatMap((f) => partsOf(f));
+  const { batches, notReviewed, estimatedCostUsd } = packBatches(entries, baseChars);
   const effort = triage.elevated ? EFFORT.elevated : EFFORT.normal;
 
   if (DRY) {
@@ -101,9 +103,11 @@ async function main() {
         {
           range: { base: range.base, head: range.head, baseReason: range.baseReason, commits: range.commits.length },
           changedFiles: all.length,
-          reviewable: files.map((f) => `${f.path} [${f.tags.join(',')}] ${f.diff.length}ch callers:${f.callers.length}`),
+          reviewable: files.map((f) => `${f.path} [${f.tags.join(',')}] ${f.diff.length}ch callers:${f.callers.length} parts:${entries.filter((e) => e.path === f.path).length}`),
           triage: { tags: triage.tags, elevated: triage.elevated, signals: triage.signals.length, criteria: triage.criteria.length, codeWithoutTests: triage.codeWithoutTests },
-          batches: batches.map((b) => ({ files: b.files.length, chars: b.chars })),
+          register: { open: previousOpen.length, refuted: refuted.length },
+          baseChars,
+          batches: batches.map((b) => ({ entries: b.files.map((f) => (f.part ? `${f.path} part ${partLabel(f)}` : f.path)), chars: b.chars, carriedOpen: carriedFor(b.files, shared).open.length })),
           notReviewed,
           effort,
           estimatedCostUsd,
@@ -126,12 +130,13 @@ async function main() {
     const outgoingSystem = clean('outgoing message', system);
     const user = clean('outgoing message', buildUserMessage({ ...shared, batch: batches[i], batchIndex: i, batchCount: batches.length }));
     if (!withinBudget(spentForCap, outgoingSystem.length + user.length + SCHEMA_CHARS)) {
-      for (const b of batches.slice(i)) for (const f of b.files) notReviewed.push({ path: f.path, reason: `outside the $${BUDGET.maxCostUsd} cost cap` });
+      for (const b of batches.slice(i)) for (const f of b.files) notReviewed.push({ path: f.path, ...(f.part ? { part: partLabel(f) } : {}), reason: `outside the $${BUDGET.maxCostUsd} cost cap` });
       break;
     }
     const r = await callReviewer({ apiKey: env.OPENROUTER_API_KEY, system: outgoingSystem, user, schema: REVIEW_SCHEMA, effort });
     spentForCap += typeof r.usage?.cost === 'number' ? r.usage.cost : estimateCostUsd(outgoingSystem.length + user.length, 1);
-    results.push({ ...r, files: batches[i].files.map((f) => f.path) });
+    // `shown`: the carried findings this batch was given — the only ones it may mark resolved (report.mjs).
+    results.push({ ...r, files: [...new Set(batches[i].files.map((f) => f.path))], shown: carriedFor(batches[i].files, shared).open.map((f) => f.fingerprint) });
   }
   const modelCalls = results.length;
   const costUsd = actualCost(results.map((r) => r.usage));

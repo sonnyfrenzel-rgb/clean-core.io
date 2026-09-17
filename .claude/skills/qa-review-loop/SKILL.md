@@ -27,7 +27,9 @@ Start in the background, then keep working on something that does not touch the 
 node scripts/qa/await.mjs <pushed-sha> --timeout=60     # run_in_background: true
 ```
 
-Exit codes: `0` go · `3` findings or smoke not OK · `2` no result (failed, superseded, timed out, revoked).
+Exit codes: `0` go · `3` findings or smoke not OK · `2` no result (failed, superseded, timed out, revoked, or the
+review read nothing — verdict `no_review`: its findings are only the carried register, not work for this round;
+measure the range with `--dry` and review it in slices, docs/QA-REVIEW-LOOP.md §8).
 The review comes first (Sonny, 16.09.2026): with findings, `await.mjs` returns exit `3` as soon as the review
 job is done — one to two minutes after the push — and notes the smoke check as pending; do not wait for it,
 the push that fixes the findings gets its own. Only a clean review keeps waiting for the smoke check.

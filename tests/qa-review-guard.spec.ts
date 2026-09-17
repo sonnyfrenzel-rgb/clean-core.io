@@ -417,6 +417,157 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     expect(read('scripts/qa/review.mjs')).toMatch(/run: \{ id: env\.GITHUB_RUN_ID \|\| null, attempt: env\.GITHUB_RUN_ATTEMPT \|\| null \}/);
   });
 
+  test('a batch is told only about its own files: the part every batch repeats does not grow with the register', async () => {
+    const { buildUserMessage, carriedChars, CARRIED_LIMITS } = await lib('prompt.mjs');
+    const { buildFullUserMessage } = await lib('full.mjs');
+    const { packBatches } = await lib('pack.mjs');
+    const range = { base: 'b'.repeat(40), head: 'h'.repeat(40), baseReason: 'last reviewed checkpoint', commits: ['abc1234 fix'] };
+    const triage = { tags: [], signals: [], criteria: [], codeWithoutTests: false };
+    const open = (file: string, n: number) => Array.from({ length: n }, (_, i) => ({ fingerprint: `${file}#${i}`, severity: 'medium', file, line: i, title: `Open ${i}`, failure_scenario: 's'.repeat(450) }));
+    const refutations = (file: string, n: number) => Array.from({ length: n }, (_, i) => ({ fingerprint: `${file}~${i}`, file, title: `Refuted ${i}`, reason: 'r'.repeat(1_400) }));
+    // On 17.09.2026 the register held 262 open findings and 97 refutations; here ten times that, all in other files.
+    const register = (elsewhere: number) => ({
+      previousOpen: [...open('lib/own.ts', 2), ...open('lib/old-name.ts', 1), ...open('lib/elsewhere.ts', elsewhere)],
+      refuted: [...refutations('lib/own.ts', 1), ...refutations('lib/elsewhere.ts', elsewhere)],
+    });
+    const small = register(3);
+    const large = register(3_590);
+    const own = { path: 'lib/own.ts', status: 'M', tags: [], diff: '+x', callers: [] };
+    const renamed = { path: 'lib/new-name.ts', oldPath: 'lib/old-name.ts', status: 'R', tags: [], diff: '+y', callers: [] };
+    const delta = (files: unknown[], reg: object) => buildUserMessage({ range, batch: { files }, batchIndex: 0, batchCount: 1, triage, claims: '', ...reg });
+    const full = (files: unknown[], reg: object) => buildFullUserMessage({ head: range.head, batch: { files }, batchIndex: 0, batchCount: 1, map: '', ...reg });
+    // What grows is the digits of a count, nothing else — in the shared part and in a batch.
+    for (const message of [delta, full]) {
+      expect(message([], large).length - message([], small).length).toBeLessThanOrEqual(8);
+      expect(message([own, renamed], large).length - message([own, renamed], small).length).toBeLessThanOrEqual(8);
+    }
+    // A batch still gets everything about its own files — a renamed file answers for its old name — capped per field.
+    const batch = delta([own, renamed], large);
+    for (const fp of ['lib/own.ts#0', 'lib/own.ts#1', 'lib/old-name.ts#0']) expect(batch).toContain(`[${fp}]`);
+    expect(batch).toContain('lib/own.ts · Refuted 0');
+    expect(batch).not.toContain('lib/elsewhere.ts');
+    expect(batch).not.toContain('r'.repeat(CARRIED_LIMITS.text + 1));
+    // A 1,501-character diff did not fit into one call on 17.09.2026. Its register now travels with it and it fits.
+    const file = { path: 'lib/own.ts', status: 'M', tags: [], diff: 'x'.repeat(1_501), callers: [], carriedChars: 0 };
+    file.carriedChars = carriedChars(file, large);
+    expect(file.carriedChars).toBeGreaterThan(2 * 450);
+    const { batches, notReviewed } = packBatches([file], read('docs/qa/reviewer-brief.md').length + delta([], large).length);
+    expect(notReviewed).toEqual([]);
+    expect(batches.map((b: { files: unknown[] }) => b.files.length)).toEqual([1]);
+    for (const src of [read('scripts/qa/review.mjs'), read('scripts/qa/full-review.mjs')]) expect(src).toMatch(/for \(const f of files\) f\.carriedChars = carriedChars\(f, shared\);/);
+  });
+
+  // A diff above maxFileDiffChars, as git prints it: 48 hunks of 64 lines, about 152,000 characters.
+  const PREAMBLE = ['diff --git a/lib/big.ts b/lib/big.ts', 'index 1111111..2222222 100644', '--- a/lib/big.ts', '+++ b/lib/big.ts'];
+  const bigDiff = (hunks: number, linesPerHunk: number) => {
+    const out = [...PREAMBLE];
+    let oldLine = 1;
+    let newLine = 1;
+    for (let h = 0; h < hunks; h++) {
+      const body = Array.from({ length: linesPerHunk }, (_, k) => `${k % 2 ? '+' : ' '}const value_${String(h).padStart(4, '0')}_${String(k).padStart(4, '0')} = '${'x'.repeat(20)}';`);
+      const context = body.filter((l) => l[0] === ' ').length;
+      out.push(`@@ -${oldLine},${context} +${newLine},${linesPerHunk} @@ function f${h}() {`, ...body);
+      oldLine += context + 7;
+      newLine += linesPerHunk + 7;
+    }
+    return out.join('\n');
+  };
+  const bodyLines = (text: string) => text.split('\n').filter((l) => !l.startsWith('@@') && !PREAMBLE.includes(l));
+
+  test('a 150,000-character diff is read in three parts, cut between hunks, and the file counts as read only when all three were', async () => {
+    const { partsOf, packBatches, splitDiff } = await lib('pack.mjs');
+    const { BUDGET } = await lib('config.mjs');
+    const { buildUserMessage } = await lib('prompt.mjs');
+    const { buildReport } = await lib('report.mjs');
+    const diff = bigDiff(48, 64);
+    expect(diff.length).toBeGreaterThanOrEqual(150_000);
+    const parts = partsOf({ path: 'lib/big.ts', status: 'M', tags: ['engine'], diff, callers: [{ symbol: 'bigFunction', callers: [{ file: 'lib/user.ts', line: 3, text: 'bigFunction()' }] }], carriedChars: 500 });
+    expect(parts.map((p: { part: { index: number; count: number } }) => `${p.part.index} of ${p.part.count}`)).toEqual(['1 of 3', '2 of 3', '3 of 3']);
+    // Each part fits the unchanged per-file size, starts with the file header, and holds whole hunks; together they hold every line once, in order.
+    for (const p of parts) {
+      expect(p.diff.length).toBeLessThanOrEqual(BUDGET.maxFileDiffChars);
+      expect(p.diff.startsWith(`${PREAMBLE.join('\n')}\n@@ -`)).toBe(true);
+      expect(p.part.lines).toMatch(/^new-file lines \d+–\d+$/);
+    }
+    expect(parts.flatMap((p: { diff: string }) => bodyLines(p.diff))).toEqual(bodyLines(diff));
+    // The register travels with every part, the callers with the first.
+    expect(parts.map((p: { carriedChars: number; callers: unknown[] }) => [p.carriedChars, p.callers.length])).toEqual([[500, 1], [500, 0], [500, 0]]);
+    // A single hunk larger than a part is cut between lines, and every piece is numbered where it continues.
+    const oneHunk = splitDiff(bigDiff(1, 3_200), BUDGET.maxFileDiffChars);
+    expect(oneHunk.length).toBe(3);
+    let newLine = 1;
+    for (const p of oneHunk) {
+      expect(p.text.length).toBeLessThanOrEqual(BUDGET.maxFileDiffChars);
+      const header = p.text.split('\n').find((l: string) => l.startsWith('@@')) as string;
+      expect(Number(header.match(/\+(\d+),/)?.[1])).toBe(newLine);
+      newLine += bodyLines(p.text).filter((l: string) => l[0] === ' ' || l[0] === '+').length;
+    }
+    expect(oneHunk.flatMap((p: { text: string }) => bodyLines(p.text))).toEqual(bodyLines(bigDiff(1, 3_200)));
+    // A single line larger than a part is wrapped, not dropped.
+    const wide = splitDiff(['diff --git a/x.json b/x.json', '@@ -0,0 +1,1 @@', `+${'y'.repeat(130_000)}`].join('\n'), BUDGET.maxFileDiffChars);
+    expect(wide.every((p: { text: string }) => p.text.length <= BUDGET.maxFileDiffChars)).toBe(true);
+    expect(wide.reduce((n: number, p: { text: string }) => n + (p.text.match(/y/g) || []).length, 0)).toBe(130_000);
+    // The reviewer is told which part it holds.
+    expect(buildUserMessage({ range: { base: 'b', head: 'h', baseReason: 'x', commits: [] }, batch: { files: [parts[1]] }, batchIndex: 0, batchCount: 1, triage: { tags: [], signals: [], criteria: [], codeWithoutTests: false }, claims: '', previousOpen: [], refuted: [] })).toContain('### lib/big.ts (M; tags: engine) — PART 2 OF 3, new-file lines');
+    // All three packed and all three read: the file is reviewed and the review complete.
+    const { batches, notReviewed } = packBatches(parts, 30_000);
+    expect(notReviewed).toEqual([]);
+    const results = batches.map((b: { files: { path: string }[] }) => ({ review: { verdict: 'go', summary: '', findings: [], acceptance: [], test_gaps: [], previous_findings: [], coverage_notes: '' }, files: [...new Set(b.files.map((f) => f.path))], shown: [] }));
+    const report = buildReport({ range: { base: 'b'.repeat(40), head: 'h'.repeat(40) }, results, previous: null, refuted: [], notReviewed, triage: { tags: [], signals: [], codeWithoutTests: false }, meta: {} });
+    expect(report.coverage.reviewed).toEqual(['lib/big.ts']);
+    expect(report.incomplete).toBe(false);
+    // In the pipeline: the diff is no longer cut where it is read, and every file is packed as its parts.
+    expect(read('scripts/qa/lib/git-delta.mjs')).not.toMatch(/slice\(0, BUDGET\.maxFileDiffChars\)/);
+    expect(read('scripts/qa/review.mjs')).toMatch(/const entries = files\.flatMap\(\(f\) => partsOf\(f\)\);\s+const \{ batches, notReviewed, estimatedCostUsd \} = packBatches\(entries, baseChars\);/);
+  });
+
+  test('a part that is not read keeps the whole file unreviewed, the review incomplete and the checkpoint where it was', async () => {
+    const { partsOf, packBatches } = await lib('pack.mjs');
+    const { BUDGET } = await lib('config.mjs');
+    const { buildReport, renderText } = await lib('report.mjs');
+    const parts = partsOf({ path: 'lib/big.ts', status: 'M', tags: ['engine'], diff: bigDiff(48, 64), callers: [] });
+    const small = { path: 'lib/small.ts', status: 'M', tags: ['engine'], diff: '+x', callers: [] };
+    // One call of 200,000 characters with a 70,000-character shared part holds two parts and the small file; the third part has no call left.
+    const { batches, notReviewed } = packBatches([...parts, small], 70_000, { budget: { ...BUDGET, maxBatches: 1 } });
+    expect(notReviewed).toEqual([{ path: 'lib/big.ts', part: '3 of 3', reason: 'outside the 1-call budget' }]);
+    // Nothing goes missing: every part is either in a batch or named as not reviewed.
+    expect(batches.flatMap((b: { files: { part?: { index: number } }[] }) => b.files.map((f) => f.part?.index)).filter(Boolean).length + notReviewed.length).toBe(3);
+    const range = { base: 'b'.repeat(40), head: 'h'.repeat(40) };
+    const read1 = { review: { verdict: 'go', summary: '', findings: [], acceptance: [], test_gaps: [], previous_findings: [], coverage_notes: '' }, files: ['lib/big.ts', 'lib/small.ts'], shown: [] };
+    const report = buildReport({ range, results: [read1], previous: null, refuted: [], notReviewed, triage: { tags: [], signals: [], codeWithoutTests: false }, meta: {} });
+    expect(report.coverage.reviewed).toEqual(['lib/small.ts']);
+    expect(report.incomplete).toBe(true);
+    expect(report.verdict).toBe('go_with_notes');
+    expect(report.range.checkpoint).toBe(range.base);
+    expect(renderText(report)).toContain('NOT REVIEWED: lib/big.ts part 3 of 3 (outside the 1-call budget)');
+    // A part the cost cap stops is named with its part too.
+    expect(read('scripts/qa/review.mjs')).toMatch(/notReviewed\.push\(\{ path: f\.path, \.\.\.\(f\.part \? \{ part: partLabel\(f\) \} : \{\}\), reason: `outside the \$\$\{BUDGET\.maxCostUsd\} cost cap` \}\)/);
+  });
+
+  test('packing fills earlier calls first and gives the same batches for the same entries, in whatever order they arrive', async () => {
+    const { packBatches, partsOf } = await lib('pack.mjs');
+    const { BUDGET } = await lib('config.mjs');
+    const two = { budget: { ...BUDGET, maxBatches: 2 } };
+    const sized = (p: string, tags: string[], size: number) => file(p, tags, size - p.length - 64);
+    // Riskiest first: 150,000 opens call 1, 100,000 opens call 2. The 40,000 fills call 1 and the 90,000 fills call 2 —
+    // before 18.09.2026 a new call began as soon as one entry did not fit, and the last file found no call left.
+    const entries = [sized('firestore.rules', ['security'], 150_000), sized('lib/audit-pack-x.ts', ['trust-chain'], 100_000), sized('lib/abap/a.ts', ['engine'], 40_000), sized('app/page.tsx', ['ui'], 90_000)];
+    const { batches, notReviewed } = packBatches(entries, 0, two);
+    expect(notReviewed).toEqual([]);
+    expect(batches.map((b: { files: { path: string }[] }) => b.files.map((f) => f.path))).toEqual([['firestore.rules', 'lib/abap/a.ts'], ['lib/audit-pack-x.ts', 'app/page.tsx']]);
+    // A riskier entry is never displaced: what finds no room is the least risky.
+    const crowded = packBatches([...entries, sized('components/Z.tsx', ['ui'], 30_000)], 0, two);
+    expect(crowded.notReviewed.map((n: { path: string }) => n.path)).toEqual(['components/Z.tsx']);
+    // Deterministic: the same entries in reverse or shuffled order — parts of one file included — give the same batches.
+    const mixed = [...entries, ...partsOf({ path: 'lib/abap/big.ts', status: 'M', tags: ['engine'], diff: bigDiff(48, 64), callers: [] }), file('tests/b.spec.ts', ['tests'], 5_000), file('tests/a.spec.ts', ['tests'], 5_000)];
+    const layout = (list: unknown[]) => JSON.stringify(packBatches(list, 20_000).batches.map((b: { files: { path: string; part?: { index: number } }[] }) => b.files.map((f) => `${f.path}#${f.part?.index ?? 0}`)));
+    const expected = layout(mixed);
+    expect(layout([...mixed].reverse())).toBe(expected);
+    expect(layout([mixed[5], mixed[0], mixed[8], mixed[4], mixed[6], mixed[2], mixed[7], mixed[1], mixed[3]])).toBe(expected);
+    // Code-unit order, so a local dry run and the CI runner agree whatever their locale.
+    expect(read('scripts/qa/lib/pack.mjs')).not.toMatch(/\.localeCompare\(/);
+  });
+
   test('a file larger than one call is reported, not silently cut from view', async () => {
     const { packBatches } = await lib('pack.mjs');
     const { notReviewed } = packBatches([file('lib/huge.ts', [], 500_000)], 10_000);
@@ -426,6 +577,9 @@ test.describe('spend is capped and only the delta is reviewed', () => {
   test('generated, vendored and prose files are not sent as code', async () => {
     const { isReviewable, isClaimSource } = await lib('git-delta.mjs');
     for (const p of ['package-lock.json', 'lib/abap/generated/cloudification-repo.latest.json', 'docs/ROADMAP.md', 'public/og.png']) expect(isReviewable(p)).toBe(false);
+    // The corpus bundle is generated, its manifest included; the baseline is judged by hand and stays reviewable.
+    for (const p of ['tests/korpus/cases/A01/source.abap', 'tests/korpus/manifest.json']) expect(isReviewable(p), p).toBe(false);
+    expect(isReviewable('tests/korpus/baseline.json')).toBe(true);
     for (const p of ['app/api/health/route.ts', 'firestore.rules', '.github/workflows/deploy.yml', 'lib/abap/evidence-model.ts']) expect(isReviewable(p)).toBe(true);
     expect(isClaimSource('CHANGELOG.md')).toBe(true);
   });
@@ -451,7 +605,12 @@ test.describe('the report a maintainer acts on', () => {
     confidence: 0.8,
     ...over,
   });
-  const review = (findings: unknown[], previous_findings: unknown[] = []) => ({ review: { verdict: 'go_with_notes', summary: 's', findings, acceptance: [], test_gaps: [], previous_findings, coverage_notes: '' }, files: ['lib/x.ts'] });
+  // `shown`: the carried findings the batch was given — a batch speaks only for those (report.mjs).
+  const review = (findings: unknown[], previous_findings: { fingerprint: string; status: string; reason: string }[] = []) => ({
+    review: { verdict: 'go_with_notes', summary: 's', findings, acceptance: [], test_gaps: [], previous_findings, coverage_notes: '' },
+    files: ['lib/x.ts'],
+    shown: previous_findings.map((s) => s.fingerprint),
+  });
   const triage = { tags: [], signals: [], codeWithoutTests: false };
   const range = { base: 'b', head: 'h'.repeat(40) };
 
@@ -518,6 +677,66 @@ test.describe('the report a maintainer acts on', () => {
     });
     expect(report.resolved.map((f: { title: string }) => f.title)).toEqual(['Fixed in batch one']);
     expect(report.findings.map((f: { title: string }) => f.title)).toEqual(['Disputed']);
+  });
+
+  test('a carried finding no batch was shown stays open and carried, whatever a batch says about it', async () => {
+    const { buildReport, fingerprint } = await lib('report.mjs');
+    const { carriedFor } = await lib('prompt.mjs');
+    const { reviewBatches } = await lib('full.mjs');
+    const unread = { ...finding({ file: 'lib/unread.ts', title: 'Unread bug' }), fingerprint: fingerprint(finding({ file: 'lib/unread.ts', title: 'Unread bug' })) };
+    const fixed = { ...finding({ title: 'Read and fixed' }), fingerprint: fingerprint(finding({ title: 'Read and fixed' })) };
+    // The batch holds lib/x.ts, so it is given only the finding of lib/x.ts.
+    const shown = carriedFor([{ path: 'lib/x.ts' }], { previousOpen: [unread, fixed], refuted: [] }).open.map((f: { fingerprint: string }) => f.fingerprint);
+    expect(shown).toEqual([fixed.fingerprint]);
+    // The model answers for both, one of which it never saw; lib/unread.ts was not read at all.
+    const statuses = [
+      { fingerprint: unread.fingerprint, status: 'resolved', reason: 'looks fine' },
+      { fingerprint: fixed.fingerprint, status: 'resolved', reason: 'guard added' },
+    ];
+    const report = buildReport({
+      range,
+      results: [{ ...review([], statuses), shown }],
+      previous: { findings: [unread, fixed] },
+      refuted: [],
+      notReviewed: [{ path: 'lib/unread.ts', reason: 'outside the 4-call budget' }],
+      triage,
+      meta: {},
+    });
+    expect(report.resolved.map((f: { fingerprint: string }) => f.fingerprint)).toEqual([fixed.fingerprint]);
+    expect(report.findings).toEqual([expect.objectContaining({ fingerprint: unread.fingerprint, file: 'lib/unread.ts', severity: 'medium', carried: true })]);
+    // Both entry points record what each batch was shown, and the full review passes it through.
+    expect(read('scripts/qa/review.mjs')).toMatch(/shown: carriedFor\(batches\[i\]\.files, shared\)\.open\.map\(\(f\) => f\.fingerprint\)/);
+    expect(read('scripts/qa/full-review.mjs')).toMatch(/shown: carriedFor\(batch\.files, shared\)\.open\.map\(\(f\) => f\.fingerprint\)/);
+    const run = await reviewBatches({ batches: [{ files: [{ path: 'lib/x.ts' }] }], capUsd: 1, messageFor: () => ({ system: 's', user: 'u', shown: [fixed.fingerprint] }), call: async () => ({ review: {}, usage: { cost: 0 } }), fits: () => true, worstCase: () => 0 });
+    expect(run.results[0].shown).toEqual([fixed.fingerprint]);
+  });
+
+  test('a review that read nothing is no_review — never go or go_with_notes — keeps its checkpoint, and the wait does not end green', async () => {
+    const { buildReport, fingerprint, needsAnotherRound, renderText } = await lib('report.mjs');
+    const old = { ...finding(), fingerprint: fingerprint(finding()) };
+    const noModel = { modelCalls: 0 };
+    // The reviews of 9edb37f and c812085: nothing packed, every file named as not reviewed, zero model calls.
+    const nothing = buildReport({ range, results: [], previous: { findings: [old] }, refuted: [], notReviewed: [{ path: 'lib/a.ts', reason: "diff alone exceeds one call's budget (1501 characters)" }], triage, meta: noModel });
+    expect(nothing.verdict).toBe('no_review');
+    expect(nothing.incomplete).toBe(true);
+    expect(nothing.range.checkpoint).toBe(range.base);
+    expect(needsAnotherRound(nothing)).toBe(true);
+    expect(nothing.findings).toEqual([expect.objectContaining({ fingerprint: old.fingerprint, carried: true })]);
+    expect(renderText(nothing)).toMatch(/^QA review \w+ — verdict no_review .*\nNO REVIEW — /);
+    // Neither an empty unread list nor a deterministic result makes a verdict out of reading nothing.
+    const silent = buildReport({ range, results: [], previous: null, refuted: [], notReviewed: [], triage, meta: noModel });
+    expect(silent.verdict).toBe('no_review');
+    expect(silent.range.checkpoint).toBe(range.base);
+    const secretOnly = { review: { verdict: 'no_go', summary: '', findings: [finding({ severity: 'critical', title: 'Possible key committed' })], acceptance: [], test_gaps: [], previous_findings: [], coverage_notes: '' }, files: [] };
+    const secret = buildReport({ range, results: [secretOnly], previous: null, refuted: [], notReviewed: [{ path: 'lib/a.ts', reason: 'outside the $0.5 cost cap' }], triage, meta: noModel });
+    expect(secret.verdict).toBe('no_review');
+    expect(secret.findings.map((f: { severity: string }) => f.severity)).toEqual(['critical']);
+    // Only a delta with nothing to read passes without a model call.
+    const prose = buildReport({ range, results: [], previous: null, refuted: [], notReviewed: [], triage, meta: { ...noModel, skipped: 'no reviewable code in the delta — prose, assets or generated files only' } });
+    expect(prose.verdict).toBe('go');
+    expect(prose.range.checkpoint).toBe(range.head);
+    // The local wait ends with exit 2 on such a report, for the delta review and for the full review.
+    expect(read('scripts/qa/await.mjs').match(/if \(readNothing\((review|full)\)\) \{\r?\n\s+reportNothingRead\([^\r\n]*\);\r?\n\s+return 2;/g)).toHaveLength(2);
   });
 
   test('fingerprints survive a moved line but not a different file', async () => {
