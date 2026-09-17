@@ -10,13 +10,23 @@ import {
   gradeFromInventory,
   gradeFromCatalogState,
   gradeFromSapStates,
+  gradeFromSapStatesForUse,
+  gradeKey,
+  objectUseFromAccess,
   isCustomerObject,
   gradeDistribution,
   worstGrade,
   ABCD_META,
   ALL_GRADES,
 } from '../lib/abap/abcd-classification';
-import { gradeSapObject, getPublishedGradeDistribution } from '../lib/abap/catalog-service';
+import {
+  gradeSapObject,
+  gradeSapObjectUse,
+  gradeSapObjectUses,
+  getPublishedGradeDistribution,
+} from '../lib/abap/catalog-service';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 test.describe('A/B/C/D readiness derivation', () => {
   test('gradeFromCoupling maps access + risk to A/B/C/D', () => {
@@ -168,5 +178,100 @@ test.describe('catalog-backed A/B/C/D grading (SAP published data)', () => {
     expect(totalObjects).toBe(
       distribution.A + distribution.B + distribution.C + distribution.D + distribution.Unknown,
     );
+  });
+});
+
+/**
+ * Roadmap 2.11, defect families (a) and (b): the level of a *use*.
+ *
+ * The reference corpus graded nine reads of KNA1/KNB1/KNVV C where the engine
+ * said D, and four programs writing their own Z table B where the engine said
+ * Unknown. One root each: the grade knew only the object's name. Reading a
+ * table SAP will not release is using an internal object (C, corpus R01);
+ * writing to it directly is D (R02); the customer's own table is classic ABAP
+ * working on its own data (B, R20/R03).
+ */
+test.describe('the level of a use: read, write, own table', () => {
+  test('a table SAP will not release is C to read and D to write', () => {
+    const states = { releaseState: 'notToBeReleased', hasSuccessor: true, isSapObject: true };
+    expect(gradeFromSapStatesForUse(states, 'read')).toMatchObject({
+      grade: 'C',
+      provenance: 'catalog',
+      state: 'notToBeReleased',
+      use: 'read',
+      objectGrade: 'D',
+    });
+    expect(gradeFromSapStatesForUse(states, 'write')).toMatchObject({ grade: 'D', use: 'write' });
+    expect(gradeFromSapStatesForUse(states, 'write').objectGrade).toBeUndefined();
+    // Without a use nothing moves: the catalog page and the census keep the answer for the name.
+    expect(gradeFromSapStatesForUse(states, null)).toEqual(gradeFromSapStates(states));
+    // The successor does not decide it — R01 is about the state, not about a named replacement.
+    expect(gradeFromSapStatesForUse({ ...states, hasSuccessor: false }, 'read').grade).toBe('C');
+  });
+
+  test('the classic file still decides where it speaks', () => {
+    // The contested overlap keeps the precedence /method/levels argues for, and
+    // noAPI is not for customer use whatever the access.
+    expect(
+      gradeFromSapStatesForUse({ releaseState: 'notToBeReleased', classificationState: 'classicAPI', isSapObject: true }, 'read').grade,
+    ).toBe('D');
+    expect(gradeFromSapStatesForUse({ classificationState: 'noAPI', isSapObject: true }, 'read').grade).toBe('D');
+    expect(gradeFromSapStatesForUse({ releaseState: 'released', isSapObject: true }, 'write').grade).toBe('A');
+    expect(gradeFromSapStatesForUse({ isSapObject: true }, 'read')).toMatchObject({ grade: 'C', provenance: 'catalog-residual' });
+  });
+
+  test("the customer's own table is B when the code reads or writes it, and nothing else is", () => {
+    const own = { isSapObject: false, isCustomerObject: true };
+    expect(gradeFromSapStatesForUse(own, 'write')).toMatchObject({ grade: 'B', provenance: 'own-object', use: 'write' });
+    expect(gradeFromSapStatesForUse(own, 'read')).toMatchObject({ grade: 'B', provenance: 'own-object', use: 'read' });
+    // A customer object the code only calls has an implementation nobody read.
+    expect(gradeFromSapStatesForUse(own, null)).toMatchObject({ grade: 'Unknown', provenance: 'heuristic' });
+    // A namespaced object SAP does not list is not assumed to be the customer's.
+    expect(gradeFromSapStatesForUse({ isSapObject: false, isCustomerObject: false }, 'write')).toMatchObject({
+      grade: 'Unknown',
+      provenance: 'heuristic',
+    });
+  });
+
+  test('real objects, graded for their use against the synced artifacts', () => {
+    expect(gradeSapObjectUse('KNA1', 'read')).toMatchObject({ grade: 'C', state: 'notToBeReleased', objectGrade: 'D' });
+    expect(gradeSapObjectUse('kna1', 'write')).toMatchObject({ grade: 'D', state: 'notToBeReleased' });
+    expect(gradeSapObjectUse('ZCC_DECISION', 'write')).toMatchObject({ grade: 'B', provenance: 'own-object' });
+    expect(gradeSapObjectUse('/ACME/TABLE1', 'write')).toMatchObject({ provenance: 'heuristic' });
+    expect(gradeSapObjectUse('I_CUSTOMER', 'read')).toMatchObject({ grade: 'A', state: 'released' });
+    expect(gradeSapObjectUse('KNA1', null)).toEqual(gradeSapObject('KNA1'));
+  });
+
+  test('the catalog page gets both answers only where the access decides the level', () => {
+    expect(gradeSapObjectUses('KNA1')).toMatchObject({ read: { grade: 'C' }, write: { grade: 'D' } });
+    // A released view, a class in the contested overlap, and a class SAP will not
+    // release: one answer each, because reading and writing do not apply or do not matter.
+    expect(gradeSapObjectUses('I_CUSTOMER')).toBeNull();
+    expect(gradeSapObjectUses('CL_BCS')).toBeNull();
+    expect(gradeSapObjectUses('CL_HTTP_CLIENT')).toBeNull();
+  });
+
+  test('access types and lookup keys', () => {
+    expect(objectUseFromAccess('Read')).toBe('read');
+    expect(objectUseFromAccess('Write')).toBe('write');
+    expect(objectUseFromAccess('Read/Write')).toBe('write');
+    expect(objectUseFromAccess(undefined)).toBeNull();
+    expect(objectUseFromAccess('call')).toBeNull();
+    expect(gradeKey(' kna1 ', 'read')).toBe('KNA1@read');
+    expect(gradeKey('kna1', null)).toBe('KNA1');
+  });
+
+  test('the corpus comparison grades through the function the product shows', () => {
+    // tests/korpus/baseline.json measures the engine's level through
+    // tests/helpers/korpus-comparison.ts. If that helper graded objects any other
+    // way than /api/abcd-classify does, the ratchet could go green on a grade no
+    // user ever sees.
+    const read = (p: string) => readFileSync(join(__dirname, '..', p), 'utf8');
+    const route = read('app/api/abcd-classify/route.ts');
+    const comparison = read('tests/helpers/korpus-comparison.ts');
+    expect(route).toMatch(/gradeSapObjectUse\(name, use\)/);
+    expect(comparison).toMatch(/gradeSapObjectUse\(name, uses\.get\(name\) \?\? null\)/);
+    expect(comparison).not.toMatch(/\bgradeSapObject\(/);
+    expect(route).not.toMatch(/\bgradeSapObject\(/);
   });
 });

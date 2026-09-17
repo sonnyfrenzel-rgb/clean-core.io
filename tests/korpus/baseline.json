@@ -15,9 +15,9 @@
     {
       "case": "CC-001",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Stimmt seit 2.11 überein. Bis 17.09.2026 benotete die Engine KNA1 (Nachfolger I_CUSTOMER) aus dem Namen allein mit D, weil notToBeReleased für jede Verwendung D ergab. Jetzt bekommt die Note je Objekt die Zugriffsart aus extractDataCoupling mit (gradeSapObjectUse, dieselbe Funktion wie /api/abcd-classify): gelesen und ohne Eintrag in der Klassifikationsdatei ist das ein internes SAP-Objekt, C (R01); nur das direkte Schreiben bleibt D (R02). Der katalogisierte Nachfolger entscheidet die Note nicht und wird nicht zum Drop-in-Versprechen (R17)."
     },
     {
       "case": "CC-001",
@@ -50,9 +50,9 @@
     {
       "case": "CC-002",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNB1 → I_CUSTOMERCOMPANY), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Stimmt seit 2.11 überein. Bis 17.09.2026 benotete die Engine KNB1 (Nachfolger I_CUSTOMERCOMPANY) aus dem Namen allein mit D, weil notToBeReleased für jede Verwendung D ergab. Jetzt bekommt die Note je Objekt die Zugriffsart aus extractDataCoupling mit (gradeSapObjectUse, dieselbe Funktion wie /api/abcd-classify): gelesen und ohne Eintrag in der Klassifikationsdatei ist das ein internes SAP-Objekt, C (R01); nur das direkte Schreiben bleibt D (R02). Der katalogisierte Nachfolger entscheidet die Note nicht und wird nicht zum Drop-in-Versprechen (R17)."
     },
     {
       "case": "CC-002",
@@ -225,9 +225,9 @@
     {
       "case": "CC-007",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 3 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER, KNB1 → I_CUSTOMERCOMPANY, KNVV → I_CUSTOMERSALESAREA), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 3 Objekt(e)) C. Stimmt seit 2.11 überein. Bis 17.09.2026 benotete die Engine KNA1, KNB1 und KNVV (Nachfolger I_CUSTOMER, I_CUSTOMERCOMPANY, I_CUSTOMERSALESAREA) aus dem Namen allein mit D, weil notToBeReleased für jede Verwendung D ergab. Jetzt bekommt die Note je Objekt die Zugriffsart aus extractDataCoupling mit (gradeSapObjectUse, dieselbe Funktion wie /api/abcd-classify): gelesen und ohne Eintrag in der Klassifikationsdatei ist das ein internes SAP-Objekt, C (R01); nur das direkte Schreiben bleibt D (R02). Der katalogisierte Nachfolger entscheidet die Note nicht und wird nicht zum Drop-in-Versprechen (R17)."
     },
     {
       "case": "CC-007",
@@ -260,9 +260,9 @@
     {
       "case": "CC-008",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 3 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER, KNB1 → I_CUSTOMERCOMPANY, KNVV → I_CUSTOMERSALESAREA), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 3 Objekt(e)) C. Stimmt seit 2.11 überein. Bis 17.09.2026 benotete die Engine KNA1, KNB1 und KNVV (Nachfolger I_CUSTOMER, I_CUSTOMERCOMPANY, I_CUSTOMERSALESAREA) aus dem Namen allein mit D, weil notToBeReleased für jede Verwendung D ergab. Jetzt bekommt die Note je Objekt die Zugriffsart aus extractDataCoupling mit (gradeSapObjectUse, dieselbe Funktion wie /api/abcd-classify): gelesen und ohne Eintrag in der Klassifikationsdatei ist das ein internes SAP-Objekt, C (R01); nur das direkte Schreiben bleibt D (R02). Der katalogisierte Nachfolger entscheidet die Note nicht und wird nicht zum Drop-in-Versprechen (R17)."
     },
     {
       "case": "CC-008",
@@ -820,9 +820,9 @@
     {
       "case": "CC-024",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) Unknown. Die Engine urteilt milder als der Fall — ein falsches Grün ist die eine Richtung, in der ein Levelunterschied gefährlich ist."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) B. Stimmt seit 2.11 überein. Bis 17.09.2026 lieferte die Engine Unknown: ZCC_DECISION (geschrieben) steht in keiner SAP-Datei, und die Note kannte nur den Namen. Jetzt ist eine kundeneigene Tabelle, die der Code liest oder schreibt, ein eigenes Objekt mit Note B — klassisches ABAP auf eigenen Daten (R20, R03) —, statt Unknown im Vergleich und statt der Risiko-Heuristik im Panel, die jedes Schreiben auf eine eigene Tabelle mit D benotete. Ein kundeneigener Baustein, der nur aufgerufen wird, bleibt Unknown (R16)."
     },
     {
       "case": "CC-024",
@@ -995,9 +995,9 @@
     {
       "case": "CC-029",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) Unknown. Die Engine urteilt milder als der Fall — ein falsches Grün ist die eine Richtung, in der ein Levelunterschied gefährlich ist."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) B. Stimmt seit 2.11 überein. Bis 17.09.2026 lieferte die Engine Unknown: ZCC_DECISION (geschrieben) steht in keiner SAP-Datei, und die Note kannte nur den Namen. Jetzt ist eine kundeneigene Tabelle, die der Code liest oder schreibt, ein eigenes Objekt mit Note B — klassisches ABAP auf eigenen Daten (R20, R03) —, statt Unknown im Vergleich und statt der Risiko-Heuristik im Panel, die jedes Schreiben auf eine eigene Tabelle mit D benotete. Ein kundeneigener Baustein, der nur aufgerufen wird, bleibt Unknown (R16)."
     },
     {
       "case": "CC-029",
@@ -1030,9 +1030,9 @@
     {
       "case": "CC-030",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) Unknown. Die Engine urteilt milder als der Fall — ein falsches Grün ist die eine Richtung, in der ein Levelunterschied gefährlich ist."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 1 Objekt(e)) B. Stimmt seit 2.11 überein. Bis 17.09.2026 lieferte die Engine Unknown: ZCC_DECISION (gelesen und geschrieben) steht in keiner SAP-Datei, und die Note kannte nur den Namen. Jetzt ist eine kundeneigene Tabelle, die der Code liest oder schreibt, ein eigenes Objekt mit Note B — klassisches ABAP auf eigenen Daten (R20, R03) —, statt Unknown im Vergleich und statt der Risiko-Heuristik im Panel, die jedes Schreiben auf eine eigene Tabelle mit D benotete. Ein kundeneigener Baustein, der nur aufgerufen wird, bleibt Unknown (R16)."
     },
     {
       "case": "CC-030",
@@ -1067,7 +1067,7 @@
       "class": "level",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 2 Objekt(e)) Unknown. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte."
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 2 Objekt(e)) B. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte. Seit 2.11 B statt Unknown: ZCC_DECISION wird geschrieben und ist als eigene Tabelle B (R20, R03); Z_CC_NOTIFY wird nur aufgerufen, hat keine Zugriffsart, bleibt Unknown (R16) und wird von worstGrade übersprungen. Das B entspricht dem known_worst_level des Falls; das Level Unknown für die Kette führt die Engine weiterhin nicht, deshalb bleibt es nicht-vergleichbar."
     },
     {
       "case": "CC-031",
@@ -1135,9 +1135,9 @@
     {
       "case": "CC-033",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus B · Engine (schlechteste Katalognote über 2 Objekt(e)) Unknown. Die Engine urteilt milder als der Fall — ein falsches Grün ist die eine Richtung, in der ein Levelunterschied gefährlich ist."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 2 Objekt(e)) B. Stimmt seit 2.11 überein. Bis 17.09.2026 lieferte die Engine Unknown: ZCC_DECISION und ZCC_CASE (geschrieben) steht in keiner SAP-Datei, und die Note kannte nur den Namen. Jetzt ist eine kundeneigene Tabelle, die der Code liest oder schreibt, ein eigenes Objekt mit Note B — klassisches ABAP auf eigenen Daten (R20, R03) —, statt Unknown im Vergleich und statt der Risiko-Heuristik im Panel, die jedes Schreiben auf eine eigene Tabelle mit D benotete. Ein kundeneigener Baustein, der nur aufgerufen wird, bleibt Unknown (R16)."
     },
     {
       "case": "CC-033",
@@ -1695,9 +1695,9 @@
     {
       "case": "CC-049",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNB1 → I_CUSTOMERCOMPANY), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Stimmt seit 2.11 überein. Bis 17.09.2026 benotete die Engine KNB1 (Nachfolger I_CUSTOMERCOMPANY) aus dem Namen allein mit D, weil notToBeReleased für jede Verwendung D ergab. Jetzt bekommt die Note je Objekt die Zugriffsart aus extractDataCoupling mit (gradeSapObjectUse, dieselbe Funktion wie /api/abcd-classify): gelesen und ohne Eintrag in der Klassifikationsdatei ist das ein internes SAP-Objekt, C (R01); nur das direkte Schreiben bleibt D (R02). Der katalogisierte Nachfolger entscheidet die Note nicht und wird nicht zum Drop-in-Versprechen (R17)."
     },
     {
       "case": "CC-049",
@@ -1765,9 +1765,9 @@
     {
       "case": "CC-051",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Stimmt seit 2.11 überein. Bis 17.09.2026 benotete die Engine KNA1 (Nachfolger I_CUSTOMER) aus dem Namen allein mit D, weil notToBeReleased für jede Verwendung D ergab. Jetzt bekommt die Note je Objekt die Zugriffsart aus extractDataCoupling mit (gradeSapObjectUse, dieselbe Funktion wie /api/abcd-classify): gelesen und ohne Eintrag in der Klassifikationsdatei ist das ein internes SAP-Objekt, C (R01); nur das direkte Schreiben bleibt D (R02). Der katalogisierte Nachfolger entscheidet die Note nicht und wird nicht zum Drop-in-Versprechen (R17)."
     },
     {
       "case": "CC-051",
@@ -1977,7 +1977,7 @@
       "class": "level",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "Korpus (Paar) · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Fallpaar: die Antwort hängt am Zielprofil, und der Evidenzbericht der Engine trägt kein Profil im Schlüssel (R31)."
+      "reason": "Korpus (Paar) · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Fallpaar: die Antwort hängt am Zielprofil, und der Evidenzbericht der Engine trägt kein Profil im Schlüssel (R31). Seit 2.11 C statt D: KNA1 wird gelesen, und die Note je Objekt kennt die Zugriffsart (R01, nur Schreiben ist D nach R02). Das Urteil bleibt nicht-vergleichbar, weil die Sollantwort am Zielprofil hängt."
     },
     {
       "case": "CC-057",
@@ -2082,7 +2082,7 @@
       "class": "level",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "Korpus (Paar) · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Fallpaar: die Antwort hängt am Zielprofil, und der Evidenzbericht der Engine trägt kein Profil im Schlüssel (R31)."
+      "reason": "Korpus (Paar) · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Fallpaar: die Antwort hängt am Zielprofil, und der Evidenzbericht der Engine trägt kein Profil im Schlüssel (R31). Seit 2.11 C statt D: KNA1 wird gelesen, und die Note je Objekt kennt die Zugriffsart (R01, nur Schreiben ist D nach R02). Das Urteil bleibt nicht-vergleichbar, weil die Sollantwort am Zielprofil hängt."
     },
     {
       "case": "CC-060",
@@ -2150,9 +2150,9 @@
     {
       "case": "CC-062",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Stimmt seit 2.11 überein. Bis 17.09.2026 benotete die Engine KNA1 (Nachfolger I_CUSTOMER) aus dem Namen allein mit D, weil notToBeReleased für jede Verwendung D ergab. Jetzt bekommt die Note je Objekt die Zugriffsart aus extractDataCoupling mit (gradeSapObjectUse, dieselbe Funktion wie /api/abcd-classify): gelesen und ohne Eintrag in der Klassifikationsdatei ist das ein internes SAP-Objekt, C (R01); nur das direkte Schreiben bleibt D (R02). Der katalogisierte Nachfolger entscheidet die Note nicht und wird nicht zum Drop-in-Versprechen (R17)."
     },
     {
       "case": "CC-062",
@@ -2185,9 +2185,9 @@
     {
       "case": "CC-063",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Stimmt seit 2.11 überein. Bis 17.09.2026 benotete die Engine KNA1 (Nachfolger I_CUSTOMER) aus dem Namen allein mit D, weil notToBeReleased für jede Verwendung D ergab. Jetzt bekommt die Note je Objekt die Zugriffsart aus extractDataCoupling mit (gradeSapObjectUse, dieselbe Funktion wie /api/abcd-classify): gelesen und ohne Eintrag in der Klassifikationsdatei ist das ein internes SAP-Objekt, C (R01); nur das direkte Schreiben bleibt D (R02). Der katalogisierte Nachfolger entscheidet die Note nicht und wird nicht zum Drop-in-Versprechen (R17)."
     },
     {
       "case": "CC-063",
@@ -2325,9 +2325,9 @@
     {
       "case": "CC-067",
       "class": "level",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Stimmt seit 2.11 überein. Bis 17.09.2026 benotete die Engine KNA1 (Nachfolger I_CUSTOMER) aus dem Namen allein mit D, weil notToBeReleased für jede Verwendung D ergab. Jetzt bekommt die Note je Objekt die Zugriffsart aus extractDataCoupling mit (gradeSapObjectUse, dieselbe Funktion wie /api/abcd-classify): gelesen und ohne Eintrag in der Klassifikationsdatei ist das ein internes SAP-Objekt, C (R01); nur das direkte Schreiben bleibt D (R02). Der katalogisierte Nachfolger entscheidet die Note nicht und wird nicht zum Drop-in-Versprechen (R17)."
     },
     {
       "case": "CC-067",

@@ -9,7 +9,7 @@ import {
   getObjectAppComponent,
   objectToSlug,
 } from '@/lib/abap/catalog-index';
-import { resolveApi, hasNoReleasedApiPath, gradeSapObject } from '@/lib/abap/catalog-service';
+import { resolveApi, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses } from '@/lib/abap/catalog-service';
 import { ABCD_META } from '@/lib/abap/abcd-classification';
 import CatalogAttribution from '@/components/catalog/CatalogAttribution';
 import { jsonLdHtml } from '@/lib/json-ld';
@@ -77,6 +77,7 @@ export default async function CatalogModulePage({
       noPath: hasNoReleasedApiPath(name),
       component: getObjectAppComponent(name),
       graded: gradeSapObject(name),
+      byUse: gradeSapObjectUses(name),
     };
   });
 
@@ -148,7 +149,25 @@ export default async function CatalogModulePage({
                   </Link>
                 </td>
                 <td className="px-4 py-2.5">
-                  {r.graded.grade !== 'Unknown' && (
+                  {/* A table SAP will not release is one level to read and
+                      another to write; the row shows both rather than the
+                      stricter one alone (roadmap 2.11). */}
+                  {r.byUse ? (
+                    <span
+                      className="inline-flex items-center gap-1 whitespace-nowrap"
+                      title={`SAP state: ${r.graded.state} · ${r.byUse.read.grade} to read directly, ${r.byUse.write.grade} to write directly`}
+                    >
+                      {[r.byUse.read.grade, r.byUse.write.grade].map((grade, i) => (
+                        <span
+                          key={i}
+                          className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-[11px] font-black border ${ABCD_META[grade].badge}`}
+                        >
+                          {grade}
+                        </span>
+                      ))}
+                      <span className="text-[10px] font-semibold text-slate-500">read/write</span>
+                    </span>
+                  ) : r.graded.grade !== 'Unknown' && (
                     <span
                       className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-[11px] font-black border ${ABCD_META[r.graded.grade].badge}`}
                       title={r.graded.state ? `SAP state: ${r.graded.state}` : 'Listed in neither SAP file — SAP-internal'}

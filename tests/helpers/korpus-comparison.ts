@@ -29,8 +29,13 @@ import { extractDataCoupling } from '../../lib/abap/code-assessment';
 import { routeExtensibility } from '../../lib/abap/extensibility-router';
 import { buildProcessFacts, type ProcessFacts } from '../../lib/abap/process-facts';
 import { readStatements, type AbapStatement } from '../../lib/abap/statement-reader';
-import { gradeSapObject } from '../../lib/abap/catalog-service';
-import { worstGrade, type CloudReadinessGrade } from '../../lib/abap/abcd-classification';
+import { gradeSapObjectUse } from '../../lib/abap/catalog-service';
+import {
+  objectUseFromAccess,
+  worstGrade,
+  type CloudReadinessGrade,
+  type ObjectUse,
+} from '../../lib/abap/abcd-classification';
 
 /**
  * Das Bündel. `KORPUS_ROOT` lässt sich überschreiben, damit derselbe Vergleich
@@ -279,7 +284,17 @@ export interface EngineReading {
   }>;
   /** Alle Objektnamen, die die Engine über den ganzen Fall gesehen hat. */
   objectNames: Set<string>;
-  /** Die schlechteste Katalognote über alle gesehenen Objekte. */
+  /**
+   * Die schlechteste Note über alle gesehenen Objekte — je Objekt die Note, die
+   * das Analyse-Panel für dasselbe Objekt zeigt: `gradeSapObjectUse` mit der
+   * Zugriffsart aus `extractDataCoupling`, dieselbe Funktion und dieselbe
+   * Eingabe wie `/api/abcd-classify`. Ein Name, den nur ein Befund nennt, hat
+   * keine Zugriffsart und bekommt die Note seines Namens.
+   *
+   * Die Rollup-Regel selbst (`worstGrade`) ist eine Bildung dieses Vergleichs:
+   * das Produkt zeigt keine Gesamtnote für ein Programm, nur eine Note je Zeile
+   * und deren Verteilung.
+   */
   worst: CloudReadinessGrade;
   /** Nur als Lebenszeichen: die Route ist im Korpus ohne Gegenstück. */
   routeCount: number;
@@ -288,6 +303,7 @@ export interface EngineReading {
 export function readWithEngine(korpusCase: KorpusCase): EngineReading {
   const deployment = deploymentOf(korpusCase.profile);
   const objectNames = new Set<string>();
+  const uses = new Map<string, ObjectUse>();
   let routeCount = 0;
   const perFile = korpusCase.sources.map((source) => {
     const evidence = buildAbapEvidence(source.code, source.name, deployment);
@@ -297,14 +313,20 @@ export function readWithEngine(korpusCase: KorpusCase): EngineReading {
       access: entry.accessType,
       custom: entry.isCustom,
     }));
-    for (const table of tables) objectNames.add(table.name);
+    for (const table of tables) {
+      objectNames.add(table.name);
+      // Über mehrere Dateien gilt, was das Panel je Datei sähe, zusammengefasst:
+      // ein Schreiben irgendwo macht die Verwendung zum Schreiben.
+      const use = objectUseFromAccess(table.access);
+      if (use && uses.get(table.name) !== 'write') uses.set(table.name, use);
+    }
     for (const finding of evidence.findings) {
       if (finding.objectName) objectNames.add(finding.objectName.toUpperCase());
     }
     routeCount += routeExtensibility(evidence, deployment).checkpoints.length;
     return { file: source.name, evidence, facts, statements: readStatements(source.code), tables };
   });
-  const grades = [...objectNames].map((name) => gradeSapObject(name).grade);
+  const grades = [...objectNames].map((name) => gradeSapObjectUse(name, uses.get(name) ?? null).grade);
   return { perFile, objectNames, worst: worstGrade(grades), routeCount };
 }
 

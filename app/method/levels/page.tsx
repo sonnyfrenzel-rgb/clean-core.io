@@ -251,7 +251,53 @@ export default function LevelDerivationPage() {
         <p className="text-sm text-gray-500 leading-relaxed max-w-3xl">
           A customer object (Z*, Y*) carries no SAP classification at all, and neither does a
           namespaced object SAP does not list — those fall through to the engine&rsquo;s own
-          evidence and are labelled as estimated rather than looked up.
+          evidence and are labelled as estimated rather than looked up, with the one exception
+          below.
+        </p>
+      </section>
+
+      {/* ---------------------------------------------------------------- */}
+      <section className="space-y-5">
+        <h2 className="text-2xl font-black tracking-tight text-gray-950">
+          When the code&rsquo;s access changes the level
+        </h2>
+        <p className="text-gray-600 leading-relaxed max-w-3xl">
+          The table above grades an object by its name. An analysis also knows what the code does
+          with a table — reads it or writes to it — and in the cases below that decides the level
+          it shows. Everywhere else the access changes nothing, and the object keeps the level
+          above. These rows are part of the rule version at the top of this page.
+        </p>
+
+        <div className="overflow-x-auto rounded-2xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-left">
+                <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Object and access</th>
+                <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Level</th>
+                <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              {USE_RULES.map((rule) => (
+                <tr key={rule.use} className="border-t border-gray-100 align-top">
+                  <td className="px-4 py-3 font-mono text-xs font-bold text-gray-900">{rule.use}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black border ${ABCD_META[rule.grade].badge}`}
+                    >
+                      {rule.grade}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 leading-relaxed">{rule.why}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="text-sm text-gray-500 leading-relaxed max-w-3xl">
+          Each level belongs to one object and one access. There is no level here for a program as a
+          whole: a report that only reads released views still runs as classic ABAP.
         </p>
       </section>
 
@@ -435,7 +481,7 @@ const RULES: { state: string; grade: CloudReadinessGrade; why: string }[] = [
   {
     state: 'notToBeReleased',
     grade: 'D',
-    why: 'SAP will not release it. There is no level A path through this object, and in almost every case SAP names what to use instead.',
+    why: 'SAP will not release it. There is no level A path through this object, and in almost every case SAP names what to use instead. For a table the code only reads, see the access rules below.',
   },
   {
     state: 'deprecated + successor',
@@ -461,5 +507,29 @@ const RULES: { state: string; grade: CloudReadinessGrade; why: string }[] = [
     state: 'listed in neither file',
     grade: 'C',
     why: 'An SAP object with no published classification is what the level C definition describes — internal, usable with a changelog check before each upgrade.',
+  },
+];
+
+/**
+ * The branches of `gradeFromSapStatesForUse` that move a level, in order.
+ *
+ * Hand-written for the same reason as `RULES`; `tests/level-rule-page-guard`
+ * runs every row against the function.
+ */
+const USE_RULES: { use: string; grade: CloudReadinessGrade; why: string }[] = [
+  {
+    use: 'notToBeReleased, read',
+    grade: 'C',
+    why: 'Reading a table or view SAP will not release, and that the classic file does not name, is using an internal SAP object — conditionally clean, with a changelog check before each upgrade. The successor SAP names is where to look, not a drop-in replacement.',
+  },
+  {
+    use: 'notToBeReleased, written',
+    grade: 'D',
+    why: 'Writing to it directly bypasses the application that owns the data. The level stays D, and a read successor is no write path.',
+  },
+  {
+    use: 'customer table, read or written',
+    grade: 'B',
+    why: 'Your own table or view (Z*, Y*). SAP’s files do not classify it, and the analysis has seen the whole dependency, so it is not Unknown: classic ABAP working on its own data is level B. A customer function or class the code only calls is not covered — its implementation was not read.',
   },
 ];
