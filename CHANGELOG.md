@@ -155,6 +155,138 @@ davon sind am laufenden Code nachgestellt. Das Muster hinter den Widerlegungen: 
 Prüfer liest einen Rückwärtskompatibilitäts-Test als eingefrorenen Defekt** — sechs von
 vierzehn sind dieser eine Denkfehler.
 
+### Modellieren — Phase 3 vollständig
+
+**Editor (3.1).** Der Prozess lässt sich bearbeiten: derselbe Modeller hinter denselben
+Props wie die Lesekarte, mit einer Palette aus 19 benannten Schaltflächen für Pools,
+Lanes, Ereignisse, Gateways, alle Task-Typen, Teilprozess, Datenobjekt, Nachrichtenfluss
+und Anmerkung, dazu Umbenennen, Löschen, Undo und Redo. Bedienbar mit der Tastatur, weil
+derselbe Entwurf daneben als Liste steht — die Palette von bpmn-js ist mit Tab nicht
+erreichbar und kennt Task-Typen und das parallele Gateway gar nicht. **Das rekonstruierte
+Ist wird dabei nie geschrieben**: der Editor arbeitet auf einer Kopie, und der Test misst
+das an der Zeichnung der Lesekarte, nicht an der Absicht.
+
+**Revisionen (3.2).** Jedes Speichern legt eine unveränderliche Revision an, geschrieben
+nur vom Server über `DocumentReference.create()` — kein `set`, kein `update`, kein
+`merge`. Revision 1 ist das aus der signierten Quelle rekonstruierte Ist und kann von
+keinem Request gesetzt werden; der Lauf wird dafür geladen und seine Signatur geprüft,
+bevor rekonstruiert wird. Jede weitere Revision trägt Konto und Serveruhr. Zwei
+Revisionen lassen sich vergleichen, je Element über die stabilen Ids aus 2.6, sodass ein
+umbenannter Schritt als Umbenennung erscheint und nicht als ein verschwundener plus ein
+neuer. Zweimal dieselben Bytes legen keine zweite Revision an; hat jemand anderes
+inzwischen gespeichert, wird nichts überschrieben, und der Satz nennt die Revision, die
+zu öffnen ist.
+
+**Prüfhinweise (3.3).** bpmnlints Standardregeln plus vier eigene — Task ohne Anker,
+Gateway ohne Bedingung, Lane nur rekonstruiert, Element weicht ohne Zustand vom Code ab.
+Am 1.000-Zeilen-Beispiel 28 Hinweise, zählbar, abschaltbar, jeder mit Sprung zum Element.
+**Kein Hinweis sperrt etwas.** Genau ein unbeschrifteter Zweig ist ein Default Flow und
+wird nie gemeldet.
+
+**Zustände je Element und Regel (3.5).** Beibehalten · bewusst ändern · entfallen ·
+klären, für jedes Prozesselement und jede Geschäftsregel `BR-nnn`. Eine Bestätigung ist
+eine **Bedarfsrevision** mit Konto und Serverzeit, unveränderlich in einer eigenen
+Unterkollektion — nicht in den Prozessrevisionen, weil deren Route auf unveränderte Bytes
+absichtlich ohne Schreibvorgang antwortet und Zustände dort genau diese Regel aufgeweicht
+hätten. **„Keep" heißt, dass das Geschäft die Sache weiterhin braucht; es konserviert
+keine ABAP-Zeile** — das steht über der Liste und an jeder Karte. Ändern und Entfallen
+verlangen eine Begründung. Unentschieden ist kein Zustand, sondern seine Abwesenheit, und
+wird als solche gezählt. Eine bestätigte Regel, die sich bewegt, markiert nur die
+Elemente, die aus ihr gezeichnet wurden.
+
+**Ist und Soll (3.6).** Das Soll wird aus der rekonstruierten Karte und den Zuständen
+abgeleitet: Beibehaltenes bleibt, Entfallenes verschwindet daraus — behält im Vergleich
+aber seine Zeilen, weil belegt ist, dass es den Code gab —, bewusst Geändertes bleibt
+markiert, und „klären" wie „unentschieden" bleiben offen, getrennt gezählt. **Ein
+Element, das nur im Soll steht, hat keinen Anker und bekommt auch keinen**: die Funktion,
+die einen Bedarf ohne Code erzeugt, bekommt gar kein Element übergeben und hat nichts zu
+kopieren. Der Vergleich zählt so ein Element als hinzugekommen, nie als bestätigt. Ein
+Soll ist keine Aussage über den Code; es geht in kein signiertes Audit-Pack.
+
+### Die Vertrauenskette
+
+**Ein Testergebnis ist eine Beobachtung des Servers, keine Behauptung des Browsers.**
+`/api/run-tests` führt die **gespeicherten** Artefakte aus — Code und Tests aus dem Body
+werden nicht mehr gelesen — und schreibt Verdikte und eine unveränderliche Quittung in
+einem Zug, gebunden an den signierten Lauf und an die Prüfsummen von Code, Suite und
+Fallliste. Testing und Delivery werden nur damit grün; ein selbst gesetztes „Passed"
+bleibt sichtbar und heißt **„Self-reported"**.
+
+**Die Signierroute nimmt keinen Nicht-ABAP-Text mehr** als abgeschlossene Analyse an, und
+sie prüft das, bevor ein Kontingent gebucht wird. Eine Architektenfreigabe entsteht in
+einer Transaktion und kann damit nicht an einen Lauf geraten, den niemand geprüft hat.
+
+**`/.well-known/` veröffentlicht einen Schlüsselbund statt eines einzelnen Schlüssels.**
+Eine Beweismappe von gestern verifiziert auch nach einer Rotation. Ein nicht mehr
+geführter Schlüssel ergibt „konnte nicht prüfen", nie „fehlgeschlagen" — der Unterschied
+zwischen Unwissen und Urteil.
+
+### Security
+
+**Entzogene Rechte enden jetzt dort, wo sie gelten.** Ein Administrator exportiert kein
+fremdes Beweispaket mehr und signiert keinen Lauf in einem fremden Projekt; ein
+gesperrtes Konto erreicht keinen S/4-Mandanten mehr; ein zurückgenommener Admin-Anspruch
+wird dem Token entzogen statt nur auf den Admin-Routen geprüft; und eine Rechtevergabe,
+die nur halb durchging, lässt nichts Benutzbares zurück. Der Signierschlüssel der
+Vertrauenskette hat einen Boden von 32 Zeichen. Die vier Routen, die mit einem fremden
+S/4-Mandanten sprechen, lesen dessen Antwort durch einen gemeinsamen Helfer mit Zeit- und
+Größengrenze statt vier Mal unbegrenzt.
+
+### Engine
+
+**Text ist kein Code — die Regel steht jetzt einmal statt achtmal halb.** Dreizehn
+Engine-Defekte der Vollprüfung teilten eine Wurzel: jeder Detektor brachte sein eigenes
+halbes Maskieren mit, keiner kannte das Stringtemplate, zwei kannten auch Kommentare
+nicht. Sechs Detektoren lesen jetzt dieselbe Vorstufe; fünf eigene Literalkopien sind
+gelöscht. Das schließt elf Befunde, darunter die beiden schwersten — und beide erfanden
+nichts, sondern **löschten** etwas: eine auskommentierte Deklaration ließ den kritischen
+Schreibzugriff auf VBAK restlos verschwinden, und ein Wort in einem Stringtemplate machte
+aus einem echten Schreibzugriff eine interne Tabellenoperation.
+
+**Ein Wächter ist keine Verzweigung.** Neben jedem gefalteten Schalter trägt die BPMN
+jetzt eine Umgehungskante mit der negierten Bedingung. Damit sagt die Datei selbst, dass
+das Programm am Schalter nicht endet — auch in einem fremden Modellierwerkzeug. Am
+1.000-Zeilen-Beispiel: mit `p_rfc` aus ist genau ein Schritt nicht erreicht statt alles
+hinter dem Schalter.
+
+### Ehrliche Aussagen
+
+**Jede Antwort der laufenden Zufriedenheitsumfrage war unsichtbar.** Ein Punkt im
+Schlüssel ist bei Firestores `set()` kein Feldpfad, sondern ein Zeichen im Feldnamen: die
+Route meldete `ok`, die Seite zeigte Rückkehrern ein leeres Blatt, der Digest zählte
+niemanden. Dazu fünf Stellen, an denen das Produkt mehr behauptete, als es tut — die
+Landingpage nannte statische Beispiele kompiliert und getestet, das Whitepaper versprach
+ein kompiliertes Paket, SAP-HANA-Dienste bekamen die PostgreSQL-Anleitung, der
+Confluence-Export erfand Routing-Belege, wenn die Analyse keine lieferte, und das
+Auto-Heal ersetzte das ganze erzeugte Paket durch eine einzelne ungeprüfte Datei. **Wo
+ein Satz keine Mechanik hinter sich hatte, ist der Satz gegangen, nicht seine
+Formulierung.**
+
+**Die How-to-Seite und die Landingpage beschreiben das Produkt, das es gibt.** Beide
+führten Phasenlisten mit sechs statt sieben Phasen; die Landingpage zeigte dazu sechs
+Screenshots vom Juli mit „Upload" als eigener Stufe, ohne Economics, Testing vor
+Documentation, und Badges wie „AI Verified" und „92 % Estimated Coverage". Sie sind
+gelöscht, nicht übermalt, und an ihrer Stelle stehen sieben Karten aus derselben
+Phasenquelle, jede mit Link ins Demo-Projekt. Das Sitemap-Datum einer Route wird jetzt
+aus allem gelesen, was sie rendert — zwölf Routen meldeten ein Datum, das keine
+Inhaltsänderung bewegen konnte. Und elf öffentliche Seiten hatten vier Antworten auf die
+Frage nach dem Rückweg; eine davon schickte Abgemeldete hinter den Login.
+
+### QA
+
+Der Prüfpunkt der Delta-Review stand zwei Tage still, weil eine unvollständige Review ihn
+auf ihrer Basis stehen lässt und das ungelesene Delta mit jedem Push wuchs. Das
+Aufrufbudget steigt von vier auf zehn; die Kostenobergrenze von 0,50 $ bleibt und bleibt
+echt. Seither liest die Review wieder vollständig.
+
+Von 504 gemeldeten Befunden der Vollprüfung sind **alle 30 kritischen und alle 94 hohen
+entschieden**. Bei den hohen: 15 bekannt, 14 mit Beleg widerlegt, 62 bestätigt (39
+eigenständige Defekte), 3 unklar. Das Muster hinter den Widerlegungen ist wertvoller als
+ihre Zahl: **der Prüfer liest einen Rückwärtskompatibilitäts-Test als eingefrorenen
+Defekt** — er sieht ein Manifest der Version 2.0 grün bleiben und schließt daraus, das
+Spec halte die Implementierung fest, ohne das Spec daneben zu öffnen, das für das heutige
+Ausgabeformat genau das Gegenteil verlangt.
+
 ## [v2.12.0] — 2026-09-17
 
 ### Eine signierte Beweismappe war fälschbar. Der Referenzkorpus liegt jetzt im Repository und prüft die Engine. Und neun Versprechen, die nichts hielten, sind weg — vier davon ersatzlos
