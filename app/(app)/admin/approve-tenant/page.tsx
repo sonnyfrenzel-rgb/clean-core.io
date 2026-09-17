@@ -209,16 +209,25 @@ function TenantApprovalContent() {
         <p className="text-slate-400 text-sm font-medium mb-8 leading-relaxed">
           You must be logged in as a platform administrator to access this panel and approve S/4HANA live connections.
         </p>
-        <button 
+        {/*
+          UX-107: this button used to say "Sign In as Admin" and sign the reader
+          out — a label that promised the opposite of what the click did, on the
+          one page an operator lands on when they are in the wrong account. It
+          now says what it does, and does the second half as well: the landing
+          page opens its sign-in dialog for `?auth=signin` (LandingModals), the
+          same way "Sign out and sign in again" in the MFA settings already works.
+        */}
+        <button
+          data-testid="approve-tenant-switch-account"
           onClick={() => {
             const auth = getAuth();
             auth.signOut().then(() => {
-              router.push('/');
+              router.push('/?auth=signin');
             });
           }}
           className="w-full bg-red-600 hover:bg-red-750 text-white py-3.5 rounded-xl font-bold uppercase tracking-wider transition-all active:scale-95 shadow-lg shadow-red-650/10"
         >
-          Sign In as Admin
+          Sign out and sign in as administrator
         </button>
       </motion.div>
     );
