@@ -3,6 +3,176 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+## Offen für den 19.09.2026 — in dieser Reihenfolge
+
+### Sonnys Entscheidungen, ohne die es nicht weitergeht
+
+1. **Die vier öffentlichen Texte, bevor Phase 5 auf `main` darf.** `app/datenschutz/page.tsx` §8
+   sagt wörtlich *„There is no sharing feature today: no other user can be granted access to your
+   project."* Dazu `components/TrustBeforeUpload.tsx` („Zugriff nur für das Konto" — **vor** dem
+   Hochladen, also genau dort, wo Vertrauen gefasst wird), `SECURITY.md` (kennt nur einen Lesepfad)
+   und `docs/DATA-RETENTION.md` (schweigt zur Aufbewahrung der eingeladenen Adresse).
+   `tests/trust-card-guard.spec.ts:380` heißt *„it promises no sharing, because there is none to
+   promise"* und wird rot — er hat recht. **Phase 5 liegt fertig auf `dev` und wartet allein
+   darauf.** Entwurf kann ich machen; die Datenschutzerklärung und `SECURITY.md` sind rechtlich
+   relevant und gehen nicht ohne Sonnys Lesen raus.
+2. **`firestore.rules` ausrollen** (`npm run deploy:rules`), **vor** dem App-Release — so verlangt
+   es 5.4 ausdrücklich. Die Änderung liegt fertig und ist an neun Angriffsfällen geprüft: hinzu
+   kommt genau ein Lesezugriff, es fällt nichts weg, kein Feld wird client-schreibbar, kein `get()`.
+3. **Die Umfrage-Migration.** Der Fehler ist behoben, neue Antworten kommen an. Alles seit dem
+   31.08. liegt weiter unter dem wörtlichen Feldnamen und ist unsichtbar. Die Falle ist
+   dokumentiert: `update({'answers.ran': FieldValue.delete()})` löscht genau die eben gerettete
+   Antwort. Erst Export als Backup, dann Trockenlauf, dann Migration.
+4. **Die Schlüsselrotation** — jetzt gefahrlos, weil der Schlüsselbund auf `main` ist. Der alte
+   öffentliche Schlüssel wandert in `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED`.
+5. **„Admin" in Roadmapzeile 5.4 streichen?** Die Zeile sagt „Besitzer, Admin oder Einladung", ist
+   vom 15.09. und widerspricht Sonnys Entzug des Operator-Lesens vom 16.09. Strang C2 hat die
+   spätere Entscheidung genommen und den Widerspruch gemeldet.
+6. **Obergrenze für gleichzeitige Einladungen je Projekt?** Das Konzept schlägt drei vor.
+7. **PDF: eigener Schreiber oder Bibliothek?** 4.4 hat einen kleinen, lesbaren gebaut (mit `pypdf`
+   gegengeprüft, 11 Seiten), weil eine Abhängigkeit rückfragepflichtig war. Alternative `pdf-lib`
+   (MIT, ~1,5 MB) — der Austausch beträfe nur `lib/brief/pdf-writer.ts`.
+
+### Sicherheit, in der Reihenfolge des Schadens
+
+8. **Die WIF-Provider-Bedingung verengen** (`gcloud`, braucht Sonny). Die Erlaubnis steht seit heute
+   allein im Deploy-Job; die Bedingung ist weiter nur `attribute.repository`, ohne Ref und ohne
+   Workflow, für ein Dienstkonto mit `roles/editor`, `run.admin`, `storage.admin`. **Das ist die
+   zweite Hälfte des dringendsten Fundes von heute.**
+9. **`clean-core-dev` hält Produktionsgeheimnisse** und ist `--allow-unauthenticated`: derselbe
+   `AUDIT_SIGNING_KEY`, der Produktions-Beweismappen signiert, dazu `S4_ENCRYPTION_KEY`,
+   `RESEND_API_KEY`, `PILOT_APPROVAL_SECRET`, `MFA_BACKUP_CODE_PEPPER`. Senken: getrennte
+   Dev-Geheimnisse und GitHub Environments (M).
+10. **Kontosperre entzieht den direkten Firestore-Zugriff nicht** (offen aus 0.14). Der billige Weg:
+    Custom Claim `suspended` plus `revokeRefreshTokens`, dann fragt die Regel das Token statt ein
+    Dokument zu lesen. **Achtung:** muss die *ganze* Lesebedingung umklammern, nicht nur den
+    Besitzerzweig — sonst liest eine gesperrte eingeladene Person weiter (Befund von C2).
+11. **SEC-2026-077 nicht nach Empfehlung beheben.** Erst ein Redaktor für die Fundstelle, dann die
+    `AIzaSy`-Ausnahme. Umgekehrt landet ein echter Schlüssel im signierten Pack.
+
+### Arbeit, die keine Entscheidung braucht
+
+12. **Die 97 hohen Befunde der Release-Vollprüfung** triagieren — nach dem Muster von heute, mit der
+    Faustregel „bei `test-weakening` zuerst die Nettobilanz per `git show --stat`".
+13. **Die UX-Befunde**: 58 aus dem Release, davon 54 übertragen, 61 offen im Register. Vier sind neu.
+14. **0.2 zu Ende:** Facts-Service und Copy-CI stehen weiter aus — die letzten beiden Posten, die
+    Phase 0 offenhalten.
+15. **0.18, der lohnendste Rest:** eine Befundmarke für die Typabhängigkeit (R29). Dann wird
+    CC-045 · befunde von „nicht vergleichbar" zu einem echten Vergleich statt zu einem Schweigen.
+16. **Das Auto-Heal ist wirkungslos** (Befund aus 0.17, in der Roadmap notiert). Der wahrscheinliche
+    Weg ist ein quittungsloser Kandidatenmodus, der ausführt, aber weder Quittung noch Verdikte
+    schreibt — damit „ausprobiert" nie wie „belegt" aussieht.
+17. **Zwei Flaker, die einen eigenen Fix verdienen** (beide am unveränderten Baum reproduziert):
+    `process-editor.spec.ts › editing leaves the reconstructed Ist exactly as it was` liest die
+    Traceability-Zeile vor und nach dem Editieren, und der `ensureQuote`-POST landet je nach Timing
+    dazwischen — die `CLAUDE.md`-Falle „ein Test, der auf ein Fenster wartet".
+    `preservation-register.spec.ts › each stage opens on its reference case` fällt nur im Stapel.
+18. **`tests/verdict-honesty-guard.spec.ts:27` ist lokal rot, in CI grün** — der dynamische
+    `import('../lib/test-verdicts')` wird von einer Behelfskonfiguration unter `tmp/` nicht
+    transpiliert, weil die Datei außerhalb von `testDir` liegt. Kein Befund, aber es hat heute drei
+    Strängen Zeit gekostet. Entweder die Behelfskonfiguration reparieren oder den Hinweis ins
+    Briefing.
+19. **Der Referenzkorpus hat weiter keine unabhängige Gegenzeichnung.** Das Fallbuch sagt es selbst:
+    *„kein Fall ist von einem SAP-Architekten gegengezeichnet."* Joule for Consultants war der
+    naheliegende Gegenprüfer und ist verworfen (direkte SAP-Lizenzierung nötig). Wenn jemand mit
+    SAP-Hintergrund verfügbar ist, sind die **zwölf Fälle mit Abweichung** eine Stunde Arbeit und
+    mehr wert als jedes weitere Modell.
+
+### Hygiene, bevor die nächste Welle startet
+
+20. **Emulator und Dev-Server neu starten**, bevor mehr als vier Agenten laufen. Der Emulator stand
+    heute abend bei 6,3 GB und 20.000 CPU-Sekunden; seine Fehlschläge sehen wie Regressionen aus.
+21. **Höchstens sieben Agenten**, und lieber vier. Jenseits davon wird die Maschine zum Engpass —
+    Lint ging von zwei auf vierzig Minuten und starb einmal am Heap.
+22. **Nach jedem Merge mit neuer Abhängigkeit installieren** — und nie `npm ci` im Hauptcheckout,
+    solange Agenten über Junctions darauf zeigen.
+
+---
+
+**Feierabend 18.09.2026 — v2.13.0 ist auf `main` (`a7c9e71`).** Der Tag hatte drei Themen:
+Phase 2 zu Ende bringen, Phase 3 ganz bauen, und die Vollprüfung von `a19945ef01dc` abarbeiten
+statt sie weiter zu triagieren. Vierzehn Stränge liefen, meist vier bis sieben gleichzeitig.
+
+**Gebaut: elf Roadmap-Schritte.** 2.4 Fachliche Benennung · 2.5 BPMN-Ansicht · 2.6 BPMN-Export ·
+2.7 Erster Blick · 2.9 Große Prozesse navigieren — **Phase 2 ist damit vollständig**. 3.1 Editor ·
+3.2 Revisionen · 3.3 Prüfhinweise · 3.5 Zustände je Element und Regel · 3.6 Ist und Soll —
+**Phase 3 ist vollständig**. Dazu 4.4 Kurzbrief und 5.1–5.5 Teilen, beide auf `dev` und noch nicht
+auf `main` (Grund unten).
+
+**Die Engine: 24 Korpus-Defekte auf einen.** Drei Familien geschlossen. Die dreizehn
+Engine-Defekte der Vollprüfung hatten *eine* Wurzel — jeder Detektor brachte sein eigenes halbes
+Maskieren mit, keiner kannte das Stringtemplate, zwei kannten auch Kommentare nicht. Die Regel
+steht jetzt einmal in `lib/abap/statement-reader.ts`, sechs Detektoren lesen sie, fünf eigene
+Literalkopien sind gelöscht. Die beiden schwersten Befunde *löschten* etwas statt zu erfinden:
+eine auskommentierte Deklaration ließ den kritischen Schreibzugriff auf VBAK restlos
+verschwinden, und ein Wort in einem Stringtemplate machte aus einem echten Schreibzugriff eine
+interne Tabellenoperation.
+
+**Der eine übrige Defekt ist keiner.** CC-050 · level: das A der Engine stammt aus dem
+freigegebenen `I_CUSTOMER` und ist als Objektnote richtig; das B des Falls ist ein **Artefaktlevel**
+nach R03. Was fehlt, ist die Sprachversion — und ein Level je Artefakt verweigert
+`/method/levels` öffentlich. Produktentscheidung, kein Bugfix.
+
+**Die Vollprüfung ist abgearbeitet, nicht nur gelesen.** Von 504 Befunden: alle 30 kritischen und
+alle 94 hohen entschieden; 46 behoben (11 Engine, 14 Sicherheit, 10 ehrliche Aussagen und Umfrage,
+11 Vertrauenskette). Das Release v2.13.0 brachte eine zweite Vollprüfung (25 kritisch, 97 hoch) und
+ein Sicherheitsaudit (3 kritisch, 1 hoch) — die kritischen beider sind entschieden, die 97 hohen
+der zweiten stehen noch offen.
+
+**Zwei echte Löcher zu.** Zip-Slip in der Auslieferung: modellerzeugte Pfade gingen ungeprüft ins
+Archiv und hätten beim Entpacken Dateien **auf dem Rechner des Kunden** überschrieben; die Prüfung
+lehnt jetzt ab statt zu reparieren. SSRF in der Egress-Allowlist: `h.endsWith(s)` statt
+`h.endsWith('.' + s)` — damit passte `evil-sap.com` auf `sap.com`. Dazu SEC-2026-025 vom Vormittag,
+ein Dateileseloch in der Testlauf-Sandbox.
+
+**Und der Fund, der in keinem Prüfbericht stand.** `id-token: write` auf Workflow-Ebene plus
+`npm ci --foreground-scripts` plus ein Workload-Identity-Provider ohne Ref-Bedingung für ein
+Dienstkonto mit `roles/editor`: ein bösartiges npm-Paket wäre Editor im GCP-Projekt geworden, ohne
+Menschen, ohne Fork, ohne Pull Request — und `usage-report.yml` läuft freitags von selbst. Der
+Prüfer hatte vierzehn Workflow-Befunde gemeldet und in keinem davon diesen Weg benannt; er
+unterstellte durchweg einen Collaborator, den das Repository nicht hat (einer, null Forks). Die
+Erlaubnis steht jetzt allein im Deploy-Job; die Provider-Bedingung fehlt noch und braucht `gcloud`.
+
+**Ehrlichkeit nach außen.** Die How-to-Seite und die Landingpage beschreiben das Produkt, das es
+gibt: sechs Screenshots vom Juli gelöscht statt übermalt, sieben Phasen statt sechs, der Chatbot
+liest dieselbe Quelle wie die Seite. Jede Antwort der laufenden Zufriedenheitsumfrage war
+unsichtbar — ein Punkt im Firestore-Schlüssel ist kein Feldpfad, sondern ein Zeichen im Feldnamen.
+Fünf Stellen, an denen das Produkt mehr behauptete als es tut, sind gegangen statt umformuliert.
+
+**Was die Prüfer über sich selbst verraten haben.** 44 Widerlegungen heute, und sie fallen in vier
+Muster: zehnmal „eine Zusicherung wurde entfernt", während der Commit sie mehrzeilig und schärfer
+ersetzt hatte (Nettobilanz prüfen, nicht den Hunk lesen) · viermal Zeilen, die es am geprüften
+Commit nicht gab · dreimal ein Namensmuster ohne Substanz (`_KEY` plus Zeichenkette) · zweimal der
+Kommentar eines Guards gelesen als Beschreibung dessen, was der Guard verhindert. **Zweimal war der
+Rat des Prüfers gefährlicher als sein Befund** — beim Vorschlag, die `AIzaSy`-Ausnahme zu entfernen
+(ein echter Schlüssel wäre im signierten Pack gelandet), und bei den vierzehn Workflow-Befunden, die
+an einem erfundenen Angreifer hingen.
+
+**Meine eigenen Fehler, damit sie nicht wiederkommen.** (1) Den Rückgabewert einer Pipeline als
+Testergebnis gelesen — `tail` lieferte exit 0, Playwright hatte zwanzig Fehlschläge. Nur die Zeile
+`PASS (n) FAIL (m)` zählt. (2) `npm ci` im Hauptcheckout gefahren, während sieben Agenten über
+Junctions auf dasselbe `node_modules` zeigten; es löschte und scheiterte dann an einer Sperre. Das
+verbietet mein eigenes Briefing den Agenten. (3) Nach einem Merge mit neuer Abhängigkeit nicht
+installiert — `bpmnlint` fehlte, und stundenlange lokale Rotfärbungen kamen daher. (4) Eine Ref
+beim Rendern geleert (`react-hooks/refs`) und damit den Build auf `dev` rot gemacht; Strang Y hat es
+gemeldet, obwohl die Datei für ihn tabu war. (5) Empfohlen, CC-050 in der Grundlinie umzubuchen —
+**die Korpus-Ratsche hat es gefangen**, mit einer Zusicherung, die jemand geschrieben hat, bevor es
+etwas zu beschönigen gab: *„kein einziger Engine-Defekt über 68 Fälle — das wäre der Moment, den
+Vergleich zu misstrauen, nicht die Engine zu loben."*
+
+**Was die Maschine über Parallelität gelehrt hat.** Sieben Agenten sind die Obergrenze dieses
+Rechners, nicht der Arbeit: ein Lint-Lauf wuchs von zwei auf vierzig Minuten und starb einmal bei
+6 GB Heap; der Firestore-Emulator stand nach einem Tag bei 6,3 GB und 20.000 CPU-Sekunden und
+musste neu gestartet werden, was einen Strang zwei Stunden kostete. **Ein wandernder Fehlschlag in
+einem großen Spec-Satz ist ein Infrastrukturzeichen, kein Befund** — aber nur, wenn man ihn einzeln
+nachprüft.
+
+**Und die Lehre über Nähte.** Ich habe 3.1 und 3.2 parallel vergeben, ohne zu benennen, wem die
+Stelle dazwischen gehört. Beide Stränge lieferten sauber, und dazwischen lag nichts: der Editor
+speicherte nirgendwohin. Bei 3.5/3.6 und bei 5.1–5.3/5.4–5.5 habe ich den Datenvertrag deshalb
+**vorher** festgelegt und mich selbst als Besitzer der Naht benannt — beide Male hielt sie ohne eine
+Zeile Anpassung.
+
 **Feierabend 17.09.2026 — v2.12.0 ist auf `main` (`e3817ce`).** Der Tag hatte drei Themen: zwei
 Sicherheitslöcher, den Referenzkorpus, und den Beginn von Phase 2. Sechs Stränge liefen
 parallel, jeder in eigener Worktree.
