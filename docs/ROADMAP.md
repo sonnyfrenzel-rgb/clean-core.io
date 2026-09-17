@@ -114,7 +114,7 @@ Phase 0  v2.10  Belegt ....................... öffentliche Aussagen korrigieren
 Phase 1  v2.11  Gerüst ....................... Erhaltungsregister, Zero-LLM, Arbeitsraum-Schale
 Phase 2  v2.12  Prozess aus dem Code ......... Kontrollfluss, BPMN-Rekonstruktion mit Ankern
 Phase 3  v2.13  Modellieren .................. Editor, Regeln, Beibehalten/Ändern/Entfallen, Ist/Soll
-Phase 4  v2.14  Austauschen .................. BPMN-Import und -Export, Signavio-Rundlauf, Kurzbrief
+Phase 4  v2.14  Austauschen .................. BPMN-Export, Signavio-Export geprüft, Kurzbrief
 Phase 5  v2.15  Teilen ....................... Einladung per E-Mail-Link, Einsicht
 Phase 6  v2.16  Sichten ...................... Business · IT · Management, Ebenen, Overlays
 Phase 7  v2.17  Standard und Kosten .......... Standardabdeckung, Gegenprobe, Optionen
@@ -142,7 +142,7 @@ vom 15.09. (**fett**).
 | # | Schritt | Größe |
 |---|---|---|
 | 0.1 | `G0:R0` — Sperre des Live-Testmodus mit Grund und Wiedereröffnungsbedingung in `SECURITY.md` — **gebaut in v2.10.0** (`lib/locked-paths.ts`, `SECURITY.md` §7.1, `tests/locked-paths-guard.spec.ts`) | S |
-| 0.2 | Facts-Service, Copy-CI, Audit-Korrekturen. **Dazu: die Signavio-Aussagen** („validated for SAP Signavio", „Signavio-importable", „importable into SAP Signavio") auf „BPMN 2.0 XML" zurücknehmen, bis Schritt 4.3 den Import belegt — **Signavio-Teil gebaut in v2.10.2** | M |
+| 0.2 | Facts-Service, Copy-CI, Audit-Korrekturen. **Dazu: die Signavio-Aussagen** („validated for SAP Signavio", „Signavio-importable", „importable into SAP Signavio") auf „BPMN 2.0 XML" zurücknehmen, bis Schritt 4.3 belegt, dass unser Export in SAP Signavio Process Manager öffnet — **Signavio-Teil gebaut in v2.10.2** | M |
 | 0.3 | Level-Regelseite mit Regelversion; TCO-Versprechen entfernt. **Namensfrage entschieden (Sonny, 16.09.2026): der Name bleibt „Clean Core Score“, und er wird bekannt gemacht.** Die Recherche trägt die Entscheidung: SAP führt überhaupt keinen „Clean Core Score“ — die belegten SAP-Kennzahlen im RISE-Dashboard heißen `Technical Debt Score`, `Clean Core Share`, `Clean Core Level` (A–D); gegenläufig ist allein der `Technical Debt Score` (SAP wörtlich: „a higher score indicating greater technical debt“). Markenrechtlich hält niemand „Clean Core“ in Klasse 9 oder 42, SAP hält nichts, und die USPTO hat bei einer fremden Marke einen Disclaimer auf „CLEAN CORE“ verlangt — amtlich beschreibend, also von niemandem gegen uns verwendbar. `/clean-core-score` behält URL, Canonical und seine Position 7. **Was daraus folgt:** (1) die Abgrenzung gehört sichtbar ins Produkt — Chatbot-Wissen, `llms.txt` und die Score-Seite sagen, dass dies nicht SAPs `Technical Debt Score` ist und in die andere Richtung zeigt (schließt UX-088); (2) die Regelseite mit Regelversion und die Streichung der TCO-Versprechen bleiben in diesem Schritt; (3) „bekannt machen“ ist SEO- und Inhaltsarbeit auf der bestehenden Seite, kein Umbau. **Gebaut 16.09.2026 (`dev`):** `/method/levels` nennt die Regelversion, und sie ist gemessen — ein Fingerabdruck ueber alle 48 Eingaben, die die Ableitung unterscheiden kann, dazu Release und Pruefsumme beider SAP-Dateien (`lib/abap/level-rule-version.ts`, `tests/level-rule-page-guard.spec.ts`) · fuenf TCO-Versprechen auf vier Oberflaechen entfernt, und der Guard, der sie haette fangen muessen, fing bisher nur Betraege mit Waehrungszeichen, nicht das Versprechen in Worten (`tests/money-honesty-guard.spec.ts`, neuer Test samt Fixtures) · Chatbot-Wissen, `/llms.txt` und `/clean-core-score` grenzen den Score gegen SAPs `Technical Debt Score`, `Clean Core Share` und `Clean Core Level` ab, mit der Richtung jeder Kennzahl (`tests/score-name-guard.spec.ts`; schliesst UX-088). `/clean-core-score` behielt URL, Canonical und Position. Zwei Wiedervorlagen ohne Hindernis: EUTM 019420980 „CleanCore Radar“ (angemeldet 11.09.2026, in Prüfung) und „CLEAN CORE X-RAY“ (WO 1830724, EU-wirksam) — gleiche Bauform, anderer Name | M |
 | 0.4 | Keine Geldwerte ohne Annahmenrevision — **gebaut in v2.10.3** | S |
 | 0.5 | Manifest- und Inputvertrag: `inputs[]` mit Revision und Hash. **Gebaut 16.09.2026 (`dev`):** `lib/input-manifest.ts` — sechs Eingaben mit Id, Datenklasse (QA24-14), Revision, `binding` und Digest, eine kanonische Form, ein Hash; im signierten Payload, gespiegelt nach `auditMetadata.inputManifest`, im Pack als `08-input-manifest.json` (signiert, nicht attestiert). `binding` unterscheidet `value` (die Bytes wurden gelesen) von `reference` (unter Namen und Revision gebunden), damit kein Lauf behauptet, fünf Megabyte Katalog gelesen zu haben; eine Eingabe der Klasse `secret-identity` wird abgewiesen. Die kanonische Form der Audit-Packs ist unangetastet, jedes zuvor versiegelte Pack verifiziert Byte für Byte (C23-A02). `tests/input-manifest.spec.ts` | M |
@@ -359,18 +359,26 @@ ist.
 
 ### Phase 4 — v2.14 „Austauschen"
 
-Der Weg zu und von SAP Signavio — über Dateien, nicht über eine Anbindung (§6).
+Der Weg **zu** SAP Signavio — über Dateien, nicht über eine Anbindung (§6).
+**Nur die Ausgangsrichtung** (Entscheidung Sonny, 18.09.2026): der BPMN-Import und der
+Rundlauf zurück warten auf die Zeit nach 3.0, weil sich der Rückweg heute nicht
+ehrlich prüfen lässt — er braucht eine fremde Datei aus einem lizenzierten
+Signavio-Workspace, und ohne die wäre jeder Importtest ein Test gegen unseren eigenen
+Export. Was hier steht, ist deshalb das, was wir selbst belegen können.
 
 | # | Schritt | Größe |
 |---|---|---|
-| 4.1 | **BPMN-Import** (`.bpmn`, `.xml`): Bericht mit Fehlern (nicht importiert) und Warnungen (Element entfällt); importierte Elemente tragen die Herkunft „importiert" und erscheinen nie als aus Code rekonstruiert | M |
-| 4.2 | **Rundlauf:** der Reimport eines eigenen Exports erkennt Elemente an der ID, Anker und Zustände bleiben; fremde Änderungen kommen als neue Revision mit Vergleich | M |
-| 4.3 | **Signavio-Rundlauf geprüft:** Export → Import in SAP Signavio Process Manager → Export → Import zurück, im Workspace eines Mitglieds mit Lizenz. Protokoll, was überlebt (Namensraum-Erweiterungen, Lanes, Layout). Erst danach darf eine Seite „getestet mit SAP Signavio Process Manager" sagen — mit Datum | S, extern |
+| 4.3 | **Signavio-Export geprüft:** Export → Import in SAP Signavio Process Manager, im Workspace eines Mitglieds mit Lizenz. Protokoll, was überlebt (Namensraum-Erweiterungen, Lanes, Layout) und was nicht. Erst danach darf eine Seite „getestet mit SAP Signavio Process Manager" sagen — mit Datum, und ausdrücklich nur für diese eine Richtung | S, extern |
 | 4.4 | **Kurzbrief:** Prozessbild, Regeln, offene Fragen — jede Aussage mit Anker; PDF und `.bpmn` in einem Download | M |
 
-**Fertig, wenn** eine Exportdatei aus Signavio (aus 4.3) mit Bericht importiert wird,
-eigener Export → Import → Export bis auf dokumentierte Unterschiede identisch ist und
-das Protokoll aus 4.3 im Repo liegt.
+Die Nummern 4.1 und 4.2 bleiben unbesetzt: sie trugen den BPMN-Import und den
+Rundlauf und stehen jetzt in §7. Die Lücke ist Absicht — Schritt 0.2 verweist
+namentlich auf 4.3, und ein Umnummerieren würde diesen Verweis stillschweigend
+falsch machen.
+
+**Fertig, wenn** der eigene Export in SAP Signavio Process Manager öffnet, das
+Protokoll aus 4.3 mit Datum im Repo liegt und keine Seite mehr behauptet, als dieses
+Protokoll deckt.
 
 ### Phase 5 — v2.15 „Teilen"
 
@@ -400,7 +408,7 @@ Mockup Screens 1–4: Umschalter, Ebenen, Status-Chips, nächster Schritt, Suche
 | 6.1 | **Umschalter Business · IT · Management** (immer in dieser Reihenfolge, Business vorn und beim Öffnen gewählt; Entscheidung Sonny 15.09.2026), in IT mit Fokus Application · Solution · Enterprise. Gehalten in URL und Browser — nicht im Konto, nicht im Projekt, nicht in Run oder Audit-Pack. Dazu **die drei Sichten in Bewegung** in „New project" (`DESIGN.md` §6.1.1): eine Tatsache mit festem Anker wandert einmal durch die drei Sichten, aus dem echten Lauf des Beispiels, überspringbar, bei reduzierter Bewegung still. Unter dem Umschalter je Sicht ein Satz, welche Frage sie beantwortet, mit „About this view" (`DESIGN.md` §2.3) | M |
 | 6.2 | **Ebenen:** Bedarf & Prozess · Standard-Fit · Kosten & Annahmen · Architektur & Abhängigkeiten · Nachweise & Kontrollen · Änderungen & Zusagen. Eine Ebene ohne Inhalt sagt das, statt etwas zu erfinden (W22-A03) | M |
 | 6.3 | **Overlays auf dem Prozessmodell:** Clean-Core-Level des Codes hinter einem Task, Findings, Nutzung (wenn importiert) — Darstellung, kein Inhalt; das Level bleibt außerhalb des signierten Audit-Packs | M |
-| 6.4 | **Management-Sicht auf dasselbe Projekt:** was bestätigt ist, was fehlt, was eine Entscheidung binden würde; **Clean Core Score mit Regelversion und Verlauf** — ein Verlauf vergleicht nur Runs derselben Regelversion — kein Portfolio | M |
+| 6.4 | **Management-Sicht auf dasselbe Projekt:** was bestätigt ist, was fehlt, was eine Entscheidung binden würde; **Clean Core Score mit Regelversion und Verlauf** — ein Verlauf vergleicht nur Runs derselben Regelversion — kein Portfolio. **Die Darstellung dieser Sicht ist Schritt 3.0.10** (Diagramme, Übersichtsschirm, „nicht bestimmt" als eigene Fläche): hier entstehen die Antworten, dort ihre Form — wer 6.4 baut, liest 3.0.10 mit, damit die Zahlen von Anfang an die Abdeckung mitführen, die das Diagramm zeigen muss | M |
 | 6.5 | **Nächster Schritt:** regelbasiert der nächste offene Punkt mit Grund, ohne Modellaufruf | S |
 | 6.6 | **Suche im Projekt** (⌘K) über Elemente, Regeln, Findings, Zeilen und Glossar; **Glossar zum Start** nach `DESIGN.md` §6.1 (SAP- und Produktbegriffe, Quelle je SAP-Begriff), auch in „Ask this case": Fachwörter mit Popover, „What is …?" aus dem Eintrag ohne Modellaufruf (Entscheidung 15.09.2026) | M |
 | 6.7 | **Public-Cloud-Fit und vier Töpfe:** welche Objekte des Projekts in Public Cloud keinen Weg haben (nur Tier 3) und damit die Deployment-Entscheidung blockieren; Einordnung jedes Objekts in Retire · Keep · Rebuild · **Blocked by SAP** (kein freigegebenes API, kein Nachfolger) — der vierte Topf trennt eigene Hausaufgaben von SAPs Roadmap. Abgeleitet aus Katalog und Level, jede Zuordnung mit Beleg (Feedback 15.09.2026). Regeln nach `DESIGN.md` §5.6 (Entscheidung 15.09.2026): abhängig von der Zielplattform; Retire nur aus bestätigtem Drop oder null Nutzung über ≥ 13 Monate, mit Quelle, Zeitraum und Jahresabschluss sichtbar; Blocked nur für Katalogobjekte ohne freigegebenen Nachfolger, Modifikationen sind Rebuild | M |
@@ -463,13 +471,17 @@ QA24-A17 (ein Fingerprint ohne Bestätigung ist kein grüner Status).
 | 3.0.7 | **Demo-Projekt und Tour im Arbeitsraum** (`DESIGN.md` §6.1.2): die Demo aus 0.10 in allen Sichten und Ebenen, neu erzeugt mit jedem Release, das Engine oder Regelversion ändert; Tour mit rund zwölf Stationen (Enthüllung bis Übergabe), eine Station je Ort, Fortschritt nur im Browser, Einladung nach jeder dritten Station und am Ende; „Show tips again" im Hilfe-Menü | M |
 | 3.0.8 | **Repo-Texte auf 3.0 ziehen — mit 3.0, nicht vorher** (Entscheidung Sonny 16.09.2026): `CLAUDE.md` (Stufenmodell, Layout, Konventionen, die drei Agenten, Gotchas), `README.md`, `docs/ARCHITECTURE.md`, `SECURITY.md`, `llms.txt`, `docs/QA-REVIEW-LOOP.md` und jede weitere öffentliche Datei im Repository, die noch die sieben Stufen als Produkt, die alte Startseite, Signavio-Import, Dark Mode oder gestrichene Teile beschreibt. Bis dahin bleiben sie, wie sie sind — sie beschreiben das, was ausgeliefert ist. Ein Guard prüft nach dem Umbau, dass keine öffentliche Datei mehr Elemente nennt, die 3.0 entfernt hat (Liste aus 3.0.5 und §8). Zusammen mit den Produkttexten aus 3.0.6 | M |
 | 3.0.9 | **Zustellbarkeit der Mails** (Entscheidung Sonny 16.09.2026): Welcome-, Freigabe-, Umfrage-, Digest- und Community-Mails landen automatisch im Spam, obwohl SPF, DKIM, DMARC `p=reject` und der ausgerichtete Return-Path seit 01.09.2026 korrekt sind (`docs/ARCHITECTURE.md`, Mail-Tabelle) und die Bulk-Sendungen RFC 8058 erfüllen. Erst messen, dann drehen: Seed-Test je Kampagne auf Gmail, Outlook, GMX/web.de und T-Online (Inbox oder Spam, Header vollständig), Google Postmaster Tools und Microsoft SNDS für die Domain, die DMARC-Berichte an `dmarc@clean-core.io` tatsächlich lesen. Dann die Hebel in dieser Reihenfolge: Resend-Tracking aus (nur Sonny kann es prüfen — jeder Link muss mit `https://clean-core.io/` beginnen), DKIM auf 2048 bit zwischen zwei Sendungen, eigene Subdomain für Kampagnen und die Stammdomain nur für Transaktionsmails, ein Absendername für alles, Aufwärmen mit kleinen Mengen an Empfänger, die geöffnet haben, Unterdrückung aus Bounces und Beschwerden (`email_events`) vor jedem Versand, Text- und HTML-Teil deckungsgleich, keine Bilder, keine Kurzlinks. **Fertig, wenn** der Seed-Test bei den vier Anbietern im Posteingang landet und Postmaster die Domain-Reputation nicht „schlecht" nennt — geprüft vor jedem Versand, nicht einmal | M |
+| 3.0.10 | **Die Management-Sicht wird lesbar in Sekunden** (Entscheidung Sonny, 18.09.2026 — Teil des Releases 3.0, nicht danach): die Sicht beantwortet ihre Frage *„What do I risk, what do I decide?"* heute in Karten und Tabellen; sie bekommt dafür Diagramme und eine Übersicht, die ein Vorstand in einem Blick liest. **Bindend bleibt `DESIGN.md`, nicht der Geschmack:** ADR-029 gilt unverändert — jede Karte beginnt mit ihrem **Antwortsatz als Titel**, erst darunter Zahl, Diagramm und Tabelle, und eine Einordnung, die leicht falsch gelesen wird („a grade, not a compliance percentage", „Simulation, not a quote"), steht im Antwortsatz, nie nur im Popover. Farben nach **§1.8**: Diagramme, die Zustände zählen (Level A–D, Befunde je Schwere), nehmen die Zustandsfarben mit Buchstabe und beschrifteter Kategorie; **alle anderen** die kategoriale Palette und **nie** eine Zustandsfarbe. Was gebaut wird: **(a)** ein Übersichtsschirm, der die Frage der Sicht in **einem** Satz beantwortet und darunter höchstens sechs Karten trägt, jede mit einer Antwort; **(b)** die **vier Töpfe** (Retire · Keep · Rebuild · Blocked by SAP) als Verteilung mit *not assigned* als eigener, sichtbarer Fläche — plus die Gegenüberstellung „was sich bewegt, wenn die Zielplattform wechselt", denn dieselbe B-Einstufung ist in der Private Edition *Keep* und in der Public Edition *Rebuild*; **(c)** der **Readiness-Verlauf** über Runs **derselben** Regelversion, mit der Regelversion an der Achse — ein Verlauf über zwei Regelversionen wird nicht gezeichnet, sondern als Bruch benannt; **(d)** die **Level-Verteilung A–D** nach §1.8; **(e)** „**was die Entscheidung blockiert**" als kurze, geordnete Liste mit Beleg je Zeile, nicht als Tortendiagramm — ein Objekt ohne Public-Cloud-Weg blockiert die Entscheidung, das ist keine Quote; **(f)** der **Entscheidungsstand**: welche Entscheidung offen ist und worauf sie wartet. **Drei Grenzen, die keine Gestaltung aufweicht:** „**nicht bestimmt**" ist in jedem Diagramm eine eigene, sichtbare Fläche und wird nie weggerundet oder in „sonstige" gefaltet; **jede Zahl nennt ihre Abdeckung** („42 findings in 907 of 907 lines · 2 includes not read") und **jede Zahl im Diagramm ist auch als Text erreichbar** (Tabelle oder `aria-label`, §1.8); **Kosten erscheinen nur als Simulation** mit ihrer Annahmenrevision (0.4) — kein Geldwert ohne sie, auch nicht als Achsenbeschriftung. Sprache nach §3.1: klar und ohne KI-Spuren, keine Superlative, keine Fortschrittsbalken für etwas, das kein Fortschritt ist. Tastatur, Screenreader, `forced-colors` und das Druckbild nach §7.1 gelten wie überall (3.0.4) — ein Diagramm, das nur auf dem Schirm funktioniert, ist nicht fertig. Gehalten von `tests/no-fabricated-figures.spec.ts`, `tests/money-honesty-guard.spec.ts` und einem gerenderten Test je Diagramm | L |
 
 **Fertig, wenn** alle Phasenabnahmen auf `main` gelaufen sind, ein Korpusfall den
 ganzen Fluss durchläuft und die Copy-CI grün ist — **und die neue Landingpage mit
 echten Produktansichten live ist**: kein Mockup-Bild auf einer öffentlichen Seite,
 Anmeldung wie heute erreichbar, Landing-Guards und Signavio-/Geld-Guards grün,
 JSON-LD und sichtbares FAQ deckungsgleich. 3.0 wird nicht ohne die neue Startseite
-veröffentlicht.
+veröffentlicht — **und nicht ohne die Management-Sicht aus 3.0.10**: ihre Frage in
+einem Satz beantwortet, die vier Töpfe und der Readiness-Verlauf als Diagramm, „nicht
+bestimmt" in jedem davon als eigene Fläche, jede Zahl mit ihrer Abdeckung und als Text
+erreichbar, Kosten nur als Simulation mit Annahmenrevision.
 
 ---
 
@@ -635,6 +647,7 @@ ist, wie Signavio mit fremden `extensionElements` umgeht** — genau das klärt 
 |---|---|
 | **3.1** | Lesender MCP-Zugang je Projekt mit Scoped Token (Screen 6) und Open Evidence Format · Vergleichsseiten „wann Nova, wann Clean-Core.io, wann beides" und deutsche Kernseiten (beides nach 0.2 jederzeit vorziehbar) |
 | **3.2** | Cloudification-Changelog mit RSS als Auslöser für Wiedervorlagen |
+| **nach 3.0, ohne Version** | **BPMN-Import und Rundlauf** (war Phase 4.1/4.2, verschoben am 18.09.2026): Import von `.bpmn` und `.xml` mit Bericht — Fehler heißt nicht importiert, Warnung heißt Element entfällt; importierte Elemente tragen die Herkunft „importiert" und erscheinen nie als aus Code rekonstruiert. Dazu der Rundlauf: der Reimport eines eigenen Exports erkennt Elemente an der ID, Anker und Zustände bleiben, fremde Änderungen kommen als neue Revision mit Vergleich. **Warum erst hier:** der Rückweg lässt sich ohne eine echte Exportdatei aus einem lizenzierten Signavio-Workspace nicht ehrlich prüfen — ein Importtest gegen den eigenen Export beweist nur, dass wir uns selbst lesen können |
 | **3.3** | Auswirkungsanalyse: eine Katalogänderung erzeugt Prüfaufträge nur für betroffene Projekte |
 | **3.4** | Musterbibliothek (CC-BY, nur nach Veröffentlichungsreview) |
 | **3.5** | Beobachtete Wirkung gegen die eingefrorene Kostenrevision (Screen 5 rechts) · Multi-Provider-BYOK |
@@ -775,8 +788,8 @@ nicht vorkommt; das maschinenlesbare Fallbündel mit Kontexthash.
   Sätze mit Zeilenanker (ab 2.5 gespeichert).
 - **Bestätigungsanteil** — wie viele Elemente eines Modells einen Zustand
   „beibehalten / ändern / entfallen" tragen (ab 3.5).
-- **Signavio-Rundlauf** — welche Elemente und Attribute den Weg hin und zurück
-  überleben (Protokoll aus 4.3).
+- **Signavio-Export** — welche Elemente und Attribute den Weg zu SAP Signavio
+  überleben (Protokoll aus 4.3). Der Weg zurück wird erst nach 3.0 gemessen.
 - **Frage → Entscheidung** — Zeit und Revisionen vom ersten Run bis zur bestätigten
   Entscheidung (ab 8.4).
 - **Bench-Kennzahlen** nach 3.0 — Präzision und Recall der Findings,
