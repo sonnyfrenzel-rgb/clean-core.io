@@ -31,6 +31,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { callGemini } from '@/lib/gemini';
 import ModelStagesCard from '@/components/ModelStagesCard';
+import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { clsx } from 'clsx';
 
 export default function SettingsPage() {
@@ -1467,9 +1468,12 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Roadmap 1.2 — the five model stages, one switch each. Next to the
-              key it spends, because the two questions are asked together. */}
-          <ModelStagesCard />
+          {/* Roadmap 1.2 — the model stages, one switch each. Next to the
+              key it spends, because the two questions are asked together.
+              Roadmap 2.4: the naming stage is offered only where the
+              workspace preview is on — the map it names is not shown
+              anywhere else yet. */}
+          <ModelStagesCard showPreviewStages={workspaceShellEnabled(profile)} />
 
           {isPilotTier && (
             <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-gray-100 relative overflow-hidden transition-all duration-300 hover:shadow-md">

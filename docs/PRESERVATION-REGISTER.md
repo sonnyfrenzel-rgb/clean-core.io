@@ -89,6 +89,14 @@ was generated rather than showing an empty box (V25-A12). Analyze is the one
 stage whose output does not depend on the answer: its evidence, route and score
 are deterministic, and the run is signed either way.
 
+Since roadmap 2.4 there is a sixth switch, `naming`, and it is deliberately not
+one of the seven stages in the table: it names the nodes of the process skeleton
+in the workspace preview, writes nothing to the project document and reaches no
+signed run. Its names live in `projects/{id}/process_naming/current`, written
+only by `POST /api/projects/{id}/process-naming`, and it is offered in the
+settings only to an account whose workspace preview is on — everybody else keeps
+the five rows above.
+
 Two entries in that table are worth reading twice. **Documentation writes
 `generatedCode`** — it inserts `docs/process-blueprint.md` into the transformation
 stage's file workspace, inside a transaction that re-reads it. And **Delivery
