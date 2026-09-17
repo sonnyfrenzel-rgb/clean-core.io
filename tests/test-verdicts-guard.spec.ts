@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -139,5 +140,80 @@ test.describe('the runner, end to end', () => {
     expect(body.stubbedPackages).toEqual(['express']);
     const byId = Object.fromEntries((body.testResults as { id: string; status: string }[]).map((r) => [r.id, r.status]));
     expect(byId).toMatchObject({ TC_01: 'Passed', TC_02: 'Skipped', TC_03: 'Todo' });
+  });
+
+  // ── The sandbox file boundary (SEC-2026-025) ──────────────────────────────
+  // The bundler resolves the untrusted test/app imports in the PARENT process.
+  // A specifier that resolves outside `testDir` must be refused for every
+  // extension and both relative and absolute forms — otherwise the default
+  // resolver reads that file straight off the server filesystem and inlines it
+  // into the bundle returned to the caller (service-account JSON, app source).
+  // The sandbox dir the route creates lives directly under os.tmpdir(), so a
+  // marker file placed there is reachable by `../` from inside the sandbox and
+  // by its absolute path — the two shapes the guard has to cover.
+  test.describe('imports cannot escape the sandbox dir', () => {
+    const MARKER = `CC-SANDBOX-ESCAPE-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+    const fileName = `cc-sandbox-escape-${Date.now()}-${Math.floor(Math.random() * 1e6)}.js`;
+    const absMarker = path.join(os.tmpdir(), fileName);
+    // esbuild parses import specifiers as literal paths; forward slashes avoid
+    // JS-string escaping of a Windows path and stay absolute (path.isAbsolute).
+    const absSpec = absMarker.replace(/\\/g, '/');
+    // From inside testDir (= <os.tmpdir()>/cc-tests-…) this climbs to os.tmpdir();
+    // no extension, so it also exercises the case the old `.js`-only guard missed.
+    const relSpec = `../${fileName.replace(/\.js$/, '')}`;
+
+    test.beforeAll(() => {
+      fs.writeFileSync(absMarker, `export const SANDBOX_ESCAPE_MARKER = ${JSON.stringify(MARKER)};\n`);
+    });
+    test.afterAll(() => {
+      try { fs.unlinkSync(absMarker); } catch { /* best effort */ }
+    });
+
+    const exfilSuite = (spec: string) => [
+      `import { SANDBOX_ESCAPE_MARKER } from '${spec}';`,
+      "import { test } from 'node:test';",
+      // The marker rides in the test name, so a successful read surfaces it in
+      // the TAP output the route returns — that is what a leak looks like.
+      "test('exfil ' + SANDBOX_ESCAPE_MARKER, () => {});",
+    ].join('\n');
+
+    for (const [shape, spec] of [['an absolute', absSpec], ['a relative-traversal', relSpec]] as const) {
+      test(`${shape} import outside the sandbox is rejected, its content never returned`, async ({ request }) => {
+        test.setTimeout(90 * 1000);
+        const res = await request.post('/api/run-tests', {
+          headers: { Authorization: `Bearer ${token}` },
+          data: { projectId: PROJECT_ID, tests: { code: exfilSuite(spec) }, code: '' },
+        });
+        expect(res.status(), await res.text()).toBe(200);
+        const body = await res.json();
+        // The bundle step must fail closed with the fixed, path-free message.
+        expect(body.buildError, JSON.stringify(body).slice(0, 600)).toBe(true);
+        expect(body.error).toContain('Path outside sandbox rejected.');
+        // And nothing from the target file may reach the caller by any field.
+        const whole = JSON.stringify(body);
+        expect(whole).not.toContain(MARKER);
+        expect(whole).not.toContain(absMarker);
+      });
+    }
+
+    test('a relative import that stays inside the sandbox still compiles and runs', async ({ request }) => {
+      test.setTimeout(90 * 1000);
+      const suite = [
+        "import { test } from 'node:test';",
+        "import assert from 'node:assert';",
+        "import { sum } from './app.js';", // tsx-style .js specifier → ./app.ts
+        "test('TC_SUM: relative import within the sandbox works', () => { assert.strictEqual(sum(2, 3), 5); });",
+      ].join('\n');
+      const appFiles = JSON.stringify([{ path: 'app.ts', content: 'export const sum = (a: number, b: number): number => a + b;' }]);
+      const res = await request.post('/api/run-tests', {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { projectId: PROJECT_ID, tests: { code: suite }, code: appFiles, selectedTestIds: ['TC_SUM'] },
+      });
+      expect(res.status(), await res.text()).toBe(200);
+      const body = await res.json();
+      expect(body.buildError, JSON.stringify(body).slice(0, 600)).toBeFalsy();
+      const byId = Object.fromEntries((body.testResults as { id: string; status: string }[]).map((r) => [r.id, r.status]));
+      expect(byId).toMatchObject({ TC_SUM: 'Passed' });
+    });
   });
 });
