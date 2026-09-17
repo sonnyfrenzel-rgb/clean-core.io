@@ -159,7 +159,7 @@ export default function ProcessFilters({
           </p>
           <p className="text-[11px] font-medium text-cc-ink-muted">
             A step behind a switch is dimmed together with the level it opens. What comes after it is not:
-            the code skips the step and goes on, and the file draws that guard as an arrow with nothing beside it.
+            the code skips the step and goes on, and the file carries that way past the switch as a flow of its own.
           </p>
         </div>
       ) : null}
