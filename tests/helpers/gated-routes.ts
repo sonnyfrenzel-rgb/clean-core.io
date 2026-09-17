@@ -85,6 +85,12 @@ export const GATED_ROUTES: GatedRoute[] = [
   // second factor reaches neither.
   { file: 'app/api/projects/[projectId]/process-revisions/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/process-revisions` },
   { file: 'app/api/projects/[projectId]/process-revisions/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/process-revisions`, body: {} },
+  // Roadmap 3.5 — what the business still needs, per element and per rule. GET
+  // hands out the process and the business rules read out of the project's
+  // code, POST stores an account's answer about them. A token from before the
+  // second factor reaches neither.
+  { file: 'app/api/projects/[projectId]/process-states/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/process-states` },
+  { file: 'app/api/projects/[projectId]/process-states/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/process-states`, body: { baseRevision: 0, choices: [] } },
 ];
 
 /**
