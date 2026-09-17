@@ -79,6 +79,12 @@ export const GATED_ROUTES: GatedRoute[] = [
   // reaches neither.
   { file: 'app/api/projects/[projectId]/process-map/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/process-map` },
   { file: 'app/api/projects/[projectId]/process-map/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/process-map` },
+  // Roadmap 3.2 — the revisions of a project's process model. GET hands out a
+  // process drawn from the project's code, POST reconstructs it from the signed
+  // source and stores what somebody drew on top of it. A token from before the
+  // second factor reaches neither.
+  { file: 'app/api/projects/[projectId]/process-revisions/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/process-revisions` },
+  { file: 'app/api/projects/[projectId]/process-revisions/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/process-revisions`, body: {} },
 ];
 
 /**
