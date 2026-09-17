@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
+import BackLink from '@/components/BackLink';
 import {
-  ArrowLeft, ArrowRight, MousePointerClick, Clock, Mail, HelpCircle,
+  ArrowRight, MousePointerClick, Clock, Mail, HelpCircle,
   CheckCircle2, FileCode2, PlayCircle, BookOpen,
 } from 'lucide-react';
 import { CONTACT_EMAIL } from '@/lib/constants';
@@ -129,13 +130,10 @@ export default function FirstRunPage() {
     <div className="space-y-8 animate-in fade-in duration-300">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }} />
 
+      {/* UX-104: this guide is written for someone who has not signed in yet, and
+          it was offering them a way "back" to a page behind the login. */}
       <div className="flex items-center justify-start">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-white px-5 py-2.5 rounded-full border border-gray-200 hover:border-green-200 hover:bg-green-50/50 hover:shadow-sm"
-        >
-          <ArrowLeft size={14} /> Back to Workspace
-        </Link>
+        <BackLink />
       </div>
 
       {/* Header */}

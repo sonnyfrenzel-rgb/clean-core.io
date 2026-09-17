@@ -206,7 +206,10 @@ test.describe('no text offers the locked path', () => {
       .replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
 
   test('the scan reaches the surfaces the claims were found on', () => {
-    for (const file of ['components/KnowledgeClient.tsx', 'components/LandingSlideshow.tsx', 'app/api/send-tenant-revoke-email/route.ts', 'lib/chatbot-knowledge.ts']) {
+    // `components/LandingSlideshow.tsx` was one of the four; it was removed with the
+    // July screenshots (roadmap 0.2, UX-102 follow-up) and `components/LandingProcess.tsx`
+    // renders that section now, so the self-test names the file that carries the text today.
+    for (const file of ['components/KnowledgeClient.tsx', 'components/LandingProcess.tsx', 'app/api/send-tenant-revoke-email/route.ts', 'lib/chatbot-knowledge.ts']) {
       expect(SURFACES).toContain(file);
     }
     expect(SURFACES.length).toBeGreaterThan(200);

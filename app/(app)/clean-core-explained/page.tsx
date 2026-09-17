@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
+import BackLink from '@/components/BackLink';
 import {
-  ArrowLeft, ArrowRight, BookOpen, Lightbulb, AlertTriangle, GraduationCap,
+  ArrowRight, BookOpen, Lightbulb, AlertTriangle, GraduationCap,
   MessageSquareQuote, PlayCircle, ExternalLink, Check, Clock, Ban, Sparkles,
 } from 'lucide-react';
 import GuideShareBar from '@/components/GuideShareBar';
@@ -81,12 +82,7 @@ export default function CleanCoreExplainedPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
 
       <div className="flex items-center justify-start">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-slate-50 px-5 py-2.5 rounded-full border border-gray-200 hover:border-green-200 hover:bg-green-50/50"
-        >
-          <ArrowLeft size={14} /> Back to Homepage
-        </Link>
+        <BackLink />
       </div>
 
       {/* Hero */}

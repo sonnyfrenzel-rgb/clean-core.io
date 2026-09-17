@@ -27,24 +27,55 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  * Route → the files whose content the page is made of. The newest of them wins.
  * A page that renders a data module (the guide, the reference run, the feature
  * copy) is only as fresh as that module, which is why they are listed too.
+ *
+ * The failure this list has is silent, so it is worth naming. On 17.09.2026
+ * `/how-to` was rewritten from six phases to seven, every sentence on the page
+ * replaced — and the route reported the same `lastmod` as before, because the
+ * words had moved into `components/HowToClient.tsx` and `lib/how-to-content.ts`
+ * and only `page.tsx` was listed here. The date did not lie about nothing; it
+ * lied about the largest content change the page has had. Eleven more routes had
+ * the same shape (the whitepaper's figures, the first-run examples, the coverage
+ * matrix, the catalog attribution, `getCatalogStats` on five pages).
+ *
+ * `tests/content-dates-guard.spec.ts` holds the line, without asking anyone to
+ * judge what counts as content: a module this table already calls content for one
+ * route must be called content on every listed page that imports it.
  */
 const ROUTE_SOURCES = {
-  '/': ['app/page.tsx', 'components/BenefitCard.tsx', 'components/TransformationShowroom.tsx', 'lib/reference-analysis.ts'],
-  '/clean-core-explained': ['app/(app)/clean-core-explained/page.tsx', 'lib/clean-core-guide.ts'],
-  '/first-run': ['app/(app)/first-run/page.tsx'],
-  '/how-to': ['app/(app)/how-to/page.tsx'],
+  '/': [
+    'app/page.tsx',
+    'components/BenefitCard.tsx',
+    'components/TransformationShowroom.tsx',
+    'components/LandingProcess.tsx',
+    'lib/how-to-content.ts',
+    'lib/reference-analysis.ts',
+    'lib/abap/catalog-service.ts',
+    'lib/abap/support-matrix.ts',
+  ],
+  '/clean-core-explained': [
+    'app/(app)/clean-core-explained/page.tsx',
+    'lib/clean-core-guide.ts',
+    'lib/clean-core-capabilities.ts',
+  ],
+  '/first-run': ['app/(app)/first-run/page.tsx', 'lib/starter-examples.ts'],
+  '/how-to': ['app/(app)/how-to/page.tsx', 'components/HowToClient.tsx', 'lib/how-to-content.ts'],
   '/knowledge': ['app/(app)/knowledge/page.tsx', 'components/KnowledgeClient.tsx'],
-  '/abap-custom-code-analysis': ['app/(app)/abap-custom-code-analysis/page.tsx'],
+  '/abap-custom-code-analysis': ['app/(app)/abap-custom-code-analysis/page.tsx', 'lib/abap/catalog-service.ts'],
   '/clean-core-score': ['app/(app)/clean-core-score/page.tsx'],
-  '/sap-clean-core-object-classification': ['app/(app)/sap-clean-core-object-classification/page.tsx'],
+  '/sap-clean-core-object-classification': [
+    'app/(app)/sap-clean-core-object-classification/page.tsx',
+    'lib/abap/catalog-service.ts',
+    'lib/abap/abcd-classification.ts',
+  ],
   // Every figure on this page is computed by getLevelDerivationCensus() over the
   // two SAP artifacts, so the page is exactly as fresh as that function and the
   // rules it reports on — not as fresh as its own JSX.
   '/method/levels': ['app/method/levels/page.tsx', 'lib/abap/catalog-service.ts', 'lib/abap/abcd-classification.ts'],
-  '/sap-cloudification': ['app/(app)/sap-cloudification/page.tsx'],
-  '/how-it-works': ['app/(app)/how-it-works/page.tsx'],
+  '/sap-cloudification': ['app/(app)/sap-cloudification/page.tsx', 'lib/abap/catalog-service.ts'],
+  '/how-it-works': ['app/(app)/how-it-works/page.tsx', 'lib/abap/catalog-service.ts', 'lib/abap/support-matrix.ts'],
   '/about': ['app/(app)/about/page.tsx'],
-  '/whitepaper': ['app/whitepaper/page.tsx'],
+  // Every figure and every construct row in the whitepaper is read from these two.
+  '/whitepaper': ['app/whitepaper/page.tsx', 'lib/reference-analysis.ts', 'lib/abap/support-matrix.ts'],
   '/reference-analysis': ['app/reference-analysis/page.tsx', 'lib/reference-analysis.ts'],
   '/tenant-security': ['app/(app)/tenant-security/page.tsx'],
   '/trust': ['app/(app)/trust/page.tsx'],
@@ -52,10 +83,12 @@ const ROUTE_SOURCES = {
   '/datenschutz': ['app/datenschutz/page.tsx'],
   '/terms': ['app/terms/page.tsx'],
   '/licenses': ['app/licenses/page.tsx'],
-  '/catalog': ['app/catalog/page.tsx', 'lib/abap/catalog-index.ts'],
-  '/catalog/browse': ['app/catalog/browse/[letter]/page.tsx', 'lib/abap/catalog-index.ts'],
-  '/catalog/module': ['app/catalog/module/[area]/page.tsx', 'lib/abap/catalog-index.ts'],
-  '/catalog/object': ['app/catalog/[object]/page.tsx', 'lib/abap/catalog-index.ts'],
+  // `CatalogAttribution` is the Apache-2.0 attribution and the trademark notice,
+  // rendered at the foot of all four catalog routes.
+  '/catalog': ['app/catalog/page.tsx', 'lib/abap/catalog-index.ts', 'lib/abap/catalog-service.ts', 'components/catalog/CatalogAttribution.tsx'],
+  '/catalog/browse': ['app/catalog/browse/[letter]/page.tsx', 'lib/abap/catalog-index.ts', 'lib/abap/catalog-service.ts', 'components/catalog/CatalogAttribution.tsx'],
+  '/catalog/module': ['app/catalog/module/[area]/page.tsx', 'lib/abap/catalog-index.ts', 'lib/abap/catalog-service.ts', 'components/catalog/CatalogAttribution.tsx'],
+  '/catalog/object': ['app/catalog/[object]/page.tsx', 'lib/abap/catalog-index.ts', 'lib/abap/catalog-service.ts', 'components/catalog/CatalogAttribution.tsx'],
   '/features': ['app/features/[slug]/page.tsx', 'lib/features-content.ts'],
 };
 

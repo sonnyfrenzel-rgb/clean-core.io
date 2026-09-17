@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
-import { BookOpen, ArrowLeft } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import Link from 'next/link';
+import BackLink from '@/components/BackLink';
 import HowToClient from '@/components/HowToClient';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { HOW_TO_DESCRIPTION, howToSteps } from '@/lib/how-to-content';
@@ -50,14 +51,10 @@ export default function HowToPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
-      {/* Back to Workspace Navigation Link */}
+      {/* UX-015/UX-104: this page is public and in the sitemap, so the way back
+          cannot be a hard link to /dashboard. See components/BackLink.tsx. */}
       <div className="flex items-center justify-start">
-        <Link 
-          href="/dashboard" 
-          className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-white px-5 py-2.5 rounded-full border border-gray-200 hover:border-green-200 hover:bg-green-50/50 hover:shadow-sm shadow-slate-100"
-        >
-          <ArrowLeft size={14} /> Back to Workspace
-        </Link>
+        <BackLink />
       </div>
 
       {/* Upper Glassmorphic Header Card */}

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
-import { Shield, ShieldCheck, Globe, Lock, Server, Eye, KeyRound, Users, ArrowLeft } from 'lucide-react';
+import { Shield, ShieldCheck, Globe, Lock, Server, Eye, KeyRound, Users } from 'lucide-react';
 import Link from 'next/link';
-import BackButton from '@/components/BackButton';
+import BackLink from '@/components/BackLink';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'Tenant Security — How We Protect Your S/4HANA Connection | Clean-Core.io',
@@ -24,7 +24,7 @@ export default function TenantSecurityPage() {
 
       {/* Navigation */}
       <div className="flex items-center justify-start">
-        <BackButton />
+        <BackLink />
       </div>
 
       {/* Hero Banner */}

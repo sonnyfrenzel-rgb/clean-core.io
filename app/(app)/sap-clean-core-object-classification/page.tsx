@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
-import { ArrowLeft, Layers, Check } from 'lucide-react';
+import { Layers, Check } from 'lucide-react';
 import Link from 'next/link';
+import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { getPublishedGradeDistribution } from '@/lib/abap/catalog-service';
@@ -65,9 +66,7 @@ export default function CleanCoreClassificationPage() {
 
       {/* Navigation */}
       <div className="flex items-center justify-start">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-slate-50 px-5 py-2.5 rounded-full border border-gray-200 hover:border-green-200">
-          <ArrowLeft size={14} /> Back to Homepage
-        </Link>
+        <BackLink />
       </div>
 
       {/* Hero */}

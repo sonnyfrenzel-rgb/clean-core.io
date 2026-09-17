@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { getCatalogStats } from '@/lib/abap/catalog-service';
 import { GitBranch, Database, Code2, Bot, Ruler, ChevronDown, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
-import Link from 'next/link';
-import BackButton from '@/components/BackButton';
+import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { supportMatrixRows, LEVEL_LABEL, LEVEL_EMOJI } from '@/lib/abap/support-matrix';
@@ -107,7 +106,7 @@ export default function HowItWorksPage() {
 
       {/* Navigation */}
       <div className="flex items-center justify-start">
-        <BackButton />
+        <BackLink />
       </div>
 
       {/* Hero Banner */}

@@ -7,11 +7,24 @@
  * 
  * Sources:
  * - Knowledge Hub (/knowledge) — FAQs, glossary, RAP vs CAP comparison
- * - How-To (/how-to) — 7-phase walkthrough, narrations, hotspot Q&As
- * - Platform pages — Analysis, Design, Transformation, Testing, Documentation, Delivery, TCO
+ * - How-To (/how-to) — the seven-phase walkthrough, read from `lib/how-to-content.ts`
+ * - Platform pages — Analyze, Design, Transformation, Documentation, Testing, Economics, Delivery
  * - Settings — BYOK, S/4HANA tenant configuration
+ *
+ * Roadmap 0.2, UX-102 (the follow-up in the knowledge base). This file described
+ * a /how-to that stopped existing on 17.09.2026 — "Interactive Hotspots",
+ * "Speech Scripts" and three "Core Architecture Concepts" cards (CAP/CDS, BTP
+ * destinations, JWT/XSUAA), all removed with the phase rebuild — and carried its
+ * own copy of the walkthrough with six phases in the wrong order, no Economics,
+ * and the claims that copy was removed for. A chatbot that is told about features
+ * the product does not have will offer them to the reader in its own words.
+ *
+ * So the walkthrough below is not written here any more: it is `howToSteps()`,
+ * the same module `/how-to` renders. A phase added, reordered or reworded there
+ * reaches the model in the same release, and the two cannot disagree.
  */
 
+import { howToSteps } from './how-to-content';
 import { LIVE_TEST_EXECUTION } from './locked-paths';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,78 +101,25 @@ export const RAP_VS_CAP_COMPARISON = `
 // HOW-TO WALKTHROUGH (All 7 Phases)
 // ─────────────────────────────────────────────────────────────────────────────
 
+const HOW_TO_STEPS = howToSteps();
+
 export const HOWTO_WALKTHROUGH = `
-## HOW-TO WALKTHROUGH — COMPLETE PLATFORM GUIDE
+## HOW-TO WALKTHROUGH — THE PHASES OF A PROJECT (/how-to)
 
 ### Introduction
-Custom core modifications are one of the biggest barriers to S/4HANA upgrades. Clean-Core.io is a free, community-built assistant that helps SAP architects and developers assess custom ABAP and draft modern side-by-side cloud services (CAP) or in-app extensions (RAP), keeping the SAP core clean. It is complementary to SAP's own tools (ADT, ATC, Readiness Check, Signavio), not a replacement, and is not affiliated with or certified by SAP. Every analysis is captured as an immutable, HMAC-signed evidence Run.
+Custom core modifications are one of the biggest barriers to S/4HANA upgrades. Clean-Core.io is a free, community-built assistant that helps SAP architects and developers assess custom ABAP and draft an in-app extension on the RAP track or a side-by-side service on the CAP track, keeping the SAP core clean. It is complementary to SAP's own tools (ADT, ATC, Readiness Check, Signavio), not a replacement, and is not affiliated with or certified by SAP. Every analysis is captured as an immutable, signed evidence Run.
 
-### Phase 1: Technical Analytics (Upload & Analyze)
-Upload custom legacy ABAP source files directly into the Technical Analytics workspace. The static analysis engine parses the legacy custom code, maps external database dependencies, and highlights hard-coded workarounds. You get a clear compliance baseline showing which parts of the legacy package violate the clean-core philosophy.
-- **Which files can be uploaded?** You can upload ABAP files directly (e.g. .clas, .prog, or custom SAP transport files) containing your legacy custom code.
-- **What are DB dependencies?** The parser detects external database tables, standard function modules, and custom objects that are hard-coded in the ABAP logic.
-- **What is the Compliance Baseline?** A calculated rating of how upgrade-ready and clean the uploaded code is compared to S/4HANA extensibility guidelines.
-- **Features**: Multi-file upload, automatic ABAP parsing, database dependency mapping, Clean Core score calculation, compliance baseline report.
-
-### Phase 2: Solution Design (Architecture Blueprint)
-Design the modern target cloud-native schema. The solution design console maps custom legacy transactions into versioned API routes and transformed side-by-side Node.js applications. It also details secure JWT/XSUAA BTP tunnels and S/4HANA BYOT destination routing.
-- **What is S/4HANA BYOT Routing?** Bring Your Own Tenant allows configuring secure RFC and OData tunnels back to your specific S/4HANA instances, routing live queries safely via the SAP BTP Connectivity service.
-- **How does security work?** The solution configures secure JWT/XSUAA BTP tunnels, supporting OAuth 2.0 and SAML/JWT assertion flows to safely propagate identities without exposing credentials.
-- **What is the Destination Manager?** It manages secure connections and principal propagation back to your SAP S/4HANA core, routing OData and RFC queries safely.
-- **Features**: Side-by-side target architecture blueprint, CDS schema generation, API route mapping, Dockerfile generation, JWT/XSUAA security configuration, BTP destination bindings.
-
-### Phase 3: Code Transformation (ABAP → Modern Code)
-Review the side-by-side conversion in detail. The scroll-sync code comparison viewer maps legacy ABAP statements directly to their modern TypeScript equivalents. Architects can audit the refactored code patterns and ensure secure database queries and BTP SDK conventions are followed.
-- **Scroll-Sync Code Viewer**: Scrolling either the legacy ABAP code or the modern TypeScript code scrolls the other side in perfect synchronization.
-- **Code Translation Engine**: Parses ABAP structures and database SELECTs, translating them into secure, cloud-native Node.js queries using the SAP CAP SDK.
-- **Audit Capabilities**: The editor highlights potential security, performance, and best-practice remarks.
-- **Features**: Dual-pane scroll-sync viewer, ABAP-to-TypeScript/ABAP Cloud transformation, code quality annotations, refactoring suggestions.
-
-### Phase 4: Testing & Sandbox (Verify Compliance)
-The platform mounts the new code inside a restricted test runner and runs selective, granular unit tests against mocks.
-- **Locked: tests against a live tenant.** ${LIVE_TEST_EXECUTION.userNotice}
-- **TAP Format**: Test Anything Protocol — a standardized text output format for logging unit test assertions, passes, and fails.
-- **Test Coverage**: Generated test cases assert data models, validation rules, security checks, and service endpoint response values.
-- **Mock vs Tenant tab**: the Mock Environment runs the tests; the "Check tenant connection" tab checks the connection, reads OData metadata and makes one read-only call — it does not run the tests.
-- **Features**: Automated test case generation, sandbox execution against mocks, tenant connection check, TAP-formatted execution logs.
-
-### Phase 5: Process Blueprint & Documentation
-Automatically document both the technical and business logic with a dual-track layout.
-- **Technical Blueprint**: Generates standard BPMN 2.0 XML exports; import into SAP Signavio has not been verified yet.
-- **Business SOP & Compliance**: Builds audit-ready RACI matrices, step-by-step operating procedures, and risk control checkpoints.
-- **Confluence Export**: Compiles all technical specifications, RACI tables, and audit control objectives into an ISO 9001-compliant Confluence HTML document for direct import.
-- **Features**: BPMN 2.0 XML export, RACI matrix generation, SOP generation, risk control tables, Confluence-compatible export.
-
-### Phase 6: Project Delivery & Go-Live
-Download the completed deployable asset. The ZIP bundle includes package.json configs, tests, markdown documentation, sprint backlog, and deployment checklists.
-- **Handover ZIP contents**: A standard SAP BTP CAP project with schema definitions, OData service controllers, auto-generated unit tests, deployment configs, and README documentation.
-- **Deployment**: Unzip the project, run 'npm install', run local tests, then use 'mbt build' and 'cf deploy' to push to your SAP BTP subaccount.
-- **Sprint Planning**: AI-generated sprint backlog with task estimation and team assignments.
-- **Go-Live Checklist**: Comprehensive readiness assessment covering security, performance, compliance, and rollback plans.
-- **Features**: ZIP handover package download, sprint backlog generation, go-live readiness checklist, deployment guides.
-`;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CORE ARCHITECTURE CONCEPTS
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const CORE_CONCEPTS = `
-## CORE ARCHITECTURE CONCEPTS
-
-### 1. Native CAP & CDS Schemas
-- **Official SAP Standard**: Built on SAP Cloud Application Programming Model (CAP), the official design pattern for cloud extensions.
-- **CDS Declarative Schema**: Core Data Services (.cds) files define data structures and API service models with strict typing.
-- **HANA & SQL Compatibility**: Supports automated persistence migrations for SAP HANA Cloud, SQLite, or PostgreSQL.
-
-### 2. BTP Destination Bindings
-- **Extensible Integration**: Connects extensions to SAP S/4HANA core systems securely without hardcoding server hostnames.
-- **Principal Propagation**: Seamlessly forwards the logged-in cloud user's identity down to the on-premise ABAP gateway.
-- **Dynamic API Routing**: Swap endpoints (sandbox, QA, production) effortlessly through BTP Cockpit destinations.
-
-### 3. Stateless JWT & XSUAA Security
-- **OAuth 2.0 Trust Setup**: Secured using SAP BTP's Extended Services for User Account and Authentication (XSUAA).
-- **Stateless API Tokens**: Intercepts and validates JWT (JSON Web Tokens) at the microservice gateway layer.
-- **Granular RBAC Enforcements**: Authorizes individual endpoints using scopes mapped to enterprise user roles.
+The phases below are the phases the product has, in the order it shows them, in the words /how-to uses. There is no other walkthrough: never describe a phase this list does not name, and never reorder them.
+${HOW_TO_STEPS
+  .map((step) =>
+    [
+      `### Phase ${step.n} of ${HOW_TO_STEPS.length}: ${step.title} (/project/{id}/${step.key})`,
+      step.summary,
+      ...step.details.map((detail) => `- ${detail}`),
+      ...step.questions.map((q) => `- **${q.question}** ${q.answer}`),
+    ].join('\n'),
+  )
+  .join('\n\n')}
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -184,12 +144,11 @@ Upload and analyze legacy SAP ABAP customizations. The static analysis engine pr
 - **Risk Assessment**: Highlights high-risk patterns like direct table modifications, unreleased API usage, and hardcoded values
 
 ### Solution Design Stage (/project/[id]/design)
-Architect the target state for your modernized application. AI generates the complete side-by-side blueprint.
-- **Architecture Blueprint**: Auto-generated target architecture showing the CAP project structure
-- **CDS Schema Generation**: Core Data Services schema files generated from analyzed ABAP structures
-- **API Route Mapping**: Maps legacy ABAP transactions to modern OData/REST API endpoints
-- **Dockerfile Generation**: Container configuration for BTP Cloud Foundry or Kyma deployment
-- **Security Configuration**: JWT/XSUAA trust setup and BTP destination binding definitions
+A model drafts the target architecture for the route on the project, and the user records which target they accept. The draft follows the track: on the RAP track a RAP design inside SAP S/4HANA, on the CAP track a SAP CAP design on SAP BTP. Never describe the CAP draft as if it were the product's only output.
+- **Architecture Blueprint**: project structure, service endpoints, data consistency, security requirements and a phased roadmap
+- **CAP track only**: the drafted layout names CDS schema files, service handlers and a Dockerfile, and the security requirements are written in BTP terms (XSUAA/JWT). These are words in a model-written draft — the product does not create a BTP destination, a trust configuration or an XSUAA binding for anyone, and it never connects to BTP.
+- **Accepting a target** records the target, the account and the time on the server: a self-declaration, not an organisational approval
+- **Stale drafts**: a design or an acceptance given for a previous source is marked stale, and code is not generated from it
 
 ### Transformation Stage (/project/[id]/transformation)
 Side-by-side code conversion from legacy ABAP to modern cloud-native code.
@@ -213,14 +172,15 @@ Auto-generate comprehensive migration documentation.
 - **RACI Matrix**: Dynamic responsibility assignment matrix
 - **Standard Operating Procedures (SOPs)**: Step-by-step procedures with exception handling
 - **Risk & Control Framework**: Audit-ready control objectives and risk assessments
-- **Export Options**: Confluence HTML, PDF, BPMN 2.0 XML
+- **Export Options**: BPMN 2.0 XML and Confluence HTML, and nothing else — the page offers no PDF export
 
 ### Delivery Stage (/project/[id]/delivery)
-Prepare for go-live with sprint planning, deployment checklists, and handover packages.
-- **Sprint Backlog**: AI-generated sprint tasks with story point estimation
-- **Go-Live Checklist**: Comprehensive readiness assessment (security, performance, data migration, rollback)
-- **Handover Package**: Downloadable ZIP with complete BTP project, tests, docs, and deployment configs
-- **Deployment Guide**: Step-by-step instructions for BTP Cloud Foundry or Kyma deployment
+What is on record for handover, and the downloads that follow from it. The page has six cards and no others — there is no sprint backlog, no go-live checklist and no deployment guide on it; never offer one.
+- **Delivery Bundle**: a ZIP with the generated files, the test suite and the documentation
+- **Stakeholder briefing** and **Board Presentation**: a slide summary of findings and architecture, without a savings figure
+- **SOP & Compliance** and **Developer Guide**: the business layer and the technical guidelines, when they were generated
+- **Integrity Report**: what exists and what it is worth — generated code is reported as not compiled or tested, never as ready to deploy
+- **Audit evidence pack**: signed by the server over the signed run; blocked while anything was built for a previous source, and checkable afterwards on the Verify Pack page
 
 ### TCO Analysis (/project/[id]/tco)
 A cost model for your modernization project — priced only with figures you enter.
@@ -244,11 +204,12 @@ Reference library for SAP Clean Core architecture and BTP extensibility patterns
 - **Clean Core Alignment**: How findings map to SAP's Clean Core extensibility guidance. Clean-Core.io is not affiliated with or certified by SAP — it complements SAP's own tools (ADT, ATC, Readiness Check).
 
 ### How-To Tutorials (/how-to)
-Interactive walkthrough guiding users through the platform's stages (Analyze → Design → Transformation → Documentation → Testing → TCO → Delivery).
-- **Slideshow Presentation**: Full-screen capable, keyboard-navigable slide deck
-- **Interactive Hotspots**: Clickable question marks on screenshots revealing detailed Q&A popups
-- **Speech Scripts**: Pre-written narration scripts for each phase (useful for demos/presentations)
-- **Core Architecture Concepts**: Deep dives into CAP/CDS, BTP Destinations, and JWT/XSUAA Security
+A walkthrough of the seven phases in the product's order (${HOW_TO_STEPS.map((s) => s.title).join(' → ')}), readable without an account.
+- **One slide per phase**: what the phase does, what it does not do, and the questions a reader has at that point — the text in the HOW-TO WALKTHROUGH section above, word for word
+- **A phase index** beside the deck, and arrow keys while the deck has focus; it can be shown fullscreen
+- **A link into the demo project** from every slide, so the reader sees the phase in the product instead of a picture of it
+- **No screenshots, no narration scripts and no architecture cards**: the pictures showed a workflow the product no longer has, and the three "Core Architecture Concepts" cards (CAP/CDS, BTP destinations, JWT/XSUAA) described configuration this product never performs. All of it was removed on 17.09.2026 — do not offer any of it.
+- **Getting started instead**: /first-run is the click-by-click guide from signing in to a downloadable package.
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -442,7 +403,11 @@ export function buildKnowledgeBase(): string {
     EXTENDED_GLOSSARY,
     RAP_VS_CAP_COMPARISON,
     HOWTO_WALKTHROUGH,
-    CORE_CONCEPTS,
+    // CORE_CONCEPTS stood here: the three /how-to cards on CAP/CDS, BTP
+    // destinations and XSUAA. They went with the page (UX-102) because they
+    // described the CAP track as if it were the product and configuration the
+    // product never performs. The glossary above still defines CDS and XSUAA for
+    // a reader who asks what they are.
     PLATFORM_NAVIGATION,
     S4HANA_BRIDGE_GUIDE,
     SECURITY_AND_PRIVACY,

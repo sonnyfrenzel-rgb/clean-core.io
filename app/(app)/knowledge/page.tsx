@@ -3,7 +3,7 @@ import { withTwitterCard } from '@/lib/page-metadata';
 import { BookOpen, Layers, Check } from 'lucide-react';
 import Link from 'next/link';
 import KnowledgeClient from '@/components/KnowledgeClient';
-import BackButton from '@/components/BackButton';
+import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
 
 // Server-side Metadata configuration for SEO & GEO Crawlers
@@ -78,7 +78,7 @@ export default function KnowledgePage() {
 
       {/* Navigation */}
       <div className="flex items-center justify-start">
-        <BackButton />
+        <BackLink />
       </div>
 
       {/* Header Banner */}

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { ShieldCheck, Lock, MapPin, Trash2, FileCheck2, Server, Network } from 'lucide-react';
-import BackButton from '@/components/BackButton';
+import BackLink from '@/components/BackLink';
 import { APP_VERSION } from '@/lib/version';
 
 export const metadata: Metadata = withTwitterCard({
@@ -32,7 +32,7 @@ const Section = ({ icon: Icon, title, children }: { icon: any; title: string; ch
 export default function TrustPage() {
   return (
     <main className="max-w-3xl mx-auto px-6 py-12">
-      <BackButton />
+      <BackLink />
       <p className="text-xs font-bold tracking-widest text-emerald-600 uppercase mb-2 mt-4">Trust &amp; Privacy</p>
       <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-3">How we handle your data</h1>
       <p className="text-slate-600 leading-relaxed mb-8">
