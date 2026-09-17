@@ -17,7 +17,8 @@
  *     of 33471220d6e9, 14d4000c4586). Here the literals are walked once, at the
  *     front: a `.` inside `'…'` or `` `…` `` does not end a statement, a `"`
  *     inside one does not open a comment, and a `PERFORM` inside one is never
- *     seen by anything downstream.
+ *     seen by anything downstream. The rule itself is `createLiteralScanner()`
+ *     below — one implementation, used by every reader that needs it.
  *   - **The offset matters as much as the answer.** Buffering from the start of
  *     the line put `IF sy-subrc = 0.` at the head of the next statement (QA review
  *     of 5e598828093c). Statements are cut at the period, so two on one line are
@@ -110,18 +111,75 @@ export function isAbapCommentLine(raw: string, statementOpen: boolean): boolean 
 }
 
 /**
+ * The one place that knows where an ABAP literal begins and where it ends.
+ *
+ * ABAP has four of them and they do not nest the same way: `'…'`, `` `…` ``,
+ * the string template `|…|`, and inside a template the embedded expression
+ * `{ … }`, which is code again. Every reader that looks for something in ABAP
+ * source has to know the difference, because inside a literal nothing means
+ * what it looks like: a `.` does not end a statement, a `"` does not open a
+ * comment, a `PERFORM` is prose, and a `5` in `|Toleranz: { 5 }|` is not a
+ * number somebody decided — it is a digit in a sentence.
+ *
+ * The rule was written twice in this file alone — once for the statement scan
+ * and once for `stripInlineComment`, which did not know about templates at all
+ * and cut `IF lv_text = |He said "yes"|.` in half. A second copy of a rule is a
+ * second version of it, so there is now one: feed it characters in source
+ * order and it says, for each, whether that character is part of a literal.
+ */
+export interface LiteralScanner {
+  /**
+   * Feed one character, in source order. True when the character belongs to a
+   * literal — its delimiters and its embedded `{ … }` included — and must
+   * therefore not be read as code.
+   */
+  consume(ch: string): boolean;
+  /** True while the scanner stands inside a literal. */
+  inLiteral(): boolean;
+  /** True while the scanner stands inside a `|…|` template. */
+  inTemplate(): boolean;
+  /** Forget the state. A literal never spans lines in ABAP. */
+  reset(): void;
+}
+
+export function createLiteralScanner(): LiteralScanner {
+  let quote = false;
+  let tick = false;
+  let template = false;
+  // Embedded `{ … }` may hold another template, so the depth is counted rather
+  // than toggled (QA review of ca2464aba930). Inside `{ … }` a bar opens or
+  // closes a *nested* template and either way the outer one is still open, so
+  // it changes nothing; counting bars instead cannot tell an opening one from a
+  // closing one, and `|a { |b.c| } d.|.` then never terminated.
+  let embedded = 0;
+  return {
+    consume(ch: string): boolean {
+      if (ch === "'" && !tick && !template) { quote = !quote; return true; }
+      if (ch === '`' && !quote && !template) { tick = !tick; return true; }
+      if (ch === '|' && !quote && !tick) {
+        if (!embedded) template = !template;
+        return true;
+      }
+      if (template && ch === '{') { embedded += 1; return true; }
+      if (template && ch === '}') { embedded = Math.max(0, embedded - 1); return true; }
+      return quote || tick || template;
+    },
+    inLiteral(): boolean { return quote || tick || template; },
+    inTemplate(): boolean { return template; },
+    reset(): void { quote = false; tick = false; template = false; embedded = 0; },
+  };
+}
+
+/**
  * Remove the inline comment from a line: a `"` that is not inside a literal.
  * A literal cannot span lines in ABAP, so the quote state starts fresh here.
  */
 function stripInlineComment(raw: string): string {
-  let inQuote = false;
-  let inTick = false;
+  const literals = createLiteralScanner();
   let kept = '';
   for (let c = 0; c < raw.length; c++) {
     const ch = raw[c];
-    if (ch === '"' && !inQuote && !inTick) break;
-    if (ch === "'" && !inTick) inQuote = !inQuote;
-    else if (ch === '`' && !inQuote) inTick = !inTick;
+    if (!literals.consume(ch) && ch === '"') break;
     kept += ch;
   }
   return kept;
@@ -149,14 +207,11 @@ function sliceText(chars: string[], from: number, to: number): string {
  * parentheses are not chain operators.
  */
 function chainColon(chars: string[], from: number, to: number): number {
-  let inQuote = false;
-  let inTick = false;
+  const literals = createLiteralScanner();
   let depth = 0;
   for (let p = from; p < to; p++) {
     const ch = chars[p];
-    if (ch === "'" && !inTick) { inQuote = !inQuote; continue; }
-    if (ch === '`' && !inQuote) { inTick = !inTick; continue; }
-    if (inQuote || inTick) continue;
+    if (literals.consume(ch)) continue;
     if (ch === '(') depth += 1;
     else if (ch === ')') depth = Math.max(0, depth - 1);
     else if (ch === ':' && depth === 0) return p;
@@ -167,14 +222,11 @@ function chainColon(chars: string[], from: number, to: number): number {
 /** Offsets of the top-level commas in `[from, to)`. */
 function topLevelCommas(chars: string[], from: number, to: number): number[] {
   const out: number[] = [];
-  let inQuote = false;
-  let inTick = false;
+  const literals = createLiteralScanner();
   let depth = 0;
   for (let p = from; p < to; p++) {
     const ch = chars[p];
-    if (ch === "'" && !inTick) { inQuote = !inQuote; continue; }
-    if (ch === '`' && !inQuote) { inTick = !inTick; continue; }
-    if (inQuote || inTick) continue;
+    if (literals.consume(ch)) continue;
     if (ch === '(') depth += 1;
     else if (ch === ')') depth = Math.max(0, depth - 1);
     else if (ch === ',' && depth === 0) out.push(p);
@@ -287,30 +339,14 @@ export function readStatements(source: string): AbapStatement[] {
     for (const ch of trimmed) { pending.chars.push(ch); pending.lineAt.push(i + 1); }
 
     let p = from;
-    let inQuote = false;
-    let inTick = false;
     // A string template `|…|` is a literal too, and the one most likely to
     // carry a period: `|Total: { x } EUR.|` ended the statement at the full
-    // stop inside the sentence. Embedded `{ … }` may hold another template, so
-    // the depth is counted rather than toggled (QA review of ca2464aba930).
-    let inTemplate = 0;
-    let inEmbedded = 0;
+    // stop inside the sentence. The state machine lives in
+    // `createLiteralScanner()`, once, for every reader that needs it.
+    const literals = createLiteralScanner();
     while (p < pending.chars.length) {
       const ch = pending.chars[p];
-      if (ch === "'" && !inTick && !inTemplate) { inQuote = !inQuote; p += 1; continue; }
-      if (ch === '`' && !inQuote && !inTemplate) { inTick = !inTick; p += 1; continue; }
-      if (ch === '|' && !inQuote && !inTick) {
-        // Inside `{ … }` a bar opens or closes a *nested* template, and either
-        // way the outer one is still open — so it changes nothing here. Only a
-        // bar outside the braces starts or ends the template this scanner cares
-        // about. Counting bars instead of ignoring them cannot tell an opening
-        // from a closing one, and `|a { |b.c| } d.|.` then never terminated.
-        if (!inEmbedded) inTemplate = inTemplate ? 0 : 1;
-        p += 1;
-        continue;
-      }
-      if (inTemplate && ch === '{') { inEmbedded += 1; p += 1; continue; }
-      if (inTemplate && ch === '}') { inEmbedded = Math.max(0, inEmbedded - 1); p += 1; continue; }
+      if (literals.consume(ch)) { p += 1; continue; }
       // A period between two digits is a decimal point, not a statement end:
       // `lv_price = 12.50.` is one statement and `IF lv_rate > 0.5.` is one
       // condition. Splitting there did not merely lose a statement — it handed
@@ -320,14 +356,13 @@ export function readStatements(source: string): AbapStatement[] {
         && /\d/.test(pending.chars[p - 1] ?? '')
         && /\d/.test(pending.chars[p + 1] ?? '')
       ) { p += 1; continue; }
-      if (ch === '.' && !inQuote && !inTick && !inTemplate) {
+      if (ch === '.') {
         emit(out, pending, 0, p, nativeSql);
         noteNativeSqlBoundary();
         pending.chars.splice(0, p + 1);
         pending.lineAt.splice(0, p + 1);
         p = 0;
-        inQuote = false;
-        inTick = false;
+        literals.reset();
         continue;
       }
       p += 1;
