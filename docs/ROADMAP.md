@@ -1044,6 +1044,47 @@ mittleren Befunde füllen die neuen Phase-0-Schritte **0.14–0.18** und die gen
 widerlegten betrafen vor allem Komponenten und Funktionen, die nirgends gerendert oder aufgerufen
 werden, und Schutzmaßnahmen an anderer Stelle (Server-Guard, Emulator-Ausnahme, bereits gebauter Fix).
 
+**Ergebnis der Triage vom 18.09.2026 — die 94 hohen sind damit alle entschieden:** 15 waren
+bekannt, **14 mit Beleg widerlegt, 62 bestätigt** (davon 28 Zwillinge, also **39 eigenständige
+Defekte**) und 3 unklar und deshalb wie bestätigt behandelt. 21 der bestätigten sind am
+laufenden Code nachgestellt — mit Engine-Probe, Firestore-Emulator oder nachgebauter Regex,
+nicht nach Aktenlage. Jede Widerlegung liegt mit ihrem Beleg im versiegelten
+`docs/qa/refuted-findings.enc.json` (115 Einträge).
+
+Die drei schwersten:
+
+- **Eine Kommentarzeile kann einen kritischen Befund vollständig löschen.** Ein
+  auskommentiertes `* DATA vbak TYPE ztab.` lässt „Direct Write to SAP Standard Table VBAK"
+  restlos verschwinden — ein Befund wird null (`f4383c553eaa`).
+- **Jede je abgegebene Umfrageantwort ist unsichtbar.** Die Route schreibt mit einem Punkt im
+  Schlüssel und legt damit ein Feld *namens* `answers.q1` an, statt in `answers`
+  hineinzuschreiben; `data.answers` bleibt `undefined`, die Umfrageseite sieht nichts und der
+  Digest zählt null (`b22563b1cd74`, am Emulator nachgestellt).
+- **Nach einem Wechsel des Ed25519-Schlüssels verifiziert keine bereits ausgegebene Mappe
+  mehr**, weil `/.well-known/` nur den aktuellen Schlüssel veröffentlicht (`40294c1bc63a`).
+
+**Das Muster ist wertvoller als die Zahl.** Sechs der vierzehn Widerlegungen sind derselbe
+Denkfehler: **der Prüfer liest einen Rückwärtskompatibilitäts-Test als eingefrorenen Defekt.**
+Er sieht ein Manifest der Version 2.0 in einem Test grün bleiben und schließt daraus, das Spec
+halte die Implementierung fest — ohne das Spec daneben zu öffnen, das für das heutige
+Ausgabeformat genau das Gegenteil verlangt. Dieselbe Fehllesung traf am selben Tag vier als
+`high` gemeldete Befunde der Delta-Review von `13d1ffa`, dort in der Form „eine Zusicherung
+wurde entfernt", während der Commit sie mehrzeilig und schärfer ersetzt hatte. **Faustregel
+für die nächste Triage:** bei jedem `test-weakening`-Befund zuerst prüfen, welche
+Format- oder Versionsvariante der Test baut, und dann `git log` der Zieldatei auf die
+Nettobilanz ansehen. Vier weitere Widerlegungen zeigen auf Zeilen, die am geprüften Commit
+nicht mehr existierten (`carried: true` ist dafür ein guter Verdachtsfilter).
+
+**Und ein Befund über die Befunde:** die dreizehn Engine-Defekte teilen **eine** Ursache —
+Kommentare und String-Templates `|…|` werden vor der Regex-Erkennung nicht maskiert
+(`f4383c553eaa`, `f5f91aeacd41`, `19bdc218308b`, `359639c30d77`). Eine literal- und
+kommentarbewusste Vorstufe für alle Detektoren schließt vier hohe Befunde auf einmal; das ist
+der lohnendste Einzelschritt in 0.18.
+
+Einplanung: **0.14** Sicherheit (15 Fingerabdrücke, Titel zurückgehalten) · **0.15** Stufen (15) ·
+**0.18** Engine (13) · **0.2** ehrliche Aussagen (11) · **0.16** Umfrage (2) ·
+**0.5 / 0.6 / 0.7 / 0.17 / E07-F02** Vertrauenskette (9).
+
 | ID | Schwere | Fundstelle | Befund | Roadmap-Schritt | Status |
 |---|---|---|---|---|---|
 | 13c6115ec642 | critical | app/api/runs/create/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.12 | behoben (dev) |
@@ -1094,6 +1135,71 @@ werden, und Schutzmaßnahmen an anderer Stelle (Server-Guard, Emulator-Ausnahme,
 | eac2cdb069a7 | high | lib/chatbot-knowledge.ts | Chatbot teaches a workflow that contradicts the canonical seven phases | 0.2 | eingeplant |
 | eac6118f1eac | high | lib/abap/code-assessment.ts | Internal-table INSERT, MODIFY and DELETE statements are reported as database coupling | 0.18 | eingeplant |
 | f4561d983d92 | high | scripts/security/lib/surface.mjs | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.16 | eingeplant |
+| 052d2fe8f51c | high | lib/abap/code-assessment.ts | Short programs that write SAP standard tables are recommended for retirement | 0.18 | eingeplant |
+| 0613631545b2 | high | app/(app)/project/[projectId]/analyze/page.tsx | Confluence export fabricates project-specific routing evidence when optional analysis is missing | 0.2 | eingeplant |
+| 093df0feed02 | high | app/api/test-s4-odata-read/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 0e2d5f95821f | high | app/api/fetch-s4-metadata/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 1386ead8a318 | high | app/api/runs/create/route.ts | The signing route accepts arbitrary non-ABAP text as a completed analysis run | 0.15 | eingeplant |
+| 1925189d0606 | high | app/page.tsx | Worked examples are falsely described as compiled, tested, and verified | 0.2 | eingeplant |
+| 19bdc218308b | high | lib/abap/findings-detector.ts | Keywords inside string templates become support findings | 0.18 | eingeplant |
+| 241c291b4205 | high | lib/workflow-steps.ts | Client-authored test statuses still unlock Testing and Delivery | E07-F02 | eingeplant |
+| 2913b2ec26d6 | high | lib/audit-signing-keypair.ts | Signing-key rotation makes previously issued packs fail default verification | 0.5 | eingeplant |
+| 2ba9cba8e984 | high | app/api/fetch-odata-metadata/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 2f60dc7f9d20 | high | app/whitepaper/page.tsx | Whitepaper promises export of a compiled package without an ABAP compilation path | 0.2 | eingeplant |
+| 359639c30d77 | high | lib/abap/code-assessment.ts | RFC/BAPI detection misses normal module names and scans non-executable text | 0.18 | eingeplant |
+| 3ad7de2e710c | high | app/api/audit-pack/create/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 40294c1bc63a | high | lib/audit-signing-keypair.ts | Key rotation breaks default verification of previously issued packs | 0.5 | eingeplant |
+| 45b717594b8d | high | app/(app)/project/[projectId]/delivery/page.tsx | ABAP delivery archives do not contain valid abapGit repository metadata | 0.15 | eingeplant |
+| 4692f9ace1b9 | high | app/(app)/project/[projectId]/design/page.tsx | Any non-empty model response is persisted as a completed design | 0.15 | eingeplant |
+| 46b217f0aebb | high | lib/workflow-steps.ts | Client-authored Passed strings are still treated as proven test execution | E07-F02 | eingeplant |
+| 46cf75c33b44 | high | components/analyze/ExtensibilityDecisionMatrix.tsx | Missing comparative analysis is replaced with fabricated project-specific conclusions | 0.2 | eingeplant |
+| 498a8c35f988 | high | components/design/CloudServiceIntegrations.tsx | SAP HANA services are mapped to the PostgreSQL implementation guide | 0.2 | eingeplant |
+| 4aadc9188407 | high | app/(app)/project/[projectId]/documentation/page.tsx | Parseable but structurally invalid JSON is saved as completed documentation | 0.15 | eingeplant |
+| 50704cd319b4 | high | components/analyze/ExtensibilityDecisionMatrix.tsx | Missing route evidence is replaced with fabricated project assessments | 0.2 | eingeplant |
+| 5af40f93f84c | high | app/(app)/project/[projectId]/transformation/page.tsx | The generation lock does not prevent cross-tab transformations from overwriting each other | 0.15 | eingeplant |
+| 5dce9bd7ff9e | high | lib/abap/usage-parser.ts | Whitespace-only XLSX counts become measured zeroes and retirement candidates | 0.18 | eingeplant |
+| 62c08912d745 | high | components/design/CloudServiceIntegrations.tsx | SAP HANA services are still mapped to the PostgreSQL implementation guide | 0.2 | eingeplant |
+| 666a399f4dd2 | high | components/TransformationReplay.tsx | Timer-driven replay still reports compilation and generated tests that never occurred | 0.2 | eingeplant |
+| 7182b3754472 | high | app/api/test-s4-odata-read/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 725c5d80afc6 | high | lib/abap/extensibility-router.ts | Routing checkpoints assert constructs that were not detected | 0.18 | eingeplant |
+| 751bd4ef8e8b | high | app/(app)/project/[projectId]/transformation/page.tsx | Non-JSON model output is still saved as a completed transformation | 0.15 | eingeplant |
+| 766ae59f10e4 | high | lib/abap/usage-parser.ts | Whitespace-only spreadsheet counts still become measured zeroes | 0.18 | eingeplant |
+| 76c6c79c6f72 | high | lib/firebase-admin.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 79dc8a8a2d59 | high | lib/firebase-admin.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 7bf8808c5773 | high | lib/firebase-admin.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 7ce412f6a068 | high | lib/audit-signing-key.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 80da84ae34ce | high | lib/abap/usage-parser.ts | Negative fractional counts can be rounded into retirement evidence | 0.18 | eingeplant |
+| 832ddd8c145e | high | firestore.rules | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 8e69958dd531 | high | app/(app)/project/[projectId]/design/page.tsx | Concurrent design regenerations can overwrite each other and mix design with unrelated NFRs | 0.15 | eingeplant |
+| 95d0baf27ef4 | high | app/api/test-s4-connection/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| 9a6e2d291c22 | high | .github/workflows/deploy.yml | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| a0a649312df1 | high | app/api/survey/vote/route.ts | Survey answers are stored under literal dotted field names | 0.16 | eingeplant |
+| a2b81a5bd2ab | high | app/(app)/project/[projectId]/analyze/page.tsx | Model-authored routing confidence still overrides the deterministic run confidence on screen | 0.15 | eingeplant |
+| a3b0bfd48551 | high | lib/abap/select-parser.ts | A decimal literal can truncate a SELECT before later joins | 0.18 | eingeplant |
+| ac4cdeea96b6 | high | app/api/test-s4-connection/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| ae52df4b0683 | high | app/api/runs/create/route.ts | The signing route still accepts arbitrary non-ABAP text as a completed run | 0.15 | eingeplant |
+| ae858da40fb5 | high | app/(app)/project/[projectId]/documentation/page.tsx | Structured analysis objects make documentation generation fail before calling Gemini | 0.15 | eingeplant |
+| b22563b1cd74 | high | app/api/survey/vote/route.ts | Survey answers are still stored under literal dotted field names | 0.16 | eingeplant |
+| b429fb9e0d5b | high | app/(app)/project/[projectId]/documentation/page.tsx | Structured analysis data crashes documentation generation | 0.15 | eingeplant |
+| b70c8431c87d | high | lib/workflow-steps.ts | Editing one byte of a stale artefact makes it appear current | 0.6 | eingeplant |
+| c1523df5fc4e | high | hooks/useTestExecution.ts | Auto-healing replaces the complete generated package with one unverified source file | 0.2 | eingeplant |
+| c7ed32966a98 | high | app/api/run-tests/route.ts | Caller-supplied tests and code are reported as project test results without artefact binding | 0.17 | eingeplant |
+| ce41dce9ccd5 | high | app/whitepaper/page.tsx | Whitepaper still advertises an uncompiled package as compiled | 0.2 | eingeplant |
+| cece3b6a9c51 | high | app/api/fetch-s4-metadata/route.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| d228da9ee431 | high | app/(app)/project/[projectId]/design/page.tsx | Concurrent regenerations can mix a design with unrelated NFRs | 0.15 | eingeplant |
+| d67ef0b953f0 | high | lib/audit-signing-key.ts | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.14 | eingeplant |
+| de2651041d61 | high | app/api/projects/[projectId]/commands/route.ts | Concurrent analysis can attach an architect sign-off to an unreviewed run | 0.7 | eingeplant |
+| dfa0816bc852 | high | app/(app)/project/[projectId]/analyze/page.tsx | Changing deployment in the confirmation modal signs the run against the previous deployment | 0.15 | eingeplant |
+| e0261e6cf390 | high | app/api/runs/create/route.ts | Model receipts are not bound to the source or project represented by the signed run | 0.17 | eingeplant |
+| e1523558dc46 | high | app/(app)/project/[projectId]/design/page.tsx | Any non-empty model response is persisted as a completed solution design | 0.15 | eingeplant |
+| ed2b52cc2d3f | high | lib/abap/select-parser.ts | Valid unqualified JOIN clauses bypass complex-query assessment | 0.18 | eingeplant |
+| ee1fe33023c7 | high | lib/workflow-steps.ts | Client-writable test statuses are treated as execution evidence and can unlock Delivery | E07-F02 | eingeplant |
+| ee2390f88be0 | high | app/(app)/project/[projectId]/documentation/page.tsx | Structured analysis data still crashes documentation generation | 0.15 | eingeplant |
+| f4383c553eaa | high | lib/abap/evidence-model.ts | Declarations inside comments can suppress critical database-write findings | 0.18 | eingeplant |
+| f5f91aeacd41 | high | lib/abap/open-sql-discrimination.ts | ABAP string templates are not masked before internal-table discrimination | 0.18 | eingeplant |
+| fa9e39148077 | high | app/page.tsx | Landing page still calls static demonstrations compiled, tested, and verified | 0.2 | eingeplant |
+| fbc8bdcaa983 | high | lib/abap/extensibility-router.ts | Private-cloud standard-table writes are incorrectly presented as Tier-2 wrappable | 0.18 | eingeplant |
+| fd3e6ec4d394 | high | lib/abap/coverage.ts | Common dynamic instance-method calls are omitted from findings and coverage gaps | 0.18 | eingeplant |
 | 00875a4ff030 | medium | tests/board-deck.integrity.test.ts | The tests require go-live approval without execution or sign-off evidence | 0.8 | behoben (dev) |
 | 024ec609bc86 | medium | app/(app)/project/[projectId]/design/page.tsx | *(Titel bis zur Auslieferung zurückgehalten — Sicherheit)* | 0.15 | eingeplant |
 | 03380a33a523 | medium | app/(app)/project/[projectId]/testing/page.tsx | Project-load failures leave the testing page permanently loading | 0.15 | eingeplant |
