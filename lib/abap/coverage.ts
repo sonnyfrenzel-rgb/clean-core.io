@@ -88,7 +88,16 @@ const RULES: Rule[] = [
     test: (s) =>
       // CALL FUNCTION <variable> — a name that is not a literal
       /^CALL\s+FUNCTION\s+(?!')/.test(s) ||
+      // A dynamic method name stands in parentheses, and the parenthesis is not
+      // always the one right after METHOD. `CALL METHOD (class)=>(meth)` was
+      // recognised; `CALL METHOD lo_service->(lv_method)` — the ordinary
+      // instance form, and the common one — was not, so a statement whose
+      // target no static analysis can name came back with no finding and
+      // `coverage.complete = true`, and `routeExtensibility` could score the
+      // extension 100 and call it trivial (full review of a19945ef01dc,
+      // fd3e6ec4d394). Both selectors, and the object or class before them.
       /^CALL\s+METHOD\s*\(/.test(s) ||
+      /^CALL\s+METHOD\s+[\w<>/~-]*(?:->|=>)\s*\(/.test(s) ||
       /^CREATE\s+OBJECT\s*\(/.test(s) ||
       /^PERFORM\s*\(/.test(s) ||
       /\bASSIGN\s*\(/.test(s),
