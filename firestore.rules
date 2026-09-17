@@ -26,6 +26,42 @@ service cloud.firestore {
     // Quota enforcement is handled server-side by reserveTransformationQuota().
     // OrgId isolation is handled server-side in API routes.
 
+    // Roadmap 5.4 — Einsicht by invitation.
+    //
+    // `readers` is the list of uids whose invitation to a project was accepted
+    // and not revoked. It sits on the project document itself, so this check
+    // reads no second document: `resource.data` is the document the request is
+    // already fetching. The alternative — get()ing into
+    // projects/{id}/invitations — would cost one document read per rule
+    // evaluation and is exactly the construct this file removed twice before
+    // (getUserData above, the admin fallback below) after it produced
+    // evaluation errors in the emulator.
+    //
+    // Three defaults do the safety work, and each has a test:
+    //   · a project with no `readers` field at all falls back to the empty
+    //     list, so absence grants nothing — a rule that gets generous when a
+    //     field is missing is the classic way to open a door by accident;
+    //   · `readers: []` grants nothing;
+    //   · anything that is not a list grants nothing, rather than erroring its
+    //     way into an undefined outcome.
+    //
+    // `readers` is deliberately absent from both client allowlists on
+    // /projects/{projectId} — the one on create and the one on update — so no
+    // browser can put itself, or anyone else, on that list by any write path,
+    // including as one key inside a larger write that would otherwise be
+    // allowed. Only the Admin SDK writes it, on accepting and on revoking an
+    // invitation.
+    //
+    // (Neither allowlist is quoted here on purpose: `lib/firestore-rules-contract.ts`
+    // finds the update allowlist by searching this file for the first
+    // occurrence of that call, and a comment that spelled it out would be the
+    // one it found.)
+    function invitedReader(data) {
+      return isAuthenticated() &&
+             data.get('readers', []) is list &&
+             request.auth.uid in data.get('readers', []);
+    }
+
     function userClientCreateKeys() {
       return [
         'firstName', 'lastName', 'email',
@@ -129,7 +165,15 @@ service cloud.firestore {
       // a report of malicious code in an upload — is handled server-side
       // through the Admin SDK, which bypasses these rules by design; that is a
       // deliberate act with a record, not a console anyone can open.
-      allow read: if isAuthenticated() && resource != null && resource.data.userId == request.auth.uid;
+      //
+      // Roadmap 5.4 adds exactly one more reader, and not a kind of account:
+      // the individual uid of a person the owner invited and who accepted. The
+      // administrator is still not among them — the roadmap line for 5.4 was
+      // written on 15.09.2026, one day before Sonny took the operator's read
+      // away, and the later decision wins. An operator who wants to read a
+      // project has the same route as anyone else: be invited.
+      allow read: if isAuthenticated() && resource != null &&
+                  (resource.data.userId == request.auth.uid || invitedReader(resource.data));
       // Quota enforcement and field validation are server-side
       allow create: if isAuthenticated() && 
                     request.resource.data.keys().hasAll(['name', 'status', 'userId', 'createdAt']) &&
@@ -166,6 +210,13 @@ service cloud.firestore {
                       // The list here and `SERVER_ONLY_PROJECT_FIELDS` in
                       // lib/project-commands.ts are held apart by
                       // tests/project-command-boundary.spec.ts.
+                      //
+                      // `readers` (roadmap 5.4) is not on this list and must
+                      // never be: it is what the read rule above believes, so a
+                      // browser that could write it could grant itself, or
+                      // anyone, the right to read the project. hasOnly() covers
+                      // the case that is easy to forget — `readers` smuggled in
+                      // as one key of a write whose other keys are allowed.
                       request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                         'status', 'legacyCode', 's4Deployment', 'extensibilityRoute', 'solutionDesign',
                         'generatedCode', 'documentation', 'businessDocumentation', 'presentation',
@@ -183,8 +234,34 @@ service cloud.firestore {
     match /projects/{projectId}/runs/{runId} {
       // A run carries the source it was computed from, so it follows the
       // project: owner only.
+      //
+      // Roadmap 5.4 deliberately does NOT widen this one. A run document would
+      // have to carry its own copy of `readers` for a rule here to answer
+      // without a get(), and then a revocation would have to succeed in N
+      // documents instead of one: a revocation that must land everywhere is
+      // weaker than a revocation that lands in a single place. An invited
+      // reader gets the run's contents through GET /api/projects/{projectId},
+      // which re-reads `readers` off the project document on every request —
+      // same single source of truth, and it stops answering the moment the
+      // owner revokes.
       allow read: if isAuthenticated() && resource != null && resource.data.userId == request.auth.uid;
       allow write: if false;
+    }
+
+    // Roadmap 5.2/5.4/5.5 — the invitations of a project. Server-only, in both
+    // directions, and the read half is the point: an invitation carries the
+    // e-mail address of the person it was sent to, so a project's invitation
+    // list is a list of other people's addresses. Somebody with Einsicht into
+    // the project has no business reading it; the owner sees it through
+    // GET /api/projects/{projectId}/readers, which returns the accepted ones
+    // and nothing else. Written only by the Admin SDK.
+    //
+    // Default-deny would already cover this — no match block means no access —
+    // but the deny is written down so that a later rule for a sibling
+    // subcollection cannot widen it by accident, and so that the intent is
+    // visible to anyone auditing the file.
+    match /projects/{projectId}/invitations/{invitationId} {
+      allow read, write: if false;
     }
 
     // Validate SupportTicket

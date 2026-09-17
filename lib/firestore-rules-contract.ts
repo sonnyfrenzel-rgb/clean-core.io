@@ -78,6 +78,32 @@ export function parseClientWritableProjectFields(rulesText: string): string[] {
   return [...list.matchAll(/'([A-Za-z_]\w*)'/g)].map((m) => m[1]).sort();
 }
 
+/** Full-line `//` comments removed, which is the only comment form this file uses. */
+function stripLineComments(text: string): string {
+  return text.replace(/^[ \t]*\/\/.*$/gm, '');
+}
+
+/**
+ * The read rule of `projects/{projectId}`, as one collapsed line.
+ *
+ * The allowlist above answers "what may a browser *write*", and until roadmap
+ * 5.4 that was the only half of the file an app change ever depended on. 5.4
+ * depends on the other half: an invited reader can read a project only once the
+ * widened *read* rule is live, and a record that tracks write fields alone
+ * would have called that change "nothing to deploy". So the read rule is
+ * recorded verbatim, the way it is written, and a change to it is visible.
+ */
+export function parseProjectReadRule(rulesText: string): string {
+  const text = stripLineComments(normaliseRulesText(rulesText));
+  const at = text.indexOf('match /projects/{projectId} {');
+  if (at === -1) throw new Error('firestore.rules: the /projects/{projectId} block is gone.');
+  const readAt = text.indexOf('allow read:', at);
+  if (readAt === -1) throw new Error('firestore.rules: /projects/{projectId} has no read rule.');
+  const end = text.indexOf(';', readAt);
+  if (end === -1) throw new Error('firestore.rules: the read rule of /projects/{projectId} is not terminated.');
+  return text.slice(readAt, end + 1).replace(/\s+/g, ' ').trim();
+}
+
 /* ------------------------------------------------------- deployment record */
 
 export interface RulesDeploymentRecord {
@@ -94,6 +120,11 @@ export interface RulesDeploymentRecord {
     rulesetName?: string;
     /** The client-writable project allowlist of the text that is live. */
     clientWritableProjectFields: string[];
+    /**
+     * The read rule of `projects/{projectId}` as the live text writes it.
+     * Optional so that a record written before roadmap 5.4 still parses.
+     */
+    projectDocumentReadRule?: string;
   };
   /**
    * Present only while the working copy differs from what is deployed. The
@@ -106,6 +137,14 @@ export interface RulesDeploymentRecord {
     recordedFor: string;
     addsToClient: string[];
     removesFromClient: string[];
+    /**
+     * The read rule of `projects/{projectId}` in the working copy, when it
+     * differs from the deployed one. Roadmap 5.4 is the first change whose app
+     * half depends on a widened *read* rather than a widened write, and a
+     * record that only listed write fields would have described it as no change
+     * at all.
+     */
+    projectDocumentReadRule?: string;
     note: string;
   };
 }
@@ -133,6 +172,15 @@ export interface RulesDeploymentVerdict {
   /** True while the working copy has not been deployed. */
   pending: boolean;
   direction: RulesDeploymentDirection;
+  /**
+   * True when the working copy's read rule for `projects/{projectId}` is not
+   * the one the record says is live. It does not by itself make the verdict
+   * fail — a read rule that only *narrows* is the same safe direction as a
+   * write field being taken away — but it is the one thing a reader of
+   * `npm run rules:check` has to see, because an app half that depends on a
+   * widened read is broken in production until the deploy.
+   */
+  readRuleChanged: boolean;
 }
 
 /**
@@ -160,6 +208,19 @@ export function checkRulesDeployment(
   const fields = parseClientWritableProjectFields(text);
   const pendingBlock = record.pending;
   const pending = hash !== record.deployed.sha256OfLfNormalisedText;
+  // A text this function cannot find a read rule in is not its business to
+  // reject — it compares two texts, and `parseProjectReadRule` throwing here
+  // would turn every other check in the file into "the parser was unhappy".
+  let readRule: string | null = null;
+  try {
+    readRule = parseProjectReadRule(text);
+  } catch {
+    readRule = null;
+  }
+  const readRuleChanged =
+    readRule !== null &&
+    record.deployed.projectDocumentReadRule !== undefined &&
+    record.deployed.projectDocumentReadRule !== readRule;
 
   if (!pending) {
     if (pendingBlock) {
@@ -173,11 +234,17 @@ export function checkRulesDeployment(
         `${RULES_DEPLOYMENT_RECORD}: deployed.clientWritableProjectFields does not match ${RULES_FILE} — expected ${fields.join(', ')}.`,
       );
     }
+    if (readRuleChanged) {
+      problems.push(
+        `${RULES_DEPLOYMENT_RECORD}: deployed.projectDocumentReadRule does not match ${RULES_FILE} — expected ${readRule}`,
+      );
+    }
     return {
       ok: problems.length === 0,
       problems,
       pending: false,
       direction: pendingBlock ? 'record-ahead-of-file' : 'in-sync',
+      readRuleChanged,
     };
   }
 
@@ -185,7 +252,7 @@ export function checkRulesDeployment(
     problems.push(
       `RULES CHANGED, NOT DEPLOYED, NOT RECORDED — ${RULES_FILE} differs from the text ${RULES_DEPLOYMENT_RECORD} says is live, and nothing says why. Deploy with \`npm run deploy:rules\` (which records it), or, if the deploy has to wait, write it down with \`npm run rules:record -- --pending "<why>"\`.`,
     );
-    return { ok: false, problems, pending: true, direction: 'rules-changed-unrecorded' };
+    return { ok: false, problems, pending: true, direction: 'rules-changed-unrecorded', readRuleChanged };
   }
 
   if (pendingBlock.sha256OfLfNormalisedText !== hash) {
@@ -210,6 +277,21 @@ export function checkRulesDeployment(
       `RULES CHANGED AND WERE NOT DEPLOYED — the app depends on them: ${added.join(', ')} ${added.length === 1 ? 'is' : 'are'} client-writable only in the undeployed ${RULES_FILE}. Deploy first — \`npm run deploy:rules\` — then ship the app.`,
     );
   }
+  // A changed read rule has to be written down in the same breath as the
+  // change. Not writing it down is the failure; writing it down is not,
+  // because narrowing a read is as safe to sit pending as taking a write field
+  // away. Which of the two it is, the two lines say for themselves.
+  if (readRuleChanged && pendingBlock.projectDocumentReadRule !== readRule) {
+    problems.push(
+      `${RULES_DEPLOYMENT_RECORD}: the read rule of /projects/{projectId} changed and the "pending" block does not say so. Record it — pending.projectDocumentReadRule should be ${readRule}`,
+    );
+  }
 
-  return { ok: problems.length === 0, problems, pending: true, direction: 'rules-changed-not-deployed' };
+  return {
+    ok: problems.length === 0,
+    problems,
+    pending: true,
+    direction: 'rules-changed-not-deployed',
+    readRuleChanged,
+  };
 }

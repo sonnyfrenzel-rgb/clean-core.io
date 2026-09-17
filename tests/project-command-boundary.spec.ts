@@ -157,13 +157,18 @@ test.describe('client, server, index and export name the same six fields', () =>
     expect(sorted(REGISTER.baseline.rules.projectDocument.clientWritableFields)).toEqual(ALLOWED);
     // …and the deployment record accounts for the six leaving it.
     const record = DEPLOYMENT.pending ?? DEPLOYMENT.deployed;
-    const removed: string[] = DEPLOYMENT.pending ? DEPLOYMENT.pending.removesFromClient : [];
     expect(record.sha256OfLfNormalisedText).toMatch(/^[0-9a-f]{64}$/);
-    if (DEPLOYMENT.pending) {
-      expect(sorted(removed)).toEqual(sorted(SERVER_ONLY_PROJECT_FIELDS));
-    } else {
-      expect(DEPLOYMENT.deployed.clientWritableProjectFields.filter((f: string) => (SERVER_ONLY_PROJECT_FIELDS as readonly string[]).includes(f))).toEqual([]);
-    }
+    const six = SERVER_ONLY_PROJECT_FIELDS as readonly string[];
+    // This used to read "if there is a pending block, it removes exactly the
+    // six" — true while 0.7 was the only rules change anyone had written down,
+    // and wrong the moment a second one (roadmap 5.4, which widens a *read* and
+    // moves no field at all) sat pending on top of it. The invariant was never
+    // about which change is pending; it is that the six are not client-writable
+    // in the text that is live, in the text in the working copy, and in
+    // anything pending in between.
+    expect(DEPLOYMENT.deployed.clientWritableProjectFields.filter((f: string) => six.includes(f)), 'live').toEqual([]);
+    expect(ALLOWED.filter((f) => six.includes(f)), 'working copy').toEqual([]);
+    expect((DEPLOYMENT.pending?.addsToClient ?? []).filter((f: string) => six.includes(f)), 'pending').toEqual([]);
     // No stage claims to write them from the browser any more.
     for (const stage of REGISTER.stages) {
       for (const field of stage.outputs.clientWrites) {

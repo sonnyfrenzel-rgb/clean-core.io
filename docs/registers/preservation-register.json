@@ -38,11 +38,11 @@
     },
     "rules": {
       "file": "firestore.rules",
-      "sha256OfLfNormalisedText": "9d723a3c3f54fe2c7b15c9825dc4837191761b6cd1c495d6085ef96bedefec34",
+      "sha256OfLfNormalisedText": "88b5fe431436d64e9b78577f35ad14aafe4298bc1a6050223a19ae1d09f38d6d",
       "deploymentRecord": "docs/registers/rules-deployment.json",
       "note": "Hashed after normalising CRLF to LF so the value is the same on Windows and on CI.",
       "projectDocument": {
-        "read": "owner (resource.data.userId == request.auth.uid) or admin",
+        "read": "owner (resource.data.userId == request.auth.uid), or a uid on `readers` — an accepted, not revoked invitation (roadmap 5.4). Not admin: the operator's read was removed on 16.09.2026.",
         "create": "keys exactly within [name, status, userId, createdAt, legacyCode, fromExample]; status in [uploaded, created]",
         "delete": "never from a client — server only, via DELETE /api/projects/{projectId}",
         "clientWritableFields": [
@@ -68,7 +68,7 @@
       },
       "runSubcollection": {
         "path": "projects/{projectId}/runs/{runId}",
-        "read": "owner or admin",
+        "read": "owner only — not admin, and not an invited reader; a reader gets the active run through GET /api/projects/{projectId}",
         "write": "never from a client — `allow write: if false`"
       },
       "changedAt": "2026-09-16",
