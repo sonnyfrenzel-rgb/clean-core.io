@@ -8,8 +8,20 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { viewFromParam, type WorkspaceView } from '@/lib/workspace-model';
+import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
 import WorkspaceShell from '@/components/workspace/WorkspaceShell';
 import type { Project } from '@/lib/types';
+
+/**
+ * The query the build-up of `DESIGN.md` §5.2 answers to.
+ *
+ * *"Nach Code-Import oder Beispiel"* — so the build-up is not what every visit
+ * to a workspace does; it is what the screen that started the analysis asks for
+ * when it sends the reader here ("New project", roadmap 2.7). Without it the
+ * first look goes straight to its end state, which is also what a second visit
+ * gets.
+ */
+const FIRST_LOOK_PARAM = 'first';
 
 /**
  * The workspace of a project — roadmap step 1.4, behind the switch.
@@ -48,8 +60,23 @@ export default function ProjectWorkspacePage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading');
+  // `null` until the browser has been asked. Rendering the build-up and then
+  // removing it would be the one thing a second visit is promised not to see.
+  const [buildUp, setBuildUp] = useState<boolean | null>(null);
 
   const view = viewFromParam(searchParams?.get('view'));
+  const asked = searchParams?.get(FIRST_LOOK_PARAM) === '1';
+
+  useEffect(() => {
+    if (!enabled || !projectId) return;
+    if (!asked) {
+      setBuildUp(false);
+      return;
+    }
+    const seen = firstLookSeen(projectId);
+    setBuildUp(!seen);
+    if (!seen) markFirstLookSeen(projectId);
+  }, [enabled, projectId, asked]);
 
   const setView = useCallback(
     (next: WorkspaceView) => {
@@ -98,7 +125,7 @@ export default function ProjectWorkspacePage() {
     notFound();
   }
 
-  if (state === 'loading') {
+  if (state === 'loading' || buildUp === null) {
     return <div data-workspace-gate="loading" className="py-16" aria-hidden={true} />;
   }
 
@@ -108,6 +135,7 @@ export default function ProjectWorkspacePage() {
       projectId={projectId}
       view={view}
       onViewChange={setView}
+      buildUp={buildUp}
     />
   );
 }
