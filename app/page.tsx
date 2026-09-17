@@ -481,10 +481,22 @@ export default function Home() {
               eyebrow="Three Worked Examples"
               title="See a real ABAP program transformed"
             >
+              {/*
+                This read "Every output below is a real transformation — verified,
+                compiled and tested against Clean-Core Engine {APP_VERSION}". None of
+                those three words had a mechanism behind it: the outputs below are
+                fixed text in a component, there is no ABAP compiler anywhere in this
+                product, and nothing on this page is executed. The green ticks that
+                repeated the claim beside the code ("Service definition compiled",
+                "1 of 1 unit tests passed") are gone for the same reason — a corrected
+                sentence next to a badge that contradicts it is still a contradiction
+                (QA fa9e39148077, 1925189d0606; audit F-16: "compiled and tested"
+                without a named mechanism is not allowed).
+              */}
               Three example programs, end to end: what each one is, what it does as a process, and
-              what the engine turns it into. Every output below is a real transformation &mdash;
-              verified, compiled and tested against Clean-Core Engine {APP_VERSION}. Your own code
-              goes through the same seven steps.
+              what the engine turns it into. The outputs below are fixed examples generated with
+              Clean-Core Engine {APP_VERSION}; nothing on this page was compiled or run. Your own
+              code goes through the same seven steps.
             </SectionHeader>
             <Suspense fallback={null}>
               <TransformationReplay />

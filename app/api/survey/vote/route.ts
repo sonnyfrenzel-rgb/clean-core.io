@@ -3,7 +3,7 @@ import { getAdminDb } from '@/lib/firebase-admin';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { logger, errMessage } from '@/lib/logger';
 import { verifySurveyToken } from '@/lib/survey/token';
-import { docId } from '@/lib/survey/store';
+import { docId, recordAnswer } from '@/lib/survey/store';
 import { getOption, getQuestion, SURVEY_FREETEXT_MAX } from '@/lib/survey/definition';
 
 /**
@@ -95,18 +95,17 @@ export async function POST(req: NextRequest) {
       value = a;
     }
 
-    await ref.set(
-      {
-        campaign: identity.campaign,
-        uid: identity.uid,
-        // Dotted path so one answer never overwrites the others.
-        [`answers.${q}`]: value,
-        [`answeredAt.${q}`]: FieldValue.serverTimestamp(),
-        confirmedAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
+    // Nested maps, merged — the write lives in `lib/survey/store.ts` so a spec can
+    // run it against the emulator and read the document back. It used to be four
+    // lines here with dotted keys, which `set()` stores as literal field names
+    // rather than paths, so no reader ever saw an answer (QA b22563b1cd74).
+    await recordAnswer(ref, {
+      campaign: identity.campaign,
+      uid: identity.uid,
+      questionId: q,
+      value,
+      stamp: FieldValue.serverTimestamp(),
+    });
 
     return NextResponse.json({ ok: true, recorded: q });
   } catch (error) {

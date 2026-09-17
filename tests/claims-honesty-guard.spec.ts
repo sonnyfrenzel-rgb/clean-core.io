@@ -29,6 +29,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
+import { getCloudServiceDetails } from '../components/design/CloudServiceIntegrations';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -243,6 +244,38 @@ test.describe('a signed-in account reading its own project', () => {
     await expect(page.locator('input[placeholder*="Transforming BAPI"]')).toHaveCount(0);
   });
 
+  test('0613631545b2 · the routing panel does not invent checkpoints it never ran', async ({ page }) => {
+    /*
+     * The seeded analysis has no `extensibilityRouting` at all — the ordinary case
+     * when the model returns none. Both this panel and the Confluence export used
+     * to fill the gap with four complete checkpoints and a two-track comparison
+     * written out in the source and selected by one boolean: whether the route
+     * contains "BTP". The reader was shown a "Custom Technical Assessment" of
+     * their own code that nothing had assessed.
+     */
+    await page.goto(`/project/${BTP}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Modernization Strategy' }).click({ timeout: 60000 });
+    await page.waitForSelector('text=Extensibility Decision Matrix', { timeout: 60000 });
+
+    // One for the checkpoints, one for the track comparison: the panel says twice
+    // that it has nothing, where it used to say twice that it had everything.
+    await expect(page.locator('[data-not-determined]').first()).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('[data-not-determined]')).toHaveCount(2);
+
+    const text = await page.locator('body').innerText();
+    for (const invented of [
+      'Transactional Coupling',
+      'UI Paradigm & Customization',
+      'Data & DB Proximity',
+      'Lifecycle & Resource Scaling',
+      'Zero latency database reads on core S/4HANA standard tables',
+      'Highly Compatible',
+      'Partially Compatible',
+    ]) {
+      expect(text, `"${invented}" was written out for an analysis that produced nothing`).not.toContain(invented);
+    }
+  });
+
   test('UX-084 · the first-run guide quotes the header it is describing', async ({ page }) => {
     // What the header actually renders for this account, read from the app.
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
@@ -373,5 +406,150 @@ test.describe('UX-107 — a button does what it says', () => {
     await button.click();
     await page.waitForURL(/[?&]auth=signin/, { timeout: 20_000 });
     await expect(page.locator('input[type="email"]'), 'the sign-in dialog is open').toBeVisible({ timeout: 20_000 });
+  });
+});
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Roadmap 0.2, second pass — the QA full review of a19945ef01dc.
+ *
+ * Four more sentences and one mapping that said more than the product does.
+ * Where a claim had no mechanism behind it the claim went, rather than its
+ * wording: `/how-to` deleted its July screenshots for that reason, and the
+ * showroom's green ticks follow them.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+test.describe('the public pages claim only what the product does', () => {
+  test('fa9e39148077 · the showroom does not call its examples compiled, tested or verified', async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const showroom = page.locator('#showroom');
+    await expect(showroom).toBeVisible({ timeout: 60_000 });
+    const text = await showroom.innerText();
+
+    for (const gone of [
+      'verified, compiled and tested',
+      'CDS test environment created',
+      '1 of 1 unit tests passed',
+      'Service definition compiled',
+      'Schema validated',
+      'Verified against Clean-Core Engine',
+    ]) {
+      expect(text, `"${gone}" came back`).not.toContain(gone);
+    }
+
+    // And it says what these examples are instead.
+    expect(text).toContain('nothing on this page was compiled or run');
+
+    /*
+     * The mechanism, not the six strings: no green success mark may stand beside
+     * a word about compiling, testing or validating. That is what UX-027 took off
+     * the delivery stage, and the same badge pattern had three copies here.
+     * Computed colour, resolved to sRGB by the browser — Tailwind v4 reports
+     * `oklch(...)`.
+     */
+    const greenClaims = await showroom.evaluate((root) => {
+      const ctx = document.createElement('canvas').getContext('2d')!;
+      const green = (colour: string) => {
+        ctx.fillStyle = colour;
+        ctx.fillRect(0, 0, 1, 1);
+        const [r, g, b, a] = Array.from(ctx.getImageData(0, 0, 1, 1).data);
+        return a > 0 && g > r + 24 && g > b + 24;
+      };
+      const claim = /\bcompiled\b|\bvalidated\b|\btests? passed\b|\bverified against\b/i;
+      const negated = /\bnot\b[^.]{0,40}(compiled|run|tested|verified)|\bunverified\b/i;
+      const out: string[] = [];
+      for (const el of Array.from(root.querySelectorAll('*'))) {
+        if (el.children.length > 0) continue;
+        const t = (el.textContent || '').trim();
+        if (!t || !claim.test(t) || negated.test(t)) continue;
+        const style = getComputedStyle(el);
+        if (green(style.color) || green(style.backgroundColor)) out.push(t.slice(0, 80));
+      }
+      return out;
+    });
+    expect(greenClaims, 'a green mark stands beside work the product never did').toEqual([]);
+  });
+
+  test('ce41dce9ccd5 · the whitepaper does not promise a compiled package', async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto('/whitepaper', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#benefits-evidence')).toBeVisible({ timeout: 60_000 });
+    const text = await page.locator('body').innerText();
+    expect(text, 'there is no ABAP compiler in this product').not.toContain('compiled package');
+    expect(text).toContain('to compile, activate and test in your own system');
+  });
+});
+
+test.describe('0613631545b2 · the export writes no evidence the analysis never produced', () => {
+test('0613631545b2 · and the Confluence export carries no invented evidence either', () => {
+  /*
+   * The export is a string built in a click handler and handed to the browser as
+   * a download; there is no rendered surface to measure. So it is read from
+   * source — but not for the sentences: for the four checkpoint names and the
+   * pros and cons that only ever existed as a fallback. If the fallback comes
+   * back, these strings come back with it.
+   */
+  for (const rel of [
+    'app/(app)/project/[projectId]/analyze/page.tsx',
+    'components/analyze/ExtensibilityDecisionMatrix.tsx',
+  ]) {
+    const s = withoutComments(read(rel));
+    for (const invented of [
+      'Transactional Coupling',
+      'UI Paradigm & Customization',
+      'Data & DB Proximity',
+      'Lifecycle & Resource Scaling',
+      'Zero latency database reads on core S/4HANA standard tables',
+      'Absolute lifecycle isolation',
+      "Perfect technical fit.",
+    ]) {
+      expect(s, `${rel} still writes "${invented}" where the analysis produced nothing`).not.toContain(invented);
+    }
+    // And the optional fields are read as optional, with no `||` standing by.
+    expect(s, `${rel} fills in decisionTreeCheckpoints`).not.toMatch(/decisionTreeCheckpoints\s*\|\|/);
+    expect(s, `${rel} fills in comparativeAnalysis`).not.toMatch(/comparativeAnalysis\s*\|\|/);
+  }
+  expect(withoutComments(read('app/(app)/project/[projectId]/analyze/page.tsx')), 'the export says so instead').toContain(
+    'Not determined for this run',
+  );
+});
+});
+
+test.describe('62c08912d745 · a service guide names the client that service speaks', () => {
+  /*
+   * One rule matched `postgres || hana || database` and returned the PostgreSQL
+   * record for all three, so "SAP HANA Cloud Database" handed an architect the
+   * `pg` package and a PostgreSQL connection string. The guide is copyable; it
+   * cannot connect. This is the routing function itself, which is what decides
+   * the drawer's contents.
+   */
+  test('a HANA service gets HANA guidance, not the PostgreSQL package', () => {
+    for (const name of ['SAP HANA Cloud Database', 'HANA Cloud', 'SAP HANA Cloud, HDI container']) {
+      const d = getCloudServiceDetails(name);
+      expect(d.npmPackages, `${name} was handed a PostgreSQL driver`).not.toContain('pg');
+      expect(d.npmPackages, `${name} needs the SAP HANA client`).toContain('@sap/hana-client');
+      expect(d.codeSnippet).not.toContain("require('pg')");
+    }
+  });
+
+  test('PostgreSQL still gets PostgreSQL', () => {
+    const d = getCloudServiceDetails('PostgreSQL on SAP BTP');
+    expect(d.npmPackages).toContain('pg');
+  });
+
+  test('a service that only says "database" is not given a driver by guesswork', () => {
+    const d = getCloudServiceDetails('Managed Database Service');
+    expect(d.npmPackages, 'naming the wrong client is worse than naming none').toEqual(['@sap/xsenv']);
+    expect(d.title).toBe('Cloud Service Binding Integration');
+  });
+
+  test('"S/4HANA" is the ERP system and never routes to a database guide', () => {
+    for (const name of ['SAP S/4HANA Cloud', 'S/4HANA OData Service', 'S4HANA Extension']) {
+      const d = getCloudServiceDetails(name);
+      expect(d.npmPackages, `${name} was read as a database`).not.toContain('@sap/hana-client');
+      expect(d.npmPackages, `${name} was read as a database`).not.toContain('pg');
+    }
   });
 });

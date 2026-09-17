@@ -144,6 +144,35 @@ async function queryExtensionData(userId) {
   }
 }`
   },
+  hanaCloud: {
+    title: 'SAP HANA Cloud Database',
+    details: 'SAP HANA Cloud is the managed database behind an HDI container on SAP BTP. A side-by-side extension binds to its own container, so the extension schema is separate from the S/4HANA core schema while still sitting on the same database technology. Node.js reaches it through the SAP HANA client, not through a PostgreSQL driver.',
+    whyCritical: 'Extension tables belong in the extension’s own HDI container, never in the S/4HANA core schema — that is what keeps an upgrade from colliding with custom data. The binding is injected by the platform, so nothing about the host, schema or certificate is written into the application.',
+    npmPackages: ['@sap/hana-client', '@sap/xsenv'],
+    codeSnippet: `const hana = require('@sap/hana-client');
+const xsenv = require('@sap/xsenv');
+
+// Resolve the HDI container binding the platform injected (VCAP_SERVICES)
+const { db } = xsenv.getServices({ db: { label: 'hana' } });
+const c = db.credentials;
+
+const connection = hana.createConnection();
+connection.connect({
+  serverNode: \`\${c.host}:\${c.port}\`,
+  uid: c.user,
+  pwd: c.password,
+  currentSchema: c.schema,
+  encrypt: 'true',
+  sslValidateCertificate: 'true'
+});
+
+function queryExtensionData(userId) {
+  const stmt = connection.prepare(
+    'SELECT * FROM "EXTENSION_USERS" WHERE "ID" = ?'
+  );
+  return stmt.exec([userId])[0];
+}`
+  },
   // ── SAP-Native / RAP Deep Dives ──────────────────────────────
   cdsView: {
     title: 'Released CDS View Integration',
@@ -270,13 +299,35 @@ try {
   }
 };
 
+/**
+ * "SAP S/4HANA …" is the ERP system, not a database service. The substring `hana`
+ * sits inside it, so any rule that matches on `hana` alone claims every S/4HANA
+ * destination, OData service and extension name as a database.
+ */
+const S4 = /s\/?4\s*hana/;
+
 export const getCloudServiceDetails = (serviceName: string) => {
   const name = serviceName.toLowerCase();
   // BTP / Node.js services
   if (name.includes('xsuaa') || (name.includes('identity') && !name.includes('iam'))) return cloudServiceDetails.xsuaa;
   if (name.includes('destination') || name.includes('connectivity') || name.includes('sdk')) return cloudServiceDetails.destination;
   if (name.includes('mesh') || name.includes('messaging') || name.includes('amqp')) return cloudServiceDetails.eventmesh;
-  if (name.includes('postgres') || name.includes('hana') || name.includes('database')) return cloudServiceDetails.postgresql;
+  /*
+   * One rule used to read `postgres || hana || database` and return the PostgreSQL
+   * guide for all three. "SAP HANA Cloud Database" therefore handed an architect the
+   * `pg` package, PostgreSQL credentials and a PostgreSQL connection — for a service
+   * that speaks none of it (QA 62c08912d745, 498a8c35f988). The guide was not merely
+   * unhelpful; it was copyable, and it cannot connect.
+   *
+   * So each database is matched by its own name, and a service that only says
+   * "database" gets the generic binding guide at the bottom rather than a driver
+   * picked by guesswork. Naming the wrong client is worse than naming none.
+   */
+  if (name.includes('postgres')) return cloudServiceDetails.postgresql;
+  if (name.includes('hana') && !S4.test(name)) return cloudServiceDetails.hanaCloud;
+  // A database with no vendor in its name: the generic service-binding guide,
+  // before the RAP branch below can read the word "service" in it.
+  if (name.includes('database') || /\bdb\b/.test(name)) return cloudServiceDetails.default;
   // SAP-native / RAP services
   if (name.includes('cds') || name.includes('view') || name.includes('i_') || name.includes('projection')) return cloudServiceDetails.cdsView;
   if (name.includes('iam') || name.includes('role') || name.includes('auth')) return cloudServiceDetails.iamRoles;
