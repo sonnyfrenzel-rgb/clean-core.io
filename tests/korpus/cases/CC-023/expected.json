@@ -1,0 +1,407 @@
+{
+  "answerFields": {
+    "cloud_api_surface": "not_usable (KNA1)",
+    "cloud_artefact": "not_activatable (REPORT, PARAMETERS, WRITE)",
+    "known_worst_level": "D (beobachtet: UPDATE KNA1, F01)"
+  },
+  "beleggrad": "konstruiert (synthetisch). Verifiziert sind Syntax und Objekte: UPDATE … SET … WHERE, COMMIT WORK AND WAIT, ROLLBACK WORK, KNA1 mit KUNNR und NAME1; KUNNR trägt über Datenelement/Domäne die Konvertierungsroutine ALPHA (v2 §11.4), ein PARAMETERS … TYPE c LENGTH 10 hat keine Domäne und damit keine Konvertierungsroutine.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        }
+      ],
+      "id": "CC-023-B01",
+      "text": "Im Testmodus (p_test = 'X') wird SIMULATION_ONLY ausgegeben und vor dem UPDATE zurückgekehrt; es findet keine Datenbankänderung statt. Die Vorbelegung 'X' ist ein Default, kein dauerhaftes Schreibverbot: der Benutzer kann sie im Selektionsbild abwählen."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 2,
+          "raw": "source.abap:2",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        }
+      ],
+      "id": "CC-023-B02",
+      "text": "Außerhalb des Testmodus (p_test <> 'X', Zweig ab Zeile 6) wird versucht, NAME1 der KNA1-Zeile zu ändern, deren KUNNR exakt der eingegebenen zehnstelligen Zeichenkette entspricht. Nur bei Treffer (sy-subrc = 0) folgt der Commit-Zweig (B03). p_kunnr ist ohne DDIC-Bezug deklariert und erhält keine ALPHA-Konvertierung (F03): für einen numerischen Kundenschlüssel trifft nur die Eingabe im internen, nullaufgefüllten Format (Vektor 1000 → kein Treffer, 0000001000 → Treffer); ein alphanumerischer Schlüssel braucht keine Nullauffüllung und trifft in der eingegebenen Schreibweise (Gegenvektor ABC123). Ein Treffer ist vom Code nicht garantiert."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10–17",
+          "token": null
+        }
+      ],
+      "id": "CC-023-B03",
+      "text": "Bei sy-subrc = 0 nach dem UPDATE wird COMMIT WORK AND WAIT aufgerufen, sonst ROLLBACK WORK. Eine separate Prüfung des Commit-Ergebnisses ist nicht sichtbar; der Code hat keine weitere fachliche Ergebnisprüfung. Das ist eine Beschreibung, kein Defektbefund."
+    }
+  ],
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "D",
+  "cloud_api_surface": "not_usable (KNA1)",
+  "cloud_artefact": "not_activatable (REPORT, PARAMETERS, WRITE)",
+  "convergence": "v1-Fall (von allen vier Modellreviews gelesen und angegriffen) · Fable KA-102 (ALPHA; v2 §11.4) · Gegenreview REV2-10",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10+1 (Tabellentoken; Sekundäranker: source.abap:10)",
+        "token": 1
+      },
+      "id": "CC-023-F01",
+      "profiles": null,
+      "rule": "R02",
+      "ruleRaw": "R02@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-SQL; S01"
+      ],
+      "statement": "Direktes Schreiben auf SAP-Tabelle KNA1 ist D; der gelistete Lesenachfolger I_CUSTOMER ersetzt dieses Update nicht. D hängt am Vorhandensein des nicht unterstützten Schreibwegs im Programm, nicht an einem beobachteten erfolgreichen Schreibversuch — der Testmodus umgeht ihn nur im gewählten Pfad."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 12,
+        "raw": "source.abap:12",
+        "token": null
+      },
+      "id": "CC-023-F02",
+      "profiles": null,
+      "rule": "R19",
+      "ruleRaw": "R19@1.1.0; R25@2.1.0 (Achsen 1, 4)",
+      "ruleVersion": "1.1.0;",
+      "severity": "info",
+      "sources": [
+        "SAP-FLOW",
+        "SAP-CALL",
+        "SAP-SCREEN; S09"
+      ],
+      "statement": "Transaktionsabschluss ist Teil der Semantik; der Testmodus (Zeile 6) überspringt den gesamten Schreibpfad. COMMIT WORK AND WAIT beendet die Datenbank-LUW (db_luw); AND WAIT betrifft die Achse dispatch und hat hier nichts abzuwarten — es gibt keine Verbuchungsregistrierung. Es ist kein Beleg für die fachliche Richtigkeit der Änderung."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 2,
+        "raw": "source.abap:2 (Sekundäranker: source.abap:10+9, Token @p_kunnr)",
+        "token": null
+      },
+      "id": "CC-023-F03",
+      "profiles": null,
+      "rule": "R18",
+      "ruleRaw": "R18@1.0.0 (Regelträger vorläufig — siehe Offene Prüferfragen)",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-ABAPDOC (Konvertierungsroutinen); S15"
+      ],
+      "statement": "p_kunnr ist generisch c LENGTH 10 ohne DDIC-Bezug: keine Konvertierungsroutine am Eingabefeld, während KNA1-KUNNR ALPHA trägt. Ob WHERE kunnr = @p_kunnr trifft, ist datenabhängig: ein numerischer Schlüssel nur in interner, nullaufgefüllter Form; ein alphanumerischer Schlüssel ohne Nullauffüllung."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-023",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku (S01 Leveldefinition, S15 ALPHA-Konvertierung)",
+  "known_worst_level": "D (beobachtet: UPDATE KNA1, F01)",
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10+1 (Sekundäranker: source.abap:10)",
+        "token": 1
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNA1",
+        "objectType": "TABL",
+        "tadirObjName": "KNA1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNA1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMER",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "write"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Regelträger für F03: reicht R18 (Vorschlag des Reviews), oder braucht das Register einen eigenen Eintrag „Eingabefeld ohne Konvertierungsroutine gegen ALPHA-Schlüsselfeld\"? v2 §11.4 hat gemeldet, dass keine v1-Regel den Befund trägt. Entscheidung beim Zusammenführer.",
+    "Welche unterstützte fachliche Schreib-API ersetzt das Update im Zielrelease (W01)? Nicht untersucht — weder vom Autor noch vom Review.",
+    "Native Verprobung der vier Prüfvektoren: bisher nur Zeichenvergleich (Autor) und Python-Nachstellung (Review), kein SAP-Lauf."
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "t"
+      },
+      {
+        "condition": "p_test = 'X'",
+        "from": "t",
+        "to": "so"
+      },
+      {
+        "condition": "always",
+        "from": "so",
+        "to": "x"
+      },
+      {
+        "condition": "p_test <> 'X'",
+        "from": "t",
+        "to": "u"
+      },
+      {
+        "condition": "always",
+        "from": "u",
+        "to": "g"
+      },
+      {
+        "condition": "sy-subrc = 0",
+        "from": "g",
+        "to": "c"
+      },
+      {
+        "condition": "sy-subrc <> 0",
+        "from": "g",
+        "to": "r"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "ok"
+      },
+      {
+        "condition": "always",
+        "from": "r",
+        "to": "no"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "t",
+        "meaning": "Testmodus?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "so",
+        "meaning": "SIMULATION_ONLY melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "Simulation ohne Schreiben",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "u",
+        "meaning": "Name ändern — Versuch; Treffer eingabeabhängig (B02)",
+        "type": "write"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Update erfolgreich?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "COMMIT WORK AND WAIT",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "r",
+        "meaning": "ROLLBACK WORK",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "ok",
+        "meaning": "Commit melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        "id": "no",
+        "meaning": "Kein Update melden",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "candidate / not independently signed.",
+  "title": "Direktes SAP-UPDATE mit Testmodus: D trotz CDS-Nachfolger"
+}

@@ -1,0 +1,156 @@
+{
+  "answerFields": {
+    "known_worst_level": "B — keine SAP-Abhängigkeit im gelieferten Scope."
+  },
+  "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert. DEFINE … END-OF-DEFINITION mit Platzhaltern &1, &2 und Aufruf mit Literalen existiert nach Autorenwissen. Das Review nennt als Quelle „Korpuskonvention\".",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": "e1",
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7#e1 (Bindung &1 = 'A', Statement :3)",
+          "token": null
+        },
+        {
+          "expressionPath": "e2",
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7#e2 (Bindung &2 = 'B', Statement :4)",
+          "token": null
+        }
+      ],
+      "id": "CC-066-B01",
+      "text": "Es wird zuerst A, dann B je auf einer neuen Zeile ausgegeben."
+    }
+  ],
+  "classes": [
+    "K14",
+    "K02"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_applicable",
+  "cloud_artefact": null,
+  "convergence": "Gegenreview CE-06 / REV2-13 (Regelurteil R27 „hält nur unter Bedingung\": „eine Makroaufrufstelle kann mehrere Wirkungsstellen enthalten\") · Gegenfall zum Wortlaut R27@2.0.0 („Wirkungsort ist die Aufrufstelle\") und Ergänzung zu CC-042 (zwei Aufrufstellen, je eine Wirkung) und CC-043 (Kettensatz: Tokenoffset) · Modellreviews 16.09.: GLM A-035 (Anker auf Definition und Aufruf), Grok H-006, Fable KA-001, DeepSeek CC-GAP-020 nennen Makros; kein Modell nannte zwei gleichartige Wirkungen an einer Aufrufstelle.",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": "e1",
+        "file": "source.abap",
+        "line": 7,
+        "raw": "source.abap:7#e1 und source.abap:7#e2 (Herkunft :3 bzw. :4 als Sekundäranker)",
+        "token": null
+      },
+      "id": "CC-066-F01",
+      "profiles": null,
+      "rule": "R27",
+      "ruleRaw": "R27@2.1.0 (Fassung nach REV2-13)",
+      "ruleVersion": "2.1.0",
+      "severity": "medium",
+      "sources": [
+        "Korpuskonvention (Härtungsstudie F05; REV2-13)"
+      ],
+      "statement": "Ein Makroaufruf expandiert zu zwei Statements gleicher Wirkungsart (Ausgabe) an derselben Aufrufstelle. Ankeridentität = Aufrufstelle plus Expansionsordinal, mit der Definitionszeile als Herkunft; die Aufrufstelle allein oder ein Tokenoffset identifiziert die Wirkung nicht. Zwei Knoten, zwei Anker, feste Reihenfolge. Kein A–D-Befund; Level B nach R03."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:7 — Nicht ein Knoten und nicht ein Anker für zwei Ausgaben (R27@2.0.0-Lesart „Wirkungsort ist die Aufrufstelle\" ohne Ordinal — die Lesart, unter der die beiden Wirkungen zusammenfallen). Zwei Knoten mit Typ output und Quelle source.abap:7 ohne Ordinal sind eine mehrdeutige Signatur (Prüfung F05) und werden abgewiesen.",
+    "source.abap:3, source.abap:4 — Kein Knoten und kein Befund mit Primäranker an der Definition; das bleibt richtig aus CC-042. Die Definition ist Herkunft (Sekundäranker).",
+    "source.abap:7 — Nicht als opaker Aufruf: das Makro ist im Slice definiert und expandierbar.",
+    "source.abap:7 — two_outputs nicht als PERFORM oder Methodenaufruf lesen; 'A' 'B' sind Makroargumente, keine Parameter eines Unterprogramms; kein R13a-„Literal ohne Konsument\" — die Literale werden zu Statementteilen.",
+    "Kein dritter Knoten; die Reihenfolge A vor B ist Teil des Sollvertrags."
+  ],
+  "id": "CC-066",
+  "independence": [
+    "gegenreview"
+  ],
+  "independenceRaw": "gegenreview",
+  "known_worst_level": "B — keine SAP-Abhängigkeit im gelieferten Scope.",
+  "objects": [],
+  "openReviewerQuestions": [
+    "P1: Welche Notation für das Expansionsordinal soll korpusweit gelten (7#e1, 7+0/1, expansion_stack nach REV2-13)? Dieser Fall benutzt #e1/#e2 als Vorschlag; die Konvention setzt der Zusammenführer (wie CC-043 P1 für den Tokenoffset).",
+    "P2: Wie ist ein verschachteltes Makro (Makro ruft Makro) zu ankern — Ordinalpfad 7#e1.e2? Nicht gebaut; das Review nennt expansion_stack.",
+    "P3: Bestätigt die Makrosemantik, dass die Expansion an Zeile 7 genau WRITE / 'A'. und WRITE / 'B'. lautet (Ersetzung vor der Syntaxprüfung; die Anführungszeichen der Argumente bleiben erhalten)?",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "o1"
+      },
+      {
+        "condition": "always",
+        "from": "o1",
+        "to": "o2"
+      },
+      {
+        "condition": "always",
+        "from": "o2",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": "e1",
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7#e1 (Herkunft :3)",
+          "token": null
+        },
+        "id": "o1",
+        "meaning": "A ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": "e2",
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7#e2 (Herkunft :4)",
+          "token": null
+        },
+        "id": "o2",
+        "meaning": "B ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Ein Makroaufruf, zwei Wirkungsstellen: die Aufrufstelle allein identifiziert die Wirkung nicht (Gegenfall zu R27, Partner von CC-042/CC-043)"
+}

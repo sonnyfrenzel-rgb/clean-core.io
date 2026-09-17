@@ -1,0 +1,205 @@
+{
+  "answerFields": {
+    "known_worst_level": "B — keine SAP-Abhängigkeit im gelieferten Scope."
+  },
+  "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert (native_compile: NOT_RUN). Die Syntaxelemente (Stringtemplate mit eingebettetem funktionalem Methodenaufruf, CLASS-DATA, CLASS-METHODS … RETURNING VALUE(…), Inline-Deklaration) existieren nach Autorenwissen; der erwartete Zählerstand 1 folgt aus der dokumentierten Sprachsemantik (S12), nicht aus einem Lauf.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        }
+      ],
+      "id": "CC-061-B01",
+      "text": "Beim Auswerten des Templates wird tick genau einmal aufgerufen; der Zähler steigt von 0 auf 1; der gelieferte Text „tick\" wird nicht weiterverwendet."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        }
+      ],
+      "id": "CC-061-B02",
+      "text": "Der Zählerstand wird ausgegeben; Sollwert 1."
+    }
+  ],
+  "classes": [
+    "K13",
+    "K02"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_applicable",
+  "cloud_artefact": null,
+  "convergence": "Gegenreview CE-01 / REV2-05 (Regelurteil R13a „hält nicht\") · Gegenfall zu CC-016 (Zeile 7) und zur R13a-Begründung in CC-034 · Modellreviews 16.09.: kein Modell nannte die Auswertung eingebetteter Ausdrücke; Grok führt „Template-Call\" nur als Ankerproblem in seiner Lückentabelle (§4, „Zeilenanker\"), Fable KA-007 betrifft Lexergrenzen von Templates — beides verwandt, nicht dasselbe.",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 14,
+        "raw": "source.abap:14 (sek. :14 eingebetteter Ausdruck { lcl_counter=>tick( ) }; Rumpf :8–11; Seiteneffekt :9)",
+        "token": null
+      },
+      "id": "CC-061-F01",
+      "profiles": null,
+      "rule": "R13a",
+      "ruleRaw": "R13a@2.1.0 (Fassung nach REV2-05)",
+      "ruleVersion": "2.1.0",
+      "severity": "medium",
+      "sources": [
+        "S12"
+      ],
+      "statement": "Das Stringtemplate enthält einen eingebetteten Ausdruck mit funktionalem Methodenaufruf. Der Aufruf wird bei der Auswertung des Templates ausgeführt — ohne jeden späteren Konsumenten des erzeugten Strings (unused_text wird nicht weiterverwendet). Inert sind nur die Textsegmente eines Templates (hier: keine). Der Aufruf und sein Seiteneffekt (calls + 1) gehören in Aufrufgraph und Skelett. Kein A–D-Befund; Level B nach R03."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:14 — Nicht „Stringtemplate ohne Konsument ist kein Statement\" (R13a@2.0.0; CC-016-Lesart „Stringtemplate enthält keinen ausgeführten Aufruf\"). CC-016 bleibt richtig: dort ist der eingebettete Ausdruck ein Variablenlesen ({ lv_text }) und der Rest Text. Hier ist der eingebettete Ausdruck ein Aufruf.",
+    "source.abap:14 — Kein R13b-Befund: es gibt keinen interpretierenden Konsumenten (kein ADBC, kein GENERATE, kein dynamisches SQL). Der Aufruf ist gewöhnliches ABAP innerhalb des Ausdrucks, kein „Literal wird Code\".",
+    "source.abap:14 — Nicht als toten Code oder entfernbare Zuweisung werten, weil unused_text unbenutzt ist: die rechte Seite hat einen Seiteneffekt.",
+    "source.abap:14 — Kein R06/R07-Befund „dynamischer Aufruf\": Klasse und Methode stehen statisch.",
+    "source.abap:10, source.abap:14 — Kein Phantomobjekt aus dem Text tick.",
+    "source.abap:15 — Kein Fachsatz „es wird 0 ausgegeben\"; das wäre die Folge der v2-Lesart, die den Aufruf verliert."
+  ],
+  "id": "CC-061",
+  "independence": [
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "gegenreview · sap-doku",
+  "known_worst_level": "B — keine SAP-Abhängigkeit im gelieferten Scope.",
+  "objects": [],
+  "openReviewerQuestions": [
+    "Bestätigt der Prüfer Einmaligkeit und Ort der Auswertung (genau ein Aufruf je Template-Auswertung, an Zeile 14)? Das Gegenreview hat nicht ausgeführt; S12 beschreibt die Semantik.",
+    "Soll R13a in der Neufassung den eingebetteten Ausdruck als eigenen Begriff führen („Ausdrücke werden ausgewertet, Textsegmente sind inert\") oder als Ausnahme der Literalregel? Der Fall trägt beides gleich.",
+    "Ist ein Aufruf mit Seiteneffekt im Template ein eigener Befund oder nur ein Knoten im Skelett? Der Fall führt ihn als F01 mit Schwere medium, weil eine Engine, die ihn verliert, den Aufrufgraph verliert.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "t"
+      },
+      {
+        "condition": "call (eingebetteter Ausdruck)",
+        "from": "t",
+        "to": "a"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "r"
+      },
+      {
+        "condition": "return nach :14",
+        "from": "r",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "o",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "t",
+        "meaning": "Template auswerten; der eingebettete Ausdruck ruft lcl_counter=>tick",
+        "type": "call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "Zähler erhöhen (Seiteneffekt)",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "r",
+        "meaning": "Text liefern",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Zähler ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Stringtemplate mit eingebettetem Methodenaufruf: der Seiteneffekt braucht keinen Konsumenten (Gegenfall zu CC-016)"
+}

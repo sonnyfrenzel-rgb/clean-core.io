@@ -1,0 +1,159 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        }
+      ],
+      "id": "CC-021-B01",
+      "text": "Der Report benötigt das nicht gelieferte Include zcc_ref_021_rules."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        }
+      ],
+      "id": "CC-021-B02",
+      "text": "Betrag und Ergebnisfeld werden an determine_route übergeben; die eigentliche Regel ist unbekannt."
+    }
+  ],
+  "classes": [
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 4,
+        "raw": "source.abap:4",
+        "token": null
+      },
+      "id": "CC-021-F01",
+      "profiles": null,
+      "rule": "R16",
+      "ruleRaw": "R16@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-OO"
+      ],
+      "statement": "Include nicht geliefert; FORM-Signatur und Verhalten nicht als bekannt ausgeben."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-021",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 4,
+        "raw": "source.abap:4",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCC_REF_021_RULES",
+        "objectType": "PROG",
+        "tadirObjName": "ZCC_REF_021_RULES",
+        "tadirObject": "PROG"
+      },
+      "name": "ZCC_REF_021_RULES",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": [],
+      "usage": "missing_include"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Exaktes Include mit Quellhash beschaffen",
+    "FORM-Signatur und Datenfluss des CHANGING-Parameters prüfen",
+    "Anker und Skelett nach Include-Ergänzung neu freigeben",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "intentionally_incomplete",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "p"
+      },
+      {
+        "condition": "normal return",
+        "from": "p",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start bei vollständig aktiviertem System",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "p",
+        "meaning": "Unbekannte FORM",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Ergebnis nach Rückkehr",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Fehlendes INCLUDE: keine erfundene Kreditregel"
+}

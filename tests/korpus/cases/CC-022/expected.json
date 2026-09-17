@@ -1,0 +1,161 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        }
+      ],
+      "id": "CC-022-B01",
+      "text": "Ein statisch benannter Partneraufruf erhält den Betrag25000."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        }
+      ],
+      "id": "CC-022-B02",
+      "text": "Der Rückgabewert wird ausgegeben; die Partnerimplementierung bleibt unbekannt."
+    }
+  ],
+  "classes": [
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 4,
+        "raw": "source.abap:4",
+        "token": null
+      },
+      "id": "CC-022-F01",
+      "profiles": null,
+      "rule": "R16",
+      "ruleRaw": "R16@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-OO"
+      ],
+      "statement": "Partnerklasse im expliziten /ACME/-Fixture-Namespace fehlt. Nicht allein wegen Nicht-Z-Präfix als SAP-Objekt C einstufen."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:4 — Kein direkter Tabellenzugriff und keine begründete SAP-intern-Einstufung."
+  ],
+  "id": "CC-022",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 4,
+        "raw": "source.abap:4",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "/ACME/CL_ROUTE",
+        "objectType": "CLAS",
+        "tadirObjName": "/ACME/CL_ROUTE",
+        "tadirObject": "CLAS"
+      },
+      "name": "/ACME/CL_ROUTE",
+      "owner": "partner",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": [],
+      "usage": "missing_partner_class"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Ownership und freigegebenen Vertrag des Partner-Namespace dokumentieren",
+    "Partnerquelle oder belastbare externe API-Spezifikation beschaffen",
+    "Fehlende Partnerquelle nie als bekannte SAP-interne Implementierung darstellen",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "intentionally_incomplete",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "p"
+      },
+      {
+        "condition": "normal return",
+        "from": "p",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "p",
+        "meaning": "Partnerregel aufrufen",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Rückgabe ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Partner-Namespace: fehlende Quelle ist kein SAP-internes C"
+}

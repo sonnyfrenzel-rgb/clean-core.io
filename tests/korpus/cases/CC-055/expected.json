@@ -1,0 +1,347 @@
+{
+  "answerFields": {
+    "known_worst_level": "nicht behauptet — das Innere der Transaktion ist opak; C ist das Urteil über die sichtbare Abhängigkeit, kein Urteil über SAPMF02D."
+  },
+  "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        }
+      ],
+      "id": "CC-055-B01",
+      "text": "Für den eingegebenen Kunden wird die Anlage über die Transaktion XD01 mit dem eingegebenen Namen angestoßen und synchron verbucht; ob und was persistiert wird, entscheidet die aufgerufene Transaktion — im Ausschnitt gibt es keinen COMMIT und keinen Erfolgsnachweis außer dem Fehlen einer E-Meldung."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 21,
+          "raw": "source.abap:21",
+          "token": null
+        }
+      ],
+      "id": "CC-055-B02",
+      "text": "Enthält die Meldungstabelle eine Fehlermeldung, wird BDC_ERROR ausgegeben, sonst BDC_DONE."
+    }
+  ],
+  "classes": [
+    "K17"
+  ],
+  "classic_level": "C",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "Fable KA-059 · DeepSeek CC-GAP-006 · Fable-Lücke L9 · Grok-Lückenzeile „Native/dynamischer Code: R13-Vorrang gegen Ausführung\" (verwandt)",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 14,
+        "raw": "source.abap:14 (sek. :14+2 Literal 'XD01')",
+        "token": null
+      },
+      "id": "CC-055-F01",
+      "profiles": null,
+      "rule": "R34",
+      "ruleRaw": "R34@2.0.0-candidate.1",
+      "ruleVersion": "2.0.0-candidate.1",
+      "severity": "high",
+      "sources": [
+        "ABAP-KEYDOC (CALL TRANSACTION",
+        "Datenbank-LUW)",
+        "SAP-LEVEL"
+      ],
+      "statement": "Programmübergreifend: SAP-Transaktion XD01 per Batch-Input — Systemgrenze, external_program-Knoten, opak. Das Schreiben (Kundenstamm) geschieht im Aufruf, nicht sichtbar; UPDATE 'S' = synchrone Verbuchung vor Rückkehr; implizite Commit-Semantik nach R25. Abhängigkeit auf eine nicht freigegebene Transaktion und deren Dynpro-Folge: C. Kein CDS-Nachfolger. Im Zielprofil durch BP abgelöst (Fixture)."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 7,
+        "raw": "source.abap:7 (sek. :8 'SAPMF02D', '0100'; :9 'RF02D-KUNNR'; :11 '0110'; :12 'KNA1-NAME1'; :13 '=UPDA')",
+        "token": null
+      },
+      "id": "CC-055-F02",
+      "profiles": null,
+      "rule": "R13b",
+      "ruleRaw": "R13b@2.0.0-candidate.1",
+      "ruleVersion": "2.0.0-candidate.1",
+      "severity": "high",
+      "sources": [
+        "ABAP-KEYDOC (CALL TRANSACTION USING)",
+        "SAP-CALL"
+      ],
+      "statement": "Literale mit Konsument (BDC-Felder, konsumiert durch CALL TRANSACTION USING): Abhängigkeiten auf Programm SAPMF02D, Dynpros 0100/0110, Dynprofelder und Funktionscodes — nicht Text. Bricht bei jeder UI-Änderung."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:12 — 'KNA1-NAME1' ist kein UPDATE kna1: kein R02-Befund, kein D aus dem Feldnamen.",
+    "source.abap:14 — Nicht „keine Befunde, B\": ein Batch-Input ist keine SAP-abhängigkeitsfreie Standard-ABAP-Zeile.",
+    "source.abap:14 — Kein D „Anti-Clean-Core\": SAP-LEVEL nennt Batch-Input nicht unter D; die Einstufung C ist ein Kandidat (Prüferfrage), D wäre erfunden.",
+    "source.abap:21 — BDC_DONE ist kein Nachweis „Kunde angelegt\": keine E-Meldung ist kein Erfolgsbeweis (Abbruch ohne E-Meldung, Warnungen, Umleitung im Ziel)."
+  ],
+  "id": "CC-055",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview (regel-ebene) · sap-doku — REVIEW-2.0.1 (16.09.2026), nicht blind; Urteile zu R25 („CALL TRANSACTION USING/BDC separat\", S24) und R34, Fall selbst nicht gelesen; sap-doku: S06 (CALL TRANSACTION beendet die Datenbank-LUW nicht; neue SAP-LUW), S33 (UPDATE 'S' ≙ COMMIT WORK AND WAIT in der gerufenen Transaktion) nach Lesung des Regelautors",
+  "known_worst_level": "nicht behauptet — das Innere der Transaktion ist opak; C ist das Urteil über die sichtbare Abhängigkeit, kein Urteil über SAPMF02D.",
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 14,
+        "raw": "source.abap:14",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "not_observed_in_extract",
+      "identity": {
+        "objectKey": "XD01",
+        "objectType": "TRAN",
+        "tadirObjName": "XD01",
+        "tadirObject": "TRAN"
+      },
+      "name": "XD01",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "exists_identity_not_recorded",
+      "successors": null,
+      "usage": "call_transaction_batch_input"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 7,
+        "raw": "source.abap:7 (sek",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "not_observed_in_extract",
+      "identity": {
+        "objectKey": "SAPMF02D",
+        "objectType": "PROG",
+        "tadirObjName": "SAPMF02D",
+        "tadirObject": "PROG"
+      },
+      "name": "SAPMF02D",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_applicable",
+      "successors": null,
+      "usage": "bdc_target_program"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Level C oder D? SAP-LEVEL nennt Batch-Input nicht ausdrücklich. Der Fall stuft die Abhängigkeit auf eine nicht freigegebene Transaktion wie ein nicht freigegebenes Objekt ein (C). R34 vergibt kein Level — das ist eine Lücke im Regelregister, die der Zusammenführer schließen muss.",
+    "Ist XD01 in S/4HANA 2023 gesperrt, umgeleitet oder mit Meldung abgewiesen? Der Fixture-Satz „durch BP abgelöst\" ist erinnert, die genaue Mechanik nicht belegt; keine SAP-Note wird hier erfunden.",
+    "CALL TRANSACTION … USING ohne WITH AUTHORITY-CHECK / WITHOUT AUTHORITY-CHECK ist seit 7.40 obsolet; ob eine S_TCODE-Prüfung auf XD01 erfolgt, hängt von Systemeinstellungen ab. Soll das ein eigener R28-Befund sein („Berechtigungsverhalten nicht im Code festgelegt\")? Der Autor hat ihn nicht aufgenommen, um den Fall auf eine Ursache zu halten.",
+    "Verursacht CALL TRANSACTION … MODE 'N' im Zielprofil dieselben impliziten Datenbank-Commits wie ein Dialogaufruf (Dialogschrittwechsel)? R25/R34 setzen das; die Schlüsselwortdokumentation zur Datenbank-LUW ist die Prüfstelle.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "b"
+      },
+      {
+        "condition": "always",
+        "from": "b",
+        "to": "x"
+      },
+      {
+        "condition": "Rückkehr mit Meldungstabelle",
+        "from": "x",
+        "to": "r"
+      },
+      {
+        "condition": "always",
+        "from": "r",
+        "to": "g"
+      },
+      {
+        "condition": "sy-subrc = 0",
+        "from": "g",
+        "to": "e1"
+      },
+      {
+        "condition": "sy-subrc <> 0",
+        "from": "g",
+        "to": "e2"
+      },
+      {
+        "condition": "always",
+        "from": "e1",
+        "to": "done"
+      },
+      {
+        "condition": "always",
+        "from": "e2",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "b",
+        "meaning": "Batch-Input-Mappe füllen (Literale sind Abhängigkeiten, F02)",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "XD01 per Batch-Input: opak, eigene SAP-LUW, implizite Commit-Semantik, synchrone Verbuchung",
+        "type": "external_program"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        "id": "r",
+        "meaning": "Fehlermeldung suchen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Fehlermeldung vorhanden?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        "id": "e1",
+        "meaning": "BDC_ERROR melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 21,
+          "raw": "source.abap:21",
+          "token": null
+        },
+        "id": "e2",
+        "meaning": "BDC_DONE melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 22,
+          "raw": "source.abap:22",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Batch-Input auf XD01: Literale werden Abhängigkeiten, das Schreiben geschieht im Aufruf"
+}

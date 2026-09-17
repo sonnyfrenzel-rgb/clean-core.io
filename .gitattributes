@@ -14,3 +14,13 @@
 # Firestore rules are hashed LF-normalised by the preservation register and
 # deployed as text; a CRLF working copy makes the hash disagree with itself.
 *.rules text eol=lf
+
+# The reference corpus is held together by hashes: every case source is checked
+# against the `Quellenhash:` its case declares, and `manifest.json` carries the
+# SHA-256 of the case book it was built from. All three are computed over the
+# LF form, so a CRLF working copy would make the corpus disagree with itself in
+# exactly the way the workflow files did above.
+# The appendix carries its own `MANIFEST.sha256.json` over its own files, so it
+# gets the same treatment rather than a CRLF copy that fails its own verifier.
+docs/korpus/** text eol=lf
+tests/korpus/** text eol=lf

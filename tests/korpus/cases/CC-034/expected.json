@@ -1,0 +1,656 @@
+{
+  "answerFields": {
+    "cloud_api_surface": "not_usable (KNA1)",
+    "cloud_artefact": "not_activatable (REPORT, PARAMETERS, WRITE; zusätzlich Native SQL auf KNA1)",
+    "known_worst_level": "D (beobachtet: nicht unterstützter KNA1-Schreibweg, F02)"
+  },
+  "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        }
+      ],
+      "id": "CC-034-B01",
+      "text": "Bei initialem p_kunnr wird NO_KEY ausgegeben und vor dem SQL-Aufbau zurückgekehrt; es wird kein SQL gebaut und nichts geschrieben."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 2,
+          "raw": "source.abap:2",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        }
+      ],
+      "id": "CC-034-B02",
+      "text": "Nach dem Guard (Zeile 7) wird ein UPDATE-Text gebaut, der NAME1 in KNA1 für den eingegebenen Kunden im aktuellen Mandanten ändern soll (beabsichtigter Filter MANDT = sy-mandt AND KUNNR = p_kunnr; der Mandant steht explizit im Text, weil Native SQL keinen automatischen Mandantenfilter hat, S11), und in Zeile 15 ausgeführt. Drei Bedingungen: (1) der Schlüsselguard wurde passiert; (2) die Operation ist ein Versuch — ein Treffer ist nicht garantiert (Nulltreffer landet in B04; bei numerischem Schlüssel ohne Nullauffüllung kein Treffer, vgl. CC-023-F03); (3) der tatsächlich betroffene Zeilenscope ist eingabeabhängig: weil p_name und p_kunnr ungeprüft in den interpretierten Text eingesetzt werden (F03), garantiert der Code die Begrenzung auf diesen Kunden und diesen Mandanten nicht — eine Eingabe innerhalb der 35 Zeichen von p_name kann den WHERE-Filter aufheben. Bei nicht manipulierten, im internen Format passenden Werten wird versucht, genau die passende Zeile zu ändern."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        }
+      ],
+      "id": "CC-034-B03",
+      "text": "Wirft die Datenbank eine SQL-Ausnahme, wird ROLLBACK WORK ausgeführt, DB_ERROR ausgegeben und abgebrochen. Zurückgerollt wird die aktuelle Datenbank-LUW der Standardverbindung; aus dieser LUW ist nichts persistiert. Über frühere, bereits abgeschlossene LUWs sagt das nichts."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 21,
+          "raw": "source.abap:21",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 22,
+          "raw": "source.abap:22",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 26,
+          "raw": "source.abap:26",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 27,
+          "raw": "source.abap:27",
+          "token": null
+        }
+      ],
+      "id": "CC-034-B04",
+      "text": "Sind null Zeilen betroffen (lv_rows = 0), folgt ROLLBACK WORK und NO_UPDATE; sonst wird mit COMMIT WORK (Zeile 26) die Datenbank-LUW abgeschlossen und UPDATE_COMMITTED ausgegeben. Der Code prüft nicht auf genau eine betroffene Zeile (lv_rows <> 0, nicht = 1) und belegt keine Einhaltung des beabsichtigten Kunden-/Mandantenscopes (B02). Dass COMMIT WORK den ADBC-Update auf der Standardverbindung einschließt, ist mit S08/S10 belegt, nicht nativ ausgeführt."
+    }
+  ],
+  "classes": [
+    "K13",
+    "K02",
+    "K01"
+  ],
+  "classic_level": "D",
+  "cloud_api_surface": "not_usable (KNA1)",
+  "cloud_artefact": "not_activatable (REPORT, PARAMETERS, WRITE; zusätzlich Native SQL auf KNA1)",
+  "convergence": "Fable KA-018 (ausgeschrieben §3.2) · Grok H-013 · GLM A-007 (Native-SQL-Klasse) · DeepSeek: keine · Gegenreview REV2-04 (Fachsatz), REV2-05 (Abgrenzung zu CE-01), REV2-07 (Injektionsbefund)",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 15,
+        "raw": "source.abap:15",
+        "token": null
+      },
+      "id": "CC-034-F01",
+      "profiles": null,
+      "rule": "R13b",
+      "ruleRaw": "R13b@2.1.0 (Rolle a: interpretiertes SQL)",
+      "ruleVersion": "2.1.0",
+      "severity": "high",
+      "sources": [
+        "SAP-ABAPDOC",
+        "SAP-SQL; S10",
+        "S12"
+      ],
+      "statement": "Das Stringtemplate aus Zeile 11 wird von CL_SQL_STATEMENT->EXECUTE_UPDATE als SQL ausgeführt. Der Text ist Statement, nicht Text; Level und Befund folgen dem Konsumenten. Kein R13a-Negativfall. Die eingebetteten Ausdrücke { p_name }, { sy-mandt }, { p_kunnr } sind Datenobjekte ohne Aufruf — die Templateauswertung selbst (Zeile 11) hat keinen Seiteneffekt (R13a@2.1.0: eingebettete Ausdrücke werden ausgewertet, hier gibt es nichts auszuführen); das unterscheidet diesen Fall von CE-01 des Reviews, im Korpus CC-061, wo ein funktionaler Methodenaufruf im Template bereits bei der Auswertung läuft. Sekundäranker: source.abap:11–12 (Templatezeilen). Verbunden mit F03 über denselben Datenfluss."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 15,
+        "raw": "source.abap:15",
+        "token": null
+      },
+      "id": "CC-034-F02",
+      "profiles": null,
+      "rule": "R02",
+      "ruleRaw": "R02@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-SQL; S01",
+        "S19"
+      ],
+      "statement": "Direktes, nicht unterstütztes Schreiben auf SAP-Tabelle KNA1 per Native SQL auf der stipulierten Standardverbindung: D. I_CUSTOMER ist Lesenachfolger, keine Schreib-API; eine eigene Klasse um CL_SQL_STATEMENT ändert das Level nicht. D folgt aus dem belegten KNA1-Schreibweg, nicht aus einem geratenen Freigabestatus der Klasse."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 11,
+        "raw": "source.abap:11 (Textaufbau, Eingabefluss; Sekundäranker: source.abap:2, :3, :15)",
+        "token": null
+      },
+      "id": "CC-034-F03",
+      "profiles": null,
+      "rule": "R28",
+      "ruleRaw": "R28@2.1.0 (Fünf-Teile-Struktur; Injektion = Eingabe als Text in interpretiertem SQL)",
+      "ruleVersion": "2.1.0",
+      "severity": "high",
+      "sources": [
+        "SAP-ABAPDOC; S10"
+      ],
+      "statement": "Aussageklasse security_and_authorization — Beobachtung: p_name und p_kunnr werden ohne Escaping in den interpretierten SQL-Text eingesetzt (Injektion). Datenfluss: Selektionsbild → Template (Zeile 11) → EXECUTE_UPDATE (Zeile 15). Wirksame Schutzmaßnahme: keine — der Guard p_kunnr IS INITIAL (Zeile 7) ist weder Escaping noch Allowlist. Verbleibendes Risiko: eine Eingabe innerhalb der 35 Zeichen von p_name kann den nachgestellten WHERE-Filter aufheben (lokale SQLite-Nachstellung des Reviews; kein HANA-Lauf). policy_decision: Umbau auf gebundene Parameter (SET_PARAM, S10) oder auf eine API (W02) — eine Projektentscheidung, kein technischer Nachfolger. Gebundener Wert ist der Gegenfall (CC-035). Verändert das A–D-Level nicht."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 16,
+        "raw": "source.abap:16",
+        "token": null
+      },
+      "id": "CC-034-F04",
+      "profiles": null,
+      "rule": "R19",
+      "ruleRaw": "R19@1.1.0",
+      "ruleVersion": "1.1.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-ABAPDOC"
+      ],
+      "statement": "CATCH cx_sql_exception ist die Fehlerkante des TRY-Blocks (Zeilen 13–20), keine nach jedem Aufruf ausgeführte Prüfung: abgefangene SQL-Ausnahme → ROLLBACK WORK, DB_ERROR, RETURN. Abstraktionsgrenze des Skeletts: andere Laufzeitfehler sind nicht abgefangen und nicht modelliert; keine weiteren Ausnahmen erfinden."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 26,
+        "raw": "source.abap:26",
+        "token": null
+      },
+      "id": "CC-034-F05",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@2.1.0 (Achsen 1, 5)",
+      "ruleVersion": "2.1.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-FLOW; S08",
+        "S09",
+        "S10"
+      ],
+      "statement": "COMMIT WORK beendet die Datenbank-LUW der Standardverbindung und schließt den ADBC-Update ein (Standardverbindung stipuliert; S08, S10). UPDATE_COMMITTED belegt die Stufe *Commit erfolgt* im Nichtnull-Pfad, nicht die Anzahl oder den Scope der geänderten Zeilen: lv_rows <> 0 heißt nicht lv_rows = 1; *fachlich bestätigt* ist nichts."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:11 — Nicht „Stringliteral ist kein UPDATE\" (CC-016-Lesart). R13a gilt nur für Literale ohne Konsument; hier ist der Konsument Zeile 15.",
+    "source.abap:11 — Nicht „Template führt Code aus\" im Sinne von CE-01/CC-061: die eingebetteten Ausdrücke sind Datenobjekte (F01).",
+    "source.abap:14 — Nicht B, weil „eigene Klasse/ADBC-Wrapper\". Die Wirkung ist ein KNA1-Update.",
+    "source.abap:15 — Nicht Unknown. Tabelle, Operation und Feld stehen statisch im Template; unbekannt ist nur der effektive Zeilenscope (B02).",
+    "source.abap:11 — Kein Fachsatz, der die Änderung auf genau den eingegebenen Kunden im aktuellen Mandanten garantiert (REV2-04).",
+    "gesamte Scheibe — Kein Befund „Berechtigungsprüfung fehlt\" als bewiesene Schwachstelle: im Slice ist keine sichtbar, Start-/Systemberechtigungen liegen außerhalb. Der Injektionsbefund F03 ist davon unabhängig."
+  ],
+  "id": "CC-034",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku (S01 Leveldefinition, S08 Datenbank-Commit, S10 ADBC, S11 Native SQL, S19 KNA1-Eintrag)",
+  "known_worst_level": "D (beobachtet: nicht unterstützter KNA1-Schreibweg, F02)",
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 15,
+        "raw": "source.abap:15; Sekundäranker source.abap:11",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNA1",
+        "objectType": "TABL",
+        "tadirObjName": "KNA1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNA1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMER",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "write_native_sql_via_adbc"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 14,
+        "raw": "source.abap:14, source.abap:15",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "not_asserted",
+      "identity": {
+        "objectKey": "CL_SQL_STATEMENT",
+        "objectType": "CLAS",
+        "tadirObjName": "CL_SQL_STATEMENT",
+        "tadirObject": "CLAS"
+      },
+      "name": "CL_SQL_STATEMENT",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "unknown",
+      "successors": [],
+      "usage": "instance_method_call_execute_update"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 16,
+        "raw": "source.abap:16",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "not_asserted",
+      "identity": {
+        "objectKey": "CX_SQL_EXCEPTION",
+        "objectType": "CLAS",
+        "tadirObjName": "CX_SQL_EXCEPTION",
+        "tadirObject": "CLAS"
+      },
+      "name": "CX_SQL_EXCEPTION",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_collected",
+      "successors": null,
+      "usage": "exception_class_catch"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Eintrag von CL_SQL_STATEMENT (und CX_SQL_EXCEPTION) in objectReleaseInfo_PCE2022.json: released für Dienstverbindungen, notToBeReleased, nicht enthalten? Beobachten, nicht annehmen (die Suche des Reviews galt der Classic-Datei).",
+    "Native Verprobung der Prüfvektoren 1–4 auf HANA: das SQLite-Gegenmodell ist keine HANA-Semantik.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad? (B02 nach dieser Fassung: drei Bedingungen ausgeschrieben; Bestätigung ausstehend.)"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "g1"
+      },
+      {
+        "condition": "p_kunnr IS INITIAL",
+        "from": "g1",
+        "to": "nk"
+      },
+      {
+        "condition": "always",
+        "from": "nk",
+        "to": "e1"
+      },
+      {
+        "condition": "p_kunnr IS NOT INITIAL",
+        "from": "g1",
+        "to": "b"
+      },
+      {
+        "condition": "always",
+        "from": "b",
+        "to": "w"
+      },
+      {
+        "condition": "always",
+        "from": "w",
+        "to": "gx"
+      },
+      {
+        "condition": "cx_sql_exception",
+        "from": "gx",
+        "to": "rb1"
+      },
+      {
+        "condition": "always",
+        "from": "rb1",
+        "to": "de"
+      },
+      {
+        "condition": "always",
+        "from": "de",
+        "to": "e2"
+      },
+      {
+        "condition": "no exception",
+        "from": "gx",
+        "to": "g2"
+      },
+      {
+        "condition": "lv_rows = 0",
+        "from": "g2",
+        "to": "rb2"
+      },
+      {
+        "condition": "always",
+        "from": "rb2",
+        "to": "nu"
+      },
+      {
+        "condition": "always",
+        "from": "nu",
+        "to": "e3"
+      },
+      {
+        "condition": "lv_rows <> 0",
+        "from": "g2",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "ok"
+      },
+      {
+        "condition": "always",
+        "from": "ok",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "g1",
+        "meaning": "Kundennummer leer?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "nk",
+        "meaning": "NO_KEY melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "e1",
+        "meaning": "Block verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "b",
+        "meaning": "SQL-Text bauen (Template, Zeilen 11–12; keine Ausführung, kein Seiteneffekt)",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "w",
+        "meaning": "Native SQL über ADBC ausführen — Tabelle statisch aus dem Template, effektiver Zeilenscope eingabeabhängig, keine garantierte Ein-Kunden-Wirkung",
+        "type": "write"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        "id": "gx",
+        "meaning": "SQL-Ausnahme? (CATCH-Zweig; Fehlerkante des TRY-Blocks)",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        "id": "rb1",
+        "meaning": "ROLLBACK WORK",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18",
+          "token": null
+        },
+        "id": "de",
+        "meaning": "DB_ERROR melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        "id": "e2",
+        "meaning": "Block verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 21,
+          "raw": "source.abap:21",
+          "token": null
+        },
+        "id": "g2",
+        "meaning": "Null Zeilen betroffen?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 22,
+          "raw": "source.abap:22",
+          "token": null
+        },
+        "id": "rb2",
+        "meaning": "ROLLBACK WORK",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 23,
+          "raw": "source.abap:23",
+          "token": null
+        },
+        "id": "nu",
+        "meaning": "NO_UPDATE melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 24,
+          "raw": "source.abap:24",
+          "token": null
+        },
+        "id": "e3",
+        "meaning": "Block verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 26,
+          "raw": "source.abap:26",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "COMMIT WORK",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 27,
+          "raw": "source.abap:27",
+          "token": null
+        },
+        "id": "ok",
+        "meaning": "UPDATE_COMMITTED melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 27,
+          "raw": "source.abap:27",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "candidate / not independently signed.",
+  "title": "ADBC: das Stringtemplate wird als SQL ausgeführt (Gegenstück zu CC-016)"
+}

@@ -1,0 +1,267 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 2,
+          "raw": "source.abap:2",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 2,
+          "raw": "source.abap:2–5",
+          "token": null
+        }
+      ],
+      "id": "CC-019-B01",
+      "text": "Die lokale Struktur enthält AMOUNT und CURRENCY."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        }
+      ],
+      "id": "CC-019-B02",
+      "text": "Der Code ermittelt Metadaten dieser Struktur; er berechnet keine Beträge und liest keine SAP-Stammdatentabelle."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        }
+      ],
+      "id": "CC-019-B03",
+      "text": "Die Namen der Strukturkomponenten werden ausgegeben."
+    }
+  ],
+  "classes": [
+    "K10"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "usable",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9",
+        "token": null
+      },
+      "id": "CC-019-F01",
+      "profiles": null,
+      "rule": "R15",
+      "ruleRaw": "R15@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-RTTI",
+        "SAP-PCE22"
+      ],
+      "statement": "RTTI mit bekanntem lokalem Strukturtyp; verwendete CL_ABAP_TYPEDESCR und CL_ABAP_STRUCTDESCR sind im PCE2022-Auszug released."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:9 — RTTI nicht pauschal als unauflösbar oder Cloud-verboten klassifizieren."
+  ],
+  "id": "CC-019",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 7,
+        "raw": "source.abap:7",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "released",
+      "identity": {
+        "objectKey": "CL_ABAP_STRUCTDESCR",
+        "objectType": "CLAS",
+        "tadirObjName": "CL_ABAP_STRUCTDESCR",
+        "tadirObject": "CLAS"
+      },
+      "name": "CL_ABAP_STRUCTDESCR",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_listed_in_observed_record",
+      "successors": [],
+      "usage": "type_reference"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "released",
+      "identity": {
+        "objectKey": "CL_ABAP_TYPEDESCR",
+        "objectType": "CLAS",
+        "tadirObjName": "CL_ABAP_TYPEDESCR",
+        "tadirObject": "CLAS"
+      },
+      "name": "CL_ABAP_TYPEDESCR",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_listed_in_observed_record",
+      "successors": [],
+      "usage": "static_method_call"
+    }
+  ],
+  "openReviewerQuestions": [
+    "PCE2022-Freigabe beider RTTS-Klassen und benötigter Methoden bestätigen",
+    "Komponenten AMOUNT/CURRENCY mit RTTI-Ausgabe vergleichen",
+    "Keinen pauschalen RTTI-Handarbeits- oder D-Zwang einführen",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "d"
+      },
+      {
+        "condition": "always",
+        "from": "d",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "l"
+      },
+      {
+        "condition": "next component",
+        "from": "l",
+        "to": "o"
+      },
+      {
+        "condition": "next iteration",
+        "from": "o",
+        "to": "l"
+      },
+      {
+        "condition": "exhausted",
+        "from": "l",
+        "to": "e"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "d",
+        "meaning": "Lokale Struktur beschreiben",
+        "type": "call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "Komponenten ermitteln",
+        "type": "call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "l",
+        "meaning": "Komponenten iterieren",
+        "type": "loop"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Namen ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "Ende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "RTTI: bekannter lokaler Strukturtyp"
+}

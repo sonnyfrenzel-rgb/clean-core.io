@@ -1,0 +1,701 @@
+{
+  "answerFields": {
+    "cloud_api_surface": "Wrapper not_usable, Konsument usable (bedingt)",
+    "cloud_artefact": "Wrapper not_activatable, Konsument conditional (Kandidat)",
+    "known_worst_level": "C in beiden Profilen (beobachtet: KNA1-Lesen im Wrapper, transitiv)",
+    "scope_members": "{zcl_route_service (Konsument), zcl_customer_api (Wrapper)}"
+  },
+  "beleggrad": "verifiziert (Syntax/Objekte: KNA1, I_CUSTOMER, SAP-Drei-Ebenen-Erweiterungsmodell mit Freigabevertrag C1 „Verwendung systemintern\"; kundeneigene klassische Wrapper mit C1-Freigabe für Cloud-Konsumenten sind dokumentiert — S02, S04) — die Bezeichnung der Vertragsstufen jenseits von C1 wird nicht behauptet; die C1-Attribute des Wrappers sind Fixture-Stipulation",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 11,
+          "raw": "zcl_route_service.clas.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 12,
+          "raw": ":12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 13,
+          "raw": ":13",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 14,
+          "raw": ":14; zcl_customer_api.clas.abap:10–16 (Wrapperbezug)",
+          "token": null
+        }
+      ],
+      "id": "CC-060-B01",
+      "text": "Liefert get_name einen initialen String — kein Satz in KNA1 gefunden oder ein vorhandener Kunde mit initialem NAME1 —, setzt determine die Route UNKNOWN_CUSTOMER und kehrt zurück; die Betragsregel wird nicht ausgewertet."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 16,
+          "raw": "zcl_route_service.clas.abap:16 (expression_path #cond, #arm1, #arm2)",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 12,
+          "raw": ":12",
+          "token": null
+        }
+      ],
+      "id": "CC-060-B02",
+      "text": "Bei nicht initialem zurückgegebenem Namen ist die Route MANAGER_ROUTE, wenn iv_amount größer als 10000 ist (Gleichheit: AUTO_ROUTE), sonst AUTO_ROUTE. Der Code prüft keine Währung (R23), keine tatsächlich erfolgte Freigabe und keinen unabhängigen Existenzindikator; die Route ist ein berechneter Text, keine Genehmigung (R18)."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "zcl_customer_api.clas.abap",
+          "line": 10,
+          "raw": "zcl_customer_api.clas.abap:10+4",
+          "token": 4
+        },
+        {
+          "expressionPath": null,
+          "file": "zcl_customer_api.clas.abap",
+          "line": 10,
+          "raw": ":10–15; zcl_route_service.clas.abap:11",
+          "token": null
+        }
+      ],
+      "id": "CC-060-B03",
+      "text": "Die vorliegende Wrapperimplementierung liest NAME1 aus KNA1; der Konsumententext verwendet nur die Wrapper-API und sieht die Herkunft nicht. Das Analysepaket enthält beide Quellen (scope_members) und stellt den transitiven Bezug dar — das ist der Grund, warum extension_level und known_worst_level C sind, während component_level des Konsumenten es nicht ist."
+    }
+  ],
+  "classes": [
+    "K19",
+    "K02",
+    "K01"
+  ],
+  "classic_level": null,
+  "cloud_api_surface": null,
+  "cloud_artefact": null,
+  "convergence": "Fable KA-103, KA-104, KA-105, Abschnitt 4 L7 · Grok H-001, H-005 (Z-API-Kette: oberste Klasse ist nicht das Urteil) · GLM: keiner · DeepSeek: keiner · Gegenreview REV2-08 (Scopes), REV2-09 (Name initial), REV2-13 (Ankeridentität), REV2-10 (Eingabeformat)",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": [
+    {
+      "cloud_artefact": "not_activatable (KNA1)",
+      "fields": [
+        {
+          "field": "scope_members",
+          "file": null,
+          "scope": "extension",
+          "value": "zcl_route_service, zcl_customer_api"
+        },
+        {
+          "field": "component_level",
+          "file": null,
+          "scope": "zcl_customer_api",
+          "value": "C"
+        },
+        {
+          "field": "component_level",
+          "file": null,
+          "scope": "zcl_route_service",
+          "value": "B (R03@1.1.0: nur C1-Wrapper als Abhängigkeit)"
+        },
+        {
+          "field": "extension_level",
+          "file": null,
+          "scope": "extension (beide Dateien)",
+          "value": "C"
+        },
+        {
+          "field": "known_worst_level",
+          "file": null,
+          "scope": "extension (transitiv)",
+          "value": "C"
+        },
+        {
+          "field": "release_contract",
+          "file": null,
+          "scope": "zcl_customer_api",
+          "value": "C1 (Kontextbeleg; release_state = released, usage_visibility stipuliert)"
+        },
+        {
+          "field": "release_contract",
+          "file": null,
+          "scope": "zcl_route_service",
+          "value": "none"
+        },
+        {
+          "field": "cloud_api_surface",
+          "file": null,
+          "scope": "zcl_customer_api",
+          "value": "not_usable (KNA1)"
+        },
+        {
+          "field": "cloud_api_surface",
+          "file": null,
+          "scope": "zcl_route_service",
+          "value": "usable — nur bei gültigem C1-/Sichtbarkeitskontext"
+        },
+        {
+          "field": "cloud_artefact",
+          "file": null,
+          "scope": "zcl_customer_api",
+          "value": "not_activatable (KNA1)"
+        },
+        {
+          "field": "cloud_artefact",
+          "file": null,
+          "scope": "zcl_route_service",
+          "value": "conditional (Kandidat; nicht nativ geprüft)"
+        },
+        {
+          "field": "completeness",
+          "file": null,
+          "scope": "extension",
+          "value": "complete_for_declared_slice"
+        }
+      ],
+      "findingIds": [
+        "CC-060-F01",
+        "CC-060-F02",
+        "CC-060-F04",
+        "CC-060-F05"
+      ],
+      "header": "Profil 1 (onpremise-s4 · alles standard)",
+      "known_worst_level": "C",
+      "label": "Profil 1"
+    },
+    {
+      "cloud_artefact": "not_activatable (KNA1) — Tier 2 bleibt absichtlich klassisch",
+      "fields": [
+        {
+          "field": "scope_members",
+          "file": null,
+          "scope": "extension",
+          "value": "zcl_route_service, zcl_customer_api"
+        },
+        {
+          "field": "component_level",
+          "file": null,
+          "scope": "zcl_customer_api",
+          "value": "C"
+        },
+        {
+          "field": "component_level",
+          "file": null,
+          "scope": "zcl_route_service",
+          "value": "A (Kandidat; R30@2.1.0-Bedingungen stipuliert)"
+        },
+        {
+          "field": "extension_level",
+          "file": null,
+          "scope": "extension (beide Dateien)",
+          "value": "C"
+        },
+        {
+          "field": "known_worst_level",
+          "file": null,
+          "scope": "extension (transitiv)",
+          "value": "C (R30@2.1.0: stoppt nicht am Wrapper)"
+        },
+        {
+          "field": "release_contract",
+          "file": null,
+          "scope": "zcl_customer_api",
+          "value": "C1 (dito)"
+        },
+        {
+          "field": "release_contract",
+          "file": null,
+          "scope": "zcl_route_service",
+          "value": "none"
+        },
+        {
+          "field": "cloud_api_surface",
+          "file": null,
+          "scope": "zcl_customer_api",
+          "value": "not_usable (KNA1)"
+        },
+        {
+          "field": "cloud_api_surface",
+          "file": null,
+          "scope": "zcl_route_service",
+          "value": "usable — nur bei gültigem C1-/Sichtbarkeitskontext"
+        },
+        {
+          "field": "cloud_artefact",
+          "file": null,
+          "scope": "zcl_customer_api",
+          "value": "not_activatable (KNA1) — Tier 2 bleibt absichtlich klassisch"
+        },
+        {
+          "field": "cloud_artefact",
+          "file": null,
+          "scope": "zcl_route_service",
+          "value": "conditional (Kandidat; nicht nativ geprüft)"
+        },
+        {
+          "field": "completeness",
+          "file": null,
+          "scope": "extension",
+          "value": "complete_for_declared_slice"
+        }
+      ],
+      "findingIds": [
+        "CC-060-F01",
+        "CC-060-F02",
+        "CC-060-F04",
+        "CC-060-F05",
+        "CC-060-F03"
+      ],
+      "header": "Profil 2 (private-cloud · Konsument abap-for-cloud)",
+      "known_worst_level": "C (R30@2.1.0: stoppt nicht am Wrapper)",
+      "label": "Profil 2"
+    }
+  ],
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "zcl_customer_api.clas.abap",
+        "line": 10,
+        "raw": "zcl_customer_api.clas.abap:10+4 (Sekundäranker: :11)",
+        "token": 4
+      },
+      "id": "CC-060-F01",
+      "profiles": [
+        "Profil 1",
+        "Profil 2"
+      ],
+      "rule": "R01",
+      "ruleRaw": "R01@1.1.0",
+      "ruleVersion": "1.1.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22; S01",
+        "S04",
+        "S19"
+      ],
+      "statement": "Direkter Lesezugriff auf KNA1 im Wrapper unter dem stipulierten internen Profil: C. Nachfolger I_CUSTOMER, kein bewiesener Drop-in (R17). Gilt in beiden Profilen; der C1-Vertrag ändert das Level des Wrappers nicht — nicht vom C1-Label auf eine Level-A-Implementierung schließen."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "zcl_route_service.clas.abap",
+        "line": 11,
+        "raw": "zcl_route_service.clas.abap:11",
+        "token": null
+      },
+      "id": "CC-060-F02",
+      "profiles": [
+        "Profil 1",
+        "Profil 2"
+      ],
+      "rule": "R30",
+      "ruleRaw": "R30@2.1.0",
+      "ruleVersion": "2.1.0",
+      "severity": "high",
+      "sources": [
+        "SAP-LEVEL; S02",
+        "S04"
+      ],
+      "statement": "Aufruf eines kundeneigenen Objekts mit stipuliertem release_contract = C1. Zwei Scopes, zwei Antworten: component_level des Konsumenten stoppt am Vertrag (Profil 1: B nach R03; Profil 2: A-Kandidat); extension_level des Zwei-Dateien-Scopes ist C (F01); known_worst_level = C ist der beobachtete transitive Unterbau. Der Vertrag zählt nur mit belegtem release_state, Sichtbarkeit, Sprachversionen und Signatur (S02, S04) — sonst nur bedingte API-Nutzbarkeit."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "zcl_route_service.clas.abap",
+        "line": 12,
+        "raw": "zcl_route_service.clas.abap:12",
+        "token": null
+      },
+      "id": "CC-060-F04",
+      "profiles": [
+        "Profil 1",
+        "Profil 2"
+      ],
+      "rule": "R18",
+      "ruleRaw": "R18@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "Korpusquellen; lokales Gegenmodell des Reviews"
+      ],
+      "statement": "lv_name IS INITIAL prüft den Rückgabewert, nicht die Existenz des Kunden: der Wrapper liefert einen Namen oder einen initialen String, keinen Existenzindikator. Ein vorhandener Kunde mit initialem NAME1 läuft in denselben Zweig wie „kein Satz\". Kein Fachsatz „Kunde unbekannt\" (REV2-09)."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "zcl_route_service.clas.abap",
+        "line": 16,
+        "raw": "zcl_route_service.clas.abap:16 (expression_path: #cond, #arm1, #arm2 — Notation als Vorschlag)",
+        "token": null
+      },
+      "id": "CC-060-F05",
+      "profiles": [
+        "Profil 1",
+        "Profil 2"
+      ],
+      "rule": "R27",
+      "ruleRaw": "R27@2.1.0",
+      "ruleVersion": "2.1.0",
+      "severity": "medium",
+      "sources": [
+        "Korpuskonvention; Härtungsstudie F05"
+      ],
+      "statement": "COND-Gateway und beide Ergebnisarme teilen Zeile 16: zwei action-Knoten gleichen Typs mit identischer Ankerzeile — die Signaturkollision aus Fehlerfamilie F05 der Härtungsstudie, im Graphvergleich fallen sie zu einem zusammen. Ankeridentität braucht expression_path zusätzlich zur Zeile: :16#cond (Bedingung iv_amount > 10000), :16#arm1 (MANAGER_ROUTE), :16#arm2 (AUTO_ROUTE) — Notation analog zu CC-066 (:7#e1/#e2, Expansionsordinal); der Zusammenführer gleicht CC-043, CC-060 und CC-066 ab. Zeile plus Knotentyp reicht nicht (REV2-13)."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "zcl_route_service.clas.abap",
+        "line": 1,
+        "raw": "zcl_route_service.clas.abap:1 (scope=artefact)",
+        "token": null
+      },
+      "id": "CC-060-F03",
+      "profiles": [
+        "Profil 2"
+      ],
+      "rule": "R31",
+      "ruleRaw": "R31@2.0.0",
+      "ruleVersion": "2.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-LEVEL; S02"
+      ],
+      "statement": "Konsument in Sprachversion ABAP for Cloud mit ausschließlich freigegebenen Abhängigkeiten (C1-Wrapper): component_level A-Kandidat. known_worst_level = C und extension_level = C sind getrennt zu führen und zu zeigen; die Aussage „A\" ohne Scope-Angabe und ohne den C-Unterbau ist unvollständig."
+    }
+  ],
+  "forbiddenConclusions": [
+    "Profil 2, zcl_route_service.clas.abap:11 — kein known_worst_level = A oder none, „weil der Wrapper freigegeben ist\" (R30).",
+    "Profil 2, zcl_route_service.clas.abap:1 — kein component_level = C für den Konsumenten, „weil der Wrapper KNA1 liest\" (der Vertrag stoppt das Komponentenlevel).",
+    "Profil 2 — kein „A\" für den Scope extension und kein A-Label ohne Scope-Angabe: eine nackte A-Kachel mit verborgenem C-Unterbau ist irreführend (REV2-08).",
+    "Profil 1, zcl_customer_api.clas.abap:1 — kein B für den Wrapper „weil es ein Z-Objekt ist\" (Grok H-001: die Fassade ändert das Level nicht).",
+    "beide Profile, zcl_customer_api.clas.abap:10 — kein Unknown für den Konsumenten: der Wrapper ist geliefert, completeness ist vollständig (R16-Logik greift nicht).",
+    "beide Profile, zcl_route_service.clas.abap:12 — kein Fachsatz „Kunde existiert nicht\" / „Kunde unbekannt\" aus lv_name IS INITIAL (F04).",
+    "beide Profile — kein „Berechtigung geprüft\" aus C1; kein security_and_authorization-Befund erfunden (keine Beobachtung; die KNA1-Abfrage kann Zugriffskontrollen brauchen, die im Slice nicht nachweisbar sind)."
+  ],
+  "id": "CC-060",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku (S01, S02 API-Freigabe = Zustand, Vertrag, Sichtbarkeit; S04 Wrapper mit C1; S19 KNA1)",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": null,
+        "line": null,
+        "raw": "zcl_customer_api",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNA1",
+        "objectType": "TABL",
+        "tadirObjName": "KNA1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNA1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMER",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "read"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": null,
+        "line": null,
+        "raw": "zcl_route_service",
+        "token": null
+      },
+      "classicRawState": null,
+      "cloudRawState": "not_applicable_customer_object",
+      "identity": {
+        "objectKey": "ZCL_CUSTOMER_API",
+        "objectType": "CLAS",
+        "tadirObjName": "ZCL_CUSTOMER_API",
+        "tadirObject": "CLAS"
+      },
+      "name": "ZCL_CUSTOMER_API",
+      "owner": "Kunde",
+      "releaseContract": "C1",
+      "successorStatus": "not_applicable",
+      "successors": [],
+      "usage": "static_method_call"
+    },
+    {
+      "anchor": null,
+      "classicRawState": null,
+      "cloudRawState": null,
+      "identity": {
+        "objectKey": "ZCL_ROUTE_SERVICE",
+        "objectType": "CLAS",
+        "tadirObjName": "ZCL_ROUTE_SERVICE",
+        "tadirObject": "CLAS"
+      },
+      "name": "ZCL_ROUTE_SERVICE",
+      "owner": "Kunde",
+      "releaseContract": null,
+      "successorStatus": null,
+      "successors": null,
+      "usage": "defined"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Welches Katalogartefakt gehört zu onpremise-s4 · S/4HANA 2023 und zu private-cloud · 2023 — PCE2022-objectReleaseInfo oder eine eigene Releasedatei? (Korpusfrage für den Zusammenführer; v1 verwendet PCE2022 für alle Fälle.)",
+    "Native Aktivierung des Konsumenten in Sprachversion ABAP for Cloud mit dem stipulierten C1-Wrapper (nicht ausgeführt); tatsächliche ADT-Attribute des Wrappers.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad? (B01/B02 nach dieser Fassung: Bestätigung ausstehend.)"
+  ],
+  "scope": "complete_for_declared_slice (beide Dateien geliefert)",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "q"
+      },
+      {
+        "condition": "always",
+        "from": "q",
+        "to": "wg"
+      },
+      {
+        "condition": "sy-subrc = 0",
+        "from": "wg",
+        "to": "wa"
+      },
+      {
+        "condition": "sy-subrc <> 0 (Rückgabe bleibt initial)",
+        "from": "wg",
+        "to": "g1"
+      },
+      {
+        "condition": "always",
+        "from": "wa",
+        "to": "g1"
+      },
+      {
+        "condition": "lv_name IS INITIAL",
+        "from": "g1",
+        "to": "u"
+      },
+      {
+        "condition": "always",
+        "from": "u",
+        "to": "x"
+      },
+      {
+        "condition": "lv_name IS NOT INITIAL",
+        "from": "g1",
+        "to": "g2"
+      },
+      {
+        "condition": "iv_amount > 10000",
+        "from": "g2",
+        "to": "m"
+      },
+      {
+        "condition": "iv_amount <= 10000",
+        "from": "g2",
+        "to": "a"
+      },
+      {
+        "condition": "always",
+        "from": "m",
+        "to": "e"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "e"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 10,
+          "raw": "zcl_route_service.clas.abap:10",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Methodenstart (trigger = call)",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 11,
+          "raw": "zcl_route_service.clas.abap:11",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "Wrapper aufrufen (aufgelöst)",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "zcl_customer_api.clas.abap",
+          "line": 10,
+          "raw": "zcl_customer_api.clas.abap:10",
+          "token": null
+        },
+        "id": "q",
+        "meaning": "Name aus KNA1 lesen — Versuch",
+        "type": "read"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "zcl_customer_api.clas.abap",
+          "line": 14,
+          "raw": "zcl_customer_api.clas.abap:14",
+          "token": null
+        },
+        "id": "wg",
+        "meaning": "Treffer im Wrapper?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "zcl_customer_api.clas.abap",
+          "line": 15,
+          "raw": "zcl_customer_api.clas.abap:15",
+          "token": null
+        },
+        "id": "wa",
+        "meaning": "Rückgabe setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 12,
+          "raw": "zcl_route_service.clas.abap:12",
+          "token": null
+        },
+        "id": "g1",
+        "meaning": "Name leer? (Rückgabewert, kein Existenzindikator)",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 13,
+          "raw": "zcl_route_service.clas.abap:13",
+          "token": null
+        },
+        "id": "u",
+        "meaning": "UNKNOWN_CUSTOMER setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 14,
+          "raw": "zcl_route_service.clas.abap:14",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "Methode verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 16,
+          "raw": "zcl_route_service.clas.abap:16 (expression_path = #cond)",
+          "token": null
+        },
+        "id": "g2",
+        "meaning": "Betrag > 10000?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 16,
+          "raw": "zcl_route_service.clas.abap:16 (expression_path = #arm1)",
+          "token": null
+        },
+        "id": "m",
+        "meaning": "MANAGER_ROUTE setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 16,
+          "raw": "zcl_route_service.clas.abap:16 (expression_path = #arm2)",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "AUTO_ROUTE setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "zcl_route_service.clas.abap",
+          "line": 17,
+          "raw": "zcl_route_service.clas.abap:17",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "Methodenende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "candidate / not independently signed.",
+  "title": "Profilpaar mit release_contract: kundeneigener Wrapper mit C1-Freigabe liest KNA1 — das Level des Konsumenten stoppt am Vertrag, known_worst nicht"
+}

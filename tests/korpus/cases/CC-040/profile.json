@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "PCE2022-objectReleaseInfo",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=PCE2022-objectReleaseInfo · rule_revision=v1-1.0.0+v2-draft(R13a,R13b,R26,R28)",
+  "release": "S/4HANA 2023",
+  "rule_revision": "v1-1.0.0+v2-draft(R13a,R13b,R26,R28)",
+  "runtime_context": null,
+  "second_profile": "btp-abap-environment/abap-for-cloud: es gibt dort kein SAPMV45A und keinen Zugriff auf Programmspeicher fremder Programme; Antwort not_usable, kein Level."
+}

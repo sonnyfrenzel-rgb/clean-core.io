@@ -1,0 +1,15 @@
+REPORT zcc_ref_046.
+PARAMETERS p_land TYPE c LENGTH 3.
+DATA gv_title TYPE c LENGTH 20.
+WRITE: / 'LAND', p_land.
+WRITE / 'ROW_1'.
+INITIALIZATION.
+  p_land = 'DE'.
+  gv_title = 'CUSTOMER_LIST'.
+AT SELECTION-SCREEN.
+  TRANSLATE p_land TO UPPER CASE.
+TOP-OF-PAGE.
+  WRITE / gv_title.
+  ULINE.
+AT LINE-SELECTION.
+  WRITE: / 'DETAIL', sy-lisel.

@@ -1,0 +1,14 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "n/a",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {
+    "update_mode": "nicht lokal (wie CC-026)"
+  },
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=n/a · rule_revision=2.1.0-candidate · runtime_context=dialog (direkter Start) · update_mode=nicht lokal (wie CC-026)",
+  "release": "S/4HANA 2023",
+  "rule_revision": "2.1.0-candidate",
+  "runtime_context": "dialog (direkter Start)",
+  "second_profile": "runtime_context=called-via-submit-and-return: Der Report läuft dann in einer eigenen internen Sitzung mit eigener, verschachtelter SAP-LUW (sap_luw = new, S07, S30); die Datenbank-LUW wird durch den Aufruf nicht beendet (db_luw = shared, S30: „does not end the current database LUW\"). Ein späteres COMMIT WORK des Aufrufers stößt nur dessen eigene Registrierungen an; es darf nicht als Dispatcher dieses Reports eingezeichnet werden. Die Sollantwort „in der Scheibe nicht angestoßen\" bleibt in beiden Kontexten (Partnerfall für die Aufruferseite: CC-065). Cloud-Zweitprofil wie CC-026: cloud_artefact = not_activatable, Skelett bleibt."
+}

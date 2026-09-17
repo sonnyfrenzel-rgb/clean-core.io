@@ -1,0 +1,328 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        }
+      ],
+      "id": "CC-009-B01",
+      "text": "Die konfigurierte BAdI-Implementierung wird angefordert."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        }
+      ],
+      "id": "CC-009-B02",
+      "text": "Der Betrag wird der Methode determine übergeben und ein Routentext übernommen; dieser Aufruf ist nicht selbst ein menschlicher Freigabeprozess."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "implementation.abap",
+          "line": 7,
+          "raw": "implementation.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "implementation.abap",
+          "line": 8,
+          "raw": "implementation.abap:8",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "implementation.abap",
+          "line": 10,
+          "raw": "implementation.abap:10",
+          "token": null
+        }
+      ],
+      "id": "CC-009-B03",
+      "text": "Die im Fixture einzige aktive Implementierung setzt für Beträge größer10000 MANAGER_ROUTE, ansonsten AUTO_ROUTE."
+    }
+  ],
+  "classes": [
+    "K05"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6",
+        "token": null
+      },
+      "id": "CC-009-F01",
+      "profiles": null,
+      "rule": "R24",
+      "ruleRaw": "R24@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-BADI"
+      ],
+      "statement": "BAdI-Auswahl aus mitgelieferter synthetischer SE18/SE19-Konfiguration nachvollziehen; keine SAP-Standardabdeckung behaupten."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-009",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 3,
+        "raw": "source.abap:3",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZBADI_CC_ROUTE",
+        "objectType": "BADI_DEF",
+        "tadirObjName": "ZCC_ROUTE_SPOT",
+        "tadirObject": "ENHS"
+      },
+      "name": "ZBADI_CC_ROUTE",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": [],
+      "usage": "badi_definition"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "interface.abap",
+        "line": 2,
+        "raw": "interface.abap:2",
+        "token": null
+      },
+      "classicRawState": "classicAPI",
+      "cloudRawState": "released",
+      "identity": {
+        "objectKey": "IF_BADI_INTERFACE",
+        "objectType": "INTF",
+        "tadirObjName": "IF_BADI_INTERFACE",
+        "tadirObject": "INTF"
+      },
+      "name": "IF_BADI_INTERFACE",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_listed_in_observed_record",
+      "successors": [],
+      "usage": "interface_inclusion"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "implementation.abap",
+        "line": 3,
+        "raw": "implementation.abap:3",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZIF_CC_ROUTE",
+        "objectType": "INTF",
+        "tadirObjName": "ZIF_CC_ROUTE",
+        "tadirObject": "INTF"
+      },
+      "name": "ZIF_CC_ROUTE",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": [],
+      "usage": "implementation_dependency"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "implementation.abap",
+        "line": 1,
+        "raw": "implementation.abap:1",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCL_CC_ROUTE_IMPL",
+        "objectType": "CLAS",
+        "tadirObjName": "ZCL_CC_ROUTE_IMPL",
+        "tadirObject": "CLAS"
+      },
+      "name": "ZCL_CC_ROUTE_IMPL",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": [],
+      "usage": "supplied_implementation"
+    }
+  ],
+  "openReviewerQuestions": [
+    "SE18/SE19-Single-use-Aktivierung und Schnittstellenobjekte einrichten",
+    "Main- und Implementierungsquellen zu einer durchgehenden Spur verbinden",
+    "Grenzwerte und deaktivierte/fehlende Implementierung gesondert prüfen",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "b"
+      },
+      {
+        "condition": "one active implementation per fixture",
+        "from": "b",
+        "to": "c"
+      },
+      {
+        "condition": "fixture selects supplied implementation",
+        "from": "c",
+        "to": "g"
+      },
+      {
+        "condition": "iv_amount > 10000",
+        "from": "g",
+        "to": "m"
+      },
+      {
+        "condition": "iv_amount <= 10000",
+        "from": "g",
+        "to": "a"
+      },
+      {
+        "condition": "normal return",
+        "from": "m",
+        "to": "o"
+      },
+      {
+        "condition": "normal return",
+        "from": "a",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "b",
+        "meaning": "Aktiven BAdI ermitteln",
+        "type": "call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "Eindeutige aktive Implementierung aufrufen",
+        "type": "call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Routentext ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "implementation.abap",
+          "line": 7,
+          "raw": "implementation.abap:7",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Betrag größer10000?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "implementation.abap",
+          "line": 8,
+          "raw": "implementation.abap:8",
+          "token": null
+        },
+        "id": "m",
+        "meaning": "MANAGER_ROUTE setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "implementation.abap",
+          "line": 10,
+          "raw": "implementation.abap:10",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "AUTO_ROUTE setzen",
+        "type": "action"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Expliziter kundeneigener BAdI mit festgehaltener Aktivierung"
+}

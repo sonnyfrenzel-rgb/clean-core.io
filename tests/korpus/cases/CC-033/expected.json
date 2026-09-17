@@ -1,0 +1,455 @@
+{
+  "answerFields": {},
+  "beleggrad": "erinnert — Syntax verifiziert; dass eine E-Meldung im Dialogkontext eines Reports die Verarbeitung beendet, ist sicher; ob sie dabei einen impliziten Datenbank-Rollback auslöst oder die offene Datenbank-LUW am Dialogschrittende implizit festgeschrieben wird, ist Erinnerung des Autors und die zentrale Prüferfrage. Die Sollantwort ist so formuliert, dass sie unabhängig davon gilt.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        }
+      ],
+      "id": "CC-033-B01",
+      "text": "Die Route des Falls wird geändert; fehlt der Fall, wird MISSING_CASE ausgegeben und der Block ohne Commit verlassen — nichts ist geändert."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        }
+      ],
+      "id": "CC-033-B02",
+      "text": "Fehlt danach der Kopfsatz des Falls, wird die Fehlermeldung 001(ZCC) vom Typ E ausgegeben. Im Dialogkontext beendet sie die Verarbeitung; COMMIT WORK wird nicht erreicht. Die bereits ausgeführte Routenänderung ist in diesem Zweig nicht als persistiert belegt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        }
+      ],
+      "id": "CC-033-B03",
+      "text": "Treffen beide Updates, wird COMMIT WORK ausgeführt und RECORDED ausgegeben."
+    }
+  ],
+  "classes": [
+    "K12",
+    "K02"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": "Fable KA-031 · DeepSeek CC-GAP-004 (Abschnitt 3, Fall 10: MESSAGE e… im Rollback-Zweig) · GLM A-044 (Fachsatz „ändert\" gilt nur im Commit-Fall)",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 12,
+        "raw": "source.abap:12",
+        "token": null
+      },
+      "id": "CC-033-F01",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@v2-draft",
+      "ruleVersion": "v2-draft",
+      "severity": "high",
+      "sources": [
+        "SAP-FLOW"
+      ],
+      "statement": "MESSAGE Typ E ist ein Abbruchpfad ohne Fortsetzung im Code. Im Profil runtime_context=dialog wird COMMIT WORK (Zeile 14) nicht erreicht; die Änderung aus Zeile 5 ist nicht durch COMMIT belegt — angekündigt, nicht persistiert. Ohne Laufzeitkontext: Unknown."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 12,
+        "raw": "source.abap:12",
+        "token": null
+      },
+      "id": "CC-033-F02",
+      "profiles": null,
+      "rule": "R19",
+      "ruleRaw": "R19@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-FLOW"
+      ],
+      "statement": "Der Abbruch ist ein end-Knoten, dessen Ziel (Selektionsbild, Jobabbruch, Ausnahme beim RFC-Rufer) vom Laufzeitkontext abhängt und nicht aus der Scheibe ableitbar ist. Kein ENDIF-Folgeknoten aus Zeile 13."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 15,
+        "raw": "source.abap:15",
+        "token": null
+      },
+      "id": "CC-033-F03",
+      "profiles": null,
+      "rule": "R18",
+      "ruleRaw": "R18@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-FLOW"
+      ],
+      "statement": "RECORDED steht nur hinter beiden erfolgreichen Updates und dem COMMIT WORK."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5",
+        "token": null
+      },
+      "id": "CC-033-F04",
+      "profiles": null,
+      "rule": "R20",
+      "ruleRaw": "R20@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-SQL"
+      ],
+      "statement": "Schreibzugriffe auf kundeneigene Tabellen (auch Zeile 10); kein SAP-Standardtabellen-D."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-033",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku — REVIEW-2.0.1 (16.09.2026), nicht blind; Fall in §7 des Reviews inhaltlich gelesen (kein universelles ROLLBACK; Persistenz nicht nachgewiesen), Regel R25 beurteilt; sap-doku: S08 (Senden einer Meldung E/I/W = impliziter Datenbank-Commit), S29 (impliziter Rollback), S34 (Batch), S35 (RFC) nach Lesung des Regelautors 17.09.2026, kein Snapshot",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCC_DECISION",
+        "objectType": "TABL",
+        "tadirObjName": "ZCC_DECISION",
+        "tadirObject": "TABL"
+      },
+      "name": "ZCC_DECISION",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": null,
+      "usage": "customer_table_write"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCC_CASE",
+        "objectType": "TABL",
+        "tadirObjName": "ZCC_CASE",
+        "tadirObject": "TABL"
+      },
+      "name": "ZCC_CASE",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": null,
+      "usage": "customer_table_write"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 12,
+        "raw": "source.abap:12",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCC",
+        "objectType": "MSAG",
+        "tadirObjName": "ZCC",
+        "tadirObject": "MSAG"
+      },
+      "name": "ZCC (Nachrichtenklasse), Nachricht 001",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": null,
+      "usage": "message_class_reference"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Bestätigen: Eine E-Meldung im Verarbeitungsblock START-OF-SELECTION eines Dialogreports beendet die Verarbeitung — wohin kehrt das Programm zurück (Selektionsbild), und löst der Abbruch einen impliziten Datenbank-Rollback aus, oder wird die offene Datenbank-LUW am Dialogschrittende implizit festgeschrieben? Davon hängt ab, ob B02 um „und zurückgerollt\" oder um „und dennoch festgeschrieben\" erweitert werden darf.",
+    "Bestätigen: Verhalten derselben Meldung bei runtime_context=batch (Jobabbruch mit Protokoll) und runtime_context=rfc (Ausnahme beim Rufer).",
+    "Fehlende Regel: Der Laufzeitkontext als Pflichtfeld des Zielprofils ist in R25/R31 nicht vorgesehen. Der Autor hat runtime_context in allen K12-Zielprofilen ergänzt; der Zusammenführer entscheidet, ob es v2-weit Pflichtfeld wird.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "w1"
+      },
+      {
+        "condition": "always",
+        "from": "w1",
+        "to": "g1"
+      },
+      {
+        "condition": "sy-subrc <> 0",
+        "from": "g1",
+        "to": "o1"
+      },
+      {
+        "condition": "always",
+        "from": "o1",
+        "to": "e1"
+      },
+      {
+        "condition": "sy-subrc = 0",
+        "from": "g1",
+        "to": "w2"
+      },
+      {
+        "condition": "always",
+        "from": "w2",
+        "to": "g2"
+      },
+      {
+        "condition": "sy-subrc <> 0",
+        "from": "g2",
+        "to": "m"
+      },
+      {
+        "condition": "sy-subrc = 0",
+        "from": "g2",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "o2"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "w1",
+        "meaning": "Route ändern",
+        "type": "write"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "g1",
+        "meaning": "Fall vorhanden?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "o1",
+        "meaning": "Fehlenden Fall melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "e1",
+        "meaning": "Block verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "w2",
+        "meaning": "Status setzen",
+        "type": "write"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "g2",
+        "meaning": "Kopfsatz vorhanden?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "m",
+        "meaning": "Abbruch durch E-Meldung; Ziel kontextabhängig (runtime_context)",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "Commit",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "o2",
+        "meaning": "Gespeichert melden",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "MESSAGE Typ E als Abbruchpfad: die LUW-Wirkung hängt am Laufzeitkontext"
+}

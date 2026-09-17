@@ -1,0 +1,245 @@
+[
+  {
+    "id": "REV2-01",
+    "priority": "P0",
+    "title": "LUW-Regel verallgemeinert Transaktionsgrenzen falsch",
+    "input_location": "v2 §7.3 R25; CC-026/027; CC-055/056",
+    "observation": "R25 bündelt SAP-LUW, Datenbank-LUW und Update-Ausführung. CALL TRANSACTION ohne USING beendet laut Keyworddokumentation nicht allein die DB-LUW. Der gleiche pauschale implizite-Commit-Text steht in CC-056.",
+    "consequence": "Die Engine könnte Commit- und Persistenzknoten erfinden, fachlich wirksame Änderungen übersehen oder bei Transformation eine Transaktionsgrenze falsch versetzen.",
+    "repair": "R25 in getrennte Zustands-/Ereignisregeln für DB-Transaktion, SAP-LUW, Update-Registrierung, Dispatch, lokale/V1/V2-Synchronisation und Nachweis zerlegen. Varianten und Laufzeitkontext benennen.",
+    "sources": [
+      "S05",
+      "S06",
+      "S07",
+      "S08",
+      "S09",
+      "S24"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-02",
+    "priority": "P0",
+    "title": "Hostmarker sind kein pauschaler D-Beweis",
+    "input_location": "v2 §7.3 R32; CC-053-F01/F02, source.abap:1,4,8",
+    "observation": "FORM-Name und Variable VBAK beweisen weder MV45AFZZ als Repositoryidentität noch Modifikation. Allgemeine SAP-Definition umfasst auch nominierte klassische Userexits/BAdIs unter B.",
+    "consequence": "Falsche D-Klassifikation kann eine unnötige Neuentwicklung oder voreilige Side-by-Side-Entscheidung begründen.",
+    "repair": "Marker als Hypothese ausgeben; Repository-/Enhancementmechanismus als getrennten Kontextbeleg verlangen. Konkretes Include nicht ohne Beleg von D auf B umetikettieren.",
+    "sources": [
+      "S01",
+      "S20",
+      "S25"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-03",
+    "priority": "P0",
+    "title": "Hypothetisches D wird als known_worst ausgegeben",
+    "input_location": "v2 §7.3 R26; CC-037-F01, CC-038-F01",
+    "observation": "Die Regel setzt D für dynamisches FROM/WHERE/DML. In CC-038 ist aber keine konkrete SAP-Kerntabelle als erreichbares Ziel belegt. Ein dynamisches WHERE lässt ein statisches FROM bekannt.",
+    "consequence": "Das Datenmodell verkauft ein vorsorgliches Risiko als beobachtete technische Evidenz. Unterschiedliche Views könnten daraus falsche harte Entscheidungen ableiten.",
+    "repair": "known_worst nur über nachgewiesene Elemente im benannten Scope; unresolved_targets und potential_worst getrennt. Strukturelle Zielverträglichkeit und Kontext beachten.",
+    "sources": [
+      "S01"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-04",
+    "priority": "P0",
+    "title": "CC-034 behauptet garantierten Kundenscope trotz Injektion",
+    "input_location": "CC-034-B02 und F03; source.abap:11–15",
+    "observation": "Ungeprüfte Eingabe wird in SQL eingesetzt. B02 formuliert dennoch eine garantierte Änderung des angegebenen Kunden im aktuellen Mandanten. Ein lokales SQL-Gegenmodell kann den nachgestellten Filter mit einer kurzen Eingabe entfernen.",
+    "consequence": "Business- und Management-Erklärung könnte einen engeren Wirkungsumfang zeigen, als der Code garantiert. Ein korrekter technischer Sicherheitsbefund allein verhindert die falsche fachliche Erzählung nicht.",
+    "repair": "B02 zu Updateversuch und beabsichtigtem, nicht garantiertem Filter ändern. Effektive Zielmenge als eingabeabhängig markieren; gebundene Parameter als Gegenfall.",
+    "sources": [
+      "S10",
+      "S11"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-05",
+    "priority": "P0",
+    "title": "R13a übersieht Ausführung innerhalb eines Templates",
+    "input_location": "v2 §7.2 R13a; Gegenbeispiel CE-01",
+    "observation": "Eingebettete funktionale Methodenaufrufe werden beim Aufbau eines Templates ausgewertet. Ein späterer SQL-/Code-Konsument ist dafür nicht notwendig.",
+    "consequence": "Parser kann Calls und Seiteneffekte verlieren, obwohl er die neue Literal-zu-SQL-Regel besteht.",
+    "repair": "Inert sind Textsegmente/Kommentare. Eingebettete ABAP-Ausdrücke rekursiv auswerten; erst danach spätere Fremdsprach-/SQL-Konsumenten analysieren.",
+    "sources": [
+      "S12"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-06",
+    "priority": "P1",
+    "title": "Opake Grenze wird mit Ende des Aufrufers verwechselt",
+    "input_location": "v2 §7.3 R34; CC-056 source.abap:9–12",
+    "observation": "Pauschales Skelettende an Systemgrenze kollidiert mit modellierbarer AND-RETURN-Fortsetzung. CC-056 zeichnet die Rückkehr selbst richtig; der allgemeine Wortlaut ist zu weit.",
+    "consequence": "Folgeschritte und ihre Nachweise gehen im Businessprozess verloren.",
+    "repair": "Unbekannte Innenlogik begrenzen, normale Caller-Fortsetzung und alternative nicht normale Ausgänge getrennt modellieren.",
+    "sources": [
+      "S06",
+      "S07"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-07",
+    "priority": "P1",
+    "title": "Security-Achse richtig, Einzelheuristiken zu absolut",
+    "input_location": "v2 §7.3 R28; Gegenbeispiele CE-03/04; CC-034/035 und Beobachtung CC-059",
+    "observation": "CLIENT SPECIFIED ist nicht gleich tatsächlich mandantenübergreifende Ergebnismenge. Gesicherter Rückgabecode kann später geprüft werden. Gebundene Eingabe bleibt Datenwert. LOCAL MODE im eigenen Behavior ist häufig explizites Frameworkmuster, nicht allein eine Schwachstelle.",
+    "consequence": "False Positives und unbegründete Verbots-/Nachfolgerempfehlungen schwächen die fachliche Glaubwürdigkeit.",
+    "repair": "Beobachtung, Datenfluss, Schutzmaßnahme, Befundschwere und Policyentscheidung trennen. Sicherheitsentscheidung nicht als technischen Nachfolger kodieren.",
+    "sources": [
+      "S10",
+      "S11",
+      "S14",
+      "S17",
+      "S18"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-08",
+    "priority": "P1",
+    "title": "C1-Bewertung braucht klare Komponenten- und Gesamtscopes",
+    "input_location": "v2 R30; CC-060 Profilmatrix und B02",
+    "observation": "Ein gültiger C1-Wrapper kann einen Cloud-Konsumenten ermöglichen; vollständige Freigabemetadaten fehlen als Nachweis. A beim Konsumenten und C im transitiven Zwei-Dateien-Scope sind nur als ausdrücklich verschiedene Sichten konsistent.",
+    "consequence": "Eine Managementansicht könnte aus einer zulässigen Schnittstelle eine vollständig saubere Gesamtimplementierung ableiten.",
+    "repair": "component_contract_level und extension_level mit scope_members, release_state, contract, usage_visibility und Objektsprachversionen erfassen. C-Unterbau sichtbar erhalten.",
+    "sources": [
+      "S01",
+      "S02",
+      "S04"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-09",
+    "priority": "P1",
+    "title": "Kunde unbekannt ist nicht dasselbe wie Name initial",
+    "input_location": "CC-060 consumer:11–16; wrapper:10–16",
+    "observation": "Der Wrapper liefert einen Namen oder initialen String, keinen expliziten Existenzindikator. Ein vorhandener Datensatz mit initialem Namen ist durch die beschriebenen Eingaben nicht ausgeschlossen.",
+    "consequence": "Die Fachbeschreibung erfindet eine Existenzprüfung und könnte beim Neuaufbau eine andere Regel implementieren.",
+    "repair": "B02 auf Name-nicht-initial beschränken. Ein explizites found-Kennzeichen wäre eine fachliche Änderung, kein stiller Refactor.",
+    "sources": [
+      "Korpusquellen; lokales Gegenmodell"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-10",
+    "priority": "P1",
+    "title": "CC-023-Korrektur nicht konsolidiert; ALPHA-Satz weiter zu weit",
+    "input_location": "v2 §11.4 und CC-023-B02; CC-057/060 Kontext",
+    "observation": "Der alte unbedingte Änderungssatz bleibt im Fallkörper. Der neue Satz „ohne führende Nullen kein Treffer“ gilt nicht für jeden zulässigen alphanumerischen Schlüssel.",
+    "consequence": "Menschen und Importer können verschiedene Oracles verwenden; eine angebliche Korrektur friert einen neuen Überall-Satz ein.",
+    "repair": "Eine kanonische B02-Fassung; explizite numerische Testdaten für Nullauffüllung, zusätzlicher alphanumerischer Gegenfall.",
+    "sources": [
+      "S15"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-11",
+    "priority": "P1",
+    "title": "Reportende ist nicht identisch mit ROLLBACK",
+    "input_location": "CC-027 offene Prüferfragen; source.abap:5–10",
+    "observation": "Keine explizite Updateausführung im Slice ist richtig. Ende einer internen Sitzung und Löschen der Registrierungen sind aber nicht dieselbe Operation. SUBMIT AND RETURN hat einen anderen SAP-LUW-Kontext als normale externe Prozeduren.",
+    "consequence": "Prüfung kann physische Registrierungsdaten und fachliche Persistenz verwechseln und den falschen Aufrufer als Commit-Verantwortlichen ausweisen.",
+    "repair": "registration_state, dispatch_state und business_persistence getrennt; Ausführungs-/Sessionkontext fixieren.",
+    "sources": [
+      "S07",
+      "S09"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-12",
+    "priority": "P1",
+    "title": "Zielaktivierbarkeit darf As-is-Wissen nicht löschen",
+    "input_location": "CC-038 Zweitprofil; CC-057/058 Prozess-Soll; CC-056 Zweitprofil",
+    "observation": "Mehrere Cloud-Zweitprofile formulieren nur Unknown trotz klassischem REPORT/SUBMIT. Andere Fälle verlangen gar kein Prozessskelett bei Ziel-Nichtaktivierbarkeit.",
+    "consequence": "Im Ziel unbrauchbarer Legacycode würde gerade seine für Explore wichtigste fachliche Erklärung verlieren.",
+    "repair": "Source-Interpretation und Targetaktivierbarkeit getrennt. Targetexecution_graph not_applicable darf source_process_graph nicht entfernen. Neues n/a explizit schematisieren.",
+    "sources": [
+      "S02",
+      "S27"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-13",
+    "priority": "P1",
+    "title": "Statementoffset allein identifiziert nicht jede Wirkung",
+    "input_location": "v2 R27; CC-060 consumer:16; Gegenbeispiel CE-06",
+    "observation": "Makroaufruf kann mehrere identische Wirkungsarten erzeugen. COND-Gateway und zwei Aktionsarme können dieselbe Zeile teilen.",
+    "consequence": "Graphvergleich kann Semantik zusammenziehen oder zwei richtige Graphen fälschlich auseinanderhalten.",
+    "repair": "Normierte Lexertokens, code-span plus expression_path/arm_id sowie expansion_stack. Keine Behauptung, der nicht gelieferte v2-Comparator sei bereits getestet.",
+    "sources": [
+      "Korpuskonvention"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-14",
+    "priority": "P2",
+    "title": "Metadaten wurden verbessert, sind aber kein nativer Pin",
+    "input_location": "CC-057/058/059/060; v2 Zielprofile",
+    "observation": "I_CUSTOMER und CL_ABAP_BEHAVIOR_HANDLER besitzen eigene released-Einträge in der abgefragten PCE2022-Ansicht. Das ist stärker als die v2-Erinnerung, aber main und Webcache sind kein unveränderlicher Zielsystem-Snapshot.",
+    "consequence": "Ein richtiges Einzelmetadatum könnte irrtümlich als exakter vollständiger 2023/BTP-2408-Vertrag verwendet werden.",
+    "repair": "Record-Provenienz speichern; eigene released-Records ergänzen. Profil, vollständigen native Snapshot und ADT-Vertragsdetails für spätere formale Abnahme binden.",
+    "sources": [
+      "S19",
+      "S20",
+      "S21"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-15",
+    "priority": "P1",
+    "title": "Blindheit und Kontrollfallresultate werden methodisch überinterpretiert",
+    "input_location": "Prüfauftrag §2.3, §8, §10; v2 Gegenprüfmethodik",
+    "observation": "Nichtfinden eines absichtlich falschen Oracles beweist nicht, dass der Prüfer vorher die Sollantwort gelesen hat. Ein positives Review oder ein Konflikt mit abaplint ist allein ebenfalls kein Beweis methodischer Ungültigkeit.",
+    "consequence": "Falsche Unabhängigkeitslabels oder eine Prüfung, die negative Ergebnisse erzwingen soll.",
+    "repair": "Blinde Materialtrennung, tatsächliche vorgezogene Abgabe und Empfangsbeleg. Kontrolltreffer separat als Qualitätssignal. Parserdissens mit Version/Minimalfall adjudizieren, nicht per Toolnamen entscheiden.",
+    "sources": [
+      "Eigene methodische Bewertung"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  },
+  {
+    "id": "REV2-16",
+    "priority": "P2",
+    "title": "Version-/Enum-/Nachweisregister noch nicht maschinenklar",
+    "input_location": "v2 §7, Fallköpfe und Anker; Prüfauftrag Zählung",
+    "observation": "35 aktive IDs durch R13a/R13b statt nominell 34. Fallreferenzen verwenden mehrere v2-Versionstexte. Stufe-A-Felder nutzen teils n/a/not_applicable/none unterschiedlich; vollständige neue JSON-Fixtures/Comparator nicht mitgeliefert.",
+    "consequence": "Automatische Freigabe könnte mit uneinheitlichen Regeln oder importierten Alttexten arbeiten.",
+    "repair": "Ein aktives 35er-Regelregister, Alias-/Migrationsplan, explizite Enumsemantik, canonische Sollfassungen. Autorenangaben zu Enginefixes nicht als in diesem Review ausgeführte Tests zählen.",
+    "sources": [
+      "Korpusquellen"
+    ],
+    "product_engine_reproduction": "NOT_RUN",
+    "status": "review_finding_not_external_signoff"
+  }
+]

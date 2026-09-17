@@ -1,0 +1,37 @@
+{
+  "document_version": "REVIEW-2.0.1-proposed",
+  "review_date": "2026-09-16",
+  "reviewer": "KI-Assistent; kein identifizierter externer menschlicher SAP-Architekt",
+  "review_type": "NONBLIND_AI_COUNTERREVIEW",
+  "prior_involvement": "v1-Korpus mitverfasst; v2-Sollantworten vor Review gesehen",
+  "scope": "Stufe A inhaltlich; ausgewählte zusätzliche Beobachtungen, keine komplette B/C-Abnahme",
+  "human_external_signoff": null,
+  "native_sap_execution": "NOT_RUN",
+  "clean_core_engine_execution": "NOT_RUN",
+  "v2_comparator_execution": "NOT_RUN",
+  "original_inputs_unchanged": true,
+  "status": "HOLD_FOR_ORACLE_CORRECTIONS",
+  "files_and_rule_ids_reviewed": {
+    "semantic_cases": 10,
+    "active_rules": 35,
+    "mechanically_checked_cases": 60,
+    "abap_files": 63,
+    "abap_lines": 997,
+    "declared_hashes_verified": 61,
+    "numbered_copies_verified": 63
+  },
+  "local_countermodel_tests": {
+    "count": 15,
+    "passed": 15,
+    "runtimes": [
+      "Python standard library",
+      "SQLite in-memory"
+    ],
+    "not_evidence_of": "SAP-native semantics verification, engine accuracy, human independence"
+  },
+  "new_counterexamples": {
+    "count": 8,
+    "kind": "constructed",
+    "native_compile": "NOT_RUN"
+  }
+}

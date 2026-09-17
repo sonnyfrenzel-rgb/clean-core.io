@@ -1,0 +1,20 @@
+test_existing_customer_with_empty_name_has_unknown_route (test_countermodels.CustomerNameCountermodels.test_existing_customer_with_empty_name_has_unknown_route) ... ok
+test_name_guard_dominates_amount (test_countermodels.CustomerNameCountermodels.test_name_guard_dominates_amount) ... ok
+test_threshold_above_is_manager (test_countermodels.CustomerNameCountermodels.test_threshold_above_is_manager) ... ok
+test_threshold_equal_not_manager (test_countermodels.CustomerNameCountermodels.test_threshold_equal_not_manager) ... ok
+test_above_threshold_sets_candidate (test_countermodels.ExitStateCountermodels.test_above_threshold_sets_candidate) ... ok
+test_equal_threshold_keeps_prior_block (test_countermodels.ExitStateCountermodels.test_equal_threshold_keeps_prior_block) ... ok
+test_negative_branch_keeps_prior_block (test_countermodels.ExitStateCountermodels.test_negative_branch_keeps_prior_block) ... ok
+test_other_order_type_does_not_clear (test_countermodels.ExitStateCountermodels.test_other_order_type_does_not_clear) ... ok
+test_alphanumeric_key_can_match_without_zeroes (test_countermodels.KeyFormatCountermodels.test_alphanumeric_key_can_match_without_zeroes) ... ok
+test_canonical_numeric_input_matches (test_countermodels.KeyFormatCountermodels.test_canonical_numeric_input_matches) ... ok
+test_unconverted_numeric_short_input_misses_canonical_numeric (test_countermodels.KeyFormatCountermodels.test_unconverted_numeric_short_input_misses_canonical_numeric) ... ok
+test_bound_parameter_keeps_same_payload_as_data (test_countermodels.SQLCountermodels.test_bound_parameter_keeps_same_payload_as_data) ... ok
+test_commit_does_not_prove_a_customer_matched (test_countermodels.SQLCountermodels.test_commit_does_not_prove_a_customer_matched) ... ok
+test_input_within_c35_can_remove_appended_scope_in_sqlite (test_countermodels.SQLCountermodels.test_input_within_c35_can_remove_appended_scope_in_sqlite) ... ok
+test_normal_text_updates_single_intended_row (test_countermodels.SQLCountermodels.test_normal_text_updates_single_intended_row) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.001s
+
+OK

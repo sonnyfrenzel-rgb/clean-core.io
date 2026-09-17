@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "PCE2022-objectReleaseInfo",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=PCE2022-objectReleaseInfo · rule_revision=2.0.0-candidate.1",
+  "release": "S/4HANA 2023",
+  "rule_revision": "2.0.0-candidate.1",
+  "runtime_context": null,
+  "second_profile": "ecc-6 (ABAP < 7.55): der Zusatz existiert nicht — nicht kompilierbar; Sollantwort dort Unknown mit Befund „Syntax erst ab 7.55\", kein Level."
+}

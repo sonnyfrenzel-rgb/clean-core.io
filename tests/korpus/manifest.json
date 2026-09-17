@@ -1,0 +1,1940 @@
+{
+  "book": {
+    "caseCount": 68,
+    "path": "docs/korpus/referenzkorpus-v2.1.md",
+    "sha256": "9b1ed17256d04a3990335ff9e1a54f2151bccfd44e43190cc40fead2c0d0b288"
+  },
+  "cases": [
+    {
+      "beleggrad": null,
+      "businessStatementCount": 3,
+      "classes": [
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "c95f9c5ff6bae2ae269f60d7c32a7a570692fc9e06a7a09af3495ade43d2d8fc",
+          "lines": 15,
+          "name": "source.abap",
+          "sha256": "c95f9c5ff6bae2ae269f60d7c32a7a570692fc9e06a7a09af3495ade43d2d8fc"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-001",
+      "independence": [],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "c95f9c5ff6bae2ae269f60d7c32a7a570692fc9e06a7a09af3495ade43d2d8fc",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 8,
+      "title": "Kundenliste: SAP-Tabelle lesen, keine Schreibmigration"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 3,
+      "classes": [
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "ea6745f9e30b5041cc10315194ddcb88d56c6f113f6061ff88a8f4bd6a83d23d",
+          "lines": 20,
+          "name": "source.abap",
+          "sha256": "ea6745f9e30b5041cc10315194ddcb88d56c6f113f6061ff88a8f4bd6a83d23d"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-002",
+      "independence": [],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "ea6745f9e30b5041cc10315194ddcb88d56c6f113f6061ff88a8f4bd6a83d23d",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 7,
+      "title": "FAE: expliziter Leermengenschutz und Company-Daten"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 3,
+      "classes": [
+        "K02"
+      ],
+      "files": [
+        {
+          "declared": "a8fcae066b8e02d4ddec782a5d40ec390615e27956799ecd3d05a77a74d4808a",
+          "lines": 21,
+          "name": "source.abap",
+          "sha256": "a8fcae066b8e02d4ddec782a5d40ec390615e27956799ecd3d05a77a74d4808a"
+        }
+      ],
+      "findingCount": 0,
+      "id": "CC-003",
+      "independence": [],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "a8fcae066b8e02d4ddec782a5d40ec390615e27956799ecd3d05a77a74d4808a",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 8,
+      "title": "Lokaler Regel-Wrapper: Standard-ABAP B und keine echte Freigabe"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 2,
+      "classes": [
+        "K02"
+      ],
+      "files": [
+        {
+          "declared": "baf697be6ec0a962e8164b2f440f4c355aa1e20c86a16403aef66935f90dd34d",
+          "lines": 15,
+          "name": "source.abap",
+          "sha256": "baf697be6ec0a962e8164b2f440f4c355aa1e20c86a16403aef66935f90dd34d"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-004",
+      "independence": [],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "baf697be6ec0a962e8164b2f440f4c355aa1e20c86a16403aef66935f90dd34d",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 4,
+      "title": "HTTP-Wrapper: Classic API plus notToBeReleased"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 2,
+      "classes": [
+        "K03"
+      ],
+      "files": [
+        {
+          "declared": "169d55b94e766f7bd3909fbcdef09feb143dc39a814ef894904b78528063f767",
+          "lines": 12,
+          "name": "source.abap",
+          "sha256": "169d55b94e766f7bd3909fbcdef09feb143dc39a814ef894904b78528063f767"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-005",
+      "independence": [],
+      "objectCount": 2,
+      "profileCount": 1,
+      "quellenhash": "169d55b94e766f7bd3909fbcdef09feb143dc39a814ef894904b78528063f767",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 4,
+      "title": "Statische Funktionsbausteine: ALPHA in beide Richtungen"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 2,
+      "classes": [
+        "K03",
+        "K06"
+      ],
+      "files": [
+        {
+          "declared": "0b63a007cac0e750a991ec24c8bc58c0921fb018da669ee4f2299a9718f60aec",
+          "lines": 9,
+          "name": "source.abap",
+          "sha256": "0b63a007cac0e750a991ec24c8bc58c0921fb018da669ee4f2299a9718f60aec"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-006",
+      "independence": [],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "0b63a007cac0e750a991ec24c8bc58c0921fb018da669ee4f2299a9718f60aec",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 3,
+      "title": "Konstanter FM-Name ist statisch, kein dynamischer Blindflug"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 2,
+      "classes": [
+        "K04",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "7a0c8f3aa6fba22a43212733367e78ae7ad3812b1023286dbfe3f2ae6f7d3da4",
+          "lines": 13,
+          "name": "source.abap",
+          "sha256": "7a0c8f3aa6fba22a43212733367e78ae7ad3812b1023286dbfe3f2ae6f7d3da4"
+        }
+      ],
+      "findingCount": 4,
+      "id": "CC-007",
+      "independence": [],
+      "objectCount": 3,
+      "profileCount": 1,
+      "quellenhash": "7a0c8f3aa6fba22a43212733367e78ae7ad3812b1023286dbfe3f2ae6f7d3da4",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 5,
+      "title": "Drei Tabellen: Kunden, Company, Sales Area und Multiplizität"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 2,
+      "classes": [
+        "K04",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "7a5d3ec80446dc61de1a986e0392817f52506fc34ab8f9487e461c9c8ab8c2c4",
+          "lines": 12,
+          "name": "source.abap",
+          "sha256": "7a5d3ec80446dc61de1a986e0392817f52506fc34ab8f9487e461c9c8ab8c2c4"
+        }
+      ],
+      "findingCount": 4,
+      "id": "CC-008",
+      "independence": [],
+      "objectCount": 3,
+      "profileCount": 1,
+      "quellenhash": "7a5d3ec80446dc61de1a986e0392817f52506fc34ab8f9487e461c9c8ab8c2c4",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 3,
+      "title": "LEFT JOIN: WHERE-Filter entfernt Nulltreffer"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 3,
+      "classes": [
+        "K05"
+      ],
+      "files": [
+        {
+          "declared": null,
+          "lines": 13,
+          "name": "implementation.abap",
+          "sha256": "e84d4011292fe3752eaa6e7897c2d0e9971eeb18502d1be560adb812be202375"
+        },
+        {
+          "declared": null,
+          "lines": 5,
+          "name": "interface.abap",
+          "sha256": "1028ec4f176ee2c64e51cd2a58da7ed532732af80a04db2f912f66a67c77c936"
+        },
+        {
+          "declared": "cbff55adc6761e7a6529c3dda43a1b2373ac3122e4dd0ef6ce6264ff13a2c28a",
+          "lines": 10,
+          "name": "source.abap",
+          "sha256": "cbff55adc6761e7a6529c3dda43a1b2373ac3122e4dd0ef6ce6264ff13a2c28a"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-009",
+      "independence": [],
+      "objectCount": 4,
+      "profileCount": 1,
+      "quellenhash": "cbff55adc6761e7a6529c3dda43a1b2373ac3122e4dd0ef6ce6264ff13a2c28a",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 7,
+      "title": "Expliziter kundeneigener BAdI mit festgehaltener Aktivierung"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 2,
+      "classes": [
+        "K05"
+      ],
+      "files": [
+        {
+          "declared": "f0773dc4956a95a6ea863694f1ccac65e28d3d1f1bbdffd7d06fa1f7c084591f",
+          "lines": 13,
+          "name": "source.abap",
+          "sha256": "f0773dc4956a95a6ea863694f1ccac65e28d3d1f1bbdffd7d06fa1f7c084591f"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-010",
+      "independence": [],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "f0773dc4956a95a6ea863694f1ccac65e28d3d1f1bbdffd7d06fa1f7c084591f",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 6,
+      "title": "Implizites Enhancement: Kontext bestimmt D, nicht Z-Name"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 2,
+      "classes": [
+        "K06"
+      ],
+      "files": [
+        {
+          "declared": "9e47e55bb554d21dfd1cb9361840f167d90e53a8c7da9ea18ef54cc5f531b6eb",
+          "lines": 10,
+          "name": "source.abap",
+          "sha256": "9e47e55bb554d21dfd1cb9361840f167d90e53a8c7da9ea18ef54cc5f531b6eb"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-011",
+      "independence": [],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "9e47e55bb554d21dfd1cb9361840f167d90e53a8c7da9ea18ef54cc5f531b6eb",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 4,
+      "title": "Dynamischer FM: Syntax dynamisch, Datenfluss auflösbar"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 3,
+      "classes": [
+        "K06",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "56e238efaaf2b60fdd73976fda995ae616ab01c80c706546b79a5fe857ef245e",
+          "lines": 16,
+          "name": "source.abap",
+          "sha256": "56e238efaaf2b60fdd73976fda995ae616ab01c80c706546b79a5fe857ef245e"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-012",
+      "independence": [],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "56e238efaaf2b60fdd73976fda995ae616ab01c80c706546b79a5fe857ef245e",
+      "scope": "partial_missing_runtime_targets",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 6,
+      "title": "Externer dynamischer Aufruf und PERFORM: bewusst unaufgelöst"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 3,
+      "classes": [
+        "K07"
+      ],
+      "files": [
+        {
+          "declared": "a696d1e6ac04fdaa2ecba1e3044b46f116c0766a41ef18ea01814f1c42348e71",
+          "lines": 20,
+          "name": "source.abap",
+          "sha256": "a696d1e6ac04fdaa2ecba1e3044b46f116c0766a41ef18ea01814f1c42348e71"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-013",
+      "independence": [],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "a696d1e6ac04fdaa2ecba1e3044b46f116c0766a41ef18ea01814f1c42348e71",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 9,
+      "title": "Vollständiger Dynpro-Mikrofall: PBO, PAI und GUI-Status"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 2,
+      "classes": [
+        "K07",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "a55206bf57547ac11e628300879ecce662b296749f2c57b070582902dbe62d55",
+          "lines": 5,
+          "name": "source.abap",
+          "sha256": "a55206bf57547ac11e628300879ecce662b296749f2c57b070582902dbe62d55"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-014",
+      "independence": [],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "a55206bf57547ac11e628300879ecce662b296749f2c57b070582902dbe62d55",
+      "scope": "partial_missing_screen",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 3,
+      "title": "Dynpro-Aufruf ohne Screenexport"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 2,
+      "classes": [
+        "K08"
+      ],
+      "files": [
+        {
+          "declared": "e826a73b93fb399faf47dc9cc59a68f30999c4d8a9f6a2a481acdb089267341b",
+          "lines": 13,
+          "name": "source.abap",
+          "sha256": "e826a73b93fb399faf47dc9cc59a68f30999c4d8a9f6a2a481acdb089267341b"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-015",
+      "independence": [],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "e826a73b93fb399faf47dc9cc59a68f30999c4d8a9f6a2a481acdb089267341b",
+      "scope": "partial_kernel_contract_unverified",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 5,
+      "title": "Echter Kernelaufruf: Kenntnisgrenze sichtbar halten"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 2,
+      "classes": [
+        "K08",
+        "K02"
+      ],
+      "files": [
+        {
+          "declared": "7a2a28dc25aa81bffbbdc9d58de23b53ac1df351cb44697e17da7d451ddef9aa",
+          "lines": 8,
+          "name": "source.abap",
+          "sha256": "7a2a28dc25aa81bffbbdc9d58de23b53ac1df351cb44697e17da7d451ddef9aa"
+        }
+      ],
+      "findingCount": 0,
+      "id": "CC-016",
+      "independence": [],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "7a2a28dc25aa81bffbbdc9d58de23b53ac1df351cb44697e17da7d451ddef9aa",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 4,
+      "title": "Lexikalische Falle: SQL und Kernel nur in Texten"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 3,
+      "classes": [
+        "K09"
+      ],
+      "files": [
+        {
+          "declared": "5e4b662c4f97bca5b0ceb04a2536c3bb65c26e45c43a6258f48cd1c997ec1784",
+          "lines": 34,
+          "name": "source.abap",
+          "sha256": "5e4b662c4f97bca5b0ceb04a2536c3bb65c26e45c43a6258f48cd1c997ec1784"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-017",
+      "independence": [],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "5e4b662c4f97bca5b0ceb04a2536c3bb65c26e45c43a6258f48cd1c997ec1784",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 9,
+      "title": "OO: Redefinition und expliziter Super-Aufruf"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 2,
+      "classes": [
+        "K09",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "3696af0664d9e42e8a1aa4d985a88982458a59f8d918f1be0a57ee6bf30aba4c",
+          "lines": 13,
+          "name": "source.abap",
+          "sha256": "3696af0664d9e42e8a1aa4d985a88982458a59f8d918f1be0a57ee6bf30aba4c"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-018",
+      "independence": [],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "3696af0664d9e42e8a1aa4d985a88982458a59f8d918f1be0a57ee6bf30aba4c",
+      "scope": "intentionally_incomplete",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 3,
+      "title": "OO: fehlende globale Basisklasse"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 3,
+      "classes": [
+        "K10"
+      ],
+      "files": [
+        {
+          "declared": "d1d8dd3270afc4a8939f8f5f89a0f39f5b1d5bd4ca11b390ae25c2441719e693",
+          "lines": 13,
+          "name": "source.abap",
+          "sha256": "d1d8dd3270afc4a8939f8f5f89a0f39f5b1d5bd4ca11b390ae25c2441719e693"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-019",
+      "independence": [],
+      "objectCount": 2,
+      "profileCount": 1,
+      "quellenhash": "d1d8dd3270afc4a8939f8f5f89a0f39f5b1d5bd4ca11b390ae25c2441719e693",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 6,
+      "title": "RTTI: bekannter lokaler Strukturtyp"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 3,
+      "classes": [
+        "K10",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "a5e03946a38c6cbc7727904536610134a217cade27b5cb0797af77382b9151ae",
+          "lines": 15,
+          "name": "source.abap",
+          "sha256": "a5e03946a38c6cbc7727904536610134a217cade27b5cb0797af77382b9151ae"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-020",
+      "independence": [],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "a5e03946a38c6cbc7727904536610134a217cade27b5cb0797af77382b9151ae",
+      "scope": "partial_missing_type_and_runtime_domain",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 6,
+      "title": "Dynamischer Typ und Feldname aus Eingabe"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 2,
+      "classes": [
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "ae06569fe9c75606764a46ff1476c2b7321500b309e66d55176bda7bd9e90025",
+          "lines": 7,
+          "name": "source.abap",
+          "sha256": "ae06569fe9c75606764a46ff1476c2b7321500b309e66d55176bda7bd9e90025"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-021",
+      "independence": [],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "ae06569fe9c75606764a46ff1476c2b7321500b309e66d55176bda7bd9e90025",
+      "scope": "intentionally_incomplete",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 3,
+      "title": "Fehlendes INCLUDE: keine erfundene Kreditregel"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 2,
+      "classes": [
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "370c6eb448994d4c179e4fc406e2a576f68da4baa7541a415a573cf10e7b382f",
+          "lines": 5,
+          "name": "source.abap",
+          "sha256": "370c6eb448994d4c179e4fc406e2a576f68da4baa7541a415a573cf10e7b382f"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-022",
+      "independence": [],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "370c6eb448994d4c179e4fc406e2a576f68da4baa7541a415a573cf10e7b382f",
+      "scope": "intentionally_incomplete",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 3,
+      "title": "Partner-Namespace: fehlende Quelle ist kein SAP-internes C"
+    },
+    {
+      "beleggrad": "konstruiert (synthetisch). Verifiziert sind Syntax und Objekte: UPDATE … SET … WHERE, COMMIT WORK AND WAIT, ROLLBACK WORK, KNA1 mit KUNNR und NAME1; KUNNR trägt über Datenelement/Domäne die Konvertierungsroutine ALPHA (v2 §11.4), ein PARAMETERS … TYPE c LENGTH 10 hat keine Domäne und damit keine Konvertierungsroutine.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "2d09e72b740dda8b3314f5717dc0b7ea4d5e61c47724b27562a2780bce89766d",
+          "lines": 17,
+          "name": "source.abap",
+          "sha256": "2d09e72b740dda8b3314f5717dc0b7ea4d5e61c47724b27562a2780bce89766d"
+        }
+      ],
+      "findingCount": 3,
+      "id": "CC-023",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "2d09e72b740dda8b3314f5717dc0b7ea4d5e61c47724b27562a2780bce89766d",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 10,
+      "title": "Direktes SAP-UPDATE mit Testmodus: D trotz CDS-Nachfolger"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 3,
+      "classes": [
+        "K02"
+      ],
+      "files": [
+        {
+          "declared": "c22b8aef90ba9021dadb19cdb6d0cf4b88eaad22715ade6264989305df7d474f",
+          "lines": 17,
+          "name": "source.abap",
+          "sha256": "c22b8aef90ba9021dadb19cdb6d0cf4b88eaad22715ade6264989305df7d474f"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-024",
+      "independence": [],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "c22b8aef90ba9021dadb19cdb6d0cf4b88eaad22715ade6264989305df7d474f",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 9,
+      "title": "Eigene Persistenz: keine automatische CAP-Pflicht"
+    },
+    {
+      "beleggrad": null,
+      "businessStatementCount": 5,
+      "classes": [
+        "K02"
+      ],
+      "files": [
+        {
+          "declared": "67c8d9540ec79b4a271a788e5e546a6af8c7078d1de83f12359b2c910c922c22",
+          "lines": 24,
+          "name": "source.abap",
+          "sha256": "67c8d9540ec79b4a271a788e5e546a6af8c7078d1de83f12359b2c910c922c22"
+        }
+      ],
+      "findingCount": 0,
+      "id": "CC-025",
+      "independence": [],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "67c8d9540ec79b4a271a788e5e546a6af8c7078d1de83f12359b2c910c922c22",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 13,
+      "title": "Business-Gegenprobe: Währung, Nachtregel, Grenzen und nur Routing"
+    },
+    {
+      "beleggrad": "konstruiert (Muster aus realem Verbuchungscode). Verifiziert: die Syntax IN UPDATE TASK, COMMIT WORK, ROLLBACK WORK und ihr dokumentiertes Verhalten (S05, S09; S32 laut Regelregister v2.1).",
+      "businessStatementCount": 4,
+      "classes": [
+        "K12",
+        "K03",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "e71faa102cfbc7afe3d567a0cfa38934db87fa5bf2d88cbc90342a934a49f7a0",
+          "lines": 17,
+          "name": "source.abap",
+          "sha256": "e71faa102cfbc7afe3d567a0cfa38934db87fa5bf2d88cbc90342a934a49f7a0"
+        }
+      ],
+      "findingCount": 5,
+      "id": "CC-026",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "e71faa102cfbc7afe3d567a0cfa38934db87fa5bf2d88cbc90342a934a49f7a0",
+      "scope": "partial_missing_update_module_source",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 9,
+      "title": "Verbuchung: registriert an der Aufrufstelle, ausgeführt beim COMMIT, verworfen beim ROLLBACK"
+    },
+    {
+      "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+      "businessStatementCount": 2,
+      "classes": [
+        "K12",
+        "K03",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "15a9f6ef9f7f76c40225df816ad8f9ce9c4f05ed30b4d53ee55b619583f876df",
+          "lines": 10,
+          "name": "source.abap",
+          "sha256": "15a9f6ef9f7f76c40225df816ad8f9ce9c4f05ed30b4d53ee55b619583f876df"
+        }
+      ],
+      "findingCount": 4,
+      "id": "CC-027",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "15a9f6ef9f7f76c40225df816ad8f9ce9c4f05ed30b4d53ee55b619583f876df",
+      "scope": "partial_missing_update_module_source",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 4,
+      "title": "Verbuchung ohne COMMIT WORK: angekündigt, nicht persistiert (Negativkontrolle zu CC-026)"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte) — BAPI_SALESORDER_CREATEFROMDAT2, BAPI_TRANSACTION_COMMIT mit Parameter WAIT, die Strukturen BAPISDHD1, BAPIPARNR, BAPIRET2, BAPIVBELN und das dokumentierte BAPI-Transaktionsmodell (BAPI schreibt in die LUW, Aufrufer committet) existieren. Nicht behauptet: dass die gezeigten Pflichtfelder für eine erfolgreiche Anlage ausreichen.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K12",
+        "K03"
+      ],
+      "files": [
+        {
+          "declared": "df6782b91d81068eec460beadd35e2930cd7ae915c88c811c6fa118c5ce905e5",
+          "lines": 22,
+          "name": "source.abap",
+          "sha256": "df6782b91d81068eec460beadd35e2930cd7ae915c88c811c6fa118c5ce905e5"
+        }
+      ],
+      "findingCount": 4,
+      "id": "CC-028",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 2,
+      "profileCount": 1,
+      "quellenhash": "df6782b91d81068eec460beadd35e2930cd7ae915c88c811c6fa118c5ce905e5",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 8,
+      "title": "BAPI-Paar: Anlage nur mit BAPI_TRANSACTION_COMMIT; der Fehlerzweig committet nichts"
+    },
+    {
+      "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K12",
+        "K03"
+      ],
+      "files": [
+        {
+          "declared": "f8fe578de400de65e5ca09cb6f6f99b7fc4bd15a71e008ceba9e73bc912fc16b",
+          "lines": 22,
+          "name": "source.abap",
+          "sha256": "f8fe578de400de65e5ca09cb6f6f99b7fc4bd15a71e008ceba9e73bc912fc16b"
+        }
+      ],
+      "findingCount": 5,
+      "id": "CC-029",
+      "independence": [
+        "modellreview"
+      ],
+      "objectCount": 3,
+      "profileCount": 1,
+      "quellenhash": "f8fe578de400de65e5ca09cb6f6f99b7fc4bd15a71e008ceba9e73bc912fc16b",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 11,
+      "title": "Sperre als Transaktionsknoten: geschrieben wird nur mit gesetzter Sperre"
+    },
+    {
+      "beleggrad": "erinnert — Syntax verifiziert; dass ein Datenbank-Commit den offenen SELECT-Cursor schließt und die Schleife danach mit Laufzeitfehler abbricht, ist SAP-dokumentiert nach Erinnerung des Autors. Nicht behauptet: der exakte Name des Laufzeitfehlers und ob er beim zweiten Satz oder erst beim Nachladen des nächsten Pakets vom Datenbankcursor eintritt.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K12",
+        "K02"
+      ],
+      "files": [
+        {
+          "declared": "de606b1bc638190db6770722805838b86d2a719a512ab7d6ace90e1cfd29d508",
+          "lines": 13,
+          "name": "source.abap",
+          "sha256": "de606b1bc638190db6770722805838b86d2a719a512ab7d6ace90e1cfd29d508"
+        }
+      ],
+      "findingCount": 4,
+      "id": "CC-030",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "de606b1bc638190db6770722805838b86d2a719a512ab7d6ace90e1cfd29d508",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 7,
+      "title": "COMMIT WORK in SELECT … ENDSELECT: der Befund ist ein Laufzeitfehler, kein Level"
+    },
+    {
+      "beleggrad": "konstruiert — Syntax CALL FUNCTION … DESTINATION, die Standardausnahmen COMMUNICATION_FAILURE/SYSTEM_FAILURE und die dokumentierte Regel, dass ein synchroner RFC-Aufruf im rufenden Programm einen impliziten Datenbank-Commit auslöst, sind SAP-Keyword-Dokumentation; der Baustein und die Destination sind Fixture.",
+      "businessStatementCount": 4,
+      "classes": [
+        "K12",
+        "K03",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "6a49f88e8c40cbb413e427536d3d1196158456ce2da14c543bd3570fd9dcc8e2",
+          "lines": 23,
+          "name": "source.abap",
+          "sha256": "6a49f88e8c40cbb413e427536d3d1196158456ce2da14c543bd3570fd9dcc8e2"
+        }
+      ],
+      "findingCount": 5,
+      "id": "CC-031",
+      "independence": [
+        "modellreview"
+      ],
+      "objectCount": 2,
+      "profileCount": 1,
+      "quellenhash": "6a49f88e8c40cbb413e427536d3d1196158456ce2da14c543bd3570fd9dcc8e2",
+      "scope": "partial_missing_runtime_targets",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 13,
+      "title": "RFC mit dynamischer Destination: Systemgrenze, impliziter Commit, wirkungsloser Rollback"
+    },
+    {
+      "beleggrad": "erinnert — Syntax STARTING NEW TASK … PERFORMING form ON END OF TASK und RECEIVE RESULTS FROM FUNCTION sind verifiziert; der Zeitpunkt, zu dem der Callback im rufenden Programm ausgeführt wird (nach Erinnerung des Autors erst bei WAIT oder beim nächsten Dialogschrittwechsel), und ob der aRFC-Start im Rufer einen impliziten Datenbank-Commit auslöst, sind Erinnerung.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K12",
+        "K03",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "151bf78c60045a0062018328c5a7ef054d0528e776a79532bd926dc8a17978d1",
+          "lines": 22,
+          "name": "source.abap",
+          "sha256": "151bf78c60045a0062018328c5a7ef054d0528e776a79532bd926dc8a17978d1"
+        }
+      ],
+      "findingCount": 5,
+      "id": "CC-032",
+      "independence": [
+        "modellreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "151bf78c60045a0062018328c5a7ef054d0528e776a79532bd926dc8a17978d1",
+      "scope": "partial_missing_function_module_source",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 8,
+      "title": "Asynchroner RFC: paralleler Zweig, Callback-Handler als Anker, Ergebnis ohne Konsument"
+    },
+    {
+      "beleggrad": "erinnert — Syntax verifiziert; dass eine E-Meldung im Dialogkontext eines Reports die Verarbeitung beendet, ist sicher; ob sie dabei einen impliziten Datenbank-Rollback auslöst oder die offene Datenbank-LUW am Dialogschrittende implizit festgeschrieben wird, ist Erinnerung des Autors und die zentrale Prüferfrage. Die Sollantwort ist so formuliert, dass sie unabhängig davon gilt.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K12",
+        "K02"
+      ],
+      "files": [
+        {
+          "declared": "c8b526c53fd2fe3cf8b4b196ee50e97d9b7cf910f1e03e8869160e2b025c1cca",
+          "lines": 15,
+          "name": "source.abap",
+          "sha256": "c8b526c53fd2fe3cf8b4b196ee50e97d9b7cf910f1e03e8869160e2b025c1cca"
+        }
+      ],
+      "findingCount": 4,
+      "id": "CC-033",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 3,
+      "profileCount": 1,
+      "quellenhash": "c8b526c53fd2fe3cf8b4b196ee50e97d9b7cf910f1e03e8869160e2b025c1cca",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 10,
+      "title": "MESSAGE Typ E als Abbruchpfad: die LUW-Wirkung hängt am Laufzeitkontext"
+    },
+    {
+      "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+      "businessStatementCount": 4,
+      "classes": [
+        "K13",
+        "K02",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "26b37cee8075e8afc842debab752a762bd26612c51ec22429bbed3f14b8bab2c",
+          "lines": 27,
+          "name": "source.abap",
+          "sha256": "26b37cee8075e8afc842debab752a762bd26612c51ec22429bbed3f14b8bab2c"
+        }
+      ],
+      "findingCount": 5,
+      "id": "CC-034",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 3,
+      "profileCount": 1,
+      "quellenhash": "26b37cee8075e8afc842debab752a762bd26612c51ec22429bbed3f14b8bab2c",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 17,
+      "title": "ADBC: das Stringtemplate wird als SQL ausgeführt (Gegenstück zu CC-016)"
+    },
+    {
+      "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K13",
+        "K08",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "a2fb42668ccf064fe3c2576db6000bdce440390a675e6b98ea60a3e370bcf9d3",
+          "lines": 16,
+          "name": "source.abap",
+          "sha256": "a2fb42668ccf064fe3c2576db6000bdce440390a675e6b98ea60a3e370bcf9d3"
+        }
+      ],
+      "findingCount": 4,
+      "id": "CC-035",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "a2fb42668ccf064fe3c2576db6000bdce440390a675e6b98ea60a3e370bcf9d3",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 9,
+      "title": "EXEC SQL: Native SQL schreibt KNA1, kein Nachfolger, nicht in der Cloud"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte) — dynamisches FROM (name) in ABAP SQL, statische Feldliste bei dynamischer Tabelle, KNA1 mit KUNNR/NAME1/LAND1 existieren. Ob der ABAP-Compiler eine CONSTANTS-Angabe in Klammern statisch prüft, ist nicht belegt (Prüferfrage 1); die Sollantwort stützt sich auf R07 (Datenfluss), nicht auf Compilerverhalten.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K13",
+        "K01",
+        "K06"
+      ],
+      "files": [
+        {
+          "declared": "5f23ff261d99983540cf31def61bdcfa1ebb76c58b325f2481aec6edd40dacc1",
+          "lines": 21,
+          "name": "source.abap",
+          "sha256": "5f23ff261d99983540cf31def61bdcfa1ebb76c58b325f2481aec6edd40dacc1"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-036",
+      "independence": [
+        "keine"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "5f23ff261d99983540cf31def61bdcfa1ebb76c58b325f2481aec6edd40dacc1",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 8,
+      "title": "Dynamisches FROM aus Konstante: Datenfluss vollständig, Ziel KNA1 (Fallpaar A)"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte) — dynamisches FROM (name), SELECT COUNT(*) … INTO @lv, Selektionsbildparameter mit DEFAULT existieren. Die Berechtigungsobjekte S_TABU_DIS/S_TABU_NAM sind als Beispiele genannt und existieren; welches davon hier fachlich verlangt wäre, ist Prüferfrage.",
+      "businessStatementCount": 2,
+      "classes": [
+        "K13",
+        "K01",
+        "K06",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "c036d817dc5a6cef4a96f3374c2bf0f7ddf2d79584db41698a22612b29e122bb",
+          "lines": 12,
+          "name": "source.abap",
+          "sha256": "c036d817dc5a6cef4a96f3374c2bf0f7ddf2d79584db41698a22612b29e122bb"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-037",
+      "independence": [
+        "modellreview",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "c036d817dc5a6cef4a96f3374c2bf0f7ddf2d79584db41698a22612b29e122bb",
+      "scope": "partial_missing_runtime_targets",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 7,
+      "title": "Dynamisches FROM aus Eingabe: Zielmenge Unknown, schlimmster Fall D (Fallpaar B)"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte) — MODIFY (dbtab) FROM @wa mit dynamischem Tabellennamen, sy-subrc nach MODIFY dbtab, COMMIT/ROLLBACK WORK existieren. Die kundeneigenen Objekte ZCC_LOG_ROW/ZCC_LOG_A sind Fixture-Stipulationen.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K13",
+        "K01",
+        "K06",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "217138e8b504d83c33491dbc459a5f6ada8abf71af5ee326c25a1b6fae772d52",
+          "lines": 21,
+          "name": "source.abap",
+          "sha256": "217138e8b504d83c33491dbc459a5f6ada8abf71af5ee326c25a1b6fae772d52"
+        }
+      ],
+      "findingCount": 4,
+      "id": "CC-038",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 2,
+      "profileCount": 1,
+      "quellenhash": "217138e8b504d83c33491dbc459a5f6ada8abf71af5ee326c25a1b6fae772d52",
+      "scope": "partial_missing_runtime_targets",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 12,
+      "title": "Dynamisches Schreibziel: MODIFY (p_tab) — Unknown, schlimmster Fall D, plus Sicherheitsbefund"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte) — GENERATE SUBROUTINE POOL itab NAME prog MESSAGE msg, sy-subrc nach GENERATE, PERFORM … IN PROGRAM (prog) IF FOUND, Typ syrepid existieren; die Anweisung ist in ABAP for Cloud Development nicht verfügbar. Die Reihenfolge IF FOUND vor USING/CHANGING ist Prüferfrage.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K13",
+        "K06",
+        "K08",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "23bb093a15643a1a93a1aca08980660c59419e256dd1cd0b244b54c281b8123c",
+          "lines": 19,
+          "name": "source.abap",
+          "sha256": "23bb093a15643a1a93a1aca08980660c59419e256dd1cd0b244b54c281b8123c"
+        }
+      ],
+      "findingCount": 3,
+      "id": "CC-039",
+      "independence": [
+        "modellreview"
+      ],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "23bb093a15643a1a93a1aca08980660c59419e256dd1cd0b244b54c281b8123c",
+      "scope": "partial_runtime_generated_code",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 9,
+      "title": "GENERATE SUBROUTINE POOL: Daten werden Code, jede statische Antwort ist Annahme"
+    },
+    {
+      "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+      "businessStatementCount": 2,
+      "classes": [
+        "K13",
+        "K10",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "f823e01219c52165f9285c74753df356811f6688038db8de43189c3b4170f9f6",
+          "lines": 16,
+          "name": "source.abap",
+          "sha256": "f823e01219c52165f9285c74753df356811f6688038db8de43189c3b4170f9f6"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-040",
+      "independence": [
+        "modellreview"
+      ],
+      "objectCount": 2,
+      "profileCount": 1,
+      "quellenhash": "f823e01219c52165f9285c74753df356811f6688038db8de43189c3b4170f9f6",
+      "scope": "partial_missing_host_program_context",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 7,
+      "title": "ASSIGN ('(SAPMV45A)VBAK-VBELN'): das Literal wird Abhängigkeit auf ein SAP-Programm"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte) — CALL METHOD oref->(name) RECEIVING … mit dynamischem Methodennamen, lokale Klassen mit FINAL, NEW existieren.",
+      "businessStatementCount": 2,
+      "classes": [
+        "K13",
+        "K06",
+        "K09"
+      ],
+      "files": [
+        {
+          "declared": "d7444c46c1ebb2ca2a77801f9b46a3c211f9f69852063551e6fed6745f2a8ff8",
+          "lines": 27,
+          "name": "source.abap",
+          "sha256": "d7444c46c1ebb2ca2a77801f9b46a3c211f9f69852063551e6fed6745f2a8ff8"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-041",
+      "independence": [
+        "modellreview"
+      ],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "d7444c46c1ebb2ca2a77801f9b46a3c211f9f69852063551e6fed6745f2a8ff8",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 8,
+      "title": "Dynamischer Methodenname mit Zielmenge zwei: die Liste ist die Antwort"
+    },
+    {
+      "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+      "businessStatementCount": 2,
+      "classes": [
+        "K14",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "80faf411049df0179601be54858d02b6b3c40eebf25b1c217edf29fbb499f43e",
+          "lines": 10,
+          "name": "source.abap",
+          "sha256": "80faf411049df0179601be54858d02b6b3c40eebf25b1c217edf29fbb499f43e"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-042",
+      "independence": [
+        "modellreview",
+        "gegenreview"
+      ],
+      "objectCount": 2,
+      "profileCount": 1,
+      "quellenhash": "80faf411049df0179601be54858d02b6b3c40eebf25b1c217edf29fbb499f43e",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 5,
+      "title": "Makro: zwei Lesebefunde an den Aufrufzeilen, keiner an der Definition"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte)",
+      "businessStatementCount": 3,
+      "classes": [
+        "K14",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "ab90266c99c6436793364e6ae68484a7472eb8f5c708e6a34f73ae842dba099a",
+          "lines": 10,
+          "name": "source.abap",
+          "sha256": "ab90266c99c6436793364e6ae68484a7472eb8f5c708e6a34f73ae842dba099a"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-043",
+      "independence": [
+        "modellreview",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "ab90266c99c6436793364e6ae68484a7472eb8f5c708e6a34f73ae842dba099a",
+      "scope": "intentionally_incomplete",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 7,
+      "title": "Kettensatz: drei Aufrufe auf einer Zeile, drei Anker, drei Knoten"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte)",
+      "businessStatementCount": 2,
+      "classes": [
+        "K14",
+        "K03"
+      ],
+      "files": [
+        {
+          "declared": "d599d32587e9d32bf204556bfa711281dac4890235c06e07660c5d0f486973ea",
+          "lines": 15,
+          "name": "source.abap",
+          "sha256": "d599d32587e9d32bf204556bfa711281dac4890235c06e07660c5d0f486973ea"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-044",
+      "independence": [
+        "modellreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "d599d32587e9d32bf204556bfa711281dac4890235c06e07660c5d0f486973ea",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 6,
+      "title": "Literal auf der Folgezeile: Primäranker ist der Statementbeginn"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte)",
+      "businessStatementCount": 2,
+      "classes": [
+        "K18",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "98e5b2648745035ea249ac8d6894e3d25b6baf73e1d4a51b29dddc572358def6",
+          "lines": 17,
+          "name": "source.abap",
+          "sha256": "98e5b2648745035ea249ac8d6894e3d25b6baf73e1d4a51b29dddc572358def6"
+        }
+      ],
+      "findingCount": 4,
+      "id": "CC-045",
+      "independence": [
+        "modellreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "98e5b2648745035ea249ac8d6894e3d25b6baf73e1d4a51b29dddc572358def6",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 7,
+      "title": "Typabhängigkeit ohne SQL: TABLES, SELECT-OPTIONS FOR, INCLUDE STRUCTURE, TYPE"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte); die Zuordnung der Zeilen 4–5 zum impliziten START-OF-SELECTION ist Prüferfrage P1",
+      "businessStatementCount": 4,
+      "classes": [
+        "K18",
+        "K02"
+      ],
+      "files": [
+        {
+          "declared": "d51812d9cbfa87b4c3c226d12a4491ed89d4fc33126274c773deb31a3bc04761",
+          "lines": 15,
+          "name": "source.abap",
+          "sha256": "d51812d9cbfa87b4c3c226d12a4491ed89d4fc33126274c773deb31a3bc04761"
+        }
+      ],
+      "findingCount": 0,
+      "id": "CC-046",
+      "independence": [
+        "modellreview"
+      ],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "d51812d9cbfa87b4c3c226d12a4491ed89d4fc33126274c773deb31a3bc04761",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 14,
+      "title": "Klassischer Report ohne START-OF-SELECTION: vier Ereignisblöcke, kein leeres Skelett"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte: NODES, GET, END-OF-SELECTION, KNA1); der LDB-Name DDF und KNA1 als deren Wurzelknoten sind erinnert (Prüferfrage P1)",
+      "businessStatementCount": 2,
+      "classes": [
+        "K18",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "173de4c3318a64d8c96e0a7483fa6d7ae2f14e7a16500901658d48c80551da82",
+          "lines": 10,
+          "name": "source.abap",
+          "sha256": "173de4c3318a64d8c96e0a7483fa6d7ae2f14e7a16500901658d48c80551da82"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-047",
+      "independence": [
+        "modellreview"
+      ],
+      "objectCount": 2,
+      "profileCount": 1,
+      "quellenhash": "173de4c3318a64d8c96e0a7483fa6d7ae2f14e7a16500901658d48c80551da82",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 8,
+      "title": "Logische Datenbank: KNA1 lesen ohne SELECT, Kontrollfluss von außen"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte)",
+      "businessStatementCount": 4,
+      "classes": [
+        "K18"
+      ],
+      "files": [
+        {
+          "declared": "e501c5a0880b26e152d4d26cc45ba3ee60e11735fd57c658cc160157628db582",
+          "lines": 18,
+          "name": "source.abap",
+          "sha256": "e501c5a0880b26e152d4d26cc45ba3ee60e11735fd57c658cc160157628db582"
+        }
+      ],
+      "findingCount": 0,
+      "id": "CC-048",
+      "independence": [
+        "modellreview"
+      ],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "e501c5a0880b26e152d4d26cc45ba3ee60e11735fd57c658cc160157628db582",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 12,
+      "title": "CHECK in drei Kontexten: drei Bedingungen, drei verschiedene Ziele"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax AUTHORITY-CHECK OBJECT … ID … FIELD; Berechtigungsobjekte F_KNA1_BUK mit Feldern BUKRS/ACTVT und F_KNA1_GEN mit Feld ACTVT; Tabelle KNB1). Buchungskreis und Ablauf konstruiert.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K15",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "8b383b78ad40dfc3c363c221cf6e9a3d4e8fec484c114e91e11193b484e3baf7",
+          "lines": 20,
+          "name": "source.abap",
+          "sha256": "8b383b78ad40dfc3c363c221cf6e9a3d4e8fec484c114e91e11193b484e3baf7"
+        }
+      ],
+      "findingCount": 3,
+      "id": "CC-049",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 3,
+      "profileCount": 1,
+      "quellenhash": "8b383b78ad40dfc3c363c221cf6e9a3d4e8fec484c114e91e11193b484e3baf7",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 10,
+      "title": "AUTHORITY-CHECK: mit Auswertung ein Gateway, ohne Auswertung „geprüft ohne Wirkung\""
+    },
+    {
+      "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K15"
+      ],
+      "files": [
+        {
+          "declared": "34ecaafce83499bf4cc5d99ff28bef9b7d32e79ac2811ee1e6d61cbe7678ac6c",
+          "lines": 15,
+          "name": "source.abap",
+          "sha256": "34ecaafce83499bf4cc5d99ff28bef9b7d32e79ac2811ee1e6d61cbe7678ac6c"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-050",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "34ecaafce83499bf4cc5d99ff28bef9b7d32e79ac2811ee1e6d61cbe7678ac6c",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 8,
+      "title": "WITH PRIVILEGED ACCESS: sieht clean aus, umgeht die Zugriffskontrolle"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax FROM dbtab CLIENT SPECIFIED mit Mandantenfeld in WHERE; KNA1 mit MANDT, KUNNR, NAME1). Mandantennummer konstruiert.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K15",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "6c9335129b287a41580df0ecdb73c93e7eed069307e2a493e3171cf3b219b3df",
+          "lines": 14,
+          "name": "source.abap",
+          "sha256": "6c9335129b287a41580df0ecdb73c93e7eed069307e2a493e3171cf3b219b3df"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-051",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "6c9335129b287a41580df0ecdb73c93e7eed069307e2a493e3171cf3b219b3df",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 6,
+      "title": "CLIENT SPECIFIED: R01-C plus Befund „mandantenübergreifend\""
+    },
+    {
+      "beleggrad": "verifiziert (Tabelle USR02 mit Feldern BNAME, BCODE, UFLAG). Ablauf konstruiert.",
+      "businessStatementCount": 3,
+      "classes": [
+        "K15",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "023d16f18ea7259818ebc87ebdd98111d4391ffe41fc840caf1d63a416c55612",
+          "lines": 13,
+          "name": "source.abap",
+          "sha256": "023d16f18ea7259818ebc87ebdd98111d4391ffe41fc840caf1d63a416c55612"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-052",
+      "independence": [
+        "modellreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "023d16f18ea7259818ebc87ebdd98111d4391ffe41fc840caf1d63a416c55612",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 7,
+      "title": "USR02 lesen: C plus Sicherheitsbefund; der Nachfolger ist ein Verbot"
+    },
+    {
+      "beleggrad": "verifiziert (Existenz): Include MV45AFZZ des Programms SAPMV45A mit FORM USEREXIT_SAVE_DOCUMENT und die Struktur VBAK mit den Feldern AUART, NETWR, LIFSK existieren. Nicht verifiziert: dass *diese* Quelle MV45AFZZ ist — das ist ein Liefermetadatum (Dateiname des Fallbündels), im Quelltext steht es nicht. Auftragsart, Grenzwert und Sperrkennzeichen konstruiert.",
+      "businessStatementCount": 2,
+      "classes": [
+        "K16",
+        "K05"
+      ],
+      "files": [
+        {
+          "declared": "15ee87e9982533d74130756cdf7ed96a82b5007f62276819836ead07d756e37e",
+          "lines": 10,
+          "name": "source.abap",
+          "sha256": "15ee87e9982533d74130756cdf7ed96a82b5007f62276819836ead07d756e37e"
+        }
+      ],
+      "findingCount": 4,
+      "id": "CC-053",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "15ee87e9982533d74130756cdf7ed96a82b5007f62276819836ead07d756e37e",
+      "scope": "complete_for_declared_slice (die Datei)",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 7,
+      "title": "Userexit-FORM userexit_save_document: Marker im Code sind eine Hosthypothese, das Level braucht den Kontextbeleg"
+    },
+    {
+      "beleggrad": "verifiziert (Funktionsbaustein REUSE_ALV_GRID_DISPLAY mit Parametern I_CALLBACK_PROGRAM, I_CALLBACK_USER_COMMAND, IT_FIELDCAT, T_OUTTAB; Typen SLIS_T_FIELDCAT_ALV, SLIS_SELFIELD; Funktionscode &IC1 für Doppelklick). Daten konstruiert.",
+      "businessStatementCount": 2,
+      "classes": [
+        "K17",
+        "K16",
+        "K07"
+      ],
+      "files": [
+        {
+          "declared": "1f7d75bd7effad2d2fe36bc80ad21202e8871993f664781307374a130e6e0984",
+          "lines": 26,
+          "name": "source.abap",
+          "sha256": "1f7d75bd7effad2d2fe36bc80ad21202e8871993f664781307374a130e6e0984"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-054",
+      "independence": [
+        "modellreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "1f7d75bd7effad2d2fe36bc80ad21202e8871993f664781307374a130e6e0984",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 9,
+      "title": "Der Konsument entscheidet: ALV-Callback im Literal wirkt, ENHANCEMENT im Kommentar nicht"
+    },
+    {
+      "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+      "businessStatementCount": 2,
+      "classes": [
+        "K17"
+      ],
+      "files": [
+        {
+          "declared": "e68c64af454f1c0ba98b8d962eb31d4ec7a08f02f5770d368dbc6474ba1ab904",
+          "lines": 22,
+          "name": "source.abap",
+          "sha256": "e68c64af454f1c0ba98b8d962eb31d4ec7a08f02f5770d368dbc6474ba1ab904"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-055",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 2,
+      "profileCount": 1,
+      "quellenhash": "e68c64af454f1c0ba98b8d962eb31d4ec7a08f02f5770d368dbc6474ba1ab904",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 8,
+      "title": "Batch-Input auf XD01: Literale werden Abhängigkeiten, das Schreiben geschieht im Aufruf"
+    },
+    {
+      "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+      "businessStatementCount": 2,
+      "classes": [
+        "K17",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "d1366af48a879817491b66589aa1a497851894d8e03a07d226893e31a0f6656e",
+          "lines": 12,
+          "name": "source.abap",
+          "sha256": "d1366af48a879817491b66589aa1a497851894d8e03a07d226893e31a0f6656e"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-056",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "d1366af48a879817491b66589aa1a497851894d8e03a07d226893e31a0f6656e",
+      "scope": "intentionally_incomplete",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 8,
+      "title": "SUBMIT … AND RETURN: Systemgrenze, opak, ohne erfundene Kindlogik"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte: KNA1, I_CUSTOMER, Klassensyntax; Prinzip „Sprachversion ABAP for Cloud beschränkt den Zugriff auf freigegebene Objekte\" — S02) — die exakte Meldungsklasse im Zielsystem ist erinnert, siehe Prüferfragen; dass KNA1 und I_CUSTOMER im BTP ABAP Environment nicht vorhanden sind, ist erinnert",
+      "businessStatementCount": 2,
+      "classes": [
+        "K19",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "9219f9ff868f33c1f9dd5e886ebb0c6521cf09a73f8fe95b52dfb721b8efbf89",
+          "lines": 18,
+          "name": "source.abap",
+          "sha256": "9219f9ff868f33c1f9dd5e886ebb0c6521cf09a73f8fe95b52dfb721b8efbf89"
+        }
+      ],
+      "findingCount": 3,
+      "id": "CC-057",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 2,
+      "quellenhash": "9219f9ff868f33c1f9dd5e886ebb0c6521cf09a73f8fe95b52dfb721b8efbf89",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 5,
+      "title": "Profilpaar: SELECT FROM KNA1 in einer globalen Klasse — C mit Nachfolger oder nicht aktivierbar"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte: I_CUSTOMER mit eigenem Eintrag released in der vom Review abgerufenen PCE2022-Ansicht — S19, Webzeilen 29313–29322, Abschrift ohne Snapshot; REPORT/PARAMETERS/WRITE sind in der Sprachversion ABAP for Cloud nicht zulässig) — Feldnamen Customer, CustomerName, Country und die Vertragsstufe C1 bleiben erinnert, siehe Prüferfragen",
+      "businessStatementCount": 3,
+      "classes": [
+        "K19",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "90768b4fe05c109a404523cc2a17962e46f535c71bbfd5e932880081c1405845",
+          "lines": 15,
+          "name": "source.abap",
+          "sha256": "90768b4fe05c109a404523cc2a17962e46f535c71bbfd5e932880081c1405845"
+        }
+      ],
+      "findingCount": 4,
+      "id": "CC-058",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 2,
+      "quellenhash": "90768b4fe05c109a404523cc2a17962e46f535c71bbfd5e932880081c1405845",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 8,
+      "title": "Profilpaar: SELECT FROM I_CUSTOMER im klassischen REPORT — freigegebenes Lesen ist nicht C, der Report bleibt klassisch"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte: EML READ/MODIFY ENTITIES … IN LOCAL MODE, FOR DETERMINE ON MODIFY, %tky, cl_abap_behavior_handler; dokumentiertes Verhalten: LOCAL MODE ist nur in der Verhaltensimplementierung desselben BO zulässig und führt Berechtigungsprüfung und Feature-Kontrolle des BO nicht aus) — die vollständige Liste dessen, was LOCAL MODE überspringt, und die Freigabe von cl_abap_behavior_handler im Katalog sind erinnert, siehe Prüferfragen",
+      "businessStatementCount": 3,
+      "classes": [
+        "K19 (RAP/EML hat keine v1-Klasse — Zusammenführer)"
+      ],
+      "files": [
+        {
+          "declared": "6d3d8eed7c945479a22bce21e823efc7524a004e9ff17f69e112940c09424772",
+          "lines": 23,
+          "name": "source.abap",
+          "sha256": "6d3d8eed7c945479a22bce21e823efc7524a004e9ff17f69e112940c09424772"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-059",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 2,
+      "profileCount": 2,
+      "quellenhash": "6d3d8eed7c945479a22bce21e823efc7524a004e9ff17f69e112940c09424772",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 1,
+      "skeletonNodeCount": 4,
+      "title": "Profilpaar: RAP/EML MODIFY ENTITIES … IN LOCAL MODE — sieht aus wie A, das Level hängt an der Sprachversion, der Sicherheitsbefund an keiner"
+    },
+    {
+      "beleggrad": "verifiziert (Syntax/Objekte: KNA1, I_CUSTOMER, SAP-Drei-Ebenen-Erweiterungsmodell mit Freigabevertrag C1 „Verwendung systemintern\"; kundeneigene klassische Wrapper mit C1-Freigabe für Cloud-Konsumenten sind dokumentiert — S02, S04) — die Bezeichnung der Vertragsstufen jenseits von C1 wird nicht behauptet; die C1-Attribute des Wrappers sind Fixture-Stipulation",
+      "businessStatementCount": 3,
+      "classes": [
+        "K19",
+        "K02",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "c7a0750cddd8e983d5c4ecc7d3aad9fd291bd970c60bef5390995627c5b9c441",
+          "lines": 18,
+          "name": "zcl_customer_api.clas.abap",
+          "sha256": "c7a0750cddd8e983d5c4ecc7d3aad9fd291bd970c60bef5390995627c5b9c441"
+        },
+        {
+          "declared": "bcd9d620d1c3c4f2777a982e02922010343840189b42158f4e70ccfb12435d02",
+          "lines": 18,
+          "name": "zcl_route_service.clas.abap",
+          "sha256": "bcd9d620d1c3c4f2777a982e02922010343840189b42158f4e70ccfb12435d02"
+        }
+      ],
+      "findingCount": 5,
+      "id": "CC-060",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 3,
+      "profileCount": 2,
+      "quellenhash": null,
+      "scope": "complete_for_declared_slice (beide Dateien geliefert)",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 12,
+      "title": "Profilpaar mit release_contract: kundeneigener Wrapper mit C1-Freigabe liest KNA1 — das Level des Konsumenten stoppt am Vertrag, known_worst nicht"
+    },
+    {
+      "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert (native_compile: NOT_RUN). Die Syntaxelemente (Stringtemplate mit eingebettetem funktionalem Methodenaufruf, CLASS-DATA, CLASS-METHODS … RETURNING VALUE(…), Inline-Deklaration) existieren nach Autorenwissen; der erwartete Zählerstand 1 folgt aus der dokumentierten Sprachsemantik (S12), nicht aus einem Lauf.",
+      "businessStatementCount": 2,
+      "classes": [
+        "K13",
+        "K02"
+      ],
+      "files": [
+        {
+          "declared": "68d81e64b944d9779e160f1bfbc18c4ed2e298d33d0f2d99cdf78a3a2e8fcfce",
+          "lines": 15,
+          "name": "source.abap",
+          "sha256": "68d81e64b944d9779e160f1bfbc18c4ed2e298d33d0f2d99cdf78a3a2e8fcfce"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-061",
+      "independence": [
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "68d81e64b944d9779e160f1bfbc18c4ed2e298d33d0f2d99cdf78a3a2e8fcfce",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 6,
+      "title": "Stringtemplate mit eingebettetem Methodenaufruf: der Seiteneffekt braucht keinen Konsumenten (Gegenfall zu CC-016)"
+    },
+    {
+      "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert; expectation.json sagt selbst: „Syntax-/DB-Verfügbarkeit im Ziel noch nicht nativ geprüft\". Dynamische WHERE-Bedingung WHERE (dobj), SELECT COUNT(*) … INTO @lv, KNA1 mit Feld LAND1 existieren nach Autorenwissen; ob DEFAULT mit einem Backtick-Literal, das einfache Anführungszeichen enthält, aktivierbar ist, ist Prüferfrage 1.",
+      "businessStatementCount": 2,
+      "classes": [
+        "K13",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "23e79bd8231839997365dac1baa609ee6837d02fc62257707e680a9f71eb32f3",
+          "lines": 6,
+          "name": "source.abap",
+          "sha256": "23e79bd8231839997365dac1baa609ee6837d02fc62257707e680a9f71eb32f3"
+        }
+      ],
+      "findingCount": 3,
+      "id": "CC-062",
+      "independence": [
+        "modellreview",
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "23e79bd8231839997365dac1baa609ee6837d02fc62257707e680a9f71eb32f3",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 4,
+      "title": "Bekanntes FROM trotz dynamischem WHERE: die Tabelle ist KNA1, das Prädikat ist Eingabe (Gegenfall zu CC-037/CC-038)"
+    },
+    {
+      "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert. SELECT SINGLE … CLIENT SPECIFIED in nicht strikter Syntax (INTO vor FROM, Hostvariablen ohne @), KNA1 mit MANDT/KUNNR/NAME1 existieren nach Autorenwissen; die Mandantensemantik ist S14 (SAP NetWeaver 7.01, Specifying a Client — historische Sprachdokumentation, keine Cloud-Zulassung).",
+      "businessStatementCount": 2,
+      "classes": [
+        "K15",
+        "K01"
+      ],
+      "files": [
+        {
+          "declared": "b093bf11dc9a107b6938ded1709fdad0da8f191d1663c937176580fc15b2abc7",
+          "lines": 7,
+          "name": "source.abap",
+          "sha256": "b093bf11dc9a107b6938ded1709fdad0da8f191d1663c937176580fc15b2abc7"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-063",
+      "independence": [
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "b093bf11dc9a107b6938ded1709fdad0da8f191d1663c937176580fc15b2abc7",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 4,
+      "title": "CLIENT SPECIFIED mit explizitem eigenem Mandanten: Mandantenautomatik aus, Ergebnismenge trotzdem der Anmeldemandant (Gegenfall zu CC-051)"
+    },
+    {
+      "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert. AUTHORITY-CHECK OBJECT … ID … FIELD, Berechtigungsobjekt S_TCODE mit Feld TCD, Inline-Deklaration aus sy-subrc existieren nach Autorenwissen. Das Review nennt als Quelle nur den „direkten Datenfluss des konstruierten Beispiels; kein eigener SAP-Katalogbeleg\".",
+      "businessStatementCount": 2,
+      "classes": [
+        "K15",
+        "K02"
+      ],
+      "files": [
+        {
+          "declared": "1aaeb9cb66c873994752413c479a3d06975995afcbce9fc7f729c4c7261a74f3",
+          "lines": 9,
+          "name": "source.abap",
+          "sha256": "1aaeb9cb66c873994752413c479a3d06975995afcbce9fc7f729c4c7261a74f3"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-064",
+      "independence": [
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "1aaeb9cb66c873994752413c479a3d06975995afcbce9fc7f729c4c7261a74f3",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 8,
+      "title": "Gesicherter Rückgabewert statt unmittelbarer sy-subrc-Prüfung: die Berechtigungsprüfung wirkt (Gegenfall zu CC-049-F03)"
+    },
+    {
+      "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert; das Review: „Für einen nativen Test beide separaten Reportobjekte anlegen; keinerlei Lauf behauptet\". SUBMIT prog AND RETURN mit statischem Programmnamen existiert nach Autorenwissen; die LUW-Semantik ist S07 (ABAP 7.52, SAP LUW).",
+      "businessStatementCount": 1,
+      "classes": [
+        "K17",
+        "K11"
+      ],
+      "files": [
+        {
+          "declared": "13ba1c9e36f4632692e81cb53e442353122be5a51f21fa302a893cd18483209b",
+          "lines": 4,
+          "name": "caller.abap",
+          "sha256": "13ba1c9e36f4632692e81cb53e442353122be5a51f21fa302a893cd18483209b"
+        },
+        {
+          "declared": "f8ae954b307ca803c1c9912d346baeb0c6cb3bee7ba9feb293658f6cfed68ed4",
+          "lines": 4,
+          "name": "child.abap",
+          "sha256": "f8ae954b307ca803c1c9912d346baeb0c6cb3bee7ba9feb293658f6cfed68ed4"
+        }
+      ],
+      "findingCount": 3,
+      "id": "CC-065",
+      "independence": [
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "13ba1c9e36f4632692e81cb53e442353122be5a51f21fa302a893cd18483209b",
+      "scope": "intentionally_incomplete",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 4,
+      "title": "Opakes SUBMIT mit Fortsetzung des Aufrufers: die Grenze beendet die Kenntnis, nicht den Kontrollfluss (Gegenfall zur R34-Fassung, Partner von CC-056)"
+    },
+    {
+      "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert. DEFINE … END-OF-DEFINITION mit Platzhaltern &1, &2 und Aufruf mit Literalen existiert nach Autorenwissen. Das Review nennt als Quelle „Korpuskonvention\".",
+      "businessStatementCount": 1,
+      "classes": [
+        "K14",
+        "K02"
+      ],
+      "files": [
+        {
+          "declared": "8787c11b0662a7f922e42dfb438a081affa3bee6634e6c4ed8574a7ffdd5a4f2",
+          "lines": 7,
+          "name": "source.abap",
+          "sha256": "8787c11b0662a7f922e42dfb438a081affa3bee6634e6c4ed8574a7ffdd5a4f2"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-066",
+      "independence": [
+        "gegenreview"
+      ],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "8787c11b0662a7f922e42dfb438a081affa3bee6634e6c4ed8574a7ffdd5a4f2",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 4,
+      "title": "Ein Makroaufruf, zwei Wirkungsstellen: die Aufrufstelle allein identifiziert die Wirkung nicht (Gegenfall zu R27, Partner von CC-042/CC-043)"
+    },
+    {
+      "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert. ASSERT log_exp ohne ID, lines( ), FOR ALL ENTRIES IN @itab in strikter Syntax existieren nach Autorenwissen; die Semantik ist S13 (ASSERT ohne ID ist aktiv; bei falscher Bedingung Laufzeitfehler) und S23 (FAE mit leerer Tabelle liest alle Zeilen).",
+      "businessStatementCount": 1,
+      "classes": [
+        "K01",
+        "K02"
+      ],
+      "files": [
+        {
+          "declared": "78d4d2a10e62bb2716e73c6b508dc4ca6a1768713a989f2e9f5b0f41943eff04",
+          "lines": 9,
+          "name": "source.abap",
+          "sha256": "78d4d2a10e62bb2716e73c6b508dc4ca6a1768713a989f2e9f5b0f41943eff04"
+        }
+      ],
+      "findingCount": 2,
+      "id": "CC-067",
+      "independence": [
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 1,
+      "profileCount": 1,
+      "quellenhash": "78d4d2a10e62bb2716e73c6b508dc4ca6a1768713a989f2e9f5b0f41943eff04",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 5,
+      "title": "ASSERT ohne ID vor FAE: ein Fail-fast-Guard, kein sanfter Leerfall (Gegenfall zur R09-Präzisierung in v2 §7.1, Partner von CC-002)"
+    },
+    {
+      "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert. Eigener Strukturtyp, Datenobjekt mit dem Namen einer SAP-Tabelle, FORM in der Namenskonvention der SD-Userexits existieren als Syntax nach Autorenwissen; die Levelquelle ist S01 (SAP Learning: klassische Userexits/BAdIs nicht pauschal D; keine Einzelobjektfreigabe für MV45AFZZ).",
+      "businessStatementCount": 1,
+      "classes": [
+        "K16",
+        "K02"
+      ],
+      "files": [
+        {
+          "declared": "2e825cfbab6ae183aad45b051b8f1b7140266181d718e553562ee7ccb76483d5",
+          "lines": 14,
+          "name": "source.abap",
+          "sha256": "2e825cfbab6ae183aad45b051b8f1b7140266181d718e553562ee7ccb76483d5"
+        }
+      ],
+      "findingCount": 1,
+      "id": "CC-068",
+      "independence": [
+        "sap-doku",
+        "gegenreview"
+      ],
+      "objectCount": 0,
+      "profileCount": 1,
+      "quellenhash": "2e825cfbab6ae183aad45b051b8f1b7140266181d718e553562ee7ccb76483d5",
+      "scope": "complete_for_declared_slice",
+      "securityFindingCount": 0,
+      "skeletonNodeCount": 5,
+      "title": "Gleicher Exittext im kundeneigenen Report: der FORM-Name ist eine Hypothese, kein Host und kein D (Gegenfall zu CC-053)"
+    }
+  ],
+  "generatedBy": "scripts/korpus/build-bundle.mjs",
+  "hashCheck": {
+    "checked": 70,
+    "mismatch": 0
+  },
+  "skippedSectionCount": 114,
+  "unknownSectionCount": 0
+}

@@ -1,0 +1,168 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 2,
+          "raw": "source.abap:2",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        }
+      ],
+      "id": "CC-006-B01",
+      "text": "Das Aufrufziel ist die unveränderliche Konstante CONVERSION_EXIT_ALPHA_INPUT."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        }
+      ],
+      "id": "CC-006-B02",
+      "text": "Das konvertierte Ergebnis wird in lv_result übernommen."
+    }
+  ],
+  "classes": [
+    "K03",
+    "K06"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6",
+        "token": null
+      },
+      "id": "CC-006-F01",
+      "profiles": null,
+      "rule": "R06",
+      "ruleRaw": "R06@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-CALL"
+      ],
+      "statement": "Konstante wird laut SAP als statisch spezifiziert ausgewertet. Auflösen nach CONVERSION_EXIT_ALPHA_INPUT."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:6 — Nicht als unauflösbares dynamisches Ziel behandeln."
+  ],
+  "id": "CC-006",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 2,
+        "raw": "source.abap:2, source.abap:6",
+        "token": null
+      },
+      "classicRawState": "classicAPI",
+      "cloudRawState": "notToBeReleasedStable",
+      "identity": {
+        "objectKey": "CONVERSION_EXIT_ALPHA_INPUT",
+        "objectType": "FUNC",
+        "tadirObjName": "ALFA",
+        "tadirObject": "FUGR"
+      },
+      "name": "CONVERSION_EXIT_ALPHA_INPUT",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_listed_in_observed_record",
+      "successors": [],
+      "usage": "static_via_constant"
+    }
+  ],
+  "openReviewerQuestions": [
+    "CONSTANTS-Bindung mit SAP-Syntaxreferenz prüfen",
+    "Aufrufstelle und Definitionsanker konsistent zuordnen",
+    "Korpusgegenprobe auf Variable ändern; erwartete Syntaxklasse muss wechseln",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "f"
+      },
+      {
+        "condition": "always",
+        "from": "f",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "f",
+        "meaning": "Statischer ALPHA-Aufruf über Konstante",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Ergebnis ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Konstanter FM-Name ist statisch, kein dynamischer Blindflug"
+}

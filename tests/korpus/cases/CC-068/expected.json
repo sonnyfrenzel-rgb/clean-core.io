@@ -1,0 +1,188 @@
+{
+  "answerFields": {
+    "known_worst_level": "B — keine SAP-Abhängigkeit im gelieferten Scope."
+  },
+  "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert. Eigener Strukturtyp, Datenobjekt mit dem Namen einer SAP-Tabelle, FORM in der Namenskonvention der SD-Userexits existieren als Syntax nach Autorenwissen; die Levelquelle ist S01 (SAP Learning: klassische Userexits/BAdIs nicht pauschal D; keine Einzelobjektfreigabe für MV45AFZZ).",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        }
+      ],
+      "id": "CC-068-B01",
+      "text": "Erfüllt die eigene Kopfstruktur Auftragsart TA und Wert größer als 20000 (Gleichheit nicht; Wert ohne Währung), wird das Feld lifsk der Struktur auf 01 gesetzt. Im gelieferten Slice wird die Struktur nie gefüllt: der Zweig ist nicht erreichbar, es wird nichts ausgegeben und nichts persistiert."
+    }
+  ],
+  "classes": [
+    "K16",
+    "K02"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_applicable",
+  "cloud_artefact": null,
+  "convergence": "Gegenreview CE-08 / REV2-02 (Regelurteil R32 „hält nicht\": „Namen und Marker liefern Hinweise, nicht das Level D\") · Gegenfall zu CC-053 (dessen Prüferfrage 2 genau diesen Fall angekündigt hat: „Ein Z-Report mit einem FORM gleichen Namens und eigener Deklaration von vbak wäre der nächste Gegenfall\") · Modellreviews 16.09.: Grok H-063 („B oder D je Fixture\"), Fable KA-052 (D „namentlich erkennbar ohne Metadaten\" — die Lesart, die hier belastet wird), Fable KA-055 (Keyword-Überreaktion bei ENHANCEMENT-POINT im Z-Report — dieselbe Fehlerklasse, anderes Schlüsselwort).",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10 (Gegenbelege :1, :7, :9; sek. :11, :12)",
+        "token": null
+      },
+      "id": "CC-068-F01",
+      "profiles": null,
+      "rule": "R32",
+      "ruleRaw": "R32@2.1.0 (Fassung nach REV2-02)",
+      "ruleVersion": "2.1.0",
+      "severity": "medium",
+      "sources": [
+        "S01",
+        "S20 (Negativsuche MV45AFZZ/USEREXIT_SAVE_DOCUMENT ohne Treffer — kein Levelbeweis)"
+      ],
+      "statement": "Hostmarker-Hypothese: der FORM-Name folgt der Namenskonvention der SD-Userexits — Hypothese, nicht Level. Gegenbelege im Slice: REPORT (:1) — eigenständiges Programm, kein Include-Fragment; vbak deklariert (:7) mit eigenem Typ (:2–6) — keine Host-Globale, keine DDIC-Abhängigkeit (kein R29-Befund); Aufruf durch eigenes PERFORM (:9) — kein Host. Ergebnis: kein Hostkontext, kein Erweiterungsmechanismus, Level B nach R03; kein D nach R10, kein Unknown — der Slice entscheidet die Hypothese negativ. Ein Repository-/Enhancementnachweis ist hier nicht nötig, weil das Programm selbst den Nicht-Host beweist."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:10 — Kein D aus dem FORM-Namen (R32@2.0.0-Lesart „MV45AFZZ u. ä. sind Marker, aus denen D folgt\"; CC-053-F01/F02-Muster; Fable KA-052 „namentlich erkennbar ohne Metadaten\"). Der Name ist ein Hinweis; die drei Gegenbelege entscheiden.",
+    "source.abap:7, source.abap:11, source.abap:12 — Kein SAP-Objekt VBAK (TABL) in der Objektliste: vbak ist ein Programmdatenobjekt mit eigenem Typ. Kein R29-Befund, kein R02-Befund, kein write-Knoten.",
+    "source.abap:10 — Kein Unknown „Hostmetadaten fehlen\" (CC-010-Lesart): REPORT und eigene Deklaration entscheiden — es gibt keinen Host, den Metadaten belegen könnten.",
+    "source.abap:12 — Kein Fachsatz „Liefersperre am Kundenauftrag\" oder „SD-Beleg wird gesperrt\": es gibt keinen Beleg, nur ein Feld einer eigenen Struktur.",
+    "source.abap:1 — Nicht A: klassischer REPORT mit FORM.",
+    "source.abap:10 — Nicht „Marker im Kommentar\" (R13a-Gegenprobe aus R32): der Name steht in Code, ist aber trotzdem nur Hypothese — die Gegenprobe des Kommentars und dieser Fall sind zwei verschiedene Gegenfälle."
+  ],
+  "id": "CC-068",
+  "independence": [
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "gegenreview · sap-doku",
+  "known_worst_level": "B — keine SAP-Abhängigkeit im gelieferten Scope.",
+  "objects": [],
+  "openReviewerQuestions": [
+    "P1: Reichen REPORT-Statement plus eigene Deklaration von vbak als Gegenbelege, oder verlangt der Prüfer zusätzlich die Repository-Identität (TADIR) als Kontextbeleg, obwohl der Code den Nicht-Host zeigt? R32@2.1.0 muss sagen, wann der Slice allein entscheidet.",
+    "P2: Wie ist der Fall zu ankern, wenn derselbe FORM-Text ohne REPORT und ohne Deklaration geliefert wird (= CC-053)? Nach REV2-02 bleibt dort D Hypothese bis zum Mechanismusnachweis; die Korrektur an CC-053 ist Sache des Stufe-A-Autors, dieser Fall setzt sie voraus.",
+    "P3: Soll der Korpus einen Fall führen, dessen positiver Zweig im Slice unerreichbar ist (wie CC-067 P2)? Quelle byteidentisch belassen, Unerreichbarkeit markiert.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "c"
+      },
+      {
+        "condition": "call",
+        "from": "c",
+        "to": "g"
+      },
+      {
+        "condition": "vbak-auart = 'TA' AND vbak-netwr > 20000 (im Slice nicht erreichbar)",
+        "from": "g",
+        "to": "a"
+      },
+      {
+        "condition": "sonst",
+        "from": "g",
+        "to": "e"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "e"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart — kein SAP-Host",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "Lokales FORM ausführen (im Slice definiert, nicht opak)",
+        "type": "call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Auftragsart TA und Wert größer 20000?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "lifsk der eigenen Struktur setzen (kein DB-Write, keine Host-Arbeitsstruktur)",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "Rückkehr an :9, Ende des Blocks",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Gleicher Exittext im kundeneigenen Report: der FORM-Name ist eine Hypothese, kein Host und kein D (Gegenfall zu CC-053)"
+}

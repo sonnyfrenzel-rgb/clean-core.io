@@ -1,0 +1,136 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        }
+      ],
+      "id": "CC-014-B01",
+      "text": "Das Programm ruft eine Screenfolge ab0200 auf."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        }
+      ],
+      "id": "CC-014-B02",
+      "text": "Nach normaler Rückkehr wird gv_result ausgegeben; sein in der Screenfolge möglicher Wert bleibt unbekannt."
+    }
+  ],
+  "classes": [
+    "K07",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": true
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 4,
+        "raw": "source.abap:4",
+        "token": null
+      },
+      "id": "CC-014-F01",
+      "profiles": null,
+      "rule": "R11",
+      "ruleRaw": "R11@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-SCREEN"
+      ],
+      "statement": "Screen0200 samt PBO/PAI/GUI-Status fehlt. Die UI- und Fachlogik kann nicht rekonstruiert werden."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-014",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [],
+  "openReviewerQuestions": [
+    "Screen0200 samt PBO/PAI/GUI-Status exportieren",
+    "Schreibstellen von GV_RESULT und mögliche Abbruchpfade suchen",
+    "Erst nach Quellenvollständigkeit fachliches Skelett freigeben",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "partial_missing_screen",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "d"
+      },
+      {
+        "condition": "screen returns normally",
+        "from": "d",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "d",
+        "meaning": "Unbekannte Screenfolge",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Wert nach Rückkehr ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Dynpro-Aufruf ohne Screenexport"
+}

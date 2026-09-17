@@ -1,0 +1,292 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        }
+      ],
+      "id": "CC-050-B01",
+      "text": "Es werden Kunden mit dem eingegebenen Länderschlüssel gelesen, unter Umgehung der Zugriffskontrolle der Entität — die Treffermenge ist nicht auf die Berechtigung des Benutzers eingeschränkt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        }
+      ],
+      "id": "CC-050-B02",
+      "text": "Ohne Treffer wird NO_MATCH ausgegeben und der Reportingblock verlassen."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        }
+      ],
+      "id": "CC-050-B03",
+      "text": "Bei Treffern werden Kundennummer und Name als Liste ausgegeben."
+    }
+  ],
+  "classes": [
+    "K15"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "usable",
+  "cloud_artefact": null,
+  "convergence": "Fable KA-021 · Grok H-071 (verwandt: Berechtigungsumgehung beim Lesen über eine View) · Grok-Lückenzeile „RAP/EML/DCL-Bypass: PRIVILEGED nie zu A\". Nur ein Modell nennt die Syntax direkt; aufgenommen, weil kritisch: das Level kann diesen Befund nicht ausdrücken.",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 4,
+        "raw": "source.abap:4 (sek. :5+2 WITH PRIVILEGED ACCESS)",
+        "token": null
+      },
+      "id": "CC-050-F01",
+      "profiles": null,
+      "rule": "R28",
+      "ruleRaw": "R28@2.0.0-candidate.1",
+      "ruleVersion": "2.0.0-candidate.1",
+      "severity": "high",
+      "sources": [
+        "ABAP-KEYDOC (SELECT",
+        "WITH PRIVILEGED ACCESS)",
+        "SAP-LEVEL"
+      ],
+      "statement": "[security_and_authorization] Zugriffskontrolle der CDS-Entität wird umgangen („DCL umgangen\"). Level unverändert B; Cloud-API-Oberfläche unverändert usable. Compliance-Befund, kein Levelbefund."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:5 — Kein R01-C: I_CUSTOMER ist im Profil freigegeben, nicht intern.",
+    "source.abap:5 — Kein D und kein „B mit Abschlag\": das A–D-Level kann „unsicher\" nicht sagen; der Befund steht in der eigenen Aussageklasse.",
+    "source.abap:1 — Kein A: der REPORT mit WRITE-Liste ist klassisches ABAP; usable bezeichnet die API-Oberfläche, nicht die Implementierung."
+  ],
+  "id": "CC-050",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview (regel-ebene) · sap-doku — REVIEW-2.0.1 (16.09.2026), nicht blind; Urteil zu R28 (Beobachtung/Policy trennen), Fall selbst nicht gelesen; sap-doku: S19 (I_CUSTOMER released, Webabruf 16.09.2026 ohne Commit-Pin)",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 4,
+        "raw": "source.abap:4 (sek",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "released",
+      "identity": {
+        "objectKey": "I_CUSTOMER",
+        "objectType": "CDS_STOB",
+        "tadirObjName": "I_CUSTOMER",
+        "tadirObject": "DDLS"
+      },
+      "name": "I_CUSTOMER",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_applicable",
+      "successors": [],
+      "usage": "read_privileged"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Trägt I_CUSTOMER im Zielrelease tatsächlich eine Zugriffskontrolle? Ohne DCL ist der Zusatz wirkungslos — bleibt der Befund dann bestehen (Autorenmeinung: ja, als Absicht) oder entfällt er?",
+    "Ist WITH PRIVILEGED ACCESS in ABAP for Cloud Development syntaktisch zulässig? Davon hängt ab, ob btp-abap-environment ein drittes Profil mit gleicher Antwort ist oder ein Syntaxbefund.",
+    "Ist I_CUSTOMER im Zielprofil als released (C1) belegt, oder nur als Nachfolger gelistet? Das Level B hängt daran.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "q"
+      },
+      {
+        "condition": "always",
+        "from": "q",
+        "to": "g"
+      },
+      {
+        "condition": "lt_customers IS INITIAL",
+        "from": "g",
+        "to": "no"
+      },
+      {
+        "condition": "always",
+        "from": "no",
+        "to": "e"
+      },
+      {
+        "condition": "lt_customers IS NOT INITIAL",
+        "from": "g",
+        "to": "l"
+      },
+      {
+        "condition": "next row",
+        "from": "l",
+        "to": "o"
+      },
+      {
+        "condition": "next iteration",
+        "from": "o",
+        "to": "l"
+      },
+      {
+        "condition": "no more rows",
+        "from": "l",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "q",
+        "meaning": "Kunden lesen; Attribut privileged_access = true",
+        "type": "read"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Trefferliste leer?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "no",
+        "meaning": "Keine Treffer melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "Block verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "l",
+        "meaning": "Kunden iterieren",
+        "type": "loop"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Kunden ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Liste fertig",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "WITH PRIVILEGED ACCESS: sieht clean aus, umgeht die Zugriffskontrolle"
+}

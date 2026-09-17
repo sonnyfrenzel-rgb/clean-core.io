@@ -1,0 +1,252 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Syntax/Objekte)",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        }
+      ],
+      "id": "CC-044-B01",
+      "text": "Ohne Eingabe wird NO_INPUT ausgegeben und der Block verlassen; der Baustein wird nicht gerufen."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9 (Statement; Literal 9+2)",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        }
+      ],
+      "id": "CC-044-B02",
+      "text": "Bei Eingabe wird p_id an CONVERSION_EXIT_ALPHA_INPUT übergeben und dessen Ausgabe aus lv_internal ausgegeben."
+    }
+  ],
+  "classes": [
+    "K14",
+    "K03"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "Fable KA-003, KA-004 (L10) · Grok — · GLM — · DeepSeek — . Einzelnennung; aufgenommen, weil der Fall den Ankervertrag festlegt (Statementbeginn plus Tokenoffset, Literalzeile sekundär), auf den alle anderen Fälle verweisen.",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9",
+        "token": null
+      },
+      "id": "CC-044-F01",
+      "profiles": null,
+      "rule": "R06",
+      "ruleRaw": "R06@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-CALL"
+      ],
+      "statement": "Statisch benannter klassischer Funktionsbaustein; das Namensliteral ist Token +2 des Statements und steht auf Zeile 10. Historisches Rohlabel notToBeReleasedStable nicht in D umdeuten."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:10 — Kein Befund mit Primäranker auf der Literalzeile. Ein Befund, der nur Zeile 10 nennt, ist eine Verschiebung auf eine formal gültige Zeile (Prüfung F01) und wird nicht als Treffer gewertet.",
+    "source.abap:9–14 — Kein Bereichsanker als Primäranker. Der Statementbereich ist erlaubt als Zusatzangabe, nicht als Identität (KA-004: eine Konvention, nicht zwei).",
+    "source.abap:9 — Nicht als dynamischen Aufruf behandeln, weil das Literal nicht auf derselben Zeile steht.",
+    "source.abap:9 — Kein zweiter Befund für dasselbe Statement, weil es sich über sechs Zeilen erstreckt."
+  ],
+  "id": "CC-044",
+  "independence": [
+    "modellreview"
+  ],
+  "independenceRaw": "modellreview",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9 (Literal source.abap:9+2 auf Zeile 10)",
+        "token": null
+      },
+      "classicRawState": "classicAPI",
+      "cloudRawState": "notToBeReleasedStable",
+      "identity": {
+        "objectKey": "CONVERSION_EXIT_ALPHA_INPUT",
+        "objectType": "FUNC",
+        "tadirObjName": "ALFA",
+        "tadirObject": "FUGR"
+      },
+      "name": "CONVERSION_EXIT_ALPHA_INPUT",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_listed_in_observed_record",
+      "successors": [],
+      "usage": "static_function_call"
+    }
+  ],
+  "openReviewerQuestions": [
+    "P1: Soll der Korpus die Tokenidentität (9+2) oder die Literalzeile (10) als kanonische Schreibweise des Sekundärankers führen? Beides zugleich zuzulassen wäre wieder die KA-004-Doppelkonvention.",
+    "P2: Der Auftrag nannte ein BAPI-Literal. Für kein BAPI liegt in v1 ein beobachteter Katalogzustand vor; soll der Fall auf ein BAPI umgestellt werden, sobald dessen PCE-Eintrag beobachtet ist?",
+    "P3: Verlangt der Prüfer für mehrzeilige Statements den Endzeilenbereich als Pflichtzusatz (9–14), auch wenn er nicht Teil der Identität ist?",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "g"
+      },
+      {
+        "condition": "p_id IS INITIAL",
+        "from": "g",
+        "to": "no"
+      },
+      {
+        "condition": "always",
+        "from": "no",
+        "to": "e"
+      },
+      {
+        "condition": "p_id IS NOT INITIAL",
+        "from": "g",
+        "to": "f"
+      },
+      {
+        "condition": "always",
+        "from": "f",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Eingabe leer?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "no",
+        "meaning": "NO_INPUT melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "Block verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "f",
+        "meaning": "ALPHA INPUT",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Ergebnis ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Literal auf der Folgezeile: Primäranker ist der Statementbeginn"
+}

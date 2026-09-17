@@ -1,0 +1,287 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 32,
+          "raw": "source.abap:32",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 31,
+          "raw": "source.abap:31–32",
+          "token": null
+        }
+      ],
+      "id": "CC-017-B01",
+      "text": "Das Objekt hinter der Basisklassenreferenz ist eine Instanz der Kindklasse."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 23,
+          "raw": "source.abap:23",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 25,
+          "raw": "source.abap:25",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 23,
+          "raw": "source.abap:23–25",
+          "token": null
+        }
+      ],
+      "id": "CC-017-B02",
+      "text": "Die Kindklasse weist negative Beträge zurück, ohne die Basismethode auszuführen."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 27,
+          "raw": "source.abap:27",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 23,
+          "raw": "source.abap:23–27",
+          "token": null
+        }
+      ],
+      "id": "CC-017-B03",
+      "text": "Nicht negative Beträge werden durch den expliziten Super-Aufruf nach der Basisregel verarbeitet."
+    }
+  ],
+  "classes": [
+    "K09"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_applicable",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": true
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 17,
+        "raw": "source.abap:17",
+        "token": null
+      },
+      "id": "CC-017-F01",
+      "profiles": null,
+      "rule": "R14",
+      "ruleRaw": "R14@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-OO"
+      ],
+      "statement": "Vollständige lokale Vorfahren vorhanden. Referenztyp Base, Laufzeittyp Child; negatives Input endet vor Super."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-017",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [],
+  "openReviewerQuestions": [
+    "Dispatch Base-Referenz auf Child-Instanz und Super-Aufruf nachvollziehen",
+    "Negative Beträge dürfen die Basis nicht erreichen",
+    "Zusätzlichen Vorfahren oder Override als Änderungsprobe prüfen",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "g"
+      },
+      {
+        "condition": "iv_amount < 0",
+        "from": "g",
+        "to": "x"
+      },
+      {
+        "condition": "return from method",
+        "from": "x",
+        "to": "o"
+      },
+      {
+        "condition": "iv_amount >= 0",
+        "from": "g",
+        "to": "b"
+      },
+      {
+        "condition": "always",
+        "from": "b",
+        "to": "h"
+      },
+      {
+        "condition": "iv_amount > 10000",
+        "from": "h",
+        "to": "m"
+      },
+      {
+        "condition": "iv_amount <= 10000",
+        "from": "h",
+        "to": "a"
+      },
+      {
+        "condition": "always",
+        "from": "m",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 30,
+          "raw": "source.abap:30",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 33,
+          "raw": "source.abap:33",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "Child-Override aufrufen",
+        "type": "call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 23,
+          "raw": "source.abap:23",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Negativ?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 25,
+          "raw": "source.abap:25",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "INVALID zurückgeben",
+        "type": "return"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 27,
+          "raw": "source.abap:27",
+          "token": null
+        },
+        "id": "b",
+        "meaning": "Basismethode aufrufen",
+        "type": "call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "h",
+        "meaning": "Größer10000?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "m",
+        "meaning": "Managerroute",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "Autoroute",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 34,
+          "raw": "source.abap:34",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Ausgabe",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "OO: Redefinition und expliziter Super-Aufruf"
+}

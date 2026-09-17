@@ -1,0 +1,289 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7 (Bindung &1 = kna1)",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4 (Statement)",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        }
+      ],
+      "id": "CC-042-B01",
+      "text": "Die Zahl aller Sätze in KNA1 wird ohne Einschränkung ermittelt und ausgegeben."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9 (Bindung &1 = knb1)",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4 (Statement)",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        }
+      ],
+      "id": "CC-042-B02",
+      "text": "Danach wird die Zahl aller Sätze in KNB1 ohne Einschränkung ermittelt und ausgegeben; lv_count wird dabei überschrieben."
+    }
+  ],
+  "classes": [
+    "K14",
+    "K01"
+  ],
+  "classic_level": "C",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "Grok H-006 · GLM A-035 · Fable KA-001 (L10) · DeepSeek",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 7,
+        "raw": "source.abap:7",
+        "token": null
+      },
+      "id": "CC-042-F01",
+      "profiles": null,
+      "rule": "R01",
+      "ruleRaw": "R01@1.0.0 + R27@2.0.0-draft",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22"
+      ],
+      "statement": "Direkter Lesezugriff auf KNA1 durch Expansion von count_rows mit &1 = kna1. Wirkungsort ist der Aufruf. CDS-Nachfolger I_CUSTOMER ist kein bewiesener Drop-in-Ersatz."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9",
+        "token": null
+      },
+      "id": "CC-042-F02",
+      "profiles": null,
+      "rule": "R01",
+      "ruleRaw": "R01@1.0.0 + R27@2.0.0-draft",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22"
+      ],
+      "statement": "Direkter Lesezugriff auf KNB1 durch Expansion von count_rows mit &1 = knb1. Wirkungsort ist der Aufruf. CDS-Nachfolger I_CUSTOMERCOMPANY ist kein bewiesener Drop-in-Ersatz."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:4 — Kein Lesebefund an der Definitionszeile. &1 ist kein Tabellenname; ein Befund „Lesen von &1“ oder „Tabelle unbekannt“ ist falsch.",
+    "source.abap:4 — Kein R26-Befund „dynamisches FROM“. Der Platzhalter wird bei der Übersetzung ersetzt; es gibt keinen Laufzeitwert.",
+    "source.abap:3–5 — Nicht als Kommentar oder Literal (R13a) verwerfen. Die Definition ist Code; ihre Wirkung liegt an Zeile 7 und 9.",
+    "source.abap:7, source.abap:9 — Nicht als opaker Aufruf modellieren. Das Makro ist im Slice definiert und expandierbar; der Knoten ist ein read.",
+    "Kein dritter Lesebefund. Zwei Aufrufe, zwei Befunde, zwei Objekte."
+  ],
+  "id": "CC-042",
+  "independence": [
+    "modellreview",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview (regel-ebene) — REVIEW-2.0.1 (16.09.2026), nicht blind; Urteil zu R27 und Gegenbeispiel CE-06, Fall selbst nicht gelesen",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 7,
+        "raw": "source.abap:7 (Sekundäranker source.abap:4)",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNA1",
+        "objectType": "TABL",
+        "tadirObjName": "KNA1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNA1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMER",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "read"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9 (Sekundäranker source.abap:4)",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNB1",
+        "objectType": "TABL",
+        "tadirObjName": "KNB1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNB1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMERCOMPANY",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMERCOMPANY",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "read"
+    }
+  ],
+  "openReviewerQuestions": [
+    "P1: Bestätigt die Makrosemantik (Ersetzung von &1 vor der Syntaxprüfung, auch innerhalb eines Tokens wie lt_&1), dass die Expansion an Zeile 7 und 9 genau SELECT COUNT(*) FROM kna1 … beziehungsweise … knb1 … lautet?",
+    "P2: Ist der Primäranker am Aufruf (R27) für den Prüfer die richtige Konvention, oder verlangt der Zielarbeitsraum Ankerpaare mit gleichrangiger Definitionszeile (GLM A-035)?",
+    "P3: Ist DEFINE … END-OF-DEFINITION in abap-for-cloud zulässig? Die Sollantwort dieses Falls hängt nicht davon ab; die Zeile Zweites Profil schon.",
+    "P4: Grok H-006 zeigt dieselbe Mechanik mit UPDATE (R02, D). Soll der Korpus die DML-Variante als eigenen Fall führen, oder genügt CC-042 als Mechanikbeleg plus CC-023 als Levelbeleg?",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "q1"
+      },
+      {
+        "condition": "always",
+        "from": "q1",
+        "to": "o1"
+      },
+      {
+        "condition": "always",
+        "from": "o1",
+        "to": "q2"
+      },
+      {
+        "condition": "always",
+        "from": "q2",
+        "to": "o2"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7 (sekundär :4)",
+          "token": null
+        },
+        "id": "q1",
+        "meaning": "KNA1 zählen (Makro expandiert)",
+        "type": "read"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "o1",
+        "meaning": "KNA1-Zahl ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9 (sekundär :4)",
+          "token": null
+        },
+        "id": "q2",
+        "meaning": "KNB1 zählen (Makro expandiert)",
+        "type": "read"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "o2",
+        "meaning": "KNB1-Zahl ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Makro: zwei Lesebefunde an den Aufrufzeilen, keiner an der Definition"
+}

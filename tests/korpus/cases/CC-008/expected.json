@@ -1,0 +1,300 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5–8",
+          "token": null
+        }
+      ],
+      "id": "CC-008-B01",
+      "text": "Kunden ohne passenden Company-Satz im gewählten Buchungskreis bleiben nicht im Ergebnis."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5–8",
+          "token": null
+        }
+      ],
+      "id": "CC-008-B02",
+      "text": "Ein fehlender Sales-Area-Satz allein entfernt einen sonst passenden Kunden nicht."
+    }
+  ],
+  "classes": [
+    "K04",
+    "K01"
+  ],
+  "classic_level": "C",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5",
+        "token": null
+      },
+      "id": "CC-008-F01",
+      "profiles": null,
+      "rule": "R01",
+      "ruleRaw": "R01@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22"
+      ],
+      "statement": "KNA1 lesen."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6",
+        "token": null
+      },
+      "id": "CC-008-F02",
+      "profiles": null,
+      "rule": "R01",
+      "ruleRaw": "R01@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22"
+      ],
+      "statement": "KNB1 lesen."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 7,
+        "raw": "source.abap:7",
+        "token": null
+      },
+      "id": "CC-008-F03",
+      "profiles": null,
+      "rule": "R01",
+      "ruleRaw": "R01@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22"
+      ],
+      "statement": "KNVV lesen."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 8,
+        "raw": "source.abap:8",
+        "token": null
+      },
+      "id": "CC-008-F04",
+      "profiles": null,
+      "rule": "R08",
+      "ruleRaw": "R08@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-SQL"
+      ],
+      "statement": "WHERE-Bedingung auf rechter Tabelle verwirft NULL-Company-Treffer. Verlagerung nach ON verändert Semantik."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-008",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNA1",
+        "objectType": "TABL",
+        "tadirObjName": "KNA1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNA1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMER",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "join_read"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNB1",
+        "objectType": "TABL",
+        "tadirObjName": "KNB1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNB1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMERCOMPANY",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMERCOMPANY",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "join_read"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 7,
+        "raw": "source.abap:7",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNVV",
+        "objectType": "TABL",
+        "tadirObjName": "KNVV",
+        "tadirObject": "TABL"
+      },
+      "name": "KNVV",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMERSALESAREA",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMERSALESAREA",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "join_read"
+    }
+  ],
+  "openReviewerQuestions": [
+    "NULL-Semantik mit fehlendem Company- und fehlendem Sales-Satz verproben",
+    "WHERE-nach-ON-Verschiebung ausdrücklich als Verhaltensänderung erkennen",
+    "Ziel-CDS-Join mit identischer Ergebnismenge fachlich prüfen",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "j"
+      },
+      {
+        "condition": "for each surviving row",
+        "from": "j",
+        "to": "o"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4–9",
+          "token": null
+        },
+        "id": "j",
+        "meaning": "Outer Joins plus WHERE ausführen",
+        "type": "read"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Verbleibende Zeilen ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "LEFT JOIN: WHERE-Filter entfernt Nulltreffer"
+}

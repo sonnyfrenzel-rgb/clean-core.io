@@ -1,0 +1,254 @@
+[
+  {
+    "id": "S01",
+    "title": "SAP Learning: Exploring Clean Core Extensibility Best Practices",
+    "url": "https://learning.sap.com/courses/practicing-clean-core-extensibility-for-sap-s-4hana-cloud/explaining-extensibility-model-best-practices_e290f382-800e-40ef-a203-85a13115f487",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Level A–D; klassische APIs/Techniken; Userexits/BAdIs nicht pauschal D. Keine Einzelobjektfreigabe für MV45AFZZ.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S02",
+    "title": "SAP Learning: Setting Up for Clean Core Development / Tier-2 APIs",
+    "url": "https://learning.sap.com/courses/practicing-clean-core-extensibility-for-sap-s-4hana-cloud/creating-tier-2-cloud-apis_a75bf2cd-815c-42bb-8d3b-2bba4931ecad",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "API-Freigabe umfasst Zustand, Vertrag und Sichtbarkeit; Wrapper-/Konsumentengrenzen.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S03",
+    "title": "SAP: Object Release State in Cloudification Repository Viewer",
+    "url": "https://community.sap.com/t5/technology-blog-posts-by-sap/object-release-state-in-cloudification-repository-viewer-for-clean-core/ba-p/14350668",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "SAP-Beitrag zum Overlap classicAPI/notToBeReleased und zur Bestandsverwendung deprecated APIs. Suchansicht ausgewertet.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S04",
+    "title": "SAP ABAP Platform 2022: Cloud API Enablement / Wrapper",
+    "url": "https://help.sap.com/docs/ABAP_PLATFORM_NEW/b5670aaaa2364a29935f40b16499972d/f871712b816943b0ab5e04b60799e518.html?version=202210.000",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Kundeneigene Wrapper außerhalb ABAP Cloud mit C1-Freigabe für Cloud-Konsumenten; keine Freigabe der Wrapperimplementierung durch bloßen Vertragsnamen.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S05",
+    "title": "SAP: LUWs in ABAP",
+    "url": "https://help.sap.com/docs/abap-cloud/abap-concepts/luws-in-abap",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "SAP-LUW versus Datenbank-LUW; Verbuchung, lokale/synchrone/asynchrone Verarbeitung; Transaktionsgrenzen. Keine native Ausführung des Fallcodes.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S06",
+    "title": "ABAP 7.52 Keyword Documentation: CALL TRANSACTION",
+    "url": "https://help.sap.com/doc/abapdocu_752_index_htm/7.52/en-US/abapcall_transaction.htm",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Neue SAP-LUW beim normalen Aufruf; Aufruf allein beendet die Datenbank-LUW nicht. CALL TRANSACTION USING/BDC und aufgerufene Anwendung separat betrachten.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S07",
+    "title": "ABAP 7.52 Keyword Documentation: SAP LUW",
+    "url": "https://help.sap.com/doc/abapdocu_752_index_htm/7.52/en-US/abensap_luw.htm",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "SAP-LUW bei internen Sitzungen; SUBMIT/CALL TRANSACTION; unvollständig abgeschlossene Verbuchungsregistrierungen.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S08",
+    "title": "ABAP 7.52 Keyword Documentation: Database Commit",
+    "url": "https://help.sap.com/doc/abapdocu_752_index_htm/7.52/en-US/abendb_commit.htm",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Datenbank-Commit, implizite Kontexte, RFC/WAIT/Dialog und Cursor. Nicht gleichbedeutend mit COMMIT WORK/Update-Dispatch.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S09",
+    "title": "ABAP 7.52 Keyword Documentation: COMMIT WORK",
+    "url": "https://help.sap.com/doc/abapdocu_752_index_htm/7.52/en-US/abapcommit.htm?file=abapcommit.htm%2F1000",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Verbuchungsanstoß, AND WAIT und sy-subrc; unvollständig beendete SAP-LUW; Cursor und Fehlernachweise. Erfolgreich gelesene Suchansicht, kein nativer SAP-Lauf.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S10",
+    "title": "ABAP 7.52: ADBC DDL and DML",
+    "url": "https://help.sap.com/doc/abapdocu_752_index_htm/7.52/en-US/abenadbc_ddl_dml.htm",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "EXECUTE_UPDATE, Anzahl bearbeiteter Zeilen, Platzhalter und SET_PARAM statt unsicherem Textaufbau.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S11",
+    "title": "ABAP 7.52: EXEC SQL",
+    "url": "https://help.sap.com/doc/abapdocu_752_index_htm/7.52/en-US/abapexec.htm",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Native SQL, Hostvariablen, fehlende automatische Mandantenbehandlung, sy-subrc und sy-dbcnt nach ENDEXEC.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S12",
+    "title": "ABAP 7.52: Embedded Expressions in String Templates",
+    "url": "https://help.sap.com/doc/abapdocu_752_index_htm/7.52/en-US/abenstring_templates_expressions.htm",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Eingebettete Ausdrücke einschließlich funktionaler Methodenaufrufe; auch Seiteneffekte möglich, ohne späteren SQL-/Code-Konsumenten.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S13",
+    "title": "SAP: ASSERT",
+    "url": "https://help.sap.com/docs/abap-cloud/abap-keyword/assert",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "ASSERT ohne ID ist aktiv; bei falscher Bedingung Laufzeitfehler. ASSERT ID zusätzlich von Checkpoint-Konfiguration abhängig.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S14",
+    "title": "SAP: Specifying a Client",
+    "url": "https://help.sap.com/docs/SAP_NETWEAVER_701/6da3d9466c4b1014a5a2e370bd8c5dc8/fceb3969358411d1829f0000e829fbfe.html?locale=en-US&state=PRODUCTION&version=7.01.24",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "CLIENT SPECIFIED schaltet automatische Mandantenbehandlung aus; explizite Einschränkung kann Mandant erneut begrenzen. Historische Sprachdokumentation, nicht Cloud-Zulassung.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S15",
+    "title": "SAP: ALPHA Conversion",
+    "url": "https://help.sap.com/docs/SAP_NETWEAVER_AS_ABAP_751_IP/9c91640bf34c49d8bad6bc560bedd707/cfb789f931a24016999eabd80aa4ea6f.html?version=7.51.12",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Numerische und nicht numerische Schlüssel werden unterschiedlich behandelt; keine universelle Pflicht zu führenden Nullen für alphanumerische Schlüssel.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S16",
+    "title": "SAP: Exiting GET Event Blocks",
+    "url": "https://help.sap.com/saphelp_autoid2007/helpdata/en/9f/db99b435c111d1829f0000e829fbfe/content.htm?no_cache=true",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "CHECK/EXIT im GET-Kontext können untergeordnete LDB-Knoten unterdrücken; nicht bloß generischer Blockabbruch.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S17",
+    "title": "SAP: EML READ ENTITIES, Long Form",
+    "url": "https://help.sap.com/docs/abap-cloud/abap-keyword/read-entities-long-form",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "IN LOCAL MODE im eigenen Behavior-Kontext; Umgehung definierter Frameworkprüfungen ist nicht allein ein Schwachstellennachweis.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S18",
+    "title": "SAP ABAP Platform 2022: Determinations",
+    "url": "https://help.sap.com/docs/ABAP_PLATFORM_NEW/fc4c71aa50014fd1b43721701471913d/ede4e327def74b3b869fad2e70b00abb.html?version=202210.latest",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Offizielles Determination-Muster mit EML IN LOCAL MODE; BDEF-Trigger/Save-Kontext bleiben notwendig.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S19",
+    "title": "SAP Cloudification Repository: objectReleaseInfo_PCE2022.json",
+    "url": "https://raw.githubusercontent.com/SAP/abap-atc-cr-cv-s4hc/main/src/objectReleaseInfo_PCE2022.json",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Eigene Einträge I_CUSTOMER und CL_ABAP_BEHAVIOR_HANDLER: released; KNA1: notToBeReleased mit typisiertem I_CUSTOMER-Nachfolger. main ist beweglich, kein vollständiger Commit-/Byte-Pin.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S20",
+    "title": "SAP Cloudification Repository: objectClassifications_SAP.json",
+    "url": "https://raw.githubusercontent.com/SAP/abap-atc-cr-cv-s4hc/main/src/objectClassifications_SAP.json",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Gezielte Suche nach MV45AFZZ, USEREXIT_SAVE_DOCUMENT, KNA1, CL_SQL_STATEMENT ohne Treffer. Keine vollständige Negativzertifizierung und kein Levelbeweis aus Abwesenheit.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S21",
+    "title": "SAP Public Edition 2608: Customer CDS field-name changes",
+    "url": "https://help.sap.com/docs/SAP_S4HANA_CLOUD/ee9ee0ca4c3942068ea584d2f929b5b1/33e87490d09e496093a1b45dba38c2b4.html?locale=de-DE",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Nur ein neueres Gegenbeispiel zur pauschalen Feldäquivalenz: CustomerName-Quellen ändern sich in 2608. Nicht auf das 2023-Fixture übertragen.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S22",
+    "title": "SAP: Transaction Model for Developing BAPIs",
+    "url": "https://help.sap.com/docs/SAP_NETWEAVER_AS_ABAP_752/166400f6be7b46e8adc6b90fd20f3516/4d4f424ab3ee468de10000000a42189c.html",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Caller-gesteuerter Transaktionsabschluss, Kontext und BAPI-Ergebnisprüfung; Aufruf eines Commit-Funktionsbausteins ist kein universeller fachlicher Erfolgsbeweis.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S23",
+    "title": "SAP samples: ABAP SQL Cheat Sheet",
+    "url": "https://raw.githubusercontent.com/SAP-samples/abap-cheat-sheets/main/03_ABAP_SQL.md",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Vom Korpus übernommene Quelle für SQL-Semantik; in dieser Runde nicht als nativer Zielrelease-Compilebeleg gewertet.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S24",
+    "title": "SAP: Running a Program Using CALL TRANSACTION USING",
+    "url": "https://help.sap.com/saphelp_gbt10/helpdata/EN/4d/91cdf0b9a642a1e10000000a42189c/content.htm?no_cache=true",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "BDC-Variante hat eigene Commit-/Batch-Input-Semantik; nicht mit dem normalen CALL TRANSACTION ohne USING gleichsetzen.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S25",
+    "title": "SAP Community by SAP: Extensibility in the Age of AI",
+    "url": "https://community.sap.com/t5/technology-blog-posts-by-sap/extensibility-in-the-age-of-ai-why-abcd-is-easier-and-smarter-than-you/ba-p/14234516/page/2",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Zusätzlicher, schwächerer Kontext: nennt MV45AFZZ als mögliches Level-B-Muster und verweist auf Note 3578329. Die Note war nicht lesbar; daraus wird keine konkrete Objekt-/Releasefreigabe gemacht.",
+    "retrieval": "Web-Leseansicht; kein archivierter vollständiger Upstream-Snapshot"
+  },
+  {
+    "id": "S26",
+    "title": "SAP: CALL FUNCTION func",
+    "url": "https://help.sap.com/docs/abap-cloud/abap-keyword/call-function-func",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Literal/Konstante versus Variable; eigentliche Auswertung und Signaturkonflikte zur Laufzeit; dynamische Eingaben prüfen.",
+    "retrieval": "Substantive Suchansicht; direkte JavaScript-Seite leer."
+  },
+  {
+    "id": "S27",
+    "title": "SAP samples: ABAP Object Orientation",
+    "url": "https://raw.githubusercontent.com/SAP-samples/abap-cheat-sheets/main/04_ABAP_Object_Orientation.md",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "Vererbung, lokale/globale Klassen, Parameter, Polymorphismus; kein Zielrelease-Aktivierungsnachweis.",
+    "retrieval": "Web-Raw-Ansicht"
+  },
+  {
+    "id": "S28",
+    "title": "SAP: Building Your First BAdI",
+    "url": "https://help.sap.com/saphelp_scm700_ehp02/helpdata/en/44/f5175e19fd2463e10000000a1553f7/content.htm?no_cache=true",
+    "publisher": "SAP",
+    "access_date": "2026-09-16",
+    "scope": "GET/CALL BAdI und Aktivierungs-/Implementierungskontext.",
+    "retrieval": "SAP-Hilfeseite"
+  }
+]

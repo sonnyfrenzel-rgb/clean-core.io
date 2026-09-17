@@ -1,0 +1,379 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Syntax/Objekte)",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7 (Bedingung)",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14 (Ziel)",
+          "token": null
+        }
+      ],
+      "id": "CC-048-B01",
+      "text": "Bei negativem Mindestwert wird weder summiert noch eine Summe ausgegeben; die Liste enthält nur END."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9 (Bedingung)",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8 (Ziel bei falscher Bedingung)",
+          "token": null
+        }
+      ],
+      "id": "CC-048-B02",
+      "text": "Nur Werte, die mindestens dem Mindestwert entsprechen, gehen in die Summe ein; kleinere werden übersprungen, die Schleife läuft weiter."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16 (Bedingung)",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18 (Ziel bei falscher Bedingung)",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        }
+      ],
+      "id": "CC-048-B03",
+      "text": "Die Summe wird nur ausgegeben, wenn sie größer als 0 ist; sonst wird das Unterprogramm ohne Ausgabe verlassen."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5–13",
+          "token": null
+        }
+      ],
+      "id": "CC-048-B04",
+      "text": "END wird auf jedem Pfad ausgegeben, auch nach jedem der drei abgebrochenen Kontexte."
+    }
+  ],
+  "classes": [
+    "K18"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_applicable",
+  "cloud_artefact": null,
+  "convergence": "Grok H-103 · GLM A-036 und Abschnitt 4 Nr. 9 („dritter CHECK-Kontext“) · Fable KA-082, KA-083 (L5 c) · Realcode-Prüfung RV-027/RV-028 (§8.2) · DeepSeek",
+  "declaredEmpty": {
+    "findings": true,
+    "objects": true
+  },
+  "expectedByProfile": null,
+  "findings": [],
+  "forbiddenConclusions": [
+    "source.abap:7 — Nicht „Programmende“ und nicht „Liste ohne END“. Der falsche CHECK verlässt den Ereignisblock START-OF-SELECTION; END-OF-SELECTION läuft trotzdem.",
+    "source.abap:9 — Nicht „Schleife verlassen“ (das wäre EXIT) und nicht „Block verlassen“. Der falsche CHECK springt zur nächsten Iteration.",
+    "source.abap:16 — Nicht „Programmende“ und nicht „Schleife“. Der falsche CHECK verlässt die FORM; die Verarbeitung geht nach dem PERFORM weiter.",
+    "source.abap:7, 9, 16 — Keine pauschale Übersetzung „Prüfung nicht erfolgreich → Ende des gesamten Prozesses“ für alle drei (Prüfung §8.2).",
+    "source.abap:12 — Nicht als opaker Aufruf. Die FORM steht in Zeile 15–18.",
+    "source.abap:14 — Nicht als bedingte Ausgabe. END erscheint auf jedem Pfad."
+  ],
+  "id": "CC-048",
+  "independence": [
+    "modellreview"
+  ],
+  "independenceRaw": "modellreview",
+  "known_worst_level": null,
+  "objects": [],
+  "openReviewerQuestions": [
+    "P1: Bestätigt die Schlüsselwortdokumentation, dass ein falscher CHECK in START-OF-SELECTION den Ereignisblock verlässt und END-OF-SELECTION anschließend ausgelöst wird (kein Sprung ans Programmende)?",
+    "P2: Der Ereignisblock-Kontext ist hier START-OF-SELECTION. Für AT SELECTION-SCREEN ist die Wirkung eines falschen CHECK (Fable KA-082: Bild bleibt) nicht mit gleicher Sicherheit belegbar und deshalb bewusst nicht gewählt. Soll ein Partnerfall das aufnehmen?",
+    "P3: CHECK im GET-Block einer LDB (verwirft nur den aktuellen Satz, Fable KA-083) wäre ein vierter Kontext; er gehört zu CC-047, wurde dort aber wegen „eine Ursache je Fall“ weggelassen. Eigener Fall?",
+    "P4: Ist action für den Aufruf einer lokal definierten FORM und für die Rückkehr der richtige Knotentyp, oder braucht der Vertrag call/return? v1 kennt nur opaque_call.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "a0"
+      },
+      {
+        "condition": "always",
+        "from": "a0",
+        "to": "g1"
+      },
+      {
+        "condition": "CHECK falsch: p_min < 0 — Ereignisblock verlassen",
+        "from": "g1",
+        "to": "ee"
+      },
+      {
+        "condition": "p_min >= 0",
+        "from": "g1",
+        "to": "l"
+      },
+      {
+        "condition": "next row",
+        "from": "l",
+        "to": "g2"
+      },
+      {
+        "condition": "CHECK falsch: lv_value < p_min — nächste Iteration",
+        "from": "g2",
+        "to": "l"
+      },
+      {
+        "condition": "lv_value >= p_min",
+        "from": "g2",
+        "to": "a1"
+      },
+      {
+        "condition": "next iteration",
+        "from": "a1",
+        "to": "l"
+      },
+      {
+        "condition": "no more rows",
+        "from": "l",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "g3"
+      },
+      {
+        "condition": "CHECK falsch: iv_sum <= 0 — FORM verlassen",
+        "from": "g3",
+        "to": "r"
+      },
+      {
+        "condition": "iv_sum > 0",
+        "from": "g3",
+        "to": "o1"
+      },
+      {
+        "condition": "always",
+        "from": "o1",
+        "to": "r"
+      },
+      {
+        "condition": "normal return",
+        "from": "r",
+        "to": "ee"
+      },
+      {
+        "condition": "always",
+        "from": "ee",
+        "to": "o2"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "a0",
+        "meaning": "Werte füllen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "g1",
+        "meaning": "Mindestwert nicht negativ? (CHECK im Ereignisblock)",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "l",
+        "meaning": "Werte iterieren",
+        "type": "loop"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "g2",
+        "meaning": "Wert >= Mindestwert? (CHECK in LOOP)",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "a1",
+        "meaning": "Summieren",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "show_sum aufrufen (lokale FORM, nicht opak)",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        "id": "g3",
+        "meaning": "Summe > 0? (CHECK in FORM)",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        "id": "o1",
+        "meaning": "Summe ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18",
+          "token": null
+        },
+        "id": "r",
+        "meaning": "Rückkehr aus show_sum",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "ee",
+        "meaning": "END-OF-SELECTION",
+        "type": "event_block"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "o2",
+        "meaning": "END ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "CHECK in drei Kontexten: drei Bedingungen, drei verschiedene Ziele"
+}

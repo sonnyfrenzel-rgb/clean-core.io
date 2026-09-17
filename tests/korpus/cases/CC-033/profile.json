@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "n/a",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=n/a · rule_revision=v2-draft · runtime_context=dialog (Pflichtfeld für diesen Fall)",
+  "release": "S/4HANA 2023",
+  "rule_revision": "v2-draft",
+  "runtime_context": null,
+  "second_profile": "runtime_context=batch — die E-Meldung bricht nach Erinnerung des Autors den Jobschritt ab; runtime_context=rfc — in einem per RFC aufgerufenen Baustein wird sie als Ausnahme an den Rufer gereicht. In beiden Fällen ändert sich der end-Knoten und die Aussage über die Datenbank-LUW; ohne Laufzeitkontext ist die Sollantwort Unknown."
+}

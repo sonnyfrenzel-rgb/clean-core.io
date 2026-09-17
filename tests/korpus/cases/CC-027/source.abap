@@ -1,0 +1,10 @@
+REPORT zcc_ref_027.
+PARAMETERS p_id TYPE c LENGTH 10.
+PARAMETERS p_route TYPE c LENGTH 20.
+START-OF-SELECTION.
+  CALL FUNCTION 'Z_CC_DECISION_UPD'
+    IN UPDATE TASK
+    EXPORTING iv_case_id = p_id
+              iv_route   = p_route.
+  WRITE / 'REGISTERED'.
+  WRITE / 'END_OF_REPORT'.

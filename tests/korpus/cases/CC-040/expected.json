@@ -1,0 +1,309 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        }
+      ],
+      "id": "CC-040-B01",
+      "text": "Außerhalb des Aufrufkontexts von SAPMV45A liefert die Methode eine leere Belegnummer."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        }
+      ],
+      "id": "CC-040-B02",
+      "text": "Innerhalb dieses Kontexts liefert sie die Belegnummer des gerade bearbeiteten Kundenauftrags aus dem Programmspeicher von SAPMV45A. Dass VBAK-VBELN dort diese Bedeutung hat, ist Fixture-Annahme (Beleggrad erinnert), nicht aus dem gelieferten Code ablesbar."
+    }
+  ],
+  "classes": [
+    "K13",
+    "K10",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "Fable KA-096 (ausgeschrieben §3.1) · Grok H-041 (allgemeiner dynamischer ASSIGN) · GLM: keine · DeepSeek: keine",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9",
+        "token": null
+      },
+      "id": "CC-040-F01",
+      "profiles": null,
+      "rule": "R13b",
+      "ruleRaw": "R13b@2.0.0-draft",
+      "ruleVersion": "2.0.0-draft",
+      "severity": "high",
+      "sources": [
+        "SAP-ABAPDOC",
+        "SAP-RTTI"
+      ],
+      "statement": "Das Literal '(SAPMV45A)VBAK-VBELN' ist konsumentengebunden (dynamischer ASSIGN) und begründet eine Abhängigkeit auf das SAP-Programm SAPMV45A und dessen globales Datenobjekt VBAK. Es ist weder „Literal ohne Wirkung\" (CC-016) noch „dynamisch, deshalb ohne Objekt\" (CC-020)."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9",
+        "token": null
+      },
+      "id": "CC-040-F02",
+      "profiles": null,
+      "rule": "R12",
+      "ruleRaw": "R12@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-KERNEL-EXAMPLE"
+      ],
+      "statement": "Lesezugriff auf Programminterna eines SAP-Programms: Konstrukt eindeutig, aber kein freigegebener Zugriffsweg belegbar. Level Unknown statt erfundenem C oder D; known_worst_level D (Kopplung an nicht stabile SAP-Interna, in Cloud unmöglich)."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:9 — Nicht als CC-020-artiges Unknown ohne Objektabhängigkeit kodieren; SAPMV45A und VBAK müssen als Objekte erscheinen.",
+    "source.abap:9 — Nicht B „Standard-ABAP ohne SAP-Objekt\". Das SAP-Objekt steht im Literal.",
+    "source.abap:9 — Nicht D als Level: der Fall ist lesend, und für den Zugriffsweg ist keine SAP-Einstufung belegt. D ist known_worst_level.",
+    "source.abap:9 — Kein security_and_authorization-Befund: lesend, ohne Eingabe, ohne generisches Ziel."
+  ],
+  "id": "CC-040",
+  "independence": [
+    "modellreview"
+  ],
+  "independenceRaw": "modellreview",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "not_asserted",
+      "identity": {
+        "objectKey": "SAPMV45A",
+        "objectType": "PROG",
+        "tadirObjName": "SAPMV45A",
+        "tadirObject": "PROG"
+      },
+      "name": "SAPMV45A",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_listed_in_observed_record",
+      "successors": [],
+      "usage": "program_global_read_via_literal"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "not_asserted",
+      "identity": {
+        "objectKey": "VBAK",
+        "objectType": "TABL",
+        "tadirObjName": "VBAK",
+        "tadirObject": "TABL"
+      },
+      "name": "VBAK",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "unknown",
+      "successors": [],
+      "usage": "program_global_field_read_via_literal"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Ist Level Unknown mit known_worst_level D für einen lesenden Zugriff auf Programminterna die vom Prüfer gewünschte Antwort, oder gilt lesender Zugriff auf SAP-Programmspeicher bereits als D (Modifikationsäquivalent)?",
+    "Wie ist VBAK im PCE2022-Auszug eingetragen, und bestätigt der Prüfer, dass ein CDS-Lesenachfolger den Programmspeicherzugriff nicht ersetzt?",
+    "Ist VBAK im Zielrelease tatsächlich ein globales Datenobjekt von SAPMV45A, und trägt VBAK-VBELN im Dialog VA01/VA02 den bearbeiteten Beleg? (Beleggrad erinnert.)",
+    "Soll die schreibende Variante (<fs> = … in SAPMV45A-Speicher, Fable KA-096) als eigener Fall mit D folgen?",
+    "Ist ein Klassen-Quelltext ohne REPORT-Rahmen im Zeilenvertrag zulässig, oder verlangt der Zusammenführer einen Report mit lokaler Klasse?",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "partial_missing_host_program_context",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "r"
+      },
+      {
+        "condition": "always",
+        "from": "r",
+        "to": "g"
+      },
+      {
+        "condition": "sy-subrc <> 0",
+        "from": "g",
+        "to": "cl"
+      },
+      {
+        "condition": "always",
+        "from": "cl",
+        "to": "e1"
+      },
+      {
+        "condition": "sy-subrc = 0",
+        "from": "g",
+        "to": "a"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Methodenstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "r",
+        "meaning": "Programmspeicher lesen — kein Datenbankzugriff; Quelle ist das geladene SAP-Programm",
+        "type": "read"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Nicht im Kontext von SAPMV45A?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "cl",
+        "meaning": "Rückgabe leeren",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "e1",
+        "meaning": "Methode verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "Belegnummer übernehmen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Methodenende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "ASSIGN ('(SAPMV45A)VBAK-VBELN'): das Literal wird Abhängigkeit auf ein SAP-Programm"
+}

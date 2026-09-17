@@ -1,0 +1,934 @@
+[
+  {
+    "case": "CC-001",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 15,
+        "sha256": "c95f9c5ff6bae2ae269f60d7c32a7a570692fc9e06a7a09af3495ade43d2d8fc",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "c95f9c5ff6bae2ae269f60d7c32a7a570692fc9e06a7a09af3495ade43d2d8fc"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-002",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 20,
+        "sha256": "ea6745f9e30b5041cc10315194ddcb88d56c6f113f6061ff88a8f4bd6a83d23d",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "ea6745f9e30b5041cc10315194ddcb88d56c6f113f6061ff88a8f4bd6a83d23d"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-003",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 21,
+        "sha256": "a8fcae066b8e02d4ddec782a5d40ec390615e27956799ecd3d05a77a74d4808a",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "a8fcae066b8e02d4ddec782a5d40ec390615e27956799ecd3d05a77a74d4808a"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-004",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 15,
+        "sha256": "baf697be6ec0a962e8164b2f440f4c355aa1e20c86a16403aef66935f90dd34d",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "baf697be6ec0a962e8164b2f440f4c355aa1e20c86a16403aef66935f90dd34d"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-005",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 12,
+        "sha256": "169d55b94e766f7bd3909fbcdef09feb143dc39a814ef894904b78528063f767",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "169d55b94e766f7bd3909fbcdef09feb143dc39a814ef894904b78528063f767"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-006",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 9,
+        "sha256": "0b63a007cac0e750a991ec24c8bc58c0921fb018da669ee4f2299a9718f60aec",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "0b63a007cac0e750a991ec24c8bc58c0921fb018da669ee4f2299a9718f60aec"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-007",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 13,
+        "sha256": "7a0c8f3aa6fba22a43212733367e78ae7ad3812b1023286dbfe3f2ae6f7d3da4",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "7a0c8f3aa6fba22a43212733367e78ae7ad3812b1023286dbfe3f2ae6f7d3da4"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-008",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 12,
+        "sha256": "7a5d3ec80446dc61de1a986e0392817f52506fc34ab8f9487e461c9c8ab8c2c4",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "7a5d3ec80446dc61de1a986e0392817f52506fc34ab8f9487e461c9c8ab8c2c4"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-009",
+    "sources": [
+      {
+        "file": "implementation.abap",
+        "lines": 13,
+        "sha256": "e84d4011292fe3752eaa6e7897c2d0e9971eeb18502d1be560adb812be202375",
+        "declared": false,
+        "missing_newline_match": false,
+        "expected": [
+          "cbff55adc6761e7a6529c3dda43a1b2373ac3122e4dd0ef6ce6264ff13a2c28a"
+        ]
+      },
+      {
+        "file": "interface.abap",
+        "lines": 5,
+        "sha256": "1028ec4f176ee2c64e51cd2a58da7ed532732af80a04db2f912f66a67c77c936",
+        "declared": false,
+        "missing_newline_match": false,
+        "expected": [
+          "cbff55adc6761e7a6529c3dda43a1b2373ac3122e4dd0ef6ce6264ff13a2c28a"
+        ]
+      },
+      {
+        "file": "source.abap",
+        "lines": 10,
+        "sha256": "cbff55adc6761e7a6529c3dda43a1b2373ac3122e4dd0ef6ce6264ff13a2c28a",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "cbff55adc6761e7a6529c3dda43a1b2373ac3122e4dd0ef6ce6264ff13a2c28a"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-010",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 13,
+        "sha256": "f0773dc4956a95a6ea863694f1ccac65e28d3d1f1bbdffd7d06fa1f7c084591f",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "f0773dc4956a95a6ea863694f1ccac65e28d3d1f1bbdffd7d06fa1f7c084591f"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-011",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 10,
+        "sha256": "9e47e55bb554d21dfd1cb9361840f167d90e53a8c7da9ea18ef54cc5f531b6eb",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "9e47e55bb554d21dfd1cb9361840f167d90e53a8c7da9ea18ef54cc5f531b6eb"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-012",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 16,
+        "sha256": "56e238efaaf2b60fdd73976fda995ae616ab01c80c706546b79a5fe857ef245e",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "56e238efaaf2b60fdd73976fda995ae616ab01c80c706546b79a5fe857ef245e"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-013",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 20,
+        "sha256": "a696d1e6ac04fdaa2ecba1e3044b46f116c0766a41ef18ea01814f1c42348e71",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "a696d1e6ac04fdaa2ecba1e3044b46f116c0766a41ef18ea01814f1c42348e71"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-014",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 5,
+        "sha256": "a55206bf57547ac11e628300879ecce662b296749f2c57b070582902dbe62d55",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "a55206bf57547ac11e628300879ecce662b296749f2c57b070582902dbe62d55"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-015",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 13,
+        "sha256": "e826a73b93fb399faf47dc9cc59a68f30999c4d8a9f6a2a481acdb089267341b",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "e826a73b93fb399faf47dc9cc59a68f30999c4d8a9f6a2a481acdb089267341b"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-016",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 8,
+        "sha256": "7a2a28dc25aa81bffbbdc9d58de23b53ac1df351cb44697e17da7d451ddef9aa",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "7a2a28dc25aa81bffbbdc9d58de23b53ac1df351cb44697e17da7d451ddef9aa"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-017",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 34,
+        "sha256": "5e4b662c4f97bca5b0ceb04a2536c3bb65c26e45c43a6258f48cd1c997ec1784",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "5e4b662c4f97bca5b0ceb04a2536c3bb65c26e45c43a6258f48cd1c997ec1784"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-018",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 13,
+        "sha256": "3696af0664d9e42e8a1aa4d985a88982458a59f8d918f1be0a57ee6bf30aba4c",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "3696af0664d9e42e8a1aa4d985a88982458a59f8d918f1be0a57ee6bf30aba4c"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-019",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 13,
+        "sha256": "d1d8dd3270afc4a8939f8f5f89a0f39f5b1d5bd4ca11b390ae25c2441719e693",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "d1d8dd3270afc4a8939f8f5f89a0f39f5b1d5bd4ca11b390ae25c2441719e693"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-020",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 15,
+        "sha256": "a5e03946a38c6cbc7727904536610134a217cade27b5cb0797af77382b9151ae",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "a5e03946a38c6cbc7727904536610134a217cade27b5cb0797af77382b9151ae"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-021",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 7,
+        "sha256": "ae06569fe9c75606764a46ff1476c2b7321500b309e66d55176bda7bd9e90025",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "ae06569fe9c75606764a46ff1476c2b7321500b309e66d55176bda7bd9e90025"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-022",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 5,
+        "sha256": "370c6eb448994d4c179e4fc406e2a576f68da4baa7541a415a573cf10e7b382f",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "370c6eb448994d4c179e4fc406e2a576f68da4baa7541a415a573cf10e7b382f"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-023",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 17,
+        "sha256": "2d09e72b740dda8b3314f5717dc0b7ea4d5e61c47724b27562a2780bce89766d",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "2d09e72b740dda8b3314f5717dc0b7ea4d5e61c47724b27562a2780bce89766d"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-024",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 17,
+        "sha256": "c22b8aef90ba9021dadb19cdb6d0cf4b88eaad22715ade6264989305df7d474f",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "c22b8aef90ba9021dadb19cdb6d0cf4b88eaad22715ade6264989305df7d474f"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-025",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 24,
+        "sha256": "67c8d9540ec79b4a271a788e5e546a6af8c7078d1de83f12359b2c910c922c22",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "67c8d9540ec79b4a271a788e5e546a6af8c7078d1de83f12359b2c910c922c22"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-026",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 17,
+        "sha256": "e71faa102cfbc7afe3d567a0cfa38934db87fa5bf2d88cbc90342a934a49f7a0",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "e71faa102cfbc7afe3d567a0cfa38934db87fa5bf2d88cbc90342a934a49f7a0"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-027",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 10,
+        "sha256": "15a9f6ef9f7f76c40225df816ad8f9ce9c4f05ed30b4d53ee55b619583f876df",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "15a9f6ef9f7f76c40225df816ad8f9ce9c4f05ed30b4d53ee55b619583f876df"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-028",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 22,
+        "sha256": "df6782b91d81068eec460beadd35e2930cd7ae915c88c811c6fa118c5ce905e5",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "df6782b91d81068eec460beadd35e2930cd7ae915c88c811c6fa118c5ce905e5"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-029",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 22,
+        "sha256": "f8fe578de400de65e5ca09cb6f6f99b7fc4bd15a71e008ceba9e73bc912fc16b",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "f8fe578de400de65e5ca09cb6f6f99b7fc4bd15a71e008ceba9e73bc912fc16b"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-030",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 13,
+        "sha256": "de606b1bc638190db6770722805838b86d2a719a512ab7d6ace90e1cfd29d508",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "de606b1bc638190db6770722805838b86d2a719a512ab7d6ace90e1cfd29d508"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-031",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 23,
+        "sha256": "6a49f88e8c40cbb413e427536d3d1196158456ce2da14c543bd3570fd9dcc8e2",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "6a49f88e8c40cbb413e427536d3d1196158456ce2da14c543bd3570fd9dcc8e2"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-032",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 22,
+        "sha256": "151bf78c60045a0062018328c5a7ef054d0528e776a79532bd926dc8a17978d1",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "151bf78c60045a0062018328c5a7ef054d0528e776a79532bd926dc8a17978d1"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-033",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 15,
+        "sha256": "c8b526c53fd2fe3cf8b4b196ee50e97d9b7cf910f1e03e8869160e2b025c1cca",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "c8b526c53fd2fe3cf8b4b196ee50e97d9b7cf910f1e03e8869160e2b025c1cca"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-034",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 27,
+        "sha256": "26b37cee8075e8afc842debab752a762bd26612c51ec22429bbed3f14b8bab2c",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "26b37cee8075e8afc842debab752a762bd26612c51ec22429bbed3f14b8bab2c"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-035",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 16,
+        "sha256": "a2fb42668ccf064fe3c2576db6000bdce440390a675e6b98ea60a3e370bcf9d3",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "a2fb42668ccf064fe3c2576db6000bdce440390a675e6b98ea60a3e370bcf9d3"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-036",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 21,
+        "sha256": "5f23ff261d99983540cf31def61bdcfa1ebb76c58b325f2481aec6edd40dacc1",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "5f23ff261d99983540cf31def61bdcfa1ebb76c58b325f2481aec6edd40dacc1"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-037",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 12,
+        "sha256": "c036d817dc5a6cef4a96f3374c2bf0f7ddf2d79584db41698a22612b29e122bb",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "c036d817dc5a6cef4a96f3374c2bf0f7ddf2d79584db41698a22612b29e122bb"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-038",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 21,
+        "sha256": "217138e8b504d83c33491dbc459a5f6ada8abf71af5ee326c25a1b6fae772d52",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "217138e8b504d83c33491dbc459a5f6ada8abf71af5ee326c25a1b6fae772d52"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-039",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 19,
+        "sha256": "23bb093a15643a1a93a1aca08980660c59419e256dd1cd0b244b54c281b8123c",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "23bb093a15643a1a93a1aca08980660c59419e256dd1cd0b244b54c281b8123c"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-040",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 16,
+        "sha256": "f823e01219c52165f9285c74753df356811f6688038db8de43189c3b4170f9f6",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "f823e01219c52165f9285c74753df356811f6688038db8de43189c3b4170f9f6"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-041",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 27,
+        "sha256": "d7444c46c1ebb2ca2a77801f9b46a3c211f9f69852063551e6fed6745f2a8ff8",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "d7444c46c1ebb2ca2a77801f9b46a3c211f9f69852063551e6fed6745f2a8ff8"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-042",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 10,
+        "sha256": "80faf411049df0179601be54858d02b6b3c40eebf25b1c217edf29fbb499f43e",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "80faf411049df0179601be54858d02b6b3c40eebf25b1c217edf29fbb499f43e"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-043",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 10,
+        "sha256": "ab90266c99c6436793364e6ae68484a7472eb8f5c708e6a34f73ae842dba099a",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "ab90266c99c6436793364e6ae68484a7472eb8f5c708e6a34f73ae842dba099a"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-044",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 15,
+        "sha256": "d599d32587e9d32bf204556bfa711281dac4890235c06e07660c5d0f486973ea",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "d599d32587e9d32bf204556bfa711281dac4890235c06e07660c5d0f486973ea"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-045",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 17,
+        "sha256": "98e5b2648745035ea249ac8d6894e3d25b6baf73e1d4a51b29dddc572358def6",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "98e5b2648745035ea249ac8d6894e3d25b6baf73e1d4a51b29dddc572358def6"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-046",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 15,
+        "sha256": "d51812d9cbfa87b4c3c226d12a4491ed89d4fc33126274c773deb31a3bc04761",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "d51812d9cbfa87b4c3c226d12a4491ed89d4fc33126274c773deb31a3bc04761"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-047",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 10,
+        "sha256": "173de4c3318a64d8c96e0a7483fa6d7ae2f14e7a16500901658d48c80551da82",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "173de4c3318a64d8c96e0a7483fa6d7ae2f14e7a16500901658d48c80551da82"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-048",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 18,
+        "sha256": "e501c5a0880b26e152d4d26cc45ba3ee60e11735fd57c658cc160157628db582",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "e501c5a0880b26e152d4d26cc45ba3ee60e11735fd57c658cc160157628db582"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-049",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 20,
+        "sha256": "8b383b78ad40dfc3c363c221cf6e9a3d4e8fec484c114e91e11193b484e3baf7",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "8b383b78ad40dfc3c363c221cf6e9a3d4e8fec484c114e91e11193b484e3baf7"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-050",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 15,
+        "sha256": "34ecaafce83499bf4cc5d99ff28bef9b7d32e79ac2811ee1e6d61cbe7678ac6c",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "34ecaafce83499bf4cc5d99ff28bef9b7d32e79ac2811ee1e6d61cbe7678ac6c"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-051",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 14,
+        "sha256": "6c9335129b287a41580df0ecdb73c93e7eed069307e2a493e3171cf3b219b3df",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "6c9335129b287a41580df0ecdb73c93e7eed069307e2a493e3171cf3b219b3df"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-052",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 13,
+        "sha256": "023d16f18ea7259818ebc87ebdd98111d4391ffe41fc840caf1d63a416c55612",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "023d16f18ea7259818ebc87ebdd98111d4391ffe41fc840caf1d63a416c55612"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-053",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 10,
+        "sha256": "15ee87e9982533d74130756cdf7ed96a82b5007f62276819836ead07d756e37e",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "15ee87e9982533d74130756cdf7ed96a82b5007f62276819836ead07d756e37e"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-054",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 26,
+        "sha256": "1f7d75bd7effad2d2fe36bc80ad21202e8871993f664781307374a130e6e0984",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "1f7d75bd7effad2d2fe36bc80ad21202e8871993f664781307374a130e6e0984"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-055",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 22,
+        "sha256": "e68c64af454f1c0ba98b8d962eb31d4ec7a08f02f5770d368dbc6474ba1ab904",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "e68c64af454f1c0ba98b8d962eb31d4ec7a08f02f5770d368dbc6474ba1ab904"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-056",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 12,
+        "sha256": "d1366af48a879817491b66589aa1a497851894d8e03a07d226893e31a0f6656e",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "d1366af48a879817491b66589aa1a497851894d8e03a07d226893e31a0f6656e"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-057",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 18,
+        "sha256": "9219f9ff868f33c1f9dd5e886ebb0c6521cf09a73f8fe95b52dfb721b8efbf89",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "9219f9ff868f33c1f9dd5e886ebb0c6521cf09a73f8fe95b52dfb721b8efbf89"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-058",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 15,
+        "sha256": "90768b4fe05c109a404523cc2a17962e46f535c71bbfd5e932880081c1405845",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "90768b4fe05c109a404523cc2a17962e46f535c71bbfd5e932880081c1405845"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-059",
+    "sources": [
+      {
+        "file": "source.abap",
+        "lines": 23,
+        "sha256": "6d3d8eed7c945479a22bce21e823efc7524a004e9ff17f69e112940c09424772",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "6d3d8eed7c945479a22bce21e823efc7524a004e9ff17f69e112940c09424772"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "CC-060",
+    "sources": [
+      {
+        "file": "zcl_customer_api.clas.abap",
+        "lines": 18,
+        "sha256": "c7a0750cddd8e983d5c4ecc7d3aad9fd291bd970c60bef5390995627c5b9c441",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "c7a0750cddd8e983d5c4ecc7d3aad9fd291bd970c60bef5390995627c5b9c441",
+          "bcd9d620d1c3c4f2777a982e02922010343840189b42158f4e70ccfb12435d02"
+        ]
+      },
+      {
+        "file": "zcl_route_service.clas.abap",
+        "lines": 18,
+        "sha256": "bcd9d620d1c3c4f2777a982e02922010343840189b42158f4e70ccfb12435d02",
+        "declared": true,
+        "missing_newline_match": false,
+        "expected": [
+          "c7a0750cddd8e983d5c4ecc7d3aad9fd291bd970c60bef5390995627c5b9c441",
+          "bcd9d620d1c3c4f2777a982e02922010343840189b42158f4e70ccfb12435d02"
+        ]
+      }
+    ]
+  }
+]

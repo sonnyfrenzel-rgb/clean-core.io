@@ -1,0 +1,311 @@
+{
+  "answerFields": {
+    "known_worst_level": "unknown — das Ziel ist kundeneigen und nicht geliefert; ein C oder D darf nicht erfunden werden."
+  },
+  "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        }
+      ],
+      "id": "CC-056-B01",
+      "text": "Ohne Länderschlüssel wird NO_COUNTRY ausgegeben und der Reportingblock verlassen."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        }
+      ],
+      "id": "CC-056-B02",
+      "text": "Mit Länderschlüssel wird CHILD_START ausgegeben, das Kindprogramm mit diesem Länderschlüssel gestartet, und nach dessen Ende CHILD_DONE ausgegeben. Was das Kind tut, ist nicht Teil dieses Satzes."
+    }
+  ],
+  "classes": [
+    "K17",
+    "K11"
+  ],
+  "classic_level": "Unknown",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": "Fable KA-058 · DeepSeek CC-GAP-007 · (LEAVE TO TRANSACTION: DeepSeek CC-GAP-008, Fable KA-060 — nicht gebaut, siehe Autorenbericht)",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9 (sek. :9+1 Programmname, :10 Parameterübergabe, :11 AND RETURN)",
+        "token": null
+      },
+      "id": "CC-056-F01",
+      "profiles": null,
+      "rule": "R34",
+      "ruleRaw": "R34@2.0.0-candidate.1",
+      "ruleVersion": "2.0.0-candidate.1",
+      "severity": "high",
+      "sources": [
+        "ABAP-KEYDOC (SUBMIT",
+        "Datenbank-LUW)",
+        "SAP-LEVEL"
+      ],
+      "statement": "Programmübergreifender Aufruf: Systemgrenze als external_program-Knoten, opak (Quelle nicht geliefert), eigener Ausführungskontext und eigene SAP-LUW, Rückkehr nach Ende des Kindes; implizite Commit-Semantik nach R25. Die Übergabe p_land setzt ein Selektionsbild voraus, das nicht belegt ist (Laufzeitfehler möglich). Level Unknown, kundeneigen — nicht C."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 4,
+        "raw": "source.abap:4",
+        "token": null
+      },
+      "id": "CC-056-F02",
+      "profiles": null,
+      "rule": "R19",
+      "ruleRaw": "R19@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-FLOW"
+      ],
+      "statement": "Kontrollfluss erhalten: Guard vor der Systemgrenze; CHILD_DONE (:12) belegt nur die Rückkehr, nicht ein Ergebnis des Kindes."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:9 — Kein D: SUBMIT ist kein Eingriff in SAP-Objekte; DeepSeeks „Level D\" ist eine Wertung, kein SAP-Level.",
+    "source.abap:9 — Kein C: eine fehlende kundeneigene Quelle ist kein SAP-internes Objekt (Sinn von v1-R16, hier ohne Regelzitat).",
+    "source.abap:12 — Kein Fachsatz über das, was das Kind getan, gelesen oder ausgegeben hat.",
+    "Kein Knoten „Kindprogramm liest Kunden\" oder ähnliches: das Innere bleibt opak."
+  ],
+  "id": "CC-056",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku — REVIEW-2.0.1 (16.09.2026), nicht blind; Fall in §4.6 und §7 des Reviews inhaltlich gelesen (Rückkehrkante bestätigt; pauschaler Commit und Cloud-Zweitprofil widersprochen), Regeln R25/R34 beurteilt; sap-doku: S30 (SUBMIT beendet die Datenbank-LUW nicht, „regardless of AND RETURN\"; neue SAP-LUW; Fortsetzung nach dem Statement), S07, S08 nach Lesung des Regelautors",
+  "known_worst_level": "unknown — das Ziel ist kundeneigen und nicht geliefert; ein C oder D darf nicht erfunden werden.",
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 9,
+        "raw": "source.abap:9 (sek",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCC_REF_056_CHILD",
+        "objectType": "PROG",
+        "tadirObjName": "ZCC_REF_056_CHILD",
+        "tadirObject": "PROG"
+      },
+      "name": "ZCC_REF_056_CHILD",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable",
+      "successors": null,
+      "usage": "submit_target"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Löst SUBMIT … AND RETURN im Zielprofil einen impliziten Datenbank-Commit aus, und an welcher Stelle (beim Aufruf, beim Dialogschrittwechsel im Kind, bei Rückkehr)? R25/R34 setzen die Transaktionsknoten-Semantik; die Schlüsselwortdokumentation zur Datenbank-LUW ist die Prüfstelle.",
+    "Ist Unknown das richtige Level für den Aufrufer, wenn dessen eigene Statements keine SAP-Abhängigkeit haben? v1 (CC-021, CC-022) antwortet für fehlende kundeneigene Quellen Unknown; der Fall folgt dem. Eine Engine, die „B für die Scheibe, Unknown für die Kette\" trennt, müsste beides ausgeben.",
+    "Soll die Anzeige der Kindliste (ohne EXPORTING LIST TO MEMORY) als eigener Ausgabeknoten modelliert werden oder im opaken Knoten bleiben? Der Fall lässt sie im Knoten.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "intentionally_incomplete",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "g"
+      },
+      {
+        "condition": "p_land IS INITIAL",
+        "from": "g",
+        "to": "no"
+      },
+      {
+        "condition": "always",
+        "from": "no",
+        "to": "e"
+      },
+      {
+        "condition": "p_land IS NOT INITIAL",
+        "from": "g",
+        "to": "o1"
+      },
+      {
+        "condition": "always",
+        "from": "o1",
+        "to": "x"
+      },
+      {
+        "condition": "Rückkehr (AND RETURN)",
+        "from": "x",
+        "to": "o2"
+      },
+      {
+        "condition": "always",
+        "from": "o2",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Länderschlüssel leer?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "no",
+        "meaning": "NO_COUNTRY melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "Block verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "o1",
+        "meaning": "CHILD_START melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "Kindprogramm ausführen: opak, eigener Kontext, eigene SAP-LUW, implizite Commit-Semantik, Selektionsübergabe p_land",
+        "type": "external_program"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "o2",
+        "meaning": "CHILD_DONE melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende (anderer Typ als o2, keine Signaturkollision)",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "SUBMIT … AND RETURN: Systemgrenze, opak, ohne erfundene Kindlogik"
+}

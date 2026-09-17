@@ -1,0 +1,392 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Syntax/Objekte) — BAPI_SALESORDER_CREATEFROMDAT2, BAPI_TRANSACTION_COMMIT mit Parameter WAIT, die Strukturen BAPISDHD1, BAPIPARNR, BAPIRET2, BAPIVBELN und das dokumentierte BAPI-Transaktionsmodell (BAPI schreibt in die LUW, Aufrufer committet) existieren. Nicht behauptet: dass die gezeigten Pflichtfelder für eine erfolgreiche Anlage ausreichen.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        }
+      ],
+      "id": "CC-028-B01",
+      "text": "Ein Verkaufsauftrag mit der eingegebenen Auftragsart und dem Auftraggeber wird zur Anlage übergeben; der BAPI-Aufruf selbst persistiert nichts."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18",
+          "token": null
+        }
+      ],
+      "id": "CC-028-B02",
+      "text": "Meldet RETURN mindestens eine Zeile vom Typ E, wird ERROR ausgegeben und der Block verlassen; es wird kein Commit ausgeführt. Ein Auftrag ist in diesem Zweig nicht als angelegt belegt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 20,
+          "raw": "source.abap:20",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 21,
+          "raw": "source.abap:21",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 22,
+          "raw": "source.abap:22",
+          "token": null
+        }
+      ],
+      "id": "CC-028-B03",
+      "text": "Ohne E-Zeile wird BAPI_TRANSACTION_COMMIT mit WAIT aufgerufen und danach CREATED mit der Belegnummer ausgegeben. Erst dieser Aufruf macht die Anlage persistent; sein Ergebnis wird im Code nicht geprüft."
+    }
+  ],
+  "classes": [
+    "K12",
+    "K03"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "Grok H-029, H-030 · GLM A-017 · Fable KA-041 · DeepSeek CC-GAP-048 (dort mit DESTINATION; hier bewusst lokal)",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 11,
+        "raw": "source.abap:11",
+        "token": null
+      },
+      "id": "CC-028-F01",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@v2-draft",
+      "ruleVersion": "v2-draft",
+      "severity": "high",
+      "sources": [
+        "SAP-CALL",
+        "SAP-FLOW"
+      ],
+      "statement": "Der BAPI-Aufruf legt den Auftrag in der offenen SAP-LUW an, committet aber nicht. Persistenz hat als Träger ausschließlich Zeile 20."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 16,
+        "raw": "source.abap:16",
+        "token": null
+      },
+      "id": "CC-028-F02",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@v2-draft",
+      "ruleVersion": "v2-draft",
+      "severity": "high",
+      "sources": [
+        "SAP-FLOW"
+      ],
+      "statement": "Fehlerzweig ohne BAPI_TRANSACTION_ROLLBACK: Die LUW wird weder committet noch explizit zurückgerollt, sondern mit RETURN verlassen. Was von der Teil-Anlage am nächsten impliziten Datenbank-Commit übrig bleibt, ist aus der Scheibe nicht ableitbar (Unknown)."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 22,
+        "raw": "source.abap:22",
+        "token": null
+      },
+      "id": "CC-028-F03",
+      "profiles": null,
+      "rule": "R18",
+      "ruleRaw": "R18@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-FLOW"
+      ],
+      "statement": "CREATED steht nach dem Commit-Baustein, dessen RETURN-Parameter nicht angefordert und nicht ausgewertet wird: Commit angestoßen, Ergebnis nicht geprüft."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 11,
+        "raw": "source.abap:11",
+        "token": null
+      },
+      "id": "CC-028-F04",
+      "profiles": null,
+      "rule": "R06",
+      "ruleRaw": "R06@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-CALL",
+        "SAP-LEVEL"
+      ],
+      "statement": "Zwei statisch benannte SAP-Bausteine; Level B unter der Fixture-Stipulation classicAPI. Kein Drop-in-Nachfolger behauptet."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-028",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku — REVIEW-2.0.1 (16.09.2026), nicht blind; Fall in §7 des Reviews inhaltlich gelesen (Fehlerzweig, Commit-Return), Regeln R25/R18 beurteilt; sap-doku: S22 (BAPI-Transaktionsmodell), S08/S09 (Dialogschritt-Commit, AND WAIT) nach Lesung des Regelautors",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 11,
+        "raw": "source.abap:11",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "not_asserted",
+      "identity": {
+        "objectKey": "BAPI_SALESORDER_CREATEFROMDAT2",
+        "objectType": "FUNC",
+        "tadirObjName": "not_looked_up",
+        "tadirObject": "FUGR"
+      },
+      "name": "BAPI_SALESORDER_CREATEFROMDAT2",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "unknown",
+      "successors": [],
+      "usage": "static_function_call"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 20,
+        "raw": "source.abap:20",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "not_asserted",
+      "identity": {
+        "objectKey": "BAPI_TRANSACTION_COMMIT",
+        "objectType": "FUNC",
+        "tadirObjName": "not_looked_up",
+        "tadirObject": "FUGR"
+      },
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "unknown",
+      "successors": [],
+      "usage": "static_function_call"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Bestätigen: BAPI_SALESORDER_CREATEFROMDAT2 schreibt über Verbuchungsbausteine, sodass ohne COMMIT WORK/BAPI_TRANSACTION_COMMIT nichts persistiert wird — oder gibt es direkte Schreibanteile, die am impliziten Datenbank-Commit des Dialogschrittendes hängen bleiben? Davon hängt ab, ob F02 „Unknown\" oder „kein Effekt\" lauten muss.",
+    "Bestätigen: RETURN-Zeilen vom Typ A werden vom Guard in Zeile 16 nicht erfasst; ist das ein eigener Befund (R23) oder bereits in F02 enthalten?",
+    "Classic-Rohzustand beider Bausteine im beobachteten SAP-CLASSIC-Datensatz nachschlagen; Stipulation aufheben.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "p"
+      },
+      {
+        "condition": "always",
+        "from": "p",
+        "to": "b"
+      },
+      {
+        "condition": "call returns",
+        "from": "b",
+        "to": "g"
+      },
+      {
+        "condition": "line_exists type = 'E'",
+        "from": "g",
+        "to": "o1"
+      },
+      {
+        "condition": "always",
+        "from": "o1",
+        "to": "e"
+      },
+      {
+        "condition": "no E line",
+        "from": "g",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "o2"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "p",
+        "meaning": "Kopf und Partner füllen (interne Daten, Sekundäranker source.abap:10)",
+        "type": "write"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "b",
+        "meaning": "Auftrag per BAPI übergeben; schreibt in die offene LUW",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Fehler in RETURN?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        "id": "o1",
+        "meaning": "Fehler melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 18,
+          "raw": "source.abap:18",
+          "token": null
+        },
+        "id": "e",
+        "meaning": "Block ohne Commit verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 20,
+          "raw": "source.abap:20",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "BAPI-Commit mit WAIT",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 22,
+          "raw": "source.abap:22",
+          "token": null
+        },
+        "id": "o2",
+        "meaning": "Angelegt melden",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "BAPI-Paar: Anlage nur mit BAPI_TRANSACTION_COMMIT; der Fehlerzweig committet nichts"
+}

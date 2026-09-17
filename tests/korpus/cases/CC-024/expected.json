@@ -1,0 +1,309 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        }
+      ],
+      "id": "CC-024-B01",
+      "text": "Eine existierende Zeile der kundeneigenen Tabelle erhält den eingegebenen Routentext."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11–16",
+          "token": null
+        }
+      ],
+      "id": "CC-024-B02",
+      "text": "Wenn UPDATE keine passende Zeile trifft, wird MISSING_CASE ausgegeben; der Code legt keine neue Zeile an."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11–13",
+          "token": null
+        }
+      ],
+      "id": "CC-024-B03",
+      "text": "RECORDED bestätigt in diesem Code den Speicherpfad, nicht eine organisatorisch mandatierte Entscheidung."
+    }
+  ],
+  "classes": [
+    "K02"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "unknown",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10",
+        "token": null
+      },
+      "id": "CC-024-F01",
+      "profiles": null,
+      "rule": "R20",
+      "ruleRaw": "R20@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-SQL"
+      ],
+      "statement": "Kundeneigene Tabelle mit geliefertem Schema; eigener Schreibzugriff ist kein SAP-Standardtabellen-D und erzwingt kein CAP."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 12,
+        "raw": "source.abap:12",
+        "token": null
+      },
+      "id": "CC-024-F02",
+      "profiles": null,
+      "rule": "R19",
+      "ruleRaw": "R19@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "info",
+      "sources": [
+        "SAP-FLOW",
+        "SAP-CALL",
+        "SAP-SCREEN"
+      ],
+      "statement": "Entwurfsstatus speichern und fachliche Genehmigung sind verschiedene Aussagen."
+    }
+  ],
+  "forbiddenConclusions": [],
+  "id": "CC-024",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 10,
+        "raw": "source.abap:10",
+        "token": null
+      },
+      "classicRawState": "not_applicable",
+      "cloudRawState": "not_applicable",
+      "identity": {
+        "objectKey": "ZCC_DECISION",
+        "objectType": "TABL",
+        "tadirObjName": "ZCC_DECISION",
+        "tadirObject": "TABL"
+      },
+      "name": "ZCC_DECISION",
+      "owner": "customer",
+      "releaseContract": null,
+      "successorStatus": "not_applicable_customer_or_partner",
+      "successors": [],
+      "usage": "customer_table_write"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Kundeneigene DDIC-Tabelle und Schlüssel clientabhängig einrichten",
+    "UPDATE versus INSERT und Commit/Rollback fachlich verifizieren",
+    "On-stack/Side-by-Side erst mit Zielkontext, Betrieb und Kosten vergleichen",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "t"
+      },
+      {
+        "condition": "p_test = 'X'",
+        "from": "t",
+        "to": "x"
+      },
+      {
+        "condition": "p_test <> 'X'",
+        "from": "t",
+        "to": "u"
+      },
+      {
+        "condition": "always",
+        "from": "u",
+        "to": "g"
+      },
+      {
+        "condition": "sy-subrc = 0",
+        "from": "g",
+        "to": "c"
+      },
+      {
+        "condition": "sy-subrc <> 0",
+        "from": "g",
+        "to": "r"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "ok"
+      },
+      {
+        "condition": "always",
+        "from": "r",
+        "to": "no"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Start",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "t",
+        "meaning": "Testmodus?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "Ohne Schreiben enden",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "u",
+        "meaning": "Eigene Zeile ändern",
+        "type": "write"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Zeile geändert?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "Commit",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "r",
+        "meaning": "Rollback",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 13,
+          "raw": "source.abap:13",
+          "token": null
+        },
+        "id": "ok",
+        "meaning": "Gespeichert melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        "id": "no",
+        "meaning": "Fehlenden Fall melden",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Eigene Persistenz: keine automatische CAP-Pflicht"
+}

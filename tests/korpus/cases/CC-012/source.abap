@@ -1,0 +1,16 @@
+REPORT zcc_ref_012.
+PARAMETERS p_func TYPE c LENGTH 30.
+PARAMETERS p_prog TYPE c LENGTH 40.
+PARAMETERS p_form TYPE c LENGTH 30.
+DATA lv_input TYPE c LENGTH 10 VALUE '42'.
+DATA lv_output TYPE c LENGTH 10.
+START-OF-SELECTION.
+  IF p_func IS NOT INITIAL.
+    CALL FUNCTION p_func
+      EXPORTING input = lv_input
+      IMPORTING output = lv_output.
+  ENDIF.
+  IF p_prog IS NOT INITIAL AND p_form IS NOT INITIAL.
+    PERFORM (p_form) IN PROGRAM (p_prog) IF FOUND.
+  ENDIF.
+  WRITE / 'DISPATCH_RETURNED'.

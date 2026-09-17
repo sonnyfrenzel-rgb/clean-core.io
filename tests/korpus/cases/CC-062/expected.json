@@ -1,0 +1,254 @@
+{
+  "answerFields": {
+    "known_worst_level": "C — beobachtet am statischen FROM; kein D, weil weder DML noch dynamisches FROM (siehe F02)."
+  },
+  "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert; expectation.json sagt selbst: „Syntax-/DB-Verfügbarkeit im Ziel noch nicht nativ geprüft\". Dynamische WHERE-Bedingung WHERE (dobj), SELECT COUNT(*) … INTO @lv, KNA1 mit Feld LAND1 existieren nach Autorenwissen; ob DEFAULT mit einem Backtick-Literal, das einfache Anführungszeichen enthält, aktivierbar ist, ist Prüferfrage 1.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 2,
+          "raw": "source.abap:2",
+          "token": null
+        }
+      ],
+      "id": "CC-062-B01",
+      "text": "Es wird die Zahl der KNA1-Sätze im Anmeldemandanten gezählt, die das zur Laufzeit eingegebene Prädikat erfüllen; welche Sätze das sind, entscheidet die Eingabe. Ein Fachsatz „Kunden in DE\" ist nicht tragbar."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        }
+      ],
+      "id": "CC-062-B02",
+      "text": "Die Zahl wird ausgegeben; bei null Treffern die 0. Bei leerer Eingabe (nur Leerzeichen) gilt nach Autorenerinnerung keine Bedingung, und alle Sätze des Mandanten werden gezählt (Beleggrad erinnert, Prüferfrage 3)."
+    }
+  ],
+  "classes": [
+    "K13",
+    "K01"
+  ],
+  "classic_level": "C",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "Gegenreview CE-02 / REV2-03 (Regelurteil R26 „hält nicht\") · Gegenfall zu CC-037 und CC-038 (dort: Ziel aus Eingabe, Unknown + known_worst_level D) · Modellreviews 16.09.: Grok H-010 (WHERE (p_where): „Level C und Security-Unknown\") und GLM A-040 („C + SQL-Injection-Hinweis + Bedingung als Unknown\") hatten für dynamisches WHERE bereits die Antwort dieses Falls; v2-R26 hat WHERE mit FROM und DML in einen Satz gezogen. DeepSeek CC-GAP-055 ist LOOP AT … WHERE (lv_where), kein SQL.",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5 (sek. :5 Token FROM kna1)",
+        "token": null
+      },
+      "id": "CC-062-F01",
+      "profiles": null,
+      "rule": "R01",
+      "ruleRaw": "R01@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22 (S19)",
+        "S23"
+      ],
+      "statement": "Direkter Lesezugriff auf KNA1: C. Das Ziel steht statisch im FROM; das dynamische Prädikat ändert die Tabellenidentität nicht. CDS-Nachfolger I_CUSTOMER ist gelistet, kein bewiesener Drop-in — hier zusätzlich deshalb nicht, weil ein zur Laufzeit eingegebenes Prädikat KNA1-Feldnamen (LAND1) trägt, die die CDS-Entität anders benennt; ein Umstieg müsste eingehende Prädikate übersetzen."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5 (sek. :5 Token (p_where); Herkunft :2)",
+        "token": null
+      },
+      "id": "CC-062-F02",
+      "profiles": null,
+      "rule": "R26",
+      "ruleRaw": "R26@2.1.0 (Fassung nach REV2-03)",
+      "ruleVersion": "2.1.0",
+      "severity": "high",
+      "sources": [
+        "S23",
+        "S01"
+      ],
+      "statement": "Zielauflösung und Prädikatauflösung sind zwei Aussagen: target_resolution = statisch (KNA1); Prädikat = dynamisch, Herkunft Eingabe (Zeile 2). Beobachteter schlimmster Fall C (Lesen einer internen SAP-Tabelle); keine unaufgelösten Ziele per FROM; kein D — weder DML noch dynamisches FROM. DEFAULT ist Vorbelegung, kein Prädikat. (Feldbezeichner nach Reparaturvorschlag REV2-03; Festlegung durch den Registerautor.)"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5 (sek. :2)",
+        "token": null
+      },
+      "id": "CC-062-F03",
+      "profiles": null,
+      "rule": "R28",
+      "ruleRaw": "R28@2.1.0 (Fassung nach REV2-07)",
+      "ruleVersion": "2.1.0",
+      "severity": "medium",
+      "sources": [
+        "S23",
+        "S10 (Bindung statt Textaufbau",
+        "sinngemäß)"
+      ],
+      "statement": "Aussageklasse security_and_authorization. Beobachtung: Eingabe fließt in interpretierten Text (dynamische WHERE-Bedingung). Datenfluss: p_where (Selektionsbild) → (p_where) ohne Prüfung. Sichtbare Schutzmaßnahme: keine (keine Allowlist, kein cl_abap_dyn_prg). Verbleibendes Risiko: Manipulation des Prädikats (etwa Aufhebung des Filters) — nicht Tabellenwechsel und nicht ein zweites Statement, weil Open SQL die Bedingung selbst parst; ob das Prädikat Unterabfragen auf andere Tabellen tragen darf, ist Prüferfrage 2. Policyentscheidung (Verbot, Allowlist) ist Projektsache und kein Nachfolger. Verändert das Level nicht: C bleibt C."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:5 — Nicht Zielmenge Unknown und nicht Level Unknown wegen des dynamischen WHERE (R26@2.0.0: „Dynamisches FROM, WHERE, DML-Ziel: Zielmenge Unknown, known_worst_level D\"; CC-037/CC-038-Muster). Das FROM ist statisch; ein unbekanntes Prädikat macht FROM kna1 nicht zu einem unbekannten Objekt.",
+    "source.abap:5 — Nicht known_worst_level D. Kein DML, kein dynamisches FROM; ein nur vermuteter Worst Case heißt nicht „known\".",
+    "source.abap:2 — Kein Fachsatz „Kunden in Deutschland werden gezählt\" aus dem DEFAULT; Vorbelegung ist keine Zielmenge.",
+    "source.abap:5 — Nicht „Injektion wie CC-034\" im Sinne beliebigen SQL: Open SQL interpretiert eine WHERE-Bedingung, nicht einen freien Statementtext. Die Wirkung ist Prädikatmanipulation.",
+    "source.abap:5 — Den Sicherheitsbefund nicht in das Level rechnen (kein „C, eigentlich D wegen Security\").",
+    "source.abap:5 — Nicht „kein Befund, weil die Tabelle bekannt ist\": Prädikat aus Eingabe bleibt F02 und F03."
+  ],
+  "id": "CC-062",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "gegenreview · sap-doku · modellreview",
+  "known_worst_level": "C — beobachtet am statischen FROM; kein D, weil weder DML noch dynamisches FROM (siehe F02).",
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNA1",
+        "objectType": "TABL",
+        "tadirObjName": "KNA1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNA1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMER",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "read_dynamic_predicate"
+    }
+  ],
+  "openReviewerQuestions": [
+    "P1: Ist PARAMETERS … DEFAULT mit einem Backtick-Literal, das einfache Anführungszeichen enthält, im Zielrelease aktivierbar? Das Gegenreview hat es nicht geprüft („Syntax-/DB-Verfügbarkeit im Ziel noch nicht nativ geprüft\"). Die Sollantwort hängt nicht davon ab; der Abdruck schon.",
+    "P2: Erlaubt die dynamische WHERE-Bedingung im Zielrelease Unterabfragen auf andere Tabellen? Wenn ja, ist die Menge der *gelesenen* Objekte nicht auf KNA1 beschränkt, wohl aber das FROM-Ziel — der Befund F02 bliebe, die Objektliste bekäme eine Unbekannt-Zeile. Der Autor hält das für möglich und hat es nicht belegt.",
+    "P3: Führt ein leeres Prädikat (nur Leerzeichen) zu „keine Bedingung\" oder zu einer Ausnahme? B02 nimmt das Erste an (Beleggrad erinnert).",
+    "P4: Ist der Sicherheitsbefund ohne Nennung eines Berechtigungsobjekts tragfähig (wie CC-038-Fallbogen §6), oder verlangt der Prüfer einen konkreten Eintrag?",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "q"
+      },
+      {
+        "condition": "always",
+        "from": "q",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "o",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "q",
+        "meaning": "KNA1 zählen; Attribut target_resolution = static, predicate_resolution = dynamic (input)",
+        "type": "read"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "Zahl ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Bekanntes FROM trotz dynamischem WHERE: die Tabelle ist KNA1, das Prädikat ist Eingabe (Gegenfall zu CC-037/CC-038)"
+}

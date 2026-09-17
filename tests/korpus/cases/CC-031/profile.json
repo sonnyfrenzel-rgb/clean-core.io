@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "n/a",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=n/a · rule_revision=v2-draft · runtime_context=dialog",
+  "release": "S/4HANA 2023",
+  "rule_revision": "v2-draft",
+  "runtime_context": "dialog",
+  "second_profile": "abap_language_version=abap-for-cloud — CALL FUNCTION … DESTINATION ist dort nach Erinnerung des Autors zulässig, die Destination muss aber über den freigegebenen Destination-Service bezogen werden; eine Eingabe als Destination wäre dort ein zusätzlicher Befund. Die LUW-Aussagen (F02, F03) bleiben gleich."
+}

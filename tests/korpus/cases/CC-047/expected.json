@@ -1,0 +1,338 @@
+{
+  "answerFields": {},
+  "beleggrad": "verifiziert (Syntax/Objekte: NODES, GET, END-OF-SELECTION, KNA1); der LDB-Name DDF und KNA1 als deren Wurzelknoten sind erinnert (Prüferfrage P1)",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        }
+      ],
+      "id": "CC-047-B01",
+      "text": "Jeder von der LDB gelieferte KNA1-Satz erhöht den Zähler und wird mit Kundennummer und Name ausgegeben; welche Sätze das sind, bestimmt die LDB mit ihrem Selektionsbild, nicht der Report."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        }
+      ],
+      "id": "CC-047-B02",
+      "text": "Nach dem letzten Satz wird die Anzahl als COUNT ausgegeben; der Zähler beginnt bei 0."
+    }
+  ],
+  "classes": [
+    "K18",
+    "K01"
+  ],
+  "classic_level": "C",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "GLM A-069, A-070, A-071 (HR-Analogon PNPCE/INFOTYPES) · Fable KA-120, KA-083 (L2, L5 b) · Grok — · DeepSeek",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 2,
+        "raw": "source.abap:2",
+        "token": null
+      },
+      "id": "CC-047-F01",
+      "profiles": null,
+      "rule": "R29",
+      "ruleRaw": "R29@2.0.0-draft",
+      "ruleVersion": "2.0.0-draft",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22"
+      ],
+      "statement": "NODES: kna1 bindet den Report an den LDB-Knoten KNA1 und erzeugt einen Arbeitsbereich vom Typ KNA1: DDIC-Abhängigkeit ohne ausführendes Statement."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6",
+        "token": null
+      },
+      "id": "CC-047-F02",
+      "profiles": null,
+      "rule": "R01",
+      "ruleRaw": "R01@1.0.0 + R33@2.0.0-draft",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22"
+      ],
+      "statement": "KNA1-Sätze werden gelesen und im Ereignis GET kna1 je Satz an den Report übergeben. Das ausführende SELECT steht in der LDB, nicht im Slice. CDS-Nachfolger I_CUSTOMER ist kein Ersatz für die LDB-Bindung."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:1–10 — Nicht „keine Findings, B“, weil kein SELECT, kein CALL FUNCTION und keine Klasse vorkommt. Der Report liest eine Stammdatentabelle.",
+    "source.abap:6 — GET ist kein Unterprogrammaufruf, kein LOOP über eine interne Tabelle des Reports und kein READ TABLE. Es ist ein Ereignisblock, den die LDB je gelesenem Satz auslöst.",
+    "source.abap:2 — Kein R16-Befund. DDF ist ein SAP-Objekt; dass seine Implementierung nicht im Slice liegt, ist keine unaufgelöste kundeneigene Abhängigkeit.",
+    "Kein Selektionsbild aus dem Quelltext ableiten oder erfinden; es stammt aus der LDB und ist im Slice nicht sichtbar.",
+    "source.abap:4–5 — Nicht als Ort des Lesens deuten; START-OF-SELECTION läuft vor dem ersten GET und liest nichts."
+  ],
+  "id": "CC-047",
+  "independence": [
+    "modellreview"
+  ],
+  "independenceRaw": "modellreview",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6 (Ereignis), source.abap:2 (Bindung), source.abap:8 (Feldzugriff)",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNA1",
+        "objectType": "TABL",
+        "tadirObjName": "KNA1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNA1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMER",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "ldb_read"
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": null,
+        "line": null,
+        "raw": "Programmattribut (Kontextbeleg); syntaktische Evidenz source.abap:2, source.abap:6",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "not_captured_in_observed_extract",
+      "identity": {
+        "objectKey": "DDF",
+        "objectType": "LDBA",
+        "tadirObjName": "DDF",
+        "tadirObject": "LDBA"
+      },
+      "name": "DDF",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "not_listed_in_observed_record",
+      "successors": [],
+      "usage": "ldb_binding"
+    }
+  ],
+  "openReviewerQuestions": [
+    "P1: Existiert die LDB DDF im Zielrelease mit KNA1 als Wurzelknoten? Der Name ist erinnert, nicht belegt. Ein anderer LDB-Name ändert nur den Kontextbeleg und den Objekteintrag, nicht die Mechanik.",
+    "P2: Ist LDBA der korrekte TADIR-Objekttyp für logische Datenbanken?",
+    "P3: Ist R01 („direktes Lesen“) für ein Lesen durch die LDB die richtige Regel, oder braucht der Korpus eine Regelvariante „indirektes Lesen über SAP-Rahmen“ mit gleichem Level? R33 deckt den Kontrollfluss, nicht das Level.",
+    "P4: Führt die LDB eigene Berechtigungsprüfungen aus (viele LDBs tun das)? Wenn ja, gehört das als Kontextbeleg in security_and_authorization (R28) eines Partnerfalls, nicht hierher.",
+    "P5: CHECK im GET-Block (Fable KA-083: verwirft nur den Satz) ist absichtlich nicht enthalten; siehe CC-048 P3.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "a0"
+      },
+      {
+        "condition": "always",
+        "from": "a0",
+        "to": "ldb"
+      },
+      {
+        "condition": "nächster KNA1-Satz",
+        "from": "ldb",
+        "to": "eg"
+      },
+      {
+        "condition": "always",
+        "from": "eg",
+        "to": "a1"
+      },
+      {
+        "condition": "always",
+        "from": "a1",
+        "to": "o1"
+      },
+      {
+        "condition": "Satz verarbeitet",
+        "from": "o1",
+        "to": "ldb"
+      },
+      {
+        "condition": "keine weiteren Sätze",
+        "from": "ldb",
+        "to": "ee"
+      },
+      {
+        "condition": "always",
+        "from": "ee",
+        "to": "o2"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "START-OF-SELECTION nach LDB-Selektionsbild",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "a0",
+        "meaning": "Zähler auf 0",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 2,
+          "raw": "source.abap:2 (Kontext: Attribut DDF)",
+          "token": null
+        },
+        "id": "ldb",
+        "meaning": "LDB DDF liest KNA1 (Quelle nicht im Slice)",
+        "type": "opaque_call"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "eg",
+        "meaning": "GET kna1 (je Satz)",
+        "type": "event_block"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "a1",
+        "meaning": "Zähler erhöhen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "o1",
+        "meaning": "Nummer und Name ausgeben",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "ee",
+        "meaning": "END-OF-SELECTION",
+        "type": "event_block"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "o2",
+        "meaning": "COUNT ausgeben",
+        "type": "output"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Logische Datenbank: KNA1 lesen ohne SELECT, Kontrollfluss von außen"
+}

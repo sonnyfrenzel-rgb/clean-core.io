@@ -1,0 +1,28 @@
+{
+  "declared_in": "fall",
+  "profiles": [
+    {
+      "abap_language_version": "standard",
+      "catalog_revision": "PCE2022-objectReleaseInfo",
+      "edition": "onpremise-s4",
+      "extra": {},
+      "label": "Profil 1",
+      "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=PCE2022-objectReleaseInfo · rule_revision=2.1.0-candidate",
+      "release": "S/4HANA 2023",
+      "rule_revision": "2.1.0-candidate",
+      "runtime_context": null
+    },
+    {
+      "abap_language_version": "abap-for-cloud",
+      "catalog_revision": "PCE2022-objectReleaseInfo",
+      "edition": "onpremise-s4",
+      "extra": {},
+      "label": "Profil 2",
+      "raw": "edition=onpremise-s4 · abap_language_version=abap-for-cloud · release=S/4HANA 2023 · catalog_revision=PCE2022-objectReleaseInfo · rule_revision=2.1.0-candidate",
+      "release": "S/4HANA 2023",
+      "rule_revision": "2.1.0-candidate",
+      "runtime_context": null
+    }
+  ],
+  "second_profile": "im Paar enthalten."
+}

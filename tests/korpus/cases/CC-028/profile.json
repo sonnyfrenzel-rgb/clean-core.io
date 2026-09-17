@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "PCE2022-objectReleaseInfo",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=PCE2022-objectReleaseInfo · rule_revision=v2-draft · runtime_context=dialog",
+  "release": "S/4HANA 2023",
+  "rule_revision": "v2-draft",
+  "runtime_context": "dialog",
+  "second_profile": "abap_language_version=abap-for-cloud — beide Bausteine sind nach Kenntnis des Autors nicht freigegeben; die Sollantwort wäre not_usable mit Nachfolgerfrage (freigegebene Sales-Order-API), deren Identität hier nicht behauptet wird."
+}

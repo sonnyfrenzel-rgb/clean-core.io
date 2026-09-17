@@ -1,0 +1,16 @@
+REPORT zcc_ref_035.
+PARAMETERS p_kunnr TYPE c LENGTH 10.
+PARAMETERS p_name TYPE c LENGTH 35 LOWER CASE.
+DATA lv_mandt TYPE c LENGTH 3.
+START-OF-SELECTION.
+  IF p_name IS INITIAL.
+    WRITE / 'NO_NAME'.
+    RETURN.
+  ENDIF.
+  lv_mandt = sy-mandt.
+  EXEC SQL.
+    UPDATE KNA1 SET NAME1 = :p_name
+      WHERE MANDT = :lv_mandt AND KUNNR = :p_kunnr
+  ENDEXEC.
+  COMMIT WORK.
+  WRITE / 'UPDATE_COMMITTED'.

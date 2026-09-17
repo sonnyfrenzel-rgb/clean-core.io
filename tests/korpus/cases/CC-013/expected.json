@@ -1,0 +1,288 @@
+{
+  "answerFields": {},
+  "beleggrad": null,
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        }
+      ],
+      "id": "CC-013-B01",
+      "text": "Im PBO wird der GUI-Status MAIN gesetzt."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10–18",
+          "token": null
+        }
+      ],
+      "id": "CC-013-B02",
+      "text": "Nur CHECK prüft den Grenzwert und setzt einen Routentext."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        }
+      ],
+      "id": "CC-013-B03",
+      "text": "BACK beendet die Screenfolge; andere Funktionscodes führen zu keiner Regelentscheidung."
+    }
+  ],
+  "classes": [
+    "K07"
+  ],
+  "classic_level": "B",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": null,
+  "declaredEmpty": {
+    "findings": false,
+    "objects": true
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 1,
+        "raw": "source.abap:1",
+        "token": null
+      },
+      "id": "CC-013-F01",
+      "profiles": null,
+      "rule": "R11",
+      "ruleRaw": "R11@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-SCREEN"
+      ],
+      "statement": "Dynpro mit gelieferten PBO/PAI- und Statusmetadaten: klassischer B-Kandidat, Cloud-UI-Rehosting nötig; nicht automatisch D."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:1 — Nicht allein wegen MODULE POOL/Dynpro D vergeben."
+  ],
+  "id": "CC-013",
+  "independence": [],
+  "independenceRaw": null,
+  "known_worst_level": null,
+  "objects": [],
+  "openReviewerQuestions": [
+    "Screen0100, MAIN-Status und PBO/PAI-Metadaten im Sandboxsystem einrichten",
+    "CHECK/BACK/sonstige Befehle und Screen-Rücksprung verproben",
+    "UI-Rehosting von Classic-Level separat bewerten",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "p"
+      },
+      {
+        "condition": "screen interaction per fixture",
+        "from": "p",
+        "to": "i"
+      },
+      {
+        "condition": "always",
+        "from": "i",
+        "to": "g"
+      },
+      {
+        "condition": "ok_code = 'CHECK'",
+        "from": "g",
+        "to": "v"
+      },
+      {
+        "condition": "ok_code = 'BACK'",
+        "from": "g",
+        "to": "x"
+      },
+      {
+        "condition": "other command",
+        "from": "g",
+        "to": "c"
+      },
+      {
+        "condition": "gv_amount > 10000",
+        "from": "v",
+        "to": "m"
+      },
+      {
+        "condition": "gv_amount <= 10000",
+        "from": "v",
+        "to": "a"
+      },
+      {
+        "condition": "always",
+        "from": "m",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "a",
+        "to": "c"
+      },
+      {
+        "condition": "next_screen=0100",
+        "from": "c",
+        "to": "s"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Screen 0100 PBO",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "p",
+        "meaning": "MAIN setzen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "i",
+        "meaning": "PAI durch Benutzerinteraktion",
+        "type": "event"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Funktionscode?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "v",
+        "meaning": "Betrag größer 10000?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12",
+          "token": null
+        },
+        "id": "m",
+        "meaning": "MANAGER_ROUTE",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 14,
+          "raw": "source.abap:14",
+          "token": null
+        },
+        "id": "a",
+        "meaning": "AUTO_ROUTE",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 17,
+          "raw": "source.abap:17",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "Screenfolge verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 19,
+          "raw": "source.abap:19",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "Funktionscode leeren",
+        "type": "action"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "Vollständiger Dynpro-Mikrofall: PBO, PAI und GUI-Status"
+}

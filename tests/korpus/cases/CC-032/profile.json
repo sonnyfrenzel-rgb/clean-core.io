@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "n/a",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=n/a · rule_revision=v2-draft · runtime_context=dialog",
+  "release": "S/4HANA 2023",
+  "rule_revision": "v2-draft",
+  "runtime_context": "dialog",
+  "second_profile": "runtime_context=batch — ohne Dialogschrittwechsel und ohne WAIT wird der Callback nach Erinnerung des Autors in diesem Programm nie erreicht; B03 bliebe gleich (kein Konsument), das Skelett verlöre die Kante zum Callback. abap_language_version=abap-for-cloud — ob STARTING NEW TASK dort zulässig ist, ist nicht bekannt; Prüferfrage."
+}

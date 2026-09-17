@@ -1,0 +1,12 @@
+{
+  "abap_language_version": "standard",
+  "catalog_revision": "PCE2022-objectReleaseInfo",
+  "declared_in": "fall",
+  "edition": "onpremise-s4",
+  "extra": {},
+  "raw": "edition=onpremise-s4 · abap_language_version=standard · release=S/4HANA 2023 · catalog_revision=PCE2022-objectReleaseInfo · rule_revision=v2-draft (v1-Regeln @1.0.0, R27 @2.0.0-draft)",
+  "release": "S/4HANA 2023",
+  "rule_revision": "v2-draft (v1-Regeln @1.0.0, R27 @2.0.0-draft)",
+  "runtime_context": null,
+  "second_profile": "abap-for-cloud: Baustein notToBeReleasedStable, nicht benutzbar; Classic bleibt B (wie CC-005). Keine abweichende Levelantwort, kein Fallpaar."
+}

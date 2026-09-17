@@ -1,0 +1,640 @@
+[
+  {
+    "rule": "R01",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_interpretation",
+    "verdict": "hält nur unter Bedingung",
+    "reason": "C nur für tatsächlich internes, nicht anders nominiertes Objekt und unter dem ausdrücklich stipulierten Profil. Katalog- und releaseübergreifende Abwesenheit ist nicht aus einer einzelnen Suchfehlanzeige beweisbar.",
+    "sources": [
+      "S01",
+      "S19",
+      "S20"
+    ],
+    "affected_cases": [
+      "CC-001",
+      "CC-002",
+      "CC-007",
+      "CC-008",
+      "CC-057"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R02",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_interpretation",
+    "verdict": "hält",
+    "reason": "Nicht unterstütztes direktes SAP-Kerntabellenschreiben bleibt D; ADBC oder Native SQL ändern den Effekt nicht. Ein Lesenachfolger ist keine Schreib-API.",
+    "sources": [
+      "S01",
+      "S10",
+      "S11"
+    ],
+    "affected_cases": [
+      "CC-023",
+      "CC-034",
+      "CC-035"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R03",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_interpretation",
+    "verdict": "hält nur unter Bedingung",
+    "reason": "B im erklärten klassischen Bestandsscope, wenn die gesamte bewertete Abhängigkeits- und Technologiemenge geschlossen und zulässig ist. Nicht von einer sichtbaren eigenen Klasse auf eine unbekannte Implementierung schließen.",
+    "sources": [
+      "S01",
+      "S02"
+    ],
+    "affected_cases": [
+      "CC-003",
+      "CC-026",
+      "CC-060"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R04",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_interpretation",
+    "verdict": "hält",
+    "reason": "Getrennte Classic-/Cloud-Betrachtung ist im dokumentierten Overlap richtig. Beide Metadatenfelder erhalten; nicht in ein einziges Release-Label kollabieren.",
+    "sources": [
+      "S03"
+    ],
+    "affected_cases": [
+      "CC-004"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R05",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_interpretation",
+    "verdict": "hält nur unter Bedingung",
+    "reason": "Der dokumentierte Bestands-/Deprecated-Kontext muss im Regelkopf benannt werden. Die bloße Zahl der Nachfolger legt kein Level fest; R05 ist kein genereller Ersatz für die Released-Lese-Regel R03.",
+    "sources": [
+      "S01",
+      "S03"
+    ],
+    "affected_cases": [
+      "CC-058"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R06",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_semantics",
+    "verdict": "hält",
+    "reason": "Statische Angabe per Literal/Konstante und syntaktisch dynamische Variable getrennt von der Datenflussauflösung führen. Keine Änderung gegenüber dem eingegrenzten CALL-FUNCTION-Vertrag.",
+    "sources": [
+      "S26"
+    ],
+    "affected_cases": [
+      "CC-005",
+      "CC-006",
+      "CC-011",
+      "CC-044"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R07",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_semantics",
+    "verdict": "hält nur unter Bedingung",
+    "reason": "Zielmenge nur bei vollständigem, pfad- und aliasbewusstem Datenfluss schließen. Vorbelegung, Namensmuster und nicht vollständig bekannte Aufrufer sind keine Singleton-Garantie.",
+    "sources": [
+      "S26",
+      "S27"
+    ],
+    "affected_cases": [
+      "CC-036",
+      "CC-037",
+      "CC-038",
+      "CC-041"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R08",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_semantics",
+    "verdict": "hält",
+    "reason": "Kardinalität, Projektion und Prädikat-/NULL-Semantik erhalten. Die v2-Präzisierung des konkreten CC-008-Prädikats ist richtig; WHERE-Position allein reicht nicht.",
+    "sources": [
+      "S23"
+    ],
+    "affected_cases": [
+      "CC-007",
+      "CC-008"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R09",
+    "input_version": "1.0.0 plus v2-Präzisierung",
+    "authority_as_declared": "sap_semantics",
+    "verdict": "hält nur unter Bedingung",
+    "reason": "FAE-Leerfortsetzungsschutz und fachlich sanfter Leerpfad trennen. ASSERT ohne ID kann die Fortsetzung wirksam verhindern, aber durch Dump. Die v2-Aussage, ASSERT sei überhaupt kein Guard, gilt nicht als allgemeine Semantik.",
+    "sources": [
+      "S13",
+      "S23"
+    ],
+    "affected_cases": [
+      "CC-002"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R10",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_interpretation",
+    "verdict": "hält",
+    "reason": "D für als implizite SAP-Erweiterung belegten Eingriff. Nicht auf jeden klassischen Exit oder Enhancement-Marker ausweiten; dafür trägt R10 keine Aussage.",
+    "sources": [
+      "S01"
+    ],
+    "affected_cases": [
+      "CC-010",
+      "CC-053"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R11",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_interpretation",
+    "verdict": "hält",
+    "reason": "Dynpro allein begründet kein D. Ereignis-, Screen- und GUI-Metadaten sind für Rekonstruktion notwendig; Cloud-Rehosting und klassisches Level getrennt halten.",
+    "sources": [
+      "S01"
+    ],
+    "affected_cases": [
+      "CC-013",
+      "CC-014"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R12",
+    "input_version": "1.0.0",
+    "authority_as_declared": "corpus_policy",
+    "verdict": "hält nur unter Bedingung",
+    "reason": "Unknown ist für den fehlenden konkreten Freigabebeleg zulässig. Ist eine Technologie oder ein Objekt ausdrücklich unsupported/noAPI, darf generelle Unkenntnis diese negative Evidenz nicht verdrängen. Konvention, keine pauschale SAP-Kernelklassifikation.",
+    "sources": [
+      "S01"
+    ],
+    "affected_cases": [
+      "CC-015"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R13a",
+    "input_version": "2.0.0",
+    "authority_as_declared": "sap_semantics",
+    "verdict": "hält nicht",
+    "reason": "Der Ausschluss ganzer Stringtemplates ohne späteren Konsumenten ist zu weit. Eingebettete funktionale Methodenaufrufe werden bereits bei Auswertung des Templates ausgeführt und können Seiteneffekte haben. Nur Textsegmente sind inert.",
+    "sources": [
+      "S12"
+    ],
+    "affected_cases": [
+      "CC-016",
+      "CC-034"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R13b",
+    "input_version": "2.0.0",
+    "authority_as_declared": "sap_semantics",
+    "verdict": "hält nur unter Bedingung",
+    "reason": "Konsumentenbezogene Interpretation ist richtig. Quellsprachenausdrücke, SQL-Text, Identifier und gebundene Parameter müssen getrennt bleiben. Ein Literal mit beliebigem Konsumenten ist nicht automatisch ausführbarer Code oder Injektion.",
+    "sources": [
+      "S10",
+      "S11",
+      "S12"
+    ],
+    "affected_cases": [
+      "CC-034",
+      "CC-035",
+      "CC-039",
+      "CC-054"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R14",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_semantics",
+    "verdict": "hält",
+    "reason": "Dispatch, super-Aufruf und fehlende Vorfahren getrennt zu führen bleibt richtig. Diese Regel wird als semantisches Prinzip bestätigt, nicht als Prüfung jeder OO-Fixture-Implementierung.",
+    "sources": [
+      "S27"
+    ],
+    "affected_cases": [
+      "CC-017",
+      "CC-018",
+      "CC-041"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R15",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_interpretation",
+    "verdict": "hält nur unter Bedingung",
+    "reason": "RTTS-Freigabe, dynamisch bezeichnete Typen und Klassensprache jeweils prüfen. Freigabe eines Deskriptors ist keine Freigabe jedes damit erreichbaren Typs.",
+    "sources": [
+      "S02",
+      "S19"
+    ],
+    "affected_cases": [
+      "CC-019",
+      "CC-020"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R16",
+    "input_version": "1.0.0",
+    "authority_as_declared": "corpus_policy",
+    "verdict": "hält",
+    "reason": "Fehlende Customer-/Partnerimplementierung führt zu Unvollständigkeit, nicht zu erfundenem SAP-internem C. Bekannte Evidenz und Gesamturteil getrennt zu halten ist die richtige Korpuskonvention.",
+    "sources": [
+      "S01"
+    ],
+    "affected_cases": [
+      "CC-012",
+      "CC-018",
+      "CC-021",
+      "CC-022",
+      "CC-026",
+      "CC-027"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R17",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_metadata",
+    "verdict": "hält",
+    "reason": "TADIR- und spezifische Objektidentität sowie Nachfolgerliste erhalten; unbekannt, leer und nicht erhoben unterscheiden. Ein Katalogverweis ist kein Beleg für Drop-in-Kompatibilität.",
+    "sources": [
+      "S19",
+      "S21"
+    ],
+    "affected_cases": [
+      "CC-023",
+      "CC-034",
+      "CC-035",
+      "CC-057",
+      "CC-058"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R18",
+    "input_version": "1.0.0",
+    "authority_as_declared": "corpus_policy",
+    "verdict": "hält",
+    "reason": "Fachsätze müssen vom angegebenen Scope und vollständigen Guard-Kontext getragen werden. Statusausgabe ist nicht gleich Geschäftsereignis; die Regel ist richtig, wird aber in mehreren v2-Sollsätzen verletzt.",
+    "sources": [
+      "S09",
+      "S10"
+    ],
+    "affected_cases": [
+      "CC-023",
+      "CC-026",
+      "CC-027",
+      "CC-028",
+      "CC-034",
+      "CC-035",
+      "CC-060"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R19",
+    "input_version": "1.0.0",
+    "authority_as_declared": "corpus_policy",
+    "verdict": "hält nur unter Bedingung",
+    "reason": "Kontroll- und Abbruchpfade sind richtig gefordert. Abstraktionsgrenze, ausgelassene allgemeine Exceptions und Rückkehr aus opaken Aufrufen müssen explizit sein; nicht jede ausgelassene Sprachoperation ist ein Fehler.",
+    "sources": [
+      "S06",
+      "S07"
+    ],
+    "affected_cases": [
+      "CC-026",
+      "CC-034",
+      "CC-035",
+      "CC-060"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R20",
+    "input_version": "1.0.0",
+    "authority_as_declared": "corpus_policy",
+    "verdict": "hält",
+    "reason": "Eigene Persistenz begründet keine automatische CAP-/BTP-Pflicht. Dies ist eine sinnvolle Architekturkonvention; konkrete Zielplattformfähigkeit ist separat nachzuweisen.",
+    "sources": [
+      "S02"
+    ],
+    "affected_cases": [
+      "CC-024",
+      "CC-038"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R21",
+    "input_version": "1.0.0",
+    "authority_as_declared": "corpus_policy",
+    "verdict": "hält",
+    "reason": "Nicht gemessene Stunden bleiben Annahmen; Istwerte null. Der Satz bleibt unabhängig vom technischen Review gültig und liefert ausdrücklich keinen Aufwand-Accuracy-Score.",
+    "sources": [
+      "Korpuskonvention"
+    ],
+    "affected_cases": [
+      "CC-001–CC-060"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R22",
+    "input_version": "1.0.0",
+    "authority_as_declared": "corpus_policy",
+    "verdict": "hält",
+    "reason": "Exakte Quell-, Kontext-, Regel- und Sollversionen sind nötig. Änderungen erzeugen einen Reviewbedarf. Hashes belegen Integrität, nicht fachliche Wahrheit; noch fehlende Kontexthashes sind eine Umsetzungslücke.",
+    "sources": [
+      "S19"
+    ],
+    "affected_cases": [
+      "CC-001–CC-060"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R23",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_semantics",
+    "verdict": "hält",
+    "reason": "Grenzwerte, Währung und vorgelagerte Abbrüche müssen in Fachsätzen erhalten bleiben. Auch ein korrektes numerisches Prädikat liefert ohne Währung keine EUR-Aussage.",
+    "sources": [
+      "S12"
+    ],
+    "affected_cases": [
+      "CC-025",
+      "CC-053",
+      "CC-060"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R24",
+    "input_version": "1.0.0",
+    "authority_as_declared": "sap_semantics",
+    "verdict": "hält",
+    "reason": "GET/CALL BADI allein beweist keine konkrete aktive Einzelimplementierung. Die Bindungsmetadaten bleiben eigenständige Evidenz; keine universelle Herabstufung klassischer BAdIs.",
+    "sources": [
+      "S01",
+      "S28"
+    ],
+    "affected_cases": [
+      "CC-009",
+      "CC-010"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R25",
+    "input_version": "2.0.0",
+    "authority_as_declared": "sap_semantics",
+    "verdict": "hält nicht",
+    "reason": "SAP-LUW, Datenbank-LUW, Verbuchungsanstoß, Ausführungsmodus und bestätigte Persistenz werden vermischt. Nicht jeder Programm-/Screenaufruf committet; DB-Commit ist kein automatisches COMMIT WORK. Registrierung ohne Anstoß ist nicht gleich vollständige Wirkungslosigkeit.",
+    "sources": [
+      "S05",
+      "S06",
+      "S07",
+      "S08",
+      "S09",
+      "S24"
+    ],
+    "affected_cases": [
+      "CC-026",
+      "CC-027",
+      "CC-028",
+      "CC-030",
+      "CC-031",
+      "CC-032",
+      "CC-033",
+      "CC-055",
+      "CC-056"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R26",
+    "input_version": "2.0.0",
+    "authority_as_declared": "corpus_policy",
+    "verdict": "hält nicht",
+    "reason": "Ein möglicher Worst Case darf nicht known_worst heißen. Dynamisches WHERE verändert nicht automatisch die bekannte FROM-Zielmenge. Unbekannt, beobachtet und vorsorgliche Obergrenze sind drei unterschiedliche Aussagen.",
+    "sources": [
+      "S01",
+      "S10"
+    ],
+    "affected_cases": [
+      "CC-037",
+      "CC-038"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R27",
+    "input_version": "2.0.0",
+    "authority_as_declared": "corpus_policy",
+    "verdict": "hält nur unter Bedingung",
+    "reason": "Statementanker plus Offset ist sinnvoll, aber Tokenisierung muss normiert werden. Kettenelement, Makroexpansionspfad und Ausdrucksarm brauchen zusätzliche IDs; eine Makroaufrufstelle kann mehrere Wirkungsstellen enthalten.",
+    "sources": [
+      "Korpuskonvention"
+    ],
+    "affected_cases": [
+      "CC-007",
+      "CC-008",
+      "CC-042",
+      "CC-043",
+      "CC-044",
+      "CC-060"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R28",
+    "input_version": "2.0.0",
+    "authority_as_declared": "corpus_policy",
+    "verdict": "hält nicht",
+    "reason": "Die separate Sicherheitsachse ist richtig, die pauschalen Befunde sind es nicht: CLIENT SPECIFIED erlaubt expliziten Mandantenfilter; LOCAL MODE kann bestimmungsgemäß sein; gebundene Eingabe ist keine Textinjektion; gespeicherter sy-subrc kann später wirksam geprüft werden. Verbot und Nachfolger sind verschiedene Felder.",
+    "sources": [
+      "S10",
+      "S11",
+      "S14",
+      "S17",
+      "S18"
+    ],
+    "affected_cases": [
+      "CC-034",
+      "CC-035",
+      "CC-038",
+      "CC-049",
+      "CC-050",
+      "CC-051",
+      "CC-052",
+      "CC-059"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R29",
+    "input_version": "2.0.0",
+    "authority_as_declared": "sap_interpretation",
+    "verdict": "hält nur unter Bedingung",
+    "reason": "Typreferenzen sind eigenständige DDIC-Abhängigkeiten; ein Lese-CDS ist kein mechanischer Typersatz. Level erst nach Objekt-/Release-/Nominationkontext; NODES/GET brauchen zusätzlich LDB-Bindung.",
+    "sources": [
+      "S01",
+      "S16",
+      "S19"
+    ],
+    "affected_cases": [
+      "CC-045",
+      "CC-047",
+      "CC-053"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R30",
+    "input_version": "2.0.0",
+    "authority_as_declared": "corpus_policy",
+    "verdict": "hält nur unter Bedingung",
+    "reason": "C1 kann eine zulässige Konsumentengrenze bilden. Dafür Zustand, Vertrag, Usage Visibility, Sprachversionen und Signatur prüfen. Komponentenlevel und Gesamt-/transitiver Scope dürfen nicht unter derselben Levelspalte unterschiedlich aggregiert werden.",
+    "sources": [
+      "S01",
+      "S02",
+      "S04"
+    ],
+    "affected_cases": [
+      "CC-060"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R31",
+    "input_version": "2.0.0",
+    "authority_as_declared": "corpus_policy",
+    "verdict": "hält",
+    "reason": "Quelle plus explizites Zielprofil ist gegenüber einer Code-only-Antwort richtig. Der Schlüssel muss um bewerteten Scope und objektbezogene Sprach-/Freigabemetadaten ergänzt werden. Profilpaare dürfen mehrere Dimensionen wechseln, dann aber keine Ein-Faktor-Kausalität behaupten.",
+    "sources": [
+      "S02",
+      "S19"
+    ],
+    "affected_cases": [
+      "CC-057",
+      "CC-058",
+      "CC-059",
+      "CC-060"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R32",
+    "input_version": "2.0.0",
+    "authority_as_declared": "sap_semantics",
+    "verdict": "hält nicht",
+    "reason": "Namen und Marker liefern Hinweise, nicht das Level D. Klassische nominierte Userexits/BAdIs können B sein; explizite, implizite und echte Modifikationen unterscheiden. Source-Bytes allein identifizieren ein Include nicht als MV45AFZZ.",
+    "sources": [
+      "S01",
+      "S20",
+      "S25"
+    ],
+    "affected_cases": [
+      "CC-010",
+      "CC-053",
+      "CC-054"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R33",
+    "input_version": "2.0.0",
+    "authority_as_declared": "sap_semantics",
+    "verdict": "hält nur unter Bedingung",
+    "reason": "Ereignisorientierung und kontextabhängiges CHECK sind richtig. Reportereignisse sind kein stets vollständig durchlaufener linearer Ablauf; GET/CHECK kann den LDB-Unterbaum unterdrücken. Ereignisbedingungen und Wiedereintritte gehören zum Vertrag.",
+    "sources": [
+      "S16"
+    ],
+    "affected_cases": [
+      "CC-046",
+      "CC-047",
+      "CC-048"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  },
+  {
+    "rule": "R34",
+    "input_version": "2.0.0",
+    "authority_as_declared": "corpus_policy",
+    "verdict": "hält nicht",
+    "reason": "An einer opaken Grenze endet die Kenntnis der internen Logik, nicht zwingend der Kontrollfluss des Aufrufers. AND RETURN, synchrone Rückkehr und asynchrone Fortsetzung sind zu erhalten; Transaktionseffekte separat nach korrigiertem R25. CC-056 zeigt selbst eine Rückkehrkante; die Korpusinstanz ist an dieser Stelle präziser als der pauschale Regelwortlaut.",
+    "sources": [
+      "S06",
+      "S07",
+      "S24"
+    ],
+    "affected_cases": [
+      "CC-031",
+      "CC-032",
+      "CC-055",
+      "CC-056"
+    ],
+    "native_execution": false,
+    "external_human_signoff": false
+  }
+]

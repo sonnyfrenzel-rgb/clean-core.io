@@ -1,0 +1,398 @@
+{
+  "answerFields": {
+    "cloud_api_surface": "not_usable (KNA1)",
+    "cloud_artefact": "not_activatable (REPORT; und EXEC SQL ist in ABAP for Cloud nicht verfügbar)",
+    "known_worst_level": "D (beobachtet: Native-SQL-UPDATE auf KNA1, F02)"
+  },
+  "beleggrad": "verifiziert (Fundstelle, im Repository nicht benannt) — das Konstrukt ist in fachanwendung belegt und an der Quelle nachgeprüft; der Zeiger steht nicht hier (§9.2). Sollantwort davon unberührt.",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        }
+      ],
+      "id": "CC-035-B01",
+      "text": "Bei initialem Namen wird NO_NAME ausgegeben und vor dem Datenbankaufruf zurückgekehrt; es wird nichts geschrieben."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 12,
+          "raw": "source.abap:12–13",
+          "token": null
+        }
+      ],
+      "id": "CC-035-B02",
+      "text": "Nach dem Guard (Zeile 6) wird per Native SQL versucht, NAME1 der KNA1-Zeilen zu ändern, deren MANDT dem in Zeile 10 übernommenen sy-mandt und deren KUNNR dem gebundenen p_kunnr entspricht. Weil die Werte gebundene Hostvariablen sind, ist der Filter für jede Eingabe wirksam (Gegenfall zu CC-034-B02); ob eine Zeile getroffen wird, garantiert der Code nicht — kein Treffer bei unbekanntem Kunden oder, bei numerischem Schlüssel, bei Eingabe ohne Nullauffüllung (vgl. CC-023-F03)."
+    },
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11–16",
+          "token": null
+        }
+      ],
+      "id": "CC-035-B03",
+      "text": "Nach normalem Abschluss von ENDEXEC folgt ohne Trefferprüfung COMMIT WORK und die Ausgabe UPDATE_COMMITTED; weder sy-dbcnt noch sy-subrc werden ausgewertet. Persistenz wird also auch dann gemeldet, wenn keine Zeile geändert wurde. Bei nicht abgefangenem Datenbankfehler wird dieser Normalpfad nicht erreicht (nicht modellierter Laufzeitfehler)."
+    }
+  ],
+  "classes": [
+    "K13",
+    "K08",
+    "K01"
+  ],
+  "classic_level": "D",
+  "cloud_api_surface": "not_usable (KNA1)",
+  "cloud_artefact": "not_activatable (REPORT; und EXEC SQL ist in ABAP for Cloud nicht verfügbar)",
+  "convergence": "Grok H-012 · GLM A-007 · Fable KA-017 · DeepSeek: keine · Gegenreview (Architekturreview §6, „Bound Values sind kein zweiter CC-034-Injektionsfall\"; REV2-07)",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 11,
+        "raw": "source.abap:11",
+        "token": null
+      },
+      "id": "CC-035-F01",
+      "profiles": null,
+      "rule": "R13b",
+      "ruleRaw": "R13b@2.1.0 (Rolle a für den SQL-Text, Rolle c für die Hostvariablen)",
+      "ruleVersion": "2.1.0",
+      "severity": "high",
+      "sources": [
+        "SAP-ABAPDOC; S11"
+      ],
+      "statement": "EXEC SQL … ENDEXEC reicht den Text der Zeilen 12–13 unverändert an die Datenbank durch. Der Text ist Statement; die Tabelle KNA1 ist eine Abhängigkeit, kein Wort in einem Literal. SQL-Text, Identifier und gebundene Werte bleiben getrennt: :p_name, :lv_mandt, :p_kunnr sind Hostvariablen — Datenwerte, kein Teil des SQL-Texts (S11). Sekundäranker: source.abap:12–13."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 11,
+        "raw": "source.abap:11",
+        "token": null
+      },
+      "id": "CC-035-F02",
+      "profiles": null,
+      "rule": "R02",
+      "ruleRaw": "R02@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "high",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-SQL",
+        "SAP-ABAPDOC; S01",
+        "S11",
+        "S19"
+      ],
+      "statement": "Native-SQL-UPDATE auf SAP-Tabelle KNA1: D. In der beobachteten Katalogbeziehung (S19) gibt es für die Schreiboperation keinen 1:1-Ersatz; I_CUSTOMER ist Lesemodell. Das Statement EXEC SQL selbst hat in ABAP for Cloud Development keinen Ersatz. Ob eine unterstützte fachliche Schreib-API existiert, ist nicht untersucht."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 15,
+        "raw": "source.abap:15",
+        "token": null
+      },
+      "id": "CC-035-F03",
+      "profiles": null,
+      "rule": "R25",
+      "ruleRaw": "R25@2.1.0 (Achsen 1, 5)",
+      "ruleVersion": "2.1.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-FLOW; S09",
+        "S11"
+      ],
+      "statement": "COMMIT WORK unmittelbar nach ENDEXEC, ohne vorherige Auswertung von sy-subrc/sy-dbcnt: die Datenbank-LUW wird auch dann abgeschlossen, wenn null Zeilen betroffen waren — Stufe *Commit erfolgt* ohne Stufe *Zeilen betroffen*."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 16,
+        "raw": "source.abap:16",
+        "token": null
+      },
+      "id": "CC-035-F04",
+      "profiles": null,
+      "rule": "R18",
+      "ruleRaw": "R18@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-FLOW; S11"
+      ],
+      "statement": "UPDATE_COMMITTED kann auch nach null betroffenen Zeilen erscheinen; die Ausgabe belegt den Commit-Aufruf, keine geänderte Kundenzeile. Kein Gateway erfinden, das der Code nicht enthält."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:11 — Nicht „kein Open-SQL-UPDATE, also B\". Native SQL ist kein Wrapper und kein Kernelaufruf (K08 im v1-Sinn), sondern eigene Klasse K13.",
+    "source.abap:12 — Nicht als Kommentar oder Literal ohne Konsument lesen; der Konsument ist Zeile 11.",
+    "source.abap:12 — Kein Injektionsbefund: :p_name, :lv_mandt, :p_kunnr sind gebundene Hostvariablen, kein Textaufbau. Das ist der Gegenfall zu CC-034-F03; eine Engine, die beide Fälle unter derselben Taint-Regel meldet, ist falsch. R28@2.1.0 („gebundene Werte sind Daten, kein Injektionsbefund — CC-035\") und R13b@2.1.0 Rolle (c). Bestätigt vom Review (S11).",
+    "source.abap:13 — Kein Befund „mandantenübergreifend\": Native SQL hat keine automatische Mandantenbehandlung, aber der Block filtert explizit auf :lv_mandt = sy-mandt (Zeile 10). Das ist weder ein vollständiger Berechtigungsnachweis noch ein mandantenübergreifender Zugriff.",
+    "gesamte Scheibe — Kein Befund „Berechtigungsprüfung fehlt\" als bewiesene Schwachstelle (wie CC-034).",
+    "source.abap:11 — Kein Gateway auf sy-subrc/sy-dbcnt im As-is-Skelett; das wäre ein Änderungsentwurf (W02)."
+  ],
+  "id": "CC-035",
+  "independence": [
+    "modellreview",
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "modellreview · gegenreview · sap-doku (S01, S11 EXEC SQL, S19)",
+  "known_worst_level": "D (beobachtet: Native-SQL-UPDATE auf KNA1, F02)",
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 11,
+        "raw": "source.abap:11; Sekundäranker source.abap:12",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNA1",
+        "objectType": "TABL",
+        "tadirObjName": "KNA1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNA1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMER",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "write_native_sql"
+    }
+  ],
+  "openReviewerQuestions": [
+    "Exakter sy-subrc nach einem Native-SQL-UPDATE ohne Treffer im Zielrelease/auf HANA (vom Review bewusst nicht abgeleitet).",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad? (B02 nach dieser Fassung: Bestätigung ausstehend.)"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "g"
+      },
+      {
+        "condition": "p_name IS INITIAL",
+        "from": "g",
+        "to": "nn"
+      },
+      {
+        "condition": "always",
+        "from": "nn",
+        "to": "e1"
+      },
+      {
+        "condition": "p_name IS NOT INITIAL",
+        "from": "g",
+        "to": "m"
+      },
+      {
+        "condition": "always",
+        "from": "m",
+        "to": "w"
+      },
+      {
+        "condition": "always",
+        "from": "w",
+        "to": "c"
+      },
+      {
+        "condition": "always",
+        "from": "c",
+        "to": "o"
+      },
+      {
+        "condition": "always",
+        "from": "o",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Name leer?",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 7,
+          "raw": "source.abap:7",
+          "token": null
+        },
+        "id": "nn",
+        "meaning": "NO_NAME melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 8,
+          "raw": "source.abap:8",
+          "token": null
+        },
+        "id": "e1",
+        "meaning": "Block verlassen",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 10,
+          "raw": "source.abap:10",
+          "token": null
+        },
+        "id": "m",
+        "meaning": "Mandant in Hostvariable übernehmen",
+        "type": "action"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 11,
+          "raw": "source.abap:11",
+          "token": null
+        },
+        "id": "w",
+        "meaning": "KNA1 ändern — Native SQL, Tabelle statisch im EXEC-SQL-Text (Zeilen 12–13), Werte gebunden; Treffer nicht garantiert",
+        "type": "write"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 15,
+          "raw": "source.abap:15",
+          "token": null
+        },
+        "id": "c",
+        "meaning": "COMMIT WORK (unbedingt)",
+        "type": "transaction"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        "id": "o",
+        "meaning": "UPDATE_COMMITTED melden",
+        "type": "output"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 16,
+          "raw": "source.abap:16",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "candidate / not independently signed.",
+  "title": "EXEC SQL: Native SQL schreibt KNA1, kein Nachfolger, nicht in der Cloud"
+}

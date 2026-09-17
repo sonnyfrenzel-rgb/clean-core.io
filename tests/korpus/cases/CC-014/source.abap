@@ -1,0 +1,5 @@
+REPORT zcc_ref_014.
+DATA gv_result TYPE c LENGTH 20.
+START-OF-SELECTION.
+  CALL SCREEN 0200.
+  WRITE / gv_result.

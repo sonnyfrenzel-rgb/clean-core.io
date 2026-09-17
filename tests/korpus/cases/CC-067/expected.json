@@ -1,0 +1,226 @@
+{
+  "answerFields": {},
+  "beleggrad": "konstruiert — vom Gegenreview gebaut, nicht in SAP aktiviert. ASSERT log_exp ohne ID, lines( ), FOR ALL ENTRIES IN @itab in strikter Syntax existieren nach Autorenwissen; die Semantik ist S13 (ASSERT ohne ID ist aktiv; bei falscher Bedingung Laufzeitfehler) und S23 (FAE mit leerer Tabelle liest alle Zeilen).",
+  "businessStatements": [
+    {
+      "anchors": [
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 3,
+          "raw": "source.abap:3",
+          "token": null
+        }
+      ],
+      "id": "CC-067-B01",
+      "text": "Bei leerer Schlüsseltabelle bricht der Lauf vor der Datenbankabfrage mit einem Laufzeitfehler ab (ASSERTION_FAILED); es gibt keinen definierten Weiterlauf und keine Ausgabe. Im gelieferten Slice ist das der einzige mögliche Lauf, weil keys nie gefüllt wird."
+    }
+  ],
+  "classes": [
+    "K01",
+    "K02"
+  ],
+  "classic_level": "C",
+  "cloud_api_surface": "not_usable",
+  "cloud_artefact": null,
+  "convergence": "Gegenreview CE-07 / Regelurteil R09 „hält nur unter Bedingung\" („ASSERT ohne ID kann die Fortsetzung wirksam verhindern, aber durch Dump; die v2-Aussage, ASSERT sei überhaupt kein Guard, gilt nicht als allgemeine Semantik\") · Gegenfall zu v2 §7.1 („Ein ASSERT ist kein Guard im Sinne von R09, sondern ein Abbruchpfad\", übernommen aus Fable §5 Punkt 4 gegen die Härtungsstudie RC-023) und Ergänzung zu CC-002 (Guard mit definiertem Weiterlauf) · Modellreviews 16.09.: Fable §5/4 ist die v2-Lesart, die hier belastet wird; Grok H-102 nennt die ASSERT ID-Variante (checkpoint-gruppenabhängig, „produktiv oft inaktiv\") — eigener Fall, nicht gebaut.",
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "expectedByProfile": null,
+  "findings": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 5,
+        "raw": "source.abap:5 (Schutzobjekt :6, sek. :7 FOR ALL ENTRIES)",
+        "token": null
+      },
+      "id": "CC-067-F01",
+      "profiles": null,
+      "rule": "R09",
+      "ruleRaw": "R09@1.1.0 (Fassung nach Regelurteil R09)",
+      "ruleVersion": "1.1.0",
+      "severity": "medium",
+      "sources": [
+        "S13",
+        "S23"
+      ],
+      "statement": "Zwei Aussagen, getrennt: (a) FAE-Leerfortsetzungsschutz: der aktive ASSERT ohne ID (S13) verhindert wirksam, dass das FAE-SELECT mit leerer Tabelle ausgeführt wird — die dokumentierte Leertabellen-Semantik (alle Zeilen, S23) tritt nicht ein; kein Befund „ungesichertes Leertabellen-FAE\". (b) Kein sanfter Leerpfad: die Verhinderung geschieht durch Laufzeitfehler (ASSERTION_FAILED), ohne definierten Weiterlauf, ohne Ausgabe; das ist ein Fail-fast-Guard, kein Guard mit Rückkehr wie CC-002 Zeile 9–12. ASSERT ID … CONDITION wäre ein eigener, konfigurationsabhängiger Fall."
+    },
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6 (sek. :6 Token FROM kna1)",
+        "token": null
+      },
+      "id": "CC-067-F02",
+      "profiles": null,
+      "rule": "R01",
+      "ruleRaw": "R01@1.0.0",
+      "ruleVersion": "1.0.0",
+      "severity": "medium",
+      "sources": [
+        "SAP-LEVEL",
+        "SAP-PCE22 (S19)"
+      ],
+      "statement": "Direkter Lesezugriff auf KNA1: C. CDS-Nachfolger I_CUSTOMER gelistet, kein bewiesener Drop-in. Im gelieferten Slice nicht erreichbar (Profilannahmen); das Level folgt der statischen Abhängigkeit."
+    }
+  ],
+  "forbiddenConclusions": [
+    "source.abap:6 — Nicht „ungesichertes Leertabellen-FAE\" (v2 §7.1-Lesart „ASSERT ist kein Guard\"; Fable §5/4 als allgemeine Semantik gelesen). Die Fortsetzung mit leerer Tabelle ist verhindert.",
+    "source.abap:5 — Kein Fachsatz „bei leerer Schlüsselliste wird vor der FAE-Abfrage abgebrochen\" im Sinne von CC-002-B02 (definiertes Ende, NO_INPUT): hier endet der Lauf mit Laufzeitfehler. „Verhindert\" und „sanft beendet\" sind zwei Aussagen.",
+    "source.abap:5 — Nicht mit ASSERT ID … CONDITION … gleichsetzen: ohne ID ist ASSERT immer aktiv (S13); mit ID hängt es an der Checkpoint-Gruppe — Grok H-102, nicht gebaut.",
+    "source.abap:6 — Das Level nicht aus dem ASSERT ableiten; C bleibt C. Auch nicht „kein C, weil unerreichbar\".",
+    "Kein Fachsatz „Kunden werden gefunden\": found wird nicht verwendet, und :6 ist im Slice nicht erreichbar.",
+    "source.abap:5 — Kein gateway mit zwei „always\"-Kanten: der negative Zweig ist ein Abbruch, kein Weiterlauf."
+  ],
+  "id": "CC-067",
+  "independence": [
+    "sap-doku",
+    "gegenreview"
+  ],
+  "independenceRaw": "gegenreview · sap-doku",
+  "known_worst_level": null,
+  "objects": [
+    {
+      "anchor": {
+        "expressionPath": null,
+        "file": "source.abap",
+        "line": 6,
+        "raw": "source.abap:6 (sek",
+        "token": null
+      },
+      "classicRawState": "not_asserted",
+      "cloudRawState": "notToBeReleased",
+      "identity": {
+        "objectKey": "KNA1",
+        "objectType": "TABL",
+        "tadirObjName": "KNA1",
+        "tadirObject": "TABL"
+      },
+      "name": "KNA1",
+      "owner": "SAP",
+      "releaseContract": null,
+      "successorStatus": "listed",
+      "successors": [
+        {
+          "objectKey": "I_CUSTOMER",
+          "objectType": "CDS_STOB",
+          "tadirObjName": "I_CUSTOMER",
+          "tadirObject": "DDLS"
+        }
+      ],
+      "usage": "read_fae_unreachable_in_slice"
+    }
+  ],
+  "openReviewerQuestions": [
+    "P1: Bestätigt der Prüfer, dass ein ASSERT ohne ID in jeder Systemkonfiguration aktiv ist (S13) und die Verletzung ein nicht behandelbarer Laufzeitfehler ist — also weder CATCH noch Checkpoint-Gruppe den Weiterlauf öffnen?",
+    "P2: Soll der Korpus einen Fall mit unerreichbarem positiven Zweig führen, oder verlangt der Prüfer einen Füllpfad für keys, damit der Fall nativ beide Zweige zeigen kann? Der Autor hat die Quelle byteidentisch belassen und die Unerreichbarkeit markiert.",
+    "P3: Braucht v2.1 einen eigenen Knotentyp für den Abbruch durch Laufzeitfehler (abort), oder genügt end mit Attribut kind = runtime_error? Der Fall benutzt das Zweite, weil das Briefing keinen neuen Typ freigibt.",
+    "P4: Soll die ASSERT ID-Variante (Grok H-102) als eigener Fall folgen? Dieser Fall sagt nur, dass sie ein anderer ist.",
+    "Tragen alle Anker den vollständigen Fachsatz einschließlich Bedingungen und Negativpfad?",
+    "Welche Aussage ist nur eine Fixture-Annahme und darf nicht auf den echten Kunden übertragen werden?"
+  ],
+  "scope": "complete_for_declared_slice",
+  "securityFindings": [],
+  "skeleton": {
+    "edges": [
+      {
+        "condition": "always",
+        "from": "s",
+        "to": "g"
+      },
+      {
+        "condition": "lines( keys ) = 0",
+        "from": "g",
+        "to": "x"
+      },
+      {
+        "condition": "lines( keys ) > 0 (im Slice nicht erreichbar)",
+        "from": "g",
+        "to": "q"
+      },
+      {
+        "condition": "always",
+        "from": "q",
+        "to": "done"
+      }
+    ],
+    "nodes": [
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 4,
+          "raw": "source.abap:4",
+          "token": null
+        },
+        "id": "s",
+        "meaning": "Reportstart",
+        "type": "start"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "g",
+        "meaning": "Schlüsseltabelle leer? — Träger ist der ASSERT",
+        "type": "gateway"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 5,
+          "raw": "source.abap:5",
+          "token": null
+        },
+        "id": "x",
+        "meaning": "Abbruch durch Laufzeitfehler; Attribut kind = runtime_error, kein definiertes Ende",
+        "type": "end"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 6,
+          "raw": "source.abap:6",
+          "token": null
+        },
+        "id": "q",
+        "meaning": "Kunden zu Schlüsseln lesen (FAE); im Slice nicht erreichbar",
+        "type": "read"
+      },
+      {
+        "anchor": {
+          "expressionPath": null,
+          "file": "source.abap",
+          "line": 9,
+          "raw": "source.abap:9",
+          "token": null
+        },
+        "id": "done",
+        "meaning": "Ende (andere Zeile als x, keine Signaturkollision)",
+        "type": "end"
+      }
+    ]
+  },
+  "status": "nicht unabhängig freigegeben.",
+  "title": "ASSERT ohne ID vor FAE: ein Fail-fast-Guard, kein sanfter Leerfall (Gegenfall zur R09-Präzisierung in v2 §7.1, Partner von CC-002)"
+}
