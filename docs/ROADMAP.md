@@ -205,6 +205,7 @@ Code-Karte darunter.
 | 2.9 | **Große Prozesse navigieren** (`DESIGN.md` §5.9): Übersicht der Phasen als eingeklappte Teilprozesse, Ebenen mit Pfadzeile, Gliederungsbaum statt flacher Schrittliste, Problemzeile je Teilprozess, Minikarte, „Show paths to here" und „Main path", Laufvarianten aus den Selektionsschaltern, Overlays als Filter, Suche öffnet die Ebene des Treffers, stabile Anordnung, Ebene und Auswahl in der URL. Abnahme am 1.000-Zeilen-Beispiel: jeder Schritt in höchstens drei Aktionen erreichbar, per Tastatur wie per Maus | L |
 | 2.10 | **Referenzkorpus v2.1 im Repository:** `docs/korpus/referenzkorpus-v2.1.md` (das Fallbuch mit Rahmen, Regelregister, Negativliste, Gegenreview, Autorenberichten) und `tests/korpus/cases/CC-nnn/` mit `source.abap`, `profile.json`, `expected.json` je Fall, erzeugt aus dem Fallbuch durch `scripts/korpus/build-bundle.mjs` (deterministisch, Quellenhashes geprüft). `tests/korpus-engine.spec.ts` lässt die Engine gegen alle 68 Fälle laufen und vergleicht Befunde, Level, Objekte, Skelettknoten; **Ratsche** wie bei abaplint: `tests/korpus/baseline.json` führt jede Abweichung mit Urteil (`engine-defekt` · `korpus-offen` · `nicht-vergleichbar`) und Grund, ein Fall, der übereinstimmte und es nicht mehr tut, macht den Lauf rot, eine still verschwundene Abweichung ebenfalls. Fundstellen aus öffentlichen Repositories stehen im Repository nur als URL, Commit, Pfad, Zeilen und SHA-256 des Ausschnitts — **kein fremder Code**, elf von zwölf Quellen sind ohne Lizenz. Der Korpus wird nie als Prompt- oder Trainingsmaterial des Modells verwendet, das er prüft | M |
 
+| 2.11 | **Was der Korpus an der Engine findet** (Grundlinie vom 17.09.2026, `tests/korpus/baseline.json`): 24 Engine-Defekte in drei Familien, dazu 134 Aussageklassen, die die Engine noch gar nicht produziert. Die Familien, nicht die Einzelfälle, sind die Arbeit — siehe unten | L |
 **Fertig, wenn**
 - jeder Task, jedes Gateway und jede Lane einen Zeilenanker trägt oder sichtbar
   „unbelegt" ist, und die Quote angezeigt wird (V25-A01);
@@ -214,6 +215,52 @@ Code-Karte darunter.
 - ein syntaktisch gültiges Modell nie als belegter End-to-End-Istprozess
   ausgewiesen wird;
 - für Korpusfälle mit Prozess-Ground-Truth das Skelett übereinstimmt.
+
+**Die drei Defektfamilien aus 2.11, gemessen am 17.09.2026**
+
+Die Grundlinie vergleicht je Fall fünf Aussageklassen: 340 Paare, 178 stimmen überein.
+Von den 162 Abweichungen sind 134 **nicht vergleichbar** — die Engine kennt die
+Aussageklasse nicht (Fachsätze durchweg, Level und Objekte bei den neuen Klassen). Das
+ist kein Defekt, sondern der gemessene Abstand zwischen dem, was Phase 2 verspricht, und
+dem, was heute läuft. Vier sind **Korpus-offen** (siehe unten). Bleiben 24 Defekte:
+
+**(a) Die Note liest den Katalogeintrag zur Hälfte — 9 Fälle.** CC-001, CC-002, CC-007,
+CC-008, CC-049, CC-051, CC-062, CC-063, CC-067 werden von der Engine als **D** benotet,
+wo der Korpus **C** sagt. Eine Wurzel: die Engine nimmt die schlechteste Katalognote über
+alle Objekte und ignoriert dabei die **Zugriffsart** und den **katalogisierten Nachfolger**.
+KNA1 zu *lesen* ist C mit Nachfolger `I_CUSTOMER` (R01); nur ein nicht unterstützter
+*Schreibzugriff* ist D (R02). Beide Angaben stehen in derselben Katalogquelle, aus der die
+Engine ihre Note zieht. Das ist der billigste der drei Punkte und der mit der größten
+Wirkung: neun Fälle an einer Stelle.
+
+**(b) Die Engine urteilt milder, als sie darf — 5 Fälle.** CC-050 bekommt **A**, wo der
+Korpus B sagt: `SELECT … WITH PRIVILEGED ACCESS` umgeht die DCL-Prüfung, und die Engine
+sieht darin nichts. CC-024, CC-029, CC-030, CC-033 liefern **Unknown** statt B. Ein falsches
+Gut ist teurer als ein falsches Schlecht — diese fünf gehen vor (a).
+
+**(c) Abhängigkeiten, die niemand sieht — 9 Fälle, ein Befund.** Die Engine meldet an
+diesen Stellen entweder nichts oder das Falsche:
+- **ADBC** (CC-034): `cl_sql_statement->execute_update( |UPDATE KNA1 …| )` ergibt genau
+  einen Befund (`commit-work`), keine Datenkopplung, und das Wort KNA1 kommt in der
+  gesamten Ausgabe nicht vor. Genau der Fall, den das Gegenreview vorhergesagt hat.
+- **Makroexpansion** (CC-042): der Platzhalter `&1` aus `DEFINE` wird als Tabelle gemeldet,
+  KNA1 und KNB1 gar nicht — eine erfundene Abhängigkeit und zwei verlorene.
+- **Dynamische Ziele** (CC-020, CC-036, CC-037, CC-038): `(LC_TAB)` und `(P_TAB)` stehen als
+  Datenbankabhängigkeit in der Ausgabe, das aufgelöste Ziel fehlt.
+- **Typreferenz ohne SQL** (CC-045, R29): `TABLES:`, `TYPE kna1`, `INCLUDE STRUCTURE` — null
+  Befunde, null Kopplung.
+- **Logische Datenbank** (CC-047): `NODES` + `GET` — dasselbe.
+- **Programmglobales Feld über Literal** (CC-040): `ASSIGN ('(SAPMV45A)VBAK-…')` — VBAK fehlt.
+
+**Was der Korpus selbst falsch hat — 4 Fälle, `korpus-offen`.** CC-001, CC-002, CC-007 und
+CC-008 verankern R01 auf der `FROM`-Zeile; R27 legt den Anweisungsbeginn als Primäranker
+fest. Der Korpus widerspricht sich hier selbst (v1-Konvention gegen die v2.1-Regel), und
+die Engine folgt R27. Das geht an die Fallautoren, nicht an die Engine.
+
+**Die Ratsche hält das fest:** `tests/korpus-engine.spec.ts` wird rot, wenn ein `agree` zu
+`disagree` wird, wenn eine `disagree` ohne Streichung verschwindet, wenn ein Eintrag sein
+Urteil oder seine Begründung verliert, wenn das Bündel vom Fallbuch abdriftet — und wenn
+je ein Hostname oder eine vierzigstellige Commit-ID nach `docs/korpus/` gerät.
 
 **Befunde vom 16.09.2026 aus den Unabhängigkeitsprüfungen, in 2.1/2.2 zu beheben:**
 - **Kettensätze in der Coverage untererfasst.** Die Engine hat zwei
