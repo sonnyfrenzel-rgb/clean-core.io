@@ -166,15 +166,23 @@ The most valuable part of this step. Each of these was found by reading the code
 at the baseline commit, each is recorded in the JSON as a `knownLimit`, and each
 has an assertion in the guard so that fixing it forces the register to be updated.
 
-- **L-01 — Testing can never be `done`.** No code path writes a verdict back onto
-  `project.testCases[].status`. The testing page shows a run's verdicts on screen
-  and stores nothing. Because Delivery's readiness depends on Testing being
-  `done`, **Delivery can never be `done` either.** `docs/ARCHITECTURE.md` §2 says
-  this; it is worth saying again where the rebuild will read it.
+- **L-01 — a verdict is written by the server or by nobody.** No client path
+  writes one onto `project.testCases[].status`: not the testing page, not
+  `useTestExecution`, not `useTestGeneration`. `POST /api/run-tests` writes the
+  verdicts it observed with the Admin SDK, in the same write as its
+  `testRunReceipt`, and the page mirrors that answer into its own state without
+  touching Firestore. The field stays in the client allowlist of
+  `firestore.rules`, so an owner can still put `Passed` there; that is why
+  `lib/workflow-steps.ts` counts passes for `proven` from the receipt
+  (`attestedPasses`) and reads a row of unbacked `Passed` strings as
+  `Self-reported`. Until 2026-09-17 nothing wrote them at all, and Testing —
+  and therefore Delivery — could not be reached by running the suite (QA
+  6c38e0c7c620).
 - **L-02 — a missing sign-off is not a delivery gap.** `workflowSteps()` counts
   only generated code, tests and documentation. If every test passed, the contract
-  would report Delivery `done` beside Design `partial (Awaiting sign-off)`. Only
-  L-01 keeps that combination out of reach today.
+  reports Delivery `done` beside Design `partial (Awaiting sign-off)` — reachable
+  since a recorded run stores its verdicts (L-01). `proven` still follows
+  Testing's, so the combination is green only behind a receipt.
 - **L-03 — two artefacts leave in the bundle that can never be stale.**
   `TRACKED_ARTEFACTS` covers `solutionDesign`, `generatedCode`, `testCases` and
   `documentation`. The delivery ZIP also carries `testSuite.code` and

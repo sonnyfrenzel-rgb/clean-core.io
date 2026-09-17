@@ -6,7 +6,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc, adminMergeDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
-import { parseTapOutput, packageNameOf } from '../lib/test-verdicts';
+import { parseTapOutput, packageNameOf, applyRunnerVerdicts } from '../lib/test-verdicts';
 import { TERMS_VERSION } from '../lib/constants';
 
 /**
@@ -63,6 +63,46 @@ test.describe('the TAP reader', () => {
     expect(packageNameOf('express/lib/router')).toBe('express');
     expect(packageNameOf('@sap/xssec')).toBe('@sap/xssec');
     expect(packageNameOf('@sap-cloud-sdk/http-client/dist/x')).toBe('@sap-cloud-sdk/http-client');
+  });
+});
+
+/**
+ * One rule for what a run says about a case, written down once.
+ *
+ * It is applied twice — by `/api/run-tests`, which stores the verdicts beside
+ * its receipt, and by the testing page, which shows the run it just watched
+ * without waiting for a reload. Two copies would drift, and the drift would read
+ * as a screen disagreeing with the phase contract about the same run.
+ */
+test.describe('a run laid over the cases it reported on', () => {
+  const CASES = [{ id: 'TC_01', name: 'a' }, { id: 'TC_02', name: 'b' }, { id: 'TC_03', name: 'c' }];
+
+  test('the runner\'s verdict where there is one, `Not run` where there is not', () => {
+    const applied = applyRunnerVerdicts(
+      CASES,
+      [
+        { id: 'TC_01', name: 'a', status: 'Passed', message: 'Passed in the Node.js test runner' },
+        { id: 'TC_02', name: 'b', status: 'Failed', message: 'Expected 3 but got 4' },
+      ],
+      1,
+    );
+    expect(applied.map((c) => c.status)).toEqual(['Passed', 'Failed', 'Not run']);
+    expect(applied[2].message).toBe('The run failed before this test reported a result');
+    // Everything else about the case survives — a verdict is added, not a case rewritten.
+    expect(applied[0].name).toBe('a');
+  });
+
+  test('a green exit code is not a verdict for a case the runner never mentioned', () => {
+    // The shape of the defect: a whole file failing to load exits 0 in some
+    // configurations, and every case in it was reported as verified.
+    const applied = applyRunnerVerdicts(CASES, [], 0);
+    expect(applied.map((c) => c.status)).toEqual(['Not run', 'Not run', 'Not run']);
+    expect(applied[0].message).toBe('The runner finished without reporting on this test — no result to show');
+  });
+
+  test('SKIP and TODO arrive as themselves, so a pass count cannot absorb them', () => {
+    const applied = applyRunnerVerdicts(CASES, parseTapOutput('ok 1 - TC_01: x # SKIP\nok 2 - TC_02: y # TODO\n'), 0);
+    expect(applied.map((c) => c.status)).toEqual(['Skipped', 'Todo', 'Not run']);
   });
 });
 

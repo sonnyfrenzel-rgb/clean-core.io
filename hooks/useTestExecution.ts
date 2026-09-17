@@ -5,7 +5,9 @@ import { callGemini } from '@/lib/gemini';
 import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase } from '@/lib/types';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
-import { parseGeneratedPackage, failingFileIndex, replaceFileContent } from '@/lib/generated-package';
+import { parseGeneratedPackage, replaceFileContent, repairTarget } from '@/lib/generated-package';
+import { applyRunnerVerdicts } from '@/lib/test-verdicts';
+import type { TestRunReceipt } from '@/lib/test-receipt';
 
 export const useTestExecution = (projectId: string, project: Project | null, setProject?: React.Dispatch<React.SetStateAction<Project | null>>) => {
   const [isRunning, setIsRunning] = useState(false);
@@ -120,7 +122,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
     }
   };
 
-  const executeWithHealing = async (payload: { tests: Project['testSuite']; projectId: string; code: string | undefined }, maxRetries = 2): Promise<{ exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[] }> => {
+  const executeWithHealing = async (payload: { tests: Project['testSuite']; projectId: string; code: string | undefined }, maxRetries = 2): Promise<{ exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[]; receipt?: TestRunReceipt | null }> => {
     let currentPayload = { ...payload };
     /**
      * A repair is held here until a run proves it compiles.
@@ -179,7 +181,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         throw new Error('Network error. Test Sandbox might be restarting.');
       }
       
-      let result: { exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[] };
+      let result: { exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[]; receipt?: TestRunReceipt | null };
       try {
         const textResponse = await response.text();
         result = JSON.parse(textResponse);
@@ -188,34 +190,36 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
       }
 
       // Compilation/syntax error in AI-generated code (returned as HTTP 200 + buildError).
-      // Auto-heal the offending source — one file of the generated package, or the
-      // test suite, chosen from the compiler error — then retry. The repair is held
-      // until a run compiles; see `pendingPatch` above.
+      // Auto-heal the offending source — one file of the generated package, the
+      // flat legacy module, or the test suite — then retry. Which of the three is
+      // `repairTarget`'s decision and nothing else's: it used to be
+      // `/app\.ts/.test(errText)`, which misses every other path a generated
+      // package contains and sent the repair at the test suite instead
+      // (QA 1c8234b64f35). The repair is held until a run compiles; see
+      // `pendingPatch` above.
       if (result.buildError && attempt < maxRetries) {
         const errText = result.error || '';
-        const targetsModule = /app\.ts/.test(errText) || !currentPayload.tests?.code;
+        const target = repairTarget({ code: currentPayload.code, suite: currentPayload.tests?.code, errorText: errText });
         try {
-          if (targetsModule) {
+          if (target.kind === 'none') {
+            setSandboxOutput(prev => prev + `\n[Auto-Healing] ${target.reason} — nothing is repaired and the generated package is left as it is.\n`);
+            return result;
+          }
+          if (target.kind === 'package') {
             // A package is repaired file by file. The model is asked for one
             // module, so one module is what it is allowed to replace.
-            const pkg = parseGeneratedPackage(currentPayload.code);
-            let fixedCode: string;
-            let repairedLabel = 'Module';
-            if (pkg) {
-              const idx = failingFileIndex(pkg, errText);
-              if (idx < 0) {
-                setSandboxOutput(prev => prev + `\n[Auto-Healing] No source file in the generated package matches the compiler error — the package is left as it is.\n`);
-                return result;
-              }
-              const repaired = await autoHealCode(errText, pkg[idx].content, 'module', pkg[idx].path);
-              fixedCode = replaceFileContent(pkg, idx, repaired);
-              repairedLabel = pkg[idx].path;
-            } else {
-              fixedCode = await autoHealCode(errText, currentPayload.code || '', 'module');
-            }
+            const pkg = parseGeneratedPackage(currentPayload.code)!;
+            const idx = target.index;
+            const repaired = await autoHealCode(errText, pkg[idx].content, 'module', pkg[idx].path);
+            const fixedCode = replaceFileContent(pkg, idx, repaired);
             currentPayload = { ...currentPayload, code: fixedCode };
             pendingPatch = { ...(pendingPatch || {}), generatedCode: fixedCode };
-            setSandboxOutput(prev => prev + `\n[Auto-Healing] ${repairedLabel} repaired. Retrying execution — nothing is saved until it compiles...\n`);
+            setSandboxOutput(prev => prev + `\n[Auto-Healing] ${pkg[idx].path} repaired. Retrying execution — nothing is saved until it compiles...\n`);
+          } else if (target.kind === 'module') {
+            const fixedCode = await autoHealCode(errText, currentPayload.code || '', 'module');
+            currentPayload = { ...currentPayload, code: fixedCode };
+            pendingPatch = { ...(pendingPatch || {}), generatedCode: fixedCode };
+            setSandboxOutput(prev => prev + `\n[Auto-Healing] Module repaired. Retrying execution — nothing is saved until it compiles...\n`);
           } else {
             const fixed = await autoHealCode(errText, currentPayload.tests?.code || '', 'test');
             currentPayload = { ...currentPayload, tests: { ...currentPayload.tests, code: fixed } };
@@ -599,37 +603,29 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
       }
       
       const result = await executeWithHealing(payload);
-      
-      const results: TestCase[] = selectedTestCases.map(tc => {
-        const match = result.testResults && Array.isArray(result.testResults)
-          ? (result.testResults as any[]).find(r => r.id === tc.id)
-          : null;
-        
-        if (match) {
-          return {
-            ...tc,
-            status: match.status as TestCase['status'],
-            message: match.message || (match.status === 'Passed' ? 'Passed in the Node.js test runner' : 'Test assertion failed')
-          };
-        }
 
-        // No line in the runner's output mentions this test.
-        //
-        // This used to read `result.exitCode === 0` and, on a green run, label the
-        // case "Verified by Node.js Test Runner" — a verification claim for a test
-        // the runner never mentioned. A whole file failing to load exits 0 in some
-        // configurations, and every case in it was then reported as verified.
-        //
-        // An absent verdict is not a verdict. It says so.
-        return {
-          ...tc,
-          status: 'Not run' as const,
-          message: result.exitCode === 0
-            ? 'The runner finished without reporting on this test — no result to show'
-            : 'The run failed before this test reported a result'
-        };
-      });
+      // One rule for what a run says about a case, shared with the route that
+      // stores it (`lib/test-verdicts.ts`): the runner's verdict where there is
+      // one, `Not run` where there is not. A test the runner never mentioned
+      // used to inherit `result.exitCode === 0` and be labelled "Verified by
+      // Node.js Test Runner".
+      const reported = Array.isArray(result.testResults) ? result.testResults : [];
+      const results = applyRunnerVerdicts(selectedTestCases, reported, result.exitCode) as TestCase[];
       setTestResults(results);
+
+      // The project in this page's state, brought up to what the server just
+      // wrote: the verdicts of this run and the receipt that attests to it. It is
+      // a mirror, not a write — `/api/run-tests` stored both with the Admin SDK
+      // (QA 6c38e0c7c620), and nothing here may put a verdict into Firestore,
+      // because a verdict a browser can write is exactly what the receipt exists
+      // to distinguish itself from. Without the receipt the page shows the
+      // verdicts and the phase contract reads them as self-reported, which is
+      // what an unrecorded run is.
+      if (setProject && result.receipt) {
+        const receipt = result.receipt;
+        const executed = applyRunnerVerdicts(project?.testCases || [], reported, result.exitCode) as TestCase[];
+        setProject((prev: Project | null) => (prev ? { ...prev, testCases: executed, testRunReceipt: receipt } : prev));
+      }
       const stubs = Array.isArray(result.stubbedPackages) ? result.stubbedPackages : [];
       setStubbedPackages(stubs);
 

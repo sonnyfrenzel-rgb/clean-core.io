@@ -96,6 +96,46 @@ export function parseTapOutput(stdout: string): TestRunResult[] {
   return results;
 }
 
+/** What a stored case may carry after a run: what the runner said, or the honest absence. */
+export type StoredVerdict = RunnerVerdict | 'Not run';
+
+/**
+ * One run's verdicts, laid over the cases they belong to.
+ *
+ * There is one of these because the verdicts are now written twice and must be
+ * the same both times. `/api/run-tests` stores them on the project beside its
+ * receipt — what the server observed, the server writes down — and the testing
+ * page shows the same mapping on screen without waiting for a reload. Two
+ * copies of this rule would drift, and the drift would show up as a screen that
+ * disagrees with the phase contract about the run the reader just watched.
+ *
+ * A case the runner never mentioned is `Not run`, never a pass. It used to
+ * inherit `exitCode === 0` and be labelled "Verified by Node.js Test Runner" —
+ * a whole file failing to load exits 0 in some configurations, and every case
+ * in it was then reported as verified.
+ */
+export function applyRunnerVerdicts<T extends { id?: unknown }>(
+  cases: readonly T[],
+  results: readonly TestRunResult[],
+  exitCode: number,
+): Array<T & { status: StoredVerdict; message: string }> {
+  const reported = new Map(results.map((r) => [r.id, r]));
+  return cases.map((testCase) => {
+    const hit = reported.get(String(testCase?.id ?? ''));
+    if (hit) {
+      return { ...testCase, status: hit.status, message: hit.message ?? '' };
+    }
+    return {
+      ...testCase,
+      status: 'Not run' as const,
+      message:
+        exitCode === 0
+          ? 'The runner finished without reporting on this test — no result to show'
+          : 'The run failed before this test reported a result',
+    };
+  });
+}
+
 /**
  * The npm package a bare import specifier belongs to: `@sap/xssec/lib/x` →
  * `@sap/xssec`, `express/lib/router` → `express`. Used to name what the runner
