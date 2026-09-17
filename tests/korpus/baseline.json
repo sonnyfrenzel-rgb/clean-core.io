@@ -3,7 +3,7 @@
     "path": "docs/korpus/referenzkorpus-v2.1.md",
     "sha256": "9b1ed17256d04a3990335ff9e1a54f2151bccfd44e43190cc40fead2c0d0b288"
   },
-  "written": "2026-09-17",
+  "written": "2026-09-18",
   "entries": [
     {
       "case": "CC-001",
@@ -682,14 +682,14 @@
       "class": "level",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 1 Objekt(e)) Unknown. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte. 2.11, Folge aus objekte: die Engine sieht jetzt ein Objekt statt keines; die Note bleibt unvergleichbar, weil der Fall „Unknown\" antwortet."
     },
     {
       "case": "CC-020",
       "class": "objekte",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 0: —. Fehlend: ZCCR_PAYLOAD (default_dynamic_type_not_exhaustive). Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: ZCCR_PAYLOAD. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —. 2.11, Defektfamilie (c): CREATE DATA … TYPE (p_type) hat kein aufgelöstes Ziel (R26); ZCCR_PAYLOAD steht als *mögliches* Ziel aus dem DEFAULT in der Datenkopplung, markiert mit possibleTargetOf, und das ungelöste Ziel selbst als „dynamic-target\" in der Coverage."
     },
     {
       "case": "CC-020",
@@ -962,7 +962,7 @@
       "class": "level",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "Korpus B · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "reason": "Korpus B · Engine (schlechteste Katalognote über 2 Objekt(e)) C. Die Engine urteilt strenger, und der Fall stützt sein Level nicht auf einen katalogisierten Nachfolger. Der Korpus vergibt ein Level je Artefakt unter einem Regelvertrag, die Engine eine Katalognote je Objekt; ein Artefaktlevel gibt es in lib/abap/ nicht. 2.11, Folge aus (c): R29 — DATA … TYPE bapisdhd1 und TYPE bapivbeln-vbeln sind Typabhängigkeiten, die die Engine jetzt führt. Die Note (C aus dem Katalogrest) bleibt unvergleichbar; der Fall begründet sein B nicht über einen katalogisierten Nachfolger."
     },
     {
       "case": "CC-028",
@@ -1163,23 +1163,23 @@
     {
       "case": "CC-034",
       "class": "befunde",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "2 von 5 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 1 verfehlt. Verfehlt: CC-034-F01 R13b@2.1.0 (Rolle a: interpretiertes SQL)@source.abap:15 erwartet native-sql in source.abap:15–15. Engine an diesem Fall: source.abap:26 commit-work. Ohne Gegenstück: CC-034-F02 R02@1.0.0@source.abap:15 — R02 ohne Gegenstück an „lv_rows = lo_stmt->execute_update( lv_sql )\", CC-034-F03 R28@2.1.0 (Fünf-Teile-Struktur; Injektion = Eingabe als Text in interpretiertem SQL)@source.abap:11 (Textaufbau, Eingabefluss; Sekundäranker: source.abap:2, :3, :15) — R28 ohne Gegenstück an „lv_sql = |UPDATE KNA1 SET NAME1 = '{ p_name }' |\", CC-034-F04 R19@1.1.0@source.abap:16 — keine Brücke für R19."
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 von 5 Sollbefunden vergleichbar; 2 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-034-F02 R02@1.0.0@source.abap:15 — R02 ohne Gegenstück an „lv_rows = lo_stmt->execute_update( lv_sql )\", CC-034-F03 R28@2.1.0 (Fünf-Teile-Struktur; Injektion = Eingabe als Text in interpretiertem SQL)@source.abap:11 (Textaufbau, Eingabefluss; Sekundäranker: source.abap:2, :3, :15) — R28 ohne Gegenstück an „lv_sql = |UPDATE KNA1 SET NAME1 = '{ p_name }' |\", CC-034-F04 R19@1.1.0@source.abap:16 — keine Brücke für R19. 2.11, Defektfamilie (c): R13b(a) — der ADBC-Aufruf execute_update( lv_sql ) führt den Text des Stringtemplates aus. Die Engine meldet an der Konsumentenzeile 15 jetzt native-sql und den Schreibzugriff auf KNA1; der verfehlte Sollbefund CC-034-F01 ist getroffen."
     },
     {
       "case": "CC-034",
       "class": "level",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
-      "reason": "Korpus D · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "state": "agree",
+      "verdict": null,
+      "reason": "Korpus D · Engine (schlechteste Katalognote über 1 Objekt(e)) D 2.11, Folge aus objekte: mit KNA1 als gesehenem Objekt trifft die Katalognote D die Antwort des Falls."
     },
     {
       "case": "CC-034",
       "class": "objekte",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 0: —. Fehlend: KNA1 (write_native_sql_via_adbc). Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —. 2.11, Defektfamilie (c): das Stringtemplate *ist* SQL (R13b a); KNA1 steht als Schreibobjekt der Datenkopplung, verankert an der Konsumentenzeile 15 (R27)."
     },
     {
       "case": "CC-034",
@@ -1240,16 +1240,16 @@
     {
       "case": "CC-036",
       "class": "level",
-      "state": "agree",
-      "verdict": null,
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C"
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte. 2.11, **Folgeänderung** aus objekte (gehört zu Familie (a), Strang C): die frühere Übereinstimmung war ein Zufall — die Engine benotete das Pseudoobjekt (LC_TAB) als Katalogrest mit C. Mit dem aufgelösten KNA1 steht die Katalognote D gegen das C des Falls, und der Fall stützt sein C auf den katalogisierten Nachfolger I_CUSTOMER."
     },
     {
       "case": "CC-036",
       "class": "objekte",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: (LC_TAB). Fehlend: KNA1 (read_via_dynamic_from_constant_singleton). Zugriffsart abweichend: —. Vom Fall nicht geführt: (LC_TAB)."
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —. 2.11, Defektfamilie (c): R07 — lc_tab ist eine CONSTANTS-Deklaration mit genau einem Wert, das dynamische FROM ist damit aufgelöst. KNA1 statt des Pseudoobjekts (LC_TAB)."
     },
     {
       "case": "CC-036",
@@ -1270,21 +1270,21 @@
       "class": "befunde",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:9 standard-table-read. Ohne Gegenstück: CC-037-F01 R26@2.0.0-draft@source.abap:9 — keine Brücke für R26, CC-037-F02 R28@2.0.0-draft@source.abap:9 — R28 ohne Gegenstück an „SELECT COUNT(*) FROM (p_tab) INTO @lv_count\"."
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-037-F01 R26@2.0.0-draft@source.abap:9 — keine Brücke für R26, CC-037-F02 R28@2.0.0-draft@source.abap:9 — R28 ohne Gegenstück an „SELECT COUNT(*) FROM (p_tab) INTO @lv_count\". 2.11, Folge aus (c): das ungelöste Ziel (p_tab) ist kein Objekt mehr (R26), also meldet die Engine an diesem Fall keinen standard-table-read auf ein erfundenes Objekt; der Fall bleibt ohne Brücke unvergleichbar."
     },
     {
       "case": "CC-037",
       "class": "level",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte."
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte. 2.11, Folge aus objekte: die Note kommt jetzt von KNA1 als möglichem Ziel statt vom Pseudoobjekt (P_TAB); vergleichbar ist sie weiterhin nicht, weil der Fall „Unknown\" antwortet."
     },
     {
       "case": "CC-037",
       "class": "objekte",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: (P_TAB). Fehlend: KNA1 (default_dynamic_target_not_exhaustive). Zugriffsart abweichend: —. Vom Fall nicht geführt: (P_TAB)."
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —. 2.11, Defektfamilie (c): R26 — das Ziel aus der Eingabe bleibt ungelöst und erscheint nicht mehr als Tabelle (P_TAB). KNA1 steht als mögliches Ziel aus dem DEFAULT, markiert mit possibleTargetOf; die Aussage über das ungelöste Ziel steht in der Coverage."
     },
     {
       "case": "CC-037",
@@ -1312,14 +1312,14 @@
       "class": "level",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 2 Objekt(e)) Unknown. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte. 2.11, Folge aus objekte: die Engine sieht jetzt zwei Objekte (mögliches Ziel und Typabhängigkeit), beide kundeneigen und ohne Katalogzustand; der Fall antwortet „Unknown\", also bleibt die Klasse unvergleichbar."
     },
     {
       "case": "CC-038",
       "class": "objekte",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "2 Tabellenobjekt(e) im Fall; Engine sieht 0: —. Fehlend: ZCC_LOG_A (default_dynamic_target_not_exhaustive), ZCC_LOG_ROW (type_reference). Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Tabellenobjekt(e) im Fall; Engine sieht 2: ZCC_LOG_A, ZCC_LOG_ROW. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —. 2.11, Defektfamilie (c): R26 — MODIFY (p_tab) wird als dynamisches Schreibziel gelesen, ZCC_LOG_A steht als mögliches Ziel aus dem DEFAULT; R29 — DATA ls_row TYPE zcc_log_row ist eine Typabhängigkeit mit eigener Verwendung (Reference), kein Lesezugriff."
     },
     {
       "case": "CC-038",
@@ -1382,14 +1382,14 @@
       "class": "level",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "reason": "Korpus Unknown · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Der Fall antwortet „Unknown\" — das ist eine Aussage über die Vollständigkeit der Scheibe, und Vollständigkeit führt lib/abap/ nicht: der Evidenzbericht hat kein Feld, das „diese Frage ist mit dem gelieferten Code nicht entscheidbar\" sagen könnte. 2.11, Folge aus objekte: VBAK ist jetzt ein gesehenes Objekt; der Fall antwortet „Unknown\", die Klasse bleibt unvergleichbar."
     },
     {
       "case": "CC-040",
       "class": "objekte",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 0: —. Fehlend: VBAK (program_global_field_read_via_literal). Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: VBAK. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —. 2.11, Defektfamilie (c): R13b(b) — das Literal '(SAPMV45A)VBAK-VBELN' benennt das programmglobale Datenobjekt VBAK des SAP-Programms SAPMV45A. Die Abhängigkeit steht als Reference mit dem Programm in der Empfehlung, nicht als Datenbankzugriff."
     },
     {
       "case": "CC-040",
@@ -1445,21 +1445,21 @@
       "class": "befunde",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:4 standard-table-read. Ohne Gegenstück: CC-042-F01 R01@1.0.0 + R27@2.0.0-draft@source.abap:7 — R01 ohne Gegenstück an „count_rows kna1\", CC-042-F02 R01@1.0.0 + R27@2.0.0-draft@source.abap:9 — R01 ohne Gegenstück an „count_rows knb1\"."
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:7 standard-table-read, source.abap:9 standard-table-read. Ohne Gegenstück: CC-042-F01 R01@1.0.0 + R27@2.0.0-draft@source.abap:7 — R01 ohne Gegenstück an „count_rows kna1\", CC-042-F02 R01@1.0.0 + R27@2.0.0-draft@source.abap:9 — R01 ohne Gegenstück an „count_rows knb1\". 2.11, Folge aus (c): die Makroexpansion wirkt an der Aufrufstelle (R27) — die Engine meldet die Lesezugriffe jetzt an den Zeilen 7 und 9 statt am Platzhalter in der Definition. Vergleichbar wird der Fall dadurch nicht: die Brücke R01 verlangt ein SELECT in der Anweisung am Anker, und dort steht der Makroaufruf."
     },
     {
       "case": "CC-042",
       "class": "level",
-      "state": "agree",
-      "verdict": null,
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) C"
+      "state": "disagree",
+      "verdict": "engine-defekt",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 2 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER, KNB1 → I_CUSTOMERCOMPANY), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte. 2.11, **Folgeänderung** aus objekte (Familie (a), Strang C): die frühere Übereinstimmung kam vom Pseudoobjekt &1, das als Katalogrest C bekam. Mit KNA1 und KNB1 steht D gegen das C des Falls, das sich auf die katalogisierten Nachfolger stützt."
     },
     {
       "case": "CC-042",
       "class": "objekte",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "2 Tabellenobjekt(e) im Fall; Engine sieht 1: &1. Fehlend: KNA1 (read), KNB1 (read). Zugriffsart abweichend: —. Vom Fall nicht geführt: &1."
+      "state": "agree",
+      "verdict": null,
+      "reason": "2 Tabellenobjekt(e) im Fall; Engine sieht 2: KNA1, KNB1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —. 2.11, Defektfamilie (c): R27 — der Platzhalter &1 ist nie ein Objekt; die Wirkung der Expansion steht an den Aufrufstellen, also KNA1 (Zeile 7) und KNB1 (Zeile 9)."
     },
     {
       "case": "CC-042",
@@ -1556,15 +1556,15 @@
       "case": "CC-045",
       "class": "level",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "verdict": "engine-defekt",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte. 2.11, **Folgeänderung** aus objekte (Familie (a), Strang C): vorher sah die Engine kein Objekt, jetzt KNA1 aus der Typabhängigkeit — und benotet es mit D, wo der Fall C mit dem katalogisierten Nachfolger begründet."
     },
     {
       "case": "CC-045",
       "class": "objekte",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 0: —. Fehlend: KNA1 (type_reference). Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —. 2.11, Defektfamilie (c): R29 — TABLES: kna1, SELECT-OPTIONS … FOR kna1-kunnr, INCLUDE STRUCTURE kna1 und DATA … TYPE kna1 sind Typabhängigkeiten. Sie stehen als eigene Verwendung (Reference) mit vier Ankern, ohne Lesezugriff und ohne Befund."
     },
     {
       "case": "CC-045",
@@ -1620,21 +1620,21 @@
       "class": "befunde",
       "state": "disagree",
       "verdict": "nicht-vergleichbar",
-      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-047-F01 R29@2.0.0-draft@source.abap:2 — keine Brücke für R29, CC-047-F02 R01@1.0.0 + R33@2.0.0-draft@source.abap:6 — R01 ohne Gegenstück an „GET kna1\"."
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:6 standard-table-read. Ohne Gegenstück: CC-047-F01 R29@2.0.0-draft@source.abap:2 — keine Brücke für R29, CC-047-F02 R01@1.0.0 + R33@2.0.0-draft@source.abap:6 — R01 ohne Gegenstück an „GET kna1\". 2.11, Folge aus (c): die Engine meldet den LDB-Lesezugriff auf KNA1 jetzt am GET-Ereignis (Zeile 6). Die Brücke R01 verlangt ein SELECT in der Anweisung am Anker, deshalb bleibt der Fall unvergleichbar."
     },
     {
       "case": "CC-047",
       "class": "level",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
-      "reason": "Korpus C · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Die Engine hat an diesem Fall kein einziges Objekt gesehen, also auch keine Note vergeben — die A kommt aus worstGrade([]), das für die leere Liste 'A' liefert. Zu vergleichen gibt es hier nichts; festzuhalten ist, dass „kein Beleg\" in dieser Funktion als bestes Ergebnis herauskommt."
+      "verdict": "engine-defekt",
+      "reason": "Korpus C · Engine (schlechteste Katalognote über 1 Objekt(e)) D. Die Engine urteilt strenger. Der Fall begründet sein C mit dem katalogisierten Nachfolger (KNA1 → I_CUSTOMER), der aus derselben Quelle stammt, aus der die Engine ihre Note zieht. Eine Note, die den Nachfolger nicht berücksichtigt, liest den Katalogeintrag zur Hälfte. 2.11, **Folgeänderung** aus objekte (Familie (a), Strang C): mit KNA1 aus der LDB-Bindung benotet die Engine D, wo der Fall C mit dem katalogisierten Nachfolger begründet."
     },
     {
       "case": "CC-047",
       "class": "objekte",
-      "state": "disagree",
-      "verdict": "engine-defekt",
-      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 0: —. Fehlend: KNA1 (ldb_read). Zugriffsart abweichend: —. Vom Fall nicht geführt: —."
+      "state": "agree",
+      "verdict": null,
+      "reason": "1 Tabellenobjekt(e) im Fall; Engine sieht 1: KNA1. Fehlend: —. Zugriffsart abweichend: —. Vom Fall nicht geführt: —. 2.11, Defektfamilie (c): R33 — NODES: kna1 bindet den Report an den LDB-Knoten, GET kna1 liest die Sätze. KNA1 steht als Lesezugriff über die logische Datenbank, mit beiden Ankern."
     },
     {
       "case": "CC-047",

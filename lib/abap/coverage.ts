@@ -1,4 +1,5 @@
 import { tokenize } from './declaration-parser';
+import { readTableDependencies } from './table-dependencies';
 
 /**
  * What the evidence engine did NOT judge.
@@ -31,6 +32,7 @@ export type CoverageGap =
   | 'classic-list-output'
   | 'local-function-call'
   | 'dynamic-invocation'
+  | 'dynamic-target'
   | 'macro'
   | 'generated-code';
 
@@ -56,8 +58,13 @@ interface Rule {
   gap: CoverageGap;
   label: string;
   why: string;
-  /** Applied to the comment-stripped, upper-cased statement text. */
-  test: (upper: string) => boolean;
+  /**
+   * Applied to the comment-stripped, upper-cased statement text. `unresolved`
+   * says whether `readTableDependencies` left a dynamic target of this statement
+   * open — a question the text alone cannot answer, because `FROM (lc_tab)` is
+   * closed by a constant declared somewhere else.
+   */
+  test: (upper: string, at: { unresolved: boolean }) => boolean;
 }
 
 const RULES: Rule[] = [
@@ -94,6 +101,12 @@ const RULES: Rule[] = [
     test: (s) => /^WRITE\b/.test(s) && !/\bTO\b/.test(s),
   },
   {
+    gap: 'dynamic-target',
+    label: 'Table or type named at runtime',
+    why: 'The statement takes its table or type from a value the source does not close — an input, a variable, SQL text built at runtime. The engine names no target it cannot establish; a value the source shows for it, such as a DEFAULT, is listed as a possible target in the data coupling, never as the dependency.',
+    test: (_s, at) => at.unresolved,
+  },
+  {
     gap: 'macro',
     label: 'Macro definition',
     why: 'Macro bodies are expanded by the compiler, not by this engine, so any statement written inside one is invisible to every detector.',
@@ -115,11 +128,13 @@ function trim(text: string): string {
 
 export function assessCoverage(code: string): CoverageReport {
   const unassessed: UnassessedConstruct[] = [];
+  const unresolved = new Set(readTableDependencies(code).unresolved.map((target) => target.statement));
 
-  for (const stmt of tokenize(code)) {
+  for (const [index, stmt] of tokenize(code).entries()) {
     const upper = stmt.text.toUpperCase().trim();
+    const at = { unresolved: unresolved.has(index) };
     for (const rule of RULES) {
-      if (!rule.test(upper)) continue;
+      if (!rule.test(upper, at)) continue;
       unassessed.push({
         gap: rule.gap,
         label: rule.label,

@@ -3,6 +3,7 @@ import { SAP_API_CATALOG_VERSION } from './sap-api-catalog';
 import { MERGED_TABLE_MAP, getMergedCatalogVersion, hasNoReleasedApiPath, getSapObjectStates } from './catalog-service';
 
 import { assessCoverage, type CoverageReport } from './coverage';
+import { readTableDependencies, type DependencyRoute, type TableDependency } from './table-dependencies';
 
 export type EvidenceKind =
   | 'table-access'
@@ -109,33 +110,6 @@ function replacementProvenance(entry: { confidence?: string } | undefined): {
 }
 
 /**
- * Resolves ABAP CONSTANTS declarations to their literal values.
- * e.g. `CONSTANTS c_tcode_va02 VALUE 'VA02'` → { 'C_TCODE_VA02': 'VA02' }
- */
-function resolveConstants(code: string): Record<string, string> {
-  const map: Record<string, string> = {};
-  const re = /CONSTANTS\s+(\w+).*?VALUE\s+'([^']+)'/gi;
-  let m;
-  while ((m = re.exec(code)) !== null) {
-    map[m[1].toUpperCase()] = m[2];
-  }
-  return map;
-}
-
-/**
- * Names declared as local data objects in the source.
- *
- * The write detectors match the first token after INSERT / MODIFY / DELETE, and
- * ABAP uses those same keywords for internal tables. Without this, every
- * `INSERT ls_wa INTO TABLE lt_items` became a Critical "direct write to SAP
- * standard table LS_WA" — fabricated findings on ordinary code, which inflate
- * the Critical count, depress the Clean Core Score and can flip the routing
- * decision to side-by-side.
- *
- * Approximate by design: an unknown name is still treated as a table, so a real
- * database write is never missed. What this removes is the noise.
- */
-/**
  * Conventional ABAP prefixes for local/global data objects and parameters.
  * Used only in combination with "not present in either SAP artifact" — 103 real
  * SAP objects (CS_BOM_EXPL_MAT_V2, RS_*, CT_*) share these prefixes and must
@@ -143,55 +117,37 @@ function resolveConstants(code: string): Record<string, string> {
  */
 const LOCAL_NAME_PREFIX = /^(?:L[TSVORXD]_|G[TSVOR]_|[EIC][TSV]_|R[TSV]_|ME_|MO_|MT_|MS_|MV_)/;
 
-function collectLocalDataObjects(code: string): Set<string> {
-  const names = new Set<string>();
-  const add = (n?: string) => {
-    const v = (n || '').toUpperCase().replace(/[<>]/g, '').trim();
-    if (v) names.add(v);
-  };
-
-  // DATA foo TYPE …, CLASS-DATA, STATICS, CONSTANTS, FIELD-SYMBOLS, TYPES,
-  // PARAMETERS, SELECT-OPTIONS, RANGES — declaration keyword followed by a name.
-  const decl = /\b(?:CLASS-DATA|DATA|STATICS|CONSTANTS|FIELD-SYMBOLS|TYPES|PARAMETERS|SELECT-OPTIONS|RANGES)\s*:?\s*([\w<>\/]+)/gi;
-  for (const m of code.matchAll(decl)) add(m[1]);
-
-  // Chained declarations: DATA: a TYPE i, b TYPE string.
-  const chained = /\b(?:CLASS-DATA|DATA|STATICS|CONSTANTS|FIELD-SYMBOLS|TYPES)\s*:\s*([\s\S]*?)\./gi;
-  for (const m of code.matchAll(chained)) {
-    for (const part of m[1].split(',')) add(part.trim().split(/\s+/)[0]);
-  }
-
-  // Inline declarations: DATA(lv_x), @DATA(lt_x), FINAL(lv_y), FIELD-SYMBOL(<fs>)
-  const inline = /\b(?:@?DATA|FINAL|FIELD-SYMBOL)\(\s*([\w<>\/]+)\s*\)/gi;
-  for (const m of code.matchAll(inline)) add(m[1]);
-
-  // Signature parameters of methods and forms.
-  const params = /\b(?:IMPORTING|EXPORTING|CHANGING|RETURNING|USING|VALUE\(|REFERENCE\()\s*([\w\/]+)/gi;
-  for (const m of code.matchAll(params)) add(m[1]);
-
-  // LOOP AT it INTO wa / ASSIGNING <fs> — the target is a data object.
-  //
-  // One form is not: `INSERT INTO <dbtab> VALUES …`, the standard Open SQL
-  // insert. There the name after INTO is a database table, and registering it
-  // here as a local data object made `processTableAccess` return before it ever
-  // looked at it — so a direct write into an SAP standard table, in the most
-  // common syntax there is, produced no finding at all. Neither review pass
-  // found this; it surfaced while testing the neighbouring `INSERT <wa> INTO
-  // <itab>` fix, because the two share the keyword and nothing else.
-  const scanned = code.replace(/\bINSERT\s+INTO\b/gi, 'INSERT');
-  const targets = /\b(?:INTO|ASSIGNING)\s+(?:TABLE\s+)?([\w<>\/]+)/gi;
-  for (const m of scanned.matchAll(targets)) add(m[1]);
-
-  return names;
-}
+/**
+ * One sentence on how the table was reached, where it was not written in an
+ * ABAP SQL statement. The finding is the same finding — a direct read is a
+ * direct read whether a macro, a constant or a logical database carries it
+ * (R02: "der Schreibweg ändert den Effekt nicht") — but a reader looking for
+ * `SELECT … FROM kna1` in the quoted line would not find it without this.
+ */
+const ROUTE_NOTE: Partial<Record<DependencyRoute, string>> = {
+  'dynamic-sql': ' The table is named in a dynamic token whose value is a constant in this source.',
+  macro: ' The statement stands in a macro body; this is the call site that expands it.',
+  adbc: ' The table is named in SQL text executed through ADBC (CL_SQL_STATEMENT), which bypasses ABAP SQL.',
+  'logical-database': ' The rows are read by a logical database (GET); the SELECT runs there, not in this source.',
+};
 
 export function buildAbapEvidence(code: string, fileName: string, deployment?: 'public' | 'private'): AbapEvidenceReport {
   const findings: EvidenceFinding[] = [];
   const statements = tokenize(code);
   let idCounter = 1;
-  const constantsMap = resolveConstants(code);
-  const localDataObjects = collectLocalDataObjects(code);
   const isPublicCloud = deployment === 'public';
+
+  // Which tables each statement reads or writes — one reading, shared with the
+  // data coupling (`table-dependencies.ts`). A type reference is a dependency
+  // but no access, and a possible target of an unresolved dynamic name is not
+  // an access either (R26): neither becomes a finding here.
+  const dependencies = readTableDependencies(code);
+  const accessesAt = new Map<number, TableDependency[]>();
+  for (const dependency of dependencies.dependencies) {
+    if (dependency.access === 'reference' || dependency.possibleTargetOf) continue;
+    accessesAt.set(dependency.statement, [...(accessesAt.get(dependency.statement) ?? []), dependency]);
+  }
+  const adbcAt = new Set(dependencies.adbc.map((execution) => execution.statement));
 
   const FAKE_TABLES = new Set([
     'MODE', 'TASK', 'RISK', 'SCREEN', 'LINE', 'TABLE', 'INTO', 'FROM',
@@ -213,11 +169,13 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     });
   };
 
-  const processTableAccess = (tableName: string, isWrite: boolean, line: number, text: string) => {
+  const processTableAccess = (tableName: string, isWrite: boolean, line: number, text: string, route: DependencyRoute) => {
     const table = tableName.toUpperCase().trim();
     if (!table || table.length < 2 || FAKE_TABLES.has(table) || /^\d/.test(table)) return;
-    // A name declared in this source is a variable, not a database table.
-    if (localDataObjects.has(table)) return;
+    // A name declared in this source is a variable, not a database table —
+    // `readTableDependencies` has already asked the declarations, the same ones
+    // the data coupling asks.
+    const routeNote = ROUTE_NOTE[route] ?? '';
 
     const sapStates = getSapObjectStates(table);
     const knownToSap = Boolean(sapStates.releaseState || sapStates.classificationState);
@@ -250,7 +208,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
           objectType: 'Database Table',
           lineStart: line,
           snippet: text,
-          technicalDetail: `Direct modification statement (INSERT/UPDATE/MODIFY/DELETE) on custom table ${table}.`,
+          technicalDetail: `Direct modification statement (INSERT/UPDATE/MODIFY/DELETE) on custom table ${table}.${routeNote}`,
           cleanCoreImpact: 'Direct DB access bypasses the application layer and encapsulation, violating clean core rules.',
           recommendation: `Expose custom tables via RAP Business Objects (Developer Extensibility) or use Side-by-Side persistence in BTP (CAP).`,
           targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
@@ -265,7 +223,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
           objectType: 'Database Table',
           lineStart: line,
           snippet: text,
-          technicalDetail: `SELECT statement reading from custom table ${table}.`,
+          technicalDetail: `SELECT statement reading from custom table ${table}.${routeNote}`,
           cleanCoreImpact: 'Reading from custom tables directly is acceptable if wrapped in Tier-2 or CDS views, but should be checked for proper API usage.',
           recommendation: `Expose custom table via CDS view and wrap it in a RAP service layer.`,
           targetOptions: ['Developer Extensibility / RAP', 'Key User Extensibility']
@@ -283,7 +241,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
           objectType: 'Database Table',
           lineStart: line,
           snippet: text,
-          technicalDetail: `Direct modification statement on standard SAP table ${table}.`,
+          technicalDetail: `Direct modification statement on standard SAP table ${table}.${routeNote}`,
           cleanCoreImpact: 'Directly modifying standard SAP tables destroys system integrity, invalidates SAP guarantees, and blocks upgrades completely.',
           recommendation: `REPLACE IMMEDIATELY with official SAP released APIs (OData APIs, BAPIs) or RAP actions. Do NOT perform direct writes in S/4HANA.`,
           targetOptions: ['Developer Extensibility / RAP', 'Integration Suite'],
@@ -303,7 +261,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
           objectType: 'Database Table',
           lineStart: line,
           snippet: text,
-          technicalDetail: `Direct SELECT statement on standard SAP table ${table}.${isPublicCloud ? ' In Public Cloud this is a hard break — no direct table access allowed.' : ' In Private Cloud this creates upgrade risk that can be mitigated with Tier 2 wrappers.'}`,
+          technicalDetail: `Direct SELECT statement on standard SAP table ${table}.${routeNote}${isPublicCloud ? ' In Public Cloud this is a hard break — no direct table access allowed.' : ' In Private Cloud this creates upgrade risk that can be mitigated with Tier 2 wrappers.'}`,
           cleanCoreImpact: isPublicCloud
             ? 'In SAP S/4HANA Public Cloud, direct reads on standard tables are strictly forbidden. The system will reject custom code accessing unreleased objects.'
             : 'Direct read access to standard SAP tables couples custom code to SAP data models, creating upgrade dependencies. In Private Cloud, Tier 2 wrappers can mitigate this.',
@@ -319,68 +277,17 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     }
   };
 
-  for (const stmt of statements) {
+  statements.forEach((stmt, statementIndex) => {
     const text = stmt.text.trim();
-    if (!text) continue;
-    const upper = text.toUpperCase();
+    if (!text) return;
 
     // -- 1. Table Accesses --
-    if (/^SELECT\b/i.test(text)) {
-      const fromMatch = text.match(/\bFROM\s+([\s\S]+?)(?:\b(INTO|WHERE|ORDER|GROUP|UP|HAVING|UNION|FOR)\b|$)/i);
-      if (fromMatch) {
-        const tableArea = fromMatch[1].trim();
-        const parts = tableArea.split(/\b(?:INNER\s+|LEFT\s+(?:OUTER\s+)?|RIGHT\s+(?:OUTER\s+)?|FULL\s+(?:OUTER\s+)?|CROSS\s+)?JOIN\b/i);
-        for (const part of parts) {
-          const words = part.trim().split(/\s+/);
-          const tableName = words[0]?.replace(/[~,]/g, '').trim();
-          if (tableName) {
-            processTableAccess(tableName, false, stmt.line, text);
-          }
-        }
-      }
-    }
-
-    // ABAP spells internal-table and database operations with the same keywords.
-    // These clauses only ever appear on the internal-table form, so they are the
-    // reliable discriminator; the declared-name check in processTableAccess
-    // catches the rest.
-    const INTERNAL_TABLE_CLAUSE = /\b(?:INTO\s+TABLE|LINES\s+OF|INITIAL\s+LINE|ADJACENT\s+DUPLICATES|ASSIGNING|REFERENCE\s+INTO|TRANSPORTING|\bINDEX\b)/i;
-    const isInternalTableOp = INTERNAL_TABLE_CLAUSE.test(text);
-
-    // INSERT — database form is `INSERT tab FROM …` / `INSERT INTO tab VALUES …`.
-    //
-    // `INSERT <wa> INTO <itab>` is the internal-table form and carries none of
-    // the clauses above, so it used to fall through to the database branch and
-    // report the *work area* as an SAP standard table — a Critical finding on a
-    // variable. The declared-name guards in processTableAccess catch it only
-    // when the declaration is in the upload and the name follows the `LS_`/`GS_`
-    // convention; neither holds for the partial snippets people actually paste.
-    //
-    // The discriminator is where INTO sits: after a name it is the internal
-    // form, immediately after INSERT it is Open SQL.
-    const insertIntoItab = /^INSERT\s+[\w\/]+(?:-[\w]+)*\s+INTO\b/i.test(text);
-    const insertMatch = text.match(/^INSERT\s+(?:INTO\s+)?([\w\/]+)/i);
-    if (insertMatch && !isInternalTableOp && !insertIntoItab) {
-      processTableAccess(insertMatch[1], true, stmt.line, text);
-    }
-
-    // UPDATE — no internal-table form, so no guard needed.
-    const updateMatch = text.match(/^UPDATE\s+([\w\/]+)/i);
-    if (updateMatch) processTableAccess(updateMatch[1], true, stmt.line, text);
-
-    // MODIFY — `MODIFY TABLE itab`, `MODIFY itab … INDEX n` and TRANSPORTING are internal.
-    const modifyMatch = text.match(/^MODIFY\s+([\w\/]+)/i);
-    if (modifyMatch && !isInternalTableOp && !['SCREEN', 'LINE', 'TABLE'].includes(modifyMatch[1].toUpperCase())) {
-      processTableAccess(modifyMatch[1], true, stmt.line, text);
-    }
-
-    // DELETE — database form is `DELETE FROM tab WHERE …`; `DELETE itab …` is internal.
-    const deleteMatch = text.match(/^DELETE\s+(?:FROM\s+)?([\w\/]+)/i);
-    const isDbDelete = /^DELETE\s+FROM\b/i.test(text) || /^DELETE\s+[\w\/]+\s+FROM\b/i.test(text);
-    // `DELETE itab WHERE …` (no FROM) only exists for internal tables.
-    const isInternalDelete = !isDbDelete && /^DELETE\s+[\w\/]+\s+WHERE\b/i.test(text);
-    if (deleteMatch && !isInternalDelete && (isDbDelete || !isInternalTableOp) && !['FROM', 'TABLE', 'ADJACENT'].includes(deleteMatch[1].toUpperCase())) {
-      processTableAccess(deleteMatch[1], true, stmt.line, text);
+    // Read by `readTableDependencies`, the one reader of `SELECT … FROM`, the
+    // DML statements, dynamic targets a constant closes, macro call sites, ADBC
+    // SQL text and logical-database reads. The internal-table forms of INSERT,
+    // MODIFY and DELETE are told apart there (`open-sql-discrimination.ts`).
+    for (const access of accessesAt.get(statementIndex) ?? []) {
+      processTableAccess(access.table, access.access === 'write', access.line, access.snippet, access.route);
     }
 
     // -- 2. Legacy Pattern Detections --
@@ -485,6 +392,23 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
         technicalDetail: `EXEC SQL block detected. Direct database bypass.`,
         cleanCoreImpact: 'Native SQL bypasses database abstraction, creates hard database vendor locks, and fails completely in SAP S/4HANA Cloud (Public Edition).',
         recommendation: `Rewrite database queries using standard Open SQL (ABAP SQL) or CDS views.`,
+        targetOptions: ['Developer Extensibility / RAP']
+      });
+    } else if (adbcAt.has(statementIndex)) {
+      // ADBC is native SQL without the keyword: `lo_stmt->execute_update( lv_sql )`
+      // hands its text to the database as it stands (R13b, role a). The pattern
+      // above looked for `EXEC SQL` and nothing else, so a program writing KNA1
+      // through CL_SQL_STATEMENT produced one finding — its COMMIT WORK (CC-034).
+      addFinding({
+        kind: 'native-sql',
+        title: 'Native SQL through ADBC (CL_SQL_STATEMENT)',
+        severity: 'Critical',
+        confidence: 'High',
+        lineStart: stmt.line,
+        snippet: text,
+        technicalDetail: `ADBC call that executes SQL text on the database connection. The text is interpreted SQL, not ABAP SQL: no table buffering, no automatic client handling, no syntax check at compile time.`,
+        cleanCoreImpact: 'Native SQL bypasses database abstraction, creates hard database vendor locks, and fails completely in SAP S/4HANA Cloud (Public Edition).',
+        recommendation: `Rewrite the statement in ABAP SQL against released CDS views, or call a released API for the write.`,
         targetOptions: ['Developer Extensibility / RAP']
       });
     }
@@ -684,7 +608,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
         targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
       });
     }
-  }
+  });
 
   // -- 4. Core modifications --
   // Modification markers are full-line comments, which tokenize() drops by

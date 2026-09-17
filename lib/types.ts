@@ -200,7 +200,13 @@ export interface CodeInventoryItem {
 /** Database table access detected in code */
 export interface DataCouplingEntry {
   tableName: string;
-  accessType: 'Read' | 'Write' | 'Read/Write';
+  /**
+   * `Reference` (since 2.11): the program depends on the table's definition —
+   * `TABLES`, `TYPE kna1`, `INCLUDE STRUCTURE`, a logical-database node, a
+   * global data object of another program — without reading or writing a row
+   * itself (R29). It is neither a read nor a write; test for writes by name.
+   */
+  accessType: 'Read' | 'Write' | 'Read/Write' | 'Reference';
   isCustom: boolean;
   riskLevel: 'High' | 'Medium' | 'Low';
   recommendation: string;
@@ -210,6 +216,18 @@ export interface DataCouplingEntry {
   lineNumbers?: number[];
   snippets?: string[];
   replacementConfidence?: 'Catalog Match' | 'Verified' | 'Candidate' | 'Needs Validation';
+  /**
+   * How the dependency is established, where that is not only ABAP SQL
+   * (`lib/abap/table-dependencies.ts`). Absent on entries stored before 2.11 and
+   * on entries read from ABAP SQL alone.
+   */
+  via?: Array<'open-sql' | 'dynamic-sql' | 'macro' | 'adbc' | 'logical-database' | 'type-reference' | 'program-global'>;
+  /**
+   * Set when every occurrence is only a *possible* target: a dynamic name the
+   * source does not close (`FROM (p_tab)`) shows this value — a DEFAULT, a
+   * literal assignment — and nothing more (R26). Lists the dynamic names.
+   */
+  possibleTargetOf?: string[];
 }
 
 

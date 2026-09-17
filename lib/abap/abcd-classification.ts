@@ -116,7 +116,10 @@ export function gradeFromCoupling(c: { accessType?: string; riskLevel?: string; 
   // instead of silently defaulting to Medium (avoids false precision).
   const risk = c.riskLevel;
   if (risk !== 'High' && risk !== 'Medium' && risk !== 'Low') return 'Unknown';
-  const isWrite = (c.accessType || '').toLowerCase() !== 'read';
+  // A type reference (`Reference`, 2.11) reads no row and writes none. A missing
+  // access type still grades as a write, as it did: the stricter reading.
+  const access = (c.accessType || '').toLowerCase();
+  const isWrite = access !== 'read' && access !== 'reference';
   if (risk === 'High') return isWrite ? 'D' : 'C';
   if (risk === 'Medium') return isWrite ? 'C' : 'B';
   return 'A'; // Low risk

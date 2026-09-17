@@ -502,6 +502,26 @@ function readConstants(
   return { declared, index: { byName } };
 }
 
+/**
+ * Every `CONSTANTS` declaration with a literal value, for a caller that holds
+ * only the source.
+ *
+ * `lib/abap/table-dependencies.ts` asks this whether `FROM (lc_tab)` names one
+ * table (R07). It reads the constants here rather than with a pattern of its
+ * own, so that the rule candidate a constant produces and the table it names
+ * come from the same reading — including the two things a pattern gets wrong:
+ * a declaration inside a macro body is no declaration, and a name declared
+ * twice has no single value (`byName` holds `null` for it).
+ */
+export function readConstantDeclarations(source: string): {
+  declared: DeclaredConstant[];
+  byName: Map<string, DeclaredConstant | null>;
+} {
+  const statements = readStatements(source);
+  const { declared, index } = readConstants(statements, readBlocks(statements));
+  return { declared, byName: index.byName };
+}
+
 interface Reader {
   rejected: RejectedLiteral[];
   drafts: Draft[];

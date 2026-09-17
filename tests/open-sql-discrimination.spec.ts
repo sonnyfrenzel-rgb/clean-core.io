@@ -77,12 +77,23 @@ test.describe('the coupling report of the assessment engine', () => {
 });
 
 test('both engines read the same rule', () => {
+  // Since 2.11 the shared reading is `table-dependencies.ts`: it asks this
+  // module which DML statements are database writes, and it is the only place
+  // that reads `SELECT … FROM`, a dynamic target, a macro call site or ADBC SQL
+  // text. Both engines read it, and neither keeps a copy of a detector.
   const assessment = readFileSync(join(process.cwd(), 'lib/abap/code-assessment.ts'), 'utf8');
-  expect(assessment).toContain("from './open-sql-discrimination'");
-  // The private copies of the detectors are gone.
-  expect(assessment).not.toMatch(/const insertMatch = text\.match/);
-  expect(assessment).not.toMatch(/const modifyMatch = text\.match/);
-  expect(assessment).not.toMatch(/const deleteMatch = text\.match/);
+  const evidence = readFileSync(join(process.cwd(), 'lib/abap/evidence-model.ts'), 'utf8');
+  const shared = readFileSync(join(process.cwd(), 'lib/abap/table-dependencies.ts'), 'utf8');
+  expect(assessment).toContain("from './table-dependencies'");
+  expect(evidence).toContain("from './table-dependencies'");
+  expect(shared).toContain("from './open-sql-discrimination'");
+  // The private copies of the detectors are gone — from both engines.
+  for (const [name, source] of [['code-assessment', assessment], ['evidence-model', evidence]] as const) {
+    expect(source, `${name} keeps its own INSERT detector`).not.toMatch(/const insertMatch = text\.match/);
+    expect(source, `${name} keeps its own MODIFY detector`).not.toMatch(/const modifyMatch = text\.match/);
+    expect(source, `${name} keeps its own DELETE detector`).not.toMatch(/const deleteMatch = text\.match/);
+    expect(source, `${name} keeps its own FROM parser`).not.toMatch(/const fromMatch = text\.match/);
+  }
 });
 
 test.describe('an internal-table word is only a clause where it is syntax', () => {
