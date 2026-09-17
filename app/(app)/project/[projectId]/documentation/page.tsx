@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, runTransaction } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
@@ -28,6 +28,15 @@ import { sha256Hex } from '@/lib/artefact-digest';
 import { useProcessMap } from '@/hooks/useProcessMap';
 import { useProcessMapAddress } from '@/hooks/useProcessMapAddress';
 import { buildNavigation, levelOf, resolveMapAddress } from '@/lib/process-navigation';
+import {
+  ensureProcessBaseline,
+  revisionOutcomeSentence,
+  saveProcessRevision,
+} from '@/lib/process-revisions-client';
+import type {
+  SaveProcessModelInput,
+  SaveProcessModelResult,
+} from '@/components/process-map/BpmnEditor';
 
 const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
   let files: Array<{ path: string, content: string }> = [];
@@ -67,6 +76,19 @@ const ProcessFlow = dynamic(() => import('@/components/ProcessFlow'), { ssr: fal
  * screen and what leaves the building are the same process.
  */
 const ProcessMap = dynamic(() => import('@/components/process-map/ProcessMap'), { ssr: false });
+
+/**
+ * Roadmap 3.2 — the history of the process and the comparison of two revisions.
+ *
+ * Client only for the same reason as the map above: it reads BPMN to compare
+ * two files, and a reader who never opens this stage should not pay for that.
+ * It fetches and draws on its own; all it is given is the project, a key that
+ * changes after every save, and permission to reconstruct revision 1.
+ */
+const RevisionCompare = dynamic(
+  () => import('@/components/process-revisions/RevisionCompare'),
+  { ssr: false },
+);
 
 // Robust JSON Extractor
 const extractJSON = (text: string) => {
@@ -490,6 +512,104 @@ Structure the JSON exactly like this:
     }));
   }, [goToAddress, mapNav]);
 
+  /* ------------------------------------------------------------------ *
+   * Roadmap 3.2 — the seam between the editor and the revisions.
+   * ------------------------------------------------------------------ */
+
+  /**
+   * The revision this draft was opened from.
+   *
+   * A **ref**, not state, and for the same reason the draft in `ProcessMap` is
+   * one: the editor is mounted inside a memoised tree and a state change here
+   * re-renders it. The number is read and written by the callback below and by
+   * nothing that paints.
+   *
+   * `null` means "not established yet" — the baseline call has not answered, or
+   * the last save was refused. The next save establishes it again rather than
+   * guessing at 1: guessing is exactly what `revision-moved` exists to catch.
+   */
+  const baseRevision = useRef<number | null>(null);
+  /** Bumped after every answered save, so the history panel reloads. */
+  const [revisionsKey, setRevisionsKey] = useState(0);
+
+  /**
+   * Reconstruct revision 1 when this project has none — on opening the stage.
+   *
+   * Safe on every open by contract (`ensureProcessBaseline`): a project that
+   * already has revision 1 is not reconstructed again, and the answer is the
+   * revision that is there. It runs only once the source is the one the run
+   * signed, because that is the only state in which the server would write it.
+   *
+   * This is the **only** baseline call on this page. `RevisionCompare` can make
+   * one of its own and is deliberately not asked to: two of them on every open
+   * would be two writes against a per-account rate limit, for one revision that
+   * either exists or is written once. The list is told to reload instead.
+   */
+  useEffect(() => {
+    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
+    if (!idStr || !signedSource) return;
+    let cancelled = false;
+    void ensureProcessBaseline(idStr).then((outcome) => {
+      if (cancelled || !outcome.ok) return;
+      baseRevision.current = outcome.record.revision;
+      setRevisionsKey((token) => token + 1);
+    });
+    return () => { cancelled = true; };
+  }, [projectId, signedSource]);
+
+  /**
+   * Keep the draft as a revision — what `BpmnEditor` calls when Save is pressed.
+   *
+   * The adapter, and it is deliberately thin. `xml` is the only part of the
+   * editor's input that travels: the reconstruction (`baseXml`) and the file
+   * name are the server's own, built from the source the signed run named, and
+   * a browser that sent them would be sending the one thing the store refuses
+   * to take from a browser.
+   *
+   * Every refusal becomes a sentence through `revisionOutcomeSentence` — never
+   * the raw `code`, which is a word for this file and not for a reader — and
+   * `created: false` is reported as an outcome, not as a failure: saving bytes
+   * that are already the newest revision is supposed to write nothing.
+   */
+  const saveProcessModel = useCallback(async ({ xml }: SaveProcessModelInput): Promise<SaveProcessModelResult> => {
+    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
+    if (!idStr) {
+      return { ok: false, message: 'This project could not be identified, so nothing was saved.' };
+    }
+
+    // The baseline first, when it is not established: a save into an empty
+    // history has no revision to be based on, and the server reconstructs
+    // revision 1 before it accepts an edit anyway.
+    if (baseRevision.current === null) {
+      const baseline = await ensureProcessBaseline(idStr);
+      if (!baseline.ok) {
+        setRevisionsKey((token) => token + 1);
+        return { ok: false, message: revisionOutcomeSentence(baseline) };
+      }
+      baseRevision.current = baseline.record.revision;
+    }
+
+    const outcome = await saveProcessRevision(idStr, xml, baseRevision.current);
+    setRevisionsKey((token) => token + 1);
+
+    if (outcome.ok) {
+      baseRevision.current = outcome.record.revision;
+      return {
+        ok: true,
+        message: revisionOutcomeSentence(outcome),
+        revisionId: String(outcome.record.revision),
+      };
+    }
+
+    // On `revision-moved` the base is left exactly where it was. Moving it to
+    // the server's `latest` would make the next press of Save write this draft
+    // over a revision nobody here has seen, and clearing it would make the next
+    // press ask for the baseline again and be refused for the same reason with
+    // one more request. The reader is told which revision to open, and the
+    // history below has just reloaded so that revision is on the screen.
+    return { ok: false, message: revisionOutcomeSentence(outcome) };
+  }, [projectId]);
+
   const downloadBPMN = async () => {
     if (!signedSource) return;
     // Loaded on the click: the reader of this stage pays for the ABAP reader
@@ -818,6 +938,7 @@ Structure the JSON exactly like this:
               onPlaneChange={openPlane}
               selected={resolved.node}
               onSelectedChange={selectElement}
+              save={saveProcessModel}
             />
           ) : (
             <p className="text-sm font-medium text-gray-500">
@@ -826,6 +947,19 @@ Structure the JSON exactly like this:
                 : 'Reading the process out of the source…'}
             </p>
           )}
+
+          {/* Roadmap 3.2 — what was kept, and what changed between two of them.
+              Under the map rather than beside it: the process is the subject and
+              its history is the account of it. It reads only; the effect above
+              is what reconstructs revision 1, and `refreshKey` is what brings
+              this list back after that and after every save. */}
+          <div data-process-revisions-section className="mt-6 border-t border-gray-100 pt-6">
+            <h4 className="mb-3 text-[15px] font-bold text-cc-ink">Revisions of this process</h4>
+            <RevisionCompare
+              projectId={(Array.isArray(projectId) ? projectId[0] : projectId) ?? ''}
+              refreshKey={revisionsKey}
+            />
+          </div>
         </div>
       )}
 

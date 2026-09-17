@@ -6,6 +6,7 @@ import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc, adminDocExists } from './helpers/admin-seed';
 import { sha256Hex } from '../lib/artefact-digest';
+import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
 import { diffProcessRevisions, type ProcessRevisionRecord, type ProcessRevisionSummary } from '../lib/process-revisions';
 
@@ -26,11 +27,21 @@ import { diffProcessRevisions, type ProcessRevisionRecord, type ProcessRevisionS
  *      revision is refused rather than silently branching;
  *   5. only the owner reads or writes, and no browser reads the subcollection
  *      straight out of Firestore;
- *   6. deleting the project takes the revisions with it (`recursiveDelete`).
+ *   6. deleting the project takes the revisions with it (`recursiveDelete`);
+ *   7. **revision 1 comes from a run that was loaded and verified.** The route
+ *      used to take `activeRunId` on faith and reconstruct from the project's
+ *      mirrored fingerprint, so any truthy id — one naming no run at all, or a
+ *      run whose document had been altered — produced a revision 1 claiming to
+ *      be the source that run signed (QA finding 33e0feb4fe87).
  *
  * The editor is roadmap 3.1 and is not under test here. The bodies posted below
  * are BPMN edited the way an editor edits it — the id stays, the name moves —
  * because that is the contract the comparison of two revisions rests on.
+ *
+ * The run seeded below is **signed**, with the same hash and HMAC
+ * `api/runs/create` produces, because claim 7 is what makes the difference
+ * between a fixture and a decoration: a run document with no signature would be
+ * refused, and every test here would fail for that reason instead of its own.
  */
 
 const STAMP = Date.now();
@@ -39,6 +50,11 @@ const OTHER_EMAIL = `process-revisions-other-${STAMP}@cleancore-test.io`;
 const SIGN_IN = `spec-${process.pid}-${Math.random().toString(36).slice(2)}-Aa1!`;
 const PROJECT_ID = `process-revisions-${STAMP}`;
 const DOOMED_ID = `process-revisions-doomed-${STAMP}`;
+/** Claim 7: a project pointing at a run that was never written. */
+const GHOST_RUN_ID = `process-revisions-ghost-${STAMP}`;
+/** Claim 7: a project whose run document exists and no longer hashes to its own runHash. */
+const ALTERED_RUN_ID = `process-revisions-altered-${STAMP}`;
+const RUN_ID = `run-${STAMP}`;
 
 const PROGRAM = [
   'REPORT z_revision_store.',
@@ -59,6 +75,44 @@ const PROGRAM = [
 
 const FILE_NAME = 'z_revision_store.abap';
 const SOURCE_SHA = sha256Hex(PROGRAM);
+
+/**
+ * A run document the way `api/runs/create` writes one: the payload, its hash
+ * recomputed over exactly that payload, and the HMAC over the hash.
+ *
+ * `AUDIT_SIGNING_KEY` is set at module scope in `playwright.config.ts` and the
+ * server inherits it, so what is signed here is what the route verifies with.
+ */
+function signedRun(projectId: string, runId: string, over: Record<string, unknown> = {}) {
+  const unsigned = {
+    runId,
+    projectId,
+    userId: uid,
+    createdAt: new Date().toISOString(),
+    status: 'completed',
+    inputFingerprint: {
+      sha256: SOURCE_SHA,
+      fileName: FILE_NAME,
+      lineCount: PROGRAM.split('\n').length,
+      byteSize: Buffer.byteLength(PROGRAM, 'utf8'),
+      objectType: 'Report',
+    },
+    analyzerVersion: '2.11.0',
+    rulesetVersion: 'rules-v1.0',
+    sapApiCatalogVersion: '2024.FPS02',
+    extensibilityRoute: 'rap',
+    cleanCoreScore: 71,
+    complexityScore: 40,
+    criticalityScore: 55,
+    evidenceReport: [],
+    dataCoupling: [],
+    codeInventory: [],
+    worklist: [],
+    ...over,
+  };
+  const runHash = recomputeStoredRunHash(unsigned);
+  return { ...unsigned, analysis: '{}', runHash, signature: signRunHash(runHash, process.env.AUDIT_SIGNING_KEY!) };
+}
 
 let uid = '';
 let otherUid = '';
@@ -119,14 +173,26 @@ test.beforeAll(async () => {
       termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
     });
   }
-  for (const id of [PROJECT_ID, DOOMED_ID]) {
+  for (const id of [PROJECT_ID, DOOMED_ID, GHOST_RUN_ID, ALTERED_RUN_ID]) {
     await adminSetDoc('projects', id, {
       name: 'Requisition release', userId: uid, createdAt: new Date(),
       status: 'analyzed', legacyCode: PROGRAM, s4Deployment: 'private',
-      activeRunId: `run-${STAMP}`,
+      activeRunId: RUN_ID,
       inputFingerprint: { sha256: SOURCE_SHA, fileName: FILE_NAME },
     });
   }
+  // Two of them get a run; the third points at nothing and the fourth at a
+  // document that was altered after it was signed.
+  for (const id of [PROJECT_ID, DOOMED_ID]) {
+    await adminSetDoc(`projects/${id}/runs`, RUN_ID, signedRun(id, RUN_ID));
+  }
+  const altered = signedRun(ALTERED_RUN_ID, RUN_ID);
+  await adminSetDoc(`projects/${ALTERED_RUN_ID}/runs`, RUN_ID, {
+    ...altered,
+    // One field moved after signing, and `runHash` left where it was — exactly
+    // what an Admin-SDK repair or a compromised path leaves behind.
+    cleanCoreScore: 99,
+  });
 });
 
 test('the server under test has the route', async ({ request }) => {
@@ -152,7 +218,7 @@ test('revision 1 is the process reconstructed by the server, and a browser canno
   expect(one.xml).not.toBe(forged);
   expect(one.sourceSha256).toBe(SOURCE_SHA);
   expect(one.fileName).toBe(FILE_NAME);
-  expect(one.runId).toBe(`run-${STAMP}`);
+  expect(one.runId).toBe(RUN_ID);
   expect(one.flowNodes).toBe(expected.stats.flowNodes);
   expect(one.anchored).toBe(expected.stats.anchored);
 
@@ -273,6 +339,51 @@ test('only the owner reads or writes, and no browser reads the revisions out of 
   // …while the same session reads the project itself, so the refusal above is
   // the rule and not a signed-out client.
   expect((await getDoc(doc(clientDb, 'projects', PROJECT_ID))).exists()).toBe(true);
+});
+
+test('an activeRunId that names no run reconstructs nothing', async ({ request }) => {
+  // The finding, as a request. This project carries a truthy `activeRunId` and
+  // the mirrored fingerprint of its own source — everything the route used to
+  // check — and there is no such run. Before the fix this answered 201 and
+  // wrote a revision 1 saying it was the source that run signed.
+  const ghost = `/api/projects/${GHOST_RUN_ID}/process-revisions`;
+  const res = await request.post(ghost, { headers: headers(), data: {} });
+  expect(res.status(), await res.text()).toBe(409);
+  const body = await res.json();
+  expect(body.code).toBe('run-unverified');
+  // It names no reason a caller could probe with: not "no such run", not
+  // "signature", not the id.
+  expect(body.error).not.toContain(RUN_ID);
+
+  expect(
+    await adminDocExists(`projects/${GHOST_RUN_ID}/process_revisions`, '1'),
+    'a revision 1 was written for a run that does not exist',
+  ).toBe(false);
+  const history = await request.get(ghost, { headers: headers() });
+  expect(history.status()).toBe(200);
+  expect((await history.json()).revisions).toEqual([]);
+});
+
+test('a run altered after it was signed reconstructs nothing', async ({ request }) => {
+  // `runHash` is still the hash of the payload as it was signed, and the payload
+  // is not that payload any more. Confirming that the field is present — which
+  // is all this route could have done without loading the run — would pass.
+  const altered = `/api/projects/${ALTERED_RUN_ID}/process-revisions`;
+  const res = await request.post(altered, { headers: headers(), data: {} });
+  expect(res.status(), await res.text()).toBe(409);
+  expect((await res.json()).code).toBe('run-unverified');
+  expect(await adminDocExists(`projects/${ALTERED_RUN_ID}/process_revisions`, '1')).toBe(false);
+
+  // Put the run back as it was signed and the same request writes revision 1:
+  // the refusal above was the alteration and not the fixture.
+  await adminSetDoc(`projects/${ALTERED_RUN_ID}/runs`, RUN_ID, signedRun(ALTERED_RUN_ID, RUN_ID));
+  const repaired = await request.post(altered, { headers: headers(), data: {} });
+  expect(repaired.status(), await repaired.text()).toBe(201);
+  const record = (await repaired.json()).record as ProcessRevisionRecord;
+  expect(record.revision).toBe(1);
+  expect(record.origin).toBe('reconstructed');
+  expect(record.runId).toBe(RUN_ID);
+  expect(record.sourceSha256).toBe(SOURCE_SHA);
 });
 
 test('deleting the project takes its revisions with it', async ({ request }) => {

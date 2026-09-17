@@ -23,7 +23,7 @@ import {
   type ProcessSearchHit,
 } from '@/lib/process-navigation';
 import BpmnCanvas from './BpmnCanvas';
-import BpmnEditor from './BpmnEditor';
+import BpmnEditor, { type SaveProcessModel } from './BpmnEditor';
 import ProcessBreadcrumb from './ProcessBreadcrumb';
 import ProcessCodeCard from './ProcessCodeCard';
 import ProcessFilters, { type PathHighlight } from './ProcessFilters';
@@ -98,6 +98,18 @@ import ProcessStepList from './ProcessStepList';
  * a string and hands a string back, *Discard* forgets the string, and the map
  * beside it goes on drawing `model.xml`. Whether a draft becomes a revision is
  * roadmap 3.2 and is not decided in this file.
+ *
+ * ## Roadmap 3.2 — `save`, and why it is only handed through
+ *
+ * This component takes a model and a source. It has no `projectId`, it makes no
+ * request, and it is not going to get one: the moment a view knows how to reach
+ * a store, every caller has to think about which store. So `save` is a function
+ * the caller supplies and this file passes to `BpmnEditor` unread. The page that
+ * mounts the map knows the project and builds it (`documentation/page.tsx`).
+ *
+ * Optional and additive: every other prop is what it was, and a caller that
+ * omits `save` gets the editor's own footer sentence. 3.1 and 3.6 inherit the
+ * interface unchanged, which was the whole point of writing it down in 2.9.
  */
 export type ProcessMapView = 'map' | 'steps';
 
@@ -118,6 +130,13 @@ export interface ProcessMapProps {
   defaultView?: ProcessMapView;
   /** When the quote was last measured and stored for this source. */
   measuredAt?: string | null;
+  /**
+   * Roadmap 3.2 — keep the draft as a revision. Handed straight to the editor.
+   *
+   * Omitted here means omitted there, and the editor's footer says saving is not
+   * wired up rather than pretending to have saved.
+   */
+  save?: SaveProcessModel;
 }
 
 export default function ProcessMap({
@@ -131,6 +150,7 @@ export default function ProcessMap({
   onViewChange,
   defaultView = 'map',
   measuredAt = null,
+  save,
 }: ProcessMapProps) {
   const [viewLocal, setViewLocal] = useState<ProcessMapView>(defaultView);
   const [selectedLocal, setSelectedLocal] = useState<string | null>(null);
@@ -563,6 +583,7 @@ export default function ProcessMap({
               onSelectedChange={setSelected}
               onDraftChange={keepDraft}
               onDiscard={discardDraft}
+              save={save}
             />
           ) : view === 'map' ? (
             <BpmnCanvas

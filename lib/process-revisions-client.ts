@@ -72,6 +72,13 @@ export type SaveRevisionRefusal =
   | 'revision-moved'
   | 'no-source'
   | 'no-run'
+  /**
+   * The project points at a run, and that run could not be shown to be the run
+   * that signed its source: no such document, one that names another project,
+   * or one whose HMAC does not check out. Revision 1 is the Ist of a signed run
+   * or it is nothing, so no reconstruction is written.
+   */
+  | 'run-unverified'
   | 'source-moved'
   | 'format-version'
   | 'unreachable';
@@ -121,6 +128,81 @@ export async function saveProcessRevision(
   return post(projectId, { xml, baseRevision });
 }
 
+/** The refusals this build knows, as values — the union above, once. */
+export const SAVE_REVISION_REFUSALS: readonly SaveRevisionRefusal[] = Object.freeze([
+  'bad-request',
+  'too-large',
+  'not-bpmn',
+  'revision-moved',
+  'no-source',
+  'no-run',
+  'run-unverified',
+  'source-moved',
+  'format-version',
+  'unreachable',
+] as SaveRevisionRefusal[]);
+
+function isSaveRevisionRefusal(value: unknown): value is SaveRevisionRefusal {
+  return typeof value === 'string' && (SAVE_REVISION_REFUSALS as readonly string[]).includes(value);
+}
+
+/**
+ * One outcome, one sentence a reader can act on.
+ *
+ * A screen that prints `code` prints a word nobody outside this file knows, and
+ * a screen that prints the server's `error` prints a sentence written for the
+ * next programmer. So the translation lives here, next to the codes it covers,
+ * where it is asserted without a browser — and every code has a case, because
+ * the parameter is the union and TypeScript refuses a `switch` that misses one.
+ *
+ * Two things it is careful about:
+ *
+ *   - **`created: false` is not a failure.** Saving bytes that are already the
+ *     newest revision writes nothing on purpose. The sentence says nothing
+ *     changed; it does not apologise for an error that did not happen.
+ *   - **`revision-moved` says what to do.** Somebody else saved while this tab
+ *     was open. "Could not be saved" leaves the reader with a draft and no next
+ *     move, so the sentence names the revision to open.
+ */
+export function revisionOutcomeSentence(outcome: SaveRevisionOutcome): string {
+  if (outcome.ok) {
+    return outcome.created
+      ? `Saved as revision ${outcome.record.revision}.`
+      : `Nothing has changed since revision ${outcome.record.revision}, so no new revision was written.`;
+  }
+  switch (outcome.code) {
+    case 'bad-request':
+      return 'This model was not accepted by the store. Reload the page and try saving again.';
+    case 'too-large':
+      return 'This model is too large to keep as a revision. Remove some elements and save again.';
+    case 'not-bpmn':
+      return 'This draft is not a BPMN 2.0 document, so nothing was saved.';
+    case 'revision-moved':
+      return typeof outcome.latest === 'number'
+        ? `Revision ${outcome.latest} was saved from somewhere else while this draft was open. Nothing was overwritten.`
+          + ` Reload the process, open revision ${outcome.latest} and apply your change to it.`
+        : 'A newer revision was saved while this draft was open. Nothing was overwritten. Reload the process and'
+          + ' apply your change to the newer revision.';
+    case 'no-source':
+      return 'This project has no source, so there is no process to keep a revision of.';
+    case 'no-run':
+      return 'This project has no active analysis run. Analyse the source again, then save.';
+    case 'run-unverified':
+      return 'The analysis run this project points at could not be verified as the run that signed its source.'
+        + ' Nothing was saved — analyse the source again, then save.';
+    case 'source-moved':
+      return 'The source changed since the run signed it. Analyse it again before a revision is kept.';
+    case 'format-version':
+      return 'The first revision of this process was written in a shape this build cannot read, so nothing was saved.';
+    case 'unreachable':
+      // Two states share this code: the request never arrived, and it arrived
+      // and was refused for a reason this build has no word for. The sentence
+      // has to be true of both, so it claims neither.
+      return 'This revision could not be saved, and the store gave no reason this build understands. Nothing was'
+        + ' written and your draft is still on the canvas.';
+  }
+}
+
 async function post(projectId: string, payload: Record<string, unknown>): Promise<SaveRevisionOutcome> {
   try {
     const res = await fetch(processRevisionsPath(projectId), {
@@ -140,7 +222,11 @@ async function post(projectId: string, payload: Record<string, unknown>): Promis
     }
     return {
       ok: false,
-      code: (body.code as SaveRevisionRefusal) || 'unreachable',
+      // A code this build does not know is not a code. It used to be passed
+      // through as one, so a newer server — or a proxy answering with its own
+      // JSON — could put a value in the union that nothing here has a sentence
+      // for, and the sentence came out `undefined`.
+      code: isSaveRevisionRefusal(body.code) ? body.code : 'unreachable',
       error: body.error || `This revision could not be saved (${res.status}).`,
       status: res.status,
       ...(typeof body.latest === 'number' ? { latest: body.latest } : {}),

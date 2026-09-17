@@ -6,6 +6,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { sha256Hex } from '../lib/artefact-digest';
+import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { buildProcessMapModel, type ProcessMapModel } from '../lib/process-map';
@@ -291,10 +292,20 @@ test.describe('the editor of roadmap 3.1', () => {
       inputFingerprint: fingerprint,
     });
 
-    await adminSetDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, {
+    // Signed the way `api/runs/create` signs one. Since the QA finding of
+    // 33e0feb4fe87 the revision store loads this document and verifies its HMAC
+    // before it reconstructs anything, so an unsigned fixture would make the
+    // stage's baseline call fail for a reason that has nothing to do with 3.1.
+    const unsignedRun = {
       runId: RUN_ID, projectId: PROJECT_ID, userId: uid,
       createdAt: new Date().toISOString(), status: 'completed',
       inputFingerprint: fingerprint,
+    };
+    const runHash = recomputeStoredRunHash(unsignedRun);
+    await adminSetDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, {
+      ...unsignedRun,
+      runHash,
+      signature: signRunHash(runHash, process.env.AUDIT_SIGNING_KEY!),
     });
   });
 
@@ -409,11 +420,14 @@ test.describe('the editor of roadmap 3.1', () => {
     expect(Number(await page.locator('[data-hints-count]').innerText())).toBeGreaterThan(before);
 
     // **Hints, not blocks.** With hints on the model, Save is pressable, it
-    // answers, and the drawn element is still on the canvas afterwards.
+    // answers, and the drawn element is still on the canvas afterwards. Since
+    // 3.2 the answer is a revision rather than a sentence about a step that has
+    // not been built — the hints are the thing under test either way, and what
+    // matters here is that a model with hints on it is kept, not refused.
     const save = page.locator('[data-editor-save]');
     await expect(save).toBeEnabled();
     await save.click();
-    await expect(page.locator('[data-editor-saved]')).toContainText('3.2');
+    await expect(page.locator('[data-editor-saved]')).toContainText(/Saved as revision \d+\./, { timeout: 30000 });
     await expect(page.locator('[data-draft-row][data-drawn="true"]')).toHaveCount(1);
 
     // Switchable: off means an empty list and a count of nothing, and drawing

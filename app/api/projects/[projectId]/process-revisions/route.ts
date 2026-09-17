@@ -9,6 +9,8 @@ import {
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { sha256Hex } from '@/lib/artefact-digest';
+import { verifyRunIntegrity } from '@/lib/run-signature';
+import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { buildBpmnExportFromSource } from '@/lib/bpmn/export';
 import {
   PROCESS_REVISION_COLLECTION,
@@ -38,6 +40,23 @@ import {
  *      and an edit arriving at an empty history reconstructs it first and lands
  *      as revision 2. So "the Ist is unchanged after modelling" is not a
  *      discipline anybody has to keep — there is no code path that changes it.
+ *      **"The source the active run signed" is read out of the run itself**, and
+ *      that is a correction rather than a description: this route used to take
+ *      the project document's word for it. It read the mirrored fingerprint off
+ *      the project, checked that `activeRunId` was truthy, and reconstructed. The
+ *      run was never loaded and its signature never verified, so any truthy
+ *      `activeRunId` — a run that does not exist, one of another project, a
+ *      string — satisfied the check, and revision 1 then carried that id and the
+ *      claim of being the signed source. Now the run is loaded through the Admin
+ *      SDK, `verifyRunIntegrity` rehashes it and checks its HMAC (the same check
+ *      `api/audit-pack/create` makes before it signs anything on top of a run),
+ *      it must name this project and this document, and the digest **it** signed
+ *      is what the reconstruction bytes are compared against. The check runs
+ *      where the claim is made — at the one write that creates revision 1. Every
+ *      later revision carries that revision's `runId`, `sourceSha256` and file
+ *      name forward rather than measuring anything again, which is what makes
+ *      "the chain descends from one verified run" a property of the store and
+ *      not of the caller.
  *   2. **A written revision is never written again.** Documents are created with
  *      `DocumentReference.create()`, which fails when the document exists. No
  *      `set`, no `update`, no merge, no delete. A second save makes the next
@@ -230,6 +249,104 @@ interface Written {
   created: boolean;
 }
 
+/** The run `activeRunId` names, once it has been shown to be that run. */
+interface VerifiedRun {
+  runId: string;
+  sha256: string;
+  fileName: string;
+}
+
+/**
+ * The active run of this project, loaded and verified — or the refusal.
+ *
+ * Nothing here trusts the project document. `activeRunId` is a field the run
+ * route writes, but the fingerprint beside it is a mirror, and a mirror is not
+ * evidence: the run is fetched, rehashed and its HMAC checked, and only then is
+ * the digest it signed handed back as the source revision 1 may be built from.
+ */
+async function verifiedRun(
+  db: AdminDb,
+  gate: Extract<Gate, { ok: true }>,
+): Promise<VerifiedRun | { refusal: NextResponse }> {
+  const runId = typeof gate.project.activeRunId === 'string' ? gate.project.activeRunId.trim() : '';
+  if (!runId) {
+    return {
+      refusal: NextResponse.json(
+        { error: 'This project has no active run, so there is no signed source to reconstruct from.', code: 'no-run' },
+        { status: 409 },
+      ),
+    };
+  }
+
+  // One sentence for every way the run fails to be this project's signed run.
+  // Which way it was is in the log and nowhere else: a caller that could tell
+  // "no such run" from "the signature does not check out" could use this route
+  // to probe the store, and neither answer changes what the reader must do.
+  const unverified = NextResponse.json(
+    {
+      error:
+        'The analysis run this project points at could not be verified as the run that signed its source. Analyse the source again before a process is reconstructed from it.',
+      code: 'run-unverified',
+    },
+    { status: 409 },
+  );
+
+  const runSnap = await db.collection('projects').doc(gate.projectId).collection('runs').doc(runId).get();
+  if (!runSnap.exists) {
+    logger.warn('process-revisions refused: activeRunId names no run', {
+      route: 'api/projects/process-revisions',
+      projectId: gate.projectId,
+      runId,
+    });
+    return { refusal: unverified };
+  }
+  const runData = (runSnap.data() || {}) as Record<string, unknown>;
+
+  // The signature covers the run's own `projectId` and `runId`, so a document
+  // copied into another project verifies against the signature it was born with
+  // while naming somewhere else. Both are compared to where it was found.
+  if (runData.projectId !== gate.projectId || runData.runId !== runId) {
+    logger.warn('process-revisions refused: the run names another project or another id', {
+      route: 'api/projects/process-revisions',
+      projectId: gate.projectId,
+      runId,
+    });
+    return { refusal: unverified };
+  }
+
+  const key = getAuditSigningKey();
+  if (!key) {
+    console.error(MISSING_SIGNING_KEY_LOG);
+    return { refusal: NextResponse.json({ error: 'Internal Server Error' }, { status: 500 }) };
+  }
+  const integrity = verifyRunIntegrity(runData, key);
+  if (!integrity.valid) {
+    logger.error('process-revisions refused: run integrity check failed', {
+      route: 'api/projects/process-revisions',
+      projectId: gate.projectId,
+      runId,
+      reason: integrity.reason,
+    });
+    return { refusal: unverified };
+  }
+
+  const fingerprint = (runData.inputFingerprint || {}) as { sha256?: unknown; fileName?: unknown };
+  if (typeof fingerprint.sha256 !== 'string' || fingerprint.sha256 === '') {
+    logger.error('process-revisions refused: the verified run carries no source digest', {
+      route: 'api/projects/process-revisions',
+      projectId: gate.projectId,
+      runId,
+    });
+    return { refusal: unverified };
+  }
+
+  return {
+    runId,
+    sha256: fingerprint.sha256,
+    fileName: typeof fingerprint.fileName === 'string' && fingerprint.fileName ? fingerprint.fileName : '',
+  };
+}
+
 /**
  * Revision 1, reconstructing it when the project has none.
  *
@@ -262,17 +379,10 @@ async function ensureBaseline(
       ),
     };
   }
-  const signed = gate.project.inputFingerprint ?? gate.project.auditMetadata?.inputFingerprint;
   const sourceSha256 = sha256Hex(source);
-  if (!gate.project.activeRunId || !signed?.sha256) {
-    return {
-      refusal: NextResponse.json(
-        { error: 'This project has no active run, so there is no signed source to reconstruct from.', code: 'no-run' },
-        { status: 409 },
-      ),
-    };
-  }
-  if (signed.sha256 !== sourceSha256) {
+  const run = await verifiedRun(db, gate);
+  if ('refusal' in run) return run;
+  if (run.sha256 !== sourceSha256) {
     return {
       refusal: NextResponse.json(
         { error: 'The source changed since the run signed it. Analyse it again before the process is reconstructed.', code: 'source-moved' },
@@ -281,7 +391,13 @@ async function ensureBaseline(
     };
   }
 
-  const fileName = signed.fileName || 'source.abap';
+  // The file name the run signed, not the one mirrored on the project: the
+  // mirror is what the reconstruction is *named* after, and it is beside the
+  // digest that was just proven, so it comes from the same place.
+  const fileName = run.fileName
+    || gate.project.inputFingerprint?.fileName
+    || gate.project.auditMetadata?.inputFingerprint?.fileName
+    || 'source.abap';
   const { xml } = buildBpmnExportFromSource(source, {
     processName: typeof gate.project.name === 'string' && gate.project.name ? gate.project.name : fileName,
     sourceFileName: fileName,
@@ -297,7 +413,9 @@ async function ensureBaseline(
     xmlSha256: sha256Hex(xml),
     sourceSha256,
     fileName,
-    runId: typeof gate.project.activeRunId === 'string' ? gate.project.activeRunId : null,
+    // The id of the run that was loaded and verified above — the field says the
+    // revision came from that run, and now it has been shown to.
+    runId: run.runId,
     ...stats,
     xml,
   };
