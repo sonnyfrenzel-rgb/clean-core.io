@@ -4,8 +4,8 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useCallback, useRef } from 'react';
 import { verifyAuditPack, type VerifyResult, type FileVerifyResult } from '@/lib/audit-pack-verify';
-import { ShieldCheck, ShieldAlert, ShieldX, Upload, CheckCircle2, XCircle, AlertCircle, FileText, Clock, Tag, Hash, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import { ShieldCheck, ShieldAlert, ShieldX, Upload, CheckCircle2, XCircle, AlertCircle, FileText, Hash } from 'lucide-react';
+import BackLink from '@/components/BackLink';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function VerifyPackPage() {
@@ -79,9 +79,11 @@ export default function VerifyPackPage() {
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="mb-10">
-          <Link href="/dashboard" className="flex items-center gap-1.5 text-gray-400 hover:text-gray-600 text-xs font-bold uppercase tracking-widest mb-6 transition-colors">
-            <ArrowLeft size={14} /> Back to Dashboard
-          </Link>
+          {/* UX-015/UX-104: a pack can be verified without an account, so the way
+              back cannot be a hard link to /dashboard. */}
+          <div className="mb-6">
+            <BackLink />
+          </div>
           <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
             Audit Pack Verification
           </h1>

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { Globe, ShieldCheck, Server, Users, Linkedin, Github } from 'lucide-react';
 import Link from 'next/link';
-import BackButton from '@/components/BackButton';
+import BackLink from '@/components/BackLink';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = withTwitterCard({
@@ -64,7 +64,7 @@ export default function AboutPage() {
 
       {/* Navigation */}
       <div className="flex items-center justify-start">
-        <BackButton />
+        <BackLink />
       </div>
 
       {/* Hero Banner */}

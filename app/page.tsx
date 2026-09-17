@@ -22,7 +22,7 @@ import PricingCTA from '@/components/PricingCTA';
 import FooterCTA from '@/components/FooterCTA';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import LandingModals from '@/components/LandingModals';
-import LandingSlideshow from '@/components/LandingSlideshow';
+import LandingProcess from '@/components/LandingProcess';
 import QuickAnswer from '@/components/QuickAnswer';
 import SectionHeader from '@/components/SectionHeader';
 import SiteFooter from '@/components/SiteFooter';
@@ -32,6 +32,7 @@ import SamplePackageDownload from '@/components/SamplePackageDownload';
 import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/version';
 import { getCatalogStats } from '@/lib/abap/catalog-service';
 import { SUPPORT_MATRIX } from '@/lib/abap/support-matrix';
+import { PHASES } from '@/lib/workflow-steps';
 import BenefitCard from '@/components/BenefitCard';
 import { getReferenceAnalysis } from '@/lib/reference-analysis';
 
@@ -496,7 +497,11 @@ export default function Home() {
         </section>
 
 
-        {/* Interactive Slideshow */}
+        {/* The seven phases. The lead names them from PHASES rather than spelling
+            them out: the sentence that stood here — "Upload, analyze, design,
+            transform, test, document, deliver" — was the stepper of July, with
+            Upload as a phase of its own and no Economics, and it had drifted
+            silently because nothing compared it to the product. */}
         <div id="process" className="scroll-mt-14 relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
           {/* This was the only section on the page without a header, so it read as
               a widget floating between two arguments rather than as the step that
@@ -504,15 +509,15 @@ export default function Home() {
               width as every other section. */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <SectionHeader
-              eyebrow="The Seven Steps"
+              eyebrow="The Seven Phases"
               title="How a transformation actually runs"
             >
-              Upload, analyze, design, transform, test, document, deliver. Each step produces
-              something you can read and check before the next one starts &mdash; and an architect
-              signs the result, not the tool.
+              {PHASES.map((p) => p.label).join(' · ')}. Each phase produces something you can
+              read and check before the next one starts &mdash; and an architect signs the result,
+              not the tool.
             </SectionHeader>
           </div>
-          <LandingSlideshow />
+          <LandingProcess />
         </div>
 
         {/* Benefit card, placed after the slideshow: the reader has seen what the
