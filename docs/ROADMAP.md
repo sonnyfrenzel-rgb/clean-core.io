@@ -205,7 +205,7 @@ Code-Karte darunter.
 | 2.9 | **Große Prozesse navigieren** (`DESIGN.md` §5.9): Übersicht der Phasen als eingeklappte Teilprozesse, Ebenen mit Pfadzeile, Gliederungsbaum statt flacher Schrittliste, Problemzeile je Teilprozess, Minikarte, „Show paths to here" und „Main path", Laufvarianten aus den Selektionsschaltern, Overlays als Filter, Suche öffnet die Ebene des Treffers, stabile Anordnung, Ebene und Auswahl in der URL. Abnahme am 1.000-Zeilen-Beispiel: jeder Schritt in höchstens drei Aktionen erreichbar, per Tastatur wie per Maus | L |
 | 2.10 | **Referenzkorpus v2.1 im Repository:** `docs/korpus/referenzkorpus-v2.1.md` (das Fallbuch mit Rahmen, Regelregister, Negativliste, Gegenreview, Autorenberichten) und `tests/korpus/cases/CC-nnn/` mit `source.abap`, `profile.json`, `expected.json` je Fall, erzeugt aus dem Fallbuch durch `scripts/korpus/build-bundle.mjs` (deterministisch, Quellenhashes geprüft). `tests/korpus-engine.spec.ts` lässt die Engine gegen alle 68 Fälle laufen und vergleicht Befunde, Level, Objekte, Skelettknoten; **Ratsche** wie bei abaplint: `tests/korpus/baseline.json` führt jede Abweichung mit Urteil (`engine-defekt` · `korpus-offen` · `nicht-vergleichbar`) und Grund, ein Fall, der übereinstimmte und es nicht mehr tut, macht den Lauf rot, eine still verschwundene Abweichung ebenfalls. Fundstellen aus öffentlichen Repositories stehen im Repository nur als URL, Commit, Pfad, Zeilen und SHA-256 des Ausschnitts — **kein fremder Code**, elf von zwölf Quellen sind ohne Lizenz. Der Korpus wird nie als Prompt- oder Trainingsmaterial des Modells verwendet, das er prüft | M |
 
-| 2.11 | **Was der Korpus an der Engine findet** (Grundlinie vom 17.09.2026, `tests/korpus/baseline.json`): 24 Engine-Defekte in drei Familien, dazu 134 Aussageklassen, die die Engine noch gar nicht produziert. Die Familien, nicht die Einzelfälle, sind die Arbeit — siehe unten | L |
+| 2.11 | **Was der Korpus an der Engine findet** (Grundlinie vom 17.09.2026, `tests/korpus/baseline.json`): 24 Engine-Defekte in drei Familien, dazu 134 Aussageklassen, die die Engine noch gar nicht produziert. Die Familien, nicht die Einzelfälle, sind die Arbeit. **Stand 18.09.2026: 2 Defekte übrig** (CC-045 · level, CC-050 · level), 131 Aussageklassen noch nicht produziert — siehe unten | L |
 **Fertig, wenn**
 - jeder Task, jedes Gateway und jede Lane einen Zeilenanker trägt oder sichtbar
   „unbelegt" ist, und die Quote angezeigt wird (V25-A01);
@@ -216,41 +216,57 @@ Code-Karte darunter.
   ausgewiesen wird;
 - für Korpusfälle mit Prozess-Ground-Truth das Skelett übereinstimmt.
 
-**Die drei Defektfamilien aus 2.11, gemessen am 17.09.2026**
+**Die drei Defektfamilien aus 2.11 — Grundlinie 17.09.2026, Stand 18.09.2026**
 
-Die Grundlinie vergleicht je Fall fünf Aussageklassen: 340 Paare, 178 stimmen überein.
-Von den 162 Abweichungen sind 134 **nicht vergleichbar** — die Engine kennt die
-Aussageklasse nicht (Fachsätze durchweg, Level und Objekte bei den neuen Klassen). Das
-ist kein Defekt, sondern der gemessene Abstand zwischen dem, was Phase 2 verspricht, und
-dem, was heute läuft. Vier sind **Korpus-offen** (siehe unten). Bleiben 24 Defekte:
+Die Grundlinie vergleicht je Fall fünf Aussageklassen: 340 Paare. Am **17.09.2026**
+stimmten 178 überein; von den 162 Abweichungen waren 134 **nicht vergleichbar** (die
+Engine kennt die Aussageklasse nicht — Fachsätze durchweg, Level und Objekte bei den
+neuen Klassen), 4 **korpus-offen** und **24 Engine-Defekte** in drei Familien.
 
-**(a) Die Note liest den Katalogeintrag zur Hälfte — 9 Fälle.** CC-001, CC-002, CC-007,
-CC-008, CC-049, CC-051, CC-062, CC-063, CC-067 werden von der Engine als **D** benotet,
-wo der Korpus **C** sagt. Eine Wurzel: die Engine nimmt die schlechteste Katalognote über
-alle Objekte und ignoriert dabei die **Zugriffsart** und den **katalogisierten Nachfolger**.
-KNA1 zu *lesen* ist C mit Nachfolger `I_CUSTOMER` (R01); nur ein nicht unterstützter
-*Schreibzugriff* ist D (R02). Beide Angaben stehen in derselben Katalogquelle, aus der die
-Engine ihre Note zieht. Das ist der billigste der drei Punkte und der mit der größten
-Wirkung: neun Fälle an einer Stelle.
+Am **18.09.2026**, nach den Strängen C (Familien a und b) und D (Familie c), stimmen
+**203** Paare überein, 131 sind nicht vergleichbar, 4 korpus-offen — und **2**
+Engine-Defekte sind übrig. Die 25 neuen Übereinstimmungen sind nicht durch eine
+nachgiebigere Messung entstanden: die Vergleichsschicht `tests/helpers/korpus-comparison.ts`
+ist unverändert, und drei Fälle sind von „nicht vergleichbar" zu einem *sichtbaren*
+Urteil gewandert, weil die Engine die Aussageklasse jetzt überhaupt produziert.
 
-**(b) Die Engine urteilt milder, als sie darf — 5 Fälle.** CC-050 bekommt **A**, wo der
-Korpus B sagt: `SELECT … WITH PRIVILEGED ACCESS` umgeht die DCL-Prüfung, und die Engine
-sieht darin nichts. CC-024, CC-029, CC-030, CC-033 liefern **Unknown** statt B. Ein falsches
-Gut ist teurer als ein falsches Schlecht — diese fünf gehen vor (a).
+**(a) Die Note las den Katalogeintrag zur Hälfte — 9 Fälle, geschlossen bis auf einen.**
+CC-001, CC-002, CC-007, CC-008, CC-049, CC-051, CC-062, CC-063, CC-067 wurden als **D**
+benotet, wo der Korpus **C** sagt. Die Wurzel: die Engine nahm die schlechteste
+Katalognote über alle Objekte und ignorierte dabei die **Zugriffsart** und den
+**katalogisierten Nachfolger**. KNA1 zu *lesen* ist C mit Nachfolger `I_CUSTOMER` (R01);
+nur ein nicht unterstützter *Schreibzugriff* ist D (R02). Beide Angaben stehen in
+derselben Katalogquelle. **Offen: CC-045 · level.** Eine Typabhängigkeit (`TYPE kna1`,
+`TABLES:`) trägt die Verwendung `Reference` und damit keine Zugriffsart im Sinne der
+Benotung, weshalb `gradeSapObjectUse` auf die Namensnote D zurückfällt, wo R29 die Note
+aus dem Objektzustand verlangt. Der Fall wurde erst dadurch sichtbar, dass die Engine das
+Objekt seit Familie (c) überhaupt sieht — ein Fortschritt, der einen Defekt freilegt.
 
-**(c) Abhängigkeiten, die niemand sieht — 9 Fälle, ein Befund.** Die Engine meldet an
-diesen Stellen entweder nichts oder das Falsche:
-- **ADBC** (CC-034): `cl_sql_statement->execute_update( |UPDATE KNA1 …| )` ergibt genau
-  einen Befund (`commit-work`), keine Datenkopplung, und das Wort KNA1 kommt in der
-  gesamten Ausgabe nicht vor. Genau der Fall, den das Gegenreview vorhergesagt hat.
-- **Makroexpansion** (CC-042): der Platzhalter `&1` aus `DEFINE` wird als Tabelle gemeldet,
-  KNA1 und KNB1 gar nicht — eine erfundene Abhängigkeit und zwei verlorene.
-- **Dynamische Ziele** (CC-020, CC-036, CC-037, CC-038): `(LC_TAB)` und `(P_TAB)` stehen als
-  Datenbankabhängigkeit in der Ausgabe, das aufgelöste Ziel fehlt.
-- **Typreferenz ohne SQL** (CC-045, R29): `TABLES:`, `TYPE kna1`, `INCLUDE STRUCTURE` — null
-  Befunde, null Kopplung.
-- **Logische Datenbank** (CC-047): `NODES` + `GET` — dasselbe.
-- **Programmglobales Feld über Literal** (CC-040): `ASSIGN ('(SAPMV45A)VBAK-…')` — VBAK fehlt.
+**(b) Die Engine urteilte milder, als sie darf — 5 Fälle, vier geschlossen.** CC-024,
+CC-029, CC-030 und CC-033 lieferten **Unknown** statt B. **Offen: CC-050 · level** — die
+Engine sagt **A**, der Korpus **B**. Die frühere Begründung an dieser Stelle (`SELECT …
+WITH PRIVILEGED ACCESS` umgehe die DCL-Prüfung und die Engine sehe darin nichts) ist
+**falsch** und hier nur noch als korrigierter Irrtum vermerkt: nach **R28** ändert
+`WITH PRIVILEGED ACCESS` das Level nicht, und das A der Engine stammt aus dem
+freigegebenen `I_CUSTOMER`. Womit der Fall sein B tatsächlich begründet, ist am Fallbuch
+zu prüfen — es entscheidet sich daran, ob dies ein Engine-Defekt oder ein
+`korpus-offen` ist. Ein falsches Gut bleibt teurer als ein falsches Schlecht.
+
+**(c) Abhängigkeiten, die niemand sah — 9 Fälle, ein Befund. Geschlossen.** Die Engine
+meldete an diesen Stellen nichts oder Erfundenes: **ADBC** (CC-034) — das Stringtemplate
+eines `cl_sql_statement->execute_update` *ist* SQL, KNA1 kam in der ganzen Ausgabe nicht
+vor; **Makroexpansion** (CC-042) — der Platzhalter `&1` aus `DEFINE` wurde als Tabelle
+gemeldet, KNA1 und KNB1 gar nicht; **dynamische Ziele** (CC-020, CC-036, CC-037, CC-038)
+— `(LC_TAB)` und `(P_TAB)` standen als Datenbankabhängigkeit in der Ausgabe, das
+aufgelöste Ziel fehlte; **Typreferenz ohne SQL** (CC-045, R29), **logische Datenbank**
+(CC-047, `NODES`/`GET`) und **programmglobales Feld über Literal** (CC-040, `ASSIGN
+('(SAPMV45A)VBAK-…')`) — null Befunde, null Kopplung.
+Beide Engines lesen das jetzt aus **einer** Datei (`lib/abap/table-dependencies.ts`) statt
+aus zwei Kopien desselben Musters, und dieselbe Datei fragt die Deklarationen — weshalb
+`MODIFY gt_bp_data FROM gs_bp_data` keine erfundene Datenbankkopplung mehr ist. Ein
+Ziel, das die Quelle nicht schließt, ist keine Tabelle, sondern die Coverage-Klasse
+`dynamic-target` („Nicht bestimmt"); der Wert daneben steht als *mögliches* Ziel,
+markiert und nie als bekannt.
 
 **Was der Korpus selbst falsch hat — 4 Fälle, `korpus-offen`.** CC-001, CC-002, CC-007 und
 CC-008 verankern R01 auf der `FROM`-Zeile; R27 legt den Anweisungsbeginn als Primäranker
@@ -764,6 +780,23 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-021 | info | P1 | Phase 0 · sofort behoben | behoben |
 | SEC-2026-023 | hoch | P2 | Phase 0 · sofort behoben | behoben |
 | SEC-2026-024 | hoch | P1 | Phase 0 · sofort behoben | behoben |
+| SEC-2026-025 | hoch | P1 | Patch-Schritt sofort, vor jeder Roadmap-Arbeit (nach Prüfung kritisch) | behoben |
+| SEC-2026-026 | hoch | P1 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
+| SEC-2026-027 | mittel | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
+| SEC-2026-029 | mittel | P2 | eigener Schritt, braucht Sonnys Go | eingeplant |
+| SEC-2026-031 | mittel | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
+| SEC-2026-033 | mittel | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
+| SEC-2026-034 | mittel | P2 | Phase 2 · Datenschutz-Schritt | eingeplant |
+| SEC-2026-036 | mittel | P3 | Phase 4 · Austauschen | eingeplant |
+| SEC-2026-037 | mittel | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
+| SEC-2026-038 | mittel | P2 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
+| SEC-2026-039 | mittel | P3 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
+| SEC-2026-040 | mittel | P2 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
+| SEC-2026-041 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
+| SEC-2026-042 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
+| SEC-2026-055 | niedrig | P2 | Phase 2 · Datenschutz-Schritt | eingeplant |
+| SEC-2026-065 | niedrig | P3 | Phase 2 · Datenschutz-Schritt | eingeplant |
+| SEC-2026-067 | niedrig | P3 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
 
 Erstes Audit: v2.11.0 (16.09.2026), 247 gemeldete Befunde. Der Bericht sagt selbst,
 dass seine Verifikationsstufe nicht zurückkam — die Befunde sind gemeldet, nicht
@@ -812,7 +845,7 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-088 | high | Clean Core Score ohne Abgrenzung zu SAPs gegenläufigem Score | 0.3 | eingeplant |
 | UX-091 | high | Mail-Warnung verspricht erneuten Versand, Zeile kann ihn nicht | — | behoben |
 | UX-094 | high | Alte Backup-Codes werden ohne Übergang abgewiesen | — | zurückgestellt |
-| UX-102 | high | How-to nennt 6 Phasen, Produkt hat 7 Stufen | 0.2 | eingeplant |
+| UX-102 | high | How-to nennt 6 Phasen, Produkt hat 7 Stufen | 0.2 | behoben |
 | UX-005 | medium | Routenwechsel ohne Bestätigung und Undo | 0.7 | eingeplant |
 | UX-006 | medium | Von Befund kein Weg in den Code | 1.5 | eingeplant |
 | UX-012 | medium | Sticky-Header und Tabs verdecken Inhalt auf Phone | 1.4 | eingeplant |
@@ -851,8 +884,9 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-099 | medium | Matrix-Close-Buttons ohne Namen für Screenreader | sofort | behoben |
 | UX-104 | medium | First-Run-Rücksprung führt Abgemeldete hinter Login | 1.4 | eingeplant |
 | UX-106 | medium | NotGenerated nennt Settings, führt aber nicht dorthin | 1.5 | eingeplant |
-| UX-107 | medium | Admin-Button meldet ab statt an | sofort | eingeplant |
-| UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | eingeplant |
+| UX-107 | medium | Admin-Button meldet ab statt an | sofort | behoben |
+| UX-116 | medium | FREE-Badge verschweigt Erstlauf-Begrenzung | sofort | behoben |
+| UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | behoben |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |
 | UX-015 | low | Zurück-Navigation verhält sich je Seite anders | 1.4 | eingeplant |
@@ -882,6 +916,7 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-101 | low | 2FA-Schlüssel lässt sich nicht kopieren | sofort | behoben |
 | UX-105 | low | Dark-Entfernung ohne Hinweis an Bestandskonten | 1.6 | eingeplant |
 | UX-110 | low | Badge-Detail nur im Hover-Titel versteckt | 3.0.4 | eingeplant |
+| UX-115 | low | Demo verspricht sieben Stufen ohne Mitnahme | 0.2 | eingeplant |
 ---
 
 ## 14. QA-Befunde aus der Vollprüfung
