@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isUrlSafe, safeFetch, SsrfError, readBoundedBody } from '@/lib/url-validation';
+import {
+  isUrlSafe,
+  safeFetch,
+  SsrfError,
+  readBoundedBody,
+  readBoundedJson,
+  TOKEN_BODY_LIMITS,
+  ODATA_BODY_LIMITS,
+} from '@/lib/url-validation';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 
@@ -69,16 +77,20 @@ async function fetchOAuth2Token(
       signal: controller.signal,
     });
 
+    // The abort timer covered the wait for the headers and is done here; the
+    // body has its own limits below. The OData reads further down were bounded
+    // first and this exchange was left unbounded, which is the half that talks
+    // to the host the caller named.
     clearTimeout(timeout);
 
     if (!response.ok) {
-      const errorBody = await response.text().catch(() => '');
+      const errorBody = await readBoundedBody(response, TOKEN_BODY_LIMITS).catch(() => '');
       throw new Error(
         `Token endpoint returned HTTP ${response.status}. ${errorBody ? `Response: ${errorBody.substring(0, 200)}` : 'Verify Client ID and Client Secret.'}`
       );
     }
 
-    const tokenData = await response.json();
+    const tokenData = await readBoundedJson(response, TOKEN_BODY_LIMITS);
     if (!tokenData.access_token) {
       throw new Error('Token endpoint responded but did not return an access_token.');
     }
@@ -165,13 +177,11 @@ async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, st
 
 // --- Helper: Fetch with timeout ---
 // The timeout below covers the wait for the headers; the body is read
-// separately under these limits. The read used to follow `return response`
-// with the timer already cleared, so a tenant could answer as slowly and as
-// largely as it liked. An OData $metadata document is usually well under a
-// megabyte; 8 MB leaves room for the largest ones without letting a host of
-// the caller's choosing fill the memory of the instance.
-const RESPONSE_BODY_LIMITS = { maxBytes: 8 * 1024 * 1024, timeoutMs: 20000 };
-
+// separately under ODATA_BODY_LIMITS. The read used to follow `return
+// response` with the timer already cleared, so a tenant could answer as slowly
+// and as largely as it liked. The limits live in lib/url-validation.ts beside
+// the reader, because the same ceiling has to hold for the three other routes
+// that read from the same tenant under the same credentials.
 async function fetchWithTimeout(url: string, headers: Record<string, string>, timeoutMs = 20000): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -415,7 +425,7 @@ export async function POST(req: NextRequest) {
           const response = await fetchWithTimeout(candidateUrl, headers);
 
           if (response.ok) {
-            const xml = await readBoundedBody(response, RESPONSE_BODY_LIMITS);
+            const xml = await readBoundedBody(response, ODATA_BODY_LIMITS);
             const entityTypes = extractEntityTypes(xml);
 
             return NextResponse.json({
@@ -463,7 +473,7 @@ export async function POST(req: NextRequest) {
         if (!response.ok) continue;
 
         const contentType = response.headers.get('content-type') || '';
-        const body = await readBoundedBody(response, RESPONSE_BODY_LIMITS);
+        const body = await readBoundedBody(response, ODATA_BODY_LIMITS);
 
         let services: Array<{ title: string; path: string; serviceUrl: string }> = [];
 

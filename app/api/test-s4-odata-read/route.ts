@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isUrlSafe, safeFetch, SsrfError, isSafeODataServicePath } from '@/lib/url-validation';
+import {
+  isUrlSafe,
+  safeFetch,
+  SsrfError,
+  isSafeODataServicePath,
+  readBoundedBody,
+  readBoundedJson,
+  TOKEN_BODY_LIMITS,
+  ODATA_BODY_LIMITS,
+} from '@/lib/url-validation';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 
@@ -32,6 +41,62 @@ import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
  *   }
  */
 
+/**
+ * OAuth 2.0 client-credentials token exchange.
+ *
+ * The two call sites below used to inline the whole exchange, and neither of
+ * them passed an `AbortSignal` or looked at the status: `safeFetch` was awaited
+ * with no deadline at all and `tokenResp.json()` then buffered whatever came
+ * back, so a token endpoint that answered its headers and kept streaming held
+ * a Cloud Run worker and its memory for as long as it liked. One helper with a
+ * deadline on the connection and `TOKEN_BODY_LIMITS` on the body, in the shape
+ * the three sibling routes use.
+ */
+async function fetchOAuth2Token(
+  tokenUrl: string,
+  clientId: string,
+  clientSecret: string,
+): Promise<{ access_token?: string }> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+
+  try {
+    const response = await safeFetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+        'Accept': 'application/json',
+      },
+      body: 'grant_type=client_credentials',
+      signal: controller.signal,
+    });
+
+    // The abort timer covered the wait for the headers and is done here; the
+    // body has its own limits below.
+    clearTimeout(timeout);
+
+    // A refusal was parsed as if it were a token before this: the body of a
+    // 401 is an error document, and reading `access_token` off it simply found
+    // nothing while the request carried on as though authentication had been
+    // skipped.
+    if (!response.ok) {
+      const errorBody = await readBoundedBody(response, TOKEN_BODY_LIMITS).catch(() => '');
+      throw new Error(
+        `Token endpoint returned HTTP ${response.status}.${errorBody ? ` Response: ${errorBody.substring(0, 200)}` : ''}`,
+      );
+    }
+
+    return await readBoundedJson(response, TOKEN_BODY_LIMITS);
+  } catch (err: any) {
+    clearTimeout(timeout);
+    if (err?.name === 'AbortError') {
+      throw new Error('OAuth token request timed out after 12 seconds.');
+    }
+    throw err;
+  }
+}
+
 // --- Helper: Build auth headers (shared logic with fetch-s4-metadata) ---
 async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, string>; targetUrl: string }> {
   const headers: Record<string, string> = {
@@ -59,24 +124,14 @@ async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, st
       if (tokenUrl && clientId && clientSecret) {
         const tokenCheck = await isUrlSafe(tokenUrl);
         if (!tokenCheck.safe) throw new Error(`Token URL blocked: ${tokenCheck.reason}`);
-        const tokenResp = await safeFetch(tokenUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}` },
-          body: 'grant_type=client_credentials',
-        });
-        const tokenData = await tokenResp.json();
+        const tokenData = await fetchOAuth2Token(tokenUrl, clientId, clientSecret);
         if (tokenData.access_token) headers['Authorization'] = `Bearer ${tokenData.access_token}`;
       }
     }
   } else if (body.authType === 'oauth2' && body.tokenUrl && body.username && body.password) {
     const tokenCheck = await isUrlSafe(body.tokenUrl);
     if (!tokenCheck.safe) throw new Error(`Token URL blocked: ${tokenCheck.reason}`);
-    const tokenResp = await safeFetch(body.tokenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Basic ${Buffer.from(`${body.username}:${body.password}`).toString('base64')}` },
-      body: 'grant_type=client_credentials',
-    });
-    const tokenData = await tokenResp.json();
+    const tokenData = await fetchOAuth2Token(body.tokenUrl, body.username, body.password);
     if (tokenData.access_token) headers['Authorization'] = `Bearer ${tokenData.access_token}`;
   } else if (body.authType === 'basic' && body.username && body.password) {
     headers['Authorization'] = `Basic ${Buffer.from(`${body.username}:${body.password}`).toString('base64')}`;
@@ -192,8 +247,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Parse JSON response
-    const data = await response.json().catch(() => null);
+    // Parse the JSON response, under a size limit and a deadline of its own:
+    // the abort timer above ended with the headers, and `response.json()` then
+    // buffered an entity read of any length from the tenant.
+    const data = await readBoundedJson(response, ODATA_BODY_LIMITS).catch(() => null);
     if (!data) {
       return NextResponse.json({
         status: 'failed',

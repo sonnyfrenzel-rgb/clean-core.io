@@ -86,6 +86,55 @@ test.describe('the audit signing key has no fallback', () => {
     }
   });
 
+  /**
+   * "Set" is not the same as "usable".
+   *
+   * `getAuditSigningKey` accepted anything with `length > 0`, so a
+   * one-character placeholder typed into a secret field to see whether a deploy
+   * goes through was a valid key for the whole trust chain. HMAC-SHA256 is only
+   * as strong as its key: one genuine pack is enough to try candidates offline
+   * against its manifest hash, and a short key falls in seconds — after which
+   * every forgery made with it verifies as genuine. The floor is a startup
+   * condition, so a weak key lands in exactly the state a missing one does
+   * (QA full review of a19945ef01dc, d67ef0b953f0 / 7ce412f6a068).
+   */
+  test('a key below the minimum is refused like a missing one', () => {
+    // Imported here rather than at the top: the module reads the environment at
+    // call time, so the test sets it around each call and restores it after.
+    const { getAuditSigningKey, MIN_SIGNING_KEY_LENGTH } = require('../lib/audit-signing-key');
+    const original = process.env.AUDIT_SIGNING_KEY;
+    try {
+      for (const weak of ['x', 'x'.repeat(MIN_SIGNING_KEY_LENGTH - 1), '']) {
+        process.env.AUDIT_SIGNING_KEY = weak;
+        expect(
+          getAuditSigningKey(),
+          `a ${weak.length}-character key was accepted for the trust chain`,
+        ).toBeNull();
+      }
+      process.env.AUDIT_SIGNING_KEY = 'y'.repeat(MIN_SIGNING_KEY_LENGTH);
+      expect(getAuditSigningKey(), 'a key at the minimum was refused').toHaveLength(MIN_SIGNING_KEY_LENGTH);
+    } finally {
+      if (original === undefined) delete process.env.AUDIT_SIGNING_KEY;
+      else process.env.AUDIT_SIGNING_KEY = original;
+    }
+  });
+
+  /**
+   * The same floor before the deploy, so a weak secret is refused where it can
+   * still be changed instead of taking every export route on the live service
+   * down with a 500 after the rollout. The workflow reads the length of the
+   * secret and nothing else about it.
+   */
+  test('the production deploy refuses a key below the minimum', () => {
+    const { MIN_SIGNING_KEY_LENGTH } = require('../lib/audit-signing-key');
+    const workflow = fs.readFileSync(path.join(ROOT, '.github/workflows/deploy.yml'), 'utf8');
+    expect(
+      workflow,
+      'the deploy still accepts any non-empty AUDIT_SIGNING_KEY, so a weak secret ' +
+        'reaches production and the signing routes answer 500 there instead of failing here',
+    ).toContain(`if [ "\${#AUDIT_SIGNING_KEY}" -lt ${MIN_SIGNING_KEY_LENGTH} ]; then`);
+  });
+
   test('a signature made with the wrong key is not accepted', async ({ request }) => {
     const crypto = require('crypto');
     const canonicalManifest = 'guard-fixture.md:hash000;';

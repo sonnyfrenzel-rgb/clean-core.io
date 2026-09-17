@@ -73,8 +73,28 @@ export async function POST(req: NextRequest) {
     }
     const projectData = projectDoc.data() || {};
     const isAdmin = decodedToken.admin === true;
+
+    // Owner only. The administrator claim does not open this door.
+    //
+    // It used to: `decodedToken.admin === true` stood in for ownership, so an
+    // administrator who had a project id — from a support mail, a screenshot, a
+    // bug report — could post it here and get back the ZIP with the project's
+    // ABAP, its evidence and its decision record in it. The only other gate on
+    // the way is `assertMfaSatisfied`, which lets any token through for an
+    // account whose profile does not say `mfaEnabled` (`mfaSatisfied` in
+    // lib/mfa-gate.ts returns null for such an account), so an administrator
+    // who never enrolled a second factor needed nothing but a plain ID token.
+    //
+    // The same permission was taken off DELETE /api/projects/{projectId} on
+    // 17.09.2026 for the same reason, and `firestore.rules` took the operator's
+    // read of a project away on 16.09.2026 — reading somebody else's evidence
+    // through an export route was the last way around that rule. Nothing loses
+    // a function: the only caller is the owner's own delivery stage. A support
+    // export, if it is ever wanted, is a separate operation with its own
+    // authorisation, its own step-up and its own journal entry — not every
+    // holder of the claim, silently.
     const isOwner = projectData.userId === decodedToken.uid;
-    if (!isOwner && !isAdmin) {
+    if (!isOwner) {
       return NextResponse.json({ error: 'Unauthorized.' }, { status: 403 });
     }
 
