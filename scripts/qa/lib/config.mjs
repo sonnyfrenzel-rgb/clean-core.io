@@ -52,8 +52,22 @@ export const BUDGET = {
   maxCostUsd: 0.5,
   /** Delta context per model call, in characters. */
   maxBatchChars: 200_000,
-  /** Calls per review. What does not fit is named in the report as not reviewed, never silently dropped. */
-  maxBatches: 4,
+  /**
+   * Calls per review. What does not fit is named in the report as not reviewed, never silently dropped.
+   *
+   * Raised from 4 to 10 on 18.09.2026 (Sonny's go) because four calls had turned into a deadlock rather
+   * than a budget. An incomplete review leaves the checkpoint at its base (report.mjs), so the delta it
+   * could not read comes back *plus* everything pushed since — and grows again with every push. The review
+   * of `13d1ffa` left 20 files unread "outside the 4-call budget" and the checkpoint stuck at `a19945e`
+   * for a second day.
+   *
+   * Money was never the binding constraint here: that review cost $0.1031 against a $0.50 cap. The cap
+   * stays where it is and stays real — ten full calls estimate at 10 × ($0.0384 output + $0.0114 input)
+   * = $0.498, so `withinBudget` still refuses the eleventh, and an ordinary delta review remains one or
+   * two calls and costs the same as before. What changed is only how much of a *backlog* one review may
+   * work through before it gives up.
+   */
+  maxBatches: 10,
   /**
    * Includes reasoning tokens. The first live run (15.09.2026) spent a 12,000
    * allowance entirely on reasoning at effort `high` and returned no review.

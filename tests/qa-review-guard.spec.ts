@@ -307,7 +307,14 @@ test.describe('spend is capped and only the delta is reviewed', () => {
   test('the riskiest files go first, and what does not fit is named', async () => {
     const { packBatches } = await lib('pack.mjs');
     const { BUDGET } = await lib('config.mjs');
-    const files = [file('app/page.tsx', ['ui'], 150_000), file('firestore.rules', ['security'], 150_000), file('tests/a.spec.ts', ['tests'], 150_000), file('lib/abap/a.ts', ['engine'], 150_000), file('lib/audit-pack-x.ts', ['trust-chain'], 150_000)];
+    // Every diff here is far larger than the batch size, so each file takes a batch of its own and
+    // exactly BUDGET.maxBatches of them fit. The list is built *from* the budget rather than pinned to
+    // a count, because it was pinned to four and the 18.09.2026 raise to ten would otherwise have left
+    // nothing over the limit — the "what does not fit is named" half of this test would have passed
+    // while asserting nothing. One file more than fits, and the lowest-risk one is the one left over.
+    const engine = Array.from({ length: BUDGET.maxBatches - 3 }, (_, i) => file(`lib/abap/a${i}.ts`, ['engine'], 150_000));
+    const files = [file('app/page.tsx', ['ui'], 150_000), file('firestore.rules', ['security'], 150_000), file('tests/a.spec.ts', ['tests'], 150_000), ...engine, file('lib/audit-pack-x.ts', ['trust-chain'], 150_000)];
+    expect(files.length).toBe(BUDGET.maxBatches + 1);
     const { batches, notReviewed } = packBatches(files, 10_000);
     expect(batches[0].files[0].path).toBe('firestore.rules');
     expect(batches.length).toBeLessThanOrEqual(BUDGET.maxBatches);
