@@ -178,6 +178,17 @@ export const RULE_BRIDGES: RuleBridge[] = [
     why: 'Direktes Lesen eines SAP-Objekts; die Engine meldet denselben SELECT als standard-table-read.',
   },
   {
+    rule: 'R01',
+    kinds: ['standard-table-read'],
+    construct: /\bGET\s+(?!BADI|TIME|PARAMETER|RUN|BIT|CURSOR|REFERENCE|LOCALE|DATASET|PF-STATUS|PROPERTY)\w/i,
+    why:
+      'Lesen über eine logische Datenbank. R01 Bedingung (c) verweist das LDB-Lesen an R33, und R33 sagt, dass ' +
+      '`GET <node>` den Satz je Ereignis erhält — der SELECT läuft in der LDB, nicht in dieser Quelle. Genau das ' +
+      'meldet die Engine am GET: einen standard-table-read über die Route logical-database, mit dem Satz in der ' +
+      'Begründung. Die Ausnahmeliste hält die anderen GET-Anweisungen heraus, die keine LDB-Knoten sind ' +
+      '(GET BADI, GET TIME, GET PARAMETER …).',
+  },
+  {
     rule: 'R02',
     kinds: ['standard-table-write'],
     construct: /\b(INSERT|UPDATE|MODIFY|DELETE)\b/i,

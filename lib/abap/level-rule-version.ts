@@ -12,7 +12,8 @@
  * So the version is measured, not declared. The rule's inputs are a small,
  * closed set — a release state, a classification state, whether SAP named a
  * successor, whether the object is SAP's at all, whether it is the customer's,
- * and how the code uses it (not known, read, written) — so every input the rule
+ * and how the code uses it (not known, read, written, referenced as a type) —
+ * so every input the rule
  * can distinguish is enumerated, the answer it gives for each is recorded, and
  * the whole table is hashed. Change one branch of `gradeFromSapStatesForUse`
  * (which includes `gradeFromSapStates`) and the fingerprint moves. Change
@@ -39,7 +40,7 @@ export type LevelGrader = (states: SapObjectStates, use: ObjectUse | null) => {
 };
 
 /** The uses the rule can be asked about; `null` is "only the name is known". */
-export const RULE_USES: readonly (ObjectUse | null)[] = [null, 'read', 'write'];
+export const RULE_USES: readonly (ObjectUse | null)[] = [null, 'read', 'write', 'reference'];
 
 /**
  * The release-file states the rule branches on, verbatim from
