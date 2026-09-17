@@ -40,6 +40,13 @@ import ProcessHints from './ProcessHints';
  * the footer reports whatever it returns. The signature is
  * `SaveProcessModel` below.
  *
+ * Since 3.2 there is one: `documentation/page.tsx` builds the adapter over
+ * `lib/process-revisions-client.ts` and hands it down through `ProcessMap`. The
+ * page is where it belongs, because a revision is stored against a project and
+ * neither this component nor the map has a project — they have a model and a
+ * source. The fallback below stays for a caller that mounts the editor without
+ * one, and it says exactly that rather than claiming the step is unbuilt.
+ *
  * ## The palette is a list of buttons, not a drag source
  *
  * bpmn-js brings a palette of its own. It is a drag-and-drop surface: it cannot
@@ -66,7 +73,7 @@ import ProcessHints from './ProcessHints';
  */
 
 /* ------------------------------------------------------------------ *
- * What roadmap 3.2 will provide.
+ * What the caller provides — roadmap 3.2.
  * ------------------------------------------------------------------ */
 
 export interface SaveProcessModelInput {
@@ -86,13 +93,14 @@ export interface SaveProcessModelResult {
   revisionId?: string;
 }
 
-/** Roadmap 3.2 supplies this. Until it does, the footer says saving is not there yet. */
+/** Supplied by whoever mounts the editor. In the product: the documentation stage. */
 export type SaveProcessModel = (input: SaveProcessModelInput) => Promise<SaveProcessModelResult>;
 
-const SAVING_ARRIVES_WITH_REVISIONS: SaveProcessModel = async () => ({
+/** No `save` prop: a statement about this mounting, not about the product. */
+const NO_PLACE_TO_KEEP_IT: SaveProcessModel = async () => ({
   ok: false,
-  message: 'Keeping a model is a revision with an account and a time — roadmap step 3.2. Your draft is kept in this'
-    + ' session and the reconstruction is untouched.',
+  message: 'This editor was opened without somewhere to keep a revision, so nothing was saved. Your draft is kept'
+    + ' in this session and the reconstruction is untouched.',
 });
 
 /* ------------------------------------------------------------------ *
@@ -271,7 +279,7 @@ export interface BpmnEditorProps {
   onDraftChange: (xml: string) => void;
   /** Throw the draft away and open the reconstruction again. */
   onDiscard: () => void;
-  /** Roadmap 3.2. Omitted until it exists. */
+  /** Roadmap 3.2 — keep the draft as a revision. Omitted means the footer says so. */
   save?: SaveProcessModel;
 }
 
@@ -628,7 +636,7 @@ export default function BpmnEditor({
   const onSave = useCallback(async () => {
     setSaving(true);
     try {
-      const keep = save ?? SAVING_ARRIVES_WITH_REVISIONS;
+      const keep = save ?? NO_PLACE_TO_KEEP_IT;
       const result = await keep({ xml: draftXml, baseXml, fileName });
       setSaved(result.message);
       if (result.ok) setDirty(false);

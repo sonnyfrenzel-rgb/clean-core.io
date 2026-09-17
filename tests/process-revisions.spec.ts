@@ -6,8 +6,14 @@ import {
   diffProcessRevisions,
   readRevisionStats,
   revisionLine,
+  type ProcessRevisionRecord,
   type ProcessRevisionSummary,
 } from '../lib/process-revisions';
+import {
+  SAVE_REVISION_REFUSALS,
+  revisionOutcomeSentence,
+  type SaveRevisionOutcome,
+} from '../lib/process-revisions-client';
 
 /**
  * Roadmap 3.2 — the comparison of two revisions, with no server at all.
@@ -220,3 +226,63 @@ test('the line a revision carries says what it is, and never that it is right', 
     expect(line.toLowerCase()).not.toMatch(/verified|correct|approved|proven/);
   }
 });
+
+/**
+ * The half of the seam that needs no server — roadmap 3.2, QA finding 54a73bb3bed2.
+ *
+ * The editor's footer prints whatever the adapter hands back. Before there was
+ * an adapter this was moot; now it is the difference between a reader who knows
+ * what happened and one who is shown `revision-moved` and a 409. So: every
+ * refusal the store can answer with has a sentence of its own, and none of them
+ * is the code or the server's own wording.
+ */
+test('every outcome of a save is a sentence a reader can act on', () => {
+  const seen = new Set<string>();
+  for (const code of SAVE_REVISION_REFUSALS) {
+    const outcome: SaveRevisionOutcome = { ok: false, code, error: 'SERVER_SIDE_WORDING', status: 409, latest: 7 };
+    const sentence = revisionOutcomeSentence(outcome);
+    expect(typeof sentence, `${code} has no sentence`).toBe('string');
+    expect(sentence.length, `${code} is too terse to act on`).toBeGreaterThan(40);
+    expect(sentence, `${code} shows the raw code`).not.toContain(code);
+    expect(sentence, `${code} passes the server's own wording through`).not.toContain('SERVER_SIDE_WORDING');
+    expect(seen.has(sentence), `${code} repeats another refusal's sentence`).toBe(false);
+    seen.add(sentence);
+  }
+
+  // The refusal the run check added has one of its own: a revision 1 that is not
+  // bound to a verified run reaches the reader as a sentence, not as a 409.
+  expect(SAVE_REVISION_REFUSALS).toContain('run-unverified');
+
+  // The one refusal a reader can do something about names what to do and which
+  // revision to open.
+  const moved = revisionOutcomeSentence({ ok: false, code: 'revision-moved', error: 'x', status: 409, latest: 7 });
+  expect(moved).toContain('revision 7');
+  expect(moved).toContain('Nothing was overwritten');
+
+  // And `created: false` is an outcome, not a failure — it does not read as one.
+  const unchanged = revisionOutcomeSentence({
+    ok: true,
+    created: false,
+    record: { ...summaryOfNothing, revision: 4 } as ProcessRevisionRecord,
+  });
+  expect(unchanged).toContain('revision 4');
+  expect(unchanged.toLowerCase()).not.toContain('could not');
+  expect(unchanged.toLowerCase()).not.toContain('failed');
+});
+
+/** Enough of a record to name a revision number; nothing here reads the rest. */
+const summaryOfNothing = {
+  formatVersion: 1,
+  revision: 1,
+  origin: 'edited' as const,
+  account: { uid: 'u1', name: 'n', email: 'e' },
+  savedAt: '2026-09-18T07:30:00.000Z',
+  xmlSha256: 'a'.repeat(64),
+  sourceSha256: 'b'.repeat(64),
+  fileName: 'z.abap',
+  runId: 'run-1',
+  flowNodes: 1,
+  anchored: 1,
+  unanchored: 0,
+  xml: '<bpmn:definitions/>',
+};
