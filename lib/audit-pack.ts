@@ -31,15 +31,25 @@ interface ManifestFile {
 }
 
 /**
- * A file the issuer placed in the archive without signing its contents. Its
- * path is bound into the manifest hash (see `lib/audit-pack-canonical.ts`);
- * what is inside is the account holder's own statement and carries no hash on
- * purpose — a recorded digest of an unsigned file would read as a guarantee it
- * cannot give.
+ * A file the issuer placed in the archive without vouching for what it says.
+ *
+ * Its path and, from manifest version 3, the SHA-256 of the bytes that were
+ * sealed are bound into the manifest hash (see `lib/audit-pack-canonical.ts`).
+ * The digest used to be left out on purpose — it would read as a guarantee the
+ * issuer cannot give — but the omission kept the wrong promise: a recipient
+ * could rewrite `07-user-attested.md` from "sign-off: not given" into a
+ * fabricated approval and every verifier still said the pack was authentic. The
+ * digest says *which* self-declaration was in the archive; the `provenance`
+ * label, the verifiers and this pack's own provenance file keep saying that
+ * nobody vouches for whether it is true.
+ *
+ * `sha256` is absent on every pack sealed before 17.09.2026, which is why it is
+ * optional and why those packs still verify.
  */
 export interface AttestedFile {
   path: string;
   provenance: 'user-attested';
+  sha256?: string;
 }
 
 /** The one user-attested file a pack carries today. */
@@ -228,7 +238,7 @@ function usageContextOf(mc: ModelCard | undefined): string {
   ].join('\n');
 }
 
-const SEE_ATTESTED = `recorded in ${USER_ATTESTED_FILE} — the account holder's own statement, not covered by the signature`;
+const SEE_ATTESTED = `recorded in ${USER_ATTESTED_FILE} — the account holder's own statement, sealed but not confirmed`;
 
 export function generateExecutiveSummary(project: Project): string {
   const fp = project.auditMetadata?.inputFingerprint;
@@ -629,7 +639,7 @@ model-generated drafts and user-attested inputs.
 | 05-known-limitations.md | static |
 | 06-architecture-decision-record.md | server-computed (evidence, engine recommendation, worklist from the signed run) |
 | ${INPUT_MANIFEST_FILE} | server-computed (the inputs the run bound itself to, with revision and hash) |
-| ${USER_ATTESTED_FILE} | **user-attested — not covered by the signature.** Project name, chosen target architecture, sign-off, approver, override reason, workflow status. The manifest binds the file's name, not its contents. |
+| ${USER_ATTESTED_FILE} | **user-attested — nobody vouches for what it says.** Project name, chosen target architecture, sign-off, approver, override reason, workflow status. The manifest binds the file's name and the SHA-256 of the bytes that were sealed, so you can tell it has not been rewritten since; it does not make the statement in it true. |
 | manifest.json | server-computed (file hashes, manifest hash, HMAC / Ed25519 signature, attested file names) |
 
 **Headline field provenance**

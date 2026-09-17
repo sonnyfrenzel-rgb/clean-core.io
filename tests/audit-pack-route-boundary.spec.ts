@@ -162,7 +162,12 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     // The archive is exactly what the manifest says: the signed files, the one
     // attested file, the manifest.
     const entries = Object.values(zip.files).filter((e) => !e.dir).map((e) => e.name).sort();
-    expect(manifest.attested).toEqual([{ path: USER_ATTESTED_FILE, provenance: 'user-attested' }]);
+    // The digest is bound too since 17.09.2026: which self-declaration was sealed
+    // is a fact about the archive, and leaving it out let anyone rewrite the
+    // sign-off inside a pack that still verified.
+    expect(manifest.attested).toEqual([
+      { path: USER_ATTESTED_FILE, provenance: 'user-attested', sha256: sha(await zip.file(USER_ATTESTED_FILE)!.async('nodebuffer')) },
+    ]);
     expect(entries).toEqual([...manifest.files.map((f: { path: string }) => f.path), USER_ATTESTED_FILE, 'manifest.json'].sort());
 
     // The manifest hash is the shared canonical form, over the signed files and the attested name.
@@ -174,6 +179,8 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
       runHash: manifest.runHash,
       engineVersion: manifest.engineVersion,
       sapApiCatalogVersion: manifest.sapApiCatalogVersion,
+      version: manifest.version,
+      generatedAt: manifest.generatedAt,
     });
     expect(sha(canonical)).toBe(manifest.manifestHash);
     expect(manifest.signed).toBe(true);

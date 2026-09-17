@@ -236,10 +236,21 @@ Two rules follow, and both are guarded by `tests/run-integrity-guard.spec.ts`:
   builds the signed generators' input from a named list of run fields, and the
   owner's statements go into `07-user-attested.md`: listed under `attested` in
   `manifest.json`, its **name** bound into the manifest hash
-  (`lib/audit-pack-canonical.ts`, shared by issuer and web verifier), its
-  **contents** deliberately unhashed and unsigned. Both verifiers show it as
-  "user-attested · not covered by the signature"; a pack sealed with it and opened
-  without it fails. The run's signed `worklist` holds findings only — the
+  (`lib/audit-pack-canonical.ts`, shared by issuer and web verifier). Its
+  **contents** were deliberately unhashed until 17.09.2026 — and that let anyone
+  holding a genuine pack rewrite the sign-off while every verifier still called
+  the pack authentic (QA full review of a19945ef01dc). Manifest version 3 binds
+  the file's SHA-256 as well: which self-declaration was sealed is a fact about
+  the archive, and nobody vouches for whether it is true. Both verifiers show it
+  as "user-attested · sealed, not confirmed" — a pack from version 2 keeps the
+  older, weaker label, "not covered by the signature", because that is what its
+  format supports. A pack sealed with the file and opened without it fails.
+  Version 3 also binds `version` and `generatedAt`, and refuses a manifest whose
+  paths carry `:` `;` or `,`: the concatenated form is only canonical if one
+  string can come from one manifest, and unescaped separators in a path let two
+  file lists produce the same signed bytes. That refusal applies to version-2
+  packs too, so the hole is closed for packs already delivered; their canonical
+  bytes are otherwise untouched and they still verify. The run's signed `worklist` holds findings only — the
   narrative's `gaps` are model text and reach the project's interactive worklist,
   not the signature. `tests/audit-pack-signed-input.spec.ts` changes every
   client-writable field and asserts that no signed byte moves.

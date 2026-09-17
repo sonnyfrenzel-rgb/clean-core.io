@@ -130,6 +130,59 @@ function keyFromDocument(doc) {
   return { key, keyId: keyIdOf(key) };
 }
 
+/** The characters the canonical form uses as separators; `lib/audit-pack-canonical.ts` says why no path may contain one. */
+const SEPARATOR = /[:;,]/;
+/** The run-binding fields are held only to this: the live catalog version carries a colon and a comma. */
+const SECTION_END = /;/;
+const SHA256 = /^[0-9a-f]{64}$/;
+const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+
+/** Format 3 escapes the run-binding fields; format 2 is left at the bytes it was signed with. */
+function escapeField(value) {
+  return String(value).replace(/%/g, '%25').replace(/:/g, '%3A').replace(/;/g, '%3B');
+}
+
+/** True for a manifest sealed in the bound form — attested digests and issuance metadata. */
+function bindsIssuanceMetadata(version) {
+  const major = Number.parseInt(String(version ?? ''), 10);
+  return Number.isFinite(major) && major >= 3;
+}
+
+/** Why this manifest has no single canonical string, or null — the same rules as `canonicalManifestDefect`. */
+function canonicalDefect(manifest, attested) {
+  const bound = bindsIssuanceMetadata(manifest.version);
+  const seen = new Set();
+  for (const f of manifest.files || []) {
+    if (!f.path) return 'a file entry has no path';
+    if (SEPARATOR.test(f.path)) return `a file path contains a field separator: ${JSON.stringify(f.path)}`;
+    if (!SHA256.test(f.sha256)) return `${JSON.stringify(f.path)} carries no 64-digit lowercase SHA-256`;
+    if (seen.has(f.path)) return `the same path is listed twice: ${JSON.stringify(f.path)}`;
+    seen.add(f.path);
+  }
+  for (const a of attested) {
+    if (!a.path) return 'an attested entry has no path';
+    if (SEPARATOR.test(a.path)) return `an attested path contains a field separator: ${JSON.stringify(a.path)}`;
+    if (seen.has(a.path)) return `${JSON.stringify(a.path)} is listed as both signed and attested`;
+    seen.add(a.path);
+    if (bound) {
+      if (!SHA256.test(a.sha256 ?? '')) return `the attested file ${JSON.stringify(a.path)} carries no 64-digit lowercase SHA-256`;
+    } else if (a.sha256 !== undefined) {
+      return `the attested file ${JSON.stringify(a.path)} carries a digest that manifest version ${JSON.stringify(String(manifest.version ?? ''))} does not bind`;
+    }
+  }
+  if (!bound) {
+    for (const name of ['projectId', 'runId', 'runHash', 'engineVersion', 'sapApiCatalogVersion']) {
+      const value = manifest[name];
+      if (value !== undefined && SECTION_END.test(String(value))) return `${name} contains a field separator: ${JSON.stringify(value)}`;
+    }
+  }
+  if (bound) {
+    if (SEPARATOR.test(String(manifest.version))) return `version contains a field separator: ${JSON.stringify(manifest.version)}`;
+    if (!ISO_INSTANT.test(String(manifest.generatedAt ?? ''))) return `generatedAt is not an ISO-8601 instant: ${JSON.stringify(String(manifest.generatedAt ?? ''))}`;
+  }
+  return null;
+}
+
 async function main() {
   let JSZip;
   try {
@@ -183,15 +236,27 @@ async function main() {
     console.log(`${c.bad('unlisted')}  ${name}`);
     contentsOk = false;
   }
-  // A user-attested file: the issuer bound its name into the manifest, not its
-  // contents. It has to be there — a pack sealed with it and opened without it
-  // was altered — and whatever it says is the account holder's statement.
+  // A user-attested file carries the account holder's own statement. From
+  // manifest version 3 the issuer records its SHA-256 and binds it into the
+  // signature — which self-declaration was sealed is a fact about the archive,
+  // and while it was unbound anyone holding a genuine pack could rewrite
+  // "sign-off: not given" into a fabricated approval and still read "Verified"
+  // here. A version-2 pack has no digest to check, and that gap is printed
+  // rather than folded into the verdict.
+  let unboundAttested = 0;
   for (const a of attested) {
-    if (zip.file(a.path)) {
-      console.log(`${c.warn('attested')}  ${a.path}  ${c.dim('user-attested — present, not covered by the signature')}`);
-    } else {
+    const entry = zip.file(a.path);
+    if (!entry) {
       console.log(`${c.bad('missing')}   ${a.path}  ${c.dim('attested file the manifest names')}`);
       contentsOk = false;
+    } else if (!a.sha256) {
+      unboundAttested += 1;
+      console.log(`${c.warn('attested')}  ${a.path}  ${c.dim("user-attested — present; in this pack's format its contents are not covered by the signature")}`);
+    } else if (createHash('sha256').update(await entry.async('nodebuffer')).digest('hex') !== a.sha256) {
+      console.log(`${c.bad('altered')}   ${a.path}  ${c.dim('attested file — its bytes are not the bytes that were sealed')}`);
+      contentsOk = false;
+    } else {
+      console.log(`${c.warn('attested')}  ${a.path}  ${c.dim("user-attested — the sealed bytes, the account holder's own statement")}`);
     }
   }
   console.log(
@@ -203,8 +268,22 @@ async function main() {
   // 2. The manifest hash, rebuilt the way the issuer built it
   //    (lib/audit-pack-canonical.ts — this script repeats the form so it needs
   //    no build; tests/verify-pack-cli.spec.ts holds the two to the same bytes).
+  // The form is only canonical if one string can come from one manifest. A
+  // concatenation with unescaped separators is not: delete file `a`, rename `b`
+  // to `a:<hash of a>;b`, collapse the two rows into that one, and the signed
+  // bytes are unchanged while a signed evidence file is gone. So a separator in
+  // a path, a digest that is not 64 lowercase hex digits, or a repeated path is
+  // a manifest no issuer wrote — refused here, on old and new packs alike.
+  const defect = canonicalDefect(manifest, attested);
+  if (defect) {
+    console.log(c.bad(`FAILED    this manifest has no unambiguous canonical form: ${defect}`));
+    console.log('\n' + c.bad('NOT verified. At least one check above failed.') + '\n');
+    process.exit(FAILED);
+  }
+
+  const bound = bindsIssuanceMetadata(manifest.version);
   const sorted = [...(manifest.files || [])].sort((a, b) => a.path.localeCompare(b.path));
-  const attestedPaths = attested.map((a) => a.path).sort((a, b) => a.localeCompare(b));
+  const attestedSorted = [...attested].sort((a, b) => a.path.localeCompare(b.path));
   // The run suffix belongs only to a pack that carries a run hash. Appending
   // it unconditionally turned every pack issued before the run binding into
   // "FAILED manifest digest" here while the web verifier said OK — two
@@ -213,9 +292,15 @@ async function main() {
     sorted.map((f) => `${f.path}:${f.sha256}`).join(';') +
     ';' +
     (manifest.runHash !== undefined
-      ? `${manifest.projectId || ''}:${manifest.runId || ''}:${manifest.runHash || ''}:${manifest.engineVersion || ''}:${manifest.sapApiCatalogVersion || ''};`
+      ? ((f) =>
+          `${f(manifest.projectId || '')}:${f(manifest.runId || '')}:${f(manifest.runHash || '')}:${f(manifest.engineVersion || '')}:${f(manifest.sapApiCatalogVersion || '')};`)(
+          bound ? escapeField : (s) => String(s),
+        )
       : '') +
-    (attestedPaths.length ? `attested=${attestedPaths.join(',')};` : '');
+    (attestedSorted.length
+      ? `attested=${attestedSorted.map((a) => (bound ? `${a.path}:${a.sha256}` : a.path)).join(',')};`
+      : '') +
+    (bound ? `issued=${manifest.version}:${manifest.generatedAt};` : '');
   const manifestHash = createHash('sha256').update(canonical).digest('hex');
   const hashOk = manifestHash === manifest.manifestHash;
   console.log(
@@ -267,10 +352,18 @@ async function main() {
   }
 
   const verified = contentsOk && hashOk && sigOk;
+  // A pack sealed before attested contents were bound gets a verdict that names
+  // the exception instead of one sentence that covers the whole archive: the
+  // signed evidence is verified, the self-declaration inside it is not.
   console.log(
     '\n' +
       (verified
-        ? c.ok('Verified. Contents, manifest and signature all agree — checked offline, no secret involved.')
+        ? unboundAttested
+          ? c.ok('Verified. The signed evidence, the manifest and the signature all agree — checked offline, no secret involved.') +
+            c.warn(
+              `\n${unboundAttested} attested file(s) carry no digest in this pack's manifest version, so their contents are outside the check.`,
+            )
+          : c.ok('Verified. Contents, manifest and signature all agree — checked offline, no secret involved.')
         : c.bad('NOT verified. At least one check above failed.')) +
       '\n',
   );

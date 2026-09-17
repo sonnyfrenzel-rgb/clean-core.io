@@ -164,7 +164,11 @@ test('the signed files point at the attested file instead of restating it', () =
   expect(record.architectReview).toEqual({ attestationType: 'self-attested', recordedIn: USER_ATTESTED_FILE, signed: false });
   expect(record.recommendation.engineRecommendation).toBe('rap');
   expect(record.recommendation.targetArchitecture).toBeUndefined();
-  expect(signed['00-provenance.md']).toContain(`${USER_ATTESTED_FILE} | **user-attested — not covered by the signature.**`);
+  // Since 17.09.2026 the manifest binds the attested file's bytes as well as its
+  // name, so the provenance table says what the digest does and does not buy:
+  // the statement was not rewritten after sealing, and nobody vouches for it.
+  expect(signed['00-provenance.md']).toContain(`${USER_ATTESTED_FILE} | **user-attested — nobody vouches for what it says.**`);
+  expect(signed['00-provenance.md']).toContain('it does not make the statement in it true');
 });
 
 test.describe('the canonical manifest', () => {

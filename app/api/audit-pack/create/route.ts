@@ -5,7 +5,7 @@ import JSZip from 'jszip';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { verifyRunIntegrity } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
-import { signEd25519 } from '@/lib/audit-signing-keypair';
+import { signEd25519, getSigningKeypair } from '@/lib/audit-signing-keypair';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { APP_VERSION } from '@/lib/version';
 import { signOffKey } from '@/lib/artefact-digest';
@@ -19,7 +19,7 @@ import {
 } from '@/lib/input-manifest';
 import { USER_ATTESTED_FILE, type AttestedFile } from '@/lib/audit-pack';
 import { attestationsOf, buildAuditPackContents } from '@/lib/audit-pack-build';
-import { canonicalAuditManifest } from '@/lib/audit-pack-canonical';
+import { canonicalAuditManifest, MANIFEST_VERSION_ED25519, MANIFEST_VERSION_HMAC } from '@/lib/audit-pack-canonical';
 
 /**
  * POST /api/audit-pack/create  (v1.20 §5 — server-authoritative audit pack)
@@ -274,23 +274,33 @@ export async function POST(req: NextRequest) {
       attested: attestationsOf(projectData),
     });
 
-    // 2. Hash server-side — the signed files only. The attested file gets no
-    // recorded digest: a hash of an unsigned file reads as a guarantee it
-    // cannot give.
+    // 2. Hash server-side — every file the archive carries, signed or attested.
+    // The attested file's digest says which self-declaration was sealed, not
+    // that it is true; it used to be left out, and the omission let anyone
+    // holding a pack rewrite the sign-off while every verifier still called the
+    // pack authentic (QA full review of a19945ef01dc).
     const sha = (s: string) => crypto.createHash('sha256').update(s).digest('hex');
     const enc = new TextEncoder();
     const files = Object.entries(fileContents).map(([path, content]) => ({
       path, sha256: sha(content), bytes: enc.encode(content).byteLength,
     }));
-    const attested: AttestedFile[] = Object.keys(attestedContents).map((path) => ({ path, provenance: 'user-attested' }));
+    const attested: AttestedFile[] = Object.entries(attestedContents).map(([path, content]) => ({
+      path, provenance: 'user-attested', sha256: sha(content),
+    }));
 
     // 3. Canonical manifest + signature. One implementation, shared with the
-    // verifier (lib/audit-pack-canonical.ts): the attested file's name is bound
-    // into the hash, its contents are not.
+    // verifier (lib/audit-pack-canonical.ts). The issuance metadata is decided
+    // before the hash rather than after it: `generatedAt` was printed by both
+    // verifiers as part of a successful result while nothing bound it, so a
+    // genuine pack could be given any issue date and still verify.
     const runHash: string = runData.runHash;
     const engineVersion: string = runData.analyzerVersion || APP_VERSION;
     const sapApiCatalogVersion: string = runData.sapApiCatalogVersion || '';
-    const canonicalManifest = canonicalAuditManifest({ files, attested, projectId, runId, runHash, engineVersion, sapApiCatalogVersion });
+    const generatedAt = new Date().toISOString();
+    const version = getSigningKeypair() ? MANIFEST_VERSION_ED25519 : MANIFEST_VERSION_HMAC;
+    const canonicalManifest = canonicalAuditManifest({
+      files, attested, projectId, runId, runHash, engineVersion, sapApiCatalogVersion, version, generatedAt,
+    });
     const manifestHash = sha(canonicalManifest);
 
     const signingKey = getAuditSigningKey();
@@ -299,7 +309,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
     const signature = crypto.createHmac('sha256', signingKey).update(manifestHash).digest('hex');
-    const generatedAt = new Date().toISOString();
 
     // The asymmetric signature, when a key is configured. It covers exactly the
     // same string as the HMAC, so a verifier checks one value with either method
@@ -309,7 +318,7 @@ export async function POST(req: NextRequest) {
     const ed25519 = signEd25519(manifestHash);
 
     const manifest = {
-      version: ed25519 ? '2.1' : '2.0',
+      version,
       runId,
       projectId,
       generatedAt,

@@ -236,6 +236,9 @@ test.describe('v1.19 Trust Chain Closure', () => {
         runHash: manifest.runHash,
         engineVersion: manifest.engineVersion,
         sapApiCatalogVersion: manifest.sapApiCatalogVersion,
+        // Bound since 17.09.2026, so the rebuild has to carry them too.
+        version: manifest.version,
+        generatedAt: manifest.generatedAt,
       });
       expect(sha(canonicalManifest)).toBe(manifest.manifestHash);
 
