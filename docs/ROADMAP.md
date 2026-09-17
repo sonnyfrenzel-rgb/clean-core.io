@@ -206,6 +206,20 @@ Code-Karte darunter.
 | 2.10 | **Referenzkorpus v2.1 im Repository:** `docs/korpus/referenzkorpus-v2.1.md` (das Fallbuch mit Rahmen, Regelregister, Negativliste, Gegenreview, Autorenberichten) und `tests/korpus/cases/CC-nnn/` mit `source.abap`, `profile.json`, `expected.json` je Fall, erzeugt aus dem Fallbuch durch `scripts/korpus/build-bundle.mjs` (deterministisch, Quellenhashes geprüft). `tests/korpus-engine.spec.ts` lässt die Engine gegen alle 68 Fälle laufen und vergleicht Befunde, Level, Objekte, Skelettknoten; **Ratsche** wie bei abaplint: `tests/korpus/baseline.json` führt jede Abweichung mit Urteil (`engine-defekt` · `korpus-offen` · `nicht-vergleichbar`) und Grund, ein Fall, der übereinstimmte und es nicht mehr tut, macht den Lauf rot, eine still verschwundene Abweichung ebenfalls. Fundstellen aus öffentlichen Repositories stehen im Repository **nur als SHA-256 des Ausschnitts** — kein fremder Code, und auch kein Zeiger darauf: weder URL noch Commit-ID noch Pfad, denn elf von zwölf Quellen sind ohne Lizenz und die tragenden sind nach allen Indizien unautorisiert hochgeladene Arbeitgeberbestände. Dieses Repository ist öffentlich und Git vergisst nichts; ein Link mit Commit und Zeile wäre ein dauerhafter, indizierter Zeiger auf eine fremde Offenlegung, auch nachdem ihn jemand wieder herausnimmt. Der vollständige Nachweis liegt außerhalb. Gehalten von `tests/korpus-engine.spec.ts` („docs/korpus/ trägt keinen Zeiger auf ein fremdes Repository"), das auf jeden Hostnamen und jede 40-stellige Hex-Kette anschlägt. Die Fallquellen selbst sind durchweg **konstruiert** — kein Fall stammt aus einem Kundensystem. Der Korpus wird nie als Prompt- oder Trainingsmaterial des Modells verwendet, das er prüft | M |
 
 | 2.11 | **Was der Korpus an der Engine findet** (Grundlinie vom 17.09.2026, `tests/korpus/baseline.json`): 24 Engine-Defekte in drei Familien, dazu 134 Aussageklassen, die die Engine noch gar nicht produziert. Die Familien, nicht die Einzelfälle, sind die Arbeit. **Stand 18.09.2026: 1 Defekt übrig** (CC-050 · level — eine Produktentscheidung, kein Bugfix), 130 Aussageklassen noch nicht produziert — siehe unten | L |
+**Zwei Nachzieher an 2.6, gefunden beim Bau von 2.9 (18.09.2026):**
+
+- **Ein Wächter ist keine Verzweigung.** Ein führendes `CHECK p_rfc = abap_true.`
+  wird als bedingter Fluss **ohne Umgehungskante** gezeichnet. Wer ihm wie einer
+  Verzweigung folgt, behauptet, das Programm ende am Schalter: `p_rfc` aus ergäbe
+  „31 von 65 Schritten laufen nicht", tatsächlich laufen 59. 2.9 unterscheidet
+  deshalb Wächter von Verzweigung; die saubere Lösung ist eine Umgehungskante in
+  `lib/bpmn`, damit die Datei selbst die Wahrheit trägt und nicht ihr Leser.
+- **`dataAssociations` kommen nicht aus dem Export heraus.** Die Tabellen je Knoten
+  stehen in der BPMN nur als Text-Referenzen (`<bpmn:sourceRef>`). Ein
+  `dataByElement: Record<id, { reads, writes }>` auf `BpmnExport` würde das
+  Data-Overlay ohne einen zweiten XML-Parser möglich machen — ohne das bleibt es
+  ungebaut (2.9, bewusst).
+
 **Fertig, wenn**
 - jeder Task, jedes Gateway und jede Lane einen Zeilenanker trägt oder sichtbar
   „unbelegt" ist, und die Quote angezeigt wird (V25-A01);

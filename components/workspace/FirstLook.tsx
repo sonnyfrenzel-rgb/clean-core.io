@@ -198,6 +198,33 @@ export default function FirstLook({
   const [naming, setNaming] = useState<{ record: ProcessNamingRecord | null } | null>(null);
   const [rules, setRules] = useState<BusinessRuleSet | null>(null);
 
+  /**
+   * Every stage above holds a reading of *one* source, and nothing in them says
+   * which. If this instance is ever handed a different project or a different
+   * source, the four would still be full of the last one's answer until the
+   * effects below have run — and the screen would show a process name, a
+   * traceability quote, decisions and rules belonging to a program the reader is
+   * not looking at. That is the one thing this whole screen exists to prevent:
+   * every number here is supposed to come from this run.
+   *
+   * So the reading is tied to what it was read from, and a change throws it away
+   * during the render that brings it, before anything is painted (React's
+   * "adjusting state when a prop changes"). Today the page fetches once per
+   * `projectId` and a full navigation remounts, so this is a guard rather than a
+   * fix for a reachable bug — which is the point: the next caller that keeps the
+   * instance alive should not have to discover this.
+   */
+  const readingKey = `${projectId} ${source}`;
+  const [readFor, setReadFor] = useState(readingKey);
+  if (readFor !== readingKey) {
+    setReadFor(readingKey);
+    setTables(null);
+    setProcess(null);
+    setNaming(null);
+    setRules(null);
+    setSkipped(false);
+  }
+
   /* ---- stage 1's work ---- */
   useEffect(() => {
     if (!hasSource) return;
