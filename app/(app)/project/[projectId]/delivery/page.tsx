@@ -471,7 +471,12 @@ jobs:
         align="center"
         icon={<Rocket className="w-8 h-8 md:w-9 md:h-9 text-green-600" />}
       >
-        {deliveryPhase.done
+        {/* `proven`, not `done`. The material can all be present while the test
+            run behind the verdicts never happened — `testCases[].status` is
+            client-writable and used to be read as an execution (QA full review
+            of a19945ef01dc). In that case the lead falls through to the phase's
+            own detail, which says so. */}
+        {deliveryPhase.proven
           ? 'Code, documentation and a passing test run are on record. Whether to deploy remains an architect’s decision, not this page’s.'
           : handoverBlocked
             ? 'What is on record for handover, and what is not yet.'

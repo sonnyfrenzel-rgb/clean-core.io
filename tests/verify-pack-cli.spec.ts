@@ -25,13 +25,34 @@ const sha = (s: string) => createHash('sha256').update(s).digest('hex');
 function keyPair() {
   const { publicKey, privateKey } = generateKeyPairSync('ed25519');
   const der = publicKey.export({ format: 'der', type: 'spki' }) as Buffer;
-  return { privateKey, rawPublicBase64: der.subarray(der.length - 32).toString('base64') };
+  const raw = der.subarray(der.length - 32);
+  return {
+    privateKey,
+    rawPublicBase64: raw.toString('base64'),
+    // The same derivation `lib/audit-signing-keypair.ts` uses, so a pack's
+    // `signingKeyId` and a published entry can be compared at all.
+    keyId: createHash('sha256').update(raw).digest('hex').slice(0, 16),
+  };
+}
+
+/** A `/.well-known/clean-core-io-signing.json` document, written to a file. */
+function keyDocument(entries: Array<{ rawPublicBase64: string; status: 'active' | 'retired' }>) {
+  const path = join(mkdtempSync(join(tmpdir(), 'verify-keys-')), 'signing.json');
+  writeFileSync(
+    path,
+    JSON.stringify({
+      keys: entries.map((e) => ({ algorithm: 'Ed25519', use: 'audit-pack-signature', status: e.status, publicKey: e.rawPublicBase64 })),
+    }),
+  );
+  return path;
 }
 
 async function buildPack(opts: {
   signWith?: KeyObject;
   extra?: Record<string, string>;
   signingKeyUrl?: string;
+  /** What the pack says signed it — how a verifier finds the right key in a set. */
+  signingKeyId?: string;
   attested?: Record<string, string | null>;
   /** A pack from before the run binding: no runHash, no suffix in its canonical form. */
   legacy?: boolean;
@@ -54,6 +75,7 @@ async function buildPack(opts: {
     manifest.signatureEd25519 = sign(null, Buffer.from(manifestHash, 'utf8'), opts.signWith).toString('base64');
   }
   if (opts.signingKeyUrl) manifest.signingKeyUrl = opts.signingKeyUrl;
+  if (opts.signingKeyId) manifest.signingKeyId = opts.signingKeyId;
 
   const zip = new JSZip();
   zip.file('00-executive-summary.md', content);
@@ -125,6 +147,50 @@ test('a pack from before the run binding canonicalises without the suffix, as th
 test('a pack without a signature is "could not check", never "verified"', async () => {
   const { code, out } = run([await buildPack({})]);
   expect(out).toContain('SKIPPED');
+  expect(code).toBe(2);
+});
+
+/* ─────────────────────────── rotation ─────────────────────────── */
+
+/**
+ * A key is rotated once and everything issued before it becomes unverifiable —
+ * silently, and in the worst possible words.
+ *
+ * `/.well-known/…` published exactly one key, the current one, and the verifier
+ * took the first Ed25519 entry it found. So after a rotation an auditor holding
+ * a perfectly genuine pack from last month was told the signature "does not
+ * verify" — the sentence reserved for a forgery, for a document nobody had
+ * touched. The signature was valid the whole time; there was simply no way left
+ * to find the key that made it.
+ */
+test('a pack signed before a rotation still verifies against the published key set', async () => {
+  const retired = keyPair();
+  const active = keyPair();
+  const pack = await buildPack({ signWith: retired.privateKey, signingKeyId: retired.keyId });
+  // The document as the endpoint now serves it: the new key first, because it
+  // is the active one, and the key this pack was signed with kept beside it.
+  const doc = keyDocument([
+    { rawPublicBase64: active.rawPublicBase64, status: 'active' },
+    { rawPublicBase64: retired.rawPublicBase64, status: 'retired' },
+  ]);
+  const { code, out } = run([pack, '--key', doc]);
+  expect(out).toContain('Verified.');
+  expect(out).toContain(retired.keyId);
+  expect(code).toBe(0);
+});
+
+test('a withdrawn key is "could not check", never "forged"', async () => {
+  // Removing a key from the set is how a compromised one is revoked. A pack it
+  // signed can no longer be confirmed — and that is not the same statement as
+  // "this signature is wrong", so it must not be given the same exit code.
+  const withdrawn = keyPair();
+  const active = keyPair();
+  const pack = await buildPack({ signWith: withdrawn.privateKey, signingKeyId: withdrawn.keyId });
+  const doc = keyDocument([{ rawPublicBase64: active.rawPublicBase64, status: 'active' }]);
+  const { code, out } = run([pack, '--key', doc]);
+  expect(out).toContain('Could not obtain a public key');
+  expect(out).toContain(withdrawn.keyId);
+  expect(out, 'a withdrawn key was reported as a bad signature').not.toContain('FAILED');
   expect(code).toBe(2);
 });
 

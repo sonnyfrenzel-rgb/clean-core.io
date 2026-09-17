@@ -4,7 +4,7 @@ import os from 'os';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
-import { adminSetDoc } from './helpers/admin-seed';
+import { adminSetDoc, adminMergeDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { parseTapOutput, packageNameOf } from '../lib/test-verdicts';
 import { TERMS_VERSION } from '../lib/constants';
@@ -131,9 +131,13 @@ test.describe('the runner, end to end', () => {
       "test.skip('TC_02: needs a tenant', () => {});",
       "test.todo('TC_03: not written yet');",
     ].join('\n');
+    // The suite is stored on the project, not posted in the body: since the QA
+    // full review of a19945ef01dc the route executes the project's own
+    // artefacts, so that a result can be attributed to the project at all.
+    await adminMergeDoc('projects', PROJECT_ID, { testSuite: { code: suite }, generatedCode: '' });
     const res = await request.post('/api/run-tests', {
       headers: { Authorization: `Bearer ${token}` },
-      data: { projectId: PROJECT_ID, tests: { code: suite }, code: '', selectedTestIds: ['TC_01', 'TC_02', 'TC_03'] },
+      data: { projectId: PROJECT_ID, selectedTestIds: ['TC_01', 'TC_02', 'TC_03'] },
     });
     expect(res.status(), await res.text()).toBe(200);
     const body = await res.json();
@@ -180,9 +184,10 @@ test.describe('the runner, end to end', () => {
     for (const [shape, spec] of [['an absolute', absSpec], ['a relative-traversal', relSpec]] as const) {
       test(`${shape} import outside the sandbox is rejected, its content never returned`, async ({ request }) => {
         test.setTimeout(90 * 1000);
+        await adminMergeDoc('projects', PROJECT_ID, { testSuite: { code: exfilSuite(spec) }, generatedCode: '' });
         const res = await request.post('/api/run-tests', {
           headers: { Authorization: `Bearer ${token}` },
-          data: { projectId: PROJECT_ID, tests: { code: exfilSuite(spec) }, code: '' },
+          data: { projectId: PROJECT_ID },
         });
         expect(res.status(), await res.text()).toBe(200);
         const body = await res.json();
@@ -205,9 +210,10 @@ test.describe('the runner, end to end', () => {
         "test('TC_SUM: relative import within the sandbox works', () => { assert.strictEqual(sum(2, 3), 5); });",
       ].join('\n');
       const appFiles = JSON.stringify([{ path: 'app.ts', content: 'export const sum = (a: number, b: number): number => a + b;' }]);
+      await adminMergeDoc('projects', PROJECT_ID, { testSuite: { code: suite }, generatedCode: appFiles });
       const res = await request.post('/api/run-tests', {
         headers: { Authorization: `Bearer ${token}` },
-        data: { projectId: PROJECT_ID, tests: { code: suite }, code: appFiles, selectedTestIds: ['TC_SUM'] },
+        data: { projectId: PROJECT_ID, selectedTestIds: ['TC_SUM'] },
       });
       expect(res.status(), await res.text()).toBe(200);
       const body = await res.json();

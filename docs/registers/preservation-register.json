@@ -1010,18 +1010,21 @@
           "status"
         ],
         "serverWrites": {
-          "via": "POST /api/s4-credentials",
+          "via": "POST /api/s4-credentials, POST /api/run-tests",
           "creates": "s4_credentials/{uid} (AES-256-GCM, server-only collection)",
-          "project": []
+          "project": [
+            "testRunReceipt"
+          ]
         },
         "otherCollections": [
           "tenant_access_requests/{uid}"
         ],
         "consumedByNextStage": [
           "testCases",
-          "coverageEstimate"
+          "coverageEstimate",
+          "testRunReceipt"
         ],
-        "note": "Verdicts are not written. generatedCode and testSuite are rewritten only by the auto-heal path in useTestExecution."
+        "note": "The page still does not store the verdicts it shows; what is stored is the server's own record of the run. POST /api/run-tests writes testRunReceipt with the Admin SDK — outside the client allowlist of firestore.rules — bound to the active run and to the digests of generatedCode, testSuite and testCases. lib/workflow-steps.ts reads it: a row of client-written Passed strings is 'done' and never proven without it. generatedCode and testSuite are rewritten only by the auto-heal path in useTestExecution."
       },
       "preconditions": {
         "enforceActiveRun": true,

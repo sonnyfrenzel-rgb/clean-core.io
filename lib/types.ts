@@ -73,6 +73,14 @@ export interface Project {
   generatedCode?: string;
   testCases?: TestCase[];
   testSuite?: TestSuite;
+  /**
+   * The server's record that the suite ran, written by `/api/run-tests` with the
+   * Admin SDK (E07-F02, `lib/test-receipt.ts`). Not in the client update
+   * allowlist of `firestore.rules`, so a browser cannot write one — which is the
+   * whole point: `testCases[].status` is client-writable and used to be read as
+   * an execution.
+   */
+  testRunReceipt?: import('./test-receipt').TestRunReceipt;
   coverageEstimate?: CoverageEstimate;
   manualTestingRequirements?: ManualTestRequirement[];
   documentation?: string;

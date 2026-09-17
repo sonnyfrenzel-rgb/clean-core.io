@@ -123,7 +123,7 @@ test.describe('client, server, index and export name the same six fields', () =>
     expect(route.indexOf('verifyRequestAuth(')).toBeGreaterThan(-1);
     expect(route.indexOf('assertMfaSatisfied(')).toBeGreaterThan(route.indexOf('verifyRequestAuth('));
     expect(route.indexOf('project.userId !== decodedToken.uid')).toBeGreaterThan(route.indexOf('assertMfaSatisfied('));
-    expect(route.indexOf('batch.set(ref,'), 'nothing is written before the owner check').toBeGreaterThan(
+    expect(route.indexOf('tx.set(ref,'), 'nothing is written before the owner check').toBeGreaterThan(
       route.indexOf('project.userId !== decodedToken.uid'),
     );
 
@@ -132,12 +132,22 @@ test.describe('client, server, index and export name the same six fields', () =>
     // on its own and leave a recorded sign-off that nothing records; reversing
     // them only moves the lie to the other side (QA review of fafb3299ae6c).
     expect(route, 'the journal entry is no longer written here').toContain("db.collection('audit_events')");
-    expect(route, 'the change and its journal entry are not in one batch').toMatch(
-      /const batch = db\.batch\(\)[\s\S]*batch\.set\(ref,[\s\S]*audit_events[\s\S]*await batch\.commit\(\)/,
+
+    // …and the read the decision is made on is the read the write is conditional
+    // on. A batch was atomic but not isolated: between `ref.get()` and
+    // `batch.commit()` a concurrent `/api/runs/create` could make a different run
+    // the active one, so a sign-off validated against run A landed on a project
+    // whose active run was B (QA full review of a19945ef01dc). The project read,
+    // `validateProjectCommand` and both writes are inside one transaction body.
+    expect(route, 'the command is not read, decided and written in one transaction').toMatch(
+      /db\.runTransaction\([\s\S]*tx\.get\(ref\)[\s\S]*validateProjectCommand\([\s\S]*tx\.set\(ref,[\s\S]*audit_events[\s\S]*\}\,?\s*\)\;/,
     );
+    expect(route, 'the project is read outside the transaction').not.toMatch(/await ref\.get\(\)/);
     // And no second, separate write that could succeed or fail on its own.
-    expect(route.match(/await ref\.set\(|await db\.collection\('audit_events'\)\.add\(/g) ?? [], 'a write outside the batch')
-      .toEqual([]);
+    expect(
+      route.match(/await ref\.set\(|db\.batch\(\)|await db\.collection\('audit_events'\)\.add\(/g) ?? [],
+      'a write outside the transaction',
+    ).toEqual([]);
   });
 
   test('index: both registers name the set the rules and the route agree on', () => {

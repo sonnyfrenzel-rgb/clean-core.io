@@ -80,13 +80,17 @@ function keyIdOf(publicKey) {
 }
 
 async function resolveKey(manifest) {
+  // Which key the pack says signed it. Held only to the shape the issuer
+  // derives, so a pack cannot steer the selection with anything else.
+  const wanted = /^[0-9a-f]{16}$/.test(String(manifest.signingKeyId || '')) ? String(manifest.signingKeyId) : null;
+
   if (keyArg) {
-    if (/^https?:\/\//.test(keyArg)) return fetchKey(keyArg);
+    if (/^https?:\/\//.test(keyArg)) return fetchKey(keyArg, wanted);
     // A path if it reads as a file, otherwise treat the argument as the key.
     try {
       const text = await readFile(keyArg, 'utf8');
       const parsed = text.trim().startsWith('{') ? JSON.parse(text) : null;
-      if (parsed) return keyFromDocument(parsed);
+      if (parsed) return keyFromDocument(parsed, wanted);
       const key = text.includes('BEGIN')
         ? createPublicKey(text)
         : publicKeyFromRawBase64(text.trim());
@@ -110,24 +114,63 @@ async function resolveKey(manifest) {
     const shown = JSON.stringify(String(manifest.signingKeyUrl).replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 200));
     console.log(c.warn(`WARNING   pack names ${shown} as its key document — ignored`));
   }
-  return fetchKey(TRUSTED_KEY_URL);
+  return fetchKey(TRUSTED_KEY_URL, wanted);
 }
 
-async function fetchKey(url) {
+async function fetchKey(url, wanted) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`fetching ${url} returned HTTP ${res.status}`);
-  return keyFromDocument(await res.json());
+  return keyFromDocument(await res.json(), wanted);
 }
 
-function keyFromDocument(doc) {
-  const entry = (doc.keys || []).find((k) => k.algorithm === 'Ed25519') || (doc.keys || [])[0];
-  if (!entry) throw new Error('the key document contains no keys');
-  const key = entry.publicKeyPem
-    ? createPublicKey(entry.publicKeyPem)
-    : publicKeyFromRawBase64(entry.publicKey);
-  // The id is derived from the key, not taken from the document: a document that
-  // mislabels its own key would otherwise pass the id check it exists to fail.
-  return { key, keyId: keyIdOf(key) };
+/**
+ * The key the pack names, out of everything the document publishes.
+ *
+ * It used to take the first Ed25519 entry and nothing else, which was the same
+ * as assuming the document only ever holds one key. The day the issuer rotates,
+ * every pack signed before it is checked against the *new* key and reported as
+ * not verifying — a genuine pack, given the answer reserved for a forged one.
+ * So: match on the pack's `signingKeyId`, against the id **derived** from each
+ * published key rather than the label beside it, and fall back to the active
+ * entry only for a pack that names no key at all (the shape packs had before
+ * the id existed).
+ *
+ * A pack that names a key the document does not publish is not verified and not
+ * refused either — it throws, and the caller exits `CANNOT_CHECK`. That is the
+ * honest verdict: the key may have been revoked, or the auditor may be pointing
+ * at the wrong document, and neither is a statement about the signature.
+ */
+function keyFromDocument(doc, wanted) {
+  const entries = (doc.keys || []).filter((k) => k && (k.publicKeyPem || k.publicKey));
+  if (entries.length === 0) throw new Error('the key document contains no keys');
+
+  const usable = [];
+  for (const entry of entries) {
+    try {
+      const key = entry.publicKeyPem
+        ? createPublicKey(entry.publicKeyPem)
+        : publicKeyFromRawBase64(entry.publicKey);
+      // The id is derived from the key, not taken from the document: a document
+      // that mislabels its own key would otherwise pass the id check it exists
+      // to fail.
+      usable.push({ key, keyId: keyIdOf(key), status: entry.status });
+    } catch {
+      /* an unreadable entry is not a reason to abandon the readable ones */
+    }
+  }
+  if (usable.length === 0) throw new Error('the key document contains no usable Ed25519 key');
+
+  if (wanted) {
+    const match = usable.find((u) => u.keyId === wanted);
+    if (match) return { key: match.key, keyId: match.keyId };
+    throw new Error(
+      `the pack was signed with key ${wanted}, which this key document does not publish ` +
+        `(it publishes ${usable.map((u) => u.keyId).join(', ')}). The key may have been withdrawn.`,
+    );
+  }
+
+  const active = usable.find((u) => u.status === 'active') || usable[0];
+  return { key: active.key, keyId: active.keyId };
 }
 
 /** The characters the canonical form uses as separators; `lib/audit-pack-canonical.ts` says why no path may contain one. */
