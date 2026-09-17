@@ -120,19 +120,32 @@ test.describe('the audit signing key has no fallback', () => {
   });
 
   /**
-   * The same floor before the deploy, so a weak secret is refused where it can
-   * still be changed instead of taking every export route on the live service
-   * down with a 500 after the rollout. The workflow reads the length of the
-   * secret and nothing else about it.
+   * The deploy asserts the secret exists. It does **not** yet assert the length
+   * floor, and that is a decision with a date on it (Sonny, 18.09.2026).
+   *
+   * The floor was going to be checked here too, so a weak secret is refused where
+   * it can still be changed instead of taking every export route on the live
+   * service down with a 500 after the rollout. The check went in and came back
+   * out, because the only remedy it offers is a rotation — and a rotation is the
+   * one thing this product cannot do today. `app/api/export/verify/route.ts`
+   * verifies with the single key `getAuditSigningKey()` returns; there is no key
+   * history. Rotating would leave every audit pack already in someone's hands
+   * unverifiable: not reported as forged, simply refused, though it is genuine.
+   * That is the same defect the full review records for the Ed25519 key.
+   *
+   * So the floor holds where it costs nothing — at runtime, on new signatures,
+   * asserted by the tests above — and the deploy keeps the check it can keep.
+   * When the key history exists, the length check goes back into `deploy.yml`
+   * and this test asserts it again.
    */
-  test('the production deploy refuses a key below the minimum', () => {
-    const { MIN_SIGNING_KEY_LENGTH } = require('../lib/audit-signing-key');
+  test('the production deploy refuses a key that is not set at all', () => {
     const workflow = fs.readFileSync(path.join(ROOT, '.github/workflows/deploy.yml'), 'utf8');
     expect(
       workflow,
-      'the deploy still accepts any non-empty AUDIT_SIGNING_KEY, so a weak secret ' +
-        'reaches production and the signing routes answer 500 there instead of failing here',
-    ).toContain(`if [ "\${#AUDIT_SIGNING_KEY}" -lt ${MIN_SIGNING_KEY_LENGTH} ]; then`);
+      'the deploy no longer refuses an unset AUDIT_SIGNING_KEY, so a deployment ' +
+        'without the secret reaches production and every signing and verifying ' +
+        'route answers 500 there instead of failing here',
+    ).toContain('if [ -z "$AUDIT_SIGNING_KEY" ]; then');
   });
 
   test('a signature made with the wrong key is not accepted', async ({ request }) => {
