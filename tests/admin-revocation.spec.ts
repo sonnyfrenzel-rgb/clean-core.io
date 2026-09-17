@@ -224,6 +224,43 @@ test.describe('the Firestore mirror grants nothing on its own', () => {
   });
 });
 
+test.describe('a half-applied grant grants nothing', () => {
+  /**
+   * `setAdminClaim` makes two writes across two systems and cannot make them
+   * atomically. Either failing throws, so the route reports it — but a throw
+   * does not undo the write that already went through, and the order therefore
+   * decides what the failure leaves behind.
+   *
+   * It used to write the claim first on a grant, so that the mirror never
+   * showed more than the claim granted. The price was the opposite half-state:
+   * claim written, mirror write failed, operator told the grant failed, and the
+   * account holding working administrator rights on its next token refresh —
+   * because an absent mirror is not a denial (QA full review of a19945ef01dc,
+   * 76c6c79c6f72). Mirror first in both directions: a failed mirror write never
+   * reaches the claim, and a failed claim write leaves a mirror that grants
+   * nothing.
+   *
+   * Pinned from the source because the state it guards is a failure *between*
+   * two writes, which no spec can produce through the route.
+   */
+  test('both directions write the Firestore mirror before the Auth claim', () => {
+    const src = fs
+      .readFileSync(path.resolve(__dirname, '../lib/firebase-admin.ts'), 'utf8')
+      .replace(/\r\n/g, '\n');
+    const body = src.slice(src.indexOf('export async function setAdminClaim'));
+    const fn = body.slice(0, body.indexOf('\n}\n') + 2);
+    expect(fn.indexOf('await writeMirror();'), 'setAdminClaim no longer writes the mirror').toBeGreaterThan(-1);
+    expect(
+      fn.indexOf('await writeMirror();'),
+      'the claim is written before the mirror again — a failed mirror write then leaves usable rights behind',
+    ).toBeLessThan(fn.indexOf('await writeClaim();'));
+    // And only one of each: an `if (isAdmin)` branch with its own order is how
+    // the two directions drifted apart in the first place.
+    expect((fn.match(/await writeMirror\(\);/g) || []).length).toBe(1);
+    expect((fn.match(/await writeClaim\(\);/g) || []).length).toBe(1);
+  });
+});
+
 test.describe('outside the emulator', () => {
   test('a token that claims admin is verified against the revocation time', () => {
     // The Auth emulator looks every token up whether or not the verifier asked,

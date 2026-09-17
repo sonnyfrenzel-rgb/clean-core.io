@@ -106,8 +106,55 @@ export async function verifyIdToken(idToken: string) {
 }
 
 /**
+ * The withdrawal mirror, applied to every token that claims the privilege —
+ * not only to the admin routes.
+ *
+ * `users/{uid}.isAdmin` grants nothing; it denies, and that is what makes a
+ * withdrawal durable when `revokeRefreshTokens` does not get through (the
+ * claim lives in the ID token and nothing rewrites a JWT). That deny gate sat
+ * inside `verifyAdminRequest`, so it covered `/api/admin/*` and nothing else —
+ * while the claim is also trusted well outside those routes, as
+ * `isAdminClaim` on `assertS4TenantAccess` and `assertAccountActive`. A
+ * withdrawal whose token revocation failed therefore still opened the live
+ * S/4 endpoints and still waived the approval and Terms gates, for as long as
+ * the old token lived (QA full review of a19945ef01dc, 79dc8a8a2d59).
+ *
+ * The claim is dropped from the decoded token rather than the token refused:
+ * the person is still a signed-in user, they are simply no longer an
+ * administrator, so every consumer sees exactly that without a special case.
+ * An unreadable mirror drops it too — a withdrawal that cannot be ruled out is
+ * treated as one. Absent is not a denial: the mirror is a record of
+ * withdrawal, and an account that has never had one has never had its rights
+ * taken away.
+ *
+ * Costs one Firestore read per request, and only for tokens that carry
+ * `admin: true` — the same bargain `verifyIdToken` already makes above for the
+ * revocation lookup.
+ */
+async function withoutWithdrawnAdminClaim<T extends { uid: string }>(decoded: T): Promise<T> {
+  if ((decoded as { admin?: unknown }).admin !== true) return decoded;
+
+  let withdrawn: boolean;
+  try {
+    const { db } = await getAdminDb();
+    const snap = await db.collection('users').doc(decoded.uid).get();
+    withdrawn = snap.exists && snap.data()?.isAdmin === false;
+  } catch (err) {
+    console.error('verifyRequestAuth: admin mirror unreadable, dropping the admin claim:', err);
+    withdrawn = true;
+  }
+  if (!withdrawn) return decoded;
+
+  const { admin: _withdrawn, ...rest } = decoded as T & { admin?: unknown };
+  return rest as T;
+}
+
+/**
  * Extract and verify the Bearer token from request headers.
  * Returns the decoded token or null if missing/invalid.
+ *
+ * A token that still claims `admin` after the claim was withdrawn comes back
+ * without it — see `withoutWithdrawnAdminClaim`.
  */
 export async function verifyRequestAuth(req: Request) {
   const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
@@ -117,7 +164,7 @@ export async function verifyRequestAuth(req: Request) {
   if (!token) return null;
 
   try {
-    return await verifyIdToken(token);
+    return await withoutWithdrawnAdminClaim(await verifyIdToken(token));
   } catch (err) {
     console.error('verifyRequestAuth error:', err);
     return null;
@@ -145,24 +192,17 @@ export async function verifyRequestAuth(req: Request) {
  * `admin: true` and Firebase has no revocation time to check it against (QA
  * review of 146ac2e1a724, 9f4046043f12). The mirror is written *before* the
  * claim is removed and is therefore already `false` in exactly that window.
- * One read per admin request, on the rarest routes in the app, and the
- * withdrawal holds whether or not the revocation got through.
+ *
+ * That check no longer lives here. It moved into `verifyRequestAuth`
+ * (`withoutWithdrawnAdminClaim`), because the claim is trusted in more places
+ * than the admin routes and a withdrawal has to hold in all of them; a
+ * withdrawn token arrives here already stripped of `admin`, so the one line
+ * below is the whole gate.
  */
 export async function verifyAdminRequest(req: Request) {
   const decoded = await verifyRequestAuth(req);
   if (!decoded) return null;
   if ((decoded as any).admin !== true) return null;
-  try {
-    const { db } = await getAdminDb();
-    const snap = await db.collection('users').doc(decoded.uid).get();
-    // Absent is not a denial: the mirror is a record of withdrawal, and an
-    // account without one has never had its rights taken away.
-    if (snap.exists && snap.data()?.isAdmin === false) return null;
-  } catch (err) {
-    // The mirror could not be read, so the withdrawal cannot be ruled out.
-    console.error('verifyAdminRequest: admin mirror unreadable, refusing:', err);
-    return null;
-  }
   return decoded;
 }
 
@@ -488,11 +528,29 @@ export async function activateAccount(uid: string): Promise<{ activated: boolean
  * Sets or revokes the `admin` custom claim on a user and mirrors the boolean to
  * users/{uid}.isAdmin (for UI display). Existing custom claims are preserved.
  *
- * The claim is the authorization; the mirror is what the UI shows and decides
- * nothing (see `verifyAdminRequest`). The two writes are ordered so the mirror
- * never shows more than the claim grants: a grant writes the claim first, a
- * withdrawal the mirror first. Either write failing throws, so the route
- * reports the failure instead of an `ok` for a half-applied change.
+ * The claim is the authorization; the mirror is what the UI shows and what
+ * denies a withdrawal (see `withoutWithdrawnAdminClaim`). Either write failing
+ * throws, so the route reports the failure instead of an `ok` for a
+ * half-applied change — but a throw does not undo the write that went through,
+ * so the *order* decides what a half-applied change leaves behind. Both
+ * directions write the mirror first, and both therefore fail closed:
+ *
+ *  - a grant whose mirror write fails never writes the claim, so nothing is
+ *    granted;
+ *  - a grant whose claim write fails leaves a mirror saying `true`, which
+ *    grants nothing at all — the admin console renders and every admin route
+ *    answers 403;
+ *  - a withdrawal whose claim removal or token revocation fails leaves a
+ *    mirror saying `false`, which is a denial on every route.
+ *
+ * It used to be the other way round for a grant — claim first, mirror second —
+ * so that the mirror never showed more than the claim granted. The cost of
+ * that was the opposite half-state: a successful claim write followed by a
+ * failed mirror write reported failure to the operator and handed the account
+ * working administrator rights on its next token refresh, because an absent
+ * mirror is not a denial (QA full review of a19945ef01dc, 76c6c79c6f72). A
+ * console that shows a button it may not press is a cosmetic fault; a grant
+ * that was reported as failed and works is not.
  *
  * A withdrawal also revokes the account's refresh tokens. The claim lives in
  * the ID token, so without that the withdrawn administrator kept a working
@@ -515,14 +573,9 @@ export async function setAdminClaim(uid: string, isAdmin: boolean): Promise<void
     { merge: true },
   );
 
-  if (isAdmin) {
-    await writeClaim();
-    await writeMirror();
-    return;
-  }
   await writeMirror();
   await writeClaim();
-  await auth.revokeRefreshTokens(uid);
+  if (!isAdmin) await auth.revokeRefreshTokens(uid);
 }
 
 /**
@@ -547,6 +600,23 @@ export async function assertS4TenantAccess(
   }
 
   const data = snap.data();
+
+  // A suspended account reaches no tenant, whatever else its profile says.
+  //
+  // This gate used to read the profile and then decide from `isAdminClaim` or
+  // `s4TenantAccessAllowed` alone, and `adminRevokeUser` changes neither of
+  // them — it writes `status: 'suspended'`. So an account that had been
+  // approved for S/4 and was then suspended went on sending authenticated
+  // requests to the stored tenant with the stored credentials: the four S/4
+  // routes call this function and not `assertAccountActive`, so the suspension
+  // was never asked about on the one path that talks to somebody else's
+  // production system. Same conditions as `assertAccountActive`, on the
+  // document this function has already read — no second lookup.
+  const status = data.status || 'pending';
+  if (status === 'suspended' || status === 'deleted' || data.disabled === true) {
+    throw new QuotaError('This account has been suspended. Please contact support.', 403);
+  }
+
   const isAdminUser = opts?.isAdminClaim === true;
   const s4TenantAccessAllowed = data.s4TenantAccessAllowed === true;
 

@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
-import { isUrlSafe, safeFetch, SsrfError } from '@/lib/url-validation';
+import {
+  isUrlSafe,
+  safeFetch,
+  SsrfError,
+  readBoundedBody,
+  readBoundedJson,
+  TOKEN_BODY_LIMITS,
+} from '@/lib/url-validation';
 
 /**
  * POST /api/test-s4-connection
@@ -51,16 +58,21 @@ async function fetchOAuth2Token(
       signal: controller.signal,
     });
 
+    // The abort timer covered the wait for the headers and is done here; the
+    // body has its own limits below. Before that it had none: `clearTimeout`
+    // ran and `response.text()` / `response.json()` then read whatever the
+    // token endpoint sent, for as long as it kept sending — a host the caller
+    // chose, holding a Cloud Run worker and its memory for as long as it liked.
     clearTimeout(timeout);
 
     if (!response.ok) {
-      const errorBody = await response.text().catch(() => '');
+      const errorBody = await readBoundedBody(response, TOKEN_BODY_LIMITS).catch(() => '');
       throw new Error(
         `Token endpoint returned HTTP ${response.status}. ${errorBody ? `Response: ${errorBody.substring(0, 200)}` : 'Verify Client ID and Client Secret.'}`
       );
     }
 
-    const tokenData = await response.json();
+    const tokenData = await readBoundedJson(response, TOKEN_BODY_LIMITS);
 
     if (!tokenData.access_token) {
       throw new Error('Token endpoint responded but did not return an access_token.');

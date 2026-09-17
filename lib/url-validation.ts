@@ -288,6 +288,44 @@ export async function readBoundedBody(
 }
 
 /**
+ * The same read, parsed as JSON — what `response.json()` does, under the same
+ * limits as `readBoundedBody`.
+ *
+ * It exists so that no route has to choose between the bound and the
+ * convenience: `await response.json()` is one call and the bounded form was
+ * two, which is why four routes kept the unbounded one for their OAuth token
+ * exchange long after the OData reads had been fixed. Throws exactly what
+ * `JSON.parse` throws when the body is not JSON, so a caller that wants a
+ * `null` instead still writes `.catch(() => null)`.
+ */
+export async function readBoundedJson(
+  response: Response,
+  limits: { maxBytes: number; timeoutMs: number },
+): Promise<any> {
+  return JSON.parse(await readBoundedBody(response, limits));
+}
+
+/**
+ * What a tenant's OAuth token endpoint may answer with.
+ *
+ * A client-credentials token response is a JSON object of a few hundred bytes;
+ * 64 KiB is room for the largest JWT any SAP tenant hands out and a verbose
+ * error document beside it. The deadline is shorter than the OData one for the
+ * same reason: this is a handshake, not a document.
+ */
+export const TOKEN_BODY_LIMITS = { maxBytes: 64 * 1024, timeoutMs: 10_000 };
+
+/**
+ * What a tenant's OData answer may be.
+ *
+ * A `$metadata` document is usually well under a megabyte; 8 MB leaves room
+ * for the largest ones without letting a host of the caller's choosing fill
+ * the memory of the instance. The same ceiling covers a catalog listing and an
+ * entity read, which come from the same endpoint under the same credentials.
+ */
+export const ODATA_BODY_LIMITS = { maxBytes: 8 * 1024 * 1024, timeoutMs: 20_000 };
+
+/**
  * Whether an OData service path may be appended to an allowlisted S/4 host.
  *
  * Getting onto the host is the SSRF check's job; this decides what may be

@@ -59,11 +59,60 @@ test('a body within the limits is returned as text() would return it', async () 
   expect(await readBoundedBody(new Response(null), { maxBytes: 8 * MB, timeoutMs: 1_000 })).toBe('');
 });
 
-test('the metadata route reads tenant bodies through the helper', () => {
-  const src = fs.readFileSync(path.resolve(__dirname, '../app/api/fetch-odata-metadata/route.ts'), 'utf8');
-  // The two reads the finding named: the $metadata document and the catalog.
-  expect(src).not.toMatch(/const xml = await response\.text\(\)/);
-  expect(src).not.toMatch(/const body = await response\.text\(\)/);
-  expect((src.match(/readBoundedBody\(response, RESPONSE_BODY_LIMITS\)/g) || []).length).toBe(2);
-  expect(src).toMatch(/RESPONSE_BODY_LIMITS = \{ maxBytes: 8 \* 1024 \* 1024, timeoutMs: \d+ \}/);
+/**
+ * Every route that reads from a tenant reads through the helper.
+ *
+ * One of the four was fixed and the other three were not, and inside that one
+ * the OData reads were bounded while its OAuth token exchange still buffered
+ * whatever the token endpoint sent — the half that talks to the host the
+ * caller named (QA full review of a19945ef01dc: cece3b6a9c51, 0e2d5f95821f,
+ * ac4cdeea96b6, 95d0baf27ef4, 7182b3754472, 093df0feed02, 2ba9cba8e984). So
+ * the guard names all four routes and asks the same question of each: is there
+ * any unbounded read of a foreign response left in it.
+ */
+const TENANT_ROUTES = [
+  'app/api/fetch-odata-metadata/route.ts',
+  'app/api/fetch-s4-metadata/route.ts',
+  'app/api/test-s4-connection/route.ts',
+  'app/api/test-s4-odata-read/route.ts',
+];
+
+/** The file with its comments taken out — they explain the old reads by name. */
+function code(rel: string): string {
+  return fs
+    .readFileSync(path.resolve(__dirname, '..', rel), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+}
+
+test('every route that reads from a tenant reads through the bounded helper', () => {
+  for (const rel of TENANT_ROUTES) {
+    const src = code(rel);
+
+    // `safeFetch` decides where the request may go; these are what may come
+    // back. A bare `.text()` or `.json()` on a response is the unbounded read.
+    const unbounded = [...src.matchAll(/\b(\w+)\.(text|json)\(\)/g)]
+      .filter((m) => /^(response|resp|tokenResp|res)$/i.test(m[1]))
+      .map((m) => m[0]);
+    expect(
+      unbounded,
+      `${rel} still reads a tenant response without a size limit or a deadline: ${unbounded.join(', ')}`,
+    ).toEqual([]);
+
+    expect(src, `${rel} does not read through the bounded helper at all`).toMatch(
+      /readBounded(Body|Json)\(/,
+    );
+  }
+});
+
+test('the limits are one pair of numbers, not one per route', () => {
+  const lib = fs.readFileSync(path.resolve(__dirname, '../lib/url-validation.ts'), 'utf8');
+  expect(lib).toMatch(/export const ODATA_BODY_LIMITS = \{ maxBytes: 8 \* 1024 \* 1024, timeoutMs: [\d_]+ \}/);
+  expect(lib).toMatch(/export const TOKEN_BODY_LIMITS = \{ maxBytes: 64 \* 1024, timeoutMs: [\d_]+ \}/);
+  for (const rel of TENANT_ROUTES) {
+    expect(
+      code(rel).match(/maxBytes:/g),
+      `${rel} declares its own byte ceiling instead of using the shared limits`,
+    ).toBeNull();
+  }
 });

@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isUrlSafe, safeFetch, SsrfError, isSafeODataServicePath } from '@/lib/url-validation';
+import {
+  isUrlSafe,
+  safeFetch,
+  SsrfError,
+  isSafeODataServicePath,
+  readBoundedBody,
+  readBoundedJson,
+  TOKEN_BODY_LIMITS,
+  ODATA_BODY_LIMITS,
+} from '@/lib/url-validation';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 
@@ -60,16 +69,19 @@ async function fetchOAuth2Token(
       signal: controller.signal,
     });
 
+    // The abort timer covered the wait for the headers and is done here; the
+    // body has its own limits below. Before that it had none, so a token
+    // endpoint that answered promptly and then streamed held the worker.
     clearTimeout(timeout);
 
     if (!response.ok) {
-      const errorBody = await response.text().catch(() => '');
+      const errorBody = await readBoundedBody(response, TOKEN_BODY_LIMITS).catch(() => '');
       throw new Error(
         `Token endpoint returned HTTP ${response.status}. ${errorBody ? `Response: ${errorBody.substring(0, 200)}` : ''}`
       );
     }
 
-    const tokenData = await response.json();
+    const tokenData = await readBoundedJson(response, TOKEN_BODY_LIMITS);
     if (!tokenData.access_token) {
       throw new Error('Token endpoint did not return an access_token.');
     }
@@ -320,10 +332,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // The abort timer covered the wait for the headers and is done here; both
+    // the error body and the document below are read under ODATA_BODY_LIMITS.
+    // They used to be read with a bare `response.text()`, so a tenant that sent
+    // its headers and then streamed — deliberately or through a proxy fault —
+    // filled the instance's memory with a $metadata document of any size.
     clearTimeout(timeout);
 
     if (!response.ok) {
-      const errorBody = await response.text().catch(() => '');
+      const errorBody = await readBoundedBody(response, ODATA_BODY_LIMITS).catch(() => '');
       return NextResponse.json({
         status: 'failed',
         message: `Metadata endpoint returned HTTP ${response.status}. ${
@@ -336,8 +353,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Read the XML response
-    const xmlText = await response.text();
+    // Read the XML response, under the same ceiling as the error body above.
+    let xmlText: string;
+    try {
+      xmlText = await readBoundedBody(response, ODATA_BODY_LIMITS);
+    } catch (readErr: any) {
+      return NextResponse.json(
+        { status: 'failed', message: `Metadata response could not be read: ${readErr.message}` },
+        { status: 502 },
+      );
+    }
 
     if (!xmlText || xmlText.length < 50) {
       return NextResponse.json({

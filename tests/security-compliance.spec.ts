@@ -591,6 +591,132 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     expect(await adminDocExists('projects', projectId)).toBe(false);
   });
 
+  /**
+   * The export route, from the same administrator.
+   *
+   * Deleting a stranger's project was taken away on 17.09.2026; reading one
+   * through an export was the door beside it. `decodedToken.admin === true`
+   * stood in for ownership here too, so an administrator who knew a project id
+   * got back the ZIP — the ABAP, the evidence, the decision record — from a
+   * plain ID token, with `assertMfaSatisfied` waving through an account whose
+   * profile does not say `mfaEnabled` (QA full review of a19945ef01dc,
+   * 3ad7de2e710c). `firestore.rules` had already taken the operator's read of a
+   * foreign project away; this was the way round it.
+   *
+   * The refusal is checked before the run exists, so it is the ownership test
+   * and not a later gate that produces it: a 403 here cannot be a 422 for a
+   * missing active run.
+   */
+  test('an administrator token cannot export another account’s audit pack', async ({ request }) => {
+    const email = `temp-adminpack-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
+    const ownerUid = cred.user.uid;
+    await adminSetDoc('users', ownerUid, {
+      firstName: 'T', lastName: 'AP', email, tier: 'pilot', status: 'approved', isAdmin: false,
+      transformationsUsed: 0, transformationsLimit: 5, maxTeamMembers: 1,
+      s4TenantAccessAllowed: false, s4TenantAccessRequested: false, mfaEnabled: false, createdAt: new Date(),
+    });
+    const projectId = `appack-${ownerUid}`;
+    await adminSetDoc('projects', projectId, { name: 'AP', status: 'uploaded', userId: ownerUid, createdAt: new Date() });
+
+    const adminCred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
+    const adminToken = await adminCred.user.getIdToken(true);
+    const refused = await request.post('/api/audit-pack/create', {
+      headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+      data: { projectId },
+    });
+    expect(refused.status(), 'the administrator claim still stood in for ownership').toBe(403);
+    expect((await refused.json()).error).toContain('Unauthorized');
+
+    // And the route is not simply shut: the owner gets past the ownership gate
+    // and is stopped further down, where a project with no analysis belongs.
+    const ownerToken = await cred.user.getIdToken(true);
+    const owner = await request.post('/api/audit-pack/create', {
+      headers: { Authorization: `Bearer ${ownerToken}`, 'Content-Type': 'application/json' },
+      data: { projectId },
+    });
+    expect(owner.status(), 'the owner was refused by the ownership gate too').toBe(422);
+  });
+
+  /**
+   * S/4 access ends with the account, not with the flag.
+   *
+   * `adminRevokeUser` writes `status: 'suspended'`; it does not clear
+   * `s4TenantAccessAllowed`. The four S/4 routes ask `assertS4TenantAccess`
+   * and not `assertAccountActive`, and that gate read the profile and then
+   * decided from the flag alone — so a suspended account went on sending
+   * authenticated requests to the stored tenant, which is the only place in
+   * this product where a request leaves for somebody else's production system
+   * (QA full review of a19945ef01dc, 7bf8808c5773).
+   */
+  test('a suspended account with S/4 access granted is refused at the tenant gate', async ({ request }) => {
+    const email = `temp-s4susp-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
+    const uid = cred.user.uid;
+    const profile = {
+      firstName: 'T', lastName: 'S4', email, tier: 'pilot', isAdmin: false,
+      transformationsUsed: 0, transformationsLimit: 5, maxTeamMembers: 1,
+      s4TenantAccessAllowed: true, s4TenantAccessRequested: false, mfaEnabled: false, createdAt: new Date(),
+    };
+
+    // Approved and granted: the gate lets the request through to the route's
+    // own validation, which is what proves the gate is the thing being measured.
+    await adminSetDoc('users', uid, { ...profile, status: 'approved' });
+    const token = await cred.user.getIdToken(true);
+    const allowed = await request.post('/api/test-s4-connection', {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data: {},
+    });
+    expect(allowed.status(), 'the granted account did not reach the route').toBe(400);
+
+    // Suspended, nothing else changed.
+    await adminMergeDoc('users', uid, { status: 'suspended' });
+    const refused = await request.post('/api/test-s4-connection', {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data: {},
+    });
+    expect(refused.status(), 'a suspended account still reached the live tenant endpoints').toBe(403);
+    expect((await refused.json()).message).toContain('suspended');
+  });
+
+  /**
+   * A withdrawal that the token revocation did not finish still holds outside
+   * the admin routes.
+   *
+   * The mirror was read in `verifyAdminRequest` only, so `/api/admin/*` was
+   * covered and the claim-based exemptions elsewhere were not: an
+   * administrator whose claim had been withdrawn but whose refresh-token
+   * revocation failed kept `admin: true` on the token he was holding, and
+   * `assertS4TenantAccess` took it at face value — a way into the live tenant
+   * endpoints for an account that had no S/4 grant of its own (QA full review
+   * of a19945ef01dc, 79dc8a8a2d59). The mirror is now a deny gate on every
+   * token that carries the claim.
+   */
+  test('a withdrawn admin claim no longer opens the S/4 gate', async ({ request }) => {
+    const email = `temp-mirrors4-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
+    const uid = cred.user.uid;
+    await adminSetDoc('users', uid, {
+      firstName: 'T', lastName: 'MS', email, tier: 'pilot', status: 'approved', isAdmin: true,
+      transformationsUsed: 0, transformationsLimit: 5, maxTeamMembers: 1,
+      s4TenantAccessAllowed: false, s4TenantAccessRequested: false, mfaEnabled: false, createdAt: new Date(),
+    });
+    await adminSetCustomClaim(uid, { admin: true });
+    const token = await cred.user.getIdToken(true);
+    const headers = { Authorization: `Bearer ${token}` };
+
+    // The claim alone opens the gate while the mirror agrees — the account has
+    // no `s4TenantAccessAllowed` of its own, so this is the claim and nothing else.
+    const before = await request.get('/api/s4-credentials', { headers });
+    expect(before.status(), 'the admin claim did not open the S/4 gate').not.toBe(403);
+
+    // The mirror is withdrawn. The token is untouched and still says `admin: true`.
+    await adminMergeDoc('users', uid, { isAdmin: false });
+    const after = await request.get('/api/s4-credentials', { headers });
+    expect(after.status(), 'the withdrawn claim still opened the S/4 gate').toBe(403);
+    expect((await after.json()).error).toContain('restricted');
+  });
+
   test('F-02: a pending account is blocked at a business API (run-tests → 403)', async ({ request }) => {
     const email = `temp-pending-${branchSuffix}-${Date.now()}@cleancore-test.io`;
     const cred = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
