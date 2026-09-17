@@ -7,7 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, deleteDoc, doc, getDocs, limit } from 'firebase/firestore';
-import { Plus, Trash2, ArrowRight, FolderOpen, Folder, ChevronRight, ChevronDown, ChevronUp, FileText, FileCode2, Download, Copy, Eye, X, Activity, Clock, CheckCircle2, RefreshCw, AlertCircle, BookOpen, Shield, ShieldAlert, MessageSquare, Crown, ShieldCheck, HelpCircle } from 'lucide-react';
+import { Plus, Trash2, ArrowRight, FolderOpen, Folder, ChevronRight, ChevronDown, ChevronUp, FileText, FileCode2, Download, Copy, Eye, X, Activity, Clock, CheckCircle2, RefreshCw, AlertCircle, BookOpen, Shield, ShieldAlert, MessageSquare, Crown, ShieldCheck, HelpCircle, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import nextDynamic from 'next/dynamic';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -22,6 +22,7 @@ const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false }
 import { ProjectSkeleton, ExampleSkeleton } from '@/components/Skeleton';
 import StarterExamples from '@/components/StarterExamples';
 import DemoEntryCard from '@/components/demo/DemoEntryCard';
+import InviteReaderDialog from '@/components/InviteReaderDialog';
 
 const STATIC_EXAMPLES = [
   {
@@ -1791,6 +1792,10 @@ export default function Dashboard() {
 
 function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isProceeding, onView, onDownload }: any) {
   const [expanded, setExpanded] = useState(false);
+  // Roadmap 5.2. It sits in the owner's own list rather than inside a workflow
+  // stage: sharing is a property of the project, not a step of the seven, and
+  // the stage pages are written for one reader who owns it.
+  const [inviting, setInviting] = useState(false);
 
   const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
 
@@ -1928,6 +1933,14 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
           <button onClick={onProceed} disabled={isProceeding} className="p-3 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50" title="Continue Transformation">
             {isProceeding ? <RefreshCw size={18} className="animate-spin" /> : <ArrowRight size={18} />}
           </button>
+          <button
+            data-invite-open
+            onClick={() => setInviting(true)}
+            className="p-3 text-[#0b1c30]/60 hover:text-[#006b2c] hover:bg-[#eff4ff] rounded-xl transition-colors"
+            title="Invite someone to read this project"
+          >
+            <UserPlus size={18} />
+          </button>
           <button onClick={onCopy} className="p-3 text-[#0b1c30]/60 hover:text-[#006b2c] hover:bg-[#eff4ff] rounded-xl transition-colors" title="Duplicate Project">
             <Copy size={18} />
           </button>
@@ -1991,6 +2004,14 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
             </div>
           )}
         </div>
+      )}
+
+      {inviting && (
+        <InviteReaderDialog
+          projectId={project.id}
+          projectName={project.name}
+          onClose={() => setInviting(false)}
+        />
       )}
     </div>
   );
