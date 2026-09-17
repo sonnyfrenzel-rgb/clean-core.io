@@ -558,10 +558,14 @@ function targetHost(args) {
   if (typeof args[1] === 'string') return args[1];
   return '';
 }
+// A suffix is a *domain*, so it matches at a label boundary and nowhere else.
+// Plain endsWith let 'evil-sap.com' through an allowlist of 'sap.com' — a host
+// an attacker can register, reached by the one process that holds decrypted
+// tenant credentials (security audit of v2.13.0).
 function allowed(host) {
   const h = String(host || '').toLowerCase();
   if (!h) return false;
-  return ALLOWED_SUFFIXES.some((s) => h === s || h.endsWith(s));
+  return ALLOWED_SUFFIXES.some((s) => h === s || h.endsWith('.' + s));
 }
 function gate(real) {
   return function (...args) {
