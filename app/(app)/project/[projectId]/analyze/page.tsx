@@ -900,8 +900,10 @@ export default function AnalyzePage() {
               </tr></thead>
               <tbody>
                 ${(project.dataCoupling || []).map((item: any) => {
-                  const accessBg = item.accessType !== 'Read' ? '#ffebe6' : '#f4f5f7';
-                  const accessFg = item.accessType !== 'Read' ? '#de350b' : '#5e6c84';
+                  // A type reference (`Reference`, 2.11) is no write; only the two write forms are red.
+                  const writes = item.accessType === 'Write' || item.accessType === 'Read/Write';
+                  const accessBg = writes ? '#ffebe6' : '#f4f5f7';
+                  const accessFg = writes ? '#de350b' : '#5e6c84';
                   const riskBg = item.riskLevel === 'High' ? '#ffebe6' : item.riskLevel === 'Medium' ? '#fff0b3' : '#e3fcef';
                   const riskFg = item.riskLevel === 'High' ? '#de350b' : item.riskLevel === 'Medium' ? '#974f0c' : '#006644';
                   return `<tr>

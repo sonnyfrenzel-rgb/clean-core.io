@@ -313,7 +313,7 @@ export function buildBoardDeck(input: {
   // Slide 7: Risk Register & Quality Gates (risk slide)
   const riskRows: any[] = [];
   
-  const hasCustomWrite = (project.dataCoupling || []).some(dc => dc.accessType !== 'Read');
+  const hasCustomWrite = (project.dataCoupling || []).some(dc => dc.accessType === 'Write' || dc.accessType === 'Read/Write');
   if (hasCustomWrite) {
     riskRows.push({
       col1: 'Database Table Coupling writes',

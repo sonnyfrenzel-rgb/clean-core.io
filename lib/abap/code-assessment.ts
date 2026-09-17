@@ -6,8 +6,7 @@
  */
 
 import type { CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
-import { tokenize } from './declaration-parser';
-import { databaseWriteIn } from './open-sql-discrimination';
+import { readTableDependencies, type DependencyRoute } from './table-dependencies';
 
 // Well-known SAP standard tables and their recommended API/CDS replacements
 const STANDARD_TABLE_MAP: Record<string, string> = {
@@ -111,8 +110,12 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
       });
     }
 
-    // INCLUDE
-    const includeMatch = trimmed.match(/^INCLUDE\s+([\w]+)/);
+    // INCLUDE — the program include. `INCLUDE STRUCTURE kna1` and `INCLUDE TYPE`
+    // are dictionary statements inside a TYPES block, and reading them here put
+    // an object called STRUCTURE in the inventory (R29: not v1-R16's missing
+    // include). The dependency they carry is a table dependency and is read by
+    // `table-dependencies.ts`.
+    const includeMatch = trimmed.match(/^INCLUDE\s+(?!STRUCTURE\b|TYPE\b)([\w]+)/);
     if (includeMatch && !seen.has(includeMatch[1])) {
       seen.add(includeMatch[1]);
       items.push({
@@ -129,94 +132,71 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
 
 /**
  * Extract database table coupling from ABAP source code.
+ *
+ * Which tables, and how, is read by `readTableDependencies` — the reader the
+ * evidence engine uses too, so the two surfaces cannot disagree about whether
+ * `gt_bp_data` is a table (it is a variable declared in the source) or whether
+ * `FROM (lc_tab)` reads KNA1 (it does, `lc_tab` is a constant). This function
+ * only aggregates: one entry per table, with its reads, writes and references.
+ *
+ * Two kinds of entry are new with 2.11 and both say what they are:
+ *
+ *   - `accessType: 'Reference'` — a dependency on the table's definition
+ *     without a row read or written here (`TABLES`, `TYPE`, `INCLUDE
+ *     STRUCTURE`, a logical-database node, another program's global field).
+ *   - `possibleTargetOf` — the name is only a value a dynamic target may take
+ *     (a DEFAULT), never the resolved dependency (R26). The dynamic statement
+ *     itself is reported where an unresolved question belongs: as an unassessed
+ *     construct in the coverage.
  */
 export function extractDataCoupling(code: string): DataCouplingEntry[] {
   const entries: DataCouplingEntry[] = [];
-  const statements = tokenize(code);
-
-  const FAKE_TABLES = new Set([
-    'MODE', 'TASK', 'RISK', 'SCREEN', 'LINE', 'TABLE', 'INTO', 'FROM',
-    'CORRESPONDING', 'DATA', 'ADJACENT', 'RESULT', 'CONNECTION', 'TYPE',
-    'INDEX', 'UP', 'TO', 'ROWS', 'WHERE', 'AND', 'OR', 'NOT', 'NULL',
-    'IS', 'AS', 'ON', 'JOIN', 'LEFT', 'RIGHT', 'OUTER', 'INNER',
-    'FULL', 'CROSS', 'USING', 'CLIENT', 'SPECIFIED', 'SYSTEM', 'VALUES',
-    'SELECT', 'INSERT', 'UPDATE', 'MODIFY', 'DELETE', 'FOR', 'ALL',
-    'ENTRIES', 'BY', 'ORDER', 'GROUP', 'HAVING'
-  ]);
 
   interface TableStats {
     tableName: string;
     reads: number;
     writes: number;
+    references: number;
+    /** Occurrences that are the table itself rather than a possible target. */
+    known: number;
+    possibleTargetOf: Set<string>;
+    routes: Set<DependencyRoute>;
+    programs: Set<string>;
     lineNumbers: number[];
     snippets: string[];
   }
 
   const statsMap = new Map<string, TableStats>();
 
-  const getOrCreate = (table: string): TableStats => {
-    const normTable = table.toUpperCase().trim();
-    if (!statsMap.has(normTable)) {
-      statsMap.set(normTable, {
-        tableName: normTable,
+  for (const dependency of readTableDependencies(code).dependencies) {
+    let stats = statsMap.get(dependency.table);
+    if (!stats) {
+      stats = {
+        tableName: dependency.table,
         reads: 0,
         writes: 0,
+        references: 0,
+        known: 0,
+        possibleTargetOf: new Set(),
+        routes: new Set(),
+        programs: new Set(),
         lineNumbers: [],
-        snippets: []
-      });
+        snippets: [],
+      };
+      statsMap.set(dependency.table, stats);
     }
-    return statsMap.get(normTable)!;
-  };
-
-  const addStat = (table: string, isWrite: boolean, line: number, snippet: string) => {
-    if (!table || table.length < 2 || FAKE_TABLES.has(table.toUpperCase()) || /^\d/.test(table)) return;
-    const stats = getOrCreate(table);
-    if (isWrite) stats.writes++;
-    else stats.reads++;
-    if (!stats.lineNumbers.includes(line)) {
-      stats.lineNumbers.push(line);
-      stats.snippets.push(snippet);
+    if (dependency.access === 'write') stats.writes++;
+    else if (dependency.access === 'read') stats.reads++;
+    else stats.references++;
+    if (dependency.possibleTargetOf) stats.possibleTargetOf.add(dependency.possibleTargetOf);
+    else stats.known++;
+    stats.routes.add(dependency.route);
+    if (dependency.program) stats.programs.add(dependency.program);
+    if (!stats.lineNumbers.includes(dependency.line)) {
+      stats.lineNumbers.push(dependency.line);
+      stats.snippets.push(dependency.snippet);
     }
-  };
-
-  for (const stmt of statements) {
-    const text = stmt.text.trim();
-    if (!text) continue;
-    const upper = text.toUpperCase();
-
-    // 1. SELECT Statement (with Join parsing support)
-    if (/^SELECT\b/i.test(text)) {
-      // Extract from FROM part until any terminating SQL clause
-      const fromMatch = text.match(/\bFROM\s+([\s\S]+?)(?:\b(INTO|WHERE|ORDER|GROUP|UP|HAVING|UNION|FOR)\b|$)/i);
-      if (fromMatch) {
-        const tableArea = fromMatch[1].trim();
-        // Split by JOIN keywords to find all participating tables
-        const parts = tableArea.split(/\b(?:INNER\s+|LEFT\s+(?:OUTER\s+)?|RIGHT\s+(?:OUTER\s+)?|FULL\s+(?:OUTER\s+)?|CROSS\s+)?JOIN\b/i);
-        for (const part of parts) {
-          const words = part.trim().split(/\s+/);
-          const tableName = words[0]?.replace(/[~,]/g, '').trim(); // strip alias markers or commas
-          if (tableName) {
-            addStat(tableName, false, stmt.line, text);
-          }
-        }
-      }
-    }
-
-    // 2.-5. INSERT / UPDATE / MODIFY / DELETE
-    //
-    // ABAP spells internal-table and database operations with the same words,
-    // and this file used to take the first token after each keyword as a table
-    // name. `INSERT ls_item INTO TABLE lt_items` therefore appeared as a
-    // Medium-risk coupling to a database table called LS_ITEM — a dependency
-    // that does not exist, on the architecture surfaces downstream
-    // (QA review of 33471220d6e9, eac6118f1eac). The evidence engine already
-    // told the two forms apart; the rule is one module now, read by both
-    // (`lib/abap/open-sql-discrimination.ts`).
-    const write = databaseWriteIn(text);
-    if (write) {
-      addStat(write.table, true, stmt.line, text);
-    }
-}
+  }
 
   // Convert map to entries
   for (const [tableName, stats] of statsMap) {
@@ -224,20 +204,25 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
     const hasWrite = stats.writes > 0;
     const isCustom = tableName.startsWith('Z') || tableName.startsWith('Y');
     const isStandard = STANDARD_TABLE_MAP[tableName] !== undefined;
+    const referenceOnly = !hasRead && !hasWrite;
+    const possibleOnly = stats.known === 0;
 
-    let accessType: 'Read' | 'Write' | 'Read/Write' = 'Read';
+    let accessType: DataCouplingEntry['accessType'] = 'Reference';
     if (hasRead && hasWrite) accessType = 'Read/Write';
     else if (hasWrite) accessType = 'Write';
+    else if (hasRead) accessType = 'Read';
 
     let riskLevel: 'High' | 'Medium' | 'Low' = 'Low';
     if (hasWrite && isStandard) riskLevel = 'High';
     else if (hasWrite && isCustom) riskLevel = 'High';
     else if (hasWrite) riskLevel = 'Medium';
-    else if (isStandard) riskLevel = 'Medium';
+    else if (hasRead && isStandard) riskLevel = 'Medium';
 
     let recommendation = '';
     let replacementConfidence: 'Catalog Match' | 'Verified' | 'Candidate' | 'Needs Validation' = 'Needs Validation';
-    if (isStandard && STANDARD_TABLE_MAP[tableName]) {
+    if (referenceOnly) {
+      recommendation = referenceRecommendation(tableName, stats.routes, stats.programs);
+    } else if (isStandard && STANDARD_TABLE_MAP[tableName]) {
       recommendation = STANDARD_TABLE_MAP[tableName];
       // Hand-written guidance in this file, not a lookup in SAP's release data.
       replacementConfidence = 'Verified';
@@ -254,19 +239,37 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
       recommendation = 'Verify API availability in SAP API Hub';
       replacementConfidence = 'Needs Validation';
     }
+    if (!referenceOnly) {
+      if (stats.routes.has('logical-database')) {
+        recommendation += '. Read through a logical database (GET): the SELECT runs in the logical database, and a CDS view does not replace the binding';
+      }
+      if (stats.routes.has('adbc')) {
+        recommendation += '. Accessed in native SQL through ADBC (CL_SQL_STATEMENT)';
+      }
+    }
+    if (possibleOnly) {
+      const names = [...stats.possibleTargetOf].sort().join(', ');
+      recommendation =
+        `Possible target only: ${names} names the ${stats.routes.has('type-reference') ? 'type' : 'table'} at runtime, and the source shows this value for it (a DEFAULT or an assignment), which does not close what it can be. ` +
+        recommendation;
+      replacementConfidence = 'Needs Validation';
+    }
 
+    const via = [...stats.routes].sort();
     entries.push({
       tableName,
       accessType,
       isCustom,
       riskLevel,
       recommendation,
-      occurrences: stats.reads + stats.writes,
+      occurrences: stats.reads + stats.writes + stats.references,
       readCount: stats.reads,
       writeCount: stats.writes,
       lineNumbers: stats.lineNumbers,
       snippets: stats.snippets,
-      replacementConfidence
+      replacementConfidence,
+      ...(via.some((route) => route !== 'open-sql') ? { via } : {}),
+      ...(possibleOnly ? { possibleTargetOf: [...stats.possibleTargetOf].sort() } : {}),
     });
   }
 
@@ -279,6 +282,18 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
   });
 
   return entries;
+}
+
+/** What a dependency without a row access asks of a migration. */
+function referenceRecommendation(tableName: string, routes: Set<DependencyRoute>, programs: Set<string>): string {
+  if (routes.has('program-global')) {
+    const program = [...programs].sort().join(', ') || 'another program';
+    return `Global data object ${tableName} of program ${program}, reached through a dynamic ASSIGN — a dependency on SAP program internals, not a database access. SAP publishes no released path into another program's memory`;
+  }
+  if (routes.has('logical-database') && !routes.has('type-reference')) {
+    return 'Logical database node bound by NODES — rows reach the program through the logical database, not through a statement in this source';
+  }
+  return 'Type reference only (TABLES, TYPE, INCLUDE STRUCTURE) — no database access. A successor is at structure level (a released structure or data element), not a CDS read view';
 }
 
 /**
@@ -393,8 +408,12 @@ export function recommendArchitecture(
   const upper = code.toUpperCase();
 
   // Scoring factors
-  const customTableWrites = dataCoupling.filter((d) => d.isCustom && d.accessType !== 'Read').length;
-  const standardTableReads = dataCoupling.filter((d) => !d.isCustom && d.accessType === 'Read').length;
+  // A type reference is no write, and a possible target of an unresolved
+  // dynamic name is not a table this program is known to touch (R26): neither
+  // may decide the architecture.
+  const known = dataCoupling.filter((d) => !d.possibleTargetOf?.length);
+  const customTableWrites = known.filter((d) => d.isCustom && (d.accessType === 'Write' || d.accessType === 'Read/Write')).length;
+  const standardTableReads = known.filter((d) => !d.isCustom && d.accessType === 'Read').length;
   const hasRfcIdoc = /\b(CALL\s+FUNCTION\s+'RFC|IDOC|BAPI_)\b/i.test(upper);
   const hasEventPattern = /\b(EVENT\s+RAISED|RAISE\s+EVENT|PUBLISH)\b/i.test(upper);
   const loc = code.split(/\r?\n/).filter((l) => l.trim().length > 0).length;

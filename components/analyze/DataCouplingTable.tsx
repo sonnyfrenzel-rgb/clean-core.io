@@ -16,7 +16,7 @@ export default function DataCouplingTable({ dataCoupling }: DataCouplingTablePro
     <CollapsibleAccordion
       icon={<Link2 size={16} />}
       title="Data Coupling"
-      badge={`${dataCoupling.length} table${dataCoupling.length !== 1 ? 's' : ''} · ${dataCoupling.filter(d => d.accessType !== 'Read').length} direct writes`}
+      badge={`${dataCoupling.length} table${dataCoupling.length !== 1 ? 's' : ''} · ${dataCoupling.filter(d => d.accessType === 'Write' || d.accessType === 'Read/Write').length} direct writes`}
       badgeSeverity={dataCoupling.some(d => d.riskLevel === 'High') ? 'red' : dataCoupling.some(d => d.riskLevel === 'Medium') ? 'amber' : 'green'}
       tooltip="Direct database table accesses detected in your code. Write operations on standard tables are a Clean-Core risk."
     >

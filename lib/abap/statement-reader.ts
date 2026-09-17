@@ -137,13 +137,26 @@ export function isAbapCommentLine(raw: string, statementOpen: boolean): boolean 
  * Each call advances the state, so a scanner is used for exactly one left-to-
  * right pass. ABAP literals do not span lines; `readStatements` therefore starts
  * a fresh scanner for each line it appends and for each statement it cuts.
+ *
+ * `embedded()` reads the state the last character left behind — inside a
+ * template's `{ … }` or not — and changes nothing. It exists for one reader:
+ * an ADBC call executes the *text segments* of a template as SQL while its
+ * embedded expressions stay ABAP (R13a, `lib/abap/table-dependencies.ts`), so
+ * that reader has to tell the two apart. It asks this scanner rather than
+ * counting braces itself, because counting them is the rule again.
  */
-export function createLiteralScanner(): (ch: string) => boolean {
+export interface LiteralScanner {
+  (ch: string): boolean;
+  /** True while the characters read so far leave a template's `{ … }` open. */
+  embedded(): boolean;
+}
+
+export function createLiteralScanner(): LiteralScanner {
   let quote = false;
   let tick = false;
   let template = false;
   let embedded = 0;
-  return (ch: string): boolean => {
+  const scan = ((ch: string): boolean => {
     if (ch === "'" && !tick && !template) { quote = !quote; return false; }
     if (ch === '`' && !quote && !template) { tick = !tick; return false; }
     if (ch === '|' && !quote && !tick) {
@@ -155,7 +168,9 @@ export function createLiteralScanner(): (ch: string) => boolean {
     if (template && ch === '{') { embedded += 1; return false; }
     if (template && ch === '}') { embedded = Math.max(0, embedded - 1); return false; }
     return !quote && !tick && !template;
-  };
+  }) as LiteralScanner;
+  scan.embedded = () => template && embedded > 0;
+  return scan;
 }
 
 /**
