@@ -154,9 +154,16 @@ service cloud.firestore {
              (!('usageReport' in data) || (data.usageReport is map)) &&
              // Roadmap 7.1, same reasoning as usageReport directly above: an
              // imported ATC worklist is server-written only (POST
-             // /api/projects/{projectId}/commands, `record-atc-report`) and
-             // never reaches this validator through a client write — see
-             // `SERVER_ONLY_PROJECT_FIELDS` in lib/project-commands.ts.
+             // /api/projects/{projectId}/commands, `record-atc-report`).
+             //
+             // What actually keeps a browser out is in the rules, not in
+             // TypeScript: `allow create` above lists the six keys a client may
+             // create with, and `allow update` lists the client-writable fields.
+             // `atcReport` is in neither, so this line only fixes the *type* of a
+             // field the Admin SDK writes — it is not the thing that makes it
+             // server-only. Saying that imprecisely once already produced a false
+             // "client can write atcReport" finding in the QA review of
+             // a81b30dc12a9, so the enforcing rule is named here.
              (!('atcReport' in data) || (data.atcReport is map)) &&
              (!('nonFunctionalRequirements' in data) || (data.nonFunctionalRequirements is map));
     }

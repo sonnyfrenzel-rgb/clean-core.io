@@ -372,6 +372,74 @@ test.describe('the transition, decided once and in one place', () => {
       expect(report.source).toBe('atc');
     }
   });
+
+  /**
+   * The rows, not only the envelope.
+   *
+   * The top-level key set was closed from the first cut; each finding was not,
+   * and a QA review of a81b30dc12a9 said so. The browser parses and then posts
+   * what it parsed, so without this the closed `AtcFinding` type is a promise
+   * only the browser keeps — a crafted request stores rows of any shape.
+   *
+   * Refusing rather than dropping the bad row is the deliberate half: a silently
+   * shorter list would be a wrong count, and this import exists so that ATC's
+   * numbers stay ATC's numbers.
+   */
+  test('each ATC row is held to the model too, not only the envelope (QA review of a81b30dc12a9)', () => {
+    const state = { activeRunId: 'run-1' };
+    const envelope = { source: 'atc', importedAt: '2026-09-18', warnings: [] };
+
+    const r = validateProjectCommand(
+      {
+        command: 'record-atc-report',
+        atcReport: {
+          ...envelope,
+          findings: [
+            {
+              objectName: 'ZFI',
+              message: 'Direct table write',
+              priority: 'error',
+              // None of these are fields of a finding.
+              smuggledRow: { anything: 'at all' },
+              nested: [1, 2, 3],
+              overlong: 'x'.repeat(9000),
+            },
+          ],
+        },
+      },
+      state,
+      actor,
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const stored = (r.fields.atcReport as Record<string, unknown>).findings as Record<string, unknown>[];
+      const keys = Object.keys(stored[0]);
+      for (const smuggled of ['smuggledRow', 'nested', 'overlong']) {
+        expect(keys, `a finding kept "${smuggled}", which the model does not declare`).not.toContain(smuggled);
+      }
+      expect(stored[0].objectName, 'the declared fields were lost with the undeclared ones').toBe('ZFI');
+    }
+
+    // A row that cannot carry the two fields a finding is defined by is refused,
+    // never quietly left out of the list.
+    for (const bad of [{ message: 'no object' }, { objectName: 'ZFI' }, 'not an object', null]) {
+      const refused = validateProjectCommand(
+        { command: 'record-atc-report', atcReport: { ...envelope, findings: [bad] } },
+        state,
+        actor,
+      );
+      expect(refused.ok, `a finding row ${JSON.stringify(bad)} was accepted`).toBe(false);
+    }
+
+    // A quarantined row without its reason is the same case: the reason is the
+    // whole point of quarantining rather than dropping.
+    const noReason = validateProjectCommand(
+      { command: 'record-atc-report', atcReport: { ...envelope, findings: [], quarantined: [{ raw: 'x' }] } },
+      state,
+      actor,
+    );
+    expect(noReason.ok, 'a quarantined row without a reason was accepted').toBe(false);
+  });
 });
 
 /* ================================================= the live rules, executed */

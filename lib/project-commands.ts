@@ -179,13 +179,75 @@ const ATC_SOURCES = ['atc'] as const;
 export const ATC_REPORT_MAX_FINDINGS = 20000;
 export const ATC_REPORT_MAX_QUARANTINED = 20000;
 
+/** Keys of a single finding the server stores; anything else is dropped. */
+const ATC_FINDING_KEYS = [
+  'objectName',
+  'objectType',
+  'checkId',
+  'checkTitle',
+  'message',
+  'priority',
+  'line',
+  'exempted',
+] as const;
+
+/**
+ * Keys of a quarantined row, from `AtcQuarantineEntry` in `lib/abap/atc-model.ts`:
+ * the spreadsheet row, the object name as far as it was readable, and why the
+ * parser could not use it. Written from the model rather than from memory — the
+ * first cut of this list guessed `raw`, dropped `row` and `objectName`, and
+ * `tests/atc-import-guard.spec.ts` caught it on the stored shape.
+ */
+const ATC_QUARANTINE_KEYS = ['row', 'objectName', 'reason'] as const;
+
+/** A ceiling per string, so one row cannot carry a document. */
+const ATC_FIELD_MAX = 4000;
+
+/**
+ * One row, reduced to the keys the model declares.
+ *
+ * The top level was closed from the start; the rows were not, and a QA review of
+ * a81b30dc12a9 said so. The browser parses, then posts what it parsed — so
+ * without this, a crafted request stores finding objects of any shape, and the
+ * closed `AtcFinding` type is a promise only the browser keeps. Unknown keys are
+ * dropped rather than refused: a newer export carrying an extra column should
+ * import, it just should not persist a field nothing reads.
+ *
+ * What this does **not** do is enforce privacy. The personal-data hint is a
+ * warning with an acknowledgement and deliberately not a control (Sonny,
+ * 18.09.2026), so the server cannot and must not claim to have filtered
+ * anything — it bounds the shape, not the meaning.
+ */
+function normaliseAtcRow(
+  row: unknown,
+  keys: readonly string[],
+  required: readonly string[],
+): Record<string, unknown> | null {
+  if (!isPlainObject(row)) return null;
+  const out: Record<string, unknown> = {};
+  for (const key of keys) {
+    const v = row[key];
+    if (v === undefined) continue;
+    if (typeof v === 'string') out[key] = v.length > ATC_FIELD_MAX ? v.slice(0, ATC_FIELD_MAX) : v;
+    else if (typeof v === 'number' && Number.isFinite(v)) out[key] = v;
+    else if (typeof v === 'boolean') out[key] = v;
+    // Anything else — an object, a list, a NaN — is not a field of a row.
+  }
+  for (const key of required) {
+    if (typeof out[key] !== 'string' || (out[key] as string).length === 0) return null;
+  }
+  return out;
+}
+
 /**
  * The ATC import, reduced to the fields the model declares — the same
  * shallow contract `normaliseUsageReport` keeps: a closed top-level key set,
- * a closed source vocabulary and a ceiling on size. What goes into each
- * finding is the browser's own parser's job (`lib/abap/atc-parser.ts`,
- * `lib/abap/atc-privacy.ts`); this is the part the browser cannot be trusted
- * with regardless of what its own code does.
+ * a closed source vocabulary and a ceiling on size, and since the QA review of
+ * a81b30dc12a9 a closed key set per row as well. Which rows are worth keeping,
+ * and what the personal-data hint says about them, stays the browser's parser's
+ * job (`lib/abap/atc-parser.ts`, `lib/abap/atc-privacy.ts`); the shape of what
+ * gets stored is the part the browser cannot be trusted with regardless of what
+ * its own code does.
  */
 export function normaliseAtcReport(
   value: unknown,
@@ -209,10 +271,34 @@ export function normaliseAtcReport(
     }
   }
 
+  // A row that cannot carry its two required fields is refused outright rather
+  // than dropped: a silently shorter list would be a wrong count, and this
+  // import's whole point is that ATC's numbers stay ATC's numbers.
+  const findings: Record<string, unknown>[] = [];
+  for (const row of value.findings) {
+    const clean = normaliseAtcRow(row, ATC_FINDING_KEYS, ['objectName', 'message']);
+    if (!clean) return { ok: false, error: 'atcReport.findings holds a row without an object name and a message.' };
+    findings.push(clean);
+  }
+
+  const quarantined: Record<string, unknown>[] = [];
+  for (const row of (value.quarantined as unknown[]) ?? []) {
+    const clean = normaliseAtcRow(row, ATC_QUARANTINE_KEYS, ['reason']);
+    if (!clean) return { ok: false, error: 'atcReport.quarantined holds a row without a reason.' };
+    quarantined.push(clean);
+  }
+
+  const warnings = (value.warnings as unknown[])
+    .filter((w): w is string => typeof w === 'string')
+    .map((w) => (w.length > ATC_FIELD_MAX ? w.slice(0, ATC_FIELD_MAX) : w));
+
   const report: Record<string, unknown> = {};
   for (const key of ATC_REPORT_KEYS) {
     if (value[key] !== undefined) report[key] = value[key];
   }
+  report.findings = findings;
+  report.warnings = warnings;
+  if (value.quarantined !== undefined) report.quarantined = quarantined;
   return { ok: true, report };
 }
 
