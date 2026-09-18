@@ -959,6 +959,9 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-135 | hoch | P1 | sofort | behoben |
 | SEC-2026-136 | hoch | P1 | sofort | behoben |
 | SEC-2026-137 | hoch | P1 | sofort | behoben |
+| SEC-2026-150 | hoch | P2 | 3.0 | eingeplant |
+| SEC-2026-151 | hoch | — | — | akzeptiertes Risiko |
+| SEC-2026-152 | hoch | P1 | sofort | behoben |
 
 **Audit von v2.13.0 (`a7c9e71`, 18.09.2026): 3 kritisch, 1 hoch, 7 mittel, 14 niedrig — 2 behoben,
 7 eingeplant, 16 widerlegt.** Behoben sind der Zip-Slip in der Auslieferung (modellerzeugte Pfade

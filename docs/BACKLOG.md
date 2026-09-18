@@ -412,6 +412,40 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     Aufruf". Drei kleine Exporte, ein Aufräumschritt. Gemessen: `Z_MM_PO_APPROVAL` 3 Aufträge (zwei
     Includes, ein `CALL FUNCTION lv_fm_name`), Legacy-1000 keiner, die sechs kleinen keiner.
 
+29. **Aus dem Security-Audit zu `b88c77b` (18.09., spät) — drei Folgeposten, IDs im versiegelten
+    Register.** *(a)* **SEC-2026-150, P2:** der Transformationsprompt stellt den Ausgabevertrag *vor* die
+    unvertrauten ABAP-Quellen; Härtung: Vertrag nach den Quellen wiederholen, Modellausgabe gegen ein
+    Schema validieren, Marker serverseitig setzen — und **prüfen, ob eine Injektion angezeigte
+    Stützungsgrade kippen kann** (ungeprüft, deshalb angenommen). *(b)* **SEC-2026-151, akzeptiertes
+    Risiko mit Wortproblem:** ein Audit-Pack mit einer attestierten Datei ohne Digest heißt weiterhin
+    `authentic`; der Verifier sagt im selben Atemzug „presence was sealed, contents were not". Das ist
+    per Design (attestiert ≠ signiert), aber ein Leser sieht zuerst das Wort. Folgeschritt: eigener
+    Statuswert für „signiert, Attestierung unversiegelt". *(c)* **Kosmetik:** `lib/gemini.ts:72-79`
+    schickt `userId` und `idToken` im Rumpf mit; die Route liest beides nicht (0 Treffer) — totes
+    Gepäck aus einer älteren Fassung, das jeden Prüfer zum selben Fehlalarm verleitet. Entfernen.
+    Von 20 kritischen und hohen Befunden des Laufs: 4 fingerabdruckgleich schon widerlegt (die
+    Namensfehlalarme, zum dritten Mal), 12 widerlegt, 2 eingeplant, 1 Risiko, **1 echt** — die
+    Modell-URL im Präsentations-Viewer (SEC-2026-152), behoben.
+
+30. **Aus 7.6 (18.09.2026, spät) — drei Entscheidungen, von mir getroffen, und zwei Reibungspunkte
+    an 7.2.** *(1)* `carrierToday.level` bleibt `null` mit Herkunft *Reconstructed* und Zeilenanker —
+    die 7.2-Leiter misst, wie stark ein *Standardkandidat* belegt ist; „der Code ruft ME21N in L631"
+    ist keiner, und E0 wie E1 wären dafür falsch. In der Darstellung steht der Herkunfts-Chip an der
+    Stelle des E-Identifiers. *(2)* Feldname „Where the catalogue points" statt „Carrier in future" —
+    die Überschrift darf keine Zusage sein, und der Katalog nennt **keine einzige Fiori-App** (gemessen
+    am Sync vom 15.09.: `ME21N`, `ME51N`, `VA01`, `VA02`, `MIGO` fehlen; alle 414 Nachfolger sind
+    DDLS/CLAS/INTF). *(3)* Kein „SAP GUI → Fiori" in Satz 3 — aus welchem Client ein Report startet,
+    steht nicht im Quelltext; welche App ein freigegebenes Objekt ausliefert, nicht im Katalog.
+    **Deterministischer Fund, eingebaut:** `CALL TRANSACTION … USING <bdcdata>` ist Batch-Input — da
+    sitzt niemand; beide ausgelieferten Programme fahren ihre Transaktion so. „Nutzer arbeiten heute
+    in ME21N" wäre der wahrscheinlichste falsche Satz des Schritts gewesen.
+    **Reibung an 7.2, gemeldet statt geändert:** `StandardCapability` nennt seine Routinen nicht
+    direkt (ein `routines: string[]` spart 7.6 und 7.8 je einen Durchlauf); `SCOPE_ITEM_NOTE` wird auch
+    für Katalogzeiger benutzt — ein neutraler Name in `evidence-level.ts` wäre sauberer. **Nicht
+    gebaut:** kein Panel. `lib/abap/user-change.ts` ist **nicht client-safe** (zieht die Engine); eine
+    Tafel bekommt den Bericht als Prop aus einer Server-Komponente oder Route, nie per Import in eine
+    Client-Komponente. Gemessen: 14 Datensätze über acht Programme, zwei Schulungshinweise, `E2+` = 0.
+
 ### Hygiene, bevor die nächste Welle startet
 
 20. **Emulator und Dev-Server neu starten**, bevor mehr als vier Agenten laufen. Der Emulator stand
