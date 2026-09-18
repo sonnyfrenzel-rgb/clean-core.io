@@ -63,9 +63,24 @@ export async function POST(request: NextRequest) {
      *
      * The old check validated the *shape* of the address and not its *binding*,
      * which is why "F-04: Empfängeradresse validieren" did not prevent this.
-     * Firebase Auth is the one place the address is proven, so it is the one
-     * place this reads it. Security audit of bc2f786, SEC-bc2f786-12 — the only
-     * part of that finding that stands.
+     * Firebase Auth holds the address the account was created with, so that is
+     * what this reads. Security audit of bc2f786, SEC-bc2f786-12 — the only part
+     * of that finding that stands.
+     *
+     * **What this does not do, said plainly.** An Auth address is only *proven*
+     * once `emailVerified` is true, and this product's password accounts are not
+     * verified today (see `docs/BACKLOG.md`). So somebody can still sign up with
+     * a stranger's address and have the welcome mail go there when an
+     * administrator approves them. That is the ordinary unverified-signup risk
+     * every product with this shape carries, and it is materially smaller than
+     * what it replaced — the address is at least the one the account is bound to,
+     * not a free-text field in a document the same browser wrote. Closing it
+     * properly means verifying addresses at sign-up, which is a product change
+     * and not a line here: a hard `emailVerified` check today would silently stop
+     * the welcome mail for every existing account, which is the lockout shape
+     * this codebase has been bitten by twice. Reported as `not_met` by the QA
+     * review of 4a99d5355716, correctly — the first version of this comment
+     * claimed the address was proven, and it is not.
      */
     const adminAuth = await getAdminAuth();
     let account;

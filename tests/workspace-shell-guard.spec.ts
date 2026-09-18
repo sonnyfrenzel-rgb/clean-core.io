@@ -801,13 +801,20 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
     // and nowhere else (`tests/view-attribute-guard.spec.ts` is the guard for
     // "nowhere else" — this is only the UI half).
     await focusSegments.nth(1).click();
-    await expect(page).toHaveURL(/[?&]focus=solution\b/, { timeout: 30000 });
+    // Tight on purpose. The 30 s above buys the *first* hit of this route the
+    // compile a dev server may need; by here the page is loaded and the URL
+    // change is client-side, so anything beyond a moment is a hang and should be
+    // reported as one rather than waited out. The QA review of 4a99d5355716
+    // flagged long waits in this file. Its premise — that this change raised
+    // them — does not hold (130 insertions, 0 deletions against bc2f786), but
+    // the point stands for the waits the new block introduced itself.
+    await expect(page).toHaveURL(/[?&]focus=solution\b/, { timeout: 5000 });
     await expect(focusSegments.nth(1)).toHaveAttribute('aria-checked', 'true');
     await expect(focusSegments.nth(0)).toHaveAttribute('aria-checked', 'false');
 
     // Management: Focus is gone again, and the view is still in the URL.
     await page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'Management' }).click();
-    await expect(page).toHaveURL(/[?&]view=management\b/, { timeout: 30000 });
+    await expect(page).toHaveURL(/[?&]view=management\b/, { timeout: 5000 });
     await expect(page.locator('[data-workspace-it-focus]')).toHaveCount(0);
 
     // Every switch above — two views, one focus, one "About this view" toggle

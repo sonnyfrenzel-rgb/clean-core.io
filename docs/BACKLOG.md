@@ -268,6 +268,19 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     Aktion *Welcome mail resend* in der Zeile. Nicht heute gebaut, weil sie den Mailversand
     anfasst und das eine eigene Prüfung verdient.
 
+21. **E-Mail-Adressen werden beim Registrieren nicht bestätigt.** Heute ist kein Passwortkonto
+    dieses Produkts `emailVerified` — was bedeutet, dass die Adresse, an die eine Begrüßungsmail
+    geht, zwar die des Kontos ist, aber von niemandem belegt. Wer sich mit der Adresse eines
+    Fremden registriert, lässt beim Freigeben eine clean-core.io-Mail dorthin gehen. Das ist das
+    gewöhnliche Risiko jeder unbestätigten Anmeldung und deutlich kleiner als das, was am
+    18.09. behoben wurde (`3b8ca34`: die Adresse stand vorher frei wählbar in einem Dokument,
+    das derselbe Browser geschrieben hatte). Die richtige Lösung ist eine Bestätigung beim
+    Anmelden. **Nicht als harte Prüfung nachrüsten:** ein `emailVerified`-Zwang in
+    `/api/send-approval-email` würde die Begrüßungsmail für jedes bestehende Konto still
+    abschalten — dieselbe Aussperrungsform wie bei MFA und beim ToS-Gate. Erst bestätigen
+    können, dann verlangen. Hängt mit der MFA-Frage zusammen: Firebase verweigert die Anmeldung
+    eines zweiten Faktors auf einer unbestätigten Adresse.
+
 ### Hygiene, bevor die nächste Welle startet
 
 20. **Emulator und Dev-Server neu starten**, bevor mehr als vier Agenten laufen. Der Emulator stand
