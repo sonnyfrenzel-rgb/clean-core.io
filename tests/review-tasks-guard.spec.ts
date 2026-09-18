@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { join, resolve } from 'path';
+import { initializeApp, getApps } from 'firebase/app';
+import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
+import firebaseConfig from '../firebase-config.json';
+import { TERMS_VERSION } from '../lib/constants';
+import { adminSetDoc } from './helpers/admin-seed';
 import {
   deriveReviewTasks,
   deriveReviewTasksFrom,
@@ -425,6 +430,37 @@ test.describe('an include this run does not hold is a task with its name', () =>
  * ================================================================== */
 
 test.describe('a computed call target is a task with its line', () => {
+  /**
+   * The negative half. A QA review of 4ddc262851d3 noted that the computed
+   * forms are proven and the static ones are not - and that the coverage
+   * snippets are classified by prefix, so `CALL METHOD lo->do_it` could be
+   * one prefix away from a false task. Measured through the real path,
+   * not the classifier alone: every static form of the same five statements
+   * raises nothing.
+   */
+  test('the static form of every one of those statements raises no task', () => {
+    const out = deriveReviewTasks(
+      [
+        'REPORT ztest.',
+        'DATA lo_service TYPE REF TO zcl_service.',
+        'START-OF-SELECTION.',
+        '  CREATE OBJECT lo_service TYPE zcl_service.',
+        '  CALL METHOD lo_service->do_it.',
+        '  lo_service->do_more( ).',
+        "  CALL FUNCTION 'Z_STATIC_FM'.",
+        '  PERFORM static_form.',
+        "  CALL TRANSACTION 'VA01'.",
+        '  SUBMIT zother_report.',
+        'FORM static_form.',
+        "  WRITE / 'x'.",
+        'ENDFORM.',
+        '',
+      ].join('\n'),
+    );
+    expect(out.counts.byKind['dynamic-call'], 'a static call was reported as a computed target').toBe(0);
+    expect(out.tasks, JSON.stringify(out.tasks.map((t) => t.task))).toEqual([]);
+  });
+
   test('CALL FUNCTION lv_fm_name in Z_MM_PO_APPROVAL is one task on line 502', () => {
     const tasks = of(deriveReviewTasks(example(PO)), 'dynamic-call');
     expect(tasks).toHaveLength(1);
@@ -652,5 +688,95 @@ test.describe('the panel takes the tasks rather than deriving them', () => {
       reviewTasksNoneLine(false, true),
       reviewTasksNoneLine(true, true),
     ]).size).toBe(3);
+  });
+});
+
+/* ==================================================================== *
+ * The panel a reader actually meets - wired, rendered, with the model
+ * unreachable. A QA review of 4ddc262851d3 said, correctly, that a panel
+ * nobody can open is not available to anybody: the module and the panel
+ * were proven on their own, the page that shows them was not. Seeded with
+ * the shipped example that carries three tasks, so the count is measured
+ * on the same source the "counted" test above measures.
+ * ==================================================================== */
+
+const RENDER_EMAIL = `review-tasks-${Date.now()}@cleancore-test.io`;
+const RENDER_SIGN_IN = `spec-${process.pid}-${Math.random().toString(36).slice(2)}-Aa1!`;
+const RENDER_PROJECT_ID = `review-tasks-project-${Date.now()}`;
+
+test.describe('the panel a reader actually meets', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeAll(async () => {
+    const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    try {
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+    } catch {
+      /* already connected */
+    }
+    const cred = await createUserWithEmailAndPassword(auth, RENDER_EMAIL, RENDER_SIGN_IN);
+    const uid = cred.user.uid;
+    await adminSetDoc('users', uid, {
+      firstName: 'Review', lastName: 'Tasks', email: RENDER_EMAIL, tier: 'pilot', status: 'approved',
+      activatedAt: new Date(), transformationsUsed: 0, transformationsLimit: 5,
+      termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
+    });
+    // A finished run with no narrative renders the evidence-only report - the
+    // branch that carries the table panels and, since 7.5, the check tasks.
+    await adminSetDoc('projects', RENDER_PROJECT_ID, {
+      name: 'Review tasks fixture',
+      userId: uid,
+      createdAt: new Date(),
+      status: 'analyzed',
+      legacyCode: readFileSync(join(process.cwd(), 'public/starter-examples/Z_MM_PO_APPROVAL.abap'), 'utf8'),
+      activeRunId: `${RENDER_PROJECT_ID}-run`,
+      cleanCoreScore: 41,
+    });
+    await adminSetDoc(`projects/${RENDER_PROJECT_ID}/runs`, `${RENDER_PROJECT_ID}-run`, {
+      runId: `${RENDER_PROJECT_ID}-run`,
+      projectId: RENDER_PROJECT_ID,
+      userId: uid,
+      createdAt: new Date().toISOString(),
+      status: 'completed',
+      cleanCoreScore: 41,
+    });
+  });
+
+  test('the analyze stage shows the three tasks of the purchase-order example, each as withheld, with no model call', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+
+    const modelCalls: string[] = [];
+    await page.route('**/api/gemini**', async (route) => {
+      modelCalls.push(route.request().url());
+      await route.abort();
+    });
+
+    await page.goto('/');
+    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+    await page.waitForSelector('input[type="email"]');
+    await page.fill('input[type="email"]', RENDER_EMAIL);
+    await page.fill('input[type="password"]', RENDER_SIGN_IN);
+    await page.click('button[type="submit"]:has-text("Sign In")');
+    await page.waitForTimeout(3500);
+    await page.goto(`/project/${RENDER_PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
+
+    const panel = page.locator('[data-review-tasks]');
+    await expect(panel, 'the analyze stage does not show the check tasks').toBeVisible({ timeout: 30000 });
+
+    // Three, measured on the same file the "counted" test measures: two
+    // includes the run does not hold and one call target computed at run time.
+    await expect(panel.locator('[data-review-task-step]')).toHaveCount(3);
+    await expect(panel.locator('[data-review-task-withheld]')).toHaveCount(3);
+    for (const line of await panel.locator('[data-review-task-withheld]').allInnerTexts()) {
+      expect(line, 'a withheld sentence reached the screen without its prefix').toMatch(/^Not said while this is open:/);
+    }
+    // The tasks name what to do, not what is wrong.
+    const steps = await panel.locator('[data-review-task-step]').allInnerTexts();
+    expect(steps.join(' ')).toContain('Z_MM_PO_NOTIFY');
+    expect(steps.join(' ')).toContain('Z_MM_PO_LOG');
+
+    expect(modelCalls, 'the panel reached the model').toEqual([]);
   });
 });

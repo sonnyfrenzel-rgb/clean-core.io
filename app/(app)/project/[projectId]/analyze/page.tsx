@@ -56,6 +56,8 @@ import ModuleHeatmap from '@/components/analyze/ModuleHeatmap';
 import AbcdClassificationPanel from '@/components/analyze/AbcdClassificationPanel';
 import DataCouplingTable from '@/components/analyze/DataCouplingTable';
 import ComplianceReviewHints from '@/components/ComplianceReviewHints';
+import ReviewTasks from '@/components/ReviewTasks';
+import { deriveReviewTasks } from '@/lib/abap/review-tasks';
 import BusinessValueAudit from '@/components/analyze/BusinessValueAudit';
 import PlainEnglishGuide from '@/components/analyze/PlainEnglishGuide';
 import ExtensibilityDecisionMatrix from '@/components/analyze/ExtensibilityDecisionMatrix';
@@ -112,6 +114,14 @@ export default function AnalyzePage() {
   const [isSticky, setIsSticky] = useState(false);
   const [routeReport, setRouteReport] = useState<import('@/lib/abap/extensibility-router').ExtensibilityRouteReport | null>(null);
   const [usageReport, setUsageReport] = useState<UsageReportType | null>(null);
+  // Roadmap 7.5: the check tasks this source leaves open - a window too
+  // short, an include not read, a call target computed at run time. Derived
+  // here, in the browser, from the same source the evidence engine reads;
+  // the panel only paints. lib/abap/review-tasks.ts imports no catalog.
+  const reviewTasks = useMemo(
+    () => deriveReviewTasks(project?.legacyCode || legacyCode || '', { usage: (usageReport || project?.usageReport) ?? undefined }),
+    [project?.legacyCode, legacyCode, usageReport, project?.usageReport],
+  );
   // Roadmap 7.1: ATC-Import — kept as its own state and its own type, never
   // merged into `usageReport` or the engine's evidence findings.
   const [atcReport, setAtcReport] = useState<AtcReportType | null>(null);
@@ -1204,6 +1214,9 @@ export default function AnalyzePage() {
               7.7) — hints out of the table names, never a classification of
               anybody's data, and no model call. */}
           <ComplianceReviewHints dataCoupling={project.dataCoupling || []} />
+          {/* What this reading could not settle, as tasks with a line each
+              (roadmap 7.5) - never a verdict about the code. */}
+          <ReviewTasks result={reviewTasks} />
 
           <GapsWorklist
             projectId={projectId as string}
@@ -1800,6 +1813,10 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               {/* Compliance review hints (roadmap 7.7) — hints out of the table
                   names, never a classification of anybody's data. */}
               <ComplianceReviewHints dataCoupling={project.dataCoupling || []} />
+
+              {/* Check tasks (roadmap 7.5) - what this reading could not
+                  settle, as tasks with a line each, never a verdict. */}
+              <ReviewTasks result={reviewTasks} />
 
               {/* Valuation details */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
