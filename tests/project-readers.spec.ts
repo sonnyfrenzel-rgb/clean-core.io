@@ -169,15 +169,38 @@ test.describe('a widened READ rule is recorded before it is shipped', () => {
     expect(parseProjectReadRule(rules())).not.toContain('runs');
   });
 
-  test('the deployment record says the read rule changed, and what it changed to', () => {
+  /**
+   * This assertion turned over on 18.09.2026, when the rules were deployed.
+   *
+   * It used to read: `deployed` is still `OLD_READ`, `pending` carries the
+   * widened rule, and the note says the deploy comes first. That was the whole
+   * point of 5.4's order — rules first, app after — and it was true for exactly
+   * as long as the deploy was owed.
+   *
+   * Now it is done (`88b5fe431436…`, all five databases, `npm run rules:verify`
+   * agrees with production), so the record has no `pending` block any more and
+   * `deployed` is the widened rule. Asserting the old shape would mean the
+   * suite demanding that a deploy stay owed forever. What still has to hold —
+   * and what this now checks — is that the file and the record say the same
+   * thing, which is the drift this register was created to make visible.
+   *
+   * The three cases below keep guarding the *rule* on fixtures, so the ordering
+   * discipline is not lost with the window it was written in.
+   */
+  test('the deployment record says the widened read rule is what production serves', () => {
     const record = JSON.parse(read(RULES_DEPLOYMENT_RECORD)) as RulesDeploymentRecord;
-    expect(record.deployed.projectDocumentReadRule, 'what production serves').toBe(OLD_READ);
-    expect(record.pending?.projectDocumentReadRule, 'what the working copy says').toBe(parseProjectReadRule(rules()));
-    expect(record.pending?.sha256OfLfNormalisedText).toBe(sha256(rules()));
-    expect(record.pending?.note, 'and that the deploy comes first').toContain('Regel-Deploy vor der App');
+    expect(record.deployed.projectDocumentReadRule, 'what production serves').toBe(NEW_READ);
+    expect(record.deployed.projectDocumentReadRule, 'and it is the working copy, not a third text').toBe(
+      parseProjectReadRule(rules()),
+    );
+    expect(record.deployed.sha256OfLfNormalisedText).toBe(sha256(rules()));
+    expect(record.pending, 'nothing is waiting to be deployed').toBeFalsy();
     const verdict = checkRulesDeployment(rules(), record, sha256);
-    expect(verdict.readRuleChanged, 'the check sees it').toBe(true);
+    expect(verdict.readRuleChanged, 'record and file agree, so nothing is outstanding').toBe(false);
+    expect(verdict.pending).toBe(false);
+    expect(verdict.direction).toBe('in-sync');
     expect(verdict.problems, verdict.problems.join('\n')).toEqual([]);
+    expect(verdict.ok).toBe(true);
   });
 
   const base: RulesDeploymentRecord = {
