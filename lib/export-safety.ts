@@ -67,3 +67,30 @@ export function sapApiHubLink(raw: unknown, label: string): string {
   if (!href) return text;
   return `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
 }
+
+/**
+ * A model-supplied URL that may be put on an `href`, or nothing.
+ *
+ * The same reasoning as `sapApiHubHref` without the host rule: an `href` is
+ * one of the places where escaping does not help, because
+ * `javascript:alert(1)` escapes to itself and React renders it (with a
+ * warning in development and nothing in production). So the URL is parsed and
+ * only `http:` or `https:` with a host survives; everything else — `javascript:`,
+ * `data:`, `vbscript:`, a relative path, a bare word — comes back empty, and the
+ * caller shows the text without a link. Written for the presentation viewer,
+ * which put `row.url` straight on an anchor (security audit of b88c77b,
+ * SEC-2026-152); the return value is the *parsed* URL, not the raw string, so
+ * whitespace and case tricks are normalised away before they reach the DOM.
+ */
+export function safeHttpHref(raw: unknown): string {
+  if (typeof raw !== 'string') return '';
+  let url: URL;
+  try {
+    url = new URL(raw.trim());
+  } catch {
+    return '';
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+  if (!url.hostname) return '';
+  return url.toString();
+}

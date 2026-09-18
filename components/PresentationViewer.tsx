@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, FileText, Maximize2, ExternalLink } from 'lucide-react';
+import { safeHttpHref } from '@/lib/export-safety';
 
 export interface SlideData {
   title: string;
@@ -213,9 +214,14 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
                         </span>
                       </td>
                       <td className="p-3 sm:p-4 text-right">
-                        {row.url ? (
+                        {/* `row.url` is model-supplied. It goes on an anchor only as
+                            an http(s) URL - React renders a `javascript:` href with
+                            nothing more than a development warning (security audit
+                            of b88c77b, SEC-2026-152). Anything else is shown as no
+                            link rather than a link that runs. */}
+                        {safeHttpHref(row.url) ? (
                           <a
-                            href={row.url}
+                            href={safeHttpHref(row.url)}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-0.5 text-[9px] font-black text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-widest"
@@ -223,7 +229,7 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
                             Doc <ExternalLink size={10} />
                           </a>
                         ) : (
-                          <span className="text-gray-300">—</span>
+                          <span className="text-gray-300" title={row.url ? 'The document link the model supplied is not an http(s) address and was not rendered.' : undefined}>—</span>
                         )}
                       </td>
                     </tr>

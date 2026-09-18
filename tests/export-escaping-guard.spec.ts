@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { sapApiHubHref, sapApiHubLink, escapeHtml } from '../lib/export-safety';
+import { sapApiHubHref, sapApiHubLink, safeHttpHref, escapeHtml } from '../lib/export-safety';
 import { escapeHtml as escapeHtmlFromUtils } from '../lib/utils';
 
 /**
@@ -56,6 +56,47 @@ test('the design preview is not written into a window of our own origin', () => 
   // runs whatever the document contains as same-origin markup.
   expect(s).not.toContain('win.document.write');
   expect(s).toContain("window.open(url, '_blank', 'noopener,noreferrer')");
+});
+
+/**
+ * A model-supplied URL reaches an anchor only as http(s). The presentation
+ * viewer put `row.url` straight on `href` (security audit of b88c77b,
+ * SEC-2026-152): `javascript:alert(1)` escapes to itself, and React renders it
+ * with nothing more than a development warning. So the URL is parsed, not
+ * escaped - the same reasoning `sapApiHubHref` states in its header, without
+ * the host rule, because a document link may point anywhere on the web.
+ */
+test('a model-supplied document link is http(s) with a host, or it is no link at all', () => {
+  for (const bad of [
+    'javascript:alert(1)',
+    'JavaScript:alert(1)',
+    ' javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'vbscript:msgbox(1)',
+    'file:///etc/passwd',
+    '/relative/path',
+    'not a url',
+    '',
+    undefined,
+    null,
+    42,
+  ]) {
+    expect(safeHttpHref(bad), `rendered a link for ${JSON.stringify(bad)}`).toBe('');
+  }
+  expect(safeHttpHref('https://help.sap.com/docs/x')).toBe('https://help.sap.com/docs/x');
+  expect(safeHttpHref('http://example.org/a?b=1')).toBe('http://example.org/a?b=1');
+  // The parsed form, not the raw string: whitespace and case are normalised
+  // before the DOM sees them.
+  expect(safeHttpHref('  HTTPS://Help.SAP.com/docs/x  ')).toBe('https://help.sap.com/docs/x');
+});
+
+test('the presentation viewer puts a model URL on an anchor only through that check', () => {
+  const src = fs.readFileSync(path.join(process.cwd(), 'components/PresentationViewer.tsx'), 'utf8');
+  expect(src, 'row.url is rendered on an href unchecked').not.toMatch(/href=\{row\.url\}/);
+  expect(src, 'the viewer no longer routes the URL through safeHttpHref').toMatch(/href=\{safeHttpHref\(row\.url\)\}/);
+  // No other anchor in the file takes a value that is not one of ours.
+  const hrefs = [...src.matchAll(/href=\{([^}]+)\}/g)].map((m) => m[1].trim());
+  for (const h of hrefs) expect(h, `an href takes an unchecked value: ${h}`).toMatch(/^safeHttpHref\(/);
 });
 
 test('an API Hub link is an https link to SAP, or it is not a link', () => {
