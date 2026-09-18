@@ -1,5 +1,4 @@
-import { getCatalogStats, getMergedCatalogVersion } from '@/lib/abap/catalog-service';
-import { APP_VERSION, APP_RELEASE_DATE_ISO } from '@/lib/version';
+import { getFacts } from '@/lib/facts';
 
 /**
  * /llms.txt — a compact, machine-readable orientation file for LLM crawlers and
@@ -17,7 +16,8 @@ export const revalidate = 86400; // refresh daily
 
 export function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
-  const { classifiedObjects, mappedWithSuccessor, syncDate } = getCatalogStats();
+  const facts = getFacts();
+  const { objectCount: classifiedObjects, successorCount: mappedWithSuccessor, catalogSyncDate: syncDate } = facts;
 
   const body = `# Clean-Core.io
 
@@ -31,21 +31,25 @@ Clean-Core.io is not affiliated with, endorsed by, or certified by SAP SE. It is
 complementary to SAP's own tooling (SAP ADT, SAP ABAP Test Cockpit, SAP Cloud ALM),
 which remain the authoritative in-system checks.
 
-Version: ${APP_VERSION} (${APP_RELEASE_DATE_ISO})
+Version: ${facts.engineVersion} (${facts.engineReleaseDate})
 
 ## Figures worth citing
 
-All figures are derived from the generated catalog artifact, not asserted by hand.
+All figures are derived from the generated catalog artifact, not asserted by hand — the
+full set, with the hash and sync date of both source files, is at ${baseUrl}/facts and
+${baseUrl}/facts.json.
 
 - ${classifiedObjects.toLocaleString('en-US')} SAP objects classified from the SAP Cloudification Repository (synced ${syncDate}).
 - ${mappedWithSuccessor.toLocaleString('en-US')} legacy objects carry a mapped released successor (official repository data plus curated field-level mappings). The remainder are either already-released APIs that need no successor, or objects the repository lists with no released path at all — that distinction matters and is shown per object.
-- Catalog provenance string: ${getMergedCatalogVersion()}
+- Catalog provenance string: ${facts.catalogVersion}
+- A–D rule version: ${facts.ruleVersion}
 
 Source data: https://github.com/SAP/abap-atc-cr-cv-s4hc — © SAP SE and contributors,
 Apache-2.0. Normalized and enriched by Clean-Core.io.
 
 ## Primary entry points
 
+- [Facts](${baseUrl}/facts): the source for every public number on this site — object count, successor count, the A–D distribution, both synced catalog files with their hash and sync date, engine and rule version, reference-run figures. Also at ${baseUrl}/facts.json.
 - [SAP Cloudification Repository Viewer / Object Catalog](${baseUrl}/catalog): look up any SAP standard object and its released successor. Individual object pages live at ${baseUrl}/catalog/<object>, e.g. ${baseUrl}/catalog/vbak.
 - [Clean Core object classification A–D](${baseUrl}/sap-clean-core-object-classification): SAP's four clean-core extensibility levels and how Clean-Core.io derives a readiness grade.
 - [Clean Core Score](${baseUrl}/clean-core-score): how the deterministic score is calculated, and how it differs from SAP's own figures (see "Naming" below).

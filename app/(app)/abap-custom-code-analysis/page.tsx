@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
-import { getCatalogStats } from '@/lib/abap/catalog-service';
+import { getFacts, formatObjectCount } from '@/lib/facts';
 import { Cpu, Activity, ShieldCheck, Link2, Check } from 'lucide-react';
 import Link from 'next/link';
 import BackLink from '@/components/BackLink';
@@ -59,16 +59,14 @@ const faqs = [
 export default function AbapAnalysisPage() {
 
   /**
-   * The object count is read from the catalog artifact, never typed into the copy.
-   * It said `23,000+` here while the landing page rendered the live figure two
+   * The object count is read from lib/facts.ts, never typed into the copy. It
+   * said `23,000+` here while the landing page rendered the live figure two
    * scrolls away — on pages that argue for verifiability, a stale number is the
-   * most expensive kind of mistake.
+   * most expensive kind of mistake. Roadmap 0.2 (`UX-E14-F01:R0`) removed the
+   * fallback literal itself, not just its appearance in the markup.
    */
-  const stats = getCatalogStats();
-  const catalogObjects =
-    stats.classifiedObjects > 0
-      ? `${stats.classifiedObjects.toLocaleString('en-US')} objects`
-      : '23,000+ objects';
+  const facts = getFacts();
+  const catalogObjects = formatObjectCount(facts);
   const schemaJson = {
     "@context": "https://schema.org",
     "@type": "FAQPage",

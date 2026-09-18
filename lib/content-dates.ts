@@ -10,17 +10,18 @@
  * whole domain.
  */
 export const CONTENT_LAST_MODIFIED: Record<string, string> = {
-  '/': '2026-09-17',
+  '/': '2026-09-18',
   '/clean-core-explained': '2026-09-17',
   '/first-run': '2026-09-17',
   '/how-to': '2026-09-17',
   '/knowledge': '2026-09-17',
-  '/abap-custom-code-analysis': '2026-09-17',
+  '/abap-custom-code-analysis': '2026-09-18',
   '/clean-core-score': '2026-09-17',
   '/sap-clean-core-object-classification': '2026-09-17',
   '/method/levels': '2026-09-17',
-  '/sap-cloudification': '2026-09-17',
-  '/how-it-works': '2026-09-17',
+  '/sap-cloudification': '2026-09-18',
+  '/how-it-works': '2026-09-18',
+  '/facts': '2026-09-18',
   '/about': '2026-09-17',
   '/whitepaper': '2026-09-15',
   '/reference-analysis': '2026-08-28',

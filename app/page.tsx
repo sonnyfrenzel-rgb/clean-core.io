@@ -30,7 +30,7 @@ import TransformationShowroom from '@/components/TransformationShowroom';
 import TransformationReplay from '@/components/TransformationReplay';
 import SamplePackageDownload from '@/components/SamplePackageDownload';
 import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/version';
-import { getCatalogStats } from '@/lib/abap/catalog-service';
+import { getFacts, formatObjectCount } from '@/lib/facts';
 import { SUPPORT_MATRIX } from '@/lib/abap/support-matrix';
 import { PHASES } from '@/lib/workflow-steps';
 import BenefitCard from '@/components/BenefitCard';
@@ -57,7 +57,7 @@ export const metadata: Metadata = withTwitterCard({
 });
 
 export default function Home() {
-  const catalogStats = getCatalogStats();
+  const facts = getFacts();
 
   /**
    * The SAP-versus-Clean-Core.io comparison, defined once.
@@ -71,15 +71,17 @@ export default function Home() {
    * catalog. On a page whose whole argument is "verifiable, not asserted", that
    * last one is the most expensive place on the site to carry a stale number.
    *
-   * So the count is interpolated from the same `catalogStats` the badge uses, and
+   * So the count is interpolated from the same `facts` the trust badge uses, and
    * `level` is the single source for how a cell reads. Both renderers derive
    * their styling from it rather than comparing badge strings, which is what let
    * the labels drift apart in the first place.
+   *
+   * Roadmap 0.2 (`UX-E14-F01:R0`): the `23,000+` fallback that used to sit here
+   * is gone rather than merely hidden from the markup — `lib/facts.ts` is now the
+   * only source for this figure, and a number nobody can trace to it is exactly
+   * the failure mode Phase 0 exists to close.
    */
-  const catalogObjects =
-    catalogStats.classifiedObjects > 0
-      ? `${catalogStats.classifiedObjects.toLocaleString('en-US')} objects`
-      : '23,000+ objects';
+  const catalogObjects = formatObjectCount(facts);
 
   const comparisonRows: Array<{
     title: string;
@@ -559,7 +561,7 @@ export default function Home() {
             handedBackKinds={reference.handedBackKinds}
             rollCall={reference.rollCall}
             businessDecisions={reference.businessDecisions}
-            classifiedObjects={catalogStats.classifiedObjects}
+            classifiedObjects={facts.objectCount}
             constructsTotal={constructs.length}
             constructsFullyCovered={fullyCovered}
           />
@@ -600,10 +602,10 @@ export default function Home() {
                 (ADT) and ATC.
               </SectionHeader>
               <div className="text-center md:text-left -mt-10 mb-10">
-              {catalogStats.classifiedObjects > 0 && (
+              {facts.objectCount > 0 && (
                 <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-xs font-bold">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  {catalogStats.classifiedObjects.toLocaleString('en-US')} classified SAP objects · Auto-synced from SAP&apos;s official repository
+                  {facts.objectCount.toLocaleString('en-US')} classified SAP objects · Auto-synced from SAP&apos;s official repository
                 </div>
               )}
               </div>

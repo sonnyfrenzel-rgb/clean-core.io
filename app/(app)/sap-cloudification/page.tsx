@@ -4,7 +4,7 @@ import { Cloud, Database, Route, ShieldCheck, Check, GitBranch, Layers } from 'l
 import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
-import { getCatalogStats } from '@/lib/abap/catalog-service';
+import { getFacts } from '@/lib/facts';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = withTwitterCard({
@@ -52,10 +52,16 @@ const faqs = [
 ];
 
 export default function SapCloudificationPage() {
-  const stats = getCatalogStats();
-  const classified = stats.classifiedObjects
-    ? stats.classifiedObjects.toLocaleString('en-US')
-    : '23,000+';
+  // Roadmap 0.2 (`UX-E14-F01:R0`): lib/facts.ts is the only source for this
+  // figure now — the `23,000+` fallback that used to sit here is gone, not just
+  // hidden from the markup. `objectCount` can only be zero if both generated
+  // catalog artifacts were empty, which cannot happen with the files committed
+  // to this repo; the fallback names the gap honestly rather than reprinting a
+  // number nobody measured.
+  const facts = getFacts();
+  const classified = facts.objectCount > 0
+    ? facts.objectCount.toLocaleString('en-US')
+    : 'an unavailable count of';
 
   const schemaJson = {
     '@context': 'https://schema.org',
@@ -120,7 +126,7 @@ export default function SapCloudificationPage() {
           <p className="text-sm text-gray-600 font-medium leading-relaxed">
             Enter any SAP standard object &mdash; VBAK, BSEG, MARA &mdash; and get its released
             S/4HANA successor, or an honest &ldquo;no released path&rdquo; verdict.
-            {classified ? ` ${classified} classified objects.` : ''} Free, no sign-up.
+            {facts.objectCount > 0 ? ` ${classified} classified objects.` : ''} Free, no sign-up.
           </p>
         </div>
         <span className="inline-flex items-center gap-2 text-sm font-black text-green-600 group-hover:gap-3 transition-all shrink-0">

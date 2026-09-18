@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withTwitterCard } from '@/lib/page-metadata';
 import { getCatalogStats, getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { getCatalogSearchIndex, CATALOG_LETTERS, getModuleAreas } from '@/lib/abap/catalog-index';
 import CatalogSearch from '@/components/catalog/CatalogSearch';
@@ -7,12 +8,25 @@ import CatalogAttribution from '@/components/catalog/CatalogAttribution';
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 
-export const metadata: Metadata = {
+// This is one of the highest-traffic pages on the site (1,491 impressions in the
+// six months to 2026-09-15, per tests/seo-surface-guard.spec.ts) and, until
+// roadmap 0.2, the one public page still missing its own `openGraph` — a share
+// of this URL showed the generic domain-level card from app/layout.tsx instead
+// of introducing the catalog itself, exactly the defect `withTwitterCard`'s own
+// comment describes for the pages it already covers.
+export const metadata: Metadata = withTwitterCard({
   title: 'SAP Cloudification Repository Viewer & Clean Core Object Catalog | Clean-Core.io',
   description:
     'Browse the SAP Cloudification Repository: look up any SAP standard object, its Clean Core readiness, and its released S/4HANA API successor. Official plus curated reference data, enriched by Clean-Core.io — free.',
   alternates: { canonical: `${BASE}/catalog` },
-};
+  openGraph: {
+    title: 'SAP Object Catalog — Cloudification Repository Viewer',
+    description:
+      'Look up any SAP standard object, its Clean Core readiness, and its released S/4HANA API successor.',
+    url: `${BASE}/catalog`,
+    type: 'website',
+  },
+});
 
 export default function CatalogIndexPage() {
   const stats = getCatalogStats();

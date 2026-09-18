@@ -17,6 +17,13 @@ import path from 'path';
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
+/** Comments stripped, so a fix's own explanation of what it removed cannot trip the check for it. */
+const withoutComments = (rel: string) =>
+  read(rel)
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+
 test.describe('the comparison matrix has one definition', () => {
   test('both breakpoints render the same array', () => {
     const s = read('app/page.tsx');
@@ -49,25 +56,35 @@ test.describe('the comparison matrix has one definition', () => {
 });
 
 test.describe('the object count is read, not typed', () => {
+  // Roadmap 0.2 (`UX-E14-F01:R0`): all four pages that carried the `23,000+`
+  // fallback, plus `/facts`, the page the fallback was replaced with a single
+  // source for. `tests/copy-ci-guard.spec.ts` generalises this same rule
+  // ("no public page states a number the facts service does not back") across
+  // every public page; this block stays as the specific regression test for the
+  // defect that was actually found.
   const pages = [
     'app/page.tsx',
     'app/(app)/how-it-works/page.tsx',
     'app/(app)/abap-custom-code-analysis/page.tsx',
+    'app/(app)/sap-cloudification/page.tsx',
+    'app/facts/page.tsx',
   ];
 
-  test('no page states a hard-coded object count in its copy', () => {
+  test('no page states a hard-coded object count anywhere in its source', () => {
     for (const rel of pages) {
-      const s = read(rel);
-      const jsx = s.slice(s.indexOf('return ('));
-      // The literal survives as a fallback for when the catalog artifact is
-      // missing, but it must not appear in rendered copy.
-      expect(jsx, `${rel} carries a typed-in object count`).not.toContain('23,000+');
+      // Unlike the JSX-only check this replaced, the fallback literal itself is
+      // gone from every one of these files now — lib/facts.ts is the only
+      // source, so there is nothing left to fall back to, and a `23,000+` found
+      // anywhere in the code (not only in rendered copy) means it came back.
+      // Comments are stripped first: several of these files explain, in prose,
+      // that the literal used to sit there — that explanation is not the defect.
+      expect(withoutComments(rel), `${rel} carries a typed-in object count`).not.toContain('23,000+');
     }
   });
 
-  test('every one of them derives the figure from the catalog', () => {
+  test('every one of them derives the figure from lib/facts.ts', () => {
     for (const rel of pages) {
-      expect(read(rel), `${rel} does not read the catalog`).toContain('getCatalogStats');
+      expect(read(rel), `${rel} does not read the facts service`).toMatch(/from '@\/lib\/facts'/);
     }
   });
 });

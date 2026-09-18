@@ -24,6 +24,11 @@ export default function robots(): MetadataRoute.Robots {
           '/about',
           '/whitepaper',
           '/tenant-security',
+          // The facts service (roadmap 0.2, UX-E14-F01:R0): the one page an
+          // answer engine should read for a citable number instead of inferring
+          // one from marketing prose.
+          '/facts',
+          '/facts.json',
         ],
         disallow: ['/admin/', '/project/', '/dashboard/', '/settings/', '/api/'],
       },

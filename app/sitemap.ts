@@ -40,6 +40,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/method/levels`, lastModified: on('/method/levels'), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${baseUrl}/sap-cloudification`, lastModified: on('/sap-cloudification'), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${baseUrl}/how-it-works`, lastModified: on('/how-it-works'), changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${baseUrl}/facts`, lastModified: on('/facts'), changeFrequency: 'weekly', priority: 0.6 },
     { url: `${baseUrl}/about`, lastModified: on('/about'), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${baseUrl}/whitepaper`, lastModified: on('/whitepaper'), changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/reference-analysis`, lastModified: on('/reference-analysis'), changeFrequency: 'weekly', priority: 0.9 },
