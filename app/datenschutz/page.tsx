@@ -80,7 +80,7 @@ export default function DatenschutzPage() {
             </p>
             <ul className="list-disc pl-5 space-y-3 text-sm text-gray-600">
               <li>
-                <strong className="text-gray-800">Google Authentication (Firebase Auth):</strong> To sign in, we use Google Sign-In. This securely reads your name, email address, and profile picture from your Google account to authenticate your user session and establish access privileges.
+                <strong className="text-gray-800">Google Authentication (Firebase Auth):</strong> To sign in, we use Google Sign-In. This securely reads your name, email address, and profile picture from your Google account to authenticate your user session and establish access privileges. <em>Legal basis: Art. 6(1)(b) GDPR.</em>
               </li>
               <li>
                 <strong className="text-gray-800">Email and password (Firebase Auth):</strong> You can also register with an email address and a password instead of using Google. In that case we process the email address and the first and last name you enter. The password itself is handled by Firebase Authentication and is never visible to us. <em>Legal basis: Art. 6(1)(b) GDPR.</em>

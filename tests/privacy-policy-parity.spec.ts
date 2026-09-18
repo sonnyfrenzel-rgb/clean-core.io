@@ -104,6 +104,25 @@ test.describe('the privacy policy in two languages', () => {
     });
   }
 
+  /**
+   * Art. 13(1)(c) wants the basis stated for each processing, and the two
+   * versions have to state it for the *same* set. Counting is crude and it is
+   * exactly what was needed: the English "Google Authentication" bullet went out
+   * without its basis while the German one had it, six against seven, and the
+   * guard above — sections, anchors, keywords — saw nothing (QA review of
+   * 1c3476dfb92e). A disclosure duty met in one language is not met.
+   */
+  test('both versions state a legal basis for the same number of purposes', () => {
+    const en = read(EN).match(/Legal basis:/g)?.length ?? 0;
+    const de = read(DE).match(/Rechtsgrundlage:/g)?.length ?? 0;
+    expect(en, 'the English version states no legal basis per purpose at all').toBeGreaterThan(0);
+    expect(
+      de,
+      `the two versions name a different number of legal bases — English ${en}, German ${de}. ` +
+        'One of them is missing a purpose, and a reader in that language is told less than the other.',
+    ).toBe(en);
+  });
+
   test('neither version claims sharing does not exist', () => {
     // The sentence this replaced said "There is no sharing feature today". It was
     // true until phase 5 shipped, and a policy that still said it would be the
