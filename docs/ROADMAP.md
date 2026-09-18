@@ -414,7 +414,7 @@ this case".
 | 5.1 | **Zurück zum Link:** Anmeldung und Registrierung unverändert; danach führt die App zum Einladungslink zurück (nur eigene Pfade, keine offene Weiterleitung) | S |
 | 5.2 | **Einladen:** der Besitzer gibt eine E-Mail-Adresse ein; der Server legt die Einladung mit Ablaufdatum an und verschickt den Link | M |
 | 5.3 | **Annehmen:** angemeldet, Terms akzeptiert (vorhandener Zustimmungsweg), Konto-E-Mail gleich eingeladener Adresse und bestätigt. Google-Login gilt als bestätigt; ein Passwortkonto bekommt in diesem Moment eine Bestätigungsmail — die Registrierung selbst ändert sich nicht | M |
-| 5.4 | **Einsicht:** die eingeladene Person liest das Projekt vollständig, **inklusive ABAP-Quellcode**. Generieren, Bestätigen, Signieren und Exportieren bleiben beim Besitzer. `firestore.rules`: lesen darf Besitzer, Admin oder angenommene Einladung — **Regel-Deploy vor der App** | M |
+| 5.4 | **Einsicht:** die eingeladene Person liest das Projekt vollständig, **inklusive ABAP-Quellcode**. Generieren, Bestätigen, Signieren und Exportieren bleiben beim Besitzer. `firestore.rules`: lesen darf der **Besitzer oder eine angenommene Einladung** — der Administrator nicht (siehe unten) — **Regel-Deploy vor der App** | M |
 | 5.5 | **Übersicht und Widerruf:** der Besitzer sieht, wer seit wann Einsicht hat, und widerruft; wirksam sofort | S |
 
 **Fertig, wenn**
@@ -422,6 +422,16 @@ this case".
 - nach dem Widerruf das Lesen an den Regeln scheitert, nicht nur in der Oberfläche;
 - ein unbestätigtes Passwortkonto keine Einsicht bekommt;
 - der Einladungsdialog ausdrücklich sagt: „inklusive Quellcode".
+
+**„Admin" ist am 18.09.2026 aus 5.4 gestrichen** (Sonny). Die Zeile stand seit dem
+15.09. da und widersprach dem Entzug des Operator-Lesens vom 16.09. — sie war einen
+Tag älter, und die spätere Entscheidung gilt. Lesen darf der Besitzer und die
+angenommene Einladung, sonst niemand; `firestore.rules` hat es nie anders gemacht,
+der Widerspruch stand allein in dieser Zeile. Ein Notfall — ein gemeldeter
+Schadcode-Upload — läuft weiter serverseitig über das Admin SDK, das an den Regeln
+vorbeigeht: eine bewusste Handlung mit Protokoll, keine Konsole, die offensteht.
+Ein Operator, der ein Projekt lesen will, hat denselben Weg wie alle: eingeladen
+werden.
 
 ### Phase 6 — v2.16 „Sichten"
 
@@ -706,6 +716,22 @@ diese Roadmap das Konto nicht anfasst.
 ---
 
 ## 9. Entscheidungen
+
+### Am 18.09.2026 geschlossen
+
+Die sieben Punkte, die am Abend des 17.09. als „ohne Sonny geht es nicht weiter"
+im Arbeitsprotokoll standen, plus die Hälfte des dringendsten Sicherheitsfundes.
+
+| Entscheidung | Ergebnis |
+|---|---|
+| **Die vier öffentlichen Texte** | Entwürfe für alle vier (Datenschutz §8, Vertrauenskarte, `SECURITY.md`, `docs/DATA-RETENTION.md`); Datenschutzerklärung und `SECURITY.md` gehen erst nach Sonnys Lesen auf `main` |
+| **Regel-Deploy 5.4** | Wird ausgerollt, bevor die App folgt — wie 5.4 es verlangt |
+| **Umfrage-Migration** | Sicherung und Trockenlauf jetzt, der schreibende Schritt erst nach Sonnys Blick auf das Ergebnis |
+| **Schlüsselrotation** | Vorbereitet (neues Ed25519-Paar, alter öffentlicher Schlüssel in `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED`); die Secrets setzt Sonny |
+| **„Admin" in 5.4** | **Gestrichen.** Lesen darf Besitzer und angenommene Einladung, sonst niemand — die Entscheidung vom 16.09. schlägt die Zeile vom 15.09. |
+| **Einladungen je Projekt** | **Höchstens drei gleichzeitig offen** (`INVITATION_MAX_OPEN`). Nur offene belegen einen Platz; ein Widerruf gibt ihn sofort frei |
+| **PDF-Schreiber** | Der eigene bleibt. Keine neue Abhängigkeit für 491 Zeilen, die mit `pypdf` gegengeprüft sind |
+| **WIF-Bedingung** | **Verengt** auf Repository **und** Ref (`main`, `dev`) **und** die beiden Workflows, die überhaupt ein Token holen (`deploy.yml`, `usage-report.yml`) |
 
 ### Am 15.09.2026 geschlossen
 

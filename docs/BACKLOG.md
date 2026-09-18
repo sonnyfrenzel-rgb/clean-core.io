@@ -3,6 +3,45 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+## Am 18.09.2026 entschieden und abgearbeitet
+
+Die sieben Entscheidungen unten sind getroffen (`docs/ROADMAP.md` §9, „Am 18.09.2026
+geschlossen"). Was daraus schon erledigt ist:
+
+- **Punkt 5 — „Admin" in 5.4 gestrichen.** Nur eine Roadmapzeile: `firestore.rules`
+  hatte den Admin-Lesezweig nie, der Widerspruch stand allein in der Zeile.
+- **Punkt 2 — Regel-Deploy ist raus.** `88b5fe431436…`, am 18.09. auf allen fünf
+  Datenbanken inklusive `clean-core-eu`; `npm run rules:verify` sagt, dass Produktion,
+  Aufzeichnung und Arbeitskopie übereinstimmen. Der Vergleich vorher: genau ein
+  Lesezugriff kommt hinzu, nichts fällt weg.
+- **Punkt 6 — Obergrenze drei.** `INVITATION_MAX_OPEN`, durchgesetzt in derselben
+  Transaktion, die die Einladung anlegt: zwei überlappende Anfragen können nicht beide
+  denselben freien Platz finden. Nur offene Einladungen belegen einen; ein Widerruf gibt
+  den Platz sofort frei.
+- **Punkt 7 — eigener PDF-Schreiber bleibt.** Keine Änderung nötig.
+- **Punkt 8 — WIF-Bedingung verengt.** Sie war `attribute.repository` allein; sie ist
+  jetzt Repository **und** Ref (`main`, `dev`) **und** die beiden Workflows, die
+  überhaupt ein Token holen. Zurückdrehen: dieselbe `gcloud`-Zeile mit der alten
+  Bedingung.
+- **Punkt 3 — Umfrage: Sicherung und Trockenlauf sind gelaufen.** `scripts/survey-repair-dotted-answers.ts`,
+  Trockenlauf ist der Standard. Befund: 4 Dokumente, 20 gestrandete Felder, keine
+  Kollision mit einer späteren Antwort. **Davon sind 16 Felder drei Testsonden
+  (`preview-check__…`)** — echt betroffen ist genau **eine** Person mit vier Antworten.
+  Der schreibende Schritt wartet auf Sonnys Blick.
+- **Punkt 4 — Rotation vorbereitet.** Neues Ed25519-Paar erzeugt, der bisher aktive
+  öffentliche Schlüssel (`a2373c8c054f2b1a`) gehört in
+  `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED`. Erst die Ruhestandsliste setzen, dann den
+  privaten Schlüssel — umgekehrt entsteht ein Fenster, in dem ausgelieferte
+  Beweismappen kurz als unprüfbar gelten. `AUDIT_SIGNING_KEY` (HMAC) wird **nicht**
+  angefasst: er hat keinen Schlüsselbund.
+- **Punkt 1 — die vier Texte sind entworfen** (Datenschutz §8, Vertrauenskarte samt
+  Beleg und Wächter, `SECURITY.md` §3.7, Aufbewahrungsrichtlinie). Sie liegen auf `dev`.
+  **Datenschutzerklärung und `SECURITY.md` gehen erst nach Sonnys Lesen auf `main`.**
+
+Dazu ungeplant: **die rote Pipeline** (Lauf 35267830947) kam von einem Wächter, der
+recht hatte — Phase 5 brachte zwei Routen mit, die auf den zweiten Faktor prüfen und in
+keinem Katalog standen. Beide sind eingetragen, 36 Tests grün.
+
 ## Offen für den 19.09.2026 — in dieser Reihenfolge
 
 ### Sonnys Entscheidungen, ohne die es nicht weitergeht
