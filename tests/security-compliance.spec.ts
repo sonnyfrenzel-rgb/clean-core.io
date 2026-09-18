@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, connectAuthEmulator } from 'firebase/auth';
 import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, connectFirestoreEmulator } from 'firebase/firestore';
-import { adminSetDoc, adminSetCustomClaim, adminMergeDoc, adminDocExists } from './helpers/admin-seed';
+import { adminSetDoc, adminSetCustomClaim, adminMergeDoc, adminDocExists, adminGetDoc } from './helpers/admin-seed';
 import JSZip from 'jszip';
 import { createHash } from 'crypto';
 
@@ -474,6 +474,86 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     expect(await adminDocExists('s4_credentials', tempUid)).toBe(false);
     expect(await adminDocExists('mfa_secrets', tempUid)).toBe(false);
     expect(await adminDocExists('mfa_pending', tempUid)).toBe(false);
+  });
+
+  /**
+   * The same erasure, for an account that was an invited *reader* rather than an
+   * owner — roadmap phase 5.
+   *
+   * The cascade deletes the projects whose `userId` is the erased account, and
+   * `recursiveDelete` takes their invitations with them. It never looked at
+   * anybody else's project, and that is where an invited reader leaves its
+   * personal data: its uid in `projects/{id}.readers`, and the invitation that
+   * names its address in `projects/{id}/invitations`. Neither is the owner's
+   * datum, and neither went anywhere when the reader asked to be forgotten.
+   *
+   * The other owner's project itself must survive: an erasure that took a
+   * stranger's project with it would be the opposite failure.
+   */
+  test('erasure clears the account out of other owners’ projects (readers + the invitation naming it)', async ({ request }) => {
+    const readerEmail = `reader-erase-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const readerCred = await createUserWithEmailAndPassword(firebaseAuth, readerEmail, TEST_PASSWORD);
+    const readerUid = readerCred.user.uid;
+    const readerToken = await readerCred.user.getIdToken();
+
+    await adminSetDoc('users', readerUid, {
+      firstName: 'Invited', lastName: 'Reader', email: readerEmail, tier: 'pilot', status: 'approved',
+      isAdmin: false, transformationsUsed: 0, transformationsLimit: 5, maxTeamMembers: 1,
+      s4TenantAccessAllowed: false, s4TenantAccessRequested: false, mfaEnabled: false, createdAt: new Date(),
+    });
+
+    // A second owner's project. The erased account owns nothing here — it only
+    // ever accepted an invitation to read it.
+    const ownerUid = `owner-of-${readerUid}`;
+    const otherReaderUid = `co-reader-of-${readerUid}`;
+    const strangerEmail = `stranger-${branchSuffix}-${Date.now()}@cleancore-test.io`;
+    const foreignProjectId = `shared-${readerUid}`;
+    await adminSetDoc('projects', foreignProjectId, {
+      name: 'A project shared with the erased account', status: 'analyzed', userId: ownerUid,
+      readers: [otherReaderUid, readerUid], createdAt: new Date(),
+    });
+
+    const invitedAt = new Date();
+    const expiresAt = new Date(invitedAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const invitation = (email: string, status: string, acceptedBy: Record<string, string> | null) => ({
+      projectId: foreignProjectId, email,
+      invitedBy: { uid: ownerUid, name: 'The Other Owner' },
+      invitedAt: invitedAt.toISOString(), expiresAt: expiresAt.toISOString(),
+      status, acceptedBy, acceptedAt: acceptedBy ? invitedAt.toISOString() : null, revokedAt: null,
+    });
+    const acceptedId = `inv-accepted-${readerUid}`;
+    const strangerId = `inv-stranger-${readerUid}`;
+    await adminSetDoc(`projects/${foreignProjectId}/invitations`, acceptedId,
+      invitation(readerEmail, 'accepted', { uid: readerUid, email: readerEmail }));
+    // Somebody else's invitation in the same subcollection: the sweep has to be
+    // aimed at one address, not at the project.
+    await adminSetDoc(`projects/${foreignProjectId}/invitations`, strangerId,
+      invitation(strangerEmail, 'pending', null));
+
+    const res = await request.post('/api/account/delete', {
+      headers: { Authorization: `Bearer ${readerToken}` },
+    });
+    expect(res.status(), await res.text()).toBe(200);
+
+    // The invitation is deleted, not marked `revoked`: a withdrawn invitation
+    // still carries the address of the person who asked to be erased.
+    expect(
+      await adminDocExists(`projects/${foreignProjectId}/invitations`, acceptedId),
+      'an invitation naming the erased address outlived the account',
+    ).toBe(false);
+
+    const foreign = await adminGetDoc('projects', foreignProjectId);
+    expect(foreign, 'the other owner’s project was erased along with the reader').not.toBeNull();
+    expect(foreign?.userId).toBe(ownerUid);
+    expect(foreign?.name).toBe('A project shared with the erased account');
+    // Only the erased uid leaves the list — the co-reader keeps their access.
+    expect(foreign?.readers, 'the erased uid is still on somebody else’s project').toEqual([otherReaderUid]);
+    expect(
+      await adminDocExists(`projects/${foreignProjectId}/invitations`, strangerId),
+      'the sweep took another person’s invitation with it',
+    ).toBe(true);
+
+    expect(await adminDocExists('users', readerUid)).toBe(false);
   });
 
   test('admin console delete-user runs the full GDPR erasure cascade (not just users)', async ({ request }) => {

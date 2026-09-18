@@ -19,6 +19,7 @@ Two sub-processors receive data in transit for the features that require them �
 | `users/{uid}` | Profile, tier, quota counters | uid | Life of account | ✅ direct |
 | `projects/{id}` | Project metadata, `legacyCode`, pointers | `userId` | Life of account | ✅ recursiveDelete |
 | `projects/{id}/runs/{runId}` | Immutable signed analysis runs (evidence + narrative) | `userId` | Life of account (immutable while retained) | ✅ via project recursiveDelete |
+| `projects/{id}/invitations/{id}` | Read-by-invitation grants: the **invited email address**, inviter uid/name, invited/expiry/acceptance/revocation times, status, accepting uid+email | parent project `userId`; invited `email` | Life of the project (expiry ends the grant, not the record) | ✅ **owner:** via project recursiveDelete · **invited reader:** every invitation naming their address is deleted (not marked `revoked` — that would leave the address behind), and their uid is removed from `projects/{id}.readers` |
 | `abap_examples/{id}` | User-saved ABAP snippets | `userId` | Life of account | ✅ query delete |
 | `support_tickets/{id}` | Support messages | `userId` | Life of account | ✅ query delete |
 | `files/{id}` | Uploaded file metadata | `userId` | Life of account | ✅ query delete |

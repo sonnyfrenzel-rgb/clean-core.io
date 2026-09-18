@@ -3,6 +3,7 @@ import { verifyApprovalToken } from '@/lib/approval-token';
 import { encrypt, decrypt } from './s4-credentials';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp } from './mfa-gate';
 import { starterExampleForFingerprint } from './starter-example-fingerprints';
+import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } from './invitations';
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
@@ -626,6 +627,17 @@ export async function assertS4TenantAccess(
 }
 
 /**
+ * The Admin SDK is reached through a dynamic import, so its handles arrive
+ * untyped — the same shape `app/api/projects/[projectId]/readers/route.ts`
+ * names for the same reason. Only the two members the erasure below uses are
+ * declared.
+ */
+interface ErasableDoc {
+  ref: unknown;
+  data: () => Record<string, unknown> | undefined;
+}
+
+/**
  * Permanently erases all user data from Firestore collections and deletes the Firebase Auth account.
  * Implements GDPR Right to Erasure (Art. 17 GDPR) server-side to prevent orphaned data.
  *
@@ -726,6 +738,80 @@ export async function deleteUserDataAndAccount(
     }
   } catch (e: any) {
     console.warn('[erasure] orphan-runs backstop skipped:', e?.message || e);
+  }
+
+  // 3c. What the account left behind in *other people's* projects.
+  //
+  //     Steps 1 and 2 erase what the account owns, and `recursiveDelete` on an
+  //     owned project takes its invitations with it. An account that was only
+  //     ever an invited reader (roadmap phase 5) owns none of that, and two
+  //     traces of it sit in documents this cascade otherwise never looks at:
+  //     its uid in `projects/{id}.readers`, and every invitation addressed to
+  //     it under `projects/{id}/invitations`. Both are its personal data inside
+  //     somebody else's project, so neither goes away with the owner's project.
+  //
+  //     `FieldValue` comes from the real handle rather than from `db`: it is a
+  //     module-level sentinel and not bound to an instance, and `deps.db` may be
+  //     a stand-in that only proxies reads and writes.
+  const { FieldValue } = await getAdminDb();
+
+  {
+    const q = db.collection('projects').where(PROJECT_READERS_FIELD, 'array-contains', uid).limit(400);
+    await tryDelete('project-readers', async () => {
+      let snapshot = await q.get();
+      while (snapshot.size > 0) {
+        const batch = db.batch();
+        snapshot.docs.forEach((projectDoc: ErasableDoc) => {
+          batch.update(projectDoc.ref, { [PROJECT_READERS_FIELD]: FieldValue.arrayRemove(uid) });
+        });
+        await batch.commit();
+        // The same query again. `arrayRemove` takes the uid out of the field the
+        // query matches on, so a project just written no longer comes back and
+        // the paging terminates by itself.
+        snapshot = await q.get();
+      }
+    });
+  }
+
+  //     The invitations are **deleted, not withdrawn**. A withdrawal writes
+  //     `status: 'revoked'` and leaves `email` in place — the address of the
+  //     person who asked to be erased, still sitting in another owner's
+  //     subcollection, which is a record of them rather than of a permission.
+  //     Art. 17 asks for the data to be gone. What the owner loses is a row
+  //     naming an account that no longer exists.
+  //
+  //     Unlike the orphan-runs backstop above, a failure here is collected
+  //     instead of logged: that one sweeps up documents that should not exist,
+  //     this one is the erasure itself, and an address left behind under a green
+  //     "account deleted" is precisely what step 4 exists to prevent. Note that
+  //     `collectionGroup` needs a collection-group-scoped index on
+  //     `invitations.email` in production — Firestore creates single-field
+  //     indexes for a collection, not for a collection group — and that without
+  //     it this step fails rather than passing quietly.
+  let invitedAddress: string | null = null;
+  try {
+    const profileSnap = await db.collection('users').doc(uid).get();
+    // The profile, not the Auth user: the Auth module is deliberately not loaded
+    // until the last step, and this document is still here — it goes in step 5.
+    invitedAddress = normaliseInvitedEmail((profileSnap.data() || {}).email);
+  } catch (e: any) {
+    erasureErrors.push(`invitations: the account address could not be read: ${e?.message || e}`);
+  }
+
+  if (invitedAddress) {
+    // The address is stored normalised by the route that writes an invitation,
+    // and the same normalisation is applied here, so one equality match covers
+    // every spelling the owner typed.
+    const q = db.collectionGroup(INVITATION_COLLECTION).where('email', '==', invitedAddress).limit(400);
+    await tryDelete('invitations', async () => {
+      let snapshot = await q.get();
+      while (snapshot.size > 0) {
+        const batch = db.batch();
+        snapshot.docs.forEach((inviteDoc: ErasableDoc) => batch.delete(inviteDoc.ref));
+        await batch.commit();
+        snapshot = await q.get();
+      }
+    });
   }
 
   // 4. Stop here while anything of the account's data is left. The profile and
