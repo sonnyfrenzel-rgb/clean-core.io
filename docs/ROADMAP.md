@@ -98,6 +98,15 @@ Was die Phasen voraussetzen oder ersetzen. Gelesen, nicht gelaufen.
 
 ## 4. Phasen bis 3.0
 
+**Stand 18.09.2026, Abend.** `main` ist v2.13.0 (`b88c77b`): Phase 2 und Phase 5 vollständig.
+Auf `dev` (`acf09bb`) liegen darüber: Phase 6 zu vier Achteln (6.1, 6.5, 6.6, 6.7), Phase 7 zu
+sechs Achteln (7.1, 7.2, 7.3, 7.5, 7.6, 7.7 — 7.6 ohne Tafel, siehe BACKLOG 30), die MFA-Pflicht
+für S/4-Zugang und eigenen Gemini-Schlüssel (SEC-2026-135/136/137), die Reparaturen aus den drei
+Reviews zu v2.13.0 (sieben UX, sechs Sicherheit — darunter SEC-2026-152 und -236, zwei rohe
+Modell-URLs auf `href`) und die ausgerollten Firestore-Regeln. Offen vor v2.16/v2.17: 6.2, 6.3,
+6.4, 6.8, 7.4, 7.8; dazu die 226 hohen Befunde der QA-Vollprüfung (§14, BACKLOG 33). Die drei
+Entscheidungen des Abends stehen in §9. Nächste Promotion auf `main` auf Sonnys Go.
+
 **Wie ein Schritt läuft.** Jeder Schritt ist ein Patch-Release nach der Routine aus
 2.9: Code, Guard-Spec mit zitierter Abnahme, CHANGELOG, zuerst `dev`, `main` nur auf
 Freigabe. Größen sind Planungshypothesen für einen Maintainer mit AI-Unterstützung —
@@ -446,7 +455,7 @@ vorbeigeht: eine bewusste Handlung mit Protokoll, keine Konsole, die offensteht.
 Ein Operator, der ein Projekt lesen will, hat denselben Weg wie alle: eingeladen
 werden.
 
-### Phase 6 — v2.16 „Sichten"
+### Phase 6 — v2.16 „Sichten" — **auf `dev`: 6.1, 6.5, 6.6, 6.7 (18.09.2026); offen 6.2, 6.3, 6.4, 6.8**
 
 Mockup Screens 1–4: Umschalter, Ebenen, Status-Chips, nächster Schritt, Suche.
 
@@ -466,7 +475,7 @@ erzeugt keine neue Hypothese), ein Wechsel keinen Modellaufruf auslöst und ein 
 belegt, dass kein gespeichertes Artefakt, kein Run und kein Pack ein Sichtattribut
 trägt.
 
-### Phase 7 — v2.17 „Standard und Kosten"
+### Phase 7 — v2.17 „Standard und Kosten" — **auf `dev`: 7.1, 7.2, 7.3, 7.5, 7.6, 7.7 (18.09.2026); offen 7.4, 7.8**
 
 Mockup Screen 2.
 
@@ -761,6 +770,8 @@ Am Nachmittag desselben Tages, aus zwei Rechtsprüfungen der öffentlichen Texte
 | **Sicherungen** | Es gab **keine**. Täglich 7 Tage und wöchentlich 28 Tage angelegt, damit die 30-Tage-Zusage wieder gedeckt ist |
 | **ToS-Fassung** | **Springt auf `2026-09-18`** (Dokument v2.1.0) — aber erst, nachdem der Zustimmungsweg gebaut war. Ohne ihn hätte der Sprung alle 158 Konten ausgesperrt |
 | **Guard für personenbezogene Daten** | Wird gebaut: deterministisch, im Browser, vor dem Hochladen, mit bewusster Bestätigung — an beiden Upload-Wegen **und** am Nutzungsdaten-Import. Er zeigt Muster, er erkennt keine personenbezogenen Daten |
+| **dev-Dienst mit dem Produktions-Secret-Satz** | Bewusst so lassen (Sonny, 18.09.2026, Abend). Die QA-Vollprüfung von `b88c77b` nennt es achtmal kritisch; die Prämisse — ein zweites Konto mit Schreibrecht — gibt es nicht (Kollaboratorenliste: genau eines), und die Zwei-Umgebungen-Entscheidung steht in `CLAUDE.md`. Wird wieder zur Frage, sobald ein zweites Konto Schreibrecht bekommt — so steht es als Bedingung im QA-Register. |
+| **gitleaks und die versiegelten Register** | Regel-Allowlist statt Fingerabdruck je Schreibvorgang (Sonny, 18.09.2026, Abend). `docs/security/register.enc.json` und `docs/qa/refuted-findings.enc.json` sind vollständig Chiffrat aus einer Funktion (`v`, `alg`, `key`, `iv`, `tag`, `data`); der per RSA-OAEP eingepackte AES-Schlüssel reißt je nach Zufall die Entropieschwelle von `generic-api-key` — dreimal an einem Tag. `.gitleaks.toml` nennt die beiden Pfade; `.gitleaksignore` bleibt für Einzelfälle mit Begründung. |
 
 **Weiter offen (Sonny):** die drei Vertragspunkte der ersten Prüfung —
 Haftungskaskade in ToS § 4 (der Absatz zu Kardinalpflichten widerspricht dem Satz
@@ -807,6 +818,7 @@ ersetzt.
 | 11 | **Unquotierte Dezimalzahl: nachsichtig lesen oder nicht?** | Seit 3342f34 liest die Engine `lv = 12.50.` als eine Anweisung. abaplint — und die Sprache — lesen zwei: ABAP-Zahlliterale sind Ganzzahlen, `'12.50'` wäre richtig. Unsere Regel liest also Code, der nicht übersetzen würde. In keinem der acht Beispiele kommt der Fall vor; die Regel ist dort unerprobt |
 | 12 | **Kommentarzeilen zählen als LOC in der Komplexität** | `computeComplexityScore` (`lib/abap/code-assessment.ts`) zählt Kommentar- und Fortsetzungszeilen: `Z_MM_PO_APPROVAL` steigt von 8 auf 9, wenn vor jeder Zeile ein Kommentar steht. Gefunden durch die metamorphe Eigenschaft P3 (`tests/abap-metamorphic.spec.ts`). Ändern heißt, eine Zahl zu ändern, die jeder signierte Run speichert |
 | 13 | **QA-Delta-Review: Budget gegen große Diffs** | Ein Diff, der allein das Budget eines Modellaufrufs übersteigt, wird nie gelesen — `tests/abap-metamorphic.spec.ts` (52.712 Zeichen) hält seit `04b4684` den Checkpoint auf `a19945e`, und in der Vollprüfung traf es `analyze/page.tsx` mit 172.900 Zeichen. Der Checkpoint hing heute schon einmal 41 Commits lang fest (44a8715 → a19945e) und wurde mit sechs `workflow_dispatch`-Scheiben nachgezogen, ohne das Budget anzufassen. Optionen: das Budget je Aufruf für einzelne Dateien heben, Test-Dateien mit eigenem Budget lesen, oder große Dateien in Abschnitten reviewen. Jede davon ändert `scripts/qa/lib/config.mjs` oder `review.mjs` — Agentenmaschinerie, braucht dein Go |
+| 14 | **Scope Items als Registry-Eintrag (7.2/7.8)** | SAP stellt keinen maschinenlesbaren Gesamtbestand öffentlich bereit (geprüft 18.09.2026 inkl. Community: Process Navigator hinter Login, rapid.sap.com tot, Excel-Export widersprüchlich beschrieben). Bleiben: Eintrag aus dem Konto (Weg 1) oder ein vom Betreiber gezogener Export. **Stand 18.09.2026, Abend: Sonny holt einen Signavio-Export; bis dahin warten (BACKLOG 27).** |
 
 **Offen für Sonny:** 7, 8, 9, 10, 11, 12 und 13. Keiner blockiert ein
 Release; sie stehen hier, damit sie nicht neu gesucht werden müssen. 10 bis 12
@@ -1180,6 +1192,23 @@ Fix auf `main` ist (§12 gilt sinngemäß). Der Volltext liegt nur lokal unter `
 Einplanung wie in §12: **kritisch** als eigener Schritt vor jeder anderen Arbeit · **hoch** in die
 laufende Phase · **mittel** in den nächsten passenden Schritt · **niedrig** neben verwandter Arbeit.
 Was der 3.0-Umbau ohnehin ersetzt, wird zurückgestellt, nicht doppelt gebaut.
+
+**Vollprüfung von b88c77b4b5d1 (v2.13.0, 18.09.2026, `openai/gpt-5.6-sol`, 769 Dateien, 5,70 $):**
+1446 Befunde — 49 kritisch, 226 hoch, 1129 mittel, 42 niedrig — Verdikt `no_go`, **INCOMPLETE**. Erste
+Sichtung am Abend: **47 der 49 kritischen mit Beleg widerlegt** — 34 Workflow-Befunde (Prämisse ist ein
+zweiter Mitarbeiter mit Schreibrecht; die Kollaboratorenliste nennt genau ein Konto, Fork-PRs bekommen
+keine Secrets; als Bedingung im Register: ab dem zweiten Konto wird jeder davon wahr), 5 „secret-named
+literal" (Storage-Schlüsselnamen), 8 zur Signaturkette (`files[].bytes` ist im Kopf von
+`lib/audit-pack-canonical.ts` bewusst ausgenommen — der Inhalts-Hash pinnt die Datei; das
+`provenance`-Label liest kein Verifizierer, die Klassifikation kommt aus der signierten
+`attested`-Liste, `lib/audit-pack-verify.ts:125–153`). **Offen:** `26350daa4493`/`8f267dbfbd9b` — der
+Web-Verifizierer hasht `file.async('text')` statt der Archiv-Bytes; ein ungültiges UTF-8-Byte, das zum
+selben Zeichen dekodiert, passiert — Wirkung null (gleicher Text), Härtung klein (BACKLOG 33). **Die
+226 hohen sind nicht triagiert;** nach Datei gruppiert in BACKLOG 33 — Router-Fehlrouten, Open-SQL-Leser,
+Nebenläufigkeit in Transformation/Design/Dokumentation, gelöschte Projekte werden von laufenden Runs
+wieder angelegt, gesperrte Konten behalten Firestore-/S/4-Zugriff, Quittungen nicht an Quelle gebunden.
+Triage thematisch, je Thema ein Schritt, gesperrte Konten und Löschung zuerst — nächste Sitzung. Volltext
+nur lokal unter `.qa-review/b88c77b4b5d1.full.json`.
 
 **Vollprüfung von a19945ef01dc (v2.11.1, 16./17.09.2026, `openai/gpt-5.6-sol`, 14 Aufrufe, 4,57 $):**
 504 Befunde — 30 kritisch, 94 hoch, 373 mittel, 7 niedrig — Verdikt `no_go`, **INCOMPLETE** (der Diff von

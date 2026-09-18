@@ -395,6 +395,7 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     Nutzungsbedingungen für „SAP for Me"-Inhalte die Anzeige in einem fremden, kostenlosen Produkt
     erlauben — anders als beim Cloudification Repository, das als offenes GitHub-Repo unter klarer Lizenz
     genau dafür da ist. Scraping der Login-Oberfläche: nicht ohne geklärte Bedingungen.
+    **Stand 18.09., Abend:** Sonny holt einen Signavio-Export; Weg 1 wartet, bis der da ist.
 
 28. **Aus 7.5 (18.09.2026, spät) — vier Entscheidungen, von mir getroffen, und drei Export-Lücken.**
     *(1)* `withheld` bleibt die benannte Fehlfolgerung („is one nobody calls any more") — vertretbar
@@ -479,6 +480,7 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     Register-Schreibvorgang (`076bfcf…:docs/security/register.enc.json:generic-api-key:1`) — Security
     CI bleibt rot, bis Sonny ihn einträgt oder eine Regel-Allowlist für die versiegelten Register
     entscheidet (dritter Fall an einem Tag; die Datei selbst sagt „nie ein Pfad").
+    **Stand 18.09., Abend:** gitleaks ist entschieden — Regel-Allowlist für die zwei versiegelten Register in `.gitleaks.toml` (Sonny); die `.gitleaksignore`-Zeile ist damit nicht mehr nötig.
 
 33. **Vollständige QA-Review zu `b88c77b` (`gpt-5.6-sol`, 769 Dateien, 5,70 USD, `INCOMPLETE`) —
     1446 Befunde: 49 kritisch, 226 hoch, 1129 mittel, 42 niedrig; Urteil no_go.** Die 49 kritischen
@@ -505,6 +507,7 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     Quittungsbindung); die 1129 mittleren nur stichprobenweise.
 
 ### Hygiene, bevor die nächste Welle startet
+    **Stand 18.09., Abend:** dev mit Produktions-Secrets — bewusst so lassen (Sonny); Bedingung „zweites Konto mit Schreibrecht" steht im QA-Register und in ROADMAP §9.
 
 20. **Emulator und Dev-Server neu starten**, bevor mehr als vier Agenten laufen. Der Emulator stand
     heute abend bei 6,3 GB und 20.000 CPU-Sekunden; seine Fehlschläge sehen wie Regressionen aus.

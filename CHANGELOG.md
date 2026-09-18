@@ -10,6 +10,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [Unreleased] — auf `dev`, Stand 18.09.2026 abends
+
+Was seit v2.13.0 auf `dev` liegt und mit der nächsten Freigabe auf `main` geht — die
+Regeln sind ausgerollt, die MFA-Pflicht für S/4-Zugang und eigenen Gemini-Schlüssel
+gilt, 7.5 und 7.6 sind gebaut, und die drei Reviews zu v2.13.0 sind abgearbeitet
+(`docs/ROADMAP.md` §4 „Stand", §9, §12–§14). Je Commit eine Zeile, neueste zuerst:
+
+- `acf09bb` docs(agents): drei Posteingaenge zu b88c77b entschieden - UX 16, Security 83, QA-Vollreview 49 kritische
+- `1db8523` sec(audit): fuenf mittlere Befunde aus b88c77b behoben - ein echter href, drei Bindungen, ein Ring
+- `1a90b06` fix(ux): sieben Befunde aus dem UX-Review zu b88c77b, jeder mit Waechter
+- `d6a2bfc` feat(7.6): Was sich fuer Nutzer aendert - vier Felder, jedes mit Stand und Quelle
+- `076bfcf` docs(security): Audit zu b88c77b entschieden - 16 hohe, einer echt
+- `f9f4ac1` sec(xss): eine Modell-URL erreicht einen Anker nur als http(s)
+- `ce7dd9c` feat(7.5): das Panel ist verdrahtet, gerendert geprueft, und die statischen Aufrufe belegt
+- `4ddc262` feat(7.5): Pruefauftraege statt Scheinwissen - drei Arten Nichtwissen werden Aufgaben
+- `43b7fab` docs(backlog): Beobachtung zur QA-Delta-Pruefung - ein mitgepushter Prosa-Diff galt als nicht enthalten
+- `13e474c` fix(mfa): ein fehlendes Profil ist eine Ablehnung, wo Einschreibung verlangt wird
+- `a650a09` docs(backlog): Scope Items - keine offizielle maschinenlesbare Quelle, zwei Wege bleiben
+- `14ab490` docs(security): SEC-2026-135/136/137 behoben in 7a5a6b0, Zeilen in ROADMAP Paragraph 12
+- `7a5a6b0` sec(mfa): Einschreibepflicht fuer S/4-Zugang und den eigenen Gemini-Schluessel
+- `e61f26c` chore(rules): ausgerollt - Produktion, Register und Arbeitskopie stimmen ueberein
+
 ## [v2.13.0] — 2026-09-18
 
 ### Der Prozess kommt jetzt aus dem Code heraus — als BPMN, benannt, navigierbar, und mit einem statt vierundzwanzig Engine-Defekten

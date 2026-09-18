@@ -16,6 +16,14 @@ paths = [
   '''firebase-applet-config\.json''',
   '''\.env\.example''',
   '''playwright\.config\.ts''',
+  # The two sealed registers — security decisions and QA refutations — are ciphertext
+  # from one function (`v`, `alg`, `key`, `iv`, `tag`, `data`, nothing else), so there is
+  # no plaintext in them to scan. The RSA-OAEP-wrapped AES key crossed the entropy
+  # threshold of generic-api-key three times on 18.09.2026 alone; Sonny decided the
+  # allowlist over a fingerprint per write. The exact-fingerprint entries in
+  # .gitleaksignore stay for the history scan.
+  '''docs/security/register\.enc\.json''',
+  '''docs/qa/refuted-findings\.enc\.json''',
 ]
 regexes = [
   # Deterministic CI test placeholders — not real credentials.
