@@ -32,7 +32,15 @@ Two sub-processors receive data in transit for the features that require them �
 | `tenant_access_requests/{uid}` | BYOT access requests | uid | Life of account | ✅ direct |
 | `survey_responses/{campaign}__{uid}` | Survey answers and the free-text comment beside them | `uid` | Life of account | ✅ query delete |
 | `audit_events/{id}` | Admin/security audit log | server | **24 months** from the recorded action, then deleted (see note) | ❌ intentionally kept |
-| `rate_limits/{key}` | Sliding-window counters (`gemini:<uid>:<ip>`) | composite | Self-expiring (window) | ❌ no durable PII, auto-expires |
+| `rate_limits/{key}` | Sliding-window counters. The document id is an HMAC-SHA256 of `gemini:<uid>:<ip>` under `RATE_LIMIT_PEPPER`, so no address is stored in readable form | composite (hashed) | Self-expiring: `expiresAt` drives a Firestore TTL policy, **created 2026-09-18** | ❌ no durable PII, auto-expires |
+
+**`rate_limits` note:** `lib/rate-limit.ts` has written `expiresAt` since F-10 and its
+comment said the field "drives a Firestore TTL policy … so windows self-delete instead
+of accumulating forever". The policy did not exist. `gcloud firestore fields ttls list`
+on `clean-core-eu` returned nothing until it was created on **2026-09-18**; the
+documents had been accumulating since the field was introduced. A comment describing a
+setting is not the setting — the pattern is the same one the Backups section below
+records, and it is why both are now named with the command that proves them.
 
 **`audit_events` note:** deliberately excluded from erasure to preserve a tamper-evident record of privileged actions (approvals, deletions). Contains actor uid/email and action type — a legitimate-interest legal basis for security accountability. Reviewed for minimization; no analysis content stored.
 
@@ -50,10 +58,29 @@ The cascade is all-or-nothing in one direction: the profile (`users/{uid}`) and 
 
 ## Backups
 
-- **Firestore scheduled exports** (managed) to a dedicated GCS bucket in europe-west1.
-- Backup retention: 30 days rolling. Backups are encrypted at rest (Google-managed keys).
-- **Restore is tested** at least annually (an untested backup is not a backup); result recorded in the ops log.
-- **Backup vs. erasure:** an Art. 17 deletion removes live data immediately; residual copies in backups age out within the 30-day window and are not restored selectively. This lawful basis/timeline is disclosed to users on request.
+- **Firestore managed backup schedules** on `clean-core-eu` (europe-west1), created 2026-09-18: a **daily** backup kept **7 days** and a **weekly** backup (Sunday) kept **28 days**. Nothing therefore survives beyond 30 days. Backups are encrypted at rest (Google-managed keys).
+- **Point-in-time recovery** is enabled on the same database; its window is 7 days and it is independent of the schedules above.
+- **Backup vs. erasure:** an Art. 17 deletion removes live data immediately; residual copies age out within the windows above and are not restored selectively. The privacy policy states the 30-day ceiling, and these settings are what make that statement true.
+
+**What this section said until 2026-09-18, and why it was wrong.** It described
+"Firestore scheduled exports (managed) to a dedicated GCS bucket", "30 days rolling"
+and "restore is tested at least annually". None of it was configured.
+`gcloud firestore backups schedules list` returned nothing, `gcloud firestore backups
+list` returned nothing, and `gs://cleancore-491216-firestore-backup/` held exactly one
+folder — `2026-08-20-pre-migration/`, a one-off export taken before the August move.
+The only real protection was point-in-time recovery, seven days, and the privacy
+policy was promising thirty.
+
+It was found by checking the configuration while answering a legal review, not by a
+test, which is the uncomfortable part: a retention policy is a document about
+infrastructure, and nothing in this repository compares the two. Until something
+does, **this section is verified by hand whenever it changes** — the two `gcloud`
+commands above are the check, and they take a minute.
+
+- **Restore has not been tested yet.** The first scheduled backups appear on
+  2026-09-19. An untested backup is not a backup; a restore drill into a scratch
+  database belongs in the next operations step, and this line stays here, saying so,
+  until it has run.
 
 ## Review
 
