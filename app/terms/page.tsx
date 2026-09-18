@@ -3,6 +3,7 @@ import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+import { ARCHIVED_TERMS_VERSIONS } from '@/lib/terms-versions';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'Terms of Service & Community Guidelines | Clean-Core.io',
@@ -87,16 +88,37 @@ export default function TermsPage() {
           </section>
 
           <section id="free-community-edition" className="scroll-mt-20">
-            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">2. Free Community Edition; No Fee</h2>
+            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">2. Free Community Edition; No Fee; Term, Availability and Discontinuation</h2>
             <p className="text-base mb-3">
-              Access to the Platform is provided completely free of charge. No payment, subscription, or consideration is
+              <strong>2.1</strong> Access to the Platform is provided completely free of charge. No payment, subscription, or consideration is
               required or accepted. Clean-Core.io is a free community project: there is no paid tier, no paid edition and
-              no commercial version of it.
+              no commercial version of the Platform.
+            </p>
+            <p className="text-base mb-3">
+              <strong>2.2</strong> The Platform is operated on a voluntary community basis. The operator does not owe any particular level
+              of availability and gives no availability guarantee. Planned maintenance will be announced on the Platform
+              where this is reasonably possible.
+            </p>
+            <p className="text-base mb-3">
+              <strong>2.3</strong> The contract is concluded for an indefinite period. You may terminate it at any time and without notice,
+              in particular by deleting your account in the profile settings. The operator may terminate the contract, and
+              may discontinue the Platform in whole or in part, by giving at least 30 days&apos; notice in text form to the
+              e-mail address associated with your account. Until the contract ends you may export your projects;
+              thereafter project content is deleted in accordance with the Privacy Policy.
+            </p>
+            <p className="text-base mb-3">
+              <strong>2.4</strong> The operator may restrict or suspend access with immediate effect for good cause, in particular where
+              this is required by law or by a binding decision, in order to avert an imminent security risk, or in the
+              event of a material breach of section 7. The operator will inform you of the reason without undue delay and
+              will lift the measure as soon as the reason ceases to apply. Your right to object to the measure and to have
+              it reviewed remains unaffected.
             </p>
             <p className="text-base">
-              Because the Platform is provided free of charge and on a voluntary community basis, there is no entitlement to
-              availability, specific features, support, or continued operation. The operator may modify, suspend, or
-              discontinue the Platform, in whole or in part, at any time.
+              <strong>2.5</strong> Changes to the Platform that go beyond what is necessary to maintain conformity will be made only for
+              one of the valid reasons listed in section 10.4, at no cost to you. Where such a change more than
+              negligibly impairs your access to or use of the Platform, the operator will inform you in text form at least
+              30 days in advance, and you may terminate the contract free of charge within 30 days of receiving that
+              information or of the change taking effect, whichever is later (cf. § 327r BGB).
             </p>
           </section>
 
@@ -117,27 +139,58 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">4. AI Code Generation and Limitation of Liability</h2>
+            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">4. AI-Generated Output, Agreed Characteristics and Limitation of Liability</h2>
             <p className="text-base mb-3">
-              Modernization analyses and source code are generated automatically by generative AI models. The operator
-              gives no warranty or guarantee as to the reliability, correctness, completeness, security, merchantability,
-              fitness for a particular purpose, or compilation status of any output, to the extent permitted by law.
+              <strong>4.1 Agreed characteristics of the digital product.</strong> Modernization analyses and source code
+              are generated automatically by generative AI models. The parties expressly agree that the output owed under
+              this contract consists of automatically synthesized draft artifacts which are illustrative only and which
+              must be inspected, validated and approved by qualified software architects before any compilation,
+              deployment or use in a test, staging or productive environment (section 3). The operator therefore does not
+              owe the correctness, completeness, security, compilability, merchantability or fitness for a particular
+              purpose of any individual output.
             </p>
             <p className="text-base mb-3">
-              <strong>Limitation of liability:</strong> The operator is liable without limitation for damages arising from
-              injury to life, body, or health caused by a breach of duty by the operator, and for damages caused
-              intentionally or by gross negligence. Because the Platform is provided free of charge, the operator is
-              otherwise liable only for intent and gross negligence.
+              <strong>4.2 Consumers.</strong> Where you are a consumer within the meaning of § 13 BGB and provide personal
+              data in connection with the use of the Platform, the deviation from the objective requirements set out in
+              section 4.1 applies only where you have been specifically informed of it before submitting your contractual
+              declaration and have expressly and separately agreed to it at that time (§ 327h BGB). Your statutory rights
+              under §§ 327 ff. BGB &mdash; in particular as to conformity, updates and remedies &mdash; otherwise remain
+              unaffected; sections 2, 4.1, 4.3 and 6 neither are intended to nor do limit those rights.
             </p>
             <p className="text-base mb-3">
-              Mandatory statutory liability, including under the German Product Liability Act (Produkthaftungsgesetz) and
-              for the culpable breach of essential contractual obligations (Kardinalpflichten), remains unaffected. Where
-              liability for slight negligence exists for the breach of an essential contractual obligation, it is limited to
-              the foreseeable damage typical for this type of contract.
+              <strong>4.3 Liability of the operator.</strong>
+            </p>
+            <p className="text-base mb-3">
+              (a) The operator is liable without limitation for damages caused intentionally or by gross negligence, for
+              damages arising from injury to life, body or health caused by a breach of duty by the operator, for the
+              fraudulent concealment of a defect, where the operator has assumed a guarantee, and under the German
+              Product Liability Act (Produkthaftungsgesetz).
+            </p>
+            <p className="text-base mb-3">
+              (b) In the case of slight negligence, the operator is liable only for the breach of an essential contractual
+              obligation. An essential contractual obligation is an obligation whose fulfilment makes the proper
+              performance of this contract possible in the first place, whose breach jeopardises the achievement of the
+              purpose of the contract, and on whose observance you may therefore regularly rely. In such cases, liability
+              is limited to the damage that is foreseeable and typical for a contract of this kind.
+            </p>
+            <p className="text-base mb-3">
+              (c) Any further liability of the operator is excluded. In particular, the operator is not liable for
+              slightly negligent breaches of obligations that are not essential contractual obligations.
+            </p>
+            <p className="text-base mb-3">
+              (d) Liability for the loss of data is limited to the expense that would have been necessary to restore the
+              data had you made backup copies appropriate to the risk. You remain responsible for retaining your own
+              copies of the source code you submit and of the output you receive.
+            </p>
+            <p className="text-base mb-3">
+              (e) Sections 4.3(a) to (d) apply equally to the liability of the operator&apos;s legal representatives,
+              employees and vicarious agents, and to claims in tort.
             </p>
             <p className="text-base">
-              Nothing in these Terms excludes or limits liability that cannot be excluded or limited under applicable
-              mandatory law.
+              (f) The above provisions do not alter the statutory allocation of the burden of proof. Statutory liability
+              privileges applicable to the gratuitous provision of services (in particular §§ 521, 599 BGB) remain
+              unaffected where they apply. Nothing in these Terms excludes or limits liability that cannot be excluded or
+              limited under applicable mandatory law.
             </p>
           </section>
 
@@ -173,7 +226,10 @@ export default function TermsPage() {
               aborted or fails is not counted. This is a one-time
               allotment and is not reset on a daily or monthly basis. When you provide your own Google Gemini API key
               (BYOK, see section 5), no quota applies. Fair-use rate limits apply to all accounts. The operator may
-              adjust, introduce, or remove quotas at any time to protect the stability and fair use of the Platform.
+              adjust, introduce or remove quotas with effect for the future in order to protect the stability and fair
+              use of the Platform. A one-time allotment already granted to your existing account and not yet used will
+              not be reduced retroactively. A reduction with effect for the future will be notified in text form at
+              least 30 days in advance; section 2.5 applies accordingly.
             </p>
           </section>
 
@@ -189,8 +245,12 @@ export default function TermsPage() {
               <li>Report system hallucinations, security vulnerabilities, or compilation errors to help continuously refine the engine.</li>
             </ul>
             <p className="text-sm text-gray-500 mt-4">
-              The operator may, at its discretion and without notice, remove content and suspend or terminate access for any
-              user who violates these Terms or the Code of Conduct.
+              The operator may remove content and restrict, suspend or terminate access where there is an objective
+              reason for doing so, in particular a breach of these Terms or of the Code of Conduct. Any such measure
+              follows section 2.4: the operator will inform you of the reason for it without undue delay in text form,
+              you will be given an opportunity to respond, and the measure will be lifted as soon as the reason for it
+              ceases to apply. Your statutory rights, and your right to object to the measure and to have it reviewed,
+              remain unaffected.
             </p>
           </section>
 
@@ -249,10 +309,38 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">10. Changes to These Terms</h2>
+            <p className="text-base mb-3">
+              <strong>10.1</strong> These Terms can be amended only by agreement between the parties. The operator will
+              notify you of a proposed amendment in text form to the e-mail address associated with your account at least
+              six weeks before the date on which it is proposed to take effect. The notice will contain the amended text,
+              a clear indication of the provisions that are changing, and the reason for the amendment.
+            </p>
+            <p className="text-base mb-3">
+              <strong>10.2</strong> An amendment becomes binding on you only if you accept it expressly, for example by
+              confirming it in the dialogue displayed at your next sign-in. Your silence, and your continued use of the
+              Platform, do not constitute acceptance of an amendment.
+            </p>
+            <p className="text-base mb-3">
+              <strong>10.3</strong> If you do not accept a proposed amendment, you may continue to use the Platform on the
+              basis of the Terms as they stood before the proposed amendment. Your right to terminate at any time under
+              section 2.3 remains unaffected. The operator may in that case terminate the contract in accordance with
+              section 2.3 by giving at least 30 days&apos; notice in text form, where continuing the contract on the
+              existing Terms cannot reasonably be expected of the operator.
+            </p>
+            <p className="text-base mb-3">
+              <strong>10.4</strong> Valid reasons for proposing an amendment are: (a) changes in the applicable law, or
+              binding decisions of a court or a public authority; (b) changes to the third-party services on which the
+              Platform depends (section 5), including changes to their terms, their technical interfaces or their
+              availability; (c) the introduction of new functions, or the discontinuation of existing functions, of the
+              Platform; (d) closing a gap in these Terms which has become apparent after their conclusion and which
+              cannot be resolved by interpretation; and (e) amendments which are purely advantageous or neutral for you.
+              Amendments affecting the essential content of the contract &mdash; in particular the scope of the service
+              owed under sections 1 to 3 and the liability provisions in section 4, to your detriment &mdash; are never
+              implemented unilaterally and always require your express acceptance under section 10.2.
+            </p>
             <p className="text-base">
-              The operator may amend these Terms where necessary, for example to reflect changes in the Platform, in the
-              third-party services used, or in the applicable law. The current version is published on the Platform.
-              Continued use of the Platform after changes take effect constitutes acceptance of the amended Terms.
+              <strong>10.5</strong> The operator publishes the current version of these Terms, together with all previous
+              versions and their effective dates, at clean-core.io/terms.
             </p>
           </section>
 
@@ -274,9 +362,51 @@ export default function TermsPage() {
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">12. Severability</h2>
             <p className="text-base">
               Should any provision of these Terms be or become invalid or unenforceable, the validity of the remaining
-              provisions shall not be affected. The invalid or unenforceable provision shall be replaced by a valid
-              provision that comes as close as legally possible to the economic purpose of the original provision.
+              provisions shall not be affected. In place of an invalid or unenforceable provision, the statutory
+              provisions apply.
             </p>
+          </section>
+
+          <section id="right-of-withdrawal" className="scroll-mt-20">
+            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">13. Right of Withdrawal for Consumers</h2>
+            <p className="text-base mb-3">
+              <strong>Right of withdrawal.</strong> You have the right to withdraw from this contract within fourteen days
+              without giving any reason. The withdrawal period is fourteen days from the day of the conclusion of the
+              contract. To exercise your right of withdrawal, you must inform us &mdash; Felix Frenzel, Hellerstraße 9,
+              96047 Bamberg, Germany, phone +49 151 59200157, e-mail info@clean-core.io &mdash; by means of a clear
+              statement (for example a letter sent by post or an e-mail) of your decision to withdraw from this contract.
+              You may use the model withdrawal form below, but you are not obliged to. To meet the withdrawal deadline,
+              it is sufficient for you to send your communication concerning your exercise of the right of withdrawal
+              before the withdrawal period has expired.
+            </p>
+            <p className="text-base mb-3">
+              <strong>Effects of withdrawal.</strong> Access to the Platform is provided free of charge and no payment is
+              made or accepted, so there are no payments to be reimbursed. On withdrawal the contract ends, your account
+              is closed and project content is deleted in accordance with the Privacy Policy. Your right to terminate the
+              contract at any time under section 2.3 is additional to this right of withdrawal and is not affected by it.
+            </p>
+            <p className="text-base mb-3">
+              <strong>Early expiry of the right of withdrawal.</strong> Where performance begins before the withdrawal
+              period has expired, the right of withdrawal expires if you have expressly requested that performance begin
+              during the withdrawal period, have acknowledged that you thereby lose your right of withdrawal, and the
+              operator has confirmed the contract in text form (§ 356 (5) BGB).
+            </p>
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl">
+              <p className="text-sm text-gray-700 mb-2">
+                <strong>Model withdrawal form</strong> &mdash; complete and return this form only if you wish to withdraw
+                from the contract.
+              </p>
+              <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
+                <li>To: Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, e-mail: info@clean-core.io</li>
+                <li>I/We (*) hereby give notice that I/We (*) withdraw from my/our (*) contract for the provision of the following service: use of the Clean-Core.io Platform</li>
+                <li>Registered on (*) / contract concluded on (*):</li>
+                <li>Name of the consumer(s):</li>
+                <li>Address of the consumer(s):</li>
+                <li>Signature of the consumer(s) (only if this form is notified on paper):</li>
+                <li>Date:</li>
+              </ul>
+              <p className="text-xs text-gray-500 mt-3">(*) Delete as appropriate.</p>
+            </div>
           </section>
 
           <section>
@@ -288,6 +418,39 @@ export default function TermsPage() {
               Phone: +49 151 59200157<br />
               E-mail: <a href="mailto:info@clean-core.io" className="text-green-600 hover:underline font-semibold">info@clean-core.io</a>
             </p>
+          </section>
+
+          {/*
+            The archive § 10.5 promises. It lists the superseded versions and links
+            to each one; it deliberately does not reproduce them here. An earlier
+            text carries clauses this document replaced because they would not
+            survive a German court — a consent fiction, moderation with neither
+            reason nor notice — and putting them a scroll below the clauses that
+            replaced them is how a reader ends up quoting the wrong
+            one. `tests/terms-consumer-law-guard.spec.ts` holds that line: none of
+            the removed sentences may appear on this rendered page.
+          */}
+          <section id="previous-versions" className="scroll-mt-20">
+            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">Previous versions</h2>
+            <p className="text-base mb-3">
+              The text above is the version in force. Under section 10.5 every earlier version stays
+              published with the date on which it took effect, and each is kept here word for word, with
+              the SHA-256 digest of its wording, so that the version an account accepted can be shown to
+              be the version it accepted.
+            </p>
+            <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600" data-terms-archive>
+              {ARCHIVED_TERMS_VERSIONS.map((archived) => (
+                <li key={archived.version} data-terms-archive-entry={archived.version}>
+                  {archived.label} &mdash; effective {archived.effectiveOn} &mdash;{' '}
+                  <Link
+                    href={`/terms/versions/${archived.version}`}
+                    className="text-green-600 hover:underline font-semibold"
+                  >
+                    read the full text
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </section>
 
           <div className="pt-8 border-t border-gray-100 text-center text-[10px] text-gray-400 font-black font-mono uppercase tracking-wider">

@@ -143,7 +143,15 @@ test.describe('consent records what the server knows, not what the caller says',
     const route = read('app/api/consent/route.ts');
     // Both were written verbatim into the append-only record.
     expect(lib).toContain('privacyVersion: TERMS_VERSION');
-    expect(lib).toContain('contentSha256: null');
+    // `contentSha256` was a literal null until the Terms archive existed; it is
+    // now derived on the server from the version being recorded, which is the
+    // same rule and a better record. What must never come back is a value the
+    // caller supplies — see `tests/terms-version-archive.spec.ts` for the other
+    // half, that the digest is the one the archived wording actually hashes to.
+    expect(lib, 'the document hash is no longer derived from the version').toContain(
+      'archivedTermsSha256(TERMS_VERSION)',
+    );
+    expect(lib, 'contentSha256 is an input again').not.toMatch(/contentSha256\??:\s*string/);
     expect(lib, 'privacyVersion is an input again').not.toMatch(/privacyVersion\??:\s*string/);
     expect(route, 'the route forwards a body value again').not.toMatch(/body\?\.privacyVersion/);
     expect(route).not.toMatch(/body\?\.contentSha256/);

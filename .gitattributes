@@ -24,3 +24,10 @@
 # gets the same treatment rather than a CRLF copy that fails its own verifier.
 docs/korpus/** text eol=lf
 tests/korpus/** text eol=lf
+
+# An archived Terms version is evidence of a wording: `lib/terms-versions.ts`
+# carries the SHA-256 of each file and a consent record stores it. The digest is
+# taken over the LF form, so a CRLF checkout would still hash correctly — this
+# keeps one from appearing in the first place, which is also what makes the file
+# a reader opens byte-for-byte the file the digest names.
+docs/terms/** text eol=lf

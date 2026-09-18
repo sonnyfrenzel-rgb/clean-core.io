@@ -1,5 +1,6 @@
 import { getAdminDb } from '@/lib/firebase-admin';
 import { TERMS_VERSION } from '@/lib/constants';
+import { archivedTermsSha256 } from '@/lib/terms-versions';
 
 /**
  * Server-authoritative Terms/Privacy consent (finding V14).
@@ -38,9 +39,23 @@ export interface RecordConsentInput {
  * A consent record whose contents the consenting party chooses is not evidence.
  *
  * The privacy notice is versioned together with the Terms, so the version is
- * derived. `contentSha256` stays null until there is a versioned artifact on
- * disk to hash — hashing a React page's rendered output would change with every
- * build and prove nothing.
+ * derived. `contentSha256` used to be null for a reason worth keeping on the
+ * record: there was nothing honest to put there. The only text of the Terms was
+ * a React page, and a hash of its rendered output moves with every build, every
+ * Tailwind class and every release stamp in its footer — it would have looked
+ * like evidence of the wording while proving nothing about it.
+ *
+ * `lib/terms-versions.ts` removed that obstacle rather than the field: a
+ * published version now exists as a file under `docs/terms/` that never changes
+ * again, and the digest of that file is the wording. So the record carries it,
+ * derived on the server from the version it is recording, exactly like the
+ * version itself.
+ *
+ * A version with no archived text records null and not a substitute. The whole
+ * point of the field is that it names the words the account was shown; another
+ * version's digest, or a hash of something adjacent, would be an immutable
+ * statement that the account accepted words it never saw. Null says "the
+ * wording is not pinned for this version", which is true and checkable.
  */
 
 export async function recordConsent({
@@ -51,6 +66,11 @@ export async function recordConsent({
 }: RecordConsentInput): Promise<{ termsVersion: string }> {
   const { db, FieldValue } = await getAdminDb();
 
+  // The wording of the version being accepted, as a digest. Null while that
+  // version has no archived text — see the note above on why null and not a
+  // stand-in.
+  const contentSha256 = archivedTermsSha256(TERMS_VERSION);
+
   // 1) append-only consent event (primary, tamper-evident record; userId lets the
   //    erasure cascade purge it on account deletion).
   await db.collection('consent_events').add({
@@ -59,7 +79,7 @@ export async function recordConsent({
     email,
     termsVersion: TERMS_VERSION,
     privacyVersion: TERMS_VERSION,
-    contentSha256: null,
+    contentSha256,
     locale: typeof locale === 'string' ? locale : null,
     source,
     createdAt: FieldValue.serverTimestamp(),
