@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { scanCodeContent } from '@/lib/staged-code-scan';
+import { personalDataHintKey, scanForPersonalDataHints } from '@/lib/personal-data-hints';
 import { looksLikeAbap } from '@/lib/abap-input-check';
 import { routeWasOverridden } from '@/lib/route-override';
 import { runProjectCommand } from '@/lib/project-command-client';
@@ -72,6 +73,7 @@ import { UsageRiskMatrixFor } from '@/components/analyze/UsageRiskMatrix';
 import SectionBoundary from '@/components/SectionBoundary';
 import NotGenerated from '@/components/NotGenerated';
 import TrustBeforeUpload from '@/components/TrustBeforeUpload';
+import PersonalDataHints from '@/components/PersonalDataHints';
 import WhyScorePanel from '@/components/analyze/WhyScorePanel';
 import { getRunCapabilities } from '@/lib/run-capabilities';
 import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
@@ -106,6 +108,13 @@ export default function AnalyzePage() {
   const [isSticky, setIsSticky] = useState(false);
   const [routeReport, setRouteReport] = useState<import('@/lib/abap/extensibility-router').ExtensibilityRouteReport | null>(null);
   const [usageReport, setUsageReport] = useState<UsageReportType | null>(null);
+  /**
+   * Which set of personal-data hints the reader has said they looked at, held
+   * as the hints' own key rather than as a boolean. Edit the source and the key
+   * changes, so a tick made for the old text stops counting for the new one
+   * without anything having to clear it (`lib/personal-data-hints.ts`).
+   */
+  const [personalDataAckFor, setPersonalDataAckFor] = useState('');
   /**
    * Roadmap 1.2 — whether a model may write the narrative for this account, and
    * whether a key exists at all. The stage does not depend on the answer to run:
@@ -1078,6 +1087,26 @@ export default function AnalyzePage() {
     () => (legacyCode ? scanCodeContent(legacyCode) : null),
     [legacyCode],
   );
+
+  /**
+   * The lines of the staged source that look as though they may hold personal
+   * data — a hint before the text leaves the browser, never a verdict about it
+   * (`lib/personal-data-hints.ts`).
+   *
+   * Read off `legacyCode` for the same reason the payload scan above is: the
+   * textarea can be edited after the file was dropped, and this is the value
+   * that is about to be sent. A starter example is ours, not the reader's, so
+   * there is nothing of theirs to notice in it and it is left alone — the same
+   * condition the Terms checkbox below already uses.
+   */
+  const personalDataHints = useMemo(
+    () => (legacyCode && !isFromExample ? scanForPersonalDataHints(legacyCode) : []),
+    [legacyCode, isFromExample],
+  );
+  const personalDataKey = personalDataHintKey(personalDataHints);
+  const personalDataAcknowledged = personalDataKey !== '' && personalDataAckFor === personalDataKey;
+  /** Something to look at, and nobody has said they looked. */
+  const personalDataPending = personalDataHints.length > 0 && !personalDataAcknowledged;
 
   const signedCleanCoreScore: number | null =
     typeof routeReport?.cleanCoreScore === 'number'
@@ -2087,6 +2116,18 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               </div>
             )}
 
+            {/* A chance to notice what the Terms ask you to strip, while the
+                source is still in your own browser. It claims nothing: these
+                are shapes that often indicate personal data, and the reader
+                decides. Nothing is blocked and nothing is removed — the tick
+                below is the whole of it (18.09.2026). */}
+            <PersonalDataHints
+              id="analyze-personal-data"
+              hints={personalDataHints}
+              acknowledged={personalDataAcknowledged}
+              onAcknowledge={(next) => setPersonalDataAckFor(next ? personalDataKey : '')}
+            />
+
             {/* v1.22: Optional usage data upload */}
             {legacyCode && (
               <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-4 animate-in slide-in-from-bottom-4 mb-8">
@@ -2158,7 +2199,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               </div>
             )}
 
-            {legacyCode && !isFromExample && (!targetDeployment || !acceptedTerms) && (
+            {legacyCode && !isFromExample && (!targetDeployment || !acceptedTerms || personalDataPending) && (
               <div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl text-xs text-amber-900 leading-relaxed font-semibold flex items-start gap-3 mt-8 animate-in slide-in-from-bottom-2 duration-300">
                 <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5 animate-pulse" />
                 <div className="space-y-1">
@@ -2170,6 +2211,9 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                     )}
                     {!acceptedTerms && (
                       <li>Accept the <strong>Terms & Conditions</strong> (via the checkbox in the Security section above).</li>
+                    )}
+                    {personalDataPending && (
+                      <li>Read the lines that <strong>look as though they may hold personal data</strong> and tick the box to say you have checked them.</li>
                     )}
                   </ul>
                 </div>
@@ -2197,11 +2241,16 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     return;
                   }
+                  if (personalDataPending) {
+                    setError('Some lines in this source look as though they may hold personal data. Read them, then tick the box to say you have checked them and want to upload this anyway.');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                  }
                   setError('');
                   setModalSelection(targetDeployment);
                   setShowConceptQuestion(true);
                 }}
-                disabled={loading || !legacyCode || !acceptedTerms || stagedScanBlock !== null}
+                disabled={loading || !legacyCode || !acceptedTerms || stagedScanBlock !== null || personalDataPending}
                 title={stagedScanBlock ? `Security Block: ${stagedScanBlock} Remove the flagged content before analysing.` : undefined}
                 className={clsx(
                   "flex items-center gap-3 bg-[#00873a] text-white px-10 py-4 rounded-2xl hover:bg-[#006b2c] hover:shadow-xl hover:shadow-green-900/20 transition-all font-black disabled:opacity-50 disabled:cursor-not-allowed min-w-[220px] justify-center shadow-lg shadow-green-900/10",
@@ -2449,13 +2498,24 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     return;
                   }
+                  // The same check the button behind this dialog makes. The
+                  // dialog is only reachable through that button, but a guard
+                  // that lives in one of two places is a guard somebody routes
+                  // around later — which is why `acceptedTerms` is asked twice
+                  // here too.
+                  if (personalDataPending) {
+                    setError('Some lines in this source look as though they may hold personal data. Read them, then tick the box to say you have checked them and want to upload this anyway.');
+                    setShowConceptQuestion(false);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                  }
                   if (modalSelection) {
                     setTargetDeployment(modalSelection);
                     setShowConceptQuestion(false);
                     handleAnalyze(legacyCode);
                   }
-                }} 
-                disabled={!modalSelection || !acceptedTerms}
+                }}
+                disabled={!modalSelection || !acceptedTerms || personalDataPending}
                 className="bg-[#00873a] hover:bg-[#006b2c] disabled:opacity-50 text-white px-6 py-2.5 rounded-xl text-xs font-black transition-all shadow-sm flex items-center gap-2 active:scale-95 hover:shadow-lg hover:shadow-green-900/10"
               >
                 Start AI Modernization Engine <ArrowRight size={14} />

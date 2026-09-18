@@ -5,6 +5,12 @@ import { FileSpreadsheet, AlertTriangle, CheckCircle2, Info, ChevronDown, XCircl
 import clsx from 'clsx';
 import type { UsageSource, UsageReport, UsageDateLocale } from '@/lib/abap/usage-model';
 import { PRIVACY_NOTICE } from '@/lib/abap/usage-privacy';
+import {
+  personalDataHintKey,
+  scanForPersonalDataHints,
+  type PersonalDataHint,
+} from '@/lib/personal-data-hints';
+import PersonalDataHints from '@/components/PersonalDataHints';
 
 interface UsageUploadProps {
   onImport: (report: UsageReport) => void;
@@ -35,6 +41,19 @@ const DATE_OPTIONS: { value: UsageDateLocale | ''; label: string }[] = [
 const PREVIEW_ROWS = 25;
 
 /**
+ * How much of the file is looked at for shapes that often indicate personal
+ * data. A usage export can be tens of megabytes, and a heading row — the thing
+ * that matters most here — stands at the top of it.
+ */
+const HINT_SCAN_BYTES = 512 * 1024;
+/** What can be read as text at all. An `.xlsx` is a compressed archive. */
+const TEXT_FILE = /\.(csv|tsv|txt)$/i;
+const NOT_TEXT_NOTE =
+  'This file is not plain text — a spreadsheet is a compressed archive — so nothing here has read it. ' +
+  'An SAP usage export names the user who ran each object by construction, which makes it the most likely ' +
+  'of all the uploads to carry personal data. Open it yourself before you import it.';
+
+/**
  * Three steps, and only the last one saves: declare what the export is (source,
  * date format, monitoring window), look at what the parser made of it — including
  * every row it refused and why — and then confirm. It used to parse and store in
@@ -58,6 +77,19 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   // A later read supersedes an earlier one still in flight.
   const readSeq = useRef(0);
+  /**
+   * What the last look at the dropped file found, and the acknowledgement that
+   * belongs to it. Held as the findings' own key rather than as a boolean, so
+   * dropping a second file cannot inherit the tick made for the first one
+   * (`lib/personal-data-hints.ts`).
+   */
+  const [hintScan, setHintScan] = useState<{
+    hints: PersonalDataHint[];
+    unreadable: string | null;
+    name: string;
+  } | null>(null);
+  const [hintAckFor, setHintAckFor] = useState('');
+  const hintSeq = useRef(0);
 
   // Read the file under what is currently declared. Called again whenever the
   // file or a declaration changes, so a corrected date format or window shows
@@ -90,12 +122,49 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
     if (file) void read(file, next);
   };
 
+  /**
+   * A look at the file itself, beside the parse.
+   *
+   * It reads the text, not the parsed records: `sanitizeUsageRecords` drops the
+   * person-identifying columns on the way in, which is right for what gets
+   * stored and wrong for this question. What the person has to decide is
+   * whether to hand over the *file*, and the columns the parser is about to
+   * throw away are exactly the ones worth seeing first.
+   */
+  const inspect = useCallback(async (f: File) => {
+    const seq = ++hintSeq.current;
+    if (!TEXT_FILE.test(f.name) && !f.type.startsWith('text/')) {
+      setHintScan({ hints: [], unreadable: NOT_TEXT_NOTE, name: f.name });
+      return;
+    }
+    try {
+      const text = await f.slice(0, HINT_SCAN_BYTES).text();
+      if (seq !== hintSeq.current) return;
+      setHintScan({ hints: scanForPersonalDataHints(text), unreadable: null, name: f.name });
+    } catch {
+      if (seq !== hintSeq.current) return;
+      setHintScan({ hints: [], unreadable: NOT_TEXT_NOTE, name: f.name });
+    }
+  }, []);
+
   const choose = (f: File) => {
     setFile(f);
+    setHintScan(null);
+    setHintAckFor('');
     void read(f, declared);
+    void inspect(f);
   };
 
   const { source: selectedSource, dateLocale, windowFrom, windowTo } = declared;
+
+  const hints = hintScan?.hints ?? [];
+  const hintUnreadable = hintScan?.unreadable ?? null;
+  // Not being able to read a file is its own thing to acknowledge, so it gets a
+  // key of its own rather than the empty one an absent finding would produce.
+  const hintKey = hintUnreadable ? `unreadable:${hintScan?.name ?? ''}` : personalDataHintKey(hints);
+  const hintAcknowledged = hintKey !== '' && hintAckFor === hintKey;
+  /** Something to look at, and nobody has said they looked. */
+  const hintPending = (hints.length > 0 || !!hintUnreadable) && !hintAcknowledged;
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -110,21 +179,28 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
   };
 
   const confirm = () => {
-    if (!preview) return;
+    // The import is what sends the file's contents on. Nothing is refused here
+    // — the tick is what is asked for, and the button below says so.
+    if (!preview || hintPending) return;
     readSeq.current++; // nothing still in flight may replace what was confirmed
     setImported(preview);
     onImport(preview);
     setPreview(null);
     setFile(null);
+    setHintScan(null);
+    setHintAckFor('');
   };
 
   const startOver = () => {
     readSeq.current++;
+    hintSeq.current++;
     setImported(null);
     setPreview(null);
     setFile(null);
     setError(null);
     setParsing(false);
+    setHintScan(null);
+    setHintAckFor('');
   };
 
   // ── Imported ────────────────────────────────────────────────────────
@@ -285,6 +361,19 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
         </div>
       )}
 
+      {/* What the file itself looks like it may carry. Shapes, not a verdict —
+          and of all three upload paths this is the one where a user id is there
+          by construction (18.09.2026). */}
+      {file && (
+        <PersonalDataHints
+          id="usage-personal-data"
+          hints={hints}
+          unreadableNote={hintUnreadable}
+          acknowledged={hintAcknowledged}
+          onAcknowledge={(next) => setHintAckFor(next ? hintKey : '')}
+        />
+      )}
+
       {/* Preview — what would be taken over, and what would not */}
       {preview && !error && (
         <div className="border border-slate-200 rounded-2xl p-4 space-y-3" data-usage-preview>
@@ -322,7 +411,7 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={confirm}
-              disabled={preview.records.length === 0}
+              disabled={preview.records.length === 0 || hintPending}
               data-usage-confirm
               className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-wider hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed"
             >
@@ -334,6 +423,11 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
             >
               Cancel
             </button>
+            {hintPending && (
+              <span data-usage-personal-data-pending className="text-xs font-bold text-amber-700">
+                Tick the box above to say you have checked this file. Nothing has been imported yet.
+              </span>
+            )}
           </div>
         </div>
       )}

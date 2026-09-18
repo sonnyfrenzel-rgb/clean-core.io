@@ -22,6 +22,11 @@ import {
 } from '@/lib/run-cost';
 import { quotaExhausted } from '@/lib/run-quota-rule';
 import {
+  personalDataHintKey,
+  scanForPersonalDataHints,
+  type PersonalDataHint,
+} from '@/lib/personal-data-hints';
+import {
   CLEAN_CORE_LEVEL_CAVEAT,
   CLEAN_CORE_MEANING,
   CLEAN_CORE_SCHEMA,
@@ -33,6 +38,7 @@ import {
   type CatalogArtifactFigures,
   type StartChoice,
 } from '@/lib/new-project-content';
+import PersonalDataHints from '@/components/PersonalDataHints';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -108,6 +114,17 @@ export default function NewProject({
   const [example, setExample] = useState<StarterExample>(STARTER_EXAMPLES[0]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * What the last look at the source found, and which selection it was about.
+   *
+   * Carrying the selection along is what makes an effect unnecessary: pick a
+   * different example and `scannedToken` below no longer matches, so the old
+   * findings simply stop being the current ones. Nothing has to clear them, and
+   * there is no render in which a stale list stands beside a new choice.
+   */
+  const [scanned, setScanned] = useState<{ token: string; hints: PersonalDataHint[] } | null>(null);
+  /** The hint set the reader said they had checked — see `personalDataHintKey`. */
+  const [personalDataAckFor, setPersonalDataAckFor] = useState('');
 
   useEffect(() => onAuthStateChanged(getAuth(), setUser), []);
 
@@ -130,6 +147,15 @@ export default function NewProject({
     markIntroSeen();
   }, []);
 
+  /** What the findings below are about. Changing it makes them stale by itself. */
+  const scannedToken = choice === 'example' ? `example:${example.file}` : 'own-code';
+  const personalDataHints = scanned && scanned.token === scannedToken ? scanned.hints : [];
+  const personalDataKey = personalDataHintKey(personalDataHints);
+  const personalDataAcknowledged =
+    personalDataKey !== '' && personalDataAckFor === personalDataKey;
+  /** Something to look at, and nobody has said they looked. */
+  const personalDataPending = personalDataHints.length > 0 && !personalDataAcknowledged;
+
   const start = useCallback(async () => {
     if (busy || !user) return;
     setBusy(true);
@@ -137,6 +163,22 @@ export default function NewProject({
     try {
       const db = getDb();
       const source = choice === 'example' ? await loadStarterExample(example.file) : '';
+
+      /**
+       * The source is written to Firestore two lines below, so this is the last
+       * moment it is only in the browser. Shapes that often indicate personal
+       * data are put in front of the reader here rather than a screen earlier:
+       * with nothing found there is nothing to say, and asking about an upload
+       * that never happens would be noise. Nothing is blocked — the second
+       * click goes through once the box is ticked.
+       */
+      const found = source ? scanForPersonalDataHints(source) : [];
+      if (found.length > 0 && personalDataAckFor !== personalDataHintKey(found)) {
+        setScanned({ token: scannedToken, hints: found });
+        setBusy(false);
+        return;
+      }
+
       const docRef = await addDoc(collection(db, 'projects'), {
         name: choice === 'example' ? example.name : 'Untitled project',
         status: 'uploaded',
@@ -162,7 +204,7 @@ export default function NewProject({
       );
       setBusy(false);
     }
-  }, [busy, user, choice, example, profile, router]);
+  }, [busy, user, choice, example, profile, router, personalDataAckFor, scannedToken]);
 
   if (profileLoading || introOpen === null) {
     return (
@@ -437,6 +479,19 @@ export default function NewProject({
             </div>
           )}
 
+          {/* The same panel and the same words as the Analyze stage, on
+              purpose: one wording for one rule, wherever a source enters. */}
+          {personalDataHints.length > 0 ? (
+            <div className="mt-3">
+              <PersonalDataHints
+                id="new-project-personal-data"
+                hints={personalDataHints}
+                acknowledged={personalDataAcknowledged}
+                onAcknowledge={(next) => setPersonalDataAckFor(next ? personalDataKey : '')}
+              />
+            </div>
+          ) : null}
+
           {error ? (
             <div className="mt-3">
               <CcMessageStrip state="error" headline="Nothing was created." announce>
@@ -450,7 +505,7 @@ export default function NewProject({
               variant="primary"
               density="cozy"
               onClick={() => void start()}
-              disabled={busy || blocked || !user}
+              disabled={busy || blocked || !user || personalDataPending}
               icon={busy ? <Loader2 size={16} aria-hidden={true} /> : undefined}
               data-new-project-start={choice}
             >
@@ -459,6 +514,14 @@ export default function NewProject({
             {blocked ? (
               <span data-new-project-blocked="" className="text-[12px] font-medium text-cc-ink-muted">
                 {ownCodeCost.quota}
+              </span>
+            ) : null}
+            {personalDataPending ? (
+              <span
+                data-new-project-personal-data-pending=""
+                className="text-[12px] font-medium text-cc-ink-muted"
+              >
+                Read the lines above and tick the box to carry on. Nothing has been created yet.
               </span>
             ) : null}
           </div>
