@@ -312,6 +312,19 @@ function subjectOf(rule: BusinessRule): string | null {
   return typeof subject === 'string' && subject.trim().length > 0 ? subject : null;
 }
 
+/**
+ * The `StandardCapability.key` this rule belongs to, or `null` when its subject
+ * is not readable — the same rule `coverageFrom` files rules under `unassigned` by.
+ *
+ * Exported because roadmap 7.3 files a counter-check scenario under the same
+ * key, and two copies of "which capability is this" would be two answers the day
+ * one of them changed.
+ */
+export function capabilityKeyOf(rule: BusinessRule): string | null {
+  const subject = subjectOf(rule);
+  return subject === null ? null : subject.toUpperCase();
+}
+
 /** The routines a rule stands in, upper-cased; program level when it names none. */
 function routinesOf(rule: BusinessRule): RoutineKey[] {
   const keys = new Set<RoutineKey>();
@@ -336,11 +349,11 @@ function coverageFrom(
 
   for (const rule of ruleSet.rules) {
     const subject = subjectOf(rule);
-    if (subject === null) {
+    const key = capabilityKeyOf(rule);
+    if (subject === null || key === null) {
       unassigned.push({ ruleId: rule.id, reason: 'subject-not-derivable', detail: SUBJECT_NOT_DERIVABLE });
       continue;
     }
-    const key = subject.toUpperCase();
     const group = grouped.get(key);
     if (group) group.rules.push(rule);
     else {

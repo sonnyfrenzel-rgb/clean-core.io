@@ -718,6 +718,21 @@ if (ALLOWED_SUFFIXES.length === 0) {
       (t): t is Record<string, unknown> => !!t && typeof t === 'object',
     );
     const known = new Set(storedCases.map((t) => String(t.id ?? '')).filter(Boolean));
+    // Roadmap 7.3: the scope and the stubs go into the record beside the
+    // environment. Both were already known here and neither survived the
+    // response — the scope only ever reached `SANDBOX_TEST_PATTERNS`, and the
+    // stub list only ever reached one banner on one screen. A later reader
+    // asking "what did this run actually cover, and against what" had no way to
+    // answer, and the receipt is the thing that outlives the screen.
+    //
+    // `selected` is the ids the caller asked for, and `null` when it asked for
+    // the whole suite; `[]` would say "the caller asked for nothing", which is a
+    // different run. The ids are narrowed to cases the project holds for the
+    // same reason the verdicts are: a scope naming cases no reader can see is
+    // not a scope anybody can check.
+    const selectedScope = Array.isArray(selectedTestIds)
+      ? [...new Set(selectedTestIds.map((id: unknown) => String(id)).filter((id: string) => known.has(id)))].sort()
+      : null;
     // Every stored case, carrying this run's verdict — or `Not run` where the
     // runner said nothing about it, which is what an unselected or unreported
     // case is. A case keeps no verdict from an earlier run: the receipt beside
@@ -730,6 +745,8 @@ if (ALLOWED_SUFFIXES.length === 0) {
       suiteDigest: subject.suiteDigest,
       casesDigest: subject.casesDigest,
       environment: 'mock',
+      scope: { selected: selectedScope, cases: storedCases.length },
+      stubs: [...stubbedPackages].sort(),
       executedAt: new Date().toISOString(),
       executedBy: decodedToken.uid,
       exitCode,

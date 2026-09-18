@@ -192,6 +192,12 @@ test.describe('a test result belongs to the project it is reported for', () => {
     const stored = await read(`projects/${PROJECT_ID}`);
     expect(isTestRunReceipt(stored?.testRunReceipt), 'no receipt was written').toBe(true);
     expect(stored?.testRunReceipt.runId).toBe(runId);
+    // Roadmap 7.3: the record says what the run covered and against what. The
+    // scope is the cases that were asked for, narrowed to the ones the project
+    // holds; the stub list is what the sandbox replaced before the suite loaded.
+    expect(stored?.testRunReceipt.environment).toBe('mock');
+    expect(stored?.testRunReceipt.scope).toEqual({ selected: ['TC_01', 'TC_02'], cases: CASES.length });
+    expect(Array.isArray(stored?.testRunReceipt.stubs), 'the receipt kept no stub list').toBe(true);
     // The receipt is taken over the project's artefacts, not the body's.
     expect(coveringTestRunReceipt(stored as Project), 'the receipt does not fit the project it was written on').toBeTruthy();
   });

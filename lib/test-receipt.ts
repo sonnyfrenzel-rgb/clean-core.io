@@ -45,6 +45,17 @@ import { artefactDigest, sha256Hex } from './artefact-digest';
  *   - `environment` — `mock` names a sandbox, and a sandbox result is still an
  *     execution of the generated code. A live tenant check is not an execution
  *     of anything and never reaches here.
+ *   - `scope` — which cases the run was *asked* for. Two of eleven cases
+ *     reporting two passes is a true sentence about two cases and a false one
+ *     about the suite, and without the scope the receipt cannot tell them apart
+ *     on its own.
+ *   - `stubs` — the npm packages the sandbox replaced with a universal mock
+ *     before the suite loaded. The runner has always computed this list and has
+ *     always thrown it away after painting one banner on one screen; roadmap 7.3
+ *     puts it in the record, because a run against a mock of `@sap/xssec` and a
+ *     run against `@sap/xssec` are two different facts and only the receipt
+ *     outlives the banner (UX-E08-F02-US02: *Umgebung und ersetzte
+ *     Abhängigkeiten sind am Ergebnis sichtbar*).
  *
  * **What a verified receipt does and does not prove.** It proves that this
  * server ran this suite against this code for this account and saw these
@@ -53,11 +64,31 @@ import { artefactDigest, sha256Hex } from './artefact-digest';
  * that changed is "the browser said these passed" → "the server saw these pass".
  */
 
-/** Bumped only when the claim set changes. A reader refuses a version it does not know. */
-export const TEST_RUN_RECEIPT_VERSION = 1;
+/**
+ * Bumped only when the claim set changes. A reader refuses a version it does not know.
+ *
+ * 2 (roadmap 7.3) added `scope` and `stubs`. A version-1 receipt is refused
+ * rather than read with those two claims defaulted, because a default would be
+ * the claim itself: an empty `stubs` list means "nothing was replaced", and no
+ * version-1 receipt ever established that. The cost is that a project whose last
+ * run predates 7.3 reads as self-reported until the suite is run again, which is
+ * the conservative direction this whole file is written in.
+ */
+export const TEST_RUN_RECEIPT_VERSION = 2;
 
 /** The verdicts a runner can report. Only `Passed` is a pass. */
 export type TestRunVerdict = 'Passed' | 'Failed' | 'Not run' | 'Skipped' | 'Todo' | 'Error';
+
+/** What the run was asked to cover. */
+export interface TestRunScope {
+  /**
+   * The case ids the caller selected, sorted — or `null` when the whole suite
+   * was asked for. `[]` is not the same thing and is not written for "all".
+   */
+  selected: string[] | null;
+  /** How many cases the project held when the run started. */
+  cases: number;
+}
 
 export interface TestRunReceipt {
   v: number;
@@ -71,6 +102,13 @@ export interface TestRunReceipt {
   casesDigest: string | null;
   /** `mock` — the Node sandbox. Nothing else executes the generated code today. */
   environment: 'mock';
+  /** Which cases the run was asked for. */
+  scope: TestRunScope;
+  /**
+   * The npm packages the sandbox replaced with a universal mock, sorted. Empty
+   * means the run replaced none — a statement, not an absence.
+   */
+  stubs: string[];
   /** Server clock, ISO 8601. */
   executedAt: string;
   /** The account the run was served for. */
@@ -100,6 +138,15 @@ export function testRunSubject(source: {
   };
 }
 
+function isTestRunScope(value: unknown): value is TestRunScope {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const scope = value as Record<string, unknown>;
+  const selected = scope.selected;
+  const selectedOk =
+    selected === null || (Array.isArray(selected) && selected.every((id) => typeof id === 'string'));
+  return selectedOk && typeof scope.cases === 'number';
+}
+
 /** Shape check only — it says nothing about whether the receipt still fits the project. */
 export function isTestRunReceipt(value: unknown): value is TestRunReceipt {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -111,6 +158,9 @@ export function isTestRunReceipt(value: unknown): value is TestRunReceipt {
     (r.suiteDigest === null || typeof r.suiteDigest === 'string') &&
     (r.casesDigest === null || typeof r.casesDigest === 'string') &&
     r.environment === 'mock' &&
+    isTestRunScope(r.scope) &&
+    Array.isArray(r.stubs) &&
+    r.stubs.every((s) => typeof s === 'string') &&
     typeof r.executedAt === 'string' &&
     typeof r.executedBy === 'string' &&
     typeof r.exitCode === 'number' &&

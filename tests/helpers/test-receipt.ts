@@ -11,6 +11,11 @@ import { TEST_RUN_RECEIPT_VERSION, testRunSubject, type TestRunReceipt } from '.
  *
  * `verdicts` is deliberately per case and explicit: a helper that passed every
  * id whatever the fixture said would be the same shortcut one level up.
+ *
+ * `scope` and `stubs` arrived with receipt version 2 (roadmap 7.3). The default
+ * is the honest one for a fixture: the whole suite was asked for (`selected:
+ * null`) and no package was replaced. A fixture that means something else passes
+ * it in — it is not defaulted away anywhere a test reasons about it.
  */
 export function receiptFor(
   project: {
@@ -20,6 +25,7 @@ export function receiptFor(
     testCases?: unknown;
   },
   verdicts?: Array<{ id: string; status: TestRunReceipt['verdicts'][number]['status'] }>,
+  over?: Partial<Pick<TestRunReceipt, 'scope' | 'stubs' | 'environment' | 'exitCode'>>,
 ): TestRunReceipt {
   const subject = testRunSubject(project);
   const ids = (Array.isArray(project.testCases) ? project.testCases : []).map((t) =>
@@ -29,9 +35,12 @@ export function receiptFor(
     v: TEST_RUN_RECEIPT_VERSION,
     ...subject,
     environment: 'mock',
+    scope: { selected: null, cases: ids.length },
+    stubs: [],
     executedAt: '2026-09-17T10:00:00.000Z',
     executedBy: 'fixture-uid',
     exitCode: 0,
     verdicts: verdicts ?? ids.map((id) => ({ id, status: 'Passed' as const })),
+    ...over,
   };
 }
