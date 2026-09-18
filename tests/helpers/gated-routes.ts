@@ -91,6 +91,19 @@ export const GATED_ROUTES: GatedRoute[] = [
   // second factor reaches neither.
   { file: 'app/api/projects/[projectId]/process-states/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/process-states` },
   { file: 'app/api/projects/[projectId]/process-states/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/process-states`, body: { baseRevision: 0, choices: [] } },
+  // Roadmap 5.2/5.4 — sharing. Inviting hands a third party the project's ABAP
+  // source, and revoking is how an owner takes that back; both are at least as
+  // grave as editing the evidence, so both sit behind the factor. Found by the
+  // completeness check rather than by anyone remembering them: the two routes
+  // shipped with Phase 5 and were in none of these lists, which is precisely
+  // the hole that check was written for.
+  //
+  // The POST is knocked on with an address that cannot receive: the gate
+  // answers before the mailer is reached, and if it ever stopped doing so, the
+  // spec would be sending real invitations.
+  { file: 'app/api/projects/[projectId]/invitations/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/invitations`, body: { email: 'reader@example.invalid' } },
+  { file: 'app/api/projects/[projectId]/readers/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/readers` },
+  { file: 'app/api/projects/[projectId]/readers/route.ts', method: 'DELETE', path: (p) => `/api/projects/${p}/readers`, body: { uid: 'not-a-reader' } },
 ];
 
 /**
