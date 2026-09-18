@@ -7,6 +7,10 @@ import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { PHASES, workflowSteps, workflowSummary } from '../lib/workflow-steps';
 import type { Project, TestCase } from '../lib/types';
+// The current Terms version, not a literal: seeding a stale one makes the
+// account fail `requireCurrentTerms` on every protected route, so a version
+// bump would break this spec for a reason that has nothing to do with it.
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * One phase model, and every view reads it (roadmap E01-F01, CR-11).
@@ -209,7 +213,7 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
       firstName: 'Phase', lastName: 'Guard', email: EMAIL,
       tier: 'pilot', status: 'approved',
       transformationsUsed: 1, transformationsLimit: 5,
-      termsVersionAccepted: '2026-07-07',
+      termsVersionAccepted: TERMS_VERSION,
       createdAt: new Date(),
     });
 

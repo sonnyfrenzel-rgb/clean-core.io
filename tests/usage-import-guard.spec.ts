@@ -6,6 +6,10 @@ import firebaseConfig from '../firebase-config.json';
 import { parseUsage, parseUsageDate } from '../lib/abap/usage-parser';
 import { joinUsageWithEvidence } from '../lib/abap/usage-join';
 import type { UsageReport } from '../lib/abap/usage-model';
+// The current Terms version, not a literal: seeding a stale one makes the
+// account fail `requireCurrentTerms` on every protected route, so a version
+// bump would break this spec for a reason that has nothing to do with it.
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * A usage import that can be believed (roadmap E03-F02, CR-24).
@@ -222,7 +226,7 @@ test.describe('the analyze page stores nothing before confirmation, and then the
     const uid = (await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD)).user.uid;
     await adminSetDoc('users', uid, {
       firstName: 'Usage', lastName: 'Import', email: EMAIL, tier: 'pilot', status: 'approved',
-      transformationsUsed: 0, transformationsLimit: 5, termsVersionAccepted: '2026-07-07', createdAt: new Date(),
+      transformationsUsed: 0, transformationsLimit: 5, termsVersionAccepted: TERMS_VERSION, createdAt: new Date(),
     });
     // Source staged, no analysis yet: the stage where the usage import lives.
     await adminSetDoc('projects', PROJECT_ID, {

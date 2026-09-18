@@ -45,17 +45,57 @@ export default function TermsReacceptGate() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const acceptRef = useRef<HTMLButtonElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
   const needed = !loading && !!profile && profile.termsVersionAccepted !== TERMS_VERSION;
 
-  // The focus belongs in the dialog, and the page behind it must not scroll —
-  // the accessibility findings of 17.09. are not a licence to add another one.
+  /**
+   * Focus goes in and stays in, and the page behind does not scroll.
+   *
+   * Setting initial focus is the easy half and was all this had at first (QA
+   * review of 38e6f079a0ba). Without the trap, Tab walks out of a dialog that
+   * blocks everything behind it, and a keyboard user ends up operating controls
+   * that answer 403 — which is the failure this whole gate exists to prevent,
+   * reproduced for the people least able to guess what happened.
+   */
   useEffect(() => {
     if (!needed) return;
     acceptRef.current?.focus();
-    const previous = document.body.style.overflow;
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = previous; };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      const root = dialogRef.current;
+      if (!root) return;
+      const focusable = [...root.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')]
+        .filter((el) => el.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+
+      // Outside already — for instance because something else moved focus while
+      // the dialog was opening — bring it back rather than letting Tab continue.
+      if (!active || !root.contains(active)) {
+        event.preventDefault();
+        first.focus();
+        return;
+      }
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [needed]);
 
   if (!needed) return null;
@@ -98,6 +138,7 @@ export default function TermsReacceptGate() {
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="terms-gate-title"

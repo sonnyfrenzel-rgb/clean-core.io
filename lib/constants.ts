@@ -39,7 +39,7 @@ export const COMMUNITY_QUOTA = 5;
  * (`termsVersionAccepted`) so a later Terms change can request re-consent and
  * the accepted version is provable. Kept in sync with the effective date on /terms.
  */
-export const TERMS_VERSION = '2026-07-07';
+export const TERMS_VERSION = '2026-09-18';
 
 /**
  * Canonical base URL of the application (no trailing slash).

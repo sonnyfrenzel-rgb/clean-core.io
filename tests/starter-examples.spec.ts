@@ -7,6 +7,10 @@ import { STARTER_EXAMPLES } from '../lib/starter-examples';
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
 
 import firebaseConfig from '../firebase-config.json';
+// The current Terms version, not a literal: seeding a stale one makes the
+// account fail `requireCurrentTerms` on every protected route, so a version
+// bump would break this spec for a reason that has nothing to do with it.
+import { TERMS_VERSION } from '../lib/constants';
 
 const firebaseApp = initializeApp(firebaseConfig, 'starter-examples');
 const firebaseAuth = getAuth(firebaseApp);
@@ -37,7 +41,7 @@ test.describe('Dashboard — starter examples', () => {
       firstName: 'Starter', lastName: 'Tester', email: EMAIL,
       tier: 'pilot', status: 'approved',
       transformationsUsed: 0, transformationsLimit: 5,
-      termsVersionAccepted: '2026-07-07',
+      termsVersionAccepted: TERMS_VERSION,
       createdAt: new Date(),
     });
   });

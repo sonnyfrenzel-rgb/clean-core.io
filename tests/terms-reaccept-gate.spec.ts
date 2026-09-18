@@ -122,3 +122,58 @@ test('the gate is mounted in the shell every protected page shares', () => {
   // Refusing has to be possible without deleting the account.
   expect(gate).toContain('data-terms-gate-signout');
 });
+
+/**
+ * Tab stays inside.
+ *
+ * The first version of this gate set initial focus and stopped there, which a
+ * QA review caught (38e6f079a0ba): focus could walk out of a dialog that blocks
+ * everything behind it, so a keyboard user would have ended up operating
+ * controls that answer 403 — the very failure the gate exists to prevent,
+ * reproduced for the people least able to guess what had happened.
+ */
+test('the keyboard cannot leave the gate', async ({ page }) => {
+  test.setTimeout(180 * 1000);
+
+  // A second stale account, because the first one accepted above and this file
+  // runs serially.
+  const email = `terms-focus-${STAMP}@cleancore-test.io`;
+  const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
+  const cred = await createUserWithEmailAndPassword(getAuth(app), email, PASSWORD);
+  await adminSetEmailVerified(cred.user.uid, true);
+  await adminSetDoc('users', cred.user.uid, {
+    firstName: 'Terms', lastName: 'Focus', email,
+    tier: 'pilot', status: 'approved', createdAt: new Date(),
+    transformationsUsed: 0, transformationsLimit: 5,
+    termsVersionAccepted: STALE, mfaEnabled: false,
+  });
+
+  await page.goto('/?auth=signin');
+  await page.waitForSelector('input[type="email"]', { timeout: 60000 });
+  await page.fill('input[type="email"]', email);
+  await page.fill('input[type="password"]', PASSWORD);
+  await page.click('button[type="submit"]:has-text("Sign In")');
+
+  const gate = page.locator('[data-terms-gate]');
+  await expect(gate).toBeVisible({ timeout: 60000 });
+
+  const insideGate = () =>
+    page.evaluate(() => {
+      const root = document.querySelector('[data-terms-gate]');
+      const active = document.activeElement;
+      return !!root && !!active && root.contains(active);
+    });
+
+  expect(await insideGate(), 'focus did not start inside the dialog').toBe(true);
+
+  // Forwards past the last control, and backwards past the first: both are the
+  // moments a trap is missing.
+  for (let i = 0; i < 12; i++) {
+    await page.keyboard.press('Tab');
+    expect(await insideGate(), `Tab ${i + 1} left the dialog`).toBe(true);
+  }
+  for (let i = 0; i < 12; i++) {
+    await page.keyboard.press('Shift+Tab');
+    expect(await insideGate(), `Shift+Tab ${i + 1} left the dialog`).toBe(true);
+  }
+});

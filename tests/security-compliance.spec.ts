@@ -12,6 +12,10 @@ process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-a
 import { createApprovalToken } from '../lib/approval-token';
 import { computeRunHash, signRunHash } from '../lib/run-signature';
 import firebaseConfig from '../firebase-config.json';
+// The current Terms version, not a literal: seeding a stale one makes the
+// account fail `requireCurrentTerms` on every protected route, so a version
+// bump would break this spec for a reason that has nothing to do with it.
+import { TERMS_VERSION } from '../lib/constants';
 
 // Initialize Firebase SDK in Node context for seeding and validation
 const firebaseApp = initializeApp(firebaseConfig);
@@ -394,7 +398,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
         s4TenantAccessAllowed: false,
         s4TenantAccessRequested: false,
         mfaEnabled: false,
-        termsVersionAccepted: '2026-07-07',
+        termsVersionAccepted: TERMS_VERSION,
         termsAcceptedAt: new Date(),
       }),
     ).rejects.toThrow();
