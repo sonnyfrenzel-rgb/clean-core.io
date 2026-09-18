@@ -30,3 +30,12 @@ design-capture/
 .security-audit/
 .ux-review/
 pw.local.config.ts
+
+# Backups written by the maintenance scripts before they delete anything
+# (`scripts/purge-audit-events.ts`, `scripts/survey-repair-dotted-answers.ts`).
+# They hold whole records — administrator addresses in one case, survey answers
+# in the other — and they land in the working directory by default. A public
+# repository and a public Actions log have cost us addresses once already
+# (15.09.2026); a pattern here is cheaper than remembering.
+audit-events-purge-*.json
+survey-backup-*.json

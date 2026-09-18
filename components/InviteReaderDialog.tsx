@@ -7,6 +7,7 @@ import {
   INVITATION_DEFAULT_DAYS,
   INVITATION_LIMITS_SENTENCE,
   INVITATION_SCOPE_SENTENCE,
+  INVITATION_SPAM_HINT,
   type Invitation,
 } from '@/lib/invitations';
 
@@ -100,6 +101,13 @@ export default function InviteReaderDialog({
               <strong className="text-gray-900">{sent.email}</strong> has been sent a link to read “{projectName}”.
               It opens only for an account signed in with that address, and only once that address is confirmed.
               It expires on {new Date(sent.expiresAt).toUTCString().slice(5, 16)}.
+            </p>
+            <p
+              data-invite-spam-hint
+              className="flex gap-2 text-xs font-medium text-amber-900 bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 leading-relaxed text-left"
+            >
+              <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+              <span>{INVITATION_SPAM_HINT}</span>
             </p>
             <button
               onClick={onClose}

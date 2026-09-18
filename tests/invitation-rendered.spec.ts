@@ -1,10 +1,12 @@
 import { test, expect } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc, adminSetEmailVerified } from './helpers/admin-seed';
-import { invitationLinkPath } from '../lib/invitations';
+import { invitationLinkPath, INVITATION_SPAM_HINT } from '../lib/invitations';
 
 /**
  * Roadmap 5.1 and 5.2, in a browser.
@@ -101,6 +103,40 @@ test('the invitation dialog says, in the dialog, that this includes the source c
 
   // Nothing had to be opened to read it: the dialog is one step from the list.
   expect(await dialog.locator('[data-invite-email]').count()).toBe(1);
+
+  // The spam hint belongs to the moment *after* sending, not to the form: it is
+  // something the owner can act on once there is a recipient waiting, and
+  // putting it here would read as a warning about inviting at all.
+  expect(
+    await dialog.locator('[data-invite-spam-hint]').count(),
+    'the spam hint is shown before anything has been sent',
+  ).toBe(0);
+});
+
+/**
+ * Our transactional mail lands in spam often enough to matter (Sonny,
+ * 16.09.2026; roadmap 3.0.9), and the owner is the only one who can do anything
+ * about it — they know the person and can tell them to look. A source guard
+ * rather than a rendered one: reaching the sent state needs a real invitation to
+ * go out, and a spec that sends mail to prove a sentence is on a screen is a
+ * spec that sends mail.
+ */
+test('the owner is told the mail may land in spam, once it has gone out', () => {
+  const source = fs.readFileSync(
+    path.resolve(__dirname, '..', 'components', 'InviteReaderDialog.tsx'),
+    'utf8',
+  );
+  const sentBranch = source.split('The invitation is on its way')[1]?.split('</form>')[0] ?? '';
+  expect(sentBranch, 'the success state of the dialog is gone').not.toBe('');
+  expect(sentBranch, 'the hint is not in the state that follows a send').toContain(
+    'data-invite-spam-hint',
+  );
+  expect(sentBranch).toContain('INVITATION_SPAM_HINT');
+  // The sentence itself says what to do, not merely that something may happen.
+  expect(INVITATION_SPAM_HINT).toMatch(/spam or junk folder/i);
+  expect(INVITATION_SPAM_HINT, 'it has to name the sender, or "check your spam" is half a hint').toContain(
+    'info@clean-core.io',
+  );
 });
 
 test('sign-in comes back to the invitation link', async ({ page }) => {

@@ -240,3 +240,41 @@ export const INVITATION_SCOPE_SENTENCE =
 /** The other half of the same honesty: what an invitation does *not* hand over. */
 export const INVITATION_LIMITS_SENTENCE =
   'Reading only. Analysing, confirming, signing and exporting stay with you, and you can withdraw the invitation at any time.';
+
+/**
+ * The same two facts, addressed to the person who was invited.
+ *
+ * The two sentences above are written for the owner standing in the invite
+ * dialog — "**they** can read this project", "the source code **you** uploaded",
+ * "**you** can withdraw it". The invitation mail reused them verbatim, so the
+ * recipient was told that somebody else could read a project, that they had
+ * uploaded code they have never seen, and that they could withdraw an invitation
+ * that is not theirs to withdraw (found 18.09.2026, while reading the mail out
+ * for a legal review).
+ *
+ * Same facts, same order, second person: the reader of a mail is the reader of
+ * the project, and the limits are limits *on them*. Kept here beside the
+ * owner-facing pair so the two can never drift into saying different things.
+ */
+export const INVITATION_SCOPE_SENTENCE_RECIPIENT =
+  'You can read this project in full, including the ABAP source code that was uploaded to it.';
+
+/** What an invitation does not give the person who accepts it. */
+export const INVITATION_LIMITS_SENTENCE_RECIPIENT =
+  'Reading only. Analysing, confirming, signing and exporting stay with the owner, and the owner can withdraw your access at any time.';
+
+/**
+ * What the owner is told once the invitation has gone out.
+ *
+ * Our transactional mail reaches inboxes unevenly — DNS for the sender has been
+ * correct since 01.09.2026 and messages still land in spam folders often enough
+ * to matter (Sonny, 16.09.2026; roadmap 3.0.9). The owner is the only person who
+ * can do anything about that: they know the recipient and can tell them to look.
+ *
+ * So it is said here, at the moment it is actionable, rather than left for the
+ * owner to discover from silence. "Delivered" and "read" are different claims,
+ * and a product that knows the first is unreliable should not let the second be
+ * assumed.
+ */
+export const INVITATION_SPAM_HINT =
+  'Mail does not always land in the inbox. If they do not see it within a few minutes, ask them to check their spam or junk folder — and tell them it comes from info@clean-core.io.';

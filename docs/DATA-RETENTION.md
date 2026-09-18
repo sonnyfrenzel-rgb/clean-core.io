@@ -31,10 +31,16 @@ Two sub-processors receive data in transit for the features that require them �
 | `registration_requests/{uid}` | Pilot access requests | uid | Life of account | ✅ direct |
 | `tenant_access_requests/{uid}` | BYOT access requests | uid | Life of account | ✅ direct |
 | `survey_responses/{campaign}__{uid}` | Survey answers and the free-text comment beside them | `uid` | Life of account | ✅ query delete |
-| `audit_events/{id}` | Admin/security audit log | server | **Retained** for security accountability (see note) | ❌ intentionally kept |
+| `audit_events/{id}` | Admin/security audit log | server | **24 months** from the recorded action, then deleted (see note) | ❌ intentionally kept |
 | `rate_limits/{key}` | Sliding-window counters (`gemini:<uid>:<ip>`) | composite | Self-expiring (window) | ❌ no durable PII, auto-expires |
 
 **`audit_events` note:** deliberately excluded from erasure to preserve a tamper-evident record of privileged actions (approvals, deletions). Contains actor uid/email and action type — a legitimate-interest legal basis for security accountability. Reviewed for minimization; no analysis content stored.
+
+The period is **24 months from the recorded action**, decided by the owner on **2026-09-18**. Until that decision this row said only "retained", which is not a retention period: Art. 13(2)(a) GDPR asks for the storage duration or, where none can be given, the criteria used to determine it, and a legal review flagged the omission. Twenty-four months covers two annual security reviews, so a privileged action stays traceable across both of them, while the administrator identities the record names do not outlive the reason for holding them.
+
+The purge is **`scripts/purge-audit-events.ts`** — dry run by default, `--apply` deletes, `--older-than <months>` overrides the period, and every record it is about to delete is written to a JSON backup before anything is removed. It prints counts and document ids only; the backup holds the full records, including who acted, and must not be committed. The purge writes one record of itself, so the journal never loses entries silently.
+
+It is run by hand today because nothing can be 24 months old yet: the first records are from 2026, so the earliest document reaches the period in 2028. **Automation must be in place before the first records reach 24 months (first possible: 2028)** — a period that depends on somebody remembering a command is no more a retention period than "retained" was.
 
 ## GDPR Art. 17 (Right to Erasure)
 

@@ -1,6 +1,11 @@
 import { APP_VERSION } from '@/lib/version';
 import { APP_BASE_URL, CONTACT_EMAIL } from '@/lib/constants';
-import { INVITATION_SCOPE_SENTENCE, INVITATION_LIMITS_SENTENCE } from '@/lib/invitations';
+import {
+  INVITATION_SCOPE_SENTENCE_RECIPIENT,
+  INVITATION_LIMITS_SENTENCE_RECIPIENT,
+  INVITATION_DEFAULT_DAYS,
+  INVITATION_MAX_DAYS,
+} from '@/lib/invitations';
 
 /**
  * The two mails phase 5 sends.
@@ -40,9 +45,25 @@ export const INVITATION_EMAIL_SUBJECT = 'You have been invited to read a project
  * project therefore tells a typo'd recipient something the owner never meant to
  * tell them. The name appears on the invitation page, after the reader has
  * shown they hold the account with that confirmed address.
+ *
+ * **It carries the Art. 14 GDPR notice** (Sonny, 18.09.2026), and it is the only
+ * mail that has to. The invited person's address reached us from the owner who
+ * typed it, not from them, so Art. 14 applies in full: they are owed the
+ * identity of the controller, what is held, why, on what basis, for how long,
+ * where it came from, and their rights — and this mail is the only channel we
+ * have to them. The confirmation mail below is deliberately without it: it goes
+ * to somebody who already holds an account and gave us that address themselves,
+ * which is Art. 13 and already answered by the privacy policy they accepted.
+ *
+ * The notice sits last and small on purpose. What the reader came for is the
+ * invitation; a legal panel above the button would bury it.
  */
 export function buildInvitationEmail({ inviterName, recipient, link, expires }: InvitationEmailInput): string {
   const trustUrl = `${APP_BASE_URL}/trust`;
+  // Section 8 of the privacy policy, "Who Can Open Your Projects" — the anchor
+  // exists in `app/datenschutz/page.tsx`, so the reader lands on the paragraph
+  // this mail is about rather than at the top of a long page.
+  const privacyUrl = `${APP_BASE_URL}/datenschutz#project-access`;
   return `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
         <tr>
@@ -63,10 +84,10 @@ export function buildInvitationEmail({ inviterName, recipient, link, expires }: 
                   <h1 style="font-size: 23px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.02em; line-height: 1.2;">${inviterName} invited you to read a project</h1>
 
                   <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 18px 0 0 0;">
-                    ${INVITATION_SCOPE_SENTENCE}
+                    ${INVITATION_SCOPE_SENTENCE_RECIPIENT}
                   </p>
                   <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 12px 0 0 0;">
-                    ${INVITATION_LIMITS_SENTENCE}
+                    ${INVITATION_LIMITS_SENTENCE_RECIPIENT}
                   </p>
 
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 22px 0;">
@@ -94,6 +115,13 @@ export function buildInvitationEmail({ inviterName, recipient, link, expires }: 
 
                   <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; font-size: 14px; color: #64748b; line-height: 1.5;">
                     Warm regards,<br /><strong>The Clean-Core.io Team</strong>
+                  </div>
+
+                  <div style="border-top: 1px solid #f1f5f9; margin-top: 20px; padding-top: 14px; font-size: 12px; line-height: 1.6; color: #64748b;">
+                    <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px;">How we got your address &mdash; Art. 14 GDPR</strong>
+                    The person who invited you typed your address; you never gave it to us. We store it to send this one mail and to open that one project for this address and no other, and if you accept, we also store your account&rsquo;s id and the address on that account. Nobody sees any of it but the owner who invited you: our security rules let no browser read an invitation at all.
+                    <br /><br />
+                    The basis is our legitimate interest in running an invitation feature a user asked for (Art. 6(1)(f) GDPR). An invitation expires on its own after ${INVITATION_DEFAULT_DAYS} days by default and ${INVITATION_MAX_DAYS} at the most; it is deleted with the project, and it is deleted if you delete a Clean-Core.io account carrying this address. You can ask us for access, rectification, erasure or restriction, you can object at any time (Art. 21 GDPR), and you can complain to a supervisory authority. Controller: Felix Frenzel, Hellerstra&szlig;e 9, 96047 Bamberg, Germany, <a href="mailto:${CONTACT_EMAIL}" style="color: #047857; font-weight: 700;">${CONTACT_EMAIL}</a>. The full privacy policy is at <a href="${privacyUrl}" style="color: #0284c7; font-weight: 700;">${privacyUrl}</a>, section 8.
                   </div>
 
                 </td>

@@ -11,3 +11,14 @@ export const APP_RELEASE_DATE = 'September 18, 2026';
  * every positive UTC offset (CET included). Update both constants together.
  */
 export const APP_RELEASE_DATE_ISO = '2026-09-18';
+
+/**
+ * The same date again, written the way a German reader expects it, for the
+ * German privacy policy at `/datenschutz/de`.
+ *
+ * A third literal rather than a formatter: `toLocaleDateString('de-DE')` on a
+ * string parsed at local midnight walks into the same off-by-one this file
+ * already documents above, and a date that is one day wrong in a legal document
+ * is worse than one more line to keep in step. Update all four together.
+ */
+export const APP_RELEASE_DATE_DE = '18. September 2026';

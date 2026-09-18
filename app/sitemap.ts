@@ -47,6 +47,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/trust`, lastModified: on('/trust'), changeFrequency: 'monthly', priority: 0.6 },
     { url: `${baseUrl}/impressum`, lastModified: on('/impressum'), changeFrequency: 'monthly', priority: 0.4 },
     { url: `${baseUrl}/datenschutz`, lastModified: on('/datenschutz'), changeFrequency: 'monthly', priority: 0.4 },
+    // The German privacy policy is its own indexable page, not a variant of the
+    // English one: both carry `hreflang` alternates pointing at each other, and a
+    // German search for "Datenschutzerklärung Clean-Core" should reach the German
+    // text rather than the English page that happens to have a German title.
+    { url: `${baseUrl}/datenschutz/de`, lastModified: on('/datenschutz/de'), changeFrequency: 'monthly', priority: 0.4 },
     { url: `${baseUrl}/terms`, lastModified: on('/terms'), changeFrequency: 'monthly', priority: 0.5 },
     { url: `${baseUrl}/licenses`, lastModified: on('/licenses'), changeFrequency: 'monthly', priority: 0.4 },
   ];
