@@ -13,6 +13,7 @@ import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import SiteFooter from '@/components/SiteFooter';
 import { APP_VERSION } from '@/lib/version';
 import UserOnboarding from '@/components/UserOnboarding';
+import TermsReacceptGate from '@/components/TermsReacceptGate';
 import { runsAreSelfFunded, runsRemaining } from '@/lib/run-quota-rule';
 
 export default function AppLayout({children}: {children: React.ReactNode}) {
@@ -289,6 +290,12 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           </div>
         </div>
       )}
+
+      {/* Asked once per Terms version, and it blocks: every protected route
+          refuses while the accepted version is stale, so a dismissible notice
+          would leave people in a product that answers 403 everywhere and reads
+          as broken. See the component for the whole reasoning. */}
+      <TermsReacceptGate />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-32">
         {children}
