@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { recordEmailSent } from '@/lib/email-events';
 import { CONTACT_EMAIL } from '@/lib/constants';
 import { APP_VERSION } from '@/lib/version';
-import { verifyAdminRequest, assertAdminStepUp } from '@/lib/firebase-admin';
+import { verifyAdminRequest, assertAdminStepUp, getAdminAuth } from '@/lib/firebase-admin';
 import { escapeHtml } from '@/lib/utils';
 import { mockMailAllowed } from '@/lib/mail-delivery-mode';
 import { wrapEmailDocument } from '@/lib/email-layout';
@@ -28,15 +28,27 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, name: rawName } = body;
+    const { uid, name: rawName } = body;
 
-    if (!email || !rawName) {
+    if (typeof uid !== 'string' || !uid || uid.length > 128 || !rawName) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // F-04: Empfängeradresse validieren (verhindert Missbrauch des Mailers selbst durch Admins)
-    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
-      return NextResponse.json({ error: 'Invalid recipient email.' }, { status: 400 });
+    // The address comes from the account, never from the request. It used to
+    // arrive in the body, copied by the admin console out of the request
+    // document — which the requester writes (tenant_access_requests, own uid,
+    // no field check). A request could therefore name any address, and the
+    // administrator's approval would mail it from team@clean-core.io, greeting
+    // it by name (security audit of b88c77b, SEC-2026-235). Same rule as the
+    // welcome mail since 3b8ca34: Auth says who the account is.
+    let email: string | null = null;
+    try {
+      email = (await (await getAdminAuth()).getUser(uid)).email ?? null;
+    } catch {
+      email = null;
+    }
+    if (!email) {
+      return NextResponse.json({ error: 'No account with a sign-in address under that uid.' }, { status: 404 });
     }
     if (typeof rawName !== 'string' || rawName.length > 200) {
       return NextResponse.json({ error: 'Invalid recipient name.' }, { status: 400 });
@@ -203,7 +215,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, to: email });
   } catch (error) {
     console.error('Error in send-tenant-revoke-email API:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

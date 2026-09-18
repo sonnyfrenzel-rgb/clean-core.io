@@ -708,7 +708,7 @@ class SkeletonBuilder {
     for (const [name, set] of this.effects) if (set.size === 0) this.helpers.add(name);
   }
 
-  private directEffects(block: Block): Set<FormEffect> {
+  private directEffects(block: Block, expanding: Set<string> = new Set()): Set<FormEffect> {
     const out = new Set<FormEffect>();
     const [from, to] = bodyRange(block);
     for (let i = from; i <= to; i++) {
@@ -718,7 +718,16 @@ class SkeletonBuilder {
       // the body is read here as if it stood at the call site.
       const macro = this.macros.get(statement.keyword);
       if (macro) {
-        for (const effect of this.directEffects(macro.block)) out.add(effect);
+        // A macro that names itself, or a ring of two, is not ABAP the compiler
+        // would take — but this reader is not the compiler, and without a floor
+        // the recursion ran until the stack gave out, which made one crafted
+        // DEFINE the end of the whole analysis (security audit of b88c77b,
+        // SEC-2026-227). A macro already being expanded is read once.
+        if (!expanding.has(statement.keyword)) {
+          expanding.add(statement.keyword);
+          for (const effect of this.directEffects(macro.block, expanding)) out.add(effect);
+          expanding.delete(statement.keyword);
+        }
         continue;
       }
       const text = statement.text;

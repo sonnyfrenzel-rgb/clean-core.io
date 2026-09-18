@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { sapApiHubHref, sapApiHubLink, safeHttpHref, escapeHtml } from '../lib/export-safety';
+import { sapApiHubHref, sapApiHubLink, sapApiHubUrl, safeHttpHref, escapeHtml } from '../lib/export-safety';
 import { escapeHtml as escapeHtmlFromUtils } from '../lib/utils';
 
 /**
@@ -249,4 +249,26 @@ test('the analysis export escapes every stored value it writes', () => {
 
   const stale = ANALYSIS_EXPORT_EXCEPTIONS.filter(([expr]) => !all.some((e) => e.expr === expr));
   expect(stale.map(([e]) => e), 'an audited exception no longer appears in the export').toEqual([]);
+});
+
+test("sapApiHubUrl keeps only SAP's API Hub over TLS, unescaped, for a React href", () => {
+  // Security audit of b88c77b, SEC-2026-236: the mapping table put the model's
+  // apiHubUrl straight on an anchor, the same defect as SEC-2026-152 one panel over.
+  expect(sapApiHubUrl('https://api.sap.com/api/API_BUSINESS_PARTNER/overview')).toBe('https://api.sap.com/api/API_BUSINESS_PARTNER/overview');
+  expect(sapApiHubUrl('  HTTPS://API.SAP.COM/api/X?a=1&b=2 ')).toBe('https://api.sap.com/api/X?a=1&b=2');
+  expect(sapApiHubUrl('https://hub.api.sap.com/x')).toBe('https://hub.api.sap.com/x');
+  for (const bad of ['javascript:alert(1)', 'http://api.sap.com/x', 'https://evil.example/api.sap.com', 'https://api.sap.com.evil.example/x', 'https://notapi.sap.com/x', 'data:text/html,hi', '/relative', '', undefined, null, 42]) {
+    expect(sapApiHubUrl(bad), `${String(bad)} came through`).toBe('');
+  }
+  // The exported-HTML form is the same decision, escaped once for an attribute.
+  expect(sapApiHubHref('https://api.sap.com/api/X?a=1&b=2')).toBe('https://api.sap.com/api/X?a=1&amp;b=2');
+});
+
+test("neither the API Hub mapping table nor the markdown export puts the model's URL on a link unchecked", () => {
+  const table = fs.readFileSync(path.join(__dirname, '..', 'components', 'design', 'ApiBusinessHubMapping.tsx'), 'utf8');
+  expect(table, 'href={map.apiHubUrl} is back on the anchor').not.toMatch(/href=\{map\.apiHubUrl\}/);
+  expect(table).toMatch(/href=\{sapApiHubUrl\(map\.apiHubUrl\)\}/);
+  const md = fs.readFileSync(path.join(__dirname, '..', 'lib', 'markdownFormatter.ts'), 'utf8');
+  expect(md, 'the markdown export links the raw apiHubUrl').not.toMatch(/\]\(\$\{map\.apiHubUrl\}\)/);
+  expect(md).toMatch(/sapApiHubUrl\(map\.apiHubUrl\)/);
 });

@@ -244,8 +244,10 @@ export default function AdminConsole() {
               'Content-Type': 'application/json',
               ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             },
+            // The route looks the address up on the account; the request
+            // document's copy is the requester's own writing (SEC-2026-235).
             body: JSON.stringify({
-              email: targetReq.email,
+              uid: targetReq.uid,
               name: targetReq.name
             })
           });

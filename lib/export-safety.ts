@@ -42,8 +42,15 @@ export function escapeHtml(value: unknown): string {
     .replace(/'/g, '&#39;');
 }
 
-/** SAP's API Hub, over TLS, or no link at all. */
-export function sapApiHubHref(raw: unknown): string {
+/**
+ * SAP's API Hub, over TLS, as the parsed URL — or nothing. This is the form for
+ * a React `href`, which React quotes itself; `sapApiHubHref` below escapes it
+ * once more for a hand-built attribute in an exported document. Kept apart
+ * from `safeHttpHref` because the mapping table promises *SAP's* documentation,
+ * and a model that puts any other host there has not kept that promise
+ * (security audit of b88c77b, SEC-2026-236).
+ */
+export function sapApiHubUrl(raw: unknown): string {
   if (typeof raw !== 'string') return '';
   let url: URL;
   try {
@@ -54,7 +61,13 @@ export function sapApiHubHref(raw: unknown): string {
   if (url.protocol !== 'https:') return '';
   const host = url.hostname.toLowerCase();
   if (host !== 'api.sap.com' && !host.endsWith('.api.sap.com')) return '';
-  return escapeHtml(url.toString());
+  return url.toString();
+}
+
+/** SAP's API Hub, over TLS, escaped for an exported HTML attribute — or no link at all. */
+export function sapApiHubHref(raw: unknown): string {
+  const url = sapApiHubUrl(raw);
+  return url ? escapeHtml(url) : '';
 }
 
 /**

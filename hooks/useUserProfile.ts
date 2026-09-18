@@ -140,7 +140,6 @@ export function useUserProfile() {
       setLoading(false);
       return;
     }
-    console.log('[PROFILE HOOK LOG] useEffect auth listener mounted. auth.currentUser:', auth.currentUser ? auth.currentUser.email : 'null');
     // The profile listener from the previous signed-in user, so it can be torn
     // down when the user changes.
     //

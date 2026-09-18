@@ -1,4 +1,5 @@
 import { readStoredAnalysis, withoutUnapprovedMoney } from './money-honesty';
+import { sapApiHubUrl } from './export-safety';
 
 /**
  * Professional Markdown Formatting Engine
@@ -123,7 +124,7 @@ export function formatDesignToMarkdown(rawJson: string): string {
       md += `| Legacy Object | Target Released SAP Public API | Business Accelerator Hub ID | Integration Role / Context | Link |\n`;
       md += `| :--- | :--- | :--- | :--- | :--- |\n`;
       data.sapStandardApiMapping.forEach((map: any) => {
-        md += `| \`${map.legacyTableOrFunction}\` | **${map.sapStandardApiName}** | \`${map.apiId}\` | ${map.description} | [API Hub Reference](${map.apiHubUrl}) |\n`;
+        md += `| \`${map.legacyTableOrFunction}\` | **${map.sapStandardApiName}** | \`${map.apiId}\` | ${map.description} | ${sapApiHubUrl(map.apiHubUrl) ? `[API Hub Reference](${sapApiHubUrl(map.apiHubUrl)})` : 'no API Hub link'} |\n`;
       });
       md += `\n`;
     }

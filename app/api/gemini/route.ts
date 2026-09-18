@@ -196,6 +196,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // `prompt` goes to the model as its `contents`, which the API also takes as
+    // a structured array. An array has a `.length` of its own — the element
+    // count — so the character limit below measured 1 for a client that sent
+    // one element holding a megabyte. One shape, one measure (security audit
+    // of b88c77b, SEC-2026-225). The only client, lib/gemini.ts, sends a string.
+    if (typeof prompt !== 'string') {
+      return NextResponse.json(
+        { error: 'The prompt must be a single string.' },
+        { status: 400 },
+      );
+    }
+
     // F-07: Validate model against server-side allowlist
     if (!ALLOWED_MODELS.has(model)) {
       return NextResponse.json(

@@ -735,3 +735,26 @@ test.describe('rule 7 — kind and line are not an identity', () => {
     }
   });
 });
+
+test('a ring of macros does not take the reader down with it', () => {
+  // Security audit of b88c77b, SEC-2026-227: the effect reader followed a macro
+  // into itself with no floor; two DEFINEs naming each other were a stack
+  // overflow, and one crafted upload the end of the analysis.
+  const source = [
+    'REPORT z_macro_ring.',
+    'DEFINE loop_a.',
+    '  loop_b.',
+    'END-OF-DEFINITION.',
+    'DEFINE loop_b.',
+    '  loop_a.',
+    "  SELECT SINGLE * FROM mara INTO @DATA(ls_mara) WHERE matnr = '1'.",
+    'END-OF-DEFINITION.',
+    'FORM read_it.',
+    '  loop_a.',
+    'ENDFORM.',
+    'START-OF-SELECTION.',
+    '  PERFORM read_it.',
+  ].join('\n');
+  const skeleton = buildProcessSkeleton(source);
+  expect(skeleton).toBeTruthy();
+});

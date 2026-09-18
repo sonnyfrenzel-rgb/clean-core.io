@@ -401,7 +401,9 @@ test.describe('a mail nobody could send is not reported as sent', () => {
       expect(s, `${rel} logs the mock unguarded`).toContain('} else if (mockMailAllowed()) {');
       // The 503 has to come before the success answer, or the fallthrough is back.
       const refusal = s.indexOf('{ status: 503 }');
-      const success = s.indexOf('NextResponse.json({ success: true })');
+      // A prefix, not the whole literal: the tenant routes answer `{ success: true, to }`
+      // since SEC-2026-235, and the order is what this pin is about.
+      const success = s.indexOf('NextResponse.json({ success: true');
       expect(refusal, `${rel} has no 503 for a missing mail configuration`).toBeGreaterThan(-1);
       expect(refusal, `${rel} answers success before it refuses`).toBeLessThan(success);
     }

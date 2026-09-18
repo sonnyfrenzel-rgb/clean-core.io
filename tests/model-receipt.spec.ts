@@ -372,3 +372,15 @@ test('the proxy issues a receipt the run route accepts', async ({ request }) => 
   expect(run.model.provider).toBe(MODEL_PROVIDER_ID);
   expect(run.model.modelId).toBe(receipt.modelId);
 });
+
+test('the proxy takes one string, not a structured contents array', async ({ request }: { request: APIRequestContext }) => {
+  // Security audit of b88c77b, SEC-2026-225: `prompt` is forwarded as the model's
+  // `contents`, and an array's `.length` is its element count — one element
+  // holding a megabyte measured as 1 against the 250,000-character limit.
+  const res = await request.post('/api/gemini', {
+    headers: headers(),
+    data: { prompt: [{ role: 'user', parts: [{ text: 'x'.repeat(10) }] }], stage: 'analyze' },
+  });
+  expect(res.status(), await res.text()).toBe(400);
+  expect((await res.json()).error).toContain('single string');
+});

@@ -2,6 +2,7 @@
 
 import { Network, ArrowUpRight } from 'lucide-react';
 import GlossaryTerm from '@/components/GlossaryTerm';
+import { sapApiHubUrl } from '@/lib/export-safety';
 
 interface ApiMapping {
   legacyTableOrFunction: string;
@@ -49,14 +50,28 @@ export default function ApiBusinessHubMapping({ sapStandardApiMapping }: ApiBusi
                 <td className="py-4 px-4"><span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded font-mono text-[10px]">{map.apiId}</span></td>
                 <td className="py-4 px-4 text-slate-600 leading-relaxed max-w-sm">{map.description}</td>
                 <td className="py-4 text-right">
-                  <a
-                    href={map.apiHubUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[10px] font-black text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-105 border border-blue-100 hover:border-blue-200 px-3.5 py-2 rounded-xl transition-all shadow-sm uppercase tracking-widest"
-                  >
-                    Open API Hub <ArrowUpRight className="w-3 h-3" />
-                  </a>
+                  {sapApiHubUrl(map.apiHubUrl) ? (
+                    <a
+                      href={sapApiHubUrl(map.apiHubUrl)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[10px] font-black text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-105 border border-blue-100 hover:border-blue-200 px-3.5 py-2 rounded-xl transition-all shadow-sm uppercase tracking-widest"
+                    >
+                      Open API Hub <ArrowUpRight className="w-3 h-3" />
+                    </a>
+                  ) : (
+                    /* The model's address was not api.sap.com over TLS. It used
+                       to go on the anchor as it came, so a javascript: or a
+                       foreign link was one click away (security audit of
+                       b88c77b, SEC-2026-236). */
+                    <span
+                      data-api-hub-unlinked
+                      className="inline-flex items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest"
+                      title="The model gave no api.sap.com address for this entry, so there is nothing safe to open."
+                    >
+                      No API Hub link
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}
