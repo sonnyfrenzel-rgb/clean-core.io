@@ -318,6 +318,22 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     Bezeichnernamen ansetzen. **Beides ist eine Änderung an der Agentenmaschinerie und braucht
     nach `CLAUDE.md` Sonnys Go**, ist also bewusst hier notiert und nicht getan.
 
+23. **Aus 7.3 (18.09.2026, abends) — drei Entscheidungen für Sonny, zwei Folgeschritte.**
+    Entscheidungen: *(a)* darf ein Lauf in der Mock-Sandbox irgendwo „bestanden" heißen? Gebaut
+    ist: nie an einer Fähigkeit (E3, `mock-only`, `demonstrated-mock`, nie grün); das Wort bleibt
+    dem Runner für seine eigene Ausgabe. Vorschlag: so lassen, in der Oberfläche „Demonstrated
+    in the mock sandbox". *(b)* Der Receipt-Versionssprung 1→2 retiriert jedes gespeicherte
+    Receipt — Bestandsprojekte lesen sich als *self-reported*, bis die Suite neu läuft.
+    Vorschlag: so lassen, eine aufgefüllte Stub-Liste wäre die Lüge, die 7.3 verhindern soll.
+    *(c)* Ein Lauf mit ersetzten Paketen (`@sap/xssec` durch Mock) erreicht E3 und *nennt* die
+    Stubs; Alternative wäre ein Deckel bei E2. Vorschlag: so lassen, E3 heißt schon „gegen Mocks".
+    Folgeschritte: die Zuordnung Szenario→Testfall wird **deklariert, nie geraten** — heute lehnt
+    `scenarioDemonstrations` mit `not-linked` ab, bis jemand sie erklärt; wenn der Testgenerator
+    das nächste Mal angefasst wird, `CCS-nnn` als Fall-ID ausgeben und einen Leser bestätigen
+    lassen. Und: **keine Oberfläche** — die Testing-Stufe zeigt die Szenarien noch nicht; „damit
+    Fachbereiche sie ohne ABAP prüfen" ist erst eingelöst, wenn sie sie sehen. Ungeprüft bleibt,
+    ob die Wortwahl für einen Fachbereich trägt: gelesen hat sie außer dem Agenten niemand.
+
 ### Hygiene, bevor die nächste Welle startet
 
 20. **Emulator und Dev-Server neu starten**, bevor mehr als vier Agenten laufen. Der Emulator stand
