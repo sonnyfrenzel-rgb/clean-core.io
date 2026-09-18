@@ -317,6 +317,11 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     `datei + kategorie` statt über den Titel bilden, und die Sekretdetektion auf Werte statt auf
     Bezeichnernamen ansetzen. **Beides ist eine Änderung an der Agentenmaschinerie und braucht
     nach `CLAUDE.md` Sonnys Go**, ist also bewusst hier notiert und nicht getan.
+    **Beobachtung, nicht diagnostiziert (18.09., spät):** die QA-Delta-Prüfung zu `13e474c` meldete
+    den Backlog-Befund zu Scope Items als „nur in der Commit-Nachricht, kein Prosa-Diff enthalten" —
+    der Push `14ab490..13e474c` enthielt aber `a650a09` mit 29 Zeilen in `docs/BACKLOG.md`
+    (`git diff --stat` nachgeprüft). Ob der Prüfer nur den HEAD-Commit oder einen gefilterten
+    Ausschnitt sieht, ist offen; ein einzelner Fall, daher hier nur festgehalten.
 
 23. **Aus 7.3 (18.09.2026, abends) — drei Entscheidungen, von Sonny entschieden: a) lassen, b) lassen,
     c) lassen (18.09., spät). Zwei Folgeschritte bleiben.** Zur Nachvollziehbarkeit die Fragen:
