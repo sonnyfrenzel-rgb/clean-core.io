@@ -202,6 +202,60 @@ test.describe('a test result belongs to the project it is reported for', () => {
     expect(coveringTestRunReceipt(stored as Project), 'the receipt does not fit the project it was written on').toBeTruthy();
   });
 
+  /**
+   * The scope and the stub list are what the run *observed*, not what the
+   * request *said*.
+   *
+   * The test above shows the happy path: two known ids in, the same two stored.
+   * That would also pass if the route stored the request's list unread. This
+   * one sends an id the project does not hold and a stub list the request has
+   * no business supplying, and reads back what was persisted: the unknown id is
+   * gone, and the stub list is the sandbox's own, not the caller's. QA review of
+   * 5cbc8deaa23c asked for exactly this pair.
+   */
+  test('the receipt narrows the scope to cases the project holds, and takes the stub list from the sandbox, not the request', async ({ request }) => {
+    test.setTimeout(90 * 1000);
+    const res = await request.post('/api/run-tests', {
+      headers: { Authorization: `Bearer ${token}` },
+      data: {
+        projectId: PROJECT_ID,
+        selectedTestIds: ['TC_01', 'TC_99', 'TC_01'],
+        // Not a field this route reads. Planted the way a client that wanted its
+        // run to look like it had stubbed nothing - or everything - would send it.
+        stubs: ['@sap/xssec', 'planted-package'],
+      },
+    });
+    expect(res.status(), await res.text()).toBe(200);
+    const body = await res.json();
+    const stored = await read(`projects/${PROJECT_ID}`);
+    expect(isTestRunReceipt(stored?.testRunReceipt), 'no receipt was written').toBe(true);
+
+    // TC_99 is nobody's case; the duplicate collapses. What is stored is a scope
+    // a reader can check against the project's own suite.
+    expect(stored?.testRunReceipt.scope).toEqual({ selected: ['TC_01'], cases: CASES.length });
+
+    // The stub list is whatever the sandbox replaced before the suite loaded -
+    // observed on the server, never copied from the body.
+    const stubs: string[] = stored?.testRunReceipt.stubs;
+    expect(Array.isArray(stubs)).toBe(true);
+    expect(stubs, 'a package the request named ended up in the receipt').not.toContain('@sap/xssec');
+    expect(stubs).not.toContain('planted-package');
+    // And the response reports the same observation it persisted.
+    if (Array.isArray(body.stubs)) expect([...body.stubs].sort()).toEqual([...stubs].sort());
+
+    // Leave the project as the tests below expect to find it: a run over both
+    // cases. This test narrowed the stored scope on purpose, and the "green by
+    // itself" test further down reads that stored state - the first version of
+    // this test left one case behind and turned that one red for a reason that
+    // had nothing to do with what it checks.
+    const restore = await request.post('/api/run-tests', {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { projectId: PROJECT_ID, selectedTestIds: ['TC_01', 'TC_02'] },
+    });
+    expect(restore.status(), await restore.text()).toBe(200);
+    expect((await read(`projects/${PROJECT_ID}`))?.testRunReceipt.scope).toEqual({ selected: ['TC_01', 'TC_02'], cases: CASES.length });
+  });
+
   test('an administrator cannot put an execution receipt on a stranger\'s project', async ({ request }) => {
     test.setTimeout(120 * 1000);
     // The receipt is what turns Testing and Delivery green, so the route that

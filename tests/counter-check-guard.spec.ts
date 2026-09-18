@@ -109,6 +109,34 @@ ENDFORM.
 `;
 
 /** A condition that mixes AND with OR: no combination rule may be stated for it. */
+/**
+ * Half the values are fields, one is worked out at run time: `gs_x-a` can be
+ * put on a record, `lo_ref->get_value( )` cannot. The first cut counted this
+ * as runnable and wrote the expression into the data need as a clause; a QA
+ * review of 5cbc8deaa23c called that what it is - a data need with a hole.
+ */
+const HALF_NAMED = `REPORT ztest.
+START-OF-SELECTION.
+  PERFORM check_it.
+
+FORM check_it.
+  IF gs_x-a > 5 AND gs_x-b > lo_ref->get_value( ).
+    WRITE / 'hit'.
+  ENDIF.
+ENDFORM.
+`;
+
+const SUBJECT_MIXED = `REPORT ztest.
+START-OF-SELECTION.
+  PERFORM check_it.
+
+FORM check_it.
+  IF lo_ref->get_value( ) > 42 AND gs_x-a > 5.
+    WRITE / 'hit'.
+  ENDIF.
+ENDFORM.
+`;
+
 const MIXED = `REPORT ztest.
 START-OF-SELECTION.
   PERFORM check_it.
@@ -301,8 +329,10 @@ test.describe('every decision gets both arms', () => {
     expect(po.counts).toEqual({
       rules: 11,
       scenarios: 16,
-      runnable: 16,
-      blocked: { 'subject-not-named': 0 },
+      // Two of the sixteen (BR-010, both arms) compare more than the engine
+      // reads and are blocked, not runnable - measured, not chosen.
+      runnable: 14,
+      blocked: { 'subject-not-named': 0, 'value-not-named': 0, 'condition-partly-read': 2 },
       withoutScenario: 3,
       dataNeeds: 22,
       withCapability: 16,
@@ -421,6 +451,39 @@ test.describe('the test data need', () => {
     }
     expect(out.counts.runnable).toBe(0);
     expect(deriveStandardCoverage(NO_SUBJECT).unassigned.map((u) => u.ruleId)).toEqual(['BR-001']);
+  });
+
+  test('a condition the engine could only partly read is blocked, not counted as runnable', () => {
+    const out = deriveCounterCheckScenarios(HALF_NAMED);
+    expect(out.scenarios.length, 'one rule, two arms').toBe(2);
+    for (const scenario of out.scenarios) {
+      // The comparison the engine did read is still written down - a reader
+      // sees what *can* be prepared - but the second one never became a need,
+      // and a scenario with a hole is not offered as something to run.
+      expect(scenario.data.map((d) => d.field)).toEqual(['gs_x-a']);
+      expect(scenario.blocked?.reason).toBe('condition-partly-read');
+      expect(scenario.blocked?.detail).toContain('Read the anchored line first');
+      expect(scenario.notes.join(' ')).toContain('compares more than the engine could read');
+    }
+    expect(out.counts.runnable).toBe(0);
+    expect(out.counts.blocked).toEqual({ 'subject-not-named': 0, 'value-not-named': 0, 'condition-partly-read': 2 });
+  });
+
+  /**
+   * The other mixed shape: the engine read *both* comparisons, but one of them
+   * has an expression where a field would be. `gs_x-a` can go on a record;
+   * `lo_ref->get_value( )` cannot. Half a record is not a record.
+   */
+  test('a decision with an expression beside a named field is blocked, and says on which line', () => {
+    const out = deriveCounterCheckScenarios(SUBJECT_MIXED);
+    expect(out.scenarios.length).toBe(2);
+    for (const scenario of out.scenarios) {
+      expect(scenario.data.map((d) => d.field)).toEqual([null, 'gs_x-a']);
+      expect(scenario.blocked?.reason).toBe('value-not-named');
+      expect(scenario.blocked?.detail).toContain('L6');
+    }
+    expect(out.counts.runnable).toBe(0);
+    expect(out.counts.blocked).toEqual({ 'subject-not-named': 0, 'value-not-named': 2, 'condition-partly-read': 0 });
   });
 
   test('a constant nothing reads yields no scenario and is not dropped either', () => {

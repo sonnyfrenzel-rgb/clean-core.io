@@ -153,7 +153,19 @@ test.describe('the privacy policy in two languages', () => {
   const EN_BASIS = /Legal basis:/;
   const DE_BASIS = /Rechtsgrundlage:/;
 
-  type Purpose = { label: string; hasBasis: boolean };
+  type Purpose = { label: string; hasBasis: boolean; bases: string[] };
+
+  /**
+   * The letters of Art. 6(1) a purpose cites, as a sorted set: `b`, or `b,f`.
+   * English writes `Art. 6(1)(b) GDPR`, German `Art. 6 Abs. 1 lit. b DSGVO`;
+   * the letter is the one thing the two spellings share, and it is the thing
+   * that has to agree - a purpose based on consent in one language and on
+   * legitimate interest in the other is the drift Art. 13(1)(c) cares about.
+   */
+  const basisLetters = (item: string, pattern: RegExp): string[] =>
+    [...new Set([...item.matchAll(pattern)].map((m) => m[1]))].sort();
+  const EN_LETTER = /Art\. 6\(1\)\(([a-f])\)/g;
+  const DE_LETTER = /Art\. 6 Abs\. 1 lit\. ([a-f])/g;
 
   /** The <ul> that carries the basis marker, split into its <li> items. */
   const purposesList = (src: string, basisMarker: RegExp): { before: string; list: string; after: string } => {
@@ -169,13 +181,14 @@ test.describe('the privacy policy in two languages', () => {
     throw new Error('no list carrying a legal basis was found');
   };
 
-  const purposesWithBasis = (src: string, basisMarker: RegExp): Purpose[] =>
+  const purposesWithBasis = (src: string, basisMarker: RegExp, letter: RegExp): Purpose[] =>
     purposesList(src, basisMarker)
       .list.split(/<li>/)
       .slice(1)
       .map((item) => ({
         label: (item.match(/<strong[^>]*>([^<]*)<\/strong>/)?.[1] ?? '').replace(/:\s*$/, '').trim(),
         hasBasis: basisMarker.test(item),
+        bases: basisLetters(item, letter),
       }));
 
   /** The first place the two lists disagree, or null when they agree throughout. */
@@ -193,13 +206,19 @@ test.describe('the privacy policy in two languages', () => {
           `German "${de[i].label}" ${de[i].hasBasis ? 'states' : 'lacks'} one`
         );
       }
+      if (en[i].bases.join(',') !== de[i].bases.join(',')) {
+        return (
+          `purpose ${i + 1}: English "${en[i].label}" rests on Art. 6(1)(${en[i].bases.join(', ') || '?'}), ` +
+          `German "${de[i].label}" on Art. 6 Abs. 1 lit. ${de[i].bases.join(', ') || '?'} - not the same basis`
+        );
+      }
     }
     return null;
   };
 
   test('the same purposes carry a legal basis in both versions, pairwise', () => {
-    const en = purposesWithBasis(read(EN), EN_BASIS);
-    const de = purposesWithBasis(read(DE), DE_BASIS);
+    const en = purposesWithBasis(read(EN), EN_BASIS, EN_LETTER);
+    const de = purposesWithBasis(read(DE), DE_BASIS, DE_LETTER);
 
     // Not vacuous: the list actually has purposes, and every one of them names
     // its basis today - a guard that passed on an empty list would prove nothing.
@@ -237,9 +256,35 @@ test.describe('the privacy policy in two languages', () => {
     expect(count(mutated), 'the mutation changed the total, so it does not test the blind spot').toBe(count(enSrc));
 
     // The pairwise check does.
-    const mismatch = firstPairwiseMismatch(purposesWithBasis(mutated, EN_BASIS), purposesWithBasis(read(DE), DE_BASIS));
+    const mismatch = firstPairwiseMismatch(purposesWithBasis(mutated, EN_BASIS, EN_LETTER), purposesWithBasis(read(DE), DE_BASIS, DE_LETTER));
     expect(mismatch, 'the pairwise check let a moved legal basis through').not.toBeNull();
     expect(mismatch).toMatch(/^purpose 1:/);
+  });
+
+  /**
+   * And a basis that is *present* in both but *different* - consent in one
+   * language, legitimate interest in the other. Presence and count both stay
+   * equal; only the letters disagree. QA review of 5cbc8deaa23c asked for the
+   * semantic half, and this is the half of it that has a key: the article
+   * letter is shared by both spellings, the prose label is not.
+   */
+  test('and it catches the same purpose resting on a different legal basis in the two languages', () => {
+    const enSrc = read(EN);
+    const { before, list, after } = purposesList(enSrc, EN_BASIS);
+    const first = list.indexOf('Art. 6(1)(b)');
+    expect(first, 'no purpose on Art. 6(1)(b) to alter').toBeGreaterThanOrEqual(0);
+    const altered = list.slice(0, first) + 'Art. 6(1)(f)' + list.slice(first + 'Art. 6(1)(b)'.length);
+    const mutated = before + altered + after;
+
+    const count = (src: string) => (src.match(/Legal basis:/g) ?? []).length;
+    expect(count(mutated)).toBe(count(enSrc));
+
+    const en = purposesWithBasis(mutated, EN_BASIS, EN_LETTER);
+    const de = purposesWithBasis(read(DE), DE_BASIS, DE_LETTER);
+    expect(en.every((p) => p.hasBasis), 'the mutation removed a basis; it was meant to change one').toBe(true);
+    const mismatch = firstPairwiseMismatch(en, de);
+    expect(mismatch, 'a purpose on a different basis in the two languages went unnoticed').not.toBeNull();
+    expect(mismatch).toMatch(/not the same basis/);
   });
 
   test('neither version claims sharing does not exist', () => {

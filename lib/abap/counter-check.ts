@@ -114,7 +114,21 @@ export type NeedCombination =
 /** Why a scenario cannot be run as written. Set exactly when it is not runnable. */
 export type ScenarioBlockedReason =
   /** The code compares the value with an expression, so no field can be named. */
-  'subject-not-named';
+  | 'subject-not-named'
+  /**
+   * Some of the values are named fields and at least one is an expression: the
+   * record can be partly prepared and partly not, which is not a record anybody
+   * can prepare. Counting such a scenario as runnable would hand a tester a
+   * data need with a hole in it (QA review of 5cbc8deaa23c).
+   */
+  | 'value-not-named'
+  /**
+   * The condition compares more than the engine could read out of it. What was
+   * read is written down; what was not cannot be turned into a record. That is
+   * a job for a reader at the anchored line - roadmap 7.5, a review task rather
+   * than a verdict - and not a scenario to run (QA review of 5cbc8deaa23c).
+   */
+  | 'condition-partly-read';
 
 /** Why a rule yields no scenario at all. */
 export type NoScenarioReason =
@@ -225,7 +239,7 @@ export function deriveCounterCheckScenarios(source: string): CounterCheckScenari
         rules: 0,
         scenarios: 0,
         runnable: 0,
-        blocked: { 'subject-not-named': 0 },
+        blocked: { 'subject-not-named': 0, 'value-not-named': 0, 'condition-partly-read': 0 },
         withoutScenario: 0,
         dataNeeds: 0,
         withCapability: 0,
@@ -255,7 +269,7 @@ export function deriveCounterCheckScenariosFrom(ruleSet: BusinessRuleSet): Count
     for (const arm of ARMS) scenarios.push(buildScenario(rule, arm, scenarios.length + 1));
   }
 
-  const blocked: Record<ScenarioBlockedReason, number> = { 'subject-not-named': 0 };
+  const blocked: Record<ScenarioBlockedReason, number> = { 'subject-not-named': 0, 'value-not-named': 0, 'condition-partly-read': 0 };
   for (const scenario of scenarios) {
     if (scenario.blocked) blocked[scenario.blocked.reason] += 1;
   }
@@ -608,7 +622,21 @@ function buildScenario(rule: BusinessRule, arm: ScenarioArm, index: number): Cou
     notes.push(`Not stated in the code: ${caveat}.`);
   }
 
-  const blocked = blockedOf(data);
+  // Three ways a scenario can be un-runnable, in order of how little was
+  // read: no subject at all, a subject beside an expression, a comparison the
+  // engine could not read. The first cut kept the third as a note on a
+  // runnable scenario; a note is not enough when the data need it decorates
+  // has a hole in it.
+  const blocked: CounterCheckScenario['blocked'] =
+    blockedOf(data) ??
+    (conditionPartlyRead(rule)
+      ? {
+          reason: 'condition-partly-read',
+          detail:
+            'The condition compares more than the engine could read out of it, so no record can be prepared from ' +
+            'the values here alone. Read the anchored line first.',
+        }
+      : null);
 
   const given = clause(
     'given',
@@ -651,6 +679,22 @@ function blockedOf(data: readonly TestDataNeed[]): CounterCheckScenario['blocked
       reason: 'subject-not-named',
       detail:
         'The code compares the value with an expression rather than with a named field, so nobody can be told which record to prepare.',
+    };
+  }
+  // A mix: some values are fields a record can carry, at least one is an
+  // expression the code works out at run time. The first cut let this through
+  // as runnable, with the expression rendered as a clause - and a data need
+  // that says "and the expression compared on L40 is greater than 5" is not a
+  // need anybody can fill from the sheet. It is a scenario with a hole, and a
+  // hole is a reason, not a footnote.
+  const unnamed = data.filter((need) => need.field === null);
+  if (unnamed.length > 0) {
+    const lines = [...new Set(unnamed.flatMap((need) => need.anchors))].join(', ');
+    return {
+      reason: 'value-not-named',
+      detail:
+        `The code compares against an expression on ${lines}, not a named field; the record cannot be prepared ` +
+        'until that value is established outside this sheet.',
     };
   }
   return null;
