@@ -29,6 +29,7 @@ export const CONTENT_LAST_MODIFIED: Record<string, string> = {
   '/trust': '2026-09-17',
   '/impressum': '2026-07-06',
   '/datenschutz': '2026-09-18',
+  '/datenschutz/de': '2026-09-18',
   '/terms': '2026-09-18',
   '/licenses': '2026-07-10',
   '/catalog': '2026-09-18',

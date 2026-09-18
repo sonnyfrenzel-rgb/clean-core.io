@@ -50,6 +50,7 @@ const ROUTE_SOURCES = {
     'lib/how-to-content.ts',
     'lib/reference-analysis.ts',
     'lib/facts.ts',
+    'lib/abap/catalog-service.ts',
     'lib/abap/support-matrix.ts',
   ],
   '/clean-core-explained': [
@@ -60,12 +61,18 @@ const ROUTE_SOURCES = {
   '/first-run': ['app/(app)/first-run/page.tsx', 'lib/starter-examples.ts'],
   '/how-to': ['app/(app)/how-to/page.tsx', 'components/HowToClient.tsx', 'lib/how-to-content.ts'],
   '/knowledge': ['app/(app)/knowledge/page.tsx', 'components/KnowledgeClient.tsx'],
-  '/abap-custom-code-analysis': ['app/(app)/abap-custom-code-analysis/page.tsx', 'lib/facts.ts'],
+  '/abap-custom-code-analysis': ['app/(app)/abap-custom-code-analysis/page.tsx', 'lib/facts.ts', 'lib/abap/catalog-service.ts'],
   '/clean-core-score': ['app/(app)/clean-core-score/page.tsx'],
   // The facts service (roadmap 0.2, UX-E14-F01:R0) — the single source the four
   // marketing pages above also read from, published for a reader who wants the
   // provenance behind a number rather than the headline.
-  '/facts': ['app/facts/page.tsx', 'lib/facts.ts'],
+  // `lib/facts.ts` is a wrapper, not a source: every figure it publishes is read
+  // back out of `catalog-service.ts` and the two synced SAP artifacts. Listing
+  // facts alone would have frozen these dates — a catalog sync changes the
+  // numbers on the page without touching either the page or the wrapper, and the
+  // sitemap would then claim the content was older than it is. That is the exact
+  // defect this table exists to prevent. Caught by the QA review of fdfe4f976742.
+  '/facts': ['app/facts/page.tsx', 'lib/facts.ts', 'lib/abap/catalog-service.ts'],
   '/sap-clean-core-object-classification': [
     'app/(app)/sap-clean-core-object-classification/page.tsx',
     'lib/abap/catalog-service.ts',
@@ -75,8 +82,8 @@ const ROUTE_SOURCES = {
   // two SAP artifacts, so the page is exactly as fresh as that function and the
   // rules it reports on — not as fresh as its own JSX.
   '/method/levels': ['app/method/levels/page.tsx', 'lib/abap/catalog-service.ts', 'lib/abap/abcd-classification.ts'],
-  '/sap-cloudification': ['app/(app)/sap-cloudification/page.tsx', 'lib/facts.ts'],
-  '/how-it-works': ['app/(app)/how-it-works/page.tsx', 'lib/facts.ts', 'lib/abap/support-matrix.ts'],
+  '/sap-cloudification': ['app/(app)/sap-cloudification/page.tsx', 'lib/facts.ts', 'lib/abap/catalog-service.ts'],
+  '/how-it-works': ['app/(app)/how-it-works/page.tsx', 'lib/facts.ts', 'lib/abap/catalog-service.ts', 'lib/abap/support-matrix.ts'],
   '/about': ['app/(app)/about/page.tsx'],
   // Every figure and every construct row in the whitepaper is read from these two.
   '/whitepaper': ['app/whitepaper/page.tsx', 'lib/reference-analysis.ts', 'lib/abap/support-matrix.ts'],
@@ -85,6 +92,12 @@ const ROUTE_SOURCES = {
   '/trust': ['app/(app)/trust/page.tsx'],
   '/impressum': ['app/impressum/page.tsx'],
   '/datenschutz': ['app/datenschutz/page.tsx'],
+  // The German version is its own route in `app/sitemap.ts` and needs its own
+  // entry here. It was missing from the day the page shipped (1c3476d): the
+  // table was never told about it, and nothing noticed while the generated file
+  // still carried a hand-written line for it. Regenerating removed that line —
+  // the script only writes what this table names — and `sitemap-guard` went red.
+  '/datenschutz/de': ['app/datenschutz/de/page.tsx'],
   '/terms': ['app/terms/page.tsx'],
   '/licenses': ['app/licenses/page.tsx'],
   // `CatalogAttribution` is the Apache-2.0 attribution and the trademark notice,
