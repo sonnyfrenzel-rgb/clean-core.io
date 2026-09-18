@@ -245,7 +245,7 @@ test('an account the server grandfathers is asked, not shut out', async ({ page 
  * This is the test that would have caught it, so it is written the way the day
  * actually looks: an account holding the version production served.
  */
-test('an account on the previous published version is asked, and keeps working', async ({ page }) => {
+test('an account on the previous published version is asked, and keeps working', async ({ page, request }) => {
   test.setTimeout(180 * 1000);
 
   const email = `terms-prev-${STAMP}@cleancore-test.io`;
@@ -278,6 +278,20 @@ test('an account on the previous published version is asked, and keeps working',
 
   // And the product is usable behind it, which is what § 10.3 promises.
   await page.locator('h1, h2').first().click({ timeout: 15000 });
+
+  // The assertion that actually decides release day: a *protected route*
+  // answers. A clickable heading only shows that nothing covers the page; the
+  // refusal § 10.3 forbids happens on the server, in
+  // `assertAccountActive(..., { requireCurrentTerms: true })`, and this is the
+  // only way to see it (QA review of 4b54de668a93).
+  const token = await cred.user.getIdToken(true);
+  const gated = await request.get('/api/model-stages', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  expect(
+    gated.status(),
+    `a protected route refused an account on the previous, still-in-force Terms: ${await gated.text()}`,
+  ).toBe(200);
 });
 
 test('the version production serves today is one the platform still honours', () => {
