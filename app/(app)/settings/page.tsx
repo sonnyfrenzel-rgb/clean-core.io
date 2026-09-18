@@ -1464,6 +1464,13 @@ export default function SettingsPage() {
                     </button>
                   )}
                 </div>
+                {/* Said before the request rather than as a 403 after it: the
+                    own-key routes require an enrolled factor (lib/mfa-gate.ts,
+                    byokRequiresEnrolment). */}
+                <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                  Storing, testing or removing your own key requires multi-factor authentication on this account —
+                  enable it in the Security section first.
+                </p>
               </form>
             </div>
           )}
@@ -1794,6 +1801,15 @@ export default function SettingsPage() {
                           </>
                         )}
                       </button>
+                      {/* Said here, before the request, rather than as a 403
+                          after approval: the enrolment requirement is enforced
+                          by every S/4 route (lib/firebase-admin.ts,
+                          assertS4TenantAccess). */}
+                      <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                        Live S/4HANA access requires multi-factor authentication on this account. Enable it in the
+                        Security section above before you use a connection — the S/4 endpoints refuse an account
+                        without an enrolled authenticator.
+                      </p>
                     </form>
                   )}
                 </div>

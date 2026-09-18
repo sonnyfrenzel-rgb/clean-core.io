@@ -66,7 +66,7 @@ const SECURITY_POINTS: string[] = [
   "<strong>Your code does not train a model.</strong> Not used for training per the Gemini API terms; transient processing and caching may occur under those terms.",
   '<strong>Keys never reach the browser.</strong> Every model call goes through a server-side proxy; a BYOK key is encrypted at rest with AES-256-GCM in a server-only store.',
   '<strong>Evidence you can re-verify.</strong> Each analysis is an immutable, HMAC-signed Run, and the audit pack you download can be checked independently.',
-  '<strong>Two-factor authentication.</strong> TOTP in Settings, enforced server-side rather than on the login screen. Worth enabling on day one.',
+  '<strong>Multi-factor authentication.</strong> Recommended for every account, and required before you connect a live S/4HANA tenant or store your own Gemini key. Settings &rarr; Security: scan the code with a TOTP authenticator app (Google Authenticator, 1Password, Authy &hellip;) and enter the six digits once &mdash; from then on the factor is checked server-side on every sensitive request, not on the login screen.',
   '<strong>Live SAP connections stay opt-in.</strong> Connecting a non-production sandbox is a separate, admin-reviewed request; read-only, and production endpoints are blocked.',
   '<strong>Erasure is self-service.</strong> Settings &rarr; Danger Zone deletes your profile, projects, runs, secrets and login (GDPR Art. 17).',
 ];
@@ -151,7 +151,7 @@ export function buildWelcomeEmail({ name, recipient }: WelcomeEmailInput): strin
                     <tr>
                       <td style="padding: 16px; font-size: 13px; line-height: 1.5; color: #92400e;">
                         <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #b45309; margin-bottom: 5px;">What &ldquo;free&rdquo; means</strong>
-                        <strong>${quota} free transformations.</strong> Only the analysis in stage 1 is metered &mdash; the six stages after it are included, and re-analysing the same source is free. The starter examples on your dashboard are free the first time you run each of them; starting the same example again is an ordinary analysis and uses one run, once that analysis completes. Add your own Gemini key in <a href="${settingsUrl}" style="color: #92400e; font-weight: 700;">Settings</a> for unlimited runs, still at no cost.
+                        <strong>${quota} free transformations.</strong> Only the analysis in stage 1 is metered &mdash; the six stages after it are included, and re-analysing the same source is free. The starter examples on your dashboard are free the first time you run each of them; starting the same example again is an ordinary analysis and uses one run, once that analysis completes. Add your own Gemini key in <a href="${settingsUrl}" style="color: #92400e; font-weight: 700;">Settings</a> for unlimited runs, still at no cost (storing a key needs multi-factor authentication on your account &mdash; see below).
                       </td>
                     </tr>
                   </table>

@@ -1,7 +1,7 @@
 import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, termsVersionInForce } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { encrypt, decrypt } from './s4-credentials';
-import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp } from './mfa-gate';
+import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp, s4AccessRequiresEnrolment } from './mfa-gate';
 import { starterExampleForFingerprint } from './starter-example-fingerprints';
 import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } from './invitations';
 // Types only — erased at compile time, so the modules themselves still load
@@ -633,6 +633,28 @@ export async function assertS4TenantAccess(
   if (!isAdminUser && !s4TenantAccessAllowed) {
     throw new QuotaError('Access to S/4HANA live tenant endpoints is restricted to admin-approved accounts or administrators. Please request access in settings.', 403);
   }
+
+  // A second factor has to be *enrolled*, not merely honoured when present
+  // (Sonny, 18.09.2026: MFA-Zwang für S/4-Zugang). Every S/4 route also calls
+  // `assertMfaSatisfied`, which for an enrolled account demands the factor on
+  // the token; for an account that never enrolled it demands nothing, and that
+  // gap was the finding both audits described. This closes it on the one path
+  // that reaches a customer's tenant with stored credentials. The admin claim
+  // is not an exemption here - it exempts from the *approval*, not from the
+  // factor.
+  //
+  // Skipped under the Firebase emulator, exactly as `assertAdminStepUp` is and
+  // for the same reason: the Auth emulator cannot enrol a TOTP factor, so the
+  // E2E fixtures cannot satisfy this, and refusing them would remove every S/4
+  // route from the test suite. The decision itself is a pure function and is
+  // tested without the emulator (`lib/mfa-gate.ts`,
+  // `tests/s4-mfa-enrolment-guard.spec.ts`); production always enforces it.
+  // Measured before shipping: exactly one production account held S/4 access
+  // without a factor.
+  if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true') {
+    const refusal = s4AccessRequiresEnrolment(data.mfaEnabled === true);
+    if (refusal) throw new QuotaError(refusal.message, refusal.status);
+  }
 }
 
 /**
@@ -915,7 +937,21 @@ export const hasSecondFactor = tokenHasSecondFactor;
  * Firebase's own TOTP multi-factor, and the proof is the ID token — see
  * lib/mfa-gate.ts for the decision and for what this replaced.
  */
-export async function assertMfaSatisfied(req: Request, decodedToken: any) {
+export async function assertMfaSatisfied(
+  req: Request,
+  decodedToken: any,
+  opts?: {
+    /**
+     * A route that requires the factor to be *enrolled*, not merely honoured
+     * when present, passes its pure decision here (`byokRequiresEnrolment`
+     * for the own-key routes; the S/4 routes ask theirs inside
+     * `assertS4TenantAccess`). Skipped under the Firebase emulator, which
+     * cannot enrol TOTP - the same shape as `assertAdminStepUp`; the decision
+     * is tested without it. Everything else keeps the conditional gate.
+     */
+    requireEnrolment?: (mfaEnabled: boolean) => { status: number; message: string } | null;
+  },
+) {
   void req;
   const uid = decodedToken.uid;
   const { db } = await getAdminDb();
@@ -923,7 +959,13 @@ export async function assertMfaSatisfied(req: Request, decodedToken: any) {
   const userDoc = await db.collection('users').doc(uid).get();
   if (!userDoc.exists) return;
 
-  const refusal = mfaSatisfied(userDoc.data()?.mfaEnabled === true, decodedToken);
+  const mfaEnabled = userDoc.data()?.mfaEnabled === true;
+  if (opts?.requireEnrolment && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true') {
+    const enrolment = opts.requireEnrolment(mfaEnabled);
+    if (enrolment) throw new QuotaError(enrolment.message, enrolment.status);
+  }
+
+  const refusal = mfaSatisfied(mfaEnabled, decodedToken);
   if (refusal) throw new QuotaError(refusal.message, refusal.status);
 }
 

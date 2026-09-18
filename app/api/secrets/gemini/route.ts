@@ -9,6 +9,7 @@ import {
   logAuditEvent,
   QuotaError,
 } from '@/lib/firebase-admin';
+import { byokRequiresEnrolment } from '@/lib/mfa-gate';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 
 /**
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // 1. MFA Step-up Gate
-    await assertMfaSatisfied(req, decodedToken);
+    await assertMfaSatisfied(req, decodedToken, { requireEnrolment: byokRequiresEnrolment });
 
     // F-02: block suspended/stale-Terms accounts from managing a BYOK key. Approval is
     // NOT required to *store* a key — the bypass the finding is about is *using* it, which
@@ -82,7 +83,7 @@ export async function DELETE(req: NextRequest) {
 
   try {
     // 1. MFA Step-up Gate
-    await assertMfaSatisfied(req, decodedToken);
+    await assertMfaSatisfied(req, decodedToken, { requireEnrolment: byokRequiresEnrolment });
 
     // 2. Rate Limiting Gate (10 requests per hour)
     const ip = getClientIp(req);

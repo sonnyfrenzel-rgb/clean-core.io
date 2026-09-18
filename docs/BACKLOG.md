@@ -318,7 +318,8 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     Bezeichnernamen ansetzen. **Beides ist eine Änderung an der Agentenmaschinerie und braucht
     nach `CLAUDE.md` Sonnys Go**, ist also bewusst hier notiert und nicht getan.
 
-23. **Aus 7.3 (18.09.2026, abends) — drei Entscheidungen für Sonny, zwei Folgeschritte.**
+23. **Aus 7.3 (18.09.2026, abends) — drei Entscheidungen, von Sonny entschieden: a) lassen, b) lassen,
+    c) lassen (18.09., spät). Zwei Folgeschritte bleiben.** Zur Nachvollziehbarkeit die Fragen:
     Entscheidungen: *(a)* darf ein Lauf in der Mock-Sandbox irgendwo „bestanden" heißen? Gebaut
     ist: nie an einer Fähigkeit (E3, `mock-only`, `demonstrated-mock`, nie grün); das Wort bleibt
     dem Runner für seine eigene Ausgabe. Vorschlag: so lassen, in der Oberfläche „Demonstrated
@@ -341,6 +342,25 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     `npm run deploy:rules`, danach `npm run rules:record` ohne `--pending`. CI ist davon unabhängig:
     `tests/project-readers.spec.ts:190` verlangte am 18.09. kurzzeitig, dass *nie* etwas aussteht — das
     war nicht sein Zweck (der ist: Produktion serviert die verbreiterte Leseregel) und ist zurückgeführt.
+
+25. **MFA-Zwang für S/4 ist gebaut — ein Konto muss angeschrieben werden.** Seit dem 18.09. (abends)
+    verweigern alle sechs S/4-Routen ein Konto ohne eingeschriebenen zweiten Faktor, mit einer Meldung, die
+    den Weg nennt (Einstellungen → Sicherheit). Gemessen in Produktion vor dem Release: **genau ein**
+    Konto hat S/4-Freigabe und keine MFA (kein Admin darunter). Diese eine Person verliert mit dem
+    nächsten `main`-Push den S/4-Zugang, bis sie einen Authenticator einrichtet — sie sollte es vorher
+    erfahren, nicht aus dem 403. Ich zähle nur; die Adresse hat Sonny in der Admin-Konsole.
+    **Nachtrag (spät):** derselbe Zwang gilt für den eigenen Gemini-Schlüssel (speichern, testen,
+    löschen) — gemessen: **null** Konten mit eigenem Schlüssel, also niemand betroffen. Runs,
+    Audit-Pack und Jira bleiben optional (Sonny). Die Begrüßungsmail empfiehlt MFA jedem Konto,
+    erklärt die Einrichtung (Einstellungen → Sicherheit, Authenticator-App, sechs Ziffern) und
+    nennt die zwei Pflichtstellen — die Bestandskonten bekommen diese Mail nicht noch einmal; wer
+    sie informieren will, braucht eine eigene Nachricht.
+
+26. **Signavio-Export (4.3): „auf jeden Fall später"** (Sonny, 18.09.2026, abends). Die Schranke aus
+    `ROADMAP.md` „3.0 — Umstellung" bleibt unverändert — 3.0 erscheint nicht ohne den protokollierten
+    Export in SAP Signavio Process Manager durch ein Mitglied mit Lizenz, und bis dahin sagt keine Seite
+    „getestet mit SAP Signavio". Es ist nur entschieden, dass niemand ihn *jetzt* fährt. Wer ihn fährt
+    und wann, ist offen; `tests/signavio-claims-guard.spec.ts` hält die Zurückhaltung so lange.
 
 ### Hygiene, bevor die nächste Welle startet
 

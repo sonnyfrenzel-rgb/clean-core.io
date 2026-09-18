@@ -7,6 +7,7 @@ import {
   logAuditEvent,
   QuotaError,
 } from '@/lib/firebase-admin';
+import { byokRequiresEnrolment } from '@/lib/mfa-gate';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { GoogleGenAI } from '@google/genai';
 
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // 1. MFA Step-up Gate
-    await assertMfaSatisfied(req, decodedToken);
+    await assertMfaSatisfied(req, decodedToken, { requireEnrolment: byokRequiresEnrolment });
 
     // 2. Rate Limiting Gate (5 tests per 15 minutes)
     const ip = getClientIp(req);
