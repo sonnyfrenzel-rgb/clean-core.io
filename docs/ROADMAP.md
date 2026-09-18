@@ -962,6 +962,24 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-150 | hoch | P2 | 3.0 | eingeplant |
 | SEC-2026-151 | hoch | — | — | akzeptiertes Risiko |
 | SEC-2026-152 | hoch | P1 | sofort | behoben |
+| SEC-2026-219 | mittel | — | — | akzeptiertes Risiko |
+| SEC-2026-220 | mittel | — | — | akzeptiertes Risiko |
+| SEC-2026-221 | mittel | — | — | akzeptiertes Risiko |
+| SEC-2026-222 | mittel | — | — | akzeptiertes Risiko |
+| SEC-2026-223 | mittel | — | — | akzeptiertes Risiko |
+| SEC-2026-224 | mittel | — | — | akzeptiertes Risiko |
+| SEC-2026-225 | mittel | P2 | sofort | behoben |
+| SEC-2026-226 | mittel | P3 | 3.0 | eingeplant |
+| SEC-2026-227 | mittel | P2 | sofort | behoben |
+| SEC-2026-228 | mittel | P2 | sofort | eingeplant |
+| SEC-2026-229 | mittel | P2 | 3.0 | eingeplant |
+| SEC-2026-230 | mittel | P3 | 3.0 | eingeplant |
+| SEC-2026-231 | mittel | P3 | 3.0 | eingeplant |
+| SEC-2026-232 | mittel | P3 | sofort | behoben |
+| SEC-2026-233 | mittel | P3 | 3.0 | eingeplant |
+| SEC-2026-234 | mittel | P2 | sofort | eingeplant |
+| SEC-2026-235 | mittel | P2 | sofort | behoben |
+| SEC-2026-236 | mittel | P1 | sofort | behoben |
 
 **Audit von v2.13.0 (`a7c9e71`, 18.09.2026): 3 kritisch, 1 hoch, 7 mittel, 14 niedrig — 2 behoben,
 7 eingeplant, 16 widerlegt.** Behoben sind der Zip-Slip in der Auslieferung (modellerzeugte Pfade
@@ -1055,7 +1073,7 @@ statt widerlegt, aber mit diesem Umfang: drei Werte, nicht sieben.
 | UX-102 | high | How-to nennt 6 Phasen, Produkt hat 7 Stufen | 0.2 | behoben |
 | UX-121 | high | Einladen-Icon ohne Namen — nur Titel, kein Label | sofort | behoben |
 | UX-122 | high | ToS-Hinweis verdrängt auf allen Routen den Inhalt | sofort | behoben |
-| UX-138 | high | Integrity-Grün bedeutet mal Existenz, mal Prüfung | sofort | eingeplant |
+| UX-138 | high | Integrity-Grün bedeutet mal Existenz, mal Prüfung | sofort | behoben |
 | UX-005 | medium | Routenwechsel ohne Bestätigung und Undo | 0.7 | eingeplant |
 | UX-006 | medium | Von Befund kein Weg in den Code | 1.5 | eingeplant |
 | UX-012 | medium | Sticky-Header und Tabs verdecken Inhalt auf Phone | 1.4 | eingeplant |
@@ -1106,8 +1124,8 @@ statt widerlegt, aber mit diesem Umfang: drei Werte, nicht sieben.
 | UX-131 | medium | ToS-Hinweis verdrängt Arbeitsbereich im ersten Viewport | — | zurückgestellt |
 | UX-135 | medium | Kontingent-Stopp im nativen alert statt im Produktdialog | 1.4 | eingeplant |
 | UX-136 | medium | Fünf Icon-Buttons ohne Text – Einladen kaum entdeckbar | 1.5 | eingeplant |
-| UX-139 | medium | Verweigertes Bundle ohne direkten Weg zur Transformation | sofort | eingeplant |
-| UX-140 | medium | Bestätigung verfällt nach Edit ohne Erklärung | sofort | eingeplant |
+| UX-139 | medium | Verweigertes Bundle ohne direkten Weg zur Transformation | sofort | behoben |
+| UX-140 | medium | Bestätigung verfällt nach Edit ohne Erklärung | sofort | behoben |
 | UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | behoben |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |
@@ -1144,10 +1162,10 @@ statt widerlegt, aber mit diesem Umfang: drei Werte, nicht sieben.
 | UX-128 | low | Neue Radien und Einzelmaße ohne Systemanschluss | 1.5 | eingeplant |
 | UX-134 | low | Blockierter Start erklärt sich nur per Hover-Titel | 1.5 | eingeplant |
 | UX-137 | low | Neue Einzel-Radien und Schriften ohne Skalenbindung | 1.5 | eingeplant |
-| UX-141 | low | Suche verspricht Diskussionen auf read-only Ankündigungen | sofort | eingeplant |
-| UX-142 | low | Optionale Importe mit uneinheitlichem Versions-Label | sofort | eingeplant |
-| UX-143 | low | Labels ohne Feld auf Freigabeseite | sofort | eingeplant |
-| UX-144 | low | Workspace-Gate lädt stumm für Screenreader | sofort | eingeplant |
+| UX-141 | low | Suche verspricht Diskussionen auf read-only Ankündigungen | sofort | behoben |
+| UX-142 | low | Optionale Importe mit uneinheitlichem Versions-Label | sofort | behoben |
+| UX-143 | low | Labels ohne Feld auf Freigabeseite | sofort | behoben |
+| UX-144 | low | Workspace-Gate lädt stumm für Screenreader | sofort | behoben |
 ---
 
 ## 14. QA-Befunde aus der Vollprüfung

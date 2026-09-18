@@ -446,6 +446,64 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     Tafel bekommt den Bericht als Prop aus einer Server-Komponente oder Route, nie per Import in eine
     Client-Komponente. Gemessen: 14 Datensätze über acht Programme, zwei Schulungshinweise, `E2+` = 0.
 
+31. **UX-Review zu `b88c77b` (18.09., spät) — 16 unentschieden, alle entschieden; und §13 hatte acht
+    ältere Entscheidungen nie bekommen.** 4 widerlegt: die drei ToS-Karten-Befunde (das Bauteil merkt
+    „Not now" per `sessionStorage`, `TermsReacceptGate.tsx:69,87`; die Screenshots zeigen die Karte
+    auf jeder Route, weil die Aufnahme nie klickt) und der `&amp;`-Titel (JSX dekodiert Entities in
+    String-Attributen — mit `ts.transpileModule` belegt). 1 zurückgestellt (UX-131: „Not now"
+    sitzungsübergreifend merken — wäre ein Konto-Feld, Entscheidung für Sonny; Empfehlung: lassen).
+    7 sofort behoben: Integrity-Grün nur noch für Geprüftes (Schätzung und Blueprint neutral wie die
+    Code-Zeile, Wächter über alle drei), Link aus dem verweigerten Bundle zur Transformation, Satz
+    unter der entwerteten Personen-Daten-Bestätigung, „Search discussions" → announcements,
+    Roadmap-Nummern und `v1.22` aus dem Produkt-UI, `<label>` ohne Feld → `<p>`, Workspace-Gate mit
+    `role="status"`. 4 eingeplant (1.4/1.5). §13 wurde komplett aus `register.mjs table` neu
+    geschrieben: UX-121…128 standen im Register, nicht in der Roadmap.
+
+32. **Security-Audit zu `b88c77b`, die 83 mittleren (18.09., spät) — 65 widerlegt, 6 Risiko, 12
+    eingeplant, 5 davon sofort behoben (SEC-2026-225/227/232/235/236).** Die Masse: 22 Zeilen sind ein
+    einziger npm-Advisory (mermaid, moderat, Fix ohne Major — als SEC-2026-234 eingeplant; die
+    firebase-tools-Zeilen sind devDependency), 8 „Sanitizer nicht geliefert", 7 „firestore.rules nicht
+    geliefert", 4 Mockup-HTMLs. **Echt:** `ApiBusinessHubMapping.tsx:53` setzte `map.apiHubUrl` roh
+    auf `href` — dieselbe Klasse wie SEC-2026-152 (jetzt `sapApiHubUrl`, host-gebunden, Wächter);
+    `/api/gemini` maß ein Array-`prompt` an seiner Elementzahl (jetzt: nur String); die Tenant-Mails
+    nahmen die Adresse aus dem Rumpf, der sie aus dem vom Antragsteller geschriebenen Dokument
+    kopierte (jetzt: `getUser(uid).email`, Antwort nennt `to`); ein Makro-Ring im ABAP war ein
+    Stack-Overflow im Effektleser (jetzt: `expanding`-Menge); eine E-Mail im Client-Log. **Offen,
+    eingeplant:** SEC-2026-228 (Makro-Expansion ist tiefen-, nicht breitenbegrenzt — ein Budget im
+    `table-dependencies`-Leser, P2), 226 (Pro-uid-Limit auf den S/4-Routen, P3), 229 (CSP-Zwilling von
+    131), 230 (`jti` fürs Approval-Token), 231 (`isValidUser` ist toter Regelcode), 233 (die
+    Mail-Sammlungen `email_sends`/`email_events`/Survey-Outbox in der Löschkaskade prüfen). **Nebenbei
+    gefunden:** die Datenschutzerklärung nennt die Umfrage nicht (0 Treffer „survey/Umfrage" in
+    `app/datenschutz`) — Bedingung, bevor die Umfragemaschine wieder eingeschaltet wird.
+    **Vom Klassifizierer gestoppt:** der exakte gitleaks-Fingerabdruck für den zweiten
+    Register-Schreibvorgang (`076bfcf…:docs/security/register.enc.json:generic-api-key:1`) — Security
+    CI bleibt rot, bis Sonny ihn einträgt oder eine Regel-Allowlist für die versiegelten Register
+    entscheidet (dritter Fall an einem Tag; die Datei selbst sagt „nie ein Pfad").
+
+33. **Vollständige QA-Review zu `b88c77b` (`gpt-5.6-sol`, 769 Dateien, 5,70 USD, `INCOMPLETE`) —
+    1446 Befunde: 49 kritisch, 226 hoch, 1129 mittel, 42 niedrig; Urteil no_go.** Die 49 kritischen
+    zerfallen in zehn Themen: 34× Workflows („ein Mitarbeiter ändert Skripte auf `dev`/dispatcht einen
+    Branch und bekommt Secrets") — widerlegt an der Kollaboratorenliste (genau ein Konto mit
+    Schreibrecht, 18.09.; fork-PRs bekommen keine Secrets), **mit Bedingung im Register**: ab dem
+    zweiten Konto wird jeder davon wahr; 5 Namens-Fehlalarme (Storage-Schlüsselnamen); 8 zur
+    Signaturkette — `files[].bytes` ist im Kopf von `audit-pack-canonical.ts` ausdrücklich
+    ausgenommen (der Inhalts-Hash pinnt die Datei), das `provenance`-Label liest kein Verifizierer
+    (Klassifikation über die signierte `attested`-Liste); **2 offen** (26350daa4493, 8f267dbfbd9b):
+    der Web-Verifizierer hasht `file.async('text')` statt der Archiv-Bytes — ein ungültiges
+    UTF-8-Byte, das zum selben Zeichen dekodiert, passiert; Wirkung null (gleicher Text), Härtung
+    klein (`uint8array` hashen, Test mit einem kaputten Byte), erledigen. **Entscheidung für Sonny:**
+    der öffentliche dev-Dienst läuft mit dem Produktions-Secret-Satz und demselben Firebase-Projekt
+    (`deploy.yml:240-257`) — die dokumentierte Zwei-Umgebungen-Entscheidung; jede Lücke auf dev ist
+    eine auf prod. Bewusst so lassen, oder dev einen eigenen Satz geben (zweites Firebase-Projekt).
+    **Die 226 hohen sind nicht triagiert**; nach Datei gruppiert sind es ~55 Dateien, die schwersten
+    Themen: Router-Fehlrouten (`extensibility-router.ts`, 17), Open-SQL-Lesefehler in
+    `table-dependencies.ts` (17), Nebenläufigkeit in Transformation/Design/Dokumentation (veraltete
+    Eingaben werden als aktuell gespeichert), gelöschte Projekte werden von laufenden Runs/Packs
+    wieder angelegt, gesperrte Konten behalten Firestore- und S/4-Zugriff (Regeln prüfen `status`
+    nicht), Modell-Quittungen nicht an Quelle/Projekt gebunden, veraltete Artefakte werden durch Edit
+    „aktuell". Vorschlag: thematisch, je Thema ein Schritt, kritischste zuerst (Sperre, Löschung,
+    Quittungsbindung); die 1129 mittleren nur stichprobenweise.
+
 ### Hygiene, bevor die nächste Welle startet
 
 20. **Emulator und Dev-Server neu starten**, bevor mehr als vier Agenten laufen. Der Emulator stand
