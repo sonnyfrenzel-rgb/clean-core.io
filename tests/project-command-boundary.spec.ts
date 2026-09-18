@@ -12,6 +12,7 @@ import { initializeFirestore, connectFirestoreEmulator, doc, updateDoc, getDoc }
 import firebaseConfig from '../firebase-config.json';
 import { adminSetDoc } from './helpers/admin-seed';
 import {
+  ATC_FIELD_MAX_CHARS,
   RELEASE_FIELDS,
   SERVER_ONLY_PROJECT_FIELDS,
   fieldsWrittenByCommands,
@@ -439,6 +440,50 @@ test.describe('the transition, decided once and in one place', () => {
       actor,
     );
     expect(noReason.ok, 'a quarantined row without a reason was accepted').toBe(false);
+  });
+
+  /**
+   * The ceiling, measured at the edge rather than somewhere past it.
+   *
+   * The previous test proves a 9,000-character field does not survive whole; it
+   * would pass just as well against a cap of 10 or of 8,000. A cap is only worth
+   * the number it names, and an off-by-one here is invisible in every other
+   * test — which is why the QA review of 91c98ea9d8f9 asked for exactly this.
+   */
+  test('a string field is cut at 4,000 characters, and one at the limit is left alone', () => {
+    const state = { activeRunId: 'run-1' };
+    const at = 'a'.repeat(ATC_FIELD_MAX_CHARS);
+    const over = `${at}b`;
+
+    const r = validateProjectCommand(
+      {
+        command: 'record-atc-report',
+        atcReport: {
+          source: 'atc',
+          importedAt: '2026-09-18',
+          warnings: [over],
+          findings: [{ objectName: 'ZFI', message: over, checkTitle: at }],
+          quarantined: [{ row: 4, objectName: over, reason: over }],
+        },
+      },
+      state,
+      actor,
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+
+    const report = r.fields.atcReport as Record<string, unknown>;
+    const finding = (report.findings as Record<string, unknown>[])[0];
+    const quarantined = (report.quarantined as Record<string, unknown>[])[0];
+
+    expect(String(finding.message)).toHaveLength(ATC_FIELD_MAX_CHARS);
+    expect(String(quarantined.reason)).toHaveLength(ATC_FIELD_MAX_CHARS);
+    expect(String(quarantined.objectName)).toHaveLength(ATC_FIELD_MAX_CHARS);
+    expect(String((report.warnings as string[])[0])).toHaveLength(ATC_FIELD_MAX_CHARS);
+
+    // Exactly at the limit is not over it: a cap that also trimmed the last
+    // allowed character would silently corrupt every field of that length.
+    expect(String(finding.checkTitle), 'a field exactly at the limit was cut').toBe(at);
   });
 });
 

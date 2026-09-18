@@ -281,6 +281,24 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     können, dann verlangen. Hängt mit der MFA-Frage zusammen: Firebase verweigert die Anmeldung
     eines zweiten Faktors auf einer unbestätigten Adresse.
 
+22. **Widerlegte Befunde kommen mit neuem Fingerabdruck zurück — in beiden Agenten.** Am 18.09.
+    zweimal beobachtet, jedes Mal mit Prüfzeit bezahlt:
+    - **Security:** die drei „Mögliches Geheimnis im Code"-Treffer auf `lib/coach-marks.ts`,
+      `lib/first-look.ts` und `scripts/verify-pack.mjs` standen bereits als `SEC-2026-082`,
+      `-083` und `-001` im Register, jeweils widerlegt — und wurden im Lauf zu `bc2f786` erneut
+      als **kritisch** gemeldet. Es sind Bezeichner, die `KEY` oder `secret` enthalten.
+    - **QA:** dieselbe Timeout-Beschwerde zu `tests/workspace-list-report.spec.ts` kam in einer
+      Runde mit drei Fingerabdrücken (`815c4fd44312`, `c5fd53baae83`, `efd8c1bf7e9a`) und in der
+      nächsten mit einem vierten (`dea455186459`) — für eine einzige Aussage über eine Datei, die
+      der geprüfte Stand nicht einmal anfasst.
+
+    Der Fingerabdruck ist `sha256(datei + titel)`; formuliert das Modell den Titel anders, ist es
+    ein neuer Befund, und `refute.mjs` greift nicht mehr. Die Widerlegungsliste wächst (140
+    Einträge) und hält trotzdem nichts zurück. Zwei Hebel, beide klein: den Fingerabdruck über
+    `datei + kategorie` statt über den Titel bilden, und die Sekretdetektion auf Werte statt auf
+    Bezeichnernamen ansetzen. **Beides ist eine Änderung an der Agentenmaschinerie und braucht
+    nach `CLAUDE.md` Sonnys Go**, ist also bewusst hier notiert und nicht getan.
+
 ### Hygiene, bevor die nächste Welle startet
 
 20. **Emulator und Dev-Server neu starten**, bevor mehr als vier Agenten laufen. Der Emulator stand

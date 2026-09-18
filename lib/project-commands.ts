@@ -200,8 +200,9 @@ const ATC_FINDING_KEYS = [
  */
 const ATC_QUARANTINE_KEYS = ['row', 'objectName', 'reason'] as const;
 
-/** A ceiling per string, so one row cannot carry a document. */
-const ATC_FIELD_MAX = 4000;
+/** A ceiling per string, so one row cannot carry a document. Exported so the
+ * guard measures the edge against this number and not a typed-in copy of it. */
+export const ATC_FIELD_MAX_CHARS = 4000;
 
 /**
  * One row, reduced to the keys the model declares.
@@ -228,7 +229,7 @@ function normaliseAtcRow(
   for (const key of keys) {
     const v = row[key];
     if (v === undefined) continue;
-    if (typeof v === 'string') out[key] = v.length > ATC_FIELD_MAX ? v.slice(0, ATC_FIELD_MAX) : v;
+    if (typeof v === 'string') out[key] = v.length > ATC_FIELD_MAX_CHARS ? v.slice(0, ATC_FIELD_MAX_CHARS) : v;
     else if (typeof v === 'number' && Number.isFinite(v)) out[key] = v;
     else if (typeof v === 'boolean') out[key] = v;
     // Anything else — an object, a list, a NaN — is not a field of a row.
@@ -290,7 +291,7 @@ export function normaliseAtcReport(
 
   const warnings = (value.warnings as unknown[])
     .filter((w): w is string => typeof w === 'string')
-    .map((w) => (w.length > ATC_FIELD_MAX ? w.slice(0, ATC_FIELD_MAX) : w));
+    .map((w) => (w.length > ATC_FIELD_MAX_CHARS ? w.slice(0, ATC_FIELD_MAX_CHARS) : w));
 
   const report: Record<string, unknown> = {};
   for (const key of ATC_REPORT_KEYS) {
