@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * The two rules the Terms took on after the legal review of 18.09.2026.
@@ -212,4 +213,30 @@ test.describe('and a reader opening the page finds them', () => {
       ).toContain(normalise(needle));
     }
   });
+});
+
+/**
+ * The version line and the obligations it stands for move together.
+ *
+ * `TERMS_VERSION` is what `requireCurrentTerms` compares against, and raising it
+ * asks every account to accept again. A bump whose document no longer carried
+ * the clauses the bump was for would ask 158 people to re-accept nothing (QA
+ * review of daa994db4415). So the two are pinned to each other: the effective
+ * version in the prose, the constant the gate reads, and the substance.
+ */
+test('the effective version, the constant and the new obligations are one change', () => {
+  const terms = fs.readFileSync(path.resolve(__dirname, '..', 'app', 'terms', 'page.tsx'), 'utf8');
+
+  // The document states a version of its own, and it is the one the gate uses.
+  expect(terms, 'the Terms no longer state an effective version').toMatch(
+    /effective\s+18\s+September\s+2026\s+\(v2\.1\.0\)/,
+  );
+  expect(TERMS_VERSION, 'the constant and the document disagree about which version is current').toBe('2026-09-18');
+
+  // And the substance that version exists for.
+  expect(terms, 'the version moved without the age rule it was raised for').toMatch(/at least 18 years old/);
+  expect(terms, 'the version moved without the personal-data prohibition').toMatch(
+    /Do not submit personal data of third parties/,
+  );
+  expect(terms, 'the version moved without the Art. 28 statement').toMatch(/data processing agreement under Art\. 28 GDPR/);
 });
