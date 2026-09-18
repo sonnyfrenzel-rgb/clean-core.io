@@ -1,6 +1,14 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+// Static, and that is the point: a dynamic `await import('../lib/test-verdicts')`
+// is resolved at run time, when Playwright's transform is no longer in the way,
+// so Node sees raw TypeScript and dies with `Unexpected token 'export'`. A
+// top-level import goes through the same transform as this file. The test was
+// red on every developer machine and green in CI, which is the CLAUDE.md gotcha
+// in reverse; `docs/BACKLOG.md` item 18 blamed a stopgap config under `tmp/`,
+// and that was wrong — it fails with the ordinary config too, for this reason.
+import { parseTapOutput } from '../lib/test-verdicts';
 
 /**
  * Nothing may report a verification that did not happen.
@@ -24,11 +32,10 @@ const ROOT = path.resolve(__dirname, '..');
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 test.describe('a verdict is only reported when there is one', () => {
-  test('the TAP parser reads SKIP and TODO directives', async () => {
+  test('the TAP parser reads SKIP and TODO directives', () => {
     // The parser moved to lib/test-verdicts.ts (E07-F01), where SKIP and TODO
     // became their own states instead of `Not run`. Checked by running it, not
     // by finding the right words in its source.
-    const { parseTapOutput } = await import('../lib/test-verdicts');
     const r = parseTapOutput('ok 1 - TC_A: x # SKIP\nok 2 - TC_B: y # TODO\n');
     expect(
       r.map((x) => x.status),

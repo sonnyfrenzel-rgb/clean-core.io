@@ -249,11 +249,19 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     Traceability-Zeile vor und nach dem Editieren, und der `ensureQuote`-POST landet je nach Timing
     dazwischen — die `CLAUDE.md`-Falle „ein Test, der auf ein Fenster wartet".
     `preservation-register.spec.ts › each stage opens on its reference case` fällt nur im Stapel.
-18. **`tests/verdict-honesty-guard.spec.ts:27` ist lokal rot, in CI grün** — der dynamische
-    `import('../lib/test-verdicts')` wird von einer Behelfskonfiguration unter `tmp/` nicht
-    transpiliert, weil die Datei außerhalb von `testDir` liegt. Kein Befund, aber es hat heute drei
-    Strängen Zeit gekostet. Entweder die Behelfskonfiguration reparieren oder den Hinweis ins
-    Briefing.
+18. ~~**`tests/verdict-honesty-guard.spec.ts:27` ist lokal rot, in CI grün**~~ — erledigt am
+    18.09.2026. **Die Diagnose hier war falsch** und hat den Fehler dadurch am Leben gehalten:
+    es lag *nicht* an einer Behelfskonfiguration unter `tmp/`. Mit der gewöhnlichen
+    `playwright.config.ts` fällt der Test genauso — der Grund ist der **dynamische**
+    `await import('../lib/test-verdicts')`. Ein dynamischer Import wird zur Laufzeit aufgelöst,
+    wenn Playwrights Transformation nicht mehr dazwischensteht; Node sieht rohes TypeScript und
+    stirbt mit `Unexpected token 'export'`. Ein statischer Import oben in der Datei geht durch
+    dieselbe Transformation wie die Spec selbst. Die Reparatur ist eine Zeile.
+
+    **Die Lektion ist die Notiz selbst.** Sie klang plausibel, war nie nachgeprüft, stand vier
+    Tage hier — und vier Arbeitsstränge haben an diesem roten Test Zeit verloren, jeder mit dem
+    Hinweis „bekannt, ignorieren". Eine falsche Diagnose im Backlog ist teurer als gar keine:
+    sie beendet das Nachdenken, ohne das Problem zu beenden.
 19. **Der Referenzkorpus hat weiter keine unabhängige Gegenzeichnung.** Das Fallbuch sagt es selbst:
     *„kein Fall ist von einem SAP-Architekten gegengezeichnet."* Joule for Consultants war der
     naheliegende Gegenprüfer und ist verworfen (direkte SAP-Lizenzierung nötig). Wenn jemand mit
