@@ -213,6 +213,28 @@ test.describe('and a reader opening the page finds them', () => {
       ).toContain(normalise(needle));
     }
   });
+
+  /**
+   * The version a reader sees, not the one the file contains.
+   *
+   * The coupling test below compares the prose, the constant and the clauses in
+   * the source. That is the fast check and it can be satisfied by a version line
+   * that never renders (QA review of 880aa5dbfda3). Which version somebody
+   * accepted is the fact that matters if it is ever disputed, so it is read off
+   * the page.
+   */
+  test('the effective version is on the page, beside the obligations it stands for', async ({ page }) => {
+    await page.goto('/terms', { waitUntil: 'domcontentloaded' });
+    const rendered = normalise(await page.locator('body').innerText());
+    expect(
+      rendered,
+      'the effective version a reader sees is not the one the gate compares against',
+    ).toContain(normalise('effective 18 September 2026 (v2.1.0)'));
+    expect(TERMS_VERSION).toBe('2026-09-18');
+    // And the two clauses that version was raised for, on the same page.
+    expect(rendered).toContain(normalise('at least 18 years old'));
+    expect(rendered).toContain(normalise('Do not submit personal data of third parties'));
+  });
 });
 
 /**
