@@ -52,7 +52,7 @@ export default function DatenschutzPage() {
           <Link href="/datenschutz/de" hrefLang="de" className="text-green-600 hover:underline font-semibold">
             German version
           </Link>{' '}
-          are equally authoritative and say the same thing.
+          say the same thing. Should they ever differ, <strong>the German version prevails</strong> — we are a German controller under a German supervisory authority, and a translation should not be able to change what we owe you.
         </p>
 
         <div className="space-y-10 text-gray-700 leading-relaxed">
@@ -86,7 +86,10 @@ export default function DatenschutzPage() {
                 <strong className="text-gray-800">Email and password (Firebase Auth):</strong> You can also register with an email address and a password instead of using Google. In that case we process the email address and the first and last name you enter. The password itself is handled by Firebase Authentication and is never visible to us. <em>Legal basis: Art. 6(1)(b) GDPR.</em>
               </li>
               <li>
-                <strong className="text-gray-800">Your motivation (optional):</strong> the free-text note you may add when registering. It is voluntary, it has no effect on whether you get access, and you can ask us to delete it at any time. <em>Legal basis: Art. 6(1)(a) GDPR — your consent, which you may withdraw at any time with effect for the future.</em>
+                <strong className="text-gray-800">Your motivation (optional):</strong> the free-text note you may add when registering. It is voluntary, it has no effect on whether you get access, and one line to <a href="mailto:info@clean-core.io" className="text-green-600 hover:underline font-semibold">info@clean-core.io</a> is enough to have it deleted — we do not ask why. <em>Legal basis: Art. 6(1)(a) GDPR — your consent, which you may withdraw at any time with effect for the future.</em>
+              </li>
+              <li>
+                <strong className="text-gray-800">Transactional email (Resend):</strong> we send you the mails the service itself requires — confirming an address, an invitation you asked us to send, a notice about your account. There is no newsletter and no marketing mail. Your address is passed to our mail provider for delivery and for nothing else. <em>Legal basis: Art. 6(1)(b) GDPR for the mails that are part of the service, and Art. 6(1)(f) GDPR for those that keep it secure.</em>
               </li>
               <li>
                 <strong className="text-gray-800">Firestore User Profiles:</strong> We store metadata about your platform usage (e.g., number of performed code transformations, system limits, as well as your first and last name) in our secure database. <em>Legal basis: Art. 6(1)(b) GDPR for the counters that make the free quota work, and Art. 6(1)(f) GDPR for operating and securing the platform.</em>
@@ -105,7 +108,10 @@ export default function DatenschutzPage() {
               <strong>Do you have to provide this data?</strong> There is no legal obligation to give us anything, and no contractual duty to register at all. Our public pages, the documentation and the offline verifier work without an account. But signing in is technically required to use the platform itself: without an email address and a name we cannot create an account, keep your projects apart from other people&apos;s, or enforce the free quota — so if you do not provide them, the platform cannot be used. Everything marked optional above (your motivation, your own API key) can be left out with no consequence other than the loss of that particular feature.
             </p>
             <p className="text-sm text-gray-500 mt-3">
-              <strong>Minimum age:</strong> Clean-Core.io is a tool for professional software work and is not directed at children. You must be at least 16 years old to create an account. We do not verify age — asking for proof would mean collecting more personal data than the service needs, not less — but we will delete an account on notice that it belongs to someone younger.
+              <strong>Minimum age:</strong> Clean-Core.io is a tool for professional software work and is not directed at children or young people. You must be at least 18 years old to create an account; the Terms of Service say the same. We do not verify age — asking for proof would mean collecting more personal data than the service needs, not less — but we will delete an account on notice that it belongs to someone younger.
+            </p>
+            <p className="text-sm text-gray-500 mt-3">
+              <strong>Please do not upload personal data.</strong> ABAP often carries it without anyone meaning to: a developer&apos;s user id, a name in a comment, a real customer number, a test record from production. Strip those before you upload. We do not offer a data processing agreement under Art. 28 GDPR, and the platform is not meant for processing personal data — the Terms of Service put this as an obligation, and section 3 explains what happens to what you do upload. This is a rule we ask you to keep; the platform does not detect or block it.
             </p>
           </section>
 
@@ -119,11 +125,10 @@ export default function DatenschutzPage() {
             <p className="text-base mb-3">
               <strong className="text-gray-800">Who can read your project:</strong> the account that created it, and
               anyone that account invites to read it &mdash; no one else, and since 16&nbsp;September&nbsp;2026 not our
-              administrator either.{' '}
+              administrator either. There is one exception, an emergency, and it is described in{' '}
               <a href="#project-access" className="text-green-700 underline underline-offset-2 hover:text-green-800">
                 Section 8
-              </a>{' '}
-              says this in full, names the rules you can read for yourself, and describes the one exception.
+              </a>, which also sets out the whole picture and names the rules you can read for yourself.
             </p>
             <div className="p-4 bg-green-50 border border-green-200 rounded-2xl">
               <p className="text-sm text-green-800">
@@ -169,7 +174,7 @@ export default function DatenschutzPage() {
               <li>Right to Restriction of Processing (Art. 18 GDPR)</li>
               <li>Right to Data Portability (Art. 20 GDPR)</li>
               <li><strong className="text-gray-800">Right to Object (Art. 21 GDPR)</strong> — see the box below</li>
-              <li>Right to Withdraw Consent (Art. 7 Abs. 3 GDPR)</li>
+              <li>Right to Withdraw Consent (Art. 7(3) GDPR)</li>
               <li>Right to Lodge a Complaint with a Supervisory Authority (Art. 77 GDPR)</li>
             </ul>
             <div className="mt-5 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
@@ -184,6 +189,9 @@ export default function DatenschutzPage() {
               To exercise these rights, particularly to erase your data, you can trigger account deletion directly in your Profile Settings under the <strong>Danger Zone</strong>, which immediately deletes your live database and authentication entries, including every project and the source code in it. A single project can be deleted on its own at any time from your dashboard. Residual copies in encrypted backups age out within 30 days (see section 6). Alternatively, contact us at <a href="mailto:info@clean-core.io" className="text-green-600 hover:underline font-semibold">info@clean-core.io</a>.
             </p>
             <p className="text-sm text-gray-500 mt-3">
+              <strong>What deletion does not reach:</strong> two things outlive it, and saying so is more useful than a clean sentence. The security audit record keeps the administrative actions taken on an account — approval, revocation, deletion — with the affected account, for 24 months from the action; without it, a privileged action could not be traced to anyone, and we may keep it under Art. 17(3)(e) and Art. 6(1)(f) GDPR. And &quot;immediately&quot; means the live database and the sign-in: copies inside encrypted backups age out on their own schedule, within 30 days, and are not restored selectively. Everything else goes at once.
+            </p>
+            <p className="text-sm text-gray-500 mt-3">
               <strong>Supervisory authority:</strong> you can complain to any supervisory authority, in particular in the EU member state of your residence, place of work or the place of the alleged infringement. The authority responsible for us is the <a href="https://www.lda.bayern.de" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-semibold">Bayerisches Landesamt für Datenschutzaufsicht (BayLDA)</a>, Promenade 18, 91522 Ansbach, Germany.
             </p>
           </section>
@@ -196,7 +204,17 @@ export default function DatenschutzPage() {
               <strong>Legal basis (Art. 6 GDPR):</strong> the basis is stated with each purpose in section 2, because one blanket sentence would not tell you which rule covers which processing. In short: performing the service you request (Art. 6(1)(b)), operating and securing the platform under our legitimate interest (Art. 6(1)(f)), and your consent where something is optional (Art. 6(1)(a)), which you may withdraw at any time with effect for the future. The emergency access described in section 8 rests on Art. 6(1)(f) — keeping the platform and its users safe from malicious content.
             </p>
             <p className="text-base mb-3">
-              <strong>Retention:</strong> Personal data is retained for the life of your account and removed on account erasure (Art. 17); residual copies in encrypted backups age out within 30 days. <strong>Security audit records are kept for 24 months</strong> from the recorded action and are then deleted; the period covers two annual reviews, which is what makes a privileged action traceable long enough to be accountable without keeping administrator identities indefinitely. Retention per collection is documented in <a href="https://github.com/sonnyfrenzel-rgb/clean-core.io/blob/main/docs/DATA-RETENTION.md" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-semibold">docs/DATA-RETENTION.md</a> in our public source repository, where you can read it yourself.
+              <strong>Retention:</strong> Personal data is retained for the life of your account and removed on account erasure (Art. 17); residual copies in encrypted backups age out within 30 days. The periods that are not simply &quot;as long as the account exists&quot;:
+            </p>
+            <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600 mb-3">
+              <li><strong className="text-gray-800">Server and access logs:</strong> 30 days (see section 9).</li>
+              <li><strong className="text-gray-800">Encrypted backups:</strong> a daily copy for 7 days and a weekly copy for 28 days, so nothing survives beyond 30.</li>
+              <li><strong className="text-gray-800">Security audit record:</strong> 24 months from the recorded action, then deleted. The period covers two annual reviews, which is what makes a privileged action traceable long enough to be accountable without keeping administrator identities indefinitely.</li>
+              <li><strong className="text-gray-800">Rate-limit counters:</strong> they expire with their own window, minutes to hours. The key is a salted hash, so no address is stored in readable form.</li>
+              <li><strong className="text-gray-800">Your own Gemini key and your Google profile picture:</strong> for as long as you keep them — the key until you delete it in the settings or your account goes, the picture reference until your account goes.</li>
+            </ul>
+            <p className="text-base mb-3">
+              Retention per collection is documented in <a href="https://github.com/sonnyfrenzel-rgb/clean-core.io/blob/main/docs/DATA-RETENTION.md" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-semibold">docs/DATA-RETENTION.md</a> in our public source repository — as additional transparency, not as the place you have to look.
             </p>
             <p className="text-base">
               <strong>No automated decision-making (Art. 22 GDPR):</strong> we use AI models to analyse and transform the code you upload. They produce text, diagrams and code — they make no decision about you. There is no automated decision-making, including profiling, that produces legal effects concerning you or similarly significantly affects you. Whether an account is approved, restricted or deleted is decided by a person.
@@ -208,7 +226,13 @@ export default function DatenschutzPage() {
               7. Cookies &amp; Tracking
             </h2>
             <p className="text-base">
-              Clean-Core.io uses only strictly necessary cookies and local storage, of two kinds. The first authenticates you and maintains your session via Google Firebase Authentication. The second remembers your own choices in the interface on your own device: which hints you have dismissed, whether you have already seen the first look, a project name you typed but did not submit, a banner you closed, and how you left the demo workspace. That second kind never leaves your browser — we do not read it, it is not sent to our server, and it is not shared with anyone. Clearing your browser storage erases it and costs you nothing but those conveniences. We do not use analytics, advertising, or tracking cookies, and we embed no third-party marketing or profiling trackers. Because only essential, functional storage is used, no cookie-consent banner is required (§ 25(2) TDDDG / ePrivacy Directive).
+              <strong className="text-gray-800">We set no cookies at all.</strong> Visit any page without signing in and your browser is left exactly as it was: no cookie, no local storage, no session storage, and no request to anyone but us. We do not use analytics, advertising, or tracking cookies, and we embed no third-party marketing or profiling trackers — no reCAPTCHA, no App Check, no performance or usage measurement.
+            </p>
+            <p className="text-base mb-3">
+              Signing in adds two things, both on your own device. Google Firebase Authentication keeps your session in your browser&apos;s <strong>IndexedDB</strong> so you stay signed in between visits; without it you would have to sign in on every page. And the interface remembers your own choices, in local storage: which hints you have dismissed (<code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">cc.workspace.coachMarks.dismissed</code>), whether you have seen the first look (<code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">cc.workspace.firstLook.seen</code>) and the introduction in the new-project dialog (<code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">cc.newProject.introSeen</code>), how you left the demo (<code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">cleancore.demo.v1</code>), and which sign-off banner you closed (<code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">signoff-banner-dismissed-…</code>). In session storage, which your browser drops when you close it: a dismissed pilot banner and a guard that stops a failed page from reloading in a loop.
+            </p>
+            <p className="text-base">
+              None of that second group ever leaves your browser: we do not read it, it is not sent to our server, and it is not shared. In our assessment this is storage that is strictly necessary to provide the service you asked for, so no cookie-consent banner is required (§ 25(2) TDDDG / ePrivacy Directive) — and since there is nothing to track with, there is nothing a banner would be protecting you from.
             </p>
           </section>
 
@@ -227,6 +251,24 @@ export default function DatenschutzPage() {
             </p>
             <p className="text-base">
               The one exception is an emergency, such as a credible report that an upload contains malicious code. Reaching a project then is a deliberate act by the operator on the server, not a permission that stands open, and it leaves a record. Administrative actions on an account — approval, revocation of access, and deletion — are likewise recorded in an audit log together with the acting administrator, the affected account and the time. Apart from the people you invite yourself, we do not pass project content to anyone other than the subprocessors named in section 4.
+            </p>
+          </section>
+
+          <section id="server-logs" className="scroll-mt-20">
+            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
+              9. Server Logs
+            </h2>
+            <p className="text-base mb-3">
+              Everything above is about people with an account. This section is about everybody, because a web server cannot answer a request without seeing where to answer to.
+            </p>
+            <p className="text-base mb-3">
+              When you open a page or our server calls a model on your behalf, our hosting records the request: your <strong>IP address</strong>, the date and time, the path requested, the response status, the amount of data sent, the referring page and your browser&apos;s user-agent string. These logs exist to keep the service running and safe — to find an error you ran into, to see that a route is failing, and to recognise abuse. We do not use them to build a profile, and they are not combined with your account to analyse your behaviour. <em>Legal basis: Art. 6(1)(f) GDPR — our legitimate interest in operating and securing the platform.</em>
+            </p>
+            <p className="text-base mb-3">
+              They are kept for <strong>30 days</strong> and then deleted automatically by Google Cloud Logging. The same applies to the error reports our application writes when something goes wrong.
+            </p>
+            <p className="text-base">
+              One related record: to stop a single caller from exhausting the free quota or the mail route, we count requests per caller in a short sliding window. The counter&apos;s identifier is a <strong>salted hash</strong> of the account and the IP address, never the address itself, and the record expires with its own window — minutes to hours. You can object to the processing in this section at any time under Art. 21 GDPR; see section 5.
             </p>
           </section>
 

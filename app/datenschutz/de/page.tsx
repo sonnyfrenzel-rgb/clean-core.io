@@ -77,7 +77,7 @@ export default function DatenschutzDePage() {
           <Link href="/datenschutz" hrefLang="en" className="text-green-600 hover:underline font-semibold">
             englische Fassung
           </Link>{' '}
-          sind gleichrangig und inhaltsgleich.
+          sagen dasselbe. Sollten sie je voneinander abweichen, <strong>ist die deutsche Fassung ma&szlig;geblich</strong> &mdash; wir sind ein deutscher Verantwortlicher unter einer deutschen Aufsichtsbeh&ouml;rde, und eine &Uuml;bersetzung soll nicht &auml;ndern k&ouml;nnen, was wir Ihnen schulden.
         </p>
 
         <div className="space-y-10 text-gray-700 leading-relaxed">
@@ -111,7 +111,10 @@ export default function DatenschutzDePage() {
                 <strong className="text-gray-800">E-Mail und Passwort (Firebase Auth):</strong> Sie können sich statt über Google auch mit E-Mail-Adresse und Passwort registrieren. In diesem Fall verarbeiten wir die E-Mail-Adresse sowie den Vor- und Nachnamen, den Sie angeben. Das Passwort selbst verwaltet Firebase Authentication; für uns ist es zu keinem Zeitpunkt sichtbar. <em>Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.</em>
               </li>
               <li>
-                <strong className="text-gray-800">Ihre Motivation (freiwillig):</strong> der Freitext, den Sie bei der Registrierung ergänzen können. Er ist freiwillig, hat keinen Einfluss darauf, ob Sie Zugang erhalten, und Sie können seine Löschung jederzeit verlangen. <em>Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO — Ihre Einwilligung, die Sie jederzeit mit Wirkung für die Zukunft widerrufen können.</em>
+                <strong className="text-gray-800">Ihre Motivation (freiwillig):</strong> der Freitext, den Sie bei der Registrierung ergänzen können. Er ist freiwillig, hat keinen Einfluss darauf, ob Sie Zugang erhalten, und eine Zeile an <a href="mailto:info@clean-core.io" className="text-green-600 hover:underline font-semibold">info@clean-core.io</a> genügt, damit er gelöscht wird — wir fragen nicht nach dem Grund. <em>Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO — Ihre Einwilligung, die Sie jederzeit mit Wirkung für die Zukunft widerrufen können.</em>
+              </li>
+              <li>
+                <strong className="text-gray-800">Transaktionale E-Mails (Resend):</strong> Wir versenden die Mails, die der Dienst selbst erfordert — die Bestätigung einer Adresse, eine Einladung, um deren Versand Sie gebeten haben, einen Hinweis zu Ihrem Konto. Einen Newsletter gibt es nicht und Werbemails gibt es nicht. Ihre Adresse geht zur Zustellung an unseren Mailanbieter und sonst nirgendwohin. <em>Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO für die Mails, die Teil der Leistung sind, und Art. 6 Abs. 1 lit. f DSGVO für die, die sie sicher halten.</em>
               </li>
               <li>
                 <strong className="text-gray-800">Nutzerprofile in Firestore:</strong> Wir speichern Metadaten zu Ihrer Nutzung (etwa die Zahl durchgeführter Code-Transformationen, Systemgrenzen sowie Ihren Vor- und Nachnamen) in unserer gesicherten Datenbank. <em>Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO für die Zähler, ohne die das kostenlose Kontingent nicht funktioniert, und Art. 6 Abs. 1 lit. f DSGVO für Betrieb und Sicherheit der Plattform.</em>
@@ -130,7 +133,10 @@ export default function DatenschutzDePage() {
               <strong>Müssen Sie diese Daten bereitstellen?</strong> Eine gesetzliche Pflicht besteht nicht, und zur Registrierung sind Sie vertraglich nicht verpflichtet. Unsere öffentlichen Seiten, die Dokumentation und der Offline-Prüfer funktionieren ohne Konto. Für die Nutzung der Plattform selbst ist die Anmeldung jedoch technisch erforderlich: ohne E-Mail-Adresse und Namen können wir kein Konto anlegen, Ihre Projekte nicht von denen anderer trennen und das kostenlose Kontingent nicht durchsetzen — ohne diese Angaben ist die Plattform also nicht nutzbar. Alles oben als freiwillig Bezeichnete (Motivation, eigener Schlüssel) können Sie weglassen; die einzige Folge ist, dass die jeweilige Funktion entfällt.
             </p>
             <p className="text-sm text-gray-500 mt-3">
-              <strong>Mindestalter:</strong> Clean-Core.io ist ein Werkzeug für professionelle Softwarearbeit und richtet sich nicht an Kinder. Für ein Konto müssen Sie mindestens 16 Jahre alt sein. Wir prüfen das Alter nicht — ein Nachweis hieße, mehr personenbezogene Daten zu erheben, nicht weniger —, löschen ein Konto aber auf Hinweis, dass es einer jüngeren Person gehört.
+              <strong>Mindestalter:</strong> Clean-Core.io ist ein Werkzeug für professionelle Softwarearbeit und richtet sich nicht an Kinder und Jugendliche. Für ein Konto müssen Sie mindestens 18 Jahre alt sein; die Nutzungsbedingungen sagen dasselbe. Wir prüfen das Alter nicht — ein Nachweis hieße, mehr personenbezogene Daten zu erheben, nicht weniger —, löschen ein Konto aber auf Hinweis, dass es einer jüngeren Person gehört.
+            </p>
+            <p className="text-sm text-gray-500 mt-3">
+              <strong>Bitte laden Sie keine personenbezogenen Daten hoch.</strong> ABAP trägt sie oft mit, ohne dass jemand es beabsichtigt: die Benutzerkennung eines Entwicklers, ein Name in einem Kommentar, eine echte Kundennummer, ein Testdatensatz aus der Produktion. Entfernen Sie das vor dem Hochladen. Wir bieten keinen Auftragsverarbeitungsvertrag nach Art. 28 DSGVO an, und die Plattform ist nicht für die Verarbeitung personenbezogener Daten gedacht — die Nutzungsbedingungen machen daraus eine Pflicht, und Abschnitt 3 erklärt, was mit dem geschieht, was Sie hochladen. Das ist eine Regel, um die wir bitten; die Plattform erkennt und blockiert nichts davon.
             </p>
           </section>
 
@@ -142,11 +148,11 @@ export default function DatenschutzDePage() {
               Die von Ihnen hochgeladenen ABAP-Quelldateien und die erzeugten Modernisierungsartefakte (etwa Lösungsentwürfe, TypeScript-Code und Testfälle) werden in unserer gesicherten Google-Firebase-Umgebung in Europa gespeichert.
             </p>
             <p className="text-base mb-3">
-              <strong className="text-gray-800">Wer Ihr Projekt lesen kann:</strong> das Konto, das es angelegt hat, und wen dieses Konto zum Lesen einlädt — sonst niemand, und seit dem 16.&nbsp;September&nbsp;2026 auch nicht unser Administrator.{' '}
+              <strong className="text-gray-800">Wer Ihr Projekt lesen kann:</strong> das Konto, das es angelegt hat, und wen dieses Konto zum Lesen einlädt — sonst niemand, und seit dem 16.&nbsp;September&nbsp;2026 auch nicht unser Administrator. Es gibt eine Ausnahme, den Notfall, und sie ist in{' '}
               <a href="#project-access" className="text-green-700 underline underline-offset-2 hover:text-green-800">
                 Abschnitt 8
               </a>{' '}
-              führt das vollständig aus, nennt die Regeln, die Sie selbst nachlesen können, und beschreibt die eine Ausnahme.
+              beschrieben, der auch das ganze Bild ausführt und die Regeln nennt, die Sie selbst nachlesen können.
             </p>
             <div className="p-4 bg-green-50 border border-green-200 rounded-2xl">
               <p className="text-sm text-green-800">
@@ -207,6 +213,9 @@ export default function DatenschutzDePage() {
               Zur Ausübung dieser Rechte, insbesondere zur Löschung Ihrer Daten, können Sie die Kontolöschung unmittelbar in Ihren Profileinstellungen unter <strong>Danger Zone</strong> auslösen. Sie löscht Ihre Einträge in der Live-Datenbank und in der Authentifizierung sofort, einschließlich sämtlicher Projekte und des darin enthaltenen Quellcodes. Ein einzelnes Projekt können Sie jederzeit über Ihr Dashboard löschen. Restkopien in verschlüsselten Sicherungen laufen binnen 30 Tagen aus (siehe Abschnitt 6). Alternativ erreichen Sie uns unter <a href="mailto:info@clean-core.io" className="text-green-600 hover:underline font-semibold">info@clean-core.io</a>.
             </p>
             <p className="text-sm text-gray-500 mt-3">
+              <strong>Was die Löschung nicht erreicht:</strong> zwei Dinge überdauern sie, und das zu sagen ist nützlicher als ein sauberer Satz. Das Sicherheits-Protokoll hält die administrativen Handlungen an einem Konto fest — Freigabe, Entzug, Löschung — samt betroffenem Konto, und zwar 24 Monate ab der Handlung; ohne es ließe sich eine privilegierte Handlung niemandem mehr zuordnen, und wir dürfen es nach Art. 17 Abs. 3 lit. e und Art. 6 Abs. 1 lit. f DSGVO behalten. Und „sofort" meint die Live-Datenbank und die Anmeldung: Kopien in verschlüsselten Sicherungen laufen nach ihrem eigenen Rhythmus aus, binnen 30 Tagen, und werden nicht gezielt wiederhergestellt. Alles Übrige geht sofort.
+            </p>
+            <p className="text-sm text-gray-500 mt-3">
               <strong>Aufsichtsbehörde:</strong> Sie können sich bei jeder Aufsichtsbehörde beschweren, insbesondere in dem Mitgliedstaat Ihres Aufenthaltsorts, Ihres Arbeitsplatzes oder des Orts des mutmaßlichen Verstoßes. Für uns zuständig ist das <a href="https://www.lda.bayern.de" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-semibold">Bayerische Landesamt für Datenschutzaufsicht (BayLDA)</a>, Promenade 18, 91522 Ansbach, Deutschland.
             </p>
           </section>
@@ -219,7 +228,17 @@ export default function DatenschutzDePage() {
               <strong>Rechtsgrundlage (Art. 6 DSGVO):</strong> Die Rechtsgrundlage ist in Abschnitt 2 bei jedem Zweck einzeln genannt, weil ein pauschaler Satz Ihnen nicht sagt, welche Norm welche Verarbeitung trägt. Zusammengefasst: Erfüllung der von Ihnen angeforderten Leistung (Art. 6 Abs. 1 lit. b), Betrieb und Sicherheit der Plattform als berechtigtes Interesse (Art. 6 Abs. 1 lit. f) sowie Ihre Einwilligung, wo etwas freiwillig ist (Art. 6 Abs. 1 lit. a), die Sie jederzeit mit Wirkung für die Zukunft widerrufen können. Der in Abschnitt 8 beschriebene Notfallzugriff stützt sich auf Art. 6 Abs. 1 lit. f DSGVO — den Schutz der Plattform und ihrer Nutzer vor schädlichen Inhalten.
             </p>
             <p className="text-base mb-3">
-              <strong>Speicherdauer:</strong> Personenbezogene Daten werden für die Dauer Ihres Kontos gespeichert und mit der Kontolöschung entfernt (Art. 17); Restkopien in verschlüsselten Sicherungen laufen binnen 30 Tagen aus. <strong>Sicherheits-Protokolleinträge werden 24 Monate</strong> ab der protokollierten Handlung aufbewahrt und danach gelöscht; die Frist deckt zwei Jahresprüfungen ab und hält damit privilegierte Handlungen lange genug nachvollziehbar, ohne Identitäten von Administratoren unbefristet vorzuhalten. Die Speicherdauer je Sammlung ist in <a href="https://github.com/sonnyfrenzel-rgb/clean-core.io/blob/main/docs/DATA-RETENTION.md" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-semibold">docs/DATA-RETENTION.md</a> in unserem öffentlichen Quellcode-Repository dokumentiert, wo Sie sie selbst nachlesen können.
+              <strong>Speicherdauer:</strong> Personenbezogene Daten werden für die Dauer Ihres Kontos gespeichert und mit der Kontolöschung entfernt (Art. 17); Restkopien in verschlüsselten Sicherungen laufen binnen 30 Tagen aus. Die Fristen, die nicht einfach „solange das Konto besteht" lauten:
+            </p>
+            <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600 mb-3">
+              <li><strong className="text-gray-800">Server- und Zugriffsprotokolle:</strong> 30 Tage (siehe Abschnitt 9).</li>
+              <li><strong className="text-gray-800">Verschlüsselte Sicherungen:</strong> eine tägliche Kopie 7 Tage lang und eine wöchentliche 28 Tage lang, sodass nichts über 30 Tage hinaus überdauert.</li>
+              <li><strong className="text-gray-800">Sicherheits-Protokoll:</strong> 24 Monate ab der protokollierten Handlung, danach gelöscht. Die Frist deckt zwei Jahresprüfungen ab und hält privilegierte Handlungen lange genug nachvollziehbar, ohne Identitäten von Administratoren unbefristet vorzuhalten.</li>
+              <li><strong className="text-gray-800">Zähler des Ratenlimits:</strong> sie laufen mit ihrem eigenen Zeitfenster ab, Minuten bis Stunden. Der Schlüssel ist ein gesalzener Hash; eine Adresse steht dort in lesbarer Form nicht.</li>
+              <li><strong className="text-gray-800">Ihr eigener Gemini-Schlüssel und Ihr Google-Profilbild:</strong> solange Sie sie behalten — der Schlüssel, bis Sie ihn in den Einstellungen löschen oder das Konto geht, der Verweis auf das Bild, bis das Konto geht.</li>
+            </ul>
+            <p className="text-base mb-3">
+              Die Speicherdauer je Sammlung ist in <a href="https://github.com/sonnyfrenzel-rgb/clean-core.io/blob/main/docs/DATA-RETENTION.md" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-semibold">docs/DATA-RETENTION.md</a> in unserem öffentlichen Quellcode-Repository dokumentiert — als zusätzliche Transparenz, nicht als die Stelle, an der Sie nachsehen müssen.
             </p>
             <p className="text-base">
               <strong>Keine automatisierte Entscheidung im Einzelfall (Art. 22 DSGVO):</strong> Wir setzen KI-Modelle ein, um den von Ihnen hochgeladenen Code zu analysieren und zu transformieren. Sie erzeugen Text, Diagramme und Code — über Sie entscheiden sie nicht. Eine automatisierte Entscheidungsfindung einschließlich Profiling, die Ihnen gegenüber rechtliche Wirkung entfaltet oder Sie in ähnlicher Weise erheblich beeinträchtigt, findet nicht statt. Ob ein Konto freigegeben, eingeschränkt oder gelöscht wird, entscheidet ein Mensch.
@@ -231,7 +250,13 @@ export default function DatenschutzDePage() {
               7. Cookies und Tracking
             </h2>
             <p className="text-base">
-              Clean-Core.io verwendet ausschließlich unbedingt erforderliche Cookies und lokale Speicherung, und zwar zweierlei Art. Die erste authentifiziert Sie und hält Ihre Sitzung über Google Firebase Authentication aufrecht. Die zweite merkt sich Ihre eigenen Entscheidungen in der Oberfläche auf Ihrem eigenen Gerät: welche Hinweise Sie weggeklickt haben, ob Sie den ersten Blick schon gesehen haben, einen Projektnamen, den Sie eingegeben, aber nicht abgeschickt haben, ein geschlossenes Hinweisband und den Stand, in dem Sie die Demo verlassen haben. Diese zweite Art verlässt Ihren Browser nie — wir lesen sie nicht, sie wird nicht an unseren Server gesendet und mit niemandem geteilt. Wer seinen Browserspeicher leert, löscht sie; verloren geht dabei nichts als diese Bequemlichkeiten. Wir setzen keine Analyse-, Werbe- oder Tracking-Cookies ein und binden keine Marketing- oder Profiling-Tracker Dritter ein. Da ausschließlich unbedingt erforderliche, funktionale Speicherung stattfindet, ist kein Cookie-Banner erforderlich (§ 25 Abs. 2 TDDDG / ePrivacy-Richtlinie).
+              <strong className="text-gray-800">Wir setzen überhaupt keine Cookies.</strong> Rufen Sie eine Seite auf, ohne sich anzumelden, bleibt Ihr Browser genau so, wie er war: kein Cookie, keine lokale Speicherung, keine Sitzungsspeicherung und keine Anfrage an irgendjemanden außer uns. Wir setzen keine Analyse-, Werbe- oder Tracking-Cookies ein und binden keine Marketing- oder Profiling-Tracker Dritter ein — kein reCAPTCHA, kein App Check, keine Leistungs- oder Nutzungsmessung.
+            </p>
+            <p className="text-base mb-3">
+              Mit der Anmeldung kommen zwei Dinge hinzu, beide auf Ihrem eigenen Gerät. Google Firebase Authentication hält Ihre Sitzung in der <strong>IndexedDB</strong> Ihres Browsers, damit Sie zwischen Besuchen angemeldet bleiben; ohne sie müssten Sie sich auf jeder Seite neu anmelden. Und die Oberfläche merkt sich Ihre eigenen Entscheidungen in der lokalen Speicherung: welche Hinweise Sie weggeklickt haben (<code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">cc.workspace.coachMarks.dismissed</code>), ob Sie den ersten Blick gesehen haben (<code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">cc.workspace.firstLook.seen</code>) und die Einführung im Projektdialog (<code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">cc.newProject.introSeen</code>), wie Sie die Demo verlassen haben (<code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">cleancore.demo.v1</code>) und welches Bestätigungsband Sie geschlossen haben (<code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">signoff-banner-dismissed-…</code>). In der Sitzungsspeicherung, die Ihr Browser beim Schließen verwirft: ein weggeklicktes Hinweisband und eine Sperre, die eine fehlgeschlagene Seite nicht in eine Neuladeschleife laufen lässt.
+            </p>
+            <p className="text-base">
+              Nichts aus dieser zweiten Gruppe verlässt jemals Ihren Browser: wir lesen es nicht, es wird nicht an unseren Server gesendet und mit niemandem geteilt. Nach unserer Bewertung handelt es sich um Speicherung, die für die von Ihnen ausdrücklich gewünschte Leistung unbedingt erforderlich ist, sodass kein Cookie-Banner erforderlich ist (§ 25 Abs. 2 TDDDG / ePrivacy-Richtlinie) — und da es nichts gibt, womit sich nachverfolgen ließe, gibt es auch nichts, wovor ein Banner Sie schützen würde.
             </p>
           </section>
 
@@ -250,6 +275,24 @@ export default function DatenschutzDePage() {
             </p>
             <p className="text-base">
               Die einzige Ausnahme ist ein Notfall, etwa ein begründeter Hinweis, dass ein Upload Schadcode enthält. Der Zugriff auf ein Projekt ist dann eine bewusste Handlung des Betreibers auf dem Server, keine dauerhaft offenstehende Berechtigung, und er wird protokolliert. Administrative Handlungen an einem Konto — Freigabe, Entzug des Zugangs und Löschung — werden ebenfalls in einem Protokoll mit handelndem Administrator, betroffenem Konto und Zeitpunkt festgehalten. Abgesehen von den Personen, die Sie selbst einladen, geben wir Projektinhalte an niemanden weiter außer an die in Abschnitt 4 genannten Auftragsverarbeiter.
+            </p>
+          </section>
+
+          <section id="server-logs" className="scroll-mt-20">
+            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
+              9. Serverprotokolle
+            </h2>
+            <p className="text-base mb-3">
+              Alles Bisherige betrifft Menschen mit einem Konto. Dieser Abschnitt betrifft alle, denn ein Webserver kann eine Anfrage nicht beantworten, ohne zu sehen, wohin er antworten soll.
+            </p>
+            <p className="text-base mb-3">
+              Wenn Sie eine Seite öffnen oder unser Server in Ihrem Auftrag ein Modell aufruft, protokolliert unser Hosting die Anfrage: Ihre <strong>IP-Adresse</strong>, Datum und Uhrzeit, den angefragten Pfad, den Antwortstatus, die übertragene Datenmenge, die verweisende Seite und die Kennung Ihres Browsers. Diese Protokolle gibt es, um den Dienst am Laufen und sicher zu halten — um einen Fehler zu finden, in den Sie geraten sind, um zu sehen, dass eine Route scheitert, und um Missbrauch zu erkennen. Wir bilden damit kein Profil, und sie werden nicht mit Ihrem Konto verknüpft, um Ihr Verhalten auszuwerten. <em>Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO — unser berechtigtes Interesse an Betrieb und Sicherheit der Plattform.</em>
+            </p>
+            <p className="text-base mb-3">
+              Sie werden <strong>30 Tage</strong> aufbewahrt und danach von Google Cloud Logging automatisch gelöscht. Dasselbe gilt für die Fehlerberichte, die unsere Anwendung schreibt, wenn etwas schiefgeht.
+            </p>
+            <p className="text-base">
+              Ein verwandter Datensatz: Damit ein einzelner Aufrufer weder das kostenlose Kontingent noch den Mailweg erschöpft, zählen wir Anfragen je Aufrufer in einem kurzen gleitenden Fenster. Die Kennung dieses Zählers ist ein <strong>gesalzener Hash</strong> aus Konto und IP-Adresse, nie die Adresse selbst, und der Datensatz läuft mit seinem Fenster ab — Minuten bis Stunden. Der Verarbeitung in diesem Abschnitt können Sie jederzeit nach Art. 21 DSGVO widersprechen; siehe Abschnitt 5.
             </p>
           </section>
 

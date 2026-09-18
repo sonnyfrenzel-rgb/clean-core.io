@@ -91,9 +91,18 @@ test.describe('the privacy policy in two languages', () => {
     { what: 'the data protection officer question answered', en: /Data protection officer/, de: /Datenschutzbeauftragter/ },
     { what: 'whether providing the data is required (Art. 13(2)(e))', en: /Do you have to provide this data\?/, de: /Müssen Sie diese Daten bereitstellen\?/ },
     { what: 'no automated decision-making (Art. 22)', en: /No automated decision-making \(Art\. 22 GDPR\)/, de: /Keine automatisierte Entscheidung im Einzelfall \(Art\. 22 DSGVO\)/ },
-    { what: 'a concrete retention for the audit record', en: /Security audit records are kept for 24 months/, de: /Sicherheits-Protokolleinträge werden 24 Monate/ },
+    { what: 'a concrete retention for the audit record', en: /24 months from the recorded action/, de: /24 Monate ab der protokollierten Handlung/ },
     { what: 'the Data Privacy Framework as the transfer basis', en: /EU-U\.S\. Data Privacy Framework/, de: /EU-U\.S\. Data Privacy Framework/ },
-    { what: 'the minimum age', en: /at least 16 years old/, de: /mindestens 16 Jahre alt/ },
+    { what: 'the minimum age', en: /at least 18 years old/, de: /mindestens 18 Jahre alt/ },
+    // Added 18.09.2026 after the second legal review.
+    { what: 'which version prevails if they differ', en: /the German version prevails/, de: /deutsche Fassung ma&szlig;geblich/ },
+    { what: 'that no processing agreement is offered', en: /do not offer a data processing agreement/, de: /keinen Auftragsverarbeitungsvertrag/ },
+    { what: 'the request not to upload personal data', en: /do not upload personal data/, de: /keine personenbezogenen Daten hoch/ },
+    { what: 'that no cookies are set at all', en: /We set no cookies at all/, de: /überhaupt keine Cookies/ },
+    { what: 'where the session actually lives', en: /IndexedDB/, de: /IndexedDB/ },
+    { what: 'a section on server logs', en: /Server Logs/, de: /Serverprotokolle/ },
+    { what: 'how long server logs are kept', en: /Google Cloud Logging/, de: /Google Cloud Logging/ },
+    { what: 'what outlives an account deletion', en: /Art\. 17\(3\)\(e\)/, de: /Art\. 17 Abs\. 3 lit\. e/ },
     { what: 'the Art. 14 notice to invited people', en: /Art\. 14 GDPR/, de: /Art\. 14 DSGVO/ },
   ];
 

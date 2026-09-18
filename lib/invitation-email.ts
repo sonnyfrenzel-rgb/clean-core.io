@@ -50,10 +50,11 @@ export const INVITATION_EMAIL_SUBJECT = 'You have been invited to read a project
  * mail that has to. The invited person's address reached us from the owner who
  * typed it, not from them, so Art. 14 applies in full: they are owed the
  * identity of the controller, what is held, why, on what basis, for how long,
- * where it came from, and their rights — and this mail is the only channel we
- * have to them. The confirmation mail below is deliberately without it: it goes
- * to somebody who already holds an account and gave us that address themselves,
- * which is Art. 13 and already answered by the privacy policy they accepted.
+ * where it came from, who else handles it, where it may travel, and their
+ * rights — and this mail is the only channel we have to them. The confirmation
+ * mail below is deliberately without it: it goes to somebody who already holds
+ * an account and gave us that address themselves, which is Art. 13 and already
+ * answered by the privacy policy they accepted.
  *
  * The notice sits last and small on purpose. What the reader came for is the
  * invitation; a legal panel above the button would bury it.
@@ -119,9 +120,9 @@ export function buildInvitationEmail({ inviterName, recipient, link, expires }: 
 
                   <div style="border-top: 1px solid #f1f5f9; margin-top: 20px; padding-top: 14px; font-size: 12px; line-height: 1.6; color: #64748b;">
                     <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px;">How we got your address &mdash; Art. 14 GDPR</strong>
-                    The person who invited you typed your address; you never gave it to us. We store it to send this one mail and to open that one project for this address and no other, and if you accept, we also store your account&rsquo;s id and the address on that account. Nobody sees any of it but the owner who invited you: our security rules let no browser read an invitation at all.
+                    The person who invited you typed your address; you never gave it to us. We store it to send this one mail and to open that one project for this address and no other, and if you accept, we also store your account&rsquo;s id and the address on that account. Nobody sees any of it but the owner who invited you: our security rules let no browser read an invitation at all. Two processors handle it on our behalf: Resend, which delivers this mail, and Google Firebase, which hosts the database the invitation is stored in (Belgium, europe-west1). Both are US companies certified under the EU-U.S. Data Privacy Framework, so a transfer to them rests on the European Commission&rsquo;s adequacy decision of 10 July 2023 (Art. 45 GDPR); where that does not cover it, the EU Standard Contractual Clauses (Art. 46 GDPR) and the providers&rsquo; data-processing terms apply.
                     <br /><br />
-                    The basis is our legitimate interest in running an invitation feature a user asked for (Art. 6(1)(f) GDPR). An invitation expires on its own after ${INVITATION_DEFAULT_DAYS} days by default and ${INVITATION_MAX_DAYS} at the most; it is deleted with the project, and it is deleted if you delete a Clean-Core.io account carrying this address. You can ask us for access, rectification, erasure or restriction, you can object at any time (Art. 21 GDPR), and you can complain to a supervisory authority. Controller: Felix Frenzel, Hellerstra&szlig;e 9, 96047 Bamberg, Germany, <a href="mailto:${CONTACT_EMAIL}" style="color: #047857; font-weight: 700;">${CONTACT_EMAIL}</a>. The full privacy policy is at <a href="${privacyUrl}" style="color: #0284c7; font-weight: 700;">${privacyUrl}</a>, section 8.
+                    The basis is our legitimate interest in running an invitation feature a user asked for (Art. 6(1)(f) GDPR). An invitation expires on its own after ${INVITATION_DEFAULT_DAYS} days by default and ${INVITATION_MAX_DAYS} at the most; it is deleted with the project, and it is deleted if you delete a Clean-Core.io account carrying this address. You can ask us for access, rectification, erasure or restriction, you can object at any time (Art. 21 GDPR), and you can complain to a supervisory authority &mdash; ours is the Bayerisches Landesamt f&uuml;r Datenschutzaufsicht (BayLDA), Promenade 18, 91522 Ansbach, Germany. Controller: Felix Frenzel, Hellerstra&szlig;e 9, 96047 Bamberg, Germany, <a href="mailto:${CONTACT_EMAIL}" style="color: #047857; font-weight: 700;">${CONTACT_EMAIL}</a>. The full privacy policy is at <a href="${privacyUrl}" style="color: #0284c7; font-weight: 700;">${privacyUrl}</a>, section 8.
                   </div>
 
                 </td>

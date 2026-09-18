@@ -72,9 +72,17 @@ export default function TermsPage() {
               Platform, you accept these Terms of Service and Community Guidelines (the &ldquo;Terms&rdquo;). If you do not
               agree, you may not use the Platform.
             </p>
-            <p className="text-base">
+            <p className="text-base mb-3">
               The Platform is intended for professional and evaluation use. By participating, you help shape and improve
               this community utility.
+            </p>
+            <p className="text-base">
+              <strong>Minimum age:</strong> You must be at least 18 years old to register for or use the Platform.
+              Accepting these Terms means entering into a contract, and under German law a minor has only limited
+              capacity to do so (§§ 106 ff. BGB), so an acceptance given without a parent or guardian would remain
+              provisionally invalid. The Platform is a tool for professional software work and is not directed at
+              children. We do not verify age &mdash; asking for proof would mean collecting more personal data than the
+              service needs, not less &mdash; but we will delete an account on notice that it belongs to someone younger.
             </p>
           </section>
 
@@ -176,6 +184,7 @@ export default function TermsPage() {
             </p>
             <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
               <li>Do not upload malicious software, illegal scripts, or proprietary source code that violates intellectual property rights or confidentiality obligations.</li>
+              <li>Do not upload personal data of third parties &mdash; section 8 says what to strip out of your code before you submit it.</li>
               <li>Maintain a respectful, collaborative, and professional tone in all community spaces.</li>
               <li>Report system hallucinations, security vulnerabilities, or compilation errors to help continuously refine the engine.</li>
             </ul>
@@ -193,6 +202,27 @@ export default function TermsPage() {
               any confidentiality or data-protection obligation.
             </p>
             <p className="text-base mb-3">
+              <strong>No personal data of third parties:</strong> that warranty has one consequence worth stating in
+              full. ABAP source routinely carries personal data that nobody put there deliberately &mdash; developer
+              user IDs in headers and change histories, names of colleagues or customers in comments, real customer,
+              vendor or employee numbers in hard-coded literals, and production records pasted in as test data. Strip or
+              replace them before you upload. Do not submit personal data of third parties to the Platform in any form.
+            </p>
+            <p className="text-base mb-3">
+              Clean-Core.io does not offer a data processing agreement under Art. 28 GDPR
+              (Auftragsverarbeitungsvertrag) and does not conclude one. It is a free community project run by one
+              person, it is not intended for the processing of personal data on anyone else&rsquo;s behalf, and there is
+              no contract under which the operator could act as your processor. Uploading such data is therefore a
+              breach of these Terms whatever the purpose; if the code you want to analyse cannot be stripped, the
+              Platform is not the place for it.
+            </p>
+            <p className="text-base mb-3">
+              This is a rule we ask you to keep, not a control we exercise. The Platform does not detect, screen, filter
+              or block personal data in an upload, and nothing in it checks whether you have stripped anything: what you
+              submit is analysed and forwarded to the Google Gemini API as you gave it (see section 5). Clearing your
+              code is something only you can do, and only before you upload it.
+            </p>
+            <p className="text-base mb-3">
               You retain all rights in the content you submit. To the extent required to operate the Platform, you grant the
               operator a non-exclusive, revocable right to process your submissions solely for the purpose of providing the
               service to you.
@@ -205,10 +235,15 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">9. Data Protection</h2>
-            <p className="text-base">
+            <p className="text-base mb-3">
               Personal data is processed in accordance with the EU General Data Protection Regulation (GDPR) and applicable
               German data-protection law. Details on the nature, scope, and purpose of processing are set out in the
               separate <Link href="/datenschutz" className="text-green-600 hover:underline font-semibold">Privacy Policy (Datenschutzerklärung)</Link> available on the Platform at clean-core.io.
+            </p>
+            <p className="text-base">
+              This section is about the personal data we process about you as a user of the Platform. Personal data that
+              ends up inside the content you upload is a different question, and section 8 answers it: it does not
+              belong on the Platform.
             </p>
           </section>
 

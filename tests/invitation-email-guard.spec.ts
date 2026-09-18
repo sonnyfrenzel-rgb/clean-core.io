@@ -64,12 +64,37 @@ test.describe('Art. 14 GDPR notice in the invitation mail', () => {
     expect(html).toMatch(/deleted with the project/);
     expect(html).toMatch(/deleted if you delete a Clean-Core\.io account carrying this address/);
 
+    // Who else gets the address — Art. 14(1)(e). Both are verified in the code:
+    // `lib/transactional-mail.ts` posts it to api.resend.com, and the route
+    // writes the invitation, address included, into Firestore with the Admin SDK.
+    expect(html, 'the notice no longer names the mail provider').toContain('Resend');
+    expect(html, 'the notice no longer names the hosting/database provider').toContain('Google Firebase');
+    expect(html).toMatch(/Two processors handle it on our behalf/);
+
+    // Third-country transfer — Art. 14(1)(f). Same two grounds, in the same
+    // order, as section 4 of `app/datenschutz/page.tsx`; the mail may not tell a
+    // reader something the policy it links to does not.
+    expect(html).toContain('EU-U.S. Data Privacy Framework');
+    expect(html).toContain('adequacy decision of 10 July 2023');
+    expect(html).toContain('Art. 45 GDPR');
+    expect(html).toContain('EU Standard Contractual Clauses');
+    expect(html).toContain('Art. 46 GDPR');
+
     // The rights, all six.
     for (const right of ['access', 'rectification', 'erasure', 'restriction']) {
       expect(html, `the notice lost the right to ${right}`).toContain(right);
     }
     expect(html).toContain('Art. 21 GDPR');
     expect(html).toContain('complain to a supervisory authority');
+
+    // …and which one. "A supervisory authority" leaves the reader to work out
+    // ours from the controller's address; Art. 14 does not ask them to.
+    expect(html, 'the competent authority is no longer named').toContain(
+      'Bayerisches Landesamt f&uuml;r Datenschutzaufsicht (BayLDA)',
+    );
+    expect(html, 'the authority is named without an address to write to').toContain(
+      'Promenade 18, 91522 Ansbach, Germany',
+    );
 
     // The privacy policy, as a link and not as prose.
     const privacyUrl = `${APP_BASE_URL}/datenschutz#project-access`;

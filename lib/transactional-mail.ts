@@ -123,8 +123,18 @@ export function htmlToText(html: string): string {
     .replace(/&rsquo;|&#x27;/g, "'")
     .replace(/&ldquo;|&rdquo;|&quot;/g, '"')
     .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–')
     .replace(/&rarr;/g, '->')
     .replace(/&bull;/g, '*')
+    // German letters, because the last line of every one of these mails is an
+    // imprint. Without them the catch-all below turned each entity into a space
+    // and the operator's own address read "Hellerstra e 9" in the text/plain
+    // part — a legal notice mangled by its own fallback (found 18.09.2026 while
+    // reading the invitation mail out for a legal review).
+    .replace(/&auml;/g, 'ä').replace(/&ouml;/g, 'ö').replace(/&uuml;/g, 'ü')
+    .replace(/&Auml;/g, 'Ä').replace(/&Ouml;/g, 'Ö').replace(/&Uuml;/g, 'Ü')
+    .replace(/&szlig;/g, 'ß')
+    .replace(/&sect;/g, '§')
     .replace(/&[a-z]+;/gi, ' ')
     .replace(/[ \t]+/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
