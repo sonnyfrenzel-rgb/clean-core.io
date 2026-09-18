@@ -362,6 +362,35 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     „getestet mit SAP Signavio". Es ist nur entschieden, dass niemand ihn *jetzt* fährt. Wer ihn fährt
     und wann, ist offen; `tests/signavio-claims-guard.spec.ts` hält die Zurückhaltung so lange.
 
+27. **Scope Items (7.2): Weg 3 ist keiner — es gibt keine offizielle, öffentliche, maschinenlesbare
+    Gesamtquelle.** Recherchiert am 18.09.2026 (Agent, nur geholte URLs; drei tragende Tatsachen von
+    mir selbst nachgeprüft):
+    - `me.sap.com/processnavigator` (Nachfolger des Best Practices Explorer): nur ein Login-Stub, SAP
+      Universal ID / S-User zwingend — auch für SAP-Notes wie 3450904. *Selbst geprüft.*
+    - `rapid.sap.com` (der alte Explorer): DNS löst auf, Port 443 verweigert die Verbindung. Tot. *Selbst
+      geprüft.*
+    - Ob der Process Navigator einen Excel/PDF-Export der Scope-Item-Liste anbietet, ist **in der SAP
+      Community selbst widersprüchlich**: Juli 2025 „export the list as an Excel", Dezember 2025 „can't
+      download that list", Januar 2026 „the global link … also disappeared". Alle drei Zitate im Thread
+      14147981 vorhanden. *Selbst geprüft.* Kein SAP-Statement dazu.
+    - SAP Help Portal rendert clientseitig (leere SPA-Hülle für Nicht-Browser); das offiziell als PUBLIC
+      deklarierte „Feature Scope Description"-PDF leitet ebenfalls zum Login. Beides *Abrufgrenze*, keine
+      Inhaltsaussage.
+    - Einzelne „Scope Document"-PDFs im SAP Digital Marketplace sind ohne Login lesbar und enthalten
+      genau die Tabellenform (Business Process | Scope Item | Description, z. B. `18J Requisitioning`,
+      `J45`, `BD9`) — aber je Packaged Service nur eine Teilmenge (~60 von 700+), Vertragsanhänge mit
+      AGB, opak benannt, Bucket-Listing 403, keine Lizenz zur Weiterverwendung.
+    - GitHub (`SAP`, `SAP-samples`, Dritte) und npm: kein Katalog. Ein Drittprojekt erklärt ausdrücklich,
+      keine SAP-Daten zu spiegeln.
+
+    **Was bleibt:** *(1)* **Kontoeingabe** — der Nutzer trägt je Fähigkeit ein Scope Item ein, Herkunft
+    „self-reported", Deckel E1 wie gebaut; sofort möglich. *(2)* **Import einer Datei, die der Betreiber
+    selbst mit seinem S-User zieht** — setzt voraus, dass der Export im Process Navigator heute noch
+    existiert (nur Sonny kann das mit echtem Login in fünf Minuten prüfen) **und** dass SAPs
+    Nutzungsbedingungen für „SAP for Me"-Inhalte die Anzeige in einem fremden, kostenlosen Produkt
+    erlauben — anders als beim Cloudification Repository, das als offenes GitHub-Repo unter klarer Lizenz
+    genau dafür da ist. Scraping der Login-Oberfläche: nicht ohne geklärte Bedingungen.
+
 ### Hygiene, bevor die nächste Welle startet
 
 20. **Emulator und Dev-Server neu starten**, bevor mehr als vier Agenten laufen. Der Emulator stand
