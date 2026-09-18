@@ -9,6 +9,7 @@ import { adminSetDoc } from './helpers/admin-seed';
 import {
   ACCESS_CLAIM_ID,
   ACCESS_NAMES_ADMIN,
+  ACCESS_NAMES_INVITATION,
   ACCESS_OWNER_ONLY,
   SECURITY_MODEL_URL,
   TRUST_CARD_DISCLOSURE,
@@ -223,10 +224,17 @@ test.describe('the access line tracks the rule it describes', () => {
     expect(grantsAdminRead(ownerOnly), 'an admin read was invented').toBe(false);
   });
 
-  test('the card and the policy say the owner alone (Sonny, 16.09.2026)', () => {
+  test('the card and the policy name the same readers (Sonny 16.09.2026, phase 5)', () => {
     const claim = TRUST_CLAIMS.find((c) => c.id === ACCESS_CLAIM_ID);
     expect(claim, 'the access claim is gone').toBeTruthy();
-    expect(claim!.text, 'the card must say the owner is alone').toContain(ACCESS_OWNER_ONLY);
+    expect(claim!.text, 'the card must say nobody else has standing access').toContain(ACCESS_OWNER_ONLY);
+    // Phase 5 added the one reader the rule did not have. A card that still said
+    // the owner was alone would promise a privacy the database stopped giving on
+    // the day sharing shipped.
+    expect(
+      claim!.text,
+      'the rule lets an invited account read — the card has to name it',
+    ).toContain(ACCESS_NAMES_INVITATION);
     expect(
       claim!.text,
       'the admin has no standing read — the card must not present it as a reader',
@@ -234,7 +242,7 @@ test.describe('the access line tracks the rule it describes', () => {
     expect(
       prose('app/datenschutz/page.tsx'),
       'the privacy policy has to say who can open a project before the card does',
-    ).toContain('No other account has standing access, and our administrator account does not either');
+    ).toContain('No account you have not invited has standing access, and our administrator account does not either');
     // And the one thing that is not a standing permission is written down too,
     // because the Admin SDK bypasses these rules by design and "nobody can read
     // it" would be false.
@@ -377,16 +385,25 @@ test.describe('the card on the upload screen', () => {
     ).toBe(0);
   });
 
-  test('it promises no sharing, because there is none to promise', async ({ page }) => {
+  test('it names sharing, because there is now something to name', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
     await openUpload(page);
 
     const block = (await page.locator('[data-trust-block]').innerText()).toLowerCase();
-    // `DESIGN.md` §6.1.3 offers "Others see it only if you invite them." There is
-    // no invitation in `firestore.rules` today; it arrives with roadmap 0.7.
-    expect(block, 'the card offers sharing by invitation, which does not exist yet').not.toContain('invite');
-    expect(block).not.toContain('share it with');
+    // This test used to assert the opposite, and was right to: `DESIGN.md`
+    // §6.1.3 offers "Others see it only if you invite them", and until phase 5
+    // `firestore.rules` had no invited reader, so the card would have been
+    // offering something that did not exist.
+    //
+    // Phase 5 built it, and the assertion turns over with it. The card sits on
+    // the screen where somebody decides whether to hand us a customer's ABAP;
+    // if it said nobody else could ever open the project, it would be the most
+    // trusted surface in the product telling them the opposite of what the
+    // database does.
+    expect(block, 'sharing exists and the card does not mention it').toContain('invite');
+    // And the limit stays on the card: invited by the owner, nobody else.
+    expect(block).toContain('no one else has standing access');
   });
 
   test('on a phone it is collapsed behind one control', async ({ page }) => {

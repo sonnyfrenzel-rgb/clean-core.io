@@ -107,12 +107,25 @@ export const TRUST_CARD_HIDE = 'Hide';
  * Admin SDK, which bypasses the rules by design, and which leaves a record — is
  * not a standing permission and is spelled out in the Privacy Policy behind the
  * link, which is why the card says "standing access" and not "nobody can".
+ *
+ * Roadmap phase 5 (sharing) adds the one reader the rule did not have: an
+ * account the owner invited by e-mail and that accepted. The card has to name
+ * it. "Only you can open this" was true until the day the product could share,
+ * and a card that kept saying it would be promising a privacy the database no
+ * longer gives — the exact failure this file exists to prevent. What stays true
+ * is the part that matters: nobody gets in unless the owner put them there, and
+ * the owner can take it back.
  */
 export const ACCESS_CLAIM_ID = 'access';
 /** What the card must say while the rule grants the admin a read. */
 export const ACCESS_NAMES_ADMIN = 'administrator';
 /** What the card must say once it does not. */
 export const ACCESS_OWNER_ONLY = 'no one else has standing access';
+/**
+ * What the card must say once the rule lets an invited account read, so that a
+ * sharing feature cannot ship behind a card that still promises there is none.
+ */
+export const ACCESS_NAMES_INVITATION = 'invite';
 
 export const TRUST_CLAIMS: TrustClaim[] = [
   {
@@ -132,7 +145,7 @@ export const TRUST_CLAIMS: TrustClaim[] = [
   },
   {
     id: ACCESS_CLAIM_ID,
-    text: 'Only the account that created this project can open it; no one else has standing access.',
+    text: 'Only the account that created this project can open it, and anyone that account chooses to invite; no one else has standing access.',
     icon: 'access',
     sources: [
       {
@@ -141,7 +154,8 @@ export const TRUST_CLAIMS: TrustClaim[] = [
         label: 'Privacy Policy §8',
         evidence: [
           'Only the account that created a project can open it',
-          'No other account has standing access, and our administrator account does not either',
+          'and anyone that account has invited to read it',
+          'No account you have not invited has standing access, and our administrator account does not either',
         ],
       },
     ],

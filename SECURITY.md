@@ -89,6 +89,26 @@ This document describes the security architecture and hardening measures impleme
 - **Audit Logging**: Every administrative action is automatically logged to the `audit_events` collection, capturing the actor's UID/email, action type, target UID, and timestamp.
 - **Admin Verification**: Access requires valid admin credentials, recent re-auth (< 5 min), and the second factor on the ID token (`assertAdminStepUp`).
 
+### 3.7 Who May Read a Project (roadmap 5, "Teilen")
+
+A project carries uploaded ABAP, so who may read it is stated here in full. There are **two** read paths from a browser and one deliberate server-side act; there is no third.
+
+- **The owner.** `firestore.rules` grants `resource.data.userId == request.auth.uid`.
+- **An invited account that accepted.** The owner invites one e-mail address; the server creates an invitation at `projects/{projectId}/invitations/{invitationId}` and mails a link. Accepting requires a signed-in account whose **own, confirmed** e-mail address equals the invited one — Google sign-in counts as confirmed, a password account is sent a confirmation first. Only then is the accepting uid written into the `readers` array on the project document, and only then does the rule answer. A forwarded link therefore opens nothing: the link names the invitation, the account is what is checked.
+- **The administrator has no read.** It was removed on 16.09.2026 and did not come back with sharing. An emergency — a credible report of malicious code in an upload — is handled server-side through the Admin SDK, which bypasses the rules by design; that is a deliberate act with a record, not a standing permission.
+
+Properties this rests on, each enforced rather than asked for:
+
+- **The grant is one field in one place.** Reading is answered by `readers` on the project document, with no `get()` into another document. A revocation removes the uid from that one array and takes effect on the next read — it does not have to succeed in N documents to be complete. For the same reason `projects/{id}/runs/{runId}` is **not** widened: an invited reader gets a run's contents through `GET /api/projects/{projectId}`, which re-reads `readers` on every request.
+- **`readers` is not client-writable.** A browser that could write it could invite itself, which is the whole grant. The field is absent from the project update allowlist, and `tests/invitation-flow.spec.ts` reads the rules file to prove it.
+- **The invitation subcollection is server-only, out loud.** `allow read, write: if false` — written down rather than left to default-deny, because an invitation carries the e-mail address of the person it was sent to, and a project's invitation list is therefore a list of other people's addresses. The owner's overview is answered by `GET /api/projects/{projectId}/readers`, which returns the accepted readers and never the pending addresses.
+- **Nothing on an invitation comes from the caller.** Both timestamps are the server's clock, `invitedBy` is the verified token, `status` is `pending` because this route is the only thing that creates one, and a requested lifetime outside 1–90 days collapses to the default of 14 rather than being honoured. Documents are written with `create()`, never `set()`, and the id is 24 random bytes.
+- **Inviting and revoking sit behind the second factor**, like every other route that touches a project's code, and behind a rate limit. A project may hold at most **three** open invitations at once (`INVITATION_MAX_OPEN`, decided 18.09.2026): the rate limit caps how fast invitations go out and cannot cap how many stand open, and a route that mails an address its caller typed needs both halves.
+- **An invitation nobody was told about is not left behind.** If the mail provider refuses, the invitation is withdrawn in the same request and the owner is told nothing went out.
+- **Reading is all it grants.** Analysing, confirming, signing and exporting remain with the owner; every one of those routes still answers on `userId`.
+
+**Rules deploy:** this is one of the two steps whose `firestore.rules` change must be deployed **before** the app that relies on it (`npm run deploy:rules`). CI does not deploy rules.
+
 ---
 
 ## 4. Credential Encryption (F-03)
