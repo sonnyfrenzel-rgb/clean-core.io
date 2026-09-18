@@ -83,6 +83,7 @@ async function seedProject(uid: string, id: string, route: string, generatedCode
     solutionDesign: '# Target architecture\n\nOne paragraph.\n',
     generatedCode,
     testCases: [{ id: 't1', name: 'Case', category: 'Unit', status: 'Passed' }],
+    coverageEstimate: { percentage: 73 },
     documentation: JSON.stringify({
       l3_flow: [{ id: 'Task_1', name: 'Check stock', type: 'task', role: 'Clerk' }],
     }),
@@ -192,18 +193,30 @@ test.describe('a signed-in account reading its own project', () => {
     // "not compiled or tested". Green is what a passed check earns. Tailwind v4
     // reports `oklch(...)`, so the browser resolves it to sRGB for us rather
     // than this spec re-implementing a colour space.
-    const paint = await icon.evaluate((el) => {
+    const rgb = (el: Element) => {
       const colour = getComputedStyle(el).color;
       const ctx = document.createElement('canvas').getContext('2d')!;
       ctx.fillStyle = colour;
       ctx.fillRect(0, 0, 1, 1);
       const [r, g, b] = Array.from(ctx.getImageData(0, 0, 1, 1).data);
       return { colour, r, g, b };
-    });
+    };
+    const readsAsSuccess = (p: { r: number; g: number; b: number }) => p.g > p.r + 24 && p.g > p.b + 24;
+    const paint = await icon.evaluate(rgb);
     expect(
-      paint.g > paint.r + 24 && paint.g > paint.b + 24,
+      readsAsSuccess(paint),
       `the unverified-code row is drawn in ${paint.colour}, which reads as success`,
     ).toBe(false);
+    // The same reading for the other rows that only say "present": a coverage
+    // figure the generator estimated and a blueprint nobody verified were still
+    // drawn in the green of a passed check beside the neutral code row (UX
+    // review of b88c77b, fc15ffd1018a). One vocabulary for the whole list.
+    for (const kind of ['estimate', 'blueprint'] as const) {
+      const row = page.locator(`[data-integrity-icon="${kind}"]`);
+      await expect(row, `the ${kind} row is not on the page`).toHaveCount(1);
+      const p = await row.evaluate(rgb);
+      expect(readsAsSuccess(p), `the ${kind} row is drawn in ${p.colour}, which reads as success`).toBe(false);
+    }
     // The sentence that states the limit stays where it was.
     await expect(page.locator('text=not compiled or tested').first()).toBeVisible();
   });

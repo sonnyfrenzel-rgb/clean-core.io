@@ -75,7 +75,7 @@ export default function AtcFindingsPanel({ atcReport, findings }: AtcFindingsPan
       <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-[9px] font-bold tracking-widest text-emerald-600 uppercase font-mono">
-            Roadmap 7.1 — ATC Import
+            ATC Import
           </span>
         </div>
         <h4 className="text-xl font-black text-slate-900">ATC Findings, Compared With the Engine</h4>

@@ -1128,6 +1128,8 @@ export default function AnalyzePage() {
   const personalDataAcknowledged = personalDataKey !== '' && personalDataAckFor === personalDataKey;
   /** Something to look at, and nobody has said they looked. */
   const personalDataPending = personalDataHints.length > 0 && !personalDataAcknowledged;
+  /** Ticked once for other lines than the ones now shown: the tick is gone, and the box says why. */
+  const personalDataAckStale = personalDataHints.length > 0 && personalDataAckFor !== '' && personalDataAckFor !== personalDataKey;
 
   const signedCleanCoreScore: number | null =
     typeof routeReport?.cleanCoreScore === 'number'
@@ -2175,6 +2177,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               id="analyze-personal-data"
               hints={personalDataHints}
               acknowledged={personalDataAcknowledged}
+              ackStale={personalDataAckStale}
               onAcknowledge={(next) => setPersonalDataAckFor(next ? personalDataKey : '')}
             />
 
@@ -2184,7 +2187,6 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[9px] font-bold tracking-widest text-emerald-600 uppercase font-mono">Optional</span>
-                    <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">v1.22</span>
                   </div>
                   <h3 className="text-xl font-black text-slate-900 tracking-tight">Add Usage Data</h3>
                   <p className="text-xs text-slate-500 mt-1">Upload SAP usage exports (SCMON, UPL, ST03N) to enable usage-weighted risk prioritization. This is optional — analysis works without it.</p>
@@ -2217,7 +2219,6 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[9px] font-bold tracking-widest text-emerald-600 uppercase font-mono">Optional</span>
-                    <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">Roadmap 7.1</span>
                   </div>
                   <h3 className="text-xl font-black text-slate-900 tracking-tight">Add ATC Results</h3>
                   <p className="text-xs text-slate-500 mt-1">Upload an ABAP Test Cockpit worklist export to compare its findings with this engine's evidence. This is optional — analysis works without it.</p>

@@ -126,8 +126,14 @@ export default function ProjectWorkspacePage() {
   // The profile decides whether this address exists at all, so nothing of the
   // shell is rendered before it has arrived — a skeleton of a page a reader may
   // not have would be the new thing this step promised not to show them.
+  // A status for screen readers, not a skeleton: as an aria-hidden div the
+  // gate read as a dead page (UX review of b88c77b, 3e936f9d57f8).
   if (profileLoading) {
-    return <div data-workspace-gate="loading" className="py-16" aria-hidden={true} />;
+    return (
+      <div data-workspace-gate="loading" role="status" className="py-16">
+        <span className="sr-only">Loading the workspace…</span>
+      </div>
+    );
   }
 
   if (!enabled) {
@@ -139,7 +145,11 @@ export default function ProjectWorkspacePage() {
   }
 
   if (state === 'loading' || buildUp === null) {
-    return <div data-workspace-gate="loading" className="py-16" aria-hidden={true} />;
+    return (
+      <div data-workspace-gate="loading" role="status" className="py-16">
+        <span className="sr-only">Loading the workspace…</span>
+      </div>
+    );
   }
 
   return (

@@ -262,7 +262,7 @@ function TenantApprovalContent() {
                 <div className="flex items-start gap-3.5">
                   <User className="w-5 h-5 text-slate-500 mt-0.5" />
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Name</label>
+                    <p className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Name</p>
                     <span className="text-white font-bold text-base">{applicant.name}</span>
                   </div>
                 </div>
@@ -270,7 +270,7 @@ function TenantApprovalContent() {
                 <div className="flex items-start gap-3.5">
                   <Mail className="w-5 h-5 text-slate-500 mt-0.5" />
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Email</label>
+                    <p className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Email</p>
                     <span className="text-blue-400 font-semibold">{applicant.email}</span>
                   </div>
                 </div>
@@ -278,7 +278,7 @@ function TenantApprovalContent() {
                 <div className="flex items-start gap-3.5 pt-3 border-t border-slate-850/60">
                   <FileText className="w-5 h-5 text-slate-500 mt-0.5" />
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Motivation / Use Case</label>
+                    <p className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Motivation / Use Case</p>
                     <p className="text-slate-300 text-sm leading-relaxed font-medium italic">
                       "{applicant.motivation || 'No details provided.'}"
                     </p>

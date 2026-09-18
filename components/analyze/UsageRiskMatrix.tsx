@@ -157,7 +157,7 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
       <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-[9px] font-bold tracking-widest text-emerald-600 uppercase font-mono">
-            v1.22 — Usage × Evidence Matrix
+            Usage × Evidence Matrix
           </span>
         </div>
         <h4 className="text-xl font-black text-slate-900">Risk Prioritization Matrix</h4>

@@ -57,12 +57,19 @@ const MAX_LISTED = 25;
 export default function PersonalDataHints({
   hints,
   acknowledged,
+  ackStale = false,
   onAcknowledge,
   id,
   unreadableNote = null,
 }: {
   hints: PersonalDataHint[];
   acknowledged: boolean;
+  /**
+   * The tick was made for a different set of lines than the ones now shown,
+   * so it has been taken back — and the box says so, instead of a checkbox
+   * that is silently empty again (UX review of b88c77b, b160d0d08a81).
+   */
+  ackStale?: boolean;
   onAcknowledge: (next: boolean) => void;
   /** Unique per instance: two of these can stand on one page. */
   id: string;
@@ -158,6 +165,11 @@ export default function PersonalDataHints({
               {hints.length > 0 ? PERSONAL_DATA_ACK_LINES : PERSONAL_DATA_ACK_FILE}
             </span>
           </label>
+          {ackStale && (
+            <p data-personal-data-ack-stale className="mt-2 text-xs font-semibold text-amber-900">
+              The source changed after you ticked this, so the tick was taken back. Read the lines above again, then tick it again.
+            </p>
+          )}
         </div>
       </div>
     </section>

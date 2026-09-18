@@ -1053,6 +1053,9 @@ statt widerlegt, aber mit diesem Umfang: drei Werte, nicht sieben.
 | UX-091 | high | Mail-Warnung verspricht erneuten Versand, Zeile kann ihn nicht | — | behoben |
 | UX-094 | high | Alte Backup-Codes werden ohne Übergang abgewiesen | — | zurückgestellt |
 | UX-102 | high | How-to nennt 6 Phasen, Produkt hat 7 Stufen | 0.2 | behoben |
+| UX-121 | high | Einladen-Icon ohne Namen — nur Titel, kein Label | sofort | behoben |
+| UX-122 | high | ToS-Hinweis verdrängt auf allen Routen den Inhalt | sofort | behoben |
+| UX-138 | high | Integrity-Grün bedeutet mal Existenz, mal Prüfung | sofort | eingeplant |
 | UX-005 | medium | Routenwechsel ohne Bestätigung und Undo | 0.7 | eingeplant |
 | UX-006 | medium | Von Befund kein Weg in den Code | 1.5 | eingeplant |
 | UX-012 | medium | Sticky-Header und Tabs verdecken Inhalt auf Phone | 1.4 | eingeplant |
@@ -1095,6 +1098,16 @@ statt widerlegt, aber mit diesem Umfang: drei Werte, nicht sieben.
 | UX-116 | medium | FREE-Badge verschweigt Erstlauf-Begrenzung | sofort | behoben |
 | UX-117 | medium | Read-only-Board lädt noch zum Fragen unten ein | sofort | eingeplant |
 | UX-118 | medium | Rücksprung heißt dreimal anders | 1.5 | eingeplant |
+| UX-123 | medium | ToS-Karte verdrängt Arbeitsinhalt auf jeder Route | sofort | behoben |
+| UX-124 | medium | ToS-Gate verdrängt Aufgabe aus erstem Viewport | sofort | behoben |
+| UX-125 | medium | Mail erneut senden angeleitet, aber nicht möglich | sofort | behoben |
+| UX-126 | medium | Filter versprechen Diskussion, Board ist read-only | sofort | behoben |
+| UX-127 | medium | Deaktivierter Start nennt Personen-Daten-Grund nicht | sofort | behoben |
+| UX-131 | medium | ToS-Hinweis verdrängt Arbeitsbereich im ersten Viewport | — | zurückgestellt |
+| UX-135 | medium | Kontingent-Stopp im nativen alert statt im Produktdialog | 1.4 | eingeplant |
+| UX-136 | medium | Fünf Icon-Buttons ohne Text – Einladen kaum entdeckbar | 1.5 | eingeplant |
+| UX-139 | medium | Verweigertes Bundle ohne direkten Weg zur Transformation | sofort | eingeplant |
+| UX-140 | medium | Bestätigung verfällt nach Edit ohne Erklärung | sofort | eingeplant |
 | UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | behoben |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |
@@ -1128,6 +1141,13 @@ statt widerlegt, aber mit diesem Umfang: drei Werte, nicht sieben.
 | UX-115 | low | Demo verspricht sieben Stufen ohne Mitnahme | 0.2 | eingeplant |
 | UX-119 | low | Leerer Dokumentationsrahmen mit viel Leerfläche | 1.5 | eingeplant |
 | UX-120 | low | Neue Radien und Schriftgrößen ohne Systemanschluss | 1.5 | eingeplant |
+| UX-128 | low | Neue Radien und Einzelmaße ohne Systemanschluss | 1.5 | eingeplant |
+| UX-134 | low | Blockierter Start erklärt sich nur per Hover-Titel | 1.5 | eingeplant |
+| UX-137 | low | Neue Einzel-Radien und Schriften ohne Skalenbindung | 1.5 | eingeplant |
+| UX-141 | low | Suche verspricht Diskussionen auf read-only Ankündigungen | sofort | eingeplant |
+| UX-142 | low | Optionale Importe mit uneinheitlichem Versions-Label | sofort | eingeplant |
+| UX-143 | low | Labels ohne Feld auf Freigabeseite | sofort | eingeplant |
+| UX-144 | low | Workspace-Gate lädt stumm für Screenreader | sofort | eingeplant |
 ---
 
 ## 14. QA-Befunde aus der Vollprüfung

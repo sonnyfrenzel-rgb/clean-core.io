@@ -17,7 +17,7 @@ import { buildBoardDeck, type RunTrendPoint } from '@/lib/board-deck';
 import { detectFindings } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel } from '@/lib/abap/class-model';
-import { Download, CheckCircle2, FileCode2, ArrowLeft, Home, RefreshCw, X, Rocket, ShieldCheck, Zap, Layout, Eye, Presentation, AlertCircle, Briefcase, BookOpen } from 'lucide-react';
+import { Download, CheckCircle2, FileCode2, ArrowLeft, Home, RefreshCw, X, Rocket, ShieldCheck, Zap, Layout, Eye, Presentation, AlertCircle, Briefcase, BookOpen, Gauge, FileText } from 'lucide-react';
 import NavigationButtons from '@/components/NavigationButtons';
 import JSZip from 'jszip';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
@@ -530,6 +530,11 @@ jobs:
                   be written outside the archive when it is unpacked. Nothing was downloaded. Run the transformation again and
                   check the source it was generated from.
                 </p>
+                <p className="mb-2">
+                  <Link href={`/project/${projectId}/transformation`} data-bundle-rejected-link className="font-bold underline underline-offset-2 hover:text-red-900">
+                    Open the Transformation stage
+                  </Link>
+                </p>
                 <ul className="list-disc pl-4 space-y-1">
                   {rejectedPaths.map((r) => (
                     <li key={r.path}>
@@ -713,10 +718,13 @@ jobs:
                 </div>
               </li>
               <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
+                {/* Neutral, like the code row above it: the figure is the
+                    generator's estimate, and a green check beside "not measured"
+                    read as a measurement (UX review of b88c77b, fc15ffd1018a). */}
                 {coveragePercentage !== undefined ? (
-                  <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                  <Gauge size={18} data-integrity-icon="estimate" className="text-slate-400 mt-0.5 shrink-0" />
                 ) : (
-                  <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
+                  <AlertCircle size={18} data-integrity-icon="missing" className="text-amber-400 mt-0.5 shrink-0" />
                 )}
                 <div>
                   <span data-stage-output={coveragePercentage !== undefined ? 'coverageEstimate' : undefined} className="text-white block font-bold">{coveragePercentage !== undefined ? `${coveragePercentage}% Estimated Coverage` : 'Coverage not estimated'}</span>
@@ -732,10 +740,12 @@ jobs:
                 </div>
               </li>
               <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
+                {/* A blueprint that exists and is current — present, not verified;
+                    the same reading as the code row. */}
                 {hasDocumentation && !docsStale ? (
-                  <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+                  <FileText size={18} data-integrity-icon="blueprint" className="text-slate-400 mt-0.5 shrink-0" />
                 ) : (
-                  <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
+                  <AlertCircle size={18} data-integrity-icon="missing" className="text-amber-400 mt-0.5 shrink-0" />
                 )}
                 <div>
                   <span data-stage-output={hasDocumentation ? 'documentation' : undefined} className="text-white block font-bold">

@@ -289,5 +289,9 @@ test('editing the source afterwards takes the acknowledgement back', async ({ pa
     page.locator('[data-personal-data-ack]'),
     'the tick made for the old text still stood for the new text',
   ).not.toBeChecked();
+  await expect(
+    page.locator('[data-personal-data-ack-stale]'),
+    'the tick was taken back without a word about why (UX review of b88c77b, b160d0d08a81)',
+  ).toContainText('changed');
   await expect(start, 'the analysis was still open after the source changed under the tick').toBeDisabled();
 });

@@ -1552,11 +1552,11 @@ export default function Dashboard() {
                       those categories and their filters come back by themselves,
                       with no second place to remember to change.
 
-                      "All Topics" always stays, so the bar never empties and the
+                      "All" always stays, so the bar never empties and the
                       selected filter always has something to return to.
                     */}
                     {[
-                      { id: 'all', label: 'All Topics', count: forumPosts.length },
+                      { id: 'all', label: 'All', count: forumPosts.length },
                       { id: 'announcements', label: 'Announcements', count: forumPosts.filter(p => p.pinned || p.category === 'announcements').length },
                       { id: 'technical', label: 'Technical Q&A', count: forumPosts.filter(p => p.category === 'technical').length },
                       { id: 'general', label: 'General', count: forumPosts.filter(p => p.category === 'general').length },
@@ -1581,7 +1581,7 @@ export default function Dashboard() {
                       type="text"
                       value={forumSearch}
                       onChange={(e) => setForumSearch(e.target.value)}
-                      placeholder="Search discussions..."
+                      placeholder="Search announcements..."
                       className="w-full bg-white border border-slate-200 rounded-2xl pl-9 pr-4 py-2.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-green-500 outline-none transition-all shadow-sm"
                     />
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
