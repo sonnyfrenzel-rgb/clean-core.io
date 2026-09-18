@@ -396,6 +396,22 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     erlauben — anders als beim Cloudification Repository, das als offenes GitHub-Repo unter klarer Lizenz
     genau dafür da ist. Scraping der Login-Oberfläche: nicht ohne geklärte Bedingungen.
 
+28. **Aus 7.5 (18.09.2026, spät) — vier Entscheidungen, von mir getroffen, und drei Export-Lücken.**
+    *(1)* `withheld` bleibt die benannte Fehlfolgerung („is one nobody calls any more") — vertretbar
+    **nur** mit dem Präfix „Not said while this is open:", das der Wächter seit heute pinnt (vorher
+    stand es allein in der Komponente). *(2)* **Ein** Fenster-Auftrag mit den Objekten als Anker, nicht
+    einer je Objekt: die Handlung ist eine; 7.8 kann je Element auffächern, das ändert dann die IDs.
+    *(3)* `ASSIGN (lv_field)` bleibt draußen (Feldzugriff, kein Aufruf); der Coverage-Gap
+    `dynamic-target` (Tabelle/Typ zur Laufzeit benannt) ist echtes Scheinwissen („kein Tabellenzugriff
+    gefunden"), aber nicht in der 7.5-Zeile — **als vierte Auftragsart in einem eigenen kleinen Schritt**,
+    nicht schweigend dazu. *(4)* „394 days" im Auftragssatz, „13 months" daneben — beides bleibt.
+    **Export-Lücken, gemeldet statt eingebaut:** `business-rule-set.ts` hat keinen exportierten
+    Programmnamen-Leser (7.5 führt deshalb kein `program`); `process-skeleton.ts` exportiert kein
+    `includesNotRead(facts)` — 7.5 **dupliziert** die zweizeilige `INCLUDE STRUCTURE`-Ausnahme, der
+    einzige echte Driftpunkt des Schritts; `coverage.ts` hat kein Prädikat „ist dieses Konstrukt ein
+    Aufruf". Drei kleine Exporte, ein Aufräumschritt. Gemessen: `Z_MM_PO_APPROVAL` 3 Aufträge (zwei
+    Includes, ein `CALL FUNCTION lv_fm_name`), Legacy-1000 keiner, die sechs kleinen keiner.
+
 ### Hygiene, bevor die nächste Welle startet
 
 20. **Emulator und Dev-Server neu starten**, bevor mehr als vier Agenten laufen. Der Emulator stand
