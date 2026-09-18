@@ -35,6 +35,13 @@ const SCAN_EXTENSIONS = new Set(['.ts', '.tsx']);
 const ALLOWLISTED_FILES = new Set([
   // The version.ts file itself defines the version
   path.resolve(ROOT, 'lib/version.ts'),
+  // The Terms archive names *document* versions, not the app's. Its whole
+  // subject is that "v2.0.0" is the label a superseded contract gives itself —
+  // in the data, and in the comments explaining why the label is not a safe key
+  // (the wording published as v2.0.0 was edited three times without the label
+  // moving). None of it follows an app release, and a guard that demanded it did
+  // would be asking for a contract to be renamed every time the product ships.
+  path.resolve(ROOT, 'lib/terms-versions.ts'),
 ]);
 
 /**
@@ -55,6 +62,15 @@ const ALLOWLISTED_LINE_PATTERNS = [
   /predate\s+v\d/,                     // Historical notes: "may predate v1.10.0"
   /pre-v\d/,                           // Historical notes: "the pre-v2.4.2 shape of a revoked account"
   /effective\s.*\(v\d+\.\d+\.\d+\)/,   // Terms-of-Service document version, e.g. "effective 7 July 2026 (v2.0.0)"
+  // The Terms archive (18.09.2026) names past *document* versions by their
+  // label, in data and in the comment beside it: `label: 'v2.0.0'`, and
+  // `'2026-07-07' — v2.0.0` where `TERMS_VERSIONS_IN_FORCE` explains which
+  // version it is not listing. Neither is the app version and neither moves
+  // when the app is bumped — that is the whole point of a version that names a
+  // wording. This guard is about the app's own version leaking into source as a
+  // literal; it must not start demanding that a superseded contract be renamed
+  // every release.
+  /'\d{4}-\d{2}-\d{2}'\s*(?:—|--|-)\s*v\d+\.\d+\.\d+/,
 ];
 
 /** Extract the semver-like version without 'v' prefix for flexible matching */

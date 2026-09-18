@@ -215,9 +215,16 @@ test.describe('the Firestore mirror grants nothing on its own', () => {
       expect((await s4.json()).error).toContain('restricted');
 
       // assertAccountActive: the same fallback waved the stale Terms through.
+      //
+      // The wording of the refusal changed on 18.09.2026 with § 10.3 of the
+      // Terms: a version that is merely older is no longer refused at all —
+      // somebody who declines an amendment may carry on under the Terms they
+      // accepted — and what is refused is a version the operator has *ended*.
+      // The point this test makes is unchanged: the admin mirror alone does not
+      // exempt an account from the Terms gate.
       const gated = await request.post('/api/gemini', { headers, data: {} });
       expect(gated.status(), 'the mirror alone exempted an account from re-accepting the Terms').toBe(403);
-      expect((await gated.json()).error).toContain('Terms of Service have been updated');
+      expect((await gated.json()).error).toContain('Terms of Service your account accepted is no longer in force');
     } finally {
       await removeAccount(uid);
     }
