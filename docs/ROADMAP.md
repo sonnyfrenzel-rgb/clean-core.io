@@ -404,10 +404,23 @@ falsch machen.
 Protokoll aus 4.3 mit Datum im Repo liegt und keine Seite mehr behauptet, als dieses
 Protokoll deckt.
 
-### Phase 5 — v2.15 „Teilen"
+### Phase 5 — v2.15 „Teilen" — **vollständig, 18.09.2026**
 
 Mockup Screen 1: „Share with members" und die Avatarreihe; Screen 4: „Members on
 this case".
+
+**Alle fünf Schritte liegen auf `main`, und die vier Abnahmekriterien haben je
+einen ausgeführten Test** (`invitation-flow`, `invitation-rendered`,
+`firestore-rules-readers`, `project-readers` — 40 Tests). Die Phase lag seit dem
+17.09. fertig auf `dev` und wartete allein auf die vier öffentlichen Texte: einer
+von ihnen, Abschnitt 8 der Datenschutzerklärung, behauptete wörtlich *„There is no
+sharing feature today"*. Am 18.09. sind sie geschrieben, der Regel-Deploy für 5.4
+ist raus und gegen die Produktion verifiziert (`88b5fe431436…`, fünf Datenbanken),
+und dazugekommen ist, was die Prüfungen desselben Tages verlangt haben: eine
+Obergrenze von drei gleichzeitig offenen Einladungen je Projekt, der Art.-14-Hinweis
+in der Einladungsmail, ein Hinweis an den Einladenden, dass die Mail im Spam landen
+kann, und eine Löschkaskade, die einem eingeladenen Leser nichts in fremden
+Projekten hinterlässt.
 
 | # | Schritt | Größe |
 |---|---|---|
@@ -732,6 +745,26 @@ im Arbeitsprotokoll standen, plus die Hälfte des dringendsten Sicherheitsfundes
 | **Einladungen je Projekt** | **Höchstens drei gleichzeitig offen** (`INVITATION_MAX_OPEN`). Nur offene belegen einen Platz; ein Widerruf gibt ihn sofort frei |
 | **PDF-Schreiber** | Der eigene bleibt. Keine neue Abhängigkeit für 491 Zeilen, die mit `pypdf` gegengeprüft sind |
 | **WIF-Bedingung** | **Verengt** auf Repository **und** Ref (`main`, `dev`) **und** die beiden Workflows, die überhaupt ein Token holen (`deploy.yml`, `usage-report.yml`) |
+
+Am Nachmittag desselben Tages, aus zwei Rechtsprüfungen der öffentlichen Texte:
+
+| Entscheidung | Ergebnis |
+|---|---|
+| **Personenbezogene Daten im Upload** | **Uploadverbot statt Auftragsverarbeitungsvertrag.** Ein AVV machte ein kostenloses Ein-Personen-Projekt dauerhaft zum Auftragsverarbeiter für fremde Kundendaten. Beide Dokumente sagen ausdrücklich dazu, dass die Plattform nichts davon erkennt oder blockiert |
+| **Mindestalter** | **18**, in Datenschutz und ToS gemeinsam. Art. 8 DSGVO und Geschäftsfähigkeit sind zwei Fragen; mit 16 wäre die Zustimmung zu den ToS ohne Eltern schwebend unwirksam |
+| **Sprachfassungen** | Bei Abweichungen ist die **deutsche Fassung maßgeblich** — deutscher Verantwortlicher, deutsche Aufsichtsbehörde |
+| **Aufbewahrung des Sicherheits-Protokolls** | **24 Monate**, danach gelöscht; Werkzeug liegt bereit, Automatisierung vor 2028 |
+| **Sicherungen** | Es gab **keine**. Täglich 7 Tage und wöchentlich 28 Tage angelegt, damit die 30-Tage-Zusage wieder gedeckt ist |
+| **ToS-Fassung** | **Springt auf `2026-09-18`** (Dokument v2.1.0) — aber erst, nachdem der Zustimmungsweg gebaut war. Ohne ihn hätte der Sprung alle 158 Konten ausgesperrt |
+| **Guard für personenbezogene Daten** | Wird gebaut: deterministisch, im Browser, vor dem Hochladen, mit bewusster Bestätigung — an beiden Upload-Wegen **und** am Nutzungsdaten-Import. Er zeigt Muster, er erkennt keine personenbezogenen Daten |
+
+**Weiter offen (Sonny):** die drei Vertragspunkte der ersten Prüfung —
+Haftungskaskade in ToS § 4 (der Absatz zu Kardinalpflichten widerspricht dem Satz
+darüber), die Verbraucherregeln für unentgeltliche digitale Produkte
+(§§ 327 ff. BGB), und die Zustimmungsfiktion in § 10 (nach BGH XI ZR 26/20 in
+dieser Pauschalität unwirksam — faktisch ist sie durch den Zustimmungsdialog
+bereits ersetzt, der Text sagt es nur noch nicht). Das ist Vertragsgestaltung,
+keine Textpflege.
 
 ### Am 15.09.2026 geschlossen
 
