@@ -7,7 +7,7 @@
   "purpose": "Which text of firestore.rules is live. CI never deploys the rules; a human does, by hand, and the same command records the result here. The offline check (npm run rules:check, tests/rules-deploy-order.spec.ts) compares this record with the working copy and refuses the one order that breaks production: an app that depends on rules which have not been deployed. The online check (npm run rules:verify) asks production what it is actually serving, which is the only way to catch a record that was updated without a deploy.",
   "whyThisExists": "Am 16.09.2026 wurde zum ersten Mal nachgesehen, was cleancore-491216 wirklich ausliefert: das Ruleset vom 20.08.2026 — drei Verschaerfungen hinter dem Repository, ohne dass es jemand wusste. In Produktion waren `termsVersionAccepted`/`termsAcceptedAt` noch client-schreibbar (Befund V14, im Repo laengst geschlossen), `email_events` noch nicht gesperrt, und der Admin-Lesezugriff auf Projekte noch offen. Sonny hat danach ausgerollt und das Ergebnis wurde gegen die Rules-API geprueft: identisch. Genau diese Drift soll dieser Datensatz kuenftig sichtbar machen.",
   "deployed": {
-    "sha256OfLfNormalisedText": "88b5fe431436d64e9b78577f35ad14aafe4298bc1a6050223a19ae1d09f38d6d",
+    "sha256OfLfNormalisedText": "7a068dad50bd599bb97ed40744709e9792eea6afc15fb1b76956c65bb377a742",
     "deployedAt": "2026-09-18",
     "deployedBy": "Sonny Frenzel, by hand (npm run deploy:rules)",
     "project": "cleancore-491216",
@@ -39,14 +39,5 @@
       "worklist"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && (resource.data.userId == request.auth.uid || invitedReader(resource.data));"
-  },
-  "pending": {
-    "sha256OfLfNormalisedText": "7a068dad50bd599bb97ed40744709e9792eea6afc15fb1b76956c65bb377a742",
-    "recordedAt": "2026-09-18",
-    "recordedFor": "7.1 ATC-Import: atcReport als 'is map' im Validator (a81b30d), dazu ein Kommentar, der die Regel benennt, die das Feld tatsaechlich server-only haelt (91c98ea). Keine Aenderung an einer Client-Allowlist, keine Aenderung einer Leseregel.",
-    "addsToClient": [],
-    "removesFromClient": [],
-    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && (resource.data.userId == request.auth.uid || invitedReader(resource.data));",
-    "note": "Bis zum Deploy sind die alten Regeln live. `npm run deploy:rules` rollt aus und loescht diesen Block."
   }
 }
