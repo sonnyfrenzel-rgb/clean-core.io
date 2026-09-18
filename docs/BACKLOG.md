@@ -72,6 +72,54 @@ und zwei Playwright-Läufe gleichzeitig gegen einen Dev-Server bringen ihn um.
 Befund aufgelöst. Was im Bericht bleibt (2 kritisch, 7 hoch), ist durchweg *carried* —
 der Triage-Bestand aus der Release-Vollprüfung, Punkt 12 unten.
 
+## Aus den zwei Rechtsprüfungen vom 18.09.2026 — offen
+
+Die Pflichtlücken sind geschlossen (Commits `1c3476d`, `2f9eb4a`, `4f0e424`). Was
+daraus als eigener Schritt übrig bleibt, in der Reihenfolge, in der es wehtut:
+
+1. **Zustimmungsweg für geänderte ToS — blockiert den Versionssprung.** Die ToS tragen
+   seit heute eine neue Pflicht (kein Upload personenbezogener Daten) und eine
+   Altersgrenze. `TERMS_VERSION` bleibt trotzdem auf `2026-07-07` stehen, **weil es
+   keine Oberfläche zum erneuten Zustimmen gibt**: `termsVersionAccepted` erscheint in
+   genau einer Komponente, im Admin-Panel, nur lesend, und keine Komponente ruft
+   `/api/consent`. Ein Sprung würde alle 158 Konten mit *„The Terms of Service have
+   been updated. Please re-accept them in the app to continue."* aus jeder geschützten
+   Route aussperren — dieselbe Falle wie die MFA-Sperre von heute, nur für alle. Erst
+   den Dialog bauen, dann springen (Entscheidung Sonny, 18.09.).
+2. **Der Guard für personenbezogene Daten beim Hochladen** (Entscheidung Sonny, 18.09.).
+   Rein deterministisch, im Browser, **vor** dem Hochladen: E-Mail-Adressen, IBANs,
+   Telefonnummern mit Vorwahl, Steuer-IDs, und die ABAP-eigenen Treffer — Literale an
+   `PERNR`, `GBDAT`, `SMTP_ADDR`, `NAME1`/`VORNA`/`NACHN`, `SY-UNAME`-Vergleiche gegen
+   einen festen Benutzernamen. Fundstellen mit Zeile und Ausschnitt, und der Uploader
+   **bestätigt bewusst**, bevor es weitergeht. **Auch am Nutzungsdaten-Import**, wo er
+   noch wichtiger ist: ein SAP-Nutzungsbericht enthält per Bauart Benutzerkennungen.
+   Er darf **nie** behaupten, personenbezogene Daten zu erkennen — er findet Muster,
+   die oft darauf hindeuten. Sonst steht statt einer ehrlichen Regel eine
+   Kontrollbehauptung, und die ToS sagen ausdrücklich das Gegenteil.
+3. **Ein Tor darf nicht wie ein Fehler aussehen.** Die MFA-Sperre zeigte sich als
+   *„Failed to analyze the code"*. Wer eine geschützte Route wegen seines Kontozustands
+   nicht passiert, muss das als Kontozustand lesen — mit dem Weg zur Behebung, nicht als
+   gescheiterte Handlung. Betrifft den zweiten Faktor, die ToS-Fassung und die Sperre.
+4. **Löschknopf für das Motivationsfeld.** Art. 7 Abs. 3 S. 4 DSGVO verlangt, dass der
+   Widerruf so einfach ist wie die Erteilung. Heute geht nur eine Mail an uns; das Feld
+   ist ein Profilfeld und gehört in die Einstellungen.
+5. **Wiederherstellungstest.** Die Sicherungen gibt es seit heute; die erste liegt am
+   19.09. vor. Eine ungetestete Sicherung ist keine. Einmal in eine Wegwerf-Datenbank
+   zurückspielen und das Ergebnis festhalten.
+6. **Die Einladungsmail nur auf Englisch.** Der Art.-14-Hinweis geht an Menschen, die
+   typischerweise in Deutschland sitzen; Art. 12 Abs. 1 verlangt verständliche Sprache.
+   Eine deutsche Variante plus Sprachwahl am Link (`/datenschutz/de#project-access`).
+7. **Aus der ersten Prüfung bewusst offen:** Haftungskaskade der ToS (§ 4 widerspricht
+   sich zwischen „nur Vorsatz und grobe Fahrlässigkeit" und der Kardinalpflichten-
+   Regelung), §§ 327 ff. BGB für unentgeltliche digitale Produkte, und die
+   Zustimmungsfiktion in § 10. Das ist Vertragsgestaltung, keine Textpflege — sie
+   braucht Sonnys Richtung und vermutlich einen Anwalt.
+
+**Nicht mehr offen, weil geprüft und widerlegt:** der Befund „Third-Party Notices
+enthalten rohen Template-Code, Komponentenliste fehlt" war ein Fehler des
+Word-Exports, nicht der Seite. `clean-core.io/licenses` rendert alle fünf
+Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
+
 ## Offen für den 19.09.2026 — in dieser Reihenfolge
 
 ### Sonnys Entscheidungen, ohne die es nicht weitergeht
