@@ -1512,6 +1512,102 @@
       "status": "eingeplant",
       "step": "1.5",
       "updatedAt": "2026-09-18T04:41:03.445Z"
+    },
+    {
+      "id": "UX-121",
+      "fingerprint": "586175c4018f",
+      "title": "Einladen-Icon ohne Namen — nur Titel, kein Label",
+      "severity": "high",
+      "area": "release",
+      "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
+      "createdAt": "2026-09-18T10:55:33.912Z",
+      "status": "eingeplant",
+      "step": "sofort",
+      "updatedAt": "2026-09-18T10:55:33.912Z"
+    },
+    {
+      "id": "UX-122",
+      "fingerprint": "e90eeac3b67c",
+      "title": "ToS-Hinweis verdrängt auf allen Routen den Inhalt",
+      "severity": "high",
+      "area": "release",
+      "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
+      "createdAt": "2026-09-18T10:55:34.058Z",
+      "status": "eingeplant",
+      "step": "sofort",
+      "updatedAt": "2026-09-18T10:55:34.058Z"
+    },
+    {
+      "id": "UX-123",
+      "fingerprint": "14e74858bf15",
+      "title": "ToS-Karte verdrängt Arbeitsinhalt auf jeder Route",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
+      "createdAt": "2026-09-18T10:55:34.206Z",
+      "status": "eingeplant",
+      "step": "sofort",
+      "updatedAt": "2026-09-18T10:55:34.206Z"
+    },
+    {
+      "id": "UX-124",
+      "fingerprint": "a20d5c99485e",
+      "title": "ToS-Gate verdrängt Aufgabe aus erstem Viewport",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
+      "createdAt": "2026-09-18T10:55:34.357Z",
+      "status": "eingeplant",
+      "step": "sofort",
+      "updatedAt": "2026-09-18T10:55:34.357Z"
+    },
+    {
+      "id": "UX-125",
+      "fingerprint": "3a377eb805ab",
+      "title": "Mail erneut senden angeleitet, aber nicht möglich",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
+      "createdAt": "2026-09-18T10:55:34.546Z",
+      "status": "eingeplant",
+      "step": "sofort",
+      "updatedAt": "2026-09-18T10:55:34.546Z"
+    },
+    {
+      "id": "UX-126",
+      "fingerprint": "25defbd52658",
+      "title": "Filter versprechen Diskussion, Board ist read-only",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
+      "createdAt": "2026-09-18T10:55:34.707Z",
+      "status": "eingeplant",
+      "step": "sofort",
+      "updatedAt": "2026-09-18T10:55:34.707Z"
+    },
+    {
+      "id": "UX-127",
+      "fingerprint": "afa299544364",
+      "title": "Deaktivierter Start nennt Personen-Daten-Grund nicht",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
+      "createdAt": "2026-09-18T10:55:34.861Z",
+      "status": "eingeplant",
+      "step": "sofort",
+      "updatedAt": "2026-09-18T10:55:34.861Z"
+    },
+    {
+      "id": "UX-128",
+      "fingerprint": "9592aa6b4af3",
+      "title": "Neue Radien und Einzelmaße ohne Systemanschluss",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
+      "createdAt": "2026-09-18T10:55:35.020Z",
+      "status": "eingeplant",
+      "step": "1.5",
+      "updatedAt": "2026-09-18T10:55:35.020Z"
     }
   ]
 }

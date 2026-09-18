@@ -222,6 +222,14 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     SAP-Hintergrund verfügbar ist, sind die **zwölf Fälle mit Abweichung** eine Stunde Arbeit und
     mehr wert als jedes weitere Modell.
 
+20. **Begrüßungsmail erneut senden — es gibt keinen Weg dafür.** Die UX-Prüfung (UX-125) fand im
+    Admin einen Hinweis, der bei fehlgeschlagener Mail zum erneuten Freigeben aufforderte; eine
+    freigegebene Zeile bietet aber nur *Revoke*, *Grant BYOT* und *Delete* an
+    (`app/(app)/admin/page.tsx:518`). Der Text ist heute auf das Mögliche zurückgeführt — „schreib
+    ihnen direkt" —, was ehrlich, aber umständlich ist. Die eigentliche Lösung ist eine eigene
+    Aktion *Welcome mail resend* in der Zeile. Nicht heute gebaut, weil sie den Mailversand
+    anfasst und das eine eigene Prüfung verdient.
+
 ### Hygiene, bevor die nächste Welle startet
 
 20. **Emulator und Dev-Server neu starten**, bevor mehr als vier Agenten laufen. Der Emulator stand

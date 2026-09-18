@@ -2251,7 +2251,22 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   setShowConceptQuestion(true);
                 }}
                 disabled={loading || !legacyCode || !acceptedTerms || stagedScanBlock !== null || personalDataPending}
-                title={stagedScanBlock ? `Security Block: ${stagedScanBlock} Remove the flagged content before analysing.` : undefined}
+                /*
+                  A disabled button swallows its own click, so the `if
+                  (personalDataPending)` branch in the handler above can never
+                  run and its explanation never reaches anybody. The security
+                  block already said why here; the personal-data block did not,
+                  and the only account of it sat in a box further up the page.
+                  UX review of bc2f7863464c. Same sentence as the unreachable
+                  handler, so the two cannot drift apart.
+                */
+                title={
+                  stagedScanBlock
+                    ? `Security Block: ${stagedScanBlock} Remove the flagged content before analysing.`
+                    : personalDataPending
+                      ? 'Some lines in this source look as though they may hold personal data. Read them, then tick the box to say you have checked them and want to upload this anyway.'
+                      : undefined
+                }
                 className={clsx(
                   "flex items-center gap-3 bg-[#00873a] text-white px-10 py-4 rounded-2xl hover:bg-[#006b2c] hover:shadow-xl hover:shadow-green-900/20 transition-all font-black disabled:opacity-50 disabled:cursor-not-allowed min-w-[220px] justify-center shadow-lg shadow-green-900/10",
                   loading && "animate-pulse",

@@ -1541,12 +1541,26 @@ export default function Dashboard() {
                 {/* Search and Category Filter Bar */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-4 rounded-3xl border border-slate-100/80">
                   <div className="flex flex-wrap gap-2">
+                    {/*
+                      A filter appears once it has something to show. The board
+                      became read-only announcements, but "Technical Q&A" and
+                      "General" stayed on the bar with a count of 0 — an offer of
+                      discussion on a board that carries none, which is the exact
+                      promise this release withdrew everywhere else (UX review of
+                      bc2f7863464c). Filtering the list rather than deleting the
+                      two entries keeps them correct either way: open the board to
+                      those categories and their filters come back by themselves,
+                      with no second place to remember to change.
+
+                      "All Topics" always stays, so the bar never empties and the
+                      selected filter always has something to return to.
+                    */}
                     {[
                       { id: 'all', label: 'All Topics', count: forumPosts.length },
                       { id: 'announcements', label: 'Announcements', count: forumPosts.filter(p => p.pinned || p.category === 'announcements').length },
                       { id: 'technical', label: 'Technical Q&A', count: forumPosts.filter(p => p.category === 'technical').length },
                       { id: 'general', label: 'General', count: forumPosts.filter(p => p.category === 'general').length },
-                    ].map(tab => (
+                    ].filter(tab => tab.id === 'all' || tab.count > 0).map(tab => (
                       <button
                         key={tab.id}
                         type="button"
@@ -1930,7 +1944,17 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
         </div>
         
         <div className="md:col-span-3 flex flex-wrap justify-start md:justify-end gap-2 pl-12 md:pl-0 w-full md:w-auto mt-3 md:mt-0" onClick={e => e.stopPropagation()}>
-          <button onClick={onProceed} disabled={isProceeding} className="p-3 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50" title="Continue Transformation">
+          {/*
+            Every one of these five is an icon and nothing else, so `aria-label`
+            is the accessible name, not a nicety. `title` alone is the browser's
+            last-resort fallback: it needs a hover to appear, which a keyboard
+            user never performs, and screen readers treat it inconsistently.
+            Reported against the new invite button by the UX review of
+            bc2f7863464c; the other four had the same gap and are fixed with it,
+            because a row where one of five icons announces itself is worse than
+            one where none do. `aria-label` and `title` are kept in step.
+          */}
+          <button onClick={onProceed} disabled={isProceeding} className="p-3 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50" title="Continue Transformation" aria-label="Continue Transformation">
             {isProceeding ? <RefreshCw size={18} className="animate-spin" /> : <ArrowRight size={18} />}
           </button>
           <button
@@ -1938,16 +1962,17 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
             onClick={() => setInviting(true)}
             className="p-3 text-[#0b1c30]/60 hover:text-[#006b2c] hover:bg-[#eff4ff] rounded-xl transition-colors"
             title="Invite someone to read this project"
+            aria-label="Invite someone to read this project"
           >
             <UserPlus size={18} />
           </button>
-          <button onClick={onCopy} className="p-3 text-[#0b1c30]/60 hover:text-[#006b2c] hover:bg-[#eff4ff] rounded-xl transition-colors" title="Duplicate Project">
+          <button onClick={onCopy} className="p-3 text-[#0b1c30]/60 hover:text-[#006b2c] hover:bg-[#eff4ff] rounded-xl transition-colors" title="Duplicate Project" aria-label="Duplicate Project">
             <Copy size={18} />
           </button>
-          <button onClick={onExport} className="p-3 text-[#0b1c30]/60 hover:text-[#006b2c] hover:bg-[#eff4ff] rounded-xl transition-colors" title="Export JSON">
+          <button onClick={onExport} className="p-3 text-[#0b1c30]/60 hover:text-[#006b2c] hover:bg-[#eff4ff] rounded-xl transition-colors" title="Export JSON" aria-label="Export JSON">
             <Download size={18} />
           </button>
-          <button onClick={onDelete} className="p-3 text-[#0b1c30]/40 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors" title="Delete Project">
+          <button onClick={onDelete} className="p-3 text-[#0b1c30]/40 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors" title="Delete Project" aria-label="Delete Project">
             <Trash2 size={18} />
           </button>
         </div>

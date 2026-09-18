@@ -46,14 +46,50 @@ import { TERMS_VERSION, termsVersionInForce } from '@/lib/constants';
  * `useUserProfile` is live, so this dialog disappears on its own once the record
  * lands — nothing here re-fetches.
  */
+/**
+ * Where "not now" is remembered.
+ *
+ * Session storage, and keyed by the version being declined: closing the browser
+ * asks again, which is what Sonny asked for (18.09.2026, "der user muss bei neu
+ * login erneut zustimmen") and what § 10.1's notice regime expects. A *later*
+ * amendment gets its own key and is therefore asked about on its own merits —
+ * declining v2 must not silently decline v3.
+ *
+ * It was React state alone until a UX review of bc2f7863464c reported the card
+ * filling the first viewport on ten routes. The comment here already claimed
+ * "this browsing session"; `useState` only ever meant "until this component
+ * unmounts", so every reload brought it back. Naming the storage makes the
+ * promise the comment was already making.
+ */
+const DECLINE_KEY = `cc.terms.declined.${TERMS_VERSION}`;
+
+/** Storage throws in a private window and is empty in a fresh one; neither is an error. */
+function readDeclined(): boolean {
+  try {
+    return typeof window !== 'undefined' && window.sessionStorage.getItem(DECLINE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 export default function TermsReacceptGate() {
   const { profile, loading } = useUserProfile();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  // Declining is remembered for this browsing session only. It is a choice about
-  // one amendment, not a setting, and the next sign-in asks again — which is what
-  // § 10.1's notice regime expects.
-  const [declined, setDeclined] = useState(false);
+  // Safe as a lazy initialiser despite SSR: this component renders `null` while
+  // the profile is loading, so the server and the first client paint agree
+  // regardless of what storage holds.
+  const [declined, setDeclinedState] = useState<boolean>(readDeclined);
+
+  const setDeclined = (value: boolean) => {
+    setDeclinedState(value);
+    try {
+      if (value) window.sessionStorage.setItem(DECLINE_KEY, '1');
+      else window.sessionStorage.removeItem(DECLINE_KEY);
+    } catch {
+      // A browser that refuses storage still gets the in-memory behaviour above.
+    }
+  };
   const acceptRef = useRef<HTMLButtonElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
 

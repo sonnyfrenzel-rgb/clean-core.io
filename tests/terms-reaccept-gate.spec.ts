@@ -230,6 +230,37 @@ test('an account the server grandfathers is asked, not shut out', async ({ page 
 
   await gate.locator('[data-terms-gate-decline]').click();
   await expect(gate, 'declining did not put the banner away').toBeHidden({ timeout: 15000 });
+
+  /*
+   * And it stays away for the rest of the session.
+   *
+   * "Not now" was React state alone, so it lasted exactly as long as the
+   * component: every reload, and every route entered with a fresh document,
+   * asked again. A UX review of bc2f7863464c found the card holding the whole
+   * first viewport on ten routes at once — the product answering a question its
+   * reader had already answered.
+   *
+   * The reload is the assertion. Clicking decline and finding the banner gone
+   * was already true before the fix; coming back and finding it still gone is
+   * what was not.
+   */
+  await page.reload();
+  await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 60000 });
+  await expect(
+    page.locator('[data-terms-gate]'),
+    'the banner came back after a reload — "not now" did not survive the page',
+  ).toBeHidden({ timeout: 15000 });
+
+  // The next sign-in must ask again, so the record of the decline is scoped to
+  // the browsing session and not to the device. Session storage is what the
+  // privacy policy § 7 names for it; local storage would outlive the session and
+  // make the policy false.
+  const persisted = await page.evaluate(() => ({
+    session: Object.keys(window.sessionStorage).filter((k) => k.startsWith('cc.terms.declined.')),
+    local: Object.keys(window.localStorage).filter((k) => k.startsWith('cc.terms.declined.')),
+  }));
+  expect(persisted.session, 'the decline was not recorded in session storage').toHaveLength(1);
+  expect(persisted.local, 'the decline outlives the session — § 7 says it does not').toHaveLength(0);
 });
 
 /**
