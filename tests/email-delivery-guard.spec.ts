@@ -129,6 +129,53 @@ test.describe('a send is traceable to its delivery', () => {
     expect(s).toContain('reply_to: CONTACT_EMAIL');
   });
 
+  /**
+   * The welcome mail goes to the account, not to a claim about it.
+   *
+   * `/api/send-approval-email` used to take `{ email, name }` out of the request
+   * body, and the admin console filled them from `registration_requests/{uid}` —
+   * a document the registering browser creates itself, and one `firestore.rules`
+   * constrains only by document id (`requestId == request.auth.uid`), not by
+   * field. So the recipient was chosen by the person awaiting approval: sign up,
+   * write somebody else's address into your own row, and an approving
+   * administrator sends a clean-core.io mail to them.
+   *
+   * The route did have a check — "F-04: Empfängeradresse validieren" — and it
+   * passed, because it validated the *shape* of the address and never its
+   * *binding* to the account. That is the distinction this test pins, and it is
+   * why a stricter regex on the address would not have helped.
+   *
+   * Found by the security audit of bc2f786 (SEC-bc2f786-12), as the one part of
+   * that finding that stands; the privilege claim in the rest of it does not.
+   */
+  test('the welcome mail reads its recipient from Firebase Auth, not from the request body', () => {
+    const rel = 'app/api/send-approval-email/route.ts';
+    const s = read(rel);
+
+    // The old shape, exactly: `const { email, name: rawName } = body;`
+    expect(
+      /const\s*\{[^}]*\bemail\b[^}]*\}\s*=\s*body/.test(s),
+      `${rel} destructures a recipient address out of the request body again`,
+    ).toBe(false);
+
+    // The new one: the address comes from the account the uid names.
+    expect(s, `${rel} no longer looks the account up`).toMatch(/getUser\(\s*uid\s*\)/);
+    expect(s, `${rel} should send to the address it read from the account`).toMatch(
+      /const\s+email\s*=\s*account\.email/,
+    );
+
+    // And the caller must not be handing one over either — a route that ignores
+    // the field is safe, but a caller still sending it means the next person to
+    // read this will reasonably assume it is used.
+    const caller = read('app/(app)/admin/page.tsx');
+    const callSite = caller.slice(caller.indexOf("'/api/send-approval-email'"));
+    const body = callSite.slice(0, callSite.indexOf('});'));
+    expect(
+      /email\s*:/.test(body),
+      'the admin console passes an address to the welcome-mail route again',
+    ).toBe(false);
+  });
+
   test('no outbound mail is sent without a reply address', () => {
     const senders = [
       'app/api/account/register/route.ts',

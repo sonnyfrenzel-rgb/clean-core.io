@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CONTACT_EMAIL } from '@/lib/constants';
 import { recordEmailSent } from '@/lib/email-events';
-import { verifyAdminRequest, assertAdminStepUp } from '@/lib/firebase-admin';
+import { verifyAdminRequest, assertAdminStepUp, getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 import { escapeHtml } from '@/lib/utils';
 import { mockMailAllowed } from '@/lib/mail-delivery-mode';
 import { wrapEmailDocument } from '@/lib/email-layout';
@@ -43,19 +43,50 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, name: rawName } = body;
+    const { uid } = body;
 
-    if (!email || !rawName) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!uid || typeof uid !== 'string' || uid.length > 128) {
+      return NextResponse.json({ error: 'Missing or invalid uid.' }, { status: 400 });
     }
 
-    // F-04: Empfängeradresse validieren (verhindert Missbrauch des Mailers selbst durch Admins)
-    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
-      return NextResponse.json({ error: 'Invalid recipient email.' }, { status: 400 });
+    /*
+     * The recipient is read from the account, never from the request.
+     *
+     * It used to be `{ email, name }` straight out of the body, and the admin
+     * console filled those from `registration_requests/{uid}` — a document the
+     * registering browser creates itself, with no field constraints in
+     * `firestore.rules` (only `requestId == request.auth.uid`). So the address
+     * the welcome mail went to was chosen by the person being approved, not by
+     * the account they had proved they owned: sign up, write somebody else's
+     * address into your own request row, and an approving administrator sends
+     * a clean-core.io mail to them.
+     *
+     * The old check validated the *shape* of the address and not its *binding*,
+     * which is why "F-04: Empfängeradresse validieren" did not prevent this.
+     * Firebase Auth is the one place the address is proven, so it is the one
+     * place this reads it. Security audit of bc2f786, SEC-bc2f786-12 — the only
+     * part of that finding that stands.
+     */
+    const adminAuth = await getAdminAuth();
+    let account;
+    try {
+      account = await adminAuth.getUser(uid);
+    } catch {
+      return NextResponse.json({ error: 'No such account.' }, { status: 404 });
     }
-    if (typeof rawName !== 'string' || rawName.length > 200) {
-      return NextResponse.json({ error: 'Invalid recipient name.' }, { status: 400 });
+
+    const email = account.email;
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+      return NextResponse.json({ error: 'The account has no usable e-mail address.' }, { status: 400 });
     }
+
+    // The display name is the person's own, and only decorates the greeting.
+    // `users/{uid}` is where they maintain it; Auth's displayName is the
+    // fallback, and the address itself the last resort.
+    const { db } = await getAdminDb();
+    const profile = (await db.collection('users').doc(uid).get()).data() || {};
+    const fromProfile = [profile.firstName, profile.lastName].filter((p: unknown) => typeof p === 'string' && p).join(' ').trim();
+    const rawName = (fromProfile || account.displayName || email.split('@')[0]).slice(0, 200);
 
     const emailHtml = buildWelcomeEmail({
       name: escapeHtml(rawName),

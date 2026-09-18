@@ -133,10 +133,10 @@ export default function AdminConsole() {
               'Content-Type': 'application/json',
               ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             },
-            body: JSON.stringify({
-              email: targetReq.email,
-              name: targetReq.name,
-            }),
+            // Only the uid: the route reads the address from Firebase Auth,
+            // because `targetReq` comes from `registration_requests/{uid}`,
+            // which the registering browser writes itself.
+            body: JSON.stringify({ uid }),
           });
           if (!mailRes.ok) {
             const detail = await mailRes.json().catch(() => ({}));
