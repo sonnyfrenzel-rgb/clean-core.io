@@ -36,6 +36,9 @@ export async function assertRateLimit(
     const windowStart = now - windowMs;
     // F-10: expiresAt drives a Firestore TTL policy on `rate_limits` so windows
     // self-delete instead of accumulating forever (see docs/DATA-RETENTION.md).
+    // That policy did not exist until 18.09.2026, and this comment was the only
+    // evidence anybody had for it — `npm run retention:verify` is now the check
+    // that the setting is really there and ACTIVE.
     const expiresAt = new Date(now + windowMs);
 
     if (!snap.exists) {

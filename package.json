@@ -20,6 +20,7 @@
     "deploy:rules": "tsx scripts/rules-deploy.ts --deploy",
     "rules:check": "tsx scripts/rules-deploy.ts",
     "rules:verify": "tsx scripts/rules-deploy.ts --verify",
+    "retention:verify": "tsx scripts/retention-verify.ts",
     "rules:record": "tsx scripts/rules-deploy.ts"
   },
   "dependencies": {

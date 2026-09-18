@@ -2,7 +2,7 @@
 
 **Version 1.0 · Clean-Core.io**
 
-Single source of truth for what data Clean-Core.io stores, where, for how long, and how it is deleted and backed up. Retention is verified by the automated GDPR Art. 17 test (`tests/security-compliance.spec.ts`) which asserts the deletion cascade covers every collection listed here.
+Single source of truth for what data Clean-Core.io stores, where, for how long, and how it is deleted and backed up. Retention is verified by the automated GDPR Art. 17 test (`tests/security-compliance.spec.ts`) which asserts the deletion cascade covers every collection listed here. The claims this file makes about *infrastructure* — backup schedules, the `rate_limits` TTL policy, log retention, point-in-time recovery — are checked against the live project by **`npm run retention:verify`**; see Backups below for why that command exists.
 
 ## Storage location
 
@@ -40,7 +40,9 @@ of accumulating forever". The policy did not exist. `gcloud firestore fields ttl
 on `clean-core-eu` returned nothing until it was created on **2026-09-18**; the
 documents had been accumulating since the field was introduced. A comment describing a
 setting is not the setting — the pattern is the same one the Backups section below
-records, and it is why both are now named with the command that proves them.
+records, and it is why both are now named with the command that proves them:
+`npm run retention:verify` checks this policy is present and `ACTIVE` in the same run
+that checks the backups.
 
 **`audit_events` note:** deliberately excluded from erasure to preserve a tamper-evident record of privileged actions (approvals, deletions). Contains actor uid/email and action type — a legitimate-interest legal basis for security accountability. Reviewed for minimization; no analysis content stored.
 
@@ -73,14 +75,47 @@ policy was promising thirty.
 
 It was found by checking the configuration while answering a legal review, not by a
 test, which is the uncomfortable part: a retention policy is a document about
-infrastructure, and nothing in this repository compares the two. Until something
-does, **this section is verified by hand whenever it changes** — the two `gcloud`
-commands above are the check, and they take a minute.
+infrastructure, and nothing in this repository compared the two.
+
+Something does now. **`npm run retention:verify`** (`scripts/retention-verify.ts`)
+reads the expected values out of *this file* — the two schedules and their
+retention, the ceiling above, the point-in-time recovery window, the region, the
+`rate_limits` TTL field, the log bucket retention below — and asks the project what
+is actually configured, then prints a verdict per claim and exits non-zero on any
+disagreement. It holds its own copy of nothing: a checker with its own numbers is a
+third place for them to drift, and the one place that would still look right while
+the other two disagreed.
+
+It is read-only by construction — every call is a `list` or a `describe`, and
+`tests/retention-verify.spec.ts` fails if a mutating command ever appears in it.
+Configuring a backup is a deliberate human act; a script that could "fix"
+production to match this document would make the document true in the wrong
+direction. It needs a developer's `gcloud` login and is therefore **not in CI**,
+for the same reason `npm run rules:verify` is not. Run it whenever this section
+changes, and before any statement about retention leaves the building.
 
 - **Restore has not been tested yet.** The first scheduled backups appear on
   2026-09-19. An untested backup is not a backup; a restore drill into a scratch
   database belongs in the next operations step, and this line stays here, saying so,
-  until it has run.
+  until it has run. Nothing automated can check this one: `npm run retention:verify`
+  can prove a backup exists and cannot prove anybody has ever restored it.
+
+## Logs
+
+- **Cloud Run request and error logs** — the one place a visitor's IP address is
+  written down — land in the Cloud Logging bucket `_Default` of project
+  `cleancore-491216`, where they are kept **30 days** and are then deleted by
+  Google. That is the number section 9 of the privacy notice states to users, and
+  `npm run retention:verify` reads it back.
+- `_Required` is a different bucket, holding Google's own Admin Activity audit
+  logs — who changed a setting in the project, not who visited the site. Its
+  retention is fixed by Google at **400 days** and cannot be shortened. It is named
+  here so that the two are never read as one: checking `_Required`, seeing 400 days
+  and calling the log question answered would say nothing at all about how long
+  visitor IP addresses are kept.
+- Application logs are structured JSON written by `lib/logger.ts` and carry ids and
+  metadata only, never request bodies or secrets (`docs/OPERATIONS.md`). They share
+  the `_Default` bucket and therefore the same 30 days.
 
 ## Review
 
