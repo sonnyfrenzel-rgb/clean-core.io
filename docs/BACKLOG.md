@@ -334,6 +334,14 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     Fachbereiche sie ohne ABAP prüfen" ist erst eingelöst, wenn sie sie sehen. Ungeprüft bleibt,
     ob die Wortwahl für einen Fachbereich trägt: gelesen hat sie außer dem Agenten niemand.
 
+24. **Regeln ausrollen — ausstehend seit 7.1, nur Sonny.** `docs/registers/rules-deployment.json` führt
+    seit `a81b30d` einen `pending`-Eintrag (`7a068dad…`): die `atcReport is map`-Typprüfung aus 7.1 und
+    ein klarstellender Kommentar (`91c98ea`); keine Client-Allowlist, keine Leseregel geändert, `adds: []`,
+    `removes: []`. Nichts in der App hängt daran — `npm run rules:check` sagt es so. Ausrollen mit
+    `npm run deploy:rules`, danach `npm run rules:record` ohne `--pending`. CI ist davon unabhängig:
+    `tests/project-readers.spec.ts:190` verlangte am 18.09. kurzzeitig, dass *nie* etwas aussteht — das
+    war nicht sein Zweck (der ist: Produktion serviert die verbreiterte Leseregel) und ist zurückgeführt.
+
 ### Hygiene, bevor die nächste Welle startet
 
 20. **Emulator und Dev-Server neu starten**, bevor mehr als vier Agenten laufen. Der Emulator stand
