@@ -5,11 +5,13 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, type User } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
-import { adminSetDoc, adminGetDoc, adminSetEmailVerified } from './helpers/admin-seed';
+import { adminSetDoc, adminGetDoc, adminMergeDoc, adminSetEmailVerified } from './helpers/admin-seed';
 import {
   INVITATION_CLOSED_CODE,
   INVITATION_COLLECTION,
   INVITATION_DEFAULT_DAYS,
+  INVITATION_MAX_OPEN,
+  INVITATION_TOO_MANY_CODE,
   PROJECT_READERS_FIELD,
   effectiveStatus,
   invitationCollectionPath,
@@ -97,16 +99,35 @@ async function readersOf(): Promise<string[]> {
   return Array.isArray(readers) ? readers : [];
 }
 
+/**
+ * Every invitation these tests created, so that one test's leftovers are not
+ * the next test's ceiling. See `test.afterEach` below.
+ */
+const createdHere: string[] = [];
+
 async function invite(
   request: APIRequestContext,
   body: Record<string, unknown>,
-): Promise<{ status: number; invitation?: Invitation; error?: string }> {
+): Promise<{ status: number; invitation?: Invitation; error?: string; code?: string }> {
   const res = await request.post(`/api/projects/${PROJECT_ID}/invitations`, {
     headers: headers(accounts[OWNER_EMAIL].token),
     data: body,
   });
-  const json = (await res.json().catch(() => ({}))) as { invitation?: Invitation; error?: string };
+  const json = (await res.json().catch(() => ({}))) as {
+    invitation?: Invitation;
+    error?: string;
+    code?: string;
+  };
+  if (json.invitation?.id) createdHere.push(json.invitation.id);
   return { status: res.status(), ...json };
+}
+
+/** Withdraw an invitation the way 5.5 does, without going through the route. */
+async function withdraw(id: string) {
+  await adminMergeDoc(invitationCollectionPath(PROJECT_ID), id, {
+    status: 'revoked',
+    revokedAt: new Date().toISOString(),
+  });
 }
 
 async function accept(request: APIRequestContext, email: string, invitationId: string) {
@@ -151,6 +172,26 @@ test.beforeAll(async () => {
     acceptedAt: null,
     revokedAt: null,
   });
+});
+
+/**
+ * A project holds three open invitations at once since 18.09.2026
+ * (`INVITATION_MAX_OPEN`), and most tests in this file create one. Left where
+ * they fall, the fourth test would be refused by the ceiling and would report
+ * that as a failure of whatever it was actually checking — a spec failing for a
+ * reason that is not in the change under test.
+ *
+ * Only *open* invitations are withdrawn. The expired fixture from `beforeAll`
+ * and the accepted one that put a reader on the project are read by later
+ * tests, and neither holds a slot anyway.
+ */
+test.afterEach(async () => {
+  while (createdHere.length) {
+    const id = createdHere.pop()!;
+    const stored = (await adminGetDoc(invitationCollectionPath(PROJECT_ID), id)) as Invitation | null;
+    if (!stored || effectiveStatus(stored) !== 'pending') continue;
+    await withdraw(id);
+  }
 });
 
 test('the server under test has both routes', async ({ request }) => {
@@ -372,4 +413,47 @@ test('the invitation subcollection is not client-readable and `readers` is not c
     'the invitation subcollection has no rule that refuses it out loud — it carries the e-mail ' +
       'addresses of other invited people, and a later catch-all match would open it silently',
   ).toMatch(block);
+});
+
+/**
+ * The ceiling (Sonny, 18.09.2026). Three invitations may wait at once; the
+ * fourth is refused, and a withdrawal frees exactly one slot.
+ *
+ * The rate limit already in the route caps how *fast* invitations go out and
+ * says nothing about how many stand open. Twenty an hour, hour after hour, is
+ * inside the rate — and a route that mails an address its caller typed needs
+ * the second half too, or it is a mailer with our return address on it.
+ *
+ * The refusal is asserted before the mail, not after: a fourth invitation that
+ * were created and then withdrawn because the ceiling noticed afterwards would
+ * still have sent a mail to somebody.
+ */
+test('three invitations wait at once, and the fourth waits for a withdrawal', async ({ request }) => {
+  const address = (n: number) => `ceiling-${n}-${STAMP}@cleancore-test.io`;
+
+  const open: string[] = [];
+  for (let n = 1; n <= INVITATION_MAX_OPEN; n++) {
+    const created = await invite(request, { email: address(n) });
+    expect(created.status, `invitation ${n} of ${INVITATION_MAX_OPEN}: ${JSON.stringify(created)}`).toBe(201);
+    open.push(created.invitation!.id);
+  }
+
+  const refused = await invite(request, { email: address(INVITATION_MAX_OPEN + 1) });
+  expect(refused.status, JSON.stringify(refused)).toBe(409);
+  expect(refused.code).toBe(INVITATION_TOO_MANY_CODE);
+  // The sentence has to say the way out. "Too many requests" would be a lie:
+  // nothing here is about speed, and waiting does not help.
+  expect(refused.error).toContain('Withdraw one');
+  expect(refused.invitation, 'a refused invitation was created anyway').toBeUndefined();
+
+  // Not a one-off: the ceiling holds on the next attempt too.
+  expect((await invite(request, { email: address(INVITATION_MAX_OPEN + 2) })).status).toBe(409);
+
+  // Withdrawing frees exactly one slot — one more goes through, the one after
+  // it does not. An owner who mistyped an address corrects it at once instead
+  // of waiting out a fortnight's expiry.
+  await withdraw(open[0]);
+  const afterWithdrawal = await invite(request, { email: address(INVITATION_MAX_OPEN + 3) });
+  expect(afterWithdrawal.status, JSON.stringify(afterWithdrawal)).toBe(201);
+  expect((await invite(request, { email: address(INVITATION_MAX_OPEN + 4) })).status).toBe(409);
 });

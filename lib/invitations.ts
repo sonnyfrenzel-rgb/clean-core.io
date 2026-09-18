@@ -96,6 +96,40 @@ export function invitationExpiry(invitedAt: Date, days?: unknown): Date {
   return new Date(invitedAt.getTime() + bounded * DAY_MS);
 }
 
+/* ------------------------------------------------------------------ ceiling */
+
+/**
+ * How many invitations one project may have waiting at the same time.
+ *
+ * Three (Sonny, 18.09.2026). The rate limit in the route already caps how
+ * *fast* invitations go out; it cannot cap the standing state, and the standing
+ * state is what matters here. Twenty an hour, hour after hour, is inside the
+ * rate and is not what sharing a project looks like — it is what a mailer with
+ * a Clean-Core.io return address looks like, sending to addresses their owners
+ * never gave us.
+ *
+ * Only *open* invitations hold a slot (`isOpen`). Accepted, revoked and expired
+ * ones do not, so withdrawing one frees it in the same moment: an owner who
+ * mistyped an address corrects it immediately instead of waiting out a
+ * fortnight's expiry. Three open invitations plus any number of accepted
+ * readers is therefore a normal state, not a blocked one.
+ */
+export const INVITATION_MAX_OPEN = 3;
+
+/** The code the route returns when the ceiling is reached. */
+export const INVITATION_TOO_MANY_CODE = 'too-many-open';
+
+/**
+ * What the owner reads when the ceiling is reached.
+ *
+ * It names the number and the way out in one sentence, because "too many
+ * requests" would be a lie — nothing here is about speed, and waiting does not
+ * help. Withdrawing does.
+ */
+export function invitationTooManyMessage(max: number = INVITATION_MAX_OPEN): string {
+  return `This project already has ${max} invitation${max === 1 ? '' : 's'} waiting to be accepted. Withdraw one before sending another.`;
+}
+
 /* -------------------------------------------------------------------- email */
 
 /**

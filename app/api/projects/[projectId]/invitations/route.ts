@@ -16,8 +16,12 @@ import { sendTransactionalMail } from '@/lib/transactional-mail';
 import { buildInvitationEmail, INVITATION_EMAIL_SUBJECT } from '@/lib/invitation-email';
 import {
   INVITATION_COLLECTION,
+  INVITATION_MAX_OPEN,
+  INVITATION_TOO_MANY_CODE,
   invitationExpiry,
   invitationLinkPath,
+  invitationTooManyMessage,
+  isOpen,
   normaliseInvitedEmail,
   type Invitation,
 } from '@/lib/invitations';
@@ -27,7 +31,7 @@ import {
  *
  *   POST { email, expiresInDays? } → `{ invitation }`, created and mailed.
  *
- * Three properties, enforced here rather than asked of the caller:
+ * Four properties, enforced here rather than asked of the caller:
  *
  *   1. **Nothing on the document comes out of the body.** The two times are this
  *      server's clock, `invitedBy` is the verified ID token and the profile
@@ -46,6 +50,11 @@ import {
  *      and, if the provider refused, withdraw it again in the same request. The
  *      alternative is a live grant to an address that was never told about it,
  *      sitting in the store until somebody guesses 24 random bytes.
+ *   4. **At most three invitations wait at once** (`INVITATION_MAX_OPEN`, Sonny
+ *      18.09.2026). The rate limit below caps how fast they go out; it cannot
+ *      cap how many stand open, and a route that mails an address its caller
+ *      typed needs both. Counted inside the transaction that creates, so two
+ *      overlapping requests cannot both find room for the same slot.
  *
  * Stored at `projects/{projectId}/invitations/{id}` through the Admin SDK.
  * `firestore.rules` has no match for that subcollection, so no client reads or
@@ -72,6 +81,19 @@ interface ProjectShape {
 type Gate =
   | { ok: true; uid: string; email: string; projectId: string; project: ProjectShape }
   | { ok: false; response: NextResponse };
+
+/**
+ * The Admin SDK is reached through a dynamic import, so its handles arrive
+ * untyped — the same shape `readers/route.ts` names for the same reason. Only
+ * the two members the ceiling uses are declared.
+ */
+interface InviteDoc {
+  data: () => Record<string, unknown>;
+}
+interface Tx {
+  get: (r: unknown) => Promise<{ docs: InviteDoc[] }>;
+  create: (r: unknown, data: Record<string, unknown>) => void;
+}
 
 async function openProject(req: NextRequest, params: Promise<{ projectId: string }>): Promise<Gate> {
   const decodedToken = await verifyRequestAuth(req);
@@ -207,7 +229,32 @@ export async function POST(
       .doc(gate.projectId)
       .collection(INVITATION_COLLECTION)
       .doc(invitation.id);
-    await ref.create(invitation);
+
+    // Property 4: a project has at most three invitations waiting at once
+    // (`INVITATION_MAX_OPEN`, Sonny 18.09.2026). Counted and taken in one
+    // transaction rather than read-then-write: two requests that overlap would
+    // otherwise both count three and both write a fourth, which is the one
+    // shape of race a ceiling exists to stop. Accepted, revoked and expired
+    // invitations hold no slot, so withdrawing one frees it at once.
+    const tooMany = Symbol('invitation ceiling');
+    try {
+      await db.runTransaction(async (tx: Tx) => {
+        const existing = await tx.get(ref.parent);
+        const open = existing.docs.filter((d: InviteDoc) =>
+          isOpen(d.data() as unknown as Pick<Invitation, 'status' | 'expiresAt'>, invitedAt),
+        ).length;
+        if (open >= INVITATION_MAX_OPEN) throw tooMany;
+        tx.create(ref, invitation as unknown as Record<string, unknown>);
+      });
+    } catch (ceilingErr: unknown) {
+      if (ceilingErr === tooMany) {
+        return NextResponse.json(
+          { error: invitationTooManyMessage(), code: INVITATION_TOO_MANY_CODE },
+          { status: 409 },
+        );
+      }
+      throw ceilingErr;
+    }
 
     const link = `${APP_BASE_URL}${invitationLinkPath(gate.projectId, invitation.id)}`;
     const outcome = await sendTransactionalMail({
