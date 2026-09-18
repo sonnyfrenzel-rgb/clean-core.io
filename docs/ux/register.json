@@ -1521,9 +1521,10 @@
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
       "createdAt": "2026-09-18T10:55:33.912Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-18T10:55:33.912Z"
+      "updatedAt": "2026-09-18T10:57:03.442Z",
+      "fixedIn": "00212eb"
     },
     {
       "id": "UX-122",
@@ -1533,9 +1534,10 @@
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
       "createdAt": "2026-09-18T10:55:34.058Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-18T10:55:34.058Z"
+      "updatedAt": "2026-09-18T10:57:03.611Z",
+      "fixedIn": "00212eb"
     },
     {
       "id": "UX-123",
@@ -1545,9 +1547,10 @@
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
       "createdAt": "2026-09-18T10:55:34.206Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-18T10:55:34.206Z"
+      "updatedAt": "2026-09-18T10:57:03.777Z",
+      "fixedIn": "00212eb"
     },
     {
       "id": "UX-124",
@@ -1557,9 +1560,10 @@
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
       "createdAt": "2026-09-18T10:55:34.357Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-18T10:55:34.357Z"
+      "updatedAt": "2026-09-18T10:57:03.948Z",
+      "fixedIn": "00212eb"
     },
     {
       "id": "UX-125",
@@ -1569,9 +1573,10 @@
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
       "createdAt": "2026-09-18T10:55:34.546Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-18T10:55:34.546Z"
+      "updatedAt": "2026-09-18T10:57:04.117Z",
+      "fixedIn": "00212eb"
     },
     {
       "id": "UX-126",
@@ -1581,9 +1586,10 @@
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
       "createdAt": "2026-09-18T10:55:34.707Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-18T10:55:34.707Z"
+      "updatedAt": "2026-09-18T10:57:04.276Z",
+      "fixedIn": "00212eb"
     },
     {
       "id": "UX-127",
@@ -1593,9 +1599,10 @@
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
       "createdAt": "2026-09-18T10:55:34.861Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "sofort",
-      "updatedAt": "2026-09-18T10:55:34.861Z"
+      "updatedAt": "2026-09-18T10:57:04.459Z",
+      "fixedIn": "00212eb"
     },
     {
       "id": "UX-128",
