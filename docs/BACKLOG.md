@@ -239,6 +239,11 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     Projektwechsel mit offenen Anfragen, Usage-Import mit verzögertem Parser); und Teilfehler,
     die halbe Zustände hinterlassen (Registrierung, Tenant-Zugang, Umfrage-Schreibreihenfolge).
     Volltext in `.qa-review/`.
+    **Nachtrag 18.09., abends:** die Vollprüfung von `def8262` (der zweite `main`-Push des Tages)
+    ist da — 14 hoch, 41 mittel, 3 niedrig, wieder durchweg Testlücken, weitgehend dieselben
+    Themen (Kontowechsel mit offener Abfrage, Deployment-Wahl im Bestätigungsdialog, atomare
+    Persistenz bei Doppelklick und zwei Tabs, Archive wirklich entpacken und bauen). Beide
+    Vollprüfungen gehören **zusammen** triagiert, nicht zweimal.
 15. **0.18, der lohnendste Rest:** eine Befundmarke für die Typabhängigkeit (R29). Dann wird
     CC-045 · befunde von „nicht vergleichbar" zu einem echten Vergleich statt zu einem Schweigen.
 16. **Das Auto-Heal ist wirkungslos** (Befund aus 0.17, in der Roadmap notiert). Der wahrscheinliche
@@ -301,8 +306,14 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
       der geprüfte Stand nicht einmal anfasst.
 
     Der Fingerabdruck ist `sha256(datei + titel)`; formuliert das Modell den Titel anders, ist es
-    ein neuer Befund, und `refute.mjs` greift nicht mehr. Die Widerlegungsliste wächst (140
-    Einträge) und hält trotzdem nichts zurück. Zwei Hebel, beide klein: den Fingerabdruck über
+    ein neuer Befund, und weder `refute.mjs` noch das Sicherheitsregister greifen mehr.
+    **Genauer, nachgelesen am Abend:** `untriaged()` in `scripts/security/lib/register.mjs`
+    filtert entschiedene Fingerabdrücke korrekt aus der Zählung — der Posteingang druckt die
+    volle Befundliste aber *ohne* Markierung, welche davon schon entschieden sind, und ein
+    umformulierter Titel bekommt einen neuen Abdruck. Am zweiten Lauf des Tages (`def8262`)
+    waren von 26 kritischen und hohen Befunden **vier** bereits fingerabdruckgleich widerlegt
+    (mitgedruckt, unmarkiert) und **drei** dieselbe Aussage unter neuem Abdruck. Zwei Hebel,
+    beide klein: den Fingerabdruck über
     `datei + kategorie` statt über den Titel bilden, und die Sekretdetektion auf Werte statt auf
     Bezeichnernamen ansetzen. **Beides ist eine Änderung an der Agentenmaschinerie und braucht
     nach `CLAUDE.md` Sonnys Go**, ist also bewusst hier notiert und nicht getan.

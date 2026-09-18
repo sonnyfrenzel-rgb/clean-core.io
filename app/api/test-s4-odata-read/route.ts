@@ -223,7 +223,6 @@ export async function POST(req: NextRequest) {
         method: 'GET',
         headers: authHeaders,
         signal: controller.signal,
-        redirect: 'follow',
       });
     } catch (fetchErr: any) {
       clearTimeout(timeout);

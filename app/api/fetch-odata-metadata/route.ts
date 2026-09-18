@@ -191,7 +191,6 @@ async function fetchWithTimeout(url: string, headers: Record<string, string>, ti
       method: 'GET',
       headers,
       signal: controller.signal,
-      redirect: 'follow',
     });
     clearTimeout(timeout);
     return response;

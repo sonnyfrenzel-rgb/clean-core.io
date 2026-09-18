@@ -173,7 +173,6 @@ async function testEndpoint(
       method: 'HEAD',
       headers,
       signal: controller.signal,
-      redirect: 'follow',
     });
   } catch (headError: any) {
     if (headError.name === 'AbortError') {
@@ -187,7 +186,6 @@ async function testEndpoint(
         method: 'GET',
         headers,
         signal: controller.signal,
-        redirect: 'follow',
       });
     } catch (getError: any) {
       clearTimeout(timeout);
@@ -208,7 +206,6 @@ async function testEndpoint(
         method: 'GET',
         headers,
         signal: controller.signal,
-        redirect: 'follow',
       });
     } catch (getError: any) {
       clearTimeout(timeout);

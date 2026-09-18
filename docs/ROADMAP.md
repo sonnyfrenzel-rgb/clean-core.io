@@ -948,6 +948,10 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-079 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
 | SEC-2026-080 | hoch | — | — | behoben |
 | SEC-2026-081 | mittel | — | — | behoben |
+| SEC-2026-099 | kritisch | — | — | akzeptiertes Risiko |
+| SEC-2026-100 | hoch | P2 | sofort | behoben |
+| SEC-2026-110 | hoch | — | — | akzeptiertes Risiko |
+| SEC-2026-131 | hoch | P2 | 3.0 | eingeplant |
 
 **Audit von v2.13.0 (`a7c9e71`, 18.09.2026): 3 kritisch, 1 hoch, 7 mittel, 14 niedrig — 2 behoben,
 7 eingeplant, 16 widerlegt.** Behoben sind der Zip-Slip in der Auslieferung (modellerzeugte Pfade
