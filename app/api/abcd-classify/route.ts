@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { verifyRequestAuth } from '@/lib/firebase-admin';
-import { gradeSapObjectUse } from '@/lib/abap/catalog-service';
+import { gradeSapObjectUse, hasNoReleasedApiPath } from '@/lib/abap/catalog-service';
 import { gradeKey, objectUseFromAccess, type GradedObject, type ObjectUse } from '@/lib/abap/abcd-classification';
 
 /**
- * Resolve clean core levels for a batch of SAP object names.
+ * Resolve clean core levels — and, since roadmap "SAP-Katalog im
+ * Browser-Bundle", the catalog's "no released API path" verdict — for a batch
+ * of SAP object names.
  *
  * An entry is either a name — graded from the name alone, keyed by the name, as
  * this route has always answered — or `{ name, use }` for a table the code
@@ -12,10 +14,22 @@ import { gradeKey, objectUseFromAccess, type GradedObject, type ObjectUse } from
  * `NAME@use` (`gradeKey`). The use changes the answer for a table like KNA1: C
  * to read it or to name it as a type, D to write it.
  *
- * Why a route at all: the grade is a lookup against ~4 MB of generated catalog
- * artifacts. The analyze view that needs it is a client component, so importing
- * the catalog there would ship both maps to the browser. The client sends names
- * and gets grades back.
+ * `noPath` answers a second, use-independent question — `catalog-service.ts`'s
+ * `hasNoReleasedApiPath()`, whether the Cloudification Repository shows no
+ * released successor and no extension path — keyed by the plain, upper-cased
+ * name. It lives in its own map rather than inside `GradedObject` because it
+ * does not vary with `use`, and duplicating it under both `NAME@read` and
+ * `NAME@write` would invite the two to silently disagree after a future edit.
+ * `components/analyze/UsageRiskMatrix.tsx` (via `lib/abap/usage-join.ts`) and
+ * `components/workspace/PublicCloudFitPanel.tsx` (via
+ * `lib/abap/public-cloud-fit-resolver.ts`) both need exactly this fact and
+ * are client components, which is why it is answered here rather than by
+ * importing `hasNoReleasedApiPath` where they run.
+ *
+ * Why a route at all: both lookups run against ~4 MB of generated catalog
+ * artifacts. The views that need them are client components, so importing the
+ * catalog there would ship both maps to the browser. The client sends names
+ * and gets grades (and path facts) back.
  *
  * Read-only over public reference data (the same data /catalog serves without a
  * login), but still auth-gated to match the posture of every other route here
@@ -52,6 +66,7 @@ export async function POST(req: Request) {
   }
 
   const grades: Record<string, GradedObject> = {};
+  const noPath: Record<string, boolean> = {};
   for (const raw of entries) {
     let name: string;
     let use: ObjectUse | null = null;
@@ -65,10 +80,13 @@ export async function POST(req: Request) {
       continue;
     }
     name = name.trim().toUpperCase();
+    if (!name) continue;
     const key = gradeKey(name, use);
-    if (!name || grades[key]) continue;
-    grades[key] = gradeSapObjectUse(name, use);
+    if (!grades[key]) grades[key] = gradeSapObjectUse(name, use);
+    // Keyed by name alone — hasNoReleasedApiPath does not depend on `use`, so
+    // one entry serves every use of the same object.
+    if (!(name in noPath)) noPath[name] = hasNoReleasedApiPath(name);
   }
 
-  return NextResponse.json({ grades });
+  return NextResponse.json({ grades, noPath });
 }

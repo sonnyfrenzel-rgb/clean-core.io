@@ -37,6 +37,10 @@ const evidence = (objectNames: string[]) =>
   }) as any;
 
 const ROUTE = {} as any;
+// None of these fixtures exercise feasibility (they check `usage`/`quadrant`
+// on buckets where `computeQuadrant` never reads it), so every object is
+// stubbed as having a released path.
+const NO_PATH = () => false;
 
 test.describe('an export with no recognised call-count column', () => {
   const CSV = 'OBJECT_NAME,LAST_USED\nZPROG_ONE,2026-01-15\nZPROG_TWO,2026-02-20\n';
@@ -56,7 +60,7 @@ test.describe('an export with no recognised call-count column', () => {
 
   test('classifies every object as unknown, never as a retirement candidate', async () => {
     const report = await parseUsage(csvFile(CSV));
-    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_ONE', 'ZPROG_TWO']), ROUTE);
+    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_ONE', 'ZPROG_TWO']), ROUTE, NO_PATH);
     expect(rows).toHaveLength(2);
     for (const row of rows) {
       expect(row.usage, `${row.objectName} bucketed on missing data`).toBe('unknown');
@@ -77,13 +81,13 @@ test.describe('an export that does carry counts', () => {
     // E03-F02: a zero is evidence of disuse only across a window long enough to
     // contain every periodic run. Declared, not derived from the executions.
     const report = await parseUsage(csvFile(CSV), { window: { from: '2025-01-01', to: '2026-01-31' } });
-    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_ONE']), ROUTE);
+    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_ONE']), ROUTE, NO_PATH);
     expect(rows.find((r) => r.objectName === 'ZPROG_ONE')?.usage).toBe('dormant');
   });
 
   test('without a declared window the same zero is "not seen", never dormant', async () => {
     const report = await parseUsage(csvFile(CSV));
-    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_ONE']), ROUTE);
+    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_ONE']), ROUTE, NO_PATH);
     const one = rows.find((r) => r.objectName === 'ZPROG_ONE');
     expect(one?.usage).toBe('unobserved');
     expect(one?.quadrant).not.toBe('retire-candidate');
@@ -91,7 +95,7 @@ test.describe('an export that does carry counts', () => {
 
   test('a heavily used object is neither dormant nor unknown', async () => {
     const report = await parseUsage(csvFile(CSV));
-    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_TWO']), ROUTE);
+    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_TWO']), ROUTE, NO_PATH);
     const two = rows.find((r) => r.objectName === 'ZPROG_TWO');
     expect(two?.usage).not.toBe('dormant');
     expect(two?.usage).not.toBe('unknown');
@@ -117,7 +121,7 @@ test.describe('a single row whose count cannot be read', () => {
     const report = await parseUsage(
       csvFile('OBJECT_NAME,CALLS\nZPROG_ONE,not available\nZPROG_TWO,17\n'),
     );
-    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_ONE']), ROUTE);
+    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_ONE']), ROUTE, NO_PATH);
     const one = rows.find((r) => r.objectName === 'ZPROG_ONE');
     expect(one?.usage).toBe('unknown');
     expect(one?.quadrant).toBe('unknown');
@@ -139,7 +143,7 @@ test.describe('a cell that says nothing is not a zero', () => {
     expect(report.records.find((r) => r.objectName === 'ZPROG_SPACES')?.callCount).toBeNull();
     expect(report.records.find((r) => r.objectName === 'ZPROG_REAL')?.callCount).toBe(17);
 
-    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_SPACES']), ROUTE);
+    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_SPACES']), ROUTE, NO_PATH);
     const spaces = rows.find((r) => r.objectName === 'ZPROG_SPACES');
     expect(spaces?.usage, 'an empty cell was read as a measured zero').toBe('unknown');
     expect(spaces?.quadrant).not.toBe('retire-candidate');
@@ -157,7 +161,7 @@ test.describe('a cell that says nothing is not a zero', () => {
     const report = await parseUsage(csvFile('OBJECT_NAME,CALLS\nZPROG_NEG,-3\nZPROG_ZERO,0\n'), WINDOW);
     expect((report.quarantined ?? []).map((q) => q.reason)).toEqual(['negative call count (-3)']);
     expect(report.records.find((r) => r.objectName === 'ZPROG_ZERO')?.callCount).toBe(0);
-    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_ZERO']), ROUTE);
+    const rows = joinUsageWithEvidence(report, evidence(['ZPROG_ZERO']), ROUTE, NO_PATH);
     expect(rows.find((r) => r.objectName === 'ZPROG_ZERO')?.usage, 'a measured zero is still evidence').toBe('dormant');
   });
 });

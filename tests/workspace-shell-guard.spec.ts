@@ -12,9 +12,15 @@ import { receiptFor } from './helpers/test-receipt';
 import firebaseConfig from '../firebase-config.json';
 import { workspaceShellEligible, workspaceShellEnabled } from '../lib/workspace-shell';
 import {
+  DEFAULT_IT_FOCUS,
   DEFAULT_VIEW,
+  IT_FOCUS_OPTIONS,
   META_ABSENT,
   STATUS_FACETS,
+  VIEW_ABOUT,
+  VIEW_QUESTIONS,
+  WORKSPACE_VIEWS,
+  itFocusFromParam,
   metaLine,
   notDetermined,
   statusOfPhase,
@@ -397,6 +403,38 @@ test.describe('a view in the URL', () => {
     expect(viewFromParam('admin')).toBe('business');
     expect(viewFromParam(null)).toBe('business');
   });
+
+  test('Business leads, IT follows, Management decides — always in that order (ADR-044)', () => {
+    expect(WORKSPACE_VIEWS).toEqual(['business', 'it', 'management']);
+  });
+});
+
+test.describe('IT\'s secondary focus (roadmap 6.1)', () => {
+  test('reads the same way a view does — an unknown or missing value is the default, never an error', () => {
+    expect(DEFAULT_IT_FOCUS).toBe('application');
+    expect(IT_FOCUS_OPTIONS).toEqual(['application', 'solution', 'enterprise']);
+    expect(itFocusFromParam('solution')).toBe('solution');
+    expect(itFocusFromParam('enterprise')).toBe('enterprise');
+    expect(itFocusFromParam('portfolio')).toBe('application');
+    expect(itFocusFromParam(null)).toBe('application');
+    expect(itFocusFromParam(undefined)).toBe('application');
+  });
+});
+
+test.describe('"About this view" (`DESIGN.md` §6.1)', () => {
+  test('names one paragraph per view, and none of them is empty or a restatement of the question', () => {
+    for (const view of WORKSPACE_VIEWS) {
+      expect(VIEW_ABOUT[view].trim().length, `${view} has no "About this view" paragraph`).toBeGreaterThan(60);
+      expect(VIEW_ABOUT[view]).not.toBe(VIEW_QUESTIONS[view]);
+    }
+    // Every paragraph names something it does not show, per DESIGN.md's own
+    // wording for the affordance ("was die Sicht zeigt und was nicht") — a
+    // paragraph that only restates what is visible would pass a length check
+    // while still failing the one thing this text exists to say.
+    for (const view of WORKSPACE_VIEWS) {
+      expect(VIEW_ABOUT[view], `${view}'s paragraph never says what it does NOT show`).toMatch(/not show|does not|never/i);
+    }
+  });
 });
 
 /* ------------------------------------------------- the rendered half */
@@ -683,6 +721,98 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
     // The open point the engine stepped over, with its reason and its line.
     await expect(page.locator('[data-not-determined-state="some"]')).toBeVisible();
     await expect(page.locator('[data-not-determined-item]').first()).toContainText('L2');
+  });
+
+  test('the view switcher, the IT focus and "About this view" — roadmap 6.1', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1200 });
+    await signIn(page, ADMIN);
+
+    // W22-A02 of the phase's acceptance line, checked from the network rather
+    // than from the component: a switch "erzeugt keine neue Hypothese" and
+    // "löst keinen Modellaufruf aus". Any request to the one path a model call
+    // can leave this product (`/api/gemini`) or to the route that mints a
+    // signed run would show up here regardless of what the UI claims to do.
+    const modelOrRunCalls: string[] = [];
+    await page.route('**/api/gemini', (route) => {
+      modelOrRunCalls.push(route.request().url());
+      return route.continue();
+    });
+    await page.route('**/api/runs/create', (route) => {
+      modelOrRunCalls.push(route.request().url());
+      return route.continue();
+    });
+
+    expect(await openWorkspace(page, FULL_ID)).toBe('shell');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'business');
+
+    // Business: no Focus control — it means nothing outside IT (roadmap 6.1).
+    await expect(page.locator('[data-workspace-it-focus]')).toHaveCount(0);
+
+    // "About this view" is a real button, collapsed by default, with an
+    // accessible name and a proper expanded/controls relationship — not a
+    // bare "?" and not a link that goes nowhere.
+    const aboutToggle = page.locator('[data-workspace-view-about-toggle]');
+    const aboutPanel = page.locator('[data-workspace-view-about]');
+    await expect(aboutToggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(aboutPanel).toHaveCount(0);
+    await aboutToggle.click();
+    await expect(aboutToggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(aboutPanel).toBeVisible();
+    // What the paragraph says and what the code shows must be the same text —
+    // a hand-written duplicate in the DOM would drift from `lib/workspace-model.ts`.
+    await expect(aboutPanel).toHaveText(VIEW_ABOUT.business);
+
+    // The toggle names the exact paragraph it opens — a real `aria-controls`
+    // relationship, not just a visual disclosure two elements happen to sit
+    // next to. `useId()` values contain colons, so this is compared as plain
+    // strings rather than fed into a CSS id selector.
+    const controls = await aboutToggle.getAttribute('aria-controls');
+    const panelId = await aboutPanel.getAttribute('id');
+    expect(controls, 'the toggle does not name the paragraph it opens').toBeTruthy();
+    expect(controls).toBe(panelId);
+
+    // Switching to IT reveals the Focus control — a real radio group, three
+    // segments in the roadmap's order, Application selected on arrival.
+    //
+    // The generous timeout below is not slack for a flaky assertion: the dev
+    // server compiles `/project/[projectId]` on demand, and the client-side
+    // navigation this click triggers is the *first* hit of that route in this
+    // test, which can take several seconds under a full, parallel test run —
+    // the same class of gotcha CLAUDE.md documents for a compiling dev server,
+    // just on the write side instead of a race between two writes.
+    const viewSeg = page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'IT' });
+    await viewSeg.click();
+    await expect(page).toHaveURL(/[?&]view=it\b/, { timeout: 30000 });
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it');
+
+    const focusGroup = page.locator('[data-workspace-it-focus] [data-cc-segmented]');
+    await expect(focusGroup).toHaveAttribute('role', 'radiogroup');
+    const focusSegments = focusGroup.locator('button[role="radio"]');
+    await expect(focusSegments).toHaveCount(3);
+    await expect(focusSegments).toHaveText(['Application', 'Solution', 'Enterprise']);
+    await expect(focusSegments.nth(0)).toHaveAttribute('aria-checked', 'true');
+
+    // The "About this view" paragraph re-opens for IT's own text — the toggle
+    // state is not reset by a view switch, but the content it shows is.
+    await expect(page.locator('[data-workspace-view-about]')).toHaveText(VIEW_ABOUT.it);
+
+    // Choosing Solution is held in `?focus=`, exactly like the view itself,
+    // and nowhere else (`tests/view-attribute-guard.spec.ts` is the guard for
+    // "nowhere else" — this is only the UI half).
+    await focusSegments.nth(1).click();
+    await expect(page).toHaveURL(/[?&]focus=solution\b/, { timeout: 30000 });
+    await expect(focusSegments.nth(1)).toHaveAttribute('aria-checked', 'true');
+    await expect(focusSegments.nth(0)).toHaveAttribute('aria-checked', 'false');
+
+    // Management: Focus is gone again, and the view is still in the URL.
+    await page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'Management' }).click();
+    await expect(page).toHaveURL(/[?&]view=management\b/, { timeout: 30000 });
+    await expect(page.locator('[data-workspace-it-focus]')).toHaveCount(0);
+
+    // Every switch above — two views, one focus, one "About this view" toggle
+    // — and not one of them called the model or minted a run.
+    expect(modelOrRunCalls, `a view or focus switch reached ${JSON.stringify(modelOrRunCalls)}`).toEqual([]);
   });
 
   test('the switch is written by the server, and refuses a caller who is not an administrator', async ({ request }) => {

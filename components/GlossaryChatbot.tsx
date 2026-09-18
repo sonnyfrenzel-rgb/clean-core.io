@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Sparkles, AlertTriangle, ShieldCheck, HelpCircle } from 'lucide-react';
 import { callGemini } from '@/lib/gemini';
 import { GLOSSARY_ITEMS } from '@/lib/glossary';
+import { glossaryAnswerFor } from '@/lib/glossary-lookup';
 import { buildKnowledgeBase } from '@/lib/chatbot-knowledge';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import clsx from 'clsx';
@@ -13,6 +14,16 @@ interface Message {
   sender: 'user' | 'bot';
   text: string;
   timestamp: string;
+  /**
+   * Set when this message was answered from the glossary rather than a model
+   * call — roadmap 6.6, `DESIGN.md` §6.1: *"eine Frage „What is …?" zu einem
+   * Glossarbegriff beantwortet der Eintrag selbst … die Antwort nennt, wenn sie
+   * aus dem Glossar kommt"*. Undefined on every other message, including the
+   * greeting, so the badge appears only where it is true.
+   */
+  source?: 'glossary';
+  /** The SAP source the entry names, when it has one (ADR-034). */
+  glossarySource?: string;
 }
 
 export default function GlossaryChatbot() {
@@ -61,6 +72,25 @@ export default function GlossaryChatbot() {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
+
+    // Roadmap 6.6 / `DESIGN.md` §6.1 — a question that names a glossary term is
+    // answered from that entry, never by asking Gemini to restate it. Checked
+    // and answered before `setLoading(true)` and before anything below reaches
+    // `callGemini`, so a test can prove the absence of a model call by watching
+    // the network rather than trusting this comment.
+    const glossary = glossaryAnswerFor(text);
+    if (glossary) {
+      const botMessage: Message = {
+        sender: 'bot',
+        text: glossary.answer,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        source: 'glossary',
+        glossarySource: glossary.item.source,
+      };
+      setMessages((prev) => [...prev, botMessage]);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -214,12 +244,30 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                     )}
                   >
                     {isBot ? (
-                      <div 
+                      <div
                         className="prose-chat"
-                        dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(msg.text) }} 
+                        dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(msg.text) }}
                       />
                     ) : msg.text}
                   </div>
+                  {msg.source === 'glossary' ? (
+                    // Roadmap 6.6: an answer that came from the glossary says so,
+                    // in the same words `run.noModelCall` uses on the signed-run
+                    // side of the product, plus the SAP source when the entry
+                    // carries one — printed honestly when it does not, rather
+                    // than left silent (ADR-034).
+                    // 11px and up, deliberately: the 8–9px labels elsewhere on this
+                    // card are an open UX finding (illegible at normal zoom), not a
+                    // size to repeat in new work.
+                    <p
+                      data-chatbot-glossary-answer=""
+                      className="text-[11px] font-bold text-slate-450 uppercase tracking-wider px-1"
+                    >
+                      <span data-chatbot-no-model-call="">No model call</span>
+                      {' · '}
+                      {msg.glossarySource ? `Source: ${msg.glossarySource}` : 'Source not yet recorded'}
+                    </p>
+                  ) : null}
                   <span className="text-[8px] font-bold text-slate-400 font-mono tracking-wider px-1">
                     {msg.timestamp}
                   </span>

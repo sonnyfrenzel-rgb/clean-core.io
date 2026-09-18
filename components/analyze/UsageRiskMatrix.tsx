@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { AlertTriangle, TrendingUp, Trash2, HelpCircle, BarChart3, Clock, X, ExternalLink, MinusCircle } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Trash2, HelpCircle, BarChart3, Clock, X, ExternalLink, MinusCircle, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { RETIREMENT_WINDOW_DAYS, type UsageJoinRow, type Quadrant, type UsageBucket, type Feasibility } from '@/lib/abap/usage-model';
 import type { UsageReport } from '@/lib/abap/usage-model';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import type { ExtensibilityRouteReport } from '@/lib/abap/extensibility-router';
-import { QUADRANT_META, joinUsageWithEvidence } from '@/lib/abap/usage-join';
+import { QUADRANT_META, joinUsageWithEvidence, usageJoinObjectNames } from '@/lib/abap/usage-join';
+import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 
 interface UsageRiskMatrixProps {
   rows: UsageJoinRow[];
@@ -19,6 +20,14 @@ interface UsageRiskMatrixProps {
  * the page. The join refuses reports that mix sources; thrown here, that lands
  * in the surrounding SectionBoundary as one failed section — thrown in the
  * page's own render, it took the whole analyze page down with it.
+ *
+ * `hasNoReleasedApiPath` (roadmap "SAP-Katalog im Browser-Bundle") is no
+ * longer imported through `usage-join.ts` — that pulled the ~4 MB
+ * Cloudification Repository artifacts into this client component's bundle.
+ * It is looked up here through `/api/abcd-classify` instead, and the matrix
+ * is not computed until that lookup settles: showing it early with every
+ * object assumed to "have a path" would silently mis-sort the very objects
+ * this matrix exists to flag (heavy usage + no path = Danger).
  */
 export function UsageRiskMatrixFor({
   usageReport,
@@ -29,8 +38,51 @@ export function UsageRiskMatrixFor({
   findings: EvidenceFinding[];
   route: ExtensibilityRouteReport;
 }) {
-  const rows = useMemo(() => joinUsageWithEvidence(usageReport, { findings }, route), [usageReport, findings, route]);
+  const objectNames = useMemo(() => usageJoinObjectNames(usageReport, { findings }), [usageReport, findings]);
+  const lookupObjects = useMemo(() => objectNames.map((name) => ({ name })), [objectNames]);
+  const lookup = useAbcdCatalogLookup(lookupObjects);
+
+  // Kept as a useMemo that runs unconditionally (rules of hooks), but only
+  // actually joins once the path lookup is ready — see the header comment.
+  const rows = useMemo(() => {
+    if (lookup.status !== 'ready') return null;
+    return joinUsageWithEvidence(usageReport, { findings }, route, (name) => lookup.noPath[name] ?? false);
+  }, [usageReport, findings, route, lookup.status, lookup.noPath]);
+
+  if (lookup.status === 'loading') return <UsageRiskMatrixPending />;
+  if (lookup.status === 'error' || !rows) return <UsageRiskMatrixLookupFailed />;
   return <UsageRiskMatrix rows={rows} usageReport={usageReport} />;
+}
+
+/** Visible "not loaded yet" state — never a matrix computed with a guessed feasibility. */
+function UsageRiskMatrixPending() {
+  return (
+    <div
+      data-usage-risk-matrix="loading"
+      className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-white px-6 py-8 shadow-sm sm:px-8"
+    >
+      <Loader2 className="h-4 w-4 shrink-0 animate-spin text-slate-400" aria-hidden="true" />
+      <p className="text-sm font-semibold text-slate-600">
+        Checking the Cloudification Repository for a released path on each object…
+      </p>
+    </div>
+  );
+}
+
+/** Visible "the lookup failed" state — never a matrix silently defaulted to "clean-core-ready". */
+function UsageRiskMatrixLookupFailed() {
+  return (
+    <div
+      data-usage-risk-matrix="error"
+      className="flex items-start gap-3 rounded-3xl border border-amber-200 bg-amber-50 px-6 py-8 shadow-sm sm:px-8"
+    >
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+      <p className="text-sm font-semibold text-amber-800">
+        Could not reach the SAP catalog lookup for feasibility, so the risk matrix cannot be shown — it would
+        otherwise have to guess whether each object has a released path. Reload the page to try again.
+      </p>
+    </div>
+  );
 }
 
 // ── Grid cell definitions (Usage × Feasibility) ───────────────────

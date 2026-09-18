@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useId, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
@@ -10,16 +10,23 @@ import WorkspaceStatusLine from './StatusLine';
 import WorkspaceLayerBar from './LayerBar';
 import WorkspaceToolBar from './ToolBar';
 import NotDeterminedCard from './NotDeterminedCard';
+import NextStepCard from './NextStepCard';
+import PublicCloudFitPanel from './PublicCloudFitPanel';
 import FirstLook from './FirstLook';
 import AskThisCase from './AskThisCase';
 import CoachMarkNote from './CoachMarks';
 import WorkspaceAccessList from './AccessList';
+import CommandSearch from './CommandSearch';
 import { useCoachMarks } from '@/hooks/useCoachMarks';
 import { preAnsweredQuestion, type PreAnswered } from '@/lib/ask-this-case';
 import type { SourceReading } from '@/lib/first-look';
-import { workflowSteps, workflowSummary } from '@/lib/workflow-steps';
+import { nextOpenPoint } from '@/lib/next-step';
+import type { ModelStageSubject } from '@/lib/model-stages';
 import {
+  IT_FOCUS_LABELS,
+  IT_FOCUS_OPTIONS,
   LAYERS,
+  VIEW_ABOUT,
   VIEW_LABELS,
   VIEW_QUESTIONS,
   WORKSPACE_VIEWS,
@@ -28,6 +35,7 @@ import {
   workspaceLayers,
   workspaceStatusLine,
   workspaceTools,
+  type ItFocus,
   type LayerKey,
   type WorkspaceView,
 } from '@/lib/workspace-model';
@@ -55,22 +63,47 @@ import type { Project } from '@/lib/types';
  * progress indicator, and a view in the URL is a perspective and never a grant
  * — this component renders one project that the reader could already open.
  *
- * What is deliberately **not** here: the process map, the rules, the reveal
- * line, "Next step". Those are phases 2 and 6 of the roadmap. A shell that
- * showed placeholders for them would be the exact failure the *Not determined*
- * area exists to rule out.
+ * **"Next step"** (roadmap 6.5) is the one card here with a `primary` button —
+ * *"die Hauptaktion der Seite steht in „Next step""* (`DESIGN.md` §1.5) — and
+ * it renders `lib/next-step.ts`'s answer without adding an opinion of its own.
+ * What is still deliberately **not** here: the process map, the rules, the
+ * reveal line. Those are phase 2 of the roadmap. A shell that showed
+ * placeholders for them would be the exact failure the *Not determined* area
+ * exists to rule out.
  */
 export default function WorkspaceShell({
   project,
   projectId,
   view,
   onViewChange,
+  focus,
+  onFocusChange,
+  account,
   buildUp = false,
 }: {
   project: Project | null;
   projectId: string;
   view: WorkspaceView;
   onViewChange: (view: WorkspaceView) => void;
+  /**
+   * IT's secondary focus (roadmap 6.1) — Application · Solution · Enterprise.
+   * Meaningless outside IT, and not read there either: nothing yet scopes to
+   * it, because the layers that would (findings, roadmap 8.1) are not built.
+   * It is ordering infrastructure, held the same way the view is, ahead of the
+   * content it will one day order.
+   */
+  focus: ItFocus;
+  onFocusChange: (focus: ItFocus) => void;
+  /**
+   * The signed-in account's own profile, or `undefined`/`null` while it has
+   * not loaded — just enough of it (`modelStages`) for `lib/next-step.ts` to
+   * tell a phase that is genuinely open from one a model switch keeps the
+   * reader from generating right now (roadmap 1.2). Never widened to the whole
+   * `UserProfile` type here: this component asks one question of it, and a
+   * narrower prop is one less reason for this file to change when that type
+   * grows a field that has nothing to do with the next step.
+   */
+  account?: ModelStageSubject | null;
   /**
    * Whether the first look builds itself up in four stages (`DESIGN.md` §5.2)
    * or goes straight to its end state. True after an import or an example, and
@@ -82,7 +115,9 @@ export default function WorkspaceShell({
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [layer, setLayer] = useState<LayerKey>(LAYERS[0]);
+  const aboutId = useId();
 
   const meta = useMemo(() => metaLine(project, projectId), [project, projectId]);
   const statuses = useMemo(() => workspaceStatusLine(project), [project]);
@@ -107,13 +142,19 @@ export default function WorkspaceShell({
     [reading],
   );
 
-  const nextPhase = useMemo(() => workflowSummary(workflowSteps(project)).next, [project]);
+  // Rule-based, no model call (roadmap 6.5) — `null` once every phase this
+  // product can finish already is, never a step invented to fill the card.
+  const nextStep = useMemo(() => nextOpenPoint(project, account), [project, account]);
 
   // A tip that points at nothing is a claim: "Select the decision" exists only
   // where the source has one, and that is not known before the reading lands.
+  // The same is now true of "Your next step" — it used to be offered whenever
+  // `workflowSummary` named *a* phase, which was always, because that cursor
+  // never returns nothing; the tip pointed at the empty space above the card
+  // this step just built on a project that had nothing left to do.
   const marks = useCoachMarks({
     hasDecision: answer?.kind === 'answered',
-    hasNextStep: Boolean(nextPhase),
+    hasNextStep: nextStep !== null,
   });
 
   /**
@@ -146,15 +187,21 @@ export default function WorkspaceShell({
   return (
     <div className="cc" data-workspace-shell={view}>
       {/* Path — Shell Bar, §2.1. The workspace is one level above the case. */}
-      <nav aria-label="Path" className="flex items-center gap-1 text-[12px] font-medium text-cc-ink-muted">
-        <Link href="/dashboard" className="text-cc-ink-muted no-underline hover:text-cc-ink">
-          My workspace
-        </Link>
-        <ChevronRight size={14} aria-hidden={true} />
-        <span data-workspace-path-current className="font-semibold text-cc-ink">
-          {project?.name || projectId}
-        </span>
-      </nav>
+      <div className="flex items-center justify-between gap-3">
+        <nav aria-label="Path" className="flex items-center gap-1 text-[12px] font-medium text-cc-ink-muted">
+          <Link href="/dashboard" className="text-cc-ink-muted no-underline hover:text-cc-ink">
+            My workspace
+          </Link>
+          <ChevronRight size={14} aria-hidden={true} />
+          <span data-workspace-path-current className="font-semibold text-cc-ink">
+            {project?.name || projectId}
+          </span>
+        </nav>
+        {/* Search ⌘K — §2.1's Shell Bar slot, roadmap 6.6. Its own component so
+            the index (elements, rules, findings, source lines, glossary) and the
+            dialog stay out of an already busy file. */}
+        <CommandSearch projectId={projectId} project={project} reading={reading} />
+      </div>
 
       <section data-workspace-header="" className="mt-3">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
@@ -191,12 +238,52 @@ export default function WorkspaceShell({
               onChange={onViewChange}
               segments={WORKSPACE_VIEWS.map((v) => ({ value: v, label: VIEW_LABELS[v] }))}
             />
+            {/* IT's secondary focus (roadmap 6.1, mockup `s4`) — meaningless in
+                the other two views, so it exists only where it means something
+                rather than sitting disabled beside them. Nothing reads it yet
+                (the layers it would scope are later roadmap steps); it is
+                ordering infrastructure, held the same way the view is. */}
+            {view === 'it' && (
+              <div className="flex items-center gap-1.5" data-workspace-it-focus="">
+                <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+                  Focus
+                </span>
+                <CcSegmentedControl
+                  label="Focus"
+                  value={focus}
+                  onChange={onFocusChange}
+                  segments={IT_FOCUS_OPTIONS.map((f) => ({ value: f, label: IT_FOCUS_LABELS[f] }))}
+                />
+              </div>
+            )}
             <p
               data-workspace-view-question
               className="m-0 max-w-xs text-[12px] leading-snug font-medium text-cc-ink-muted"
             >
-              {VIEW_QUESTIONS[view]}
+              {VIEW_QUESTIONS[view]}{' '}
+              <button
+                type="button"
+                onClick={() => setAboutOpen((v) => !v)}
+                aria-expanded={aboutOpen}
+                aria-controls={aboutId}
+                data-workspace-view-about-toggle=""
+                className="inline-flex min-h-6 items-center font-semibold text-cc-ink underline underline-offset-2"
+              >
+                About this view
+              </button>
             </p>
+            {/* The paragraph the link opens (`DESIGN.md` §6.1): what the view
+                shows and, as pointedly, what it does not. Collapsed by default —
+                the one-sentence question above is the thing every reader sees. */}
+            {aboutOpen && (
+              <p
+                id={aboutId}
+                data-workspace-view-about=""
+                className="m-0 max-w-xs text-[12px] leading-snug font-medium text-cc-ink-muted"
+              >
+                {VIEW_ABOUT[view]}
+              </p>
+            )}
           </div>
         </div>
 
@@ -235,8 +322,8 @@ export default function WorkspaceShell({
 
       <div className="mt-5">
         <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={setLayer} />
-        {/* "Your next step" — the phase `lib/workflow-steps.ts` says comes next
-            for this project, never a fixed one. */}
+        {/* "Your next step" — the coach mark now points at a real card rather
+            than the empty space above it (roadmap 6.5, `lib/next-step.ts`). */}
         <div className="mt-2">
           <CoachMarkNote
             mark={currentMark}
@@ -245,6 +332,15 @@ export default function WorkspaceShell({
             onDismissAll={marks.dismissAll}
           />
         </div>
+      </div>
+
+      {/* The rule-based "next step" (`DESIGN.md` §2.3 item 5, §5.5, roadmap
+          6.5) — the next open point in the one phase contract every other view
+          already reads, or the plain statement that nothing is open. No model
+          call: `lib/next-step.ts` is pure, and `tests/next-step.spec.ts` proves
+          it never reaches the Gemini proxy. */}
+      <div className="mt-5 max-w-3xl">
+        <NextStepCard point={nextStep} projectId={projectId} />
       </div>
 
       {/* The first look — four stages, then the head of the content (§5.1, §5.5):
@@ -283,6 +379,15 @@ export default function WorkspaceShell({
         />
         <NotDeterminedCard data={open} />
       </div>
+
+      {/* Public-Cloud-Fit and the four buckets (roadmap 6.7, `DESIGN.md` §5.6) —
+          Management's own answer, so it renders only there rather than a stub
+          appearing in the other two views ahead of its content. */}
+      {view === 'management' && (
+        <div className="mt-5 max-w-3xl">
+          <PublicCloudFitPanel project={project} />
+        </div>
+      )}
 
       {/* Roadmap 5.5 — "Members on this case" (mockup screen 1/4): who has read
           access, since when, and the revocation. Owner only, and not by hiding

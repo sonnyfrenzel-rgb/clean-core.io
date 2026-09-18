@@ -14,9 +14,30 @@ import { RETIREMENT_WINDOW_DAYS } from './usage-model';
 import type { UsageReport, UsageRecord, UsageBucket, UsageJoinRow, RiskLevel, Quadrant, Feasibility } from './usage-model';
 import type { AbapEvidenceReport, EvidenceFinding } from './evidence-model';
 import type { ExtensibilityRouteReport } from './extensibility-router';
-import { hasNoReleasedApiPath } from './catalog-service';
 
 // ── Public API ─────────────────────────────────────────────────────
+
+/**
+ * The set of object names a join over this usage report and this evidence
+ * will produce a row for — every object either one names, upper-cased.
+ *
+ * Exposed so a caller that needs a per-object fact before the join runs (the
+ * client's `/api/abcd-classify` batch lookup for `hasNoReleasedApiPath`, since
+ * this module deliberately does not import the catalog — see
+ * `joinUsageWithEvidence`'s `hasNoPath` parameter) asks for exactly this set,
+ * not a guess at it that could drift from what the join actually looks at.
+ */
+export function usageJoinObjectNames(
+  usage: Pick<UsageReport, 'records'>,
+  evidence: Pick<AbapEvidenceReport, 'findings'>,
+): string[] {
+  const names = new Set<string>();
+  for (const r of usage.records) names.add(r.objectName.toUpperCase());
+  for (const f of evidence.findings) {
+    if (f.objectName) names.add(f.objectName.toUpperCase());
+  }
+  return [...names];
+}
 
 export function joinUsageWithEvidence(
   usage: UsageReport,
@@ -26,6 +47,16 @@ export function joinUsageWithEvidence(
   // prevent. Narrower parameter, no fabrication.
   evidence: Pick<AbapEvidenceReport, 'findings'>,
   _route: ExtensibilityRouteReport,
+  // Whether the Cloudification Repository shows no released successor and no
+  // extension path for an object (`catalog-service.ts`'s `hasNoReleasedApiPath`).
+  // Taken as an input rather than imported: this module is loaded by a client
+  // component (`UsageRiskMatrix.tsx`), and importing the ~4 MB catalog
+  // artifacts here would ship them to the browser again — exactly what
+  // roadmap "SAP-Katalog im Browser-Bundle" removes. The client caller batches
+  // the same question through `/api/abcd-classify` first and passes a lookup
+  // over the answer; the two specs that call this function directly pass a
+  // stub, since neither exercises feasibility.
+  hasNoPath: (objectName: string) => boolean,
 ): UsageJoinRow[] {
   // ST03N counts transaction steps, SCMON counts procedure calls, UPL counts
   // procedure executions. Summed into one number they measure nothing (E03-F02).
@@ -80,12 +111,11 @@ export function joinUsageWithEvidence(
   // every pre-v2.9.7 report — do not qualify, whatever their dates say.
   const zeroMeansDormant = (usage.window?.days ?? 0) >= RETIREMENT_WINDOW_DAYS;
 
-  // Collect all unique object names from BOTH usage and evidence
-  const allObjects = new Set<string>();
-  for (const r of usage.records) allObjects.add(r.objectName.toUpperCase());
-  for (const f of evidence.findings) {
-    if (f.objectName) allObjects.add(f.objectName.toUpperCase());
-  }
+  // Collect all unique object names from BOTH usage and evidence — the exact
+  // set `usageJoinObjectNames` exposes, so any caller that batches a fact
+  // ahead of this call (see `hasNoPath` above) is asking about the same
+  // objects this loop below actually visits.
+  const allObjects = new Set(usageJoinObjectNames(usage, evidence));
 
   // Build findings lookup: objectName → EvidenceFinding[]
   const findingsMap = new Map<string, EvidenceFinding[]>();
@@ -105,7 +135,7 @@ export function joinUsageWithEvidence(
 
     const bucket = classifyUsageBucket(usageRecord, p25, p75, dormancyThreshold, zeroMeansDormant);
     const riskLevel = deriveRiskLevel(objectFindings);
-    const feasibility = deriveFeasibility(objName, objectFindings);
+    const feasibility = deriveFeasibility(objName, objectFindings, hasNoPath);
     const quadrant = computeQuadrant(bucket, feasibility);
 
     rows.push({
@@ -191,9 +221,14 @@ function deriveRiskLevel(findings: EvidenceFinding[]): RiskLevel {
 
 // ── Feasibility derivation ─────────────────────────────────────────
 
-function deriveFeasibility(objectName: string, findings: EvidenceFinding[]): Feasibility {
-  // Check if any finding has no released API path
-  if (hasNoReleasedApiPath(objectName)) return 'no-released-api-path';
+function deriveFeasibility(
+  objectName: string,
+  findings: EvidenceFinding[],
+  hasNoPath: (objectName: string) => boolean,
+): Feasibility {
+  // Check if any finding has no released API path — looked up by the caller,
+  // never imported here (see `joinUsageWithEvidence`'s `hasNoPath` parameter).
+  if (hasNoPath(objectName)) return 'no-released-api-path';
 
   // Check if any finding requires architect sign-off
   const needsDecision = findings.some(f => f.needsBusinessDecision === true);

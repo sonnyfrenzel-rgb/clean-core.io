@@ -9,6 +9,18 @@ export interface GlossaryItem {
   category: 'ERP Core' | 'BTP Extension' | 'Architecture' | 'Integration';
   definition: string;
   cleanCoreImplication: string;
+  /**
+   * Where an SAP term's definition comes from — ADR-034 / `DESIGN.md` §6.1 requires
+   * one for every SAP term ("bei SAP-Begriffen die Quelle"), because an
+   * unsourced definition is this product's own kind of hard-coded assumption.
+   *
+   * Deliberately optional and, as of roadmap step 6.6, **unset on every entry
+   * below**: none of the twelve had a source before this field existed, and
+   * inventing a plausible-looking SAP Help URL to fill the gap would be the
+   * exact failure the source requirement exists to prevent. Populating this is
+   * tracked as a follow-up (see the 6.6 build report) rather than done here.
+   */
+  source?: string;
 }
 
 export const GLOSSARY_ITEMS: Record<string, GlossaryItem> = {

@@ -99,6 +99,32 @@ zwei.
 **Dringlichkeit:** mittel, aber vor 3.0. Kein Fehlverhalten, nur Gewicht — und es
 trifft jeden ersten Seitenaufruf.
 
+### Der Weg ist gegangen — und das Gewicht ist geblieben (18.09.2026)
+
+Beide Aufrufe liegen jetzt hinter `/api/abcd-classify`: `usage-join.ts` bekommt
+`hasNoPath` als Parameter, `public-cloud-fit-resolver.ts` hat **keine** Vorgabewerte
+mehr und kann den Katalog dadurch strukturell nicht mehr ziehen. Beide Panels zeigen
+echte Lade- und Fehlerzustände, statt eine Bewertung zu raten. 89 Tests grün.
+
+**Die Zahlen haben sich trotzdem nicht bewegt:** analyze 883 kB vorher wie nachher,
+`/admin/workspace` 709 kB wie 709 kB. Gemessen, nicht angenommen — in einer Kopie des
+Baums, zweimal gebaut, einmal mit und einmal ohne die Änderung, gegen denselben Stand
+der übrigen laufenden Arbeit.
+
+Der Grund ist ein dritter Pfad, den die Analyse oben nicht kannte:
+`lib/abap/evidence-model.ts` importiert `catalog-service.ts` selbst statisch, und
+**beide** Aufrufstellen brauchen `buildAbapEvidence` aus genau dieser Datei — aus
+Gründen, die mit Bewertung nichts zu tun haben. Der gemeinsame Chunk
+`static/chunks/5841-*.js` (3,47 MB) trägt die Nutzlast in beiden Builds gleich.
+`analyze/page.tsx` zieht zusätzlich `getMergedCatalogVersion` direkt.
+
+**Was offen bleibt:** entweder `buildAbapEvidence` für diese zwei Aufrufstellen auf
+den Server, oder die katalogabhängigen Nachschlagewerke aus `evidence-model.ts`
+herauslösen. Beides ist deutlich größer als dieser Schritt und braucht einen eigenen
+Roadmap-Platz — heute ist die Regel aus `CLAUDE.md` wiederhergestellt, das Gewicht
+nicht. Diese Unterscheidung ist der Punkt: der Eintrag oben hätte sich sonst als
+erledigt gelesen.
+
 ## Aus den zwei Rechtsprüfungen vom 18.09.2026 — offen
 
 Die Pflichtlücken sind geschlossen (Commits `1c3476d`, `2f9eb4a`, `4f0e424`). Was

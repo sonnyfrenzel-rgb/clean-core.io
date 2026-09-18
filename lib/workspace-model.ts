@@ -80,6 +80,73 @@ export function viewFromParam(value: string | null | undefined): WorkspaceView {
   return isWorkspaceView(value) ? value : DEFAULT_VIEW;
 }
 
+/**
+ * "About this view" (roadmap 6.1, `DESIGN.md` §6.1): the paragraph behind the
+ * one-sentence question, naming what the view shows **and what it does not** —
+ * so a reader who opens it learns the boundary of the screen they are on
+ * rather than a restatement of the sentence above it.
+ *
+ * Written to what this shell actually renders today, not to layers roadmap 6.2
+ * onward still has to build: claiming a findings table or a Clean Core Score
+ * history here, before either exists, would be the same "the standard covers
+ * it" kind of statement `DESIGN.md` §5.3 forbids for a status chip — the text
+ * is not exempt from that rule just because it lives under a link.
+ */
+export const VIEW_ABOUT: Record<WorkspaceView, string> = {
+  business:
+    'Business folds the meta line and the seven status facets into one line — ' +
+    '"Show project status" opens them — and lays the seven tools under a single ' +
+    '"Tools" menu. It shows the plain-language reveal of what the code does, the ' +
+    'rule-based next step and what could not be determined; it does not show line ' +
+    'numbers, a findings table or a cost figure — those belong to IT and to Economics.',
+  it: 'IT opens the meta line, all seven statuses and every tool as its own link, ' +
+    'rather than folding them behind a summary or a menu. The Focus above will scope ' +
+    'the same evidence to one Application, the Solution it belongs to, or the wider ' +
+    'Enterprise landscape once the layers that carry findings do. It does not decide ' +
+    'anything, and switching either the view or the Focus calls no model and stores ' +
+    'nothing.',
+  management:
+    'Management opens the seven statuses — what is confirmed, what is missing — ' +
+    'while the meta line stays behind "Details", the same as Business. It does not ' +
+    'show source code, line anchors or a findings table, and it is not a separate ' +
+    'rollup: it reads the identical case Business and IT do, with no figure of its own.',
+};
+
+/* -------------------------------------------------------------- IT focus */
+
+/**
+ * The IT view's secondary focus (roadmap 6.1, mockup screen `s4`): the same
+ * evidence read at three widening scopes. Application first — the scope a
+ * finding already opens at — because a reader widens deliberately from one
+ * object outward, rather than starting at the landscape and narrowing past
+ * everything else first.
+ *
+ * Like the view itself, this is ordering, not a filter: it is a perspective
+ * held in the URL and the browser, the same as `WorkspaceView`, and it must
+ * never reach a stored project, run or audit pack either — see
+ * `tests/view-attribute-guard.spec.ts`.
+ */
+export const IT_FOCUS_OPTIONS = ['application', 'solution', 'enterprise'] as const;
+export type ItFocus = (typeof IT_FOCUS_OPTIONS)[number];
+
+/** The scope the IT view opens at. */
+export const DEFAULT_IT_FOCUS: ItFocus = 'application';
+
+export const IT_FOCUS_LABELS: Record<ItFocus, string> = {
+  application: 'Application',
+  solution: 'Solution',
+  enterprise: 'Enterprise',
+};
+
+export function isItFocus(value: unknown): value is ItFocus {
+  return typeof value === 'string' && (IT_FOCUS_OPTIONS as readonly string[]).includes(value);
+}
+
+/** Same rule as `viewFromParam`: an unknown or missing value is the default, never an error. */
+export function itFocusFromParam(value: string | null | undefined): ItFocus {
+  return isItFocus(value) ? value : DEFAULT_IT_FOCUS;
+}
+
 /* --------------------------------------------------------------- meta line */
 
 /**

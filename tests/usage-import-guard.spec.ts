@@ -31,6 +31,10 @@ const csv = (body: string, name = 'usage.csv') => new File([body], name, { type:
 const evidence = (names: string[]) =>
   ({ findings: names.map((objectName, i) => ({ id: `f${i}`, objectName, severity: 'Medium', kind: 'direct-table-access' })) }) as never;
 const ROUTE = {} as never;
+// None of these fixtures exercise feasibility (they check `usage`/`quadrant`
+// on buckets where `computeQuadrant` never reads it), so every object is
+// stubbed as having a released path.
+const NO_PATH = () => false;
 const TODAY = '2026-09-11';
 
 test.describe('dates are read as declared, never guessed', () => {
@@ -121,7 +125,7 @@ test.describe('the monitoring window is declared, and decides what a zero means'
   test('a short window warns, and no zero in it becomes a retirement candidate', async () => {
     const r = await parseUsage(csv(BODY), { dateLocale: 'de-DE', today: TODAY, window: { from: '2026-02-01', to: '2026-04-30' } });
     expect(r.warnings.join(' ')).toMatch(/89 days — less than 13 months, and no year-end/);
-    const row = joinUsageWithEvidence(r, evidence(['ZYEAR_END']), ROUTE).find((x) => x.objectName === 'ZYEAR_END')!;
+    const row = joinUsageWithEvidence(r, evidence(['ZYEAR_END']), ROUTE, NO_PATH).find((x) => x.objectName === 'ZYEAR_END')!;
     expect(row.usage).toBe('unobserved');
     expect(row.quadrant).not.toBe('retire-candidate');
   });
@@ -130,13 +134,13 @@ test.describe('the monitoring window is declared, and decides what a zero means'
     const r = await parseUsage(csv(BODY), { dateLocale: 'de-DE', today: TODAY });
     expect(r.window).toBeUndefined();
     expect(r.warnings.join(' ')).toMatch(/No monitoring window was declared/);
-    const row = joinUsageWithEvidence(r, evidence(['ZYEAR_END']), ROUTE).find((x) => x.objectName === 'ZYEAR_END')!;
+    const row = joinUsageWithEvidence(r, evidence(['ZYEAR_END']), ROUTE, NO_PATH).find((x) => x.objectName === 'ZYEAR_END')!;
     expect(row.quadrant).not.toBe('retire-candidate');
   });
 
   test('over 13 months, a measured zero is still evidence of disuse', async () => {
     const r = await parseUsage(csv(BODY), { dateLocale: 'de-DE', today: TODAY, window: { from: '2025-03-01', to: '2026-04-30' } });
-    const row = joinUsageWithEvidence(r, evidence(['ZYEAR_END']), ROUTE).find((x) => x.objectName === 'ZYEAR_END')!;
+    const row = joinUsageWithEvidence(r, evidence(['ZYEAR_END']), ROUTE, NO_PATH).find((x) => x.objectName === 'ZYEAR_END')!;
     expect(row.usage).toBe('dormant');
     expect(row.quadrant).toBe('retire-candidate');
   });
@@ -165,7 +169,7 @@ test.describe('the rest of the contract', () => {
       ],
       source: 'scmon', importedAt: '', warnings: [],
     } as UsageReport;
-    expect(() => joinUsageWithEvidence(mixed, evidence(['ZX']), ROUTE)).toThrow(/different sources/);
+    expect(() => joinUsageWithEvidence(mixed, evidence(['ZX']), ROUTE, NO_PATH)).toThrow(/different sources/);
   });
 
   test('the report holds no undefined anywhere — Firestore would refuse the save', async () => {
