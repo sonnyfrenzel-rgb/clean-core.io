@@ -32,6 +32,14 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          # Full history, for this job only. tests/terms-version-archive.spec.ts
+          # checks the archive's recorded commit and blob against git, and a
+          # shallow clone (the default, depth 1) has neither - the test would
+          # skip here on every run and verify nothing where it matters most
+          # (QA review of 7d9e0a3bdf9f). 906 commits, 36 MB of pack: seconds.
+          # The security and deploy jobs stay shallow; they run no tests.
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5

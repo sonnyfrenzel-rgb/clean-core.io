@@ -140,49 +140,106 @@ test.describe('the privacy policy in two languages', () => {
    * two languages no longer state the basis for the same processing. A QA review
    * flagged exactly that shape (7dabb1930a07).
    *
-   * There is no cross-language key on a purpose — the labels are prose in each
-   * language — so this pairs them by position inside the one list that carries
+   * There is no cross-language key on a purpose - the labels are prose in each
+   * language - so this pairs them by position inside the one list that carries
    * legal bases. That is a deliberate assumption, and the right one: the two
    * versions are translations of a single document, and a purpose reordered or
    * added in one language only is itself the parity break this guard exists for.
+   *
+   * The comparison is a pure function so the test after this one can feed it a
+   * mutated policy and prove it sees what the count cannot - the guard's own
+   * sensitivity is asserted here, not only claimed in a commit message.
    */
-  test('the same purposes carry a legal basis in both versions, pairwise', () => {
-    const purposes = (src: string, basisMarker: RegExp) => {
-      // The purposes list is the <ul> that contains the basis marker; every
-      // <li> in it starts with a <strong> label.
-      const lists = src.split(/<ul[^>]*>/).slice(1).map((chunk) => chunk.split('</ul>')[0]);
-      const list = lists.find((l) => basisMarker.test(l));
-      expect(list, 'no list carrying a legal basis was found').toBeDefined();
-      return (list as string)
-        .split(/<li>/)
-        .slice(1)
-        .map((item) => ({
-          label: (item.match(/<strong[^>]*>([^<]*)<\/strong>/)?.[1] ?? '').replace(/:\s*$/, '').trim(),
-          hasBasis: basisMarker.test(item),
-        }));
-    };
+  const EN_BASIS = /Legal basis:/;
+  const DE_BASIS = /Rechtsgrundlage:/;
 
-    const en = purposes(read(EN), /Legal basis:/);
-    const de = purposes(read(DE), /Rechtsgrundlage:/);
+  type Purpose = { label: string; hasBasis: boolean };
 
-    expect(
-      de.length,
-      `the two versions list a different number of purposes — English ${en.length}, German ${de.length}: ` +
-        `EN [${en.map((p) => p.label).join(' | ')}] vs DE [${de.map((p) => p.label).join(' | ')}]`,
-    ).toBe(en.length);
-
-    for (let i = 0; i < en.length; i++) {
-      expect(
-        de[i].hasBasis,
-        `purpose ${i + 1} — English "${en[i].label}" ${en[i].hasBasis ? 'states' : 'lacks'} a basis, ` +
-          `German "${de[i].label}" ${de[i].hasBasis ? 'states' : 'lacks'} one`,
-      ).toBe(en[i].hasBasis);
+  /** The <ul> that carries the basis marker, split into its <li> items. */
+  const purposesList = (src: string, basisMarker: RegExp): { before: string; list: string; after: string } => {
+    const open = /<ul[^>]*>/g;
+    let m: RegExpExecArray | null;
+    while ((m = open.exec(src)) !== null) {
+      const from = m.index + m[0].length;
+      const to = src.indexOf('</ul>', from);
+      if (to < 0) break;
+      const list = src.slice(from, to);
+      if (basisMarker.test(list)) return { before: src.slice(0, from), list, after: src.slice(to) };
     }
+    throw new Error('no list carrying a legal basis was found');
+  };
+
+  const purposesWithBasis = (src: string, basisMarker: RegExp): Purpose[] =>
+    purposesList(src, basisMarker)
+      .list.split(/<li>/)
+      .slice(1)
+      .map((item) => ({
+        label: (item.match(/<strong[^>]*>([^<]*)<\/strong>/)?.[1] ?? '').replace(/:\s*$/, '').trim(),
+        hasBasis: basisMarker.test(item),
+      }));
+
+  /** The first place the two lists disagree, or null when they agree throughout. */
+  const firstPairwiseMismatch = (en: Purpose[], de: Purpose[]): string | null => {
+    if (en.length !== de.length) {
+      return (
+        `the two versions list a different number of purposes: English ${en.length}, German ${de.length} ` +
+        `(EN [${en.map((p) => p.label).join(' | ')}] vs DE [${de.map((p) => p.label).join(' | ')}])`
+      );
+    }
+    for (let i = 0; i < en.length; i++) {
+      if (en[i].hasBasis !== de[i].hasBasis) {
+        return (
+          `purpose ${i + 1}: English "${en[i].label}" ${en[i].hasBasis ? 'states' : 'lacks'} a basis, ` +
+          `German "${de[i].label}" ${de[i].hasBasis ? 'states' : 'lacks'} one`
+        );
+      }
+    }
+    return null;
+  };
+
+  test('the same purposes carry a legal basis in both versions, pairwise', () => {
+    const en = purposesWithBasis(read(EN), EN_BASIS);
+    const de = purposesWithBasis(read(DE), DE_BASIS);
 
     // Not vacuous: the list actually has purposes, and every one of them names
-    // its basis today — a guard that passed on an empty list would prove nothing.
+    // its basis today - a guard that passed on an empty list would prove nothing.
     expect(en.length).toBeGreaterThan(5);
     expect(en.every((p) => p.hasBasis), 'an English purpose carries no legal basis').toBe(true);
+
+    expect(firstPairwiseMismatch(en, de)).toBeNull();
+  });
+
+  /**
+   * The guard's sensitivity, as a test rather than a claim.
+   *
+   * Moves one basis inside the English purposes list: strips it from the first
+   * purpose and repeats it on the last. The page-wide count is unchanged - that
+   * is the blind spot the count test has - and the pairwise comparison must name
+   * purpose 1. Done on a string in memory; the files are not touched.
+   */
+  test('and the pairwise check catches a basis moved between purposes, which the count does not', () => {
+    const enSrc = read(EN);
+    const { before, list, after } = purposesList(enSrc, EN_BASIS);
+
+    const first = list.indexOf('<em>Legal basis:');
+    const firstEnd = list.indexOf('</em>', first) + '</em>'.length;
+    expect(first, 'the English list has no basis to move').toBeGreaterThanOrEqual(0);
+    const stripped = list.slice(0, first) + list.slice(firstEnd);
+
+    const last = stripped.lastIndexOf('<em>Legal basis:');
+    const lastEnd = stripped.indexOf('</em>', last) + '</em>'.length;
+    const moved = stripped.slice(0, lastEnd) + ' ' + stripped.slice(last, lastEnd) + stripped.slice(lastEnd);
+
+    const mutated = before + moved + after;
+
+    // The count test would not notice.
+    const count = (src: string) => (src.match(/Legal basis:/g) ?? []).length;
+    expect(count(mutated), 'the mutation changed the total, so it does not test the blind spot').toBe(count(enSrc));
+
+    // The pairwise check does.
+    const mismatch = firstPairwiseMismatch(purposesWithBasis(mutated, EN_BASIS), purposesWithBasis(read(DE), DE_BASIS));
+    expect(mismatch, 'the pairwise check let a moved legal basis through').not.toBeNull();
+    expect(mismatch).toMatch(/^purpose 1:/);
   });
 
   test('neither version claims sharing does not exist', () => {

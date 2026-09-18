@@ -113,11 +113,12 @@ test.describe('every archived version has a text, a date and a digest', () => {
    * (49052dedfc1c): a claim about provenance that nothing checks is decoration.
    *
    * `git rev-parse <commit>:<file>` is the blob the entry claims to be, and the
-   * entry's own comment says so — this runs that command. Two honest limits: it
-   * needs the commit to be present, and CI clones shallow (`actions/checkout`
-   * with no `fetch-depth`), so there this test says "not checkable here" and
-   * skips with that reason rather than passing on nothing or failing on the
-   * clone. Every developer checkout has the history; it runs there.
+   * entry's own comment says so — this runs that command. One honest limit: it
+   * needs the commit to be present. A shallow checkout has no history, so there
+   * this test says "not checkable here" and skips with that reason rather than
+   * passing on nothing or failing on the clone. The `validate` job in
+   * `.github/workflows/deploy.yml` checks out with `fetch-depth: 0` for exactly
+   * this test, so in CI it runs; the skip is for any other shallow clone.
    */
   test('the recorded blob is what git holds at the recorded commit', () => {
     const git = (...args: string[]) =>
