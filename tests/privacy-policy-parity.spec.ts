@@ -132,6 +132,59 @@ test.describe('the privacy policy in two languages', () => {
     ).toBe(en);
   });
 
+  /**
+   * Purpose for purpose, not only in total.
+   *
+   * The count above is blind to a swap: take the basis off one English purpose,
+   * add a sentence to a different one, and the two totals still agree while the
+   * two languages no longer state the basis for the same processing. A QA review
+   * flagged exactly that shape (7dabb1930a07).
+   *
+   * There is no cross-language key on a purpose — the labels are prose in each
+   * language — so this pairs them by position inside the one list that carries
+   * legal bases. That is a deliberate assumption, and the right one: the two
+   * versions are translations of a single document, and a purpose reordered or
+   * added in one language only is itself the parity break this guard exists for.
+   */
+  test('the same purposes carry a legal basis in both versions, pairwise', () => {
+    const purposes = (src: string, basisMarker: RegExp) => {
+      // The purposes list is the <ul> that contains the basis marker; every
+      // <li> in it starts with a <strong> label.
+      const lists = src.split(/<ul[^>]*>/).slice(1).map((chunk) => chunk.split('</ul>')[0]);
+      const list = lists.find((l) => basisMarker.test(l));
+      expect(list, 'no list carrying a legal basis was found').toBeDefined();
+      return (list as string)
+        .split(/<li>/)
+        .slice(1)
+        .map((item) => ({
+          label: (item.match(/<strong[^>]*>([^<]*)<\/strong>/)?.[1] ?? '').replace(/:\s*$/, '').trim(),
+          hasBasis: basisMarker.test(item),
+        }));
+    };
+
+    const en = purposes(read(EN), /Legal basis:/);
+    const de = purposes(read(DE), /Rechtsgrundlage:/);
+
+    expect(
+      de.length,
+      `the two versions list a different number of purposes — English ${en.length}, German ${de.length}: ` +
+        `EN [${en.map((p) => p.label).join(' | ')}] vs DE [${de.map((p) => p.label).join(' | ')}]`,
+    ).toBe(en.length);
+
+    for (let i = 0; i < en.length; i++) {
+      expect(
+        de[i].hasBasis,
+        `purpose ${i + 1} — English "${en[i].label}" ${en[i].hasBasis ? 'states' : 'lacks'} a basis, ` +
+          `German "${de[i].label}" ${de[i].hasBasis ? 'states' : 'lacks'} one`,
+      ).toBe(en[i].hasBasis);
+    }
+
+    // Not vacuous: the list actually has purposes, and every one of them names
+    // its basis today — a guard that passed on an empty list would prove nothing.
+    expect(en.length).toBeGreaterThan(5);
+    expect(en.every((p) => p.hasBasis), 'an English purpose carries no legal basis').toBe(true);
+  });
+
   test('neither version claims sharing does not exist', () => {
     // The sentence this replaced said "There is no sharing feature today". It was
     // true until phase 5 shipped, and a policy that still said it would be the

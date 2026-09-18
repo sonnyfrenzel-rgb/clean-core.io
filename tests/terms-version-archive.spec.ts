@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { execFileSync } from 'child_process';
 import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin/app';
 import { getFirestore as adminFirestore, type Firestore } from 'firebase-admin/firestore';
 import firebaseConfig from '../firebase-config.json';
@@ -100,6 +101,56 @@ test.describe('every archived version has a text, a date and a digest', () => {
       // anybody can check against git rather than take on trust.
       expect(entry.source.commit, `${entry.version} names no source commit`).toMatch(/^[0-9a-f]{40}$/);
       expect(entry.source.blob, `${entry.version} names no source blob`).toMatch(/^[0-9a-f]{40}$/);
+    }
+  });
+
+  /**
+   * The provenance is checked against git, not only for shape.
+   *
+   * The test above proves `commit` and `blob` are forty hex digits. Replace them
+   * with any other forty hex digits and it still passes, while the archive keeps
+   * saying the wording came from that git object. A QA review named this
+   * (49052dedfc1c): a claim about provenance that nothing checks is decoration.
+   *
+   * `git rev-parse <commit>:<file>` is the blob the entry claims to be, and the
+   * entry's own comment says so — this runs that command. Two honest limits: it
+   * needs the commit to be present, and CI clones shallow (`actions/checkout`
+   * with no `fetch-depth`), so there this test says "not checkable here" and
+   * skips with that reason rather than passing on nothing or failing on the
+   * clone. Every developer checkout has the history; it runs there.
+   */
+  test('the recorded blob is what git holds at the recorded commit', () => {
+    const git = (...args: string[]) =>
+      execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+
+    for (const entry of ARCHIVED_TERMS_VERSIONS) {
+      const { commit, file, blob } = entry.source;
+
+      let commitPresent = true;
+      try {
+        git('rev-parse', '--verify', '--quiet', `${commit}^{commit}`);
+      } catch {
+        commitPresent = false;
+      }
+      test.skip(
+        !commitPresent,
+        `commit ${commit.slice(0, 12)} is not in this clone (shallow checkout) — the archive's provenance cannot be checked here`,
+      );
+
+      // With the commit present, a missing file or a different blob is a real
+      // failure, and the error must say which: this is the point of the test.
+      let actual = '';
+      try {
+        actual = git('rev-parse', `${commit}:${file}`);
+      } catch {
+        throw new Error(`${entry.version}: ${file} does not exist at commit ${commit} — the archive names a source that git does not have`);
+      }
+      expect(
+        actual,
+        // Both hashes in full: a flipped last digit is exactly the case this
+        // exists for, and a twelve-character prefix would print two equal strings.
+        `${entry.version}: the archive says ${file} at ${commit.slice(0, 12)} is blob ${blob}, git says ${actual}`,
+      ).toBe(blob);
     }
   });
 
