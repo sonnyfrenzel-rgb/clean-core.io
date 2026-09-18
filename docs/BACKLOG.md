@@ -23,6 +23,11 @@ geschlossen"). Was daraus schon erledigt ist:
   jetzt Repository **und** Ref (`main`, `dev`) **und** die beiden Workflows, die
   überhaupt ein Token holen. Zurückdrehen: dieselbe `gcloud`-Zeile mit der alten
   Bedingung.
+  **Bewiesen für den Deploy:** Lauf 35309005663 hat `deploy` grün abgeschlossen, also
+  sein OIDC-Token unter der engeren Bedingung bekommen. Die zweite Hälfte —
+  `usage-report.yml` — läuft freitags; alle bisherigen Läufe liefen auf `main`, und
+  `main` ist der Default-Branch, also trifft die Bedingung. Der Lauf am Mittag des
+  18.09. ist die Live-Bestätigung; bleibt der Wochenbericht aus, ist das die Ursache.
 - **Punkt 3 — Umfrage: Sicherung und Trockenlauf sind gelaufen.** `scripts/survey-repair-dotted-answers.ts`,
   Trockenlauf ist der Standard. Befund: 4 Dokumente, 20 gestrandete Felder, keine
   Kollision mit einer späteren Antwort. **Davon sind 16 Felder drei Testsonden
@@ -40,7 +45,32 @@ geschlossen"). Was daraus schon erledigt ist:
 
 Dazu ungeplant: **die rote Pipeline** (Lauf 35267830947) kam von einem Wächter, der
 recht hatte — Phase 5 brachte zwei Routen mit, die auf den zweiten Faktor prüfen und in
-keinem Katalog standen. Beide sind eingetragen, 36 Tests grün.
+keinem Katalog standen. Beide sind eingetragen, 36 Tests grün. Ein zweiter Wächter fiel
+danach, und auch er hatte recht gehabt: `project-readers.spec.ts` verlangte, dass die
+neue Leseregel als `pending` in der Deploy-Aufzeichnung steht — was stimmte, solange der
+Deploy ausstand. Er ist mitgedreht statt gelöscht: geprüft wird jetzt, dass Datei und
+Aufzeichnung dasselbe sagen. **Lauf 35309005663 ist vollständig grün** (`validate`,
+`security`, `deploy`).
+
+Und eine **echte DSGVO-Lücke**, gefunden beim Schreiben der Aufbewahrungsrichtlinie: die
+Löschkaskade löschte nur, was ein Konto besitzt. Wer eingeladener Leser war, hinterließ
+seine uid in fremden `readers`-Feldern — kein Rest, sondern ein stehendes Leserecht, denn
+`firestore.rules` antwortet auf genau dieses Feld — und seine Adresse in fremden
+Einladungen. Behoben, mit Gegenprobe am zurückgenommenen Fix.
+
+**Zwei Prüferaussagen widerlegt, beide mit Beleg.** Ein Subagent behauptete, ein
+Firestore-Index mit Collection-Group-Scope sei nötig, sonst scheitere ab sofort jede
+Kontolöschung in Produktion; alle drei fraglichen Abfragen laufen ohne jede
+Index-Ausnahme gegen `clean-core-eu`. Der QA-Prüfer meldete, die neue Kaskade beziehe
+`FieldValue` falsch; rot war ein zerschossenes `.next` des Dev-Servers — die Seed-API
+antwortete mit einem Next-500 (`loadManifest: Unexpected end of JSON input`). Nach
+Neustart 26 Tests grün. **Lehre für lange Sitzungen:** ein einzelner roter Test nach
+Stunden am selben Dev-Server wird auf frischem Build nachgeprüft, bevor man ihm glaubt;
+und zwei Playwright-Läufe gleichzeitig gegen einen Dev-Server bringen ihn um.
+
+**QA-Schleife:** drei Runden, Runde 2 und 3 je `go_with_notes` ohne neuen Befund, ein
+Befund aufgelöst. Was im Bericht bleibt (2 kritisch, 7 hoch), ist durchweg *carried* —
+der Triage-Bestand aus der Release-Vollprüfung, Punkt 12 unten.
 
 ## Offen für den 19.09.2026 — in dieser Reihenfolge
 
