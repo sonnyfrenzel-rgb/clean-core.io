@@ -347,6 +347,31 @@ test.describe('the transition, decided once and in one place', () => {
       expect(report.source).toBe('scmon');
     }
   });
+
+  test('the ATC import is held to its model, not to `is map` (roadmap 7.1)', () => {
+    const state = { activeRunId: 'run-1' };
+    expect(validateProjectCommand({ command: 'record-atc-report', atcReport: { findings: [] } }, state, actor).ok).toBe(false);
+    const r = validateProjectCommand(
+      {
+        command: 'record-atc-report',
+        atcReport: {
+          findings: [{ objectName: 'ZFI', message: 'Direct table write', priority: 'error' }],
+          source: 'atc',
+          importedAt: '2026-09-18',
+          warnings: [],
+          smuggled: { anything: 'at all' },
+        },
+      },
+      state,
+      actor,
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const report = r.fields.atcReport as Record<string, unknown>;
+      expect(Object.keys(report), 'a key the model does not declare was stored').not.toContain('smuggled');
+      expect(report.source).toBe('atc');
+    }
+  });
 });
 
 /* ================================================= the live rules, executed */
@@ -447,6 +472,7 @@ test.describe('the live emulator rules refuse every one of the six', () => {
     architectSignOffAt: '2026-09-16T11:00:00.000Z',
     approvedBy: 'cto@example.com',
     usageReport: { records: [], source: 'manual', importedAt: '2026-09-16', warnings: [] },
+    atcReport: { findings: [], source: 'atc', importedAt: '2026-09-18', warnings: [] },
   };
 
   for (const field of SERVER_ONLY_PROJECT_FIELDS) {

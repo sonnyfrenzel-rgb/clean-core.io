@@ -55,6 +55,7 @@ import CodeInventoryTable from '@/components/analyze/CodeInventoryTable';
 import ModuleHeatmap from '@/components/analyze/ModuleHeatmap';
 import AbcdClassificationPanel from '@/components/analyze/AbcdClassificationPanel';
 import DataCouplingTable from '@/components/analyze/DataCouplingTable';
+import ComplianceReviewHints from '@/components/ComplianceReviewHints';
 import BusinessValueAudit from '@/components/analyze/BusinessValueAudit';
 import PlainEnglishGuide from '@/components/analyze/PlainEnglishGuide';
 import ExtensibilityDecisionMatrix from '@/components/analyze/ExtensibilityDecisionMatrix';
@@ -70,6 +71,8 @@ import PreAnalysisPreview from '@/components/analyze/PreAnalysisPreview';
 import EvidenceSweep from '@/components/analyze/EvidenceSweep';
 import UsageUpload from '@/components/analyze/UsageUpload';
 import { UsageRiskMatrixFor } from '@/components/analyze/UsageRiskMatrix';
+import AtcUpload from '@/components/analyze/AtcUpload';
+import AtcFindingsPanel from '@/components/analyze/AtcFindingsPanel';
 import SectionBoundary from '@/components/SectionBoundary';
 import NotGenerated from '@/components/NotGenerated';
 import TrustBeforeUpload from '@/components/TrustBeforeUpload';
@@ -77,6 +80,7 @@ import PersonalDataHints from '@/components/PersonalDataHints';
 import WhyScorePanel from '@/components/analyze/WhyScorePanel';
 import { getRunCapabilities } from '@/lib/run-capabilities';
 import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
+import type { AtcReport as AtcReportType } from '@/lib/abap/atc-model';
 
 import { DocumentSkeleton } from '@/components/Skeleton';
 import VerificationRail from '@/components/VerificationRail';
@@ -108,6 +112,9 @@ export default function AnalyzePage() {
   const [isSticky, setIsSticky] = useState(false);
   const [routeReport, setRouteReport] = useState<import('@/lib/abap/extensibility-router').ExtensibilityRouteReport | null>(null);
   const [usageReport, setUsageReport] = useState<UsageReportType | null>(null);
+  // Roadmap 7.1: ATC-Import — kept as its own state and its own type, never
+  // merged into `usageReport` or the engine's evidence findings.
+  const [atcReport, setAtcReport] = useState<AtcReportType | null>(null);
   /**
    * Which set of personal-data hints the reader has said they looked at, held
    * as the hints' own key rather than as a boolean. Edit the source and the key
@@ -185,6 +192,10 @@ export default function AnalyzePage() {
           // v1.22: restore persisted usage report
           if (hydratedProject.usageReport) {
             setUsageReport(hydratedProject.usageReport);
+          }
+          // Roadmap 7.1: restore persisted ATC import
+          if (hydratedProject.atcReport) {
+            setAtcReport(hydratedProject.atcReport);
           }
         }
       } catch (error) {
@@ -1189,6 +1200,10 @@ export default function AnalyzePage() {
           <ModuleHeatmap codeInventory={project.codeInventory || []} />
           <DataCouplingTable dataCoupling={project.dataCoupling || []} />
           <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} />
+          {/* What those same tables may mean for a compliance review (roadmap
+              7.7) — hints out of the table names, never a classification of
+              anybody's data, and no model call. */}
+          <ComplianceReviewHints dataCoupling={project.dataCoupling || []} />
 
           <GapsWorklist
             projectId={projectId as string}
@@ -1535,6 +1550,20 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 </SectionBoundary>
               )}
 
+              {/* Roadmap 7.1: ATC-Import, compared with — never merged into —
+                  the engine's own evidence findings. Shown whenever an import
+                  exists, independent of whether the engine found anything for
+                  the same objects: an ATC-only view is exactly the point when
+                  it happens. */}
+              {(atcReport || project?.atcReport) && (
+                <SectionBoundary name="ATC Findings Panel">
+                  <AtcFindingsPanel
+                    atcReport={(atcReport || project!.atcReport)!}
+                    findings={evidenceFindings}
+                  />
+                </SectionBoundary>
+              )}
+
               {/* ── Evidence Findings Detail Table — deduplicated, sorted, filterable ── */}
               {evidenceFindings.length > 0 && (() => {
                 // Deduplicate by kind+objectName, aggregate lines
@@ -1767,6 +1796,10 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
               {/* Cloud Readiness Classification (A–D) */}
               <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} />
+
+              {/* Compliance review hints (roadmap 7.7) — hints out of the table
+                  names, never a classification of anybody's data. */}
+              <ComplianceReviewHints dataCoupling={project.dataCoupling || []} />
 
               {/* Valuation details */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
@@ -2157,6 +2190,38 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                     }
                   }}
                   existingReport={usageReport}
+                />
+              </div>
+            )}
+
+            {/* Roadmap 7.1: Optional ATC import, next to the usage import above. */}
+            {legacyCode && (
+              <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-4 animate-in slide-in-from-bottom-4 mb-8">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[9px] font-bold tracking-widest text-emerald-600 uppercase font-mono">Optional</span>
+                    <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">Roadmap 7.1</span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight">Add ATC Results</h3>
+                  <p className="text-xs text-slate-500 mt-1">Upload an ABAP Test Cockpit worklist export to compare its findings with this engine's evidence. This is optional — analysis works without it.</p>
+                </div>
+                <AtcUpload
+                  onImport={async (report) => {
+                    setAtcReport(report);
+                    // Same boundary as `usageReport` above and for the same
+                    // reason: server-only, held to the model's key set and a
+                    // row ceiling — see lib/project-commands.ts.
+                    try {
+                      const stored = await runProjectCommand(projectId as string, {
+                        command: 'record-atc-report',
+                        atcReport: report,
+                      });
+                      setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
+                    } catch (err) {
+                      console.error('Failed to persist ATC report:', err);
+                    }
+                  }}
+                  existingReport={atcReport}
                 />
               </div>
             )}

@@ -20,6 +20,7 @@ import {
   type UsageSource,
 } from './usage-model';
 import { sanitizeUsageRecords } from './usage-privacy';
+import { parseTabularRows } from './tabular-import';
 
 /**
  * What the person importing declares (roadmap E03-F02). None of it is inferred
@@ -61,8 +62,7 @@ export async function parseUsage(file: File, options: UsageImportOptions | Usage
   const today = opts.today ?? new Date().toISOString().split('T')[0];
   const window = opts.window ? validateWindow(opts.window, today) : undefined;
 
-  const isXlsx = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
-  const rawRows = isXlsx ? await parseXlsx(file) : await parseCsv(file);
+  const rawRows = await parseTabularRows(file);
 
   if (rawRows.length === 0) {
     throw new Error('The uploaded file contains no data rows. Please check the file format.');
@@ -264,120 +264,6 @@ function validateWindow(w: { from: string; to: string }, today: string): { from:
     throw new Error(`The monitoring window ends in the future (${to.value}); an export cannot cover days that have not happened.`);
   }
   return { from: from.value, to: to.value, days: inclusiveDays(from.value, to.value) };
-}
-
-// ── CSV Parser with delimiter sniffing ─────────────────────────────
-
-async function parseCsv(file: File): Promise<Record<string, string>[]> {
-  const text = await file.text();
-  const delimiter = sniffDelimiter(text);
-  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
-
-  if (lines.length < 2) return [];
-
-  const headers = splitCsvLine(lines[0], delimiter).map(h => h.trim().toUpperCase());
-  const rows: Record<string, string>[] = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const values = splitCsvLine(lines[i], delimiter);
-    const row: Record<string, string> = {};
-    headers.forEach((h, idx) => {
-      row[h] = (values[idx] || '').trim();
-    });
-    rows.push(row);
-  }
-
-  return rows;
-}
-
-function sniffDelimiter(text: string): string {
-  const firstLine = text.split(/\r?\n/)[0] || '';
-  const tabCount = (firstLine.match(/\t/g) || []).length;
-  const semiCount = (firstLine.match(/;/g) || []).length;
-  const commaCount = (firstLine.match(/,/g) || []).length;
-
-  if (tabCount > semiCount && tabCount > commaCount) return '\t';
-  if (semiCount > commaCount) return ';';
-  return ',';
-}
-
-function splitCsvLine(line: string, delimiter: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === delimiter && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  result.push(current);
-  return result;
-}
-
-// ── XLSX Parser ────────────────────────────────────────────────────
-
-/** Coerce an ExcelJS cell value (which may be a Date, formula, hyperlink or rich-text object) to a flat string. */
-function cellToString(v: unknown): string {
-  if (v === null || v === undefined) return '';
-  if (v instanceof Date) return v.toISOString().split('T')[0];
-  if (typeof v === 'object') {
-    const o = v as Record<string, unknown>;
-    if (Array.isArray(o.richText)) return (o.richText as Array<{ text?: string }>).map(r => r.text ?? '').join('');
-    if ('result' in o) return String(o.result ?? '');          // formula → computed result
-    if (typeof o.text === 'string') return o.text;               // hyperlink
-    return '';
-  }
-  return String(v);
-}
-
-async function parseXlsx(file: File): Promise<Record<string, string>[]> {
-  // Migrated from SheetJS (xlsx) to ExcelJS to drop the unfixed xlsx advisory
-  // (prototype pollution + ReDoS). Dynamic import keeps exceljs out of the main
-  // bundle, matching the testing page's export flow.
-  const buffer = await file.arrayBuffer();
-  const mod = await import('exceljs');
-  // Interop: the browser bundle exposes `.Workbook` directly; CJS/node under `.default`.
-  const ExcelJS = ((mod as unknown as { default?: typeof import('exceljs') }).default ?? mod);
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer);
-
-  const sheet = workbook.worksheets[0];
-  if (!sheet) throw new Error('XLSX file contains no worksheets.');
-
-  // First row = headers (uppercased); ExcelJS columns are 1-indexed.
-  const headers: string[] = [];
-  sheet.getRow(1).eachCell({ includeEmpty: true }, (cell, col) => {
-    headers[col] = cellToString(cell.value).toUpperCase().trim();
-  });
-
-  const rows: Record<string, string>[] = [];
-  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-    if (rowNumber === 1) return; // skip header row
-    const record: Record<string, string> = {};
-    let hasValue = false;
-    for (let col = 1; col < headers.length; col++) {
-      const key = headers[col];
-      if (!key) continue;
-      const value = cellToString(row.getCell(col).value);
-      record[key] = value; // keep empty cells as '' (parity with previous defval:'')
-      if (value !== '') hasValue = true;
-    }
-    if (hasValue) rows.push(record);
-  });
-
-  return rows;
 }
 
 // ── Column mapping resolution ──────────────────────────────────────

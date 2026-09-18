@@ -16,7 +16,15 @@
  * browser could put an arbitrary structure of arbitrary size on a project
  * document that later drives the risk matrix.
  *
- * So: six fields leave the client allowlist, and this module is the contract
+ * Roadmap 7.1 adds a seventh field the same way, for the same reason and one
+ * more: `atcReport` (the imported ABAP Test Cockpit worklist) is exactly the
+ * shape `usageReport` was — arbitrary size, arbitrary structure, if a browser
+ * could write it directly — and it carries an additional honesty obligation
+ * this module is also the place to hold: an ATC finding is what ATC reported,
+ * never what this product's own engine verified, and the two must stay
+ * distinguishable everywhere the field is read (see `lib/abap/atc-model.ts`).
+ *
+ * So: seven fields leave the client allowlist, and this module is the contract
  * both halves read. It is pure on purpose — the route validates with it, the
  * design stage sends what it accepts, and `tests/project-command-boundary.spec.ts`
  * holds client, server, index and export to the same list (QA24-A12).
@@ -39,11 +47,13 @@ export const RELEASE_FIELDS = [
 ] as const;
 
 /**
- * Every project field a browser may no longer write: the five release fields
- * plus the usage import that same audit named. None of these may appear in
- * the `affectedKeys().hasOnly([…])` allowlist of `firestore.rules`.
+ * Every project field a browser may no longer write: the five release fields,
+ * the usage import that same audit named, and the ATC import (roadmap 7.1)
+ * that followed the same reasoning before a browser ever got the chance to
+ * write it. None of these may appear in the `affectedKeys().hasOnly([…])`
+ * allowlist of `firestore.rules`.
  */
-export const SERVER_ONLY_PROJECT_FIELDS = [...RELEASE_FIELDS, 'usageReport'] as const;
+export const SERVER_ONLY_PROJECT_FIELDS = [...RELEASE_FIELDS, 'usageReport', 'atcReport'] as const;
 
 export type ServerOnlyProjectField = (typeof SERVER_ONLY_PROJECT_FIELDS)[number];
 
@@ -151,16 +161,77 @@ export function normaliseUsageReport(
   return { ok: true, report };
 }
 
+/* --------------------------------------------------------------- atc report */
+
+/** Top-level keys of an `AtcReport` the server stores; anything else is dropped. */
+const ATC_REPORT_KEYS = [
+  'findings',
+  'source',
+  'quarantined',
+  'importedAt',
+  'warnings',
+  'retentionExpiresAt',
+] as const;
+
+const ATC_SOURCES = ['atc'] as const;
+
+/** Same reasoning as `USAGE_REPORT_MAX_RECORDS`: a ceiling the rules could never express. */
+export const ATC_REPORT_MAX_FINDINGS = 20000;
+export const ATC_REPORT_MAX_QUARANTINED = 20000;
+
+/**
+ * The ATC import, reduced to the fields the model declares — the same
+ * shallow contract `normaliseUsageReport` keeps: a closed top-level key set,
+ * a closed source vocabulary and a ceiling on size. What goes into each
+ * finding is the browser's own parser's job (`lib/abap/atc-parser.ts`,
+ * `lib/abap/atc-privacy.ts`); this is the part the browser cannot be trusted
+ * with regardless of what its own code does.
+ */
+export function normaliseAtcReport(
+  value: unknown,
+): { ok: true; report: Record<string, unknown> } | { ok: false; error: string } {
+  if (!isPlainObject(value)) return { ok: false, error: 'atcReport must be an object.' };
+  if (!Array.isArray(value.findings)) return { ok: false, error: 'atcReport.findings must be a list.' };
+  if (value.findings.length > ATC_REPORT_MAX_FINDINGS) {
+    return { ok: false, error: `atcReport.findings exceeds ${ATC_REPORT_MAX_FINDINGS} rows.` };
+  }
+  if (typeof value.source !== 'string' || !(ATC_SOURCES as readonly string[]).includes(value.source)) {
+    return { ok: false, error: `atcReport.source must be one of ${ATC_SOURCES.join(', ')}.` };
+  }
+  if (typeof value.importedAt !== 'string' || value.importedAt.length === 0) {
+    return { ok: false, error: 'atcReport.importedAt must be an ISO date string.' };
+  }
+  if (!Array.isArray(value.warnings)) return { ok: false, error: 'atcReport.warnings must be a list.' };
+  if (value.quarantined !== undefined) {
+    if (!Array.isArray(value.quarantined)) return { ok: false, error: 'atcReport.quarantined must be a list.' };
+    if (value.quarantined.length > ATC_REPORT_MAX_QUARANTINED) {
+      return { ok: false, error: `atcReport.quarantined exceeds ${ATC_REPORT_MAX_QUARANTINED} rows.` };
+    }
+  }
+
+  const report: Record<string, unknown> = {};
+  for (const key of ATC_REPORT_KEYS) {
+    if (value[key] !== undefined) report[key] = value[key];
+  }
+  return { ok: true, report };
+}
+
 /* ---------------------------------------------------------------- commands */
 
-export const PROJECT_COMMANDS = ['approve-architecture', 'revoke-architecture', 'record-usage-report'] as const;
+export const PROJECT_COMMANDS = [
+  'approve-architecture',
+  'revoke-architecture',
+  'record-usage-report',
+  'record-atc-report',
+] as const;
 export type ProjectCommandName = (typeof PROJECT_COMMANDS)[number];
 
 /** What a caller sends. The route validates it again; this only shapes it. */
 export type ProjectCommandBody =
   | { command: 'approve-architecture'; targetArchitecture: TargetArchitectureCode; justification?: string }
   | { command: 'revoke-architecture' }
-  | { command: 'record-usage-report'; usageReport: unknown };
+  | { command: 'record-usage-report'; usageReport: unknown }
+  | { command: 'record-atc-report'; atcReport: unknown };
 
 /** The part of the project document a command is allowed to look at. */
 export interface ProjectCommandState {
@@ -278,9 +349,19 @@ export function validateProjectCommand(
     };
   }
 
-  const usage = normaliseUsageReport(body.usageReport);
-  if (!usage.ok) return refuse(400, 'malformed-usage-report', usage.error);
-  return { ok: true, action: 'PROJECT_USAGE_REPORT_RECORDED', fields: { usageReport: usage.report } };
+  if (command === 'record-usage-report') {
+    const usage = normaliseUsageReport(body.usageReport);
+    if (!usage.ok) return refuse(400, 'malformed-usage-report', usage.error);
+    return { ok: true, action: 'PROJECT_USAGE_REPORT_RECORDED', fields: { usageReport: usage.report } };
+  }
+
+  // The only command left after the switch above: `record-atc-report`. An
+  // `if` rather than a bare fallthrough, the same way `record-usage-report`
+  // just became one — a third command added here later must say which one it
+  // is rather than silently inheriting whatever sits last in the function.
+  const atc = normaliseAtcReport(body.atcReport);
+  if (!atc.ok) return refuse(400, 'malformed-atc-report', atc.error);
+  return { ok: true, action: 'PROJECT_ATC_REPORT_RECORDED', fields: { atcReport: atc.report } };
 }
 
 /**
@@ -297,6 +378,7 @@ export function fieldsWrittenByCommands(): string[] {
     { command: 'approve-architecture', targetArchitecture: 'rap' },
     { command: 'revoke-architecture' },
     { command: 'record-usage-report', usageReport: { records: [], source: 'manual', importedAt: 'x', warnings: [] } },
+    { command: 'record-atc-report', atcReport: { findings: [], source: 'atc', importedAt: 'x', warnings: [] } },
   ];
   const written = new Set<string>();
   for (const body of bodies) {

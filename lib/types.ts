@@ -137,6 +137,11 @@ export interface Project {
   // v1.22: Usage Import & Risk Prioritization
   usageReport?: import('./abap/usage-model').UsageReport;
 
+  // Roadmap 7.1: ATC-Import — findings the ABAP Test Cockpit reported,
+  // compared with (never merged into) the engine's own evidence findings.
+  // Server-only, like usageReport — see lib/project-commands.ts.
+  atcReport?: import('./abap/atc-model').AtcReport;
+
   // In-memory only (never persisted): set by loadProjectAndHydrate when an
   // activeRunId is present but the run document could not be read (e.g. a
   // Firestore rules gap or network error). Lets pages surface a real error

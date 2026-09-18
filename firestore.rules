@@ -152,6 +152,12 @@ service cloud.firestore {
              (!('testSuite' in data) || (data.testSuite is map)) &&
              (!('exports' in data) || (data.exports is map)) &&
              (!('usageReport' in data) || (data.usageReport is map)) &&
+             // Roadmap 7.1, same reasoning as usageReport directly above: an
+             // imported ATC worklist is server-written only (POST
+             // /api/projects/{projectId}/commands, `record-atc-report`) and
+             // never reaches this validator through a client write — see
+             // `SERVER_ONLY_PROJECT_FIELDS` in lib/project-commands.ts.
+             (!('atcReport' in data) || (data.atcReport is map)) &&
              (!('nonFunctionalRequirements' in data) || (data.nonFunctionalRequirements is map));
     }
 
@@ -194,7 +200,8 @@ service cloud.firestore {
                       // Roadmap 0.7: six fields left this list and are written
                       // exclusively by POST /api/projects/{projectId}/commands
                       // (Admin SDK, after a verified token, the second factor
-                      // and a validated transition):
+                      // and a validated transition); roadmap 7.1 adds a seventh
+                      // the same way, before it was ever on this list at all:
                       //
                       //   targetArchitecture · approvedByArchitect ·
                       //   architectJustifiedOverride · architectSignOffAt ·
@@ -206,6 +213,11 @@ service cloud.firestore {
                       //   else, so any structure of any size could be put on a
                       //   project document (security audit of v2.11.0). The
                       //   route holds it to the model's key set and a ceiling.
+                      //
+                      //   atcReport    — the imported ATC worklist (roadmap
+                      //   7.1). Held to the same discipline from the start:
+                      //   never client-writable, held to the model's key set
+                      //   and a ceiling by the same route.
                       //
                       // The list here and `SERVER_ONLY_PROJECT_FIELDS` in
                       // lib/project-commands.ts are held apart by

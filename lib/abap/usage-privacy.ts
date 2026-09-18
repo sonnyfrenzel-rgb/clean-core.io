@@ -10,11 +10,21 @@
 
 import type { UsageRecord } from './usage-model';
 
-// Fields that may contain PII in SAP usage exports
+// Fields that may contain PII in SAP usage exports. Also the canonical list
+// `atc-privacy.ts` reuses for ATC worklist exports (roadmap 7.1) rather than
+// keeping a second copy — see the comment on `isPiiColumn` below and the one
+// in `lib/personal-data-hints.ts` that reuses it for the same reason.
 const PII_FIELD_PATTERNS = [
   /^user/i, /^bname/i, /^terminal/i, /^client_host/i,
   /^hostname/i, /^ip_addr/i, /^logon/i, /^account/i,
   /^benutzer/i, /^endgerät/i,
+  // ATC worklist exports name the person who wrote or last touched a check
+  // result rather than the person who ran it — "Autor, Prüfer, letzter
+  // Änderer" (roadmap 7.1) — which is a different shape of column than any
+  // usage export carries and was not covered above.
+  /^author/i, /^responsible/i, /^reviewer/i, /^approver/i,
+  /^created_?by/i, /^changed_?by/i, /^last_?changed_?by/i, /^modified_?by/i,
+  /^ersteller/i, /^verantwortlich/i, /^pr(ü|ue)fer/i, /^ge(ä|ae)ndert_?von/i,
 ];
 
 /**

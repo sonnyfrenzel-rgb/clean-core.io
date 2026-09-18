@@ -39,5 +39,14 @@
       "worklist"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && (resource.data.userId == request.auth.uid || invitedReader(resource.data));"
+  },
+  "pending": {
+    "sha256OfLfNormalisedText": "be90eefb14adb4c498e14a7df82970dcab7c725da900ddf3224eb6500e063140",
+    "recordedAt": "2026-09-18",
+    "recordedFor": "Roadmap 7.1: atcReport bekommt in isValidProject dieselbe is-map-Pruefung wie usageReport -- keine Aenderung an der Client-Allowlist, atcReport ist von Anfang an server-only",
+    "addsToClient": [],
+    "removesFromClient": [],
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && (resource.data.userId == request.auth.uid || invitedReader(resource.data));",
+    "note": "Bis zum Deploy sind die alten Regeln live. `npm run deploy:rules` rollt aus und loescht diesen Block."
   }
 }
