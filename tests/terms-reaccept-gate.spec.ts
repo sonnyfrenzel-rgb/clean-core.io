@@ -177,3 +177,57 @@ test('the keyboard cannot leave the gate', async ({ page }) => {
     expect(await insideGate(), `Shift+Tab ${i + 1} left the dialog`).toBe(true);
   }
 });
+
+/**
+ * A question somebody may answer with "no" must not take the page hostage.
+ *
+ * The first version of this gate was a full-screen modal in every case,
+ * including for an account with no recorded acceptance at all — the legacy
+ * account the *server* deliberately grandfathers. It therefore blocked people
+ * the platform was letting in, and it intercepted pointer events in nine
+ * unrelated specs whose fixtures simply never set `termsVersionAccepted`.
+ *
+ * Since § 10.3 the two cases are different things and look different: a banner
+ * in the page flow while the accepted version is still in force, a modal once it
+ * is not. This pins that, and the click at the end is the part that matters —
+ * the banner must not sit on top of anything.
+ */
+test('an account the server grandfathers is asked, not shut out', async ({ page }) => {
+  test.setTimeout(180 * 1000);
+
+  const email = `terms-legacy-${STAMP}@cleancore-test.io`;
+  const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
+  const cred = await createUserWithEmailAndPassword(getAuth(app), email, PASSWORD);
+  await adminSetEmailVerified(cred.user.uid, true);
+  await adminSetDoc('users', cred.user.uid, {
+    firstName: 'Terms', lastName: 'Legacy', email,
+    tier: 'pilot', status: 'approved', createdAt: new Date(),
+    transformationsUsed: 0, transformationsLimit: 5,
+    // No `termsVersionAccepted` at all — the legacy shape.
+    mfaEnabled: false,
+  });
+
+  await page.goto('/?auth=signin');
+  await page.waitForSelector('input[type="email"]', { timeout: 60000 });
+  await page.fill('input[type="email"]', email);
+  await page.fill('input[type="password"]', PASSWORD);
+  await page.click('button[type="submit"]:has-text("Sign In")');
+  await page.waitForURL('**/dashboard', { timeout: 60000 });
+
+  const gate = page.locator('[data-terms-gate]');
+  await expect(gate, 'the legacy account was not asked at all').toBeVisible({ timeout: 60000 });
+  await expect(
+    gate,
+    'a grandfathered account got the blocking form — the server lets it in, the screen must not shut it out',
+  ).toHaveAttribute('data-terms-gate-mode', 'banner');
+
+  // Declining is offered, and it is offered as declining — not as signing out.
+  await expect(gate.locator('[data-terms-gate-decline]')).toBeVisible();
+
+  // The page underneath is usable. `click` fails on an intercepted element, so
+  // this assertion is the whole point of the banner form.
+  await page.locator('h1, h2').first().click({ timeout: 15000 });
+
+  await gate.locator('[data-terms-gate-decline]').click();
+  await expect(gate, 'declining did not put the banner away').toBeHidden({ timeout: 15000 });
+});

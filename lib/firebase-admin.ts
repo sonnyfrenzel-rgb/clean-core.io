@@ -1,4 +1,4 @@
-import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, TERMS_VERSION } from '@/lib/constants';
+import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, termsVersionInForce } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { encrypt, decrypt } from './s4-credentials';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp } from './mfa-gate';
@@ -452,14 +452,23 @@ export async function assertAccountActive(
     throw new QuotaError('Your account is not active. If you have only just signed up, reload the page to finish setting it up; if it was suspended, contact support.', 403);
   }
 
-  // Terms: block only when a *previously accepted* version is now stale, so a
-  // future Terms bump forces re-consent. A missing acceptance (legacy account) is
-  // grandfathered — it must not lock out pre-existing users before the reconsent
-  // UI runs. The client cannot forge/remove this field (see firestore.rules).
+  // Terms: block only when the accepted version is no longer in force.
+  //
+  // This used to refuse anything that was not the *current* version, which was
+  // right while the Terms said continued use was acceptance. § 10.3 of the
+  // rewrite says the opposite: somebody who declines an amendment may carry on
+  // under the Terms they accepted, and the operator's remedy is to terminate
+  // with 30 days' notice — not to lock the door. Refusing a stale-but-in-force
+  // acceptance would have made that clause false from the day it shipped.
+  //
+  // What still refuses: a version the operator has ended (removed from
+  // `TERMS_VERSIONS_IN_FORCE` after those notices ran). A missing acceptance is
+  // grandfathered as before — it must not lock out pre-existing users. The
+  // client cannot forge or remove the field (see firestore.rules).
   if (opts.requireCurrentTerms && !isAdmin) {
     const accepted = data.termsVersionAccepted || null;
-    if (accepted !== null && accepted !== TERMS_VERSION) {
-      throw new QuotaError('The Terms of Service have been updated. Please re-accept them in the app to continue.', 403);
+    if (accepted !== null && !termsVersionInForce(accepted)) {
+      throw new QuotaError('The version of the Terms of Service your account accepted is no longer in force. Please accept the current Terms in the app to continue.', 403);
     }
   }
 }

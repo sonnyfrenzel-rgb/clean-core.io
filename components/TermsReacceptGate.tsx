@@ -6,7 +6,7 @@ import { AlertTriangle, ExternalLink, Loader2 } from 'lucide-react';
 import { getAuth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { TERMS_VERSION } from '@/lib/constants';
+import { TERMS_VERSION, termsVersionInForce } from '@/lib/constants';
 
 /**
  * Asking again when the Terms have changed — and the reason it has to exist.
@@ -28,10 +28,16 @@ import { TERMS_VERSION } from '@/lib/constants';
  * So the rule here is not "show a notice". It is: **wherever a gate can refuse
  * on account state, the screen that state reaches must carry the way out.**
  *
- * It blocks deliberately. A dismissible banner would leave people in a product
- * whose every useful route answers 403, and they would read that as breakage —
- * which is exactly how the MFA lockout presented itself ("Failed to analyze the
- * code"). Signing out is offered, because refusing to accept has to be possible
+ * **Whether it blocks depends on whether declining is real.** § 10.3 of the Terms
+ * lets somebody who declines an amendment carry on under the Terms they
+ * accepted, so while their version is in force this dialogue asks and takes
+ * "not now" for an answer — a blocking dialogue would contradict the clause it
+ * is enforcing. Once the accepted version has been ended (removed from
+ * `TERMS_VERSIONS_IN_FORCE` after § 10.3's 30 days' notice), the routes really
+ * do refuse, and then it blocks: a dismissible notice would leave somebody in a
+ * product whose every useful route answers 403, read as breakage — which is
+ * exactly how the MFA lockout presented itself ("Failed to analyze the code").
+ * Signing out is offered either way, because refusing has to be possible
  * without deleting the account.
  *
  * Consent is recorded server-side: the route derives the version, the e-mail and
@@ -44,10 +50,31 @@ export default function TermsReacceptGate() {
   const { profile, loading } = useUserProfile();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // Declining is remembered for this browsing session only. It is a choice about
+  // one amendment, not a setting, and the next sign-in asks again — which is what
+  // § 10.1's notice regime expects.
+  const [declined, setDeclined] = useState(false);
   const acceptRef = useRef<HTMLButtonElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
-  const needed = !loading && !!profile && profile.termsVersionAccepted !== TERMS_VERSION;
+  const accepted = profile?.termsVersionAccepted ?? null;
+  const needed = !loading && !!profile && accepted !== TERMS_VERSION;
+
+  /**
+   * Whether declining is a real option, or whether everything is shut anyway.
+   *
+   * § 10.3 lets somebody who declines an amendment carry on under the Terms they
+   * accepted. While that is true, this dialogue must not block: it asks, and
+   * "not now" leaves the product working. It only blocks once the accepted
+   * version has left `TERMS_VERSIONS_IN_FORCE` — the operator ended it after the
+   * 30 days' notice § 10.3 requires — because then the routes really do refuse
+   * and a dismissible notice would leave somebody in a product that answers 403
+   * everywhere, which is how the MFA lockout presented itself.
+   *
+   * An account with no accepted version at all is the legacy case the server
+   * grandfathers; it is asked, not shut out.
+   */
+  const mayDecline = accepted === null || termsVersionInForce(accepted);
 
   /**
    * Focus goes in and stays in, and the page behind does not scroll.
@@ -59,7 +86,9 @@ export default function TermsReacceptGate() {
    * reproduced for the people least able to guess what happened.
    */
   useEffect(() => {
-    if (!needed) return;
+    // Only the blocking form takes focus and traps it. A banner that grabbed the
+    // caret would be worse than the problem it reports.
+    if (!needed || declined || mayDecline) return;
     acceptRef.current?.focus();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -96,9 +125,9 @@ export default function TermsReacceptGate() {
       document.removeEventListener('keydown', onKeyDown, true);
       document.body.style.overflow = previousOverflow;
     };
-  }, [needed]);
+  }, [needed, declined, mayDecline]);
 
-  if (!needed) return null;
+  if (!needed || declined) return null;
 
   const accept = async () => {
     setBusy(true);
@@ -128,21 +157,55 @@ export default function TermsReacceptGate() {
     }
   };
 
+  /**
+   * Two shapes, because the two situations are not the same thing.
+   *
+   * While the accepted version is still in force (§ 10.3) the product works and
+   * the person may decline, so this is a **banner**: it sits at the foot of the
+   * page, it covers nothing, and it lets every click through (`pointer-events`
+   * is off on the wrapper and back on for the card itself). An overlay here
+   * would take the page hostage over a question the reader is allowed to answer
+   * with "no" — and it did: it intercepted pointer events in nine unrelated
+   * specs whose fixtures simply never set `termsVersionAccepted`, which is
+   * precisely the legacy account the server grandfathers.
+   *
+   * Once the accepted version has been ended, the routes really do refuse, and
+   * then it is a **modal**: full screen, focus trapped, Escape inert. Leaving
+   * somebody loose in a product where everything answers 403 is how the MFA
+   * lockout presented itself.
+   */
+  const blocking = !mayDecline;
+
   return (
     <div
       data-terms-gate
-      className="fixed inset-0 z-[200] bg-gray-950/60 backdrop-blur-md flex items-center justify-center p-4"
+      data-terms-gate-mode={blocking ? 'blocking' : 'banner'}
+      className={
+        blocking
+          ? 'fixed inset-0 z-[200] bg-gray-950/60 backdrop-blur-md flex items-center justify-center p-4'
+          // In the page flow, not over it. A fixed banner still covers whatever
+          // is beneath it — it intercepted clicks in five specs even after the
+          // wrapper stopped taking pointer events — and a question somebody is
+          // allowed to answer with "no" must not sit on top of their work.
+          : 'max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6'
+      }
       onKeyDown={(e) => {
-        // Not dismissible: there is nothing behind this dialog that works.
-        if (e.key === 'Escape') e.preventDefault();
+        if (e.key !== 'Escape') return;
+        // Escape is a decline, and only where declining is allowed.
+        if (mayDecline) setDeclined(true);
+        else e.preventDefault();
       }}
     >
       <div
         ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
+        role={blocking ? 'dialog' : 'region'}
+        {...(blocking ? { 'aria-modal': true } : {})}
         aria-labelledby="terms-gate-title"
-        className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-gray-100 p-6 sm:p-8 max-h-[95vh] overflow-y-auto"
+        className={
+          blocking
+            ? 'bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-gray-100 p-6 sm:p-8 max-h-[95vh] overflow-y-auto'
+            : 'bg-white w-full rounded-3xl shadow-sm border border-amber-200 p-6'
+        }
       >
         <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mb-5 border border-amber-200">
           <AlertTriangle className="w-7 h-7 text-amber-600" />
@@ -151,8 +214,9 @@ export default function TermsReacceptGate() {
           The Terms of Service have changed
         </h2>
         <p className="text-sm font-medium text-gray-600 leading-relaxed mb-5">
-          You accepted an earlier version. Please read the current one and accept it to carry on — analysing,
-          exporting and inviting stay closed until you do.
+          {mayDecline
+            ? 'You accepted an earlier version. Please read the current one and accept it. You do not have to: section 10.3 lets you carry on under the Terms you accepted, and nothing stops working if you decline.'
+            : 'The version your account accepted is no longer in force, so the platform is closed to it. Please read the current Terms and accept them to carry on.'}
         </p>
 
         <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-5 space-y-3 text-xs font-medium text-gray-600 leading-relaxed">
@@ -210,6 +274,15 @@ export default function TermsReacceptGate() {
           {busy && <Loader2 size={15} className="animate-spin" />}
           I have read and accept the Terms
         </button>
+        {mayDecline && (
+          <button
+            data-terms-gate-decline
+            onClick={() => setDeclined(true)}
+            className="w-full mt-3 border border-gray-200 hover:border-gray-300 text-gray-700 hover:text-gray-950 py-3 rounded-2xl font-bold text-xs transition-colors"
+          >
+            Not now &mdash; carry on under the Terms I accepted
+          </button>
+        )}
         <button
           data-terms-gate-signout
           onClick={() => signOut(getAuth())}

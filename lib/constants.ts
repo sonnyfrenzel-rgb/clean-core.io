@@ -42,6 +42,38 @@ export const COMMUNITY_QUOTA = 5;
 export const TERMS_VERSION = '2026-09-18';
 
 /**
+ * The versions under which the platform may still be used.
+ *
+ * § 10.3 of the Terms: somebody who does not accept a proposed amendment **may
+ * carry on under the Terms as they stood before it**. So a stale acceptance is
+ * not, by itself, a reason to refuse anybody — which is what the gate used to
+ * do, and what would have made that clause false on the day it shipped.
+ *
+ * A version leaves this list only when the operator has ended the contracts
+ * resting on it, which § 10.3 allows solely by giving at least 30 days' notice
+ * in text form. Removing an entry here is therefore an act with a deadline
+ * behind it, not a tidy-up: it locks out everybody still on that version, and
+ * it must not happen before those notices have gone out and the period has run.
+ *
+ * The current version is always in force. New sign-ups accept `TERMS_VERSION`
+ * and nothing else.
+ */
+export const TERMS_VERSIONS_IN_FORCE: readonly string[] = [
+  '2026-09-18',
+  // '2026-07-07' — v2.0.0. Not listed: no account ever accepted it under a
+  // regime that promised it would stay available, because § 10.3 arrives with
+  // the rewrite itself. The first version this clause protects is the one
+  // above.
+];
+
+/** True when an account holding `accepted` may still use the platform. */
+export function termsVersionInForce(accepted: string | null | undefined): boolean {
+  // A profile with no accepted version at all is grandfathered elsewhere; this
+  // answers only the question it is asked.
+  return typeof accepted === 'string' && TERMS_VERSIONS_IN_FORCE.includes(accepted);
+}
+
+/**
  * Canonical base URL of the application (no trailing slash).
  *
  * Used instead of `request.headers.get('host')` to prevent Host-Header
