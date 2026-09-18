@@ -72,6 +72,33 @@ und zwei Playwright-Läufe gleichzeitig gegen einen Dev-Server bringen ihn um.
 Befund aufgelöst. Was im Bericht bleibt (2 kritisch, 7 hoch), ist durchweg *carried* —
 der Triage-Bestand aus der Release-Vollprüfung, Punkt 12 unten.
 
+## Der SAP-Katalog liegt im Browser-Bundle — vor 3.0 zu lösen
+
+**Gemessen am Produktionsbuild vom 18.09.2026:** `/project/[projectId]/analyze` lädt
+**884 kB** beim ersten Zugriff, `/admin/workspace` **708 kB** — gegen eine gemeinsame
+Grundlast von 105 kB. Die Ursache ist `lib/abap/catalog-service.ts`, das
+`generated/cloudification-repo.latest.json` (3,0 MB) und
+`…classifications-sap.json` (1,2 MB) **statisch** importiert. Jede Client-Komponente,
+die es mittelbar zieht, nimmt die 4,2 MB mit in den Browser.
+
+`CLAUDE.md` beschreibt es anders: `gradeSapObject()` in `catalog-service.ts` ist
+**server-only**, Clients holen sich Stapelabfragen über `/api/abcd-classify`. Diese
+Regel ist bereits gebrochen — `components/analyze/UsageRiskMatrix.tsx` ist eine
+Client-Komponente und zieht über `lib/abap/usage-join.ts` denselben Pfad —, und der
+Public-Cloud-Fit-Panel aus Schritt 6.7 tut es jetzt ebenso.
+
+**Warum es jetzt zählt:** bisher hing das an der Analyse-Seite. Mit 6.7 hängt es an
+der Arbeitsraum-Schale, und die wird mit 3.0 der Weg für alle. Ein Umbau danach ist
+teurer als einer davor.
+
+**Der Weg:** beide Aufrufe (`gradeSapObjectUse`, `hasNoReleasedApiPath`) hinter
+`/api/abcd-classify` legen und die Panels die Antwort holen lassen, statt den Katalog
+mitzubringen. Beide Fundstellen bewegen sich zusammen, das ist eine Änderung, nicht
+zwei.
+
+**Dringlichkeit:** mittel, aber vor 3.0. Kein Fehlverhalten, nur Gewicht — und es
+trifft jeden ersten Seitenaufruf.
+
 ## Aus den zwei Rechtsprüfungen vom 18.09.2026 — offen
 
 Die Pflichtlücken sind geschlossen (Commits `1c3476d`, `2f9eb4a`, `4f0e424`). Was
