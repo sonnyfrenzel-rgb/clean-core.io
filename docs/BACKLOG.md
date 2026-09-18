@@ -224,9 +224,21 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
 
 12. **Die 97 hohen Befunde der Release-Vollprüfung** triagieren — nach dem Muster von heute, mit der
     Faustregel „bei `test-weakening` zuerst die Nettobilanz per `git show --stat`".
-13. **Die UX-Befunde**: 58 aus dem Release, davon 54 übertragen, 61 offen im Register. Vier sind neu.
-14. **0.2 zu Ende:** Facts-Service und Copy-CI stehen weiter aus — die letzten beiden Posten, die
-    Phase 0 offenhalten.
+13. **Die UX-Befunde**: 58 aus dem Release, davon 54 übertragen, 61 offen im Register. Die acht
+    offenen aus `bc2f786` sind am 18.09. entschieden — UX-121 bis UX-127 behoben (`00212eb`),
+    UX-128 (Radien-Drift) nach 1.5. Drei der acht waren derselbe Befund in drei Formulierungen.
+14. ~~**0.2 zu Ende:** Facts-Service und Copy-CI~~ — erledigt am 18.09.2026 (`7635960`).
+    Arbeitspakete 5 und 6 (Audit-Copy-Korrekturen, Nachfolgertyp/Provenienz CR-08) bleiben offen.
+14a. **Die Vollprüfung von `bc2f786` ist da und noch nicht triagiert** (18.09.2026). Sie ist
+    inhaltlich etwas anderes als Posten 12: rund 55 Einträge, fast durchweg **Testlücken**
+    („baue einen Test, der X verhält sich-beweist"), keine Defektmeldungen. Elf frühere Befunde
+    sind als erledigt vermerkt. Sie sperrt nichts. Wiederkehrende Themen, nach Häufigkeit:
+    Tastatur- und Screenreader-Bedienung quer durch alle Dialoge und Schubladen; Ehrlichkeit
+    gerenderter Behauptungen gegen die tatsächliche Herkunft (Terms, Whitepaper, FAQ,
+    Chatbot-Prompt, Registrierungszusammenfassung); Wettläufe (zwei Transformationen zugleich,
+    Projektwechsel mit offenen Anfragen, Usage-Import mit verzögertem Parser); und Teilfehler,
+    die halbe Zustände hinterlassen (Registrierung, Tenant-Zugang, Umfrage-Schreibreihenfolge).
+    Volltext in `.qa-review/`.
 15. **0.18, der lohnendste Rest:** eine Befundmarke für die Typabhängigkeit (R29). Dann wird
     CC-045 · befunde von „nicht vergleichbar" zu einem echten Vergleich statt zu einem Schweigen.
 16. **Das Auto-Heal ist wirkungslos** (Befund aus 0.17, in der Roadmap notiert). Der wahrscheinliche
