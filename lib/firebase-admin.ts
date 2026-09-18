@@ -957,7 +957,17 @@ export async function assertMfaSatisfied(
   const { db } = await getAdminDb();
 
   const userDoc = await db.collection('users').doc(uid).get();
-  if (!userDoc.exists) return;
+  if (!userDoc.exists) {
+    // No profile means no enrolment on record. For the conditional gate that
+    // is "nothing to require" and the caller decides what a missing profile
+    // means; for a route that requires enrolment it is a refusal - returning
+    // here let a verified Auth account without a Firestore document past the
+    // own-key requirement (QA review of 14ab490793cb, the low finding).
+    if (opts?.requireEnrolment && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true') {
+      throw new QuotaError('This account has no profile on record, so multi-factor authentication cannot be verified. Sign in again; if this persists, contact support.', 403);
+    }
+    return;
+  }
 
   const mfaEnabled = userDoc.data()?.mfaEnabled === true;
   if (opts?.requireEnrolment && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true') {

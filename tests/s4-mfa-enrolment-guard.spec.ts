@@ -105,6 +105,16 @@ test.describe('the wiring, on the source', () => {
     const body = helper.slice(0, helper.indexOf('\n}\n') + 3);
     expect(body).toContain("opts?.requireEnrolment && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true'");
     expect(body).toMatch(/if \(enrolment\) throw new QuotaError\(enrolment\.message, enrolment\.status\)/);
+    // A missing profile is a refusal where enrolment is required, not a pass:
+    // the helper used to `return` on `!userDoc.exists` before it ever looked at
+    // the option, so a verified Auth account without a Firestore document went
+    // straight through (QA review of 14ab490793cb). The refusal has to sit
+    // inside the missing-profile branch, before the early return.
+    const missing = body.slice(body.indexOf('if (!userDoc.exists) {'), body.indexOf('const mfaEnabled ='));
+    expect(missing, 'a missing profile no longer refuses a route that requires enrolment').toMatch(
+      /opts\?\.requireEnrolment[\s\S]*throw new QuotaError\([\s\S]*403\)/,
+    );
+    expect(missing.indexOf('throw new QuotaError'), 'the refusal comes after the early return').toBeLessThan(missing.lastIndexOf('return;'));
 
     // Every handler that stores, tests or removes the key passes the decision.
     for (const rel of ['app/api/secrets/gemini/route.ts', 'app/api/secrets/gemini/test/route.ts']) {
