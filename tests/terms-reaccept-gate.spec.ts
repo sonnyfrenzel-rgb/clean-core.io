@@ -4,7 +4,7 @@ import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';
-import { TERMS_VERSION } from '../lib/constants';
+import { TERMS_VERSION, TERMS_VERSIONS_IN_FORCE } from '../lib/constants';
 import { adminSetDoc, adminGetDoc, adminSetEmailVerified } from './helpers/admin-seed';
 
 /**
@@ -230,4 +230,63 @@ test('an account the server grandfathers is asked, not shut out', async ({ page 
 
   await gate.locator('[data-terms-gate-decline]').click();
   await expect(gate, 'declining did not put the banner away').toBeHidden({ timeout: 15000 });
+});
+
+/**
+ * Release day, for the accounts that already exist.
+ *
+ * Every account on the platform when `2026-09-18` ships accepted `2026-07-07` —
+ * it is what production served until then. The first cut of
+ * `TERMS_VERSIONS_IN_FORCE` left that version out, which would have refused all
+ * 158 of them at every protected route until they clicked, on the same day the
+ * Terms gained § 10.3 saying they may carry on under the version they accepted.
+ * A QA review caught it (66a392dc1b6b); the owner chose "ask, do not shut out".
+ *
+ * This is the test that would have caught it, so it is written the way the day
+ * actually looks: an account holding the version production served.
+ */
+test('an account on the previous published version is asked, and keeps working', async ({ page }) => {
+  test.setTimeout(180 * 1000);
+
+  const email = `terms-prev-${STAMP}@cleancore-test.io`;
+  const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
+  const cred = await createUserWithEmailAndPassword(getAuth(app), email, PASSWORD);
+  await adminSetEmailVerified(cred.user.uid, true);
+  await adminSetDoc('users', cred.user.uid, {
+    firstName: 'Terms', lastName: 'Previous', email,
+    tier: 'pilot', status: 'approved', createdAt: new Date(),
+    transformationsUsed: 0, transformationsLimit: 5,
+    // What every existing account holds the moment the new version ships.
+    termsVersionAccepted: '2026-07-07',
+    mfaEnabled: false,
+  });
+
+  await page.goto('/?auth=signin');
+  await page.waitForSelector('input[type="email"]', { timeout: 60000 });
+  await page.fill('input[type="email"]', email);
+  await page.fill('input[type="password"]', PASSWORD);
+  await page.click('button[type="submit"]:has-text("Sign In")');
+  await page.waitForURL('**/dashboard', { timeout: 60000 });
+
+  const gate = page.locator('[data-terms-gate]');
+  await expect(gate, 'the existing account was not told the Terms changed').toBeVisible({ timeout: 60000 });
+  await expect(
+    gate,
+    'release day would have locked out every existing account — the previous version is still in force',
+  ).toHaveAttribute('data-terms-gate-mode', 'banner');
+  await expect(gate.locator('[data-terms-gate-decline]')).toBeVisible();
+
+  // And the product is usable behind it, which is what § 10.3 promises.
+  await page.locator('h1, h2').first().click({ timeout: 15000 });
+});
+
+test('the version production serves today is one the platform still honours', () => {
+  // A unit-level backstop for the same fact, so it fails in milliseconds rather
+  // than after a sign-in: the list must contain the version that was current
+  // before the bump, or the release locks everybody out.
+  expect(
+    TERMS_VERSIONS_IN_FORCE,
+    'the previously published Terms version is not in force — every existing account would be refused',
+  ).toContain('2026-07-07');
+  expect(TERMS_VERSIONS_IN_FORCE, 'the current version must always be in force').toContain(TERMS_VERSION);
 });

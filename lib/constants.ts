@@ -60,10 +60,19 @@ export const TERMS_VERSION = '2026-09-18';
  */
 export const TERMS_VERSIONS_IN_FORCE: readonly string[] = [
   '2026-09-18',
-  // '2026-07-07' — v2.0.0. Not listed: no account ever accepted it under a
-  // regime that promised it would stay available, because § 10.3 arrives with
-  // the rewrite itself. The first version this clause protects is the one
-  // above.
+  // v2.0.0, and listed on purpose (Sonny, 18.09.2026).
+  //
+  // Every account that exists on the day 2026-09-18 ships accepted this one —
+  // it is what production served until then. Leaving it out would have refused
+  // all of them at every protected route until they clicked, which is a lockout
+  // of the whole community on release day and flatly contradicts § 10.3, which
+  // the same release introduces. A QA review caught it before it shipped.
+  //
+  // So they are asked, not shut out: the banner offers the new version, "not
+  // now" leaves the product working, and the old Terms keep governing that
+  // account until the operator ends them with the 30 days' notice § 10.3
+  // requires. Removing this entry is that act, and nothing less.
+  '2026-07-07',
 ];
 
 /** True when an account holding `accepted` may still use the platform. */
