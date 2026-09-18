@@ -1464,6 +1464,54 @@
       "step": "sofort",
       "updatedAt": "2026-09-17T07:26:21.041Z",
       "fixedIn": "2ee0c77"
+    },
+    {
+      "id": "UX-117",
+      "fingerprint": "3c6adfe9fc0d",
+      "title": "Read-only-Board lädt noch zum Fragen unten ein",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
+      "createdAt": "2026-09-18T04:40:55.243Z",
+      "status": "eingeplant",
+      "step": "sofort",
+      "updatedAt": "2026-09-18T04:40:55.243Z"
+    },
+    {
+      "id": "UX-118",
+      "fingerprint": "a09f4055a34c",
+      "title": "Rücksprung heißt dreimal anders",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
+      "createdAt": "2026-09-18T04:40:55.404Z",
+      "status": "eingeplant",
+      "step": "1.5",
+      "updatedAt": "2026-09-18T04:40:55.404Z"
+    },
+    {
+      "id": "UX-119",
+      "fingerprint": "be8878957d67",
+      "title": "Leerer Dokumentationsrahmen mit viel Leerfläche",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
+      "createdAt": "2026-09-18T04:40:55.548Z",
+      "status": "eingeplant",
+      "step": "1.5",
+      "updatedAt": "2026-09-18T04:40:55.548Z"
+    },
+    {
+      "id": "UX-120",
+      "fingerprint": "a9e2802b4cb5",
+      "title": "Neue Radien und Schriftgrößen ohne Systemanschluss",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
+      "createdAt": "2026-09-18T04:41:03.445Z",
+      "status": "eingeplant",
+      "step": "1.5",
+      "updatedAt": "2026-09-18T04:41:03.445Z"
     }
   ]
 }

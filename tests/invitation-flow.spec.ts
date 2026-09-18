@@ -457,3 +457,55 @@ test('three invitations wait at once, and the fourth waits for a withdrawal', as
   expect(afterWithdrawal.status, JSON.stringify(afterWithdrawal)).toBe(201);
   expect((await invite(request, { email: address(INVITATION_MAX_OPEN + 4) })).status).toBe(409);
 });
+
+/**
+ * The ceiling under overlapping requests — the half a serial test cannot show.
+ *
+ * The route counts and creates inside one Firestore transaction precisely so
+ * that two requests arriving together cannot both find the last free slot. A
+ * serial test proves the count; only concurrent requests prove the transaction,
+ * and a read-then-write implementation would pass the serial test and fail here
+ * (QA review of 4bc3f799546a, test gap "Invitation ceiling concurrency").
+ *
+ * It runs as its own owner. The route's rate limit is keyed on the caller, and
+ * the tests above have already spent most of that budget on the shared account;
+ * a fresh one keeps this test measuring the ceiling rather than the rate limit.
+ */
+test('two slots taken, four requests at once — exactly one gets the last slot', async ({ request }) => {
+  test.setTimeout(180 * 1000);
+
+  const owner = `invitation-race-${STAMP}@cleancore-test.io`;
+  await makeAccount(owner, true, true);
+  const projectId = `invitation-race-project-${STAMP}`;
+  await adminSetDoc('projects', projectId, {
+    name: 'Four at the door',
+    userId: accounts[owner].uid,
+    createdAt: new Date(),
+    status: 'analyzed',
+    legacyCode: 'REPORT z_race.',
+  });
+
+  const post = (email: string) =>
+    request.post(`/api/projects/${projectId}/invitations`, {
+      headers: headers(accounts[owner].token),
+      data: { email },
+    });
+
+  for (let n = 1; n < INVITATION_MAX_OPEN; n++) {
+    const res = await post(`race-setup-${n}-${STAMP}@cleancore-test.io`);
+    expect(res.status(), `setup invitation ${n}: ${await res.text()}`).toBe(201);
+  }
+
+  // Four at once against one free slot.
+  const statuses = await Promise.all(
+    [1, 2, 3, 4].map(async (n) => (await post(`race-${n}-${STAMP}@cleancore-test.io`)).status()),
+  );
+
+  const created = statuses.filter((s) => s === 201).length;
+  const refused = statuses.filter((s) => s === 409).length;
+  expect(
+    created,
+    `exactly one of four concurrent requests may take the last slot — statuses: ${statuses.join(', ')}`,
+  ).toBe(1);
+  expect(refused, `the other three must be refused by the ceiling — statuses: ${statuses.join(', ')}`).toBe(3);
+});

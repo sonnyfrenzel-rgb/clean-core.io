@@ -963,6 +963,26 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 
 **Delta-Review von e3817ce (v2.12.0, 17.09.2026, 3 Modellaufrufe, 0,52 $):** zwölf Befunde waren unentschieden, sechs sind bestätigt (UX-102, UX-104, UX-106, UX-107 neu eingeplant; UX-105 und UX-110 auf *low* heruntergestuft), sechs widerlegt. Auffällig ist der Wiederholungsgrad: drei Befunde meldeten dieselbe Token-Liste aus dem Design-Scan (UX-111/112/113) und lasen das bewusst neue `cc`-Vokabular hinter dem Admin-Schalter als Drift — obwohl die Werte in `DESIGN.md` §1.2 und §1.5 beschlossen sind und die `coverage_notes` desselben Berichts das selbst sagen; ein vierter (UX-109) wiederholt UX-106 von der Screenshot-Seite, ein fünfter (UX-108) das bereits behobene UX-092. Nur UX-103 war ein echter Prüffehler: der Leerzustand, dessen Fehlen er belegt, steht im Code.
 
+**Delta-Review von a7c9e71 (v2.13.0, 18.09.2026, 3 Modellaufrufe, 0,46 $):** vier Befunde
+waren unentschieden, alle vier sind eingeplant (UX-117 bis UX-120). Zwei sind an der
+Fundstelle belegt: der Technik-Blueprint lädt in seinem Schlusssatz weiter zum Fragen
+ein, obwohl daneben steht, dass das Board nur gelesen wird
+(`app/(app)/dashboard/page.tsx:635` gegen `:1697`), und derselbe Rücksprung heißt an
+drei Stellen dreierlei (`components/BackLink.tsx:55`, `app/(app)/layout.tsx:150`,
+`app/(app)/settings/page.tsx:873`). UX-119 ist ebenfalls belegt, aber am Rahmen statt am
+Leerzustand: `NotGenerated` ist kompakt, die Fläche kommt aus dem `p-12 md:p-20` des
+gestrichelten Containers in `documentation/page.tsx:1558`.
+
+**UX-120 gilt nur zur Hälfte.** Der Befund meldet `rounded-[6px]` und `rounded-[8px]`
+gemeinsam als Drift. `8 px` ist die in `DESIGN.md` §1.4 (Tabelle Z. 134) beschlossene
+Skala für Zeile, Feld und Button — das ist kein Drift, sondern ihre Umsetzung. Echt sind
+`rounded-[6px]` (`components/cc/SegmentedControl.tsx:77`,
+`components/process-states/StateChoice.tsx:126`), `text-[16px]`
+(`components/cc/MessageBox.tsx:126` — schon in der Widerlegung von UX-111 als einziger
+echter Rest benannt) und `text-[18px]` (`components/workspace/FirstLook.tsx`). Nach
+`DESIGN.md` Z. 913 ist ein neuer Radius eine Änderung dieser Datei; deshalb eingeplant
+statt widerlegt, aber mit diesem Umfang: drei Werte, nicht sieben.
+
 | ID | Schwere | Befund | Roadmap-Schritt | Status |
 |---|---|---|---|---|
 | UX-002 | critical | Null Befunde als Fully Supported besiegelt | 0.8 | behoben |
@@ -1026,6 +1046,8 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-106 | medium | NotGenerated nennt Settings, führt aber nicht dorthin | 1.5 | eingeplant |
 | UX-107 | medium | Admin-Button meldet ab statt an | sofort | behoben |
 | UX-116 | medium | FREE-Badge verschweigt Erstlauf-Begrenzung | sofort | behoben |
+| UX-117 | medium | Read-only-Board lädt noch zum Fragen unten ein | sofort | eingeplant |
+| UX-118 | medium | Rücksprung heißt dreimal anders | 1.5 | eingeplant |
 | UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | behoben |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |
@@ -1057,6 +1079,8 @@ nächsten passenden Schritt · **low** neben verwandter Arbeit oder nach **3.0**
 | UX-105 | low | Dark-Entfernung ohne Hinweis an Bestandskonten | 1.6 | eingeplant |
 | UX-110 | low | Badge-Detail nur im Hover-Titel versteckt | 3.0.4 | eingeplant |
 | UX-115 | low | Demo verspricht sieben Stufen ohne Mitnahme | 0.2 | eingeplant |
+| UX-119 | low | Leerer Dokumentationsrahmen mit viel Leerfläche | 1.5 | eingeplant |
+| UX-120 | low | Neue Radien und Schriftgrößen ohne Systemanschluss | 1.5 | eingeplant |
 ---
 
 ## 14. QA-Befunde aus der Vollprüfung
