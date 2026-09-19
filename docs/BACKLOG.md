@@ -506,6 +506,20 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     „aktuell". Vorschlag: thematisch, je Thema ein Schritt, kritischste zuerst (Sperre, Löschung,
     Quittungsbindung); die 1129 mittleren nur stichprobenweise.
 
+34. **Gegenreview c5085bb vom Desktop (19.09.2026, Vormittag) — 20 Befunde, alle am Code geprüft,
+    in die Roadmap aufgenommen (§15, §9 Nr. 15–18, elf neue Schritte).** Das Paket ist von anderer
+    Qualität als die Agentenläufe: es hat Funktionen ausgeführt (Router, Klassifikation, 74
+    Skelett-/BPMN-Läufe, TCO, XML-Wächter, sechs Vergleicher-Mutanten, Node-Permission-Probe) und
+    zitiert SAP-Primärquellen. 17 bestätigt, 3 teils; nichts widerlegt — aber zwei Dinge sind
+    Entscheidungen, keine Fehler (Grade-Definition, Transaktionssemantik), und eine ist Positionierung
+    (A/B). **Der schwerste Punkt ist CR-09** — am echten Deployment zu Ende gedacht; Blast Radius und
+    Hergang stehen nur im privaten Bericht an Sonny vom 19.09. und im Reviewpaket, nicht hier
+    (Regel: IDs statt Details, solange nicht behoben). Entscheidung bei Sonny (§9 Nr. 16); Empfehlung:
+    Mock-Pfad sperren bis 8.9, Zwischenschutz sofort. **Sofort in Arbeit (19.09.):** CR-13 (Leser an vier
+    Routen), CR-20 (XML-Wächter mit saxen), CR-14 (Fragment), CR-16 (TCO-Validierung), CR-09-Zwischen-
+    schutz; CR-03/04 und CR-07 laufen bei den zwei Engine-Agenten. Reviewpaket liegt privat auf dem
+    Desktop (OneDrive) und enthält den Codeexport — nicht ins Repository.
+
 ### Hygiene, bevor die nächste Welle startet
     **Stand 18.09., Abend:** dev mit Produktions-Secrets — bewusst so lassen (Sonny); Bedingung „zweites Konto mit Schreibrecht" steht im QA-Register und in ROADMAP §9.
 

@@ -215,6 +215,7 @@ den alles Weitere gebaut wird.
 | 1.8 | **„My workspace" als List Report** (`DESIGN.md` §2.2, Mockup s7): Live-Filter, Tabelle mit Objektstatus, laufende Analyse mit Abbrechen, gescheiterter Lauf mit „Retry" und „Run without model", *Stale*; die Demo als erste Zeile und die Karte „Your turn", solange kein eigenes Projekt existiert (0.10). **Gebaut 16.09.2026 (`dev`):** hinter demselben Admin-Tor wie 1.5, bis 1.4 den Schalter baut; `/dashboard` bleibt für jedes Konto unverändert. `lib/workspace-rows.ts` druckt für ein nie analysiertes Projekt ein Wort statt einer Null — null ist nicht null Befunde —, die Demo ist die erste Zeile und trägt „partial", nie „handed over", *Stale* steht als Herkunfts-Chip neben dem Objektstatus und nicht als Status (§4.1), leer und „kein Treffer" sind zwei Komponenten mit zwei Sätzen, der Preis steht vor dem Klick, der Lauf zeigt Etappen statt Prozenten, und Abbrechen sagt, was es nicht erreicht. Neu in `components/cc/`: `ObjectIdentifier` und `Table`. `lib/analysis-run.ts` ist die eine Folge Evidenz → Narrativ → signierter Lauf, von zwei Bildschirmen aus startbar, damit eine aus der Tabelle gestartete Analyse keine andere Worklist erzeugt als eine aus der Stufe. `tests/workspace-list-report.spec.ts` liest die gerenderte Seite: neun Tests, jeder einzeln rot bewiesen | M |
 | 1.6 | **Kein Dark Mode:** Theme-Schalter in den Einstellungen und die `.dark`-Überschreibungen in `app/globals.css` entfallen, mit Guard (Entscheidung 15.09.2026; erledigt UX-023, UX-044, UX-061, UX-062). **Gebaut 16.09.2026 (`dev`):** was entfernt wurde, war nie ein Theme — 58 Zeilen `.dark`-Überschreibungen färbten mit `!important` eine handverlesene Liste von Utility-Klassen um, und alles, was die Liste nicht nannte, blieb hell: die Dashboard-Tabelle behielt ihren weißen Grund unter einem fast schwarzen Body. Weg sind die Überschreibungen, die 15 verbliebenen `dark:`-Varianten, der Light/Dark/System-Wähler, der Theme-Bootstrapper in der Shell, die `localStorage`-Kopie und jeder Griff nach `prefers-color-scheme`. Das Profilfeld `theme` bleibt stehen, dokumentiert als tot und von nichts mehr gelesen — es zu löschen wäre eine Migration von Kontodaten —, und die Einstellungen schreiben es nicht mehr. `tests/dark-mode-guard.spec.ts` prüft Quelle und Wirkung: `class="dark"` an `<html>` darf an rund 600 Elementen keine einzige Farbe bewegen; beide Hälften vorher rot gezeigt. Erledigt UX-023, UX-044, UX-061, UX-062 — die UX-Prüfung dieser Release sagte von außen dasselbe: die zitierten Stellen waren nie dunkel, sondern helle Flächen unter einem fast schwarzen Body | S |
 | 1.7 | **Ehrliche Kodierung bis zur Schale:** Stepper und Verification Rail zeigen „done" gleich, Grün nur für belegt; der Tenant-Tab heißt „Tenant-Verbindung prüfen", der Sperrhinweis steht einmal, mit dem BYOT-Freischaltweg (`DESIGN.md` §5.3, Entscheidung 15.09.2026). **Gebaut 16.09.2026 (`dev`):** die Verification Rail malte die Phase, auf der der Leser stand, grün, bevor sie irgendetwas anderes fragte — auf der Economics-Seite, die in dieser Fassung niemand abschließen kann, war der grüne Punkt das Sicherste auf dem Schirm, während der Stepper dieselbe Phase gelb zeigte; und fünf der sieben Grün standen für Arbeit, die nichts geprüft hat. `phaseTone` in `lib/workflow-steps.ts` ist jetzt die eine Regel für Stepper, Rail und Dashboard-Zeile: grün genau dann, wenn `RailStep.proven`. `done` bleibt, was es war, damit `workflowSummary().next` niemanden auf einer Phase parkt, die er nicht abschließen kann; die Position des Lesers ist keine Farbe mehr. Der Tenant-Tab heißt „Check tenant connection" (ADR-004), und der Sperrhinweis steht einmal statt dreimal — drei Absagen lesen sich wie drei verschiedene, und keine sagte, wie man die Verbindung bekommt; jetzt steht der BYOT-Weg dabei, samt dem Satz, dass eine BYOT-Freigabe G0:R0 nicht aufhebt. `tests/phase-honesty-guard.spec.ts` misst beide Oberflächen mit `getComputedStyle`; `tests/locked-paths-guard.spec.ts` verlangt jetzt genau einen Sperrhinweis statt mindestens drei | S |
+| 1.9 | **Korpus-Vergleicher mit Facettenstatus** (CR-05): je Facette Prüfstatus, Nenner und Umfang — „nicht geprüft" heißt nie *agree*; der echte `buildProcessSkeleton`-Output wird gebunden (Kanten, Guards, opake Bereiche, Ereignisse), Nachfolger typisiert 0/1/n/unknown geprüft, ein rein syntaktischer Ankercheck heißt *anchor_validation_passed*; die sechs Mutanten M01–M06 des Gegenreviews werden Ratsche — jeder muss in seiner Facette rot werden | M |
 
 **Fertig, wenn** jede Stufe ihren Referenzfall im Register besteht, ein Run ohne Key
 ein signiertes Pack liefert, die Schale für ein echtes Projekt mit ehrlichen Chips
@@ -239,6 +240,9 @@ Code-Karte darunter.
 | 2.10 | **Referenzkorpus v2.1 im Repository:** `docs/korpus/referenzkorpus-v2.1.md` (das Fallbuch mit Rahmen, Regelregister, Negativliste, Gegenreview, Autorenberichten) und `tests/korpus/cases/CC-nnn/` mit `source.abap`, `profile.json`, `expected.json` je Fall, erzeugt aus dem Fallbuch durch `scripts/korpus/build-bundle.mjs` (deterministisch, Quellenhashes geprüft). `tests/korpus-engine.spec.ts` lässt die Engine gegen alle 68 Fälle laufen und vergleicht Befunde, Level, Objekte, Skelettknoten; **Ratsche** wie bei abaplint: `tests/korpus/baseline.json` führt jede Abweichung mit Urteil (`engine-defekt` · `korpus-offen` · `nicht-vergleichbar`) und Grund, ein Fall, der übereinstimmte und es nicht mehr tut, macht den Lauf rot, eine still verschwundene Abweichung ebenfalls. Fundstellen aus öffentlichen Repositories stehen im Repository **nur als SHA-256 des Ausschnitts** — kein fremder Code, und auch kein Zeiger darauf: weder URL noch Commit-ID noch Pfad, denn elf von zwölf Quellen sind ohne Lizenz und die tragenden sind nach allen Indizien unautorisiert hochgeladene Arbeitgeberbestände. Dieses Repository ist öffentlich und Git vergisst nichts; ein Link mit Commit und Zeile wäre ein dauerhafter, indizierter Zeiger auf eine fremde Offenlegung, auch nachdem ihn jemand wieder herausnimmt. Der vollständige Nachweis liegt außerhalb. Gehalten von `tests/korpus-engine.spec.ts` („docs/korpus/ trägt keinen Zeiger auf ein fremdes Repository"), das auf jeden Hostnamen und jede 40-stellige Hex-Kette anschlägt. Die Fallquellen selbst sind durchweg **konstruiert** — kein Fall stammt aus einem Kundensystem. Der Korpus wird nie als Prompt- oder Trainingsmaterial des Modells verwendet, das er prüft | M |
 
 | 2.11 | **Was der Korpus an der Engine findet** (Grundlinie vom 17.09.2026, `tests/korpus/baseline.json`): 24 Engine-Defekte in drei Familien, dazu 134 Aussageklassen, die die Engine noch gar nicht produziert. Die Familien, nicht die Einzelfälle, sind die Arbeit. **Stand 18.09.2026: 1 Defekt übrig** (CC-050 · level — eine Produktentscheidung, kein Bugfix), 130 Aussageklassen noch nicht produziert — siehe unten | L |
+| 2.12 | **Wirkungsstatus im Grundmodell** (CR-06, nach Entscheidung §9 Nr. 15): `IN UPDATE TASK` = Registrierung, `COMMIT` = Anstoß, `ROLLBACK` = Verwerfen als Zustände des kanonischen Modells — Sichten verdichten, entfernen nicht; V1/V2, lokaler Update-Modus und `AND WAIT` nur im belegten Kontext; CC-026/CC-027 als Abnahme | S |
+| 2.13 | **Funktionale Methodenaufrufe als Wirkungsträger; „unreachable" nur mit Nachweis** (CR-07): `lo_stmt->execute_update( … )` in einer Zuweisung erscheint als Wirkungsknoten oder als ausdrücklich opake ausführbare Aufgabe mit SQL-/Quellenbezug; `CATCH` bleibt als möglicher Pfad verbunden, ohne Kontrollflussnachweis *unknown/not-modelled* — CC-034 als Abnahme; in Arbeit seit 19.09.2026 | S |
+| 2.14 | **Einstieg wählen** (CR-08): Methode, FORM oder Dynpro-Ereignis als Startpunkt; der Mehrdatei-Fall fordert fehlende Includes nach; ein Interface-only-Upload meldet „nicht anwendbar" mit Erklärung statt 0 Schritte — am 18.09. hatten 9 von 74 Korpusquellen keinen Einstieg | M |
 **Zwei Nachzieher an 2.6, gefunden beim Bau von 2.9 (18.09.2026):**
 
 - **Ein Wächter ist keine Verzweigung.** Ein führendes `CHECK p_rfc = abap_true.`
@@ -413,7 +417,7 @@ falsch machen.
 Protokoll aus 4.3 mit Datum im Repo liegt und keine Seite mehr behauptet, als dieses
 Protokoll deckt.
 
-### Phase 5 — v2.15 „Teilen" — **vollständig, 18.09.2026**
+### Phase 5 — v2.15 „Teilen" — **Einladungen implementiert (18.09.2026); Ende-zu-Ende-Leseabnahme offen (CR-13 → 5.6)**
 
 Mockup Screen 1: „Share with members" und die Avatarreihe; Screen 4: „Members on
 this case".
@@ -438,6 +442,7 @@ Projekten hinterlässt.
 | 5.3 | **Annehmen:** angemeldet, Terms akzeptiert (vorhandener Zustimmungsweg), Konto-E-Mail gleich eingeladener Adresse und bestätigt. Google-Login gilt als bestätigt; ein Passwortkonto bekommt in diesem Moment eine Bestätigungsmail — die Registrierung selbst ändert sich nicht | M |
 | 5.4 | **Einsicht:** die eingeladene Person liest das Projekt vollständig, **inklusive ABAP-Quellcode**. Generieren, Bestätigen, Signieren und Exportieren bleiben beim Besitzer. `firestore.rules`: lesen darf der **Besitzer oder eine angenommene Einladung** — der Administrator nicht (siehe unten) — **Regel-Deploy vor der App** | M |
 | 5.5 | **Übersicht und Widerruf:** der Besitzer sieht, wer seit wann Einsicht hat, und widerruft; wirksam sofort | S |
+| 5.6 | **Ende-zu-Ende-Leseabnahme** (CR-13): Owner, eingeladener Leser, Nicht-Eingeladener, widerrufener Leser und Admin-Claim ohne Mitgliedschaft über alle GET- und Schreibrouten — Prozesskarte, Benennung, Revisionen, Zustände, Export, Widerruf; Leser sehen die geteilte Revision, ändern und starten nichts. Am 19.09. verlangten die vier Prozessrouten auch bei GET den Eigentümer; das ist die Reparatur, die Abnahme ist der Test über alle Rollen | S |
 
 **Fertig, wenn**
 - ein weitergeleiteter Link für ein anderes Konto nichts öffnet (C23-A14);
@@ -467,8 +472,9 @@ Mockup Screens 1–4: Umschalter, Ebenen, Status-Chips, nächster Schritt, Suche
 | 6.4 | **Management-Sicht auf dasselbe Projekt:** was bestätigt ist, was fehlt, was eine Entscheidung binden würde; **Clean Core Score mit Regelversion und Verlauf** — ein Verlauf vergleicht nur Runs derselben Regelversion — kein Portfolio. **Die Darstellung dieser Sicht ist Schritt 3.0.10** (Diagramme, Übersichtsschirm, „nicht bestimmt" als eigene Fläche): hier entstehen die Antworten, dort ihre Form — wer 6.4 baut, liest 3.0.10 mit, damit die Zahlen von Anfang an die Abdeckung mitführen, die das Diagramm zeigen muss | M |
 | 6.5 | **Nächster Schritt:** regelbasiert der nächste offene Punkt mit Grund, ohne Modellaufruf | S |
 | 6.6 | **Suche im Projekt** (⌘K) über Elemente, Regeln, Findings, Zeilen und Glossar; **Glossar zum Start** nach `DESIGN.md` §6.1 (SAP- und Produktbegriffe, Quelle je SAP-Begriff), auch in „Ask this case": Fachwörter mit Popover, „What is …?" aus dem Eintrag ohne Modellaufruf (Entscheidung 15.09.2026) | M |
-| 6.7 | **Public-Cloud-Fit und vier Töpfe:** welche Objekte des Projekts in Public Cloud keinen Weg haben (nur Tier 3) und damit die Deployment-Entscheidung blockieren; Einordnung jedes Objekts in Retire · Keep · Rebuild · **Blocked by SAP** (kein freigegebenes API, kein Nachfolger) — der vierte Topf trennt eigene Hausaufgaben von SAPs Roadmap. Abgeleitet aus Katalog und Level, jede Zuordnung mit Beleg (Feedback 15.09.2026). Regeln nach `DESIGN.md` §5.6 (Entscheidung 15.09.2026): abhängig von der Zielplattform; Retire nur aus bestätigtem Drop oder null Nutzung über ≥ 13 Monate, mit Quelle, Zeitraum und Jahresabschluss sichtbar; Blocked nur für Katalogobjekte ohne freigegebenen Nachfolger, Modifikationen sind Rebuild | M |
+| 6.7 | **Public-Cloud-Fit und vier Töpfe:** welche Objekte des Projekts in Public Cloud keinen Weg haben (nur Tier 3) und damit die Deployment-Entscheidung blockieren; Einordnung jedes Objekts in Retire · Keep · Rebuild · **Kein katalogisierter Pfad** (kein freigegebenes API, kein Nachfolger — mit Datenbasis und Datum; „Blocked by SAP" heißt es erst mit bestätigtem Bedarf, Zielprofil und geprüften Alternativen, CR-18) — der vierte Topf trennt eigene Hausaufgaben von SAPs Roadmap. Abgeleitet aus Katalog und Level, jede Zuordnung mit Beleg (Feedback 15.09.2026). Regeln nach `DESIGN.md` §5.6 (Entscheidung 15.09.2026): abhängig von der Zielplattform; Retire nur aus bestätigtem Drop; null Nutzung über ≥ 13 Monate ergibt einen **Retire-Kandidaten** (offene Prüfung) mit Quelle, Zeitraum und Erfassungsart — ein Jahreswechsel im Fenster ist Kalenderinformation, kein erfasster Jahresabschluss (CR-17); Blocked nur für Katalogobjekte ohne freigegebenen Nachfolger, Modifikationen sind Rebuild | M |
 | 6.8 | **„Ask this case" über die eingebettete Hilfe-KI** (Entscheidung Sonny 15.09.2026): kein zweiter Chat — der vorhandene Assistent (`components/GlossaryChatbot.tsx`, `lib/chatbot-knowledge.ts`) wird für 3.0 ausgebaut. Im Projekt antwortet er nur aus der Evidenz des Projekts, jede Aussage mit Anker, Herkunft *Model proposal*; außerhalb eines Projekts bleibt er Produkt- und SAP-Hilfe. Die vorab beantwortete Frage aus den Verzweigungen des Codes (2.7) und Glossar-Antworten ohne Modellaufruf (6.6) laufen durch denselben Assistenten. Zählt nicht aufs Kontingent; Modelltext durch `lib/model-text.ts` (1.5) | M |
+| 6.9 | **Revisionshinweis im Arbeitsraum** (CR-15) und **Fragmentanker über den Sichtwechsel** (CR-14): Revisions-Badge, kostengünstige Standprüfung bei Fokus, Reload und vor jeder schreibenden Aktion, Änderungsbanner mit „alten Stand behalten / aktualisieren"; `setView`/`setFocus` erhalten `#fragment` — derselbe Gegenstand, anderer Blick, gleicher Ort | S |
 
 **Fertig, wenn** W22-A01/A02 (ein Wechsel erhält Element, Revision und Auswahl und
 erzeugt keine neue Hypothese), ein Wechsel keinen Modellaufruf auslöst und ein Guard
@@ -484,11 +490,13 @@ Mockup Screen 2.
 | 7.1 | **ATC-Import** neben dem vorhandenen Nutzungsimport; importierte Findings mit der Engine abgeglichen | M |
 | 7.2 | **Standardabdeckung je Fähigkeit** mit Evidenzstufe E0–E4: ein Kataloglink ergibt höchstens E1, ein Scope Item ist eine zu prüfende ID, ein fehlender Katalogtreffer beweist nichts | M |
 | 7.3 | **Gegenprobe-Szenarien** aus dem bestätigten Bedarf, **als Given/When/Then mit Testdatenbedarf**, damit Fachbereiche sie ohne ABAP prüfen; Testing speichert Verdikte als Receipt mit Umfang, Umgebung und Stubs | M |
-| 7.4 | **Optionen mit Kosten** nur aus einer Annahmenrevision; **„Nichts tun" als Vergleichsoption** (Regressionstest je Release, Upgrade-Verzug) und die Empfindlichkeit der Annahmen; kein Kostensieger, solange eine Option unvollständig ist. **Pflichtfelder** (Entscheidung 15.09.2026, ADR-035): Währung ohne Vorgabe, zwei Tagessätze (Entwicklung, Test/Key User), Betrachtungszeitraum ohne Vorgabe, Release-Takt nur bestätigt, je Option einmaliger Aufwand als Spanne und laufender Aufwand je Release, Wartungs-Baseline für Keep und Nichts tun; kein Feld aus einem Modell, die festen Aufwandsfaktoren je 1.000 Zeilen nur als bestätigungspflichtiger Vorschlag | M |
+| 7.4 | **Optionen mit Kosten** nur aus einer Annahmenrevision; **„Nichts tun" als Vergleichsoption** (Regressionstest je Release, Upgrade-Verzug) und die Empfindlichkeit der Annahmen; kein Kostensieger, solange eine Option unvollständig ist. **Pflichtfelder** (Entscheidung 15.09.2026, ADR-035): Währung ohne Vorgabe, zwei Tagessätze (Entwicklung, Test/Key User), Betrachtungszeitraum ohne Vorgabe, Release-Takt nur bestätigt, je Option einmaliger Aufwand als Spanne und laufender Aufwand je Release, Wartungs-Baseline für Keep und Nichts tun; kein Feld aus einem Modell, die festen Aufwandsfaktoren je 1.000 Zeilen nur als bestätigungspflichtiger Vorschlag **Vor 8.4** (Gegenreview c5085bb, §8.3): die Optionsrechnung steht, bevor die Entscheidung sie bindet; Domainvalidierung sofort — keine negativen Beträge, Score nur in 0–100, Rundung erst bei der Darstellung (CR-16) | M |
 | 7.5 | **Prüfaufträge statt Scheinwissen:** zu kurzes Nutzungsfenster, fehlendes Include, dynamischer Aufruf werden Aufgaben, keine Urteile | S |
 | 7.6 | **Was sich für Nutzer ändert:** welche Transaktion oder App den Schritt heute trägt und künftig, was anders aussieht, wo Schulung nötig ist — als Evidenzstufe wie 7.2, nie als Behauptung (Feedback 15.09.2026) | M |
 | 7.8 | **Anpassungsoptionen zum Standard, direkt am Element** (Entscheidung Sonny 16.09.2026): in der Business-Sicht zeigt jedes Element mit Standardkandidat unmittelbar, welche Anpassung des Prozesses näher an Fit-to-Standard führt — in der Prozesskarte (Map wie Steps, 2.5), in der Prozesskette bzw. Phasenübersicht (2.9) und in den Standard-Fit-Tabellen (7.2; Screens s1 und s3). **Je Betriebsmodell:** in Public Edition nur, was mit dem Scope Item und Key-User-/Developer-Extensibility ohne Modifikation geht; in Private Edition/RISE zusätzlich die Wege, die dort erlaubt bleiben (klassische Erweiterung, Modifikation als benannte Abweichung mit Upgrade-Folge). Jede Option nennt den Prozessschritt, der sich ändert, das Scope Item als zu prüfende ID, die Evidenzstufe E0–E4 aus 7.2, was sich für Nutzer ändert (7.6) und, sobald 7.4 eine Annahmenrevision hat, ihre Kosten neben „Nichts tun"; ohne Standardkandidat steht *Not determined* mit Grund (7.5), nie ein erfundener Weg. Eine gewählte Option wird Soll-Vorschlag in 3.6 (Ist und Soll) und Entscheidung je Element in 3.5 — nie eine automatische Änderung. Abgestimmt mit den vier Töpfen aus 6.7: „Blocked by SAP" hat keine Anpassungsoption, nur den Verweis auf SAPs Roadmap. Deterministisch aus Katalog, Level und Scope-Item-Zuordnung; das Modell formuliert höchstens die Klarsprache, mit Anker und Herkunft *Model proposal* | M |
 | 7.7 | **Prüfhinweise Compliance:** deterministische Hinweise auf personenbezogene, steuer- oder revisionsrelevante Daten aus den gelesenen Tabellen — sie bestimmen Prüftiefe und Testpflicht, sind aber Hinweise, keine Einstufung (Feedback 15.09.2026) | S |
+| 7.9 | **Zwei Dimensionen je Katalogobjekt** (CR-01): klassischer Freigabestatus und ABAP-Cloud-Verwendbarkeit getrennt sichtbar, Nachfolger benannt (CL_HTTP_UTILITY: klassisch freigegeben · Cloud: nicht freizugeben · Nachfolger CL_WEB_HTTP_UTILITY); der Grad bleibt der Clean-Core-Zielbezug (Entscheidung §9 Nr. 18) und sagt das am Objekt; `deprecated` ohne Nachfolger ist eine Prüfung, kein automatisches D | S |
+| 7.10 | **Zielprofil als Eingabe** (CR-02): Edition, Sprachversion je Objekt, Release-/Komponentenstand, Katalogsnapshot und Regelversion als versioniertes `AssessmentProfile` durch Analyse, Kataloglookup, Ergebnis, Entscheidung und Receipt; nicht abgedeckte Profile werden sichtbar abgelehnt oder als unbestätigt geführt; ein Profilwechsel ändert den Subject-Hash und entwertet abhängige Freigaben; ein Latest-Eintrag ersetzt keinen älteren Release-Snapshot still | L |
 
 **Fertig, wenn** V25-A02 (beide Katalogsichten mit Vorrangregel und Regelversion),
 V25-A05 (zu kurzes Fenster erzeugt einen Prüfauftrag), V25-A06 und W22-A15/A16
@@ -509,6 +517,9 @@ Mockup Screens 3, 4 und 5 (linke Spalte).
 | 8.4 | **Entscheidung:** bindet Bedarf, Option, Kostenrevision und Vertrag; Bedingungen mit Status; Zeitleiste; **umkehrbar ja/nein**. Bestätigt vom Konto — „Selbstauskunft, kein organisatorisches Mandat" | M |
 | 8.5 | **Nachweiskette und Übergabepaket:** Anforderung → Entscheidung → Receipt → Lieferartefakt; das Signaturmanifest nennt `covers[]`; der vorhandene Offline-Verifier prüft es | M |
 | 8.6 | **Steering-Einseiter:** eine Seite (PDF) mit ausschließlich Zahlen, die per Link zur Evidenz führen, jede mit ihrer Abdeckung, und der Spalte „nicht bestimmt" (Feedback 15.09.2026) | M |
+| 8.7 | **Reparaturentwürfe serverseitig** (CR-10): unveränderlicher Entwurf mit Parent-Revision, Code-/Suite-Hash und Draft-ID; der Runner führt genau diesen Entwurf aus, Übernahme nur per Compare-and-swap, Receipt an den tatsächlich ausgeführten Stand gebunden — heute hält der Client die Reparatur nur im Speicher und der Runner liest nur den gespeicherten Stand, der Retry läuft also gegen den alten Code; bis 8.7 ist Auto-Healing gesperrt statt still wirkungslos | M |
+| 8.8 | **Freigabe an den gelesenen Run gebunden** (CR-11): `expectedRunId` und Evidenz-Digest im Command `approve-architecture`, Vergleich in derselben Transaktion, 409 mit verständlichem Diff bei Abweichung, nie stilles Umhängen auf den neuesten Stand — Vorbedingung von 8.4 | S |
+| 8.9 | **Isolierter Test-Runner** (CR-09, Entscheidung §9 Nr. 16): eigener Cloud-Run-Dienst oder Job mit einem Service-Konto ohne Rollen, ohne App-Secrets, eigener Dateisystem- und Netzgrenze; der Mock-Pfad läuft dort oder gar nicht; Ergebnisnachweise stammen vom isolierten Worker; ein autorisierter Negativtest auf dem Deploymentprofil erreicht weder fremde Dateien noch Zugangsdaten — bisher „nach 3.0, ohne Version" | M |
 
 **Fertig, wenn** C23-A29 (manipulierte Evidenz wird erkannt), V25-A11
 (Offline-Verifikation mit `covers[]`), W22-A17 (Export ist keine Übernahme) und
@@ -543,6 +554,12 @@ nicht gebaut, sondern durchgeführt wird — **und nicht ohne die Management-Sic
 einem Satz beantwortet, die vier Töpfe und der Readiness-Verlauf als Diagramm, „nicht
 bestimmt" in jedem davon als eigene Fläche, jede Zahl mit ihrer Abdeckung und als Text
 erreichbar, Kosten nur als Simulation mit Annahmenrevision.
+
+**Abnahmeordnung vor 3.0 (Gegenreview c5085bb, aufgenommen 19.09.2026):** nicht ein Korpusfall
+durch den ganzen Fluss, sondern **drei vollständige Wege** — Standardübernahme, gezielte
+Erweiterung, Stilllegung — plus ein Fall, der fachlich unentscheidbar bleibt und genau so
+dargestellt wird, jeder mit Negativproben (falsche Belege, fehlerhafte Generierung, Zugriffs-
+und Revisionswechsel). Reihenfolge und Mindestabnahmen G0–G4 in §15.
 
 ---
 
@@ -713,7 +730,7 @@ ist, wie Signavio mit fremden `extensionElements` umgeht** — genau das klärt 
 | **3.4** | Musterbibliothek (CC-BY, nur nach Veröffentlichungsreview) |
 | **3.5** | Beobachtete Wirkung gegen die eingefrorene Kostenrevision (Screen 5 rechts) · Multi-Provider-BYOK |
 | **Kandidaten (Feedback 15.09.2026)** | Code-Anonymisierung vor dem Modellaufruf · CLI/API, die Pull Requests gegen Clean-Core-Regeln prüft (Shift-Left) · Aufwandsschätzung aus Metriken, erst mit Kalibrierung aus der Bench |
-| ohne Version | Bench veröffentlichen, fairer Vergleich, Teamabnahme — brauchen Termine mit Dritten, keine Entwicklungszeit · Runner-Isolation (`E08-F01-US01`) als eigener Auftrag, der den gesperrten Live-Testmodus zurückgibt |
+| ohne Version | Bench veröffentlichen, fairer Vergleich, Teamabnahme — brauchen Termine mit Dritten, keine Entwicklungszeit · Runner-Isolation: seit 19.09.2026 vor 3.0 als 8.9 (CR-09)|
 
 ---
 
@@ -819,6 +836,10 @@ ersetzt.
 | 12 | **Kommentarzeilen zählen als LOC in der Komplexität** | `computeComplexityScore` (`lib/abap/code-assessment.ts`) zählt Kommentar- und Fortsetzungszeilen: `Z_MM_PO_APPROVAL` steigt von 8 auf 9, wenn vor jeder Zeile ein Kommentar steht. Gefunden durch die metamorphe Eigenschaft P3 (`tests/abap-metamorphic.spec.ts`). Ändern heißt, eine Zahl zu ändern, die jeder signierte Run speichert |
 | 13 | **QA-Delta-Review: Budget gegen große Diffs** | Ein Diff, der allein das Budget eines Modellaufrufs übersteigt, wird nie gelesen — `tests/abap-metamorphic.spec.ts` (52.712 Zeichen) hält seit `04b4684` den Checkpoint auf `a19945e`, und in der Vollprüfung traf es `analyze/page.tsx` mit 172.900 Zeichen. Der Checkpoint hing heute schon einmal 41 Commits lang fest (44a8715 → a19945e) und wurde mit sechs `workflow_dispatch`-Scheiben nachgezogen, ohne das Budget anzufassen. Optionen: das Budget je Aufruf für einzelne Dateien heben, Test-Dateien mit eigenem Budget lesen, oder große Dateien in Abschnitten reviewen. Jede davon ändert `scripts/qa/lib/config.mjs` oder `review.mjs` — Agentenmaschinerie, braucht dein Go |
 | 14 | **Scope Items als Registry-Eintrag (7.2/7.8)** | SAP stellt keinen maschinenlesbaren Gesamtbestand öffentlich bereit (geprüft 18.09.2026 inkl. Community: Process Navigator hinter Login, rapid.sap.com tot, Excel-Export widersprüchlich beschrieben). Bleiben: Eintrag aus dem Konto (Weg 1) oder ein vom Betreiber gezogener Export. **Stand 18.09.2026, Abend: Sonny holt einen Signavio-Export; bis dahin warten (BACKLOG 27).** |
+| 15 | **Wirkungsstatus im Grundmodell — Transaktionssemantik (CR-06)** | Heute: `IN UPDATE TASK` als normale Aufgabe, `COMMIT`/`ROLLBACK` nur als Notiz („Commit nur im Technical Overlay", `DESIGN.md`). Das Gegenreview zeigt an CC-026, dass die Business-Sicht so eine nicht abgeschlossene Wirkung als erledigte Aufgabe liest. **Empfehlung:** Registrierung, Anstoß und Verwerfen als Zustände des kanonischen Modells; Sichten verdichten. Schritt 2.12 wartet auf das Ja. |
+| 16 | **Isolationsgrenze des Mock-Test-Runners (CR-09)** | Das Gegenreview belegt lokal, dass die Node-Permission-Grenze nicht hält (Details privat im Reviewpaket); die Roadmap führte die Runner-Isolation bisher unter „nach 3.0, ohne Version". **Empfehlung:** vor 3.0 als 8.9 — und bis dahin den Mock-Pfad sperren wie den Live-Pfad, mit Grund im Interface; Zwischenschutz (Builtin-Allowlist, Ladehaken, `fetch` geschlossen) sofort, ohne ihn als Grenze zu verkaufen. Blast Radius im Bericht vom 19.09. |
+| 17 | **Produktpositionierung 3.0: Einsicht (A) oder kleiner Teamraum (B)?** | Das Gegenreview empfiehlt B — Antwort am Artefakt und an einer Revision (Thread, Erwähnung, Auflösen, getrennte Bestätigung; kein Chat, keine Rollenverwaltung); §8 schließt Kommentieren seit 15.09. aus. **Empfehlung:** 3.0 als A vermarkten — „Einsicht per Einladung", nie „gemeinsam entscheiden im Produkt" — und B als 3.1-Kandidat auf derselben Autorisierungs- und Journalbasis; nicht beides halb. |
+| 18 | **Grade-Definition (CR-01): Clean-Core-Zielbezug oder klassische Nutzbarkeit?** | `CL_HTTP_UTILITY` ist klassisch freigegeben (B) und in ABAP Cloud nicht freizugeben (D, Nachfolger `CL_WEB_HTTP_UTILITY`); SAPs Beispiel ordnet klassisch B. Der Code entschied D bewusst (21 von 22 Overlap-Objekten haben einen Nachfolger). **Empfehlung:** der Grad bleibt der Zielbezug, beide Dimensionen stehen daneben (7.9), die Definition steht am Objekt. |
 
 **Offen für Sonny:** 7, 8, 9, 10, 11, 12 und 13. Keiner blockiert ein
 Release; sie stehen hier, damit sie nicht neu gesucht werden müssen. 10 bis 12
@@ -1548,3 +1569,65 @@ Einplanung: **0.14** Sicherheit (15 Fingerabdrücke, Titel zurückgehalten) · *
 | fae6b4d2b2d0 | medium | app/survey/[token]/SurveyClient.tsx | Confirming an emailed preselection clears it for multi-select questions | — | widerlegt |
 | 8ccb1b1b765b | low | app/survey/[token]/page.tsx | *(Titel bis zur Auslieferung zurückgehalten — Integrität)* | 0.16 | eingeplant |
 | bcbe2c770c8a | low | tests/workflow-style-guard.spec.ts | Rendered seven-stage style check omits the TCO stage | 0.17 | eingeplant |
+
+## 15. Gegenreview c5085bb (18.09.2026) — Aufnahme
+
+Sonny hat den vollständigen Codeexport von `c5085bb` extern prüfen lassen. Das Paket
+(`clean-core-review-c5085bb.zip`, privat, mit dem Export selbst) hat — anders als die drei
+Agenten — Funktionen wirklich ausgeführt: Router, Klassifikation, Skelett- und BPMN-Generator auf
+72 Korpusquellen, TCO-Modell, XML-Wächter, den Korpus-Vergleicher mit sechs Mutanten und eine
+lokale Node-Permission-Probe; dazu zwölf SAP-/Anbieter-Primärquellen. 20 Befunde (14 P1, 6 P2),
+eine eigene 3.0-Reihenfolge (G0–G4) und eine Marktbewertung. Jeder Punkt wurde am 19.09. am
+Code nachgeprüft; das Urteil steht hier, die Schritte in den Phasentabellen.
+
+**Die Freigabeempfehlung des Reviews** — weiterentwickeln, Stärken bewahren, den Stand nicht als
+durchgängig belastbare 3.0-Entscheidungsplattform vermarkten — ist deckungsgleich mit §4 „Stand".
+
+| ID | Befund | Urteil am Code | Übernahme |
+|---|---|---|---|
+| CR-01 | Classic-/Cloud-Präzedenz | teils: D ist bewusst (Kommentar in `abcd-classification.ts`, 21/22 Overlap-Objekte mit Nachfolger) und für den Cloud-Zielbezug vertretbar; unbestritten fehlt die zweite Dimension | 7.9 · Entscheidung §9 Nr. 18 |
+| CR-02 | Kein Zielrelease-Vertrag | bestätigt (Design): Katalog „latest" global, Run signiert nur Katalog- und Regelversion | 7.10 (L, vor 3.0 — G0) |
+| CR-03 | Public Edition erzwingt CAP | bestätigt, Tatsachenfehler: Developer Extensibility hat eigene Tabellen on-stack (SAP Learning) | Router-Fix in Arbeit 19.09. (Agent), Ratsche geprüft |
+| CR-04 | Standard-Fit aus Schreibzugriffen | bestätigt: technische Beobachtung als fachliche Antwort | Router-Fix in Arbeit 19.09.; den Fit tragen 7.2/7.3 |
+| CR-05 | Korpus-Ampel prüft nicht, was sie sagt | bestätigt (sechs Mutanten bleiben *agree*) | 1.9 |
+| CR-06 | Verbuchung zu früh als Aufgabe | Designentscheidung, Empfehlung: annehmen | §9 Nr. 15 → 2.12 |
+| CR-07 | ADBC-Wirkung fehlt, CATCH „unreachable" | bestätigt (Generatorlauf CC-034) | 2.13, in Arbeit 19.09. (Agent) |
+| CR-08 | Kein Einstieg für Methoden/Exits/Dynpro | bestätigt (9 von 74 ohne Einstieg) | 2.14 |
+| CR-09 | Mock-Runner ohne belastbare Grenze | bestätigt; Minimal-Umgebung ohne Secrets ist da, die Grenze hält trotzdem nicht (Details privat) | §9 Nr. 16 → 8.9; Zwischenschutz sofort |
+| CR-10 | Auto-Healing gegen serverautoritären Runner | bestätigt an beiden Kommentaren: der Retry läuft gegen den alten Stand | 8.7; Auto-Healing bis dahin gesperrt |
+| CR-11 | Freigabe nicht an den Run gebunden | bestätigt (Validator ohne `expectedRunId`) | 8.8 |
+| CR-12 | Transformation folgt der Empfehlung | bestätigt — steht als 8.3 | 8.3, unverändert |
+| CR-13 | Eingeladene Leser scheitern an vier Routen | bestätigt (`project.userId !== uid` auch bei GET) | sofort; 5.6; Phase-5-Kopf umformuliert |
+| CR-14 | Sichtwechsel verliert `#fragment` | bestätigt (`router.push('?…')`) | sofort; 6.9 |
+| CR-15 | Kein Revisionshinweis im Arbeitsraum | bestätigt (Design) | 6.9 |
+| CR-16 | TCO: negative Werte, frühe Rundung | teils: Finite-Prüfungen da, Vorzeichen und Score-Intervall nicht, Rundung früh | sofort (Validierung); 7.4 |
+| CR-17 | Nullnutzung → endgültig Retire | bestätigt | 6.7 umformuliert; Umsetzung folgt |
+| CR-18 | Kein Katalogpfad → „Blocked by SAP" | bestätigt | 6.7 umformuliert; Umsetzung folgt |
+| CR-19 | Alte Dokumentation, zweite Prozesswahrheit | bestätigt — steht als 3.0.5 | 3.0.5, unverändert |
+| CR-20 | XML-Regex: kaputt akzeptiert, Default-Namespace abgelehnt | bestätigt (drei Proben nachvollzogen) | sofort (saxen, ohne neue Abhängigkeit) |
+
+**Nicht übernommen, mit Grund.** (a) CR-01 als Grade B: der Grad ist der Clean-Core-Zielbezug,
+nicht die klassische Nutzbarkeit — beides zu zeigen ist die Antwort, nicht der Wechsel der
+Definition (Sonnys Entscheidung, Nr. 18). (b) Die Mockups als Nachweis-Ersatz zu verwerfen, ist
+richtig — und schon so geplant: 3.0.6 verlangt echte Produktansichten. (c) Der Pilot mit zwölf
+neuen Fällen und einem unabhängigen Reviewer (§11 des Reviews) ist kein Entwicklungsschritt; er
+steht in §7 unter „ohne Version" neben Bench und fairem Vergleich, jetzt mit den acht Messgrößen
+des Reviews als Vorlage. (d) Die Marktbewertung (§10) ändert keinen Schritt; ihre These — die
+Differenzierung liegt im geringeren Übersetzungs- und Koordinationsaufwand pro belastbarer
+Entscheidung, nicht in Sichten, BPMN, Audit oder „kostenlos" — ist die von §1 und wird zur
+Messlatte für 3.0.6 und 3.0.10.
+
+**Abnahmeordnung G0–G4 (übernommen; Zuordnung zu unseren Schritten):**
+
+| Gate | Zweck | Schritte | Mindestabnahme |
+|---|---|---|---|
+| G0 — richtige, widerlegbare Antworten | Klassifikation, Zielprofil, Prozesssemantik, echte Vergleicherfacetten | 1.9 · 2.12 · 2.13 · 7.9 · 7.10 · Router (CR-03/04) | Overlap-Fall klassisch B/Cloud nicht; deprecated mit und ohne Nachfolger; gleiche Quelle unter zwei Profilen; Public-Tabelle mit Developer Extensibility; ADBC mit Fehlerpfad; `IN UPDATE TASK` mit und ohne Commit; die sechs Mutanten rot |
+| G1 — Vertrauensgrenzen | Autorisierung, revisionsgebundene Commands, Runner | 5.6 · 8.7 · 8.8 · 8.9 | Owner/Reader/Widerruf/Admin-Claim über alle Routen; A lesen, B aktivieren, A freigeben → 409; Reparaturentwurf mit neuer Identität; Nachweis nur vom isolierten Worker |
+| G2 — ein konsistenter Arbeitsgegenstand | Sichtwechsel, Einstieg, Prozess und Dokumentation auf einem Stand | 2.14 · 6.9 · 3.0.5 · sofort (CR-14, CR-20) | Business → IT → Management → zurück: Auswahl und Revision identisch, auch nach Reload; Tab B erzeugt Revision, Tab A bekommt den Hinweis; XML-Wohlgeformtheit und fachliche Gültigkeit als getrennte Zustände |
+| G3 — erst entscheiden, dann bauen | Bedarf, Gegenprobe, Optionskosten, verbindliche Architektur | 7.2 · 7.3 · 7.4 (vor 8.4) · 7.8 · 8.2–8.4 · 6.7 (Kandidat ≠ bestätigt) | kein Standard-Fit aus Altkonstrukt; keine bestätigte Stilllegung aus Nutzung allein; die Entscheidung bindet Bedarf und Kostenrevision |
+| G4 — bewiesene Übergabe | Generatorvertrag, Receipts, Handover, Interoperabilität, Copy | 8.3 · 8.5 · 8.6 · 4.3 · 3.0.6 | drei vollständige Wege plus der offen bleibende Fall, je mit Negativproben; lizenzierter Signavio-Import protokolliert; Screen-, Zugriffs- und Performanceprüfung an echten Ansichten |
+
+Was das Review über die Roadmap sagt und hier gilt: „Teilen vollständig" war zu weit (Kopf
+umformuliert); 7.4 gehört vor 8.4 (vermerkt); die vier Töpfe sind Kandidaten, bis jemand
+bestätigt (6.7); Transaktionswissen bleibt im Grundmodell (Nr. 15); Sicherheitsgrundlagen werden
+nicht nach 3.0 verschoben, weil sie infrastrukturell unangenehm sind (Nr. 16, 8.9).
