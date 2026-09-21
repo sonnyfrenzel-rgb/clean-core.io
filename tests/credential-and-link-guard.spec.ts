@@ -44,7 +44,7 @@ test.describe('a credential in the source is reported as one', () => {
   });
 
   test('the key no longer silences the hardcoded-value detector beside it', () => {
-    // The exact shape the exclusion swallowed: one statement, a key and a path.
+    // The exact shape the exclusion swallowed: a key and a path.
     const source = [
       'REPORT z_both.',
       `DATA lv_cfg TYPE string VALUE '${KEY}'.`,
@@ -54,6 +54,21 @@ test.describe('a credential in the source is reported as one', () => {
     ].join('\n');
     const kinds = buildAbapEvidence(source, 'z_both.abap').findings.filter((f) => f.kind === 'hardcoded-value');
     expect(kinds.length, 'the key and the path did not both produce a finding').toBeGreaterThanOrEqual(2);
+  });
+
+  test('and no finding prints the key, not even the one that is about the path', () => {
+    // The first version of this guard put the key and the path in *separate*
+    // statements and so never saw the case it was meant to hold: with both in
+    // one statement, the environmental detector reports that statement as its
+    // snippet and printed the key the credential finding had just withheld
+    // (QA review of 9d7721972a67). Redaction now happens once, where a finding
+    // is collected, so every detector is covered.
+    const oneStatement = `REPORT z_one.\nDATA lv_cfg TYPE string VALUE '${KEY}' ##NO_TEXT. "and 'C:\\out.txt'\nSTART-OF-SELECTION.\n  WRITE lv_cfg.`;
+    const together = `REPORT z_two.\nCONCATENATE '${KEY}' 'HTTP://host/x' INTO DATA(lv_all).`;
+    for (const [name, source] of [['one statement', oneStatement], ['key and URL in one statement', together]] as const) {
+      const report = buildAbapEvidence(source, 'z.abap');
+      expect(JSON.stringify(report.findings), `${name}: a finding printed the key`).not.toContain(KEY);
+    }
   });
 
   test('the exclusion is gone from the source, not merely out-voted', () => {

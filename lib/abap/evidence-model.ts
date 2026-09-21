@@ -132,6 +132,32 @@ const ROUTE_NOTE: Partial<Record<DependencyRoute, string>> = {
   'logical-database': ' The rows are read by a logical database (GET); the SELECT runs there, not in this source.',
 };
 
+/**
+ * Credential-shaped literals, removed from anything a report prints.
+ *
+ * A finding's snippet is the line it found, and the line may be the one holding
+ * a key. A report that quotes a secret carries it to everyone the report
+ * reaches — the audit pack, the export, the model prompt, the screen — which is
+ * a wider audience than the source ever had. The anchor still says where to
+ * look, and the reader who may see the key has the file.
+ *
+ * Shapes, not entropy: a guess based on how random a string looks would redact
+ * ABAP identifiers and miss a short token. These are the prefixes that are
+ * unambiguous, and the list is meant to grow rather than to be complete — the
+ * detector that reports the key is the safety net, this is the muzzle.
+ */
+export function redactCredentials(snippet: string | undefined): string {
+  if (!snippet) return snippet ?? '';
+  return snippet
+    // Google API keys (AIzaSy…), the shape the credential detector reports.
+    .replace(/\bAIzaSy[0-9A-Za-z_\-]{10,}/g, 'AIzaSy…<redacted>')
+    // Bearer-ish and generic long secrets behind an obvious key word.
+    .replace(/\b(sk-|ghp_|gho_|github_pat_)[0-9A-Za-z_\-]{10,}/g, '$1…<redacted>')
+    // A password or token assigned to a literal in ABAP.
+    .replace(/\b(PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY)\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']{4,})'/gi,
+      (_m, word, mid) => `${word}${mid}'…<redacted>'`);
+}
+
 export function buildAbapEvidence(code: string, fileName: string, deployment?: 'public' | 'private'): AbapEvidenceReport {
   const findings: EvidenceFinding[] = [];
   const statements = tokenize(code);
@@ -163,6 +189,15 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
   const addFinding = (finding: Omit<EvidenceFinding, 'id' | 'source'> & { source?: EvidenceSource }) => {
     findings.push({
       ...finding,
+      // Every snippet passes through the redaction, here rather than at the
+      // twenty-five places that set one. The credential detector redacts its own
+      // snippet, and that was not enough: when a key and a hardcoded path share
+      // one statement, the *environmental* detector below reports the same
+      // statement as `snippet: text` and prints the key after all (QA review of
+      // 9d7721972a67 — and the test that was supposed to hold this used two
+      // statements, so it never saw the case). One gate means a detector added
+      // next year is covered without anyone remembering this paragraph.
+      snippet: redactCredentials(finding.snippet),
       id: `CC-${String(idCounter++).padStart(3, '0')}`,
       // Default source: 'static-parser' for all scanner findings.
       // Upgraded to 'catalog-match' when a sapReplacement is present.

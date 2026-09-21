@@ -78,19 +78,27 @@ export function zipKey(name: string): string {
  * sealed, whichever of the two is the genuine file.
  *
  * Read straight from the bytes, because the question cannot be asked of the map.
- * An archive this cannot count — no end-of-central-directory record, a ZIP64
- * marker, a record that is not where the previous one said it ends — returns
- * nothing rather than a guess: the other checks still apply, and a verifier must
- * not fail a genuine pack over a shape it simply did not parse.
+ *
+ * An archive this cannot walk — no end-of-central-directory record, a ZIP64
+ * marker, a record that is not where the previous one said it ends — is
+ * reported as *unchecked*, not as clean. Returning "no duplicates" was the
+ * obvious conservative choice and the wrong one: JSZip loads a ZIP64 archive
+ * happily, collapses its duplicates into one map entry, and every hash then
+ * agrees — so "I could not count" was a way through for exactly the archive
+ * this check exists to stop (QA review of 9d7721972a67). The issuer produces a
+ * handful of small files and never a ZIP64 container, so no genuine pack takes
+ * this path, and a reader is told which question went unanswered rather than
+ * being shown a verdict nobody established.
  *
  * The names are compared through `zipKey`, below, for the reason written there.
  */
-function duplicateEntryNames(data: unknown): string[] {
+export function duplicateEntryNames(data: unknown): { duplicates: string[]; counted: boolean; why?: string } {
+  const unchecked = (why: string) => ({ duplicates: [], counted: false, why });
   let bytes: Uint8Array;
   if (data instanceof Uint8Array) bytes = data;
   else if (data instanceof ArrayBuffer) bytes = new Uint8Array(data);
-  else return [];
-  if (bytes.byteLength < 22) return [];
+  else return unchecked('the archive was handed over in a form these bytes could not be read from');
+  if (bytes.byteLength < 22) return unchecked('the archive is too short to hold a ZIP end record');
 
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const EOCD = 0x06054b50;
@@ -103,30 +111,34 @@ function duplicateEntryNames(data: unknown): string[] {
       break;
     }
   }
-  if (eocd < 0) return [];
+  if (eocd < 0) return unchecked('no ZIP end-of-central-directory record was found');
 
   const total = view.getUint16(eocd + 10, true);
   let offset = view.getUint32(eocd + 16, true);
-  // The ZIP64 markers. An audit pack is a handful of small files, so this is a
-  // shape we do not issue and do not pretend to have counted.
-  if (total === 0xffff || offset === 0xffffffff) return [];
+  // The ZIP64 markers. This platform issues a handful of small files and never
+  // a ZIP64 container, so an archive wearing them is not one of ours.
+  if (total === 0xffff || offset === 0xffffffff) return unchecked('the archive uses the ZIP64 format, which this check does not read');
 
   const decoder = new TextDecoder();
   const seen = new Set<string>();
   const duplicates = new Set<string>();
   for (let n = 0; n < total; n++) {
-    if (offset + 46 > bytes.byteLength || view.getUint32(offset, true) !== CENTRAL) return [];
+    if (offset + 46 > bytes.byteLength || view.getUint32(offset, true) !== CENTRAL) {
+      return unchecked('a central-directory record is not where the previous one said it ends');
+    }
     const nameLength = view.getUint16(offset + 28, true);
     const extraLength = view.getUint16(offset + 30, true);
     const commentLength = view.getUint16(offset + 32, true);
-    if (offset + 46 + nameLength > bytes.byteLength) return [];
+    if (offset + 46 + nameLength > bytes.byteLength) {
+      return unchecked('a central-directory record names a file beyond the end of the archive');
+    }
     const raw = decoder.decode(bytes.subarray(offset + 46, offset + 46 + nameLength));
     const name = zipKey(raw);
     if (seen.has(name)) duplicates.add(name);
     seen.add(name);
     offset += 46 + nameLength + extraLength + commentLength;
   }
-  return [...duplicates].sort();
+  return { duplicates: [...duplicates].sort(), counted: true };
 }
 
 export interface FileVerifyResult {
@@ -247,9 +259,15 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
     // The same rule, asked of the raw archive rather than of the loaded map: a
     // path the archive carries twice is an entry the manifest does not account
     // for, and only one of the two can be the file it names.
-    const duplicates = duplicateEntryNames(inputData);
-    for (const name of duplicates) {
+    const entryNames = duplicateEntryNames(inputData);
+    for (const name of entryNames.duplicates) {
       errors.push(`The archive lists ${name} more than once; the manifest names it once.`);
+    }
+    if (!entryNames.counted) {
+      // Not "no duplicates found" — "this question went unanswered". The
+      // difference matters, because JSZip loads such an archive, collapses any
+      // duplicate into one map entry, and leaves every hash agreeing.
+      errors.push(`The archive's entry list could not be read, so it was not checked for duplicate paths: ${entryNames.why}.`);
     }
 
     // A user-attested file carries the account holder's own statement, so it is
@@ -380,7 +398,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
     }
 
     const allFilesValid = fileResults.every(f => f.valid);
-    const integrityValid = allFilesValid && manifestHashValid && duplicates.length === 0;
+    const integrityValid = allFilesValid && manifestHashValid && entryNames.counted && entryNames.duplicates.length === 0;
 
     let status: 'authentic' | 'integrity-only' | 'failed' = 'failed';
     if (integrityValid) {

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import { createHash } from 'crypto';
-import { verifyAuditPack, zipKey } from '../lib/audit-pack-verify';
+import { verifyAuditPack, zipKey, duplicateEntryNames } from '../lib/audit-pack-verify';
 import { canonicalAuditManifest } from '../lib/audit-pack-canonical';
 
 /**
@@ -114,6 +114,47 @@ test('a path the archive carries twice is not the archive that was sealed', asyn
   expect(result.integrityValid, 'an archive listing a signed path twice passed integrity').toBe(false);
   expect(result.status).not.toBe('authentic');
   expect(result.errors.some((e) => e.includes('more than once'))).toBe(true);
+});
+
+test.describe('an archive whose entry list cannot be read is unchecked, not clean', () => {
+  // "I could not count the entries" used to return "no duplicates", which is a
+  // way through for precisely the archive the count exists to stop: fold a
+  // duplicate into one map entry and every listed hash agrees (QA review of
+  // 9d7721972a67). The counter now says which of the two it means, and the
+  // caller treats "not counted" as a reason to withhold the verdict.
+
+  test('the counter distinguishes "none" from "could not tell"', async () => {
+    const good = await packWith();
+    expect(duplicateEntryNames(good)).toMatchObject({ counted: true, duplicates: [] });
+
+    const zip64 = Buffer.from(await packWith());
+    const eocd = zip64.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+    expect(eocd, 'no end-of-central-directory record in the fixture').toBeGreaterThan(-1);
+    zip64.writeUInt16LE(0xffff, eocd + 10);
+    const marked = duplicateEntryNames(zip64);
+    expect(marked.counted, 'a ZIP64 marker was reported as counted').toBe(false);
+    expect(marked.why).toContain('ZIP64');
+
+    // The same for an end record nobody can find, and for a shape that is not
+    // bytes at all — each with its own sentence, so the reader learns which.
+    expect(duplicateEntryNames(Buffer.alloc(8))).toMatchObject({ counted: false });
+    expect(duplicateEntryNames('not bytes')).toMatchObject({ counted: false });
+  });
+
+  test('and such an archive never comes back authentic', async () => {
+    const bytes = Buffer.from(await packWith());
+    const eocd = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+    bytes.writeUInt16LE(0xffff, eocd + 10);
+    const result = await verifyAuditPack(bytes as unknown as Blob);
+    // Two doors, and the reader is refused at whichever one comes first: JSZip
+    // itself rejects this container before the manifest is read, and if a
+    // future JSZip accepts it, the uncounted entry list withholds the verdict.
+    expect(result.integrityValid, 'an archive nobody could count passed integrity').toBe(false);
+    expect(result.status).not.toBe('authentic');
+    // The untouched archive still passes, so this is about the marker and not
+    // about the fixture.
+    expect((await verifyAuditPack((await packWith()) as unknown as Blob)).integrityValid).toBe(true);
+  });
 });
 
 test('the name resolution is measured against JSZip, not asserted', async () => {

@@ -228,8 +228,9 @@ function zipKey(name) {
 }
 
 function duplicateEntryNames(buffer) {
+  const unchecked = (why) => ({ duplicates: [], counted: false, why });
   const b = Buffer.from(buffer);
-  if (b.length < 22) return [];
+  if (b.length < 22) return unchecked('the archive is too short to hold a ZIP end record');
   const floor = Math.max(0, b.length - 22 - 0xffff);
   let eocd = -1;
   for (let i = b.length - 22; i >= floor; i--) {
@@ -238,25 +239,29 @@ function duplicateEntryNames(buffer) {
       break;
     }
   }
-  if (eocd < 0) return [];
+  if (eocd < 0) return unchecked('no ZIP end-of-central-directory record was found');
   const total = b.readUInt16LE(eocd + 10);
   let offset = b.readUInt32LE(eocd + 16);
-  if (total === 0xffff || offset === 0xffffffff) return [];
+  if (total === 0xffff || offset === 0xffffffff) return unchecked('the archive uses the ZIP64 format, which this check does not read');
 
   const seen = new Set();
   const duplicates = new Set();
   for (let n = 0; n < total; n++) {
-    if (offset + 46 > b.length || b.readUInt32LE(offset) !== 0x02014b50) return [];
+    if (offset + 46 > b.length || b.readUInt32LE(offset) !== 0x02014b50) {
+      return unchecked('a central-directory record is not where the previous one said it ends');
+    }
     const nameLength = b.readUInt16LE(offset + 28);
     const extraLength = b.readUInt16LE(offset + 30);
     const commentLength = b.readUInt16LE(offset + 32);
-    if (offset + 46 + nameLength > b.length) return [];
+    if (offset + 46 + nameLength > b.length) {
+      return unchecked('a central-directory record names a file beyond the end of the archive');
+    }
     const name = zipKey(b.subarray(offset + 46, offset + 46 + nameLength).toString('utf8'));
     if (seen.has(name)) duplicates.add(name);
     seen.add(name);
     offset += 46 + nameLength + extraLength + commentLength;
   }
-  return [...duplicates].sort();
+  return { duplicates: [...duplicates].sort(), counted: true };
 }
 
 /** Why this manifest has no single canonical string, or null — the same rules as `canonicalManifestDefect`. */
@@ -351,8 +356,16 @@ async function main() {
   // The same rule, asked of the raw archive rather than of the map JSZip built
   // from it: a path the archive carries twice is an entry the manifest does not
   // account for, and only one of the two can be the file it names.
-  for (const name of duplicateEntryNames(packBytes)) {
+  const entryNames = duplicateEntryNames(packBytes);
+  for (const name of entryNames.duplicates) {
     console.log(`${c.bad('twice')}     ${name}  ${c.dim('the archive lists this path more than once')}`);
+    contentsOk = false;
+  }
+  if (!entryNames.counted) {
+    // Not "no duplicates" — "not checked". JSZip loads such an archive, folds
+    // any duplicate into one map entry, and leaves every hash agreeing, so a
+    // silent pass here was a way through (QA review of 9d7721972a67).
+    console.log(`${c.bad('unread')}    ${c.dim(`the archive's entry list could not be read, so duplicate paths were not checked: ${entryNames.why}`)}`);
     contentsOk = false;
   }
   // A user-attested file carries the account holder's own statement. From
