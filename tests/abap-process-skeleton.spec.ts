@@ -757,6 +757,7 @@ test('a ring of macros does not take the reader down with it', () => {
   ].join('\n');
   const skeleton = buildProcessSkeleton(source);
   expect(skeleton).toBeTruthy();
+});
 
 /* -------------------------- b88c77b4b5d1 / CR-07 — the steps that were missing
  *
