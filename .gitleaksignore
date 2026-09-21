@@ -16,3 +16,23 @@ c1f86075617b9757a45cad10c0ab2d900fa83f7f:scripts/qa/lib/redact.mjs:generic-api-k
 # random bytes per report, so its entropy drifts across the generic-api-key threshold
 # from one write to the next — this is the first write that crossed it.
 f1e0babd37556141577638dfe9604388290189ce:docs/security/register.enc.json:generic-api-key:1
+
+# The three below were reported by the *scheduled* full-history scan on 21.09.2026
+# (run 35566863748) and by nothing else: a push scan reads only the pushed commits,
+# so a false positive in an old commit stays invisible until the Monday scan walks
+# the whole history. All three are the `generic-api-key` rule firing on a *name*.
+#
+# b64818a / 461c756 (17.09.2026): `"objectKey": "ZCC_REF_056_CHILD"` — the ABAP
+# program name of reference case CC-056, in the expected output of the corpus test
+# and in the corpus document that quotes the same identity record. The rule matched
+# the word `objectKey`; the value is a program name that is in the fixture on purpose.
+b64818a584b514575edd2c5f24f2d914ee812a43:tests/korpus/cases/CC-056/expected.json:generic-api-key:150
+b64818a584b514575edd2c5f24f2d914ee812a43:docs/korpus/referenzkorpus-v2.1.md:generic-api-key:10247
+461c756edafbc962d5cae8164d754331b5d22aae:tests/korpus/cases/CC-056/expected.json:generic-api-key:150
+#
+# af64522 (16.09.2026): the loop in `tests/no-fabricated-figures.spec.ts` that asserts
+# three secrets still reach the deployed service. It lists their *names*
+# (`MFA_BACKUP_CODE_PEPPER`, `PILOT_APPROVAL_SECRET`, `S4_ENCRYPTION_KEY`) and asserts
+# on `secrets.<name>` in the workflow. No value is in the file — that is the point of
+# the test: the values live in GitHub secrets and the spec checks the wiring.
+af645228d2663445420ce5cc48ddcf92b55f3563:tests/no-fabricated-figures.spec.ts:generic-api-key:251
