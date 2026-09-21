@@ -840,11 +840,12 @@ ersetzt.
 | 16 | **Isolationsgrenze des Mock-Test-Runners (CR-09)** | Das Gegenreview belegt lokal, dass die Node-Permission-Grenze nicht hält (Details privat im Reviewpaket); die Roadmap führte die Runner-Isolation bisher unter „nach 3.0, ohne Version". **Empfehlung:** vor 3.0 als 8.9 — und bis dahin den Mock-Pfad sperren wie den Live-Pfad, mit Grund im Interface; Zwischenschutz (Builtin-Allowlist, Ladehaken, `fetch` geschlossen) sofort, ohne ihn als Grenze zu verkaufen. Blast Radius im Bericht vom 19.09. |
 | 17 | **Produktpositionierung 3.0: Einsicht (A) oder kleiner Teamraum (B)?** | Das Gegenreview empfiehlt B — Antwort am Artefakt und an einer Revision (Thread, Erwähnung, Auflösen, getrennte Bestätigung; kein Chat, keine Rollenverwaltung); §8 schließt Kommentieren seit 15.09. aus. **Empfehlung:** 3.0 als A vermarkten — „Einsicht per Einladung", nie „gemeinsam entscheiden im Produkt" — und B als 3.1-Kandidat auf derselben Autorisierungs- und Journalbasis; nicht beides halb. |
 | 18 | **Grade-Definition (CR-01): Clean-Core-Zielbezug oder klassische Nutzbarkeit?** | `CL_HTTP_UTILITY` ist klassisch freigegeben (B) und in ABAP Cloud nicht freizugeben (D, Nachfolger `CL_WEB_HTTP_UTILITY`); SAPs Beispiel ordnet klassisch B. Der Code entschied D bewusst (21 von 22 Overlap-Objekten haben einen Nachfolger). **Empfehlung:** der Grad bleibt der Zielbezug, beide Dimensionen stehen daneben (7.9), die Definition steht am Objekt. |
+| 19 | **Ein toter Gemini-Schlüssel liegt öffentlich in der Vorgeschichte des Repositorys** (gefunden 21.09.2026 beim Nachgehen des roten Security-CI) | Im allerersten Commit vom 28.05.2026 liegt ein 12-MB-Protokoll einer IDE-Sitzung, und darin steht ein `GEMINI_API_KEY` im Klartext. Der Commit hängt an keinem Zweig mehr — weder lokal noch auf GitHub —, aber GitHub liefert hängengebliebene Commits eines öffentlichen Repositorys weiter aus: die Datei ist ohne jede Anmeldung abrufbar, nachgeprüft am 21.09. **Sprengweite: keine.** Der Schlüssel ist tot — Google antwortet `API_KEY_INVALID`, er existiert nicht mehr. Er zählt auf keine Rechnung und öffnet nichts. **Offen bleibt der Zustand, nicht der Schaden:** der Volllauf von gitleaks findet ihn bei jedem Lauf über alle Zweige, und nur GitHub selbst kann einen hängengebliebenen Commit entfernen. **Empfehlung:** (a) den Support bitten, die Vorgeschichte zu bereinigen — der einzige Weg, der wirkt; (b) die vier alten `feature/*`-Zweige vom Mai, die den Commit lokal am Leben halten, löschen, sobald Sonny bestätigt, dass nichts Unveröffentlichtes darauf liegt; (c) **nicht** in die Erlaubnisliste eintragen — ein echter Schlüssel gehört nicht in eine Fehlalarmliste, auch kein toter. Bis dahin ist der Montagslauf davon nicht betroffen: er liest nur die Vorgeschichte von `main`, und die enthält den Commit nicht. |
 
-**Offen für Sonny:** 7, 8, 9, 10, 11, 12 und 13. Keiner blockiert ein
+**Offen für Sonny:** 7, 8, 9, 10, 11, 12, 13 und 19. Keiner blockiert ein
 Release; sie stehen hier, damit sie nicht neu gesucht werden müssen. 10 bis 12
-sind am Abend des 16.09. dazugekommen, 13 in der Nacht. Die neun UX-Befunde,
-die am 16.09. in derselben Liste standen, sind am 17.09. erledigt — siehe den
+sind am Abend des 16.09. dazugekommen, 13 in der Nacht, 19 am 21.09. Die neun
+UX-Befunde, die am 16.09. in derselben Liste standen, sind am 17.09. erledigt — siehe den
 nächsten Absatz.
 
 **Die neun UX-Befunde sind am 17.09.2026 erledigt** (`dev`, §13 auf „behoben").
@@ -1593,18 +1594,18 @@ durchgängig belastbare 3.0-Entscheidungsplattform vermarkten — ist deckungsgl
 | CR-06 | Verbuchung zu früh als Aufgabe | Designentscheidung, Empfehlung: annehmen | §9 Nr. 15 → 2.12 |
 | CR-07 | ADBC-Wirkung fehlt, CATCH „unreachable" | bestätigt (Generatorlauf CC-034) | 2.13, in Arbeit 19.09. (Agent) |
 | CR-08 | Kein Einstieg für Methoden/Exits/Dynpro | bestätigt (9 von 74 ohne Einstieg) | 2.14 |
-| CR-09 | Mock-Runner ohne belastbare Grenze | bestätigt; Minimal-Umgebung ohne Secrets ist da, die Grenze hält trotzdem nicht (Details privat) | §9 Nr. 16 → 8.9; Zwischenschutz sofort |
+| CR-09 | Mock-Runner ohne belastbare Grenze | bestätigt; Minimal-Umgebung ohne Secrets ist da, die Grenze hält trotzdem nicht (Details privat) | §9 Nr. 16 → 8.9; **Zwischenschutz am 21.09. gebaut (`4f18fc6`)** — Bundler, CommonJS-Loader, Resolve-Hook und Nodes eigener Schalter, ausdrücklich keine Grenze |
 | CR-10 | Auto-Healing gegen serverautoritären Runner | bestätigt an beiden Kommentaren: der Retry läuft gegen den alten Stand | 8.7; Auto-Healing bis dahin gesperrt |
 | CR-11 | Freigabe nicht an den Run gebunden | bestätigt (Validator ohne `expectedRunId`) | 8.8 |
 | CR-12 | Transformation folgt der Empfehlung | bestätigt — steht als 8.3 | 8.3, unverändert |
-| CR-13 | Eingeladene Leser scheitern an vier Routen | bestätigt (`project.userId !== uid` auch bei GET) | sofort; 5.6; Phase-5-Kopf umformuliert |
-| CR-14 | Sichtwechsel verliert `#fragment` | bestätigt (`router.push('?…')`) | sofort; 6.9 |
+| CR-13 | Eingeladene Leser scheitern an vier Routen | bestätigt (`project.userId !== uid` auch bei GET) | **behoben 21.09. (`4f18fc6`)**, Lesen über `mayReadProject`, Schreiben bleibt beim Eigentümer; die Abnahme über alle Rollen ist 5.6 |
+| CR-14 | Sichtwechsel verliert `#fragment` | bestätigt (`router.push('?…')`) | **behoben 21.09. (`4f18fc6`)**; der Revisionshinweis daneben bleibt 6.9 |
 | CR-15 | Kein Revisionshinweis im Arbeitsraum | bestätigt (Design) | 6.9 |
-| CR-16 | TCO: negative Werte, frühe Rundung | teils: Finite-Prüfungen da, Vorzeichen und Score-Intervall nicht, Rundung früh | sofort (Validierung); 7.4 |
+| CR-16 | TCO: negative Werte, frühe Rundung | teils: Finite-Prüfungen da, Vorzeichen und Score-Intervall nicht, Rundung früh | **Validierung behoben 21.09. (`4f18fc6`)**; die Optionsrechnung selbst bleibt 7.4 |
 | CR-17 | Nullnutzung → endgültig Retire | bestätigt | 6.7 umformuliert; Umsetzung folgt |
 | CR-18 | Kein Katalogpfad → „Blocked by SAP" | bestätigt | 6.7 umformuliert; Umsetzung folgt |
 | CR-19 | Alte Dokumentation, zweite Prozesswahrheit | bestätigt — steht als 3.0.5 | 3.0.5, unverändert |
-| CR-20 | XML-Regex: kaputt akzeptiert, Default-Namespace abgelehnt | bestätigt (drei Proben nachvollzogen) | sofort (saxen, ohne neue Abhängigkeit) |
+| CR-20 | XML-Regex: kaputt akzeptiert, Default-Namespace abgelehnt | bestätigt (drei Proben nachvollzogen) | **behoben 21.09. (`4f18fc6`)**: `saxen` parst, Wohlgeformtheit und BPMN-Wurzel sind zwei Zustände — und `saxen` ist jetzt deklariert statt transitiv geliehen |
 
 **Nicht übernommen, mit Grund.** (a) CR-01 als Grade B: der Grad ist der Clean-Core-Zielbezug,
 nicht die klassische Nutzbarkeit — beides zu zeigen ist die Antwort, nicht der Wechsel der

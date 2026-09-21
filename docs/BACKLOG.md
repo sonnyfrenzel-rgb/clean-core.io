@@ -520,6 +520,37 @@ Lizenzgruppen vollständig. Der Export liest seither die gerenderte Seite.
     schutz; CR-03/04 und CR-07 laufen bei den zwei Engine-Agenten. Reviewpaket liegt privat auf dem
     Desktop (OneDrive) und enthält den Codeexport — nicht ins Repository.
 
+35. **Das rote Security-CI vom 21.09.2026 (Lauf 35566863748) hatte zwei Ursachen, eine davon
+    bisher unbemerkt.** Der Montagslauf ist der einzige, der die **ganze** Vorgeschichte liest —
+    ein Push-Lauf sieht nur die gepushten Commits. Deshalb war er rot, während jeder Lauf auf
+    `dev` grün war. (a) **Neunzehn der zweiundzwanzig Funde** sind das versiegelte Sicherheits­-
+    register: die Erlaubnisliste dafür steht seit `c5085bb` in `.gitleaks.toml`, aber `main`
+    steht auf `b88c77b` und kennt sie nicht. Sie geht mit der nächsten Freigabe mit; nichts zu
+    tun. (b) **Drei echte Fehlalarme**, alle drei die Regel `generic-api-key` auf einem *Namen*:
+    der ABAP-Programmname `ZCC_REF_056_CHILD` aus dem Referenzfall CC-056 (zweimal, in der
+    Erwartungsdatei und im Korpusdokument, das dieselbe Identität zitiert) und die Schleife in
+    `tests/no-fabricated-figures.spec.ts`, die prüft, dass drei Secrets den Dienst noch erreichen
+    — sie zählt ihre *Namen* auf, kein einziger Wert steht in der Datei. Als exakte Fingerabdrücke
+    in `.gitleaksignore` eingetragen, mit Begründung je Eintrag; lokal gegen `gitleaks 8.30.1`
+    nachgestellt und nachgewiesen: die Vorgeschichte von `main` und die von `dev` sind beide
+    sauber. **Dabei gefunden, und das ist der eigentliche Fund:** ein Volllauf über *alle* Zweige
+    (`--log-opts=--all`, was CI nicht tut) meldet fünf weitere Treffer in einem 12-MB-Protokoll
+    einer IDE-Sitzung im allerersten Commit vom 28.05.2026 — ein echter Gemini-Schlüssel im
+    Klartext, öffentlich abrufbar, weil GitHub hängengebliebene Commits öffentlicher Repositorys
+    weiter ausliefert. Er ist **tot** (`API_KEY_INVALID`), die Sprengweite damit null; der Zustand
+    bleibt. Entscheidung für Sonny in ROADMAP §9 Nr. 19. Bewusst **nicht** in die Erlaubnisliste
+    eingetragen: ein echter Schlüssel gehört nicht in eine Fehlalarmliste, auch kein toter.
+
+36. **`saxen` war ein blinder Passagier.** Der neue XML-Wächter (CR-20) importiert den Parser,
+    den `bpmn-js` ohnehin mitbringt — er stand aber nur als transitive Abhängigkeit von
+    `moddle-xml` in `node_modules`, oben gelandet, weil npm ihn zufällig hochhebt. Der Import
+    löste lokal und im Build auf und hätte an dem Tag versagt, an dem `moddle-xml` seinen
+    Bereich verschiebt oder npm verschachtelt installiert: als 500 beim Speichern einer
+    Revision und nirgends sonst. Jetzt in `package.json` deklariert (`^11.1.1`, dieselbe
+    Version, kein neuer Download); das Lockfile mit der vorgeschriebenen Toolchain erzeugt
+    (`node@22`/`npm@11`) — eine Zeile Diff, der verschachtelte `js-yaml`-Eintrag steht noch,
+    `npm ci --dry-run` grün.
+
 ### Hygiene, bevor die nächste Welle startet
     **Stand 18.09., Abend:** dev mit Produktions-Secrets — bewusst so lassen (Sonny); Bedingung „zweites Konto mit Schreibrecht" steht im QA-Register und in ROADMAP §9.
 

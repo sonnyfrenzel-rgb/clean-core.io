@@ -10,13 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [Unreleased] — auf `dev`, Stand 18.09.2026 abends
+## [Unreleased] — auf `dev`, Stand 21.09.2026
 
 Was seit v2.13.0 auf `dev` liegt und mit der nächsten Freigabe auf `main` geht — die
 Regeln sind ausgerollt, die MFA-Pflicht für S/4-Zugang und eigenen Gemini-Schlüssel
-gilt, 7.5 und 7.6 sind gebaut, und die drei Reviews zu v2.13.0 sind abgearbeitet
-(`docs/ROADMAP.md` §4 „Stand", §9, §12–§14). Je Commit eine Zeile, neueste zuerst:
+gilt, 7.5 und 7.6 sind gebaut, die drei Reviews zu v2.13.0 sind abgearbeitet
+(`docs/ROADMAP.md` §4 „Stand", §9, §12–§14), und die ersten Befunde von Sonnys
+externem Gegenreview sind behoben (§15). Je Commit eine Zeile, neueste zuerst:
 
+- `50ac4b6` chore(security): drei Fehlalarme des Volllaufs eingetragen, mit Begruendung je Eintrag
+- `4f18fc6` fix(gegenreview): CR-13, CR-14, CR-16 und CR-20 behoben, CR-09 bekommt seinen Zwischenschutz
 - `acf09bb` docs(agents): drei Posteingaenge zu b88c77b entschieden - UX 16, Security 83, QA-Vollreview 49 kritische
 - `1db8523` sec(audit): fuenf mittlere Befunde aus b88c77b behoben - ein echter href, drei Bindungen, ein Ring
 - `1a90b06` fix(ux): sieben Befunde aus dem UX-Review zu b88c77b, jeder mit Waechter
