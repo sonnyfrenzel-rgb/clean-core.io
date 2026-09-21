@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import { createHash } from 'crypto';
-import { verifyAuditPack } from '../lib/audit-pack-verify';
+import { verifyAuditPack, zipKey } from '../lib/audit-pack-verify';
 import { canonicalAuditManifest } from '../lib/audit-pack-canonical';
 
 /**
@@ -114,6 +114,35 @@ test('a path the archive carries twice is not the archive that was sealed', asyn
   expect(result.integrityValid, 'an archive listing a signed path twice passed integrity').toBe(false);
   expect(result.status).not.toBe('authentic');
   expect(result.errors.some((e) => e.includes('more than once'))).toBe(true);
+});
+
+test('the name resolution is measured against JSZip, not asserted', async () => {
+  // The rule the duplicate check depends on is JSZip's, not ours, and the first
+  // version of `zipKey` guessed one detail wrong: it dropped a leading slash,
+  // which JSZip keeps — two entries JSZip holds apart would have been reported
+  // as one, failing a genuine pack (QA review of 351e169c50a7). So the
+  // expectation is taken from JSZip at run time rather than written down here:
+  // whatever it keys an entry as, `zipKey` has to return the same string. If a
+  // future JSZip changes the rule, this goes red instead of the check going
+  // quietly wrong.
+  const names = [
+    'manifest.json',
+    '/manifest.json',
+    '//manifest.json',
+    'a//b.json',
+    './a/./b.json',
+    'a/../../b.json',
+    'x/../00-executive-summary.md',
+    'evidence/./run.json',
+  ];
+  for (const name of names) {
+    const zip = new JSZip();
+    zip.file(name, 'X');
+    const loaded = await JSZip.loadAsync(await zip.generateAsync({ type: 'nodebuffer' }));
+    const asJszipKeysIt = Object.keys(loaded.files).filter((k) => !k.endsWith('/'));
+    expect(asJszipKeysIt, `JSZip made more or fewer than one file entry out of ${name}`).toHaveLength(1);
+    expect(zipKey(name), `zipKey disagrees with JSZip about ${name}`).toBe(asJszipKeysIt[0]);
+  }
 });
 
 /**

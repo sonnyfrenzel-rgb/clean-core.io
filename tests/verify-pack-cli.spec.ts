@@ -156,6 +156,48 @@ test('a path the archive carries twice fails the pack, the signature notwithstan
   expect(code).toBe(1);
 });
 
+test('an alias of a signed path fails the pack here too', async () => {
+  // The offline verifier resolves names the way JSZip keys its map, so
+  // `x/../00-…md` and `00-…md` are the same path and the archive carries it
+  // twice. Until 21.09.2026 both verifiers compared the raw names and this
+  // archive passed; the web half is covered in
+  // `tests/audit-pack-archive-completeness.spec.ts`, and the QA review of
+  // 351e169c50a7 asked for the command-line half by name.
+  const kp = keyPair();
+  const content = '# Executive Summary\nA pack built for the command-line check.';
+  const files = [{ path: '00-executive-summary.md', sha256: sha(content), bytes: content.length }];
+  const meta = { projectId: 'p-1', runId: 'r-1', runHash: 'h-1', engineVersion: 'v1.0', sapApiCatalogVersion: '2024.FPS02' };
+  const manifestHash = sha(canonicalAuditManifest({ files, ...meta }));
+  const manifest = {
+    version: '2.0', ...meta, generatedAt: new Date().toISOString(), files, manifestHash,
+    signed: true, signature: '',
+    signatureEd25519: sign(null, Buffer.from(manifestHash, 'utf8'), kp.privateKey).toString('base64'),
+  };
+  const zip = new JSZip();
+  zip.file('zzzzz00-executive-summary.md', '# Unconditional approval. Signed, nobody.');
+  zip.file('00-executive-summary.md', content);
+  zip.file('manifest.json', JSON.stringify(manifest));
+  const bytes: Buffer = await zip.generateAsync({ type: 'nodebuffer' });
+  const from = Buffer.from('zzzzz00-executive-summary.md', 'utf8');
+  const to = Buffer.from('x/../00-executive-summary.md', 'utf8');
+  expect(from.length, 'the two names must be the same length to rewrite in place').toBe(to.length);
+  let at = 0;
+  let rewritten = 0;
+  while ((at = bytes.indexOf(from, at)) !== -1) {
+    to.copy(bytes, at);
+    at += to.length;
+    rewritten += 1;
+  }
+  expect(rewritten, 'the alias was not written into both headers — the check would be vacuous').toBe(2);
+
+  const packPath = join(mkdtempSync(join(tmpdir(), 'verify-pack-')), 'pack.zip');
+  writeFileSync(packPath, bytes);
+  const { code, out } = run([packPath, '--key', kp.rawPublicBase64]);
+  expect(out).toContain('more than once');
+  expect(out).toContain('NOT verified');
+  expect(code).toBe(1);
+});
+
 test('a user-attested file is reported as present and unsigned, and the pack still verifies', async () => {
   const kp = keyPair();
   const pack = await buildPack({ signWith: kp.privateKey, attested: { '07-user-attested.md': '# Statements\nApprover: the board, unanimously.' } });

@@ -509,9 +509,39 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
       });
     }
 
+    // A credential in the source, reported as one.
+    //
+    // The detector below used to carry `&& !/AIzaSy/i.test(text)` — an exclusion
+    // for the prefix of a Google API key. A statement holding a hardcoded Google
+    // key and a hardcoded path therefore produced *no* finding at all: the one
+    // literal that is unambiguously a secret was the one that silenced the
+    // detector (security audit of b88c77b, SEC-b88c77b-148's neighbour
+    // SEC-b88c77b-36, verified at the line on 21.09.2026). A key in ABAP source
+    // is worse than a hostname in ABAP source, so it gets its own finding and
+    // the higher severity, and the hardcoded-value detector below no longer
+    // looks away.
+    if (/\bAIzaSy[0-9A-Za-z_-]{20,}/.test(text)) {
+      addFinding({
+        kind: 'hardcoded-value',
+        title: 'Hardcoded API key in the source',
+        severity: 'Critical',
+        confidence: 'High',
+        objectName: fileName,
+        objectType: 'Credential',
+        lineStart: stmt.line,
+        // The key itself is never echoed: the anchor says where to look, and a
+        // report that quotes a secret spreads it to everyone the report reaches.
+        snippet: 'A Google API key literal is present at this line. Its value is deliberately not reproduced here.',
+        technicalDetail: 'The statement contains a literal in the shape of a Google API key (AIzaSy…).',
+        cleanCoreImpact: 'A credential in transportable source travels with every copy of the program, every export and every backup. It cannot be rotated by changing a system setting, and it is readable by anyone who can read the code.',
+        recommendation: 'Remove the key from the source and treat it as compromised: rotate it, then read it at runtime from a secure store rather than from a literal.',
+        targetOptions: ['Developer Extensibility / RAP'],
+      });
+    }
+
     // Hardcoded environmental values — the one detector whose subject *is* the
     // content of a literal, so it reads `text` on purpose.
-    if (/(?:['"](?:C:\\|PRD|CLNT|SYS|HTTP:\/\/|HTTPS:\/\/))/i.test(text) && !/AIzaSy/i.test(text)) {
+    if (/(?:['"](?:C:\\|PRD|CLNT|SYS|HTTP:\/\/|HTTPS:\/\/))/i.test(text)) {
       addFinding({
         kind: 'hardcoded-value',
         title: 'Hardcoded Environmental Parameter',

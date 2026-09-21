@@ -34,6 +34,37 @@ async function sha256(content: string | Uint8Array): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+
+/**
+ * An entry name as JSZip will key it.
+ *
+ * JSZip resolves `.` and `..` inside a path before it puts the entry in its map,
+ * so `x/../manifest.json` and `manifest.json` are one key to it and two names in
+ * the central directory. Comparing the raw names therefore missed exactly the
+ * case this check exists for: two entries JSZip collapses into one, of which an
+ * ordinary extractor would write the *other* (QA review of fce34641821e). The
+ * names are compared after the same resolution, so an alias counts as the
+ * duplicate it is.
+ */
+export function zipKey(name: string): string {
+  // Measured against JSZip 3 on 21.09.2026, because guessing the rule is how the
+  // first version of this got it wrong: `/manifest.json` keeps its leading
+  // slash and is a *different* entry from `manifest.json`, `//a` collapses to
+  // `/a`, `a//b` to `a/b`, `.` segments vanish, `..` pops and stops at the root
+  // (`a/../../b.json` is `b.json`). Dropping the leading slash, as this did
+  // first, would have merged two entries JSZip keeps apart and failed a genuine
+  // pack (QA review of 351e169c50a7).
+  const rooted = name.startsWith('/');
+  const out: string[] = [];
+  for (const part of name.split('/')) {
+    if (part === '' || part === '.') continue;
+    if (part === '..') { out.pop(); continue; }
+    out.push(part);
+  }
+  const body = out.join('/') + (name.endsWith('/') && out.length ? '/' : '');
+  return rooted ? `/${body}` : body || '/';
+}
+
 /**
  * Names the archive's central directory lists more than once.
  *
@@ -51,28 +82,9 @@ async function sha256(content: string | Uint8Array): Promise<string> {
  * marker, a record that is not where the previous one said it ends — returns
  * nothing rather than a guess: the other checks still apply, and a verifier must
  * not fail a genuine pack over a shape it simply did not parse.
- */
-/**
- * An entry name as JSZip will key it.
  *
- * JSZip resolves `.` and `..` inside a path before it puts the entry in its map,
- * so `x/../manifest.json` and `manifest.json` are one key to it and two names in
- * the central directory. Comparing the raw names therefore missed exactly the
- * case this check exists for: two entries JSZip collapses into one, of which an
- * ordinary extractor would write the *other* (QA review of fce34641821e). The
- * names are compared after the same resolution, so an alias counts as the
- * duplicate it is.
+ * The names are compared through `zipKey`, below, for the reason written there.
  */
-function zipKey(name: string): string {
-  const out: string[] = [];
-  for (const part of name.split('/')) {
-    if (part === '' || part === '.') continue;
-    if (part === '..') { out.pop(); continue; }
-    out.push(part);
-  }
-  return (out.join('/') + (name.endsWith('/') ? '/' : '')) || '/';
-}
-
 function duplicateEntryNames(data: unknown): string[] {
   let bytes: Uint8Array;
   if (data instanceof Uint8Array) bytes = data;

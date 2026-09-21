@@ -5,6 +5,7 @@ import { ShieldCheck, Info, Check, Link2, ExternalLink } from 'lucide-react';
 import clsx from 'clsx';
 import type { SupportFinding } from '@/lib/abap/class-model';
 import { LEVEL_EMOJI, LEVEL_LABEL } from '@/lib/abap/support-matrix';
+import { safeHttpHref } from '@/lib/export-safety';
 
 interface ConstructFindingsProps {
   findings: SupportFinding[];
@@ -136,9 +137,15 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
               {/* Right Column: Actions & Sign-off check */}
               <div className="flex sm:flex-row md:flex-col items-center gap-3 w-full md:w-auto shrink-0 border-t md:border-t-0 border-slate-100 pt-4 md:pt-0 md:pl-4 self-stretch md:justify-center">
                 {/* How it works Deep Link */}
-                {finding.howItWorks && (
+                {/* The value comes from the analysis model, so it reaches an
+                    anchor only as http(s) — the same rule and the same helper as
+                    the presentation viewer (SEC-2026-152, f9f4ac1). React renders
+                    a `javascript:` href with nothing but a developer warning, and
+                    a click runs it. Security audit of b88c77b, SEC-b88c77b-148:
+                    this was the second site with the same shape. */}
+                {safeHttpHref(finding.howItWorks) && (
                   <a
-                    href={finding.howItWorks}
+                    href={safeHttpHref(finding.howItWorks)}
                     target="_blank"
                     rel="noreferrer"
                     className="flex-1 md:w-full flex items-center justify-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-205 text-slate-600 hover:text-slate-800 text-[10px] font-black uppercase tracking-wider h-10 px-4 rounded-xl transition-all shadow-sm"

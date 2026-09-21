@@ -348,6 +348,14 @@ service cloud.firestore {
                     isValidABAPExample(request.resource.data, true) &&
                     (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId) &&
                     (!('createdAt' in request.resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      // The dashboard offers the owner a delete of their own example and calls
+      // deleteDoc for it, and there was no delete rule — so the call hit
+      // default-deny and the row stayed, with the owner unable to remove what
+      // they uploaded (security audit of b88c77b, SEC-b88c77b-61, verified at
+      // the line on 21.09.2026). Owner or admin, the same condition the update
+      // rule uses and the same one /files carries.
+      allow delete: if isAuthenticated() &&
+                    (('userId' in resource.data && resource.data.userId == request.auth.uid) || isAdmin());
     }
 
     match /registration_requests/{requestId} {

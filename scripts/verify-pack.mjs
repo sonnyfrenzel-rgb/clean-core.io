@@ -216,13 +216,15 @@ function bindsIssuanceMetadata(version) {
  * check (QA review of fce34641821e).
  */
 function zipKey(name) {
+  const rooted = name.startsWith('/');
   const out = [];
   for (const part of name.split('/')) {
     if (part === '' || part === '.') continue;
     if (part === '..') { out.pop(); continue; }
     out.push(part);
   }
-  return (out.join('/') + (name.endsWith('/') ? '/' : '')) || '/';
+  const body = out.join('/') + (name.endsWith('/') && out.length ? '/' : '');
+  return rooted ? `/${body}` : body || '/';
 }
 
 function duplicateEntryNames(buffer) {
