@@ -101,7 +101,7 @@ export function readRevisionStats(xml: string): RevisionStats {
   return { flowNodes: parsed.elements.length, anchored, unanchored: parsed.elements.length - anchored };
 }
 
-export type RevisionRefusal = 'bad-request' | 'too-large' | 'not-bpmn';
+export type RevisionRefusal = 'bad-request' | 'too-large' | 'not-bpmn' | 'malformed';
 
 export type RevisionXmlCheck =
   | { ok: true; xml: string; sha256: string; stats: RevisionStats }
@@ -116,8 +116,16 @@ export type RevisionXmlCheck =
  * revision is bytes somebody saved — vouching for their correctness is not
  * something this product can do, and pretending to would be the claim the
  * roadmap forbids.
+ *
+ * "Another kind" is decided by parsing, not by a regex, since 19.09.2026: the
+ * regex this replaces took `<bpmn:definitions>` with no end tag and a
+ * `definitions` in a foreign namespace, and refused a well-formed document
+ * that put BPMN in the default namespace (Gegenreview c5085bb, CR-20, three
+ * probes). Well-formedness and the namespace of the root are the structural
+ * floor; schema, import into a tool and the meaning of the graph stay
+ * separate questions with their own answers.
  */
-export function checkRevisionXml(value: unknown): RevisionXmlCheck {
+export async function checkRevisionXml(value: unknown): Promise<RevisionXmlCheck> {
   if (typeof value !== 'string' || value.trim() === '') {
     return { ok: false, code: 'bad-request', error: 'Expected the BPMN 2.0 XML of the model as a string.' };
   }
@@ -128,9 +136,8 @@ export function checkRevisionXml(value: unknown): RevisionXmlCheck {
       error: `This model is ${value.length} characters of BPMN; a revision holds at most ${MAX_REVISION_XML}.`,
     };
   }
-  if (!/<[A-Za-z][\w.-]*:?definitions[\s>]/.test(value)) {
-    return { ok: false, code: 'not-bpmn', error: 'This is not a BPMN 2.0 document: it has no definitions element.' };
-  }
+  const shape = await wellFormedBpmn(value);
+  if (!shape.ok) return shape;
   return { ok: true, xml: value, sha256: sha256Hex(value), stats: readRevisionStats(value) };
 }
 
@@ -345,4 +352,65 @@ export function diffProcessRevisions(
     ].join(', ') + '.';
 
   return { from: before.revision, to: after.revision, added, removed, changed, unchanged, identical, summary };
+}
+
+const BPMN_MODEL_NS = 'http://www.omg.org/spec/BPMN/20100524/MODEL';
+
+/**
+ * Well-formed XML whose root is a BPMN `definitions` element. saxen is the
+ * parser bpmn-js already ships — non-validating, no DTD, no entity expansion,
+ * no network — which is exactly the job: it reports an element that is never
+ * closed and a closing tag that does not match, and with the namespace map it
+ * names the root `bpmn:definitions` whether the document prefixes it or makes
+ * BPMN its default namespace. A `definitions` in any other namespace is not a
+ * BPMN document. Loaded on demand: only the two routes that store a revision
+ * ever need it, and the client bundle that imports this module for its types
+ * and record checks does not.
+ *
+ * It downloads nothing new — `moddle-xml` already pulls exactly this version in
+ * for `bpmn-js` — but it is named in `package.json` all the same, because a
+ * transitive package is only reachable while npm happens to hoist it. It was
+ * unhoisted-by-luck until 21.09.2026: the import resolved locally and would
+ * have failed on the day `moddle-xml` moved its range or npm nested the
+ * install, as a 500 on saving a revision and nowhere else.
+ */
+async function wellFormedBpmn(
+  xml: string,
+): Promise<{ ok: true } | { ok: false; code: 'malformed' | 'not-bpmn'; error: string }> {
+  const { Parser } = await import('saxen');
+  const parser = new Parser({ proxy: true });
+  parser.ns({ [BPMN_MODEL_NS]: 'bpmn' });
+  let root: string | null = null;
+  let depth = 0;
+  let failure: string | null = null;
+  parser.on('error', (err: unknown) => {
+    if (failure === null) failure = err instanceof Error ? err.message : String(err);
+  });
+  parser.on('openTag', (element: { name: string }) => {
+    if (root === null) root = element.name;
+    depth += 1;
+  });
+  parser.on('closeTag', () => {
+    depth -= 1;
+  });
+  try {
+    parser.parse(xml);
+  } catch (err) {
+    failure = err instanceof Error ? err.message : String(err);
+  }
+  if (failure !== null || depth !== 0) {
+    return {
+      ok: false,
+      code: 'malformed',
+      error: `This is not well-formed XML: ${failure ?? 'an element is opened and never closed'}.`,
+    };
+  }
+  if (root !== 'bpmn:definitions') {
+    return {
+      ok: false,
+      code: 'not-bpmn',
+      error: 'This is not a BPMN 2.0 document: its root is not a definitions element in the BPMN namespace.',
+    };
+  }
+  return { ok: true };
 }

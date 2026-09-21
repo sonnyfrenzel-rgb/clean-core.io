@@ -5,6 +5,7 @@ import {
   getAdminDb,
   assertMfaSatisfied,
 } from '@/lib/firebase-admin';
+import { mayReadProject } from '@/lib/project-readers';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { buildBpmnExportFromSource } from '@/lib/bpmn/export';
@@ -119,7 +120,11 @@ async function openProject(
     return { ok: false, response: NextResponse.json({ error: 'Project not found.' }, { status: 404 }) };
   }
   const project = (snap.data() || {}) as ProjectShape;
-  if (project.userId !== decodedToken.uid) {
+  // Reading is by membership, writing is the owner's: an invited reader may
+  // open what the owner shared and never change or start anything. Until
+  // 19.09.2026 this asked for the owner on GET as well, so a valid invitation
+  // opened the project and hid its process (Gegenreview c5085bb, CR-13).
+  if (mutating ? project.userId !== decodedToken.uid : !mayReadProject(project, decodedToken.uid)) {
     return { ok: false, response: NextResponse.json({ error: 'Unauthorized.' }, { status: 403 }) };
   }
   return { ok: true, uid: decodedToken.uid, projectId, project };

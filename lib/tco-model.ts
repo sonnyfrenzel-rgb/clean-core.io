@@ -72,8 +72,9 @@ export const TCO_TARGET_SCORE = 95;
  * Refuses when: a rate or the investment is missing; nothing scored the code;
  * the code already scores at or above the assumed target (there is nothing this
  * model can offer, and computing anyway produced a negative case out of an
- * assumption); the legacy side rounds to no maintenance cost at all; or any
- * figure comes out non-finite.
+ * assumption); the legacy side comes to less than one modelled day a year -
+ * too small for any figure here to mean anything; or any figure comes out
+ * non-finite.
  */
 export function tcoForecast(inputs: TcoInputs): TcoForecast | null {
   const { loc, devRate, userRate, upgradeFreq, fpFreq, oneTimeCost, scoreBefore } = inputs;
@@ -88,13 +89,26 @@ export function tcoForecast(inputs: TcoInputs): TcoForecast | null {
   // payback months and an ROI percentage for a project nothing had measured.
   if (typeof scoreBefore !== 'number' || !Number.isFinite(scoreBefore)) return null;
 
+  // The domain, not only the arithmetic: a negative investment produced a
+  // payback of minus twenty-one months and a score of minus one hundred a
+  // factor nobody meant (Gegenreview c5085bb, CR-16). None of these is an
+  // input; the page says which figure is missing, not a number built on it.
+  if (devRate < 0 || userRate < 0 || oneTimeCost < 0 || loc < 0 || upgradeFreq < 0 || fpFreq < 0) return null;
+  if (scoreBefore < 0 || scoreBefore > 100) return null;
+
   const scoreAfter = TCO_TARGET_SCORE;
 
   // 1. Pre-modernisation maintenance effort (days per year). Legacy custom code
   // is tightly coupled and needs substantial adaptation per upgrade.
-  const legacyDevDaysTotal = Math.round((loc / 1000) * 2.5 * upgradeFreq) + Math.round((loc / 1000) * 0.8 * fpFreq);
-  const legacyTestDaysTotal = Math.round((loc / 1000) * 1.8 * upgradeFreq) + Math.round((loc / 1000) * 0.6 * fpFreq);
+  // Days stay fractional in the model; the page rounds what it shows. Rounding
+  // every term to whole days turned the modern side of a small project into
+  // zero and its "overhead reduction" into 100 % (Gegenreview c5085bb, CR-16).
+  const legacyDevDaysTotal = (loc / 1000) * 2.5 * upgradeFreq + (loc / 1000) * 0.8 * fpFreq;
+  const legacyTestDaysTotal = (loc / 1000) * 1.8 * upgradeFreq + (loc / 1000) * 0.6 * fpFreq;
   const legacyAnnualTotal = legacyDevDaysTotal * devRate + legacyTestDaysTotal * userRate;
+  // Under one modelled day a year the model has nothing to say. This used to
+  // fall out of rounding every term to whole days; now it is the rule it was.
+  if (legacyDevDaysTotal + legacyTestDaysTotal < 1) return null;
 
   // 2. Post-modernisation effort.
   //
@@ -115,8 +129,8 @@ export function tcoForecast(inputs: TcoInputs): TcoForecast | null {
   // zero days for a small codebase while the modernised side was pinned at one
   // day each, so the model reported that modernising *costs* €1,550 a year and
   // pays back in −116 months.
-  const modernDevDaysTotal = Math.round(legacyDevDaysTotal * factor);
-  const modernTestDaysTotal = Math.round(legacyTestDaysTotal * 0.15); // 85 % automated coverage
+  const modernDevDaysTotal = legacyDevDaysTotal * factor;
+  const modernTestDaysTotal = legacyTestDaysTotal * 0.15; // 85 % automated coverage
   const modernAnnualTotal = modernDevDaysTotal * devRate + modernTestDaysTotal * userRate;
 
   // 3. Benefits.

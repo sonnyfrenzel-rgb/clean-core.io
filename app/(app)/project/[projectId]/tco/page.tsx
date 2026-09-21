@@ -420,8 +420,8 @@ export default function TcoCalculatorPage() {
                   <span className="text-[10px] text-gray-500 font-semibold">Tightly-coupled code modifications</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-extrabold text-gray-900 block">€{(calculations.legacyDevDaysTotal * calculations.devRate).toLocaleString()}</span>
-                  <span className="text-[10px] text-gray-500 font-semibold">{calculations.legacyDevDaysTotal} Dev-Days / yr</span>
+                  <span className="font-extrabold text-gray-900 block">€{Math.round(calculations.legacyDevDaysTotal * calculations.devRate).toLocaleString()}</span>
+                  <span className="text-[10px] text-gray-500 font-semibold">{Math.round(calculations.legacyDevDaysTotal)} Dev-Days / yr</span>
                 </div>
               </div>
 
@@ -431,8 +431,8 @@ export default function TcoCalculatorPage() {
                   <span className="text-[10px] text-gray-500 font-semibold">Business Key-User manual execution</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-extrabold text-gray-900 block">€{(calculations.legacyTestDaysTotal * calculations.userRate).toLocaleString()}</span>
-                  <span className="text-[10px] text-gray-500 font-semibold">{calculations.legacyTestDaysTotal} Tester-Days / yr</span>
+                  <span className="font-extrabold text-gray-900 block">€{Math.round(calculations.legacyTestDaysTotal * calculations.userRate).toLocaleString()}</span>
+                  <span className="text-[10px] text-gray-500 font-semibold">{Math.round(calculations.legacyTestDaysTotal)} Tester-Days / yr</span>
                 </div>
               </div>
 
@@ -458,8 +458,8 @@ export default function TcoCalculatorPage() {
                   <span className="text-[10px] text-gray-500 font-semibold">Decoupled standard API routing</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-extrabold text-gray-900 block">€{(calculations.modernDevDaysTotal * calculations.devRate).toLocaleString()}</span>
-                  <span className="text-[10px] text-gray-500 font-semibold">{calculations.modernDevDaysTotal} Dev-Days / yr</span>
+                  <span className="font-extrabold text-gray-900 block">€{Math.round(calculations.modernDevDaysTotal * calculations.devRate).toLocaleString()}</span>
+                  <span className="text-[10px] text-gray-500 font-semibold">{Math.round(calculations.modernDevDaysTotal)} Dev-Days / yr</span>
                 </div>
               </div>
 
@@ -469,8 +469,8 @@ export default function TcoCalculatorPage() {
                   <span className="text-[10px] text-gray-500 font-semibold">Sandboxed unit test suite validations</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-extrabold text-gray-900 block">€{(calculations.modernTestDaysTotal * calculations.userRate).toLocaleString()}</span>
-                  <span className="text-[10px] text-gray-500 font-semibold">{calculations.modernTestDaysTotal} Tester-Days / yr</span>
+                  <span className="font-extrabold text-gray-900 block">€{Math.round(calculations.modernTestDaysTotal * calculations.userRate).toLocaleString()}</span>
+                  <span className="text-[10px] text-gray-500 font-semibold">{Math.round(calculations.modernTestDaysTotal)} Tester-Days / yr</span>
                 </div>
               </div>
 

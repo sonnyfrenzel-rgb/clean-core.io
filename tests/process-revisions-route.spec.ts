@@ -314,10 +314,24 @@ test('the same bytes again add no revision, and a save from a stale revision is 
   expect(refusal.latest).toBe(latest.revision);
   expect((await history(request)).length).toBe(list.length);
 
-  // And a model that is not BPMN is refused with its own reason.
-  const wrong = await request.post(path, { headers: headers(), data: { xml: '{"nodes":[]}', baseRevision: latest.revision } });
-  expect(wrong.status()).toBe(400);
-  expect((await wrong.json()).code).toBe('not-bpmn');
+  // And a model that is not BPMN is refused with its own reason — which since
+  // 21.09.2026 is two reasons, because the check is a parse rather than a regex
+  // (Gegenreview c5085bb, CR-20). Being well-formed XML and being a BPMN
+  // document are separate states, so the route distinguishes them: JSON is not
+  // XML at all, and an XML document whose root is a `definitions` in a foreign
+  // namespace is XML that is not BPMN. Both are refused, each with its own code,
+  // and neither adds a revision.
+  const notXml = await request.post(path, { headers: headers(), data: { xml: '{"nodes":[]}', baseRevision: latest.revision } });
+  expect(notXml.status()).toBe(400);
+  expect((await notXml.json()).code, 'JSON is not well-formed XML').toBe('malformed');
+  expect((await history(request)).length).toBe(list.length);
+
+  const notBpmn = await request.post(path, {
+    headers: headers(),
+    data: { xml: '<x:definitions xmlns:x="http://example.com/other"></x:definitions>', baseRevision: latest.revision },
+  });
+  expect(notBpmn.status()).toBe(400);
+  expect((await notBpmn.json()).code, 'well-formed XML with a foreign root is not BPMN').toBe('not-bpmn');
   expect((await history(request)).length).toBe(list.length);
 });
 

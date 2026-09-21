@@ -181,27 +181,47 @@ test.describe('what a revision may hold', () => {
     expect(readRevisionStats(AFTER)).toEqual({ flowNodes: 5, anchored: 4, unanchored: 1 });
   });
 
-  test('an empty body, something that is not BPMN and a model too large are each refused for their own reason', () => {
-    expect(checkRevisionXml(undefined)).toMatchObject({ ok: false, code: 'bad-request' });
-    expect(checkRevisionXml('   ')).toMatchObject({ ok: false, code: 'bad-request' });
-    expect(checkRevisionXml({ xml: BEFORE })).toMatchObject({ ok: false, code: 'bad-request' });
-    expect(checkRevisionXml('<html><body>not a process</body></html>')).toMatchObject({
+  test('an empty body, something that is not BPMN and a model too large are each refused for their own reason', async () => {
+    expect(await checkRevisionXml(undefined)).toMatchObject({ ok: false, code: 'bad-request' });
+    expect(await checkRevisionXml('   ')).toMatchObject({ ok: false, code: 'bad-request' });
+    expect(await checkRevisionXml({ xml: BEFORE })).toMatchObject({ ok: false, code: 'bad-request' });
+    expect(await checkRevisionXml('<html><body>not a process</body></html>')).toMatchObject({
       ok: false,
       code: 'not-bpmn',
     });
     const huge = `${BEFORE}${' '.repeat(MAX_REVISION_XML)}`;
-    expect(checkRevisionXml(huge)).toMatchObject({ ok: false, code: 'too-large' });
+    expect(await checkRevisionXml(huge)).toMatchObject({ ok: false, code: 'too-large' });
   });
 
-  test('and a BPMN file comes back with its digest and its counts', () => {
-    const checked = checkRevisionXml(BEFORE);
+  test('the structural floor is parsing, not a regex: unclosed and foreign documents fail, the default namespace passes', async () => {
+    // Gegenreview c5085bb, CR-20 — the three probes the review ran against the
+    // regex, with the answers it should have given.
+    const ns = 'http://www.omg.org/spec/BPMN/20100524/MODEL';
+    expect(await checkRevisionXml(`<bpmn:definitions xmlns:bpmn="${ns}" id="d"><bpmn:process id="p"/>`)).toMatchObject({
+      ok: false,
+      code: 'malformed',
+    });
+    expect(await checkRevisionXml(`<bpmn:definitions xmlns:bpmn="${ns}" id="d"><a><b></a></bpmn:definitions>`)).toMatchObject({
+      ok: false,
+      code: 'malformed',
+    });
+    expect(await checkRevisionXml('<x:definitions xmlns:x="http://example.com/other"></x:definitions>')).toMatchObject({
+      ok: false,
+      code: 'not-bpmn',
+    });
+    const asDefault = await checkRevisionXml(`<definitions xmlns="${ns}" id="d"><process id="p"/></definitions>`);
+    expect(asDefault.ok, 'BPMN as the default namespace is well-formed BPMN').toBe(true);
+  });
+
+  test('and a BPMN file comes back with its digest and its counts', async () => {
+    const checked = await checkRevisionXml(BEFORE);
     expect(checked.ok).toBe(true);
     if (!checked.ok) return;
     expect(checked.sha256).toMatch(/^[0-9a-f]{64}$/);
     expect(checked.stats).toEqual({ flowNodes: 5, anchored: 5, unanchored: 0 });
     // The same bytes give the same digest — this is what stops a save that
     // changed nothing from becoming a revision.
-    expect(checkRevisionXml(BEFORE)).toMatchObject({ sha256: checked.sha256 });
+    expect(await checkRevisionXml(BEFORE)).toMatchObject({ sha256: checked.sha256 });
   });
 });
 

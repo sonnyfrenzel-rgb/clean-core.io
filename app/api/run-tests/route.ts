@@ -7,6 +7,7 @@ import path from 'path';
 import { isBuiltin } from 'module';
 import { pathToFileURL } from 'url';
 import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied, assertAccountActive, getAdminDb } from '@/lib/firebase-admin';
+import { modGuardSource, modHooksSource, sandboxDenied } from '@/lib/sandbox-module-guard';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { liveRunnerPermitted } from '@/lib/runner-egress-attestation';
@@ -154,6 +155,11 @@ function createSandboxResolvePlugin(opts: {
         const p: string = args.path;
         if (args.kind === 'entry-point') return undefined;
 
+        // A built-in the sandbox never hands out is refused here, at bundle
+        // time, before it could become external (lib/sandbox-module-guard.ts).
+        if ((p.startsWith('node:') || isBuiltin(p)) && sandboxDenied(p)) {
+          return { errors: [{ text: `${p} is not available in the Clean-Core.io test sandbox.` }] };
+        }
         // Node built-ins stay external (real node:test / node:assert).
         if (p.startsWith('node:') || isBuiltin(p)) return { external: true };
 
@@ -192,6 +198,21 @@ function createSandboxResolvePlugin(opts: {
 
 // Node-version dependent permission flag. isolation:'none' needs Node >= 22.8.0;
 // the flag was renamed from --experimental-permission to --permission in 23.5.0.
+/**
+ * `--no-experimental-sqlite` exists from the Node that has `node:sqlite` (22.5).
+ * The module reaches the file system past the permission model's fence — Node
+ * documents it, the counter-review of c5085bb reproduced it (CR-09) — and this
+ * switch removes the module altogether. Measured on 22.22 under
+ * `--experimental-permission`: every form of the import — static, dynamic,
+ * computed, `require` — answers ERR_UNKNOWN_BUILTIN_MODULE, while the resolve
+ * hook of `lib/sandbox-module-guard.ts` cannot even register there (it needs a
+ * worker thread the model refuses). Node 20 has neither the module nor the flag.
+ */
+function sqliteSwitchSupported(): boolean {
+  const [major, minor] = process.versions.node.split('.').map((n) => parseInt(n, 10));
+  return major > 22 || (major === 22 && minor >= 5);
+}
+
 function resolvePermissionFlag(): { flag: string | null; reason?: string } {
   const [major, minor] = process.versions.node.split('.').map((n) => parseInt(n, 10));
   if (major >= 24) return { flag: '--permission' };
@@ -660,7 +681,19 @@ if (ALLOWED_SUFFIXES.length === 0) {
     // unconditional. It used to be skipped on the same env var that unlocked
     // live mode, so the one run holding real tenant credentials was also the
     // one run with no guard loaded at all.
+    // The layer that holds against node:sqlite on the Node that has it —
+    // see sqliteSwitchSupported. Not conditional on anything else.
+    if (sqliteSwitchSupported()) args.push('--no-experimental-sqlite');
     args.push(`--import=${pathToFileURL(netGuardPath).href}`);
+    // The built-ins the sandbox refuses at runtime, whichever way they are
+    // asked for: require() through the CommonJS loader, import() through the
+    // ESM resolve hook. The bundler already refused the static form. What this
+    // is and is not stands in lib/sandbox-module-guard.ts.
+    const modHooksPath = path.join(testDir, '__modhooks.mjs');
+    const modGuardPath = path.join(testDir, '__modguard.mjs');
+    await fs.writeFile(modHooksPath, modHooksSource());
+    await fs.writeFile(modGuardPath, modGuardSource(pathToFileURL(modHooksPath).href));
+    args.push(`--import=${pathToFileURL(modGuardPath).href}`);
     args.push(runnerPath);
 
     const childEnv: Record<string, string> = {

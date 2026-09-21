@@ -51,6 +51,16 @@ const FIRST_LOOK_PARAM = 'first';
  * (roadmap 6.1) lives in `?focus=` on the same terms — see
  * `tests/view-attribute-guard.spec.ts` for the guard that proves it.
  */
+/**
+ * The `#fragment` of the current address. A view or focus switch rewrites the
+ * query and used to drop it, so a shared link to one element lost its place the
+ * moment the reader changed the view (Gegenreview c5085bb, CR-14). Same
+ * subject, other view, same place.
+ */
+function currentHash(): string {
+  return typeof window === 'undefined' ? '' : window.location.hash;
+}
+
 export default function ProjectWorkspacePage() {
   const params = useParams();
   const router = useRouter();
@@ -87,7 +97,7 @@ export default function ProjectWorkspacePage() {
       query.set('view', next);
       // `push`, not `replace`: a view is a place the reader chose to be, and Back
       // should return them to the one they came from (ADR-018).
-      router.push(`?${query.toString()}`, { scroll: false });
+      router.push(`?${query.toString()}${currentHash()}`, { scroll: false });
     },
     [router, searchParams],
   );
@@ -97,7 +107,7 @@ export default function ProjectWorkspacePage() {
     (next: ItFocus) => {
       const query = new URLSearchParams(searchParams?.toString() ?? '');
       query.set('focus', next);
-      router.push(`?${query.toString()}`, { scroll: false });
+      router.push(`?${query.toString()}${currentHash()}`, { scroll: false });
     },
     [router, searchParams],
   );

@@ -49,8 +49,9 @@ test.describe('when the model declines', () => {
   });
 
   test('a codebase too small to cost anything is not modelled', () => {
-    // Below a few hundred lines every figure rounds to a division by zero
-    // wearing a euro sign.
+    // Below one modelled day a year the model declines by rule - it used to
+    // decline because every term rounded to zero, which was the same answer
+    // for a worse reason.
     expect(tcoForecast(at({ loc: 100 }))).toBeNull();
   });
 });
@@ -141,4 +142,24 @@ test('the page runs this model and keeps no copy of it', () => {
   expect(page, 'and so does the ROI').not.toMatch(/const roiYear1 =/);
   // The refusal threshold is the model's, not a literal beside it.
   expect(page).toContain('TCO_TARGET_SCORE');
+});
+
+test.describe('the domain refuses what the arithmetic would accept', () => {
+  // Gegenreview c5085bb, CR-16: five vectors run against the exported function.
+  test('negative money and a score outside 0–100 are not inputs', () => {
+    expect(tcoForecast(at({ oneTimeCost: -10_000 }))).toBeNull();
+    expect(tcoForecast(at({ devRate: -1 }))).toBeNull();
+    expect(tcoForecast(at({ userRate: -600 }))).toBeNull();
+    expect(tcoForecast(at({ scoreBefore: -100 }))).toBeNull();
+    expect(tcoForecast(at({ scoreBefore: 101 }))).toBeNull();
+  });
+
+  test('a small project does not round its modern effort to nothing', () => {
+    // 1,000 lines, score 50, 10,000 invested: every modelled modern term used to
+    // round to zero days, and the page showed a 100 % overhead reduction.
+    const f = tcoForecast(at({ loc: 1000, scoreBefore: 50, oneTimeCost: 10_000 }));
+    expect(f).not.toBeNull();
+    expect(f!.modernAnnualTotal).toBeGreaterThan(0);
+    expect(f!.overheadReductionPct).toBeLessThan(100);
+  });
 });
