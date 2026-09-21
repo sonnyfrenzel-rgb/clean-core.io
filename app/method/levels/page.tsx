@@ -505,6 +505,11 @@ const RULES: { state: string; grade: CloudReadinessGrade; why: string }[] = [
     why: 'SAP classifies it as not intended for customer use.',
   },
   {
+    state: 'a state neither file’s vocabulary covers',
+    grade: 'Unknown',
+    why: 'SAP keeps the state verbatim and can publish one this rule does not map. The file then says something rather than nothing, so the row below — which reads "listed nowhere" — does not describe it, and no level follows until the state is read and mapped on purpose.',
+  },
+  {
     state: 'listed in neither file',
     grade: 'C',
     why: 'An SAP object with no published classification is what the level C definition describes — internal, usable with a changelog check before each upgrade.',

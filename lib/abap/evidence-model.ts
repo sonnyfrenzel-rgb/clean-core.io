@@ -4,6 +4,7 @@ import { MERGED_TABLE_MAP, getMergedCatalogVersion, hasNoReleasedApiPath, getSap
 
 import { assessCoverage, type CoverageReport } from './coverage';
 import { readTableDependencies, type DependencyRoute, type TableDependency } from './table-dependencies';
+import { maskLiterals } from './statement-reader';
 
 export type EvidenceKind =
   | 'table-access'
@@ -186,7 +187,15 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     // An object SAP has released is the target state, not a violation. Reporting
     // `SELECT FROM i_salesorder` as an illegal standard-table read told architects
     // that the correct ABAP Cloud pattern was a finding.
-    if (sapStates.releaseState === 'released') return;
+    //
+    // The exemption is the *read*, because that is the use the release contract
+    // covers. SAP releases a data object to be selected from; no release state
+    // says a customer may modify SAP's rows directly. Applied to writes as well,
+    // this line deleted the Critical finding for a direct mutation of an SAP
+    // table — the most severe access the engine reports — on the strength of a
+    // permission for a different operation (QA review of b88c77b, ac5a65eb53ff /
+    // 79705bbe66be).
+    if (!isWrite && sapStates.releaseState === 'released') return;
 
     // A reserved-namespace table SAP does not list is of unknown provenance —
     // more likely a partner or customer object than SAP standard. Calling it a
@@ -241,7 +250,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
           objectType: 'Database Table',
           lineStart: line,
           snippet: text,
-          technicalDetail: `Direct modification statement on standard SAP table ${table}.${routeNote}`,
+          technicalDetail: `Direct modification statement on standard SAP table ${table}.${routeNote}${sapStates.releaseState === 'released' ? ' SAP has released this object — for use, which is the read. The release carries no permission to write its rows directly.' : ''}`,
           cleanCoreImpact: 'Directly modifying standard SAP tables destroys system integrity, invalidates SAP guarantees, and blocks upgrades completely.',
           recommendation: `REPLACE IMMEDIATELY with official SAP released APIs (OData APIs, BAPIs) or RAP actions. Do NOT perform direct writes in S/4HANA.`,
           targetOptions: ['Developer Extensibility / RAP', 'Integration Suite'],
@@ -280,6 +289,26 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
   statements.forEach((stmt, statementIndex) => {
     const text = stmt.text.trim();
     if (!text) return;
+    /**
+     * The same statement with the inside of every literal blanked — what it
+     * *executes*, as opposed to what it says.
+     *
+     * `tokenize` drops comments and keeps literals, so until now
+     * `DATA message TYPE string VALUE 'CALL TRANSACTION VA01'.` produced a High
+     * BDC finding and `DATA(m) = |EXEC SQL …|` a Critical native-SQL one, on
+     * programs that call no transaction and execute no native SQL (QA review of
+     * b88c77b, 18e7f9c0a67e / 42f234fcae8d / 8dcf89e31a32 / 9b1698637a1d). The
+     * rule is the one `statement-reader.ts` already states: a literal is text,
+     * not code.
+     *
+     * **Which detectors may not use it.** The exception that module documents
+     * applies here too — the name in `CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'`
+     * is the call target and lives in a literal, and the hardcoded-value
+     * detector exists to look inside one. Those keep `text`, and say so at the
+     * line where they do it. Operands are read from `text` for the same reason:
+     * the transaction code and the function-module name are literal contents.
+     */
+    const codeText = maskLiterals(text);
 
     // -- 1. Table Accesses --
     // Read by `readTableDependencies`, the one reader of `SELECT … FROM`, the
@@ -293,7 +322,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     // -- 2. Legacy Pattern Detections --
 
     // Batch Data Communication (BDC)
-    if (/\bCALL\s+TRANSACTION\b/i.test(text)) {
+    if (/\bCALL\s+TRANSACTION\b/i.test(codeText)) {
       const tcodeMatch = text.match(/\bCALL\s+TRANSACTION\s+'?([\w\/]+)'?/i);
       const tcode = tcodeMatch ? tcodeMatch[1].toUpperCase() : 'UNKNOWN';
       addFinding({
@@ -313,7 +342,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     }
 
     // Remote Function Calls (RFC)
-    if (/\bCALL\s+FUNCTION\b[\s\S]+?\bDESTINATION\b/i.test(text)) {
+    if (/\bCALL\s+FUNCTION\b[\s\S]+?\bDESTINATION\b/i.test(codeText)) {
       const fmMatch = text.match(/\bCALL\s+FUNCTION\s+'?([\w\/]+)'?/i);
       const fmName = fmMatch ? fmMatch[1].toUpperCase() : 'UNKNOWN';
       addFinding({
@@ -333,7 +362,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     }
 
     // Classic Dynpro UI
-    if (/\bCALL\s+SCREEN\b/i.test(text) || /\bMODULE\s+[\w\/]+\s+(?:OUTPUT|INPUT)\b/i.test(text)) {
+    if (/\bCALL\s+SCREEN\b/i.test(codeText) || /\bMODULE\s+[\w\/]+\s+(?:OUTPUT|INPUT)\b/i.test(codeText)) {
       addFinding({
         kind: 'dynpro',
         title: 'Legacy Screen Painter (Dynpro) UI Pattern',
@@ -348,7 +377,9 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
       });
     }
 
-    // Classic ALV Grid
+    // Classic ALV Grid. The name of a called function module stands in a
+    // literal and is the call target, not prose about one — the exception
+    // `statement-reader.ts` documents. So this reads `text`, not `codeText`.
     if (/REUSE_ALV_GRID_DISPLAY/i.test(text) || /REUSE_ALV_LIST_DISPLAY/i.test(text)) {
       addFinding({
         kind: 'classic-alv',
@@ -364,7 +395,8 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
       });
     }
 
-    // GUI Download / Local File access
+    // GUI Download / Local File access. Function-module names again (`text`,
+    // for the reason above); `CL_GUI_FRONTEND_SERVICES` is the class form.
     if (/GUI_DOWNLOAD/i.test(text) || /GUI_UPLOAD/i.test(text) || /CL_GUI_FRONTEND_SERVICES/i.test(text)) {
       addFinding({
         kind: 'gui-download',
@@ -381,7 +413,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     }
 
     // Native SQL
-    if (/EXEC\s+SQL/i.test(text)) {
+    if (/EXEC\s+SQL/i.test(codeText)) {
       addFinding({
         kind: 'native-sql',
         title: 'Legacy Native SQL (EXEC SQL)',
@@ -414,7 +446,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     }
 
     // Update Task / Asynchronous V2 Updates
-    if (/\bIN\s+UPDATE\s+TASK\b/i.test(text)) {
+    if (/\bIN\s+UPDATE\s+TASK\b/i.test(codeText)) {
       addFinding({
         kind: 'update-task',
         title: 'Asynchronous Update Task (IN UPDATE TASK)',
@@ -430,7 +462,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     }
 
     // Program coupling (SUBMIT)
-    if (/\bSUBMIT\b[\s\S]+?\bAND\s+RETURN\b/i.test(text) || /^\s*SUBMIT\b/i.test(text)) {
+    if (/\bSUBMIT\b[\s\S]+?\bAND\s+RETURN\b/i.test(codeText) || /^\s*SUBMIT\b/i.test(codeText)) {
       addFinding({
         kind: 'submit',
         title: 'Legacy Program Coupling via SUBMIT',
@@ -446,7 +478,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     }
 
     // Authority Checks
-    if (/\bAUTHORITY-CHECK\b/i.test(text)) {
+    if (/\bAUTHORITY-CHECK\b/i.test(codeText)) {
       addFinding({
         kind: 'authority-check',
         title: 'Authorization Check (AUTHORITY-CHECK)',
@@ -462,7 +494,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     }
 
     // Transaction boundaries (COMMIT WORK)
-    if (/\bCOMMIT\s+WORK\b/i.test(text)) {
+    if (/\bCOMMIT\s+WORK\b/i.test(codeText)) {
       addFinding({
         kind: 'commit-work',
         title: 'Explicit Transaction Boundary (COMMIT WORK)',
@@ -477,7 +509,8 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
       });
     }
 
-    // Hardcoded environmental values
+    // Hardcoded environmental values — the one detector whose subject *is* the
+    // content of a literal, so it reads `text` on purpose.
     if (/(?:['"](?:C:\\|PRD|CLNT|SYS|HTTP:\/\/|HTTPS:\/\/))/i.test(text) && !/AIzaSy/i.test(text)) {
       addFinding({
         kind: 'hardcoded-value',
@@ -493,7 +526,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
       });
     }
 
-    // SAPOffice legacy mailing
+    // SAPOffice legacy mailing — a function-module name, read from `text`.
     if (/SO_NEW_DOCUMENT_SEND_API1/i.test(text)) {
       addFinding({
         kind: 'legacy-mail',
@@ -509,7 +542,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
       });
     }
 
-    // Credit Management custom logic
+    // Credit Management custom logic — the module name is a literal, so `text`.
     if (/Z_CREDIT|CREDIT.*EXPOSURE|CREDIT.*RISK|FSCM/i.test(text) && /CALL\s+FUNCTION/i.test(text)) {
       addFinding({
         kind: 'credit-management',
@@ -534,8 +567,8 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     // extension points and stay usable (level B).
 
     // Enhancement implementation: ENHANCEMENT <n> <name>. ... ENDENHANCEMENT.
-    const enhImpl = text.match(/^ENHANCEMENT\s+(?:\d+\s+)?([\w\/]+)/i);
-    if (enhImpl && !/^ENHANCEMENT-(POINT|SECTION)/i.test(text)) {
+    const enhImpl = codeText.match(/^ENHANCEMENT\s+(?:\d+\s+)?([\w\/]+)/i);
+    if (enhImpl && !/^ENHANCEMENT-(POINT|SECTION)/i.test(codeText)) {
       addFinding({
         kind: 'enhancement',
         title: `Enhancement implementation ${enhImpl[1].toUpperCase()}`,
@@ -553,7 +586,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     }
 
     // Explicit and implicit enhancement points / sections
-    const enhPoint = text.match(/^ENHANCEMENT-(POINT|SECTION)\s+([\w\/]+)/i);
+    const enhPoint = codeText.match(/^ENHANCEMENT-(POINT|SECTION)\s+([\w\/]+)/i);
     if (enhPoint) {
       const kindWord = enhPoint[1].toLowerCase();
       addFinding({
@@ -573,7 +606,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     }
 
     // BAdI usage — SAP's own classic extension point. Reportable, not a blocker.
-    const badi = text.match(/\b(GET|CALL)\s+BADI\s+([\w\/]+)/i);
+    const badi = codeText.match(/\b(GET|CALL)\s+BADI\s+([\w\/]+)/i);
     if (badi) {
       addFinding({
         kind: 'enhancement',
@@ -592,7 +625,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     }
 
     // Classic exit handler — the pre-Enhancement-Framework way into SAP code.
-    if (/\bCL_EXITHANDLER\s*=>\s*GET_INSTANCE\b/i.test(text)) {
+    if (/\bCL_EXITHANDLER\s*=>\s*GET_INSTANCE\b/i.test(codeText)) {
       addFinding({
         kind: 'enhancement',
         title: 'Classic exit handler (CL_EXITHANDLER=>GET_INSTANCE)',

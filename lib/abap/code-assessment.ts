@@ -204,7 +204,30 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
     const hasRead = stats.reads > 0;
     const hasWrite = stats.writes > 0;
     const isCustom = tableName.startsWith('Z') || tableName.startsWith('Y');
-    const isStandard = STANDARD_TABLE_MAP[tableName] !== undefined;
+    /**
+     * Who owns the table, asked separately from whether this file happens to
+     * carry replacement guidance for it.
+     *
+     * `isStandard` used to mean "is in `STANDARD_TABLE_MAP`", which made the
+     * risk of a write depend on whether someone had typed a successor into a
+     * 25-entry map: `UPDATE acdoca` — a write straight into the S/4HANA
+     * universal journal — came back Medium, one step below the same write to
+     * VBAK, and the `isStandard` recommendation branch below it was
+     * unreachable (QA review of b88c77b, 92e75580c745 / 4862a73a2121 /
+     * da845198acc9 / 451f13d1c004).
+     *
+     * Three answers, not two. A reserved-namespace name (`/ACME/T_ORDER`) can
+     * belong to SAP, to a partner or to the customer, and the name alone does
+     * not say which — the rule `evidence-model.ts` and
+     * `abcd-classification.ts` already apply. It is therefore neither custom
+     * nor standard here, and nothing downstream may read it as either
+     * (e955a181ba42). The catalog would answer it, and cannot be asked: this
+     * module is imported by `analyze/page.tsx`, a client component, and
+     * `catalog-service.ts` carries four megabytes of generated JSON.
+     */
+    const isNamespaced = /^\/[^/]+\//.test(tableName);
+    const isStandard = !isCustom && !isNamespaced;
+    const hasReplacement = STANDARD_TABLE_MAP[tableName] !== undefined;
     const referenceOnly = !hasRead && !hasWrite;
     const possibleOnly = stats.known === 0;
 
@@ -223,7 +246,7 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
     let replacementConfidence: 'Catalog Match' | 'Verified' | 'Candidate' | 'Needs Validation' = 'Needs Validation';
     if (referenceOnly) {
       recommendation = referenceRecommendation(tableName, stats.routes, stats.programs);
-    } else if (isStandard && STANDARD_TABLE_MAP[tableName]) {
+    } else if (isStandard && hasReplacement) {
       recommendation = STANDARD_TABLE_MAP[tableName];
       // Hand-written guidance in this file, not a lookup in SAP's release data.
       replacementConfidence = 'Verified';
@@ -459,8 +482,20 @@ export function recommendArchitecture(
   const customTableWrites = known.filter((d) => d.isCustom && (d.accessType === 'Write' || d.accessType === 'Read/Write')).length;
   const standardTableReads = known.filter((d) => !d.isCustom && d.accessType === 'Read').length;
   const standardTableWrites = known.filter((d) => !d.isCustom && (d.accessType === 'Write' || d.accessType === 'Read/Write')).length;
-  const hasRfcIdoc = /\bIDOC\b/.test(upper) || calledFunctionModules(code).some(isRfcOrIdocModule);
-  const hasEventPattern = /\b(EVENT\s+RAISED|RAISE\s+EVENT|PUBLISH)\b/i.test(upper);
+  // Both signals are about what the program *does*, so both are read from calls
+  // and statements and not from a word that happens to occur.
+  //
+  // `\bIDOC\b` on the masked source and `\bPUBLISH\b` inside the event pattern
+  // were two free-word scans, and masking comments only moved the false
+  // positive one step: `DATA idoc TYPE string.` still returned an Integration
+  // Suite recommendation at 80 % confidence and `DATA publish TYPE abap_bool.`
+  // an Event Mesh one at 75 %, from a declaration that calls nothing and raises
+  // nothing (QA review of b88c77b, d27e02241df3 / 9a4739b73b26 / 423e06020a0e /
+  // 24a2ea35802c / 9a05d24b9cf0). The IDoc families the routing has always
+  // meant are the function modules, which `isRfcOrIdocModule` already names;
+  // the word added nothing but the declarations.
+  const hasRfcIdoc = calledFunctionModules(code).some(isRfcOrIdocModule);
+  const hasEventPattern = /\b(EVENT\s+RAISED|RAISE\s+EVENT)\b/i.test(upper);
   const loc = code.split(/\r?\n/).filter((l) => l.trim().length > 0).length;
 
   // If the existing route already suggests BTP or In-App, use it as a tiebreaker

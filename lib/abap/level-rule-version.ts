@@ -51,6 +51,19 @@ export const RULE_RELEASE_STATES = ['released', 'deprecated', 'notToBeReleased']
 /** The classification-file states the rule branches on. */
 export const RULE_CLASSIFICATION_STATES = ['classicAPI', 'noAPI'] as const;
 
+/**
+ * One state standing in for every state the rule does not map.
+ *
+ * The rule has a branch for "the file names a state this code cannot read" —
+ * the answer is Unknown, because a level derived from a sentence nobody read is
+ * a claim without evidence. The enumeration below could not see that branch:
+ * it only ever passed the five states listed above, all of them mapped, so the
+ * rule could change and the fingerprint could not move — the one thing this
+ * module promises cannot happen. This sentinel is never a real SAP state; it is
+ * the representative of all of them that are not in the lists.
+ */
+export const RULE_UNMAPPED_STATE = '(a state this rule does not map)';
+
 export interface LevelRuleDecision {
   releaseState: string | null;
   classificationState: string | null;
@@ -86,9 +99,14 @@ export function enumerateLevelRule(
   } = {},
 ): LevelRuleDecision[] {
   const grade = options.grade ?? gradeFromSapStatesForUse;
-  const releaseStates = dedupe([...RULE_RELEASE_STATES, ...(options.releaseStates ?? [])]);
+  const releaseStates = dedupe([
+    ...RULE_RELEASE_STATES,
+    RULE_UNMAPPED_STATE,
+    ...(options.releaseStates ?? []),
+  ]);
   const classificationStates = dedupe([
     ...RULE_CLASSIFICATION_STATES,
+    RULE_UNMAPPED_STATE,
     ...(options.classificationStates ?? []),
   ]);
 

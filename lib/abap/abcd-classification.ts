@@ -261,8 +261,8 @@ export interface GradedObject {
    *
    * Informational only: nothing derives a grade from these.
    */
-  cloudView?: 'usable' | 'deprecated' | 'not-usable' | 'unlisted';
-  classicView?: 'classic-api' | 'not-recommended' | 'unlisted';
+  cloudView?: 'usable' | 'deprecated' | 'not-usable' | 'unlisted' | 'unreadable';
+  classicView?: 'classic-api' | 'not-recommended' | 'unlisted' | 'unreadable';
 }
 
 /**
@@ -289,6 +289,10 @@ export const CLOUD_VIEW_META: Record<NonNullable<GradedObject['cloudView']>, { l
     label: 'Not listed',
     detail: 'The release file does not mention it, so it says nothing either way.',
   },
+  unreadable: {
+    label: 'State not readable',
+    detail: 'The release file names a state this rule does not map. It says something — and not "nothing" — so no level follows from it.',
+  },
 };
 
 export const CLASSIC_VIEW_META: Record<NonNullable<GradedObject['classicView']>, { label: string; detail: string }> = {
@@ -303,6 +307,10 @@ export const CLASSIC_VIEW_META: Record<NonNullable<GradedObject['classicView']>,
   unlisted: {
     label: 'Not listed',
     detail: 'The classification file does not mention it, so it says nothing either way.',
+  },
+  unreadable: {
+    label: 'State not readable',
+    detail: 'The classification file names a state this rule does not map. It says something — and not "nothing" — so no level follows from it.',
   },
 };
 
@@ -352,10 +360,12 @@ export function gradeFromSapStates(s: SapObjectStates): GradedObject {
     release === 'released' ? 'usable'
     : release === 'deprecated' ? 'deprecated'
     : release === 'nottobereleased' ? 'not-usable'
+    : release ? 'unreadable'
     : 'unlisted';
   const classicView: GradedObject['classicView'] =
     classification === 'classicapi' ? 'classic-api'
     : classification === 'noapi' ? 'not-recommended'
+    : classification ? 'unreadable'
     : 'unlisted';
   const views = { cloudView, classicView };
 
@@ -364,8 +374,18 @@ export function gradeFromSapStates(s: SapObjectStates): GradedObject {
   if (release === 'deprecated') {
     return { grade: s.hasSuccessor ? 'C' : 'D', provenance: 'catalog', state: 'deprecated', ...views };
   }
+  // A state SAP ships that this rule does not map is not evidence for a letter.
+  // `cloudification-repo.ts` keeps the state verbatim and names `notReleased`
+  // and `decommissioned` as forms that occur, and the release state decides
+  // before the classification state — so an unmapped release state removes the
+  // basis for every branch below it, the residual C included. That branch reads
+  // "listed nowhere", which is untrue of an object whose file does say
+  // something; C would be a level asserted from a sentence nobody read
+  // (QA review of b88c77b, 469c688b0b0f / 17bfad473975).
+  if (release) return { grade: 'Unknown', provenance: 'heuristic', ...views };
   if (classification === 'classicapi') return { grade: 'B', provenance: 'catalog', state: 'classicAPI', ...views };
   if (classification === 'noapi') return { grade: 'D', provenance: 'catalog', state: 'noAPI', ...views };
+  if (classification) return { grade: 'Unknown', provenance: 'heuristic', ...views };
 
   // Listed nowhere. For an SAP object that is the level C definition itself.
   if (s.isSapObject) return { grade: 'C', provenance: 'catalog-residual', ...views };
