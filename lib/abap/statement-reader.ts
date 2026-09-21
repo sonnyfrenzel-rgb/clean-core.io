@@ -156,7 +156,21 @@ export function createLiteralScanner(): LiteralScanner {
   let tick = false;
   let template = false;
   let embedded = 0;
+  let escaped = false;
   const scan = ((ch: string): boolean => {
+    // A template escapes its own delimiters with a backslash — `\|`, `\{`, `\}`,
+    // `\\`. Without that rule the escaped bar closed the template, the period
+    // behind it ended a statement that is not in the source, and the real
+    // closing bar opened another one: `DATA(t) = |Use \| here. Done|.` was read
+    // as two statements and swallowed the one below it (full review of
+    // b88c77b4b5d1, 567fac1cd057 / 9cea07ac57f5). Whitespace does not consume
+    // the escape, because `maskLiterals` asks about a space to read the state
+    // without advancing it, and no escape sequence is a blank.
+    if (escaped) {
+      if (!/\s/.test(ch)) escaped = false;
+      return false;
+    }
+    if (template && !embedded && ch === '\\') { escaped = true; return false; }
     if (ch === "'" && !tick && !template) { quote = !quote; return false; }
     if (ch === '`' && !quote && !template) { tick = !tick; return false; }
     if (ch === '|' && !quote && !tick) {

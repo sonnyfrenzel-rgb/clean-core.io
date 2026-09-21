@@ -1,4 +1,5 @@
 import { tokenize } from './declaration-parser';
+import { maskLiterals } from './statement-reader';
 import { readTableDependencies } from './table-dependencies';
 
 /**
@@ -22,9 +23,14 @@ import { readTableDependencies } from './table-dependencies';
  * trade a false clean bill for a false accusation. It is the boundary of the
  * question the engine actually answered.
  *
- * Every match runs over `tokenize()` output, which strips full-line and inline
- * comments and respects string and backtick literals — so a construct named in a
- * comment or inside a quoted string is not a hit.
+ * Every match runs over `tokenize()` output with `maskLiterals` applied, so a
+ * construct named in a comment or inside a literal is not a hit. The comment
+ * claimed that before the masking was there: `tokenize` keeps a literal's
+ * content, so `WRITE 'TO'.` satisfied the `WRITE … TO` exclusion and classic
+ * list output went unrecorded — a program whose only statement is that one
+ * reported complete coverage (full review of b88c77b4b5d1, 610cc2bf910f /
+ * cb60ea95bec2). The delimiters stay, because `CALL FUNCTION 'name'` is told
+ * from `CALL FUNCTION lv_name` by the quote alone.
  */
 
 export type CoverageGap =
@@ -59,7 +65,8 @@ interface Rule {
   label: string;
   why: string;
   /**
-   * Applied to the comment-stripped, upper-cased statement text. `unresolved`
+   * Applied to the comment-stripped, literal-masked, upper-cased statement text.
+   * `unresolved`
    * says whether `readTableDependencies` left a dynamic target of this statement
    * open — a question the text alone cannot answer, because `FROM (lc_tab)` is
    * closed by a constant declared somewhere else.
@@ -140,7 +147,7 @@ export function assessCoverage(code: string): CoverageReport {
   const unresolved = new Set(readTableDependencies(code).unresolved.map((target) => target.statement));
 
   for (const [index, stmt] of tokenize(code).entries()) {
-    const upper = stmt.text.toUpperCase().trim();
+    const upper = maskLiterals(stmt.text).toUpperCase().trim();
     const at = { unresolved: unresolved.has(index) };
     for (const rule of RULES) {
       if (!rule.test(upper, at)) continue;

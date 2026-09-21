@@ -342,6 +342,185 @@ test.describe('a name declared in the source is a variable (Fallbuch §8)', () =
   });
 });
 
+/* ------------------------------------ b88c77b4b5d1 — the source list, again
+ *
+ * Nine findings of the full review of `b88c77b4b5d1` are about one clause: what
+ * a statement reads. Four ways of getting it wrong, each of which either put a
+ * table into the signed analysis that the program does not touch, or took one
+ * out that it does.
+ */
+
+test.describe('what a statement reads (b88c77b4b5d1)', () => {
+  const names = (code: string) => readTableDependencies(code).dependencies.map((d) => d.table);
+
+  test('a host internal table is not a database dependency (0129bc9ea03d)', () => {
+    // `FROM @lt_items` is ABAP's own way of saying "this source is an internal
+    // table". The `@` went through to the sink, which emitted a dependency on
+    // a table called `@LT_ITEMS`.
+    const code = [
+      'REPORT zp.',
+      'DATA lt_items TYPE TABLE OF mara.',
+      'START-OF-SELECTION.',
+      '  SELECT matnr FROM @lt_items AS item INTO TABLE @DATA(rows).',
+    ].join('\n');
+    expect(names(code)).toEqual([]);
+  });
+
+  test('a bare source name is a dictionary entity whatever else is called that (b885d8006422)', () => {
+    // ABAP has no `SELECT … FROM itab` without the `@`, so a bare name in a
+    // source list is a repository object. The general local-name suppression
+    // deleted the read anyway — once for a variable of the same name, once for
+    // an *actual* parameter of a call the whole-source scan mistook for a
+    // declaration (5547aaa0fdbc).
+    const shadowed = [
+      'REPORT zp.',
+      'DATA mara TYPE string.',
+      'START-OF-SELECTION.',
+      '  SELECT * FROM mara INTO TABLE @DATA(rows).',
+    ].join('\n');
+    expect(names(shadowed)).toEqual(['MARA']);
+
+    const parameterName = [
+      'REPORT zp.',
+      'START-OF-SELECTION.',
+      "  CALL FUNCTION 'Z_F' EXPORTING kna1 = 1.",
+      "  UPDATE kna1 SET name1 = 'x'.",
+    ].join('\n');
+    const write = readTableDependencies(parameterName).dependencies;
+    expect(write.map((d) => [d.table, d.access]), 'the write is still a write').toEqual([['KNA1', 'write']]);
+
+    // And a real declaration still suppresses — the guard removes noise, not coverage.
+    const declared = [
+      'REPORT zp.',
+      'DATA gt_rows TYPE TABLE OF string.',
+      'START-OF-SELECTION.',
+      '  MODIFY gt_rows FROM gs_row.',
+    ].join('\n');
+    expect(names(declared)).toEqual([]);
+  });
+
+  test('a CTE and a cursor read tables too (684fc78b1f35)', () => {
+    // Neither statement begins with SELECT, so `readSelect` was never called
+    // and MARA was missing from the signed analysis altogether. The name of
+    // the expression itself — `+m` — is not a repository object.
+    const cte = [
+      'REPORT zp.',
+      'START-OF-SELECTION.',
+      '  WITH +m AS ( SELECT matnr FROM mara )',
+      '    SELECT * FROM +m INTO TABLE @DATA(rows).',
+    ].join('\n');
+    expect(names(cte)).toEqual(['MARA']);
+
+    const cursor = [
+      'REPORT zp.',
+      'DATA lc TYPE cursor.',
+      'START-OF-SELECTION.',
+      '  OPEN CURSOR lc FOR SELECT * FROM mara.',
+    ].join('\n');
+    expect(names(cursor)).toEqual(['MARA']);
+  });
+
+  test('ADBC: a CTE alias is no table, and a write reads too (b7e25abb3b0b, 01c14cfb1ee0)', () => {
+    const alias = [
+      'REPORT zp.',
+      'START-OF-SELECTION.',
+      '  DATA(lo) = NEW cl_sql_statement( ).',
+      '  DATA(r) = lo->execute_query( |WITH recent AS (SELECT * FROM KNA1) SELECT * FROM recent| ).',
+    ].join('\n');
+    expect(names(alias), 'RECENT is a query of this statement, not a repository object').toEqual(['KNA1']);
+
+    const insertSelect = [
+      'REPORT zp.',
+      'START-OF-SELECTION.',
+      '  DATA(lo) = NEW cl_sql_statement( ).',
+      '  lo->execute_update( |INSERT INTO ZCACHE SELECT * FROM KNA1| ).',
+    ].join('\n');
+    expect(readTableDependencies(insertSelect).dependencies.map((d) => [d.table, d.access]))
+      .toEqual([['ZCACHE', 'write'], ['KNA1', 'read']]);
+
+    // `DELETE FROM x` names its target once, not once as a write and once as a source.
+    const del = [
+      'REPORT zp.',
+      'START-OF-SELECTION.',
+      '  DATA(lo) = NEW cl_sql_statement( ).',
+      '  lo->execute_update( |DELETE FROM ZCACHE| ).',
+    ].join('\n');
+    expect(readTableDependencies(del).dependencies.map((d) => [d.table, d.access]))
+      .toEqual([['ZCACHE', 'write']]);
+  });
+});
+
+test('the SQL text of a call is read wherever the source assigns it (7a2f826bddf8, refuted)', () => {
+  // The review asked for the opposite: resolve an ADBC operand from the
+  // assignments *above* the call only. In ABAP that drops the normal case. A
+  // report puts its event blocks first and its FORMs last, so the statement
+  // that builds the SQL stands below the call that executes it in almost every
+  // program of this shape — and an order-sensitive reader would report no
+  // dependency at all for the one below. `ctx.assignments` is read over the
+  // whole source on purpose; where a variable has several values, each is a
+  // possible target and marked as one.
+  const code = [
+    'REPORT zp.',
+    'DATA lv_sql TYPE string.',
+    'START-OF-SELECTION.',
+    '  PERFORM build.',
+    '  DATA(lo) = NEW cl_sql_statement( ).',
+    '  DATA(r) = lo->execute_query( lv_sql ).',
+    'FORM build.',
+    '  lv_sql = |SELECT * FROM KNA1|.',
+    'ENDFORM.',
+  ].join('\n');
+  const kna1 = readTableDependencies(code).dependencies.find((d) => d.table === 'KNA1');
+  expect(kna1, 'the FORM below the event block still builds the statement').toBeTruthy();
+  expect(kna1!.line, 'and the dependency is anchored at the call').toBe(6);
+});
+
+/* ------------------------------------------ SEC-2026-228 — the expansion fan */
+
+test('a fan of macros is read within a budget, and what is left is said out loud', () => {
+  // `depth < 4` bounds how deep an expansion goes and says nothing about how
+  // wide it gets: four levels of thirty calls each is 810 000 statements out of
+  // a source that fits on a screen, and the analysis ran until it or the server
+  // gave up. The budget is the ceiling; a call it will not pay for is recorded
+  // as unread rather than passed over in silence.
+  const fan = 30;
+  const lines = ['REPORT zfan.'];
+  for (let level = 4; level >= 1; level--) {
+    lines.push(`DEFINE m${level}.`);
+    for (let k = 0; k < fan; k++) {
+      lines.push(level === 1 ? `  SELECT COUNT(*) FROM kna1 INTO @DATA(n${k}).` : `  m${level - 1}.`);
+    }
+    lines.push('END-OF-DEFINITION.');
+  }
+  lines.push('START-OF-SELECTION.', '  m4.');
+  const source = lines.join('\n');
+
+  const started = Date.now();
+  const report = readTableDependencies(source);
+  const elapsed = Date.now() - started;
+
+  // Without the budget this source expands to 30^4 statements. The ceiling is
+  // 2000; the dependencies read can never exceed what was expanded.
+  expect(report.dependencies.length, 'the reader stopped at its budget').toBeLessThanOrEqual(2000);
+  expect(report.dependencies.length, 'and it did read what it paid for').toBeGreaterThan(0);
+  expect(report.unresolved.length, 'the calls it did not expand are recorded').toBeGreaterThan(0);
+  expect(elapsed, 'a fan of macros does not hold the server').toBeLessThan(5000);
+
+  // A single macro call is still expanded in full — the budget is a ceiling,
+  // not a tax on every source that has a DEFINE.
+  const small = [
+    'REPORT zsmall.',
+    'DEFINE read_it.',
+    '  SELECT COUNT(*) FROM &1 INTO @DATA(n).',
+    'END-OF-DEFINITION.',
+    'START-OF-SELECTION.',
+    '  read_it kna1.',
+  ].join('\n');
+  const one = readTableDependencies(small);
+  expect(one.dependencies.map((d) => [d.table, d.route])).toEqual([['KNA1', 'macro']]);
+  expect(one.unresolved).toEqual([]);
+});
+
 /* --------------------------------------------------------- the literal rule */
 
 test('the literal scanner says where an embedded expression is, and nothing else changes', () => {

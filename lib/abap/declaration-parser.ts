@@ -2,7 +2,7 @@ import type {
   ClassNode, MethodDecl, AttributeDecl, EventDecl, AliasDecl,
   ParamDef, TypeRef, Visibility, SourceRef,
 } from './class-model';
-import { isAbapCommentLine } from './statement-reader';
+import { isAbapCommentLine, createLiteralScanner } from './statement-reader';
 
 /**
  * ABAP declaration parser — parses ONLY the declaration parts of class/interface
@@ -20,14 +20,25 @@ const norm = (s: string) => s.trim().toUpperCase();
 
 interface Statement { text: string; line: number; }
 
-/** Strip comments, then split into statements (terminated by '.') with start line. */
+/**
+ * Strip comments, then split into statements (terminated by '.') with start line.
+ *
+ * The two scans below ask `createLiteralScanner()` what is code rather than
+ * tracking `'…'` and `` `…` `` themselves. Their own half of the rule knew
+ * neither the string template nor the decimal point, and both gaps fabricate
+ * ABAP that nobody wrote: `DATA(m) = |Example. SELECT * FROM VBAK |.` was cut at
+ * the period inside the template and the tail became a statement, so
+ * `table-dependencies.ts` reported a VBAK read that exists only in display text,
+ * and `METHODS m IMPORTING iv TYPE p DEFAULT 1.5.` became a default of 1 and a
+ * statement called `5` (full review of b88c77b4b5d1, 0c6a98cff70a / 9c05f6c741fc
+ * / 06b051206fa6 / 0583dde3eca9). `readStatements` has stated both rules for a
+ * while; this reader now states neither, it asks.
+ */
 export function tokenize(source: string): Statement[] {
   const lines = source.split(/\r?\n/);
   const statements: Statement[] = [];
   let buf = '';
   let startLine = 0;
-  let inSingleQuote = false;
-  let inBacktick = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -39,30 +50,28 @@ export function tokenize(source: string): Statement[] {
     // example. The rule lives once, in `statement-reader.ts`, with the two real
     // lines that disagree written out beside it.
     if (isAbapCommentLine(line, buf.length > 0)) continue;
-    // Strip inline comment ("...) when not inside a string literal or backtick literal
+    // Strip inline comment ("...) when it is not inside a literal. A literal
+    // does not span lines in ABAP, so the scanner starts fresh on each one.
+    const inLine = createLiteralScanner();
     let clean = '';
     for (let c = 0; c < line.length; c++) {
       const ch = line[c];
-      if (ch === "'" && !inBacktick) inSingleQuote = !inSingleQuote;
-      if (ch === "`" && !inSingleQuote) inBacktick = !inBacktick;
-      if (ch === '"' && !inSingleQuote && !inBacktick) break; // rest is comment
+      if (inLine(ch) && ch === '"') break; // rest is comment
       clean += ch;
     }
-    inSingleQuote = false; // comments don't span lines
-    inBacktick = false;
 
     if (!buf) startLine = i + 1;
     buf += (buf ? ' ' : '') + clean.trim();
 
-    // Split out completed statements on '.' (respect string literals and backticks)
-    let str = false;
-    let bt = false;
+    // Split out completed statements on '.' — outside every literal form, and
+    // never between two digits, where the period is a decimal point.
+    const outside = createLiteralScanner();
     let out = '';
     for (let c = 0; c < buf.length; c++) {
       const ch = buf[c];
-      if (ch === "'" && !bt) str = !str;
-      if (ch === "`" && !str) bt = !bt;
-      if (ch === '.' && !str && !bt) {
+      const code = outside(ch);
+      const decimal = /\d/.test(buf[c - 1] ?? '') && /\d/.test(buf[c + 1] ?? '');
+      if (ch === '.' && code && !decimal) {
         const text = out.trim();
         if (text) statements.push({ text, line: startLine });
         out = '';

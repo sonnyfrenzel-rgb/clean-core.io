@@ -757,4 +757,89 @@ test('a ring of macros does not take the reader down with it', () => {
   ].join('\n');
   const skeleton = buildProcessSkeleton(source);
   expect(skeleton).toBeTruthy();
+
+/* -------------------------- b88c77b4b5d1 / CR-07 — the steps that were missing
+ *
+ * Three readings of a statement that the walker did not have: a source list
+ * taken out of a literal, an ABAP SQL read that does not begin with SELECT, and
+ * a functional method call that executes SQL. Each of them left the displayed
+ * process without a step the program takes.
+ */
+
+test.describe('the steps the walker used to miss (b88c77b4b5d1, CR-07)', () => {
+  const kindsOf = (source: string, kind: string) =>
+    buildProcessSkeleton(source).nodes.filter((n) => n.kind === kind).map((n) => n.label);
+
+  test('a FROM inside a literal draws no read (b785524eb15e)', () => {
+    const code = [
+      'REPORT zp.',
+      'START-OF-SELECTION.',
+      "  SELECT 'FROM KNA1' AS note FROM vbak INTO TABLE @DATA(rows).",
+    ].join('\n');
+    expect(kindsOf(code, 'read'), 'the table the statement reads, and only it').toEqual(['VBAK']);
+  });
+
+  test('a CTE and a cursor draw their read (854c7e288bb7)', () => {
+    const cte = [
+      'REPORT zp.',
+      'START-OF-SELECTION.',
+      '  WITH +m AS ( SELECT matnr FROM mara )',
+      '    SELECT * FROM +m INTO TABLE @DATA(rows).',
+    ].join('\n');
+    expect(kindsOf(cte, 'read')).toEqual(['MARA']);
+    const cursor = [
+      'REPORT zp.',
+      'DATA lc TYPE cursor.',
+      'START-OF-SELECTION.',
+      '  OPEN CURSOR lc FOR SELECT * FROM mara.',
+    ].join('\n');
+    expect(kindsOf(cursor, 'read')).toEqual(['MARA']);
+  });
+
+  test('the ADBC call is a step, and the CATCH hangs on it (CR-07)', () => {
+    // CC-034. `lv_rows = lo_stmt->execute_update( lv_sql ).` is a functional
+    // method call in an assignment: no keyword announces it, so the whole
+    // effect of the program was absent from the flow — and because the
+    // protected part of the TRY drew no node at all, the handler hung on
+    // nothing and was reported as unreachable after an abort that the source
+    // nowhere shows.
+    const source = readFileSync(join(process.cwd(), 'tests/korpus/cases/CC-034/source.abap'), 'utf8');
+    const skeleton = buildProcessSkeleton(source);
+    const call = skeleton.nodes.find((n) => n.kind === 'call-opaque');
+    expect(call, 'the statement that executes the SQL is a step').toBeTruthy();
+    expect(call!.label).toBe('EXECUTE_UPDATE');
+    expect(call!.anchor?.lineStart, 'anchored on the call, not on the assignment target').toBe(15);
+    expect(call!.detail, 'it says the SQL is not in this statement').toMatchObject({
+      nativeSql: true,
+      statement: 'lv_sql',
+    });
+
+    const boundary = skeleton.nodes.find((n) => n.kind === 'error-boundary');
+    expect(boundary!.detail?.attachedTo, 'the handler sits on the call').toBe(call!.id);
+    expect(skeleton.edges.some((e) => e.from === call!.id && e.to === boundary!.id && e.kind === 'boundary'))
+      .toBe(true);
+    expect(skeleton.notes.map((n) => n.reason), 'nothing here is unreachable')
+      .not.toContain('unreachable-after-abort');
+  });
+
+  test('a handler on a protected part that draws no step is still a path', () => {
+    // The other half of the same rule: where there is nothing to attach to, the
+    // CATCH stays connected to what entered the TRY rather than being called
+    // unreachable.
+    const code = [
+      'REPORT zcatch.',
+      'DATA lv_rows TYPE i.',
+      'START-OF-SELECTION.',
+      '  TRY.',
+      '      lv_rows = lv_rows + 1.',
+      '    CATCH cx_sy_arithmetic_error.',
+      "      WRITE / 'ERROR'.",
+      '  ENDTRY.',
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(code);
+    const boundary = skeleton.nodes.find((n) => n.kind === 'error-boundary');
+    expect(boundary, 'the handler is drawn').toBeTruthy();
+    expect(skeleton.edges.some((e) => e.to === boundary!.id), 'and something leads to it').toBe(true);
+    expect(skeleton.notes.map((n) => n.reason)).not.toContain('unreachable-after-abort');
+  });
 });

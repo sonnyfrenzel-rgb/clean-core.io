@@ -212,9 +212,18 @@ export function collectLocalDataObjects(source: string): Set<string> {
   const inline = /\b(?:@?DATA|FINAL|FIELD-SYMBOL)\(\s*([\w<>\/]+)\s*\)/gi;
   for (const m of code.matchAll(inline)) add(m[1]);
 
-  // Signature parameters of methods and forms.
+  // Signature parameters of methods and forms — in a declaration, and only
+  // there. The same keywords name the *actual* parameters of a call, and the
+  // scan used to read the whole source: `CALL FUNCTION 'Z_F' EXPORTING kna1 =
+  // lv_x.` registered KNA1 as a local data object, and the real `UPDATE kna1`
+  // below it then produced no finding at all — the suppression path that has
+  // erased a Critical finding twice before (full review of b88c77b4b5d1,
+  // 5547aaa0fdbc).
   const params = /\b(?:IMPORTING|EXPORTING|CHANGING|RETURNING|USING|VALUE\(|REFERENCE\()\s*([\w\/]+)/gi;
-  for (const m of code.matchAll(params)) add(m[1]);
+  const signature = /(?:^|\.)\s*(?:CLASS-)?(?:METHODS|FORM|FUNCTION|MODULE)\b([^.]*)/gi;
+  for (const decl of code.matchAll(signature)) {
+    for (const m of decl[1].matchAll(params)) add(m[1]);
+  }
 
   // LOOP AT it INTO wa / ASSIGNING <fs> — the target is a data object.
   //
@@ -346,7 +355,27 @@ interface Context {
   macros: Map<string, string[]>;
   inMacroBody: boolean[];
   adbc: boolean;
+  /** What is left of `MACRO_EXPANSION_BUDGET` for this source. */
+  budget: { left: number };
 }
+
+/**
+ * How many statements one analysis may read out of macro bodies, all call sites
+ * together.
+ *
+ * `depth < 4` bounds how deep an expansion goes and says nothing about how wide
+ * it gets. A body of thirty calls to a macro of thirty calls is four levels of
+ * nothing suspicious and 810 000 statements to read, and the source that does
+ * it fits on a screen — an upload that keeps a server busy on one analysis
+ * (security audit of b88c77b4b5d1, SEC-2026-228). The budget is a ceiling on
+ * the whole source rather than on one call, because a hundred small fans cost
+ * what one large one does.
+ *
+ * A call the budget will not pay for is not expanded and not guessed at: it
+ * becomes an unresolved target, so `coverage.ts` reports the statement as
+ * unassessed instead of the engine reporting silence as a clean result.
+ */
+const MACRO_EXPANSION_BUDGET = 2000;
 
 function buildContext(source: string): Context {
   const statements = tokenize(source);
@@ -442,6 +471,7 @@ function buildContext(source: string): Context {
     macros,
     inMacroBody,
     adbc: code.some((c) => /\bCL_SQL_(?:STATEMENT|CONNECTION)\b/i.test(c)),
+    budget: { left: MACRO_EXPANSION_BUDGET },
   };
 }
 
@@ -511,11 +541,22 @@ class Sink {
     access: DependencyAccess,
     route: DependencyRoute,
     extra: Partial<Pick<TableDependency, 'possibleTargetOf' | 'program'>> = {},
+    /**
+     * The name stands bare in an ABAP SQL source list. ABAP has no such form
+     * for an internal table — that one is written `FROM @itab` — so the name is
+     * a dictionary entity whatever else the source calls it, and the local-name
+     * suppression below does not apply to it. It did: `DATA mara TYPE string.`
+     * above a real `SELECT * FROM mara` deleted the MARA read from the signed
+     * analysis, and so did a `CALL FUNCTION … EXPORTING mara = …` further up,
+     * because `collectLocalDataObjects` reads actual parameters too (full review
+     * of b88c77b4b5d1, 5f6655b0c2e0 / b885d8006422 / d0cd376a8141).
+     */
+    bareSqlSource = false,
   ): void {
     const table = raw.toUpperCase().trim();
     if (!table || table.length < 2 || FAKE_TABLES.has(table) || /^\d/.test(table)) return;
     // A name declared in this source is a variable, not a database table.
-    if (this.ctx.local.has(table)) return;
+    if (!bareSqlSource && this.ctx.local.has(table)) return;
     this.buckets[at.statement].push({
       table,
       access,
@@ -553,11 +594,23 @@ class Sink {
   }
 }
 
-/** `FROM kna1`, `JOIN knb1`, `FROM (lc_tab)` — the parts of a SELECT's source list. */
+/**
+ * `FROM kna1`, `JOIN knb1`, `FROM (lc_tab)` — the parts of a SELECT's source list.
+ *
+ * *Where* the source list stands is decided on the code, not on the text. The
+ * FROM matcher used to run over the statement as written, so `SELECT 'FROM
+ * KNA1' AS note FROM vbak INTO TABLE @DATA(rows).` took its first match from
+ * inside the literal: the signed analysis recorded a table called `KNA1'` and
+ * never reached VBAK at all (full review of b88c77b4b5d1, ff270c376162). The
+ * *contents* of the area are still read from the original text, because
+ * `FROM ('KNA1')` names its table in a literal on purpose (R07).
+ */
 function readSelect(text: string, at: Anchor, sink: Sink): void {
-  const fromMatch = text.match(/\bFROM\s+([\s\S]+?)(?:\b(INTO|WHERE|ORDER|GROUP|UP|HAVING|UNION|FOR)\b|$)/i);
+  const code = codeOnly(text);
+  const fromMatch = /\b(FROM\s+)([\s\S]+?)(?:\b(?:INTO|WHERE|ORDER|GROUP|UP|HAVING|UNION|FOR)\b|$)/i.exec(code);
   if (!fromMatch) return;
-  const tableArea = fromMatch[1].trim();
+  const areaStart = fromMatch.index + fromMatch[1].length;
+  const tableArea = text.slice(areaStart, areaStart + fromMatch[2].length).trim();
   const parts = tableArea.split(/\b(?:INNER\s+|LEFT\s+(?:OUTER\s+)?|RIGHT\s+(?:OUTER\s+)?|FULL\s+(?:OUTER\s+)?|CROSS\s+)?JOIN\b/i);
   for (const part of parts) {
     const trimmed = part.trim();
@@ -567,7 +620,15 @@ function readSelect(text: string, at: Anchor, sink: Sink): void {
       continue;
     }
     const tableName = trimmed.split(/\s+/)[0]?.replace(/[~,]/g, '').trim();
-    if (tableName) sink.table(at, tableName, 'read', 'open-sql');
+    if (!tableName) continue;
+    // `FROM @lt_items AS item` reads an internal table, and the `@` is how ABAP
+    // says so. The prefix went through to the sink, which emitted a database
+    // dependency on a table called `@LT_ITEMS` (aed161f810fc / 0129bc9ea03d).
+    if (tableName.startsWith('@')) continue;
+    // A common table expression names itself with a leading `+`; it is a query,
+    // not a repository object.
+    if (tableName.startsWith('+')) continue;
+    sink.table(at, tableName, 'read', 'open-sql', {}, true);
   }
 }
 
@@ -580,16 +641,53 @@ function readDynamicWrite(text: string, code: string, at: Anchor, sink: Sink): v
   if (inner !== null && inner.trim()) sink.target(at, inner, 'write', 'open-sql');
 }
 
+/**
+ * A SQL string literal's content, blanked, offsets kept.
+ *
+ * The literal rule of the host language stops at the template's bars; inside
+ * them the text is SQL, and SQL has literals of its own. Without this,
+ * `SELECT 'FROM KNA1' AS note FROM VBAK` recorded KNA1 — a table the statement
+ * does not touch — in the signed dependency list (full review of b88c77b4b5d1,
+ * 85107975930e / 758eb4151eb0). Double-quoted identifiers stay, because a
+ * quoted `"KNA1"` is the table.
+ */
+function maskSqlLiterals(sql: string): string {
+  let out = '';
+  let inLiteral = false;
+  for (const ch of sql) {
+    if (ch === "'") { inLiteral = !inLiteral; out += ch; continue; }
+    out += inLiteral ? ' ' : ch;
+  }
+  return out;
+}
+
+/** The names a `WITH … AS ( … )` declares: queries of this statement, not repository objects. */
+function sqlCteNames(bare: string): Set<string> {
+  const names = new Set<string>();
+  if (!/^WITH\b/i.test(bare)) return names;
+  for (const m of bare.matchAll(/(?:^WITH|,)\s*"?([\w/+]+)"?\s+AS\s*\(/gi)) names.add(m[1].toUpperCase());
+  return names;
+}
+
 /** The SQL text an ADBC call executes, read for the tables it names (R13b a). */
 function readSqlText(sql: string, at: Anchor, sink: Sink, possibleTargetOf?: string): void {
   const s = sql.replace(/\s+/g, ' ').trim();
+  const bare = maskSqlLiterals(s);
+  const cte = sqlCteNames(bare);
   const found: Array<{ raw: string; access: DependencyAccess }> = [];
-  const write = /^(?:UPDATE|INSERT\s+INTO|DELETE\s+FROM|DELETE|UPSERT|REPLACE|MERGE\s+INTO)\s+([^\s(]+)/i.exec(s);
+  const write = /^(?:UPDATE|INSERT\s+INTO|DELETE\s+FROM|DELETE|UPSERT|REPLACE|MERGE\s+INTO)\s+([^\s(]+)/i.exec(bare);
   if (write) found.push({ raw: write[1], access: 'write' });
-  else if (/^(?:SELECT|WITH)\b/i.test(s)) {
-    for (const m of s.matchAll(/\b(?:FROM|JOIN)\s+([^\s,()]+)/gi)) found.push({ raw: m[1], access: 'read' });
-  }
+  // A data-modifying statement reads as well as writes: `INSERT INTO ZCACHE
+  // SELECT * FROM KNA1` used to report the write and nothing else, so every
+  // finding the standard-table read carries was missing (d51635e5771b /
+  // 01c14cfb1ee0). The scan starts behind the write clause, or the `FROM` of a
+  // `DELETE FROM` would be read a second time as a source.
+  const sources = write
+    ? bare.slice(write.index + write[0].length)
+    : /^(?:SELECT|WITH)\b/i.test(bare) ? bare : '';
+  for (const m of sources.matchAll(/\b(?:FROM|JOIN)\s+([^\s,()]+)/gi)) found.push({ raw: m[1], access: 'read' });
   for (const { raw, access } of found) {
+    if (cte.has(raw.replace(/["';]/g, '').toUpperCase())) continue;
     const name = raw.replace(/["';]/g, '').split('.').pop() ?? '';
     if (name.includes(EMBEDDED) || !/^[A-Z_/][A-Z0-9_/]+$/i.test(name)) {
       sink.unresolved.push({
@@ -647,12 +745,31 @@ function readAdbc(text: string, code: string, at: Anchor, sink: Sink, ctx: Conte
   }
 }
 
+/**
+ * Each SELECT that stands inside a statement not opened by one — the queries of
+ * a `WITH` common table expression, the query of an `OPEN CURSOR … FOR SELECT`.
+ * Cut on the code, so a SELECT written in a literal opens nothing; each slice
+ * runs to the next SELECT, because `readSelect` reads one source list.
+ */
+function embeddedSelects(text: string, code: string): string[] {
+  const starts = [...code.matchAll(/\bSELECT\b/gi)].map((m) => m.index);
+  return starts.map((from, i) => text.slice(from, starts[i + 1] ?? text.length));
+}
+
 /** One statement — or, for a macro call, the statements it expands to. */
 function readStatement(text: string, at: Anchor, sink: Sink, ctx: Context, depth: number): void {
   const code = codeOnly(text);
   const bare = code.trim();
 
+  // Not every ABAP SQL read is a statement that begins with SELECT. A common
+  // table expression begins with WITH and a cursor with OPEN CURSOR, and both
+  // were passed over in silence: the tables they read were absent from the
+  // dependency list and from every finding drawn on it (full review of
+  // b88c77b4b5d1, c220db0d6f55 / 684fc78b1f35 / 6eecc0b3ec97).
   if (/^SELECT\b/i.test(text.trim())) readSelect(text.trim(), at, sink);
+  else if (/^(?:WITH\b|OPEN\s+CURSOR\b)/i.test(bare)) {
+    for (const part of embeddedSelects(text, code)) readSelect(part, at, sink);
+  }
 
   const write = databaseWriteIn(text.trim());
   if (write) sink.table(at, write.table, 'write', 'open-sql');
@@ -719,6 +836,20 @@ function readStatement(text: string, at: Anchor, sink: Sink, ctx: Context, depth
     const body = call ? ctx.macros.get(call[1].toUpperCase()) : undefined;
     if (call && body) {
       const argumentLists = call[2] ? splitTopLevel(call[3], ',') : [call[3]];
+      const cost = argumentLists.length * body.length;
+      if (ctx.budget.left < cost) {
+        sink.unresolved.push({
+          statement: at.statement,
+          line: at.line,
+          snippet: at.snippet,
+          expression: call[1].toUpperCase(),
+          access: 'read',
+          origin: 'expression',
+          possible: [],
+        });
+        return;
+      }
+      ctx.budget.left -= cost;
       for (const list of argumentLists) {
         const args = splitTopLevel(list, ' ').filter(Boolean);
         for (const statement of body) {

@@ -658,9 +658,12 @@ test.describe('the palette, as BPMN', () => {
       '  IF sy-subrc = 0.', '    PERFORM walk.', '  ENDIF.',
       "  UPDATE zlog SET x = 'X'.", "  CALL FUNCTION 'Z_NOTIFY'.", 'ENDFORM.',
     ].join('\n');
+    // A protected part that is a calculation draws no step, so the handler has
+    // nothing to sit on. It used to be an ADBC call — which draws a step since
+    // CR-07, and is asserted as the attached case in `abap-process-skeleton`.
     const handler = [
       'REPORT zcatch.', 'START-OF-SELECTION.', '  TRY.',
-      '      lv_rows = lo_stmt->execute_update( lv_sql ).',
+      '      lv_rows = lv_rows + 1.',
       '    CATCH cx_sql_exception.', "      WRITE / 'DB_ERROR'.", '  ENDTRY.',
     ].join('\n');
     const parser = await moddle();

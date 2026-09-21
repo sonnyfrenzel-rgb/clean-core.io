@@ -1,4 +1,4 @@
-import { afterKeyword, type AbapStatement, type SourceRange } from './statement-reader';
+import { afterKeyword, maskLiterals, type AbapStatement, type SourceRange } from './statement-reader';
 import { type Block, type BlockStructure } from './block-structure';
 import { type Branch, type ControlFlowReport } from './control-flow';
 import { type CallGraphReport } from './call-graph';
@@ -407,15 +407,60 @@ function isErrorMessage(text: string): boolean {
   return /^MESSAGE\b[\s\S]*\bTYPE\s+'[EAXeax]'/.test(text);
 }
 
-/** The Open SQL tables a `SELECT` reads, first one first. */
+/**
+ * The Open SQL tables a `SELECT` reads, first one first.
+ *
+ * Read from the code, not from the statement as written: `SELECT 'FROM KNA1' AS
+ * note FROM vbak INTO TABLE @lt.` took its first match from inside the literal,
+ * so the reconstructed process showed a read of KNA1 — a table the program does
+ * not touch — and none of VBAK (full review of b88c77b4b5d1, b785524eb15e /
+ * 799c2176c57b / 9c2f1ba7fbc7).
+ */
 function selectTables(text: string): string[] {
+  const code = maskLiterals(text);
   const out: string[] = [];
-  const from = /\bFROM\s+(?!TABLE\b|@)([\w/]+)/i.exec(text);
+  const from = /\bFROM\s+(?!TABLE\b|@)([\w/]+)/i.exec(code);
   if (from) out.push(from[1].toUpperCase());
   const join = /\bJOIN\s+([\w/]+)/gi;
   let m: RegExpExecArray | null;
-  while ((m = join.exec(text))) out.push(m[1].toUpperCase());
+  while ((m = join.exec(code))) out.push(m[1].toUpperCase());
   return [...new Set(out)];
+}
+
+/**
+ * `lv_rows = lo_stmt->execute_update( lv_sql )` — the step that hands SQL text
+ * to the database (R13b a).
+ *
+ * It is a functional method call inside an assignment, so no keyword and no
+ * `CALL METHOD` announces it, and the reconstructed process simply did not
+ * contain it: CC-034's whole effect — the write to KNA1 — was missing from the
+ * flow, and the `TRY` around it had no node for its `CATCH` to hang on
+ * (counter-review of c5085bbf, CR-07). What the statement proves is that SQL
+ * this reader cannot see is executed here; it becomes an opaque call carrying
+ * the method and the operand, not a write to a table nobody named.
+ */
+function adbcExecution(text: string): { method: string; argument: string } | null {
+  const code = maskLiterals(text);
+  const call = /->\s*(EXECUTE_(?:UPDATE|QUERY|DDL))\s*\(/i.exec(code);
+  if (!call) return null;
+  const from = call.index + call[0].length;
+  const close = code.indexOf(')', from);
+  return {
+    method: call[1].toUpperCase(),
+    argument: close === -1 ? '' : text.slice(from, close).trim(),
+  };
+}
+
+/**
+ * Does this statement read through ABAP SQL although it does not begin with
+ * SELECT? A common table expression begins with `WITH`, a cursor with `OPEN
+ * CURSOR … FOR SELECT`, and both used to produce no read node at all — the
+ * displayed process simply did not show the data access (full review of
+ * b88c77b4b5d1, 854c7e288bb7 / aa5214851b78 / 451efc95dcf9).
+ */
+function isEmbeddedSelect(text: string): boolean {
+  const code = maskLiterals(text);
+  return /^(?:WITH\b|OPEN\s+CURSOR\b)/i.test(code.trim()) && /\bSELECT\b/i.test(code);
 }
 
 /** True for `WRITE …` that puts something on the list rather than into a field. */
@@ -731,8 +776,9 @@ class SkeletonBuilder {
         continue;
       }
       const text = statement.text;
-      if (statement.keyword === 'SELECT' && selectTables(text).length) out.add('read');
+      if ((statement.keyword === 'SELECT' || isEmbeddedSelect(text)) && selectTables(text).length) out.add('read');
       if (databaseWriteIn(text)) out.add('write');
+      if (adbcExecution(text)) out.add('call');
       if (/^CALL\s+FUNCTION\b/i.test(text)) {
         const kind = functionTaskKind(/^CALL\s+FUNCTION\s+'([^']+)'/i.exec(text)?.[1]?.toUpperCase());
         if (kind === 'user-task') out.add('human');
@@ -1137,6 +1183,16 @@ class SkeletonBuilder {
         });
       if (attachedTo) {
         this.edges.push({ from: attachedTo.id, to: boundary.id, kind: 'boundary', condition: '' });
+      } else {
+        // A protected part that drew no node still runs, so its handler is still
+        // a path the program can take. Leaving the boundary unconnected made
+        // `noteUnreachableSteps` say the opposite — that nothing leads to the
+        // CATCH because what stands before it does not come back — with no
+        // control flow anywhere in the source to show it (counter-review of
+        // c5085bbf, CR-07). The handler hangs on what entered the TRY.
+        for (const entry of incoming) {
+          this.edges.push({ from: entry.from, to: boundary.id, kind: 'boundary', condition: '' });
+        }
       }
       const to = (handlers[h + 1] ?? block.closeIndex) - 1;
       out.push(...this.walkRange(handlers[h] + 1, to, ctx,
@@ -1230,7 +1286,7 @@ class SkeletonBuilder {
       return keep(this.addNode('user-task', screen, anchorOf(statement, 2), ctx.region, ctx.container));
     }
 
-    if (statement.keyword === 'SELECT') {
+    if (statement.keyword === 'SELECT' || isEmbeddedSelect(text)) {
       const tables = selectTables(text);
       if (tables.length) {
         return keep(this.addNode('read', tables[0],
@@ -1245,6 +1301,20 @@ class SkeletonBuilder {
       return keep(this.addNode('write', write.table.toUpperCase(),
         anchorOf(statement, tokenIndexOf(statement, new RegExp(`^${write.table}$`, 'i'))),
         ctx.region, ctx.container, { detail: { operation: write.keyword } }));
+    }
+
+    const adbc = adbcExecution(text);
+    if (adbc) {
+      return keep(this.addNode('call-opaque', adbc.method,
+        anchorOf(statement, tokenIndexOf(statement, /EXECUTE_(?:UPDATE|QUERY|DDL)/i)),
+        ctx.region, ctx.container, {
+          detail: {
+            nativeSql: true,
+            // The SQL text is not in this statement, so neither is the table.
+            ...(adbc.argument ? { statement: adbc.argument } : {}),
+            returns: true,
+          },
+        }));
     }
 
     if (isListOutput(statement) || isFileOutput(statement)) {
@@ -1534,12 +1604,19 @@ class SkeletonBuilder {
    * dropping them would cost the reader the lines — but they hang off no flow,
    * and a node with no way in is said out loud rather than drawn as if
    * something led to it.
+   *
+   * A boundary event is not one of them. It is attached to an activity rather
+   * than reached by a sequence flow, so "nothing leads to it" is a statement
+   * about this reader's graph and not about the program — and it was made about
+   * a `CATCH` whose protected part simply drew no node (counter-review of
+   * c5085bbf, CR-07). Unreachable is claimed where the source shows it.
    */
   private noteUnreachableSteps(): void {
     const reached = new Set(this.edges.map((e) => e.to));
     const entryNodes = new Set(this.regions.map((r) => r.entryNodeId));
     for (const node of this.nodes) {
       if (reached.has(node.id) || entryNodes.has(node.id) || node.kind === 'start') continue;
+      if (node.kind === 'error-boundary') continue;
       const statement = node.anchor ? this.statements[node.anchor.statementIndex] : undefined;
       this.notes.push({
         reason: 'unreachable-after-abort',

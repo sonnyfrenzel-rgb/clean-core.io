@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { maskComments, maskLiterals, maskNonCode } from '../lib/abap/statement-reader';
+import { maskComments, maskLiterals, maskNonCode, readStatements } from '../lib/abap/statement-reader';
+import { tokenize } from '../lib/abap/declaration-parser';
+import { assessCoverage } from '../lib/abap/coverage';
+import { readTableDependencies } from '../lib/abap/table-dependencies';
+import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { databaseWriteIn, isInternalTableOperation } from '../lib/abap/open-sql-discrimination';
 import { detectFindings } from '../lib/abap/findings-detector';
 import { buildClassModel } from '../lib/abap/class-model-resolver';
@@ -230,4 +234,104 @@ test('a literal a consumer executes is still read: ADBC SQL text (R13a)', () => 
   const kna1 = extractDataCoupling(code).find((e) => e.tableName === 'KNA1');
   expect(kna1, 'the table the executed text writes is still the dependency').toBeTruthy();
   expect(kna1!.accessType).toBe('Write');
+});
+
+/* ------------------------------------------- b88c77b4b5d1 — the four readers
+ *
+ * The full review of `b88c77b4b5d1` found the same root four readers further
+ * on: each still asked its own half of the literal rule, and each half was
+ * missing something. They are grouped here because a fix to one of them is a
+ * fix to none of the others.
+ */
+
+test.describe('the readers that still kept half the rule (b88c77b4b5d1)', () => {
+  test('a period inside a string template ends no statement (0c6a98cff70a)', () => {
+    // `tokenize` knew `'…'` and `` `…` `` and not `|…|`, so the period inside
+    // the template cut the statement in two and the tail became one of its own
+    // — and `table-dependencies` reported a VBAK read that exists only in
+    // display text.
+    const code = [
+      'REPORT zp.',
+      'START-OF-SELECTION.',
+      '  DATA(message) = |Example. SELECT * FROM VBAK |.',
+    ].join('\n');
+    expect(tokenize(code).map((s) => s.text)).toEqual([
+      'REPORT zp',
+      'START-OF-SELECTION',
+      'DATA(message) = |Example. SELECT * FROM VBAK |',
+    ]);
+    expect(readTableDependencies(code).dependencies.map((d) => d.table)).toEqual([]);
+  });
+
+  test('a decimal point ends no statement either (9c05f6c741fc)', () => {
+    const code = [
+      'REPORT zp.',
+      'CLASS lcl DEFINITION.',
+      '  PUBLIC SECTION.',
+      '    METHODS m IMPORTING iv TYPE p DEFAULT 1.5.',
+      'ENDCLASS.',
+    ].join('\n');
+    const read = tokenize(code).map((s) => s.text);
+    expect(read).toContain('METHODS m IMPORTING iv TYPE p DEFAULT 1.5');
+    expect(read, 'no statement called 5').not.toContain('5');
+  });
+
+  test('an escaped bar is template text, not the end of one (567fac1cd057)', () => {
+    // `|Use \| here. Done|` is one literal. Read as two, the period behind
+    // `here` ended a statement nobody wrote and the statement below it was
+    // swallowed into the fabricated one.
+    const code = [
+      'REPORT zp.',
+      'START-OF-SELECTION.',
+      '  DATA(text) = |Use \\| here. Done|.',
+      "  UPDATE kna1 SET name1 = 'x'.",
+    ].join('\n');
+    expect(readStatements(code).map((s) => [s.keyword, s.lineStart])).toEqual([
+      ['REPORT', 1], ['START-OF-SELECTION', 2], ['DATA', 3], ['UPDATE', 4],
+    ]);
+    expect(maskLiterals('|Use \\| here|'), 'the whole template is text').toBe('|           |');
+  });
+
+  test("WRITE 'TO' is list output, and WRITE a TO b is not (610cc2bf910f)", () => {
+    // The exclusion for `WRITE x TO y` searched the statement as written, so
+    // the word inside the literal satisfied it and classic list output went
+    // unrecorded — a program whose only statement is that one reported
+    // complete coverage.
+    const output = ['REPORT zp.', 'START-OF-SELECTION.', "  WRITE 'TO'."].join('\n');
+    expect(assessCoverage(output).unassessed.map((u) => u.gap)).toEqual(['classic-list-output']);
+    expect(assessCoverage(output).complete).toBe(false);
+    const formatting = [
+      'REPORT zp.', 'DATA a TYPE c.', 'DATA b TYPE c LENGTH 10.',
+      'START-OF-SELECTION.', '  WRITE a TO b.',
+    ].join('\n');
+    expect(assessCoverage(formatting).unassessed.map((u) => u.gap)).toEqual([]);
+  });
+
+  test('a FROM inside a literal names no table (ff270c376162, b785524eb15e)', () => {
+    // The source list was matched on the statement as written, so the first
+    // `FROM` came out of the literal: the dependency list carried a table
+    // called `KNA1'`, the process map drew a read of KNA1, and VBAK — the table
+    // the statement really reads — was in neither.
+    const code = [
+      'REPORT zp.',
+      'START-OF-SELECTION.',
+      "  SELECT 'FROM KNA1' AS note FROM vbak INTO TABLE @DATA(rows).",
+    ].join('\n');
+    expect(readTableDependencies(code).dependencies.map((d) => d.table)).toEqual(['VBAK']);
+    expect(buildProcessSkeleton(code).nodes.filter((n) => n.kind === 'read').map((n) => n.label))
+      .toEqual(['VBAK']);
+  });
+
+  test('a FROM inside the SQL literal of an ADBC call names no table (85107975930e)', () => {
+    // One literal rule stops at the template's bars; the SQL inside has
+    // literals of its own, and `'FROM KNA1'` is text there too.
+    const code = [
+      'REPORT zp.',
+      'START-OF-SELECTION.',
+      '  DATA(lo) = NEW cl_sql_statement( ).',
+      "  DATA(r) = lo->execute_query( |SELECT 'FROM KNA1' AS note FROM VBAK| ).",
+    ].join('\n');
+    expect(readTableDependencies(code).dependencies.map((d) => [d.table, d.access]))
+      .toEqual([['VBAK', 'read']]);
+  });
 });

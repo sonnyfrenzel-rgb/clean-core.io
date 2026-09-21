@@ -43,3 +43,38 @@ test.describe('a SELECT inside a literal is not a statement', () => {
     expect(found[0].text, 'the prose is not in it').not.toContain('cache');
   });
 });
+
+/* ----------------------------------- b88c77b4b5d1 — more than one on a line */
+
+test.describe('a line may carry more than one statement (1947c1826a39)', () => {
+  test('the second SELECT on a line is read as well as the first', () => {
+    // The parser emitted at the first terminator and moved to the next source
+    // line, so everything behind that period was dropped. The query that was
+    // dropped here is the three-table one, which is the one that earns a
+    // partial-support finding and an architect's sign-off.
+    const code = [
+      'REPORT z_two.',
+      'START-OF-SELECTION.',
+      '  SELECT * FROM mara INTO TABLE @DATA(a). SELECT * FROM vbak'
+        + ' INNER JOIN vbap ON vbap~vbeln = vbak~vbeln INTO TABLE @DATA(b).',
+    ].join('\n');
+    const found = extractSelects(code);
+    expect(found.map((f) => f.line)).toEqual([3, 3]);
+    expect(found[0].text).toBe('SELECT * FROM mara INTO TABLE @DATA(a)');
+    expect(found[1].text, 'the join is not lost with it').toContain('INNER JOIN vbap');
+  });
+
+  test('a statement that ends on a shared line still starts a new one there', () => {
+    const code = [
+      'REPORT z_two.',
+      'START-OF-SELECTION.',
+      '  SELECT * FROM mara',
+      '    INTO TABLE @DATA(a). SELECT * FROM vbak INTO TABLE @DATA(b). WRITE 1.',
+    ].join('\n');
+    const found = extractSelects(code);
+    expect(found.map((f) => [f.line, f.text])).toEqual([
+      [3, 'SELECT * FROM mara INTO TABLE @DATA(a)'],
+      [4, 'SELECT * FROM vbak INTO TABLE @DATA(b)'],
+    ]);
+  });
+});

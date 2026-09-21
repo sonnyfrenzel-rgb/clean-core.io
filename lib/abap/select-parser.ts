@@ -81,37 +81,53 @@ export function extractSelects(content: string): { text: string; line: number }[
     const from = code[i].length - code[i].trimStart().length;
     const to = code[i].trimEnd().length;
     if (to <= from) continue;
-    const lineCode = code[i].slice(from, to);
-    const lineText = raw[i].slice(from, to);
 
-    // `WRITE 'SELECT data FROM cache.'.` is not a query. The old condition was
-    // "the line contains SELECT", so a literal mentioning the word opened a
-    // statement, the parser buffered everything up to the next period, and the
-    // transformation prompt received a sentence as deterministic SQL metadata
-    // (QA review of 33471220d6e9, 14d4000c4586). SELECT has to be a statement
-    // keyword: outside any literal, and at the start of a statement.
-    let openedAt = -1;
-    if (!inSel) {
-      openedAt = selectStatementStart(lineCode);
-      if (openedAt === -1) continue;
-      inSel = true;
-      start = i + 1;
+    // A cursor over the line, not one pass per line: ABAP puts as many
+    // statements on a line as it likes, and everything behind the first
+    // terminator used to be dropped. `SELECT … INTO TABLE @a. SELECT … JOIN …
+    // JOIN … INTO TABLE @b.` on one line handed on the first query and lost the
+    // three-table one, so `detectComplexJoinFindings` saw no partial support and
+    // asked for no sign-off (full review of b88c77b4b5d1, 1947c1826a39 /
+    // 0fde0a8e6713).
+    let cursor = from;
+    while (cursor < to) {
+      const lineCode = code[i].slice(cursor, to);
+      const lineText = raw[i].slice(cursor, to);
+
+      // `WRITE 'SELECT data FROM cache.'.` is not a query. The old condition was
+      // "the line contains SELECT", so a literal mentioning the word opened a
+      // statement, the parser buffered everything up to the next period, and the
+      // transformation prompt received a sentence as deterministic SQL metadata
+      // (QA review of 33471220d6e9, 14d4000c4586). SELECT has to be a statement
+      // keyword: outside any literal, and at the start of a statement.
+      let openedAt = -1;
+      if (!inSel) {
+        openedAt = selectStatementStart(lineCode);
+        if (openedAt === -1) break;
+        inSel = true;
+        start = i + 1;
+        buf = '';
+        bare = '';
+      }
+
+      // From the SELECT, not from the start of the line: a statement that shares
+      // its line with the one before it would otherwise carry that one's text.
+      const at = openedAt === -1 ? 0 : openedAt;
+      // Where this line's contribution begins inside `bare`, so a terminator
+      // found in it can be mapped back to a column of the line.
+      const chunkAt = bare.length + (bare ? 1 : 0);
+      buf += (buf ? ' ' : '') + lineText.slice(at);
+      bare += (bare ? ' ' : '') + lineCode.slice(at);
+
+      const termIdx = terminatorIn(bare);
+      if (termIdx === -1) break;
+      out.push({ text: buf.slice(0, termIdx).replace(/\s+/g, ' ').trim(), line: start });
+      inSel = false;
       buf = '';
       bare = '';
+      if (termIdx < chunkAt) break;
+      cursor = cursor + at + (termIdx - chunkAt) + 1;
     }
-
-    // From the SELECT, not from the start of the line: a statement that shares
-    // its line with the one before it would otherwise carry that one's text.
-    const at = openedAt === -1 ? 0 : openedAt;
-    buf += (buf ? ' ' : '') + lineText.slice(at);
-    bare += (bare ? ' ' : '') + lineCode.slice(at);
-
-    const termIdx = terminatorIn(bare);
-    if (termIdx === -1) continue;
-    out.push({ text: buf.slice(0, termIdx).replace(/\s+/g, ' ').trim(), line: start });
-    inSel = false;
-    buf = '';
-    bare = '';
   }
   return out;
 }
