@@ -52,6 +52,27 @@ async function sha256(content: string | Uint8Array): Promise<string> {
  * nothing rather than a guess: the other checks still apply, and a verifier must
  * not fail a genuine pack over a shape it simply did not parse.
  */
+/**
+ * An entry name as JSZip will key it.
+ *
+ * JSZip resolves `.` and `..` inside a path before it puts the entry in its map,
+ * so `x/../manifest.json` and `manifest.json` are one key to it and two names in
+ * the central directory. Comparing the raw names therefore missed exactly the
+ * case this check exists for: two entries JSZip collapses into one, of which an
+ * ordinary extractor would write the *other* (QA review of fce34641821e). The
+ * names are compared after the same resolution, so an alias counts as the
+ * duplicate it is.
+ */
+function zipKey(name: string): string {
+  const out: string[] = [];
+  for (const part of name.split('/')) {
+    if (part === '' || part === '.') continue;
+    if (part === '..') { out.pop(); continue; }
+    out.push(part);
+  }
+  return (out.join('/') + (name.endsWith('/') ? '/' : '')) || '/';
+}
+
 function duplicateEntryNames(data: unknown): string[] {
   let bytes: Uint8Array;
   if (data instanceof Uint8Array) bytes = data;
@@ -87,7 +108,8 @@ function duplicateEntryNames(data: unknown): string[] {
     const extraLength = view.getUint16(offset + 30, true);
     const commentLength = view.getUint16(offset + 32, true);
     if (offset + 46 + nameLength > bytes.byteLength) return [];
-    const name = decoder.decode(bytes.subarray(offset + 46, offset + 46 + nameLength));
+    const raw = decoder.decode(bytes.subarray(offset + 46, offset + 46 + nameLength));
+    const name = zipKey(raw);
     if (seen.has(name)) duplicates.add(name);
     seen.add(name);
     offset += 46 + nameLength + extraLength + commentLength;

@@ -208,6 +208,23 @@ function bindsIssuanceMetadata(version) {
  * The other checks still apply, and a genuine pack must not fail over a shape
  * this simply did not parse.
  */
+/**
+ * An entry name as JSZip will key it — the same resolution as `zipKey` in
+ * `lib/audit-pack-verify.ts`, repeated here because this script needs no build.
+ * JSZip resolves `.` and `..` before keying its map, so two central-directory
+ * names that differ only by an alias are one entry to it and were two to this
+ * check (QA review of fce34641821e).
+ */
+function zipKey(name) {
+  const out = [];
+  for (const part of name.split('/')) {
+    if (part === '' || part === '.') continue;
+    if (part === '..') { out.pop(); continue; }
+    out.push(part);
+  }
+  return (out.join('/') + (name.endsWith('/') ? '/' : '')) || '/';
+}
+
 function duplicateEntryNames(buffer) {
   const b = Buffer.from(buffer);
   if (b.length < 22) return [];
@@ -232,7 +249,7 @@ function duplicateEntryNames(buffer) {
     const extraLength = b.readUInt16LE(offset + 30);
     const commentLength = b.readUInt16LE(offset + 32);
     if (offset + 46 + nameLength > b.length) return [];
-    const name = b.subarray(offset + 46, offset + 46 + nameLength).toString('utf8');
+    const name = zipKey(b.subarray(offset + 46, offset + 46 + nameLength).toString('utf8'));
     if (seen.has(name)) duplicates.add(name);
     seen.add(name);
     offset += 46 + nameLength + extraLength + commentLength;

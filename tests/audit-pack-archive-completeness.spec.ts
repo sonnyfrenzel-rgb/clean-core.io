@@ -116,6 +116,52 @@ test('a path the archive carries twice is not the archive that was sealed', asyn
   expect(result.errors.some((e) => e.includes('more than once'))).toBe(true);
 });
 
+/**
+ * The same trick one alias further.
+ *
+ * JSZip resolves `.` and `..` before it keys its map, so `x/../00-…md` and
+ * `00-…md` are one entry to it and two names in the central directory. A check
+ * that compared the raw names therefore found no duplicate for the very case it
+ * exists to catch (QA review of fce34641821e). The decoy goes first, so an
+ * extractor that takes the first entry — or one that writes `x/../00-…md` out
+ * literally — hands the reader a file nobody signed.
+ */
+async function packListingAnAlias() {
+  const content = '# Executive Summary\nA pack assembled for the completeness check.';
+  const files = [{ path: '00-executive-summary.md', sha256: sha(content), bytes: content.length }];
+  const bound = { projectId: 'p-1', runId: 'r-1', runHash: 'h-1', engineVersion: 'v1.0', sapApiCatalogVersion: '2024.FPS02' };
+  const manifest = {
+    version: '2.0', ...bound, generatedAt: new Date().toISOString(), files,
+    manifestHash: sha(canonicalAuditManifest({ files, ...bound })), signed: false, signature: '',
+  };
+  const zip = new JSZip();
+  // Same byte length as the alias, so the name can be rewritten in place.
+  zip.file('zzzzz00-executive-summary.md', '# Unconditional approval. Signed, nobody.');
+  zip.file('00-executive-summary.md', content);
+  zip.file('manifest.json', JSON.stringify(manifest));
+  const bytes: Buffer = await zip.generateAsync({ type: 'nodebuffer' });
+  const from = Buffer.from('zzzzz00-executive-summary.md', 'utf8');
+  const to = Buffer.from('x/../00-executive-summary.md', 'utf8');
+  expect(from.length, 'the two names must be the same length to rewrite in place').toBe(to.length);
+  let at = 0;
+  let rewritten = 0;
+  while ((at = bytes.indexOf(from, at)) !== -1) {
+    to.copy(bytes, at);
+    at += to.length;
+    rewritten += 1;
+  }
+  return { bytes, rewritten };
+}
+
+test('an alias of a signed path counts as the same path', async () => {
+  const { bytes, rewritten } = await packListingAnAlias();
+  expect(rewritten, 'the alias was not written into both headers — the check would be vacuous').toBe(2);
+  const result = await verifyAuditPack(bytes as unknown as Blob);
+  expect(result.integrityValid, 'an archive carrying an alias of a signed path passed integrity').toBe(false);
+  expect(result.status).not.toBe('authentic');
+  expect(result.errors.some((e) => e.includes('more than once'))).toBe(true);
+});
+
 test.describe('a signed file is measured as the bytes in the archive', () => {
   /**
    * The issuer hashes the UTF-8 bytes of the text it wrote
