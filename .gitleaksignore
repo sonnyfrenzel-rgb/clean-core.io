@@ -22,10 +22,17 @@ f1e0babd37556141577638dfe9604388290189ce:docs/security/register.enc.json:generic
 # so a false positive in an old commit stays invisible until the Monday scan walks
 # the whole history. All three are the `generic-api-key` rule firing on a *name*.
 #
-# b64818a / 461c756 (17.09.2026): `"objectKey": "ZCC_REF_056_CHILD"` — the ABAP
-# program name of reference case CC-056, in the expected output of the corpus test
-# and in the corpus document that quotes the same identity record. The rule matched
-# the word `objectKey`; the value is a program name that is in the fixture on purpose.
+# b64818a / 461c756 (17.09.2026): the identity record of reference case CC-056 —
+# an object-key field whose value is the ABAP program name of that case — in the
+# expected output of the corpus test and in the corpus document that quotes the
+# same record. The rule matched the field name; the value is a program name that
+# is in the fixture on purpose.
+#
+# Deliberately paraphrased rather than quoted. The first version of this comment
+# reproduced the field and its value verbatim, and the push scan promptly flagged
+# *this file* at the quoting line (run 35575429116, 21.09.2026). An allowlist that
+# has to allowlist its own explanation is one entry away from allowlisting a real
+# key by accident.
 b64818a584b514575edd2c5f24f2d914ee812a43:tests/korpus/cases/CC-056/expected.json:generic-api-key:150
 b64818a584b514575edd2c5f24f2d914ee812a43:docs/korpus/referenzkorpus-v2.1.md:generic-api-key:10247
 461c756edafbc962d5cae8164d754331b5d22aae:tests/korpus/cases/CC-056/expected.json:generic-api-key:150
