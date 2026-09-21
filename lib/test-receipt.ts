@@ -5,11 +5,13 @@ import { artefactDigest, sha256Hex } from './artefact-digest';
  *
  * Why this exists (QA full review of a19945ef01dc, roadmap E07-F02): Testing and
  * Delivery were painted green from `project.testCases[].status`. That field is
- * in the client update allowlist of `firestore.rules`, and nothing in the
- * product ever wrote `Passed` into it: the testing page shows a run's verdicts
- * on screen and stores none of them. So the only ways a stored `Passed` could
- * come about were a direct browser write and a model that invented a `status`
- * key in the suite it generated. Either one made
+ * in the client update allowlist of `firestore.rules`, so a stored `Passed` can
+ * equally have come from a direct browser write or from a model that invented a
+ * `status` key in the suite it generated — the field cannot say which. (Since
+ * roadmap 7.3 `/api/run-tests` writes the runner's verdicts there too, with the
+ * Admin SDK, so the screen and the receipt agree after a real run; that does not
+ * make the field evidence, because nothing reading it can tell the two apart.)
+ * Either of the first two made
  *
  *   testEvidence → tests.passed === tests.total → Testing done & proven
  *                → `gaps` empty → Delivery "Ready", green, and the sentence

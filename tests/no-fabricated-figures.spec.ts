@@ -69,10 +69,18 @@ test.describe('no fabricated figures on measured values', () => {
     // still went green beside *simulated* cases: it checked for failures and for
     // missing verdicts, not for mocks.
     //
-    // It follows the testing phase of the shared contract now — done only when
-    // every case passed — so this page and the dashboard cannot disagree.
-    // Strictly narrower than both.
-    expect(source).toContain('testingPhase.done ? (');
+    // It follows the testing phase of the shared contract now, and the narrow
+    // half of it: `testingPhase.done` was still satisfied by a row of `Passed`
+    // strings, and `testCases[].status` is in the client update allowlist of
+    // `firestore.rules` — so a browser write put a green tick here beside
+    // "every generated test returned a pass". `proven` is what the contract
+    // calls a verdict something checked (`lib/workflow-steps.ts`), it is what
+    // the stepper and the rail paint green, and it is strictly narrower than
+    // every condition this line has had.
+    expect(source).toContain('testingPhase.proven ? (');
+    expect(source).not.toContain('testingPhase.done ? (');
+    // And the line beside the tick says which of the two it is.
+    expect(source).toContain('no test run is on record behind these verdicts');
     expect(source).toContain('coveragePercentage !== undefined ? (');
   });
 

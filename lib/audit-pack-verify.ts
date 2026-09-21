@@ -10,12 +10,89 @@ import JSZip from 'jszip';
 import type { AuditPackManifest } from './audit-pack';
 import { canonicalAuditManifest } from './audit-pack-canonical';
 
-/** SHA-256 hash of a string using Web Crypto API. */
-async function sha256(content: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(content);
+/**
+ * SHA-256 of bytes, or of the UTF-8 bytes of a string, using the Web Crypto API.
+ *
+ * Archive entries are handed in as bytes. They used to be read with
+ * `async('text')` and hashed after decoding, which measures the text a UTF-8
+ * decoder produced rather than the bytes the issuer sealed: an invalid sequence
+ * decodes to U+FFFD and encodes back as the three bytes of U+FFFD, so an entry
+ * whose bytes were changed to something undecodable came out with the digest of
+ * an entry that genuinely held that character — and the pack was reported as
+ * authentic over bytes nobody signed. The issuer hashes the UTF-8 bytes of the
+ * string it wrote (`/api/audit-pack/create`) and the offline verifier hashes the
+ * entry's bytes, so hashing bytes here is the same number on every genuine pack
+ * and the only one that answers the question the page asks.
+ */
+async function sha256(content: string | Uint8Array): Promise<string> {
+  // The copy in the byte branch is a type adjustment, not a transformation:
+  // `crypto.subtle` wants a view over a plain ArrayBuffer and JSZip's is typed
+  // over the wider `ArrayBufferLike`. The bytes are the bytes either way.
+  const msgBuffer = typeof content === 'string' ? new TextEncoder().encode(content) : new Uint8Array(content);
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Names the archive's central directory lists more than once.
+ *
+ * JSZip holds a loaded archive in a map keyed by name, so two entries under one
+ * name arrive as one — the later overwrites the earlier — and both the
+ * completeness check and the hash below then see a single file. An archive can
+ * therefore carry a second entry under a signed path: the check hashes the one
+ * JSZip kept, the manifest agrees, the signature agrees, and an extractor that
+ * takes the first entry hands the reader the other one. The manifest names each
+ * path once, so an archive that lists one twice is not the archive that was
+ * sealed, whichever of the two is the genuine file.
+ *
+ * Read straight from the bytes, because the question cannot be asked of the map.
+ * An archive this cannot count — no end-of-central-directory record, a ZIP64
+ * marker, a record that is not where the previous one said it ends — returns
+ * nothing rather than a guess: the other checks still apply, and a verifier must
+ * not fail a genuine pack over a shape it simply did not parse.
+ */
+function duplicateEntryNames(data: unknown): string[] {
+  let bytes: Uint8Array;
+  if (data instanceof Uint8Array) bytes = data;
+  else if (data instanceof ArrayBuffer) bytes = new Uint8Array(data);
+  else return [];
+  if (bytes.byteLength < 22) return [];
+
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const EOCD = 0x06054b50;
+  const CENTRAL = 0x02014b50;
+  const floor = Math.max(0, bytes.byteLength - 22 - 0xffff);
+  let eocd = -1;
+  for (let i = bytes.byteLength - 22; i >= floor; i--) {
+    if (view.getUint32(i, true) === EOCD) {
+      eocd = i;
+      break;
+    }
+  }
+  if (eocd < 0) return [];
+
+  const total = view.getUint16(eocd + 10, true);
+  let offset = view.getUint32(eocd + 16, true);
+  // The ZIP64 markers. An audit pack is a handful of small files, so this is a
+  // shape we do not issue and do not pretend to have counted.
+  if (total === 0xffff || offset === 0xffffffff) return [];
+
+  const decoder = new TextDecoder();
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (let n = 0; n < total; n++) {
+    if (offset + 46 > bytes.byteLength || view.getUint32(offset, true) !== CENTRAL) return [];
+    const nameLength = view.getUint16(offset + 28, true);
+    const extraLength = view.getUint16(offset + 30, true);
+    const commentLength = view.getUint16(offset + 32, true);
+    if (offset + 46 + nameLength > bytes.byteLength) return [];
+    const name = decoder.decode(bytes.subarray(offset + 46, offset + 46 + nameLength));
+    if (seen.has(name)) duplicates.add(name);
+    seen.add(name);
+    offset += 46 + nameLength + extraLength + commentLength;
+  }
+  return [...duplicates].sort();
 }
 
 export interface FileVerifyResult {
@@ -133,6 +210,14 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       errors.push(`File not covered by the manifest: ${name}`);
     }
 
+    // The same rule, asked of the raw archive rather than of the loaded map: a
+    // path the archive carries twice is an entry the manifest does not account
+    // for, and only one of the two can be the file it names.
+    const duplicates = duplicateEntryNames(inputData);
+    for (const name of duplicates) {
+      errors.push(`The archive lists ${name} more than once; the manifest names it once.`);
+    }
+
     // A user-attested file carries the account holder's own statement, so it is
     // reported as exactly that and never as server evidence. From manifest
     // version 3 the issuer also records its SHA-256 and binds it into the
@@ -154,7 +239,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
         errors.push(`Attested file not covered by a digest in this pack's manifest version: ${a.path}. Its presence was sealed, its contents were not.`);
         continue;
       }
-      const actualHash = await sha256(await file.async('text'));
+      const actualHash = await sha256(await file.async('uint8array'));
       const valid = actualHash === a.sha256;
       fileResults.push({ path: a.path, expectedHash: a.sha256, actualHash, valid, found: true, signed: false });
       if (!valid) {
@@ -176,8 +261,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
         continue;
       }
 
-      const content = await file.async('text');
-      const actualHash = await sha256(content);
+      const actualHash = await sha256(await file.async('uint8array'));
       const valid = actualHash === entry.sha256;
 
       fileResults.push({
@@ -262,7 +346,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
     }
 
     const allFilesValid = fileResults.every(f => f.valid);
-    const integrityValid = allFilesValid && manifestHashValid;
+    const integrityValid = allFilesValid && manifestHashValid && duplicates.length === 0;
 
     let status: 'authentic' | 'integrity-only' | 'failed' = 'failed';
     if (integrityValid) {

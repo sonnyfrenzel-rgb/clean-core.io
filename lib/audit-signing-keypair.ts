@@ -217,7 +217,7 @@ export function getPublishedKeyring(): PublishedKey[] {
 
   const raw = process.env.AUDIT_SIGNING_PUBLIC_KEYS_RETIRED;
   if (raw && raw.trim()) {
-    for (const piece of raw.split(/[,\n]+/).map((s) => s.trim()).filter(Boolean)) {
+    for (const piece of retiredKeyEntries(raw)) {
       const key = parsePublicKey(piece);
       if (!key) {
         console.error('AUDIT_SIGNING_PUBLIC_KEYS_RETIRED contains an entry that is not an Ed25519 public key — skipped.');
@@ -233,6 +233,35 @@ export function getPublishedKeyring(): PublishedKey[] {
   }
 
   return out;
+}
+
+/**
+ * The entries of `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED`, with PEM blocks kept whole.
+ *
+ * The separators are commas and newlines, and a PEM is several lines — so a
+ * plain split hands the parser `-----BEGIN PUBLIC KEY-----` on its own, then the
+ * base64 line, then the end line, rejects all three, and publishes no retired
+ * key at all. The documented format (see the comment on `getPublishedKeyring`)
+ * then silently loses every pack signed before the rotation, which is exactly
+ * what retiring a key is supposed to prevent. Blocks are lifted out first and
+ * only what is left of the value is split, so the order the operator wrote is
+ * the order the keyring carries.
+ */
+function retiredKeyEntries(raw: string): string[] {
+  // The escaped form a secret store usually hands back, first, so one block
+  // pattern covers both shapes.
+  const text = raw.replace(/\\n/g, '\n');
+  const block = /-----BEGIN [^-]+-----[\s\S]*?-----END [^-]+-----/g;
+  const pieces: string[] = [];
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+  while ((match = block.exec(text)) !== null) {
+    pieces.push(...text.slice(cursor, match.index).split(/[,\n]+/));
+    pieces.push(match[0]);
+    cursor = match.index + match[0].length;
+  }
+  pieces.push(...text.slice(cursor).split(/[,\n]+/));
+  return pieces.map((s) => s.trim()).filter(Boolean);
 }
 
 /** A published key in any of the shapes an operator is likely to paste. */

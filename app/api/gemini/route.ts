@@ -9,7 +9,7 @@ import {
   loadGeminiApiKey,
   getAdminDb,
 } from '@/lib/firebase-admin';
-import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
+import { assertRateLimit } from '@/lib/rate-limit';
 import {
   isModelStage,
   modelStageEnabled,
@@ -114,7 +114,15 @@ export async function POST(request: NextRequest) {
     try {
       // Skip rate limiting for admin users
       if (!decodedToken.admin) {
-        await assertRateLimit(`gemini:${decodedToken.uid}:${getClientIp(request)}`, 20, 60 * 60 * 1000);
+        // Keyed on the account alone. The key used to carry the client address
+        // as well, which makes the ceiling per account *and* address: the same
+        // account reaching the shared community key through a second address got
+        // a second allowance, and a third, so the limiter the module header above
+        // calls "the primary cost guard on the shared community Gemini key" put
+        // no bound on an account at all. The address is not a second identity of
+        // the caller here — the account is the thing being metered, and it is
+        // already established by the verified token.
+        await assertRateLimit(`gemini:${decodedToken.uid}`, 20, 60 * 60 * 1000);
       }
     } catch (rateErr: any) {
       return NextResponse.json(

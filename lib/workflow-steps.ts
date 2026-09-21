@@ -433,13 +433,18 @@ export function workflowSteps(project: Project | null): RailStep[] {
   //
   // "On record" is meant literally, and since the QA full review of a19945ef01dc
   // it is meant about a record a client cannot write. `testCases[].status` is in
-  // the client allowlist of `firestore.rules`, and nothing in the product writes
-  // `Passed` into it — the testing page shows a run's verdicts on screen and
-  // stores none of them. A stored `Passed` therefore came from a browser or from
-  // a model that invented the key, and it used to be enough to paint Testing
-  // green and unlock Delivery. The verdict that counts is `/api/run-tests`'s
-  // receipt (E07-F02, `lib/test-receipt.ts`): server-written, bound to the
-  // active run and to the digests of the code, the suite and the case list.
+  // the client allowlist of `firestore.rules`, so a stored `Passed` can equally
+  // have come from a browser or from a model that invented the key, and it used
+  // to be enough to paint Testing green and unlock Delivery. The verdict that
+  // counts is `/api/run-tests`'s receipt (E07-F02, `lib/test-receipt.ts`):
+  // server-written, bound to the active run and to the digests of the code, the
+  // suite and the case list.
+  //
+  // The route writes the runner's verdicts onto `testCases` as well (roadmap
+  // 7.3, `applyRunnerVerdicts`), so after a real run the two agree and the
+  // screen shows what the receipt says. The strings on their own are still not
+  // the record — they are what a reader may annotate — which is why the proven
+  // branch asks for both and the branch under it exists at all.
   let testing: RailStep;
   if (tests.total === 0) {
     testing = phase('testing', { state: 'empty', badge: 'Not started', detail: 'No test suite generated.' });

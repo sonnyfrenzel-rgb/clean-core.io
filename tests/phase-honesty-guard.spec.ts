@@ -69,10 +69,11 @@ const project = (over: Partial<Project> = {}): Project => ({
  * server wrote the receipt that says so.
  *
  * Both halves are needed since the QA full review of a19945ef01dc. `Passed`
- * strings on `testCases` are in the client allowlist of `firestore.rules` and
- * nothing in the product writes them, so they are a self-report; the receipt is
- * `/api/run-tests`'s own record, bound to the run and to the digests of the
- * code, the suite and the case list.
+ * strings on `testCases` are in the client allowlist of `firestore.rules`, so a
+ * reader cannot tell a browser write from the verdicts `/api/run-tests` writes
+ * back beside its receipt (roadmap 7.3) — on their own they are a self-report.
+ * The receipt is that route's own record, bound to the run and to the digests of
+ * the code, the suite and the case list.
  */
 const ran = (over: Partial<Project> = {}): Project => {
   const withPasses = project({ ...over, testCases: draft.map((t) => ({ ...t, status: 'Passed' as const })) });

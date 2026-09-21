@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import {
   signEd25519,
   verifyEd25519,
@@ -170,6 +172,61 @@ test.describe('a rotation does not take the old packs with it', () => {
         expect(ring[0].status).toBe('active');
       });
     });
+  });
+
+  test('a retired key written as a PEM is published, in every shape the module documents', () => {
+    // `getPublishedKeyring` says the value holds raw base64 or a PEM, "with real
+    // newlines or the two characters \\ and n", separated by commas or newlines.
+    // A PEM is several lines, so a value in the documented format used to be cut
+    // at every newline, every fragment rejected, and the ring came back with the
+    // active key alone — the rotation of 18.09.2026 is exactly this case.
+    const keyA = generateKeyBase64();
+    let idA = '';
+    let pemA = '';
+    let rawA = '';
+    withKey(keyA, () => {
+      idA = getSigningKeypair()!.keyId;
+      pemA = getPublishedPublicKey()!.publicKeyPem;
+      rawA = getPublishedPublicKey()!.publicKey;
+    });
+    expect(pemA.split('\n').length, 'the PEM is a single line — the case under test does not arise').toBeGreaterThan(2);
+
+    const shapes: Array<[string, string]> = [
+      ['a PEM with real newlines', pemA],
+      ['a PEM whose newlines survived as \\n', pemA.replace(/\n/g, '\\n')],
+      ['a PEM beside a raw base64 entry', `${pemA}\n,${rawA}`],
+      ['a PEM with trailing whitespace', `\n${pemA}\n\n`],
+    ];
+
+    withKey(generateKeyBase64(), () => {
+      for (const [what, value] of shapes) {
+        withRetired(value, () => {
+          const ring = getPublishedKeyring();
+          const retired = ring.find((k) => k.keyId === idA);
+          expect(retired, `${what}: the retired key is not published`).toBeTruthy();
+          expect(retired!.status).toBe('retired');
+          // Listed once, whatever shape it arrived in.
+          expect(ring.filter((k) => k.keyId === idA)).toHaveLength(1);
+        });
+      }
+    });
+  });
+
+  test('a revoked key cannot be served as current for an hour', () => {
+    // Revocation here is removal from the published set, so how long a cached
+    // copy of that set stays in use is how long a compromised key keeps
+    // confirming packs. The document used to be `public, max-age=3600`, and no
+    // operator action reaches a copy already handed out.
+    const src = fs.readFileSync(
+      path.resolve(__dirname, '..', 'app/.well-known/clean-core-io-signing.json/route.ts'),
+      'utf8',
+    );
+    const maxAge = src.match(/const MAX_AGE = (\d+);/);
+    expect(maxAge, 'the key document no longer states its cache lifetime').not.toBeNull();
+    expect(Number(maxAge![1])).toBeLessThanOrEqual(300);
+    expect(src).toContain('must-revalidate');
+    const revalidate = src.match(/export const revalidate = (\d+);/);
+    expect(Number(revalidate![1])).toBeLessThanOrEqual(300);
   });
 
   test('with no key at all the ring is empty rather than a fabricated entry', () => {

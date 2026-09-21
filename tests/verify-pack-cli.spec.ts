@@ -114,6 +114,48 @@ test('a file added next to the evidence fails the pack, signature notwithstandin
   expect(code).toBe(1);
 });
 
+test('a path the archive carries twice fails the pack, the signature notwithstanding', async () => {
+  // JSZip holds a loaded archive in a map keyed by name, so two entries under
+  // one name arrive as one — the later wins. With the stranger first and the
+  // sealed file second, every listed hash, the manifest hash and the signature
+  // agree, and an extractor that takes the first entry hands the reader the
+  // other file. The web verifier asks the same question of the same archive
+  // (`tests/audit-pack-archive-completeness.spec.ts`).
+  const kp = keyPair();
+  const content = '# Executive Summary\nA pack built for the command-line check.';
+  const files = [{ path: '00-executive-summary.md', sha256: sha(content), bytes: content.length }];
+  const meta = { projectId: 'p-1', runId: 'r-1', runHash: 'h-1', engineVersion: 'v1.0', sapApiCatalogVersion: '2024.FPS02' };
+  const manifestHash = sha(canonicalAuditManifest({ files, ...meta }));
+  const manifest = {
+    version: '2.0', ...meta, generatedAt: new Date().toISOString(), files, manifestHash,
+    signed: true, signature: '',
+    signatureEd25519: sign(null, Buffer.from(manifestHash, 'utf8'), kp.privateKey).toString('base64'),
+  };
+  const zip = new JSZip();
+  // The same length as the signed path, so the name can be rewritten in place.
+  zip.file('zz-executive-summary.md', '# Unconditional approval. Signed, nobody.');
+  zip.file('00-executive-summary.md', content);
+  zip.file('manifest.json', JSON.stringify(manifest));
+  const bytes: Buffer = await zip.generateAsync({ type: 'nodebuffer' });
+  const from = Buffer.from('zz-executive-summary.md', 'utf8');
+  const to = Buffer.from('00-executive-summary.md', 'utf8');
+  let at = 0;
+  let rewritten = 0;
+  while ((at = bytes.indexOf(from, at)) !== -1) {
+    to.copy(bytes, at);
+    at += to.length;
+    rewritten += 1;
+  }
+  expect(rewritten, 'the decoy name was not written into both headers — the check would be vacuous').toBe(2);
+
+  const packPath = join(mkdtempSync(join(tmpdir(), 'verify-pack-')), 'pack.zip');
+  writeFileSync(packPath, bytes);
+  const { code, out } = run([packPath, '--key', kp.rawPublicBase64]);
+  expect(out).toContain('more than once');
+  expect(out).toContain('NOT verified');
+  expect(code).toBe(1);
+});
+
 test('a user-attested file is reported as present and unsigned, and the pack still verifies', async () => {
   const kp = keyPair();
   const pack = await buildPack({ signWith: kp.privateKey, attested: { '07-user-attested.md': '# Statements\nApprover: the board, unanimously.' } });

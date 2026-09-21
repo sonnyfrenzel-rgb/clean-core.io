@@ -683,10 +683,17 @@ jobs:
                 </div>
               </li>
               <li className="flex items-start gap-3 text-gray-400 text-xs md:text-sm font-medium">
-                {/* Green only when every case passed. The old condition also
-                    went green beside simulated cases, because it checked for
-                    failures and missing verdicts but not for simulations. */}
-                {testingPhase.done ? (
+                {/* Green only when an execution is on record. The condition has
+                    been narrowed twice: it once followed the number of cases
+                    *generated*, then every case carrying a pass — which is
+                    `testingPhase.done`, and `testCases[].status` is in the
+                    client update allowlist of `firestore.rules`. A row of
+                    `Passed` strings nobody executed therefore put a green tick
+                    here beside "every generated test returned a pass", which is
+                    the same defect the coverage row below was fixed for. Green
+                    is `proven` on this page as it is on the stepper and the rail
+                    (`phaseTone`, `lib/workflow-steps.ts`). */}
+                {testingPhase.proven ? (
                   <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
                 ) : (
                   <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
@@ -705,7 +712,9 @@ jobs:
                       : testingPhase.state === 'stale'
                         ? 'Written for a previous source — regenerate in stage 5'
                         : testsPassed === testCaseCount
-                        ? (isAbapCloud
+                        ? (!testingPhase.proven
+                            ? 'Marked as passed — no test run is on record behind these verdicts. Run the suite in stage 5.'
+                            : isAbapCloud
                             ? 'ADT: every generated test returned a pass'
                             : 'Sandbox: every generated test returned a pass')
                         : [

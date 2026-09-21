@@ -27,7 +27,19 @@ import { getPublishedKeyring } from '@/lib/audit-signing-keypair';
  * a curl both get something sensible without content negotiation.
  */
 export const runtime = 'nodejs';
-export const revalidate = 3600;
+/**
+ * Cached, but not for an hour.
+ *
+ * Removal from the key set is how a compromised key is revoked (see below), and
+ * the document was served `public, max-age=3600`: any browser, CDN or proxy that
+ * fetched it the moment before the operator pulled the key kept confirming packs
+ * signed with it for the rest of the hour, and nothing the operator can do
+ * reaches that copy. Five minutes is still a cache — the document is a kilobyte
+ * and an offline verifier fetches it once per check — and it is the length of
+ * time a revocation can go unheard.
+ */
+export const revalidate = 300;
+const MAX_AGE = 300;
 
 export function GET() {
   const keys = getPublishedKeyring();
@@ -66,6 +78,9 @@ export function GET() {
         'whose keyId matches the pack\'s signingKeyId. Offline verifier: ' +
         'scripts/verify-pack.mjs in the repository.',
     },
-    { headers: { 'Cache-Control': 'public, max-age=3600' } },
+    // `must-revalidate`: a stale copy may not be handed out while the origin is
+    // unreachable either. "I could not reach the key set" is an honest answer;
+    // an hour-old key set served as current is not.
+    { headers: { 'Cache-Control': `public, max-age=${MAX_AGE}, must-revalidate` } },
   );
 }

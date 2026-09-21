@@ -191,6 +191,55 @@ function bindsIssuanceMetadata(version) {
   return Number.isFinite(major) && major >= 3;
 }
 
+/**
+ * Names the archive's central directory lists more than once — the same check as
+ * `duplicateEntryNames` in `lib/audit-pack-verify.ts`, repeated here for the same
+ * reason the canonical form is: this script needs no build.
+ *
+ * JSZip holds a loaded archive in a map keyed by name, so two entries under one
+ * name arrive as one and the loop above hashes whichever of them survived. An
+ * archive can then carry a second entry under a signed path while every listed
+ * hash, the manifest hash and the signature agree, and an extractor that takes
+ * the first entry hands the reader the other one. The manifest names each path
+ * once; an archive that lists one twice is not the archive that was sealed.
+ *
+ * An archive this cannot count — no end record, a ZIP64 marker, a record that is
+ * not where the previous one said it ends — returns nothing rather than a guess.
+ * The other checks still apply, and a genuine pack must not fail over a shape
+ * this simply did not parse.
+ */
+function duplicateEntryNames(buffer) {
+  const b = Buffer.from(buffer);
+  if (b.length < 22) return [];
+  const floor = Math.max(0, b.length - 22 - 0xffff);
+  let eocd = -1;
+  for (let i = b.length - 22; i >= floor; i--) {
+    if (b.readUInt32LE(i) === 0x06054b50) {
+      eocd = i;
+      break;
+    }
+  }
+  if (eocd < 0) return [];
+  const total = b.readUInt16LE(eocd + 10);
+  let offset = b.readUInt32LE(eocd + 16);
+  if (total === 0xffff || offset === 0xffffffff) return [];
+
+  const seen = new Set();
+  const duplicates = new Set();
+  for (let n = 0; n < total; n++) {
+    if (offset + 46 > b.length || b.readUInt32LE(offset) !== 0x02014b50) return [];
+    const nameLength = b.readUInt16LE(offset + 28);
+    const extraLength = b.readUInt16LE(offset + 30);
+    const commentLength = b.readUInt16LE(offset + 32);
+    if (offset + 46 + nameLength > b.length) return [];
+    const name = b.subarray(offset + 46, offset + 46 + nameLength).toString('utf8');
+    if (seen.has(name)) duplicates.add(name);
+    seen.add(name);
+    offset += 46 + nameLength + extraLength + commentLength;
+  }
+  return [...duplicates].sort();
+}
+
 /** Why this manifest has no single canonical string, or null — the same rules as `canonicalManifestDefect`. */
 function canonicalDefect(manifest, attested) {
   const bound = bindsIssuanceMetadata(manifest.version);
@@ -235,7 +284,8 @@ async function main() {
     process.exit(CANNOT_CHECK);
   }
 
-  const zip = await JSZip.loadAsync(await readFile(packPath));
+  const packBytes = await readFile(packPath);
+  const zip = await JSZip.loadAsync(packBytes);
   const manifestFile = zip.file('manifest.json');
   if (!manifestFile) {
     console.error(c.bad('No manifest.json in the pack — nothing to verify.'));
@@ -277,6 +327,13 @@ async function main() {
     .sort();
   for (const name of unlisted) {
     console.log(`${c.bad('unlisted')}  ${name}`);
+    contentsOk = false;
+  }
+  // The same rule, asked of the raw archive rather than of the map JSZip built
+  // from it: a path the archive carries twice is an entry the manifest does not
+  // account for, and only one of the two can be the file it names.
+  for (const name of duplicateEntryNames(packBytes)) {
+    console.log(`${c.bad('twice')}     ${name}  ${c.dim('the archive lists this path more than once')}`);
     contentsOk = false;
   }
   // A user-attested file carries the account holder's own statement. From

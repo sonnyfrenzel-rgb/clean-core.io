@@ -31,9 +31,18 @@
  * signing and verifying routes answer 500, exactly as they do when it is
  * missing (QA full review of a19945ef01dc, d67ef0b953f0 / 7ce412f6a068).
  *
- * The same floor is checked before a production deploy in
- * `.github/workflows/deploy.yml`, so a weak secret is refused where it can
- * still be fixed instead of taking every export route down after the rollout.
+ * The floor holds at runtime and **not** in the deploy. It was going to be
+ * checked in `.github/workflows/deploy.yml` as well, so a weak secret is refused
+ * where it can still be changed rather than taking every export route down after
+ * the rollout; the check went in and came back out, because the only remedy it
+ * offers is a rotation, and `/api/export/verify` verifies with the single key
+ * this module returns — there is no key history, so rotating would leave every
+ * pack already in an auditor's hands refused rather than confirmed. The deploy
+ * asserts the secret is set and nothing more. The reasoning, the date and the
+ * condition for putting the length check back are in
+ * `tests/signing-key-guard.spec.ts`, above the test that holds the deploy to the
+ * check it does make. This paragraph said the opposite while that was true, and
+ * a comment claiming a check nobody performs is worth less than no comment.
  */
 
 /**
