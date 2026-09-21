@@ -141,6 +141,24 @@ test.describe('an archive whose entry list cannot be read is unchecked, not clea
     expect(duplicateEntryNames('not bytes')).toMatchObject({ counted: false });
   });
 
+  test('an archive that understates how many entries it has is not counted either', async () => {
+    // The end record states the number of entries, and the archive writes that
+    // record. Declare fewer than are there and a loop that trusts the number
+    // stops early — before the duplicate — and still reports "counted"
+    // (QA review of b378e515ae25). Here: three real entries, two declared.
+    const bytes = Buffer.from(await packWith({ '99-addendum.md': 'x' }));
+    const eocd = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+    expect(eocd).toBeGreaterThan(-1);
+    const declared = bytes.readUInt16LE(eocd + 10);
+    expect(declared, 'the fixture should hold three entries').toBe(3);
+    bytes.writeUInt16LE(declared - 1, eocd + 10);
+    bytes.writeUInt16LE(declared - 1, eocd + 8); // this disk's count, kept consistent
+
+    const counted = duplicateEntryNames(bytes);
+    expect(counted.counted, 'an understated entry count was accepted as counted').toBe(false);
+    expect(counted.why).toContain('declares');
+  });
+
   test('and such an archive never comes back authentic', async () => {
     const bytes = Buffer.from(await packWith());
     const eocd = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));

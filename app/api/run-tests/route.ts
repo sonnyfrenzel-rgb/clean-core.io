@@ -771,6 +771,29 @@ if (ALLOWED_SUFFIXES.length === 0) {
     // case is. A case keeps no verdict from an earlier run: the receipt beside
     // it only covers this one, and the two have to describe the same run.
     const executedCases = applyRunnerVerdicts(storedCases, testResults, exitCode);
+    // `environment: 'mock'` below is a constant, and a constant is only honest
+    // while nothing else can reach this line. Today nothing can: a live run is
+    // refused at the lock long before here. But the lock is a decision someone
+    // will one day reverse, and a receipt that then says "mock" about a run
+    // against a real tenant is worse than no receipt — it is a signed sentence
+    // that is false (security audit of b88c77b, SEC-b88c77b-18). So the
+    // assumption is checked where it is used rather than trusted from a
+    // hundred lines above: if this was not a sandbox run, no receipt is written
+    // at all, and the caller is told why.
+    if (s4Environment === 'live') {
+      logger.error('run-tests: a live run reached the receipt, which only describes sandbox runs', { projectId: sanitizedProjectId });
+      return NextResponse.json(
+        {
+          output: '',
+          error:
+            'This run executed against a live tenant, and the receipt format only describes sandbox runs. ' +
+            'No receipt was written. Reopening live execution needs a receipt that names the environment it ran in.',
+          exitCode: 1,
+          testResults: [],
+        },
+        { status: 501 },
+      );
+    }
     const receipt: TestRunReceipt = {
       v: TEST_RUN_RECEIPT_VERSION,
       runId: subject.runId,

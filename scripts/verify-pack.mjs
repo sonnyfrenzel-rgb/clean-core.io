@@ -246,10 +246,12 @@ function duplicateEntryNames(buffer) {
 
   const seen = new Set();
   const duplicates = new Set();
-  for (let n = 0; n < total; n++) {
-    if (offset + 46 > b.length || b.readUInt32LE(offset) !== 0x02014b50) {
-      return unchecked('a central-directory record is not where the previous one said it ends');
-    }
+  // Walked until the records run out, not until the declared count is reached:
+  // an archive may declare two entries and write three, and a loop that trusts
+  // the number stops before the duplicate and still reports "counted"
+  // (QA review of b378e515ae25). Same rule as `lib/audit-pack-verify.ts`.
+  let walked = 0;
+  while (offset + 46 <= b.length && b.readUInt32LE(offset) === 0x02014b50) {
     const nameLength = b.readUInt16LE(offset + 28);
     const extraLength = b.readUInt16LE(offset + 30);
     const commentLength = b.readUInt16LE(offset + 32);
@@ -260,6 +262,11 @@ function duplicateEntryNames(buffer) {
     if (seen.has(name)) duplicates.add(name);
     seen.add(name);
     offset += 46 + nameLength + extraLength + commentLength;
+    walked += 1;
+    if (walked > 100000) return unchecked('the central directory holds more records than any pack this platform issues');
+  }
+  if (walked !== total) {
+    return unchecked(`the end record declares ${total} entries and the central directory holds ${walked}`);
   }
   return { duplicates: [...duplicates].sort(), counted: true };
 }

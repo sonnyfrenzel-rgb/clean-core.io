@@ -3,7 +3,9 @@ import { logger, errMessage } from '@/lib/logger';
 import {
   verifyRequestAuth,
   getAdminDb,
+  assertAccountActive,
   assertMfaSatisfied,
+  QuotaError,
 } from '@/lib/firebase-admin';
 import { mayReadProject } from '@/lib/project-readers';
 import { assertRateLimit } from '@/lib/rate-limit';
@@ -106,6 +108,23 @@ async function openProject(
         ok: false,
         response: NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 }),
       };
+    }
+    // The same gate the three sibling process routes apply, and the one this
+    // route was missing: a suspended account, or one that has not accepted the
+    // current terms, kept its write access to the process map while naming,
+    // revisions and states refused it (security audit of b88c77b,
+    // SEC-b88c77b-13, verified by counting the call in all four routes on
+    // 21.09.2026 — this was the only zero).
+    try {
+      await assertAccountActive(decodedToken.uid, {
+        requireCurrentTerms: true,
+        isAdminClaim: decodedToken.admin === true,
+      });
+    } catch (gateErr: unknown) {
+      if (gateErr instanceof QuotaError) {
+        return { ok: false, response: NextResponse.json({ error: gateErr.message }, { status: gateErr.status }) };
+      }
+      throw gateErr;
     }
   }
 

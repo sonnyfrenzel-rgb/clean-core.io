@@ -122,10 +122,14 @@ export function duplicateEntryNames(data: unknown): { duplicates: string[]; coun
   const decoder = new TextDecoder();
   const seen = new Set<string>();
   const duplicates = new Set<string>();
-  for (let n = 0; n < total; n++) {
-    if (offset + 46 > bytes.byteLength || view.getUint32(offset, true) !== CENTRAL) {
-      return unchecked('a central-directory record is not where the previous one said it ends');
-    }
+  // Walked until the records run out, not until the declared count is reached.
+  // The end record states how many entries there are, and an archive is free to
+  // understate it: declare two, write three, and a loop that trusts the number
+  // stops before the third — the duplicate — and still reports "counted"
+  // (QA review of b378e515ae25). The count is treated as a claim to check, like
+  // every other number in a file somebody else wrote.
+  let walked = 0;
+  while (offset + 46 <= bytes.byteLength && view.getUint32(offset, true) === CENTRAL) {
     const nameLength = view.getUint16(offset + 28, true);
     const extraLength = view.getUint16(offset + 30, true);
     const commentLength = view.getUint16(offset + 32, true);
@@ -137,6 +141,12 @@ export function duplicateEntryNames(data: unknown): { duplicates: string[]; coun
     if (seen.has(name)) duplicates.add(name);
     seen.add(name);
     offset += 46 + nameLength + extraLength + commentLength;
+    walked += 1;
+    // A malformed archive could otherwise spin here; no pack has 100k entries.
+    if (walked > 100_000) return unchecked('the central directory holds more records than any pack this platform issues');
+  }
+  if (walked !== total) {
+    return unchecked(`the end record declares ${total} entries and the central directory holds ${walked}`);
   }
   return { duplicates: [...duplicates].sort(), counted: true };
 }
