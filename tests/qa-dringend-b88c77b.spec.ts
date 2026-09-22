@@ -109,31 +109,53 @@ test.describe('7976bced4c28 · one file is not a package', () => {
     return { abapCloud: chunks[0], btp: chunks[1] };
   };
 
-  const requirements = (track: 'abapCloud' | 'btp') => {
-    const block = src().match(new RegExp(`${track}:\\s*\\[([\\s\\S]*?)\\]`));
+  /**
+   * A requirement is one of two tests, and reading only one of them was the bug
+   * this grew out of. `*.clas.abap` is an extension; `package.json`,
+   * `Dockerfile` and `abapgit.xml` are names, and matching those with
+   * `endsWith` let `xpackage.json` answer for the manifest — a package reported
+   * complete that would not build (QA review of 7fea4f4). Both kinds are read
+   * here, and `satisfiedBy` applies the right one.
+   */
+  type Req = { kind: 'extension' | 'name'; value: string };
+  const requirements = (track: 'abapCloud' | 'btp'): Req[] => {
+    const block = src().match(new RegExp(`${track}:\\s*\\[([\\s\\S]*?)\\n  \\]`));
     expect(block, `no required-artefact list for the ${track} track`).not.toBeNull();
-    return allMatches(block![1], /suffix:\s*'([^']+)'/g);
+    const reqs: Req[] = [
+      ...allMatches(block![1], /match: 'extension', suffix: '([^']+)'/g).map(
+        (value) => ({ kind: 'extension' as const, value }),
+      ),
+      ...allMatches(block![1], /match: 'name', name: '([^']+)'/g).map(
+        (value) => ({ kind: 'name' as const, value }),
+      ),
+    ];
+    expect(reqs.length, `the ${track} list carries no requirement this guard understands`).toBeGreaterThanOrEqual(5);
+    return reqs;
   };
+
+  const baseOf = (path: string) => path.split(/[\\/]/).pop() ?? path;
+  const satisfiedBy = (req: Req, path: string) =>
+    req.kind === 'extension' ? path.toLowerCase().endsWith(req.value) : baseOf(path.toLowerCase()) === req.value;
 
   const promptPaths = (chunk: string) => allMatches(chunk, /"path":\s*"([^"]+)"/g);
 
   for (const track of ['abapCloud', 'btp'] as const) {
     test(`every file the ${track} prompt asks for is required back`, () => {
       const paths = promptPaths(prompts()[track]);
-      const suffixes = requirements(track);
+      const reqs = requirements(track);
       expect(paths.length, 'the prompt names no files at all').toBeGreaterThanOrEqual(5);
       for (const p of paths) {
-        const covered = suffixes.some((s) => p.toLowerCase().endsWith(s));
+        const covered = reqs.some((r) => satisfiedBy(r, p));
         expect(covered, `the prompt asks for ${p} and nothing checks that it came back`).toBe(true);
       }
     });
 
     test(`the ${track} track requires nothing the prompt never asked for`, () => {
       const paths = promptPaths(prompts()[track]).map((p) => p.toLowerCase());
-      for (const s of requirements(track)) {
+      for (const r of requirements(track)) {
         expect(
-          paths.some((p) => p.endsWith(s)),
-          `"${s}" is demanded of the model but never asked of it`,
+          paths.some((p) => satisfiedBy(r, p)),
+          `"${r.value}" is demanded of the model but never asked of it`,
         ).toBe(true);
       }
     });
@@ -141,15 +163,41 @@ test.describe('7976bced4c28 · one file is not a package', () => {
     test(`a single file cannot satisfy the ${track} track`, () => {
       // The finding's own case: one entry with a path and some content used to
       // pass, because "at least one usable file" was the whole of it.
-      const suffixes = requirements(track);
+      const reqs = requirements(track);
       const single = track === 'abapCloud' ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts';
-      const satisfied = suffixes.filter((s) => single.toLowerCase().endsWith(s));
+      const satisfied = reqs.filter((r) => satisfiedBy(r, single));
       expect(
         satisfied.length,
         'one file still answers the whole package',
-      ).toBeLessThan(suffixes.length);
+      ).toBeLessThan(reqs.length);
     });
   }
+
+  test('a fixed name is a name, not an ending', () => {
+    // `xpackage.json` is not a dependency manifest and `my-dockerfile` is not a
+    // container setup, but `endsWith` said both were — a package reported
+    // complete that would not build (QA review of 7fea4f4, acceptance "a
+    // generated package must include the required artifacts for its selected
+    // track": not met).
+    const named = (['abapCloud', 'btp'] as const).flatMap((t) => requirements(t).filter((r) => r.kind === 'name'));
+    expect(named.length, 'no requirement is matched by name any more').toBeGreaterThanOrEqual(3);
+
+    for (const r of named) {
+      expect(satisfiedBy(r, r.value), `${r.value} no longer satisfies itself`).toBe(true);
+      // A path that merely ends in the name does not.
+      expect(satisfiedBy(r, `x${r.value}`), `"x${r.value}" still answers for "${r.value}"`).toBe(false);
+      expect(satisfiedBy(r, `src/prefixed-${r.value}`), `a prefixed copy still answers for "${r.value}"`).toBe(false);
+      // A directory is the generator's business, so the real file still counts
+      // wherever it was put — with either separator, because a model writes both.
+      expect(satisfiedBy(r, `srv/${r.value}`), `${r.value} in a subdirectory stopped counting`).toBe(true);
+      expect(satisfiedBy(r, `srv\\${r.value}`), `${r.value} with a backslash stopped counting`).toBe(true);
+    }
+
+    // And the file under test applies the same two rules, not one.
+    expect(code(TRANSFORMATION), 'the two kinds of requirement are not told apart in the source').toContain(
+      "required.match === 'extension' ? path.endsWith(required.suffix) : baseName(path) === required.name",
+    );
+  });
 
   test('the gate runs before the project is written, and reports a failed generation', () => {
     const s = code(TRANSFORMATION);

@@ -65,30 +65,53 @@ const isUsableFile = (f: unknown): f is ProjectFile =>
  * suffix is the artefact kind, and a model that names the class after the
  * project instead of `zcl_demo_rap_behavior` has still answered the question.
  */
-const REQUIRED_ARTEFACTS: Record<'abapCloud' | 'btp', { label: string; suffix: string }[]> = {
+/**
+ * Two kinds of requirement, and they are not the same test.
+ *
+ * `*.clas.abap` is an extension: any file name may carry it. `package.json`,
+ * `Dockerfile` and `abapgit.xml` are *names*: the tooling that reads them looks
+ * for that exact file, not for something ending in it. Matching both with
+ * `endsWith` let `xpackage.json` satisfy the manifest requirement and
+ * `my-dockerfile` the container one — a package that would be reported complete
+ * and would not build (QA review of 7fea4f4, acceptance "a generated package
+ * must include the required artifacts for its selected track": not met).
+ *
+ * So a requirement says which test it is, and a name is compared against the
+ * base name of the path — a `package.json` in a subdirectory still counts,
+ * because the generator is free to choose the layout; a file merely *ending* in
+ * `package.json` does not.
+ */
+type Requirement = { label: string; match: 'extension'; suffix: string } | { label: string; match: 'name'; name: string };
+
+const REQUIRED_ARTEFACTS: Record<'abapCloud' | 'btp', Requirement[]> = {
   abapCloud: [
-    { label: 'behavior implementation class (*.clas.abap)', suffix: '.clas.abap' },
-    { label: 'class metadata descriptor (*.clas.xml)', suffix: '.clas.xml' },
-    { label: 'CDS data definition (*.ddls.asddls)', suffix: '.ddls.asddls' },
-    { label: 'behavior definition (*.bdef.asbdef)', suffix: '.bdef.asbdef' },
-    { label: 'service definition (*.srvd.assrvd)', suffix: '.srvd.assrvd' },
-    { label: 'service binding (*.srvb.assrvb)', suffix: '.srvb.assrvb' },
-    { label: 'abapGit repository configuration (abapgit.xml)', suffix: 'abapgit.xml' },
+    { label: 'behavior implementation class (*.clas.abap)', match: 'extension', suffix: '.clas.abap' },
+    { label: 'class metadata descriptor (*.clas.xml)', match: 'extension', suffix: '.clas.xml' },
+    { label: 'CDS data definition (*.ddls.asddls)', match: 'extension', suffix: '.ddls.asddls' },
+    { label: 'behavior definition (*.bdef.asbdef)', match: 'extension', suffix: '.bdef.asbdef' },
+    { label: 'service definition (*.srvd.assrvd)', match: 'extension', suffix: '.srvd.assrvd' },
+    { label: 'service binding (*.srvb.assrvb)', match: 'extension', suffix: '.srvb.assrvb' },
+    { label: 'abapGit repository configuration (abapgit.xml)', match: 'name', name: 'abapgit.xml' },
   ],
   btp: [
-    { label: 'service implementation (*.ts)', suffix: '.ts' },
-    { label: 'schema definition (*.cds)', suffix: '.cds' },
-    { label: 'dependency manifest (package.json)', suffix: 'package.json' },
-    { label: 'container setup (Dockerfile)', suffix: 'dockerfile' },
-    { label: 'ERP-side event publisher (*.clas.abap)', suffix: '.clas.abap' },
+    { label: 'service implementation (*.ts)', match: 'extension', suffix: '.ts' },
+    { label: 'schema definition (*.cds)', match: 'extension', suffix: '.cds' },
+    { label: 'dependency manifest (package.json)', match: 'name', name: 'package.json' },
+    { label: 'container setup (Dockerfile)', match: 'name', name: 'dockerfile' },
+    { label: 'ERP-side event publisher (*.clas.abap)', match: 'extension', suffix: '.clas.abap' },
   ],
 };
+
+/** The last segment of a path, however the model wrote the separators. */
+const baseName = (path: string): string => path.split(/[\/]/).pop() ?? path;
 
 /** What the prompt asked for and the answer does not contain, in reader's words. */
 const missingArtefacts = (generated: ProjectFile[], isAbapCloud: boolean): string[] => {
   const paths = generated.map((f) => f.path.trim().toLowerCase());
+  const satisfies = (required: Requirement, path: string): boolean =>
+    required.match === 'extension' ? path.endsWith(required.suffix) : baseName(path) === required.name;
   return REQUIRED_ARTEFACTS[isAbapCloud ? 'abapCloud' : 'btp']
-    .filter((required) => !paths.some((p) => p.endsWith(required.suffix)))
+    .filter((required) => !paths.some((p) => satisfies(required, p)))
     .map((required) => required.label);
 };
 

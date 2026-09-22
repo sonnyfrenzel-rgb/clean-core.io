@@ -195,9 +195,22 @@ test('the deep health probe reaches Firestore at most once per cooldown', () => 
   expect(reaches, 'the health route reaches Firestore more than once per request').toHaveLength(1);
   const deepBranch = src.indexOf('if (deep)');
   expect(deepBranch, 'the deep branch is gone').toBeGreaterThan(-1);
-  expect(reaches[0].index, 'the shallow probe now costs a Firestore read as well').toBeGreaterThan(deepBranch);
 
-  // The cooldown is consulted first, and the reach happens only on the far side
+  // The one reach lives in `probeFirestore`, which sits above the handler — so
+  // its position in the file says nothing any more. What says something is who
+  // calls it: only the deep branch, and only through the shared slot.
+  const probeBody = src.slice(src.indexOf('async function probeFirestore'), deepBranch);
+  expect(probeBody, 'the Firestore read moved out of probeFirestore').toContain('getAdminDb()');
+  // The declaration reads `async function probeFirestore(): Promise<boolean>`,
+  // which contains the same characters as a call — so it is removed before the
+  // call sites are counted, or the guard reports its own subject.
+  const callSites = src.replace(/async function probeFirestore\(\)[^{]*\{/, '');
+  const deepInCallSites = callSites.indexOf('if (deep)');
+  const calls = [...callSites.matchAll(/probeFirestore\(\)/g)];
+  expect(calls, 'the probe is started somewhere other than the deep branch').toHaveLength(1);
+  expect(calls[0].index, 'the shallow probe now costs a Firestore read as well').toBeGreaterThan(deepInCallSites);
+
+  // The cooldown is consulted first, and the probe starts only on the far side
   // of it. Before this, every `?deep=1` — from anybody, without a token — was a
   // read.
   const cooldown = src.match(/const (DEEP_PROBE_COOLDOWN_MS) = ([\d_]+)/);
@@ -205,7 +218,23 @@ test('the deep health probe reaches Firestore at most once per cooldown', () => 
   expect(Number(cooldown![2].replace(/_/g, '')), 'a cooldown of nothing is not a cooldown').toBeGreaterThanOrEqual(1000);
   const consulted = src.indexOf('DEEP_PROBE_COOLDOWN_MS', deepBranch);
   expect(consulted, 'the cooldown is never consulted in the deep branch').toBeGreaterThan(-1);
-  expect(consulted, 'Firestore is reached before the cooldown is consulted').toBeLessThan(reaches[0].index!);
+  expect(callSites.indexOf('DEEP_PROBE_COOLDOWN_MS', deepInCallSites), 'the probe starts before the cooldown is consulted').toBeLessThan(calls[0].index!);
+
+  // And the cooldown alone does not bound it. `lastDeepProbe.at` is written
+  // after the read returns, so a hundred requests in the same moment all read a
+  // stale timestamp and all issue their own read — a serial flood was bounded
+  // and the concurrent one, the one that matters, was not (QA review of
+  // 7fea4f4). The slot has to be claimed *before* the await, and the callers in
+  // between have to await that same promise rather than start their own.
+  expect(src, 'nothing shares the probe between concurrent callers').toMatch(
+    /deepProbeInFlight \?\?= probeFirestore\(\)/,
+  );
+  expect(src, 'the shared slot is never awaited, so nobody waits for the one read').toContain(
+    'await deepProbeInFlight',
+  );
+  expect(src, 'the slot is never released, so one failure freezes the probe forever').toMatch(
+    /\.finally\(\(\) => \{\s*deepProbeInFlight = null;/,
+  );
 
   // The verdict of the last real probe is what the calls in between are
   // answered from — not a constant, and not `undefined`.

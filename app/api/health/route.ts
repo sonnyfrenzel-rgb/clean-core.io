@@ -34,6 +34,36 @@ export const runtime = 'nodejs';
 const DEEP_PROBE_COOLDOWN_MS = 10_000;
 let lastDeepProbe: { at: number; ok: boolean } = { at: 0, ok: true };
 
+/**
+ * The probe in flight, shared by everyone who asks while it runs.
+ *
+ * The cooldown alone did not bound what it claimed to. `lastDeepProbe.at` is
+ * written *after* the read returns, so a hundred requests arriving in the same
+ * moment all read a stale timestamp, all take the else branch, and all issue
+ * their own Firestore read — the cooldown bounded a serial flood and left the
+ * concurrent one untouched, which is the flood that matters (QA review of
+ * 7fea4f4, acceptance "the deep probe's cooldown should bound unauthenticated
+ * Firestore reads": not met).
+ *
+ * So the first caller starts the read and everyone arriving while it is open
+ * awaits the same promise. One read per cooldown window, under any concurrency.
+ * Module scope is per instance, like the cooldown itself: this bounds one
+ * instance, not the service, and that is all it ever claimed.
+ */
+let deepProbeInFlight: Promise<boolean> | null = null;
+
+async function probeFirestore(): Promise<boolean> {
+  let ok = true;
+  try {
+    const { db } = await getAdminDb();
+    await db.collection('_health').doc('ping').get();
+  } catch {
+    ok = false;
+  }
+  lastDeepProbe = { at: Date.now(), ok };
+  return ok;
+}
+
 export async function GET(req: Request) {
   const deep = new URL(req.url).searchParams.get('deep') === '1';
 
@@ -58,15 +88,13 @@ export async function GET(req: Request) {
     if (Date.now() - lastDeepProbe.at < DEEP_PROBE_COOLDOWN_MS) {
       firestoreOk = lastDeepProbe.ok;
     } else {
-      let ok = true;
-      try {
-        const { db } = await getAdminDb();
-        await db.collection('_health').doc('ping').get();
-      } catch {
-        ok = false;
-      }
-      lastDeepProbe = { at: Date.now(), ok };
-      firestoreOk = ok;
+      // The slot is claimed before the await, not after it — that is the whole
+      // point. Everyone who arrives while the read is open awaits this same
+      // promise and costs nothing.
+      deepProbeInFlight ??= probeFirestore().finally(() => {
+        deepProbeInFlight = null;
+      });
+      firestoreOk = await deepProbeInFlight;
     }
   }
 
