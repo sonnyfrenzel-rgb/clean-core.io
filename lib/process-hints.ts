@@ -128,6 +128,51 @@ const ACTIVITY_TAGS = new Set([
 /** The tags rule 2 is about. A parallel gateway carries no condition by definition and is never reported. */
 const DECIDING_TAGS = new Set(['exclusiveGateway']);
 
+/**
+ * Did 2.6 draw this element from the code, or did a reader draw it in the editor?
+ *
+ * The file says so itself. Everything `lib/bpmn/export.ts` writes carries a
+ * `cc:trace` with `status="reconstructed"` and, whenever the skeleton node had
+ * one, a line range; an element added in the editor of 3.1 carries neither —
+ * there is nothing in the source for it to point at. So: a line anchor, or the
+ * engine's own status, and nothing else. Rules 1 and 4 read `lineStart` for the
+ * same reason, and the anchor alone would be the narrower test — but a
+ * reconstructed element that the engine could not anchor (`anchored="false"`) is
+ * still the engine's drawing, and rule 2 must not call it a reader's.
+ */
+function isReconstructed(element: { trace: { status: string | null; lineStart: number | null } | null }): boolean {
+  return element.trace?.lineStart != null || element.trace?.status === 'reconstructed';
+}
+
+/**
+ * The skeleton kinds 2.17 will write for a multi-instance activity.
+ *
+ * Empty today on purpose: 2.6 draws `LOOP AT` as a cycle with a real gateway, so
+ * there is no kind to name yet. When 2.17 lands, the kind it writes goes in
+ * here and rule 2 falls silent at those gateways — one line, one place.
+ */
+const MULTI_INSTANCE_KINDS: ReadonlySet<string> = new Set<string>();
+
+/**
+ * **The place where 2.17 hangs its exception in.**
+ *
+ * Step 2.17 turns `LOOP AT` from a cycle into a multi-instance marker. From then
+ * on a gateway that only closes a loop is not a decision at all, and rule 2 must
+ * not report it: this predicate is where that test goes, and it is the only
+ * place rule 2 asks.
+ *
+ * Today it answers false for every element, deliberately, because 2.17 is not
+ * built and nothing on an element says "multi-instance". The six hints rule 2
+ * produces on our own reconstruction of the 1.000-line example are *all six*
+ * `LOOP AT` gateways — `tests/process-editor.spec.ts` pins the number at 6 — and
+ * they disappear with 2.17, not before. Defining them away now would hide the
+ * finding instead of fixing it.
+ */
+function isMultiInstance(element: { trace: { kind: string | null } | null }): boolean {
+  const kind = element.trace?.kind;
+  return kind != null && MULTI_INSTANCE_KINDS.has(kind);
+}
+
 /** A lane as the file states it. */
 interface ParsedLane {
   id: string;
@@ -223,6 +268,7 @@ export function cleanCoreHints(input: CleanCoreHintInput): ProcessHint[] {
   }
   for (const element of parsed.elements) {
     if (!DECIDING_TAGS.has(element.tag)) continue;
+    if (isMultiInstance(element)) continue;
     const branches = outgoing.get(element.id) ?? [];
     if (branches.length < 2) continue;
     // Exactly one branch without a condition is the default branch, and BPMN
@@ -231,16 +277,33 @@ export function cleanCoreHints(input: CleanCoreHintInput): ProcessHint[] {
     const unlabelled = branches.filter((condition) => !condition.trim()).length;
     if (unlabelled < 2) continue;
     const label = labelFor(element.id, element.name, labels);
+    // **Told apart by where the gateway comes from** (roadmap 3.3, §16 V7,
+    // 22.09.2026). At a *reconstructed* gateway the code always had a condition,
+    // so a missing one is a defect of this engine and stays `warn`. At a
+    // *modelled* one it is a reader's open question, which a modeller is allowed
+    // to leave open, so it is `info`.
+    //
+    // The reason is a count. Over the reference stock of 1.246 SAP standard
+    // diagrams the rule in its undifferentiated form would fire at 554 of 1.320
+    // XOR splits (42,0 %) and in 310 of 1.246 diagrams (24,9 %) — 532 splits
+    // (40,3 %) carry no labelled edge at all, and only 8,5 % of all flows carry
+    // a condition. A rule that fires at almost every second reference diagram
+    // teaches the reader to skim hints, and after that "Task without an anchor"
+    // is not read either.
+    const reconstructed = isReconstructed(element);
     hints.push({
       key: `${GATEWAY_WITHOUT_CONDITION}:${element.id}`,
       ruleId: GATEWAY_WITHOUT_CONDITION,
       ruleLabel: 'Gateway without a condition',
       source: 'clean-core',
-      severity: 'warn',
+      severity: reconstructed ? 'warn' : 'info',
       elementId: element.id,
       elementLabel: label,
-      message: `Decision “${label}” has ${branches.length} branches and ${unlabelled} of them carry no condition:`
-        + ' the model does not say what decides here.',
+      message: reconstructed
+        ? `Decision “${label}” has ${branches.length} branches and ${unlabelled} of them carry no condition:`
+          + ' the model does not say what decides here.'
+        : `Decision “${label}” has ${branches.length} branches and ${unlabelled} of them carry no condition:`
+          + ' this one was drawn, not read from the code — say what decides, or leave it open.',
     });
   }
 

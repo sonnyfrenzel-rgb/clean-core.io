@@ -132,6 +132,54 @@ test.describe('the four rules of roadmap 3.3', () => {
     }
   });
 
+  test('told apart by where the gateway comes from: reconstructed warns, modelled informs', () => {
+    // Roadmap 3.3, §16 V7 (22.09.2026). The rule used to say `warn` everywhere.
+    // Over the reference stock of 1.246 SAP standard diagrams that is 554 of
+    // 1.320 XOR splits (42,0 %) and 310 of 1.246 diagrams (24,9 %) — a hint at
+    // almost every second diagram, which teaches a reader to skim the list.
+    // So: at a reconstructed gateway the code always had a condition and a
+    // missing one is an engine defect (`warn`); at a modelled one a reader is
+    // allowed to leave the decision open (`info`).
+    const model = exampleModel();
+    const labels = labelsOf(model);
+
+    // Reconstructed: every one of the six carries a line anchor from 2.6 and
+    // stays the strongest word the list uses.
+    const reconstructed = cleanCoreHints({ xml: model.xml, labels })
+      .filter((hint) => hint.ruleId === GATEWAY_WITHOUT_CONDITION);
+    expect(reconstructed.length).toBeGreaterThan(0);
+    for (const hint of reconstructed) expect(hint.severity).toBe('warn');
+
+    // Modelled: a decision drawn in the editor of 3.1, two branches, neither
+    // says what decides. It carries no `cc:trace`, because there is nothing in
+    // the source for it to point at.
+    const drawn = model.xml.replace(
+      '</bpmn:process>',
+      '<bpmn:exclusiveGateway id="Gateway_drawn" name="Needs approval?" />'
+      + '<bpmn:task id="Task_yes" name="Approve" /><bpmn:task id="Task_no" name="Reject" />'
+      + '<bpmn:sequenceFlow id="Flow_drawn_yes" sourceRef="Gateway_drawn" targetRef="Task_yes" />'
+      + '<bpmn:sequenceFlow id="Flow_drawn_no" sourceRef="Gateway_drawn" targetRef="Task_no" />'
+      + '</bpmn:process>',
+    );
+    const gateway = cleanCoreHints({ xml: drawn, labels })
+      .find((hint) => hint.ruleId === GATEWAY_WITHOUT_CONDITION && hint.elementId === 'Gateway_drawn');
+    expect(gateway, 'the modelled decision was not reported at all').toBeTruthy();
+    expect(gateway?.severity).toBe('info');
+    expect(gateway?.message).toContain('Needs approval?');
+
+    // And the rule is told apart by provenance only — the same drawing with the
+    // trace 2.6 writes is the engine's, and is a `warn` again.
+    const asReconstructed = drawn.replace(
+      '<bpmn:exclusiveGateway id="Gateway_drawn" name="Needs approval?" />',
+      '<bpmn:exclusiveGateway id="Gateway_drawn" name="Needs approval?">'
+      + '<cc:trace status="reconstructed" node="n_drawn" kind="branch" lineStart="10" lineEnd="12" />'
+      + '</bpmn:exclusiveGateway>',
+    );
+    const again = cleanCoreHints({ xml: asReconstructed, labels })
+      .find((hint) => hint.ruleId === GATEWAY_WITHOUT_CONDITION && hint.elementId === 'Gateway_drawn');
+    expect(again?.severity).toBe('warn');
+  });
+
   test('a step and a decision drawn by hand are both reported, by name', () => {
     const model = exampleModel();
     const labels = labelsOf(model);
