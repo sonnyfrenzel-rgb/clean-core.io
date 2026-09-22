@@ -10,16 +10,126 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [Unreleased] — auf `dev`, Stand 21.09.2026
+## [v2.14.0] — 2026-09-22
 
-Was seit v2.13.0 auf `dev` liegt und mit der nächsten Freigabe auf `main` geht — die
-Regeln sind ausgerollt, die MFA-Pflicht für S/4-Zugang und eigenen Gemini-Schlüssel
-gilt, 7.5 und 7.6 sind gebaut, die drei Reviews zu v2.13.0 sind abgearbeitet
-(`docs/ROADMAP.md` §4 „Stand", §9, §12–§14), und die ersten Befunde von Sonnys
-externem Gegenreview sind behoben (§15). Je Commit eine Zeile, neueste zuerst:
+### Beide Prüfagenten haben ihren Posteingang geleert — und die Engine ist tausendmal schneller
 
+**316 Befunde entschieden.** 90 offene Sicherheitsbefunde und 226 hohe Befunde der
+QA-Vollprüfung zu `b88c77b`, jeder an der zitierten Zeile geprüft statt am Bericht.
+Ergebnis: **244 Widerlegungen mit Beleg**, rund 65 Befunde waren seit dem geprüften
+Commit bereits behoben, rund dreißig echte Fehler bleiben — die dringendsten sind in
+dieser Version gebaut, der Rest ist eingeplant.
+
+Was die Zahl erklärt: derselbe Fundort kam bis zu **sechsmal** unter verschiedenen
+Fingerabdrücken; ein Stapel von 26 Befunden bestand aus vier Sachverhalten, einer von
+36 aus dreizehn. Und mehrfach zitierte der Prüfer Zeilen, die weder heute noch am
+geprüften Commit das enthielten, was er behauptete.
+
+### Die Engine: 482 Sekunden auf 447 Millisekunden
+
+`tokenize` scannte den Puffer bei jeder Zeile neu — quadratisch. `buildAbapEvidence`
+auf einer 378-kB-Quelle brauchte **482 Sekunden**; jetzt **447 Millisekunden**. Dazu
+zwei Stapelüberläufe: `walk` ist iterativ, und die wechselseitige Rekursion des
+Skeletts, die zwischen 800 und 1200 Kettengliedern kippte, hat einen Boden bei 200 —
+**mit benannter Meldung** `expansion-depth-reached`. Die Engine sagt, dass sie nicht
+gelesen hat, statt stillschweigend weniger zu finden.
+
+**Die Gleichheit ist bewiesen, nicht behauptet:** der Stand `98f374d` in einem
+Nebenbaum, 92 echte ABAP-Quellen mal vier Lesungen — 368 Vergleiche, null
+Unterschiede; `tokenize` zusätzlich über 60.092 Eingaben. Der einzige Unterschied
+überhaupt ist der neue, gemeldete Boden. Noch nicht linear: doppelte Quelle kostet
+weiter etwa das Dreifache, und das steht im Test.
+
+### Eine Fehlermeldung kann kein Transformationsergebnis mehr werden
+
+Antwortete das Modell nicht mit JSON — eine Ablehnung, eine Quota-Meldung, Fließtext
+—, wickelte der `catch`-Zweig den Text als Quelldatei ein und speicherte ihn mit
+`status: 'transformed'`. Kein Rennen, kein Sonderfall: es passierte, sooft das Modell
+einmal nicht im Format antwortete. Jetzt ist es ein Generierungsfehler, und das
+Vollständigkeitstor prüft den Pflichtsatz je Track — abgeleitet aus dem Prompt selbst.
+
+### Zwei Versprechen auf der Startseite, die der Code nicht einlöste
+
+Das als „Real abapGit Package" beworbene Beispiel war **funktionslos**: die
+SELECT-Aliase trafen die Strukturkomponenten nicht, alle acht Felder blieben initial.
+Und die Transformations-Animation zeigte „Compiled — 0 errors" aus einem
+`setTimeout` — ohne Compiler, ohne Test, ohne Hinweis. Die Animation bleibt, sagt
+jetzt aber sichtbar, dass sie eine Illustration ist; bewusst in Slate statt Emerald,
+weil ein grüner Hinweis unter einem grünen Haken sich als dritter Haken liest.
+
+### Routen und Oberfläche
+
+Dreizehn Stellen gaben rohe Fehlermeldungen an den Aufrufer heraus. Die beiden
+ausgehenden Metadata-Routen bekommen ein Limit pro Konto — sie hatten keins, und die
+Middleware schließt `api` aus. Drei Routen ließen ein gesperrtes Konto weiterarbeiten;
+am schwersten wog der Lesezugriff auf die Leserliste, der Limit **und** Kontostatus
+übersprang. `DELETE /projects/{id}` war ein Existenz-Orakel und antwortet jetzt wie
+der GET darüber.
+
+`/api/health` prüft den Ed25519-Schlüssel mit: ein gesetzter, aber unbrauchbarer
+Schlüssel wurde bisher nur geloggt, während weiter ohne ihn signiert wurde. Der
+Deep-Probe bekommt bewusst **kein** Rate-Limit, sondern einen Cooldown — der Limiter
+führt selbst eine Firestore-Transaktion aus und hätte genau den Lesezugriff gekostet,
+den er ablehnt.
+
+Die Vertrauensseite versprach gehashte MFA-Backup-Codes, die es seit dem 16.09. nicht
+mehr gibt. Das Projektdokument wuchs unbegrenzt, weil jeder Export eine volle
+HTML-Kopie ablegte und nichts aufräumte. Und der Pepper des Ratenbegrenzers fiel auf
+ein Literal im Quelltext zurück — in einem öffentlichen Repository ist das kein
+Pepper.
+
+### Die Regeln sind ausgerollt
+
+Commit `9d77219` hatte eine `delete`-Regel für `/abap_examples` eingebaut, ohne
+Deploy-Datensatz und Preservation-Register nachzuziehen — davon war die Pipeline seit
+dem 21.09. rot. Beide Register sind nachgetragen, und am 22.09. wurde auf alle sechs
+Datenbanken ausgerollt, mit `npm run rules:verify` als Gegenprobe. Der Löschen-Knopf
+im Dashboard lief vorher auf default-deny.
+
+### Ein Fehlalarm mit echter Ursache
+
+„Possible Google API key committed" stand bei **jedem** Push als kritischer Befund im
+Bericht, während `docs/QA-REVIEW-LOOP.md` daneben behauptete, er sei unterdrückt.
+Beides stimmte: die Unterdrückung vergleicht den *Pfad* eines Treffers, das letzte
+Netz vor dem Versand meldet unter `outgoing message`, und die Delta-Review filterte
+gar nicht. Jetzt wird zusätzlich der *Wert* verglichen. So überlebt ein Fehlalarm
+zwei Monate: die Prosa wurde geprüft und der Code nicht.
+
+### Roadmap
+
+Neu ist **§16**: die Auswertung eines SAP-Prozessbestands von 1.246 Diagrammen, aus
+der sieben Schritte folgen — 1.9 geschärft und vorgezogen, 2.15, 2.16 und 2.17 neu,
+dazu Ergänzungen an 2.4, 2.10, 2.14, 3.3 und 7.8. Der Bestand ist lizenzrechtlich
+gebunden; übernommen wurde nichts als Inhalt, nur als Erkenntnis. §16 nennt auch,
+was geprüft und **verworfen** wurde, und die sechs Fragen, die der Bestand nicht
+beantworten kann.
+
+**§9 Nr. 20 entschieden:** Benennung und Provenienz werden getrennt. `sourceToken`
+bleibt unverändert und trägt den Anker, daneben ein freigegebenes `businessLabel`.
+
+### Werkzeug
+
+`npm run lint` war lokal nicht mehr lauffähig — `eslint .` lief in die Arbeitskopien
+paralleler Sitzungen und starb am Speicher. CI sah das nie.
+
+Je Commit eine Zeile, neueste zuerst:
+
+- `9e4e25d` docs(agenten, roadmap): beide Posteingaenge geleert, die Regeln ausgerollt - und ein Fehlalarm, der eine echte Ursache hatte
+- `36b9a1b` sec(routen, engine, oberflaeche): 21 bestaetigte Befunde zweier Pruefagenten - und eine Engine, die tausendmal schneller ist
+- `98f374d` sec(routen, audit-pack): zwei fehlende Tore und ein Zaehler, der der behaupteten Anzahl glaubte
+- `b378e51` sec(audit-pack, evidence): zwei Nachzieher der QA-Pruefung - eine Schwaerzung an einer Stelle, und "ungezaehlt" heisst nicht "sauber"
+- `9d77219` sec(audit): drei Befunde des b88c77b-Audits, jeder am Code nachgeprueft - und die Namensaufloesung gemessen statt behauptet
+- `351e169` sec(audit-pack): ein Alias eines signierten Pfades zaehlt als derselbe Pfad
+- `c90fb65` chore(security): die Erlaubnisliste zitiert das Muster nicht mehr, das sie erklaert
+- `fce3464` fix(test): die schliessende Klammer, die der Merge verschluckt hat
+- `36a5463` sec(vertrauenskette): Bytes statt Text, ein Pfad statt zweier, und ein Widerruf, der ankommt
+- `875bb99` fix(engine): ein Literal ist Text, kein Code - und drei Schritte, die der Leser uebersah
+- `2af1890` fix(engine): der urteilende Teil sagt nicht mehr als er gefunden hat - zehn Defekte
+- `8680352` docs: vier Gegenreview-Befunde als behoben vermerkt, und ein toter Schluessel in der Vorgeschichte
 - `50ac4b6` chore(security): drei Fehlalarme des Volllaufs eingetragen, mit Begruendung je Eintrag
 - `4f18fc6` fix(gegenreview): CR-13, CR-14, CR-16 und CR-20 behoben, CR-09 bekommt seinen Zwischenschutz
+- `4770b77` docs(roadmap): Gegenreview c5085bb aufgenommen - 20 Befunde geprueft, elf Schritte, vier Entscheidungen
+- `c5085bb` docs(feierabend): Stand vom 18.09.2026 - drei Entscheidungen, die Vollpruefung, Unreleased
 - `acf09bb` docs(agents): drei Posteingaenge zu b88c77b entschieden - UX 16, Security 83, QA-Vollreview 49 kritische
 - `1db8523` sec(audit): fuenf mittlere Befunde aus b88c77b behoben - ein echter href, drei Bindungen, ein Ring
 - `1a90b06` fix(ux): sieben Befunde aus dem UX-Review zu b88c77b, jeder mit Waechter

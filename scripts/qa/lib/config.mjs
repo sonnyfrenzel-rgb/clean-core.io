@@ -13,11 +13,16 @@
  * Two reviewers, chosen by Sonny on 15.09.2026: every push to `dev` gets a delta review by the cost-efficient
  * tier; every release on `main` gets a review of the whole code base by the flagship of the same series.
  * GPT-6 Astra reviewed the deltas until then; GPT-6 Astra Pro was considered for `main` and dropped on cost.
+ *
+ * The delta reviewer moved to GPT-6 Luna on 22.09.2026 (Sonny). Same 1.05M context, and half the price of the
+ * 5.6 tier it replaces — $0.10/$0.50 per million tokens against $0.20/$1.20 — so the budget below buys twice
+ * as much review per push. `main` keeps Sol: the full review is the one that reads 769 files at once, and
+ * changing both reviewers in one step would leave no fixed point to compare a regression against.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export const QA_MODEL = 'openai/gpt-5.6-luna';
+export const QA_MODEL = 'openai/gpt-6-luna';
 export const QA_FULL_MODEL = 'openai/gpt-5.6-sol';
 
 export const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
@@ -31,7 +36,7 @@ export const DEV_URL = 'https://clean-core-dev-qcevuoi3uq-ew.a.run.app';
  * usage record is written into every report. A model without a price here cannot be costed.
  */
 export const PRICES = {
-  [QA_MODEL]: { input: 0.2, output: 1.2 },
+  [QA_MODEL]: { input: 0.1, output: 0.5 },
   [QA_FULL_MODEL]: { input: 2, output: 10 },
 };
 export const PRICE_PER_MTOK = PRICES[QA_MODEL];
@@ -51,6 +56,11 @@ export const BUDGET = {
    * On Luna one full call estimates at about $0.05, so the cap no longer decides coverage — the call count
    * does. It was $2.50 and two calls on GPT-6 Astra, and a delta that did not fit came back incomplete and
    * cost another round.
+   *
+   * On GPT-6 Luna (22.09.2026) that estimate halves again, to about $0.022 — $0.016 of output allowance plus
+   * $0.006 of input at a full 200k batch. The cap of $0.50 therefore stops binding altogether: ten calls
+   * estimate at roughly $0.22, and `maxBatches` is now the only thing that ends a review. The cap stays where
+   * it is as a floor against a pricing change nobody noticed, not as a coverage decision.
    */
   maxCostUsd: 0.5,
   /** Delta context per model call, in characters. */
@@ -64,11 +74,13 @@ export const BUDGET = {
    * of `13d1ffa` left 20 files unread "outside the 4-call budget" and the checkpoint stuck at `a19945e`
    * for a second day.
    *
-   * Money was never the binding constraint here: that review cost $0.1031 against a $0.50 cap. The cap
-   * stays where it is and stays real — ten full calls estimate at 10 × ($0.0384 output + $0.0114 input)
-   * = $0.498, so `withinBudget` still refuses the eleventh, and an ordinary delta review remains one or
-   * two calls and costs the same as before. What changed is only how much of a *backlog* one review may
-   * work through before it gives up.
+   * Money was never the binding constraint here: that review cost $0.1031 against a $0.50 cap. On the 5.6
+   * tier ten full calls estimated at 10 × ($0.0384 output + $0.0114 input) = $0.498, so `withinBudget`
+   * still refused the eleventh and the cap did real work. **Since the move to GPT-6 Luna on 22.09.2026 it
+   * does not:** the same ten calls estimate at about $0.22, and `maxBatches` alone ends a review. Raising
+   * this number now costs review coverage nothing and money almost nothing — which is a reason to leave it
+   * at ten deliberately rather than by inertia: a review that reads more than ten batches is reading a
+   * backlog, and the answer to a backlog is a push, not a bigger budget.
    */
   maxBatches: 10,
   /**

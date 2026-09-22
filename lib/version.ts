@@ -1,5 +1,5 @@
-export const APP_VERSION = 'v2.13.0';
-export const APP_RELEASE_DATE = 'September 18, 2026';
+export const APP_VERSION = 'v2.14.0';
+export const APP_RELEASE_DATE = 'September 22, 2026';
 
 /**
  * Same date as APP_RELEASE_DATE, in ISO 8601 (YYYY-MM-DD), for schema.org
@@ -10,7 +10,7 @@ export const APP_RELEASE_DATE = 'September 18, 2026';
  * midnight and then converts to UTC, which shifts the date one day back in
  * every positive UTC offset (CET included). Update both constants together.
  */
-export const APP_RELEASE_DATE_ISO = '2026-09-18';
+export const APP_RELEASE_DATE_ISO = '2026-09-22';
 
 /**
  * The same date again, written the way a German reader expects it, for the
@@ -21,4 +21,4 @@ export const APP_RELEASE_DATE_ISO = '2026-09-18';
  * already documents above, and a date that is one day wrong in a legal document
  * is worse than one more line to keep in step. Update all four together.
  */
-export const APP_RELEASE_DATE_DE = '18. September 2026';
+export const APP_RELEASE_DATE_DE = '22. September 2026';

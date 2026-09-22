@@ -100,7 +100,7 @@ There is **no** Firebase Hosting deploy; `firebase.json` is only rules + emulato
 ## QA agent — always on for `dev` (since 2026-09-15, until Sonny revokes it)
 
 Every push to `dev` triggers `.github/workflows/qa-review.yml`: a sealed delta review by
-`openai/gpt-5.6-luna` (OpenRouter) plus a sealed smoke check of the deployed revision.
+`openai/gpt-6-luna` (OpenRouter) plus a sealed smoke check of the deployed revision.
 Every release on `main` also gets a sealed review of the whole code base by `openai/gpt-5.6-sol`
 (`node scripts/qa/await.mjs <sha> --full`); it gates nothing — verify its findings and fix
 confirmed ones on `dev` as a roadmap step. A `medium` finding in the agents' own machinery

@@ -3,11 +3,13 @@
 **Stand 15.09.2026 · eingeführt mit v2.9.12 · läuft ab sofort bei jedem Push auf `dev`, bis Sonny sie widerruft**
 
 Jeder neue Stand auf `dev` bekommt zwei Prüfungen, ohne dass jemand sie anstößt:
-ein **Delta-Review** durch ein fest eingestelltes Modell (GPT-5.6 Luna über
+ein **Delta-Review** durch ein fest eingestelltes Modell (GPT-6 Luna über
 OpenRouter) und einen **Smoke-Check** der Revision, die derselbe Push deployt hat.
 Jede Version auf `main` bekommt zusätzlich ein **Vollreview des ganzen Codes** durch
-das Spitzenmodell derselben Reihe, GPT-5.6 Sol (§10). Modellwahl von Sonny am
-15.09.2026; bis dahin prüfte GPT-6 Astra die Deltas.
+das Spitzenmodell der 5.6-Reihe, GPT-5.6 Sol (§10). Modellwahl von Sonny am
+15.09.2026; bis dahin prüfte GPT-6 Astra die Deltas. Am 22.09.2026 ist der
+Delta-Prüfer auf **GPT-6 Luna** gewechselt (ebenfalls Sonny): gleicher Kontext von
+1,05 Mio. Token, halber Preis.
 Die Befunde gehen versiegelt an den Maintainer — Claude Code —, der jeden prüft,
 bestätigte behebt, widerlegte mit Begründung ablegt und erneut pusht. `main` wird
 erst gefragt, wenn die Schleife sauber ist.
@@ -27,7 +29,7 @@ erst gefragt, wenn die Schleife sauber ist.
                 │   3. Vorprüfung ohne Token (Risiko, Test-Signale,       │
                 │      Abnahmekriterien, Geheimnis-Schwärzung)            │
                 │   4. Batches nach Risiko, geschätztes Kostenbudget      │
-                │   5. GPT-5.6 Luna, strukturierte Antwort, keine Tools   │
+                │   5. GPT-6 Luna, strukturierte Antwort, keine Tools     │
                 │   6. Bericht versiegeln → Artefakt qa-review-<sha>      │
                 │                                                         ▼
                 └── job smoke ── wartet auf deploy.yml desselben Commits ─┘
@@ -94,10 +96,19 @@ und kein Befund wird ungeprüft umgesetzt (§4).
 
 ## 3. Kosten
 
-Delta-Review mit GPT-5.6 Luna, Listenpreis bei OpenRouter am 15.09.2026: **0,20 $ je
-Mio. Eingabe-Token, 1,20 $ je Mio. Ausgabe-Token** — ein Fünfzigstel von GPT-6 Astra
-(10 $ / 50 $), mit dem die Deltas bis dahin geprüft wurden. Das Vollreview auf `main`
-kostet mit GPT-5.6 Sol 2 $ / 10 $ (§10).
+Delta-Review mit GPT-6 Luna, Listenpreis bei OpenRouter am 22.09.2026: **0,10 $ je
+Mio. Eingabe-Token, 0,50 $ je Mio. Ausgabe-Token** — ein Hundertstel von GPT-6 Astra
+(10 $ / 50 $), mit dem die Deltas bis zum 15.09.2026 geprüft wurden, und die Hälfte
+von GPT-5.6 Luna (0,20 $ / 1,20 $), das bis zum 22.09.2026 an dieser Stelle stand.
+Das Vollreview auf `main` kostet mit GPT-5.6 Sol 2 $ / 10 $ (§10) und ist bewusst
+**nicht** mitgewandert: beide Prüfer in einem Schritt zu wechseln ließe keinen festen
+Punkt, gegen den sich eine Verschlechterung vergleichen lässt.
+
+**Folge für das Budget, die man kennen muss:** die Obergrenze von 0,50 $ je Review
+bindet damit nicht mehr. Ein voller Aufruf schätzt jetzt auf rund 0,022 $, zehn also
+auf rund 0,22 $ — was ein Review beendet, ist allein `maxBatches`, nicht das Geld.
+Die Grenze bleibt trotzdem stehen, als Boden gegen eine Preisänderung, die niemand
+bemerkt hat.
 
 | Maßnahme | Wirkung |
 |---|---|

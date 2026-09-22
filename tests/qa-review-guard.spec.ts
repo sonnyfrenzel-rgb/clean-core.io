@@ -122,9 +122,12 @@ test.describe('the reviewer', () => {
     const { QA_MODEL, QA_FULL_MODEL, PRICES } = await lib('config.mjs');
     const { buildRequest } = await lib('openrouter.mjs');
     // Sonny, 15.09.2026: Luna reviews every delta on dev, Sol — the flagship of the series — every release on main.
-    expect(QA_MODEL).toBe('openai/gpt-5.6-luna');
+    // The delta reviewer moved to the GPT-6 tier on 22.09.2026 (Sonny): same 1.05M context, half the price.
+    // `main` deliberately did not move with it — changing both in one step would leave no fixed point to
+    // compare a regression against.
+    expect(QA_MODEL).toBe('openai/gpt-6-luna');
     expect(QA_FULL_MODEL).toBe('openai/gpt-5.6-sol');
-    expect(PRICES[QA_MODEL]).toEqual({ input: 0.2, output: 1.2 });
+    expect(PRICES[QA_MODEL]).toEqual({ input: 0.1, output: 0.5 });
     expect(PRICES[QA_FULL_MODEL]).toEqual({ input: 2, output: 10 });
     expect(buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', model: QA_FULL_MODEL }).provider).toEqual({ allow_fallbacks: false, data_collection: 'deny' });
     const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'medium' });
@@ -322,12 +325,16 @@ test.describe('spend is capped and only the delta is reviewed', () => {
   });
 
   test('the cost cap is checked before every call against what was actually spent', async () => {
-    const { withinBudget, BUDGET, FULL_BUDGET, estimateCostUsd, PRICES, QA_FULL_MODEL } = await lib('config.mjs');
+    const { withinBudget, BUDGET, FULL_BUDGET, estimateCostUsd, PRICES, QA_MODEL, QA_FULL_MODEL } = await lib('config.mjs');
     // A first call of normal size fits; the same call after most of the budget is spent does not.
     expect(withinBudget(0, 120_000)).toBe(true);
     expect(withinBudget(BUDGET.maxCostUsd - 0.01, 120_000)).toBe(false);
     // The per-call estimate assumes the whole output allowance, so it can never undercount a call.
-    expect(estimateCostUsd(0, 1)).toBeCloseTo((BUDGET.maxOutputTokens / 1e6) * 1.2, 5);
+    // Read out of PRICES rather than written here as a literal: the output rate was
+    // pinned as 1.2 and this line went red on the move to GPT-6 Luna (22.09.2026),
+    // which is the right kind of red — but it was testing the number twice, not the
+    // arithmetic once.
+    expect(estimateCostUsd(0, 1)).toBeCloseTo((BUDGET.maxOutputTokens / 1e6) * PRICES[QA_MODEL].output, 5);
     const full = { budget: FULL_BUDGET, price: PRICES[QA_FULL_MODEL] };
     expect(estimateCostUsd(0, 1, { price: full.price, maxOutputTokens: FULL_BUDGET.maxOutputTokens })).toBeCloseTo((FULL_BUDGET.maxOutputTokens / 1e6) * 10, 5);
     expect(withinBudget(0, 400_000, full)).toBe(true);

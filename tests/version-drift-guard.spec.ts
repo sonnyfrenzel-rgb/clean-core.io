@@ -71,6 +71,13 @@ const ALLOWLISTED_LINE_PATTERNS = [
   // literal; it must not start demanding that a superseded contract be renamed
   // every release.
   /'\d{4}-\d{2}-\d{2}'\s*(?:—|--|-)\s*v\d+\.\d+\.\d+/,
+  // A comment that names the release an audit or review examined. "security
+  // audit of v2.13.0" is a fact about a past run, not a version reference that
+  // should move with the next bump — renaming it would make the comment lie
+  // about which version was audited. Added 22.09.2026 when the v2.14.0 bump
+  // reported `app/api/run-tests/route.ts:585` as drift; the comment there names
+  // the audit that produced the finding it explains.
+  /(?:audit|review|Prüfung|Pruefung|Vollprüfung|Vollpruefung)\s+(?:of|von|zu)\s+v\d+\.\d+\.\d+/i,
 ];
 
 /** Extract the semver-like version without 'v' prefix for flexible matching */
