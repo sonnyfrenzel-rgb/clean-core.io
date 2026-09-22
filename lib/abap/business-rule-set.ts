@@ -310,6 +310,37 @@ function conditionKey(conditionText: string, renumbered: boolean): string {
     .join('');
 }
 
+/**
+ * The key a `CHECK`/`WHILE` candidate is looked up by: its keyword, the line it
+ * stands on and its condition as written. Unambiguous — neither of the two
+ * keywords nor a line number can hold a `|`, so the two separators are always
+ * the first two.
+ */
+function guardKey(keyword: string, lineStart: number, condition: string): string {
+  return `${keyword}|${lineStart}|${condition}`;
+}
+
+/**
+ * Every `CHECK` and `WHILE` of the source under that key, in one pass.
+ *
+ * This used to be a `statements.find(…)` per candidate — one walk over every
+ * statement of the source for every `CHECK` the program writes, so the work
+ * grew with the square of the source. Counted on a 172 kB program with 400 such
+ * routines: 2 273 811 reads of the statement list, 471 per statement, the
+ * number doubling every time the source did; 15 839 now, 3.3 per statement,
+ * flat. The first statement written under a key wins, so the map answers with
+ * the statement `find` returned: the first one in source order.
+ */
+function guardStatements(statements: AbapStatement[]): Map<string, AbapStatement> {
+  const out = new Map<string, AbapStatement>();
+  for (const statement of statements) {
+    if (statement.keyword !== 'CHECK' && statement.keyword !== 'WHILE') continue;
+    const key = guardKey(statement.keyword, statement.lineStart, afterKeyword(statement));
+    if (!out.has(key)) out.set(key, statement);
+  }
+  return out;
+}
+
 function endKindOf(statement: AbapStatement, inLoop: boolean): EndKind | null {
   const t = statement.text;
   switch (statement.keyword) {
@@ -349,6 +380,77 @@ interface TypeReading {
   endKind?: EndKind;
 }
 
+/**
+ * The lookups this builder does once per candidate, each built once instead.
+ *
+ * Every one of them used to be a `find` or a `filter` over a list that grows
+ * with the source — the branches of 2.1, the nodes of the skeleton, the
+ * containers of the block structure — so the work grew with the square of the
+ * source, against a 1 MB cap on the field that carries the code. Measured on
+ * generated ABAP, `deriveBusinessRules` with its facts and skeleton: 1.1 MB
+ * 5450 ms → 1358 ms, 2.2 MB 18 911 ms → 4396 ms; under a profiler the builder's
+ * own share of a 1.1 MB reading fell from 4891 ms to 667 ms. The maps answer
+ * the same questions with the same answers: where a list was searched, the
+ * first entry written under a key wins, which is the entry `find` returned.
+ */
+interface RuleSetIndex {
+  branchById: Map<string, Branch>;
+  /** The gateway of a branch, by `detail.branchId`. */
+  gatewayOfBranch: Map<string, SkeletonNode>;
+  /** The gateway a `CHECK` opens, by the statement it stands on. */
+  gatewayOfCheck: Map<number, SkeletonNode>;
+  /** The loop node of a `WHILE`, by the statement it stands on. */
+  loopOfStatement: Map<number, SkeletonNode>;
+  /**
+   * Per region, its anchored nodes ordered by statement, each with the place it
+   * holds in `skeleton.nodes` — `nodesBetween` gives its window back in that
+   * order, which is the order a filter over the whole list gave it.
+   */
+  nodesOfRegion: Map<string, Array<{ at: number; pos: number; node: SkeletonNode }>>;
+  /** The `class` containers, in source order. A source has a handful at most. */
+  classContainers: Container[];
+}
+
+function buildIndex(facts: ProcessFacts, skeleton: ProcessSkeleton): RuleSetIndex {
+  const index: RuleSetIndex = {
+    branchById: new Map(),
+    gatewayOfBranch: new Map(),
+    gatewayOfCheck: new Map(),
+    loopOfStatement: new Map(),
+    nodesOfRegion: new Map(),
+    classContainers: facts.structure.containers.filter((c) => c.kind === 'class'),
+  };
+  for (const branch of facts.control.branches) {
+    if (!index.branchById.has(branch.id)) index.branchById.set(branch.id, branch);
+  }
+  skeleton.nodes.forEach((node, pos) => {
+    if (node.anchor) {
+      const region = index.nodesOfRegion.get(node.region);
+      const entry = { at: node.anchor.statementIndex, pos, node };
+      if (region) region.push(entry);
+      else index.nodesOfRegion.set(node.region, [entry]);
+    }
+    if (node.kind === 'gateway') {
+      const branchId = node.detail?.branchId;
+      // A branch id is a string; a `detail` holding anything else under that
+      // name never matched the comparison this map replaces either.
+      if (typeof branchId === 'string' && !index.gatewayOfBranch.has(branchId)) {
+        index.gatewayOfBranch.set(branchId, node);
+      }
+      const at = node.anchor?.statementIndex;
+      if (node.detail?.source === 'CHECK' && at !== undefined && !index.gatewayOfCheck.has(at)) {
+        index.gatewayOfCheck.set(at, node);
+      }
+    }
+    if (node.kind === 'loop') {
+      const at = node.anchor?.statementIndex;
+      if (at !== undefined && !index.loopOfStatement.has(at)) index.loopOfStatement.set(at, node);
+    }
+  });
+  for (const nodes of index.nodesOfRegion.values()) nodes.sort((a, b) => a.at - b.at || a.pos - b.pos);
+  return index;
+}
+
 class RuleSetBuilder {
   private lines: string[];
   private candidates: RuleCandidate[];
@@ -357,6 +459,7 @@ class RuleSetBuilder {
   private unreached: Set<string>;
   private helpers: Set<string>;
   private cloneOf = new Map<string, number>();
+  private index: RuleSetIndex;
 
   constructor(
     source: string,
@@ -368,6 +471,7 @@ class RuleSetBuilder {
     this.candidates = report.candidates;
     this.constants = report.constants;
     this.program = this.readProgram();
+    this.index = buildIndex(facts, skeleton);
     this.unreached = new Set(skeleton.notDrawn.unreached.map((u) => u.name));
     this.helpers = new Set(skeleton.notDrawn.technicalHelpers.map((h) => h.name));
     skeleton.notDrawn.clones.forEach((group, i) => {
@@ -436,7 +540,7 @@ class RuleSetBuilder {
    */
   private readOccurrences(): Occurrence[] {
     const byPlace = new Map<string, Occurrence>();
-    const statements = this.facts.statements;
+    const guards = guardStatements(this.facts.statements);
 
     this.candidates.forEach((candidate, index) => {
       const key = [
@@ -459,7 +563,7 @@ class RuleSetBuilder {
       };
 
       if (candidate.branchId) {
-        const branch = this.facts.control.branches.find((b) => b.id === candidate.branchId);
+        const branch = this.index.branchById.get(candidate.branchId);
         const armIndex = branch?.arms.findIndex(
           (arm) => arm.header.lineStart === candidate.lineStart && arm.condition === candidate.conditionText,
         ) ?? -1;
@@ -469,9 +573,8 @@ class RuleSetBuilder {
         }
       } else if (candidate.origin === 'check' || candidate.origin === 'while') {
         const keyword = candidate.origin === 'check' ? 'CHECK' : 'WHILE';
-        occurrence.statement = statements.find(
-          (s) => s.keyword === keyword && s.lineStart === candidate.lineStart
-            && afterKeyword(s) === candidate.conditionText,
+        occurrence.statement = guards.get(
+          guardKey(keyword, candidate.lineStart, candidate.conditionText),
         );
       }
 
@@ -628,8 +731,8 @@ class RuleSetBuilder {
     const out: RuleSource[] = [];
     for (const occurrence of group) {
       const routine = occurrence.container;
-      const className = this.facts.structure.containers
-        .filter((c) => c.kind === 'class' && c.lineStart <= occurrence.lineStart && c.lineEnd >= occurrence.lineEnd)
+      const className = this.index.classContainers
+        .filter((c) => c.lineStart <= occurrence.lineStart && c.lineEnd >= occurrence.lineEnd)
         .map((c) => c.name)
         .pop() ?? null;
       const source: RuleSource = {
@@ -953,16 +1056,34 @@ class RuleSetBuilder {
     };
   }
 
-  /** Nodes of `region` whose statement lies strictly between `after` and `before`. */
+  /**
+   * Nodes of `region` whose statement lies strictly between `after` and
+   * `before`, in the order a walk over `skeleton.nodes` would meet them.
+   *
+   * The window is cut out of the region's own nodes, ordered by statement, so
+   * the cost follows the size of the answer rather than the size of the source.
+   */
   private nodesBetween(region: string, after: number, before: number): SkeletonNode[] {
-    return this.skeleton.nodes.filter((n) => n.region === region && n.anchor
-      && n.anchor.statementIndex > after && n.anchor.statementIndex < before);
+    const nodes = this.index.nodesOfRegion.get(region);
+    if (!nodes) return [];
+    let lo = 0;
+    let hi = nodes.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (nodes[mid].at <= after) lo = mid + 1;
+      else hi = mid;
+    }
+    const window: Array<{ pos: number; node: SkeletonNode }> = [];
+    for (let i = lo; i < nodes.length && nodes[i].at < before; i++) window.push(nodes[i]);
+    return window.sort((a, b) => a.pos - b.pos).map((entry) => entry.node);
   }
 
   private processElementsOf(conditions: Occurrence[]): RuleProcessElement[] {
     const out: RuleProcessElement[] = [];
+    const taken = new Set<string>();
     const push = (node: SkeletonNode, relation: ProcessRelation) => {
-      if (out.some((e) => e.nodeId === node.id && e.relation === relation)) return;
+      if (taken.has(`${node.id}|${relation}`)) return;
+      taken.add(`${node.id}|${relation}`);
       const element = this.element(node, relation);
       if (element) out.push(element);
     };
@@ -970,7 +1091,7 @@ class RuleSetBuilder {
     for (const occurrence of conditions) {
       const { branch, armIndex, statement } = occurrence;
       if (branch && armIndex !== undefined) {
-        const gateway = this.skeleton.nodes.find((n) => n.kind === 'gateway' && n.detail?.branchId === branch.id);
+        const gateway = this.index.gatewayOfBranch.get(branch.id);
         if (!gateway) continue;
         push(gateway, 'condition');
         const next = branch.arms[armIndex + 1];
@@ -979,11 +1100,10 @@ class RuleSetBuilder {
           push(node, 'branch');
         }
       } else if (statement && occurrence.origin === 'check') {
-        const gateway = this.skeleton.nodes.find((n) => n.kind === 'gateway' && n.detail?.source === 'CHECK'
-          && n.anchor?.statementIndex === statement.index);
+        const gateway = this.index.gatewayOfCheck.get(statement.index);
         if (gateway) push(gateway, 'condition');
       } else if (statement && occurrence.origin === 'while') {
-        const loop = this.skeleton.nodes.find((n) => n.kind === 'loop' && n.anchor?.statementIndex === statement.index);
+        const loop = this.index.loopOfStatement.get(statement.index);
         if (!loop) continue;
         push(loop, 'condition');
         const block = this.facts.structure.blocks.find((b) => b.openIndex === statement.index);

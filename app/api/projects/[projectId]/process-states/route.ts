@@ -87,6 +87,17 @@ interface ProjectShape {
   legacyCode?: unknown;
 }
 
+/**
+ * The most ABAP one request derives rules from.
+ *
+ * The same ceiling `app/api/runs/create/route.ts` declares, for the same
+ * measurement: `deriveBusinessRules` is quadratic in the source, so a megabyte
+ * — what `firestore.rules` allows a project to carry — is about 17 s of CPU per
+ * call. Two constants rather than one shared import because its home would be
+ * `lib/`, where the algorithmic half of the finding is being changed.
+ */
+const MAX_ANALYSED_SOURCE_BYTES = 256 * 1024;
+
 type Gate =
   | { ok: true; uid: string; projectId: string; project: ProjectShape }
   | { ok: false; response: NextResponse };
@@ -136,6 +147,23 @@ async function openProject(
         return { ok: false, response: NextResponse.json({ error: gateErr.message }, { status: gateErr.status }) };
       }
       throw gateErr;
+    }
+  } else {
+    // The read is not the cheap half. It rebuilds the business rules out of the
+    // project's source on every call (`deriveBusinessRules`, quadratic in its
+    // length), and the limit above sat only in the mutating branch — so the
+    // expensive path was the unlimited one (security audit of b88c77b). A
+    // budget of its own, and a wider one, because opening the page is an
+    // ordinary thing to do; the account gate stays out of the read, where CR-13
+    // put it, because a reader may be invited rather than active.
+    try {
+      await assertRateLimit(`process-states-read:${decodedToken.uid}`, 240, 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      const q = rateErr as { message?: string; status?: number };
+      return {
+        ok: false,
+        response: NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 }),
+      };
     }
   }
 
@@ -359,6 +387,22 @@ async function open(db: AdminDb, gate: Extract<Gate, { ok: true }>): Promise<Ope
       response: NextResponse.json(
         { error: 'This project has no source, so there are no rules to confirm.', code: 'no-source' },
         { status: 409 },
+      ),
+    };
+  }
+  // Answered rather than computed. `readSubjects` below calls
+  // `deriveBusinessRules`, which is quadratic in the source — 2.5 s at 380 KB,
+  // 10.4 s at 780 KB, 67 s at 1.58 MB, measured — and `firestore.rules` lets a
+  // project carry a megabyte of it (security audit of b88c77b).
+  if (Buffer.byteLength(source, 'utf8') > MAX_ANALYSED_SOURCE_BYTES) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        {
+          error: `This project's source is larger than the ${MAX_ANALYSED_SOURCE_BYTES / 1024} KB one request derives rules from. Analyse the object in parts.`,
+          code: 'source-too-large',
+        },
+        { status: 413 },
       ),
     };
   }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyAdminRequest, setAdminClaim, assertAdminStepUp } from '@/lib/firebase-admin';
+import { logger, errMessage } from '@/lib/logger';
 
 /**
  * POST /api/admin/set-admin-claim
@@ -54,8 +55,13 @@ export async function POST(req: Request) {
     await setAdminClaim(uid, grant);
     return NextResponse.json({ ok: true, uid, isAdmin: grant });
   } catch (e: any) {
+    // `setAdminClaim` touches Firebase Auth and the profile mirror; its errors
+    // name the target uid, the claim payload and the token revocation. The
+    // caller gets the outcome, the log gets the reason (security audit of
+    // b88c77b).
+    logger.error('set-admin-claim failed', { route: 'api/admin/set-admin-claim', error: errMessage(e) });
     return NextResponse.json(
-      { error: e?.message || 'Failed to set admin claim.' },
+      { error: 'Failed to set admin claim.' },
       { status: 500 },
     );
   }

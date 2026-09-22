@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { isProjectOwner, mayReadProject } from '@/lib/project-readers';
+import { logger, errMessage } from '@/lib/logger';
 
 /**
  * GET /api/projects/{projectId}  — roadmap 5.4
@@ -75,8 +76,11 @@ export async function GET(
       run,
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to read project.';
-    return NextResponse.json({ error: message }, { status: 500 });
+    // The route above is careful never to say whether a project exists; an
+    // Admin SDK error forwarded verbatim would say it anyway, by naming the
+    // document it failed on (security audit of b88c77b).
+    logger.error('project read failed', { route: 'api/projects/[projectId]', error: errMessage(err) });
+    return NextResponse.json({ error: 'Failed to read project.' }, { status: 500 });
   }
 }
 
@@ -121,10 +125,6 @@ export async function DELETE(
     const { db } = await getAdminDb();
     const ref = db.collection('projects').doc(projectId);
     const snap = await ref.get();
-    if (!snap.exists) {
-      // Idempotent — treat an already-deleted project as success.
-      return NextResponse.json({ ok: true, alreadyDeleted: true });
-    }
 
     // Owner only. The administrator claim does not open this door.
     //
@@ -145,9 +145,19 @@ export async function DELETE(
     // was the loudest of the three permissions and the only one left. An
     // emergency stays what that rule says it is: a deliberate Admin SDK act
     // with a record, not an endpoint anyone holding the claim can call.
-    const isOwner = snap.data()?.userId === decoded.uid;
+    //
+    // "Not there" and "not yours" answer the same 404, exactly as GET above
+    // does. A missing project used to be answered with `{ ok: true,
+    // alreadyDeleted: true }` *before* anyone asked whose it was, while a
+    // stranger's existing project was refused with 403 down here — and the two
+    // answers together are an oracle: one DELETE per id tells an outsider which
+    // project ids exist, without deleting anything (security audit of b88c77b).
+    // The idempotent success was worth less than that. The only caller is the
+    // owner's own dashboard, whose list comes from a realtime query, so the
+    // second delete of the same project is not a case the product produces.
+    const isOwner = snap.exists && snap.data()?.userId === decoded.uid;
     if (!isOwner) {
-      return NextResponse.json({ error: 'Unauthorized to delete this project.' }, { status: 403 });
+      return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
     }
 
     // Deleting your own data must stay possible even while pending, so we do NOT
@@ -166,6 +176,7 @@ export async function DELETE(
     await db.recursiveDelete(ref);
     return NextResponse.json({ ok: true });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message || 'Failed to delete project.' }, { status: 500 });
+    logger.error('project delete failed', { route: 'api/projects/[projectId]', error: errMessage(err) });
+    return NextResponse.json({ error: 'Failed to delete project.' }, { status: 500 });
   }
 }

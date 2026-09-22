@@ -21,7 +21,17 @@ export default function UnsubscribeClient({ token }: { token: string }) {
   const confirm = async () => {
     setState('working');
     try {
-      const res = await fetch(`/api/unsubscribe?t=${encodeURIComponent(token)}`, { method: 'POST' });
+      // The token travels in the body, not in the query. It used to be a
+      // `?t=…` on this POST as well, which put it into the browser history and
+      // into every Cloud Run access-log line — a token that is still valid and
+      // still unsubscribes the address it is bound to. The GET link in the mail
+      // keeps its `?t=…`, because that is what a link is; this request is one
+      // the page makes itself and has no such excuse.
+      const res = await fetch('/api/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ t: token }),
+      });
       const data = await res.json().catch(() => ({ success: false }));
       if (data.success) {
         setState('done');

@@ -306,6 +306,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    // The cause is in the log line above and nowhere else. It used to be the
+    // answer: a provider error carries back the prompt it refused, the project
+    // the key belongs to, a quota figure for the community key, or a stack line
+    // from our own code — all of it to whoever made the call (security audit of
+    // b88c77b).
+    return NextResponse.json(
+      { error: 'The AI request could not be completed. Please try again.' },
+      { status: 500 },
+    );
   }
 }

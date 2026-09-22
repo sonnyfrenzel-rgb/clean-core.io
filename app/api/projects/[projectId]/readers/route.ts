@@ -8,6 +8,7 @@ import {
   QuotaError,
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
+import { logger, errMessage } from '@/lib/logger';
 import { projectReaderOverview, readersAfterRevoke, isProjectOwner } from '@/lib/project-readers';
 import type { Invitation, InvitationStatus } from '@/lib/invitations';
 
@@ -79,7 +80,6 @@ function invitationOf(id: string, data: Record<string, unknown>, projectId: stri
 async function openAsOwner(
   req: NextRequest,
   params: Promise<{ projectId: string }>,
-  mutating: boolean,
 ): Promise<
   | { ok: true; uid: string; projectId: string; db: AdminDb; project: Record<string, unknown> }
   | { ok: false; response: NextResponse }
@@ -102,26 +102,36 @@ async function openAsOwner(
     };
   }
 
-  if (mutating) {
-    try {
-      await assertRateLimit(`project-readers:${decoded.uid}`, 60, 60 * 60 * 1000);
-    } catch (rateErr: unknown) {
-      const q = rateErr as { message?: string; status?: number };
-      return {
-        ok: false,
-        response: NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 }),
-      };
+  // Both verbs, not only the write.
+  //
+  // These two gates sat behind an `if (mutating)`, and GET passed `false` — so
+  // the read of the access list was the one door in this file with no limit and
+  // no account check on it. That read is not the lesser half: it hands out the
+  // e-mail address of every person who accepted an invitation, which is other
+  // people's personal data, and a suspended account kept taking it out, as
+  // often as it liked (security audit of b88c77b). The list of who may read a
+  // project is not less sensitive than the act of changing it.
+  try {
+    await assertRateLimit(`project-readers:${decoded.uid}`, 60, 60 * 60 * 1000);
+  } catch (rateErr: unknown) {
+    const q = rateErr as { message?: string; status?: number };
+    return {
+      ok: false,
+      response: NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 }),
+    };
+  }
+  // Revoking is how an owner stops a mistake, so it is not gated on the terms
+  // version or on approval — only a hard-suspended account is refused. The same
+  // holds for reading the list, and for the same reason: an owner who is being
+  // asked to re-accept the Terms must still be able to see, and end, somebody
+  // else's access to their source code.
+  try {
+    await assertAccountActive(decoded.uid);
+  } catch (gateErr: unknown) {
+    if (gateErr instanceof QuotaError) {
+      return { ok: false, response: NextResponse.json({ error: gateErr.message }, { status: gateErr.status }) };
     }
-    // Revoking is how an owner stops a mistake, so it is not gated on the terms
-    // version or on approval — only a hard-suspended account is refused.
-    try {
-      await assertAccountActive(decoded.uid);
-    } catch (gateErr: unknown) {
-      if (gateErr instanceof QuotaError) {
-        return { ok: false, response: NextResponse.json({ error: gateErr.message }, { status: gateErr.status }) };
-      }
-      throw gateErr;
-    }
+    throw gateErr;
   }
 
   const { projectId } = await params;
@@ -145,7 +155,7 @@ async function openAsOwner(
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
   try {
-    const gate = await openAsOwner(req, params, false);
+    const gate = await openAsOwner(req, params);
     if (!gate.ok) return gate.response;
 
     const invitesSnap = await gate.db
@@ -161,14 +171,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
     const { entries, unaccountedUids } = projectReaderOverview(gate.project, invitations);
     return NextResponse.json({ entries, unaccountedUids });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to read the access list.';
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Whatever threw here came from the Admin SDK and speaks about our own
+    // collections and document ids. The caller gets the fixed sentence; the
+    // reason goes to the log (security audit of b88c77b).
+    logger.error('project readers read failed', {
+      route: 'api/projects/[projectId]/readers',
+      error: errMessage(err),
+    });
+    return NextResponse.json({ error: 'Failed to read the access list.' }, { status: 500 });
   }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
   try {
-    const gate = await openAsOwner(req, params, true);
+    const gate = await openAsOwner(req, params);
     if (!gate.ok) return gate.response;
 
     let body: { uid?: unknown } = {};
@@ -218,7 +234,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
 
     return NextResponse.json({ ok: true, uid, revokedAt, invitationsRevoked: affected.length });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to revoke access.';
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error('project readers revoke failed', {
+      route: 'api/projects/[projectId]/readers',
+      error: errMessage(err),
+    });
+    return NextResponse.json({ error: 'Failed to revoke access.' }, { status: 500 });
   }
 }

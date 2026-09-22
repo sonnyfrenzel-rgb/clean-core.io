@@ -89,6 +89,14 @@ export async function DELETE(req: NextRequest) {
     const ip = getClientIp(req);
     await assertRateLimit(`byok_delete:${decodedToken.uid}:${ip}`, 10, 3600000);
 
+    // No account-state gate, on purpose — the same intent
+    // `app/api/projects/[projectId]/readers/route.ts` states about revoking.
+    // Taking your own key off this server is how you stop it being used, and a
+    // suspended account is the case where that matters most: it must not be the
+    // one state in which the key cannot be withdrawn. Every route that *spends*
+    // the key does check (POST above, /test, /status), which is where the gate
+    // belongs (security audit of b88c77b, where this omission was read as the
+    // same defect and is not).
     await deleteGeminiApiKey(decodedToken.uid);
 
     // 3. Security Audit Logging

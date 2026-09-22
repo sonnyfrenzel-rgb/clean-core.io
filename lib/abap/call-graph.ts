@@ -381,21 +381,45 @@ function findCycles(edges: Array<{ from: string; to: string }>): string[][] {
   const inPath = new Set<string>();
   const done = new Set<string>();
 
-  const walk = (node: string) => {
-    onPath.push(node);
-    inPath.add(node);
-    for (const target of new Set(next.get(node) ?? [])) {
+  /**
+   * Depth-first, with the path on a stack of its own rather than on the call
+   * stack. Written as a recursion it recursed once per call in the deepest
+   * PERFORM chain: a 410 kB source with a 6000-deep chain — well under the 1 MB
+   * a `legacyCode` field may hold — ended in `RangeError: Maximum call stack
+   * size exceeded`, and took `readCallGraph`, the process facts and everything
+   * derived from them down with it, so the project could not be opened again.
+   *
+   * The walk is the same one: a frame holds the node, the targets it will visit
+   * and how far it has come, and the three books (`onPath`, `inPath`, `done`)
+   * are written at the same moments as before. Same order, same cycles.
+   */
+  const walk = (start: string) => {
+    const stack: Array<{ node: string; targets: string[]; at: number }> = [
+      { node: start, targets: [...new Set(next.get(start) ?? [])], at: 0 },
+    ];
+    onPath.push(start);
+    inPath.add(start);
+    while (stack.length) {
+      const frame = stack[stack.length - 1];
+      if (frame.at >= frame.targets.length) {
+        onPath.pop();
+        inPath.delete(frame.node);
+        done.add(frame.node);
+        stack.pop();
+        continue;
+      }
+      const target = frame.targets[frame.at++];
       if (inPath.has(target)) {
         const cycle = onPath.slice(onPath.indexOf(target));
         const key = [...cycle].sort().join('>');
         if (!seen.has(key)) { seen.add(key); cycles.push(cycle); }
         continue;
       }
-      if (!done.has(target)) walk(target);
+      if (done.has(target)) continue;
+      onPath.push(target);
+      inPath.add(target);
+      stack.push({ node: target, targets: [...new Set(next.get(target) ?? [])], at: 0 });
     }
-    onPath.pop();
-    inPath.delete(node);
-    done.add(node);
   };
 
   for (const node of next.keys()) if (!done.has(node)) walk(node);

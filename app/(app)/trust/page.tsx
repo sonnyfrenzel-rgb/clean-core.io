@@ -55,7 +55,24 @@ export default function TrustPage() {
           S/4HANA credentials (BYOT) and your own Gemini API key (BYOK) are encrypted at rest with
           <strong> AES-256-GCM</strong> in a server-only collection that client apps cannot read.
           Passwords/keys follow a write-only pattern — they are never returned to the browser.
-          MFA backup codes are hashed (scrypt + server pepper).
+        </p>
+        {/*
+          This line used to promise "MFA backup codes are hashed (scrypt + server
+          pepper)". Roadmap 0.13 (16.09.2026) replaced the application-level TOTP
+          with Firebase's own factor and removed the codes, the pepper and
+          `lib/mfa.ts` along with it — so the sentence had been describing a
+          mechanism that no longer exists anywhere in this codebase, on the one
+          page whose whole argument is that our claims can be checked
+          (SECURITY.md §3.5, settings page). What replaced it is stated instead
+          of merely deleted: a reader who came here for the backup codes needs
+          the answer, not a gap.
+        */}
+        <p>
+          Two-factor sign-in uses Firebase Authentication&apos;s own TOTP factor, enrolled by your
+          browser against Firebase directly — no secret and no code ever reaches our server.
+          <strong> There are no backup codes</strong>; if you lose your authenticator, write to us from
+          your account address and an administrator removes the factor after confirming with you, so
+          you can set it up again.
         </p>
       </Section>
 

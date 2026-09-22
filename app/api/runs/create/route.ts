@@ -15,6 +15,29 @@ import { analysisRunInputs, buildInputManifest } from '@/lib/input-manifest';
 import type { ModelParticipation } from '@/lib/model-stages';
 import { verifyModelReceipt } from '@/lib/model-receipt';
 import { looksLikeAbap } from '@/lib/abap-input-check';
+import { assertRateLimit } from '@/lib/rate-limit';
+
+/**
+ * The most ABAP one request may be asked to analyse.
+ *
+ * Measured, not guessed: `deriveBusinessRules` is quadratic in the source, and
+ * on this machine it took 2.5 s at 380 KB, 10.4 s at 780 KB and 67 s at
+ * 1.58 MB. `firestore.rules` caps a stored `legacyCode` at 1 MB, which is about
+ * 17 s of CPU per request — and this route does not read from Firestore at all
+ * when the body carries its own `legacyCode`, so even that cap was not in the
+ * way (security audit of b88c77b). 256 KiB is roughly a second at the far end,
+ * and seven times the largest ABAP anybody has put through the product (the
+ * 37 KB starter example). Refused before the quota is reserved, like the
+ * `looksLikeAbap` gate below, so an input we will not read costs nothing.
+ *
+ * The same ceiling is declared in
+ * `app/api/projects/[projectId]/process-states/route.ts`, the other route that
+ * runs the expensive derivation. It is two constants rather than one because
+ * its home would be `lib/`, and the algorithmic half of this finding — an index
+ * instead of a linear scan per statement — is being changed there at the same
+ * time.
+ */
+const MAX_ANALYSED_SOURCE_BYTES = 256 * 1024;
 
 // The canonicaliser moved to lib/run-signature.ts so the route that verifies a
 // run uses the same one that produced it. Two implementations of "canonical"
@@ -55,6 +78,20 @@ export async function POST(req: NextRequest) {
         { error: mfaErr?.message || 'Multi-factor authentication required.' },
         { status: mfaErr?.status || 403 },
       );
+    }
+
+    // Per account. Nothing in this file bounded how often a run could be asked
+    // for: the community quota is not a bound, because re-analysing the same
+    // fingerprint is free by design, so one account could repeat the same
+    // expensive analysis of a large source without limit (security audit of
+    // b88c77b). 30/h is far above what a person analysing ABAP produces.
+    try {
+      await assertRateLimit(`runs-create:${decodedToken.uid}`, 30, 60 * 60 * 1000);
+    } catch (rateErr: any) {
+      if (rateErr instanceof QuotaError) {
+        return NextResponse.json({ error: rateErr.message }, { status: rateErr.status });
+      }
+      throw rateErr;
     }
 
     const body = await req.json().catch(() => ({}));
@@ -116,6 +153,19 @@ export async function POST(req: NextRequest) {
     let legacyCode = body.legacyCode || projectData?.legacyCode || '';
     if (!legacyCode) {
       return NextResponse.json({ error: 'Project does not contain ABAP source code to analyze.' }, { status: 400 });
+    }
+    // Refused before anything is computed, and before the quota is reserved.
+    // `legacyCode` comes straight off the body here, so nothing else had looked
+    // at its size — not `firestore.rules`, which only governs what is stored.
+    const sourceBytes = Buffer.byteLength(legacyCode, 'utf8');
+    if (sourceBytes > MAX_ANALYSED_SOURCE_BYTES) {
+      return NextResponse.json(
+        {
+          error: `That source is ${Math.round(sourceBytes / 1024)} KB. One analysis run takes at most ${MAX_ANALYSED_SOURCE_BYTES / 1024} KB — analyse the object in parts.`,
+          code: 'source-too-large',
+        },
+        { status: 413 },
+      );
     }
     // The same gate the analyze stage applies, applied where the run is signed.
     //
@@ -649,6 +699,10 @@ export async function POST(req: NextRequest) {
       await refundRunQuota(chargedUid, chargedHash, reservation ?? undefined);
     }
     logger.error('runs/create failed', { route: 'api/runs/create', error: errMessage(error) });
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    // The log line above is where the reason belongs. Forwarding it handed the
+    // caller Admin SDK text about our own collections, signing-key handling and
+    // the evidence engine's internals (security audit of b88c77b); every
+    // refusal a caller is meant to act on is returned by name further up.
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

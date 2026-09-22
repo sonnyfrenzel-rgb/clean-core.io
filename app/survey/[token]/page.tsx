@@ -69,7 +69,17 @@ export default async function SurveyPage({
 
   const answeredInMail = Boolean(q && a && getOption(q, a));
 
-  const identity = verifySurveyToken(decodeURIComponent(token || ''));
+  // Next.js hands a dynamic segment over already decoded, so the
+  // `decodeURIComponent` that used to stand here was a second decode of a
+  // decoded value. For a real token that is a no-op (base64url and the
+  // signature carry nothing that needs escaping, and `invite-email.ts` only
+  // percent-encodes for safety), but for `/survey/%25` the segment arrives as
+  // `%` and the second decode throws `URIError` — so a mistyped or truncated
+  // link hit the error boundary instead of the "this link is no longer valid"
+  // page written for exactly that visitor. Dropping the call is honester than
+  // wrapping it in `try`/`catch`: the catch would still have to decide what a
+  // half-decoded token means, and there is nothing left here to decode.
+  const identity = verifySurveyToken(token || '');
   if (!identity) {
     return (
       <Shell>
@@ -161,7 +171,7 @@ export default async function SurveyPage({
       </p>
 
       <SurveyClient
-        token={decodeURIComponent(token || '')}
+        token={token || ''}
         initialQuestion={q ?? null}
         initialOption={a ?? null}
         existingAnswers={existingAnswers}

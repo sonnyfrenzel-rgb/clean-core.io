@@ -4,11 +4,37 @@ import { getAdminDb, QuotaError } from '@/lib/firebase-admin';
 
 // F-10: pepper used to pseudonymise the composite key into an opaque doc ID so the
 // rate_limits collection holds no durable PII (was `gemini:<uid>:<ip>` in cleartext).
-const RATE_LIMIT_PEPPER =
-  process.env.RATE_LIMIT_PEPPER || process.env.AUDIT_SIGNING_KEY || 'rate-limit-dev-pepper';
+//
+// It had a third branch — the string literal `'rate-limit-dev-pepper'` — and a
+// literal in the source is not a pepper: anyone reading this public repository
+// could recompute every document ID and turn the collection back into
+// `gemini:<uid>:<ip>`, which is the one thing F-10 was for (security audit of
+// b88c77b, SEC-b88c77b-132, read at the line on 22.09.2026). It is gone. A
+// deployment that sets neither variable now fails loudly on the first limited
+// request instead of pseudonymising with a public value, which is the same
+// no-fallback rule `lib/audit-signing-key.ts` already follows.
+//
+// `AUDIT_SIGNING_KEY` stays as the second branch because it is what production
+// actually uses today — `RATE_LIMIT_PEPPER` is in no env_vars line of
+// `.github/workflows/deploy.yml`. Sharing one secret across two purposes is
+// hygiene, not a hole, and it is scheduled separately; removing the branch
+// before the dedicated secret exists would take rate limiting off production.
+//
+// Resolved per call, not at module load: throwing while the module is imported
+// would take down every route that merely imports it, including the ones that
+// never reach a limited path.
+function rateLimitPepper(): string {
+  const pepper = process.env.RATE_LIMIT_PEPPER || process.env.AUDIT_SIGNING_KEY;
+  if (!pepper) {
+    throw new Error(
+      'Neither RATE_LIMIT_PEPPER nor AUDIT_SIGNING_KEY is set — the rate limiter refuses to pseudonymise with a known value.',
+    );
+  }
+  return pepper;
+}
 
 function rateLimitDocId(key: string): string {
-  return crypto.createHmac('sha256', RATE_LIMIT_PEPPER).update(key).digest('hex');
+  return crypto.createHmac('sha256', rateLimitPepper()).update(key).digest('hex');
 }
 
 /**

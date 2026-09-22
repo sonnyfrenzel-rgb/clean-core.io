@@ -10,6 +10,8 @@ import {
   ODATA_BODY_LIMITS,
 } from '@/lib/url-validation';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { assertRateLimit } from '@/lib/rate-limit';
+import { logger, errMessage } from '@/lib/logger';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 
 /**
@@ -242,6 +244,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Per account, for the same reason as its sibling
+    // `app/api/fetch-odata-metadata/route.ts`: this route reaches out to a host
+    // the body names and reads a document of up to 8 MB from it, and
+    // `middleware.ts` excludes `/api` from its matcher, so nothing bounded how
+    // often one MFA-confirmed account could do that (security audit of
+    // b88c77b). Same budget as the sibling, so one journey through the S/4
+    // screens cannot be refused by one route and allowed by the other.
+    try {
+      await assertRateLimit(`fetch-s4-metadata:${decodedToken.uid}`, 30, 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      // Only the limiter's own refusal is repeated back; anything else it
+      // throws is about our configuration and goes to the catch below.
+      if (rateErr instanceof QuotaError) {
+        return NextResponse.json({ status: 'failed', message: rateErr.message }, { status: rateErr.status });
+      }
+      throw rateErr;
+    }
+
     const body = await req.json();
 
     // F-03: Resolve credentials — stored (server-side) or transient (from body)
@@ -325,8 +345,18 @@ export async function POST(req: NextRequest) {
           { status: 504 }
         );
       }
+      // The cause is whatever the network layer threw, and that text is not
+      // ours to forward: an undici error carries the address it tried, a
+      // resolver failure carries the name it resolved, and a TLS failure
+      // carries the chain. It goes to the log; the caller gets the one sentence
+      // that tells them what to check (security audit of b88c77b).
+      logger.error('s4 metadata fetch failed', {
+        route: 'api/fetch-s4-metadata',
+        code: fetchErr?.cause?.code ?? null,
+        error: errMessage(fetchErr),
+      });
       return NextResponse.json(
-        { status: 'failed', message: `Connection failed: ${fetchErr.cause?.code || fetchErr.message}` },
+        { status: 'failed', message: 'Could not connect to the tenant. Verify the host is reachable and the credentials are correct.' },
         { status: 502 }
       );
     }
@@ -357,8 +387,17 @@ export async function POST(req: NextRequest) {
     try {
       xmlText = await readBoundedBody(response, ODATA_BODY_LIMITS);
     } catch (readErr: any) {
+      // Found by the guard rather than by the audit, which named the two 502s
+      // above it: `readBoundedBody` refuses for reasons of ours — a size, a
+      // deadline — but the stream underneath it can fail for reasons that are
+      // the tenant's, and that text is not ours to forward either. Same shape
+      // as its two neighbours: log the cause, answer with the limit.
+      logger.error('s4 metadata response could not be read', {
+        route: 'api/fetch-s4-metadata',
+        error: errMessage(readErr),
+      });
       return NextResponse.json(
-        { status: 'failed', message: `Metadata response could not be read: ${readErr.message}` },
+        { status: 'failed', message: 'The metadata response could not be read within the size and time limits.' },
         { status: 502 },
       );
     }

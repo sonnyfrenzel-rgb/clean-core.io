@@ -135,6 +135,27 @@ export default function TransformationReplay() {
 
   return (
     <div className="w-full" data-testid="transformation-replay">
+      {/*
+        Said on the page, in both states, and not in a title attribute: this is a
+        scripted replay. PIPELINE_STEPS and OUTPUT_LINES are literals a few lines
+        up, driven by setTimeout and setInterval — "Unit test stub created" and
+        "Compiled — 0 errors" are the script reaching its sixth line, not a test
+        runner and not a compiler, of which this product has neither (QA full
+        review of b88c77b, 9028321e9795). Same rule and the same words as the
+        section it sits in and as the delivery stage: where a claim has no
+        mechanism, the page says so where the claim is made (DESIGN §3.1;
+        tests/claims-honesty-guard.spec.ts, UX-027 and fa9e39148077). Deliberately
+        not emerald — a green caveat under a green tick reads as a third tick.
+      */}
+      <p
+        data-replay-caveat
+        className="text-center text-[11px] font-medium text-slate-500 mb-3 max-w-2xl mx-auto leading-relaxed"
+      >
+        Illustration — a fixed replay of one worked example, not a run of the engine on your
+        code. The pipeline log and the lines that type themselves are text written into this
+        page; nothing here is compiled, tested or run.
+      </p>
+
       {/* ── Play Button (when idle) ── */}
       {!isActive && (
         <div className="flex justify-center mb-6">
@@ -166,6 +187,14 @@ export default function TransformationReplay() {
               <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
               <span className="ml-2 text-[10px] sm:text-[11px] font-mono font-bold text-slate-400">
                 Clean-Core Engine {APP_VERSION}
+              </span>
+              {/* Inside the frame that makes the claims, so a reader who scrolled
+                  past the line above still has it. */}
+              <span
+                data-replay-illustration
+                className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-500 border border-slate-600/60 rounded px-1.5 py-0.5"
+              >
+                Illustration
               </span>
             </div>
             <button

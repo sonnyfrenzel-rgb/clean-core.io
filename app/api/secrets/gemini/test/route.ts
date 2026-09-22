@@ -3,6 +3,7 @@ import {
   verifyRequestAuth,
   loadGeminiApiKey,
   assertMfaSatisfied,
+  assertAccountActive,
   getAdminDb,
   logAuditEvent,
   QuotaError,
@@ -31,6 +32,15 @@ export async function POST(req: NextRequest) {
     // 2. Rate Limiting Gate (5 tests per 15 minutes)
     const ip = getClientIp(req);
     await assertRateLimit(`byok_test:${decodedToken.uid}:${ip}`, 5, 900000);
+
+    // 3. Account-state gate — hard suspension only, as on the save path. It was
+    // absent here, so a suspended account could still have the server load and
+    // decrypt its stored key and spend it against the provider (security audit
+    // of b88c77b). Not `requireApproved` or `requireCurrentTerms`: testing your
+    // own key is part of managing it, and the DELETE in
+    // `app/api/secrets/gemini/route.ts` is deliberately open for the same
+    // reason.
+    await assertAccountActive(decodedToken.uid);
 
     const body = await req.json().catch(() => ({}));
     let { apiKey } = body as { apiKey?: string };

@@ -9,6 +9,8 @@ import {
   ODATA_BODY_LIMITS,
 } from '@/lib/url-validation';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
+import { assertRateLimit } from '@/lib/rate-limit';
+import { logger, errMessage } from '@/lib/logger';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 
 /**
@@ -85,8 +87,20 @@ async function fetchOAuth2Token(
 
     if (!response.ok) {
       const errorBody = await readBoundedBody(response, TOKEN_BODY_LIMITS).catch(() => '');
+      // The body stays in the log. This message is handed straight to the
+      // caller by `buildAuthHeaders`' catch below ("Authentication failed:
+      // …"), so quoting the token endpoint verbatim passed 200 characters from
+      // a host the caller merely *named* back out through our answer — an error
+      // page, a redirect target, an internal hostname, whatever was there
+      // (security audit of b88c77b). The status is our own observation and
+      // stays: it is what tells a wrong secret from an unreachable endpoint.
+      logger.warn('oauth token exchange rejected', {
+        route: 'api/fetch-odata-metadata',
+        status: response.status,
+        body: errorBody.substring(0, 200),
+      });
       throw new Error(
-        `Token endpoint returned HTTP ${response.status}. ${errorBody ? `Response: ${errorBody.substring(0, 200)}` : 'Verify Client ID and Client Secret.'}`
+        `Token endpoint returned HTTP ${response.status}. Verify Client ID and Client Secret.`
       );
     }
 
@@ -329,6 +343,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Per account, like every other route that spends something. This one
+    // spends *outbound* requests: one call fans out to up to four catalog
+    // paths or three metadata candidates against a host the body names, each
+    // with a 20-second deadline. `middleware.ts` excludes `/api` from its
+    // matcher, so nothing else bounded it — a single MFA-confirmed account
+    // could drive unlimited outgoing fetch cycles from our address (security
+    // audit of b88c77b). 30/h is well above what configuring a tenant takes.
+    try {
+      await assertRateLimit(`fetch-odata-metadata:${decodedToken.uid}`, 30, 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      // Only the limiter's own refusal is repeated back — it names a retry
+      // delay and nothing else. Anything else the limiter throws is about our
+      // configuration (it refuses to run without a pepper) and goes to the
+      // catch below, which says nothing.
+      if (rateErr instanceof QuotaError) {
+        return NextResponse.json({ status: 'failed', message: rateErr.message }, { status: rateErr.status });
+      }
+      throw rateErr;
+    }
+
     const body = await req.json();
     const { servicePath } = body;
 
@@ -529,9 +563,17 @@ export async function POST(req: NextRequest) {
         { status: error.status }
       );
     }
-    console.error('[fetch-odata-metadata] Unexpected error:', error);
+    // Fixed sentence outward, cause into the log — the shape
+    // `app/api/secrets/gemini/test/route.ts` already uses. This used to hand
+    // out 200 characters of whatever threw: a stack line, a resolver failure
+    // naming an internal host, an Admin SDK message about our own collections
+    // (security audit of b88c77b).
+    logger.error('fetch-odata-metadata failed', {
+      route: 'api/fetch-odata-metadata',
+      error: errMessage(error),
+    });
     return NextResponse.json(
-      { status: 'failed', message: `Internal server error: ${(error.message || '').substring(0, 200)}` },
+      { status: 'failed', message: 'Internal server error during metadata fetch.' },
       { status: 500 }
     );
   }

@@ -12,7 +12,9 @@ import { APP_BASE_URL } from '@/lib/constants';
  * mail client without ever visiting the app. Authorisation comes from the signed
  * token instead of a session — see `lib/unsubscribe-token.ts`.
  *
- *   POST /api/unsubscribe?t=…   the one-click target named in `List-Unsubscribe`.
+ *   POST /api/unsubscribe       the token in a JSON body `{ t }` when our own
+ *                               confirmation page sends it, or as `?t=…` for the
+ *                               one-click target named in `List-Unsubscribe`.
  *                               Mail providers POST here with no session and no
  *                               JSON body. A token that cannot be verified is
  *                               answered 200: it will not verify on a retry, and
@@ -52,8 +54,37 @@ async function suppress(email: string, source: 'one-click' | 'confirmation-page'
     );
 }
 
+/**
+ * The token, from the body if the caller put it there, otherwise from the query.
+ *
+ * Both halves are needed, and the order matters. `/unsubscribe` — our own page —
+ * now sends it in the body, because a token in the query of a request the page
+ * itself makes lands in the browser history and in the Cloud Run access log while
+ * it is still valid. RFC 8058 one-click providers cannot do that: they POST to the
+ * URL out of `List-Unsubscribe`, with no body at all, so the query must keep
+ * working for them.
+ *
+ * The body is read defensively — those providers send no JSON, and a rejected
+ * parse must not turn a valid one-click unsubscribe into an error.
+ */
+function tokenInBody(body: unknown): string {
+  if (typeof body !== 'object' || body === null) return '';
+  const t = Reflect.get(body, 't');
+  return typeof t === 'string' ? t : '';
+}
+
+async function tokenFrom(req: NextRequest): Promise<string> {
+  try {
+    const fromBody = tokenInBody(await req.json());
+    if (fromBody) return fromBody;
+  } catch {
+    // No body, or not JSON — the one-click case. Fall through to the query.
+  }
+  return req.nextUrl.searchParams.get('t') || '';
+}
+
 export async function POST(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get('t') || '';
+  const token = await tokenFrom(req);
 
   let email: string;
   try {

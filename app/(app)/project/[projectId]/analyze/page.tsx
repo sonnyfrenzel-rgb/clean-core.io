@@ -9,7 +9,7 @@ import { looksLikeAbap } from '@/lib/abap-input-check';
 import { routeWasOverridden } from '@/lib/route-override';
 import { runProjectCommand } from '@/lib/project-command-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType, getAuth } from '@/lib/firebase';
 import Stepper from '@/components/Stepper';
 import { UploadCloud, FileCode2, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, Activity, Download, ChevronDown, X, HelpCircle, Info, Sparkles, Trash2, Layers, Shield, ShieldAlert, BarChart3, Package, Link2, Cpu, Zap } from 'lucide-react';
@@ -1029,14 +1029,43 @@ export default function AnalyzePage() {
     const save = fileSaver.saveAs || fileSaver.default?.saveAs || fileSaver.default;
     save(blob, `${project.name.replace(/\s+/g, '_')}_Business_Analysis.html`);
     
-    // Store in DB
-    const docRef = doc(getDb(), 'projects', projectId as string);
-    try {
-      await updateDoc(docRef, {
-        [`exports.analysis_confluence_${Date.now()}`]: htmlContent
-      });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `projects/${projectId}`);
+    // The export is no longer written back into the project document.
+    //
+    // Every export used to add `exports.analysis_confluence_<Date.now()>` with
+    // the whole HTML and delete nothing, inside a document Firestore caps at
+    // 1 MiB. Past that cap *every* write to the project fails and the project
+    // is finished.
+    //
+    // And the blob was never reachable anyway. `exports` has exactly one
+    // reader, the deliverables tree on the dashboard
+    // (`app/(app)/dashboard/page.tsx`, `dynamicExports`), and it reads each
+    // value as `{ title, content, type }`. What these two stages stored was a
+    // bare HTML string, so the row it produced was titled
+    // `analysis_confluence_1758…` and its View and Download buttons were handed
+    // `undefined`. The file itself has already gone to the browser above, and
+    // the HTML is regenerated from `project.analysis` on the next click.
+    //
+    // "Keep the newest N" was the other option and bounds the wrong quantity:
+    // one analysis report is easily hundreds of kilobytes, so a small N still
+    // reaches the cap.
+    //
+    // The same write clears what earlier versions left behind — a project
+    // already carrying those blobs is not rescued by merely adding no more. No
+    // new key is introduced: this still only touches `exports`, which
+    // `firestore.rules` already allows a client to write.
+    const staleExports = Object.keys(project.exports || {}).filter((key) =>
+      key.startsWith('analysis_confluence_'),
+    );
+    if (staleExports.length > 0) {
+      const docRef = doc(getDb(), 'projects', projectId as string);
+      try {
+        await updateDoc(
+          docRef,
+          Object.fromEntries(staleExports.map((key) => [`exports.${key}`, deleteField()])),
+        );
+      } catch (error) {
+        handleFirestoreError(error, OperationType.UPDATE, `projects/${projectId}`);
+      }
     }
   };
 

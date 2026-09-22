@@ -250,7 +250,8 @@ export type SkeletonNoteReason =
   | 'unterminated-container'
   | 'unreachable-after-abort'
   | 'commit-boundary'
-  | 'no-entry-point';
+  | 'no-entry-point'
+  | 'expansion-depth-reached';
 
 export interface SkeletonNote extends SourceRange {
   reason: SkeletonNoteReason;
@@ -350,6 +351,17 @@ const SWITCH_CONSTANTS = new Set([
 
 /** Blocks the walker descends into. Containers and macro bodies are not among them. */
 const FLOW_BLOCKS = new Set(['if', 'case', 'loop', 'do', 'while', 'select', 'try', 'at', 'provide']);
+
+/**
+ * How many `PERFORM`s deep the walk opens a routine before it says so instead.
+ *
+ * The walk follows a chain of calls by recursing once per link, so the chain's
+ * depth is the call stack's depth — and a source that is one long chain ended
+ * the whole analysis in a `RangeError` (see `formRegion`). Two hundred is far
+ * past any chain a program written by a person has, and far short of the depth
+ * at which this walk runs out of stack (measured: between 800 and 1200 links).
+ */
+const MAX_PERFORM_EXPANSION = 200;
 
 /**
  * When a routine collapses to one step, this is which of its steps it becomes.
@@ -547,6 +559,8 @@ class SkeletonBuilder {
   private effects = new Map<string, Set<FormEffect>>();
   private helpers = new Set<string>();
   private regionOfForm = new Map<string, SkeletonRegion>();
+  /** The chain of routines being expanded right now — the floor of `formRegion`. */
+  private expanding: string[] = [];
   private macros = new Map<string, { block: Block }>();
   private selectionNames = new Set<string>();
   private performedFrom = new Map<string, string[]>();
@@ -958,6 +972,24 @@ class SkeletonBuilder {
     const block = this.formBlocks.get(name);
     if (!block) return null;
 
+    // A chain of PERFORMs is followed by recursion — this method, the walk over
+    // the routine it opens, and the PERFORM in that routine call one another —
+    // so the depth of the chain is the depth of the call stack. A source with a
+    // 6000-link chain fits in 410 kB, well under the 1 MB a `legacyCode` field
+    // may hold, and the stack gave out before the walk did: `RangeError:
+    // Maximum call stack size exceeded` out of `buildProcessSkeleton`, and with
+    // it every reading derived from it (security audit of b88c77b). The floor
+    // answers the way the macro floor above does: read what can be read, and
+    // say what was left unread rather than fail. Real chains are two digits at
+    // most; this one is the last link that still gets opened.
+    if (this.expanding.length >= MAX_PERFORM_EXPANSION) {
+      this.note('expansion-depth-reached', this.statements[block.openIndex],
+        `${name} is performed ${MAX_PERFORM_EXPANSION} calls deep, in a chain that starts at `
+        + `${this.expanding[0]}. The call is drawn; what this routine does is not read, `
+        + 'so no step inside it is in this skeleton.');
+      return null;
+    }
+
     const opener = this.statements[block.openIndex];
     const region: SkeletonRegion = {
       key: `form:${name}`,
@@ -984,9 +1016,11 @@ class SkeletonBuilder {
     const [from, to] = bodyRange(block);
     const guarded = this.readGuard(from, to, region);
     const before = this.nodes.length;
+    this.expanding.push(name);
     const exits = this.walkRange(guarded, to, {
       region, container: name, loops: [], loopBreaks: [],
     }, []);
+    this.expanding.pop();
     // A sub-process has no start event of its own — the call site is where it
     // begins — so its first node is the one nothing inside the region points at.
     // It is looked up by region and not by position: a `PERFORM` inside this
@@ -1566,12 +1600,31 @@ class SkeletonBuilder {
     // performs `log_approval`, and until `log_approval` is a write, `reject`
     // sees a sub-process and stays one. Repeat until nothing moves — bounded by
     // the number of regions, which is what a chain of them can be at most.
+    // Both lists below used to be read with a `filter` over every node of the
+    // source, once per region and once per pass — the work grew with the square
+    // of the source, and on a 1.1 MB program it was the larger half of the time
+    // `deriveBusinessRules` took (security audit of b88c77b). Neither `region`
+    // nor `expandsTo` is written in this method; only `kind`, `collapsed` and
+    // `detail` are. So the two groupings are read once, in node order, and a
+    // pass then costs what its own nodes cost.
+    const inRegion = new Map<string, SkeletonNode[]>();
+    const callersOf = new Map<string, SkeletonNode[]>();
+    for (const node of this.nodes) {
+      const own = inRegion.get(node.region);
+      if (own) own.push(node);
+      else inRegion.set(node.region, [node]);
+      if (node.expandsTo === undefined) continue;
+      const callers = callersOf.get(node.expandsTo);
+      if (callers) callers.push(node);
+      else callersOf.set(node.expandsTo, [node]);
+    }
+
     for (let pass = 0; pass <= this.regions.length; pass++) {
       let changed = false;
       for (const region of this.regions) {
         if (region.kind !== 'sub-process') continue;
-        const inner = this.nodes.filter((n) => n.region === region.key && n.id !== region.endNodeId);
-        const callers = this.nodes.filter((n) => n.expandsTo === region.key);
+        const inner = (inRegion.get(region.key) ?? []).filter((n) => n.id !== region.endNodeId);
+        const callers = callersOf.get(region.key) ?? [];
         if (!callers.length) continue;
         if (callers[0].kind === 'business-rule-task') {
           for (const caller of callers) caller.collapsed = inner.length <= 3;

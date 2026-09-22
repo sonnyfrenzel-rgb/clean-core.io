@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteField } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -662,15 +662,37 @@ ${responseText.substring(0, 4000)}`;
     const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
     await saveAs(blob, `${currentProject.name.replace(/\s+/g, '_')}_Solution_Design.html`);
     
-    // Store in DB
-    const db = getDb();
-    const docRef = doc(db, 'projects', projectId as string);
-    try {
-      await updateDoc(docRef, {
-        [`exports.design_confluence_${Date.now()}`]: htmlContent
-      });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `projects/${projectId}`);
+    // The export is no longer written back into the project document; the same
+    // decision as the Analyze stage, for the same reason.
+    //
+    // Every export used to add `exports.design_confluence_<Date.now()>` with the
+    // whole HTML and delete nothing, inside a document Firestore caps at 1 MiB —
+    // and past that cap every write to the project fails, which ends the
+    // project. The one reader of `exports`, the deliverables tree on the
+    // dashboard, expects `{ title, content, type }` per entry and was handed a
+    // bare HTML string, so the row it drew carried the raw key as its title and
+    // `undefined` behind both of its buttons. The file is already in the
+    // reader's downloads, and the HTML is regenerated from
+    // `currentProject.solutionDesign` on the next click.
+    //
+    // The write that is left removes what earlier versions stored, because a
+    // project already carrying those blobs is not helped by adding no more. It
+    // touches no key other than `exports`, which `firestore.rules` already
+    // allows a client to write.
+    const staleExports = Object.keys(currentProject.exports || {}).filter((key) =>
+      key.startsWith('design_confluence_'),
+    );
+    if (staleExports.length > 0) {
+      const db = getDb();
+      const docRef = doc(db, 'projects', projectId as string);
+      try {
+        await updateDoc(
+          docRef,
+          Object.fromEntries(staleExports.map((key) => [`exports.${key}`, deleteField()])),
+        );
+      } catch (error) {
+        handleFirestoreError(error, OperationType.UPDATE, `projects/${projectId}`);
+      }
     }
   };
 

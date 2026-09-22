@@ -62,6 +62,43 @@ const renderSafeValue = (val: any): string => {
   return String(val);
 };
 
+/**
+ * Excel's own rules for a worksheet name, applied before ExcelJS can throw over
+ * them.
+ *
+ * The detail sheets were named `renderSafeValue(tc.id).slice(0, 30)` — a string
+ * the model wrote, handed to `addWorksheet` untouched. ExcelJS throws on the
+ * five characters Excel forbids plus the two bracket characters, on an empty
+ * name, on the reserved name `History`, and on a name already in the workbook.
+ * Any one of those ended the whole export in a `catch` that wrote to the
+ * console: no file, no message, a button that looked broken. A test case id of
+ * `FI/AP-01` or two cases sharing an id is all it took.
+ *
+ * So the name is repaired rather than trusted, and the repair is deliberately
+ * visible: a replaced character stays as `-` in the tab so the reader can see
+ * the name is not quite the id.
+ */
+const excelSheetName = (raw: string, fallback: string, taken: Set<string>): string => {
+  // * ? : / \ [ ] — Excel's forbidden set, exactly as `exceljs` tests for it.
+  // The 31-character cap comes before the apostrophe strip and not after:
+  // cutting a long name can leave a quote as its last character, which is its
+  // own refusal.
+  let name = String(raw ?? '').replace(/[*?:/\\[\]]/g, '-').trim().slice(0, 31).replace(/^'+|'+$/g, '').trim();
+  if (!name || name.toLowerCase() === 'history') {
+    name = String(fallback || 'Sheet').slice(0, 31).replace(/^'+|'+$/g, '').trim() || 'Sheet';
+  }
+
+  let candidate = name;
+  let n = 2;
+  while (taken.has(candidate.toLowerCase())) {
+    const suffix = ` (${n})`;
+    candidate = `${name.slice(0, 31 - suffix.length)}${suffix}`;
+    n += 1;
+  }
+  taken.add(candidate.toLowerCase());
+  return candidate;
+};
+
 export default function TestingSandboxPage() {
   const { projectId } = useParams();
   const router = useRouter();
@@ -82,6 +119,8 @@ export default function TestingSandboxPage() {
   const [savedS4, setSavedS4] = useState<{ url: string; username: string; authType: string; btpDestinationJson: string } | null>(null);
   /** "You have not saved this yet" is not a failed connection — see the test handler. */
   const [unsavedNotice, setUnsavedNotice] = useState('');
+  /** An export that fails has to say so on the page; see `exportTestCasesToExcel`. */
+  const [exportError, setExportError] = useState('');
   const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
   const [selectedResult, setSelectedResult] = useState<any>(null);
 
@@ -653,14 +692,20 @@ export default function TestingSandboxPage() {
   };
 
   const exportTestCasesToExcel = async () => {
+    setExportError('');
     try {
       if (!testCases || testCases.length === 0) return;
-      
+
       const ExcelJS = await import('exceljs');
       const wb = new ExcelJS.Workbook();
-      
+
+      // The names of the sheets already in the workbook, lower-cased — Excel
+      // treats two names as the same if they differ only in case, and ExcelJS
+      // refuses the second one.
+      const takenSheetNames = new Set<string>();
+
       // 1. Summary sheet
-      const wsSummary = wb.addWorksheet("Test Suite Summary");
+      const wsSummary = wb.addWorksheet(excelSheetName("Test Suite Summary", "Summary", takenSheetNames));
       wsSummary.columns = [
         { header: 'ID', key: 'ID', width: 15 },
         { header: 'Name', key: 'Name', width: 35 },
@@ -680,7 +725,7 @@ export default function TestingSandboxPage() {
       // 2. Detail sheets
       testCases.forEach((tc, index) => {
         const safeId = renderSafeValue(tc.id) || `TC_${index}`;
-        const wsDetail = wb.addWorksheet(safeId.slice(0, 30));
+        const wsDetail = wb.addWorksheet(excelSheetName(safeId, `TC_${index + 1}`, takenSheetNames));
         
         wsDetail.addRow(["Test Case ID", safeId]);
         wsDetail.addRow(["Test Case Name", renderSafeValue(tc.name) || 'Untitled']);
@@ -708,7 +753,12 @@ export default function TestingSandboxPage() {
       const projectName = project?.name?.replace(/\s+/g, '_') || 'Project';
       await saveAs(blob, `${projectName}_Test_Suite.xlsx`);
     } catch (err) {
+      // The console was the only place this ever went. The button did nothing,
+      // no file arrived, and the reader had no way to tell a refused download
+      // from a browser that had swallowed it — so the failure is said out loud
+      // now, next to the button that caused it.
       console.error("Excel export failed:", err);
+      setExportError('The Excel export could not be produced. Please try again, and tell us if it keeps failing.');
     }
   };
 
@@ -1658,6 +1708,12 @@ export default function TestingSandboxPage() {
                         <Download size={14} /> Export Excel
                       </button>
                     </div>
+                    {exportError && (
+                      <span data-export-error role="alert" className="flex items-center gap-1.5 text-[11px] font-bold text-red-700">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                        {exportError}
+                      </span>
+                    )}
                   </div>
                   <button 
                     onClick={handleRun} 

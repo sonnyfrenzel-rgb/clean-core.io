@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminRequest, approveTenantWithToken, assertAdminStepUp } from '@/lib/firebase-admin';
+import { logger, errMessage } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,7 +35,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('[approve-tenant] Error in admin tenant approval:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    // The reason goes to the log, not to the caller. The failures that land
+    // here are token comparisons and Admin SDK writes, and their messages name
+    // the target account, the collection and sometimes the token itself — the
+    // four refusals above are the ones an administrator is meant to read
+    // (security audit of b88c77b).
+    logger.error('approve-tenant failed', { route: 'api/admin/approve-tenant', error: errMessage(error) });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -8,6 +8,7 @@ import {
   adminRevokeS4,
   adminDeleteUser,
 } from '@/lib/firebase-admin';
+import { logger, errMessage } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -58,7 +59,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('[console-action] Error executing admin action:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    // Same as its neighbour `approve-tenant`: the five actions above write
+    // through the Admin SDK, and a failure there speaks about our own documents
+    // and the target account. That belongs in the log (security audit of
+    // b88c77b); the caller is told the action did not happen.
+    logger.error('console-action failed', { route: 'api/admin/console-action', error: errMessage(error) });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

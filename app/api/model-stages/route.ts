@@ -68,6 +68,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     }
     await assertMfaSatisfied(req, decodedToken);
+    // The hard-suspend check the POST below also makes. It was missing here, so
+    // a suspended account still learned whether a key is available and which of
+    // the five stages are switched on — and `answerFor` decrypts that account's
+    // own BYOK key to find out (security audit of b88c77b). Not
+    // `requireCurrentTerms`: § 10.3 lets somebody carry on under the Terms they
+    // accepted, and the write is where that is decided.
+    await assertAccountActive(decodedToken.uid);
     return NextResponse.json(await answerFor(decodedToken.uid));
   } catch (err: unknown) {
     if (err instanceof QuotaError) {

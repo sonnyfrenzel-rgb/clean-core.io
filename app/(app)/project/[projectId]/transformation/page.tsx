@@ -47,6 +47,51 @@ const isUsableFile = (f: unknown): f is ProjectFile =>
   && typeof (f as ProjectFile).path === 'string' && (f as ProjectFile).path.trim().length > 0
   && typeof (f as ProjectFile).content === 'string' && (f as ProjectFile).content.trim().length > 0;
 
+/**
+ * The smallest set of artefacts a generated package has to contain before it is
+ * stored as a finished transformation, one list per track. Every entry is read
+ * off the generation prompt further down, which enumerates exactly these
+ * artefacts in its requirements and again in its JSON example — this table says
+ * nothing about ABAP or Node.js that the prompt did not ask the model for.
+ *
+ * `isUsableFile` asks one thing of one file, and "at least one usable file" was
+ * the only completeness gate there was. An answer holding a single class — no
+ * metadata descriptor, no CDS view, no behavior definition, no abapGit
+ * configuration — passed it and was written out with `status: 'transformed'`,
+ * and the stage went green over a package nobody could import (QA full review
+ * of b88c77b, 7976bced4c28).
+ *
+ * Matched on the shape of the path, not on the prompt's example names: the
+ * suffix is the artefact kind, and a model that names the class after the
+ * project instead of `zcl_demo_rap_behavior` has still answered the question.
+ */
+const REQUIRED_ARTEFACTS: Record<'abapCloud' | 'btp', { label: string; suffix: string }[]> = {
+  abapCloud: [
+    { label: 'behavior implementation class (*.clas.abap)', suffix: '.clas.abap' },
+    { label: 'class metadata descriptor (*.clas.xml)', suffix: '.clas.xml' },
+    { label: 'CDS data definition (*.ddls.asddls)', suffix: '.ddls.asddls' },
+    { label: 'behavior definition (*.bdef.asbdef)', suffix: '.bdef.asbdef' },
+    { label: 'service definition (*.srvd.assrvd)', suffix: '.srvd.assrvd' },
+    { label: 'service binding (*.srvb.assrvb)', suffix: '.srvb.assrvb' },
+    { label: 'abapGit repository configuration (abapgit.xml)', suffix: 'abapgit.xml' },
+  ],
+  btp: [
+    { label: 'service implementation (*.ts)', suffix: '.ts' },
+    { label: 'schema definition (*.cds)', suffix: '.cds' },
+    { label: 'dependency manifest (package.json)', suffix: 'package.json' },
+    { label: 'container setup (Dockerfile)', suffix: 'dockerfile' },
+    { label: 'ERP-side event publisher (*.clas.abap)', suffix: '.clas.abap' },
+  ],
+};
+
+/** What the prompt asked for and the answer does not contain, in reader's words. */
+const missingArtefacts = (generated: ProjectFile[], isAbapCloud: boolean): string[] => {
+  const paths = generated.map((f) => f.path.trim().toLowerCase());
+  return REQUIRED_ARTEFACTS[isAbapCloud ? 'abapCloud' : 'btp']
+    .filter((required) => !paths.some((p) => p.endsWith(required.suffix)))
+    .map((required) => required.label);
+};
+
 const CodeHighlighter = nextDynamic(() => import('@/components/CodeHighlighter'), { ssr: false });
 
 export default function TransformationPage() {
@@ -592,43 +637,48 @@ CMD ["node", "srv/service.js"]`
       let filesArray: ProjectFile[] = [];
       let tests = { config: '', spec: '' };
       
+      // An answer that is not the agreed JSON is a failed *generation*, not a
+      // file. This used to end in a catch that wrapped the raw text as
+      // `srv/service.ts`: a refusal, a quota notice or any stretch of prose
+      // then passed the "at least one file" gate below and was stored with
+      // `status: 'transformed'`, so the reader got a green stage whose source
+      // code was the sentence in which the model declined the work (QA full
+      // review of b88c77b, 55cf6c0ed62a). It is reported the same way an empty
+      // answer is, a few lines down — nothing is saved, the previous artefact
+      // stands.
+      let result: unknown;
       try {
-        let result;
+        result = JSON.parse(responseText || '{}');
+      } catch {
+        // One attempt at an object inside a markdown fence is still worth
+        // making: that is a formatting slip, not a refusal.
+        const match = responseText?.match(/\{[\s\S]*\}/);
         try {
-          result = JSON.parse(responseText || '{}');
-        } catch (e) {
-          // Fallback: try to extract JSON from markdown if it exists
-          const match = responseText?.match(/\{[\s\S]*\}/);
-          if (match) {
-            result = JSON.parse(match[0]);
-          } else {
-            throw e;
-          }
+          result = match ? JSON.parse(match[0]) : undefined;
+        } catch {
+          result = undefined;
         }
-        filesArray = (Array.isArray(result.files) ? result.files : []).filter(isUsableFile);
-        tests = result.tests || { config: '', spec: '' };
-        
-        // The single-blob answer goes through the same gate as the list: it
-        // used to be pushed unchecked, so `{"files":[],"code":"   "}` reached
-        // the project as a finished transformation (QA review of 146ac2e1a724,
-        // 9712d15149c9).
-        if (filesArray.length === 0) {
-          const single = {
-            path: isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts',
-            content: result.code,
-          };
-          if (isUsableFile(single)) filesArray.push(single);
-        }
-      } catch (e) {
-        // Fallback for completely non-JSON text
-        filesArray = [
-          {
-            path: isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts',
-            content: responseText || ''
-          }
-        ].filter(isUsableFile);
       }
-      
+      if (!result || typeof result !== 'object') {
+        throw new Error('The model answered with text instead of the JSON this stage asked for. Nothing was saved — the previous version is untouched. Try the generation again.');
+      }
+
+      const parsed = result as { files?: unknown; tests?: { config: string; spec: string }; code?: unknown };
+      filesArray = (Array.isArray(parsed.files) ? parsed.files : []).filter(isUsableFile);
+      tests = parsed.tests || { config: '', spec: '' };
+
+      // The single-blob answer goes through the same gate as the list: it
+      // used to be pushed unchecked, so `{"files":[],"code":"   "}` reached
+      // the project as a finished transformation (QA review of 146ac2e1a724,
+      // 9712d15149c9).
+      if (filesArray.length === 0) {
+        const single = {
+          path: isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts',
+          content: parsed.code,
+        };
+        if (isUsableFile(single)) filesArray.push(single);
+      }
+
       // Nothing usable came back. This used to be written anyway: an empty
       // file list, an empty test suite and `status: 'transformed'` — on a
       // first run the later stages saw a transformed project with no code, and
@@ -637,6 +687,14 @@ CMD ["node", "srv/service.js"]`
       // and the stage reports a failed generation.
       if (filesArray.length === 0) {
         throw new Error('The model returned no usable code. Nothing was saved — the previous version is untouched. Try the generation again.');
+      }
+
+      // And one file is not a package. Every path the prompt enumerated has to
+      // be answered, or this is a half-generation and gets reported as one
+      // rather than stored as a finished transformation (b88c77b, 7976bced4c28).
+      const missing = missingArtefacts(filesArray, isAbapCloud);
+      if (missing.length > 0) {
+        throw new Error(`The model returned an incomplete package. Missing: ${missing.join('; ')}. Nothing was saved — the previous version is untouched. Try the generation again.`);
       }
 
       setTransformationLog(prev => [...prev, 'Code generation complete.', 'Optimizing imports...', 'Finalizing transformation...']);

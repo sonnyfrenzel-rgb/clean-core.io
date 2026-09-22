@@ -63,6 +63,12 @@ export const GATED_ROUTES: GatedRoute[] = [
   // here so that neither state is a surprise.
   { file: 'app/api/auth/jira/url/route.ts', method: 'GET', path: () => '/api/auth/jira/url', expectedStatus: [404, 403] },
   { file: 'app/api/secrets/gemini/test/route.ts', method: 'POST', path: () => '/api/secrets/gemini/test', body: { apiKey: 'not-a-real-key' } },
+  // Added with the gate itself (security audit of b88c77b): reading the key's
+  // metadata was behind a valid ID token and nothing else, while every other
+  // verb on the same secret asked for the factor. Listed here rather than only
+  // grepped for, because the completeness check below would otherwise report a
+  // route that gates and is in no list.
+  { file: 'app/api/secrets/gemini/status/route.ts', method: 'GET', path: () => '/api/secrets/gemini/status' },
   // Roadmap 1.2 — the per-stage model switch. Reading it says whether a key
   // exists for this account; writing it decides what the account's own key and
   // quota may be spent on. Both sit behind the factor.
