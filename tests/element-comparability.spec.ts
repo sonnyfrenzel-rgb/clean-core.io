@@ -6,6 +6,7 @@ import {
   classifyElement,
   classifyElements,
   compareElement,
+  hasOnlyTechnicalConditions,
   isTechnicalGateway,
   technicalMarkersIn,
   type ComparabilityClass,
@@ -255,6 +256,85 @@ test.describe('the condition rule — written here so 2.15 can use it', () => {
     expect(isTechnicalGateway({ conditions: ['sy-subrc <> 0'], predecessorKinds: ['read', 'write'] })).toBe(false);
     expect(isTechnicalGateway({ conditions: ['ls_a-b = 1'], predecessorKinds: ['read'] })).toBe(false);
     expect(isTechnicalGateway({ conditions: [''], predecessorKinds: ['read'] })).toBe(false);
+  });
+
+  test('missing predecessor evidence never produces the positive class', () => {
+    // The QA review of `9e408888bfec` (fingerprint `f51d99129444`): the helper
+    // answered `true` when the predecessors were absent or empty, so a caller
+    // without the graph got a `true` that read like the whole 2.15 rule. A
+    // missing proof is `unknown`, and a guard has to treat unknown as "no".
+    expect(isTechnicalGateway({ conditions: ['sy-subrc <> 0'] })).toBe(false);
+    expect(isTechnicalGateway({ conditions: ['sy-subrc <> 0'], predecessorKinds: [] })).toBe(false);
+    expect(isTechnicalGateway({ conditions: ['sy-subrc <> 0'], predecessorKinds: undefined })).toBe(false);
+    // The condition half is still answerable without the graph — it just has to
+    // be asked by name, and it never claims the predecessor half was checked.
+    expect(hasOnlyTechnicalConditions(['sy-subrc <> 0'])).toBe(true);
+    expect(hasOnlyTechnicalConditions(['sy-subrc <> 0', ''])).toBe(true);
+    expect(hasOnlyTechnicalConditions(['ls_order-netwr > 1000'])).toBe(false);
+    expect(hasOnlyTechnicalConditions([''])).toBe(false);
+    expect(hasOnlyTechnicalConditions([])).toBe(false);
+  });
+
+  test('the predecessor half accepts only the call, read and write kinds its head names', () => {
+    // Same finding, the other half: `task` and `output` stood in the effect set
+    // although the documented rule says "a call, read or write node". `task` is
+    // a step with no type of its own and `output` is a data object; neither sets
+    // a return code a following branch could be about.
+    const technical: ComparableElementKind[] = [
+      'read', 'write', 'service-task', 'send-task', 'call-activity',
+      'transaction', 'call-opaque', 'sub-process',
+    ];
+    for (const kind of technical) {
+      expect(isTechnicalGateway({ conditions: ['sy-subrc <> 0'], predecessorKinds: [kind] })).toBe(true);
+    }
+    const notEvidence: ComparableElementKind[] = [
+      'task', 'output', 'user-task', 'business-rule-task', 'gateway', 'loop',
+      'start', 'end', 'end-error', 'error-boundary', 'data-object', 'data-store',
+      'lane', 'pool', 'annotation',
+    ];
+    for (const kind of notEvidence) {
+      expect(isTechnicalGateway({ conditions: ['sy-subrc <> 0'], predecessorKinds: [kind] })).toBe(false);
+    }
+  });
+
+  test('the predecessor half over the eight shipped examples is counted, not assumed', () => {
+    // Pinned like every other number of 7.8. Before the fix of `f51d99129444`
+    // this was 19: one gateway passed with no known predecessor at all, one sat
+    // behind an `output` node. Both now read as not proven technical — the
+    // condition half is untouched at 27 of 68.
+    let gateways = 0;
+    let byCondition = 0;
+    let fullRule = 0;
+    for (const file of exampleFiles()) {
+      const skeleton = skeletonOf(file);
+      const kindById = new Map<string, ComparableElementKind>();
+      for (const node of skeleton.nodes) kindById.set(node.id, node.kind);
+      const outgoing = new Map<string, string[]>();
+      const incoming = new Map<string, ComparableElementKind[]>();
+      for (const edge of skeleton.edges) {
+        const conditions = outgoing.get(edge.from) ?? [];
+        conditions.push(edge.condition ?? '');
+        outgoing.set(edge.from, conditions);
+        const kind = kindById.get(edge.from);
+        if (kind) {
+          const sources = incoming.get(edge.to) ?? [];
+          sources.push(kind);
+          incoming.set(edge.to, sources);
+        }
+      }
+      for (const node of skeleton.nodes) {
+        if (node.kind !== 'gateway') continue;
+        gateways += 1;
+        const conditions = outgoing.get(node.id) ?? [];
+        const predecessorKinds = incoming.get(node.id) ?? [];
+        if (hasOnlyTechnicalConditions(conditions)) byCondition += 1;
+        if (isTechnicalGateway({ conditions, predecessorKinds })) fullRule += 1;
+      }
+    }
+    console.log(`gateways: ${gateways}, technical by condition: ${byCondition}, full 2.15 rule: ${fullRule}`);
+    expect(gateways).toBe(68);
+    expect(byCondition).toBe(27);
+    expect(fullRule).toBe(17);
   });
 
   test('a gateway on a business field is comparable, but never carries a candidate', () => {

@@ -995,6 +995,62 @@ function expectedEdgeKinds(condition: string | null): { kinds: SkeletonEdgeKind[
   return { kinds: CONDITIONAL_EDGE, label: 'bedingt' };
 }
 
+/**
+ * Die drei Skelettaussagen, die der Vergleicher **noch nicht** vergleicht —
+ * an einer Stelle, benannt, mit dem Roadmap-Schritt, der sie auflöst.
+ *
+ * Anlass: QA-Review von `9e408888bfec`, Fingerabdruck `c100d056f0d2`. Eine
+ * Facette, deren Status am bloßen Vorhandensein des Sollfelds hängt, zählt
+ * ungeprüfte Sollwerte als verglichen — dieselbe Sorte Grün, die 1.9 (CR-05)
+ * abgeschafft hat. Deshalb steht hier nur, *was* einmal verglichen wird, nie
+ * ein Status: den vergibt `compareSkeleton` fest als `not_checked`.
+ *
+ * Wer 2.15, 2.16 oder 2.17 baut, hat hier seine Einhängestelle: Eintrag raus,
+ * echter Vergleich rein, Baseline neu schreiben. Der Wechsel des Prüfstatus
+ * ist in `tests/korpus-facets.spec.ts` eine Ratsche und fällt damit auf.
+ */
+export interface PendingSkeletonAspect {
+  /** Der Facettenname, wie er im Ergebnis und in der Baseline steht. */
+  name: string;
+  /** Der Roadmap-Schritt, der diese Teilprüfung auflöst. */
+  step: string;
+  /** Was der Fall behauptet, in einem Satzteil — für die Begründung. */
+  what: string;
+  /** Derselbe Satzteil verneint, für den (heute immer) leeren Fall. */
+  absent: string;
+  /** Wie viele Sollwerte der Fall dafür trägt (heute überall 0). */
+  given: (counts: { gatewayClassGiven: number; lanes: number; parallel: number }) => number;
+  /** Der Nenner: wie viele Stellen dieser Art der Fall überhaupt kennt. */
+  total: (counts: { gateways: number; lanes: number; parallel: number }) => number;
+}
+
+export const PENDING_SKELETON_ASPECTS: PendingSkeletonAspect[] = [
+  {
+    name: 'gateway-klasse',
+    step: '2.15',
+    what: 'eine Gateway-Klasse',
+    absent: 'keine Gateway-Klasse (Sollfeld leer)',
+    given: (counts) => counts.gatewayClassGiven,
+    total: (counts) => counts.gateways,
+  },
+  {
+    name: 'lanes',
+    step: '2.16',
+    what: 'eine Lane mit Beweis',
+    absent: 'keine Lane (Sollfeld leer), und das Skelett erzeugt keine',
+    given: (counts) => counts.lanes,
+    total: (counts) => counts.lanes,
+  },
+  {
+    name: 'parallelitaet',
+    step: '2.17',
+    what: 'einen parallelen Knoten',
+    absent: 'keinen parallelen Knoten (Sollfeld leer)',
+    given: (counts) => counts.parallel,
+    total: (counts) => counts.parallel,
+  },
+];
+
 function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassResult {
   const skeleton = korpusCase.expected.skeleton;
   const nodes = skeleton.nodes;
@@ -1074,13 +1130,49 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
   }
   const comparableEdges = edgeHit.length + edgeMissing.length + edgeWrongKind.length;
 
-  // --- Die drei Teilprüfungen, die 2.15, 2.16 und 2.17 füllen werden. Solange
-  //     kein Fall das Sollfeld trägt, steht hier „nicht geprüft" — nicht `agree`.
-  //     Erfunden wird nichts: ein leeres Sollfeld ist ein leeres Sollfeld.
+  // --- Die drei Teilprüfungen, die 2.15, 2.16 und 2.17 füllen werden.
+  //
+  // QA-Review von `9e408888bfec`, Fingerabdruck `c100d056f0d2`: bis dahin hob
+  // jede dieser drei Teilprüfungen ihren Status auf `compared`, sobald ein
+  // Sollwert **auftauchte** — verglichen wurde er nie. Das ist genau der
+  // Mechanismus, gegen den 1.9 gebaut wurde (CR-05): ein Grün, das „nicht
+  // geprüft" heißt. Heute trägt keine der 68 `expected.json` eines der drei
+  // Felder, der Fehler war also noch nicht wirksam; wirksam geworden wäre er
+  // mit dem ersten Fall aus 2.10, und dann hätte ein Sollwert still danebenge-
+  // legen, während die Facette „verglichen" sagt.
+  //
+  // Gewählt ist der erste der beiden Wege: die Facetten bleiben `not_checked`,
+  // **auch wenn Sollwerte da sind**, und ihr Zähler bleibt 0. Wirklich zu
+  // vergleichen wäre heute kein Vergleich: `lib/abap/process-skeleton.ts`
+  // führt weder eine Gateway-Klasse noch eine Lane noch einen Parallel-Marker
+  // (`SkeletonNode` hat keines dieser Felder, und der Kopf der Datei sagt für
+  // Lanes und parallele Gateways ausdrücklich, dass sie später kommen). Jeder
+  // Sollwert wäre gegen `undefined` verglichen und damit pauschal „von der
+  // Engine verfehlt" — eine Rotfärbung, die nichts über die Engine aussagt.
+  //
+  // `PENDING_SKELETON_ASPECTS` ist die benannte Einhängestelle: wer 2.15, 2.16
+  // oder 2.17 baut, ersetzt hier den Eintrag durch einen echten Vergleich und
+  // schreibt die Baseline neu — der Statuswechsel `not_checked` → `compared`
+  // ist die Ratsche, die das sichtbar macht.
+  //
+  // Damit ein Sollwert bis dahin nicht still liegen bleibt: ein Fall, der eines
+  // der drei Felder trägt, gilt nicht als übereinstimmend (siehe unten).
   const gatewayNodes = nodes.filter((node) => node.type === 'gateway');
   const gatewayClassGiven = gatewayNodes.filter((node) => (node.gatewayClass ?? null) != null);
   const laneGiven = skeleton.lanes ?? [];
   const parallelGiven = nodes.filter((node) => node.parallel === true);
+
+  const pending: Array<{ name: string; step: string; what: string; absent: string; given: number; total: number }> =
+    PENDING_SKELETON_ASPECTS.map((aspect) => ({
+      name: aspect.name,
+      step: aspect.step,
+      what: aspect.what,
+      absent: aspect.absent,
+      given: aspect.given({ gatewayClassGiven: gatewayClassGiven.length, lanes: laneGiven.length, parallel: parallelGiven.length }),
+      total: aspect.total({ gateways: gatewayNodes.length, lanes: laneGiven.length, parallel: parallelGiven.length }),
+    }));
+  /** Sollwerte, für die es heute keinen Vergleich gibt. Heute überall leer. */
+  const unchecked = pending.filter((entry) => entry.given > 0);
 
   const aspects: FacetAspect[] = [
     facet(
@@ -1095,32 +1187,19 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
       skeleton.edges.length,
       'Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten.',
     ),
-    facet(
-      'gateway-klasse',
-      gatewayClassGiven.length,
-      gatewayNodes.length,
-      gatewayClassGiven.length > 0
-        ? 'Der Fall nennt eine Gateway-Klasse; verglichen wird gegen 2.15.'
-        : 'Der Fall nennt keine Gateway-Klasse (Sollfeld leer) — nicht geprüft, Roadmap 2.15.',
-      gatewayClassGiven.length > 0 ? 'compared' : 'not_checked',
-    ),
-    facet(
-      'lanes',
-      laneGiven.length,
-      laneGiven.length,
-      laneGiven.length > 0
-        ? 'Der Fall nennt Lanes mit Beweis; verglichen wird gegen 2.16.'
-        : 'Der Fall nennt keine Lane (Sollfeld leer), und das Skelett erzeugt keine — nicht geprüft, Roadmap 2.16.',
-      laneGiven.length > 0 ? 'compared' : 'not_checked',
-    ),
-    facet(
-      'parallelitaet',
-      parallelGiven.length,
-      parallelGiven.length,
-      parallelGiven.length > 0
-        ? 'Der Fall nennt parallele Knoten; verglichen wird gegen 2.17.'
-        : 'Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17.',
-      parallelGiven.length > 0 ? 'compared' : 'not_checked',
+    // Zähler fest 0 und Status fest `not_checked`: hier wird nichts verglichen,
+    // und ein vorhandener Sollwert ändert daran nichts (c100d056f0d2).
+    ...pending.map((entry) =>
+      facet(
+        entry.name,
+        0,
+        entry.total,
+        entry.given > 0
+          ? `Der Fall nennt ${entry.given}× ${entry.what}; die Engine führt dieses Feld nicht — nicht geprüft, ` +
+            `Roadmap ${entry.step}. Der Sollwert ist damit offen, nicht erfüllt.`
+          : `Der Fall nennt ${entry.absent} — nicht geprüft, Roadmap ${entry.step}.`,
+        'not_checked',
+      ),
     ),
   ];
 
@@ -1174,6 +1253,21 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
       evidence:
         `${head} Ohne Knoten: ${sample(missed)}. Andere Knotenart: ${sample(wrongKind)}. ` +
         `Fehlende Kante: ${sample(edgeMissing)}. Andere Kantenart: ${sample(edgeWrongKind)}.${tail}`,
+    });
+  }
+  // Knoten und Kanten stimmen — aber der Fall trägt eine Sollaussage, für die
+  // es heute keinen Vergleich gibt. Ein `agree` hieße hier „alles geprüft",
+  // und das wäre die Lüge aus CR-05 mit anderen Feldern (c100d056f0d2).
+  if (unchecked.length > 0) {
+    return done({
+      case: korpusCase.id,
+      class: 'skelett',
+      state: 'disagree',
+      verdict: 'nicht-vergleichbar',
+      evidence:
+        `${head} Knoten und Kanten stimmen überein, doch der Fall nennt Sollwerte, für die der Vergleicher ` +
+        `heute keine Prüfung hat: ${unchecked.map((entry) => `${entry.given}× ${entry.what} (Roadmap ${entry.step})`).join(', ')}. ` +
+        `Solange die Engine diese Felder nicht führt, ist das eine Aussage über den Umfang der Prüfung — kein Grün.${tail}`,
     });
   }
   return done({ case: korpusCase.id, class: 'skelett', state: 'agree', verdict: null, evidence: `${head}${tail}` });

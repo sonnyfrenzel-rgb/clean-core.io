@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { APP_VERSION } from '@/lib/version';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { getSigningKeypair } from '@/lib/audit-signing-keypair';
+import { singleFlight } from '@/lib/single-flight';
 
 /**
  * Liveness / readiness probe for Cloud Run health checks and uptime monitoring.
@@ -49,8 +50,15 @@ let lastDeepProbe: { at: number; ok: boolean } = { at: 0, ok: true };
  * awaits the same promise. One read per cooldown window, under any concurrency.
  * Module scope is per instance, like the cooldown itself: this bounds one
  * instance, not the service, and that is all it ever claimed.
+ *
+ * The mechanism lives in `lib/single-flight.ts` rather than in three lines here,
+ * and the reason is the test: a guard that reads those three lines out of this
+ * file cannot fail for the reason it exists — a regression that keeps the
+ * characters and still performs two reads passes it (QA review of 9e408888bfec,
+ * 78b84b92aa49). The helper can be driven with a deferred call from a spec;
+ * this handler cannot.
  */
-let deepProbeInFlight: Promise<boolean> | null = null;
+const deepProbe = singleFlight<boolean>();
 
 async function probeFirestore(): Promise<boolean> {
   let ok = true;
@@ -88,13 +96,11 @@ export async function GET(req: Request) {
     if (Date.now() - lastDeepProbe.at < DEEP_PROBE_COOLDOWN_MS) {
       firestoreOk = lastDeepProbe.ok;
     } else {
-      // The slot is claimed before the await, not after it — that is the whole
-      // point. Everyone who arrives while the read is open awaits this same
-      // promise and costs nothing.
-      deepProbeInFlight ??= probeFirestore().finally(() => {
-        deepProbeInFlight = null;
-      });
-      firestoreOk = await deepProbeInFlight;
+      // The slot is claimed before the read is awaited, not after it — that is
+      // the whole point, and it is what `singleFlight` guarantees. Everyone who
+      // arrives while the read is open awaits the same promise and costs
+      // nothing.
+      firestoreOk = await deepProbe(probeFirestore);
     }
   }
 

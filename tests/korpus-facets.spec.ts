@@ -1,11 +1,16 @@
 import { test, expect } from '@playwright/test';
 import {
   compareAll,
+  compareCase,
   readBaseline,
+  readCases,
+  readWithEngine,
   resultId,
+  PENDING_SKELETON_ASPECTS,
   SKELETON_BRIDGES,
   type ClassResult,
   type FacetAspect,
+  type KorpusCase,
 } from './helpers/korpus-comparison';
 
 /**
@@ -134,6 +139,95 @@ test.describe('jede Facette nennt Zähler, Nenner und Prüfstatus', () => {
         .map((aspect) => `  ${result.case}/${aspect.name}: „verglichen" ohne Zähler`),
     );
     expect(invented.join('\n')).toEqual('');
+  });
+
+  test('ein Sollwert aus 2.15/2.16/2.17 wird nicht als verglichen gezählt', () => {
+    // Anlass: QA-Review von `9e408888bfec`, Fingerabdruck `c100d056f0d2`. Bis
+    // dahin hob das bloße **Vorhandensein** von `gatewayClass`, `lane` oder
+    // `parallel` die Facette auf `compared` — verglichen wurde nichts, und der
+    // Fall blieb grün. Heute trägt keine der 68 expected.json eines dieser
+    // Felder, der Fehler wäre also erst mit 2.10 sichtbar geworden; diese Probe
+    // nimmt ihn vorweg, indem sie einem echten, übereinstimmenden Fall genau
+    // einen Sollwert unterschiebt — an der gelesenen Sollantwort, nicht an der
+    // Engine (`lib/` wird nicht angefasst).
+    const green = new Set(
+      LIVE.filter((result) => result.class === 'skelett' && result.state === 'agree').map((result) => result.case),
+    );
+    const cases = readCases().filter((korpusCase) => green.has(korpusCase.id));
+    const withGateway = cases.find((korpusCase) =>
+      korpusCase.expected.skeleton.nodes.some((node) => node.type === 'gateway'),
+    );
+    expect(withGateway, 'kein übereinstimmender Fall mit Gateway — die Probe misst sonst nichts').toBeTruthy();
+
+    const clone = (korpusCase: KorpusCase): KorpusCase => JSON.parse(JSON.stringify(korpusCase)) as KorpusCase;
+    const probes: Array<{ facet: string; why: string; make: (source: KorpusCase) => KorpusCase }> = [
+      {
+        facet: 'gateway-klasse',
+        why: 'Der Fall nennt eine Gateway-Klasse (2.15); die Engine führt kein solches Feld.',
+        make: (source) => {
+          const copy = clone(source);
+          const node = copy.expected.skeleton.nodes.find((entry) => entry.type === 'gateway');
+          if (node) node.gatewayClass = 'exclusive';
+          return copy;
+        },
+      },
+      {
+        facet: 'lanes',
+        why: 'Der Fall nennt eine Lane mit Beweis (2.16); das Skelett erzeugt keine Lanes.',
+        make: (source) => {
+          const copy = clone(source);
+          copy.expected.skeleton.lanes = [{ id: 'L1', evidence: 'AUTHORITY-CHECK', anchor: null }];
+          return copy;
+        },
+      },
+      {
+        facet: 'parallelitaet',
+        why: 'Der Fall nennt einen parallelen Knoten (2.17); das Skelett kennt keine Parallelität.',
+        make: (source) => {
+          const copy = clone(source);
+          const node = copy.expected.skeleton.nodes[0];
+          if (node) node.parallel = true;
+          return copy;
+        },
+      },
+    ];
+
+    const bad: string[] = [];
+    for (const probe of probes) {
+      const source = withGateway as KorpusCase;
+      const reading = readWithEngine(source);
+      const result = compareCase(probe.make(source), reading).find((entry) => entry.class === 'skelett');
+      const aspect = result?.aspects.find((entry) => entry.name === probe.facet);
+      if (!aspect) {
+        bad.push(`  ${probe.facet}: Teilprüfung fehlt`);
+        continue;
+      }
+      if (aspect.status !== 'not_checked' || aspect.compared !== 0) {
+        bad.push(
+          `  ${probe.facet}: Status „${aspect.status}" mit Zähler ${aspect.compared}, obwohl nichts verglichen wurde. ${probe.why}`,
+        );
+      }
+      if (result?.state === 'agree') {
+        bad.push(`  ${probe.facet}: der Fall ${source.id} bleibt grün, obwohl ein Sollwert ungeprüft danebenliegt.`);
+      }
+    }
+    expect(bad.join('\n')).toEqual('');
+  });
+
+  test('die offenen Teilprüfungen stehen an einer benannten Stelle', () => {
+    // Der zweite Weg aus dem Befund — wirklich vergleichen — wäre heute kein
+    // Vergleich: `lib/abap/process-skeleton.ts` führt weder Gateway-Klasse noch
+    // Lane noch Parallel-Marker. Deshalb die Einhängestelle: wer 2.15/2.16/2.17
+    // baut, findet hier, was er zu ersetzen hat.
+    expect(PENDING_SKELETON_ASPECTS.map((aspect) => aspect.name)).toEqual([
+      'gateway-klasse',
+      'lanes',
+      'parallelitaet',
+    ]);
+    for (const aspect of PENDING_SKELETON_ASPECTS) {
+      expect(aspect.step, `${aspect.name} ohne Roadmap-Schritt`).toMatch(/^2\.1[567]$/);
+      expect(aspect.what.length, `${aspect.name} ohne Beschreibung der Sollaussage`).toBeGreaterThan(5);
+    }
   });
 
   test('kein Prüfstatus ändert sich unbemerkt', () => {

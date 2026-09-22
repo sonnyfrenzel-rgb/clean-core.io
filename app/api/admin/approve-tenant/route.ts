@@ -49,12 +49,22 @@ export async function POST(req: NextRequest) {
     // same token. So the prefix goes back to the caller and the detail after
     // the colon does not: "expired", "signature", "does not match the action"
     // tell an outsider which check failed, and the caller needs none of them.
+    //
+    // And the status has to say the same thing as the body, which it did not:
+    // the refusal read "Invalid verification token." over a 500, so a client
+    // that treats 5xx as transient retries the very token this comment argues
+    // it must not retry (QA review of 9e408888bfec, 63d1d473cc3d). A refused
+    // token is now 400, joining the two payload refusals above: the caller got
+    // through `verifyAdminRequest` and `assertAdminStepUp`, so their identity
+    // is not in doubt and 401 would send them to re-authenticate for nothing —
+    // what is wrong is the `token` field they sent. 500 stays for the failures
+    // nobody chose.
     const message = errMessage(error);
     const deliberate = message.startsWith('Invalid verification token');
     logger.error('approve-tenant failed', { route: 'api/admin/approve-tenant', error: message });
     return NextResponse.json(
       { error: deliberate ? 'Invalid verification token.' : 'Internal Server Error' },
-      { status: 500 },
+      { status: deliberate ? 400 : 500 },
     );
   }
 }

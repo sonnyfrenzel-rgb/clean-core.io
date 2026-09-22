@@ -94,7 +94,13 @@ const LEAKS: Array<{ file: string; gone: RegExp[]; present: string[] }> = [
   {
     file: 'app/api/admin/approve-tenant/route.ts',
     gone: [/error\.message \|\|/],
-    present: ["logger.error('approve-tenant failed'", "error: 'Internal Server Error'"],
+    // The one route here that answers two different things from its catch.
+    // Everything unexpected is still redacted to the fixed sentence; a refusal
+    // that `lib/approval-token.ts` marked as its own goes back to the caller,
+    // because "Invalid verification token" is the answer the administrator came
+    // for and not an internal (QA review of 7fea4f4, then 9e408888bfec for the
+    // status that had to say the same thing as the body).
+    present: ["logger.error('approve-tenant failed'", "'Internal Server Error'", "'Invalid verification token.'"],
   },
   {
     file: 'app/api/admin/console-action/route.ts',
@@ -206,8 +212,11 @@ test('the deep health probe reaches Firestore at most once per cooldown', () => 
   // call sites are counted, or the guard reports its own subject.
   const callSites = src.replace(/async function probeFirestore\(\)[^{]*\{/, '');
   const deepInCallSites = callSites.indexOf('if (deep)');
-  const calls = [...callSites.matchAll(/probeFirestore\(\)/g)];
-  expect(calls, 'the probe is started somewhere other than the deep branch').toHaveLength(1);
+  // The probe is handed to `singleFlight` by name rather than called, so what is
+  // counted is every mention of it outside its own declaration. One mention, in
+  // the deep branch: nothing starts a Firestore read around the shared run.
+  const calls = [...callSites.matchAll(/probeFirestore\b/g)];
+  expect(calls, 'the probe is reachable from somewhere other than the deep branch').toHaveLength(1);
   expect(calls[0].index, 'the shallow probe now costs a Firestore read as well').toBeGreaterThan(deepInCallSites);
 
   // The cooldown is consulted first, and the probe starts only on the far side
@@ -224,17 +233,23 @@ test('the deep health probe reaches Firestore at most once per cooldown', () => 
   // after the read returns, so a hundred requests in the same moment all read a
   // stale timestamp and all issue their own read — a serial flood was bounded
   // and the concurrent one, the one that matters, was not (QA review of
-  // 7fea4f4). The slot has to be claimed *before* the await, and the callers in
-  // between have to await that same promise rather than start their own.
-  expect(src, 'nothing shares the probe between concurrent callers').toMatch(
-    /deepProbeInFlight \?\?= probeFirestore\(\)/,
+  // 7fea4f4). The callers in between have to await one shared run.
+  //
+  // What this asserts is the *wiring*, and only the wiring: that the deep branch
+  // goes through `singleFlight` and that the probe is not also reachable around
+  // it. Whether sharing actually happens under concurrency is a question about
+  // behaviour, and asserting it from source text was the previous mistake here —
+  // a regression keeping these characters could still issue two reads and stay
+  // green (QA review of 9e408888bfec, 78b84b92aa49). That half is run, not read,
+  // in `tests/single-flight.spec.ts`.
+  expect(src, 'the deep probe no longer goes through the shared-run helper').toMatch(
+    /singleFlight<boolean>\(\)/,
   );
-  expect(src, 'the shared slot is never awaited, so nobody waits for the one read').toContain(
-    'await deepProbeInFlight',
+  expect(src, 'the probe is started outside the shared run').toMatch(
+    /await deepProbe\(probeFirestore\)/,
   );
-  expect(src, 'the slot is never released, so one failure freezes the probe forever').toMatch(
-    /\.finally\(\(\) => \{\s*deepProbeInFlight = null;/,
-  );
+  expect(calls[0].index, 'probeFirestore is reached somewhere other than through deepProbe')
+    .toBe(callSites.indexOf('deepProbe(probeFirestore)') + 'deepProbe('.length);
 
   // The verdict of the last real probe is what the calls in between are
   // answered from — not a constant, and not `undefined`.

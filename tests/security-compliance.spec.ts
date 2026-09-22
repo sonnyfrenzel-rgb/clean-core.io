@@ -191,7 +191,13 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
         action: 'approve',
       },
     });
-    expect(invalidTokenRes.status()).toBe(500); // Invalid verification token error
+    // 400, not 500, since 22.09.2026. The refusal is deliberate — the caller is
+    // already through `verifyAdminRequest` and `assertAdminStepUp`, only the
+    // `token` field is wrong — and a 5xx invites a client that retries
+    // transient errors to send the same rejected token again (QA review of
+    // 9e408888bfec, 63d1d473cc3d). What this test protects is unchanged: the
+    // token is refused, the message names it, and nothing is granted below.
+    expect(invalidTokenRes.status()).toBe(400);
     const errBody = await invalidTokenRes.json();
     expect(errBody.error).toContain('Invalid verification token');
 
@@ -671,9 +677,21 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     // administrator does not delete it, the project and its immutable run
     // survive, and the owner still can. Only the word of the refusal moved.
     expect(refused.status()).toBe(404);
-    // And the refusal says nothing about whether the project exists — that is
-    // the whole point of the change above.
-    expect(JSON.stringify(await refused.json())).not.toMatch(/unauthori[sz]ed|belongs|owner/i);
+
+    // And the refusal says nothing about whether the project exists. Asserting
+    // that certain words are absent does not show that — a body reading
+    // "Project not found" for the existing project and something else for an
+    // unknown id would pass it and still be the oracle (QA review of
+    // 9e408888bfec, 3346d47e6fa9). So the two refusals are compared instead,
+    // same token, same route, only the existence of the project differs: if
+    // status and body match, there is nothing left to read off the answer.
+    const absentId = `adproj-absent-${ownerUid}`;
+    expect(await adminDocExists('projects', absentId)).toBe(false);
+    const refusedAbsent = await request.delete(`/api/projects/${absentId}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(refusedAbsent.status()).toBe(refused.status());
+    expect(await refusedAbsent.json()).toEqual(await refused.json());
     // Nothing was destroyed on the way to the refusal — the project and the
     // immutable run under it both survive.
     expect(await adminDocExists('projects', projectId)).toBe(true);

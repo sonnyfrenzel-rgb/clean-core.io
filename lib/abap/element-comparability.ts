@@ -55,12 +55,22 @@
  * knowing that module. `tests/element-comparability.spec.ts` holds the two
  * together: it fails if `SkeletonNodeKind` grows a kind this table does not name.
  *
- * **Also written for step 2.15.** `classifyCondition` and `isTechnicalGateway`
- * are the technical/business discrimination that 2.15 needs in the engine, to
- * stop exporting a pure `sy-subrc` check as an `exclusiveGateway`. They live
- * here so that 2.15 can *use* them instead of writing the same rule a second
- * time — two copies of this rule would drift, and then the Business view and the
- * BPMN export would disagree about what a decision is.
+ * **Also written for step 2.15.** `classifyCondition`,
+ * `hasOnlyTechnicalConditions` and `isTechnicalGateway` are the
+ * technical/business discrimination that 2.15 needs in the engine, to stop
+ * exporting a pure `sy-subrc` check as an `exclusiveGateway`. They live here so
+ * that 2.15 can *use* them instead of writing the same rule a second time — two
+ * copies of this rule would drift, and then the Business view and the BPMN
+ * export would disagree about what a decision is.
+ *
+ * The rule of 2.15 has **two halves** and they are two functions, since the QA
+ * review of `9e408888bfec` (fingerprint `f51d99129444`):
+ * `hasOnlyTechnicalConditions` is the condition half — that is the one the
+ * Business view and 2.15's "is this a business decision?" ask —
+ * and `isTechnicalGateway` is the whole rule, condition **and** exactly one
+ * call/read/write predecessor, which is what 2.15 must ask before it re-shapes a
+ * gateway into a boundary event. Without known predecessors the whole rule
+ * answers `false`: a missing proof never produces the positive class here.
  */
 
 /* ------------------------------------------------------------------ *
@@ -255,16 +265,34 @@ export function technicalMarkersIn(condition: string | undefined | null): string
   return TECHNICAL_MARKERS.filter((m) => m.test.test(text)).map((m) => m.name);
 }
 
-/** The kinds whose effect a `sy-subrc` belongs to (2.15: "its only predecessor"). */
+/**
+ * The kinds whose effect a `sy-subrc` belongs to — 2.15 names them as "a call,
+ * read or write node", and this set is exactly that list and nothing else:
+ * `read`/`write` are Open SQL, the rest are the call shapes 2.3 emits
+ * (`CALL FUNCTION`, a mail/IDoc send, `SUBMIT`/`PERFORM` into another program,
+ * `CALL TRANSACTION`, a call this reader has no source for, a `FORM` of its own).
+ *
+ * `task` and `output` stood here until the QA review of `9e408888bfec`
+ * (fingerprint `f51d99129444`) counted what they let through. Neither is a call,
+ * a read or a write: `task` is "a step with an effect and no type of its own" —
+ * an assignment, a computation — and `output` is a data object, a `WRITE` to the
+ * list or to a file. Neither sets `sy-subrc` in a way a following branch could
+ * be about, so a gateway behind one is not proven technical. Over the eight
+ * shipped examples the two cost one gateway (see the count on the function).
+ */
 const EFFECT_KINDS = new Set<ComparableElementKind>([
   'read', 'write', 'service-task', 'send-task', 'call-activity',
-  'transaction', 'call-opaque', 'sub-process', 'task', 'output',
+  'transaction', 'call-opaque', 'sub-process',
 ]);
 
 export interface GatewayContext {
   /** The conditions of the gateway's outgoing flows, verbatim. */
   conditions: string[];
-  /** The kinds of the elements that flow into the gateway. */
+  /**
+   * The kinds of the elements that flow into the gateway. Optional in the type
+   * because a caller may not have the graph at hand — but **absent is not a
+   * licence**: `isTechnicalGateway` answers `false` without them. See there.
+   */
   predecessorKinds?: ComparableElementKind[];
   /**
    * The selector of a `CASE`, when the gateway is one. It is needed because a
@@ -277,23 +305,61 @@ export interface GatewayContext {
 }
 
 /**
+ * The condition half of the 2.15 rule on its own: do **all** readable conditions
+ * of this gateway test `sy-subrc`, `sy-tabix`, `IS ASSIGNED`/`IS BOUND` or
+ * `lines( )`? A gateway with no readable condition at all is not technical —
+ * nothing was proven about it.
+ *
+ * It is exported because the two halves of 2.15 answer two different questions,
+ * and the QA review of `9e408888bfec` (fingerprint `f51d99129444`) showed what
+ * happens when one function tries to answer both: a caller without predecessor
+ * data got a `true` that read like the whole rule. **2.15 needs both halves** —
+ * this one to decide that a branch on a return code is no business decision,
+ * `isTechnicalGateway` to decide whether the export may re-shape the gateway
+ * into a boundary event on the step in front of it. The Business view
+ * (`classifyElement`) asks only this one, on purpose.
+ */
+export function hasOnlyTechnicalConditions(conditions: readonly string[]): boolean {
+  const classes = conditions.map(classifyCondition).filter((c) => c !== 'none');
+  return classes.length > 0 && classes.every((c) => c === 'technical');
+}
+
+/**
  * Is this gateway technical? The rule of 2.15, verbatim: **all** of its
  * conditions test `sy-subrc`, `sy-tabix`, `IS ASSIGNED`/`IS BOUND` or `lines( )`
  * **and** its only predecessor is a call, read or write node.
  *
  * Exported so 2.15 can ask exactly this question before it decides not to export
  * an `exclusiveGateway` — one rule, one place.
+ *
+ * **Missing predecessor data answers `false`.** Until the QA review of
+ * `9e408888bfec` (fingerprint `f51d99129444`) it answered `true`: a caller that
+ * passed no predecessors got the decision on the conditions alone, under the
+ * comment that "not knowing the predecessors is not the same as them being
+ * wrong". That sentence is true, and it is the argument for *unknown* — never
+ * for the positive class. The sentence this file carries is the other one:
+ * absence of evidence decides nothing. A gateway whose predecessors we do not
+ * know is unknown, not technical, and 2.15 re-shaping a gateway on evidence it
+ * does not have is exactly the false export the rule exists to prevent.
+ *
+ * The result stays a `boolean` rather than growing a third state because this is
+ * a **guard**: 2.15 asks it before it drops an `exclusiveGateway` from the
+ * export, and in a guard "unknown" has to act like "no". The third state exists
+ * where it belongs — one layer up, where `classifyElement` returns `unknown` for
+ * a gateway it cannot read, and beside it in `hasOnlyTechnicalConditions` for
+ * the caller that has conditions and no graph.
+ *
+ * Counted over the eight shipped examples: of 68 gateways, 27 are technical by
+ * condition and **17** also pass this predecessor half (before the fix: 19 — one
+ * had no known predecessor at all, one sat behind an `output` node).
  */
 export function isTechnicalGateway(context: GatewayContext): boolean {
-  const classes = context.conditions.map(classifyCondition).filter((c) => c !== 'none');
-  if (classes.length === 0) return false;
-  if (!classes.every((c) => c === 'technical')) return false;
+  if (!hasOnlyTechnicalConditions(context.conditions)) return false;
   const predecessors = context.predecessorKinds;
-  // The predecessor half of the 2.15 rule. Not knowing the predecessors is not
-  // the same as them being wrong: a caller that passes none gets the decision on
-  // the conditions alone, which is what the Business view has at hand.
-  if (!predecessors || predecessors.length === 0) return true;
-  return predecessors.length === 1 && EFFECT_KINDS.has(predecessors[0]);
+  // The predecessor half of the 2.15 rule, and it needs the data: no known
+  // predecessor, no positive classification.
+  if (!predecessors || predecessors.length !== 1) return false;
+  return EFFECT_KINDS.has(predecessors[0]);
 }
 
 /* ------------------------------------------------------------------ *
@@ -387,8 +453,8 @@ export function classifyElement(
     // question — whether the export may re-shape the gateway into a boundary
     // event — and `isTechnicalGateway` keeps answering that one for 2.15.
     // Measured over the eight examples: 27 of 68 gateways (39,7 %) are
-    // technical by condition, 19 also pass the predecessor half.
-    if (classes.length > 0 && classes.every((c) => c === 'technical')) {
+    // technical by condition, 17 also pass the predecessor half.
+    if (hasOnlyTechnicalConditions(context.conditions)) {
       const markers = context.conditions.flatMap(technicalMarkersIn);
       const named = Array.from(new Set(markers)).join(', ');
       return {
