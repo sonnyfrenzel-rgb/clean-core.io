@@ -40,7 +40,21 @@ export async function POST(req: NextRequest) {
     // the target account, the collection and sometimes the token itself — the
     // four refusals above are the ones an administrator is meant to read
     // (security audit of b88c77b).
-    logger.error('approve-tenant failed', { route: 'api/admin/approve-tenant', error: errMessage(error) });
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    //
+    // With one exception, and it was found by taking the redaction too far:
+    // `lib/approval-token.ts` marks its own refusals with the prefix `Invalid
+    // verification token:`. That is not an internal — it is the answer an
+    // administrator came for, and swallowing it turned a rejected token into
+    // "Internal Server Error", which says nothing and invites a retry with the
+    // same token. So the prefix goes back to the caller and the detail after
+    // the colon does not: "expired", "signature", "does not match the action"
+    // tell an outsider which check failed, and the caller needs none of them.
+    const message = errMessage(error);
+    const deliberate = message.startsWith('Invalid verification token');
+    logger.error('approve-tenant failed', { route: 'api/admin/approve-tenant', error: message });
+    return NextResponse.json(
+      { error: deliberate ? 'Invalid verification token.' : 'Internal Server Error' },
+      { status: 500 },
+    );
   }
 }

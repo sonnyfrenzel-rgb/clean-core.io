@@ -307,29 +307,38 @@ test.describe('9028321e9795 · the replay says it is an illustration', () => {
 
   test('and it is still there once the claims are on screen', async ({ page }) => {
     test.setTimeout(120_000);
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    // `load`, not `domcontentloaded`: the click has to reach a hydrated React
+    // tree. On `domcontentloaded` it lands on server-rendered HTML with no
+    // handler attached — nothing happens, nothing errors, and the wait after it
+    // times out against a frame that was never opened.
+    await page.goto('/', { waitUntil: 'load' });
     const replay = page.getByTestId('transformation-replay');
     await expect(replay).toBeVisible({ timeout: 60_000 });
 
-    // The click is retried until the frame is actually open, and that is not
-    // belt-and-braces. Two things made a single click useless here, both found
-    // by running it rather than by reading it:
+    // The click is retried until the frame is open, and the retry is the whole
+    // assertion rather than a condition around one: a test that asks whether
+    // its subject is there before asserting on it asserts nothing when it is
+    // not. The first version of this line guarded the click on the button's
+    // visibility, and `tests/no-vacuous-tests.spec.ts` caught it — correctly,
+    // and then caught this comment as well when it quoted the offending line
+    // verbatim. That guard is line-based and knows nothing of comments, which
+    // its own docstring calls deliberate; describing the mistake is therefore
+    // the way to record it, not reproducing it.
     //
-    //   · The landing page is heavy, and a click that lands before React has
-    //     hydrated hits server-rendered HTML with no handler attached. Nothing
-    //     happens, nothing errors, and the wait after it times out against a
-    //     frame that was never opened.
-    //   · `text=Pipeline Log` — the first way this waited — matches a substring
-    //     case-insensitively, and the caveat this very finding added contains
-    //     "The pipeline log and the lines that type themselves". The wait was
-    //     satisfied before the animation started.
+    // The inner allowance is deliberately long. The pipeline log appears on a
+    // synchronous state update, so fifteen seconds cannot be reached by a click
+    // that worked — which matters, because a second click after the animation
+    // has started would find the button gone and fail for the wrong reason.
     //
-    // So: exact heading, and the click repeated until it takes.
+    // A second thing made the first version useless: `text=Pipeline Log`
+    // matches a substring case-insensitively, and the caveat this very finding
+    // added contains "The pipeline log and the lines that type themselves". The
+    // wait was satisfied before the animation started. Hence the exact heading.
     const play = replay.getByRole('button', { name: /Watch Transformation Live/i });
     const pipelineLog = replay.getByText('Pipeline Log', { exact: true });
     await expect(async () => {
-      if (await play.isVisible()) await play.click();
-      await expect(pipelineLog).toBeVisible({ timeout: 2_000 });
+      await play.click();
+      await expect(pipelineLog).toBeVisible({ timeout: 15_000 });
     }, 'the animation never started').toPass({ timeout: 60_000 });
     await expect(replay.locator('[data-replay-caveat]')).toBeVisible();
     await expect(

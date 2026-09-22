@@ -661,7 +661,19 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     const refused = await request.delete(`/api/projects/${projectId}`, {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
-    expect(refused.status()).toBe(403);
+    // 404, not 403, since 22.09.2026. DELETE used to answer `{ok:true,
+    // alreadyDeleted:true}` for a project that is not there and 403 for one
+    // that belongs to somebody else — which told an outsider which of the two
+    // it was (security audit of b88c77b, SEC-b88c77b-115). Both now answer the
+    // same 404 the GET on this route has always answered.
+    //
+    // What this test protects is unchanged and still asserted below: the
+    // administrator does not delete it, the project and its immutable run
+    // survive, and the owner still can. Only the word of the refusal moved.
+    expect(refused.status()).toBe(404);
+    // And the refusal says nothing about whether the project exists — that is
+    // the whole point of the change above.
+    expect(JSON.stringify(await refused.json())).not.toMatch(/unauthori[sz]ed|belongs|owner/i);
     // Nothing was destroyed on the way to the refusal — the project and the
     // immutable run under it both survive.
     expect(await adminDocExists('projects', projectId)).toBe(true);

@@ -282,21 +282,64 @@ function topLevelKeys(region: string): string[] {
  * `doc(db, 'tenant_access_requests', uid)` is not counted as a project write
  * while `updateDoc(docRef, …)` — where the ref was built earlier — is.
  */
+/**
+ * The first `{` at or after `from` that is not inside a string.
+ *
+ * `indexOf('{')` was enough until a stage cleared stale keys with
+ * ``updateDoc(ref, Object.fromEntries(stale.map((key) => [`exports.${key}`, deleteField()])))``:
+ * the first brace in that call belongs to the template interpolation, and the
+ * register then reported that the Analyze stage writes a field called `key`
+ * (CI of 7fea4f4). `balanced` two functions up already tracks quotes; this is
+ * the same knowledge, applied to finding the opening brace rather than the
+ * closing one.
+ */
+function unquotedBrace(text: string, from: number): number {
+  let quote: string | null = null;
+  for (let i = from; i < text.length; i++) {
+    const c = text[i];
+    if (quote) {
+      if (c === '\\') { i++; continue; }
+      if (c === quote) quote = null;
+      continue;
+    }
+    if (c === "'" || c === '"' || c === '`') { quote = c; continue; }
+    if (c === '{') return i;
+  }
+  return -1;
+}
+
 function firestoreWriteKeys(text: string, collection = 'projects'): Set<string> {
   const keys = new Set<string>();
   const CALL = /(?:updateDoc|setDoc|addDoc)\s*\(|\b(?:tx|transaction|batch)\s*\.\s*(?:set|update)\s*\(/g;
   let m: RegExpExecArray | null;
   while ((m = CALL.exec(text)) !== null) {
-    const open = text.indexOf('{', m.index + m[0].length);
-    if (open === -1) continue;
-    const ref = text.slice(m.index + m[0].length, open);
-    const named = /['"]([A-Za-z_][\w-]*)['"]/.exec(ref);
+    // The whole argument list, so a call with no object literal in it is
+    // recognised as such instead of borrowing the next `{` in the file.
+    const args = balanced(text, m.index + m[0].length - 1);
+    if (!args) continue;
+    const end = m.index + m[0].length - 1 + args.length;
+    const named = /['"]([A-Za-z_][\w-]*)['"]/.exec(args.slice(0, unquotedBrace(args, 0) + 1 || undefined));
     const target = named ? named[1] : 'projects';
-    const region = balanced(text, open);
-    if (!region) continue;
-    CALL.lastIndex = open + region.length;
+    CALL.lastIndex = end;
     if (target !== collection) continue;
-    for (const k of topLevelKeys(region)) keys.add(k);
+
+    const brace = unquotedBrace(text, m.index + m[0].length);
+    const region = brace !== -1 && brace < end ? balanced(text, brace) : null;
+    if (region) {
+      for (const k of topLevelKeys(region)) keys.add(k);
+      continue;
+    }
+
+    // No object literal — a dotted-path update built at runtime, as
+    // `Object.fromEntries` does. The field is the root of the path, and it is
+    // still a write to it: clearing `exports.<key>` touches `exports`. Read out
+    // of the literal that names it, so a computed path cannot hide the field.
+    const dotted = [...args.matchAll(/[`'"]([A-Za-z_$][\w$]*)\.[^`'"]*[`'"]/g)].map((d) => d[1]);
+    expect(
+      dotted.length,
+      `a write to ${collection} in a form this register cannot read — neither an object literal nor a dotted path:\n${args.slice(0, 200)}`,
+    ).toBeGreaterThan(0);
+    for (const k of dotted) keys.add(k);
   }
   return keys;
 }
