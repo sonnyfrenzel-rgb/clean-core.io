@@ -29,7 +29,14 @@ const PATTERNS = [
   },
 ];
 
-export function redactSecrets(text) {
+/**
+ * `publicValues` holds the handful of values this repository publishes on purpose — the Firebase web API key,
+ * which ships in every page. They are still replaced before anything leaves the runner; they are simply not
+ * counted, so they are not reported as a committed credential. Without this the delta review raised the same
+ * critical finding on every push: the path-based suppression in config.mjs cannot see a hit that this last net
+ * reports under the path `outgoing message`.
+ */
+export function redactSecrets(text, publicValues = new Set()) {
   let out = String(text ?? '');
   const hits = [];
   for (const { kind, re } of PATTERNS) {
@@ -39,6 +46,7 @@ export function redactSecrets(text) {
       // was redacted and reported as a committed credential (Sonny, 15.09.2026). A real key assigned to such a
       // name is still caught by the provider patterns above, which do not look at names.
       if (kind === 'secret-named literal' && /_(?:PATH|FILE)$/i.test(name)) return match;
+      if (publicValues.has(match)) return `[REDACTED:${kind}]`;
       count++;
       return kind === 'secret-named literal' ? `${name}=[REDACTED:${kind}]` : `[REDACTED:${kind}]`;
     });

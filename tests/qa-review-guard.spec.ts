@@ -972,6 +972,51 @@ test.describe('the full review of a release on main', () => {
     expect(src).toMatch(/diff: clean\(f\.path, numbered\(f\.content\)\)/);
   });
 
+  /**
+   * The path-based suppression above is only half the job, and for two months it
+   * was the only half there was.
+   *
+   * `isPublicByDesign` keys on the path a hit names. The last net before a
+   * message leaves the runner reports its hits under the path `outgoing
+   * message`, so the Firebase web key never matched there — and the delta
+   * review, which had no suppression at all, opened the same critical
+   * "Possible Google API key committed" on every single push (carried finding
+   * 19146e4fbb01, raised again against 98f374de6604). `docs/QA-REVIEW-LOOP.md`
+   * meanwhile said it was suppressed, which is how a false alarm survives: the
+   * prose was checked and the code was not.
+   *
+   * So the value itself is matched. What this has to keep proving is that the
+   * suppression is narrow: the public key is still replaced in the outgoing
+   * text, and any other value of the same shape is still counted and reported.
+   */
+  test('the public value is suppressed in the outgoing-message net too, and only that value', async () => {
+    const { publicByDesignValues } = await lib('config.mjs');
+    const { redactSecrets } = await lib('redact.mjs');
+    const values = publicByDesignValues() as Set<string>;
+    const publicKey = [...values][0];
+    expect(publicKey, 'the public-by-design value is read out of its file').toMatch(/^AIza[0-9A-Za-z_-]{35}$/);
+
+    const foreignKey = `AIza${'B'.repeat(35)}`;
+    const outgoing = `config=${publicKey} leaked=${foreignKey}`;
+
+    const suppressed = redactSecrets(outgoing, values) as { text: string; hits: Array<{ kind: string; count: number }> };
+    expect(suppressed.text, 'the public key still never leaves the runner').not.toContain(publicKey);
+    expect(suppressed.text, 'and neither does the other one').not.toContain(foreignKey);
+    expect(suppressed.hits, 'exactly one of the two is reported').toEqual([{ kind: 'Google API key', count: 1 }]);
+
+    // Without the list both are reported — which is what used to happen on every push.
+    const unsuppressed = redactSecrets(outgoing) as { hits: Array<{ kind: string; count: number }> };
+    expect(unsuppressed.hits).toEqual([{ kind: 'Google API key', count: 2 }]);
+
+    // All three senders pass the list into the net, not just the full review.
+    for (const sender of ['scripts/qa/review.mjs', 'scripts/qa/full-review.mjs', 'scripts/security/audit.mjs']) {
+      expect(read(sender), `${sender} passes the public values into redactSecrets`).toMatch(
+        /const r = redactSecrets\(text, publicValues\);/,
+      );
+      expect(read(sender), `${sender} reads them`).toMatch(/const publicValues = publicByDesignValues\(\);/);
+    }
+  });
+
   test('the local wait reads the full review of main, never a dev run of the same commit', () => {
     const src = read('scripts/qa/await.mjs');
     expect(src).toMatch(/branch: FULL \? 'main' : 'dev'/);

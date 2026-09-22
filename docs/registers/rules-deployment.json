@@ -7,17 +7,17 @@
   "purpose": "Which text of firestore.rules is live. CI never deploys the rules; a human does, by hand, and the same command records the result here. The offline check (npm run rules:check, tests/rules-deploy-order.spec.ts) compares this record with the working copy and refuses the one order that breaks production: an app that depends on rules which have not been deployed. The online check (npm run rules:verify) asks production what it is actually serving, which is the only way to catch a record that was updated without a deploy.",
   "whyThisExists": "Am 16.09.2026 wurde zum ersten Mal nachgesehen, was cleancore-491216 wirklich ausliefert: das Ruleset vom 20.08.2026 — drei Verschaerfungen hinter dem Repository, ohne dass es jemand wusste. In Produktion waren `termsVersionAccepted`/`termsAcceptedAt` noch client-schreibbar (Befund V14, im Repo laengst geschlossen), `email_events` noch nicht gesperrt, und der Admin-Lesezugriff auf Projekte noch offen. Sonny hat danach ausgerollt und das Ergebnis wurde gegen die Rules-API geprueft: identisch. Genau diese Drift soll dieser Datensatz kuenftig sichtbar machen.",
   "deployed": {
-    "sha256OfLfNormalisedText": "7a068dad50bd599bb97ed40744709e9792eea6afc15fb1b76956c65bb377a742",
-    "deployedAt": "2026-09-18",
-    "deployedBy": "Sonny Frenzel, by hand (npm run deploy:rules)",
+    "sha256OfLfNormalisedText": "77160e1e6d0d8ed19c931243a8a5ae8783c746e440bc32594f48085f50a6d352",
+    "deployedAt": "2026-09-22",
+    "deployedBy": "Claude (Opus 5), auf Sonnys ausdrueckliches Okay am 22.09.2026 — npm run deploy:rules von Sonnys angemeldeter CLI",
     "project": "cleancore-491216",
-    "rulesetName": "projects/cleancore-491216/rulesets/176ce028-8e16-427a-8880-f7b92d3f2d8c",
+    "rulesetName": "projects/cleancore-491216/rulesets/6866185e-a6fa-4cd8-962d-10b68abf7874",
     "databases": [
       "(default)",
       "clean-core-eu"
     ],
-    "verifiedAgainstProduction": "2026-09-16 — GET https://firebaserules.googleapis.com/v1/projects/cleancore-491216/releases/cloud.firestore/<database>, then the ruleset it names; both `(default)` and `clean-core-eu` serve this hash. Reproduce with `npm run rules:verify`.",
-    "note": "Hashed after normalising CRLF to LF, the same way docs/registers/preservation-register.json does it, so the value is the same on Windows and on CI. This is the text of commit 6a24b632ff44ca33e9fa5be8b99a23de827c05d1 on origin/dev, whose hash the preservation register already carried as its verified baseline — record and production agreed at the moment this file was written, which is the only honest moment to seed it.",
+    "verifiedAgainstProduction": "2026-09-22 — npm run rules:verify direkt nach dem Deploy: alle sechs Datenbanken der Deploy-Konfiguration liefern 77160e1e6d0d…, identisch mit Datensatz und Arbeitskopie. Vorher 2026-09-16 gegen die Rules-API geprueft.",
+    "note": "Hashed after normalising CRLF to LF, the same way docs/registers/preservation-register.json does it, so the value is the same on Windows and on CI. Dieser Stand fuegt /abap_examples/{exampleId} eine delete-Regel hinzu (Eigentuemer oder Admin) — Sicherheitsaudit b88c77b, SEC-b88c77b-61. An /projects/{projectId} aendert sich nichts.",
     "clientWritableProjectFields": [
       "businessDocumentation",
       "coverageEstimate",

@@ -14,7 +14,7 @@
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isPublicByDesign } from '../qa/lib/config.mjs';
+import { isPublicByDesign, publicByDesignValues } from '../qa/lib/config.mjs';
 import { callReviewer } from '../qa/lib/openrouter.mjs';
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { AUDIT_PUBLIC_PEM, sealFor } from './lib/envelope.mjs';
@@ -64,8 +64,9 @@ async function main() {
 
   // Nothing leaves the runner unredacted. A hit is reported as a finding — without its value.
   const secretHits = [];
+  const publicValues = publicByDesignValues();
   const clean = (path, text) => {
-    const r = redactSecrets(text);
+    const r = redactSecrets(text, publicValues);
     for (const h of r.hits) secretHits.push({ path, ...h });
     return r.text;
   };

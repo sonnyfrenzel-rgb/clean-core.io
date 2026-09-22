@@ -215,7 +215,7 @@ den alles Weitere gebaut wird.
 | 1.8 | **„My workspace" als List Report** (`DESIGN.md` §2.2, Mockup s7): Live-Filter, Tabelle mit Objektstatus, laufende Analyse mit Abbrechen, gescheiterter Lauf mit „Retry" und „Run without model", *Stale*; die Demo als erste Zeile und die Karte „Your turn", solange kein eigenes Projekt existiert (0.10). **Gebaut 16.09.2026 (`dev`):** hinter demselben Admin-Tor wie 1.5, bis 1.4 den Schalter baut; `/dashboard` bleibt für jedes Konto unverändert. `lib/workspace-rows.ts` druckt für ein nie analysiertes Projekt ein Wort statt einer Null — null ist nicht null Befunde —, die Demo ist die erste Zeile und trägt „partial", nie „handed over", *Stale* steht als Herkunfts-Chip neben dem Objektstatus und nicht als Status (§4.1), leer und „kein Treffer" sind zwei Komponenten mit zwei Sätzen, der Preis steht vor dem Klick, der Lauf zeigt Etappen statt Prozenten, und Abbrechen sagt, was es nicht erreicht. Neu in `components/cc/`: `ObjectIdentifier` und `Table`. `lib/analysis-run.ts` ist die eine Folge Evidenz → Narrativ → signierter Lauf, von zwei Bildschirmen aus startbar, damit eine aus der Tabelle gestartete Analyse keine andere Worklist erzeugt als eine aus der Stufe. `tests/workspace-list-report.spec.ts` liest die gerenderte Seite: neun Tests, jeder einzeln rot bewiesen | M |
 | 1.6 | **Kein Dark Mode:** Theme-Schalter in den Einstellungen und die `.dark`-Überschreibungen in `app/globals.css` entfallen, mit Guard (Entscheidung 15.09.2026; erledigt UX-023, UX-044, UX-061, UX-062). **Gebaut 16.09.2026 (`dev`):** was entfernt wurde, war nie ein Theme — 58 Zeilen `.dark`-Überschreibungen färbten mit `!important` eine handverlesene Liste von Utility-Klassen um, und alles, was die Liste nicht nannte, blieb hell: die Dashboard-Tabelle behielt ihren weißen Grund unter einem fast schwarzen Body. Weg sind die Überschreibungen, die 15 verbliebenen `dark:`-Varianten, der Light/Dark/System-Wähler, der Theme-Bootstrapper in der Shell, die `localStorage`-Kopie und jeder Griff nach `prefers-color-scheme`. Das Profilfeld `theme` bleibt stehen, dokumentiert als tot und von nichts mehr gelesen — es zu löschen wäre eine Migration von Kontodaten —, und die Einstellungen schreiben es nicht mehr. `tests/dark-mode-guard.spec.ts` prüft Quelle und Wirkung: `class="dark"` an `<html>` darf an rund 600 Elementen keine einzige Farbe bewegen; beide Hälften vorher rot gezeigt. Erledigt UX-023, UX-044, UX-061, UX-062 — die UX-Prüfung dieser Release sagte von außen dasselbe: die zitierten Stellen waren nie dunkel, sondern helle Flächen unter einem fast schwarzen Body | S |
 | 1.7 | **Ehrliche Kodierung bis zur Schale:** Stepper und Verification Rail zeigen „done" gleich, Grün nur für belegt; der Tenant-Tab heißt „Tenant-Verbindung prüfen", der Sperrhinweis steht einmal, mit dem BYOT-Freischaltweg (`DESIGN.md` §5.3, Entscheidung 15.09.2026). **Gebaut 16.09.2026 (`dev`):** die Verification Rail malte die Phase, auf der der Leser stand, grün, bevor sie irgendetwas anderes fragte — auf der Economics-Seite, die in dieser Fassung niemand abschließen kann, war der grüne Punkt das Sicherste auf dem Schirm, während der Stepper dieselbe Phase gelb zeigte; und fünf der sieben Grün standen für Arbeit, die nichts geprüft hat. `phaseTone` in `lib/workflow-steps.ts` ist jetzt die eine Regel für Stepper, Rail und Dashboard-Zeile: grün genau dann, wenn `RailStep.proven`. `done` bleibt, was es war, damit `workflowSummary().next` niemanden auf einer Phase parkt, die er nicht abschließen kann; die Position des Lesers ist keine Farbe mehr. Der Tenant-Tab heißt „Check tenant connection" (ADR-004), und der Sperrhinweis steht einmal statt dreimal — drei Absagen lesen sich wie drei verschiedene, und keine sagte, wie man die Verbindung bekommt; jetzt steht der BYOT-Weg dabei, samt dem Satz, dass eine BYOT-Freigabe G0:R0 nicht aufhebt. `tests/phase-honesty-guard.spec.ts` misst beide Oberflächen mit `getComputedStyle`; `tests/locked-paths-guard.spec.ts` verlangt jetzt genau einen Sperrhinweis statt mindestens drei | S |
-| 1.9 | **Korpus-Vergleicher mit Facettenstatus** (CR-05): je Facette Prüfstatus, Nenner und Umfang — „nicht geprüft" heißt nie *agree*; der echte `buildProcessSkeleton`-Output wird gebunden (Kanten, Guards, opake Bereiche, Ereignisse), Nachfolger typisiert 0/1/n/unknown geprüft, ein rein syntaktischer Ankercheck heißt *anchor_validation_passed*; die sechs Mutanten M01–M06 des Gegenreviews werden Ratsche — jeder muss in seiner Facette rot werden | M |
+| 1.9 | **Korpus-Vergleicher mit Facettenstatus** (CR-05): je Facette Prüfstatus, Nenner und Umfang — „nicht geprüft" heißt nie *agree*; der echte `buildProcessSkeleton`-Output wird gebunden (Kanten, Guards, opake Bereiche, Ereignisse), Nachfolger typisiert 0/1/n/unknown geprüft, ein rein syntaktischer Ankercheck heißt *anchor_validation_passed*; die sechs Mutanten M01–M06 des Gegenreviews werden Ratsche — jeder muss in seiner Facette rot werden. **Geschärft und vorgezogen am 22.09.2026 (Entscheidung Sonny; §16 V1) — vor 2.15, weil ohne diesen Schritt keine Engine-Regel je durch den Korpus rot werden kann:** `tests/helpers/korpus-comparison.ts:321` ruft heute `buildProcessFacts`, **nie** `buildProcessSkeleton`; `compareSkeleton` (:637–690) vergleicht nur `gateway`/`loop` zeilenweise, weder Knotenart noch Kante; Zeile 685 sagt wörtlich „die Engine baut kein Prozessskelett", was seit `lib/abap/process-skeleton.ts` falsch ist. Gemessen: über die 47 `agree`-Fälle der Klasse `skelett` waren **71 von 390 Sollknoten (18,2 %) überhaupt vergleichbar**; CC-001 steht auf `agree` mit dem Grund „2 von 8 Knoten vergleichbar", und die Klasse `fachsaetze` steht 68-mal auf `agree` mit dem Grund „die Engine erzeugt keine Fachsätze" — ein Grün, das „nicht geprüft" heißt. Künftig vergleicht `skelett` **Knotenart je Anker über alle Arten aus `SkeletonNodeKind`**, Kanten mit Art (`sequence`/`conditional`/`default`/`loop-back`/`boundary`), die Gateway-Klasse (2.15), die Lane-Zahl mit Beweis (2.16) und Parallelität (2.17); ein Fall ist nur `agree`, wenn **mindestens die Hälfte** seiner Sollknoten vergleichbar war, und `baseline.json` nennt je Fall Zähler und Nenner. **Fertig, wenn** kein `agree` in `skelett` unter 50 % steht, kein `reason` mehr „baut kein Prozessskelett" enthält, M01–M06 in ihrer Facette rot werden und CC-001 „8 von 8 verglichen" sagt | M |
 
 **Fertig, wenn** jede Stufe ihren Referenzfall im Register besteht, ein Run ohne Key
 ein signiertes Pack liefert, die Schale für ein echtes Projekt mit ehrlichen Chips
@@ -231,18 +231,22 @@ Code-Karte darunter.
 | 2.1 | **Verzweigungen:** IF/ELSEIF/ELSE und CASE/WHEN mit Bedingungstext und Zeilenbereich — deterministisch in `lib/abap/` | M |
 | 2.2 | **Aufrufe:** FORM/PERFORM-Graph, Funktionsbausteinnamen (BAPIs eingeschlossen), CALL TRANSACTION, SUBMIT-Programm, AUTHORITY-CHECK mit Objekt und Feldern, Schreibzugriffe | M |
 | 2.3 | **Prozessskelett:** Schritte, Entscheidungen, Start und Ende aus 2.1/2.2 — jeder Knoten mit Zeilenbereich, ohne Modellaufruf. Mit der Palette aus `DESIGN.md` §5.8: Fehler-Ende, Teilprozesse aus FORMs mit Wirkung, Aufruf-Aktivität, Service-, Send-, User- und Business-Rule-Task, Mehrfach-Instanz aus `LOOP AT`, Fehler-Randereignis, Fremdsystem als Pool, Datenspeicher; **nicht erreichter Code, Klone und technische Helfer** werden erkannt und benannt statt gezeichnet. Referenzfall: `ZLEGACY_ORDER_FULFILLMENT_AUDIT` (1.000 Zeilen, 341 davon nicht erreicht) | L |
-| 2.4 | **Fachliche Benennung:** das Modell benennt nur Skelettknoten und schlägt Lanes vor. Ein Element ohne Anker heißt „unbelegt". Lanes tragen den Mockup-Satz: rekonstruiert aus AUTHORITY-CHECK und Benennung, keine organisatorische Aussage | M |
+| 2.4 | **Fachliche Benennung:** das Modell benennt nur Skelettknoten **und die Lanes, die 2.16 aus dem Code ableitet — es schlägt keine Lane vor, für die der Code keinen Beweis hat** (geändert 22.09.2026, §16 V3). Ein Element ohne Anker heißt „unbelegt". Lanes tragen den Mockup-Satz: rekonstruiert aus AUTHORITY-CHECK und Benennung, keine organisatorische Aussage. **Der Benennungsvertrag ist seit 22.09.2026 ausdrücklich zweiteilig** (Entscheidung §9 Nr. 20): `sourceToken` bleibt unverändert das Token aus der Quelle und trägt den Anker; daneben steht ein **freigegebenes** `businessLabel`. Ein Modellvorschlag ist ein Vorschlag und gilt nie automatisch als freigegeben; ohne Freigabe zeigt die Oberfläche den `sourceToken`. Ein deterministischer Prüfer weist einen Vorschlag zurück, der einen Repository-Bezeichner enthält — Tabelle, CDS-View, OData-Name, Funktionsbaustein, `SCREAMING_SNAKE`, Z-/Y-Präfix oder registrierter Namensraum; in 12.168 SAP-Aktivitätsbeschriftungen kommt so etwas dreimal vor (0,02 %) | M |
 | 2.5 | **BPMN-Ansicht im Arbeitsraum** (bpmn-js, lesend): Legende Rekonstruiert · Bestätigt · Nachgewiesen; Klick auf ein Element öffnet die Code-Karte mit markierten Zeilen; Traceability-Quote je Modell gespeichert. Ohne Maus nach DESIGN.md §5.7: gleichwertige Schrittliste „Map | Steps", ein Tab-Halt mit Pfeiltasten, benannte Knoten, gerenderter Tastatur-Test | M |
 | 2.6 | **BPMN-Export richtig:** gültiges XML (Escaping, CR-21), stabile IDs, Bedingungen an den Kanten, automatisches Layout, Anker und Status in einem eigenen Namensraum unter `extensionElements`; eingeklappte Teilprozesse als echte BPMN-Teilprozesse, Fremdsysteme als Pool mit Nachrichtenfluss, Datenspeicher; Schemaprüfung im Test; `.bpmn` auch im Delivery-ZIP. Dazu Export PNG und PDF der Prozesskarte mit Herkunfts-Chips und Ankern — kein öffentlicher Link (`DESIGN.md` §5.3, §5.7) | M |
 | 2.7 | **Erster Blick:** nach Import oder Beispiel baut sich der Arbeitsraum in vier Etappen auf — Code gelesen · Prozess erkannt · in Fachsprache · „Das ist Ihr Prozess" mit Prozessname, Traceability, Entscheidungen, Regeln und „nicht bestimmt". Jede Zahl aus dem Run, überspringbar, `prefers-reduced-motion` zeigt den Endzustand. Dazu die drei Coach Marks und die vorab beantwortete Frage in „Ask this case" aus den Verzweigungen des Codes, ohne Modellaufruf (`DESIGN.md` §5, §6.2). **Davor „New project"** nach `DESIGN.md` §6.1.1: ein Satz Kern, drei Zeilen, was anders ist, Clean Core in drei Blicken (Bedeutung, Level A–D, Herkunft der Evidenz mit Stand des Katalogabgleichs), dann Beispiel oder eigener Code mit der Kontingent-Zeile aus 0.9 | M |
 | 2.8 | **Versteckte Geschäftsregeln:** Literale in Bedingungen — Toleranzen, Werke, Buchungskreise, Kunden- und Lieferantennummern, Datumsgrenzen, Ausnahmelisten — deterministisch als Regelkandidaten mit Anker; jeder wird in 3.5 beibehalten, geändert, entfällt oder ins Customizing verschoben (Feedback 15.09.2026). Einstufende FORMs (`IF/ELSEIF`-Ketten auf Literalen) öffnen als Entscheidungstabelle am Business-Rule-Task | M |
 | 2.9 | **Große Prozesse navigieren** (`DESIGN.md` §5.9): Übersicht der Phasen als eingeklappte Teilprozesse, Ebenen mit Pfadzeile, Gliederungsbaum statt flacher Schrittliste, Problemzeile je Teilprozess, Minikarte, „Show paths to here" und „Main path", Laufvarianten aus den Selektionsschaltern, Overlays als Filter, Suche öffnet die Ebene des Treffers, stabile Anordnung, Ebene und Auswahl in der URL. Abnahme am 1.000-Zeilen-Beispiel: jeder Schritt in höchstens drei Aktionen erreichbar, per Tastatur wie per Maus | L |
-| 2.10 | **Referenzkorpus v2.1 im Repository:** `docs/korpus/referenzkorpus-v2.1.md` (das Fallbuch mit Rahmen, Regelregister, Negativliste, Gegenreview, Autorenberichten) und `tests/korpus/cases/CC-nnn/` mit `source.abap`, `profile.json`, `expected.json` je Fall, erzeugt aus dem Fallbuch durch `scripts/korpus/build-bundle.mjs` (deterministisch, Quellenhashes geprüft). `tests/korpus-engine.spec.ts` lässt die Engine gegen alle 68 Fälle laufen und vergleicht Befunde, Level, Objekte, Skelettknoten; **Ratsche** wie bei abaplint: `tests/korpus/baseline.json` führt jede Abweichung mit Urteil (`engine-defekt` · `korpus-offen` · `nicht-vergleichbar`) und Grund, ein Fall, der übereinstimmte und es nicht mehr tut, macht den Lauf rot, eine still verschwundene Abweichung ebenfalls. Fundstellen aus öffentlichen Repositories stehen im Repository **nur als SHA-256 des Ausschnitts** — kein fremder Code, und auch kein Zeiger darauf: weder URL noch Commit-ID noch Pfad, denn elf von zwölf Quellen sind ohne Lizenz und die tragenden sind nach allen Indizien unautorisiert hochgeladene Arbeitgeberbestände. Dieses Repository ist öffentlich und Git vergisst nichts; ein Link mit Commit und Zeile wäre ein dauerhafter, indizierter Zeiger auf eine fremde Offenlegung, auch nachdem ihn jemand wieder herausnimmt. Der vollständige Nachweis liegt außerhalb. Gehalten von `tests/korpus-engine.spec.ts` („docs/korpus/ trägt keinen Zeiger auf ein fremdes Repository"), das auf jeden Hostnamen und jede 40-stellige Hex-Kette anschlägt. Die Fallquellen selbst sind durchweg **konstruiert** — kein Fall stammt aus einem Kundensystem. Der Korpus wird nie als Prompt- oder Trainingsmaterial des Modells verwendet, das er prüft | M |
+| 2.10 | **Referenzkorpus v2.1 im Repository:** `docs/korpus/referenzkorpus-v2.1.md` (das Fallbuch mit Rahmen, Regelregister, Negativliste, Gegenreview, Autorenberichten) und `tests/korpus/cases/CC-nnn/` mit `source.abap`, `profile.json`, `expected.json` je Fall, erzeugt aus dem Fallbuch durch `scripts/korpus/build-bundle.mjs` (deterministisch, Quellenhashes geprüft). `tests/korpus-engine.spec.ts` lässt die Engine gegen alle 68 Fälle laufen und vergleicht Befunde, Level, Objekte, Skelettknoten; **Ratsche** wie bei abaplint: `tests/korpus/baseline.json` führt jede Abweichung mit Urteil (`engine-defekt` · `korpus-offen` · `nicht-vergleichbar`) und Grund, ein Fall, der übereinstimmte und es nicht mehr tut, macht den Lauf rot, eine still verschwundene Abweichung ebenfalls. Fundstellen aus öffentlichen Repositories stehen im Repository **nur als SHA-256 des Ausschnitts** — kein fremder Code, und auch kein Zeiger darauf: weder URL noch Commit-ID noch Pfad, denn elf von zwölf Quellen sind ohne Lizenz und die tragenden sind nach allen Indizien unautorisiert hochgeladene Arbeitgeberbestände. Dieses Repository ist öffentlich und Git vergisst nichts; ein Link mit Commit und Zeile wäre ein dauerhafter, indizierter Zeiger auf eine fremde Offenlegung, auch nachdem ihn jemand wieder herausnimmt. Der vollständige Nachweis liegt außerhalb. Gehalten von `tests/korpus-engine.spec.ts` („docs/korpus/ trägt keinen Zeiger auf ein fremdes Repository"), das auf jeden Hostnamen und jede 40-stellige Hex-Kette anschlägt. Die Fallquellen selbst sind durchweg **konstruiert** — kein Fall stammt aus einem Kundensystem. Der Korpus wird nie als Prompt- oder Trainingsmaterial des Modells verwendet, das er prüft. **Erweitert am 22.09.2026 um acht Fallformen (Entscheidung Sonny; §16 V5):** der Korpus prüft heute **Konstrukte**, aber keine **Prozessform** — 68 Fälle, 5–36 Zeilen, Median 15, Skelette im Median 5 Knoten; in allen 68 `expected.json` steht keine Lane, kein Pool, keine Nachricht, kein Parallel-Knoten, und 31 von 66 Quellen haben gar kein Gateway. Gemessen an einem Bestand von 1.246 Referenzdiagrammen prüft **kein einziger Fall eine Prozessform, die dort häufiger als 9 % vorkommt**; die beiden häufigsten (28,9 % und 18,9 %) haben null Fälle. Dazu kommt je eine konstruierte Fallfamilie: **F1** Einstieg über Funktionsbaustein, BAdI oder RAP-Handler mit Rückmeldung · **F2** Übergabe zwischen ≥ 2 verschiedenen `AUTHORITY-CHECK`-Objekten oder Dialog + Update-Task · **F3** aRFC mit `RECEIVE RESULTS` in `PERFORM … ON END OF TASK` · **F4** ≥ 2 `STARTING NEW TASK` vor einem `WAIT UNTIL` · **F5** Rework-Schleife (`DO`/`WHILE` um einen Aufruf, Abbruch auf einem Statusfeld) · **F6** mittelgroßer Prozess, 150–400 Zeilen, ≥ 3 Geschäftsentscheidungen auf Strukturkomponenten · **F7** Kette ohne Entscheidung mit mehreren Beteiligten (BAPI → `COMMIT` → IDoc/Mail → Protokoll) · **F8** Dialogprozess (Modulpool, mehrere PAI-Module, `CASE sy-ucomm`). Jede `expected.json` trägt Lanes mit Beweis, Gateway-Klasse (2.15) und Parallelität (2.17). Konstruiert wie alle übrigen Fälle: kein Kundencode, kein fremdes Diagramm, keine Rollenliste; die Einschränkung vom 16.09.2026 (kein externer Prüfer) gilt weiter. **Fertig, wenn** `manifest.json` je Familie ≥ 1 Fall nennt, jeder neue Fall durch 1.9 mit ≥ 50 % vergleichbaren Knoten läuft und durch abaplint sowie die metamorphen Eigenschaften gezogen ist | M |
 
 | 2.11 | **Was der Korpus an der Engine findet** (Grundlinie vom 17.09.2026, `tests/korpus/baseline.json`): 24 Engine-Defekte in drei Familien, dazu 134 Aussageklassen, die die Engine noch gar nicht produziert. Die Familien, nicht die Einzelfälle, sind die Arbeit. **Stand 18.09.2026: 1 Defekt übrig** (CC-050 · level — eine Produktentscheidung, kein Bugfix), 130 Aussageklassen noch nicht produziert — siehe unten | L |
 | 2.12 | **Wirkungsstatus im Grundmodell** (CR-06, nach Entscheidung §9 Nr. 15): `IN UPDATE TASK` = Registrierung, `COMMIT` = Anstoß, `ROLLBACK` = Verwerfen als Zustände des kanonischen Modells — Sichten verdichten, entfernen nicht; V1/V2, lokaler Update-Modus und `AND WAIT` nur im belegten Kontext; CC-026/CC-027 als Abnahme | S |
 | 2.13 | **Funktionale Methodenaufrufe als Wirkungsträger; „unreachable" nur mit Nachweis** (CR-07): `lo_stmt->execute_update( … )` in einer Zuweisung erscheint als Wirkungsknoten oder als ausdrücklich opake ausführbare Aufgabe mit SQL-/Quellenbezug; `CATCH` bleibt als möglicher Pfad verbunden, ohne Kontrollflussnachweis *unknown/not-modelled* — CC-034 als Abnahme; in Arbeit seit 19.09.2026 | S |
-| 2.14 | **Einstieg wählen** (CR-08): Methode, FORM oder Dynpro-Ereignis als Startpunkt; der Mehrdatei-Fall fordert fehlende Includes nach; ein Interface-only-Upload meldet „nicht anwendbar" mit Erklärung statt 0 Schritte — am 18.09. hatten 9 von 74 Korpusquellen keinen Einstieg | M |
+| 2.14 | **Einstieg wählen** (CR-08): Methode, FORM oder Dynpro-Ereignis als Startpunkt; der Mehrdatei-Fall fordert fehlende Includes nach; ein Interface-only-Upload meldet „nicht anwendbar" mit Erklärung statt 0 Schritte — am 18.09. hatten 9 von 74 Korpusquellen keinen Einstieg. **Ergänzt 22.09.2026 (§16 V5):** ein `FUNCTION name.` öffnet ein Startereignis mit dem Namen `name` und `implicit = false` — **nie** `START-OF-SELECTION`, wie heute. Eine öffentliche `METHOD` und ein `MODULE … INPUT` liefern je ein Startereignis statt `no-entry-point`; gemessen ergeben heute Klassenmethode, Modulpool und nackte `FORM` **null Knoten**. Ob es ein Nachrichten-Start ist (RFC, IDoc, BAdI), trägt die Quelle nicht: dann *Not determined* mit Grund, nicht geraten — im Referenzbestand beginnen 14 % der Prozesse mit einer Nachricht, aber das ist kein Beleg über eine einzelne Quelle | M |
+| 2.15 | **Ein Return-Code ist die Wirkung eines Schritts, keine Entscheidung des Prozesses** (22.09.2026, §16 V2; nach 1.9): ein Gateway, dessen sämtliche Bedingungen `sy-subrc`, `sy-tabix`, `IS ASSIGNED`/`IS BOUND` oder `lines( )` prüfen und dessen einziger Vorgänger ein Aufruf-, Lese- oder Schreibknoten ist, wird **nicht** als `exclusiveGateway` exportiert; sein Fehlerarm hängt als Randereignis am Schritt — das Randereignis, das `walkFunction` heute **zusätzlich** erzeugt, wird das einzige. Der Bedingungstext bleibt **wörtlich** am Fluss (Regel 6 unberührt), der Zweiginhalt bleibt erreichbar, ein Gateway auf einem Geschäftsfeld bleibt Gateway, und die Technical-Ebene zeigt den Return-Code weiter. Gemessen: **29 von 68 Gateways (42,6 %)** der acht ausgelieferten Beispiele sind technisch (ZLEGACY 10/28, Z_MM 16/31); Entscheidungen je Aktivität 0,82 gegen 0,10 im Median des Referenzbestands. Die Doppelzeichnung ist am Code belegt — `lib/abap/process-skeleton.ts:1500–1525` hängt das Randereignis an und lässt das `IF` stehen, das danach als Gateway läuft; `tests/abap-process-skeleton.spec.ts:288–299` pinnt nur das Paar, nicht das Gateway dahinter. **Sprengweite:** keine signierte Zahl betroffen (das Skelett erreicht den Run nicht), Revision 1 bestehender Projekte bleibt (3.2), die Demo wird ohnehin neu erzeugt (3.0.7). **Restrisiko, benannt:** eine fachlich gemeinte Entscheidung, die als `sy-subrc` geschrieben ist (`SELECT SINGLE … IF sy-subrc <> 0` = „gibt es nicht"), wandert vom Gateway ans Randereignis — Inhalt bleibt, Form wird „Ausnahme am Schritt"; das ist die Lesart des Zielformats, nicht bewiesen, deshalb bleibt die Bedingung sichtbar. **Fertig, wenn** Aktivitäten mit Randereignis, auf die ein `sy-subrc`-Gateway folgt, **0** sind (heute 5/5), der Anteil rein technischer XOR im Export ≤ 10 % liegt (Setzung, kein gemessenes Optimum) und jeder entfernte Zweig als Fluss mit Bedingungstext erreichbar bleibt | M |
+| 2.16 | **Lanes aus vier Beweisarten, deterministisch** (22.09.2026, §16 V3; nach 1.9): `AUTHORITY-CHECK OBJECT x` (eine Lane je **verschiedenem** Objekt) · `CALL SCREEN`/Dynpro/Popup/ALV (Mensch) · `IN UPDATE TASK`/`IN BACKGROUND TASK`/`VIA JOB` (System) · `DESTINATION` (Fremdsystem — bleibt Pool). Lane-Zahl = Zahl **verschiedener** Beweise, nie mehr, mit Obergrenze; ohne Beweis genau eine Lane; jede Lane trägt einen Zeilenanker; Status `reconstructed`, nicht *Model proposal*. **Der Lane-Name ist der Beweis-Token** (`V_VBAK_VKO`, `SCREEN 9000`, `UPDATE TASK`); ein fachlicher Name kommt nur als freigegebenes `businessLabel` daneben (2.4, §9 Nr. 20) und **nie** als Berufsbezeichnung aus einer Liste. Export: `laneSet`/`lane` mit `flowNodeRef`, Anker im Erweiterungs-Namensraum (2.6); Karte: Lanes als Bänder (2.5); Übergabe ist ein Sequenzfluss über die Lane-Grenze, kein Symbol und kein Nachrichtenfluss. `DESIGN.md` §5.8 wird von „Lanes (Vorschlag)" auf „Lanes (rekonstruiert, aus vier Beweisarten)" gezogen, mit ADR. Gemessen: `laneSet` kommt in `lib/bpmn/` **nullmal** vor, während `lib/abap/process-skeleton.ts:1375` `AUTHORITY-CHECK` ausdrücklich zum Lane-Beweis erklärt; `ZLEGACY_ORDER_FULFILLMENT_AUDIT` enthält alle vier Beweisarten (L197/L205, L510, L670, L402) und ergäbe **2 Lanes** — im Referenzbestand haben 71 % der Diagramme ≥ 2 Lanes, Median 2. **Sprengweite:** eine Lane ist die einzige Stelle, an der das Produkt etwas über Menschen sagen könnte; §8 verbietet Rollenlisten und Rollen-Mandate, deshalb Name = Code-Token und `tests/process-naming.spec.ts:326` („CFO wird verworfen") gilt auch für deterministische Lanes. Was Signavio mit `laneSet` tut, ist **ungemessen** — 4.3 führt Lanes bereits als Protokollpunkt. Treiben die Bänder in 2.5 den Schritt über M: teilen in 2.16a (Skelett + Export) und 2.16b (Karte). **Fertig, wenn** ZLEGACY genau 2 Lanes mit Ankern trägt, ein Fall ohne Beweis genau eine, jeder `flowNodeRef` auflöst, keine Lane ohne Anker existiert, kein Lane-Name ein Token enthält, das die Quelle nicht enthält, und ein Beweis in nicht erreichtem Code nicht zählt | M |
+| 2.17 | **`DESIGN.md` §5.8 und Code in Deckung bringen** (22.09.2026, §16 V4). **(a) Paralleles Gateway — der Code gibt nach:** `STARTING NEW TASK` ×≥ 2 vor einem `WAIT UNTIL` (oder `RECEIVE RESULTS` in `ON END OF TASK`) ergibt einen `parallelGateway`-Fork; ein Join nur, wenn `WAIT UNTIL` da ist — der Referenzbestand erlaubt Fork ohne Join (91 von 172 Paralleldiagrammen haben nur eins von beiden), also keine Join-Pflicht. Ein einzelnes `STARTING NEW TASK` bleibt Service-Task. Grund: 434 parallele Gateways im Bestand, das Versprechen steht öffentlich in §5.8, `startingNewTask` wird bereits erfasst — es fehlen die Knotenart und die Auswertung von `WAIT UNTIL`. **(b) `LOOP AT` — `DESIGN.md` gewinnt die Voreinstellung, der Code behält die Ausnahme:** ein `LOOP AT`, dessen Körper den Block nicht verlässt, wird **eine** Aktivität (oder ein eingeklappter Teilprozess) mit `multiInstanceLoopCharacteristics isSequential="true"`; ein `LOOP AT` mit `EXIT`/`RETURN`/Fehler-Ende und `DO`/`WHILE` mit Statusabbruch bleiben Zyklus — dort trifft das Argument aus `lib/bpmn/model.ts` Entscheidung 2 wörtlich zu, der Fluss verlässt den Körper. Der Befund, der es entscheidet: unser **eigener** Hinweis `gateway-without-condition` schlägt an ZLEGACY sechsmal an (gepinnt in `tests/process-editor.spec.ts:97`), und **alle sechs sind `LOOP AT`-Gateways** — das Produkt warnt vor seiner eigenen Zeichnung. **Nicht messbar und so im ADR festzuhalten:** wie der Referenzbestand „je Position" zeichnet — Mehrfach-Instanz-Marker sind aus der Quelle nicht extrahierbar; (b) ist eine Entscheidung über die Lesart, gestützt durch die eigene Regelkollision, kein Beleg von außen. **Fertig, wenn** die Parallel-Sonde 1 Fork, 1 Join und 2 parallele Service-Tasks liefert und ohne `WAIT UNTIL` einen Fork ohne Join; ZLEGACY 0 `gateway-without-condition`-Treffer hat (heute 6) und seine 11 Schleifen nach Kriterium als Marker oder Zyklus gezeichnet sind; `DESIGN.md` §5.8 die Ausnahme trägt, `model.ts` Entscheidung 2 umformuliert ist und ein ADR in `docs/design/decisions.md` steht | M |
+
 **Zwei Nachzieher an 2.6, gefunden beim Bau von 2.9 (18.09.2026):**
 
 - **Ein Wächter ist keine Verzweigung.** Ein führendes `CHECK p_rfc = abap_true.`
@@ -384,7 +388,7 @@ deliberately · Drop · Clarify".
 |---|---|---|
 | 3.1 | **Editor** (bpmn-js Modeler) mit den gängigen BPMN-2.0-Elementen: Pools und Lanes, Start-, Zwischen- und Endereignisse, exklusive und parallele Gateways, Task-Typen, Teilprozess, Datenobjekt, Nachrichtenfluss, Anmerkung | M |
 | 3.2 | **Revisionen:** jedes Speichern eine unveränderliche Revision mit Konto und Zeit; das rekonstruierte Ist bleibt Revision 1; Vergleich zweier Revisionen | M |
-| 3.3 | **Prüfhinweise beim Modellieren:** bpmnlint-Standardregeln plus eigene — Task ohne Anker, Gateway ohne Bedingung, Lane nur rekonstruiert, Element weicht ohne Zustand vom Code ab. Hinweise, keine Sperren | S |
+| 3.3 | **Prüfhinweise beim Modellieren:** bpmnlint-Standardregeln plus eigene — Task ohne Anker, Gateway ohne Bedingung, Lane nur rekonstruiert, Element weicht ohne Zustand vom Code ab. Hinweise, keine Sperren. **Nach Herkunft unterschieden seit 22.09.2026 (§16 V7, nach 2.17):** „Gateway ohne Bedingung" (`lib/process-hints.ts:82`) bleibt `warn` an **rekonstruierten** Gateways — dort hat der Code immer eine Bedingung, ein Fehlen ist ein Engine-Defekt —, feuert an Mehrfach-Instanz nie (2.17) und ist an **modellierten** Gateways `info`. Gemessen: die Regel in ihrer heutigen Form würde an **554 von 1.320 XOR-Splits (42,0 %)** und in **310 von 1.246 Diagrammen (24,9 %)** des Referenzbestands anschlagen; dort tragen nur 8,5 % aller Flüsse überhaupt eine Bedingung. An unserer eigenen Rekonstruktion sind alle sechs Treffer Schleifen. Eine Regel, die an fast jedem zweiten Referenzdiagramm anschlägt, erzieht dazu, Hinweise zu überlesen — danach wird auch „Task ohne Anker" nicht mehr gelesen | S |
 | 3.4 | **Geschäftsregeln `BR-nnn`:** Regeltext mit Satzankern und Quote, Typ (Regel oder Kontrolle), Quelle (Programm, Include, Form), mit Prozesselementen verknüpft | M |
 | 3.5 | **Beibehalten · bewusst ändern · entfallen · klären** je Element und Regel. Eine Bestätigung ist eine neue Revision des Kontos — eine neue Bedarfsrevision, keine Codekonservierung | M |
 | 3.6 | **Ist und Soll:** Soll-Modell aus dem Ist und den Zuständen; Gegenüberstellung, was bleibt, sich ändert, entfällt oder offen ist | M |
@@ -493,7 +497,7 @@ Mockup Screen 2.
 | 7.4 | **Optionen mit Kosten** nur aus einer Annahmenrevision; **„Nichts tun" als Vergleichsoption** (Regressionstest je Release, Upgrade-Verzug) und die Empfindlichkeit der Annahmen; kein Kostensieger, solange eine Option unvollständig ist. **Pflichtfelder** (Entscheidung 15.09.2026, ADR-035): Währung ohne Vorgabe, zwei Tagessätze (Entwicklung, Test/Key User), Betrachtungszeitraum ohne Vorgabe, Release-Takt nur bestätigt, je Option einmaliger Aufwand als Spanne und laufender Aufwand je Release, Wartungs-Baseline für Keep und Nichts tun; kein Feld aus einem Modell, die festen Aufwandsfaktoren je 1.000 Zeilen nur als bestätigungspflichtiger Vorschlag **Vor 8.4** (Gegenreview c5085bb, §8.3): die Optionsrechnung steht, bevor die Entscheidung sie bindet; Domainvalidierung sofort — keine negativen Beträge, Score nur in 0–100, Rundung erst bei der Darstellung (CR-16) | M |
 | 7.5 | **Prüfaufträge statt Scheinwissen:** zu kurzes Nutzungsfenster, fehlendes Include, dynamischer Aufruf werden Aufgaben, keine Urteile | S |
 | 7.6 | **Was sich für Nutzer ändert:** welche Transaktion oder App den Schritt heute trägt und künftig, was anders aussieht, wo Schulung nötig ist — als Evidenzstufe wie 7.2, nie als Behauptung (Feedback 15.09.2026) | M |
-| 7.8 | **Anpassungsoptionen zum Standard, direkt am Element** (Entscheidung Sonny 16.09.2026): in der Business-Sicht zeigt jedes Element mit Standardkandidat unmittelbar, welche Anpassung des Prozesses näher an Fit-to-Standard führt — in der Prozesskarte (Map wie Steps, 2.5), in der Prozesskette bzw. Phasenübersicht (2.9) und in den Standard-Fit-Tabellen (7.2; Screens s1 und s3). **Je Betriebsmodell:** in Public Edition nur, was mit dem Scope Item und Key-User-/Developer-Extensibility ohne Modifikation geht; in Private Edition/RISE zusätzlich die Wege, die dort erlaubt bleiben (klassische Erweiterung, Modifikation als benannte Abweichung mit Upgrade-Folge). Jede Option nennt den Prozessschritt, der sich ändert, das Scope Item als zu prüfende ID, die Evidenzstufe E0–E4 aus 7.2, was sich für Nutzer ändert (7.6) und, sobald 7.4 eine Annahmenrevision hat, ihre Kosten neben „Nichts tun"; ohne Standardkandidat steht *Not determined* mit Grund (7.5), nie ein erfundener Weg. Eine gewählte Option wird Soll-Vorschlag in 3.6 (Ist und Soll) und Entscheidung je Element in 3.5 — nie eine automatische Änderung. Abgestimmt mit den vier Töpfen aus 6.7: „Blocked by SAP" hat keine Anpassungsoption, nur den Verweis auf SAPs Roadmap. Deterministisch aus Katalog, Level und Scope-Item-Zuordnung; das Modell formuliert höchstens die Klarsprache, mit Anker und Herkunft *Model proposal* | M |
+| 7.8 | **Anpassungsoptionen zum Standard, direkt am Element** (Entscheidung Sonny 16.09.2026): in der Business-Sicht zeigt jedes Element mit Standardkandidat unmittelbar, welche Anpassung des Prozesses näher an Fit-to-Standard führt — in der Prozesskarte (Map wie Steps, 2.5), in der Prozesskette bzw. Phasenübersicht (2.9) und in den Standard-Fit-Tabellen (7.2; Screens s1 und s3). **Je Betriebsmodell:** in Public Edition nur, was mit dem Scope Item und Key-User-/Developer-Extensibility ohne Modifikation geht; in Private Edition/RISE zusätzlich die Wege, die dort erlaubt bleiben (klassische Erweiterung, Modifikation als benannte Abweichung mit Upgrade-Folge). Jede Option nennt den Prozessschritt, der sich ändert, das Scope Item als zu prüfende ID, die Evidenzstufe E0–E4 aus 7.2, was sich für Nutzer ändert (7.6) und, sobald 7.4 eine Annahmenrevision hat, ihre Kosten neben „Nichts tun"; ohne Standardkandidat steht *Not determined* mit Grund (7.5), nie ein erfundener Weg. Eine gewählte Option wird Soll-Vorschlag in 3.6 (Ist und Soll) und Entscheidung je Element in 3.5 — nie eine automatische Änderung. Abgestimmt mit den vier Töpfen aus 6.7: „Blocked by SAP" hat keine Anpassungsoption, nur den Verweis auf SAPs Roadmap. Deterministisch aus Katalog, Level und Scope-Item-Zuordnung; das Modell formuliert höchstens die Klarsprache, mit Anker und Herkunft *Model proposal*. **Vergleichsberechtigung je Element, ergänzt 22.09.2026 (§16 V6):** **vor** jeder Standardzuordnung bekommt jedes Element deterministisch eine Vergleichsklasse — *fachlich vergleichbar* (Task, Teilprozess, Aufruf-Aktivität, Business-Rule-Task, Gateway auf einem Geschäftsfeld) · *technisch* (Lese-/Schreibschritt, technisches Gateway aus 2.15, Randereignis, Fehler-Ende, Helfer) · *strukturell* (Start, Ende, Lane, Pool, Datenobjekt, Anmerkung) · *unbekannt* (`call-opaque`, dynamisches Ziel). Nur *fachlich vergleichbar* trägt einen Standardkandidaten oder *Not determined*; *technisch* und *strukturell* tragen **nie** „kein Standardkandidat", sondern „nicht vergleichbar"; *unbekannt* heißt unbekannt. **Drei Ergebnisse, nie zwei:** belegt abgedeckt · belegt nicht abgedeckt · unbekannt. Die Klasse steht am Element, **nie** im signierten Pack — wie das Level. Warum hier und nicht in 7.2: 7.2 arbeitet auf Fähigkeiten aus Regeln, 7.8 bringt den Standardkandidaten erstmals ans Element, und dort entsteht das Risiko. Gemessen: im 1.000-Zeilen-Beispiel sind **15 von 65 Flussknoten (23 %) Endereignisse**, sechs davon mit Fehlerdefinition; über die acht Beispiele 14 `errorEventDefinition`, 5 `boundaryEvent`, 115 Datenelemente. Im Referenzbestand: typisierte Endereignisse 3 von 2.172, Datenobjekte 24 von 19.876 — **aber Abwesenheit im Diagramm ist kein negativer Funktionsnachweis**, der Bestand abstrahiert Implementierungsdetails, und wie vollständig, ist nicht gemessen. Genau deshalb drei Ergebnisse. **Fertig, wenn** über die acht Beispiele kein Endereignis, Gateway, Randereignis und kein Datenspeicher einen Standardkandidaten oder „nicht abgedeckt" trägt, jedes `call-opaque` als unbekannt steht und die Klassenfunktion rein ist (ohne Import aus `lib/bpmn`, wie `abcd-classification.ts`) | M |
 | 7.7 | **Prüfhinweise Compliance:** deterministische Hinweise auf personenbezogene, steuer- oder revisionsrelevante Daten aus den gelesenen Tabellen — sie bestimmen Prüftiefe und Testpflicht, sind aber Hinweise, keine Einstufung (Feedback 15.09.2026) | S |
 | 7.9 | **Zwei Dimensionen je Katalogobjekt** (CR-01): klassischer Freigabestatus und ABAP-Cloud-Verwendbarkeit getrennt sichtbar, Nachfolger benannt (CL_HTTP_UTILITY: klassisch freigegeben · Cloud: nicht freizugeben · Nachfolger CL_WEB_HTTP_UTILITY); der Grad bleibt der Clean-Core-Zielbezug (Entscheidung §9 Nr. 18) und sagt das am Objekt; `deprecated` ohne Nachfolger ist eine Prüfung, kein automatisches D | S |
 | 7.10 | **Zielprofil als Eingabe** (CR-02): Edition, Sprachversion je Objekt, Release-/Komponentenstand, Katalogsnapshot und Regelversion als versioniertes `AssessmentProfile` durch Analyse, Kataloglookup, Ergebnis, Entscheidung und Receipt; nicht abgedeckte Profile werden sichtbar abgelehnt oder als unbestätigt geführt; ein Profilwechsel ändert den Subject-Hash und entwertet abhängige Freigaben; ein Latest-Eintrag ersetzt keinen älteren Release-Snapshot still | L |
@@ -756,6 +760,39 @@ diese Roadmap das Konto nicht anfasst.
 
 ## 9. Entscheidungen
 
+### Am 22.09.2026 geschlossen
+
+**Nr. 20 — Benennung und Provenienz werden getrennt. Der Vertrag wird ausdrücklich
+erweitert.** Regel 6 der Engine lautet „jedes Label ist ein Token aus der Quelle,
+nie eine Formulierung, die diese Engine erfunden hat". Das garantiert
+**Rückführbarkeit** — es garantiert **keine Fachsprache**. Ein Prüfer kann diesen
+Konflikt erkennen, aber nicht auflösen; es war eine Produktentscheidung, keine
+technische.
+
+Sonnys Entscheidung: **erweitern.** `sourceToken` bleibt unverändert das Token aus
+der Quelle und trägt den Anker; daneben steht ein **freigegebenes** `businessLabel`.
+Ein Modellvorschlag ist ein Vorschlag und gilt nie automatisch als freigegeben —
+ohne Freigabe zeigt die Oberfläche den `sourceToken`, nicht den Vorschlag. Damit
+bleibt Regel 6 in ihrem Kern unangetastet: die Rückführbarkeit hängt weiter am
+Token, nicht an einem Namen, den jemand für schöner hielt.
+
+Dazu ein deterministischer Prüfer auf dem Vorschlag, **ohne Modellaufruf**: er weist
+zurück, was einen Repository-Bezeichner enthält — Tabellenname, CDS-View, OData-Name,
+Funktionsbaustein, `SCREAMING_SNAKE`, Z-/Y-Präfix, registrierter Namensraum. Die
+Klausel ist an einem Bestand von 12.168 fachlichen Aktivitätsbeschriftungen
+kalibriert: dort kommt so etwas **dreimal** vor, 0,02 %. Ein Schritt, der „Select
+VBAK" heißt, ist nicht unschön — er ist ausserhalb dessen, was ein fachliches Modell
+je tut. Findet das Modell keinen fachlichen Namen, steht „unbelegt" statt eines
+technischen Namens, der so tut.
+
+Die übrigen Stilklauseln (Verb zuerst, 2–8 Wörter, Title Case, Länge) werden
+**nicht** zu Produktregeln: sie stammen aus einer einzigen Messreihe, und eine
+Zweitmeinung hält sie aus denselben Zahlen ausdrücklich für nicht ableitbar. Sie
+dürfen Hinweis sein, nie Bedingung.
+
+Umgesetzt in **2.4**; die Lanes aus **2.16** erben dieselbe Trennung — Beweis-Token
+als Name, fachlicher Name nur freigegeben daneben.
+
 ### Am 18.09.2026 geschlossen
 
 Die sieben Punkte, die am Abend des 17.09. als „ohne Sonny geht es nicht weiter"
@@ -1015,6 +1052,34 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-235 | mittel | P2 | sofort | behoben |
 | SEC-2026-236 | mittel | P1 | sofort | behoben |
 
+**Nachtrag zum Audit von v2.13.0 (`b88c77b`), 22.09.2026: die letzten 90 Befunde (87 niedrig,
+3 info) sind triagiert — 54 widerlegt, 35 eingeplant, 89 Registereinträge, weil zwei Befunde
+denselben Fingerabdruck tragen.** Damit ist der Posteingang dieses Audits leer. Geprüft wurde
+jeder Befund an der zitierten Zeile, nicht am Bericht: der Auditor hatte keine Werkzeuge und
+`firestore.rules`, `lib/sanitize-html.ts`, `lib/json-ld.ts` und `lib/export-safety.ts` lagen ihm
+gar nicht vor, weshalb die häufigste Fehlerart „hier fehlt eine Prüfung" lautet und die Prüfung in
+einer Datei steht, die er nicht hatte. Drei Blöcke tragen den Großteil der Widerlegungen:
+Abhängigkeits-Advisories, die dem falschen Paket zugeschrieben waren (`firebase-tools` steht in
+`devDependencies`, und die gemeldeten Transitiven hängen an `@google/genai`, nicht an der CLI),
+Senken in `dangerouslySetInnerHTML`, die längst über `jsonLdHtml()` oder `renderMarkdownSafe`
+laufen, und Befunde über `docs/roadmap/*.html`, die gar nicht ausgeliefert werden.
+
+**Zwei Befunde wurden gemessen statt geschätzt, und beide sind schwerer als ihre Meldung.**
+`tokenize()` braucht für 220 kB ABAP **154 Sekunden**, weil es den Puffer bei jeder Zeile neu
+scannt — `readStatements` schafft dieselbe Eingabe in 12 ms; und eine tiefe PERFORM-Kette lässt die
+Prozess-Rekonstruktion schon bei 221 kB an der Stapelgrenze scheitern, wonach die Business-Sicht
+des eigenen Projekts dauerhaft 500 antwortet. Beide Wege sind ohne Drosselung erreichbar. Sie sind
+als eigener Schritt eingeplant, zusammen mit den Grenzen in den beiden Routen, die die Engine
+aufrufen.
+
+**Drei Dinge brauchen Sonny, nicht Code:** ein eigenes `RATE_LIMIT_PEPPER` als Repository-Geheimnis
+(der Pepper teilt sich heute den Schlüssel mit `AUDIT_SIGNING_KEY`; das Literal als dritte
+Rückfallebene ist bereits entfernt), der Regel-Deploy für die schon eingeplante Verschärfung der
+`create`- und `update`-Regeln von `files`, `abap_examples` und `support_tickets`, und die
+Entscheidung, ob der Wochenbericht weiterhin Name und Adresse jedes neuen Kontos nennen soll — das
+ist keine Lücke, sondern eine Abwägung zwischen Aufbewahrung und dem Nutzen, den der Bericht für
+die Ansprache neuer Konten hat.
+
 **Audit von v2.13.0 (`a7c9e71`, 18.09.2026): 3 kritisch, 1 hoch, 7 mittel, 14 niedrig — 2 behoben,
 7 eingeplant, 16 widerlegt.** Behoben sind der Zip-Slip in der Auslieferung (modellerzeugte Pfade
 gingen ungeprüft ins Archiv; die Prüfung lehnt jetzt ab, statt zu reparieren) und eine SSRF in der
@@ -1214,6 +1279,51 @@ Fix auf `main` ist (§12 gilt sinngemäß). Der Volltext liegt nur lokal unter `
 Einplanung wie in §12: **kritisch** als eigener Schritt vor jeder anderen Arbeit · **hoch** in die
 laufende Phase · **mittel** in den nächsten passenden Schritt · **niedrig** neben verwandter Arbeit.
 Was der 3.0-Umbau ohnehin ersetzt, wird zurückgestellt, nicht doppelt gebaut.
+
+**Die 226 hohen Befunde von b88c77b4b5d1 sind am 22.09.2026 triagiert — der Posteingang dieser
+Vollprüfung ist damit leer.** Aufgeteilt auf acht parallele Prüfungen, jede gegen den heutigen Code,
+nicht gegen den Bericht. Das Ergebnis: **rund dreissig eigenständige Fehler.** Der Rest verteilt sich
+auf drei Gruppen, und jede sagt etwas über den Prüfer:
+
+- **Dubletten.** Derselbe Fundort kam bis zu sechsmal unter verschiedenen Fingerabdrücken. Ein
+  Batch von 26 Befunden bestand aus vier Sachverhalten, einer von 36 aus dreizehn.
+- **Seit dem geprüften Commit behoben — 65 Stück**, fast alle durch die beiden Engine-Commits
+  `2af1890` („der urteilende Teil sagt nicht mehr als er gefunden hat") und `875bb99` („ein Literal
+  ist Text, kein Code"). Vier Stellen tragen ihren eigenen Fingerabdruck als Kommentar im Code.
+- **Falsch.** Mehrfach zitiert der Bericht Zeilen, die weder heute noch am geprüften Commit das
+  enthielten, was er behauptet — und zwölf Befunde zu `lib/workflow-steps.ts` beschreiben eine
+  Clientheuristik als Sicherheitsgrenze, obwohl die Grenze serverseitig in
+  `app/api/audit-pack/create/route.ts` liegt und dort unabhängig nachgerechnet wird.
+
+190 Widerlegungen mit Beleg stehen in `docs/qa/refuted-findings.enc.json` (375 insgesamt).
+
+**Bestätigt und eingeplant, nach Gewicht.** Zwei betreffen die Vertrauenskette und sind jederzeit
+reproduzierbar, nicht nur als Rennen: `55cf6c0ed62a`
+(`app/(app)/project/[projectId]/transformation/page.tsx`) — eine Modellantwort, die kein JSON ist,
+muss als Generierungsfehler behandelt werden statt verpackt zu werden; und `dfa0816bc852`
+(`app/(app)/project/[projectId]/analyze/page.tsx`) — die Zielplattform gehört als Parameter
+durchgereicht, nicht aus dem Zustand zum Klickzeitpunkt gelesen. Dazu `7976bced4c28` (Vollständigkeit
+eines Transformationspakets), `48391b645e76` und `58201e6aaedb` (Schemaprüfung vor dem Schreiben),
+`39b694577e7e` (Prozessrevision nach einer Neuanalyse), `865c1d771d8c` (sechs Kindschreibvorgänge
+ohne Elternbedingung), `66f75a3d4632`, `f80230a27c70`, `6b0c0ae8ac9c`, `3e32d011b3c6`, `e4f486917474`,
+`ae206f1937c6`, `c5271f4aa951`, `310220ecef2e`, `b76cb79dacf6`, `3d1ade86103c`, `3e6453d5c9ce`,
+`a2b81a5bd2ab`, `827cf6758637`, `be7c1dfdf508`, `20fe6d7b4308`, `e955a181ba42`, `854c7e288bb7`,
+`13a62385b2e0`, `7a2f826bddf8`, `5198d59e7ea5`, `9028321e9795`.
+
+**Zwei davon stehen auf einer öffentlichen Seite und sind deshalb vorgezogen:** `5198d59e7ea5`
+(`components/SamplePackageDownload.tsx`) und `9028321e9795`
+(`components/TransformationReplay.tsx`). Beide behaupten auf der Startseite etwas, das der Code
+nicht einlöst — auf einer Seite, deren Versprechen „belegt, nicht geraten" lautet, ist das der
+teuerste Fehler der Liste, obwohl technisch nichts offen steht.
+
+**Eine Architekturfrage, dreimal gemeldet** (`ebb0e6e4a363`, `36f3d696ddda`, `b97e45a2976d`):
+`firestore.rules` kennt nur den Token-Claim und die Eigentümerschaft — keinen Kontostatus, keinen
+Admin-Step-up, keinen Widerruf. Eine Regel kann das auch nicht: der Step-up braucht einen
+serverseitigen Zustand, den das ID-Token nicht trägt, und `checkRevoked` gibt es nur im Admin-SDK.
+Das Muster dagegen ist am 16.09.2026 für `/projects` bereits etabliert — direktes Schreibrecht aus
+den Regeln nehmen, nur noch über gehärtete Routen. Die Übertragung auf die übrigen privilegierten
+Sammlungen ist ein eigener Schritt und braucht Sonnys Entscheidung, weil sie die Admin-Konsole
+berührt.
 
 **Vollprüfung von b88c77b4b5d1 (v2.13.0, 18.09.2026, `openai/gpt-5.6-sol`, 769 Dateien, 5,70 $):**
 1446 Befunde — 49 kritisch, 226 hoch, 1129 mittel, 42 niedrig — Verdikt `no_go`, **INCOMPLETE**. Erste
@@ -1632,3 +1742,79 @@ Was das Review über die Roadmap sagt und hier gilt: „Teilen vollständig" war
 umformuliert); 7.4 gehört vor 8.4 (vermerkt); die vier Töpfe sind Kandidaten, bis jemand
 bestätigt (6.7); Transaktionswissen bleibt im Grundmodell (Nr. 15); Sicherheitsgrundlagen werden
 nicht nach 3.0 verschoben, weil sie infrastrukturell unangenehm sind (Nr. 16, 8.9).
+
+---
+
+## 16. Auswertung eines SAP-Prozessbestands (22.09.2026) — Aufnahme
+
+Sonny hat ein maschinenlesbares Archiv von **1.246 BPMN-Prozessdiagrammen** eines
+SAP-Standardbestands bereitgestellt (573 Scope Items, 19.876 Knoten, 19.469 Flüsse).
+Vier unabhängige Auswertungen haben es vermessen — drei lokal, eine als Zweitmeinung
+über ein fremdes Modell, das **ausschliesslich** einen anonymisierten Zahlenauszug
+bekam und die Diagramme nie gesehen hat.
+
+**Die Auflage, und sie ist nicht verhandelbar.** Der Bestand ist lizenzrechtlich
+gebunden: er darf nicht ins Repository, nicht ausgeliefert und nicht serverseitig
+vorgehalten werden. §6 schliesst „SAP-Referenzprozesse als Inhalt" ohnehin aus.
+**Übernommen wurde deshalb nichts als Inhalt, sondern nur als Erkenntnis** — Zahlen,
+Verteilungen und Formregeln. Urheberrecht schützt den Ausdruck, nicht die Erkenntnis.
+Keiner der sieben Schritte unten bringt fremde Inhalte ins Produkt; keiner enthält
+eine Rollen-, Label- oder Prozessliste.
+
+**Der Befund in zwei Sätzen.** Die Engine erzeugt heute einen Kontrollflussgraphen
+mit BPMN-Namen — Return-Codes als Entscheidungen, keine Akteure, Schleifen als
+Zyklen. Und das Prüfwerkzeug, das das aufdecken müsste, vergleicht **18,2 %** der
+Skelettknoten und nennt den Rest grün.
+
+**Entscheidung Sonny, 22.09.2026: alle sieben mit hoher Priorität.**
+
+| | Was | Wo | Grösse | Ziel |
+|---|---|---|---|---|
+| V1 | Korpus-Skelettvergleich schärfen — **zuerst** | 1.9 | M | Glaubwürdigkeit · erhält |
+| V2 | Return-Code ist Wirkung, nicht Entscheidung | 2.15 (neu) | M | Usability · erhöht |
+| V3 | Lanes deterministisch aus vier Beweisarten | 2.16 (neu), 2.4 | M | Wettbewerb · erhöht |
+| V4 | `DESIGN.md` §5.8 und Code in Deckung (a Parallelität, b Schleifen) | 2.17 (neu) | M | Glaubwürdigkeit · erhält |
+| V5 | Acht Fallformen; `FUNCTION` ist kein Report | 2.10, 2.14 | M | Glaubwürdigkeit · erhöht |
+| V6 | Vergleichsberechtigung je Element, drei Ergebnisse | 7.8 | M | Glaubwürdigkeit · erhält |
+| V7 | „Gateway ohne Bedingung" nach Herkunft | 3.3 | S | Usability · erhält |
+
+**Reihenfolge und Abhängigkeiten.** V1 steht vor V2, V3, V4 und V5 — ohne den
+geschärften Vergleicher kann keine Engine-Regel je durch den Korpus rot werden, und
+eine Änderung ohne Ratsche ist eine Behauptung. V5 braucht V2, V3 und V4 als
+Sollwerte. V7 folgt auf V4 (b). V6 ist unabhängig und kann jederzeit, solange 7.8
+offen ist.
+
+**Was ausdrücklich nicht übernommen wurde**, geprüft und verworfen:
+
+- **Den Bestand serverseitig vorhalten und still dagegen vergleichen.** Das Risiko
+  sitzt im Besitz der Kopie, nicht im ausgelieferten Ergebnis, und ist damit binär —
+  gute Absicherung macht es nicht kleiner. Das Repository ist öffentlich und Git
+  vergisst nichts.
+- **„Jeder XOR-Zweig braucht eine Bedingung" als Konformitätsregel.** Sie schlägt am
+  Referenzbestand selbst in 53,9 % der Fälle an. V7 verengt unsere Regel, statt sie
+  zu verschärfen.
+- **Aus „im Bestand nicht gezeichnet" auf „gibt es nicht" schliessen.** Randereignisse
+  und Task-Untertypen können in diesem Bestand strukturell gar nicht auftauchen —
+  er ist aus Vektor-PDF rekonstruiert. V6 ist die Antwort darauf: drei Ergebnisse
+  statt zwei.
+- **Gateway-Dichte als Zielmetrik.** Ob 26 % gegen 13 % „falsch" sind, ist ohne
+  Zuordnung Programm ↔ Diagramm nicht beantwortbar; ABAP ist legitim feiner als ein
+  L3-Prozess. V2 misst deshalb die **Klasse** einer Bedingung, nicht die Dichte.
+- **Den Stilteil des Benennungsvertrags als Produktregel** (Verb zuerst, Wortzahl,
+  Schreibweise). Einquellen-Befund, von der Zweitmeinung ausdrücklich für nicht
+  ableitbar gehalten. Er darf Hinweis sein, nie Bedingung (§9 Nr. 20).
+- **Vergleich gegen einen vom Nutzer hochgeladenen fremden BPMN-Export.** Das wäre
+  der BPMN-Import durch die Hintertür; er liegt seit dem 18.09.2026 bewusst nach 3.0.
+- **Lanes aus Paketen, Klassen oder Includes.** Keine Akteursbeweise.
+
+**Was der Bestand nicht beantworten kann**, ausdrücklich festgehalten, damit es später
+nicht als beantwortet gelesen wird: Randereignisse und Task-Untertypen (strukturell
+nicht extrahierbar) · Ereignis-Untertypen ausser Nachricht (nur als Summe messbar) ·
+Datenspeicher · Schleifen- und Mehrfach-Instanz-Marker · **und vor allem das
+Rundlaufverhalten von `extensionElements`, also genau die Frage von 4.3** — ein
+PDF-Export trägt keine Extensions. Das bleibt ein Versuch mit einer echten Datei
+gegen einen echten lizenzierten Workspace.
+
+**Eine angenehme Bestätigung:** `DESIGN.md` §5.9 setzt „Übersicht ≈ 12 Elemente, eine
+Ebene ≤ 25". Der Bestand hat Median 12 und p85 25. Das war eine Designmeinung und ist
+jetzt gemessen — hier ist nichts zu ändern.

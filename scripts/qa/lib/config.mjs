@@ -14,6 +14,9 @@
  * tier; every release on `main` gets a review of the whole code base by the flagship of the same series.
  * GPT-6 Astra reviewed the deltas until then; GPT-6 Astra Pro was considered for `main` and dropped on cost.
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 export const QA_MODEL = 'openai/gpt-5.6-luna';
 export const QA_FULL_MODEL = 'openai/gpt-5.6-sol';
 
@@ -236,10 +239,38 @@ export const PUBLIC_BY_DESIGN = [
   {
     path: 'firebase-config.json',
     kind: 'Google API key',
+    // Which field of that file holds the value, so the value itself can be matched — see publicByDesignValues.
+    field: 'apiKey',
     why: 'the Firebase web API key identifies the project to the client SDK and ships in every page; access is enforced by Firebase Auth and the Firestore rules, not by keeping it secret',
   },
 ];
 
 export const isPublicByDesign = (hit) => PUBLIC_BY_DESIGN.some((p) => p.path === hit.path && p.kind === hit.kind);
+
+/**
+ * The values behind the entries above, read out of their files.
+ *
+ * `isPublicByDesign` keys on the *path* a hit names, which works for the
+ * per-file redaction and nowhere else. The last net before a message leaves the
+ * runner reports its hits under the path `outgoing message`, so the Firebase web
+ * key never matched there and came back as a critical "committed credential" on
+ * every single push — carried finding 19146e4fbb01, raised again by the delta
+ * review of 98f374de6604 although docs/QA-REVIEW-LOOP.md already promised it was
+ * suppressed. Matching the value suppresses it in that net too, and only there:
+ * any other value matching the same pattern is still reported.
+ */
+export function publicByDesignValues(root = process.cwd()) {
+  const values = new Set();
+  for (const entry of PUBLIC_BY_DESIGN) {
+    if (!entry.field) continue;
+    try {
+      const value = JSON.parse(readFileSync(join(root, entry.path), 'utf8'))[entry.field];
+      if (typeof value === 'string' && value) values.add(value);
+    } catch {
+      // The file may not exist at the reviewed commit — then there is nothing to suppress.
+    }
+  }
+  return values;
+}
 
 export const isAgentInfrastructure = (path) => AGENT_INFRASTRUCTURE.some((re) => re.test(String(path || '')));

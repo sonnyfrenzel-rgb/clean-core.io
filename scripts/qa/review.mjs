@@ -12,7 +12,7 @@
  */
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BUDGET, EFFORT, estimateCostUsd, QA_MODEL, withinBudget } from './lib/config.mjs';
+import { BUDGET, EFFORT, estimateCostUsd, publicByDesignValues, QA_MODEL, withinBudget } from './lib/config.mjs';
 import { seal } from './lib/crypto.mjs';
 import { addedLines, callersOf, changedFiles, chooseBase, commitIdOrNull, commitMessages, fileDiff, git, isAncestor, isClaimSource, isReviewable, mergeBaseWithMain, resolveRange, touchedSymbols } from './lib/git-delta.mjs';
 import { callReviewer } from './lib/openrouter.mjs';
@@ -52,8 +52,9 @@ async function main() {
   if (range.base === chosen.base) range.baseReason = chosen.reason;
 
   const secretHits = [];
+  const publicValues = publicByDesignValues();
   const clean = (path, text) => {
-    const r = redactSecrets(text);
+    const r = redactSecrets(text, publicValues);
     for (const h of r.hits) secretHits.push({ path, ...h });
     return r.text;
   };

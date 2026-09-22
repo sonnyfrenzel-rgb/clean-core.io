@@ -12,7 +12,7 @@
  */
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { estimateCostUsd, FULL_BUDGET, isPublicByDesign, PRICES, QA_FULL_MODEL, withinBudget } from './lib/config.mjs';
+import { estimateCostUsd, FULL_BUDGET, isPublicByDesign, PRICES, publicByDesignValues, QA_FULL_MODEL, withinBudget } from './lib/config.mjs';
 import { seal } from './lib/crypto.mjs';
 import { buildFullUserMessage, filesAt, fullBrief, numbered, projectMap, reviewBatches } from './lib/full.mjs';
 import { commitIdOrNull, git } from './lib/git-delta.mjs';
@@ -40,8 +40,9 @@ async function main() {
   const head = git(['rev-parse', commitIdOrNull(env.QA_HEAD) || 'HEAD']);
 
   const secretHits = [];
+  const publicValues = publicByDesignValues();
   const clean = (path, text) => {
-    const r = redactSecrets(text);
+    const r = redactSecrets(text, publicValues);
     for (const h of r.hits) secretHits.push({ path, ...h });
     return r.text;
   };
