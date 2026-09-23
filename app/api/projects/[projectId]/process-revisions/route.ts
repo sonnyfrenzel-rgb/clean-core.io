@@ -452,6 +452,24 @@ export async function GET(
     const { db } = await getAdminDb();
     const asked = req.nextUrl.searchParams.get('revision');
 
+    /**
+     * `?stand=1` — the number and nothing else (roadmap 6.9, CR-15).
+     *
+     * The workspace asks "has the Stand moved?" on focus, on reload and before
+     * a write. Answering that with the full history means reading every
+     * revision document of the project to throw all but the last number away;
+     * `latestRevision` is one document, ordered by the field. The bound on how
+     * *often* it is asked lives in the browser (`lib/workspace-revision.ts`);
+     * this is the bound on what one ask costs.
+     */
+    if (req.nextUrl.searchParams.get('stand') === '1') {
+      const newest = await latestRevision(db, gate.projectId);
+      return NextResponse.json(
+        { latest: newest ? newest.revision : null },
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
+
     if (asked !== null) {
       const n = Number(asked);
       if (!Number.isInteger(n) || n < 1) {

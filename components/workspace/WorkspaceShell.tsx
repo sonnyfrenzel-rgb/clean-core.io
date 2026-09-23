@@ -16,8 +16,10 @@ import FirstLook from './FirstLook';
 import AskThisCase from './AskThisCase';
 import CoachMarkNote from './CoachMarks';
 import WorkspaceAccessList from './AccessList';
+import WorkspaceRevisionStand from './RevisionStand';
 import CommandSearch from './CommandSearch';
 import { useCoachMarks } from '@/hooks/useCoachMarks';
+import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
 import { preAnsweredQuestion, type PreAnswered } from '@/lib/ask-this-case';
 import type { SourceReading } from '@/lib/first-look';
 import { nextOpenPoint } from '@/lib/next-step';
@@ -119,6 +121,17 @@ export default function WorkspaceShell({
   const [layer, setLayer] = useState<LayerKey>(LAYERS[0]);
   const aboutId = useId();
 
+  /**
+   * Which revision of the process this screen is showing, and the notice when
+   * somebody else has moved it (roadmap 6.9, CR-15).
+   *
+   * Checked on mount, on focus, and before the one writing action on this page
+   * — all three through one probe that reaches the server at most once every
+   * ten seconds, whatever the reader does (`lib/workspace-revision.ts`).
+   * Nothing about it is stored: it is a GET and two buttons.
+   */
+  const stand = useWorkspaceRevision(projectId);
+
   const meta = useMemo(() => metaLine(project, projectId), [project, projectId]);
   const statuses = useMemo(() => workspaceStatusLine(project), [project]);
   const layers = useMemo(() => workspaceLayers(project), [project]);
@@ -213,6 +226,16 @@ export default function WorkspaceShell({
               >
                 {project?.name || projectId}
               </h1>
+              {/* The Stand, beside the name it belongs to (roadmap 6.9, CR-15).
+                  In every view: which revision one is reading is not a
+                  perspective, it is the same fact for all three. */}
+              <WorkspaceRevisionStand
+                held={stand.held}
+                seen={stand.seen}
+                moved={stand.moved}
+                onKeep={stand.keep}
+                onRefresh={stand.refresh}
+              />
               {view !== 'it' && (
                 <CcButton
                   onClick={() => setDetailsOpen((v) => !v)}
@@ -394,7 +417,10 @@ export default function WorkspaceShell({
           it: the route behind it answers nobody else, so for a reader the
           section is not rendered at all. */}
       <div className="mt-5 max-w-3xl">
-        <WorkspaceAccessList projectId={projectId} />
+        {/* The one writing action on this page, so the Stand check of roadmap
+            6.9 hangs off it: a revocation made against a screen that has been
+            overtaken is stopped before it is sent, and the reader decides. */}
+        <WorkspaceAccessList projectId={projectId} beforeWrite={stand.checkBeforeWrite} />
       </div>
 
       {/* "Show tips again", where §6.2 puts it: offered once the tips are gone,

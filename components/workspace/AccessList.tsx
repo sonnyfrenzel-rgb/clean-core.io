@@ -27,7 +27,20 @@ import {
  * read rule consults. When the row disappears, the access is gone at the rules,
  * not merely off this screen.
  */
-export default function WorkspaceAccessList({ projectId }: { projectId: string }) {
+export default function WorkspaceAccessList({
+  projectId,
+  beforeWrite,
+}: {
+  projectId: string;
+  /**
+   * Asked immediately before the revocation is sent (roadmap 6.9, CR-15).
+   * `false` means the process moved on while this screen was open: nothing is
+   * sent and the workspace's own notice — not a second one here — offers the
+   * reader the two exits. Optional, because this section has to keep working
+   * for any caller that does not track a Stand.
+   */
+  beforeWrite?: () => Promise<boolean>;
+}) {
   const [access, setAccess] = useState<ProjectAccessList | null>(null);
   const [busyUid, setBusyUid] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +64,10 @@ export default function WorkspaceAccessList({ projectId }: { projectId: string }
       setBusyUid(uid);
       setError(null);
       try {
+        // Before the write, not after it. A revocation is not undoable, and
+        // sending one off a screen that has been overtaken is the case CR-15
+        // named; the caller's notice takes it from here.
+        if (beforeWrite && !(await beforeWrite())) return;
         await revokeProjectAccess(projectId, uid);
         await refresh();
       } catch (err) {
@@ -59,7 +76,7 @@ export default function WorkspaceAccessList({ projectId }: { projectId: string }
         setBusyUid(null);
       }
     },
-    [projectId, refresh],
+    [projectId, refresh, beforeWrite],
   );
 
   // Not the owner, or nothing to say yet: no empty frame, no placeholder.
