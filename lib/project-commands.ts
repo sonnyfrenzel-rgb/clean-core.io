@@ -35,6 +35,15 @@
  * server makes the record true — it does not make it an authority.
  */
 
+import {
+  EVIDENCE_DIGEST_MAX_CHARS,
+  describeEvidenceDiff,
+  evidenceDiff,
+  evidenceDigest,
+  parseEvidenceDigest,
+  type EvidenceChange,
+} from '@/lib/run-evidence-digest';
+
 /* ------------------------------------------------------------------ fields */
 
 /** The five release fields of `docs/roadmap/SCHNITT-0-UMFANG.md` §8, package 1. */
@@ -315,7 +324,15 @@ export type ProjectCommandName = (typeof PROJECT_COMMANDS)[number];
 
 /** What a caller sends. The route validates it again; this only shapes it. */
 export type ProjectCommandBody =
-  | { command: 'approve-architecture'; targetArchitecture: TargetArchitectureCode; justification?: string }
+  | {
+      command: 'approve-architecture';
+      targetArchitecture: TargetArchitectureCode;
+      justification?: string;
+      /** Roadmap 8.8 — the run this sign-off was read from. Not optional. */
+      expectedRunId: string;
+      /** Roadmap 8.8 — `evidenceDigest()` of that run, as the reader saw it. */
+      expectedEvidenceDigest: string;
+    }
   | { command: 'revoke-architecture' }
   | { command: 'record-usage-report'; usageReport: unknown }
   | { command: 'record-atc-report'; atcReport: unknown };
@@ -326,6 +343,19 @@ export interface ProjectCommandState {
   approvedByArchitect?: unknown;
   originalRecommendation?: unknown;
   extensibilityRoute?: unknown;
+  /**
+   * Roadmap 8.8 — `evidenceDigest()` of `projects/{id}/runs/{activeRunId}`,
+   * computed by the caller from the **run document** inside the same
+   * transaction that reads `activeRunId`. Never from the project document:
+   * every field of that one is the owner's to write, and a sign-off bound to
+   * something the approver can rewrite is not bound (`lib/audit-pack-build.ts`
+   * drew the same line for the signed half of the audit pack).
+   *
+   * `null` means the run could not be read; `undefined` means the caller did
+   * not supply it. Both refuse a sign-off, and deliberately in the same way —
+   * a caller that cannot say what the evidence is cannot approve it.
+   */
+  activeRunEvidence?: string | null;
 }
 
 /** Facts only the server knows. Never taken from the request body. */
@@ -341,6 +371,16 @@ export interface ProjectCommandRefusal {
   status: number;
   code: string;
   error: string;
+  /**
+   * Roadmap 8.8 — field name, what the caller read, what the run says now.
+   * Present on `run-moved` and `evidence-moved` and on nothing else. The
+   * sentence in `error` already carries the same content for a reader; this is
+   * the machine-readable half, so a screen can lay it out as a table without
+   * parsing prose.
+   */
+  details?: EvidenceChange[];
+  /** The run the project actually stands on, when that is the disagreement. */
+  activeRunId?: string;
 }
 
 export interface ProjectCommandWrite {
@@ -353,11 +393,18 @@ export interface ProjectCommandWrite {
 
 export type ProjectCommandResult = ProjectCommandWrite | ProjectCommandRefusal;
 
-const refuse = (status: number, code: string, error: string): ProjectCommandRefusal => ({
+const refuse = (
+  status: number,
+  code: string,
+  error: string,
+  extra?: { details?: EvidenceChange[]; activeRunId?: string },
+): ProjectCommandRefusal => ({
   ok: false,
   status,
   code,
   error,
+  ...(extra?.details && extra.details.length > 0 ? { details: extra.details } : {}),
+  ...(extra?.activeRunId ? { activeRunId: extra.activeRunId } : {}),
 });
 
 /**
@@ -389,6 +436,82 @@ export function validateProjectCommand(
     if (!isTargetArchitecture(target)) {
       return refuse(400, 'unknown-architecture', `targetArchitecture must be one of ${TARGET_ARCHITECTURES.join(', ')}.`);
     }
+
+    // ------------------------------------------------ roadmap 8.8 · CR-11
+    //
+    // The sign-off says which run it was read from and what that run said, and
+    // both are compared here — inside the caller's transaction, against the
+    // project's `activeRunId` and against the digest the caller computed from
+    // the run document. A check before the transaction would be a window; this
+    // is the same place 0.6 put its own comparison (`app/api/runs/create`, the
+    // re-read of `legacyCode` at commit time, acceptance W22-A06), and it ends
+    // the same way: 409, nothing written, and a refusal that says what to do.
+    //
+    // Required rather than optional. An optional binding is not one — a caller
+    // that omits it gets the behaviour CR-11 describes, which is the behaviour
+    // this step exists to remove.
+    const expectedRunId = body.expectedRunId;
+    if (typeof expectedRunId !== 'string' || expectedRunId.length === 0) {
+      return refuse(
+        400,
+        'missing-expected-run',
+        'A sign-off names the run it was read from. Send expectedRunId and expectedEvidenceDigest.',
+      );
+    }
+    const expectedEvidence = body.expectedEvidenceDigest;
+    if (typeof expectedEvidence !== 'string' || expectedEvidence.length === 0) {
+      return refuse(
+        400,
+        'missing-evidence-digest',
+        'A sign-off names the evidence it was read from. Send expectedEvidenceDigest alongside expectedRunId.',
+      );
+    }
+    if (expectedEvidence.length > EVIDENCE_DIGEST_MAX_CHARS || parseEvidenceDigest(expectedEvidence) === null) {
+      return refuse(
+        400,
+        'malformed-evidence-digest',
+        'expectedEvidenceDigest is not a digest this server can read. Reload the analysis and sign off again.',
+      );
+    }
+    // `null` (the run could not be read) and `undefined` (the caller did not
+    // look) end here together. Conservative on purpose, like 0.6: an evidence
+    // digest that cannot be established is not an unchanged one.
+    const actualEvidence = state.activeRunEvidence;
+    if (typeof actualEvidence !== 'string' || actualEvidence.length === 0) {
+      return refuse(
+        409,
+        'run-unreadable',
+        `The signed analysis run ${state.activeRunId} of this project could not be read, so there is nothing to bind this sign-off to. Nothing was written.`,
+        { activeRunId: state.activeRunId },
+      );
+    }
+    if (expectedRunId !== state.activeRunId) {
+      const changes = evidenceDiff(expectedEvidence, actualEvidence);
+      const what = describeEvidenceDiff(changes);
+      return refuse(
+        409,
+        'run-moved',
+        `This sign-off was prepared on analysis run ${expectedRunId}, and run ${state.activeRunId} has been this project's analysis since. Nothing was written and nothing was moved to the newer run. ` +
+          (what
+            ? `What changed: ${what}. `
+            : 'The two runs agree on every fact this comparison names, but they are not the same run. ') +
+          'Open the current analysis, read it, and sign off on that.',
+        { details: changes, activeRunId: state.activeRunId },
+      );
+    }
+    if (expectedEvidence !== actualEvidence) {
+      const changes = evidenceDiff(expectedEvidence, actualEvidence);
+      const what = describeEvidenceDiff(changes);
+      return refuse(
+        409,
+        'evidence-moved',
+        `This sign-off names analysis run ${state.activeRunId}, and the evidence that run carries is not the evidence this sign-off was read from. Nothing was written. ` +
+          (what ? `What changed: ${what}. ` : '') +
+          'Reload the analysis and sign off on what it says now.',
+        { details: changes, activeRunId: state.activeRunId },
+      );
+    }
+
     const justification = typeof body.justification === 'string' ? body.justification.trim() : '';
     if (justification.length > 4000) {
       return refuse(400, 'justification-too-long', 'The justification is longer than 4000 characters.');
@@ -460,9 +583,23 @@ export function validateProjectCommand(
  */
 export function fieldsWrittenByCommands(): string[] {
   const actor: ProjectCommandActor = { email: 'a@b.c', now: '1970-01-01T00:00:00.000Z' };
-  const state: ProjectCommandState = { activeRunId: 'run', approvedByArchitect: true };
+  // Roadmap 8.8: the sign-off is bound, so the derivation has to satisfy the
+  // binding like any other caller. The digest is computed rather than typed —
+  // a literal here would go stale the day a fact is added and this function
+  // would silently stop reporting the field set of a sign-off.
+  const runEvidence = evidenceDigest({});
+  const state: ProjectCommandState = {
+    activeRunId: 'run',
+    approvedByArchitect: true,
+    activeRunEvidence: runEvidence,
+  };
   const bodies: unknown[] = [
-    { command: 'approve-architecture', targetArchitecture: 'rap' },
+    {
+      command: 'approve-architecture',
+      targetArchitecture: 'rap',
+      expectedRunId: 'run',
+      expectedEvidenceDigest: runEvidence,
+    },
     { command: 'revoke-architecture' },
     { command: 'record-usage-report', usageReport: { records: [], source: 'manual', importedAt: 'x', warnings: [] } },
     { command: 'record-atc-report', atcReport: { findings: [], source: 'atc', importedAt: 'x', warnings: [] } },

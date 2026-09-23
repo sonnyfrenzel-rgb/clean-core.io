@@ -19,6 +19,7 @@ import {
   recommendedArchitecture,
   validateProjectCommand,
 } from '../lib/project-commands';
+import { evidenceDigest } from '../lib/run-evidence-digest';
 import { parseClientWritableProjectFields, normaliseRulesText } from '../lib/firestore-rules-contract';
 import { attestationsOf, signedGeneratorInput, buildAuditPackContents } from '../lib/audit-pack-build';
 import { USER_ATTESTED_FILE } from '../lib/audit-pack';
@@ -260,6 +261,34 @@ test.describe('client, server, index and export name the same six fields', () =>
 test.describe('the transition, decided once and in one place', () => {
   const actor = { email: 'owner@example.com', now: '2026-09-16T10:00:00.000Z' };
 
+  /**
+   * Roadmap 8.8: a sign-off names the run it was read from and what that run
+   * said, so every accepted sign-off below carries the pair. The digest is
+   * computed from a run-shaped literal rather than typed, so adding a fact to
+   * `evidenceFacts()` does not quietly turn these into malformed-digest tests.
+   */
+  const RUN_1 = {
+    inputFingerprint: { sha256: 'a'.repeat(64), lineCount: 907 },
+    evidenceReport: [{ id: 'f1' }],
+    originalRecommendation: 'In-App (ABAP Cloud)',
+    rulesetVersion: 'rules-v1.0',
+    sapApiCatalogVersion: 'catalog-1',
+    analyzerVersion: 'engine-1',
+    runHash: 'b'.repeat(64),
+  };
+  const DIGEST_1 = evidenceDigest(RUN_1);
+  const bound = (extra: Record<string, unknown> = {}) => ({
+    command: 'approve-architecture',
+    expectedRunId: 'run-1',
+    expectedEvidenceDigest: DIGEST_1,
+    ...extra,
+  });
+  const boundState = (extra: Record<string, unknown> = {}) => ({
+    activeRunId: 'run-1',
+    activeRunEvidence: DIGEST_1,
+    ...extra,
+  });
+
   test('a sign-off needs a signed run', () => {
     const r = validateProjectCommand({ command: 'approve-architecture', targetArchitecture: 'rap' }, {}, actor);
     expect(r.ok).toBe(false);
@@ -267,10 +296,10 @@ test.describe('the transition, decided once and in one place', () => {
   });
 
   test('the architecture is one of five, and the approver is the token', () => {
-    const state = { activeRunId: 'run-1', originalRecommendation: 'In-App (ABAP Cloud)' };
-    const bad = validateProjectCommand({ command: 'approve-architecture', targetArchitecture: 'whatever' }, state, actor);
+    const state = boundState({ originalRecommendation: 'In-App (ABAP Cloud)' });
+    const bad = validateProjectCommand(bound({ targetArchitecture: 'whatever' }), state, actor);
     expect(bad.ok).toBe(false);
-    const good = validateProjectCommand({ command: 'approve-architecture', targetArchitecture: 'rap' }, state, actor);
+    const good = validateProjectCommand(bound({ targetArchitecture: 'rap' }), state, actor);
     expect(good.ok).toBe(true);
     if (good.ok) {
       expect(good.fields.approvedBy).toBe('owner@example.com');
@@ -279,14 +308,13 @@ test.describe('the transition, decided once and in one place', () => {
   });
 
   test('a body cannot name its own approver or its own timestamp', () => {
-    const state = { activeRunId: 'run-1', originalRecommendation: 'rap' };
+    const state = boundState({ originalRecommendation: 'rap' });
     const r = validateProjectCommand(
-      {
-        command: 'approve-architecture',
+      bound({
         targetArchitecture: 'rap',
         approvedBy: 'cto@example.com',
         architectSignOffAt: '1999-01-01T00:00:00.000Z',
-      },
+      }),
       state,
       actor,
     );
@@ -298,22 +326,22 @@ test.describe('the transition, decided once and in one place', () => {
   });
 
   test('departing from the recommendation needs a reason — and an unknown one does not', () => {
-    const known = { activeRunId: 'run-1', originalRecommendation: 'In-App (ABAP Cloud)' };
-    const refused = validateProjectCommand({ command: 'approve-architecture', targetArchitecture: 'retire' }, known, actor);
+    const known = boundState({ originalRecommendation: 'In-App (ABAP Cloud)' });
+    const refused = validateProjectCommand(bound({ targetArchitecture: 'retire' }), known, actor);
     expect(refused.ok).toBe(false);
     if (!refused.ok) expect(refused.code).toBe('override-needs-reason');
 
     const withReason = validateProjectCommand(
-      { command: 'approve-architecture', targetArchitecture: 'retire', justification: 'Nothing runs it.' },
+      bound({ targetArchitecture: 'retire', justification: 'Nothing runs it.' }),
       known,
       actor,
     );
     expect(withReason.ok).toBe(true);
 
     // Conservative, like lib/route-override.ts: no recommendation, no override.
-    const unknown = { activeRunId: 'run-1', originalRecommendation: undefined };
-    expect(recommendedArchitecture(unknown)).toBeNull();
-    expect(validateProjectCommand({ command: 'approve-architecture', targetArchitecture: 'retire' }, unknown, actor).ok).toBe(true);
+    const unknown = boundState({ originalRecommendation: undefined });
+    expect(recommendedArchitecture({ originalRecommendation: undefined })).toBeNull();
+    expect(validateProjectCommand(bound({ targetArchitecture: 'retire' }), unknown, actor).ok).toBe(true);
   });
 
   test('a withdrawal needs something to withdraw, and clears all five', () => {
@@ -541,6 +569,21 @@ test.describe('the live emulator rules refuse every one of the six', () => {
   let ownerUid = '';
   let idToken = '';
 
+  /** The run the fixture project stands on, and the line the browser would send. */
+  const RUN_CMD_1 = {
+    runId: 'run-cmd-1',
+    projectId: PROJECT_ID,
+    status: 'completed',
+    inputFingerprint: { sha256: 'c'.repeat(64), lineCount: 12 },
+    evidenceReport: [{ id: 'f1' }, { id: 'f2' }],
+    originalRecommendation: 'In-App (ABAP Cloud)',
+    rulesetVersion: 'rules-v1.0',
+    sapApiCatalogVersion: 'catalog-fixture',
+    analyzerVersion: 'engine-fixture',
+    runHash: 'd'.repeat(64),
+  };
+  const BINDING = { expectedRunId: 'run-cmd-1', expectedEvidenceDigest: evidenceDigest(RUN_CMD_1) };
+
   test.beforeAll(async () => {
     // Pushing rules, creating two accounts and seeding two projects is six
     // round trips to an emulator several suites share. The default 30 s is
@@ -565,6 +608,11 @@ test.describe('the live emulator rules refuse every one of the six', () => {
       originalRecommendation: 'In-App (ABAP Cloud)',
       extensibilityRoute: 'In-App (ABAP Cloud)',
     });
+    // Roadmap 8.8 — the run `activeRunId` names. The fixture used to name one
+    // that did not exist, which `runs/create` never produces: the run document
+    // and the pointer to it are written in one transaction. A sign-off is now
+    // bound to what the run says, so the fixture has to have one.
+    await adminSetDoc(`projects/${PROJECT_ID}/runs`, 'run-cmd-1', RUN_CMD_1);
 
     const strangerCred = await createUserWithEmailAndPassword(auth, STRANGER, PASSWORD);
     await adminSetDoc('users', strangerCred.user.uid, {
@@ -609,7 +657,7 @@ test.describe('the live emulator rules refuse every one of the six', () => {
   test('the route records the sign-off, with its own idea of who and when', async ({ request }: { request: APIRequestContext }) => {
     const res = await request.post(`/api/projects/${PROJECT_ID}/commands`, {
       headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-      data: { command: 'approve-architecture', targetArchitecture: 'rap', approvedBy: 'cto@example.com' },
+      data: { command: 'approve-architecture', targetArchitecture: 'rap', approvedBy: 'cto@example.com', ...BINDING },
     });
     expect(res.status()).toBe(200);
     const stored = (await getDoc(doc(db, 'projects', PROJECT_ID))).data() || {};
@@ -623,7 +671,7 @@ test.describe('the live emulator rules refuse every one of the six', () => {
     const before = (await getDoc(doc(db, 'projects', PROJECT_ID))).data() || {};
     const res = await request.post(`/api/projects/${PROJECT_ID}/commands`, {
       headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-      data: { command: 'approve-architecture', targetArchitecture: 'retire' },
+      data: { command: 'approve-architecture', targetArchitecture: 'retire', ...BINDING },
     });
     expect(res.status()).toBe(400);
     expect((await res.json()).code).toBe('override-needs-reason');
@@ -634,7 +682,7 @@ test.describe('the live emulator rules refuse every one of the six', () => {
   test('the route refuses a project that is not the caller\'s', async ({ request }: { request: APIRequestContext }) => {
     const res = await request.post(`/api/projects/${FOREIGN_PROJECT_ID}/commands`, {
       headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-      data: { command: 'approve-architecture', targetArchitecture: 'rap' },
+      data: { command: 'approve-architecture', targetArchitecture: 'rap', ...BINDING },
     });
     // 404, not 403: the route answers a foreign project exactly as it answers
     // an id that names nothing (tests/project-access-matrix.spec.ts, '403-vs-404').

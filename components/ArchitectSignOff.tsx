@@ -110,6 +110,8 @@ export default function ArchitectSignOff({
   const [overrideJustification, setOverrideJustification] = useState(currentJustification || '');
   const [saving, setSaving] = useState(false);
   const [showUnlockConfirm, setShowUnlockConfirm] = useState(false);
+  /** What the server said when it refused — roadmap 8.8, shown verbatim. */
+  const [refusal, setRefusal] = useState<string | null>(null);
 
   // Sync with external props
   useEffect(() => {
@@ -124,11 +126,19 @@ export default function ArchitectSignOff({
   const handleLock = async () => {
     if (!canSave) return;
     setSaving(true);
+    setRefusal(null);
     try {
       await onLock(
         confirmed ? recommendation : selectedArchitecture,
         confirmed ? '' : overrideJustification.trim()
       );
+    } catch (err: unknown) {
+      // Roadmap 8.8: the server refuses a sign-off whose run has moved, and the
+      // whole point of that refusal is what it says — which run, and what
+      // changed since this screen was read. Until this branch existed the
+      // rejection left `handleLock` unhandled and the reader saw the button
+      // stop spinning and nothing else, which is the same screen as success.
+      setRefusal(err instanceof Error ? err.message : 'The sign-off was refused.');
     } finally {
       setSaving(false);
     }
@@ -137,10 +147,13 @@ export default function ArchitectSignOff({
   const handleUnlock = async () => {
     setShowUnlockConfirm(false);
     setSaving(true);
+    setRefusal(null);
     try {
       await onUnlock();
       setConfirmed(true);
       setOverrideJustification('');
+    } catch (err: unknown) {
+      setRefusal(err instanceof Error ? err.message : 'The withdrawal was refused.');
     } finally {
       setSaving(false);
     }
@@ -421,6 +434,20 @@ export default function ArchitectSignOff({
                 Sharing your reasoning helps keep your team aligned and documents this design decision.
               </p>
             </div>
+          </div>
+        )}
+
+        {/* The server's refusal, in its own words — roadmap 8.8. A sign-off
+            bound to a run the reader never saw is the failure CR-11 named; the
+            refusal that prevents it is only useful if the reader is told which
+            run the project now stands on and what changed since. */}
+        {refusal && (
+          <div
+            role="alert"
+            data-signoff-refusal
+            className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs sm:text-sm text-amber-900"
+          >
+            {refusal}
           </div>
         )}
 

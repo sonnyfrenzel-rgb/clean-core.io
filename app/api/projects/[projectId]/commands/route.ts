@@ -9,6 +9,8 @@ import {
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { validateProjectCommand, type ProjectCommandState } from '@/lib/project-commands';
+import { evidenceDigest } from '@/lib/run-evidence-digest';
+import type { EvidenceChange } from '@/lib/run-evidence-digest';
 
 /**
  * POST /api/projects/{projectId}/commands  — roadmap 0.7
@@ -107,9 +109,16 @@ export async function POST(
     // journal entry still commit together or not at all, which is what the batch
     // was there for (QA review of fafb3299ae6c) — a transaction is a batch that
     // also promises nothing changed while it was deciding.
+    //
+    // Roadmap 8.8 adds a second read inside the same transaction: the run
+    // document the sign-off claims to have been read from. It is read here and
+    // not before, for the reason the comment above gives for the project —
+    // `activeRunId` and the run it points at have to be the pair the write is
+    // conditional on, and a comparison made before the transaction is a window,
+    // not a binding.
     type CommandOutcome =
       | { status: 200; fields: Record<string, unknown> }
-      | { status: number; error: string; code?: string };
+      | { status: number; error: string; code?: string; details?: EvidenceChange[]; activeRunId?: string };
     const outcome: CommandOutcome = await db.runTransaction(
       async (tx: {
         get: (r: unknown) => Promise<{ exists: boolean; data: () => Record<string, unknown> | undefined }>;
@@ -131,15 +140,38 @@ export async function POST(
           return { status: 404, error: 'Project not found.' };
         }
 
+        // The evidence the sign-off will be bound to, taken from the immutable
+        // run and from nowhere else. `firestore.rules:253-269` leaves
+        // `projects/{id}/runs/{runId}` `allow write: if false`, so this is the
+        // one part of the comparison the approver cannot have authored —
+        // unlike every field of `project` above, which the owner writes from
+        // the browser. `null` when there is no run to read; the validator
+        // refuses on it rather than treating an unreadable run as an
+        // unchanged one.
+        let activeRunEvidence: string | null = null;
+        const wantsBinding =
+          typeof body === 'object' && body !== null && (body as { command?: unknown }).command === 'approve-architecture';
+        if (wantsBinding && typeof project.activeRunId === 'string' && project.activeRunId.length > 0) {
+          const runSnap = await tx.get(ref.collection('runs').doc(project.activeRunId));
+          activeRunEvidence = runSnap.exists ? evidenceDigest(runSnap.data()) : null;
+        }
+
         const state: ProjectCommandState = {
           activeRunId: project.activeRunId,
           approvedByArchitect: project.approvedByArchitect,
           originalRecommendation: project.originalRecommendation,
           extensibilityRoute: project.extensibilityRoute,
+          activeRunEvidence,
         };
         const decision = validateProjectCommand(body, state, { email, now: new Date().toISOString() });
         if (!decision.ok) {
-          return { status: decision.status, error: decision.error, code: decision.code };
+          return {
+            status: decision.status,
+            error: decision.error,
+            code: decision.code,
+            ...(decision.details ? { details: decision.details } : {}),
+            ...(decision.activeRunId ? { activeRunId: decision.activeRunId } : {}),
+          };
         }
 
         // Every change into the journal (SCHNITT-0-UMFANG §8, package 1), written
@@ -161,7 +193,16 @@ export async function POST(
 
     if (!('fields' in outcome)) {
       return NextResponse.json(
-        outcome.code ? { error: outcome.error, code: outcome.code } : { error: outcome.error },
+        outcome.code
+          ? {
+              error: outcome.error,
+              code: outcome.code,
+              // Roadmap 8.8 — the diff travels beside the sentence, so a screen
+              // can show a table and an API caller does not have to parse prose.
+              ...(outcome.details ? { details: outcome.details } : {}),
+              ...(outcome.activeRunId ? { activeRunId: outcome.activeRunId } : {}),
+            }
+          : { error: outcome.error },
         { status: outcome.status },
       );
     }

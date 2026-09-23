@@ -25,6 +25,7 @@ import ArchitectSignOff from '@/components/ArchitectSignOff';
 import type { TargetArchitecture } from '@/components/ArchitectSignOff';
 import { recommendedArchitecture } from '@/lib/project-commands';
 import { runProjectCommand } from '@/lib/project-command-client';
+import { evidenceDigest } from '@/lib/run-evidence-digest';
 
 // Helper imports from components
 import { getSecurityExplanation } from '@/components/design/SecurityHardeningChecklist';
@@ -834,6 +835,16 @@ ${responseText.substring(0, 4000)}`;
                     command: 'approve-architecture',
                     targetArchitecture: architecture,
                     justification: justification || '',
+                    // Roadmap 8.8 — which run this page rendered, and what it
+                    // said. `loadProjectAndHydrate` spreads the run over the
+                    // project (`lib/project-loader.ts:14-22`), so every fact
+                    // `evidenceDigest` reads here is the run's own; the three
+                    // keys the project keeps on merge are deliberately not
+                    // among them. If the server's active run has moved since,
+                    // the command comes back 409 with the diff instead of
+                    // silently binding the sign-off to a run nobody read.
+                    expectedRunId: String(project?.activeRunId || ''),
+                    expectedEvidenceDigest: evidenceDigest(project as unknown as Record<string, unknown>),
                   });
                   setProject((prev: Project | null) => prev ? { ...prev, ...stored } as Project : null);
                 }}
